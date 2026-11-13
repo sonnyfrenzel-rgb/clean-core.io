@@ -184,7 +184,7 @@ export interface BusinessReadingOut {
   rules: string[];
   questions: string[];
   /**
-   * The text around the map (v3.2.0, AB-6, `lib/around-the-map.ts`): what it does, the step sentences with their
+   * The text around the map (3.2.0, AB-6, `lib/around-the-map.ts`): what it does, the step sentences with their
    * checks and stops, why it exists, who is involved — the questions are measured as `questions` already.
    */
   around: string[];

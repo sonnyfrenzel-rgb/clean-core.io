@@ -258,7 +258,7 @@ test.describe('automatic model steps with an own key are a switch, off by defaul
       expect(src, f).toContain('autoAllowed: availability.autoSteps,');
       expect(src, f).toContain('<AskOnClick askNow=');
     }
-    // The text around the map (AB-6, v3.2.0), where the first insights asked: the hook reads the switch, and the
+    // The text around the map (AB-6, 3.2.0), where the first insights asked: the hook reads the switch, and the
     // component offers the click with what the hook hands it.
     expect(read('hooks/useAroundTheMap.ts')).toContain('autoAllowed: availability.autoSteps,');
     expect(read('hooks/useAroundTheMap.ts')).toContain('askNow: plain.askNow,');

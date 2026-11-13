@@ -494,7 +494,7 @@ test.describe('the places (source guards)', () => {
     expect(business).not.toContain('<BusinessRulesEditor');
     expect(shell).not.toContain('<BusinessRulesEditor');
     // 3.0.21 (owner decisions 22.10.2026): the Business opening offers no rule action at all, the demo's
-    // included; the one quiet basket line stands everywhere, and in the demo it names no Design. Since v3.2.0
+    // included; the one quiet basket line stands everywhere, and in the demo it names no Design. Since 3.2.0
     // (AB-6) the line stands under "Questions to settle with the business" in the text around the map.
     const around = read('components/analyze/AroundTheMap.tsx');
     const demo = read('components/demo/DemoAnalyzeBusiness.tsx');

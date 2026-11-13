@@ -28,7 +28,7 @@ const MEASURED_VALUE_SURFACES = [
   'app/(app)/project/[projectId]/design/page.tsx',
   // The two stage exports, moved out of those pages in block D, D.28.
   'lib/analysis-export.ts',
-  // The text around the map (v3.2.0, AB-6): its counts — questions beyond the six, the basket line — are the engine's.
+  // The text around the map (3.2.0, AB-6): its counts — questions beyond the six, the basket line — are the engine's.
   'components/analyze/AroundTheMap.tsx',
   'lib/around-the-map.ts',
   'lib/design-export.ts',
@@ -128,7 +128,7 @@ test.describe('no fabricated figures on measured values', () => {
     expect(source).toContain('No confidence score was computed');
   });
 
-  test('the text around the map counts only what the engine read (v3.2.0, AB-6)', async () => {
+  test('the text around the map counts only what the engine read (3.2.0, AB-6)', async () => {
     // Imported here, not at the top: the rest of this spec reads source only.
     const { readProcess, readRules } = await import('../lib/first-look');
     const { aroundTheMap, QUESTIONS_SHOWN } = await import('../lib/around-the-map');
@@ -406,7 +406,7 @@ test.describe('the gate that runs untrusted code holds no production secret', ()
 });
 
 test.describe('hooks run before any early return', () => {
-  // The text around the map returns early while the walk-through runs (`hidden`, v3.2.0) — after its hooks, of which it has none.
+  // The text around the map returns early while the walk-through runs (`hidden`, 3.2.0) — after its hooks, of which it has none.
   const files = ['components/UserOnboarding.tsx', 'components/design/RoutingRationale.tsx', 'components/analyze/AroundTheMap.tsx'];
   for (const rel of files) {
     test(`${rel} has no hook after a conditional return`, () => {

@@ -280,7 +280,7 @@ test.describe('what went in exchange (source guards)', () => {
     const shell = read('components/workspace/WorkspaceShell.tsx');
     expect(shell.match(/<OpenQuestions\b/g) ?? []).toHaveLength(1);
     // StandardFitTable.tsx went with the IT Standard fit table (owner decision 22.10.2026). The First insights' line
-    // left with them in v3.2.0 (AB-6); Analyze's IT page keeps the line.
+    // left with them in 3.2.0 (AB-6); Analyze's IT page keeps the line.
     expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLook.tsx'))).toBe(false);
     expect(read('app/(app)/project/[projectId]/analyze/page.tsx')).toContain('<OpenQuestionsLine');
     expect(read('components/workspace/ItAnswers.tsx')).toContain('openQuestionsLine(');

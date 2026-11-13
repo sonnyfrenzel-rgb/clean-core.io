@@ -137,7 +137,7 @@ async function open(page: Page, url: string, ready: string): Promise<void> {
   await page.waitForFunction(pageSettled, 750, { polling: 150, timeout: 60_000 }).catch(() => undefined);
 }
 
-// The text around the map in its end state (v3.2.0, AB-6), where the first insights' end state stood.
+// The text around the map in its end state (3.2.0, AB-6), where the first insights' end state stood.
 const FIRST_LOOK_DONE = '[data-around-the-map="ready"]';
 
 test.describe('machine strings — rendered', () => {

@@ -232,6 +232,22 @@ test.describe('rendered (static markup)', () => {
   const render = (el: React.ReactElement) => renderToStaticMarkup(el);
   /** The sentences on the page and the anchors they carry. */
   const sentencesIn = (html: string) => [...html.matchAll(/data-around-sentence="" data-anchor="([^"]*)"/g)].map((m) => m[1]);
+  /**
+   * Every element marked as a sentence holds the chip of its own line before the next sentence starts — the
+   * attribute alone is not a line a reader sees (rendered run of 13.11.2026: a step's checks and stops were marked
+   * as sentences and carried no chip). Returns the sentences that carry none.
+   */
+  const withoutChip = (html: string): string[] => {
+    const starts = [...html.matchAll(/data-around-sentence="" data-anchor="([^"]*)"/g)];
+    return starts
+      .filter((m, k) => {
+        const end = k + 1 < starts.length ? starts[k + 1].index! : html.length;
+        return !html.slice(m.index!, end).includes(`<span aria-hidden="true">${m[1]}</span>`);
+      })
+      .map((m) => m[1]);
+  };
+  /** The page's text as a reader gets it: tags out, entities read. */
+  const plainOf = (html: string) => html.replace(/<[^>]+>/g, '').replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&');
 
   test('engine text carries no AI chip — every block says Reconstructed', async () => {
     const { default: Around, WhatThisProgramDoes } = await load();
@@ -246,13 +262,38 @@ test.describe('rendered (static markup)', () => {
     expect(top).toContain('data-around-does="engine"');
     // Every sentence on the page carries its line, and every line of the model is on the page.
     const shown = sentencesIn(html + top);
-    expect(shown.length).toBe(everySentence(text).length);
+    expect(shown.length).toBeGreaterThan(5);
     expect(shown.every((a) => /^L\d+(?:-\d+)?$/.test(a))).toBe(true);
+    expect(withoutChip(html), 'a sentence below the map without its line chip').toEqual([]);
+    expect(withoutChip(top), 'a sentence above the map without its line chip').toEqual([]);
+    const said = plainOf(html + top);
+    for (const s of everySentence(text)) expect(said, s.text).toContain(s.text);
     // The fixed caution, the basket line into Design, and the note that IT has its own questions.
     expect(html).toContain(WHY_CAUTION);
     expect(html).toContain('data-rule-basket-line=""');
     expect(html).toContain('href="/project/p/design#rule-questions"');
     expect(html).toContain('IT has its own questions in the IT view.');
+  });
+
+  test('every sentence on the page carries its line chip — every example, engine, reworded and model text', async () => {
+    const { default: Around, WhatThisProgramDoes } = await load();
+    // A plain wording on record for every step and summary sentence: the path a project with a rewording takes.
+    const worded = (t: string) => ({ text: `In plain words: ${t}`, engine: t, worded: true });
+    for (const example of STARTER_EXAMPLES) {
+      const source = read(`public/starter-examples/${example.file}`);
+      for (const [label, text, say] of [
+        ['engine', textOf(source), undefined],
+        ['reworded', textOf(source), worded],
+        ['model', textOf(source, { narrative: narrativeOf('It reads the data it is given and shows a list.') }), undefined],
+      ] as const) {
+        const below = render(React.createElement(Around, { text, state: 'ready', say, here: { nodeId: text.runs[0]?.nodeIds[0] ?? null } }));
+        const above = render(React.createElement(WhatThisProgramDoes, { text, state: 'ready', say }));
+        expect(withoutChip(below), `${example.file} (${label}): below the map`).toEqual([]);
+        expect(withoutChip(above), `${example.file} (${label}): above the map`).toEqual([]);
+        // What a step checks and where it can end are said, inside the step that carries the line.
+        for (const run of text.runs) for (const s of run.steps) for (const m of s.more) expect(plainOf(below)).toContain(m.text);
+      }
+    }
   });
 
   test('the AI chip stands only on the block a model wrote', async () => {
