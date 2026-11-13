@@ -305,6 +305,92 @@ test.describe('3. a candidate runs inside the call that reaches it: the handlers
   });
 });
 
+/** A report registers a handler, then shows a screen; the PAI module raises the event. */
+const DIALOG = [
+  'REPORT zdialog.', //                                                         1
+  'CLASS lcl_order DEFINITION.', //                                             2
+  '  PUBLIC SECTION.', //                                                       3
+  '    EVENTS released.', //                                                    4
+  '    METHODS release.', //                                                    5
+  'ENDCLASS.', //                                                               6
+  'CLASS lcl_order IMPLEMENTATION.', //                                         7
+  '  METHOD release.', //                                                       8
+  "    UPDATE vbak SET lifsk = ' ' WHERE vbeln = gv_vbeln.", //                 9
+  '    RAISE EVENT released.', //                                               10
+  '  ENDMETHOD.', //                                                            11
+  'ENDCLASS.', //                                                               12
+  'CLASS lcl_log DEFINITION.', //                                               13
+  '  PUBLIC SECTION.', //                                                       14
+  '    CLASS-METHODS on_released FOR EVENT released OF lcl_order.', //          15
+  'ENDCLASS.', //                                                               16
+  'CLASS lcl_log IMPLEMENTATION.', //                                           17
+  '  METHOD on_released.', //                                                   18
+  '    INSERT zrel_log FROM gs_log.', //                                        19
+  '  ENDMETHOD.', //                                                            20
+  'ENDCLASS.', //                                                              21
+  'DATA go_order TYPE REF TO lcl_order.', //                                    22
+  'START-OF-SELECTION.', //                                                     23
+  '  go_order = NEW lcl_order( ).', //                                          24
+  '  SET HANDLER lcl_log=>on_released FOR go_order.', //                        25
+  '  CALL SCREEN 0100.', //                                                     26
+  'MODULE user_command_0100 INPUT.', //                                         27
+  '  CASE ok_code.', //                                                         28
+  "    WHEN 'REL'.", //                                                         29
+  '      go_order->release( ).', //                                             30
+  "    WHEN 'BACK'.", //                                                        31
+  '      LEAVE TO SCREEN 0.', //                                                32
+  '  ENDCASE.', //                                                              33
+  'ENDMODULE.', //                                                              34
+].join('\n');
+
+test.describe('4. a screen module runs inside the report\'s run: the handlers registered before CALL SCREEN are registered in it', () => {
+  test('3.2.0: the `RAISE EVENT` reached from the PAI module runs the handler the report bound before the screen', () => {
+    const skeleton = buildProcessSkeleton(DIALOG, NEW);
+    expect(entriesOf(skeleton)).toEqual([23, 27]);
+    expect(nodesAt(skeleton, 19).map((n) => n.kind)).toContain('write');
+    expect(nodesAt(skeleton, 10).every((n) => n.kind !== 'call-opaque')).toBe(true);
+  });
+
+  test('3.1.0 keeps its map: the event stays an opaque call and the handler is not drawn', () => {
+    const skeleton = buildProcessSkeleton(DIALOG, OLD);
+    expect(entriesOf(skeleton)).toEqual([23, 27]);
+    expect(nodesAt(skeleton, 19)).toEqual([]);
+    expect(nodesAt(skeleton, 10).some((n) => n.kind === 'call-opaque')).toBe(true);
+  });
+});
+
+test.describe('5. MESSAGE and TYPE are read in any case', () => {
+  const upper = [
+    'REPORT zcase.', //                                                         1
+    'START-OF-SELECTION.', //                                                   2
+    '  PERFORM check_limit.', //                                                3
+    "  CALL FUNCTION 'Z_BOOK'.", //                                             4
+    'FORM check_limit.', //                                                     5
+    '  IF p_amount > 1000.', //                                                 6
+    '    MESSAGE e001(zz) WITH p_amount.', //                                   7
+    '  ENDIF.', //                                                              8
+    "  MESSAGE 'Limit checked' TYPE 'I'.", //                                   9
+    'ENDFORM.', //                                                              10
+  ].join('\n');
+  const lower = upper.replace(/MESSAGE/g, 'message').replace(/TYPE/g, 'type').replace(/\bIF\b/g, 'if').replace('ENDIF', 'endif');
+
+  test('3.2.0: a program written in lower case keeps its error end and its popup', () => {
+    const skeleton = buildProcessSkeleton(lower, NEW);
+    expect(nodesAt(skeleton, 7).map((n) => n.kind)).toEqual(['end-error']);
+    expect(nodesAt(skeleton, 9).map((n) => n.kind)).toEqual(['user-task']);
+    // Exactly the map the same program in upper case gets.
+    const same = buildProcessSkeleton(upper, NEW);
+    expect(skeleton.nodes.map((n) => `${n.kind}@${n.anchor?.lineStart}`)).toEqual(same.nodes.map((n) => `${n.kind}@${n.anchor?.lineStart}`));
+  });
+
+  test('3.1.0 keeps its map: in lower case the error end and the popup are not drawn, and the routine loses its effect', () => {
+    const skeleton = buildProcessSkeleton(lower, OLD);
+    expect(nodesAt(skeleton, 7)).toEqual([]);
+    expect(nodesAt(skeleton, 9)).toEqual([]);
+    expect(buildProcessSkeleton(upper, OLD).nodes.map((n) => n.kind)).toContain('end-error');
+  });
+});
+
 test.describe('the readings travel with the skeleton', () => {
   test('a skeleton read for 3.1.0 is rebuilt when asked for 3.2.0, and kept when asked for 3.1.0 or a 3.0.x hotfix', () => {
     const facts = buildProcessFacts(STRATEGY);

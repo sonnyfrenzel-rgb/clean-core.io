@@ -670,9 +670,16 @@ function isMessageInto(text: string): boolean {
   return /^MESSAGE\b/i.test(text) && /\bINTO\b/i.test(maskLiterals(text));
 }
 
-/** `MESSAGE e001 …`, `MESSAGE '…' TYPE 'E'` — the types that end the process. */
-function isErrorMessage(text: string): boolean {
+/**
+ * `MESSAGE e001 …`, `MESSAGE '…' TYPE 'E'` — the types that end the process.
+ *
+ * `anyCase` (engine 3.2.0): the keywords `MESSAGE` and `TYPE` are read in any case, as ABAP reads them. Before,
+ * only the type letter was; `message e001(zz).` in a program the pretty printer wrote in lower case lost its error
+ * end, and with it the effect that made its routine a step. An older engine keeps that reading.
+ */
+function isErrorMessage(text: string, anyCase = false): boolean {
   if (isMessageInto(text)) return false;
+  if (anyCase) return /^MESSAGE\s+[eax]\d/i.test(text) || /^MESSAGE\b[\s\S]*\bTYPE\s+'[eax]'/i.test(text);
   if (/^MESSAGE\s+[eaxEAX]\d/.test(text)) return true;
   return /^MESSAGE\b[\s\S]*\bTYPE\s+'[EAXeax]'/.test(text);
 }
@@ -690,8 +697,9 @@ function isErrorMessage(text: string): boolean {
  * not decide which of two opposite elements a statement is from context it is
  * not sure of. `DISPLAY LIKE` changes the icon, not the type.
  */
-function isInfoMessage(text: string): boolean {
+function isInfoMessage(text: string, anyCase = false): boolean {
   if (isMessageInto(text)) return false;
+  if (anyCase) return /^MESSAGE\s+i\d/i.test(text) || /^MESSAGE\b[\s\S]*\bTYPE\s+'i'/i.test(text);
   if (/^MESSAGE\s+[iI]\d/.test(text)) return true;
   return /^MESSAGE\b[\s\S]*\bTYPE\s+'[Ii]'/.test(text);
 }
@@ -1131,6 +1139,8 @@ interface EntryPoint {
   origin: EntryOrigin;
   /** What the source says calls this, when it says anything at all. */
   trigger: string | null;
+  /** Engine 3.2.0: the statement that registered a callback — where its handlers were registered too (`registeredAtEntry`). */
+  site?: number;
 }
 
 /**
@@ -1310,6 +1320,8 @@ class SkeletonBuilder {
    * too (`buildEntryRegion`) — the handlers a `RAISE EVENT` in the candidate runs are the ones the caller bound.
    */
   private registrationsAtCall = new Map<number, Set<string>>();
+  /** Engine 3.2.0: the `CALL SCREEN` statements the walk passed — the screen modules run inside them. */
+  private screenCallSites: number[] = [];
   /** `METHODS m FOR EVENT ev OF cls` — the event each implemented handler method declares, upper-cased. */
   private handlerEvent = new Map<string, { event: string; of: string }>();
   /** Handler methods a `SET HANDLER` of this source registers, in the order it first names them. */
@@ -1703,11 +1715,11 @@ class SkeletonBuilder {
       if (receivesResults(text)) out.add('call');
       if (/^CALL\s+SCREEN\b/i.test(text)) out.add('human');
       if (isListOutput(statement) || isFileOutput(statement)) out.add('file');
-      if (isErrorMessage(text) || raisesException(statement)) out.add('error');
+      if (isErrorMessage(text, this.reads320) || raisesException(statement)) out.add('error');
       // The handlers of an event are called, whoever they turn out to be. Where
       // the source binds them, their own effect travels instead (`readEffects`).
       if (isRaiseEvent(text) && !this.handlersRaisedBy(statement).length) out.add('call');
-      if (isInfoMessage(text)) out.add('human');
+      if (isInfoMessage(text, this.reads320)) out.add('human');
       if (/^LEAVE\s+PROGRAM\b/i.test(text)) out.add('error');
       if (statement.keyword === 'AUTHORITY-CHECK') out.add('authority');
       const perform = /^PERFORM\s+([\w/]+)/i.exec(text);
@@ -2388,6 +2400,8 @@ class SkeletonBuilder {
   private pushCallback(key: string, label: string, site: AbapStatement, trigger = 'ON END OF TASK'): void {
     if (this.callbacks.some((c) => c.key === key)) return;
     this.callbacks.push({ key, label, site, trigger });
+    // Engine 3.2.0: the callback runs in the session that registered it, with what is registered here.
+    if (this.reads320) this.registrationsAtCall.set(site.index, new Set(this.registeredInWalk));
   }
 
   /**
@@ -2410,6 +2424,7 @@ class SkeletonBuilder {
       // Determined, unlike the other entries that are not event blocks: the
       // statement that names it says what calls it.
       trigger: callback.trigger,
+      site: callback.site.index,
     };
   }
 
@@ -3081,7 +3096,7 @@ class SkeletonBuilder {
     // unconditionally (`registeredBefore`).
     this.registeredInWalk = entry.origin === 'event' || entry.origin === 'implicit'
       ? this.registeredBefore(entry)
-      : this.registeredAtCandidateCall(entry);
+      : this.registeredAtEntry(entry);
     const exits = this.walkRange(from, entry.lastIndex, {
       region, container, loops: [], loopBreaks: [],
     }, [{ from: start.id, condition: '', kind: 'sequence' }]);
@@ -3120,17 +3135,28 @@ class SkeletonBuilder {
   }
 
   /**
-   * Engine 3.2.0 — what a candidate implementation (`candidateEntries`) starts with: the handlers registered when
-   * the walk passed the ambiguous call that reaches it (`registrationsAtCall`), those of every such call that was
-   * walked before this entry is built. Every other entry called on its own starts with nothing registered.
+   * Engine 3.2.0 — what an entry that runs **inside** this program's run starts with: the handlers registered when
+   * the walk passed the statement that hands over to it (`registrationsAtCall`), of every such statement walked
+   * before this entry is built. Three such entries: a candidate implementation runs inside the ambiguous call that
+   * reaches it (`candidateEntries`); a screen module runs inside the `CALL SCREEN` of the report that showed the
+   * screen (`deferredModuleEntries`); a callback runs in the session that registered it (`callbackEntry`). An ABAP
+   * event handler registered with `SET HANDLER` stays registered for the whole internal session, so a `RAISE EVENT`
+   * in any of them runs it. Every other entry called on its own starts with nothing registered — and so does every
+   * entry of an older engine, whose map stays as it was.
    */
-  private registeredAtCandidateCall(entry: EntryPoint): Set<string> {
+  private registeredAtEntry(entry: EntryPoint): Set<string> {
     const out = new Set<string>();
-    if (!entry.trigger?.startsWith(CANDIDATE_TRIGGER)) return out;
-    const key = `${this.classOf(entry.statement.index) ?? ''}=>${entry.label.toUpperCase()}`;
-    for (const site of this.candidateSites.get(key) ?? []) {
-      for (const handler of this.registrationsAtCall.get(site.index) ?? []) out.add(handler);
+    if (!this.reads320) return out;
+    const sites: number[] = [];
+    if (entry.trigger?.startsWith(CANDIDATE_TRIGGER)) {
+      const key = `${this.classOf(entry.statement.index) ?? ''}=>${entry.label.toUpperCase()}`;
+      sites.push(...(this.candidateSites.get(key) ?? []).map((site) => site.index));
+    } else if (entry.origin === 'module') {
+      sites.push(...this.screenCallSites);
+    } else if (entry.origin === 'callback' && entry.site !== undefined) {
+      sites.push(entry.site);
     }
+    for (const site of sites) for (const handler of this.registrationsAtCall.get(site) ?? []) out.add(handler);
     return out;
   }
 
@@ -3139,7 +3165,7 @@ class SkeletonBuilder {
     for (let i = from; i <= to; i++) {
       const statement = this.statements[i];
       if (['CHECK', 'RETURN', 'EXIT', 'STOP', 'LEAVE'].includes(statement.keyword)) return true;
-      if (isErrorMessage(statement.text) || raisesException(statement)) return true;
+      if (isErrorMessage(statement.text, this.reads320) || raisesException(statement)) return true;
     }
     return false;
   }
@@ -3816,7 +3842,7 @@ class SkeletonBuilder {
       if (DECLARATIVE.has(statement.keyword) || statement.nativeSql) continue;
       const text = statement.text;
       if (statement.keyword === 'RETURN' || statement.keyword === 'STOP'
-        || raisesException(statement) || isErrorMessage(text)
+        || raisesException(statement) || isErrorMessage(text, this.reads320)
         || /^LEAVE\s+PROGRAM\b/i.test(text) || /^LEAVE\s+TO\s+TRANSACTION\b/i.test(text)
         || leavesDialogStep(text)) {
         return false;
@@ -4121,7 +4147,7 @@ class SkeletonBuilder {
       this.edges.push({ from: node.id, to: ctx.region.endNodeId, kind: 'sequence', condition: '', reason: 'no-return' });
       return { exits: [], outputRun: null };
     }
-    if (/^LEAVE\s+PROGRAM\b/i.test(text) || isErrorMessage(text) || raisesException(statement)) {
+    if (/^LEAVE\s+PROGRAM\b/i.test(text) || isErrorMessage(text, this.reads320) || raisesException(statement)) {
       const node = this.addNode('end-error', this.errorLabel(statement), anchorOf(statement),
         ctx.region, ctx.container);
       this.connect(incoming, node.id);
@@ -4152,14 +4178,14 @@ class SkeletonBuilder {
       }));
     }
 
-    if (isInfoMessage(text)) {
+    if (isInfoMessage(text, this.reads320)) {
       // D4: the popup is a person acting in the program — a user task, and
       // lane evidence of the same kind as `CALL SCREEN` (2.16 lists the popup
       // among the human evidence). Both tokens stand in the statement.
       const label = this.errorLabel(statement);
       // `MESSAGE i012(zsd)` names itself; `MESSAGE lv_text TYPE 'I'` names
       // only its type, and that is what the token then says.
-      const id = /^MESSAGE\s+[iI]\d/.test(text) ? label : "TYPE 'I'";
+      const id = (this.reads320 ? /^MESSAGE\s+i\d/i : /^MESSAGE\s+[iI]\d/).test(text) ? label : "TYPE 'I'";
       this.recordEvidence('human', `MESSAGE ${id}`, anchorOf(statement), statement);
       return keep(this.addNode('user-task', label, anchorOf(statement), ctx.region, ctx.container, {
         detail: { message: 'I' },
@@ -4195,6 +4221,11 @@ class SkeletonBuilder {
     }
     if (/^CALL\s+SCREEN\b/i.test(text)) {
       this.screenCalled = true;
+      // Engine 3.2.0: the screen's modules run in this session, with what is registered here.
+      if (this.reads320) {
+        this.screenCallSites.push(statement.index);
+        this.registrationsAtCall.set(statement.index, new Set(this.registeredInWalk));
+      }
       const screen = /^CALL\s+SCREEN\s+([\w/]+)/i.exec(text)?.[1] ?? 'CALL SCREEN';
       // 2.16: a dynpro is a person. The token is written the way the source
       // writes it, `SCREEN 9000`, and both words are in the statement.
@@ -4993,8 +5024,8 @@ class SkeletonBuilder {
       const name = fm[1].toUpperCase();
       return at(functionTaskKind(name), name);
     }
-    if (isErrorMessage(body.text)) return at('end-error', this.errorLabel(body));
-    if (isInfoMessage(body.text)) return at('user-task', this.errorLabel(body), { message: 'I' });
+    if (isErrorMessage(body.text, this.reads320)) return at('end-error', this.errorLabel(body));
+    if (isInfoMessage(body.text, this.reads320)) return at('user-task', this.errorLabel(body), { message: 'I' });
     if (isListOutput(body) || isFileOutput(body)) {
       return at('output', body.keyword, { statements: 1, target: isFileOutput(body) ? 'file' : 'list' });
     }
