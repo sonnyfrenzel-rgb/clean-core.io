@@ -7,7 +7,7 @@ import { buildExportModel } from '../lib/bpmn/model';
 import { buildBpmnExport, businessLevelOf } from '../lib/bpmn/export';
 import { plainLabels } from '../lib/abap/plain-language';
 import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
-import { CUSTOMER_TEXT_LABEL, isCustomerTexts, readCustomerTexts, type CustomerTexts } from '../lib/abap/customer-texts';
+import { CUSTOMER_TEXT_LABEL, customerTextProvenance, emptyCustomerTexts, isCustomerTexts, readCustomerTexts, type CustomerTexts } from '../lib/abap/customer-texts';
 import { readZipSources } from '../lib/own-code-zip';
 import { mergeCustomerTexts } from '../lib/customer-texts-client';
 import { identifierSegments, rawWords } from './helpers/business-readability';
@@ -72,6 +72,12 @@ test('a value map that is an array is not customer texts (QA review 268ed7624e53
   // An array would pass as an object and read its index `0` as a domain value code.
   expect(isCustomerTexts({ ...t, values: { status: ['Approved'] } })).toBe(false);
   expect(isCustomerTexts({ ...t, values: { status: { A: 'Approved' } } })).toBe(true);
+});
+
+test('a customer text is said only as whole words, never inside a longer word', () => {
+  const texts: CustomerTexts = { ...emptyCustomerTexts(), fields: { zplan: 'Plan', zorder: 'Order' } };
+  expect(customerTextProvenance('Rows are planned and reordered.', texts)).toBe('');
+  expect(customerTextProvenance('The plan is checked.', texts)).toBe(`${CUSTOMER_TEXT_LABEL}: ZPLAN “Plan”.`);
 });
 
 test('the ZIP import reads them beside the sources, and several files merge', async () => {

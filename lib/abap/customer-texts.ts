@@ -179,9 +179,12 @@ export function customerTextProvenance(sentence: string, texts: CustomerTexts | 
   for (const [k, values] of Object.entries(texts.values)) for (const [v, t] of Object.entries(values)) offer(`${k.toUpperCase()} = ${v}`, t);
   const taken: Array<[number, number]> = [];
   const used: Array<{ at: number; said: string }> = [];
+  // A text counts only as whole words: "Plan" is not said by "planned", nor "Order" by "reorder".
+  const letter = /[\p{L}\p{N}]/u;
+  const whole = (at: number, length: number) => !letter.test(said[at - 1] ?? '') && !letter.test(said[at + length] ?? '');
   for (const [key, code] of [...byText].sort((a, b) => b[0].length - a[0].length)) {
     let from = said.indexOf(key);
-    while (from >= 0 && taken.some(([s, e]) => from < e && from + key.length > s)) from = said.indexOf(key, from + 1);
+    while (from >= 0 && (!whole(from, key.length) || taken.some(([s, e]) => from < e && from + key.length > s))) from = said.indexOf(key, from + 1);
     if (from < 0) continue;
     taken.push([from, from + key.length]);
     used.push({ at: from, said: `${code} “${original.get(key) ?? key}”` });
