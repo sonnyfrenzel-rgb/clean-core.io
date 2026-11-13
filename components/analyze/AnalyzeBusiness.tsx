@@ -12,6 +12,8 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import ProjectNoAccess from '@/components/ProjectNoAccess';
 import FirstLook from '@/components/workspace/FirstLook';
+import CommandSearch from '@/components/workspace/CommandSearch';
+import type { SourceReading } from '@/lib/first-look';
 import BusinessNextStep from '@/components/workspace/BusinessNextStep';
 import TargetReferenceLine from '@/components/workspace/TargetReferenceLine';
 import StartNarrativeMissing from '@/components/workspace/StartNarrativeMissing';
@@ -233,6 +235,13 @@ export default function AnalyzeBusiness({
     document.getElementById(BUSINESS_MAP_ID)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, []);
 
+  /**
+   * The reading of the source the first insights below the map compute, handed up for the project search (⌘K,
+   * roadmap 6.6) — the search the workspace's Business view carried until v3.1.0 stands here, where a project opens
+   * (mockup state 3: "Search this project" in the shell bar).
+   */
+  const [reading, setReading] = useState<SourceReading | null>(null);
+
   /** "I'll look around myself": the invitation steps aside; one quiet line under the map keeps the way in. */
   const [lookingAround, setLookingAround] = useState(false);
   const walk = useCallback(() => requestProcessWalk(projectId), [projectId]);
@@ -281,6 +290,8 @@ export default function AnalyzeBusiness({
 
   return (
     <StageFrame stage="analyze" data-analyze-business="ready">
+      {/* Search ⌘K: the dialog and its index; its button stands in the shell bar while this is mounted. */}
+      <CommandSearch projectId={projectId} project={project} reading={reading} />
       <StageHeader
         tools={{ steps, current: 'analyze' }}
         projectName={project?.name}
@@ -375,6 +386,7 @@ export default function AnalyzeBusiness({
             projectId={projectId}
             fullMapBelow={signed !== null}
             rulesBelow
+            onReading={setReading}
             questions={questions}
             elsewhere={givesAwayElsewhere}
           />

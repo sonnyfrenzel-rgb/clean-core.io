@@ -682,7 +682,7 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 }); // Analyze, Business since v3.1.0 (ADR-109)
 
     const trigger = page.locator('[data-command-search-trigger]');
     await expect(trigger, 'no visible way into the search that does not need a keyboard shortcut').toBeVisible();
@@ -702,7 +702,7 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 }); // Analyze, Business since v3.1.0 (ADR-109)
 
     await page.keyboard.press('Control+k');
     await expect(page.locator('[data-command-search]')).toBeVisible();
@@ -712,7 +712,7 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 }); // Analyze, Business since v3.1.0 (ADR-109)
 
     const trigger = page.locator('[data-command-search-trigger]');
     await trigger.focus();
@@ -737,7 +737,7 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 }); // Analyze, Business since v3.1.0 (ADR-109)
 
     await page.locator('[data-command-search-trigger]').click();
     await page.fill('[data-command-search-input]', 'lv_amount');
@@ -762,7 +762,7 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 }); // Analyze, Business since v3.1.0 (ADR-109)
 
     await page.locator('[data-command-search-trigger]').click();
     await page.fill('[data-command-search-input]', WORKLIST[0].title);
@@ -784,7 +784,7 @@ test.describe('the ⌘K dialog, opened by an administrator who turned the worksp
 
     await signIn(page, ADMIN);
     await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 }); // Analyze, Business since v3.1.0 (ADR-109)
 
     await page.locator('[data-command-search-trigger]').click();
     await page.fill('[data-command-search-input]', 'Clean Core');
@@ -912,7 +912,7 @@ test.describe('a Fachwort in the answer carries the glossary with it', () => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 }); // Analyze, Business since v3.1.0 (ADR-109)
 
     // Through ⌘K, the one surface that can reach any entry on demand.
     await page.locator('[data-command-search-trigger]').click();
