@@ -71,7 +71,7 @@ import { pricedOptions } from '@/lib/economics-record';
 import type { Project } from '@/lib/types';
 
 /**
- * The Business view is Analyze's since v3.1.0 (plan
+ * The Business view is Analyze's since 3.1.0 (plan
  * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-109):
  * `/project/<id>` in Business — or with no view — goes to
  * `/project/<id>/analyze` before this component renders
@@ -121,7 +121,7 @@ const MANAGEMENT_COACH_MARKS: readonly CoachMarkId[] = ['next-step'];
  * The Object Page of a project — `DESIGN.md` §2.3, roadmap step 1.4.
  *
  * Header, status line, toolbar, and the view's own answer. A project opens in
- * Analyze, Business since v3.1.0 (ADR-109), so this page holds IT and
+ * Analyze, Business since 3.1.0 (ADR-109), so this page holds IT and
  * Management; everything it says about the project is derived in
  * `lib/workspace-model.ts` so that the honesty of it is testable in one place
  * rather than seven.
@@ -153,7 +153,7 @@ export default function WorkspaceShell({
 }: {
   project: Project | null;
   projectId: string;
-  /** IT or Management: Business is Analyze's page since v3.1.0 (AB-2). */
+  /** IT or Management: Business is Analyze's page since 3.1.0 (AB-2). */
   view: ShellView;
   onViewChange: (view: WorkspaceView) => void;
   /**
@@ -246,7 +246,7 @@ export default function WorkspaceShell({
   /**
    * The reading of the source, for the search, the print sheet, the rule
    * register and "Ask this case" — read once, here: the first insights that
-   * used to hand theirs up stand in Analyze, Business since v3.1.0 (AB-2).
+   * used to hand theirs up stand in Analyze, Business since 3.1.0 (AB-2).
    */
   const reading = useSourceReading(
     typeof project?.legacyCode === 'string' ? project.legacyCode : '',
@@ -391,7 +391,7 @@ export default function WorkspaceShell({
 
   // Rule-based, no model call (roadmap 6.5) — `null` once every phase this
   // product can finish already is, never a step invented to fill the card.
-  // The start run of a new project is signed in Analyze, Business since v3.1.0
+  // The start run of a new project is signed in Analyze, Business since 3.1.0
   // (AB-2), which marks its own "Next step" as running while it is with the server.
   // ADR-094 — "nothing is open" says so when Testing was closed without a pass.
   const nothingOpen = useMemo(() => nothingOpenText(workflowSteps(project)), [project]);

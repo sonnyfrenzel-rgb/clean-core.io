@@ -65,7 +65,7 @@ const WorkspaceProcess = dynamic(() => import('@/components/workspace/WorkspaceP
  *
  * **Interim until release 3.2.0** (release cut of 06.11.2026, so nothing a user had
  * goes missing): today's First insights blocks (`BusinessOpening`, rendered by
- * `FirstLook`, whose paced build-up retired with v3.1.0, AB-3) and `BusinessNextStep` stand unchanged below
+ * `FirstLook`, whose paced build-up retired with 3.1.0, AB-3) and `BusinessNextStep` stand unchanged below
  * the map; AB-6 and AB-4 replace them in place.
  *
  * **The start run of ADR-072 lives here** (moved from the workspace page): a
@@ -181,7 +181,7 @@ export default function AnalyzeBusiness({
    * seconds while the blocks around it settle; a wheel, a touch, a key or a
    * pointer press by the reader ends it at once — the press covers a drag of
    * the scrollbar, which sends no wheel. Moved here from the workspace's
-   * Business view with v3.1.0 (AB-2): the map is this page's.
+   * Business view with 3.1.0 (AB-2): the map is this page's.
    * (`hooks/useFollowHash.ts` leaves the map's id to this follower.)
    */
   useEffect(() => {
@@ -237,7 +237,7 @@ export default function AnalyzeBusiness({
 
   /**
    * The reading of the source the first insights below the map compute, handed up for the project search (⌘K,
-   * roadmap 6.6) — the search the workspace's Business view carried until v3.1.0 stands here, where a project opens
+   * roadmap 6.6) — the search the workspace's Business view carried until 3.1.0 stands here, where a project opens
    * (mockup state 3: "Search this project" in the shell bar).
    */
   const [reading, setReading] = useState<SourceReading | null>(null);
@@ -392,7 +392,7 @@ export default function AnalyzeBusiness({
           />
           {businessStep ? <BusinessNextStep step={businessStep} projectId={projectId} noneText={nothingOpen} /> : null}
           {/* The target and its SAP reference pattern, one line under "Next step" (roadmap 3.0.9, ADR-089),
-              as it stood in the workspace's Business view until v3.1.0. */}
+              as it stood in the workspace's Business view until 3.1.0. */}
           <TargetReferenceLine project={project} />
         </section>
       </div>

@@ -167,7 +167,7 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
   const station: TourStation | null = tour && at >= 0 && at < end ? stations[at] : null;
   const overview = !!tour && at === OVERVIEW;
   const titleId = useId();
-  // The tour's map says the names its chips and the map's step list say (one source of the shown name, v3.1.0).
+  // The tour's map says the names its chips and the map's step list say (one source of the shown name, 3.1.0).
   const tourXml = useMemo(() => xmlWithShownNames(model), [model]);
   const moreId = useId();
   const mode = useMode();

@@ -532,7 +532,7 @@ function shapeFacts(text: string): Pick<ProgramSummaryFacts, 'shape'> {
 }
 
 /**
- * 3.1.0 (AB-15a, v3.1.0 acceptance run): the status workflow the code moves its object through
+ * 3.1.0 (AB-15a, 3.1.0 acceptance run): the status workflow the code moves its object through
  * (`lib/abap/state-machine.ts`), in words — so a program whose names support no purpose and that reads no table by
  * name still opens on what it does, instead of "A report that reads no table by name". Nothing when the code holds
  * no such workflow.

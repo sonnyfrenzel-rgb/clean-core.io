@@ -20,7 +20,7 @@ import type { AssessmentTarget } from '@/lib/assessment-target';
  * Analyze cannot drift apart.
  *
  * It runs at the start, while the page already shows the engine's own reading
- * (owner, 03.10.2026: "use the time of the first steps"; since v3.1.0 the
+ * (owner, 03.10.2026: "use the time of the first steps"; since 3.1.0 the
  * summary and the first insights in Analyze, Business, the paced build-up having
  * retired): only the map's place waits for the answer — never past
  * `START_NARRATIVE_CEILING_MS` (`lib/engine-run.ts`).

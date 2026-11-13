@@ -18,7 +18,7 @@
  * `/demo/workspace` is public although it needs an account: without the hint
  * it sends the visitor to the sign-in dialog without starting Auth on the way
  * (components/demo/DemoWorkspaceShell.tsx). `/demo/analyze` is the same in its
- * Business view, where the demo opens since v3.1.0
+ * Business view, where the demo opens since 3.1.0
  * (components/demo/DemoAnalyzeBusiness.tsx); its IT and Management views are
  * the public Analyze stage as before. A returning reader whose browser
  * holds a session but not yet the hint finds the session there and comes back

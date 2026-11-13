@@ -33,7 +33,7 @@ function currentHash(): string {
 /**
  * The workspace of a project — roadmap step 1.4, for every account since 3.0.1.
  *
- * Since v3.1.0 it holds IT and Management only (plan AB-2, ADR-109): a project
+ * Since 3.1.0 it holds IT and Management only (plan AB-2, ADR-109): a project
  * opens in Analyze, Business, and this route sends a Business address there.
  * The start run of a new project (ADR-072) is signed there too
  * (`components/analyze/AnalyzeBusiness.tsx`).

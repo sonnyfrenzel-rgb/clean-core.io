@@ -360,7 +360,7 @@ export default function ProcessMap({
    * phone keeps the mobile pass's order either way: the fold is a desktop one.
    */
   // Analyze, Business keeps its own choice: the mockup's map has no outline beside it, so it starts folded there
-  // whatever a reader chose on another map (v3.1.0, AB-2).
+  // whatever a reader chose on another map (3.1.0, AB-2).
   const outlineKey = page ? OUTLINE_PAGE_KEY : OUTLINE_KEY;
   const [outlineOpen, setOutlineOpen] = useState<boolean>(() => {
     try {

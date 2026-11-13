@@ -21,7 +21,7 @@ export const DEMO_WORKSPACE_MESSAGES = {
   'demo.viewLabel': 'View',
   'demo.stagesNav': 'Stages',
 
-  // DemoAnalyzeBusiness — the demo's Analyze, Business (DemoWorkspaceShell's Business view until v3.1.0)
+  // DemoAnalyzeBusiness — the demo's Analyze, Business (DemoWorkspaceShell's Business view until 3.1.0)
   'demo.processMap': 'Process map',
   'demo.levels': 'Levels of this process',
   'demo.rules': 'Rules in this code',

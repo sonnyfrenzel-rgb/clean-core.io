@@ -342,7 +342,7 @@ export default function WorkspaceProcess({
     };
   }, [arrival?.model, answers]);
   // The names the reader sees on the map, so the code panel's title says what the canvas and the step list say
-  // (one source of the shown name, v3.1.0): an AI name only once its swap has begun.
+  // (one source of the shown name, 3.1.0): an AI name only once its swap has begun.
   const byId = useMemo(() => {
     const out = new Map<string, ProcessMapElement>();
     for (const element of (shownModel ?? model)?.elements ?? []) out.set(element.id, element);

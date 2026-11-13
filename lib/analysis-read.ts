@@ -10,7 +10,7 @@
  * stays the next step, and until the reader has opened Analyze once the Analyze
  * tool carries a "Result ready" tag. (The line in the work area, with the
  * figures of the signed run, retired with the workspace's Business view and its
- * hub in v3.1.0, AB-2: a project opens on Analyze itself.)
+ * hub in 3.1.0, AB-2: a project opens on Analyze itself.)
  *
  * **Where the state lives.** In the browser and only in the browser, for the
  * reason the coach marks (ADR-036, `lib/coach-marks.ts`) and the first look's

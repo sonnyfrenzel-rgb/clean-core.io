@@ -66,7 +66,7 @@ import { engineVersionOfProject } from './run-engine-version';
 
 /**
  * Whether this browser has had the first visit of a project — once the paced
- * build-up's "a second visit has no build-up" (`DESIGN.md` §5.2); since v3.1.0
+ * build-up's "a second visit has no build-up" (`DESIGN.md` §5.2); since 3.1.0
  * the rule that the start run signs by itself only on the first visit after an
  * import or an example (`?first=1`, `components/analyze/AnalyzeBusiness.tsx`).
  *

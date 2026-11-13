@@ -40,7 +40,7 @@ export interface ExcerptOptions {
   /**
    * A step of the main line that is not part of the business process — the
    * program's own test-data switch (3.0.21; asked for by the first look's
-   * main-line picture, which retired with v3.1.0). It is
+   * main-line picture, which retired with 3.1.0). It is
    * passed over with everything inside it, the way the step list sets it apart.
    */
   skipStep?: (node: ExportNode) => boolean;

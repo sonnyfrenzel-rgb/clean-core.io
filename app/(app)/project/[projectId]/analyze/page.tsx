@@ -173,7 +173,7 @@ export default function AnalyzePage() {
   /**
    * The map's unsaved drawing, held here because Analyze, Business is not: a
    * switch to IT or Management unmounts it, and would otherwise discard the
-   * drawing unasked (held by the workspace shell until v3.1.0, AB-2).
+   * drawing unasked (held by the workspace shell until 3.1.0, AB-2).
    */
   const [processDraft] = useState(createDraftHolder);
   const [mounted, setMounted] = useState(false);

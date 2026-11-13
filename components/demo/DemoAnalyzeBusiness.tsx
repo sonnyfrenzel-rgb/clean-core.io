@@ -83,7 +83,7 @@ function Place({ place, children, className }: { place: TourPlace; children: Rea
  * (the way back to My workspace, the view switch, the seven tools), "What this
  * program does" in the engine's own sentence with the invitation — "Walk me
  * through it" and "I'll look around myself" — then the reconstructed map, and
- * below it, until v3.2.0, the First insights blocks and "Next step". IT and
+ * below it, until 3.2.0, the First insights blocks and "Next step". IT and
  * Management of the demo keep their pages (`/demo/workspace?view=it|management`
  * and today's `/demo/analyze?view=it`), as a project's do until AB-9/AB-10.
  *
@@ -396,7 +396,7 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
           </Place>
         </div>
 
-        {/* Interim until v3.2.0, as in a project: the First insights blocks and "Next step" below the map. */}
+        {/* Interim until 3.2.0, as in a project: the First insights blocks and "Next step" below the map. */}
         <section data-analyze-interim="" aria-label={wt('abiz.belowTitle')} className="flex flex-col gap-4">
           <Place place="reveal" className="">
             <div className="max-w-3xl">{stop('reveal')}</div>

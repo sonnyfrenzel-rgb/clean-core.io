@@ -208,7 +208,7 @@ export interface ProcessDocumentation {
     percent: number | null;
     sentence: string;
   };
-  /** `origin` (v3.1.0): the model that wrote the names, as recorded from its receipt; absent before, null without one. */
+  /** `origin` (3.1.0): the model that wrote the names, as recorded from its receipt; absent before, null without one. */
   naming: { state: 'named' | 'not-named' | 'stale'; notice: string | null; named: number; origin?: { provider: string; modelId: string } | null };
   steps: DocStep[];
   statements: DocStatement[];

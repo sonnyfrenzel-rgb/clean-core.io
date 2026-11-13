@@ -91,7 +91,7 @@ import {
  *
  * **Same content, one view at a time.** Business, IT and Management are three
  * orderings of one demo (ADR-018), held in `?view=` and never stored. Since
- * v3.1.0 the demo opens like a project (plan AB-2, O10): Business is the demo's
+ * 3.1.0 the demo opens like a project (plan AB-2, O10): Business is the demo's
  * Analyze page (`/demo/analyze`, `components/demo/DemoAnalyzeBusiness.tsx`), so
  * this page sends a Business address there and draws IT and Management, as a
  * project's workspace does until AB-9/AB-10. Every figure
@@ -148,7 +148,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
 
   const view = viewFromParam(searchParams?.get('view'));
   /**
-   * Business is the demo's Analyze page since v3.1.0 (AB-2, O10): a Business
+   * Business is the demo's Analyze page since 3.1.0 (AB-2, O10): a Business
    * address — or one with no view — goes there, as `/project/<id>` does for a
    * project. `replace`, so Back does not bounce into the redirect again.
    */

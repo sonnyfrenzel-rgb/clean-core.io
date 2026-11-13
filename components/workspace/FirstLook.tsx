@@ -89,7 +89,7 @@ import {
 } from '@/lib/workspace-messages';
 
 /**
- * The first insights — `DESIGN.md` §5.1, roadmap 2.7; since v3.1.0 the interim
+ * The first insights — `DESIGN.md` §5.1, roadmap 2.7; since 3.1.0 the interim
  * blocks below the map in Analyze, Business (plan
  * `docs/design/analyze-business-first-plan.md` §4.1, AB-2 and AB-3).
  *
@@ -106,7 +106,7 @@ import {
  *      stage 1 by the table read, stage 2 by the skeleton, stage 3 by the stored
  *      naming, stage 4 by the rules — and the card shows what is being read
  *      until all four are in, then its end state. The paced build-up with the
- *      code column (ADR-072) retired with v3.1.0: the map is
+ *      code column (ADR-072) retired with 3.1.0: the map is
  *      the page above this card, and its names arrive there in place (ADR-108).
  *   3. **A stage with nothing to show says so.** Stage 3 needs a naming from
  *      roadmap 2.4; without one it reports the reason `applyNaming` gives and
@@ -731,7 +731,7 @@ export default function FirstLook({
           {result ? (
             // The lines behind the card stand beside it when asked for. The
             // picture of the main line that stood there retired with the
-            // build-up (v3.1.0): the map is the page above this card.
+            // build-up (3.1.0): the map is the page above this card.
             <div
               className={cn(
                 'grid grid-cols-1 gap-4',

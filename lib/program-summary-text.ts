@@ -719,7 +719,7 @@ export function programSummary(f: ProgramSummaryFacts, options: ProgramSummaryOp
   const namesNoObject = !f.reads.some((o) => o.kind === 'business' || o.kind === 'custom');
   // Roadmap 3.0.21: from that engine it stands whenever the names support one (`purposeAlways`).
   // 3.1.0 (H8): without a purpose from the names, the program's shape says who calls it and when.
-  // 3.1.0 (AB-15a, v3.1.0 acceptance run): without either, a status workflow the code moves its object through says
+  // 3.1.0 (AB-15a, 3.1.0 acceptance run): without either, a status workflow the code moves its object through says
   // what the program does — a program that keeps its data in its own objects otherwise opened on "A report that reads
   // no table by name", which tells a business reader nothing.
   const named = f.domain ?? f.shape ?? workflowLine(f.workflow);
