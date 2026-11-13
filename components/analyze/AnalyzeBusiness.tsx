@@ -6,14 +6,11 @@ import { Play } from 'lucide-react';
 import StageFrame from '@/components/StageFrame';
 import StageHeader from '@/components/StageHeader';
 import CcButton from '@/components/cc/Button';
-import CcAnchor from '@/components/cc/Anchor';
 import CcMessageStrip from '@/components/cc/MessageStrip';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import ProjectNoAccess from '@/components/ProjectNoAccess';
-import FirstLook from '@/components/workspace/FirstLook';
+import AroundTheMap, { WhatThisProgramDoes } from '@/components/analyze/AroundTheMap';
 import CommandSearch from '@/components/workspace/CommandSearch';
-import type { SourceReading } from '@/lib/first-look';
 import BusinessNextStep from '@/components/workspace/BusinessNextStep';
 import TargetReferenceLine from '@/components/workspace/TargetReferenceLine';
 import StartNarrativeMissing from '@/components/workspace/StartNarrativeMissing';
@@ -21,23 +18,19 @@ import UsageRecords from '@/components/workspace/UsageRecords';
 import { useIsOwner } from '@/components/workspace/BusinessRulesEditor';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useStartRun } from '@/hooks/useStartRun';
-import { useOpenQuestions } from '@/hooks/useOpenQuestions';
-import { useCustomerTexts } from '@/hooks/useCustomerTexts';
+import { useAroundTheMap } from '@/hooks/useAroundTheMap';
 import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import { requestProcessWalk } from '@/lib/process-walk-request';
 import type { DraftHolder } from '@/lib/process-map-draft';
 import { signedSourceOf } from '@/lib/signed-source';
-import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { notDetermined } from '@/lib/workspace-model';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { nextOpenPoint, nothingOpenText } from '@/lib/next-step';
 import { businessNextStep } from '@/lib/business-next-step';
 import { BUSINESS_MAP_ID } from '@/lib/business-layers';
-import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
-import { programSummaryFactsOf } from '@/lib/program-summary-facts';
-import { businessInShort, programSummary } from '@/lib/program-summary-text';
+import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
 import { analyzeLinesFromHash } from '@/lib/analyze-entry';
 import { wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
@@ -63,10 +56,12 @@ const WorkspaceProcess = dynamic(() => import('@/components/workspace/WorkspaceP
  * **No score, no findings, no code before a click** — those are IT's
  * (`?view=it`, today's Analyze page until AB-9).
  *
- * **Interim until release 3.2.0** (release cut of 06.11.2026, so nothing a user had
- * goes missing): today's First insights blocks (`BusinessOpening`, rendered by
- * `FirstLook`, whose paced build-up retired with 3.1.0, AB-3) and `BusinessNextStep` stand unchanged below
- * the map; AB-6 and AB-4 replace them in place.
+ * **The text around the map** (AB-6, release 3.2.0; ADR-116): *What this program
+ * does* above the map, and under it *How it runs*, *Why it exists*, *Who is
+ * involved* and *Questions to settle with the business* (`AroundTheMap`, read by
+ * `useAroundTheMap`), every sentence with its line. It replaced the interim First
+ * insights blocks (`FirstLook`, `BusinessOpening`) of v3.1.0. `BusinessNextStep`
+ * stands under it until AB-4's two endings replace it.
  *
  * **The start run of ADR-072 lives here** (moved from the workspace page): a
  * project with source and no run, opened with `?first=1` on its first visit,
@@ -143,23 +138,15 @@ export default function AnalyzeBusiness({
   const owner = useIsOwner(project);
   const stand = useWorkspaceRevision(projectId);
   const open = useMemo(() => notDetermined(project), [project]);
-  const questions = useOpenQuestions(project, projectId, { open });
   const steps = useMemo(() => workflowSteps(project), [project]);
-
-  /** What the program does, in the engine's own sentence (`businessInShort`) — no model, no wait. */
   const legacyCode = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
-  const summarySource = signed?.source ?? legacyCode;
-  const summaryEngine = engineVersionOfProject(project);
-  const customerTexts = useCustomerTexts(projectId || null);
-  const inShort = useMemo(() => {
-    if (!summarySource.trim()) return null;
-    try {
-      const facts = programSummaryFactsOf(summarySource, { engineVersion: summaryEngine, customerTexts });
-      return businessInShort(programSummary(facts), { codes: false });
-    } catch {
-      return null;
-    }
-  }, [summarySource, summaryEngine, customerTexts]);
+
+  /**
+   * The text around the map (AB-6): what the program does above it, how it runs, why it exists, who is involved
+   * and the questions for the business below it — read once, after the first paint, from the same source. Only the
+   * owner's visit may ask for a plain wording (P8).
+   */
+  const around = useAroundTheMap({ project, projectId, owner, source: signed?.source ?? legacyCode });
 
   /** `#L42` or `#L40-48` in the address, and every line anchor clicked here: the code panel beside the map. */
   const [openLines, setOpenLines] = useState<{ lineStart: number; lineEnd: number; key: number } | null>(null);
@@ -181,7 +168,7 @@ export default function AnalyzeBusiness({
    * seconds while the blocks around it settle; a wheel, a touch, a key or a
    * pointer press by the reader ends it at once — the press covers a drag of
    * the scrollbar, which sends no wheel. Moved here from the workspace's
-   * Business view with 3.1.0 (AB-2): the map is this page's.
+   * Business view with v3.1.0 (AB-2): the map is this page's.
    * (`hooks/useFollowHash.ts` leaves the map's id to this follower.)
    */
   useEffect(() => {
@@ -236,11 +223,11 @@ export default function AnalyzeBusiness({
   }, []);
 
   /**
-   * The reading of the source the first insights below the map compute, handed up for the project search (⌘K,
-   * roadmap 6.6) — the search the workspace's Business view carried until 3.1.0 stands here, where a project opens
-   * (mockup state 3: "Search this project" in the shell bar).
+   * The reading the text around the map was read from, for the project search (⌘K, roadmap 6.6) — the search the
+   * workspace's Business view carried until v3.1.0 stands here, where a project opens (mockup state 3: "Search this
+   * project" in the shell bar).
    */
-  const [reading, setReading] = useState<SourceReading | null>(null);
+  const reading = around.reading;
 
   /** "I'll look around myself": the invitation steps aside; one quiet line under the map keeps the way in. */
   const [lookingAround, setLookingAround] = useState(false);
@@ -254,13 +241,8 @@ export default function AnalyzeBusiness({
     const running = point && point.key === 'analyze' && startRun.phase === 'running' ? { ...point, running: true as const } : point;
     return businessNextStep({ point: running, rules: null, owner });
   }, [project, profile, startRun.phase, owner]);
-  const givesAwayElsewhere = useMemo(
-    () => ({
-      documentation: stageHref({ base: `/project/${projectId}`, path: 'documentation', view: 'business', from: WORKSPACE_RETURN.tools }),
-      it: `/project/${encodeURIComponent(projectId)}/analyze?view=it`,
-    }),
-    [projectId],
-  );
+  /** Where the basket line under the questions leads: Design's questions, as the First insights' line did (3.0.21). */
+  const designHref = `/project/${encodeURIComponent(projectId)}/design#${RULE_QUESTIONS_ID}`;
 
   if (state === 'missing') return <ProjectNoAccess />;
   if (state === 'failed') {
@@ -303,51 +285,25 @@ export default function AnalyzeBusiness({
       </StageHeader>
 
       <div className="flex flex-col gap-4">
-        {/* What this program does, and the one invitation (mockup state 3). */}
-        <section
-          data-analyze-summary=""
-          data-layout-item=""
-          aria-labelledby="analyze-summary-title"
-          className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 rounded-cc-card border border-cc-line bg-cc-surface px-4 py-4 shadow-cc"
-        >
-          <div className="min-w-0 flex-1 basis-80">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 id="analyze-summary-title" className="m-0 text-[15px] leading-snug font-bold text-cc-ink">
-                {wt('abiz.summaryTitle')}
-              </h2>
-              {inShort && inShort.length > 0 ? <CcProvenanceChip value="reconstructed" /> : null}
-            </div>
-            <p data-analyze-summary-text="" className="m-0 mt-1 max-w-[60rem] text-[14px] leading-relaxed font-medium text-cc-ink">
-              {inShort && inShort.length > 0
-                ? inShort.map((line, i) => (
-                    <React.Fragment key={`${line.key}-${i}`}>
-                      <span className="break-words">{line.text}</span>
-                      {line.anchors[0] ? (
-                        <>
-                          {' '}
-                          <CcAnchor
-                            onOpen={() => openAnchor(line.anchors[0].lineStart, line.anchors[0].lineEnd)}
-                            label={`${wt('firstLook.sourceLine')} L${line.anchors[0].lineStart}`}
-                          >{`L${line.anchors[0].lineStart}`}</CcAnchor>
-                        </>
-                      ) : null}
-                      {i < inShort.length - 1 ? ' ' : null}
-                    </React.Fragment>
-                  ))
-                : wt('abiz.summaryNone')}
-            </p>
-          </div>
-          {invitation ? (
-            <div data-analyze-invitation="" className="cc-no-print flex flex-wrap items-center gap-3 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch">
-              <CcButton variant="primary" icon={<Play size={16} aria-hidden={true} />} onClick={walk} data-analyze-walk="">
-                {wt('abiz.walk')}
-              </CcButton>
-              <CcButton variant="secondary" onClick={() => setLookingAround(true)} data-analyze-look-around="">
-                {wt('abiz.lookAround')}
-              </CcButton>
-            </div>
-          ) : null}
-        </section>
+        {/* What this program does, and the one invitation (mockup state 3); it steps aside while the tour runs (AB-4). */}
+        <WhatThisProgramDoes
+          text={around.text}
+          state={around.state}
+          say={around.say}
+          onAnchor={openAnchor}
+          actions={
+            invitation ? (
+              <div data-analyze-invitation="" className="cc-no-print flex flex-wrap items-center gap-3 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch">
+                <CcButton variant="primary" icon={<Play size={16} aria-hidden={true} />} onClick={walk} data-analyze-walk="">
+                  {wt('abiz.walk')}
+                </CcButton>
+                <CcButton variant="secondary" onClick={() => setLookingAround(true)} data-analyze-look-around="">
+                  {wt('abiz.lookAround')}
+                </CcButton>
+              </div>
+            ) : null
+          }
+        />
 
         {startRun.narrativeMissing ? (
           // Its way to run the narrative again is today's page, in IT.
@@ -379,20 +335,22 @@ export default function AnalyzeBusiness({
           <UsageRecords project={project} className="mt-4" />
         </div>
 
-        {/* Interim until release 3.2.0: today's First insights blocks and "Next step", unchanged, below the map. */}
+        {/* The text around the map (AB-6, mockup states 3 and 9): how it runs, why it exists, who is involved, and the
+            questions to settle with the business — every sentence with its line. */}
+        <AroundTheMap
+          text={around.text}
+          state={around.state}
+          say={around.say}
+          askNow={around.askNow}
+          designHref={designHref}
+          onAnchor={openAnchor}
+        />
+
+        {/* Interim until AB-4's two endings: "Next step" below the text. */}
         <section data-analyze-interim="" aria-label={wt('abiz.belowTitle')} className="flex flex-col gap-4">
-          <FirstLook
-            project={project}
-            projectId={projectId}
-            fullMapBelow={signed !== null}
-            rulesBelow
-            onReading={setReading}
-            questions={questions}
-            elsewhere={givesAwayElsewhere}
-          />
           {businessStep ? <BusinessNextStep step={businessStep} projectId={projectId} noneText={nothingOpen} /> : null}
           {/* The target and its SAP reference pattern, one line under "Next step" (roadmap 3.0.9, ADR-089),
-              as it stood in the workspace's Business view until 3.1.0. */}
+              as it stood in the workspace's Business view until v3.1.0. */}
           <TargetReferenceLine project={project} />
         </section>
       </div>

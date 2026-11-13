@@ -279,11 +279,10 @@ test.describe('what went in exchange (source guards)', () => {
   test('the workspace shows one list, and the line everywhere else', () => {
     const shell = read('components/workspace/WorkspaceShell.tsx');
     expect(shell.match(/<OpenQuestions\b/g) ?? []).toHaveLength(1);
-    // First insights carries no open-questions line since 3.0.21 (ADR-103), and StandardFitTable.tsx went with the IT
-    // Standard fit table (owner decision 22.10.2026); the workspace's one list stands below First insights.
-    for (const rel of ['components/workspace/FirstLook.tsx']) {
-      expect(read(rel), rel).toContain('<OpenQuestionsLine');
-    }
+    // StandardFitTable.tsx went with the IT Standard fit table (owner decision 22.10.2026). The First insights' line
+    // left with them in v3.2.0 (AB-6); Analyze's IT page keeps the line.
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLook.tsx'))).toBe(false);
+    expect(read('app/(app)/project/[projectId]/analyze/page.tsx')).toContain('<OpenQuestionsLine');
     expect(read('components/workspace/ItAnswers.tsx')).toContain('openQuestionsLine(');
   });
 });

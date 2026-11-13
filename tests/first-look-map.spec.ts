@@ -40,11 +40,11 @@ async function firstScreen(page: Page) {
   await page.evaluate(() => window.scrollTo(0, 0));
   // Since AB-2 (ADR-109) the project opens in Analyze, Business: "What this
   // program does", then the map from the signed run — the first block under it,
-  // starting in the first screen. The first look's blocks stand below the map
-  // (interim until v3.2.0).
+  // starting in the first screen. The text around the map stands below it
+  // (v3.2.0, AB-6, where the first look's blocks stood until then).
   await expect(page.locator('[data-analyze-summary]')).toBeInViewport();
   await expect(page.locator('[data-analyze-map]')).toBeInViewport();
-  await expect(page.locator('[data-first-look="end-state"]')).toBeVisible();
+  await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible();
   // The process stands in the first screen — since 03.10.2026 as the story of
   // its steps in plain words, the opening of the Business view (owner: "he just
   // wants to know more about his old process") — and the full map, drawn from
@@ -55,8 +55,8 @@ async function firstScreen(page: Page) {
   // and "Started by / Goes in / Comes out". Owner decision 23.10.2026: its first
   // steps stand whole in the first screen of 1440 × 1000, beside the main line.
   //
-  // AB-2 moves the map to the top: the story is one of the blocks under it now.
-  await expect(page.locator('[data-process-story]')).toBeAttached();
+  // AB-2 moves the map to the top; since AB-6 the story is "How it runs" under it.
+  await expect(page.locator('[data-around-runs]')).toBeAttached();
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map).toBeVisible();
   // The picture of the main line beside the first insights retired with the
@@ -98,16 +98,16 @@ test.describe('a new project: the first look ends on the full map', () => {
     await page.click('[data-own-code-start]');
 
     await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 90000 });
-    // No build-up since AB-2/AB-3: the map stands at once, the first look's blocks below it in their end state.
+    // No build-up since AB-2/AB-3: the map stands at once, the text around it (AB-6) below it in its end state.
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-first-look="end-state"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
     await firstScreen(page);
 
-    // AB-2: what the program does, then the map, then the first look's blocks
-    // and "Next step" under it (the interim until v3.2.0).
+    // AB-2 with AB-6: what the program does, then the map, then the text around
+    // it and "Next step" under it (until AB-4's endings).
     const order = await page.evaluate(() =>
-      ['[data-analyze-summary]', '[data-workspace-process-block]', '[data-first-look]', '[data-next-step]'].map(
+      ['[data-analyze-summary]', '[data-workspace-process-block]', '[data-around-the-map]', '[data-next-step]'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;

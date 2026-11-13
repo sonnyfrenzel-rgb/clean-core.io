@@ -76,7 +76,7 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
 
     await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-first-look]')).toHaveAttribute('data-first-look', /^(complete|end-state)$/, {
+    await expect(page.locator('[data-around-the-map]')).toHaveAttribute('data-around-the-map', 'ready', {
       timeout: 90000,
     });
     // The start signs the engine's reading and the map loads its chunks — the

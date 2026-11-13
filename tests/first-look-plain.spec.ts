@@ -4,7 +4,8 @@ import path from 'path';
 import { build } from 'esbuild';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { readProcess, readTableAccess, traceabilityOf } from '../lib/first-look';
+import { readProcess, readRules, readTableAccess, traceabilityOf } from '../lib/first-look';
+import { aroundTheMap } from '../lib/around-the-map';
 import { deriveBusinessRules, deriveBusinessRulesFrom } from '../lib/abap/business-rule-set';
 import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
 import { readDemoSwitches } from '../lib/abap/demo-switches';
@@ -17,7 +18,6 @@ import { processChanges, processStory, type ProcessStory, type StoryChange } fro
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
 import { businessInShort, programSummary } from '../lib/program-summary-text';
 import { openingDecisions, type OpeningDecisions } from '../lib/first-look-plain';
-import { codeGivesAway } from '../lib/first-look-findings';
 import {
   firstLookPlainSentences,
   isPlainScope,
@@ -400,11 +400,11 @@ test.describe('the model may reword the panel — scope "firstlook", the 3.0.18 
   });
 });
 
-test.describe('rendered (BusinessOpening, static markup)', () => {
-  async function loadOpening(): Promise<(props: Record<string, unknown>) => React.ReactElement | null> {
-    const out = path.join(ROOT, 'tmp', 'first-look-plain', String(process.pid), 'BusinessOpening.cjs');
+test.describe('rendered (AroundTheMap, static markup) — the rules of the panel carried into the text around the map (AB-6)', () => {
+  async function loadAround(): Promise<(props: Record<string, unknown>) => React.ReactElement | null> {
+    const out = path.join(ROOT, 'tmp', 'first-look-plain', String(process.pid), 'AroundTheMap.cjs');
     await build({
-      entryPoints: [path.join(ROOT, 'components', 'workspace', 'BusinessOpening.tsx')],
+      entryPoints: [path.join(ROOT, 'components', 'analyze', 'AroundTheMap.tsx')],
       outfile: out,
       bundle: true,
       format: 'cjs',
@@ -417,56 +417,46 @@ test.describe('rendered (BusinessOpening, static markup)', () => {
     return require(out).default;
   }
 
-  function propsOf(panel: Panel, extra: Record<string, unknown> = {}): Record<string, unknown> {
-    return {
-      name: 'ZMM_RECEIPT_INVOICE_CHECK', nameIsProposed: false, programName: 'ZMM_RECEIPT_INVOICE_CHECK', nameReason: null,
-      story: panel.story, rules: panel.decides.map((d, i) => ({ id: `R${i}`, ...d })), rulesMore: panel.decidesMore,
-      rulesNone: '', changes: panel.changes, changesMore: 0, changesNone: '', details: null,
-      ...extra,
-    };
+  /** The text around the map for the fixture, read for one engine. */
+  function aroundFor(version: string) {
+    const proc = readProcess(FIXTURE);
+    return aroundTheMap({ source: FIXTURE, skeleton: proc.skeleton, ruleSet: readRules(FIXTURE, proc, version), processFacts: proc.facts, engineVersion: version });
   }
 
-  /** The numbered steps on top — between the list's opening tag and its end. */
-  const stepList = (html: string): string => {
-    const at = html.indexOf('data-process-story=""');
-    return at < 0 ? '' : html.slice(at, html.indexOf('</ol>', at));
-  };
+  /** "How it runs" — the block between its title and the next block. */
+  const runsOf = (html: string): string => html.slice(html.indexOf('data-around-runs='), html.indexOf('data-around-why-who'));
 
-  // 3.0.21 (owner decisions 22.10.2026): on top one line per step — what a step checks, its technical
-  // checks and where it can end are one fold down (and in the walk-through); the test-data switch is one
-  // line of "What the code gives away", said in full in the fold.
-  test('the test data switch stands apart, technical checks are counted one fold down', async () => {
-    const Opening = await loadOpening();
-    const panel = panelOf(FIXTURE, AFTER);
-    const givesAway = codeGivesAway({ source: FIXTURE, engineVersion: AFTER, testData: panel.story.testData ?? null });
-    const html = renderToStaticMarkup(React.createElement(Opening, propsOf(panel, { givesAway })));
-    expect(html).toContain('data-code-finding="test-switch"');
-    expect(html).toContain('data-process-story-test-data-detail=""');
-    expect(html).toContain('runs on 30 test cases of its own');
-    expect(html).toContain('data-process-story-technical="17"');
-    expect(html).toContain('Plus 17 technical checks');
-    expect(stepList(html)).not.toContain('data-process-story-technical');
-    expect(stepList(html)).not.toContain('data-process-story-checks');
-    expect(stepList(html)).not.toContain('data-process-story-stops');
+  // 3.0.20 (owner report 21.10.2026): the demo cases are test data, said apart from the steps; technical checks are
+  // counted, never listed. Since v3.2.0 (AB-6) the steps stand in "How it runs" below the map, the test data line
+  // under them with its line; what a step checks is said beside the step, business checks only.
+  test('the test data switch stands apart, with its line; technical checks are not listed', async () => {
+    const Around = await loadAround();
+    const text = aroundFor(AFTER);
+    const html = renderToStaticMarkup(React.createElement(Around, { text, state: 'ready' }));
+    const runs = runsOf(html);
+    expect(runs).toContain('data-around-test-data=""');
+    expect(runs).toContain('runs on 30 test cases of its own');
+    expect(text.testData?.anchor).toMatch(/^L\d+/);
     expect(html).not.toContain('Apply case');
-    expect(html).toContain('data-steps="3"');
+    expect(text.runs.reduce((n, r) => n + r.steps.length, 0)).toBe(3);
+    // The 17 technical checks of the panel are counted by the story and never said as checks.
+    expect(text.story.steps.reduce((n, s) => n + (s.technical ?? 0), 0)).toBeGreaterThanOrEqual(17);
+    expect(runs).not.toMatch(/data found|input filled|run options/i);
   });
 
-  test('before 3.0.20 the panel renders as it did then — no test data row, no counts', async () => {
-    const Opening = await loadOpening();
-    const html = renderToStaticMarkup(React.createElement(Opening, propsOf(panelOf(FIXTURE, BEFORE))));
-    expect(html).not.toContain('data-process-story-test-data');
-    expect(html).not.toContain('data-process-story-technical');
+  test('before 3.0.20 the text renders as the panel did then — no test data line', async () => {
+    const Around = await loadAround();
+    const html = renderToStaticMarkup(React.createElement(Around, { text: aroundFor(BEFORE), state: 'ready' }));
+    expect(html).not.toContain('data-around-test-data');
     expect(html).toContain('Apply case');
   });
 
   test('a reworded sentence stands in place with the chip; the engine sentence one fold down', async () => {
-    const Opening = await loadOpening();
-    const panel = panelOf(FIXTURE, AFTER);
+    const Around = await loadAround();
     const say = (text: string) =>
-      text === 'Download CSV' ? { text: 'Save the result as a file', engine: text, worded: true } : { text, engine: text, worded: false };
-    const html = renderToStaticMarkup(React.createElement(Opening, propsOf(panel, { say })));
-    expect(html).toContain('Save the result as a file');
+      text.startsWith('Download CSV') ? { text: 'Save the result as a file.', engine: text, worded: true } : { text, engine: text, worded: false };
+    const html = renderToStaticMarkup(React.createElement(Around, { text: aroundFor(AFTER), state: 'ready', say }));
+    expect(html).toContain('Save the result as a file.');
     expect(html).toContain('data-worded-chip=""');
     expect(html).toContain('data-worded-engine-sentence=""');
   });

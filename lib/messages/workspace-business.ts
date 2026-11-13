@@ -61,7 +61,8 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   // The Business order — components/workspace/WorkspaceShell.tsx.
   'biz.moreAboutProcess': 'More about this process',
 
-  // The business-first opening — components/workspace/BusinessOpening.tsx (owner, 03.10.2026).
+  // The business-first opening of 3.0.x (owner, 03.10.2026); its component left with v3.2.0 (AB-6), the text around the
+  // map took its place (lib/messages/analyze-business.ts, 'around.*'). Keys still read elsewhere stay here.
   // What the program is for, before the steps — components/workspace/ProgramInShort.tsx (owner, 12.10.2026).
   'biz.inShortTitle': 'In short',
   'biz.inShortProposalNote': 'purpose',

@@ -296,3 +296,28 @@ test.describe('what the code gives away', () => {
     });
   });
 });
+
+test.describe('where the findings stand since v3.2.0: the questions around the map (AB-6)', () => {
+  test('every finding for the business or the users is a question to settle, with its line; IT keeps its own', async () => {
+    const { aroundTheMap, QUESTIONS_SHOWN } = await import('../lib/around-the-map');
+    const { readRules } = await import('../lib/first-look');
+    let business = 0;
+    for (const [name, source] of SOURCES) {
+      const proc = readProcess(source);
+      const engine = '3.1.0';
+      const text = aroundTheMap({ source, skeleton: proc.skeleton, ruleSet: readRules(source, proc, engine), processFacts: proc.facts, engineVersion: engine });
+      const findings = allCodeFindings({ source, engineVersion: engine, skeleton: proc.skeleton, testData: text.story.testData ?? null }).findings;
+      const asked = findings.filter((f) => f.ask !== 'it');
+      business += asked.length;
+      const listed = text.questions.filter((q) => q.from === 'finding');
+      // The findings lead the list, in their fixed order, each with its line — none for IT.
+      expect(listed.map((q) => q.anchor), name).toEqual(asked.slice(0, QUESTIONS_SHOWN).map((f) => f.anchor));
+      expect(listed.map((q) => q.text), name).toEqual(asked.slice(0, QUESTIONS_SHOWN).map((f) => f.text));
+      for (const f of findings.filter((x) => x.ask === 'it')) {
+        expect(text.questions.some((q) => q.from === 'finding' && q.text === f.text), `${name}: IT's "${f.text}"`).toBe(false);
+      }
+    }
+    // At least one example gives a business reader something to settle (the 1,000-line example's fixed scope).
+    expect(business).toBeGreaterThan(0);
+  });
+});

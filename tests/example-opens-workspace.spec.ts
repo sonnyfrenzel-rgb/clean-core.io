@@ -76,10 +76,11 @@ async function expectWorkspaceWithFirstLook(page: Page): Promise<string> {
   const projectId = new URL(page.url()).pathname.split('/')[2];
   await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
   await expect(page.locator('[data-analyze-score]'), 'Business shows no score').toHaveCount(0);
-  const look = page.locator('[data-first-look]');
+  // The text around the map (v3.2.0, AB-6) where the first look stood: there at once, then read.
+  const look = page.locator('[data-around-the-map]');
   await expect(look).toBeVisible({ timeout: 60000 });
-  await expect(look).toHaveAttribute('data-first-look', /^(building|complete|end-state)$/, { timeout: 60000 });
-  await expect(look).toHaveAttribute('data-first-look', /^(complete|end-state)$/, { timeout: 90000 });
+  await expect(look).toHaveAttribute('data-around-the-map', /^(reading|ready)$/, { timeout: 60000 });
+  await expect(look).toHaveAttribute('data-around-the-map', 'ready', { timeout: 90000 });
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map, 'the start drew no full map').toBeVisible({ timeout: 60000 });
   // And it stays.

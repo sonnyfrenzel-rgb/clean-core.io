@@ -248,3 +248,22 @@ test.describe('with ids the engine really assigns (roadmap step 1.3)', () => {
     expect((instruction.match(/\[L\d+(?:-\d+)?\]/g) || []).length).toBeGreaterThan(0);
   });
 });
+
+test.describe('the model\'s wording around the map stands on the engine\'s lines, never on its own citations (v3.2.0, AB-6)', () => {
+  test('a citation in the narrative is not taken as the line: each sentence carries the line of the engine sentence it was checked against', async () => {
+    const { aroundTheMap } = await import('../lib/around-the-map');
+    const { readProcess, readRules } = await import('../lib/first-look');
+    const source = fs.readFileSync(path.resolve(__dirname, '../public/starter-examples/Z_INVOICE_EXTRACTOR.txt'), 'utf8').replace(/\r\n?/g, '\n');
+    const engine = '3.1.0';
+    const proc = readProcess(source);
+    const ruleSet = readRules(source, proc, engine);
+    const read = (narrative: string | null) =>
+      aroundTheMap({ source, skeleton: proc.skeleton, ruleSet, processFacts: proc.facts, engineVersion: engine, narrative });
+    const engineLines = read(null).does.sentences.map((s) => s.anchor);
+    // A citation to a line the program does not have, and one to a finding id: neither reaches the page.
+    const model = read(JSON.stringify({ asIsContext: 'It lists billing documents for a billing date and type [L9999]. It can also write them to a file on the server [CC-001].' }));
+    expect(model.does.by).toBe('model');
+    expect(model.does.sentences.map((s) => s.anchor)).toEqual(engineLines);
+    expect(model.does.sentences.map((s) => s.text).join(' ')).not.toMatch(/\[|L9999|CC-001/);
+  });
+});

@@ -296,7 +296,9 @@ test.describe('where it stands and what it writes', () => {
     expect(read('components/analyze/AnalyzeBusiness.tsx')).toMatch(/onClick=\{walk\} data-analyze-walk=""/);
     // The First insights' own walk button stood beside the main-line picture, which retired with the
     // build-up in v3.1.0 (AB-3); in Analyze, Business the invitation above the map opens it.
-    expect(read('components/workspace/FirstLook.tsx')).not.toContain('data-first-look-walk');
+    // Since v3.2.0 (AB-6) the First insights are gone; the text around the map opens no tour of its own.
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLook.tsx'))).toBe(false);
+    expect(read('components/analyze/AroundTheMap.tsx')).not.toMatch(/data-first-look-walk|requestProcessWalk|setTourOpen/);
     expect(read('components/analyze/AnalyzeBusiness.tsx')).toContain('const walk = useCallback(() => requestProcessWalk(projectId), [projectId]);');
     const tour = read('components/workspace/ProcessTour.tsx');
     expect(tour).not.toMatch(/setInterval|autoplay|auto-play/i);

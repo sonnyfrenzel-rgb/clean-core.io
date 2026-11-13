@@ -253,11 +253,17 @@ test.describe('automatic model steps with an own key are a switch, off by defaul
   });
 
   test('every automatic step reads the switch, and offers a click instead', () => {
-    for (const f of ['components/workspace/WorkspaceProcess.tsx', 'components/workspace/RuleDecisionFlow.tsx', 'components/design/RuleQuestions.tsx', 'components/workspace/FirstLook.tsx']) {
+    for (const f of ['components/workspace/WorkspaceProcess.tsx', 'components/workspace/RuleDecisionFlow.tsx', 'components/design/RuleQuestions.tsx']) {
       const src = read(f);
       expect(src, f).toContain('autoAllowed: availability.autoSteps,');
       expect(src, f).toContain('<AskOnClick askNow=');
     }
+    // The text around the map (AB-6, v3.2.0), where the first insights asked: the hook reads the switch, and the
+    // component offers the click with what the hook hands it.
+    expect(read('hooks/useAroundTheMap.ts')).toContain('autoAllowed: availability.autoSteps,');
+    expect(read('hooks/useAroundTheMap.ts')).toContain('askNow: plain.askNow,');
+    expect(read('components/analyze/AroundTheMap.tsx')).toContain('<AskOnClick askNow={askNow} step="plain" />');
+    expect(read('components/analyze/AnalyzeBusiness.tsx')).toContain('askNow={around.askNow}');
   });
 });
 

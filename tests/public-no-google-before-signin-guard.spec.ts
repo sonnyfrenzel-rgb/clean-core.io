@@ -353,7 +353,6 @@ const REVIEWED_SHELL_CALLS: Record<string, string> = {
   'components/workspace/TargetChange.tsx': DEMO_AFTER_GATE,
   'hooks/useProjectEvidence.ts': DEMO_AFTER_GATE,
   'lib/engine-run.ts': DEMO_AFTER_GATE,
-  'lib/process-naming-client.ts': DEMO_AFTER_GATE,
   'lib/process-revisions-client.ts': DEMO_AFTER_GATE,
   'lib/project-command-client.ts': DEMO_AFTER_GATE,
 };

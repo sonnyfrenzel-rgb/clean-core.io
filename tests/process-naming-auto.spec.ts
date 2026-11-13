@@ -76,10 +76,15 @@ test.describe('the Business view: no button, the automatic ask instead', () => {
     expect(read('lib/messages/workspace-business.ts')).not.toContain('bizNamesFailed');
   });
 
-  test('the opening reads the naming again once the page stored one', () => {
-    const firstLook = read('components/workspace/FirstLook.tsx');
-    expect(firstLook).toContain('window.addEventListener(PROCESS_NAMING_STORED_EVENT, hear)');
-    expect(firstLook).toContain('}, [projectId, hasSource, namingFrom, namingStored]);');
+  test('the map reads the naming again once the page stored one; the text around it reads none (v3.2.0, AB-6)', () => {
+    // The First insights read the stored naming again on the event; they left with v3.2.0. The names arrive on the
+    // map itself (ADR-108), which reads again when the page stored one, and the text around the map is the engine's.
+    const process = read('components/workspace/WorkspaceProcess.tsx');
+    expect(process).toContain('const bumpNaming = useCallback(() => setNamingRead((n) => n + 1), []);');
+    expect(read('hooks/useAutoProcessNaming.ts')).toContain('window.dispatchEvent(new CustomEvent(PROCESS_NAMING_STORED_EVENT, { detail: pid }));');
+    for (const rel of ['hooks/useAroundTheMap.ts', 'components/analyze/AroundTheMap.tsx']) {
+      expect(read(rel), rel).not.toMatch(/PROCESS_NAMING_STORED_EVENT|fetchProcessNaming/);
+    }
   });
 
   test('the Business view passes the facts flag by the rule the context attaches them by (3.1.0)', () => {

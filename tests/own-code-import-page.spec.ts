@@ -175,7 +175,7 @@ test.describe('own code: choose, check, start', () => {
     await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 90000 });
     expect(page.url()).not.toContain('view=it');
     const projectId = new URL(page.url()).pathname.split('/')[2];
-    await expect(page.locator('[data-first-look]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-around-the-map]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 120000 });
 
     // The control for the test above: the watcher does see the one write.

@@ -4,14 +4,14 @@ import path from 'path';
 import { build } from 'esbuild';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { readProcess } from '../lib/first-look';
+import { readProcess, readRules } from '../lib/first-look';
 import { DECIDES_SHOWN, IN_SHORT_WORDS, changesOnTop, decidesOnTop, firstLookBrief, isNegativeClause, splitPurpose } from '../lib/first-look-brief';
 import { deriveBusinessRulesFrom } from '../lib/abap/business-rule-set';
 import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
 import { businessInShort, programSummary } from '../lib/program-summary-text';
-import { processChanges, processStory } from '../lib/process-story';
-import { codeGivesAway } from '../lib/first-look-findings';
+import { processStory } from '../lib/process-story';
+import { aroundTheMap } from '../lib/around-the-map';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 
 /**
@@ -43,11 +43,17 @@ function opening(source: string) {
   return { proc, rules, facts, summary, lines, explanation, story, brief: firstLookBrief(lines) };
 }
 
-/** `BusinessOpening`, bundled for a static render; `tag` keeps parallel describes apart. */
-async function loadOpeningFor(tag: string): Promise<(props: Record<string, unknown>) => React.ReactElement | null> {
-  const out = path.join(ROOT, 'tmp', 'first-look-3021', `${process.pid}-${tag}`, 'BusinessOpening.cjs');
+/**
+ * `AroundTheMap` (plan AB-6, v3.2.0), bundled for a static render; `tag` keeps parallel describes apart. The
+ * First insights opening (`BusinessOpening`) it replaced stood below the map until v3.1.0.
+ */
+async function loadAroundFor(tag: string): Promise<{
+  default: (props: Record<string, unknown>) => React.ReactElement | null;
+  WhatThisProgramDoes: (props: Record<string, unknown>) => React.ReactElement | null;
+}> {
+  const out = path.join(ROOT, 'tmp', 'first-look-3021', `${process.pid}-${tag}`, 'AroundTheMap.cjs');
   await build({
-    entryPoints: [path.join(ROOT, 'components', 'workspace', 'BusinessOpening.tsx')],
+    entryPoints: [path.join(ROOT, 'components', 'analyze', 'AroundTheMap.tsx')],
     outfile: out,
     bundle: true,
     format: 'cjs',
@@ -57,7 +63,13 @@ async function loadOpeningFor(tag: string): Promise<(props: Record<string, unkno
     alias: { '@': ROOT },
     logLevel: 'silent',
   });
-  return require(out).default;
+  return require(out);
+}
+
+/** The text around the map, read for `engine` from `source`. */
+function aroundOf(source: string, engine = ENGINE) {
+  const proc = readProcess(source);
+  return aroundTheMap({ source, skeleton: proc.skeleton, ruleSet: readRules(source, proc, engine), processFacts: proc.facts, engineVersion: engine });
 }
 
 // The drawing beside the steps (the main-line excerpt, `lib/first-look-excerpt.ts`) retired with
@@ -145,23 +157,20 @@ test.describe('"In short" never leads with what the program does not do (owner, 
     }
   });
 
-  test('a plain wording on record of the line a part is cut from stands in its place, with the AI-generated chip', async () => {
-    const Opening = await loadOpeningFor('in-short');
-    const o = opening(BROKER);
-    const part = o.brief.inShort!.parts[0];
+  test('a plain wording on record of an engine sentence stands in its place, with the AI-generated chip (AB-6)', async () => {
+    // Since v3.2.0 "What this program does" above the map carries the engine's sentences (AB-6); a plain wording on
+    // record stands in place with the chip, the engine's sentence one fold down — as "In short" did in the opening.
+    const { WhatThisProgramDoes } = await loadAroundFor('in-short');
+    const text = aroundOf(BROKER);
+    const first = text.does.sentences[0];
+    expect(isNegativeClause(first.text), first.text).toBe(false);
     const worded = 'Shows supplier delivery commitments as a list and can save them as a CSV file.';
-    const say = (text: string, anchor: { lineStart: number; lineEnd: number } | null) =>
-      text === part.line && anchor ? { text: worded, engine: text, worded: true, origin: null } : { text, engine: text, worded: false, origin: null };
-    const html = renderToStaticMarkup(
-      React.createElement(Opening, {
-        name: 'Z_REPORT_DEMO_DOWNLOAD', nameIsProposed: false, programName: 'Z_REPORT_DEMO_DOWNLOAD', nameReason: null,
-        brief: o.brief, story: o.story, rules: [], rulesMore: 0, rulesNone: '', changes: [], changesMore: 0, changesNone: '',
-        inShort: { lines: o.lines, level: o.summary.level, proposal: null, authorClaim: null }, details: null, say,
-      }),
-    );
-    const short = html.slice(html.indexOf('data-program-in-short="compact"'), html.indexOf('story-steps-title'));
-    expect(short).toContain(worded);
-    expect(short).toContain('data-worded-chip');
+    const say = (t: string, anchor: { lineStart: number; lineEnd: number } | null) =>
+      t === first.text && anchor ? { text: worded, engine: t, worded: true, origin: null } : { text: t, engine: t, worded: false, origin: null };
+    const html = renderToStaticMarkup(React.createElement(WhatThisProgramDoes, { text, state: 'ready', say }));
+    expect(html).toContain(worded);
+    expect(html).toContain('data-worded-chip');
+    expect(html).toContain('data-worded-engine-sentence=""');
   });
 });
 
@@ -207,140 +216,28 @@ test.describe('"What it decides" and the basket line count the same rules (fix, 
   });
 });
 
-test.describe('rendered (BusinessOpening, static markup) — the 3.0.21 layout', () => {
-  async function loadOpening(): Promise<(props: Record<string, unknown>) => React.ReactElement | null> {
-    const out = path.join(ROOT, 'tmp', 'first-look-3021', String(process.pid), 'BusinessOpening.cjs');
-    await build({
-      entryPoints: [path.join(ROOT, 'components', 'workspace', 'BusinessOpening.tsx')],
-      outfile: out,
-      bundle: true,
-      format: 'cjs',
-      platform: 'node',
-      jsx: 'automatic',
-      external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*'],
-      alias: { '@': ROOT },
-      logLevel: 'silent',
-    });
-    return require(out).default;
-  }
-
-  function propsFor(source: string, extra: Record<string, unknown> = {}): Record<string, unknown> {
-    const o = opening(source);
-    const top = decidesOnTop(o.explanation);
-    return {
-      name: 'Z_MM_PO_APPROVAL',
-      nameIsProposed: false,
-      programName: 'Z_MM_PO_APPROVAL',
-      nameReason: null,
-      brief: o.brief,
-      story: o.story,
-      rules: top.lines,
-      rulesMore: top.more,
-      rulesNone: '',
-      changes: processChanges(o.proc.skeleton, source, 5, ENGINE).changes,
-      changesMore: 0,
-      changesNone: '',
-      inShort: { lines: o.lines, level: o.summary.level, proposal: null, authorClaim: null },
-      givesAway: codeGivesAway({ source, engineVersion: ENGINE, skeleton: o.proc.skeleton, facts: o.facts, testData: o.story.testData ?? null }),
-      elsewhere: { documentation: '/project/p/documentation', it: '/project/p?view=it' },
-      details: null,
-      ...extra,
-    };
-  }
-
-  /** The page above the "How this was read" fold. */
-  const onTop = (html: string): string => html.slice(0, html.indexOf('data-cc-disclosure'));
-
-  test('PO approval: five blocks on top — in short, who · in · out, steps, what the code gives away, decides beside changes', async () => {
-    const Opening = await loadOpening();
-    const html = renderToStaticMarkup(React.createElement(Opening, propsFor(PO)));
-    const top = onTop(html);
-    expect(top).toContain('data-program-in-short="compact"');
-    expect(top).toContain('Creates purchase orders and starts workflows in SAP.');
-    expect(top).toContain('data-first-look-who-in-out="3"');
-    expect(top).toContain('data-process-story=""');
-    expect(top).toMatch(/data-code-gives-away="\d"/);
-    expect(top).toContain('data-story-decides=""');
-    expect(top).toContain('data-story-changes=""');
-    // One line per step: what a step checks and where it can end are not on top.
-    expect(top).not.toContain('Checks:');
-    expect(top).not.toContain('Can end here:');
-    expect(top).not.toContain('technical check');
-    // The level is said once, by the card's chip; no second chip and no level sentence on top.
-    expect(top).not.toContain('Reconstructed from the code — not confirmed by the business.');
-    // No decision asked and no count of open questions on top.
-    expect(top).not.toContain('data-story-open');
-    expect(top).not.toContain('data-story-decide-rules');
-  });
-
-  test('the first screen keeps room for the steps: "Read from the code:" leads the sentence, tighter steps (owner decision 23.10.2026)', async () => {
-    const Opening = await loadOpening();
-    const o = opening(PO);
-    const authorClaim = { state: 'shown', heading: 'Title', text: 'Emergency purchase approval', lineStart: 3, lineEnd: 3 };
-    const html = renderToStaticMarkup(React.createElement(Opening, propsFor(PO, { inShort: { lines: o.lines, level: o.summary.level, proposal: null, authorClaim } })));
-    const short = html.slice(html.indexOf('data-program-in-short="compact"'), html.indexOf('data-first-look-who-in-out'));
-    // The author's claim quoted, and the engine's sentence with its label on one line — not a label line of its own.
-    expect(short).toContain('“Emergency purchase approval”');
-    expect(short).toMatch(/<p data-program-in-short-text=""[^>]*><span data-program-in-short-engine=""[^>]*>Read from the code: <\/span>/);
-    expect((short.match(/Read from the code:/g) ?? []).length).toBe(1);
-    // Whole spacing steps only (DESIGN.md §1.3): blocks 16 px apart, a step row 4 px top and bottom.
-    expect(html).toMatch(/data-first-look-business="" class="flex flex-col gap-4"/);
-    expect(html).toMatch(/data-process-story-step="1" class="[^"]*\bpy-1\b/);
-  });
-
-  test('a line under "What it decides" that speaks for two shows both lines (owner decision 23.10.2026)', async () => {
-    const Opening = await loadOpening();
-    const rules = [{ id: 'Q-BR-004', text: 'Sets a limit on the risk score', anchor: 'L394', also: [{ id: 'Q-BR-099', anchor: 'L900' }] }];
-    const html = renderToStaticMarkup(React.createElement(Opening, propsFor(PO, { rules, rulesMore: 0 })));
-    const block = html.slice(html.indexOf('data-story-decides'), html.indexOf('data-story-changes'));
-    expect((block.match(/Sets a limit on the risk score/g) ?? []).length).toBe(1);
-    expect(block).toContain('L394');
-    expect(block).toContain('L900');
-  });
-
-  test('every step stands on one line with its anchor; the checks and stops are one fold down', async () => {
-    const Opening = await loadOpening();
-    const html = renderToStaticMarkup(React.createElement(Opening, propsFor(PO)));
+test.describe('rendered (AroundTheMap, static markup) — the 3.0.21 rules carried into the text around the map (AB-6)', () => {
+  test('PO approval: the steps in the code order, each with its line; the level said by the chip, never a decision asked', async () => {
+    const { default: Around } = await loadAroundFor('layout');
+    const text = aroundOf(PO);
+    const html = renderToStaticMarkup(React.createElement(Around, { text, state: 'ready', designHref: '/project/p/design#rule-questions' }));
     const { story } = opening(PO);
-    expect((html.match(/data-process-story-step="/g) ?? []).length).toBe(story.steps.length);
-    const fold = html.slice(html.indexOf('data-first-look-details'));
-    expect(fold).toContain('data-process-story-detail=');
-    expect(fold).toContain('Checks: ');
-    expect(fold).toContain('Can end here: ');
-  });
-
-  test('"What the code gives away": each finding with its line and who to ask; "+ N more" leads to Documentation and IT', async () => {
-    const Opening = await loadOpening();
-    const props = propsFor(PO);
-    const givesAway = props.givesAway as ReturnType<typeof codeGivesAway>;
-    const html = renderToStaticMarkup(React.createElement(Opening, props));
-    expect((html.match(/data-code-finding="/g) ?? []).length).toBe(givesAway.findings.length);
-    for (const f of givesAway.findings) {
-      expect(html).toContain(`data-code-finding-anchor="${f.anchor}"`);
-    }
-    expect(html).toContain('Read from the code');
-    const forced = renderToStaticMarkup(React.createElement(Opening, { ...props, givesAway: { ...givesAway, more: 2 } }));
-    expect(forced).toContain('data-code-gives-away-more="2"');
-    expect(forced).toContain('href="/project/p/documentation"');
-    expect(forced).toContain('href="/project/p?view=it"');
-  });
-
-  test('nothing found: the block says none of the seven signs was found — never "clean"', async () => {
-    const Opening = await loadOpening();
-    const html = renderToStaticMarkup(
-      React.createElement(Opening, propsFor(PO, { givesAway: { findings: [], more: 0, checked: 7, testSwitch: null } })),
-    );
-    expect(html).toContain('data-code-gives-away-none=""');
-    expect(html).toContain('None of the seven signs found.');
-    expect(html.toLowerCase()).not.toMatch(/\bclean\b(?! core)/);
+    // One sentence per step of the story, each with its line (the checks and stops on the same line, muted).
+    for (const step of story.steps.filter((s) => s.anchor)) expect(html).toContain(`data-anchor="${step.anchor}"`);
+    // The level is said by the chips, not by a level sentence; no rule is decided here.
+    expect(html).not.toContain('Reconstructed from the code — not confirmed by the business.');
+    expect(html).not.toContain('data-story-decide-rules');
+    expect(html).not.toContain('data-rule-decide');
   });
 
   test('a program with rules but no question for the business does not say "no value is hard-coded"', async () => {
-    const Opening = await loadOpening();
-    const html = renderToStaticMarkup(
-      React.createElement(Opening, propsFor(PO, { rules: [], rulesMore: 0, rulesNone: 'No question for the business: the one value fixed in the code is a technical setting.' })),
-    );
-    expect(html).toContain('No question for the business');
+    const { default: Around } = await loadAroundFor('no-question');
+    const text = aroundOf(DELIVERY);
+    expect(text.questions).toEqual([]);
+    expect(text.basket?.technical).toBeGreaterThan(0);
+    const html = renderToStaticMarkup(React.createElement(Around, { text, state: 'ready', designHref: null }));
+    expect(html).toContain('The code raises no question for the business that the engine can name.');
+    expect(html).toContain('technical rule stays as coded');
     expect(html).not.toContain('No value is hard-coded');
   });
 });
@@ -362,30 +259,16 @@ test.describe('"What it changes" on top: three, in business words first', () => 
 });
 
 test.describe('the readings of the 3.0.21 gate on the page', () => {
-  test('freight: checks on a field the code gives no words for are counted one fold down, never named', async () => {
-    const out = path.join(ROOT, 'tmp', 'first-look-3021', String(process.pid), 'BusinessOpening-unsaid.cjs');
-    await build({
-      entryPoints: [path.join(ROOT, 'components', 'workspace', 'BusinessOpening.tsx')],
-      outfile: out, bundle: true, format: 'cjs', platform: 'node', jsx: 'automatic',
-      external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*'],
-      alias: { '@': ROOT }, logLevel: 'silent',
-    });
-    const Opening = require(out).default;
+  test('freight: a check on a field the code gives no words for is never named — on the page around the map either', async () => {
+    const { default: Around } = await loadAroundFor('unsaid');
     const source = read('public/starter-examples/Z_SD_FREIGHT_RATE_CHECK.abap');
     const proc = readProcess(source);
     const story = processStory(proc.skeleton, source, null, '3.0.21');
     const unsaid = story.steps.reduce((n, s) => n + (s.unsaid ?? 0), 0);
     expect(unsaid).toBeGreaterThan(0);
-    const html = renderToStaticMarkup(
-      React.createElement(Opening, {
-        name: 'Z_SD_FREIGHT_RATE_CHECK', nameIsProposed: false, programName: 'Z_SD_FREIGHT_RATE_CHECK', nameReason: null,
-        story, rules: [], rulesMore: 0, rulesNone: '', changes: [], changesMore: 0, changesNone: '', details: null,
-      }),
-    );
-    const fold = html.slice(html.indexOf('data-first-look-details'));
-    expect(fold).toContain('data-process-story-unsaid=');
-    expect(fold).toContain('on a field the code gives no words for');
-    expect(html).not.toMatch(/Vsbed|Gewei|Voleh/);
+    // Read for 3.1.0, where the dictionary names the rule questions' fields too (H5).
+    const html = renderToStaticMarkup(React.createElement(Around, { text: aroundOf(source, '3.1.0'), state: 'ready' }));
+    expect(html).not.toMatch(/Vsbed|Gewei|Voleh/i);
   });
 });
 
