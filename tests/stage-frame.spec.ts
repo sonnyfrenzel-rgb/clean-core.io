@@ -210,7 +210,9 @@ test.describe('a stage as a tool, rendered', () => {
     await page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]').click();
     await page.waitForURL(`**/project/${acct.projectId}/analyze?view=business&from=workspace-tools&layer=evidence`, { timeout: 60000 });
     await expect(page.locator('[data-stage-header="analyze"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-stage-back]')).toHaveText(/Back to project workspace\s·\s.*Business view, Evidence & controls/, { timeout: 30000 });
+    // ADR-109 (2): Analyze in Business is the project's entry; its way back is My workspace, as in the loop above.
+    await expect(page.locator('[data-stage-back]')).toHaveText('Back to My workspace', { timeout: 30000 });
+    await expect(page.locator('[data-stage-back]')).toHaveAttribute('href', '/dashboard');
     await expect(page.locator('[data-stage-tools="open"] a[aria-current="page"]')).toHaveAttribute('data-workspace-tool', 'analyze');
   });
 
