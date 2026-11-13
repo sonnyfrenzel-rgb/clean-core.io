@@ -18,6 +18,7 @@ import BusinessNextStep from '@/components/workspace/BusinessNextStep';
 import TargetReferenceLine from '@/components/workspace/TargetReferenceLine';
 import StartNarrativeMissing from '@/components/workspace/StartNarrativeMissing';
 import UsageRecords from '@/components/workspace/UsageRecords';
+import ProcessFactCharts from '@/components/analyze/ProcessFactCharts';
 import { useIsOwner } from '@/components/workspace/BusinessRulesEditor';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useStartRun } from '@/hooks/useStartRun';
@@ -378,6 +379,9 @@ export default function AnalyzeBusiness({
           ) : null}
           <UsageRecords project={project} className="mt-4" />
         </div>
+
+        {/* AB-7: the two charts under the map — how a case can end, what it changes and only reads (mockup states 8, 9). */}
+        <ProcessFactCharts project={project} projectId={projectId} onOpenLines={openAnchor} />
 
         {/* Interim until release 3.2.0: today's First insights blocks and "Next step", unchanged, below the map. */}
         <section data-analyze-interim="" aria-label={wt('abiz.belowTitle')} className="flex flex-col gap-4">

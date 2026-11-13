@@ -15,6 +15,7 @@ import type { CatalogLookupTarget } from '@/lib/assessment-target';
 import type { UsageReport } from '@/lib/abap/usage-model';
 import { UNANCHORED } from '@/lib/process-naming';
 import { EARLY_END_WORD, elementsOfPlane, engineAccessibleName, technicalView, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
+import { spotlightSet, type MapSpotlight } from '@/lib/process-map-spotlight';
 import type { MapNameArrival } from '@/lib/naming-arrival';
 import NamingStatusLine from './NamingStatusLine';
 import type { CanvasNames } from './naming-swap';
@@ -248,6 +249,14 @@ export interface ProcessMapProps {
    * the canvas shows the engine's names, as before.
    */
   nameArrival?: MapNameArrival | null;
+  /**
+   * Plan AB-7 (mockup state 8): a chart row under the map lights the elements it counts — "Showing: … · Clear" in the
+   * canvas's tool row, everything else stepping back as the path highlight does (`lit`). The level shown moves to
+   * the one level every lit element shares; a collapsed step holding one is lit on the levels above.
+   */
+  spotlight?: MapSpotlight | null;
+  /** *Clear* beside "Showing: …". */
+  onClearSpotlight?: () => void;
 }
 
 export default function ProcessMap({
@@ -273,6 +282,8 @@ export default function ProcessMap({
   draftHolder,
   canEdit = true,
   nameArrival = null,
+  spotlight = null,
+  onClearSpotlight,
 }: ProcessMapProps) {
   const stage = layout === 'stage';
   /** Analyze, Business: the canvas first, everything about it under it, the code in the caller's panel. */
@@ -509,11 +520,17 @@ export default function ProcessMap({
     return out;
   }, [activeOverlays, overlays]);
 
+  /** A chart row's elements and the steps that hold them (AB-7); it stands over the path highlight while it is on. */
+  const spotlit = useMemo(
+    () => (spotlight && spotlight.ids.length > 0 ? spotlightSet(model, spotlight.ids) : null),
+    [spotlight, model],
+  );
   const lit = useMemo(() => {
+    if (spotlit) return spotlit;
     if (highlight === 'main') return new Set(mainPath(model, nav, plane));
     if (highlight === 'to-selected' && selected) return pathsToHere(model, nav, plane, selected);
     return null;
-  }, [highlight, model, nav, plane, selected]);
+  }, [spotlit, highlight, model, nav, plane, selected]);
 
   /* ---------------- setters ---------------- */
 
@@ -1008,6 +1025,24 @@ export default function ProcessMap({
               ) : <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
               tools={(filled: boolean) => (
                 <>
+                  {spotlight ? (
+                    // AB-7 (mockup state 8): what a chart row lit, and the way back. Words, not only the light.
+                    <span
+                      data-process-map-showing=""
+                      className="inline-flex max-w-full items-center gap-1.5 rounded-cc-row border border-cc-information-border bg-cc-information-bg px-2 py-0.5 text-[12px] leading-snug font-semibold text-cc-ink"
+                    >
+                      <span className="min-w-0 break-words">{`${wt('factCharts.showing')} ${spotlight.label}`}</span>
+                      <button
+                        type="button"
+                        data-process-map-showing-clear=""
+                        aria-label={wt('factCharts.clearLabel')}
+                        onClick={onClearSpotlight}
+                        className="shrink-0 cursor-pointer rounded-[4px] px-1 font-semibold text-cc-information underline underline-offset-2 hover:no-underline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
+                      >
+                        {wt('factCharts.clear')}
+                      </button>
+                    </span>
+                  ) : null}
                   {/* The outline stands outside the full-screen frame, so in
                       full screen the toggle would act on nothing in sight. */}
                   {filled ? null : (

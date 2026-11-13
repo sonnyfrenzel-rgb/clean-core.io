@@ -23,6 +23,14 @@ import type { WalkGuide } from '@/lib/process-walk-guide';
 import type { ProcessTour as Tour } from '@/lib/process-tour';
 import { OPEN_WALK_EVENT, takeProcessWalkRequest } from '@/lib/process-walk-request';
 import ProcessTour from './ProcessTour';
+import {
+  MAP_SPOTLIGHT_EVENT,
+  announceProcessMapModel,
+  currentMapSpotlight,
+  requestMapSpotlight,
+  spotlightPlane,
+  type MapSpotlight,
+} from '@/lib/process-map-spotlight';
 import { usePlainWording } from '@/hooks/usePlainWording';
 import { plainModelEnabled, walkPlainSentences } from '@/lib/plain-wording';
 import { isConfirmedState } from '@/lib/rules-editor';
@@ -281,6 +289,29 @@ export default function WorkspaceProcess({
     return () => window.removeEventListener(OPEN_WALK_EVENT, hear);
   }, [projectId]);
   const closeTour = useCallback(() => setTourOpen(false), []);
+  /**
+   * The charts under the map (plan AB-7): the map announces the model it draws, so the charts count by its ids, and
+   * lights what a chart row asks for — on the one level its elements share, when they share one.
+   */
+  useEffect(() => {
+    if (!projectId || !model) return;
+    announceProcessMapModel(projectId, model);
+    return () => announceProcessMapModel(projectId, null);
+  }, [projectId, model]);
+  const [spotlight, setSpotlight] = useState<MapSpotlight | null>(null);
+  useEffect(() => {
+    const hear = () => {
+      const next = currentMapSpotlight(projectId);
+      setSpotlight(next);
+      if (!next || !model) return;
+      const level = spotlightPlane(model, next.ids);
+      if (level !== undefined) setPlane(level);
+    };
+    hear();
+    window.addEventListener(MAP_SPOTLIGHT_EVENT, hear);
+    return () => window.removeEventListener(MAP_SPOTLIGHT_EVENT, hear);
+  }, [projectId, model]);
+  const clearSpotlight = useCallback(() => requestMapSpotlight(projectId, null), [projectId]);
   const designHref = stageHref({ base: `/project/${projectId}`, path: 'design', view, from: WORKSPACE_RETURN.tools });
   /**
    * Business names, asked for automatically (owner decision 21.10.2026 — there
@@ -853,6 +884,8 @@ export default function WorkspaceProcess({
               projectId={projectId || null}
               draftHolder={draftHolder}
               canEdit={owner}
+              spotlight={spotlight}
+              onClearSpotlight={clearSpotlight}
             />
           ) : map.status === 'failed' ? (
             <p data-workspace-process-failed="" className="m-0 text-[13px] font-medium text-cc-ink-muted">
