@@ -144,6 +144,12 @@ export const GATED_ROUTES: GatedRoute[] = [
   // second factor reaches neither.
   { file: 'app/api/projects/[projectId]/process-states/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/process-states` },
   { file: 'app/api/projects/[projectId]/process-states/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/process-states`, body: { baseRevision: 0, choices: [] } },
+  // The customer's own dictionary texts of a project (concept "Business-Lesbarkeit" H5(b)). Both verbs call the
+  // gate before anything else: GET hands out the names of the customer's own objects read from the upload, POST
+  // stores them. The same weight as the process states beside them, so a token from before the second factor
+  // reaches neither.
+  { file: 'app/api/projects/[projectId]/customer-texts/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/customer-texts` },
+  { file: 'app/api/projects/[projectId]/customer-texts/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/customer-texts`, body: {} },
   // Roadmap 8.1 — the IT view's findings, derived on the server from the
   // project's source. A read of the customer's code by another name.
   { file: 'app/api/projects/[projectId]/findings/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/findings` },
