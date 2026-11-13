@@ -80,9 +80,9 @@ const CLUSTER = [
 ].join('\n');
 
 test('the names: constructor, getters, setters and show/display are technical; an interface method is its own name', () => {
-  for (const name of ['CONSTRUCTOR', 'class_constructor', 'GET_LIMIT', 'set_limit', 'show', 'DISPLAY', 'display_summary', 'lo_app->show( )'])
+  for (const name of ['CONSTRUCTOR', 'class_constructor', 'GET_LIMIT', 'set_limit', 'show', 'DISPLAY', 'display_summary', 'lo_app->show( )', 'refresh', 'REFRESH_ALV'])
     expect(isTechnicalMethodName(name), name).toBe(true);
-  for (const name of ['RUN', 'approve', 'block_order', 'getaway', 'LIF_STORE~ROW', 'settle'])
+  for (const name of ['RUN', 'approve', 'block_order', 'getaway', 'LIF_STORE~ROW', 'settle', 'refresh_credit_limit'])
     expect(isTechnicalMethodName(name), name).toBe(false);
   expect(ownMethodName('LIF_STORE~ROW')).toBe('ROW');
   expect(ownMethodName('LCL_APP=>RUN')).toBe('RUN');
