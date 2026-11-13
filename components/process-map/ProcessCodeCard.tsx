@@ -30,9 +30,15 @@ export interface ProcessCodeCardProps {
   source: string;
   fileName: string;
   onClose: () => void;
+  /**
+   * Whether the card takes the focus when it first appears (default yes). No when it only comes back with a step
+   * chosen before — full screen reopened over a selection — where the focus belongs to the way out and Escape to
+   * full screen. A step chosen while the card stands still takes the focus.
+   */
+  focusOnOpen?: boolean;
 }
 
-export default function ProcessCodeCard({ element, source, fileName, onClose }: ProcessCodeCardProps) {
+export default function ProcessCodeCard({ element, source, fileName, onClose, focusOnOpen = true }: ProcessCodeCardProps) {
   const headingRef = useRef<HTMLDivElement>(null);
   const lines = useMemo(
     () => (element.anchor ? codeCardLines(source, element.anchor) : []),
@@ -41,7 +47,12 @@ export default function ProcessCodeCard({ element, source, fileName, onClose }: 
 
   // The card appeared because the reader asked for it; a screen reader should
   // say so rather than leave the announcement to chance.
+  const firstRef = useRef(true);
+  const focusOnOpenRef = useRef(focusOnOpen);
   useEffect(() => {
+    const first = firstRef.current;
+    firstRef.current = false;
+    if (first && !focusOnOpenRef.current) return;
     headingRef.current?.focus();
   }, [element.id]);
 

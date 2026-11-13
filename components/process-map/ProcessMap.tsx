@@ -993,6 +993,10 @@ export default function ProcessMap({
             element={selectedElement}
             source={source}
             fileName={model.fileName}
+            // The rail first renders with the canvas's own `filled`, before `onFullscreenChange` sets `fsOpen`: a
+            // card there at that moment is a step chosen before full screen opened, and the focus stays on the way
+            // out. A step chosen in full screen (`fsOpen`) opens its card with the focus, as everywhere.
+            focusOnOpen={fsOpen}
             onClose={() => {
               setSelected(null);
               setFocusToken((token) => token + 1);
