@@ -281,8 +281,11 @@ test.describe('rendered: Analyze, Business on the seeded PO example at 1440 × 9
     await expect(page.locator('[data-process-map-details]')).toHaveCount(0);
     const canvas = (await page.locator('[data-process-map-canvas]').boundingBox())!;
     expect(canvas.width, 'the code panel squeezes the canvas').toBeGreaterThanOrEqual(600);
-    const ys = await Promise.all(['[data-map-zoom-out]', '[data-map-zoom-in]', '[data-map-fit]', '[data-map-fullscreen-toggle]'].map(async (s) => (await page.locator(s).boundingBox())!.y));
-    expect(Math.max(...ys) - Math.min(...ys), 'the map\'s tools stack instead of standing in a row').toBeLessThanOrEqual(6);
+    // The acceptance run saw them stacked one under the other; side by side they may wrap once, never stack.
+    const boxes = await Promise.all(['[data-map-zoom-out]', '[data-map-zoom-in]', '[data-map-fit]', '[data-map-fullscreen-toggle]'].map(async (s) => (await page.locator(s).boundingBox())!));
+    const zoomRow = boxes.slice(0, 3).map((b) => b.y);
+    expect(Math.max(...zoomRow) - Math.min(...zoomRow), 'zoom out, zoom in and fit do not stand in one row').toBeLessThanOrEqual(6);
+    expect(boxes[3].y, 'full screen fell under the other tools').toBeLessThanOrEqual(Math.min(...zoomRow) + 6);
 
     // The tour's own canvas draws the names its chips say.
     await page.locator('[data-analyze-code-close]').click();

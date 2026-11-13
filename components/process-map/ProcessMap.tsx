@@ -800,8 +800,8 @@ export default function ProcessMap({
     </>
   );
   /**
-   * On the page layout the reading map carries "Map | Steps" and the two modes in the canvas's own tool row (mockup
-   * state 3); the row above it is drawn only where there is no canvas row — the steps, the modeller.
+   * On the page layout the reading map carries "Map | Steps" in the canvas's own tool row (mockup state 3) and the two
+   * modes under the canvas; the row above it is drawn only where there is no canvas row — the steps, the modeller.
    */
   const toolsInCanvas = page && view === 'map' && !editing;
   const levelLine = openProblem && !editing ? (
@@ -827,6 +827,9 @@ export default function ProcessMap({
       )}
 
       <div className={slot('order-5 flex flex-col gap-2')}>
+      {/* Analyze, Business: the two modes stand under the canvas, beside what reads about the map — the canvas's row
+          keeps the mockup's tools, so it stays one row beside the code panel (mockup state 7). */}
+      {toolsInCanvas ? <div data-process-map-modes="" className="flex flex-wrap items-center gap-2">{modeButtons}</div> : null}
       {page ? titleBlock : null}
       {stage ? traceability : null}
       <ProcessMapLegend
@@ -940,7 +943,9 @@ export default function ProcessMap({
           aria-label={wt('map.outlineShort')}
           className={stage
             ? `order-2 grid min-w-0 gap-2 lg:max-h-[440px] lg:overflow-y-auto lg:pr-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:grid-rows-[auto_1fr] lg:items-start [&>*:last-child]:lg:col-start-2 [&>*:last-child]:lg:row-span-2 [&>*:last-child]:lg:row-start-1${outlineOpen ? '' : ' lg:hidden'}`
-            : `flex min-w-0 flex-col gap-2${outlineOpen ? '' : ' lg:hidden'}`}
+            // Analyze, Business folds it on every width (the phone's map comes first, mockup state 3); elsewhere a
+            // phone keeps the mobile pass's order.
+            : `flex min-w-0 flex-col gap-2${outlineOpen ? '' : page ? ' hidden' : ' lg:hidden'}`}
         >
           <ProcessSearch model={model} nav={nav} onJump={onJump} />
           <ProcessMiniMap
@@ -1006,7 +1011,7 @@ export default function ProcessMap({
                   {/* The outline stands outside the full-screen frame, so in
                       full screen the toggle would act on nothing in sight. */}
                   {filled ? null : (
-                    <span className="hidden lg:inline-flex">
+                    <span className={page ? 'inline-flex' : 'hidden lg:inline-flex'}>
                       <CcIconButton
                         data-process-outline-toggle=""
                         label={wt(outlineOpen ? 'map.outlineHide' : 'map.outlineShow')}
@@ -1032,8 +1037,6 @@ export default function ProcessMap({
                       <Keyboard size={16} aria-hidden={true} />
                     </CcIconButton>
                   </span>
-                  {/* Analyze, Business: the two modes stand in the same row; in full screen the row is the map's alone. */}
-                  {page && !filled ? modeButtons : null}
                 </>
               )}
               names={canvasNames}
