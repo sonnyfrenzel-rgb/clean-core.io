@@ -294,7 +294,9 @@ test.describe('the "Next step" card, rendered', () => {
   test('an empty project: the card names Analyze and its real reason, not only the title', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${EMPTY_ID}`, { waitUntil: 'domcontentloaded' });
+    // A project with no source opens Analyze on its upload page since v3.1.0 (ADR-109, P4): the card of the empty
+    // project stands in the workspace's IT and Management views.
+    await page.goto(`/project/${EMPTY_ID}?view=it`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
 
     const card = page.locator('[data-next-step]');
@@ -308,15 +310,16 @@ test.describe('the "Next step" card, rendered', () => {
     expect(reason.toLowerCase()).toMatch(/no source staged/);
 
     // The view and the card travel into the stage, for "Back to workspace" (block D, D.29).
-    await expect(card.locator('a[data-cc-button]')).toHaveAttribute('href', `/project/${EMPTY_ID}/analyze?view=business&from=next-step`);
+    await expect(card.locator('a[data-cc-button]')).toHaveAttribute('href', `/project/${EMPTY_ID}/analyze?view=it&from=next-step`);
     await expect(page.locator('#next-step[data-next-step]')).toHaveCount(1);
   });
 
   test('a phase blocked by the account\'s own switch: the reason names the switch', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
+    // Analyze, Business since v3.1.0 (ADR-109): the card stands under the map until AB-4.
     await page.goto(`/project/${BLOCKED_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 });
 
     const card = page.locator('[data-next-step]');
     const open = card.locator('[data-next-step-state="open"]');
@@ -335,7 +338,7 @@ test.describe('the "Next step" card, rendered', () => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${DONE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 });
 
     const card = page.locator('[data-next-step]');
     // A card in IT and Management, a bar in Business (mockup s1): a heading either way.
