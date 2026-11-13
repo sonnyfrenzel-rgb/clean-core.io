@@ -14,7 +14,8 @@ import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import OpenQuestions from '@/components/workspace/OpenQuestions';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import { IT_LAYER_ELSEWHERE, IT_LAYERS, scrollToWhenThere } from '@/lib/it-sections';
-import { replaceHashInPlace } from '@/lib/layer-redirect';
+import { layerRedirect, replaceHashInPlace } from '@/lib/layer-redirect';
+import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import WorkspaceStatusLine from '@/components/workspace/StatusLine';
 import ItAnswers from '@/components/workspace/ItAnswers';
 import PublicCloudFitPanel from '@/components/workspace/PublicCloudFitPanel';
@@ -154,9 +155,15 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
    */
   const toAnalyze = view === 'business';
   // Only once signed in: a visitor without an account is sent to sign in from
-  // this address first, and comes back here (`lib/return-path.ts`).
+  // this address first, and comes back here (`lib/return-path.ts`). The map's
+  // place goes along — `#process-map`, or an old layer address whose content
+  // is the map (`#need`) — as a project's Business address keeps it.
   useEffect(() => {
-    if (enabled && toAnalyze) router.replace(DEMO_ANALYZE_ROUTE);
+    if (!enabled || !toAnalyze) return;
+    const hash = window.location.hash;
+    const there = layerRedirect('business', hash, { hasActiveRun: true });
+    const onMap = hash === `#${BUSINESS_MAP_ID}` || (there?.kind === 'view' && there.view === 'business' && there.hash === BUSINESS_MAP_ID);
+    router.replace(onMap ? `${DEMO_ANALYZE_ROUTE}#${BUSINESS_MAP_ID}` : DEMO_ANALYZE_ROUTE);
   }, [enabled, toAnalyze, router]);
   const setView = useCallback(
     (next: WorkspaceView) => {
