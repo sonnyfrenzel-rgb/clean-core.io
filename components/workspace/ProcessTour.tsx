@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Footprints, RotateCcw, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Footprints, Pause, RotateCcw, X } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import AskOnClick from './AskOnClick';
 import CcButton from '@/components/cc/Button';
@@ -83,10 +83,34 @@ export interface ProcessTourProps {
    * it waits for one (own key, automatic steps off); null or absent otherwise.
    */
   askWording?: (() => void) | null;
+  /**
+   * On the page, beside the map on a desktop and above it up to 1100 px, instead of a layer over the whole window
+   * (plan AB-4, N3; mockup states 4, 5 and 6). Analyze, Business and the demo's Analyze use it.
+   */
+  inline?: boolean;
+  /** The two endings, said at the tour's end (inline; `components/analyze/AnalyzeEndings.tsx`). */
+  endings?: React.ReactNode;
+  /** "Pause" (inline): the tour steps aside, and opens at this station again. */
+  onPause?: (at: number) => void;
+  /** Where the tour stands, at every move (inline): the page says "you are here" and counts the walk-through as done. */
+  onMove?: (move: TourMove) => void;
 }
 
-/** The layer, portalled to the page. */
+/** Where the tour stands: the station's index (-1 the overview, `total` the end), its station, the count. */
+export interface TourMove {
+  at: number;
+  total: number;
+  station: TourStation | null;
+  end: boolean;
+}
+
+/** The tour: inline on the page, or the layer, portalled to the page. */
 export default function ProcessTour(props: ProcessTourProps) {
+  if (props.inline) return <ProcessTourInline {...props} />;
+  return <ProcessTourPortal {...props} />;
+}
+
+function ProcessTourPortal(props: ProcessTourProps) {
   const target = useCcPortalTarget();
   if (!target) return null;
   return createPortal(<ProcessTourLayer {...props} />, target);
@@ -482,21 +506,27 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
   );
 }
 
+/** The card's title: the layer's size, or the inline card's (mockup state 5: 17 px in a 320–360 px column). */
+const TITLE = 'm-0 text-[22px] leading-tight font-bold break-words text-cc-ink';
+const TITLE_INLINE = 'm-0 text-[17px] leading-snug font-bold break-words text-cc-ink';
+
 function OverviewCard({
   overview,
   titleId,
   headingRef,
   shown,
+  inline = false,
 }: {
   overview: TourOverview;
   titleId: string;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   shown: (line: WalkLine) => WordedSentence;
+  inline?: boolean;
 }) {
   const said = [...overview.purpose, ...(overview.trigger ? [overview.trigger] : []), ...(overview.result ? [overview.result] : [])];
   return (
     <div data-tour-overview="" className="flex flex-col gap-3">
-      <h2 id={titleId} ref={headingRef} tabIndex={-1} className="m-0 text-[22px] leading-tight font-bold break-words text-cc-ink">
+      <h2 id={titleId} ref={headingRef} tabIndex={-1} className={inline ? TITLE_INLINE : TITLE}>
         {wt('walk.overviewTitle')}
       </h2>
       <div data-tour-narration="" className="flex flex-col gap-2">
@@ -530,12 +560,14 @@ function StationCard({
   titleId,
   headingRef,
   shown,
+  inline = false,
 }: {
   station: TourStation;
   chapterLabel: string | null;
   titleId: string;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
   shown: (line: WalkLine) => WordedSentence;
+  inline?: boolean;
 }) {
   return (
     <>
@@ -545,7 +577,7 @@ function StationCard({
             {chapterLabel}
           </p>
         ) : null}
-        <h2 id={titleId} ref={headingRef} tabIndex={-1} className="m-0 text-[22px] leading-tight font-bold break-words text-cc-ink">
+        <h2 id={titleId} ref={headingRef} tabIndex={-1} className={inline ? TITLE_INLINE : TITLE}>
           {station.title}
         </h2>
       </div>
@@ -684,5 +716,266 @@ function EndCard({
         </span>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * The tour on the page (plan AB-4; N3; mockup states 4, 5 and 6; ADR-118). The same stations, cards and sentences as
+ * the layer, in the page's flow: the map of the tour where the map stood, the card beside it on a desktop (360 px,
+ * 320 px up to 1280) and above it up to 1100 px. Nothing covers anything, and nothing is modal — the page stays
+ * readable around it; the summary above steps aside while it runs (the caller hides it).
+ *
+ * **The camera** (`TourCanvas`, `align="inline"`) puts each station in the middle of the map at the reading scale; a
+ * station too large for the map is shrunk to fit down to 83 % and no further (ADR-025) — beyond that it shows the
+ * station's start. The page itself scrolls only as far as it must to keep the tour in view.
+ *
+ * **Keyboard:** Back, Pause and Next are buttons; the arrow keys move a step; Escape closes. The focus moves to the
+ * card's title at every station; Pause and Escape hand it back to the caller, which returns it to "Walk me through
+ * it". The last station is the end: "That was the process" and the two equal endings (`endings`), nothing else.
+ */
+export function ProcessTourInline({
+  tour,
+  unavailable = false,
+  model,
+  onClose,
+  say = ENGINE_ONLY,
+  demo = false,
+  initialStation = OVERVIEW,
+  askWording = null,
+  endings = null,
+  onPause,
+  onMove,
+}: ProcessTourProps) {
+  const stations = tour?.stations ?? [];
+  const end = stations.length;
+  const [at, setAt] = useState(() => Math.max(OVERVIEW, Math.min(initialStation, end)));
+  // A tour read after the card opened (`tour` was null): an index past the end of nothing is held to the end.
+  const shownAt = Math.max(OVERVIEW, Math.min(at, end));
+  const station: TourStation | null = tour && shownAt >= 0 && shownAt < end ? stations[shownAt] : null;
+  const overview = !!tour && shownAt === OVERVIEW;
+  const atEnd = !!tour && shownAt === end;
+  const titleId = useId();
+  const moreId = useId();
+  const tourXml = useMemo(() => xmlWithShownNames(model), [model]);
+  const [moreAt, setMoreAt] = useState<number | null>(null);
+  const more = station !== null && moreAt === shownAt;
+
+  const go = useCallback((index: number) => setAt(Math.max(OVERVIEW, Math.min(index, end))), [end]);
+
+  /* Where the tour stands, for the page: "you are here" in "How it runs", and the walk-through counted at the end. */
+  const moved = useRef(onMove);
+  useEffect(() => {
+    moved.current = onMove;
+  });
+  useEffect(() => {
+    if (!tour) return;
+    moved.current?.({ at: shownAt, total: end, station, end: shownAt === end });
+  }, [tour, shownAt, end, station]);
+
+  /* The focus moves to the card's title at every station; the page scrolls only as far as the tour needs. */
+  const sectionRef = useRef<HTMLElement>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  const opened = useRef(false);
+  useEffect(() => {
+    const section = sectionRef.current;
+    let still = false;
+    try {
+      still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch {
+      /* no media queries: jump */
+    }
+    if (section && typeof section.scrollIntoView === 'function') {
+      section.scrollIntoView({ block: opened.current ? 'nearest' : 'start', behavior: still || !opened.current ? 'auto' : 'smooth' });
+    }
+    opened.current = true;
+    headingRef.current?.focus({ preventScroll: true });
+  }, [shownAt, tour]);
+
+  const onKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
+    const tag = (event.target as HTMLElement).tagName;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      onClose();
+      return;
+    }
+    if (tag === 'SELECT' || tag === 'INPUT' || tag === 'TEXTAREA') return;
+    if (event.key === 'ArrowRight' && tour && shownAt < end) {
+      event.preventDefault();
+      go(shownAt + 1);
+    } else if (event.key === 'ArrowLeft' && tour && shownAt > OVERVIEW) {
+      event.preventDefault();
+      go(shownAt - 1);
+    }
+  };
+
+  const chapter = station && tour ? tour.chapters[station.chapter] : null;
+  const shown = (line: WalkLine) => say(line.text, line.anchor);
+  const position = overview ? wt('walk.overview') : station ? walkStepOf(shownAt + 1, end) : atEnd ? wt('walk.endTitle') : null;
+
+  return (
+    <section
+      ref={sectionRef}
+      aria-label={wt('walk.regionLabel')}
+      onKeyDown={onKeyDown}
+      data-process-tour=""
+      data-tour-mode="inline"
+      data-tour-at={!tour ? 'reading' : overview ? 'overview' : station ? shownAt + 1 : 'end'}
+      className="cc grid scroll-mt-20 grid-cols-1 items-start gap-4 min-[1101px]:grid-cols-[minmax(0,1fr)_320px] min-[1281px]:grid-cols-[minmax(0,1fr)_360px]"
+    >
+      {/* The card first in the reading order: above the map up to 1100 px, in the right column from there (by grid
+          placement, never by `order`, so the focus order stays the reading order). */}
+      <div
+        data-tour-sheet=""
+        className="flex min-w-0 flex-col rounded-cc-card border border-cc-line bg-cc-surface shadow-cc min-[1101px]:sticky min-[1101px]:top-20 min-[1101px]:col-start-2 min-[1101px]:row-start-1"
+      >
+        <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-cc-line px-4 py-3">
+          <span className="inline-flex items-center gap-2 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+            <Footprints size={14} aria-hidden={true} />
+            {wt('walk.eyebrow')}
+          </span>
+          {position ? (
+            <span data-tour-position="" className="text-[12px] font-semibold text-cc-ink-muted">
+              {position}
+            </span>
+          ) : null}
+          {tour && end > 0 ? (
+            <span aria-hidden={true} data-tour-dots="" className="ml-auto flex items-center gap-1">
+              {stations.map((s, i) => (
+                <i
+                  key={s.id}
+                  className={`block h-1.5 w-1.5 rounded-full ${i < shownAt || atEnd ? 'bg-cc-ink-muted' : i === shownAt ? 'bg-cc-ink' : 'bg-cc-line'}`}
+                />
+              ))}
+            </span>
+          ) : null}
+          {/* The way out at every station, for a pointer as Escape is for the keyboard. */}
+          <span className={tour && end > 0 ? '' : 'ml-auto'}>
+            <CcButton variant="ghost" icon={<X size={16} aria-hidden={true} />} onClick={onClose} data-tour-close="">
+              <span className="sr-only">{wt('walk.closeInline')}</span>
+            </CcButton>
+          </span>
+          {demo ? <span className="basis-full text-[12px] font-medium text-cc-ink-muted">{wt('walk.demoNote')}</span> : null}
+          <AskOnClick askNow={askWording} step="plain" />
+        </header>
+
+        <article
+          data-tour-card={overview ? 'overview' : station ? station.id : tour ? 'end' : 'reading'}
+          aria-labelledby={titleId}
+          className="flex flex-col gap-3 p-4"
+        >
+          {!tour ? (
+            <>
+              <h2 id={titleId} ref={headingRef} tabIndex={-1} className={TITLE_INLINE}>
+                {wt('walk.title')}
+              </h2>
+              {unavailable ? (
+                <p role="alert" data-tour-unavailable="" className="m-0 text-[13px] font-medium text-cc-ink-muted">
+                  {wt('walk.unavailable')}
+                </p>
+              ) : (
+                <>
+                  <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{wt('walk.preparing')}</p>
+                  <CcSkeleton shape="text" count={3} label={wt('walk.title')} />
+                </>
+              )}
+            </>
+          ) : overview ? (
+            <OverviewCard overview={tour.overview} titleId={titleId} headingRef={headingRef} shown={shown} inline />
+          ) : station ? (
+            <>
+              <StationCard
+                station={station}
+                chapterLabel={chapter && chapter.label !== station.title ? chapter.label : null}
+                titleId={titleId}
+                headingRef={headingRef}
+                shown={shown}
+                inline
+              />
+              <div data-tour-more="" className="cc-no-print">
+                <button
+                  type="button"
+                  aria-expanded={more}
+                  aria-controls={moreId}
+                  onClick={() => setMoreAt(more ? null : shownAt)}
+                  data-tour-more-open=""
+                  className="inline-flex min-h-8 items-center gap-1 rounded-cc-row text-left text-[13px] font-semibold text-cc-ink pointer-coarse:min-h-11"
+                >
+                  {wt('walk.more')}
+                  <ChevronRight size={16} aria-hidden={true} className={more ? 'rotate-90 text-cc-ink-muted' : 'text-cc-ink-muted'} />
+                </button>
+              </div>
+              <div id={moreId} data-tour-more-body="" hidden={!more}>
+                <MoreAbout station={station} shown={shown} />
+              </div>
+            </>
+          ) : (
+            <div data-tour-end="" className="flex flex-col gap-3">
+              <h2 id={titleId} ref={headingRef} tabIndex={-1} className={TITLE_INLINE}>
+                {end > 0 ? wt('walk.endTitle') : wt('walk.title')}
+              </h2>
+              {end === 0 ? <p className="m-0 text-[14px] leading-relaxed font-medium text-cc-ink">{wt('walk.empty')}</p> : null}
+              <p data-tour-stop-here="" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
+                {demo ? wt('walk.stopHereDemo') : wt('walk.stopHere')}
+              </p>
+              {endings}
+            </div>
+          )}
+          <p className="sr-only m-0">{wt('walk.keysInline')}</p>
+        </article>
+
+        {tour ? (
+          <div data-tour-nav="" className="cc-no-print flex flex-wrap items-center gap-2 border-t border-cc-line px-4 py-3">
+            <CcButton
+              variant="ghost"
+              icon={<ChevronLeft size={16} aria-hidden={true} />}
+              onClick={shownAt > OVERVIEW ? () => go(shownAt - 1) : undefined}
+              disabled={shownAt === OVERVIEW}
+              data-tour-back=""
+            >
+              {wt('walk.back')}
+            </CcButton>
+            {atEnd ? (
+              <span className="ml-auto">
+                <CcButton variant="ghost" onClick={onClose} data-tour-finish="">
+                  {wt('walk.closeInline')}
+                </CcButton>
+              </span>
+            ) : (
+              <>
+                <CcButton
+                  variant="ghost"
+                  icon={<Pause size={16} aria-hidden={true} />}
+                  onClick={() => (onPause ? onPause(shownAt) : onClose())}
+                  data-tour-pause=""
+                >
+                  {wt('walk.pause')}
+                </CcButton>
+                <span className="ml-auto">
+                  <CcButton variant="primary" onClick={() => go(shownAt + 1)} data-tour-next="">
+                    {shownAt + 1 < end ? wt('walk.next') : wt('walk.toEnd')}
+                    <ChevronRight size={16} aria-hidden={true} />
+                  </CcButton>
+                </span>
+              </>
+            )}
+          </div>
+        ) : null}
+      </div>
+
+      {/* The map of the tour, where the map stood. A picture: nothing in it takes the focus. */}
+      <div
+        data-tour-inline-map=""
+        className="min-w-0 overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface min-[1101px]:col-start-1 min-[1101px]:row-start-1"
+      >
+        <TourCanvas
+          xml={tourXml}
+          plane={station?.plane ?? null}
+          focus={station?.id ?? null}
+          align="inline"
+          label={walkMapLabel(station?.title ?? null)}
+          className="h-[min(64dvh,560px)] w-full max-[600px]:h-[48dvh]"
+        />
+      </div>
+    </section>
   );
 }

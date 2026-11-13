@@ -46,11 +46,19 @@ async function load(rel: string, name = 'default'): Promise<(props: Record<strin
 
 const textOf = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/&amp;/g, '&').replace(/\s+/g, ' ');
 
-test('closed, the demo shows the way into the tour, and nothing opens by itself', async () => {
+test('closed, the demo draws nothing of its own: the page invitation is the way in, and nothing opens by itself', async () => {
+  // Since 3.2.0 (plan AB-4) the entry card is gone: "Walk me through it" above the map opens the tour, as in a project.
   const Demo = await load('components/demo/DemoWalkThrough.tsx');
-  const html = renderToStaticMarkup(React.createElement(Demo, { model: MODEL, source: SOURCE, initialTour: TOUR }));
-  expect(html).toContain('data-tour-entry-open=""');
-  expect(html).not.toContain('data-process-tour=""');
+  const closed = renderToStaticMarkup(React.createElement(Demo, { model: MODEL, source: SOURCE, initialTour: TOUR, open: false, onOpenChange: () => {} }));
+  expect(closed).toBe('');
+  const open = renderToStaticMarkup(
+    React.createElement(Demo, { model: MODEL, source: SOURCE, initialTour: TOUR, open: true, onOpenChange: () => {}, endings: React.createElement('p', { 'data-x-endings': '' }) }),
+  );
+  // On the page where the map stands (inline), on its overview first.
+  expect(open).toContain('data-tour-mode="inline"');
+  expect(open).toContain('data-tour-at="overview"');
+  expect(open).not.toContain('role="dialog"');
+  expect(fs.existsSync(path.join(ROOT, 'components/workspace/ProcessTourEntry.tsx'))).toBe(false);
 });
 
 test('in the tour: said as the demo\'s, nothing to answer', async () => {
@@ -72,9 +80,27 @@ test('the demo shows it in the Business view, above the map, and it reaches noth
   const business = read('components/demo/DemoAnalyzeBusiness.tsx');
   expect(business.indexOf('<DemoWalkThrough')).toBeGreaterThan(-1);
   expect(business.indexOf('<DemoWalkThrough')).toBeLessThan(business.indexOf('<ProcessMap'));
-  expect(business).toContain('open={walkOpen} onOpenChange={setWalkOpen} entry={false}');
+  expect(business).toMatch(/open=\{walkOpen\}\s+onOpenChange=\{setWalkOpen\}/);
+  expect(business).not.toContain('entry={false}');
+  // The tour stands where the map stood while it runs (AB-4): the map steps aside, the summary too.
+  expect(business).toContain('data-demo-business-map="" className="scroll-mt-20" hidden={walkOpen}');
+  expect(business).toMatch(/<WhatThisProgramDoes[\s\S]{0,120}hidden=\{walkOpen\}/);
   expect(read('components/demo/DemoWorkspaceShell.tsx')).not.toContain('<DemoWalkThrough');
   const demo = read('components/demo/DemoWalkThrough.tsx');
   expect(demo).not.toMatch(/fetch\(|-client'|gemini|usePlainWording|process-states-client|firebase/);
   expect(demo).toContain('demo={true}');
+  expect(demo).toMatch(/<ProcessTour\s+inline/);
+});
+
+test('the demo tour ends on its two endings, said as the demo', async () => {
+  const Inline = await load('components/workspace/ProcessTour.tsx', 'ProcessTourInline');
+  const endings = React.createElement('div', { 'data-x-endings': '' }, 'ENDINGS');
+  const html = renderToStaticMarkup(React.createElement(Inline, { tour: TOUR, model: MODEL, onClose: () => {}, demo: true, initialStation: TOUR.stations.length, endings }));
+  const text = textOf(html);
+  expect(html).toContain('data-tour-at="end"');
+  expect(text).toContain('That was the process');
+  expect(text).toContain('ENDINGS');
+  // A demo keeps nothing: the end does not say it stays in a workspace.
+  expect(text).toContain('You can stop here.');
+  expect(text).not.toContain('stays in your workspace');
 });

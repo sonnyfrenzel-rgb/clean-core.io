@@ -150,6 +150,23 @@ test.describe('every view reads the contract', () => {
     }
   });
 
+  test('the walk-through changes no phase: what this browser remembers is read by no phase (plan AB-4, O1)', () => {
+    // Walked, "What you can do next" hidden and a later tool opened live in `localStorage` only
+    // (`lib/analyze-progress.ts`). The one phase contract reads none of it, and the module reads no phase.
+    const steps = read('lib/workflow-steps.ts');
+    expect(steps).not.toMatch(/analyze-progress|cc\.analyze\.|walkedOn|nextHidden|laterToolOpened|localStorage/);
+    const progress = read('lib/analyze-progress.ts');
+    expect(progress).not.toMatch(/from '\.\/workflow-steps'|firebase|setDoc|updateDoc|addDoc|fetch\(/);
+    // The endings, the card and the hook link, say and remember — none of them writes a phase or a status.
+    for (const rel of ['components/analyze/AnalyzeEndings.tsx', 'components/analyze/WhatNextCard.tsx', 'hooks/useAnalyzeProgress.ts']) {
+      expect(read(rel), rel).not.toMatch(/status\s*:|setDoc|updateDoc|addDoc|firebase|fetch\(/);
+    }
+    // Analyze, Business tells the walk-through to the browser and to nothing else.
+    const business = read('components/analyze/AnalyzeBusiness.tsx');
+    expect(business).not.toMatch(/updateDoc|setDoc|addDoc/);
+    expect(business).toContain('markWalked();');
+  });
+
   test('every stage header carries the tools bar — in the loaded page, not only the loading state', () => {
     // Four pages once rendered the rail in their early `loading` return and
     // nowhere else, so it disappeared as soon as there was something to

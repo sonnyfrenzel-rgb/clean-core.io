@@ -78,11 +78,16 @@ test.describe('the stations', () => {
     expect(new Set(TOUR_STATIONS.map((s) => s.view))).toEqual(new Set(['business', 'it', 'management']));
   });
 
-  test('the station at the first look carries its name, and says it is not the analysis (roadmap 3.0.7)', () => {
+  test('the station at the text around the map names what stands there, not the first look that retired (3.2.0, AB-4)', () => {
+    // Roadmap 3.0.7 named the station after the first look's card. The first look left Analyze with AB-6; its place
+    // holds the text around the map, and the station says so — with the four blocks a reader finds there.
     const reveal = TOUR_STATIONS.find((s) => s.place === 'reveal');
-    expect(reveal?.title).toBe(wt('firstLook.title'));
-    expect(reveal?.title).toBe('First insights into your process');
-    expect(reveal?.body).toMatch(/not the analysis/);
+    expect(reveal?.title).toBe('The text around the map');
+    expect(reveal?.title).not.toBe(wt('firstLook.title'));
+    for (const block of ['How the process runs', 'why it exists', 'who is involved', 'questions to settle with the business']) {
+      expect(reveal?.body).toContain(block);
+    }
+    expect(reveal?.body).toMatch(/line it stands on/);
   });
 
   test('no station carries a figure — the place does, from the engine', () => {

@@ -194,7 +194,7 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
     }
   });
 
-  test('Business reads what the program does, the map, then the text around it and Next step — in that order in the DOM (§2.9)', () => {
+  test('Business reads what the program does, the map, the text around it, then the endings and "What you can do next" — in that order in the DOM (§2.9)', () => {
     // Since v3.1.0 the Business view is Analyze's page (AB-2, ADR-109), not an
     // order of blocks in the workspace shell: the map is the page. The reading
     // order is the DOM order at every width — no CSS `order` splits the two, so
@@ -205,10 +205,17 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
       expect(i, `${needle} is not on the page`).toBeGreaterThan(-1);
       return i;
     };
-    // Since v3.2.0 (AB-6) the text around the map stands where the first insights stood.
-    const order = [at('<WhatThisProgramDoes'), at('<WorkspaceProcess'), at('<AroundTheMap'), at('<BusinessNextStep')];
+    // Since 3.2.0 (AB-6) the text around the map stands where the first insights stood, and (AB-4) the two endings in
+    // full and "What you can do next" follow it where "Next step" stood.
+    const order = [at('<WhatThisProgramDoes'), at('<WorkspaceProcess'), at('<AroundTheMap'), at('data-analyze-what-next-show'), at('<WhatNextCard')];
     for (let i = 1; i < order.length; i++) expect(order[i], `block ${i} stands before block ${i - 1}`).toBeGreaterThan(order[i - 1]);
     expect(page).not.toMatch(/\border-(first|last|\d+)\b/);
+    // The tour on the page puts its card above the map on a narrow screen by grid placement, not by `order` (AB-4):
+    // the card is first in the DOM, so the focus meets it first at every width.
+    const tour = read('components/workspace/ProcessTour.tsx');
+    const inline = tour.slice(tour.indexOf('export function ProcessTourInline'));
+    expect(inline.indexOf('data-tour-sheet=""')).toBeLessThan(inline.indexOf('data-tour-inline-map=""'));
+    expect(inline).not.toMatch(/\border-(first|last|\d+)\b/);
     // The workspace shell keeps no Business order to drift from it.
     expect(read('components/workspace/WorkspaceShell.tsx')).not.toContain('BUSINESS_ORDER');
   });

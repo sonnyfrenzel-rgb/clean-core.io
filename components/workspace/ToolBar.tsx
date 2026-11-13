@@ -14,6 +14,11 @@ import InfoPopover from './InfoPopover';
 import { useAnalysisRead } from '@/hooks/useAnalysisRead';
 import { analysisKeyOfBase, resultReadyTag } from '@/lib/analysis-read';
 import { useLocationSearch } from '@/lib/location-search';
+import { useAnalyzeProgress } from '@/hooks/useAnalyzeProgress';
+import { nextTagShown } from '@/lib/analyze-progress';
+
+/** A plain click on a tool link; `event.preventDefault()` holds the navigation. */
+export type ToolClick = (tool: WorkspaceTool, href: string, event: React.MouseEvent<HTMLElement>) => void;
 
 export interface WorkspaceTool {
   key: PhaseKey;
@@ -219,6 +224,7 @@ function ToolsNav({
   surface,
   readKey,
   compact: compactStage = false,
+  onTool,
 }: {
   tools: WorkspaceTool[];
   /** Whose analysis "Result ready" is about — the project id or `demo` (`lib/analysis-read.ts`). */
@@ -243,6 +249,12 @@ function ToolsNav({
    * hint stands beside the tools (plan AB-2, mockup state 3). The stage's own data hooks stay.
    */
   compact?: boolean;
+  /**
+   * A tool link was clicked with a plain click (Analyze, Business before the walk-through: the soft-gate note,
+   * plan AB-4, mockup state 10). The caller may hold the navigation and say why; nothing is locked — a modified
+   * click, a middle click or the keyboard's own way to open a new tab are never held.
+   */
+  onTool?: ToolClick;
 }) {
   const compact = surface === 'workspace-head' || compactStage;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -264,11 +276,21 @@ function ToolsNav({
     return () => document.removeEventListener('keydown', onKey);
   }, [menuOpen]);
 
-  const next = nextPhaseKey(tools);
+  /**
+   * The "Next" tag (O8, ADR-060 amended, plan AB-4): an analysis-only reader sees none until a tool after Analyze was
+   * opened once in this browser (`lib/analyze-progress.ts`). A stage after Analyze counts itself as opened.
+   */
+  const { progress, markLaterToolOpened } = useAnalyzeProgress(readKey);
+  useEffect(() => {
+    if (current && current !== 'analyze') markLaterToolOpened();
+  }, [current, markLaterToolOpened]);
+  const phaseNext = nextPhaseKey(tools);
+  const next = nextTagShown(tools, phaseNext, progress.laterToolOpened) ? phaseNext : null;
   // Not on Analyze itself: the stage marks it read as it opens.
   const analysisRead = useAnalysisRead(readKey);
   const ready = (tool: WorkspaceTool) => tool.key !== current && resultReadyTag(tool, analysisRead);
-  const nextTool = next ? tools.find((t) => t.key === next) ?? null : null;
+  // The line under the bar keeps naming the phase contract's next tool: it is a sentence about what the tool does.
+  const nextTool = phaseNext ? tools.find((t) => t.key === phaseNext) ?? null : null;
   const anyNeedsRun = tools.some((t) => phaseNeeds(t, tools) !== null);
   // One line under the tools: which one next and what it does, and — while
   // there is no signed run — that the others wait for one. Visible on every
@@ -314,8 +336,14 @@ function ToolsNav({
   // tool is for stays the link's accessible description, the line under the
   // bar names the next one, and "What the tools do" opens all seven at once —
   // on a tap or a key, never on hover.
+  const held = (tool: WorkspaceTool) => (event: React.MouseEvent<HTMLElement>) => {
+    if (!onTool || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const anchor = (event.target as HTMLElement).closest('a[data-workspace-tool]');
+    if (!anchor) return;
+    onTool(tool, anchor.getAttribute('href') ?? '', event);
+  };
   const barItems = tools.map((tool) => (
-    <span key={tool.key} data-workspace-tool-item={tool.key} className="inline-flex items-center">
+    <span key={tool.key} data-workspace-tool-item={tool.key} className="inline-flex items-center" onClickCapture={held(tool)}>
       {link(tool, 'bar')}
     </span>
   ));
@@ -334,7 +362,7 @@ function ToolsNav({
   // In the phone menu the purpose stands under each tool as text: there is room
   // for it, and a menu is where a reader is choosing.
   const menuItems = tools.map((tool) => (
-    <div key={tool.key} data-workspace-tool-item={tool.key} className="flex flex-col items-stretch gap-1">
+    <div key={tool.key} data-workspace-tool-item={tool.key} className="flex flex-col items-stretch gap-1" onClickCapture={held(tool)}>
       {link(tool, 'menu')}
       <span aria-hidden={true} data-workspace-tool-purpose="" className="px-1 text-[12px] leading-snug font-medium text-cc-ink-muted">
         {toolGuide(tool, tools, next, ready(tool)).slice(0, 3).join(' ')}
@@ -461,6 +489,7 @@ export function StageToolBar({
   current,
   base,
   compact = false,
+  onTool,
 }: {
   /** `workflowSteps(project)` — or the demo's rail, which is assignable to it. */
   steps: WorkspaceTool[];
@@ -469,6 +498,8 @@ export function StageToolBar({
   base: string;
   /** One row, as the compact bar: the tools, their marks and the legend (Analyze, Business — mockup state 3). */
   compact?: boolean;
+  /** A plain click on a tool (the soft-gate note of Analyze, Business, plan AB-4). */
+  onTool?: ToolClick;
 }) {
   // Read from the address in the browser only, as `StageHeader` does: a
   // statically generated demo stage must not depend on the query.
@@ -485,6 +516,7 @@ export function StageToolBar({
       open={false}
       surface="stage"
       compact={compact}
+      onTool={onTool}
       readKey={analysisKeyOfBase(base)}
       link={{ base, view: params.get('view'), from, layer: params.get('layer') }}
     />

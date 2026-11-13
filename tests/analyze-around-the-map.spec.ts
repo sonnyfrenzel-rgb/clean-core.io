@@ -312,12 +312,13 @@ test.describe('the page (source guards)', () => {
   const business = read('components/analyze/AnalyzeBusiness.tsx');
   const demo = read('components/demo/DemoAnalyzeBusiness.tsx');
 
-  test('summary, map, text, next step — in that order; the interim First insights blocks are gone', () => {
+  test('summary, map, text, then the two endings — in that order; the interim First insights blocks are gone', () => {
     const at = (needle: string) => business.indexOf(needle);
     expect(at('<WhatThisProgramDoes')).toBeGreaterThan(-1);
     expect(at('<WorkspaceProcess')).toBeGreaterThan(at('<WhatThisProgramDoes'));
     expect(at('<AroundTheMap')).toBeGreaterThan(at('<WorkspaceProcess'));
-    expect(at('<BusinessNextStep')).toBeGreaterThan(at('<AroundTheMap'));
+    // AB-4 (3.2.0): the two endings in full stand under the text where "Next step" stood.
+    expect(at('data-analyze-what-next-show')).toBeGreaterThan(at('<AroundTheMap'));
     for (const gone of ['components/workspace/BusinessOpening.tsx', 'components/workspace/FirstLook.tsx']) {
       expect(fs.existsSync(path.join(ROOT, gone)), gone).toBe(false);
     }
@@ -330,7 +331,8 @@ test.describe('the page (source guards)', () => {
   test('the demo shows the same components, asks no model, and its basket line names no Design', () => {
     expect(demo).toContain('<WhatThisProgramDoes');
     expect(demo).toContain("useAroundTheMap({ project, projectId: 'demo', owner: false, model: false, source })");
-    expect(demo).toContain('<AroundTheMap text={around.text} state={around.state} designHref={null} />');
+    // AB-4 drives "you are here" with `here`, as in a project.
+    expect(demo).toContain('<AroundTheMap text={around.text} state={around.state} designHref={null} here={here} />');
     expect(demo).not.toMatch(/<FirstLook\b/);
   });
 

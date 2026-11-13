@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import ProcessTour from '@/components/workspace/ProcessTour';
-import ProcessTourEntry from '@/components/workspace/ProcessTourEntry';
+import ProcessTour, { type TourMove } from '@/components/workspace/ProcessTour';
 import { walkOrder } from '@/lib/process-walk';
 import type { ProcessTour as Tour } from '@/lib/process-tour';
 import type { ProcessMapModel } from '@/lib/process-map';
@@ -14,15 +13,20 @@ import { APP_VERSION } from '@/lib/version';
  * same engine sentences (`ProcessTour`, `lib/process-tour.ts`), read in this
  * browser from the demo's map. It asks nothing, so the demo shows it as it is;
  * no model is asked to reword anything — the demo calls no model.
+ *
+ * Since 3.2.0 (plan AB-4, O10) it runs on the page where the demo's map stands,
+ * as in a project's Analyze (`inline`), with the same two endings on its last
+ * card; its way in is the page's invitation, "Walk me through it".
  */
 export default function DemoWalkThrough({
   model,
   source,
   designHref = null,
   initialTour = null,
-  open: openProp,
+  open,
   onOpenChange,
-  entry = true,
+  endings = null,
+  onMove,
 }: {
   model: ProcessMapModel;
   source: string;
@@ -30,27 +34,19 @@ export default function DemoWalkThrough({
   designHref?: string | null;
   /** A tour handed in without reading it here (a rendered test). */
   initialTour?: Tour | null;
-  /**
-   * Held by the page when its own invitation opens the tour (the demo's
-   * Analyze, Business: "Walk me through it", as in a project's Analyze).
-   */
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
-  /** The entry card with its own button; off where the page's invitation is the way in. */
-  entry?: boolean;
+  /** Held by the page: its invitation opens the tour (the demo's Analyze, Business, as in a project's Analyze). */
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  /** The two endings, on the tour's last card. */
+  endings?: React.ReactNode;
+  /** Where the tour stands, for the page around the map. */
+  onMove?: (move: TourMove | null) => void;
 }) {
-  const [ownOpen, setOwnOpen] = useState(false);
-  const open = openProp ?? ownOpen;
-  const setOpen = useCallback(
-    (next: boolean) => {
-      if (openProp === undefined) setOwnOpen(next);
-      onOpenChange?.(next);
-    },
-    [openProp, onOpenChange],
-  );
   const [tour, setTour] = useState<Tour | null>(initialTour);
   /** The tour could not be read (a module that did not load, a build that threw): said, never an endless "Reading …". */
   const [failed, setFailed] = useState(false);
+  /** Pause: the next "Walk me through it" opens the tour at the same station. */
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
   useEffect(() => {
     if (initialTour || !open || tour || failed) return;
     let cancelled = false;
@@ -69,13 +65,32 @@ export default function DemoWalkThrough({
   }, [model, source, initialTour, open, tour, failed]);
   // Closing clears a failure, so opening the tour again reads it again.
   const close = useCallback(() => {
-    setOpen(false);
+    onOpenChange(false);
+    onMove?.(null);
     setFailed(false);
-  }, [setOpen]);
-  return (
-    <>
-      {entry ? <ProcessTourEntry projectId="demo" onOpen={() => setOpen(true)} /> : null}
-      {open ? <ProcessTour tour={tour} unavailable={failed} model={model} onClose={close} designHref={designHref} demo={true} /> : null}
-    </>
+    setPausedAt(null);
+  }, [onOpenChange, onMove]);
+  const pause = useCallback(
+    (at: number) => {
+      onOpenChange(false);
+      onMove?.(null);
+      setPausedAt(at);
+    },
+    [onOpenChange, onMove],
   );
+  return open ? (
+    <ProcessTour
+      inline
+      tour={tour}
+      unavailable={failed}
+      model={model}
+      onClose={close}
+      onPause={pause}
+      onMove={onMove}
+      initialStation={pausedAt ?? -1}
+      designHref={designHref}
+      demo={true}
+      endings={endings}
+    />
+  ) : null;
 }
