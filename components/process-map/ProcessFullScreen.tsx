@@ -209,7 +209,8 @@ function CompactFullScreenBar({
       className="relative flex shrink-0 items-center gap-1 rounded-cc-card border border-cc-line bg-cc-surface p-1"
     >
       <div data-map-fullscreen-title="" className="flex min-w-0 flex-1 flex-col pl-1">
-        <span className="truncate text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{processName}</span>
+        {/* The level path names the process at its top; the name above it would leave the level's name a few letters. */}
+        <span className="sr-only">{processName}</span>
         <div data-map-level-path="" className="min-w-0">{place}</div>
       </div>
       {editing ? null : (

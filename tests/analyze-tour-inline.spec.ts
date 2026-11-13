@@ -146,7 +146,8 @@ test.describe('the page wiring (source guards)', () => {
   const inline = tour.slice(tour.indexOf('export function ProcessTourInline'));
 
   test('in Analyze, Business the tour runs on the page where the map stands, not as a layer over it', () => {
-    expect(process).toMatch(/\{tourOpen && model && codeOnClick \? \(\s*<ProcessTour\s+inline/);
+    // Asked for in the map's full screen it runs in full screen's side column instead (ADR-119 (d), 3.2.0).
+    expect(process).toMatch(/\{tourOpen && model && codeOnClick && !mapFull \? \(\s*<ProcessTour\s+inline/);
     expect(process).toMatch(/\{tourOpen && model && !codeOnClick \? \(/);
     // Not modal: the page stays readable around it; nothing is portalled or made inert.
     expect(inline).not.toMatch(/useCcModal|createPortal|aria-modal|overflow = 'hidden'/);
@@ -169,9 +170,13 @@ test.describe('the page wiring (source guards)', () => {
     expect(business).toContain('hidden={touring}');
     expect(business).toMatch(/<AroundTheMap[\s\S]{0,260}here=\{here\}/);
     expect(business).toContain("return station ? { nodeId: station.id, line: station.anchor?.lineStart ?? null } : null;");
-    expect(business).toMatch(/if \(wasTouring\.current && !touring\)[\s\S]{0,160}querySelector<HTMLElement>\('\[data-analyze-walk\]'\)\?\.focus\(\)/);
+    // In the map's full screen to its own "Walk me through it", never to the page behind it (ADR-119 (d)).
+    expect(business).toMatch(/if \(wasTouring\.current && !touring\)[\s\S]{0,700}querySelector<HTMLElement>\('\[data-analyze-walk\]'\);\s*target\?\.focus\(\)/);
+    expect(business).toContain("full.querySelector<HTMLElement>('[data-map-fullscreen-walk]')");
     // Pause keeps the station; the next "Walk me through it" opens there and says it continues.
-    expect(process).toContain('initialStation={pausedAt ?? -1}');
+    // Moved between full screen and the page, it opens at the station it stood at (ADR-119 (d)).
+    expect(process).toContain('const tourFrom = move ? move.at : (pausedAt ?? -1);');
+    expect(process).toContain('initialStation={tourFrom}');
     expect(business).toContain("walkState.pausedAt !== null ? wt('abiz.walkContinue') : wt('abiz.walk')");
   });
 

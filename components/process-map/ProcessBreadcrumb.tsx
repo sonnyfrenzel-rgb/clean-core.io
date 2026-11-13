@@ -101,7 +101,11 @@ export default function ProcessBreadcrumb({ crumbs, onOpen, compact = false }: P
                 data-process-crumb={crumb.plane ?? 'top'}
                 aria-current="true"
                 tabIndex={-1}
-                className="truncate text-[12px] font-semibold text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
+                className={cn(
+                  // One line beside the way up on a phone would cut the level's name to a few letters: two lines.
+                  compact ? 'line-clamp-2 leading-tight break-words' : 'truncate',
+                  'text-[12px] font-semibold text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus',
+                )}
               >
                 {crumb.outline ? `${crumb.outline} ` : ''}{crumb.label}
               </span>
