@@ -51,7 +51,7 @@ svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .mono{font-family:var(--mono);font-size:12px}
 [hidden]{display:none!important}
-@media (prefers-reduced-motion:no-preference){.bubble{transition:top .2s,left .2s,opacity .2s}}
+@media (prefers-reduced-motion:no-preference){.bc{transition:opacity .16s ease-out}.bc.fade{opacity:0}.tt{transition:outline-color .2s}}
 
 /* ---------- mock-up chrome (not part of the page) ---------- */
 .mock{position:sticky;top:0;z-index:200;background:#1f1147;color:#fff;font-size:12px;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
@@ -72,7 +72,7 @@ svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .top .r{margin-left:auto;display:flex;align-items:center;gap:6px}
 .lnk{font-size:14px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none;padding:8px 10px;border-radius:999px;background:none;border:0;white-space:nowrap}
 .lnk:hover{color:var(--cc-ink);text-decoration:underline}
-.tourbar{background:#fff;border-bottom:1px solid var(--cc-line);position:sticky;top:var(--mockh,0px);z-index:90}
+.tourbar{background:#fff;border-bottom:1px solid var(--cc-line)}
 .tourbar .in{max-width:1400px;margin:0 auto;padding:8px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .dots{display:flex;gap:4px;list-style:none;margin:0;padding:0}
 .dots button{width:26px;height:26px;border-radius:999px;border:1px solid var(--cc-field-border);background:#fff;font-size:12px;font-weight:700;color:var(--cc-ink-muted)}
@@ -99,9 +99,14 @@ svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .q:hover,.q:focus-visible{opacity:.8}
 
 /* ---------- product frame ---------- */
-.tourwrap{max-width:1400px;margin:0 auto;padding:16px 24px 8px;position:relative}
-#screen{min-width:0;max-width:100%}
-.tourwrap.docked{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px;align-items:start}
+ /* The tour is one fixed-height column: header, progress, and the stage. The page never scrolls
+    per step; the product frame scrolls (or zooms) inside the stage, and the guide box keeps its place. */
+#v-tour{display:flex;flex-direction:column;height:calc(100vh - var(--mockh,0px));height:calc(100dvh - var(--mockh,0px))}
+.top,.tourbar{flex:none}
+.tourwrap{flex:1;min-height:0;position:relative;display:flex;width:100%;max-width:1400px;margin:0 auto;--bh:380px;--bw:360px}
+#screen{flex:1;min-width:0;overflow:auto;padding:16px 24px calc(var(--bh) + 32px);overscroll-behavior:contain}
+.tourwrap.docked #screen,.tourwrap.atend #screen{padding-bottom:24px}
+.recline{font-size:12px;color:var(--cc-ink-muted);text-align:center;padding:12px 16px 0}
 .app{background:var(--cc-page);border:1px solid var(--cc-line);border-radius:12px;overflow:hidden;min-width:0}
 .subbar{height:48px;display:flex;align-items:center;gap:12px;padding:0 16px;background:#fff;border-bottom:1px solid var(--cc-line)}
 .crumb{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--cc-ink-muted);white-space:nowrap;overflow:hidden;min-width:0}
@@ -144,7 +149,7 @@ svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .levels{display:flex;align-items:center;gap:6px;padding:8px 12px;font-size:13px;color:var(--cc-ink-muted);border-bottom:1px solid var(--cc-line);background:var(--cc-surface-muted)}
 .levels button{background:none;border:0;padding:0;font-weight:600;color:var(--cc-information);text-decoration:underline}
 .levels b{color:var(--cc-ink)}
-.mapview{overflow:auto;height:520px;background:#fff;position:relative}
+.mapview{overflow:auto;height:clamp(240px,calc(100vh - 430px),500px);background:#fff;position:relative}
 .mapview svg{display:block}
 .mapview .djs-element[data-flow]{cursor:pointer}
 .mapview .djs-element[data-flow]:hover .djs-visual>:first-child{stroke:#1d4ed8}
@@ -156,7 +161,7 @@ svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke
 .mapfoot .bpmnio{margin-left:auto;font-size:11px;color:var(--cc-ink-muted)}
 .codecard .hd{display:flex;justify-content:space-between;gap:8px}
 .codecard h3{font-size:15px;margin-top:2px}
-.code{background:var(--cc-code-bg);color:var(--cc-code-ink);border-radius:8px;padding:8px 0;font-family:var(--mono);font-size:12px;line-height:1.65;overflow:auto;margin-top:10px;max-height:360px}
+.code{background:var(--cc-code-bg);color:var(--cc-code-ink);border-radius:8px;padding:8px 0;font-family:var(--mono);font-size:12px;line-height:1.65;overflow:auto;margin-top:10px;max-height:200px}
 .code .ln{display:grid;grid-template-columns:40px 1fr;padding-right:12px;white-space:pre}
 .code .ln>span:first-child{color:var(--cc-code-muted);text-align:right;padding-right:12px;user-select:none}
 .code .ln.hl{background:rgb(59 130 246 / .28);box-shadow:inset 3px 0 0 #93c5fd}
@@ -234,15 +239,10 @@ ul.plain li+li{margin-top:3px}
 
 /* tour target + bubble */
 .tt{outline:3px solid var(--cc-focus)!important;outline-offset:3px;border-radius:12px}
-.bubble{position:absolute;z-index:80;width:380px;background:#fff;border:1px solid var(--cc-ink);border-radius:12px;box-shadow:0 16px 48px rgb(11 28 48 / .22);padding:16px;display:flex;flex-direction:column;gap:10px}
-.bubble .caret{position:absolute;width:14px;height:14px;background:#fff;border-left:1px solid var(--cc-ink);border-top:1px solid var(--cc-ink)}
-.bubble.c-left .caret{left:-8px;top:28px;transform:rotate(-45deg)}
-.bubble.c-right .caret{right:-8px;top:28px;transform:rotate(135deg)}
-.bubble.c-top .caret{top:-8px;left:32px;transform:rotate(45deg)}
-.bubble.c-bottom .caret{bottom:-8px;left:32px;transform:rotate(225deg)}
-.bubble.c-none .caret{display:none}
-.tourwrap.docked .bubble{position:sticky;top:calc(var(--mockh,0px) + 64px);width:auto;max-height:calc(100vh - var(--mockh,0px) - 80px);overflow:auto}
-.tourwrap.docked .bubble .caret{display:none}
+.bubble{position:absolute;z-index:80;right:24px;bottom:16px;width:var(--bw);height:var(--bh);background:#fff;border:1px solid var(--cc-ink);border-radius:12px;box-shadow:0 16px 48px rgb(11 28 48 / .22);display:flex;flex-direction:column;overflow:hidden}
+.bc{flex:1;min-height:0;overflow:auto;padding:16px 16px 8px;display:flex;flex-direction:column;gap:10px}
+.bubble .bnav{flex:none;padding:10px 16px;border-top:1px solid var(--cc-line);background:#fff}
+.tourwrap.docked .bubble{position:static;flex:none;align-self:stretch;height:auto;margin:16px 24px 24px 0;box-shadow:none}
 .bubble .ey{font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
 .bubble h2{font-size:19px;line-height:1.25;font-weight:800;letter-spacing:-.01em}
 .bubble .lead p{font-size:14px}
@@ -262,7 +262,6 @@ ul.plain li+li{margin-top:3px}
 .bnav{display:flex;gap:6px;align-items:center}
 .bnav .kb{margin-left:auto;font-size:11px;color:var(--cc-ink-muted)}
 .tbnav{display:none;gap:6px;margin-left:auto}
-.recline{font-size:12px;color:var(--cc-ink-muted);text-align:center;padding:12px 16px 32px}
 
 /* end */
 .endwrap{max-width:1200px;margin:0 auto;padding:24px}
@@ -320,7 +319,7 @@ table.t tbody th{font-size:13px;color:var(--cc-ink)}
 /* ---------- breakpoints ---------- */
 @media (max-width:1300px){
   .g2{grid-template-columns:minmax(0,1fr) 320px}
-  .tourwrap.docked{grid-template-columns:minmax(0,1fr) 320px}
+  .tourwrap{--bw:320px;--bh:270px}
 }
 @media (max-width:1100px){
   .g2{grid-template-columns:1fr}
@@ -330,15 +329,26 @@ table.t tbody th{font-size:13px;color:var(--cc-ink)}
   .end{grid-template-columns:1fr}
 }
 @media (max-width:900px){
-  .tourwrap,.tourwrap.docked{display:flex;flex-direction:column;gap:12px;padding:12px 16px 8px}
-  .bubble,.tourwrap.docked .bubble{position:static;order:-1;width:auto;max-height:none;overflow:visible;box-shadow:none;border-color:var(--cc-focus)}
-  .bubble .caret{display:none}
+  .tourwrap,.tourwrap.docked{--bh:230px}
+  #screen,.tourwrap.docked #screen{padding:12px 16px calc(var(--bh) + 16px)}
+  .bubble,.tourwrap.docked .bubble{position:absolute;left:0;right:0;bottom:0;width:auto;height:var(--bh);margin:0;border-radius:16px 16px 0 0;border-width:1px 0 0;box-shadow:0 -8px 32px rgb(11 28 48 / .18)}
   .bubble .bnav{display:none}
+  .bc{padding:12px 16px}
+  .bubble h2{font-size:17px}
   .tbnav{display:flex!important}
   .lensbar{margin-left:0}
 }
 @media (max-width:760px){
   .top .in,.tourbar .in{padding-left:16px;padding-right:16px}
+  .top .in{height:48px}
+  .tourbar .in{padding-top:6px;padding-bottom:6px;row-gap:6px}
+  .cnt{display:none}
+  .lensbar .lb{display:none}
+  .seg button{padding:3px 8px;font-size:12px}
+  .mock{flex-wrap:nowrap;overflow-x:auto;padding:4px 8px}
+  .mock .d,.mock b{display:none}
+  .mock button{white-space:nowrap}
+  .tourwrap{--bh:250px}
   .top .in{gap:8px}
   .logo .n{display:none}
   .lnk{font-size:13px;padding:6px}
@@ -347,7 +357,7 @@ table.t tbody th{font-size:13px;color:var(--cc-ink)}
   .g3,.g4,.g2p,.g3p,.cmpgrid,.opt3{grid-template-columns:1fr}
   .tools{flex-wrap:nowrap;overflow-x:auto;max-width:100%;padding-bottom:2px}
   .toprow .views{margin-left:0}
-  .mapview{height:380px}
+  .mapview{height:240px}
   .rail li{grid-template-columns:24px 1fr;}
   .rail li .st,.rail li .d{grid-column:2}
   .endwrap{padding:0}
@@ -363,8 +373,8 @@ table.t tbody th{font-size:13px;color:var(--cc-ink)}
 <body>
 
 <div class="mock" id="mock" role="navigation" aria-label="Mock-up views">
-  <b>Mock-up v2 · not part of the page</b>
-  <button type="button" data-view="a" aria-pressed="true">A · Hint bubble at the part (recommended)</button>
+  <b>Mock-up v3 · not part of the page</b>
+  <button type="button" data-view="a" aria-pressed="true">A · Guide box fixed bottom-right, over the screen (recommended)</button>
   <button type="button" data-view="b" aria-pressed="false">B · Guide docked beside the screen</button>
   <button type="button" data-view="compare" aria-pressed="false">All together vs. lens</button>
   <button type="button" data-view="conv" aria-pressed="false">Conversion</button>
@@ -397,12 +407,9 @@ table.t tbody th{font-size:13px;color:var(--cc-ink)}
     </div>
   </div>
 </div>
-<main id="main">
-  <div class="tourwrap" id="tourwrap">
-    <div id="screen"></div>
-    <section class="bubble" id="bubble" aria-live="polite" aria-label="Guide"></section>
-  </div>
-  <p class="recline">Recorded from the engine's real reading of a sample program; no AI was called to show you this.</p>
+<main id="tourwrap" class="tourwrap">
+  <div id="screen" tabindex="-1"></div>
+  <section class="bubble" id="bubble" aria-label="Guide"><div class="bc" id="bc" aria-live="polite"></div><div class="bnav" id="bnav"></div></section>
 </main>
 </div>
 
@@ -472,7 +479,15 @@ table.t tbody th{font-size:13px;color:var(--cc-ink)}
   <div class="warn">The page says "Your own key: Gemini, and Claude from 23 December 2026" in two places (step 3 and the free-account box). Status per <span class="mono">docs/ROADMAP.md</span> (row "23.12.2026 — a switch"): Claude ships as BYOK code since 3.0.21 but is not selectable (<span class="mono">ANTHROPIC_OWN_KEY_OFFERED = false</span>); it is switched on with v3.5.0 on 23.12.2026 only if acceptance tests T01, T03 and T08 pass; the communication row says "Claude BYOK is promoted only once it is actually offered on main". The lawyer asked that the Anthropic choice stay non-selectable until the conditions are met and that the notice mail carry no Claude date. A public date before 23.12 is therefore your call and possibly the lawyer's. Safe alternatives: publish the showcase with "Your own key: Gemini" and add Claude on 23.12; or "Claude planned" without a date. Wording if it goes live on or after 23.12: "Your own key: Gemini or Claude". The additional agreement ZV-BYOK-1.0 applies to an Anthropic key (transfer to Anthropic, outside the EU); the free-account box says so in one line.</div>
 
   <h2>Variants</h2>
-  <div class="rec"><b>Recommendation: A, the hint bubble at the part,</b> from laptop width up; below 900 px both variants put the guide above the screen, with Back and Next in the progress bar and the part outlined. A points at what it explains, as asked, and keeps the screen as wide as the product's. B (guide docked beside the screen) never covers anything, but it takes 360 px from the map and makes the reader look away from what is explained.</div>
+  <div class="rec"><b>Recommendation: A, the guide box in one fixed place, over the screen.</b> Owner, 13.11.2026: the boxes must not jump; they may overlap, as long as each step first shows the whole screen. So the box no longer follows the explained part. It sits bottom-right of the product frame on desktop (360 &times; 380 px) and laptop (320 &times; 270 px), and as a bottom sheet on tablet (230 px) and phone (250 px), with a fixed height and its own scroll, so neither its top nor its bottom edge moves. The page never scrolls per step: the stage below the progress bar has a fixed height, and the product frame inside it is panned to the explained part (outlined in blue) and, only where that is not enough, zoomed out in steps of 10 % (never below 70 %) so that the part is never under the box. Only the box's text fades (160 ms, off with reduced motion). B docks the same box beside the screen: it never overlaps, but takes 320&ndash;360 px from the map.</div>
+  <h3>Measured (Playwright, a real click on Next through steps 1&ndash;10 and the end)</h3>
+  <div class="tw"><table class="t"><thead><tr><th>Width</th><th>Box position and size</th><th>Max shift between steps</th><th>Page scroll</th><th>Layout shift (CLS)</th><th>Part under the box</th><th>Zoom used</th></tr></thead><tbody>
+  <tr><th>1440 &times; 900</th><td>x 1036, y 504, 360 &times; 380</td><td>0 px (x, y, w, h)</td><td>0</td><td>0.0000</td><td>never</td><td>steps 1, 7: 90 %; 4, 10: 80 %; others 100 %</td></tr>
+  <tr><th>1280 &times; 800</th><td>x 936, 320 &times; 270</td><td>0 px</td><td>0</td><td>0.0000</td><td>never</td><td>1, 3, 7: 90 %; 4: 80 %; 10: 70 %</td></tr>
+  <tr><th>768 &times; 1024</th><td>bottom sheet, 768 &times; 230</td><td>0 px</td><td>0</td><td>0.0000</td><td>never</td><td>2: 80 %; others 100 %</td></tr>
+  <tr><th>390 &times; 844</th><td>bottom sheet, 390 &times; 250</td><td>0 px</td><td>0</td><td>0.0000</td><td>never</td><td>2, 7: 80 %; 5: 90 %; others 100 %</td></tr>
+  </tbody></table></div>
+  <p class="sub" style="margin-top:6px">Compromise: on a laptop the Delivery audit pack (step 10) is shown at 70 %; at 1280 &times; 800 the box and the right-hand column share the same corner. Tall parts (the map, the level table) are shown from their top; the table scrolls inside its card.</p>
 
   <h2>Decisions</h2>
   <div class="tw"><table class="t" id="dec"></table></div>
@@ -498,7 +513,7 @@ var TOOLS = [['analyze','Analyze'],['design','Design'],['transformation','Transf
 
 /* ---------------- the guided steps ---------------- */
 var STEPS = [
- { screen:'biz', target:'#codecard', plane:'process', sel:null, code:[1,19],
+ { screen:'biz', target:'#codecard', plane:'process', sel:null, code:[1,11],
    title:'A program decides how emergency purchases get approved. Nobody can say how.',
    all:['Its rules live only in SAP code. Here is what Clean-Core.io reads from it, without AI.'],
    emph:{business:['Purchasing relies on it, and its rules exist only as code.','Here is what Clean-Core.io reads from it, without any AI.'],
@@ -634,7 +649,7 @@ function codeCard(){
   if (sel && sel[2]) {
     return '<div class="hd"><div><div class="lbl">The code behind it · line '+sel[2]+(sel[3]&&sel[3]!==sel[2]?'–'+sel[3]:'')+'</div><h3>'+esc(sel[0])+'</h3></div></div>' +
       '<div style="margin-top:6px"><span class="chip recon">As read from the code</span></div>' +
-      '<div class="code" tabindex="0" aria-label="Source lines">'+codeLines(sel[2], sel[3]||sel[2], 5)+'</div>' +
+      '<div class="code" tabindex="0" aria-label="Source lines">'+codeLines(sel[2], sel[3]||sel[2], 3)+'</div>' +
       '<p class="foot">The name on the map is the engine’s; in your own project a model may word it plainly, marked AI-generated.</p>';
   }
   var r = st.code || [41,55];
@@ -676,6 +691,7 @@ function pickElement(id){
   var g = document.querySelector('#mapview [data-element-id="'+id+'"]'); if (g) g.focus({preventScroll:true});
 }
 function openPlane(pid){ state.plane = pid; state.sel = null; state.marks = []; renderScreen(true); }
+function showMap(){ var m = document.getElementById('mapcard'), h = document.getElementById('screen'); if (!m) return; h.scrollTop += m.getBoundingClientRect().top - h.getBoundingClientRect().top - 12; }
 function scrollMapTo(id){
   var view = document.getElementById('mapview'); if (!view) return;
   var g = view.querySelector('[data-element-id="'+id+'"]'); if (!g) return;
@@ -710,7 +726,7 @@ var RULES = [['≤ 50,000.00','An emergency up to this amount goes to the depart
 function screenBiz(){
   var ends = ENDS.map(function(e,i){ return '<button type="button" class="crow" data-end="'+i+'"><span>'+esc(e[0])+'<small>'+esc(e[1])+'</small></span><span>'+bar(e[2],3,e[3])+'</span><span class="n">'+e[2]+'</span></button>'; }).join('');
   var ch = CHANGES.map(function(e,i){ return '<button type="button" class="crow" data-chg="'+i+'"><span>'+esc(e[0])+'<small>'+esc(e[1])+'</small></span><span>'+bar(1,1)+'</span><span class="n">1</span></button>'; }).join('');
-  var rules = RULES.map(function(r){ return '<div class="rule"><span><span class="v">'+esc(r[0])+'</span> · '+esc(r[1])+'</span><button type="button" class="ln" data-line="'+r[2]+'">line '+r[2]+'</button><div class="dec">'+['Keep','Change','Drop','Clarify'].map(function(d){return quiet(d);}).join('')+'</div></div>'; }).join('');
+  var rules = RULES.map(function(r, i){ return '<div class="rule"><span><span class="v">'+esc(r[0])+'</span> · '+esc(r[1])+'</span><button type="button" class="ln" data-line="'+r[2]+'">line '+r[2]+'</button>'+(i===0?'<div class="dec">'+['Keep','Change','Drop','Clarify'].map(function(d){return quiet(d);}).join('')+'</div>':'')+'</div>'; }).join('');
   var inner =
     '<div class="card sum"><div><h3 style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">What this program does <span class="chip recon">Reconstructed</span></h3><p>Emergency purchase approval: 11 steps on the top level, 12 rules in the code, 9 ways a case can end.</p><p class="note">In your own project a model writes this in plain words, marked <span class="chip ai">AI-generated</span>. The demo calls no model.</p></div>'+quiet('Walk me through it')+'</div>' +
     '<div class="g2"><div class="card mapcard" id="mapcard"><div class="mapbar">'+quiet('Map',' ')+quiet('Steps')+'<span class="sp"></span><button type="button" class="btn ghost" data-zoom="-1" aria-label="Zoom out">−</button><span class="zv">'+Math.round(state.scale*100)+'%</span><button type="button" class="btn ghost" data-zoom="1" aria-label="Zoom in">+</button><button type="button" class="btn ghost" data-zoom="0">Fit</button>'+quiet('Export BPMN 2.0')+quiet('Full screen')+'</div>' +
@@ -729,8 +745,8 @@ function screenIt(){
     '<div class="g3" style="margin-top:0"><div class="card"><div class="lbl">Clean Core Score</div><div style="display:flex;align-items:baseline;gap:8px"><span class="hero">40</span><span class="s">of 100</span></div><table class="bd"><tr><td>Direct write to an SAP table (1)</td><td>−20</td></tr><tr><td>Batch input (1)</td><td>−10</td></tr><tr><td>File transfer through the SAP GUI (1)</td><td>−5</td></tr><tr><td>Direct reads of SAP tables (11)</td><td>−5</td></tr><tr><td>Kinds of code not assessed (4)</td><td>−20</td></tr></table></div>' +
     '<div class="card"><h3>Findings</h3><p class="s">23 distinct, at 26 places in the code.</p><div class="sev"><span class="e">1 critical</span><span class="e">3 high</span><span class="w">17 medium</span><span class="ne">4 low</span><span class="in">1 info</span></div><p class="s" style="margin-top:10px">Critical: direct write to SAP standard table EBAN, line 240.</p><div style="margin-top:10px">'+quiet('Open the worklist')+'</div></div>' +
     '<div class="card"><h3>Not determined <span class="chip nd">7</span></h3><ul class="plain"><li>Include Z_MM_PO_NOTIFY not uploaded (line 363)</li><li>Include Z_MM_PO_LOG not uploaded (line 396)</li><li>Dynamic call, target computed at runtime (line 386)</li><li>Local function calls not assessed (173, 490)</li><li>Classic list output (542, 545)</li></ul></div></div>' +
-    '<div class="g2" style="margin-top:12px"><div class="card" id="levelcard"><h3 style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">Clean core level per object <span class="chip imp">Imported · SAP classification</span></h3><p class="s">A to D from SAP’s Cloudification Repository and classification file, with the line that uses the object.</p><div class="tscroll"><table class="lt" style="margin-top:8px"><thead><tr><th>Object</th><th>Use</th><th>Level</th><th>Line</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>' +
-    '<div class="card route" id="routecard"><div class="lbl">Recommended route</div><div class="t">In-App (ABAP Cloud)</div><p class="s">Target: RAP business object, inside S/4HANA.</p><div class="opt3"><div><b>In-app · RAP</b>recommended</div><div><b>Side-by-side · BTP</b>not forced by the code</div><div><b>Key user</b>3 of 6 parts</div></div><ul><li>The direct EBAN write is replaced by a released API or a RAP action.</li><li>Batch input (line 515) and the file upload (line 129) force no side-by-side split.</li><li>Key-user candidates: ZMM_VEND_BLOCK, ZMM_DEPT_HEAD, ZMM_NOTIFY_CFG as Custom Business Objects.</li></ul><div style="margin-top:10px">'+quiet('Open Design')+'</div></div></div>';
+    '<div class="g2" style="margin-top:12px"><div class="card" id="levelcard"><h3 style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">Clean core level per object <span class="chip imp">Imported · SAP classification</span></h3><p class="s">A to D from SAP’s Cloudification Repository and classification file, with the line that uses the object.</p><div class="tscroll" style="max-height:250px;overflow:auto"><table class="lt" style="margin-top:8px"><thead><tr><th>Object</th><th>Use</th><th>Level</th><th>Line</th></tr></thead><tbody>'+rows+'</tbody></table></div></div>' +
+    '<div class="card route" id="routecard"><div class="lbl">Recommended route</div><div class="t">In-App (ABAP Cloud)</div><p class="s">Target: RAP business object, inside S/4HANA.</p><div class="opt3"><div><b>In-app · RAP</b>recommended</div><div><b>Side-by-side · BTP</b>not forced</div><div><b>Key user</b>3 of 6 parts</div></div><ul><li>The direct EBAN write is replaced by a released API or a RAP action.</li><li>Batch input (line 515) and the file upload (line 129) force no side-by-side split.</li><li>Key-user candidates: ZMM_VEND_BLOCK, ZMM_DEPT_HEAD, ZMM_NOTIFY_CFG as Custom Business Objects.</li></ul></div></div>';
   return frame('analyze','it',inner,'The code behind each step, the findings and the clean core level.');
 }
 function screenMgmt(){
@@ -751,9 +767,9 @@ function screenDelivery(){
   var rail = RAIL.map(function(r,i){ return '<li><span class="no">'+(i+1)+'</span><b>'+r[0]+'</b><span class="st '+r[1]+'">'+r[2]+'</span><span class="d">'+esc(r[3])+'</span></li>'; }).join('');
   var inner =
     '<div class="g2"><div class="card"><h3>The seven tools of this demo project</h3><p class="s">Their state, as the demo states it.</p><ol class="rail" style="margin-top:8px">'+rail+'</ol></div>' +
-    '<div class="card pack" id="packcard"><div class="lbl">Audit pack</div><h3 style="font-size:16px;font-weight:800;margin:4px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">Signed and verifiable <span class="chip demo">Not in the demo</span></h3><p style="font-size:13px">In your own project the server signs it over the analysis run. What a pack holds:</p>' +
-      '<div class="files"><div><span>manifest.json</span><span>SHA-256 of every file</span></div><div><span>signature</span><span>HMAC-SHA256</span></div><div><span>signatureEd25519</span><span>public key published</span></div><div><span>evidence files</span><span>read from the run only</span></div><div><span>07-user-attested.md</span><span>your statements, not signed</span></div></div>' +
-      '<div class="verify">'+ICON.seal+'<span><b>Verify it yourself.</b> In the browser at /verify-pack (the archive stays on your machine), or offline with the open verifier script.</span></div><div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">'+quiet('Download audit pack')+quiet('Download delivery package')+'</div></div></div>' +
+    '<div class="card pack" id="packcard"><div class="lbl">Audit pack</div><h3 style="font-size:16px;font-weight:800;margin:4px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap">Signed and verifiable <span class="chip demo">Not in the demo</span></h3><p style="font-size:13px">Signed by the server over the analysis run. It holds:</p>' +
+      '<div class="files"><div><span>manifest.json</span><span>SHA-256 of every file</span></div><div><span>signature</span><span>HMAC-SHA256</span></div><div><span>signatureEd25519</span><span>public key published</span></div><div><span>07-user-attested.md</span><span>your statements, not signed</span></div></div>' +
+      '<div class="verify">'+ICON.seal+'<span><b>Verify it yourself.</b> In the browser at /verify-pack (the archive stays on your machine), or offline with the open verifier script.</span></div><div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">'+quiet('Download audit pack')+'</div></div></div>' +
     '<div class="card" style="margin-top:12px"><h3>What a real handover still needs</h3><ul class="plain"><li>a signed run — the demo produces none</li><li>transformed code, generated against your own source</li><li>a written blueprint</li><li>an executed test suite</li><li>a cost model with your assumptions</li><li>an audit pack, sealed against a signed run</li></ul></div>';
   return frame('delivery','business',inner,'Hand everything over as one package, sealed.');
 }
@@ -785,15 +801,55 @@ function endScreen(){
 function renderScreen(keepScroll){
   var host = document.getElementById('screen');
   var mv = document.getElementById('mapview'); var sx = mv ? mv.scrollLeft : 0, sy = mv ? mv.scrollTop : 0;
+  var hostY = host.scrollTop;
   var st = STEPS[state.i];
   var html = state.i >= N ? endScreen() : st.screen==='biz' ? screenBiz() : st.screen==='it' ? screenIt() : st.screen==='mgmt' ? screenMgmt() : screenDelivery();
-  host.innerHTML = html;
+  host.innerHTML = html + '<p class="recline">Recorded from the engine\u2019s real reading of a sample program; no AI was called to show you this.</p>';
+  document.getElementById('tourwrap').classList.toggle('atend', state.i >= N);
   wireMap();
   var nv = document.getElementById('mapview');
   if (nv && keepScroll) { nv.scrollLeft = sx; nv.scrollTop = sy; }
   if (state.i < N && st.target) { var t = document.querySelector(st.target); if (t) { if (t.style.display==='contents') { [].forEach.call(t.children, function(c){ c.classList.add('tt'); }); } else t.classList.add('tt'); } }
+  if (keepScroll) { var app = host.querySelector('.app'); if (app && state.zoom) app.style.zoom = state.zoom; host.scrollTop = hostY; }
+  else fitTarget();
   if (nv && state.sel && !keepScroll) scrollMapTo(state.sel);
-  placeBubble();
+}
+/* The guide box never moves. To keep the explained part visible, the product content is panned
+   (scrolled inside the frame) and, only if that is not enough, zoomed out in steps. */
+function fitTarget(){
+  var host = document.getElementById('screen'), app = host.querySelector('.app, .endwrap');
+  var st = STEPS[state.i];
+  var info = { zoom:1, covered:0, fits:true };
+  if (!app) { state.fit = info; return; }
+  var tgt = st && state.i < N && document.querySelector(st.target);
+  if (tgt && tgt.style.display==='contents') tgt = tgt.firstElementChild;
+  if (!tgt) { app.style.zoom = ''; host.scrollTop = 0; state.zoom = 1; state.fit = info; return; }
+  var box = document.getElementById('bubble');
+  var best = null;
+  [1, .9, .8, .7].some(function(z){
+    app.style.zoom = z === 1 ? '' : String(z);
+    host.scrollTop = 0;
+    var s = host.getBoundingClientRect(), r = tgt.getBoundingClientRect();
+    host.scrollTop = Math.max(0, r.top - s.top - 12);
+    r = tgt.getBoundingClientRect();
+    var bottomLimit = s.bottom, cov = 0;
+    if (!box.hidden) {
+      var b = box.getBoundingClientRect();
+      var ox = Math.max(0, Math.min(r.right, b.right) - Math.max(r.left, b.left));
+      var oy = Math.max(0, Math.min(r.bottom, b.bottom) - Math.max(r.top, b.top));
+      cov = ox * oy;
+    }
+    var below = Math.max(0, r.bottom - bottomLimit) * r.width;
+    var bad = cov * 4 + below;
+    if (!best || bad < best.bad - 1) best = { z:z, bad:bad, top:host.scrollTop, cov:Math.round(cov), below:Math.round(below) };
+    return bad === 0;
+  });
+  app.style.zoom = best.z === 1 ? '' : String(best.z);
+  host.scrollTop = 0;
+  var s2 = host.getBoundingClientRect(), r2 = tgt.getBoundingClientRect();
+  host.scrollTop = Math.max(0, r2.top - s2.top - 12);
+  state.zoom = best.z;
+  state.fit = { zoom:best.z, covered:Math.round(best.bad), fits:best.bad === 0, under:best.cov, beyond:best.below };
 }
 function sentences(st){ return state.lens==='all' ? st.all : st.emph[state.lens]; }
 function lensLines(st){
@@ -803,34 +859,20 @@ function lensLines(st){
   }).join('');
 }
 function renderBubble(){
-  var b = document.getElementById('bubble');
+  var b = document.getElementById('bubble'), bc = document.getElementById('bc'), bn = document.getElementById('bnav');
   if (state.i >= N) { b.hidden = true; return; }
   b.hidden = false;
   var st = STEPS[state.i];
-  b.innerHTML = '<span class="caret" aria-hidden="true"></span><div class="ey">Step '+(state.i+1)+' of '+N+'</div>' +
+  bc.innerHTML = '<div class="ey">Step '+(state.i+1)+' of '+N+'</div>' +
     '<h2 id="bh" tabindex="-1">'+esc(st.title)+'</h2><div class="lead">'+sentences(st).map(function(s){return '<p>'+esc(s)+'</p>';}).join('')+'</div>' +
-    (st.why ? '<div class="why"><b>Why this matters · '+esc(st.why.t)+'</b><span>'+esc(st.why.d)+'</span></div>' : '') +
+    (st.why ? '<div class="why"><b>Why this matters \u00b7 '+esc(st.why.t)+'</b><span>'+esc(st.why.d)+'</span></div>' : '') +
     '<div class="lenses" aria-label="For each reader">'+lensLines(st)+'</div>' +
-    '<details class="itd"'+(state.lens==='it'?' open':'')+'><summary>IT details</summary><ul>'+st.itd.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul></details>' +
-    '<div class="bnav"><button type="button" class="btn ghost" data-go="-1"'+(state.i===0?' disabled':'')+'>'+ICON.back+' Back</button><button type="button" class="btn primary" data-go="1">'+(state.i===N-1?'Your turn':'Next')+' '+ICON.arrow+'</button><span class="kb">← →</span></div>';
+    '<details class="itd"'+(state.lens==='it'?' open':'')+'><summary>IT details</summary><ul>'+st.itd.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul></details>';
+  bc.scrollTop = 0;
+  bn.innerHTML = '<button type="button" class="btn ghost" data-go="-1"'+(state.i===0?' disabled':'')+'>'+ICON.back+' Back</button><button type="button" class="btn primary" data-go="1">'+(state.i===N-1?'Your turn':'Next')+' '+ICON.arrow+'</button><span class="kb">\u2190 \u2192</span>';
+  bc.classList.add('fade'); void bc.offsetWidth; bc.classList.remove('fade');
 }
-function placeBubble(){
-  var b = document.getElementById('bubble'), wrap = document.getElementById('tourwrap');
-  if (b.hidden) return;
-  b.className = 'bubble';
-  if (state.docked || window.innerWidth <= 900) { b.style.left = ''; b.style.top = ''; return; }
-  var st = STEPS[state.i]; var t = st && document.querySelector(st.target);
-  if (t && t.style.display==='contents') t = t.firstElementChild;
-  if (!t) return;
-  var W = wrap.clientWidth, wr = wrap.getBoundingClientRect(), r = t.getBoundingClientRect();
-  var tl = r.left - wr.left, tt = r.top - wr.top, bw = 380, bh = b.offsetHeight, gap = 18, left, top, c;
-  if (tl + r.width + gap + bw <= W - 8) { left = tl + r.width + gap; top = tt; c = 'c-left'; }
-  else if (r.width <= 520) { left = Math.min(Math.max(8, tl), W - bw - 8); top = tt + r.height + gap; c = 'c-top'; }
-  else if (tl - gap - bw >= 8) { left = tl - gap - bw; top = tt; c = 'c-right'; }
-  else { left = W - bw - 8; top = tt + 8; c = 'c-none'; }
-  top = Math.max(8, top);
-  b.style.left = left + 'px'; b.style.top = top + 'px'; b.classList.add(c);
-}
+function placeBubble(){ /* the box has one fixed place per breakpoint (CSS); nothing to compute */ }
 function renderDots(){
   document.getElementById('dots').innerHTML = STEPS.map(function(s,i){
     return '<li><button type="button" data-step="'+i+'" aria-label="Step '+(i+1)+': '+esc(s.title)+'"'+(i===state.i?' aria-current="step"':'')+(state.seen[i]&&i!==state.i?' class="seen"':'')+'>'+(i+1)+'</button></li>';
@@ -848,21 +890,9 @@ function go(i, focus){
   if (focus) {
     var h = state.i >= N ? document.getElementById('end-h') : document.getElementById('bh');
     if (h) h.focus({preventScroll:true});
-    revealStep();
   }
 }
-function revealStep(){
-  var st = STEPS[state.i];
-  var tgt = st && document.querySelector(st.target);
-  if (tgt && tgt.style.display==='contents') tgt = tgt.firstElementChild;
-  if (!tgt) { window.scrollTo(0,0); return; }
-  var head = (document.getElementById('mock').offsetHeight || 0) + (document.getElementById('tourbar').offsetHeight || 0) + 16;
-  var r = tgt.getBoundingClientRect(), top = r.top;
-  var b = document.getElementById('bubble');
-  if (!b.hidden && (window.innerWidth <= 900 || !state.docked)) top = Math.min(top, b.getBoundingClientRect().top);
-  var smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-  window.scrollTo({ top: Math.max(0, window.scrollY + top - head), behavior: smooth ? 'smooth' : 'auto' });
-}
+window.__demo = { go:function(i){ go(i, false); }, fit:function(){ return state.fit; }, n:N };
 function readHash(){
   var h = new URLSearchParams(location.hash.slice(1)); var s = h.get('step'), l = h.get('lens');
   if (s === 'end') state.i = N; else if (s && +s >= 1 && +s <= N) state.i = +s - 1;
@@ -974,12 +1004,12 @@ document.addEventListener('click', function(e){
   if (t.dataset.view) { setView(t.dataset.view); return; }
   if (t.dataset.go) { go(state.i + (+t.dataset.go), true); return; }
   if (t.dataset.step !== undefined) { go(+t.dataset.step, true); return; }
-  if (t.dataset.lens) { state.lens = t.dataset.lens; renderDots(); renderBubble(); if (state.i>=N) renderScreen(false); else placeBubble(); writeHash(); return; }
+  if (t.dataset.lens) { state.lens = t.dataset.lens; renderDots(); renderBubble(); if (state.i>=N) renderScreen(false); writeHash(); return; }
   if (t.dataset.plane) { openPlane(t.dataset.plane); return; }
   if (t.dataset.zoom !== undefined) { var z = +t.dataset.zoom; if (z===0) { var mv = document.getElementById('mapview'); state.scale = Math.min(1, (mv.clientWidth-16)/DATA.planes[state.plane].w); } else state.scale = Math.min(1.4, Math.max(0.4, Math.round((state.scale + z*0.1)*10)/10)); renderScreen(true); return; }
-  if (t.dataset.end !== undefined) { var r = ENDS[+t.dataset.end]; state.plane = r[5]; state.marks = r[4]; state.sel = null; renderScreen(false); scrollMapTo(r[4][0]); return; }
-  if (t.dataset.chg !== undefined) { var c = CHANGES[+t.dataset.chg]; state.plane = c[3]; state.marks = c[2]; state.sel = null; renderScreen(false); scrollMapTo(c[2][0]); return; }
-  if (t.dataset.line) { var ln = +t.dataset.line; var hit = Object.keys(DATA.el).filter(function(k){ return DATA.el[k][2]===ln; })[0]; if (hit) { state.plane = DATA.el[hit][4] ? DATA.el[hit][4]+'_plane' : 'process'; state.sel = hit; renderScreen(false); } else { state.sel = null; STEPS[state.i] && (STEPS[state.i].code = [ln-3, ln+3]); renderScreen(true); } return; }
+  if (t.dataset.end !== undefined) { var r = ENDS[+t.dataset.end]; state.plane = r[5]; state.marks = r[4]; state.sel = null; renderScreen(true); showMap(); scrollMapTo(r[4][0]); return; }
+  if (t.dataset.chg !== undefined) { var c = CHANGES[+t.dataset.chg]; state.plane = c[3]; state.marks = c[2]; state.sel = null; renderScreen(true); showMap(); scrollMapTo(c[2][0]); return; }
+  if (t.dataset.line) { var ln = +t.dataset.line; var hit = Object.keys(DATA.el).filter(function(k){ return DATA.el[k][2]===ln; })[0]; if (hit) { state.plane = DATA.el[hit][4] ? DATA.el[hit][4]+'_plane' : 'process'; state.sel = hit; renderScreen(true); showMap(); scrollMapTo(hit); } else { state.sel = null; STEPS[state.i] && (STEPS[state.i].code = [ln-3, ln+3]); renderScreen(true); } return; }
   if (t.dataset.tool) { go(t.dataset.tool==='delivery' ? 8 : 1, true); return; }
   if (t.dataset.pview) { go(t.dataset.pview==='it' ? 5 : t.dataset.pview==='management' ? 7 : 1, true); return; }
   if (t.hasAttribute('data-skip') || t.hasAttribute('data-goend')) { e.preventDefault(); go(N, true); return; }
@@ -1000,12 +1030,12 @@ document.addEventListener('keydown', function(e){
   else if (e.key==='Home') { go(0, true); e.preventDefault(); }
 });
 function mockH(){ document.documentElement.style.setProperty('--mockh', document.getElementById('mock').offsetHeight+'px'); }
-window.addEventListener('resize', function(){ mockH(); placeBubble(); });
+window.addEventListener('resize', function(){ mockH(); fitTarget(); });
 
 readHash(); mockH(); renderCompare(); renderConv(); renderOwner();
 var pv = new URLSearchParams(location.search).get('view');
 state.seen[state.i] = true; go(state.i, false);
-if (location.hash) setTimeout(function(){ var sm = document.documentElement.style.scrollBehavior; revealStep(); }, 0);
+
 if (pv) setView(pv);
 })();
 </script>
