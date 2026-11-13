@@ -899,6 +899,7 @@ export default function BpmnCanvas({
     <div
       data-process-map-canvas=""
       data-grow-to-level={growToLevel ? 'true' : undefined}
+      data-map-following={follow ? '' : undefined}
       role="group"
       aria-label={label}
       onKeyDown={controls ? keyDown : onKeyDown}

@@ -3,6 +3,7 @@
 import React, { useEffect, useRef } from 'react';
 import { ChevronRight, CornerLeftUp } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
+import CcIconButton from '@/components/cc/IconButton';
 import { cn } from '@/lib/utils';
 import { wt } from '@/lib/workspace-messages';
 
@@ -38,8 +39,9 @@ export interface ProcessBreadcrumbProps {
   crumbs: readonly ProcessBreadcrumbCrumb[];
   onOpen: (plane: string | null) => void;
   /**
-   * One line (the phone's full-screen bar, 3.2.0): the way up and the level on show; the levels above stay in the
-   * list for a screen reader, which still hears how deep the reader stands, and are reached by the way up.
+   * One line (the phone's full-screen bar, 3.2.0): the way up as a named 44 px square, then the level on show,
+   * truncated; the levels above stay in the list for a screen reader, which still hears how deep the reader stands,
+   * and are reached by the way up.
    */
   compact?: boolean;
 }
@@ -60,6 +62,20 @@ export default function ProcessBreadcrumb({ crumbs, onOpen, compact = false }: P
     }
   }, [parent]);
 
+  const upHandlers = {
+    onFocus: () => {
+      upHadFocus.current = true;
+    },
+    onBlur: () => {
+      upHadFocus.current = false;
+    },
+    onClick: () => {
+      // Kept across the click: the button goes away when the level above is the top.
+      upHadFocus.current = true;
+      if (parent) onOpen(parent.plane);
+    },
+  };
+
   return (
     <nav
       ref={navRef}
@@ -67,7 +83,14 @@ export default function ProcessBreadcrumb({ crumbs, onOpen, compact = false }: P
       aria-label={wt('map.levelNav')}
       className={cn('flex min-w-0 items-center gap-2', compact ? 'flex-nowrap' : 'flex-wrap')}
     >
-      <ol className={cn('flex min-w-0 items-center gap-1', compact ? 'flex-nowrap' : 'flex-wrap')}>
+      {compact && parent ? (
+        <span className="shrink-0">
+          <CcIconButton data-process-up="" aria-keyshortcuts="Alt+ArrowUp" density="cozy" label={wt('map.levelUp')} {...upHandlers}>
+            <CornerLeftUp size={16} aria-hidden={true} />
+          </CcIconButton>
+        </span>
+      ) : null}
+      <ol className={cn('flex min-w-0 items-center gap-1', compact ? 'flex-1 flex-nowrap' : 'flex-wrap')}>
         {crumbs.map((crumb, index) => (
           <li key={crumb.plane ?? 'top'} className={cn('flex min-w-0 items-center gap-1', compact && index !== last && 'sr-only')}>
             {index > 0 && !compact ? (
@@ -101,23 +124,13 @@ export default function ProcessBreadcrumb({ crumbs, onOpen, compact = false }: P
           </li>
         ))}
       </ol>
-      {parent ? (
+      {parent && !compact ? (
         <CcButton
           data-process-up=""
           aria-keyshortcuts="Alt+ArrowUp"
           title={wt('map.levelUp')}
           icon={<CornerLeftUp size={16} aria-hidden={true} />}
-          onFocus={() => {
-            upHadFocus.current = true;
-          }}
-          onBlur={() => {
-            upHadFocus.current = false;
-          }}
-          onClick={() => {
-            // Kept across the click: the button goes away when the level above is the top.
-            upHadFocus.current = true;
-            onOpen(parent.plane);
-          }}
+          {...upHandlers}
         >
           {wt('map.levelUpShort')}
         </CcButton>

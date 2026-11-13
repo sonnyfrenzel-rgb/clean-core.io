@@ -472,6 +472,21 @@ test.describe('@rendered full screen on Analyze, Business', () => {
     await expect(frame).toHaveAttribute('data-map-follow', station!);
     const marked = frame.locator(`[data-process-map-canvas] .djs-element.cc-tour-here[data-element-id="${station}"]`);
     await expect(marked).toHaveCount(1);
+    // The mark is seen, not only set: the station takes the tour's fill, and the rest steps back to the line colour.
+    const paint = await frame.locator('[data-process-map-canvas]').evaluate((host, id) => {
+      const fill = (el: Element | null) => (el ? getComputedStyle(el).fill : '');
+      const stroke = (el: Element | null) => (el ? getComputedStyle(el).stroke : '');
+      const here = host.querySelector(`.djs-element[data-element-id="${id}"] .djs-visual > :first-child`);
+      const other = host.querySelector('.djs-element.cc-dim .djs-visual > :first-child');
+      const probe = document.createElement('span');
+      probe.style.color = 'var(--cc-line)';
+      host.appendChild(probe);
+      const line = getComputedStyle(probe).color;
+      probe.remove();
+      return { here: fill(here), other: stroke(other), line };
+    }, station);
+    expect(paint.here, 'the station keeps the white of the renderer').not.toBe('rgb(255, 255, 255)');
+    expect(paint.other, 'the rest does not step back').toBe(paint.line);
     await expect.poll(async () => {
       const box = await marked.boundingBox();
       const canvas = await frame.locator('[data-process-map-canvas]').boundingBox();
@@ -518,6 +533,8 @@ test.describe('@rendered full screen on Analyze, Business', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     const frame = await openAnalyze(page, seeded.po);
     await frame.locator('[data-map-fullscreen-toggle]').click();
+    // On a phone the bar is one row; "Edit" stands in the sheet behind "Find, zoom and overview" (ADR-119 (f)).
+    await page.locator('[data-map-fullscreen-tools]').click();
     const edit = page.getByRole('switch', { name: 'Edit' });
     await expect(edit).toBeDisabled();
     await expect(page.locator('[data-map-fullscreen-edit="blocked"]')).toContainText(ANALYZE_FULLSCREEN_MESSAGES['fullScreen.editPhone']);

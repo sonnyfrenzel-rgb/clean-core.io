@@ -24,10 +24,10 @@ import type { ProcessSearchResults } from './ProcessSearch';
  * import, the downloads and its overview, so this bar keeps only what is not the editor's. On a phone *Edit* is
  * disabled with the sentence why (P3, `DESIGN.md` §5.7); an invited reader's with the owner-only sentence (P8).
  *
- * **On a phone, one row** (3.2.0, ADR-119): the process and the level path, one button that opens a sheet with
- * "Map | Steps", find, zoom, fit and the overview map, the *Edit* switch (its sentence said to a screen reader in the
- * row and shown in the sheet), *Walk me through it* and the way out as 44 px squares with their names — the bar that
- * wrapped to some 550 px left the canvas a sliver. The sheet lies over the top of the canvas and pushes nothing;
+ * **On a phone, one row** (3.2.0, ADR-119): the process and the level path, one 44 px button that opens a sheet,
+ * *Walk me through it* as a named 44 px square, and *Leave full screen* in words — the bar that wrapped to some 550 px
+ * left the canvas a sliver. The sheet holds "Map | Steps", find, zoom, fit, the overview map and the *Edit* switch,
+ * which a phone cannot switch on (P3), with its sentence why. It lies over the top of the canvas and pushes nothing;
  * opening it moves the focus into it, Escape or the button closes it and the focus returns to the button.
  *
  * **One side column.** The walk-through when it runs (the caller's card, `tour`), else the code of the chosen step
@@ -225,26 +225,15 @@ function CompactFullScreenBar({
           <SlidersHorizontal size={16} aria-hidden={true} />
         </CcIconButton>
       )}
-      {/* The switch keeps its sentence for a screen reader; on screen the sentence stands in the sheet, not in a row. */}
-      <div
-        data-map-fullscreen-edit={editBlocked ? 'blocked' : editing ? 'on' : 'off'}
-        className="shrink-0 [&_[data-cc-switch]>div]:sr-only"
-      >
-        <CcSwitch
-          data-map-fullscreen-edit-switch=""
-          label={wt('fullScreen.edit')}
-          checked={editing}
-          disabled={editBlocked !== null}
-          onChange={onEditingChange}
-          help={editBlocked ?? undefined}
-        />
-      </div>
       {onWalk ? (
         <CcIconButton data-map-fullscreen-walk="" density="cozy" label={wt('abiz.walk')} onClick={onWalk}>
           <Play size={16} aria-hidden={true} />
         </CcIconButton>
       ) : null}
-      <CanvasFullscreenToggle scope="map" filled={true} compact={true} onToggle={tools.leave} buttonRef={tools.leaveRef} />
+      {/* The way out in words, as everywhere in full screen (owner 03.10.2026). */}
+      <span className="shrink-0">
+        <CanvasFullscreenToggle scope="map" filled={true} onToggle={tools.leave} buttonRef={tools.leaveRef} />
+      </span>
       {sheetShown ? (
         <div
           ref={sheetRef}
@@ -268,11 +257,16 @@ function CompactFullScreenBar({
               <MapIcon size={16} aria-hidden={true} />
             </CcIconButton>
           </div>
-          {editBlocked ? (
-            <p data-map-fullscreen-sheet-edit="" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
-              {editBlocked}
-            </p>
-          ) : null}
+          <div data-map-fullscreen-edit={editBlocked ? 'blocked' : editing ? 'on' : 'off'} className="min-w-0">
+            <CcSwitch
+              data-map-fullscreen-edit-switch=""
+              label={wt('fullScreen.edit')}
+              checked={editing}
+              disabled={editBlocked !== null}
+              onChange={onEditingChange}
+              help={editBlocked ?? undefined}
+            />
+          </div>
         </div>
       ) : null}
     </div>
