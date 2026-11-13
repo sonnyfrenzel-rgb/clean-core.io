@@ -3,6 +3,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
+import { CONSENT_TEXTS, consentText } from '../lib/legal/consent-texts';
 import { adminSetCustomClaim, adminSetDoc } from './helpers/admin-seed';
 import { signInViaLanding } from './helpers/sign-in';
 
@@ -100,8 +101,9 @@ test.describe('C14 — the notice before the first automatic model call', () => 
     const notice = page.locator('[data-auto-steps-notice]');
     await expect(notice).toBeVisible({ timeout: 30000 });
     await expect(notice).toHaveAttribute('data-auto-steps-notice', 'on');
+    // The steps of this build: with the business names once it asks for them (legal review document 19).
     await expect(notice.locator('[data-auto-steps-notice-lead]')).toHaveText(
-      'When you open a project, one step — plain business sentences — is written automatically by an AI model (Google Gemini). The code it needs goes to Google for that. If your code must not leave the platform, switch this off now:',
+      consentText(CONSENT_TEXTS.autoStepsNotice.lead, 'en').replace('{Modell}', 'Google Gemini').replace('{Anbieter}', 'Google'),
     );
     // Since the legal review of 06.11.2026 (N1/B2) Transformation and Documentation start on a click
     // only, the sentence on them is gone, and the one switch covers every automatic call.

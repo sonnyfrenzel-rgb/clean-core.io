@@ -1,4 +1,5 @@
 import { resolveLegalSource } from './markup';
+import { namesWording } from './names-wording';
 import type { LegalLang } from './open-values';
 
 /**
@@ -449,8 +450,9 @@ export const CONSENT_TEXTS = {
    * C14 — one-time notice before the first automatic model call (3.0.21, A10):
    * shown once, at the first upload of own code, before the first project is
    * opened, with the switch inside it (`components/AutoStepsNotice.tsx`, rule
-   * `lib/auto-steps-notice.ts`). Written for the one automatic step there is
-   * while business names are paused (`NAMING_WITHOUT_FACTS_PAUSED`).
+   * `lib/auto-steps-notice.ts`). The lead names the business names beside the
+   * plain wording once this build asks for them, and only then
+   * (`lib/legal/names-wording.ts`, legal review document 19).
    * `{Modell}` is the model's provider label, `{Anbieter}` the company the
    * code goes to — both from the key the step would run on.
    */
@@ -460,8 +462,14 @@ export const CONSENT_TEXTS = {
       en: 'Before your first project: automatic AI steps',
     },
     lead: {
-      de: 'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell ({Modell}). Dafür geht der benötigte Code an {Anbieter}. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
-      en: 'When you open a project, one step — plain business sentences — is written automatically by an AI model ({Modell}). The code it needs goes to {Anbieter} for that. If your code must not leave the platform, switch this off now:',
+      de: namesWording(
+        'Beim Öffnen eines Projekts schreiben zwei Schritte – Fachsätze und fachliche Namen – automatisch mit einem KI-Modell ({Modell}). Dafür geht der benötigte Code an {Anbieter}. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
+        'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell ({Modell}). Dafür geht der benötigte Code an {Anbieter}. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
+      ),
+      en: namesWording(
+        'When you open a project, two steps — plain business sentences and business names — are written automatically by an AI model ({Modell}). The code they need goes to {Anbieter} for that. If your code must not leave the platform, switch this off now:',
+        'When you open a project, one step — plain business sentences — is written automatically by an AI model ({Modell}). The code it needs goes to {Anbieter} for that. If your code must not leave the platform, switch this off now:',
+      ),
     },
     switchLabel: { de: 'Alle automatischen KI-Schritte', en: 'All automatic AI steps' },
     /** Owner decision 06.11.2026 (legal review N1/B2): one switch covers every call the Platform starts without a click. */

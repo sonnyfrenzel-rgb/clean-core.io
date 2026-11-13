@@ -422,6 +422,9 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   `process-naming-auto`, `statement-proposal-route` (rendered, version-aware), new `naming-facts-starters-310`. Open:
   privacy §3, the Trust page and the C14 notice still say names are paused — a check in `naming-paused-3021` fails the
   3.1.0 bump until their new wording is in (legal review); the screenshots before/after for the owner.
+  **Status (13.11.2026, branch `legal/doc19-names`):** the new wording is in and switches with the build
+  (`lib/legal/names-wording.ts`; both directions held by `tests/legal-names-wording.spec.ts`); it goes to the lawyer
+  as document 19 and is released only with his answer.
 - **Risk:** medium. 34 % of nodes stay unnamed and half of the named ones equal the engine label (branch
   measurement), so the visible swap of AB-3 is smaller than in the mockup. `namingFactsOf` always uses the 3.5.0
   labels, also for a project signed by an older engine — check that facts and drawn labels match on such a project.
