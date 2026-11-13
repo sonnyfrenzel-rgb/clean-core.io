@@ -567,6 +567,18 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   to "Walk me through it".
 - **Risk:** medium. The tour card beside the map narrows the map; the mockup needed the zoom-to-station fix at 1280 and
   1024 px. ADR-025 floor (P-decision with N2): if the station does not fit at 83 %, scroll, do not shrink further.
+- **Status (13.11.2026, branch `night/320-ab4`, not on `dev`):** built (ADR-118; the plan's ADR-111). The tour runs
+  `inline` in `ProcessTour.tsx` where the map stands (card first in the DOM, beside the map from 1101 px, above it
+  below), the camera `TourCanvas` `align="inline"` with the 83 % floor (`STATION_FLOOR`); `AnalyzeEndings.tsx`,
+  `WhatNextCard.tsx`, `lib/analyze-progress.ts` (+ `hooks/useAnalyzeProgress.ts`); the soft-gate note and the "Next"
+  tag rule through `StageHeader` (`toolsCompact`, `onTool`, `toolsAfter`) and `ToolBar.tsx`; the demo the same way.
+  `ProcessTourEntry.tsx`, `BusinessNextStep.tsx`, `lib/business-next-step.ts` and `walk-layout-3020` deleted.
+  `lib/workflow-steps.ts` unchanged (asserted in `workflow-phases-guard`). **Deviations:** a third browser key
+  `cc.analyze.toolOpened.<id>` carries O8; the tour draws its own map, so the map's tool row is not shown while it runs
+  (full screen with the tour is AB-5's); no check on Analyze after walking (ADR-060); P6 says the rule count, never a
+  duration; the end section's "Invite a colleague" and "Download" links are not built (P5, O11). Measured server-free:
+  every station of the 1,000-line example inside the map at 1440, 1280, 1024, 768 and 390 px (focus-out 0), the card
+  beside it from 1101 px and above it below. **Open:** [look] for the states and the rendered specs (coordinator).
 
 #### AB-5 — Full screen: navigate, Edit, tour · M
 
