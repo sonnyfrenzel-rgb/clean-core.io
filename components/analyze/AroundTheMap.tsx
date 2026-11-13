@@ -15,7 +15,7 @@ import { aroundMoreQuestions, bizStoryWithin, wt } from '@/lib/workspace-message
 /**
  * The text around the map — Analyze, Business view (plan `docs/design/analyze-business-first-plan.md` §4.2, AB-6;
  * mockup `docs/roadmap/analyze-business-first-mockup.html`, states 3, 5 and 9; ADR-116). It replaces the interim
- * First insights blocks (`BusinessOpening`, `ProgramInShort`) that stood below the map in v3.1.0.
+ * First insights blocks (`BusinessOpening`, `ProgramInShort`) that stood below the map in 3.1.0.
  *
  * Two parts, one text (`lib/around-the-map.ts`, read by `hooks/useAroundTheMap.ts`):
  *

@@ -61,7 +61,7 @@ const WorkspaceProcess = dynamic(() => import('@/components/workspace/WorkspaceP
  * does* above the map, and under it *How it runs*, *Why it exists*, *Who is
  * involved* and *Questions to settle with the business* (`AroundTheMap`, read by
  * `useAroundTheMap`), every sentence with its line. It replaced the interim First
- * insights blocks (`FirstLook`, `BusinessOpening`) of v3.1.0. `BusinessNextStep`
+ * insights blocks (`FirstLook`, `BusinessOpening`) of 3.1.0. `BusinessNextStep`
  * stands under it until AB-4's two endings replace it.
  *
  * **The start run of ADR-072 lives here** (moved from the workspace page): a
@@ -169,7 +169,7 @@ export default function AnalyzeBusiness({
    * seconds while the blocks around it settle; a wheel, a touch, a key or a
    * pointer press by the reader ends it at once — the press covers a drag of
    * the scrollbar, which sends no wheel. Moved here from the workspace's
-   * Business view with v3.1.0 (AB-2): the map is this page's.
+   * Business view with 3.1.0 (AB-2): the map is this page's.
    * (`hooks/useFollowHash.ts` leaves the map's id to this follower.)
    */
   useEffect(() => {
@@ -225,7 +225,7 @@ export default function AnalyzeBusiness({
 
   /**
    * The reading the text around the map was read from, for the project search (⌘K, roadmap 6.6) — the search the
-   * workspace's Business view carried until v3.1.0 stands here, where a project opens (mockup state 3: "Search this
+   * workspace's Business view carried until 3.1.0 stands here, where a project opens (mockup state 3: "Search this
    * project" in the shell bar).
    */
   const reading = around.reading;
@@ -354,7 +354,7 @@ export default function AnalyzeBusiness({
         <section data-analyze-interim="" aria-label={wt('abiz.belowTitle')} className="flex flex-col gap-4">
           {businessStep ? <BusinessNextStep step={businessStep} projectId={projectId} noneText={nothingOpen} /> : null}
           {/* The target and its SAP reference pattern, one line under "Next step" (roadmap 3.0.9, ADR-089),
-              as it stood in the workspace's Business view until v3.1.0. */}
+              as it stood in the workspace's Business view until 3.1.0. */}
           <TargetReferenceLine project={project} />
         </section>
       </div>
