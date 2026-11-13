@@ -11,6 +11,7 @@ import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-sta
 import { localDataObjectsOf } from './table-dependencies';
 import { readBatchInputFrom, type BatchInputCall } from './batch-input';
 import { engineReads310Apply } from './engine-reads-310-gate';
+import { engineReads320Apply } from './engine-reads-320-gate';
 import { APP_VERSION } from '../version';
 import {
   hasOnlyTechnicalConditions,
@@ -458,6 +459,13 @@ export interface SkeletonLuw {
  * every one is a list of words the source may contain — never a guess
  * about what the program means.
  * ------------------------------------------------------------------ */
+
+/**
+ * Engine 3.2.0: the trigger of an entry that one of the source's own calls can reach without saying so for certain
+ * (`candidateTrigger`): `candidate of MO_STATE->HANDLE@104 (1 of 3)` — the call as the source writes it, its line,
+ * and how many implementations it can reach.
+ */
+const CANDIDATE_TRIGGER = 'candidate of ';
 
 /** The classic event blocks, in the order ABAP runs them (rule 4). */
 const RUNTIME_ORDER: Array<{ test: RegExp; rank: number }> = [
@@ -989,25 +997,40 @@ export function buildProcessSkeleton(source: string, options: SkeletonBuildOptio
  * different line numbers (`process-facts.ts`).
  */
 export function buildProcessSkeletonFrom(facts: ProcessFacts, options: SkeletonBuildOptions = {}): ProcessSkeleton {
-  const reads310 = readsOf(options.engineVersion);
+  const reads = readsOf(options.engineVersion);
   const skeleton = new SkeletonBuilder(
     facts.statements,
     facts.structure,
     facts.control,
     facts.calls,
-    reads310,
+    reads.reads310,
+    reads.reads320,
   ).build();
-  readFor.set(skeleton, reads310);
+  readFor.set(skeleton, reads);
   return skeleton;
 }
 
+/**
+ * The gated readings a build carries, one flag per gate. Each later gate implies the earlier ones
+ * (`engineVersionAtLeast`), so two builds draw the same map exactly when every flag agrees (`sameReadings`).
+ */
+interface SkeletonReadings {
+  reads310: boolean;
+  reads320: boolean;
+}
+
 /** Which gated readings a build for `engineVersion` carries; absent, this release's. */
-function readsOf(engineVersion: string | null | undefined): boolean {
-  return engineReads310Apply(engineVersion === undefined ? APP_VERSION : engineVersion);
+function readsOf(engineVersion: string | null | undefined): SkeletonReadings {
+  const version = engineVersion === undefined ? APP_VERSION : engineVersion;
+  return { reads310: engineReads310Apply(version), reads320: engineReads320Apply(version) };
+}
+
+function sameReadings(a: SkeletonReadings, b: SkeletonReadings): boolean {
+  return a.reads310 === b.reads310 && a.reads320 === b.reads320;
 }
 
 /** The readings each skeleton built here was drawn with — kept beside it, so the skeleton's own shape is unchanged. */
-const readFor = new WeakMap<ProcessSkeleton, boolean>();
+const readFor = new WeakMap<ProcessSkeleton, SkeletonReadings>();
 
 /**
  * `skeleton` when it is the map the engine `engineVersion` draws for these facts, otherwise that map, built.
@@ -1022,7 +1045,7 @@ export function skeletonReadFor(
   engineVersion: string | null | undefined,
 ): ProcessSkeleton {
   const drawn = readFor.get(skeleton);
-  if (drawn === undefined || drawn === readsOf(engineVersion)) return skeleton;
+  if (drawn === undefined || sameReadings(drawn, readsOf(engineVersion))) return skeleton;
   return buildProcessSkeletonFrom(typeof facts === 'function' ? facts() : facts, { engineVersion });
 }
 
@@ -1057,6 +1080,8 @@ interface MethodCall {
   key: string | null;
   /** More than one implementation fits and the call does not say which. */
   ambiguous: boolean;
+  /** The implementations an ambiguous call can reach, `CLASS=>METHOD` — empty otherwise (`method-resolution.ts`). */
+  candidates: string[];
   /** The method name is computed at run time: `CALL METHOD (lv_name)`. */
   dynamic: boolean;
   /** The call is the whole statement, not an operand inside one. */
@@ -1273,6 +1298,18 @@ class SkeletonBuilder {
   private refTypes = new Map<string, Set<string>>();
   /** The statements, over the whole source, whose calls resolve to each method — for entries and helpers. */
   private methodCallSites = new Map<string, number[]>();
+  /**
+   * Engine 3.2.0: the ambiguous calls each implementation is a candidate of — the statement, the call as the source
+   * writes it, its line and how many implementations the call can reach. Empty for an older engine
+   * (`readMethodCallSites`), so nothing below changes its map.
+   */
+  private candidateSites = new Map<string, Array<{ index: number; label: string; line: number; of: number }>>();
+  /**
+   * Engine 3.2.0: the handlers registered when the walk passed each ambiguous call, by statement index. A candidate
+   * implementation runs inside that call, so what `SET HANDLER` registered before it is registered in the candidate
+   * too (`buildEntryRegion`) — the handlers a `RAISE EVENT` in the candidate runs are the ones the caller bound.
+   */
+  private registrationsAtCall = new Map<number, Set<string>>();
   /** `METHODS m FOR EVENT ev OF cls` — the event each implemented handler method declares, upper-cased. */
   private handlerEvent = new Map<string, { event: string; of: string }>();
   /** Handler methods a `SET HANDLER` of this source registers, in the order it first names them. */
@@ -1317,6 +1354,13 @@ class SkeletonBuilder {
      * event of its own (`addSubProcessStarts`). False for a run of an older engine, whose map stays as it was.
      */
     private reads310 = false,
+    /**
+     * Engine 3.2.0 (`ENGINE_READS_320_FROM`): a call the source cannot resolve statically names its candidate
+     * implementations, and each candidate no other call reaches is an entry of its own (`methodEntries`,
+     * `candidateSites`); `me->m( )` and a bare `m( )` dispatch at run time when a subclass redefines `m`
+     * (`resolveMethod`, `dynamicDispatch`). False for a run of an older engine, whose map stays as it was.
+     */
+    private reads320 = false,
   ) {}
 
   build(): ProcessSkeleton {
@@ -1787,6 +1831,13 @@ class SkeletonBuilder {
     for (const statement of this.statements) {
       for (const call of this.methodCallsIn(statement)) {
         if (call.key) this.methodCallSites.set(call.key, [...(this.methodCallSites.get(call.key) ?? []), statement.index]);
+        if (!this.reads320 || !call.ambiguous) continue;
+        for (const candidate of call.candidates) {
+          this.candidateSites.set(candidate, [
+            ...(this.candidateSites.get(candidate) ?? []),
+            { index: statement.index, label: call.label, line: statement.lineStart, of: call.candidates.length },
+          ]);
+        }
       }
     }
   }
@@ -1811,16 +1862,17 @@ class SkeletonBuilder {
     op: '->' | '=>' | null,
     name: string,
     index: number,
-  ): { key: string | null; ambiguous: boolean } {
-    const { key, ambiguous } = resolveMethodTarget(
+  ): { key: string | null; ambiguous: boolean; candidates: string[] } {
+    const { key, ambiguous, candidates } = resolveMethodTarget(
       { impls: this.methodImpls, superOf: this.superOf, refTypes: this.refTypes },
       qualifier,
       op,
       name,
       this.classOf(index),
-      { byNameAlone: true },
+      // Engine 3.2.0: `me->m( )` dispatches at run time when a subclass redefines `m`.
+      { byNameAlone: true, dynamicDispatch: this.reads320 },
     );
-    return { key, ambiguous };
+    return { key, ambiguous, candidates };
   }
 
   /**
@@ -1968,7 +2020,7 @@ class SkeletonBuilder {
       const op = segments.length >= 3 ? segments[segments.length - 2] as '->' | '=>' : null;
       const qualifier = segments.length >= 3 ? segments[segments.length - 3] || ')' : null;
       const resolved = dynamic || !/^[\w/~]+$/.test(name)
-        ? { key: null, ambiguous: false }
+        ? { key: null, ambiguous: false, candidates: [] }
         : this.resolveMethod(qualifier, op, name, index);
       out.push({
         name, ...resolved, dynamic, standalone: true, constructor: false,
@@ -2031,7 +2083,7 @@ class SkeletonBuilder {
     const key = `${cls}=>CONSTRUCTOR`;
     if (!this.routineBlocks.has(key)) return;
     out.push({
-      name: 'CONSTRUCTOR', key, ambiguous: false, dynamic: false, standalone: false,
+      name: 'CONSTRUCTOR', key, ambiguous: false, candidates: [], dynamic: false, standalone: false,
       constructor: true, label: `${cls}=>CONSTRUCTOR`, at,
     });
   }
@@ -2156,6 +2208,17 @@ class SkeletonBuilder {
    * wait for: a dialog transaction starts its screens from outside.
    */
   private readEntryPoints(): EntryPoint[] {
+    const primary = this.primaryEntryPoints();
+    // Engine 3.2.0: the candidate implementations of the source's own ambiguous calls — beside whatever the
+    // source names as its beginnings, never in their place. An ambiguous call reaches its candidates from inside
+    // the source, so a candidate is no evidence of a caller outside it and pre-empts no last resort (a bare FORM).
+    const candidates = this.noteTriggers(this.candidateEntries());
+    if (!primary.length && !candidates.length) this.noteNoEntryPoint();
+    return [...primary, ...candidates];
+  }
+
+  /** The beginnings the source names, by the precedence above — empty when it names none. */
+  private primaryEntryPoints(): EntryPoint[] {
     const events = this.eventEntries();
     this.writesEventBlock = events.length > 0;
     if (events.length) {
@@ -2225,8 +2288,6 @@ class SkeletonBuilder {
     const forms = [...this.formEntries(), ...this.methodEntries(true)]
       .sort((a, b) => a.statement.index - b.statement.index);
     if (forms.length) return this.noteTriggers(forms);
-
-    this.noteNoEntryPoint();
     return [];
   }
 
@@ -2556,6 +2617,54 @@ class SkeletonBuilder {
     return `REDEFINITION OF ${found.superclass}`;
   }
 
+  /**
+   * Engine 3.2.0 — a method that a call of this source can reach but cannot be shown to reach: one of the
+   * implementations behind `lo_if->m( )` on an interface reference, behind `lo->m( )` on a superclass reference
+   * whose subclasses redefine `m`, or behind `me->m( )` in a class whose subclasses redefine it. The call is drawn
+   * opaque where it stands (D2 — the reader does not say which one runs); the implementation is drawn here, as a
+   * beginning of its own, with the call as its trigger. Before 3.2.0 such an implementation was neither drawn nor
+   * listed as not reached — a strategy, a state or a template-method pattern lost every one of its concrete steps.
+   *
+   * The trigger names the first call site outside the method's own body; a call from inside it (recursion) is
+   * not what reaches it.
+   */
+  private candidateTrigger(key: string, block: Block): string | null {
+    const site = (this.candidateSites.get(key) ?? []).find((s) => s.index < block.openIndex || s.index > block.closeIndex);
+    return site ? `${CANDIDATE_TRIGGER}${site.label}@${site.line} (1 of ${site.of})` : null;
+  }
+
+  /**
+   * Engine 3.2.0 — the candidate implementations (`candidateTrigger`) that nothing else made a beginning or a
+   * step: not an entry already, and not named by a call that reaches it for certain (D2 draws that call as the
+   * sub-process, and a call from inside the method's own body is recursion, not a caller). In source order.
+   */
+  private candidateEntries(): EntryPoint[] {
+    const out: EntryPoint[] = [];
+    for (const block of this.structure.blocks) {
+      if (block.kind !== 'method' || this.entryOfBlock.has(block.openIndex)) continue;
+      const opener = this.statements[block.openIndex];
+      const name = /^METHOD\s+([\w/~]+)/i.exec(opener.text);
+      if (!name) continue;
+      const key = `${this.classOf(block.openIndex) ?? ''}=>${name[1].toUpperCase()}`;
+      const trigger = this.candidateTrigger(key, block);
+      if (!trigger) continue;
+      const sites = this.methodCallSites.get(key) ?? [];
+      if (sites.some((site) => site < block.openIndex || site > block.closeIndex)) continue;
+      this.entryOfBlock.add(block.openIndex);
+      out.push({
+        statement: opener,
+        lastIndex: block.closeIndex - 1,
+        endStatement: this.statements[Math.min(block.closeIndex, this.statements.length - 1)],
+        label: name[1],
+        rank: RUNTIME_ORDER.length,
+        implicit: false,
+        origin: 'method',
+        trigger,
+      });
+    }
+    return out;
+  }
+
   /** Is this implemented method one the source declares callable from outside? */
   private methodTrigger(cls: string | null, name: string): string | null {
     const upper = name.toUpperCase();
@@ -2802,6 +2911,9 @@ class SkeletonBuilder {
                   + 'with (table TNAPR)'
               : entry.trigger?.startsWith('REDEFINITION OF ')
                 ? `it redefines a method of ${entry.trigger.slice(16)}, which is not in this source and is what calls it`
+              : entry.trigger?.startsWith(CANDIDATE_TRIGGER)
+                ? `the call ${entry.trigger.slice(CANDIDATE_TRIGGER.length).replace(/ \(1 of (\d+)\)$/, ' can reach it as one of $1 implementations')}, `
+                  + 'and which of them runs is decided at run time by the object the call is made on, which this reader does not guess'
               : entry.trigger ? `it is declared as a ${entry.trigger} handler`
                 : entry.origin === 'function' ? 'it is a function module, callable by name'
                   : entry.origin === 'method'
@@ -2969,7 +3081,7 @@ class SkeletonBuilder {
     // unconditionally (`registeredBefore`).
     this.registeredInWalk = entry.origin === 'event' || entry.origin === 'implicit'
       ? this.registeredBefore(entry)
-      : new Set();
+      : this.registeredAtCandidateCall(entry);
     const exits = this.walkRange(from, entry.lastIndex, {
       region, container, loops: [], loopBreaks: [],
     }, [{ from: start.id, condition: '', kind: 'sequence' }]);
@@ -3003,6 +3115,21 @@ class SkeletonBuilder {
         if (!handlers || handlers.deregisters) continue;
         for (const { key } of handlers) if (this.boundHandlers.includes(key)) out.add(key);
       }
+    }
+    return out;
+  }
+
+  /**
+   * Engine 3.2.0 — what a candidate implementation (`candidateEntries`) starts with: the handlers registered when
+   * the walk passed the ambiguous call that reaches it (`registrationsAtCall`), those of every such call that was
+   * walked before this entry is built. Every other entry called on its own starts with nothing registered.
+   */
+  private registeredAtCandidateCall(entry: EntryPoint): Set<string> {
+    const out = new Set<string>();
+    if (!entry.trigger?.startsWith(CANDIDATE_TRIGGER)) return out;
+    const key = `${this.classOf(entry.statement.index) ?? ''}=>${entry.label.toUpperCase()}`;
+    for (const site of this.candidateSites.get(key) ?? []) {
+      for (const handler of this.registrationsAtCall.get(site.index) ?? []) out.add(handler);
     }
     return out;
   }
@@ -4719,11 +4846,15 @@ class SkeletonBuilder {
         this.note('dynamic-call', statement,
           'The name of the method is computed at run time. The call is drawn, its target is not claimed.');
       }
+      // Engine 3.2.0: the candidates of this call run inside it, with what is registered here.
+      if (this.reads320 && call.ambiguous) this.registrationsAtCall.set(statement.index, new Set(this.registeredInWalk));
       const node = this.addNode('call-opaque', call.label, at, ctx.region, ctx.container, {
         detail: {
           method: true,
           dynamic: call.dynamic,
           ...(call.ambiguous ? { ambiguous: true } : {}),
+          // Engine 3.2.0: which implementations the call can reach — each is drawn as a beginning of its own.
+          ...(this.reads320 && call.candidates.length ? { candidates: call.candidates } : {}),
           // The source of the method is not here, or not one of several. The
           // flow still returns.
           returns: true,
