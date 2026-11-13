@@ -107,7 +107,8 @@ export const LANDING_FAQ: LandingFaq[] = [
   },
   {
     q: 'Can I try the demo without an account?',
-    a: 'No. The demo project lives in your workspace, so it needs a free account. Inside it nothing you do is saved, and nothing counts against your analysis runs.',
+    a: 'Yes. A four-minute demo at /demo clicks through one sample program read end to end: its process as BPMN, its rules, its clean core levels and the decision basis, with no account. The demo project you can work in yourself lives in your workspace and needs a free account; inside it nothing you do is saved, and nothing counts against your analysis runs.',
+    more: { href: '/demo', label: 'The 4-minute demo' },
   },
   {
     q: 'How does clean core reduce S/4HANA upgrade risk?',

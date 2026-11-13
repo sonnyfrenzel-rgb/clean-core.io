@@ -3,8 +3,8 @@ import { ArrowRight, PlayCircle } from 'lucide-react';
 import { CcTag } from '@/components/cc/Tag';
 import {
   DEMO_LIST_TAGLINE,
+  DEMO_ANALYZE_ROUTE,
   DEMO_PROJECT_TITLE,
-  DEMO_ROUTE,
   DEMO_SUBJECT,
   DEMO_TAG,
 } from '@/lib/demo-marks';
@@ -30,7 +30,7 @@ export default function DemoEntryCard() {
   return (
     <div className="cc mb-4 rounded-cc-card bg-cc-surface shadow-cc">
       <Link
-        href={DEMO_ROUTE}
+        href={DEMO_ANALYZE_ROUTE}
         data-testid="demo-entry"
         className="group flex flex-col gap-3 rounded-cc-card border border-cc-information-border p-4 no-underline transition-colors hover:border-cc-information sm:flex-row sm:items-center sm:justify-between sm:p-6"
       >

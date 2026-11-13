@@ -1,4 +1,4 @@
-import { DEMO_ROUTE } from './demo-marks';
+import { showcaseHrefForTool } from './demo-showcase-copy';
 import { LIVE_TEST_EXECUTION } from './locked-paths';
 import { PHASES, type PhaseKey } from './workflow-steps';
 import { BTP, BTP_FIRST } from './sap-naming';
@@ -240,7 +240,7 @@ export interface HowToStep extends PhaseHowTo {
   key: PhaseKey;
   /** The phase's label in the product, from `PHASES`. */
   title: string;
-  /** The same phase in the demo project, which needs no account. */
+  /** The same phase in the public demo showcase, which needs no account (roadmap 3.5.0 item 8). */
   demoHref: string;
 }
 
@@ -250,7 +250,7 @@ export function howToSteps(): HowToStep[] {
     n: phase.n,
     key: phase.key,
     title: phase.label,
-    demoHref: `${DEMO_ROUTE}/${phase.key}`,
+    demoHref: showcaseHrefForTool(phase.key),
     ...HOW_TO_PHASE_CONTENT[phase.key],
   }));
 }

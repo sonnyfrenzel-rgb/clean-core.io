@@ -24,8 +24,8 @@ import CcIconButton from '@/components/cc/IconButton';
  *     product has since removed ("AI Verified", "Strict Legacy Mode", "SAP
  *     Build-Compatible", "Ready for deployment"). A corrected sentence beside a
  *     picture that contradicts it is still a page that contradicts itself. Each
- *     slide links the same phase in the demo project instead, which is the
- *     product itself and needs no account. The hotspots were positioned on those
+ *     slide links the step of the public demo showcase that shows the phase
+ *     instead (`/demo#step=N`, roadmap 3.5.0 item 8), which needs no account. The hotspots were positioned on those
  *     pictures and went with them; their questions are a list now.
  *   - The narration. A third telling of every phase, for a video that does not
  *     exist, and one more place for a claim to drift.
@@ -137,7 +137,7 @@ export default function HowToClient() {
                 href={step.demoHref}
                 className="inline-flex items-center gap-2 text-sm font-bold text-cc-brand-strong hover:text-cc-brand-deep underline underline-offset-2"
               >
-                See {step.title} in the demo project <ArrowRight size={14} aria-hidden="true" />
+                See {step.title} in the 4-minute demo <ArrowRight size={14} aria-hidden="true" />
               </Link>
             </div>
 
