@@ -107,6 +107,22 @@ Use a project with a signed run, a business layer (SOP + RACI), a saved naming, 
 
 Record the result per row; only formats that pass may be named on the trust page.
 
+## Legal record: business names start by themselves again (document 19, release 3.1.0)
+
+The lawyer approved the wording of document 19 at commit `ac829ec8` (statement of 13.11.2026, "19c"). That commit is the state of the approval. Her conditions for releasing 3.1.0, and how they are built (owner decisions 13.11.2026; branch `legal/doc19-names`):
+
+| Point | What stands in the product |
+|---|---|
+| B1 | Privacy section 3, the middle sentence of the automatic-steps passage, in her German and English wording: the model *proposes* names (no "better"), what it receives per step (kind, name in the code, branch conditions, the facts including verbatim comments and message texts, not the complete source), and when a proposed name replaces the first. Trust page and C14 as approved in `ac829ec8`. |
+| B2 | C14 is recorded with the wording it showed: `users/{uid}.autoStepsNoticeWording` (`C14-1` one step, `C14-2` with business names) beside `autoStepsNoticeAt`, written only by `POST /api/model-stages` through the Admin SDK (no `firestore.rules` change). A timestamp without an id reads as `C14-1`. `/api/gemini` refuses an automatic naming call (`auto-steps-notice-pending`) until the account confirmed the wording of the build, before any key is loaded. The notice shows once more to accounts that confirmed `C14-1` with the main switch on, above the map of their project, and the map keeps the engine's names until then; with the main switch off nothing changes. |
+| B3 | The privacy policy has its own version and date (`lib/legal/privacy-versions.ts`): version 1.1 of 9 November 2026 and version 1.2 of 20 November 2026, with the change note at the top. Every version stays at a fixed address, `clean-core.io/datenschutz/versions/<id>` and `…/<id>/de`, from the archived file in `docs/privacy/` with its SHA-256 (`scripts/legal/archive-privacy.ts`; the 1.1 files are byte for byte the rendering of release v3.0.23). The sign-up box names the policy's version, and `consent_events.privacyVersion` stores its id. |
+| B4 | No filter of change notes in comments (owner decision 13.11.2026); the wording of B1 names comments and message texts. |
+| B5 | Mark "AI-generated name" / "KI-generierter Name" and the legend in the interface language, in her wording; the mark's tooltip names provider and model from the naming's receipt, never a model written in the code. |
+| Role lanes | Marked the same way ("AI-generated role lane" / "KI-generierte Rollen-Bahn", same tooltip); exports carry provider and model for them as for the names. |
+| B6 | No change to the Terms now; the future half-sentence of 4.1 (b) waits in `lib/legal/terms-next-version.ts` for the next version of the Terms. |
+
+The texts switch with the build (`LEGAL_TEXTS_NAMES_AUTOMATIC`, engine 3.1.0 read against `APP_VERSION`). **Before the release of 3.1.0, run `npx playwright test tests/legal-names-wording.spec.ts` against the release commit** — the lawyer asked for it if the release differs from `ac829ec8`, and it does. The spec holds the wording of every point above in both directions, the archive and its digests, the server refusal and the group that sees C14 again.
+
 ## Secret rotation
 
 Rotate on a defined cadence and after any suspected exposure: `AUDIT_SIGNING_KEY`, `AUDIT_SIGNING_PRIVATE_KEY` (move the old public key into `AUDIT_SIGNING_PUBLIC_KEYS_RETIRED` so earlier packs keep verifying), `GEMINI_API_KEY`, `RESEND_API_KEY`, `RESEND_WEBHOOK_SECRET`, `S4_ENCRYPTION_KEY`, `BYOK_ENCRYPTION_KEY` (versioned: add a new version to the key ring in `lib/byok-key.ts`, then retire the old one), `RATE_LIMIT_PEPPER` (resets the current windows), `PILOT_APPROVAL_SECRET`, the Firebase service account. `MFA_BACKUP_CODE_PEPPER` is retired with the backup codes: no code reads it and, since 02.10.2026, the deploy no longer passes it. Rotating `AUDIT_SIGNING_KEY` invalidates prior HMAC signatures — there is no key history for it yet (treat old packs as `integrity-only`); see `docs/INCIDENT-RESPONSE.md` R1.
