@@ -46,6 +46,15 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
 - Dictionary: RFC_READ_TABLE reads "Read a table via RFC" and no longer claims another system.
 - Demo: Analyze, Business draws the map in the page layout with the code panel beside it, as a project does, and
   opening it clears "result ready" on the demo workspace's Analyze tool.
+- The process modeller no longer stays open, with its Save, when the same map is shown for a project the account may
+  only read.
+- A link to the process map on Analyze, Business now reaches the map even when the project takes longer than five
+  seconds to load.
+- A table declared with a local row type and filled by a SELECT is now named after the table it is read from ("For
+  each sales order" instead of "For each data").
+- Status workflow: an authority check inside a loop is no longer reported as guarding status moves after the loop,
+  and when two classes implement a method of the same name, a status precondition from a call to one is no longer
+  attributed to the other.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
