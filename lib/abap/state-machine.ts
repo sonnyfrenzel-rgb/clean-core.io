@@ -142,8 +142,16 @@ interface Constants {
 
 function readConstants(statements: readonly AbapStatement[]): Constants {
   const values = new Map<string, string>();
+  /** Per class or interface (lower case), the constants it declares — what `zif_x=>c_approved` resolves against. */
+  const owned = new Map<string, Map<string, string>>();
+  /** Per name, every value a declaration of that name gives it, whoever declares it. */
+  const declared = new Map<string, Set<string>>();
   let group: string[] = [];
+  let owner: string | null = null;
   for (const s of statements) {
+    const opens = /^(?:INTERFACE\s+([\w/]+)(?!\s+(?:DEFERRED|LOAD)\b)|CLASS\s+([\w/]+)\s+(?:DEFINITION(?!\s+(?:DEFERRED|LOAD)\b)|IMPLEMENTATION)\b)/i.exec(s.text);
+    if (opens) { owner = (opens[1] ?? opens[2]).toLowerCase(); continue; }
+    if (/^END(?:INTERFACE|CLASS)\b/i.test(s.text)) { owner = null; continue; }
     if (!/^CONSTANTS\b/i.test(s.text)) continue;
     const body = s.text.replace(/^CONSTANTS\s*:?\s*/i, '');
     const begin = /^BEGIN\s+OF\s+([\w/]+)/i.exec(body);
@@ -152,15 +160,24 @@ function readConstants(statements: readonly AbapStatement[]): Constants {
     const m = /^([\w/]+)\b[\s\S]*?\bVALUE\s+('(?:[^']|'')*'|`[^`]*`|-?\d+)/i.exec(body);
     if (!m) continue;
     const name = [...group, m[1].toLowerCase()].join('-');
-    values.set(name, unquote(m[2]));
+    const value = unquote(m[2]);
+    values.set(name, value);
+    declared.set(name, (declared.get(name) ?? new Set<string>()).add(value));
+    if (owner) owned.set(owner, (owned.get(owner) ?? new Map<string, string>()).set(name, value));
   }
   return {
     value(name: string) {
       const key = name.toLowerCase();
       if (values.has(key)) return values.get(key) ?? null;
-      // An interface or class constant `zif_x=>c_approved` is read where this source defines it.
-      const tail = key.split('=>').pop() ?? key;
-      return values.get(tail) ?? null;
+      // An interface or class constant `zif_x=>c_approved` is read where this source defines it: in that type when
+      // the type declares it, else only when every declaration of the name agrees — never another type's value.
+      const parts = key.split('=>');
+      const tail = parts.pop() ?? key;
+      const type = parts.pop();
+      const own = type ? owned.get(type)?.get(tail) : undefined;
+      if (own !== undefined) return own;
+      const all = declared.get(tail);
+      return all && all.size === 1 ? [...all][0] : null;
     },
   };
 }
@@ -264,11 +281,6 @@ function calledRoutine(text: string): string | null {
   const call = /^(?:CALL\s+METHOD\s+)?(?:(?:me|[\w/]+)(?:->|=>))?([\w/~]+)\s*\(/i.exec(text) ?? /^CALL\s+METHOD\s+(?:(?:me|[\w/]+)(?:->|=>))?([\w/~]+)\b/i.exec(text);
   if (!call) return null;
   return (call[1].split('~').pop() ?? call[1]).toUpperCase();
-}
-
-/** Is a decision (`IF`, `CASE`) open — then a check closed inside it guards only that arm, not the routine. */
-function decisionOpen(frames: readonly Frame[]): boolean {
-  return frames.some((f) => f.kind === 'if' || f.kind === 'case');
 }
 
 /** Does the body between `from` and `to` (statement indices) stop: an error message, RETURN, RAISE, EXIT, LEAVE? */
@@ -379,8 +391,6 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
     const arms: ArmRead[] = [];
     const frame = (kind: Frame['kind'], start: number, condition: string | null, subject: string | null): Frame =>
       ({ kind, start, condition, subject, when: null, armGuards: [], armRoles: [], arm: -1, opened: start });
-    /** The innermost decision: where a guard closed inside it belongs. */
-    const innermostDecision = () => [...frames].reverse().find((f) => f.kind === 'if' || f.kind === 'case');
     /**
      * Where a role check belongs: the innermost decision arm or loop around it — a check in a loop runs only in a
      * pass, and a loop may make none, so it is forgotten at ENDLOOP as a CHECK is — else the routine.
@@ -463,9 +473,11 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
           const status = comparisons(top.condition, constants).length > 0;
           // A decision over the command is no check of a move: it chooses the arm (`IF verb = 'GRANT'. … RETURN.`).
           const guard: Guard = { line: opener.lineStart, condition: top.condition, stopped: stops(statements, top.start + 1, i) && !commandCondition(top.condition, constants), status };
-          // A check closed inside a decision guards only what follows it in that arm, not the routine.
-          if (!decisionOpen(frames)) guards.push(guard);
-          else innermostDecision()?.armGuards.push(guard);
+          // A check closed inside a decision guards only what follows it in that arm, not the routine; inside a loop,
+          // only the rest of that pass — a loop may make none, so it is forgotten at ENDLOOP as a CHECK is.
+          const scope = [...frames].reverse().find((f) => f.kind !== 'try');
+          if (scope) scope.armGuards.push(guard);
+          else guards.push(guard);
         }
         continue;
       }

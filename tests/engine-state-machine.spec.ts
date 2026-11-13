@@ -376,3 +376,52 @@ test('callers of a method name two classes implement hand neither one a from-val
   // Two classes: the call is lcl_b's, and lcl_a's SUBMIT states no from-value of its own — none is lent to it.
   expect(moves(src(true))).toContain('LCL_A=>SUBMIT:>OPEN');
 });
+
+test('a stopping check inside a loop gives no from-value to a move after the loop', () => {
+  const src = (inLoop: boolean) => [
+    'REPORT zt_loop_guard.',
+    "CONSTANTS: gc_draft TYPE c VALUE 'D',",
+    "           gc_sent TYPE c VALUE 'S',",
+    "           gc_done TYPE c VALUE 'X'.",
+    'DATA gs_req TYPE zt_req.',
+    'FORM send.',
+    ...(inLoop ? ['  LOOP AT gt_items INTO DATA(ls_item).'] : []),
+    '  IF gs_req-status <> gc_draft.',
+    "    MESSAGE 'Not a draft' TYPE 'E'.",
+    '  ENDIF.',
+    ...(inLoop ? ['  ENDLOOP.'] : []),
+    '  gs_req-status = gc_sent.',
+    'ENDFORM.',
+    'FORM close.',
+    '  CHECK gs_req-status = gc_sent.',
+    '  gs_req-status = gc_done.',
+    'ENDFORM.',
+  ].join('\n');
+  const moves = (s: string) => readStateMachine(s)?.transitions.map((t) => `${t.routine}:${t.from.join('/')}>${t.to}`);
+  expect(moves(src(false))).toContain('SEND:D>S');
+  // The loop may make no pass, so the check need not have run before the move.
+  expect(moves(src(true))).toContain('SEND:>S');
+});
+
+test('a qualified constant resolves in its own type, not to a same-named constant of another', () => {
+  const src = [
+    'REPORT zt_qualified.',
+    'INTERFACE zif_a.',
+    "  CONSTANTS c_open TYPE c VALUE 'A'.",
+    'ENDINTERFACE.',
+    'INTERFACE zif_b.',
+    "  CONSTANTS c_open TYPE c VALUE 'B'.",
+    "  CONSTANTS c_closed TYPE c VALUE 'C'.",
+    'ENDINTERFACE.',
+    'DATA gs_req TYPE zt_req.',
+    'FORM open.',
+    '  gs_req-status = zif_a=>c_open.',
+    'ENDFORM.',
+    'FORM close.',
+    '  CHECK gs_req-status = zif_a=>c_open.',
+    '  gs_req-status = zif_b=>c_closed.',
+    'ENDFORM.',
+  ].join('\n');
+  const machine = readStateMachine(src);
+  expect(machine?.transitions.map((t) => `${t.routine}:${t.from.join('/')}>${t.to}`)).toEqual(['OPEN:>A', 'CLOSE:A>C']);
+});
