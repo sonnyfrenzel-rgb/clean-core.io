@@ -2856,13 +2856,17 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     };
   };
 
+  /** 3.1.0 (H5b): the customer texts each decision's question was built from, kept until its label is set. */
+  const planCustomer = new Map<string, Array<[string, string]>>();
   for (const node of skeletonNodes) {
     if (isDecision(node)) {
+      ctx.customerUsed?.clear();
       try {
         plans.set(node.id, planFor(node));
       } catch {
         plans.set(node.id, { question: 'Condition met?', arm: (edge) => (edge.condition ? 'Yes' : 'No') });
       }
+      if (ctx.customerUsed?.size) planCustomer.set(node.id, [...ctx.customerUsed]);
     }
   }
 
@@ -2904,6 +2908,7 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     try {
       if (isDecision(node)) {
         label = plans.get(node.id)?.question ?? 'Condition met?';
+        for (const [code, text] of planCustomer.get(node.id) ?? []) ctx.customerUsed?.set(code, text);
       } else if (node.kind === 'end-error' || (node.kind === 'end' && node.detail?.early === true)) {
         const { lead, rejected, line } = leadingOf(node);
         label = outcomeName(node, lead, ctx, { rejected, line });
