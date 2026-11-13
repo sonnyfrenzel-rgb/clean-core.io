@@ -75,7 +75,8 @@ test.describe('the source: full screen is the page layout\'s, everything else ke
     expect(map).toContain('fsEditOnOpen.current = false;');
     // "Edit model" on the page is the way into full screen with the switch on; elsewhere it edits inline as before.
     expect(map).toContain('if (page) openEditing();');
-    expect(map).toContain('else setEditing((was) => !was);');
+    // The asked mode only: the modeller itself opens while the project allows editing (`editing = editingAsked && canEdit`).
+    expect(map).toContain('else setEditingAsked(!editing);');
   });
 
   test('a phone and an invited reader get "Edit" disabled with a sentence (P3, P8)', () => {
@@ -339,8 +340,9 @@ test.describe('@rendered full screen on Analyze, Business', () => {
     await expect(dialog.locator(`[data-process-code-card="${hitId}"]`)).toBeVisible();
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
 
-    // A click on a step opens its code in the column.
-    const node = frame.locator('[data-map-node]').nth(2);
+    // A click on a step opens its code in the column. The hit opened its own level, so the step is one drawn there:
+    // the other levels' node buttons stay in the DOM, hidden; a sub-process would open its level instead.
+    const node = frame.locator('[data-map-node][data-selected="false"]:not([aria-label^="Sub-process"]):visible').first();
     const nodeId = await node.getAttribute('data-map-node');
     await node.click();
     await expect(dialog.locator(`[data-process-code-card="${nodeId}"]`)).toBeVisible();

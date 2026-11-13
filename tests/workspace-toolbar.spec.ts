@@ -528,7 +528,9 @@ test.describe('the toolbar, rendered', () => {
     await expect(panel).toBeVisible();
     await expect(panel.locator('[data-tools-guide-entry]')).toHaveCount(7);
     await expect(panel.locator('[data-tools-guide-entry="testing"]')).toContainText(PHASE_PURPOSE.testing);
-    await expect(panel.locator('[data-tools-guide-entry="design"]')).toContainText(WORKSPACE_MESSAGES['toolGuide.recommended']);
+    // O8 (ADR-118): an analysis-only reader in a fresh browser is recommended no later tool until one was opened.
+    await expect(panel.locator('[data-tools-guide-entry="design"]')).toContainText(PHASE_PURPOSE.design);
+    await expect(panel.locator('[data-tools-guide-entry="design"]')).not.toContainText(WORKSPACE_MESSAGES['toolGuide.recommended']);
     await guide.tap();
     await expect(panel).toHaveCount(0);
     await context.close();

@@ -257,6 +257,13 @@ test.describe('a project reopened far along its way', () => {
     await first.focus();
     await expect(first).toBeFocused();
     await page.keyboard.press('Enter');
+    // Before the walk-through in this browser the soft gate holds the first plain activation for one note (ADR-118
+    // (4)); nothing is locked: its "Continue to …" link opens the stage, by keyboard as well.
+    const note = page.locator('[data-analyze-soft-gate]');
+    await expect(note).toBeFocused();
+    const go = note.locator('a[data-analyze-soft-gate-continue]');
+    await go.focus();
+    await page.keyboard.press('Enter');
     await page.waitForURL(new RegExp(`/project/${projectId}/design(\\?|$)`), { timeout: 90_000 });
   });
 

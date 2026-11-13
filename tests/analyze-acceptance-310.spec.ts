@@ -287,10 +287,11 @@ test.describe('rendered: Analyze, Business on the seeded PO example at 1440 × 9
     expect(Math.max(...zoomRow) - Math.min(...zoomRow), 'zoom out, zoom in and fit do not stand in one row').toBeLessThanOrEqual(6);
     expect(boxes[3].y, 'full screen fell under the other tools').toBeLessThanOrEqual(Math.min(...zoomRow) + 6);
 
-    // The tour's own canvas draws the names its chips say.
+    // The tour's own canvas draws the names its chips say. The walk-through runs on the page (ADR-118), its map where
+    // the map stood.
     await page.locator('[data-analyze-code-close]').click();
     await page.locator('[data-analyze-walk]').first().click();
-    const tourMap = page.locator('.cc-tour-map');
+    const tourMap = page.locator('[data-process-tour][data-tour-mode="inline"] [data-tour-inline-map]');
     await expect(tourMap.locator('svg text').first()).toBeAttached({ timeout: 60_000 });
     await expect
       .poll(async () => (await tourMap.locator('svg text').allTextContents()).join(' '), { timeout: 30_000 })

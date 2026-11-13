@@ -105,9 +105,10 @@ test.describe('a new project: the first look ends on the full map', () => {
     await firstScreen(page);
 
     // AB-2 with AB-6: what the program does, then the map, then the text around
-    // it and "Next step" under it (until AB-4's endings).
+    // it. AB-4 retired "Next step" on Analyze, Business (ADR-118): the endings
+    // come after the walk-through, so before it nothing stands under the text.
     const order = await page.evaluate(() =>
-      ['[data-analyze-summary]', '[data-workspace-process-block]', '[data-around-the-map]', '[data-next-step]'].map(
+      ['[data-analyze-summary]', '[data-workspace-process-block]', '[data-around-the-map]'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;
@@ -116,6 +117,7 @@ test.describe('a new project: the first look ends on the full map', () => {
     );
     expect(order.every((t) => t >= 0), `a block is missing: ${order.join(', ')}`).toBe(true);
     for (let i = 1; i < order.length; i++) expect(order[i], `block ${i} stands above block ${i - 1}`).toBeGreaterThan(order[i - 1]);
+    await expect(page.locator('[data-next-step]')).toHaveCount(0);
 
     // And it stays.
     await page.waitForTimeout(5000);

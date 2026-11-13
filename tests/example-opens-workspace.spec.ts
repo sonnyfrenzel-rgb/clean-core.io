@@ -158,8 +158,10 @@ test.describe('an example opens Analyze, Business, with the map and the first lo
     await page.click('[data-own-code-start]');
     const projectId = await expectWorkspaceWithFirstLook(page);
 
-    // The run is on record, so Next step has moved past Analyze.
-    await expect(page.locator('[data-next-step]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator(`[data-next-step] a[href*="/project/${projectId}/analyze"]`)).toHaveCount(0);
+    // The run is on record, so the tool bar has moved past Analyze. Analyze, Business has no "Next step" card any
+    // more (ADR-118); the tool bar says it: Analyze done, and never the tool tagged next.
+    const analyzeTool = page.locator(`[data-stage-tools] a[data-workspace-tool="analyze"][href*="/project/${projectId}/analyze"]`).first();
+    await expect(analyzeTool).toHaveAttribute('data-phase-state', 'done', { timeout: 60000 });
+    await expect(page.locator('[data-stage-tools] a[data-workspace-tool="analyze"][data-workspace-tool-next]')).toHaveCount(0);
   });
 });
