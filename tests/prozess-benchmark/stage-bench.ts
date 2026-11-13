@@ -393,7 +393,9 @@ async function one(id: string): Promise<void> {
   let finishReason: string | null = null;
   let modelVersion: string | null = null;
   let latencyMs: number | null = null;
-  for (let attempt = 1; attempt <= 4; attempt++) {
+  // A rate limit (429) is the key's per-minute quota, not the model: waited out in minutes, not seconds, and
+  // never counted as an answer.
+  for (let attempt = 1; attempt <= 6; attempt++) {
     const t0 = Date.now();
     try {
       const result = await ai.models.generateContent({
@@ -415,9 +417,10 @@ async function one(id: string): Promise<void> {
     } catch (e) {
       error = String((e as Error).message ?? e).slice(0, 300);
       record({ at: new Date().toISOString(), kind: STAGE, id, model: MODEL, failed: true, error: error.slice(0, 120), costUsd: 0 });
-      const transient = /429|503|500|RESOURCE_EXHAUSTED|UNAVAILABLE|overloaded|fetch failed|ECONNRESET/i.test(error);
+      const rateLimited = /429|RESOURCE_EXHAUSTED/i.test(error);
+      const transient = rateLimited || /503|500|UNAVAILABLE|overloaded|fetch failed|ECONNRESET/i.test(error);
       if (!transient && attempt >= 2) break;
-      await new Promise((r) => setTimeout(r, Math.min(60000, 5000 * 2 ** (attempt - 1))));
+      await new Promise((r) => setTimeout(r, rateLimited ? 45_000 * attempt : Math.min(60_000, 5_000 * 2 ** (attempt - 1))));
     }
   }
   const complete = finishReason === 'STOP' && !!text;
