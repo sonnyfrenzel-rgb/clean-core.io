@@ -424,7 +424,14 @@ export default function ProcessMap({
    * modeller talked into forgetting. Neither of the two ever touches `model` —
    * the as-is revision after editing is the as-is revision before it.
    */
-  const [editing, setEditing] = useState(false);
+  const [editingAsked, setEditingAsked] = useState(false);
+  /**
+   * Editing is what the reader asked for *and* what this project allows. The instance can outlive a
+   * change of project or of ownership (see the draft below), and a mode asked for on one project must
+   * not open the modeller, with its save, on a project this account may only read
+   * (QA review of 0c6b49ec357c, 74b480f956ec).
+   */
+  const editing = editingAsked && canEdit;
   const ownerOnlyId = useId();
   const [session, setSession] = useState(0);
 
@@ -789,7 +796,7 @@ export default function ProcessMap({
         aria-describedby={!canEdit ? ownerOnlyId : undefined}
         onClick={() => {
           setView('map');
-          setEditing((was) => !was);
+          setEditingAsked(!editing);
         }}
       >
         {wt(editing ? 'map.stopEditing' : 'map.editModel')}
