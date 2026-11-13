@@ -3,8 +3,8 @@
  *
  * The map is drawn only once the project, its run and its reading are loaded, which can take longer than
  * the hold itself. So the hold starts when the map first stands on the page, not when the address asked
- * for it; until then the follower waits, at most {@link MAP_FOLLOW_WAIT_MS}
- * (QA review of 0c6b49ec357c, 7470c349e342). A wheel, a touch, a key or a press by the reader still ends
+ * for it; until then the follower waits, at most {@link MAP_FOLLOW_WAIT_MS}.
+ * A wheel, a touch, a key or a press by the reader still ends
  * it at once — that part is the component's.
  */
 

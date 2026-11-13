@@ -303,7 +303,7 @@ function readSelectSource(text: string, sources: Map<string, string>, selected: 
   if (/\bJOIN\b/i.test(text)) return;
   const into = /\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?TABLE\s+@?(?:DATA\(\s*)?([\w<>/]+)/i.exec(text)?.[1]?.toLowerCase();
   // The table a SELECT fills a table from wins over its declared row type, which may be a local type (`ty_row`) that
-  // names no table at all (QA review of 0c6b49ec357c, f8200d0e40c6); the first SELECT still wins over a later one.
+  // names no table at all; the first SELECT still wins over a later one.
   if (into && (!sources.has(into) || rowTyped.has(into))) {
     sources.set(into, from);
     rowTyped.delete(into);

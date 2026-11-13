@@ -383,8 +383,7 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
     const innermostDecision = () => [...frames].reverse().find((f) => f.kind === 'if' || f.kind === 'case');
     /**
      * Where a role check belongs: the innermost decision arm or loop around it — a check in a loop runs only in a
-     * pass, and a loop may make none, so it is forgotten at ENDLOOP as a CHECK is (QA review of 0c6b49ec357c,
-     * f75ddb5ecfa9) — else the routine.
+     * pass, and a loop may make none, so it is forgotten at ENDLOOP as a CHECK is — else the routine.
      */
     const roleScope = () => [...frames].reverse().find((f) => f.kind !== 'try')?.armRoles ?? roles;
     const closeArm = (f: Frame | undefined, i: number) => {
@@ -584,7 +583,7 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
     // is a classification, not a workflow. The most transitions wins, a tie none.
     // A move whose routine states no from-value takes its callers' — only where every call of it asks for one, and
     // only where the name is one routine's: calls are read by the method's name alone, so two classes implementing
-    // it would hand one the other's callers (QA review of 0c6b49ec357c, 519e1e20ddf3).
+    // it would hand one the other's callers.
     const routinesByName = new Map<string, Set<string>>();
     for (const key of routines) {
       if (!key || key.startsWith('@')) continue;

@@ -428,8 +428,7 @@ export default function ProcessMap({
   /**
    * Editing is what the reader asked for *and* what this project allows. The instance can outlive a
    * change of project or of ownership (see the draft below), and a mode asked for on one project must
-   * not open the modeller, with its save, on a project this account may only read
-   * (QA review of 0c6b49ec357c, 74b480f956ec).
+   * not open the modeller, with its save, on a project this account may only read.
    */
   const editing = editingAsked && canEdit;
   const ownerOnlyId = useId();
