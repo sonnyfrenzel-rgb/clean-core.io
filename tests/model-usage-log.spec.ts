@@ -48,8 +48,16 @@ test('the line carries the four counts, the duration, the stage, the shape and t
     thoughtsTokenCount: 18_400,
     totalTokenCount: 24_412,
     failed: false,
+    finishReason: null,
   });
   expect(JSON.stringify(fields)).not.toContain('secret');
+});
+
+test('how the provider ended the answer is on the line, so a truncated call is visible as one (13.11.2026)', () => {
+  // An answer cut off at the output bound is a completed call the route then refuses; `failed: false` alone hid it.
+  expect(modelUsageLog({ usage: {}, model: 'm', leased: false, durationMs: 1, finishReason: 'MAX_TOKENS' })).toMatchObject({ failed: false, finishReason: 'MAX_TOKENS' });
+  expect(modelUsageLog({ usage: {}, model: 'm', leased: false, durationMs: 1, finishReason: '' })).toMatchObject({ finishReason: null });
+  expect(modelUsageLog({ usage: {}, model: 'm', leased: false, durationMs: 1 })).toMatchObject({ finishReason: null });
 });
 
 test('missing or odd counts are null, never invented', () => {
@@ -68,6 +76,7 @@ test('the route logs it after every provider call, from usageMetadata, with neit
   expect(args).toContain('responseShape: shape ?? null,');
   expect(args).toContain('leased: lease !== null,');
   expect(args).toContain('durationMs: Date.now() - attemptAt,');
+  expect(args).toContain('finishReason: result.candidates?.[0]?.finishReason ?? null,');
   expect(args).not.toMatch(/\bprompt\b|\btext\b|contents/);
   expect(src).toMatch(/const attemptAt = Date\.now\(\);\s*const result = await ai!\.models\.generateContent\(\{/);
 });

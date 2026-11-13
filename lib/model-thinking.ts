@@ -1,4 +1,5 @@
 import { ThinkingLevel, type ThinkingConfig } from '@google/genai';
+import { EVALUATION_GEMINI_MODEL } from './constants';
 
 /**
  * How much the model thinks before it answers, per answer shape.
@@ -20,6 +21,18 @@ import { ThinkingLevel, type ThinkingConfig } from '@google/genai';
  * thinking tokens and usable rows per part size, default against LOW) can be
  * run and its result set without a release. Unset or anything else: default.
  *
+ * A level per model and stage, where a shape says nothing (study of 13.11.2026,
+ * `docs/design/model-combination.md`): the model under evaluation
+ * (`EVALUATION_GEMINI_MODEL`, Hydrogen) thinks MEDIUM for the business
+ * statements. Measured blind on the seven largest learn cases of
+ * the process benchmark (132 expected statements): MEDIUM 84.1 % equal against
+ * 83.3 % with the provider's default, 24 against 35 technical sentences,
+ * 10,900 against 16,600 thinking tokens, 52 s against 73 s median — and no
+ * answer at or near the output bound, where the default's thinking had eaten
+ * into it on a 1,000-line program. LOW lost 3.8 points, HIGH 4.5. The product
+ * model keeps its default: on the same cases its default beat LOW 19:5 and
+ * MEDIUM 17:10 per statement where it answered at all.
+ *
  * Server-only (the route); pure apart from the SDK's enum.
  */
 export const DOCUMENTATION_BUSINESS_THINKING_ENV = 'GEMINI_THINKING_DOCUMENTATION_BUSINESS';
@@ -30,9 +43,16 @@ const CONFIGURABLE: Record<string, ThinkingLevel> = {
   high: ThinkingLevel.HIGH,
 };
 
+/** The level a model thinks at for a stage, where no shape rule applies. */
+const MODEL_STAGE_LEVELS: Readonly<Record<string, Readonly<Record<string, ThinkingLevel>>>> = {
+  [EVALUATION_GEMINI_MODEL]: { statements: ThinkingLevel.MEDIUM },
+};
+
 export function thinkingConfigFor(
   shape: string | undefined,
   env: Readonly<Record<string, string | undefined>> = process.env,
+  /** The call's model and stage, for the levels above; absent, only the shape decides. */
+  call?: { model: string; stage: string },
 ): ThinkingConfig | undefined {
   if (shape === 'transformation-fill') return { thinkingLevel: ThinkingLevel.LOW };
   // 3.0.20 (owner decision 2), measured 21.10.2026 on the 1,000-line example: rewording 201
@@ -42,6 +62,10 @@ export function thinkingConfigFor(
   if (shape === 'documentation-business') {
     const level = CONFIGURABLE[(env[DOCUMENTATION_BUSINESS_THINKING_ENV] ?? '').trim().toLowerCase()];
     return level ? { thinkingLevel: level } : undefined;
+  }
+  if (call && shape === undefined) {
+    const level = MODEL_STAGE_LEVELS[call.model]?.[call.stage];
+    if (level) return { thinkingLevel: level };
   }
   return undefined;
 }

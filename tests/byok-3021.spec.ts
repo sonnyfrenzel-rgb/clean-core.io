@@ -73,7 +73,9 @@ test.describe('the own Claude key, on a current model, in the data region "us"',
   test('the proxy records the region with who answered, beside the receipt and never inside it', () => {
     const route = read('app/api/gemini/route.ts');
     expect(route).toContain('inferenceGeo = result.inferenceGeo;');
-    expect(route).toContain("const answeredBy = { provider: receiptProvider, modelId: servedModel, keyOwner, ...(inferenceGeo ? { inferenceGeo } : {}) };");
+    // `answeredModel` since 13.11.2026 (`lib/model-combination.ts`): the model that answered in the end, which is
+    // the one asked unless the deployment's fallback answered after an incomplete first answer.
+    expect(route).toContain("const answeredBy = { provider: receiptProvider, modelId: answeredModel, keyOwner, ...(inferenceGeo ? { inferenceGeo } : {}) };");
     // The receipt's claim set is unchanged.
     const receipt = route.slice(route.indexOf('const receipt = issueModelReceipt('), route.indexOf('signingKey,', route.indexOf('const receipt = issueModelReceipt(')));
     expect(receipt).not.toContain('inferenceGeo');

@@ -5,6 +5,35 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — model combination of the business statements (prototype, 2026-11-13)
+
+Study for the owner's question of 13.11.2026 (`docs/design/model-combination.md`): whether `gemini-4-hydrogen` and
+the product model together write the business statements better than either alone. **Nothing the product calls
+changes**: production stays on `gemini-3.8-flash`, and every rule below is off unless the deployment sets it.
+
+### Added
+
+- **Two deterministic rules for the statements stage in `/api/gemini`, off by default** (`lib/model-combination.ts`):
+  a prompt longer than `GEMINI_LARGE_PROMPT_CHARS` (default 12,500 characters, about 200 ABAP lines) is answered by
+  `GEMINI_LARGE_PROMPT_MODEL`; an answer the first model did not finish (output bound, empty, unfinished — not the
+  provider's filter) is asked once more of `GEMINI_FALLBACK_MODEL`, under the same bound and deadline. Both decide
+  by the prompt's length and the answer's finish reason and by nothing a client sent; both run only on the
+  platform key; a named model must be in the register.
+- **A thinking level per model and stage** (`lib/model-thinking.ts`): `gemini-4-hydrogen` thinks MEDIUM for the
+  statements (measured blind on the seven largest learn cases: as many statements equal as the default, fewer
+  technical ones, 28 % cheaper and faster, never near the output bound). The product model keeps its default.
+- **The usage log line says how the provider ended the answer** (`finishReason`): a call cut off at the output
+  bound used to read `failed: false` with 32,768 tokens and nothing more.
+- **`tests/prozess-benchmark/weg-b-model.ts`**: the Weg B harness with a selectable model, thinking level and output
+  bound, a spend ledger with a cap, and a rewording mode.
+
+### Changed
+
+- **The receipt, the stage record and `answeredBy` name the model that answered** (`answeredModel`): the planned
+  model, or the fallback when it answered after an incomplete first answer. The receipt's claim set is unchanged.
+- **The statements output bound is 65,536** (was 32,768): thinking counts against the bound, and on a 1,000-line
+  program a thinking model ended as incomplete inside the old one.
+
 ## [v3.0.23] — 2026-11-13
 
 A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findings scheduled for it

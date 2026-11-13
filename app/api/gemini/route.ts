@@ -69,6 +69,7 @@ import { ATTEMPT_LIMIT_CODE, attemptLimitMessage, geminiAttemptLimiter } from '@
 import { LEASED_PROMPT_MAX_CHARS, isGateRepairPrompt } from '@/lib/transformation/fill-prompt';
 import { modelUsageLog } from '@/lib/model-usage-log';
 import { thinkingConfigFor } from '@/lib/model-thinking';
+import { planModelCall, type ModelCallPlan } from '@/lib/model-combination';
 import { MODEL_CALL_DEADLINE_MS, MODEL_NETWORK_CODE, MODEL_TIMEOUT_CODE, errorCodes, modelDeadline, modelTimeoutMessage, providerConnectionFailure, type ModelDeadline } from '@/lib/model-deadline';
 import { isModelCallStage, STAGE_MAX_OUTPUT_TOKENS } from '@/lib/model-call-stage';
 import { NAMING_PAUSED_CODE, NAMING_PAUSED_REASON, NAMING_STAGE, namingPromptAllowed } from '@/lib/process-naming';
@@ -630,6 +631,19 @@ export async function POST(request: NextRequest) {
     if (provider === 'anthropic' && !ALLOWED_CLAUDE_MODELS.has(servedModel)) {
       return NextResponse.json({ error: `Model "${servedModel}" is not permitted.` }, { status: 400 });
     }
+    // Model combination (study 13.11.2026, `lib/model-combination.ts`): on the
+    // platform key, a stage the study measured may route a large prompt to a
+    // second model and ask a fallback once when the first answer does not
+    // finish. Both are the deployment's choice (`GEMINI_LARGE_PROMPT_MODEL`,
+    // `GEMINI_FALLBACK_MODEL`), off unless set, and decided by the prompt's
+    // length alone — the client's request was checked against the register
+    // above and is not consulted again. `answeredModel` is who answered in the
+    // end: the receipt, the stage record and `answeredBy` name it, never the
+    // model that was asked first and did not finish.
+    const plan: ModelCallPlan = provider === 'gemini'
+      ? planModelCall({ stage, promptLength: prompt.length, model: servedModel, platformKey: !ownKey, env: process.env, register: ALLOWED_MODELS })
+      : { model: servedModel, routed: false, fallback: null };
+    let answeredModel = plan.model;
     const ai = provider !== 'gemini'
       ? null
       : byokKey
@@ -713,8 +727,9 @@ export async function POST(request: NextRequest) {
     deadline = modelDeadline(Math.max(1_000, MODEL_CALL_DEADLINE_MS - (Date.now() - arrivedAt)), abortSignal);
     const callSignal = deadline.signal;
     const responseSchema = jsonResponse && isModelStage(stage) ? responseSchemaForStage(stage, shape) : undefined;
-    // Fill and repair calls think LOW (`lib/model-thinking.ts`, measured 13.10.2026); every other shape keeps the default.
-    const thinkingConfig = thinkingConfigFor(shape);
+    // Fill and repair calls think LOW (`lib/model-thinking.ts`, measured 13.10.2026); where no shape rule applies,
+    // the model's level for the stage (13.11.2026); every other call keeps the default.
+    const thinkingConfig = thinkingConfigFor(shape, process.env, { model: plan.model, stage });
     // Set inside the provider call below; typed so the assignment there is not narrowed away.
     let inferenceGeo = null as string | null;
     // SEC-01 (3.0.21): the most output (thinking included) one call of this stage may produce.
@@ -762,7 +777,7 @@ export async function POST(request: NextRequest) {
       : await callWithRetry(async () => {
           const attemptAt = Date.now();
           const result = await ai!.models.generateContent({
-            model,
+            model: plan.model,
             contents: prompt,
             // A stage whose answer has a fixed shape sends it as a schema, so
             // the provider decodes against it rather than taking JSON mode as
@@ -781,7 +796,7 @@ export async function POST(request: NextRequest) {
             // counts are null.
             logger.warn('gemini usage', modelUsageLog({
               usage: undefined,
-              model,
+              model: plan.model,
               stage: stage ?? null,
               responseShape: shape ?? null,
               leased: lease !== null,
@@ -794,11 +809,12 @@ export async function POST(request: NextRequest) {
           // only, never the prompt or the answer (`lib/model-usage-log.ts`).
           logger.info('gemini usage', modelUsageLog({
             usage: result.usageMetadata,
-            model,
+            model: plan.model,
             stage: stage ?? null,
             responseShape: shape ?? null,
             leased: lease !== null,
             durationMs: Date.now() - attemptAt,
+            finishReason: result.candidates?.[0]?.finishReason ?? null,
           }));
           return {
             text: result.text,
@@ -814,18 +830,62 @@ export async function POST(request: NextRequest) {
     // (`lib/model-completion.ts`). Not retried: the same prompt runs into the
     // same limit. The log names the reason code and nothing the provider said.
     const completion = modelCompletion(answer);
-    if (!completion.ok) {
+    let outcome = completion;
+    // The cascade (`lib/model-combination.ts`): an answer the first model did not
+    // finish — cut off at the bound, empty, unfinished; not one the provider's
+    // filter stopped, which a second model would not change — is asked once
+    // more of the deployment's fallback model, with that model's own thinking
+    // level, under the same bound and the same deadline. Logged as a call of
+    // its own; the stub answers no fallback, because the stub's answer is the
+    // test's choice.
+    if (!completion.ok && completion.reason !== 'filtered' && plan.fallback && ai && !stubbed) {
+      const fallbackModel = plan.fallback;
+      logger.warn('gemini answer incomplete, asking the fallback model', { route: 'api/gemini', reason: completion.reason, finishReason: completion.finishReason });
+      const fallbackThinking = thinkingConfigFor(shape, process.env, { model: fallbackModel, stage });
+      const second: ModelAnswer = await callWithRetry(async () => {
+        const attemptAt = Date.now();
+        const result = await ai.models.generateContent({
+          model: fallbackModel,
+          contents: prompt,
+          config: jsonResponse
+            ? {
+                responseMimeType: 'application/json',
+                ...(responseSchema ? { responseJsonSchema: responseSchema } : {}),
+                ...(fallbackThinking ? { thinkingConfig: fallbackThinking } : {}),
+                maxOutputTokens,
+                abortSignal: callSignal,
+              }
+            : { ...(fallbackThinking ? { thinkingConfig: fallbackThinking } : {}), maxOutputTokens, abortSignal: callSignal },
+        }).catch((providerErr: unknown) => {
+          logger.warn('gemini usage', modelUsageLog({ usage: undefined, model: fallbackModel, stage: stage ?? null, responseShape: shape ?? null, leased: lease !== null, durationMs: Date.now() - attemptAt, failed: true }));
+          throw providerErr;
+        });
+        logger.info('gemini usage', modelUsageLog({
+          usage: result.usageMetadata,
+          model: fallbackModel,
+          stage: stage ?? null,
+          responseShape: shape ?? null,
+          leased: lease !== null,
+          durationMs: Date.now() - attemptAt,
+          finishReason: result.candidates?.[0]?.finishReason ?? null,
+        }));
+        return { text: result.text, finishReason: result.candidates?.[0]?.finishReason ?? null, blockReason: result.promptFeedback?.blockReason ?? null };
+      }, undefined, undefined, callSignal);
+      answeredModel = fallbackModel;
+      outcome = modelCompletion(second);
+    }
+    if (!outcome.ok) {
       logger.warn('gemini answer incomplete', {
         route: 'api/gemini',
-        reason: completion.reason,
-        finishReason: completion.finishReason,
+        reason: outcome.reason,
+        finishReason: outcome.finishReason,
       });
       return NextResponse.json(
-        { error: incompleteAnswerMessage(completion.reason), code: MODEL_INCOMPLETE_CODE, reason: completion.reason },
+        { error: incompleteAnswerMessage(outcome.reason), code: MODEL_INCOMPLETE_CODE, reason: outcome.reason },
         { status: 502 },
       );
     }
-    const text = completion.text;
+    const text = outcome.text;
 
     // The receipt. Minted here because this is the only place that knows the
     // call happened at all — the narrative reaches `/api/runs/create` in a
@@ -846,9 +906,9 @@ export async function POST(request: NextRequest) {
     // Who answered, as every answer carries it: the receipt's claim set is
     // unchanged (no signed format changes what it signs); the data region of a
     // Claude answer travels beside it.
-    const answeredBy = { provider: receiptProvider, modelId: servedModel, keyOwner, ...(inferenceGeo ? { inferenceGeo } : {}) };
+    const answeredBy = { provider: receiptProvider, modelId: answeredModel, keyOwner, ...(inferenceGeo ? { inferenceGeo } : {}) };
     if (isModelStage(stage) && !stubbed) {
-      const record: StageAnswerRecord = { provider: receiptProvider, modelId: servedModel, keyOwner, at: new Date().toISOString(), ...(inferenceGeo ? { inferenceGeo } : {}) };
+      const record: StageAnswerRecord = { provider: receiptProvider, modelId: answeredModel, keyOwner, at: new Date().toISOString(), ...(inferenceGeo ? { inferenceGeo } : {}) };
       const previous = (profile.data() as { modelAnswers?: Record<string, unknown> } | undefined)?.modelAnswers?.[stage];
       if (stageAnswerNeedsWrite(previous, record)) {
         try {
@@ -880,7 +940,7 @@ export async function POST(request: NextRequest) {
         uid: decodedToken.uid,
         text,
         provider: provider === 'gemini' ? MODEL_PROVIDER_ID : receiptProvider,
-        modelId: servedModel,
+        modelId: answeredModel,
         byok: !!byokKey,
         ...(stage !== undefined ? { stage } : {}),
         // CA-INT-02 (3.0.21): the receipt binds the prompt as well as the answer.

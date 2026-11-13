@@ -31,11 +31,19 @@ export function isModelCallStage(value: unknown): value is ModelCallStage {
  * Gemini models produce. An answer that reaches its bound ends as incomplete
  * (`lib/model-completion.ts`) — refused, never receipted — so a bound set too
  * low shows up as a named refusal, not as truncated text.
+ *
+ * `statements` went to the most on 13.11.2026: thinking counts against the
+ * bound, and on a 1,000-line program a thinking model spent the first 32,768
+ * tokens on thinking and sentences together and ended as incomplete. The
+ * largest measured statements answer (734 lines, thinking MEDIUM) was 5,415
+ * sentence tokens after 11,673 of thinking; the bound is now the ceiling of
+ * what the models produce, and the thinking level per model
+ * (`lib/model-thinking.ts`) is what keeps a call well inside it.
  */
 export const STAGE_MAX_OUTPUT_TOKENS: Record<ModelCallStage, number> = {
   analyze: 32_768,
   naming: 16_384,
-  statements: 32_768,
+  statements: 65_536,
   design: 32_768,
   transformation: 65_536,
   documentation: 65_536,
