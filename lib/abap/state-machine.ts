@@ -138,9 +138,17 @@ const OPERAND = String.raw`(?:me->)?[\w/]+(?:(?:->|-|=>)[\w/]+)*(?:\(\s*\))?`;
 
 interface Constants {
   value(name: string): string | null;
+  /** The class or interface (lower case) whose code is read now; null at program level or in a FORM. */
+  scope: string | null;
+  /**
+   * The status words the code writes into more than one field (`ms_order-status`, `ms_payment-status`): each of
+   * those fields is a status of its own, keyed by its word and the field (`statusKeyOf`), never merged by the word.
+   */
+  split: ReadonlySet<string>;
 }
 
 function readConstants(statements: readonly AbapStatement[]): Constants {
+  /** The constants declared outside any class or interface. */
   const values = new Map<string, string>();
   /** Per class or interface (lower case), the constants it declares — what `zif_x=>c_approved` resolves against. */
   const owned = new Map<string, Map<string, string>>();
@@ -161,14 +169,22 @@ function readConstants(statements: readonly AbapStatement[]): Constants {
     if (!m) continue;
     const name = [...group, m[1].toLowerCase()].join('-');
     const value = unquote(m[2]);
-    values.set(name, value);
     declared.set(name, (declared.get(name) ?? new Set<string>()).add(value));
     if (owner) owned.set(owner, (owned.get(owner) ?? new Map<string, string>()).set(name, value));
+    else values.set(name, value);
   }
   return {
+    scope: null,
+    split: new Set<string>(),
     value(name: string) {
       const key = name.toLowerCase();
-      if (values.has(key)) return values.get(key) ?? null;
+      // An unqualified name is the one the code being read sees: its own class's or interface's, else the
+      // program's, else the one value every declaration agrees on — never whichever declaration came last.
+      if (!key.includes('=>')) {
+        const mine = this.scope ? owned.get(this.scope)?.get(key) : undefined;
+        if (mine !== undefined) return mine;
+        if (values.has(key)) return values.get(key) ?? null;
+      }
       // An interface or class constant `zif_x=>c_approved` is read where this source defines it: in that type when
       // the type declares it, else only when every declaration of the name agrees — never another type's value.
       const parts = key.split('=>');
@@ -209,6 +225,28 @@ function statusWordOf(operand: string): string | null {
   return m ? wordOf(m[1]) : null;
 }
 
+/**
+ * The field an operand names, each segment without its declaration prefix: `ms_req-status` and `ls_req-status` are
+ * `req-status`, `mv_status` is `status` — copies of one row are one field, an order's and a payment's status are two.
+ */
+function fieldIdentity(operand: string): string {
+  return operand.trim().toLowerCase().replace(/^me->/, '').split(/->|-|=>/).map((p) => p.replace(/^[glmiecrps][a-z]?_/, '')).join('-');
+}
+
+/**
+ * What groups the reads and moves of a status: its word (`status`) — or, where the code writes that word into several
+ * fields (`Constants.split`), the word and the field (`status@order-status`). A getter or setter names no field and
+ * keeps the word.
+ */
+function statusKeyOf(operand: string, constants: Constants): string | null {
+  const word = statusWordOf(operand);
+  if (!word || !constants.split.has(word) || /\(/.test(operand)) return word;
+  return `${word}@${fieldIdentity(operand)}`;
+}
+
+/** The status word of a key (`statusKeyOf`). */
+const wordOfKey = (key: string) => key.split('@')[0];
+
 interface Comparison { word: string; op: '=' | '<>' | 'IN'; values: string[]; constants: Array<string | null> }
 
 /** The comparisons of a status in a condition: `status <> gc_draft AND status <> gc_new`, `get_status( ) = 'A'`. */
@@ -216,7 +254,7 @@ function comparisons(condition: string, constants: Constants): Comparison[] {
   const out: Comparison[] = [];
   const re = new RegExp(String.raw`(${OPERAND})\s*(=|<>|\bEQ\b|\bNE\b|\bNOT\s+IN\b|\bIN\b)\s*(\(\s*(?:${VALUE})(?:\s*,\s*(?:${VALUE}))*\s*\)|${VALUE})`, 'gi');
   for (const m of condition.matchAll(re)) {
-    const word = statusWordOf(m[1]);
+    const word = statusKeyOf(m[1], constants);
     if (!word) continue;
     const opRaw = m[2].toUpperCase().replace(/\s+/g, ' ');
     if (opRaw === 'NOT IN') continue;
@@ -228,15 +266,15 @@ function comparisons(condition: string, constants: Constants): Comparison[] {
   return out;
 }
 
-interface Assignment { word: string; value: string; constant: string | null }
+interface Assignment { word: string; value: string; constant: string | null; /** The field written, null for a setter. */ field: string | null }
 
 function assignmentOf(statement: AbapStatement, constants: Constants): Assignment | null {
   const text = statement.text.trim().replace(/\.$/, '');
   const assign = new RegExp(String.raw`^(${OPERAND})\s*=\s*(${VALUE})$`, 'i').exec(text);
   if (assign && !/\(/.test(assign[1])) {
-    const word = statusWordOf(assign[1]);
+    const word = statusKeyOf(assign[1], constants);
     const value = word ? valueOf(assign[2], constants) : null;
-    if (word && value) return { word, ...value };
+    if (word && value) return { word, ...value, field: assign[1] };
     return null;
   }
   // A setter: `set_status( gc_approved )`, `me->set_status( iv_status = gc_x )`, `io_ctx->transition( 'RELEASED' )`.
@@ -245,7 +283,7 @@ function assignmentOf(statement: AbapStatement, constants: Constants): Assignmen
     const setter = STATUS_SETTER.exec(call[1]);
     if (!setter) return null;
     const value = valueOf(call[2], constants);
-    if (value) return { word: wordOf(setter[1] ?? setter[2]), ...value };
+    if (value) return { word: wordOf(setter[1] ?? setter[2]), ...value, field: null };
   }
   return null;
 }
@@ -265,7 +303,7 @@ function enclosingStates(frames: readonly Frame[], statements: readonly AbapStat
         if (c.op === '=' || c.op === 'IN') out.push({ word: c.word, values: c.values, line: statements[f.start].lineStart });
       }
     }
-    const word = f.kind === 'case' && f.subject ? statusWordOf(f.subject) : null;
+    const word = f.kind === 'case' && f.subject ? statusKeyOf(f.subject, constants) : null;
     if (word && f.when) {
       const values = f.when.map((w) => valueOf(w, constants)?.value).filter((v): v is string => v != null);
       if (values.length) out.push({ word, values, line: statements[f.start].lineStart });
@@ -378,6 +416,15 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
     const statements = (statementsIn ?? readStatements(String(source ?? ''))).filter((s) => !s.nativeSql);
     const constants = readConstants(statements);
     const routines = routineKeys(statements);
+    const scopeOf = (i: number) => (routines[i]?.includes('=>') ? routines[i]!.split('=>')[0].toLowerCase() : null);
+    // A status word written into two different fields makes each field a status of its own (`Constants.split`).
+    const fieldsByWord = new Map<string, Set<string>>();
+    statements.forEach((s, i) => {
+      constants.scope = scopeOf(i);
+      const a = assignmentOf(s, constants);
+      if (a?.field) fieldsByWord.set(a.word, (fieldsByWord.get(a.word) ?? new Set<string>()).add(fieldIdentity(a.field)));
+    });
+    constants.split = new Set([...fieldsByWord].filter(([, fields]) => fields.size > 1).map(([word]) => word));
 
     // The open blocks at every statement, per routine, and the checks met so far in it.
     const found: Array<{ word: string; transition: StateTransition }> = [];
@@ -429,6 +476,7 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
       const s = statements[i];
       const t = s.text.trim();
       const kw = (/^[\w-]+/.exec(t)?.[0] ?? '').toUpperCase();
+      constants.scope = scopeOf(i);
       if (routines[i] !== currentRoutine || /^(?:METHOD|FORM)$/.test(kw)) {
         currentRoutine = routines[i];
         frames = [];
@@ -483,7 +531,8 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
       }
       if (kw === 'CASE') {
         const subject = t.replace(/^CASE\s+/i, '').replace(/\.$/, '');
-        if (statusWordOf(subject)) reads.set(statusWordOf(subject)!, [...(reads.get(statusWordOf(subject)!) ?? []), s.lineStart]);
+        const key = statusKeyOf(subject, constants);
+        if (key) reads.set(key, [...(reads.get(key) ?? []), s.lineStart]);
         frames.push(frame('case', i, null, subject));
         continue;
       }
@@ -621,7 +670,7 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
     if (!qualified.length) return null;
     qualified.sort((a, b) => b[1].length - a[1].length);
     if (qualified.length > 1 && qualified[0][1].length === qualified[1][1].length) return null;
-    const [field, list] = qualified[0];
+    const [key, list] = qualified[0];
     const states: StateMachine['states'] = [];
     for (const t of list) if (!states.some((s) => s.value === t.to)) states.push({ value: t.to, constant: t.toConstant, line: t.line });
     // A value the code only demands (the draft a request starts in) is a state too.
@@ -632,10 +681,10 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
     }
     const workflow = commandWorkflowOf(list, arms);
     return {
-      field,
+      field: wordOfKey(key),
       states,
       transitions: list,
-      reads: [...new Set(reads.get(field) ?? [])].sort((a, b) => a - b),
+      reads: [...new Set(reads.get(key) ?? [])].sort((a, b) => a - b),
       workflow,
       driver: workflow ? scenarioDriverOf(statements, routines, workflow) : null,
     };
@@ -778,7 +827,8 @@ export function stateWords(value: string, constant: string | null): string {
       .replace(/^(?:g|l|m|s)?c_/i, '')
       .replace(/^(?:co|c)_/i, '')
       .replace(/^(?:status|stat|state|zustand|stufe|phase|stage)_/i, '');
-    if (/^[a-z][a-z_]{2,}$/i.test(stem)) return sentence(stem.replace(/_/g, ' '));
+    // A name that says only "status" (`c_status`) names the field, not the state: the code stays the code.
+    if (/^[a-z][a-z_]{2,}$/i.test(stem) && !/^(?:status|stat|state|zustand|stufe|phase|stage)$/i.test(stem)) return sentence(stem.replace(/_/g, ' '));
   }
   return `'${v}'`;
 }

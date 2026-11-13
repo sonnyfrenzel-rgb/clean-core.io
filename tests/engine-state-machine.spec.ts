@@ -425,3 +425,76 @@ test('a qualified constant resolves in its own type, not to a same-named constan
   const machine = readStateMachine(src);
   expect(machine?.transitions.map((t) => `${t.routine}:${t.from.join('/')}>${t.to}`)).toEqual(['OPEN:>A', 'CLOSE:A>C']);
 });
+
+test('two status fields the code writes are two workflows, not one merged by the word "status"', () => {
+  const src = [
+    'REPORT zt_two_fields.',
+    "CONSTANTS: gc_new TYPE c VALUE 'N',",
+    "           gc_released TYPE c VALUE 'R',",
+    "           gc_closed TYPE c VALUE 'C',",
+    "           gc_open TYPE c VALUE 'O',",
+    "           gc_paid TYPE c VALUE 'P'.",
+    'DATA: gs_order TYPE zt_order, gs_payment TYPE zt_pay.',
+    'FORM release.',
+    '  CHECK gs_order-status = gc_new.',
+    '  gs_order-status = gc_released.',
+    'ENDFORM.',
+    'FORM close.',
+    '  CHECK gs_order-status = gc_released.',
+    '  gs_order-status = gc_closed.',
+    'ENDFORM.',
+    'FORM reopen.',
+    '  CHECK gs_order-status = gc_closed.',
+    '  gs_order-status = gc_new.',
+    'ENDFORM.',
+    'FORM pay.',
+    '  CHECK gs_payment-status = gc_open.',
+    '  gs_payment-status = gc_paid.',
+    'ENDFORM.',
+    'FORM unpay.',
+    '  CHECK gs_payment-status = gc_paid.',
+    '  gs_payment-status = gc_open.',
+    'ENDFORM.',
+  ].join('\n');
+  const machine = readStateMachine(src);
+  expect(machine?.field).toBe('status');
+  expect(machine?.transitions.map((t) => t.routine)).toEqual(['RELEASE', 'CLOSE', 'REOPEN']);
+  expect(machine?.states.map((s) => s.value).sort()).toEqual(['C', 'N', 'R']);
+  // Copies of one row (`ls_order`, `gs_order`) stay one field.
+  const copies = src.replace("  gs_order-status = gc_closed.", "  DATA(ls_order) = gs_order.\n  ls_order-status = gc_closed.");
+  expect(readStateMachine(copies)?.transitions.map((t) => t.routine)).toEqual(['RELEASE', 'CLOSE', 'REOPEN']);
+});
+
+test('an unqualified constant two classes declare resolves in the class whose code uses it', () => {
+  const src = [
+    'REPORT zt_scoped_constants.',
+    'CLASS lcl_a DEFINITION.',
+    '  PUBLIC SECTION.',
+    "    CONSTANTS: c_open TYPE c VALUE 'A', c_done TYPE c VALUE 'B'.",
+    '    DATA ms_req TYPE zt_req.',
+    '    METHODS open.',
+    '    METHODS finish.',
+    'ENDCLASS.',
+    'CLASS lcl_b DEFINITION.',
+    '  PUBLIC SECTION.',
+    "    CONSTANTS c_open TYPE c VALUE 'X'.",
+    'ENDCLASS.',
+    'CLASS lcl_a IMPLEMENTATION.',
+    '  METHOD open.',
+    '    ms_req-status = c_open.',
+    '  ENDMETHOD.',
+    '  METHOD finish.',
+    '    CHECK ms_req-status = c_open.',
+    '    ms_req-status = c_done.',
+    '  ENDMETHOD.',
+    'ENDCLASS.',
+  ].join('\n');
+  const machine = readStateMachine(src);
+  expect(machine?.transitions.map((t) => `${t.routine}:${t.from.join('/')}>${t.to}`)).toEqual(['LCL_A=>OPEN:>A', 'LCL_A=>FINISH:A>B']);
+});
+
+test('a constant that says only "status" leaves the state as its code', () => {
+  expect(stateWords('A', 'c_status')).toBe("'A'");
+  expect(stateWords('A', 'gc_status')).toBe("'A'");
+  expect(stateWords('A', 'gc_status_approved')).toBe('Approved');
+});
