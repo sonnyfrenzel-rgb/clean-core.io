@@ -19,13 +19,15 @@ owner decides, and every rule below is **off unless the deployment sets it**.
 2. Against that corrected baseline, judged in one blind round over all 150 learn cases, Hydrogen MEDIUM alone beats
    the product model by **8.0 points** equal (85.2 % against 77.2 %), with half the sentences that contradict the
    code (5 against 10) and no dropout (0 against 5) — at 0.074 $ against 0.052 $ today and against 0.103 $ from
-   1.1.2027.
+   1.1.2027. **On the holdout, measured once, the gain holds and grows: 84.6 % against 68.2 %** (the product model
+   lost 13 of 150 holdout cases to its thinking loop), 8 against 15 wrong sentences, 32 s against 64 s median.
 3. The one combination that adds to it is **draft and rewording**: Hydrogen MEDIUM writes the statements, the
-   product model at LOW rewords them for a business reader, anchors and facts guarded. It is better than Hydrogen
-   alone on 50 statements and worse on 9 (sign test p = 5·10⁻⁸), **+2.6 points** equal (87.8 %), and it cuts the
-   technical sentences from 48 % to **20 %** — the weakness the owner named. It costs +15 % (0.085 $; 0.096 $ from
-   2027, still under the product model's 0.103 $), +13 s median, and it contradicted the code once more than the
-   draft (6 against 5: one rewording turned "start-of-selection is left" into "processing ends").
+   product model at LOW rewords them for a business reader, anchors, facts, control flow and negations guarded. On
+   the learn set it was better than Hydrogen alone on 50 statements and worse on 9 (sign test p = 5·10⁻⁸), **+2.6
+   points** equal (87.8 %), technical sentences 48 % → **20 %** — the weakness the owner named. **On the holdout,
+   with the guard as built: +1.9 points (86.5 % against 84.6 %), 43:10 (p = 6·10⁻⁶), technical sentences 50 % →
+   31 %**, +0.013 $ a case and +13 s median. On both halves it contradicted the code once more than the draft (9
+   against 8 on the holdout): a code translated into the wrong business term, which a guard on words cannot catch.
 4. Routing by program size, the offline front-runner against yesterday's Hydrogen, adds **0.8 points** over Hydrogen
    MEDIUM alone at the same cost today and a higher one from 2027; a cascade on the product model's dropouts adds
    2.8 points to the product model and stays 5 points under Hydrogen alone; an ensemble is not worth it (§4).
@@ -103,10 +105,34 @@ Head to head per statement: Hydrogen MEDIUM against Flash 244:91 (p = 3·10⁻¹
 element, every number and quoted literal, length) — most in cases whose sentences carry many literals.
 
 This judge round is stricter than yesterday's (the same Flash answers scored 84.8 % then, 77.2 % now); only
-differences within one round are read. **The holdout was not spent**: the rule asks for a strategy that clearly
-beats both singles — at least about 3 points and fewer wrong sentences than the better single — and the rewording
-is +2.6 points with one wrong sentence more. The owner decides whether to measure it there once (about 13 $ of
-calls plus a judge round).
+differences within one round are read.
+
+**The holdout, once** (owner decision 13.11.2026: "holdout first, then dev"; configuration frozen in
+`docs/prozess-benchmark/MODEL-COMBO-FREEZE-2026-11-13.md` before the first call; 150 cases of `holdout` +
+`w3_holdout`, 1,759 expected statements, the three variants judged blind in one round of six judges, the mapping
+opened after the last verdict; the rewording here is the **guarded** one as built in §3.6):
+
+| Holdout | equal | partial | missing | wrong | dropouts | technical | $/case today | $/case 2027 | median s | p90 s |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Flash 3.8 default — single | 68.2 % | 16.0 % | 15.4 % | 15 | **13** (MAX_TOKENS at 32,768) | 37 % | 0.055 | 0.110 | 64.3 | 204.7 |
+| **Hydrogen MEDIUM — single** | **84.6 %** | 14.1 % | 1.0 % | **8** | 0 | 50 % | 0.079 | 0.079 | **32.5** | **55.1** |
+| **c  draft → guarded rewording** | **86.5 %** | 12.2 % | 1.0 % | 9 | 0 | **31 %** | 0.092 | 0.104 | 46.0 | 79.6 |
+| a1 Cascade: Flash, Hydrogen on dropout | 77.9 % | 17.1 % | 4.5 % | 16 | 0 | 42 % | 0.064 | 0.119 | 64.3 | 212.6 |
+
+Head to head per statement: Hydrogen against Flash 408:91 (p = 6·10⁻⁴⁹); rewording against Hydrogen 43:10
+(p = 6·10⁻⁶); rewording against Flash 421:73. Waves: W1+W2 84.6 / 82.4 / 67.7, W3 90.4 / 89.1 / 69.2 (rewording /
+Hydrogen / Flash). **The learn gain holds**: Hydrogen MEDIUM over Flash +16.4 points on the holdout (+8.0 on learn —
+the product model lost 13 of 150 holdout cases to its thinking loop, 5 of 150 on learn), the rewording over the
+draft +1.9 points (+2.6 unguarded on learn, +1.6 to +2.0 derived for the guard), technical sentences 50 % → 31 %
+(learn 48 % → 20 % unguarded, 24–32 % derived for the guard). Wrong sentences: the rewording has one more than the
+draft on both halves — on the holdout BM-041-B03, where "field shkzg equals 'H'" became "the item is a credit memo
+('H')": the literal is kept, the business term is wrong. A guard on words cannot catch a wrong translation of a
+code; that is the rewording's residual risk, one statement in about 1,700.
+
+**The guard** (§3.6) on the holdout rewording: 58.5 % of the draft's sentences reworded, 41.5 % kept — rejected for
+a lost fact 688, a changed control flow 621, a changed negation 275, unchanged 120, Markdown 24, an added identifier
+14, a moved element 1. On the learn sample re-read with the same guard: 62.4 % reworded; the BM-076-B05 drift is
+rejected (control flow).
 
 ## 3. The design
 

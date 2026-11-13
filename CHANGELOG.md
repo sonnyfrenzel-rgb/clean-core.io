@@ -37,7 +37,11 @@ changes**: production stays on `gemini-3.8-flash`, and every rule below is off u
   both receipts, merges deterministically on the server and records the draft's model as `origin.draft`; the chip
   says "Written by … from a draft by …", the panel counts the sentences worded and kept, the button says "Two model
   calls". Measured blind on 150 learn cases before the guard: 87.8 % equal against 85.2 % for the draft alone, a
-  fifth as many technical sentences.
+  fifth as many technical sentences. **Measured once on the frozen holdout** (150 cases, 1,759 statements, one blind
+  round, `docs/prozess-benchmark/MODEL-COMBO-FREEZE-2026-11-13.md`): the statements on `gemini-4-hydrogen` MEDIUM
+  84.6 % equal against 68.2 % on the product model (13 of 150 cases lost to its thinking loop), 8 against 15
+  sentences contradicting the code, 32 s against 64 s median; the guarded rewording on top 86.5 %, technical
+  sentences 50 % → 31 %, one contradicting sentence more than the draft.
 - **`tests/prozess-benchmark/weg-b-model.ts`**: the Weg B harness with a selectable model, thinking level and output
   bound, a spend ledger with a cap, a rewording mode on the product's prompt and guard, and a re-read mode that
   applies the current guard to stored rewordings without a call.
