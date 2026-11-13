@@ -118,6 +118,58 @@ test('a local of one routine is not the field a decision of another routine read
   expect(step?.detail?.readAtLines).toEqual(['12']);
 });
 
+test('a parameter of one routine is not the field a decision of another routine reads', () => {
+  const forms = [
+    'REPORT zflag_params.', //                                                    1
+    'START-OF-SELECTION.', //                                                     2
+    '  PERFORM check_a CHANGING gv_x.', //                                        3
+    '  PERFORM check_b USING gv_y.', //                                           4
+    'FORM check_a CHANGING lv_approved TYPE abap_bool.', //                       5
+    '  IF p_a > 1.', //                                                           6
+    "    CALL FUNCTION 'Z_ASK'.", //                                              7
+    '  ELSE.', //                                                                 8
+    '    lv_approved = abap_true.', //                                            9
+    '  ENDIF.', //                                                                10
+    "  CALL FUNCTION 'Z_NEXT_A'.", //                                             11
+    'ENDFORM.', //                                                                12
+    'FORM check_b USING lv_approved TYPE abap_bool.', //                          13
+    '  IF lv_approved = abap_true.', //                                           14
+    "    CALL FUNCTION 'Z_DONE'.", //                                             15
+    '  ENDIF.', //                                                                16
+    'ENDFORM.', //                                                                17
+  ].join('\n');
+  expect(buildProcessSkeleton(forms, NEW).nodes.filter((n) => n.detail?.flagStep === true)).toHaveLength(0);
+  const methods = [
+    'REPORT zflag_method_params.',
+    'CLASS lcl_a DEFINITION.',
+    '  PUBLIC SECTION.',
+    '    METHODS decide CHANGING cv_ok TYPE abap_bool.',
+    '    METHODS act IMPORTING cv_ok TYPE abap_bool.',
+    'ENDCLASS.',
+    'CLASS lcl_a IMPLEMENTATION.',
+    '  METHOD decide.',
+    '    IF p_a > 1.',
+    "      CALL FUNCTION 'Z_ASK'.",
+    '    ELSE.',
+    '      cv_ok = abap_true.',
+    '    ENDIF.',
+    "    CALL FUNCTION 'Z_NEXT_A'.",
+    '  ENDMETHOD.',
+    '  METHOD act.',
+    '    IF cv_ok = abap_true.',
+    "      CALL FUNCTION 'Z_DONE'.",
+    '    ENDIF.',
+    '  ENDMETHOD.',
+    'ENDCLASS.',
+  ].join('\n');
+  expect(buildProcessSkeleton(methods, NEW).nodes.filter((n) => n.detail?.flagStep === true)).toHaveLength(0);
+  // A global the two routines share is still one variable: the flag step stays.
+  const global = forms
+    .replace('FORM check_a CHANGING lv_approved TYPE abap_bool.', 'FORM check_a.')
+    .replace('FORM check_b USING lv_approved TYPE abap_bool.', 'FORM check_b.');
+  expect(buildProcessSkeleton(global, NEW).nodes.filter((n) => n.detail?.flagStep === true)).toHaveLength(1);
+});
+
 test('a constant of the source is a flag value; a decision table stays one classification', () => {
   const source = [
     'REPORT zflag_const.', //                                                     1

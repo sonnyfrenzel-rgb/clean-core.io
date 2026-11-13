@@ -3526,6 +3526,27 @@ class SkeletonBuilder {
     return null;
   }
 
+  /**
+   * Does this routine take `name` as a parameter — in its `FORM` line (`USING`, `CHANGING`, `TABLES`) or in the
+   * `METHODS` line that declares it? A parameter is the routine's own variable, like one it declares.
+   */
+  private takesAsParameter(routine: Block, name: string): boolean {
+    const key = name.toUpperCase().replace(/-.*$/, '');
+    const word = new RegExp(`(?:^|[\\s:,(])${key.replace(/[/]/g, '\\/')}(?=[\\s).,]|$)`, 'i');
+    // A parameter list without its types, so a type that happens to share the name is not read as a parameter.
+    const parameters = (text: string) => text.replace(/\b(?:TYPE|LIKE)\s+(?:REF\s+TO\s+|(?:STANDARD\s+|SORTED\s+|HASHED\s+)?TABLE\s+OF\s+)?[\w/-]+/gi, ' ');
+    const opener = this.statements[routine.openIndex];
+    const header = opener ? /^(FORM|METHOD)\s+([\w/~]+)\s*([\s\S]*)$/i.exec(opener.text.trim()) : null;
+    if (!header) return false;
+    if (header[1].toUpperCase() === 'FORM') return word.test(parameters(header[3]));
+    const method = (header[2].split('~').pop() ?? header[2]).toUpperCase();
+    return this.statements.some((statement) => {
+      if (statement.keyword !== 'METHODS' && statement.keyword !== 'CLASS-METHODS') return false;
+      const declared = /^(?:CLASS-)?METHODS\s+([\w/]+)\s*([\s\S]*)$/i.exec(statement.text.trim());
+      return !!declared && declared[1].toUpperCase() === method && word.test(parameters(declared[2]));
+    });
+  }
+
   /** Does this routine declare `name` itself (`DATA name`, `DATA: …, name`, `DATA(name)`, `FIELD-SYMBOLS`)? */
   private declaresLocally(routine: Block, name: string): boolean {
     const key = name.toUpperCase().replace(/-.*$/, '');
@@ -3604,7 +3625,7 @@ class SkeletonBuilder {
   /**
    * The lines of the decisions outside `own` whose condition, selector or `CHECK` reads `field` — the same
    * variable, not only the same name: a decision in another routine counts only when neither routine declares
-   * the field for itself (`DATA lv_ok …` in two methods are two variables).
+   * the field for itself or takes it as a parameter (`DATA lv_ok …` in two methods are two variables).
    */
   private decisionsReading(field: string, own: Block): number[] {
     const key = field.toUpperCase();
@@ -3617,8 +3638,8 @@ class SkeletonBuilder {
       .filter((r) => {
         const readerRoutine = this.routineAround(r.index);
         if (readerRoutine === ownRoutine) return true;
-        return !(ownRoutine && this.declaresLocally(ownRoutine, key))
-          && !(readerRoutine && this.declaresLocally(readerRoutine, key));
+        const own = (routine: Block | null) => !!routine && (this.declaresLocally(routine, key) || this.takesAsParameter(routine, key));
+        return !own(ownRoutine) && !own(readerRoutine);
       })
       .map((r) => r.line);
   }
