@@ -161,6 +161,12 @@ test.describe('the hint is an addition, never a phase state (source)', () => {
 
   test('the demo is the twin: its Analyze stage marks it, the demo workspace\'s stage row tags it', () => {
     expect(read('components/demo/DemoWorkspace.tsx')).toContain("if (stage === 'analyze') markAnalysisRead(DEMO_ANALYSIS_KEY);");
+    // /demo/analyze renders one of two pages by view (QA 44bb505ee725): IT and Management are DemoWorkspace above,
+    // Business is DemoAnalyzeBusiness — each marks the demo read as it opens.
+    const route = read('components/demo/DemoAnalyzeRoute.tsx');
+    expect(route).toContain("if (stageViewOf(search) === 'business') return <DemoAnalyzeBusiness data={data} />;");
+    expect(route).toContain('<DemoWorkspace demo={data.demo} stage="analyze"');
+    expect(read('components/demo/DemoAnalyzeBusiness.tsx')).toMatch(/useEffect\(\(\) => \{\s*markAnalysisRead\(DEMO_ANALYSIS_KEY\);\s*\}, \[\]\);/);
     const shell = read('components/demo/DemoWorkspaceShell.tsx');
     expect(shell).not.toContain('AnalysisReady');
     expect(shell).toContain("p.key === 'analyze' && !demoAnalysisRead ? <ResultReadyTag /> : null");
