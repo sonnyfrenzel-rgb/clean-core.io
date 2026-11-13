@@ -200,7 +200,7 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     await expect(sheet).toBeVisible();
     await expect(tools).toHaveAttribute('aria-expanded', 'true');
     await expect(sheet.locator(':focus')).toHaveCount(1);
-    for (const hook of ['[data-map-zoom-in]', '[data-map-fit]', '[data-map-fullscreen-overview]', '[data-process-search="bar"] input']) {
+    for (const hook of ['[data-map-fullscreen-walk]', '[data-map-zoom-in]', '[data-map-fit]', '[data-map-fullscreen-overview]', '[data-process-search="bar"] input']) {
       await expect(sheet.locator(hook).first(), hook).toBeVisible();
     }
     // P3: in the sheet, "Edit" is disabled with the sentence why.
@@ -210,9 +210,9 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     await expect(sheet).toHaveCount(0);
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
     await expect(tools).toBeFocused();
-    // Every control of the row is a 44 px target with a name.
+    // Every control of the row is a 44 px target with a name; "Walk me through it" stands first in the sheet.
     await expect(frame.locator('[data-map-fullscreen-toggle]')).toHaveText(/Leave full screen/);
-    for (const hook of ['[data-map-fullscreen-tools]', '[data-map-fullscreen-walk]', '[data-map-fullscreen-toggle]']) {
+    for (const hook of ['[data-map-fullscreen-tools]', '[data-map-fullscreen-toggle]']) {
       const box = await frame.locator(hook).boundingBox();
       expect(box?.height ?? 0, `${hook} height`).toBeGreaterThanOrEqual(44);
       expect(box?.width ?? 0, `${hook} width`).toBeGreaterThanOrEqual(44);

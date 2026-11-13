@@ -24,11 +24,11 @@ import type { ProcessSearchResults } from './ProcessSearch';
  * import, the downloads and its overview, so this bar keeps only what is not the editor's. On a phone *Edit* is
  * disabled with the sentence why (P3, `DESIGN.md` §5.7); an invited reader's with the owner-only sentence (P8).
  *
- * **On a phone, one row** (3.2.0, ADR-119): the process and the level path, one 44 px button that opens a sheet,
- * *Walk me through it* as a named 44 px square, and *Leave full screen* in words — the bar that wrapped to some 550 px
- * left the canvas a sliver. The sheet holds "Map | Steps", find, zoom, fit, the overview map and the *Edit* switch,
- * which a phone cannot switch on (P3), with its sentence why. It lies over the top of the canvas and pushes nothing;
- * opening it moves the focus into it, Escape or the button closes it and the focus returns to the button.
+ * **On a phone, one row** (3.2.0, ADR-119): the level path with the way up, one 44 px button that opens a sheet, and
+ * *Leave full screen* in words — the bar that wrapped to some 550 px left the canvas a sliver. The sheet holds
+ * *Walk me through it*, "Map | Steps", find, zoom, fit, the overview map and the *Edit* switch, which a phone cannot
+ * switch on (P3), with its sentence why. It lies over the top of the canvas and pushes nothing; opening it moves the
+ * focus into it, Escape or the button closes it and the focus returns to the button.
  *
  * **One side column.** The walk-through when it runs (the caller's card, `tour`), else the code of the chosen step
  * (a click on the map opens it here; full screen stays), else the hits of a search by the name the map shows, else a
@@ -226,11 +226,6 @@ function CompactFullScreenBar({
           <SlidersHorizontal size={16} aria-hidden={true} />
         </CcIconButton>
       )}
-      {onWalk ? (
-        <CcIconButton data-map-fullscreen-walk="" density="cozy" label={wt('abiz.walk')} onClick={onWalk}>
-          <Play size={16} aria-hidden={true} />
-        </CcIconButton>
-      ) : null}
       {/* The way out in words, as everywhere in full screen (owner 03.10.2026). */}
       <span className="shrink-0">
         <CanvasFullscreenToggle scope="map" filled={true} onToggle={tools.leave} buttonRef={tools.leaveRef} />
@@ -244,6 +239,19 @@ function CompactFullScreenBar({
           aria-label={wt('fullScreen.toolsSheet')}
           className="absolute top-full right-0 left-0 z-cc-popover mt-1 flex flex-col gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
         >
+          {onWalk ? (
+            <CcButton
+              data-map-fullscreen-walk=""
+              density="cozy"
+              icon={<Play size={16} aria-hidden={true} />}
+              onClick={() => {
+                setOpen(false);
+                onWalk();
+              }}
+            >
+              {wt('abiz.walk')}
+            </CcButton>
+          ) : null}
           {viewSwitch}
           {search}
           <div className={steps ? 'hidden' : 'flex flex-wrap items-center gap-2'}>
