@@ -8,9 +8,11 @@ import {
   FALLBACK_MODEL_ENV,
   LARGE_PROMPT_CHARS_ENV,
   LARGE_PROMPT_MODEL_ENV,
+  STAGE_MODELS_ENV,
   deploymentModelOf,
   largePromptThreshold,
   planModelCall,
+  stageModelsOf,
 } from '../lib/model-combination';
 import { thinkingConfigFor } from '../lib/model-thinking';
 import { STAGE_MAX_OUTPUT_TOKENS } from '../lib/model-call-stage';
@@ -89,6 +91,47 @@ test.describe('the planner', () => {
   });
 });
 
+test.describe('the model per stage, as the deployment sets it (13.11.2026)', () => {
+  const STAGES = new Set(['analyze', 'naming', 'statements', 'design', 'transformation', 'documentation', 'testing']);
+  const env = { [STAGE_MODELS_ENV]: 'statements=gemini-4-hydrogen, analyze = gemini-4-hydrogen,glossary=gemini-4-hydrogen,design=gemini-9-nope,nonsense,=x,testing=gemini-3.6-flash,testing=gemini-4-hydrogen' };
+
+  test('the list is read stage by stage, register-checked, unknown stages and models ignored, a stage once', () => {
+    const map = stageModelsOf(env, REGISTER, STAGES);
+    expect([...map.entries()]).toEqual([['statements', 'gemini-4-hydrogen'], ['analyze', 'gemini-4-hydrogen'], ['testing', 'gemini-3.6-flash']]);
+    expect(stageModelsOf({}, REGISTER, STAGES).size).toBe(0);
+  });
+
+  test('a named stage runs on its model on every call, shapes included — except the rewording; other stages run as asked', () => {
+    expect(planModelCall({ ...base, env, stages: STAGES })).toEqual({ model: 'gemini-4-hydrogen', routed: true, fallback: null });
+    expect(planModelCall({ ...base, env, stages: STAGES, promptLength: 10 })).toMatchObject({ model: 'gemini-4-hydrogen' });
+    expect(planModelCall({ ...base, env, stages: STAGES, stage: 'analyze' })).toMatchObject({ model: 'gemini-4-hydrogen' });
+    expect(planModelCall({ ...base, env, stages: STAGES, stage: 'testing' })).toMatchObject({ model: 'gemini-3.6-flash' });
+    expect(planModelCall({ ...base, env, stages: STAGES, stage: 'statements', shape: 'plain-wording' })).toMatchObject({ model: 'gemini-4-hydrogen' });
+    expect(planModelCall({ ...base, env, stages: STAGES, stage: 'statements', shape: 'statements-rewording' })).toEqual({ model: 'gemini-3.8-flash', routed: false, fallback: null });
+    expect(planModelCall({ ...base, env, stages: STAGES, stage: 'design' })).toEqual({ model: 'gemini-3.8-flash', routed: false, fallback: null });
+    expect(planModelCall({ ...base, env, stages: STAGES, stage: 'documentation', shape: 'documentation-business' })).toEqual({ model: 'gemini-3.8-flash', routed: false, fallback: null });
+    // The deployment's fallback still applies to a stage's model, unless it is that model.
+    expect(planModelCall({ ...base, env: { ...env, [FALLBACK_MODEL_ENV]: 'gemini-3.6-flash' }, stages: STAGES })).toMatchObject({ model: 'gemini-4-hydrogen', fallback: 'gemini-3.6-flash' });
+    expect(planModelCall({ ...base, env: { ...env, [FALLBACK_MODEL_ENV]: 'gemini-4-hydrogen' }, stages: STAGES })).toMatchObject({ fallback: null });
+    // Never on an own key; never without the stage list.
+    expect(planModelCall({ ...base, env, stages: STAGES, platformKey: false })).toEqual({ model: 'gemini-3.8-flash', routed: false, fallback: null });
+    expect(planModelCall({ ...base, env })).toEqual({ model: 'gemini-3.8-flash', routed: false, fallback: null });
+  });
+
+  test('the pipeline writes it per environment, and production names only what the owner approved', () => {
+    const deploy = read('.github/workflows/deploy.yml');
+    expect(deploy).toContain('GEMINI_STAGE_MODELS=${{ steps.env-ctx.outputs.gemini_stage_models }}');
+    // The environment step (`env-ctx`): one case per branch.
+    const ctx = deploy.slice(deploy.indexOf('id: env-ctx'), deploy.indexOf('esac', deploy.indexOf('id: env-ctx')));
+    const main = ctx.slice(ctx.indexOf('main)'), ctx.indexOf('release)'));
+    const dev = ctx.slice(ctx.indexOf('dev)'), ctx.indexOf('*)', ctx.indexOf('dev)')));
+    expect(main).toMatch(/echo "gemini_stage_models=.*" >> "\$GITHUB_OUTPUT"/);
+    expect(dev).toMatch(/echo "gemini_stage_models=.*" >> "\$GITHUB_OUTPUT"/);
+    // Production: nothing moves until the owner decides on the measured stages.
+    expect(main).toContain('echo "gemini_stage_models=" >> "$GITHUB_OUTPUT"');
+  });
+});
+
 test.describe('the thinking level per model and stage', () => {
   test('gemini-4-hydrogen thinks MEDIUM for the statements; the product model keeps its default; a shape rule wins', () => {
     expect(thinkingConfigFor(undefined, {}, { model: 'gemini-4-hydrogen', stage: 'statements' })).toEqual({ thinkingLevel: ThinkingLevel.MEDIUM });
@@ -110,7 +153,7 @@ test.describe('the route', () => {
 
   test('plans the call after the register check, from the prompt length and the platform key, and asks the planned model', () => {
     const check = route.indexOf('if (!modelServable(model, productModel(), ALLOWED_MODELS, EVALUATION_ONLY_MODELS)) {');
-    const plan = route.indexOf('planModelCall({ stage, shape, promptLength: prompt.length, model: servedModel, platformKey: !ownKey, env: process.env, register: ALLOWED_MODELS })');
+    const plan = route.indexOf('planModelCall({ stage, shape, promptLength: prompt.length, model: servedModel, platformKey: !ownKey, env: process.env, register: ALLOWED_MODELS, stages: new Set(MODEL_STAGES) })');
     expect(check).toBeGreaterThan(-1);
     expect(plan).toBeGreaterThan(check);
     expect(route).toContain('let answeredModel = plan.model;');

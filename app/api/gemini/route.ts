@@ -37,6 +37,7 @@ import { MODEL_HOURLY_WINDOW_MS, modelHourlyLimit } from '@/lib/model-hourly-lim
 import {
   isModelStage,
   modelStageEnabled,
+  MODEL_STAGES,
   MODEL_STAGE_LABELS,
   NO_KEY_CODE,
   STAGE_DISABLED_CODE,
@@ -641,7 +642,7 @@ export async function POST(request: NextRequest) {
     // end: the receipt, the stage record and `answeredBy` name it, never the
     // model that was asked first and did not finish.
     const plan: ModelCallPlan = provider === 'gemini'
-      ? planModelCall({ stage, shape, promptLength: prompt.length, model: servedModel, platformKey: !ownKey, env: process.env, register: ALLOWED_MODELS })
+      ? planModelCall({ stage, shape, promptLength: prompt.length, model: servedModel, platformKey: !ownKey, env: process.env, register: ALLOWED_MODELS, stages: new Set(MODEL_STAGES) })
       : { model: servedModel, routed: false, fallback: null };
     let answeredModel = plan.model;
     const ai = provider !== 'gemini'

@@ -598,6 +598,10 @@ jobs:
               # before it was written here (read 13.10.2026), not a new one.
               echo "max_instances=20" >> "$GITHUB_OUTPUT"
               echo "dev_limits_off=" >> "$GITHUB_OUTPUT"
+              # The model per stage (lib/model-combination.ts, GEMINI_STAGE_MODELS): production names only the
+              # stages the owner approved after their measurement on dev — none yet (owner decision 13.11.2026:
+              # robust tests on dev first). A stage not named runs on the product model.
+              echo "gemini_stage_models=" >> "$GITHUB_OUTPUT"
               ;;
             release)
               # Retired on 2026-08-31. `clean-core-test` was deleted: its serving
@@ -626,6 +630,10 @@ jobs:
               # Owner request 18.10.2026: the hourly generation and model-call limits are lifted on dev only
               # (lib/dev-limits.ts; the production service ignores the switch by its service name and database).
               echo "dev_limits_off=true" >> "$GITHUB_OUTPUT"
+              # Owner decision 13.11.2026: the business statements on gemini-4-hydrogen (MEDIUM by
+              # lib/model-thinking.ts), measured once on the frozen holdout (84.6 % against 68.2 % equal); every
+              # other stage joins this list on dev once its own measurement is in (docs/design/model-combination.md).
+              echo "gemini_stage_models=statements=gemini-4-hydrogen" >> "$GITHUB_OUTPUT"
               ;;
             *)
               echo "Unsupported branch: $REF_NAME" >&2
@@ -828,6 +836,7 @@ jobs:
             RUNNER_SERVICE_ACCOUNT=${{ steps.env-ctx.outputs.runner_sa }}
             S4_PROXY_BASE_URL=${{ steps.env-ctx.outputs.proxy_base }}
             CC_DEV_LIMITS_OFF=${{ steps.env-ctx.outputs.dev_limits_off }}
+            GEMINI_STAGE_MODELS=${{ steps.env-ctx.outputs.gemini_stage_models }}
 
   # Job 3: Smoke check of the production revision (codex architecture-04, code-ci-03).
   #
