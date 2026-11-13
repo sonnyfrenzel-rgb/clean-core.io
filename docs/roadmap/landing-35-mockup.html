@@ -1,0 +1,1317 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Landing 3.5 mock-up</title>
+<meta name="description" content="Mock-up v1 of the public start page of Clean-Core.io for release 3.5.0 (23.12.2026): evolutionary, one shared story for Business, IT and Management, with the change, conversion and owner panels.">
+<!--
+  Clean-Core.io · landing page for v3.5.0 · mock-up v1 · 13.11.2026
+  Branch night/landing-35. A static mock-up, not product code: app/page.tsx is unchanged.
+
+  Basis read for this file (worktree integrate/3.2.0, d8b8eb0a):
+    app/page.tsx, components/SectionHeader.tsx, lib/landing-faq.ts, lib/trust-claims.ts, lib/demo-marks.ts,
+    lib/starter-examples.ts, lib/constants.ts, lib/model-providers.ts, lib/legal/texts/privacy.en.ts,
+    docs/ROADMAP.md rows 3.1.0 / 3.2.0 / 3.5.0 / 23.12.2026 / 3.5.1, docs/design/analyze-business-first-plan.md
+    §1 and §4, docs/design/decisions.md ADR-107 to ADR-119, docs/roadmap/analyze-business-first-mockup.html,
+    docs/roadmap/documentation-next-mockup.html, tests/capture-screens.spec.ts, tests/landing-*.spec.ts,
+    public/starter-examples/Z_MM_PO_APPROVAL.abap (the shipped, fictitious example).
+  "Today" figures: measured on https://clean-core.io (v3.0.23) on 13.11.2026 with a headless browser
+    (scratchpad measure-live.cjs): 14 sections, 4,301 words in <main> (FAQ closed but the first), 192 controls,
+    page height 21,223 px at 1440 and 34,469 px at 390, first call to action 693 px from the top at 1440.
+  Rules held: one section-header style (the markup of SectionHeader: eyebrow pill, h2, lead; knobs align/tone/titleId
+    only); colours only from the --cc-* tokens of app/globals.css; light theme only; no external request of any kind.
+  Every number on the page carries its source in an HTML comment next to it.
+-->
+<style>
+/* ---------- tokens: copied from app/globals.css (--cc-*), nothing invented ---------- */
+:root{
+  --cc-brand:#16a34a; --cc-brand-strong:#15803d; --cc-brand-deep:#006b2c; --cc-brand-surface:#f0fdf4;
+  --cc-ink:#0b1c30; --cc-ink-muted:#4b5563; --cc-line:#e5e7eb; --cc-page:#f8f9ff; --cc-surface:#ffffff; --cc-surface-muted:#f9fafb;
+  --cc-surface-dark:#030712; --cc-on-dark:#ffffff; --cc-focus:#1d4ed8;
+  --cc-information:#1d4ed8; --cc-information-bg:#eff6ff; --cc-information-border:#bfdbfe;
+  --cc-success:#047857; --cc-success-bg:#ecfdf5; --cc-success-border:#a7f3d0;
+  --cc-warning:#92400e; --cc-warning-bg:#fffbeb; --cc-warning-border:#fde68a; --cc-warning-mark:#d97706;
+  --cc-error:#b91c1c; --cc-error-bg:#fef2f2; --cc-error-border:#fecaca;
+  --cc-neutral-bg:#f9fafb; --cc-neutral-border:#e5e7eb;
+  --cc-seq-1:#e0e7ff; --cc-seq-2:#a5b4fc; --cc-seq-3:#6366f1; --cc-seq-4:#3730a3; --cc-score-4:#1e1b4b;
+  --cc-chart-1:#334155; --cc-chart-2:#4f46e5; --cc-chart-3:#0d9488;
+  --cc-code-bg:#030712; --cc-code-ink:#e5e7eb; --cc-code-keyword:#c4b5fd; --cc-code-literal:#fcd34d; --cc-code-muted:#9ca3af; --cc-code-hl:rgb(59 130 246 / .28); --cc-code-hl-bar:#93c5fd;
+  --cc-radius-card:12px; --cc-radius-row:8px; --cc-shadow:0 1px 2px rgb(0 0 0 / .04); --cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --cc-font-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --font:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  /* mock-up chrome only (the annotation layer, not the page): built from the same tokens */
+  --mk-bar:var(--cc-score-4);
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
+body{margin:0;background:var(--cc-page);color:var(--cc-ink);font:16px/1.5 var(--font);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:var(--cc-brand-strong)}
+:focus-visible{outline:3px solid var(--cc-focus);outline-offset:2px;border-radius:4px}
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:16px;top:-60px;background:var(--cc-surface);padding:8px 12px;border-radius:8px;z-index:200}
+.skip:focus{top:8px}
+.wrap{max-width:1200px;margin:0 auto;padding:0 16px}
+@media(min-width:768px){.wrap{padding:0 24px}}
+code,.mono{font-family:var(--cc-font-mono);font-size:.92em}
+
+/* ---------- mock-up chrome ---------- */
+.mk{background:var(--mk-bar);color:var(--cc-on-dark);font-size:13px}
+.mk .wrap{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding-top:8px;padding-bottom:8px}
+.mk b{font-weight:800}
+.mk .grp{display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
+.mk .grp>span{opacity:.85;margin-right:2px}
+.mk button,.mk label{font:inherit;font-weight:700;color:var(--cc-on-dark);background:transparent;border:1px solid rgb(255 255 255 / .45);border-radius:6px;padding:3px 9px;cursor:pointer}
+.mk button[aria-pressed=true]{background:var(--cc-on-dark);color:var(--mk-bar)}
+.mk label{display:inline-flex;gap:6px;align-items:center}
+.mk .note{flex-basis:100%;opacity:.85;font-weight:500}
+.panels-fab{position:fixed;right:12px;bottom:12px;z-index:120;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 24px)}
+.panels-fab button{font:700 13px/1 var(--font);background:var(--mk-bar);color:var(--cc-on-dark);border:0;border-radius:999px;padding:10px 14px;box-shadow:var(--cc-shadow-dialog);cursor:pointer}
+.mark{display:none;position:absolute;left:12px;top:12px;z-index:5;font:800 11px/1 var(--font);letter-spacing:.06em;text-transform:uppercase;padding:5px 8px;border-radius:6px;border:1px solid}
+.show-marks .mark{display:inline-block}
+.mark.keep{background:var(--cc-neutral-bg);color:var(--cc-ink-muted);border-color:var(--cc-line)}
+.mark.changed{background:var(--cc-information-bg);color:var(--cc-information);border-color:var(--cc-information-border)}
+.mark.new{background:var(--cc-success-bg);color:var(--cc-success);border-color:var(--cc-success-border)}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(620px,100vw);background:var(--cc-surface);z-index:150;box-shadow:var(--cc-shadow-dialog);transform:translateX(105%);transition:transform .2s;display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.drawer header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--cc-line);background:var(--cc-surface-muted)}
+.drawer header h2{font-size:18px;margin:0}
+.drawer header button{font:700 14px var(--font);border:1px solid var(--cc-line);background:var(--cc-surface);border-radius:8px;padding:6px 12px;cursor:pointer}
+.drawer .body{overflow:auto;padding:16px 18px 80px;font-size:14px}
+.drawer h3{font-size:15px;margin:22px 0 8px}
+.drawer h3:first-child{margin-top:0}
+.drawer table{border-collapse:collapse;width:100%;font-size:13px}
+.drawer th,.drawer td{border-bottom:1px solid var(--cc-line);padding:6px 6px;text-align:left;vertical-align:top}
+.drawer th{background:var(--cc-surface-muted);font-weight:700}
+.drawer ul,.drawer ol{padding-left:18px;margin:6px 0}
+.drawer li{margin:3px 0}
+.drawer .num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;font:800 10.5px/1 var(--font);text-transform:uppercase;letter-spacing:.05em;padding:4px 6px;border-radius:5px;border:1px solid}
+.pill.keep{background:var(--cc-neutral-bg);color:var(--cc-ink-muted);border-color:var(--cc-line)}
+.pill.changed{background:var(--cc-information-bg);color:var(--cc-information);border-color:var(--cc-information-border)}
+.pill.new{background:var(--cc-success-bg);color:var(--cc-success);border-color:var(--cc-success-border)}
+.pill.removed{background:var(--cc-error-bg);color:var(--cc-error);border-color:var(--cc-error-border)}
+.callout{background:var(--cc-warning-bg);border:1px solid var(--cc-warning-border);color:var(--cc-warning);border-radius:8px;padding:10px 12px;margin:10px 0}
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:140;display:none}
+.scrim.open{display:block}
+
+/* ---------- public header (PublicHeader) ---------- */
+.ph{background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.ph .wrap{display:flex;align-items:center;gap:20px;min-height:68px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--cc-ink)}
+.logo .m{width:36px;height:36px;border-radius:10px;background:var(--cc-brand-surface);display:grid;place-items:center;color:var(--cc-brand-strong)}
+.logo .nm{font-weight:800;font-size:18px;line-height:1}
+.logo .nm em{font-style:normal;color:var(--cc-brand-strong)}
+.logo .sub{display:block;font-size:12px;color:var(--cc-ink-muted);font-weight:600;margin-top:3px}
+.ph nav{display:none;gap:22px;font-size:15px;font-weight:600}
+.ph nav a{color:var(--cc-ink);text-decoration:none}
+.ph .acts{margin-left:auto;display:flex;align-items:center;gap:14px}
+.ph .acts a.si{font-weight:700;color:var(--cc-ink);text-decoration:none;font-size:15px}
+@media(min-width:1100px){.ph nav{display:flex}}
+
+/* ---------- buttons (public-button) ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:700 16px/1.2 var(--font);border-radius:999px;padding:13px 22px;text-decoration:none;border:2px solid transparent;cursor:pointer;min-height:48px}
+.btn.primary{background:var(--cc-brand-strong);color:var(--cc-on-dark)}
+.btn.primary:hover{background:var(--cc-brand-deep)}
+.btn.secondary{background:var(--cc-surface);color:var(--cc-brand-strong);border-color:var(--cc-brand)}
+.btn.small{font-size:14px;padding:8px 14px;min-height:38px}
+.btn .sub{display:block;font-weight:600;font-size:12px;opacity:.9}
+.btn svg{width:18px;height:18px;flex:none}
+.textlink{font-weight:700;text-decoration:none;color:var(--cc-brand-strong)}
+.textlink:hover{text-decoration:underline}
+
+/* ---------- SectionHeader (the one header) ---------- */
+.sh{margin-bottom:40px;text-align:center}
+.sh.left{text-align:left}
+.sh .eb{display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:16px;border:1px solid rgb(22 163 74 / .3);color:var(--cc-brand-strong);background:var(--cc-brand-surface)}
+.sh h2{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1.1;margin:0 0 18px;text-wrap:balance;color:var(--cc-ink)}
+.sh p.lead{font-size:16px;line-height:1.6;font-weight:500;max-width:48rem;margin:0 auto;color:var(--cc-ink-muted);text-wrap:pretty}
+.sh.left p.lead{margin:0}
+@media(min-width:640px){.sh h2{font-size:36px}.sh p.lead{font-size:18px}}
+@media(min-width:768px){.sh{margin-bottom:48px}.sh h2{font-size:48px}.sh p.lead{font-size:20px}}
+
+/* ---------- sections ---------- */
+.sec{position:relative;padding:64px 0}
+.sec.alt{background:var(--cc-surface)}
+@media(min-width:768px){.sec{padding:96px 0}}
+.card{background:var(--cc-surface);border:1px solid var(--cc-line);border-radius:var(--cc-radius-card);box-shadow:var(--cc-shadow)}
+.sec.alt .card{background:var(--cc-surface)}
+.foryou{list-style:none;margin:0 auto 32px;padding:0;display:grid;gap:10px;max-width:980px}
+@media(min-width:900px){.foryou{grid-template-columns:repeat(3,1fr)}}
+.foryou li{display:flex;gap:10px;align-items:flex-start;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:10px;padding:10px 12px;font-size:14.5px;line-height:1.45}
+.sec.alt .foryou li{background:var(--cc-page)}
+.foryou .who{flex:none;font:800 11px/1 var(--font);text-transform:uppercase;letter-spacing:.06em;padding:5px 7px;border-radius:5px;background:var(--cc-surface);border:1px solid var(--cc-line);color:var(--cc-ink);min-width:88px;text-align:center}
+.deep{margin:28px auto 0;max-width:980px;border:1px solid var(--cc-line);border-radius:10px;background:var(--cc-surface)}
+.sec.alt .deep{background:var(--cc-page)}
+.deep>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;padding:14px 16px;font-weight:700}
+.deep>summary::-webkit-details-marker{display:none}
+.deep>summary .lv{font:800 11px/1 var(--font);text-transform:uppercase;letter-spacing:.06em;color:var(--cc-information);background:var(--cc-information-bg);border:1px solid var(--cc-information-border);padding:4px 6px;border-radius:5px}
+.deep>summary .ch{margin-left:auto;transition:transform .15s}
+.deep[open]>summary .ch{transform:rotate(180deg)}
+.deep .in{padding:0 16px 16px;font-size:15px;color:var(--cc-ink)}
+.deep .in ul{margin:0;padding-left:18px}
+.deep .in li{margin:5px 0}
+.linkrow{display:flex;flex-wrap:wrap;gap:8px 18px;justify-content:center;margin:24px 0 0;font-size:15px}
+.honest{font-size:14px;color:var(--cc-ink-muted);max-width:820px;margin:18px auto 0;text-align:center}
+.ln{display:inline-block;font:600 11.5px/1.2 var(--cc-font-mono);color:var(--cc-information);background:var(--cc-information-bg);border:1px solid var(--cc-information-border);border-radius:5px;padding:2px 5px;white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:5px;font:700 11.5px/1.2 var(--font);border-radius:999px;padding:3px 8px;border:1px solid;white-space:nowrap}
+.chip.rec{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-surface)}
+.chip.ai{color:var(--cc-warning);border:1px dashed var(--cc-warning-mark);background:var(--cc-warning-bg)}
+.chip.imp{color:var(--cc-chart-2);border-color:var(--cc-seq-2);background:var(--cc-surface)}
+.chip.nd{color:var(--cc-ink-muted);border-color:var(--cc-line);background:var(--cc-surface-muted)}
+.chip.pv{color:var(--cc-on-dark);background:var(--cc-success);border-color:var(--cc-success)}
+.chip.sim{color:var(--cc-chart-2);border:1px dashed var(--cc-seq-3);background:var(--cc-surface)}
+.mtag{display:inline-block;font:700 10.5px/1.2 var(--font);color:var(--cc-warning);background:var(--cc-warning-bg);border:1px solid var(--cc-warning-border);border-radius:4px;padding:2px 5px;vertical-align:middle}
+
+/* ---------- hero ---------- */
+.hero{position:relative;overflow:hidden;padding:44px 0 56px;background:
+  radial-gradient(600px 380px at 8% 20%,rgb(99 102 241 / .10),transparent 70%),
+  radial-gradient(640px 420px at 92% 18%,rgb(22 163 74 / .10),transparent 70%),var(--cc-page)}
+.hero-copy{text-align:center;max-width:880px;margin:0 auto}
+.kicker{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;background:var(--cc-surface);border:1px solid var(--cc-line);border-radius:999px;padding:6px 14px;margin:0 0 18px}
+h1{margin:0}
+h1 .h1k{display:block;font-size:20px;font-weight:800;color:var(--cc-brand-strong);margin-bottom:10px;letter-spacing:-.01em}
+h1 .h1m{display:block;font-size:32px;font-weight:800;letter-spacing:-.035em;line-height:1.06;text-wrap:balance}
+@media(min-width:768px){h1 .h1k{font-size:26px}h1 .h1m{font-size:58px}}
+.hero-lead{font-size:17px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;max-width:720px;margin:18px auto 0;text-wrap:pretty}
+@media(min-width:768px){.hero-lead{font-size:20px}}
+.cta-row{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:26px}
+.cta-row .btn{flex:0 1 auto}
+@media(max-width:520px){.cta-row .btn{flex:1 1 100%}}
+.cta-note{font-size:14px;color:var(--cc-ink-muted);margin:14px auto 0;max-width:640px}
+.cta-note b{color:var(--cc-ink)}
+
+/* product picture frame (an approximation of the 3.5 Analyze page) */
+.shot{margin:40px auto 0;max-width:1120px}
+.shot figcaption{font-size:13px;color:var(--cc-ink-muted);text-align:center;margin-bottom:10px}
+.win{background:var(--cc-surface);border:1px solid var(--cc-line);border-radius:14px;box-shadow:0 24px 60px rgb(11 28 48 / .12);overflow:hidden;text-align:left}
+.wbar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--cc-line);background:var(--cc-surface-muted);font-size:13px;color:var(--cc-ink-muted);flex-wrap:wrap}
+.wbar .dots{display:flex;gap:5px}.wbar .dots i{width:10px;height:10px;border-radius:50%;background:var(--cc-line);display:block}
+.wbar .path b{color:var(--cc-ink)}
+.seg{display:inline-flex;border:1px solid var(--cc-line);border-radius:8px;padding:2px;background:var(--cc-surface);margin-left:auto}
+.seg span{font-size:12.5px;font-weight:700;padding:4px 9px;border-radius:6px;color:var(--cc-ink-muted)}
+.seg span.on{background:var(--cc-ink);color:var(--cc-on-dark)}
+.wbody{padding:16px}
+.does{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between;border:1px solid var(--cc-line);border-radius:10px;padding:12px 14px}
+.does .t{flex:1 1 420px;min-width:0}
+.does h3{font-size:15px;margin:0 0 4px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.does p{margin:0;font-size:14.5px;line-height:1.5}
+.tools{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 8px;font-size:12.5px}
+.tools span{border:1px solid var(--cc-line);border-radius:6px;padding:3px 8px;font-weight:600;color:var(--cc-ink-muted);background:var(--cc-surface)}
+.tools span.on{background:var(--cc-ink);color:var(--cc-on-dark);border-color:var(--cc-ink)}
+.tools .r{margin-left:auto}
+
+/* the process map, drawn as HTML so it reflows to a vertical map on a phone */
+.map{border:1px solid var(--cc-line);border-radius:10px;padding:16px 12px 22px;background:var(--cc-surface);overflow:hidden}
+.map .part{font:700 11px/1 var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin:0 0 14px 4px}
+.flow{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:18px}
+.flow>li{position:relative;display:flex;flex-direction:column;align-items:center;text-align:center}
+.flow>li+li::before{content:"";position:absolute;top:-18px;left:50%;width:2px;height:18px;background:var(--cc-ink-muted)}
+.n.task{width:220px;min-height:62px;border:2px solid var(--cc-ink);border-radius:10px;padding:7px 8px;background:var(--cc-surface);display:flex;flex-direction:column;justify-content:center;gap:3px;position:relative}
+.n.task b{font-size:13.5px;line-height:1.25;font-weight:700}
+.n.task .ln{align-self:center}
+.n.task.hot{box-shadow:0 0 0 4px var(--cc-seq-1);border-color:var(--cc-seq-4)}
+.n .pen{position:absolute;right:-7px;top:-7px;width:18px;height:18px;border-radius:50%;background:var(--cc-warning-bg);border:1px dashed var(--cc-warning-mark);display:grid;place-items:center;color:var(--cc-warning)}
+.n .pen svg{width:10px;height:10px}
+.n.ev{width:40px;height:40px;border-radius:50%;border:2px solid var(--cc-ink);background:var(--cc-surface)}
+.n.ev.end{border-width:4px}
+.n.ev.err{border-color:var(--cc-ink)}
+.evl{font-size:12px;color:var(--cc-ink-muted);max-width:96px;line-height:1.3;margin-top:4px}
+.n.gw{width:40px;height:40px;transform:rotate(45deg);border:2px solid var(--cc-ink);background:var(--cc-surface);margin:6px}
+.gwl{font-size:12.5px;font-weight:700;max-width:170px;line-height:1.25;margin-top:6px}
+.branch{margin-top:8px;display:flex;align-items:center;gap:8px;font-size:12px;color:var(--cc-ink-muted);background:var(--cc-surface-muted);border:1px dashed var(--cc-line);border-radius:8px;padding:5px 8px}
+.branch .n.ev{width:22px;height:22px;border-width:3px}
+@media(min-width:900px){
+  .flow{flex-direction:row;align-items:flex-start;justify-content:center;gap:18px}
+  .flow>li{flex:0 1 auto}
+  .flow>li+li::before{top:30px;left:-18px;width:18px;height:2px}
+  .n.task{width:116px;min-height:74px}
+  .n.task b{font-size:12.5px}
+  .flow>li.evt{padding-top:11px}
+  .flow>li.evt::before{top:30px}
+  .flow>li.gwy{padding-top:5px}
+  .flow>li.nonly{display:none}
+  .flow>li>.branch{position:absolute;top:100%;left:50%;transform:translateX(-50%);z-index:1}
+  .flow:has(.branch){padding-bottom:40px}
+}
+@media(max-width:899px){.flow>li.wonly{display:none}}
+.flow>li.nonly .more{font-size:12.5px;color:var(--cc-ink-muted);border:1px dashed var(--cc-line);border-radius:8px;padding:6px 10px;background:var(--cc-surface-muted)}
+.branch{min-width:180px;justify-content:center;white-space:nowrap}
+@media(min-width:1101px){.pgrid .tour{grid-column:2;grid-row:1}.pgrid .map{grid-column:1;grid-row:1}}
+@media(max-width:520px){.panels-fab button{font-size:12px;padding:8px 10px}}
+.map .legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:12px;color:var(--cc-ink-muted);margin:16px 4px 0}
+.map .legend span{display:inline-flex;gap:6px;align-items:center}
+.statusline{font-size:12.5px;color:var(--cc-ink-muted);margin:10px 2px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* hero variant B: the map builds up, then the checked names swap in */
+.anim .flow>li{opacity:0;animation:pop .45s ease-out forwards;animation-delay:calc(var(--i) * 220ms)}
+.anim .n.task .biz{display:none}
+.anim .n.task .eng{display:inline;font-family:var(--cc-font-mono);font-weight:600;font-size:11.5px;color:var(--cc-ink-muted)}
+.anim.named .n.task .eng{display:none}
+.anim.named .n.task .biz{display:inline;animation:swap .9s ease-out}
+.n.task .eng{display:none}
+.anim:not(.named) .n.task .eng{display:inline}
+@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+@keyframes swap{0%{opacity:0;transform:translateY(6px);background:var(--cc-warning-bg)}60%{opacity:1;transform:none;background:var(--cc-warning-bg)}100%{background:transparent}}
+
+/* reader entries */
+.readers{margin:34px auto 0;max-width:1120px}
+.readers .k{font:700 12px/1 var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:center;margin:0 0 12px}
+.readers ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+@media(min-width:900px){.readers ul{grid-template-columns:repeat(3,1fr)}}
+.readers a{display:flex;flex-direction:column;gap:6px;height:100%;text-decoration:none;color:var(--cc-ink);background:var(--cc-surface);border:1px solid var(--cc-line);border-radius:12px;padding:14px 16px;transition:border-color .15s}
+.readers a:hover{border-color:var(--cc-brand)}
+.readers .who{font:800 12px/1 var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--cc-brand-strong);display:flex;gap:8px;align-items:center}
+.readers .q{font-size:15.5px;font-weight:700;line-height:1.35}
+.readers .gets{font-size:14px;color:var(--cc-ink-muted);line-height:1.45}
+.readers .go{margin-top:auto;font-size:14px;font-weight:700;color:var(--cc-brand-strong)}
+
+/* process section: map with walk-through card, charts, endings */
+.pgrid{display:grid;gap:16px}
+@media(min-width:1101px){.pgrid{grid-template-columns:minmax(0,1fr) 320px}}
+@media(min-width:1281px){.pgrid{grid-template-columns:minmax(0,1fr) 360px}}
+.tour{border:2px solid var(--cc-seq-3);border-radius:12px;padding:14px 16px;background:var(--cc-surface);align-self:start}
+.tour .st{font:800 11px/1 var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--cc-seq-4)}
+.tour h3{font-size:16px;margin:8px 0 6px}
+.tour p{font-size:14px;margin:0 0 10px;line-height:1.5}
+.tour .ca{display:flex;gap:8px;flex-wrap:wrap}
+.fakebtn{display:inline-flex;align-items:center;gap:6px;font:700 13px/1 var(--font);border:1px solid var(--cc-line);border-radius:8px;padding:8px 11px;background:var(--cc-surface);color:var(--cc-ink)}
+.fakebtn.pri{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:var(--cc-on-dark)}
+.charts{display:grid;gap:16px;margin-top:16px}
+@media(min-width:900px){.charts{grid-template-columns:1fr 1fr}}
+.chart{padding:14px 16px}
+.chart h3{font-size:15px;margin:0 0 4px}
+.chart .take{font-size:14px;margin:0 0 10px;color:var(--cc-ink)}
+.brow{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 22px;gap:10px;align-items:center;font-size:13px;padding:4px 0}
+.brow .lab small{display:block;color:var(--cc-ink-muted);font-size:11.5px}
+.brow .track{height:10px;background:var(--cc-surface-muted);border-radius:5px;overflow:hidden}
+.brow .track i{display:block;height:100%;background:var(--cc-chart-2);border-radius:5px}
+.brow .v{font-weight:800;text-align:right;font-variant-numeric:tabular-nums}
+.stack1{display:flex;height:14px;border-radius:7px;overflow:hidden;margin:4px 0 8px}
+.stack1 .a{background:var(--cc-chart-2)}.stack1 .b{background:var(--cc-seq-2)}
+.keyrow{display:flex;gap:16px;font-size:12.5px;margin:0 0 6px}
+.keyrow i{display:inline-block;width:10px;height:10px;border-radius:3px;background:var(--cc-chart-2);margin-right:5px;vertical-align:-1px}
+.keyrow i.b{background:var(--cc-seq-2)}
+.chart .cfoot{font-size:12px;color:var(--cc-ink-muted);margin:10px 0 0;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ends{display:grid;gap:12px;margin-top:16px;grid-template-columns:1fr}
+@media(min-width:700px){.ends{grid-template-columns:1fr 1fr}}
+.ends .e{border:1px solid var(--cc-line);border-radius:10px;padding:12px 14px;background:var(--cc-surface)}
+.ends .e b{display:block;font-size:15px}
+.ends .e span{font-size:13.5px;color:var(--cc-ink-muted)}
+.around{display:grid;gap:12px;margin-top:16px}
+@media(min-width:900px){.around{grid-template-columns:repeat(3,1fr)}}
+.around .card{padding:12px 14px}
+.around h4{margin:0 0 6px;font-size:14px;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.around p{margin:0;font-size:13.5px;line-height:1.5}
+
+/* rules: the decision card */
+.rules{max-width:980px;margin:0 auto;display:grid;gap:12px}
+.rule{display:grid;gap:10px;grid-template-columns:1fr;padding:16px 18px}
+@media(min-width:800px){.rule{grid-template-columns:minmax(0,1fr) auto;align-items:center}}
+.rule .rt{font-size:17px;font-weight:700;line-height:1.35;margin:0}
+.rule .rm{font-size:13.5px;color:var(--cc-ink-muted);margin:6px 0 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.answer{display:inline-flex;border:1px solid var(--cc-line);border-radius:9px;padding:3px;background:var(--cc-surface);flex-wrap:wrap}
+.answer button{font:700 13.5px/1 var(--font);border:0;background:transparent;color:var(--cc-ink);padding:9px 12px;border-radius:7px;cursor:pointer;min-height:36px}
+.answer button[aria-pressed=true]{background:var(--cc-ink);color:var(--cc-on-dark)}
+
+/* clean core: level ladder and routes */
+.cc{display:grid;gap:16px}
+@media(min-width:1000px){.cc{grid-template-columns:1.1fr .9fr}}
+.ladder{padding:18px}
+.ladder h3,.routes h3{font-size:17px;margin:0 0 4px}
+.ladder .sub2,.routes .sub2{font-size:14px;color:var(--cc-ink-muted);margin:0 0 14px}
+.lv{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;align-items:start;padding:10px 0;border-top:1px solid var(--cc-line)}
+.lv:first-of-type{border-top:0}
+.lv .g{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:18px;color:var(--cc-on-dark)}
+.g.A{background:var(--cc-success)}.g.B{background:var(--cc-chart-3)}.g.C{background:var(--cc-warning-mark)}.g.D{background:var(--cc-error)}
+.lv b{display:block;font-size:14.5px}
+.lv p{margin:2px 0 0;font-size:13.5px;color:var(--cc-ink-muted)}
+.lv .obj{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;color:var(--cc-ink)}
+.routes{padding:18px}
+.route{border:1px solid var(--cc-line);border-radius:10px;padding:10px 12px;margin-top:10px}
+.route b{font-size:14.5px}
+.route p{margin:3px 0 0;font-size:13.5px;color:var(--cc-ink-muted)}
+.route.ind{border:2px solid var(--cc-brand)}
+.route .tag{float:right;font:800 10.5px/1 var(--font);text-transform:uppercase;letter-spacing:.05em;color:var(--cc-brand-strong);background:var(--cc-brand-surface);border-radius:4px;padding:4px 6px;margin-left:8px}
+
+/* decide: management on one page */
+.mg{display:grid;gap:16px}
+@media(min-width:1000px){.mg{grid-template-columns:1fr 1fr}}
+.mg .card{padding:16px 18px}
+.mg .k{font:700 11px/1 var(--font);letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin:0}
+.mg .big{font-size:18px;font-weight:700;line-height:1.35;margin:6px 0 0}
+.indic{background:var(--cc-brand-surface)!important;border-color:rgb(22 163 74 / .35)!important}
+.indic .note{font-size:13px;color:var(--cc-ink);margin:10px 0 0;font-weight:600}
+.tiles{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-top:16px}
+@media(min-width:1000px){.tiles{grid-template-columns:repeat(4,1fr)}}
+.tile{padding:12px 14px}
+.tile .v{font-size:24px;font-weight:800;margin:4px 0 2px}
+.tile .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted)}
+.tile p{margin:0;font-size:12.5px;color:var(--cc-ink-muted)}
+.opts{margin-top:16px;padding:16px 18px;overflow-x:auto}
+.opts table{border-collapse:collapse;width:100%;min-width:560px;font-size:14px}
+.opts th,.opts td{padding:9px 10px;border-bottom:1px solid var(--cc-line);text-align:left;vertical-align:top}
+.opts th{font-size:13px}
+.opts .on{background:var(--cc-brand-surface)}
+@media(max-width:600px){.opts table{min-width:0}.opts thead{display:none}.opts tr{display:block;border-top:1px solid var(--cc-line);padding:6px 0}.opts td,.opts th{display:block;border:0;padding:4px 6px}.opts td[data-l]::before{content:attr(data-l) ": ";font-weight:800}}
+.buckets{display:grid;gap:10px;grid-template-columns:1fr 1fr;margin-top:16px}
+@media(min-width:1000px){.buckets{grid-template-columns:repeat(4,1fr)}}
+.bucket{padding:12px 14px}
+.bucket b{font-size:14.5px}
+.bucket p{margin:4px 0 0;font-size:13px;color:var(--cc-ink-muted)}
+
+/* after the decision */
+.stages{list-style:none;margin:0 0 20px;padding:0;display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.stages li{display:flex;align-items:center;gap:8px;background:var(--cc-surface);border:1px solid var(--cc-line);border-radius:999px;padding:7px 12px 7px 7px;font-size:14px;font-weight:700}
+.stages li .no{width:24px;height:24px;border-radius:50%;background:var(--cc-ink);color:var(--cc-on-dark);display:grid;place-items:center;font-size:12px}
+.stages li.cur{border-color:var(--cc-brand);background:var(--cc-brand-surface)}
+.after{display:grid;gap:16px}
+@media(min-width:1000px){.after{grid-template-columns:1.25fr .75fr}}
+.docwin .tabs{display:flex;gap:2px;border-bottom:1px solid var(--cc-line);margin:4px 0 12px;overflow-x:auto}
+.docwin .tabs span{font-size:13px;font-weight:600;padding:8px 10px;white-space:nowrap;color:var(--cc-ink-muted);border-bottom:2px solid transparent}
+.docwin .tabs span.on{color:var(--cc-ink);border-color:var(--cc-ink)}
+.docwin .tabs em{font-style:normal;font-size:11px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:999px;padding:1px 6px;margin-left:4px}
+.tiles2{display:grid;gap:8px;grid-template-columns:1fr 1fr}
+@media(min-width:640px){.tiles2{grid-template-columns:repeat(3,1fr)}}
+.st2{border:1px solid var(--cc-line);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:700;display:flex;flex-direction:column;gap:6px}
+.st2 .no{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--cc-ink);color:var(--cc-on-dark);font-size:11px;margin-right:6px}
+.limits{padding:16px 18px}
+.limits h3{font-size:16px;margin:0 0 8px}
+.limits ul{margin:0;padding-left:18px;font-size:14.5px}
+.limits li{margin:6px 0}
+
+/* evidence */
+.ev{display:grid;gap:16px}
+@media(min-width:1000px){.ev{grid-template-columns:1fr 1fr}}
+.receipt{padding:16px 18px;font-size:14px}
+.receipt h3{font-size:16px;margin:0 0 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.receipt dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 14px;margin:0}
+.receipt dt{color:var(--cc-ink-muted);font-weight:600}
+.receipt dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.receipt .ok{display:flex;gap:8px;align-items:center;margin-top:12px;padding:8px 10px;border-radius:8px;background:var(--cc-success-bg);border:1px solid var(--cc-success-border);color:var(--cc-success);font-weight:700}
+.prov{padding:16px 18px}
+.prov h3{font-size:16px;margin:0 0 10px}
+.prow{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:center;padding:7px 0;border-top:1px solid var(--cc-line);font-size:14px}
+.prow:first-of-type{border-top:0}
+@media(max-width:480px){.prow{grid-template-columns:1fr}}
+
+/* trust and IT */
+.trust3{list-style:none;margin:0 auto 28px;padding:0;display:grid;gap:12px;max-width:1100px}
+@media(min-width:900px){.trust3{grid-template-columns:repeat(3,1fr)}}
+.trust3 li{padding:16px 18px}
+.trust3 b{display:block;font-size:16px;margin-bottom:4px}
+.trust3 p{margin:0;font-size:14px;color:var(--cc-ink-muted)}
+.trust3 .src{font-size:12.5px;margin-top:8px}
+.itfacts{max-width:1100px;margin:0 auto;padding:18px}
+.itfacts>h3{font-size:18px;margin:0 0 4px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.itfacts>p{margin:0 0 14px;font-size:14px;color:var(--cc-ink-muted)}
+.facts2{display:grid;gap:0 28px}
+@media(min-width:900px){.facts2{grid-template-columns:1fr 1fr}}
+.fx{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;padding:9px 0;border-top:1px solid var(--cc-line);font-size:14px;line-height:1.45}
+.fx dt{font-weight:800}
+.fx dd{margin:0;min-width:0}
+@media(max-width:480px){.fx{grid-template-columns:1fr;gap:2px}}
+.toolt{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+.toolt th,.toolt td{border-top:1px solid var(--cc-line);padding:8px 8px;text-align:left;vertical-align:top}
+@media(max-width:700px){.toolt thead{display:none}.toolt tr{display:block;border-top:1px solid var(--cc-line);padding:8px 0}.toolt td,.toolt th{display:block;border:0;padding:2px 0}}
+
+/* start */
+.start{display:grid;gap:16px;max-width:1100px;margin:0 auto}
+@media(min-width:1000px){.start{grid-template-columns:1.1fr .9fr}}
+.steps{list-style:none;margin:0;padding:18px;display:grid;gap:14px}
+.steps li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px}
+.steps .no{width:32px;height:32px;border-radius:50%;background:var(--cc-brand-strong);color:var(--cc-on-dark);display:grid;place-items:center;font-weight:800}
+.steps h3{margin:2px 0 2px;font-size:16px}
+.steps p{margin:0;font-size:14.5px;color:var(--cc-ink-muted)}
+.price{padding:18px}
+.price h3{font-size:18px;margin:0 0 8px}
+.price ul{list-style:none;margin:0 0 14px;padding:0}
+.price li{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--cc-line);font-size:14.5px}
+.price li:first-child{border-top:0}
+.price li svg{flex:none;width:18px;height:18px;color:var(--cc-brand-strong);margin-top:2px}
+.price .full{display:flex;flex-direction:column;gap:10px}
+.share{max-width:1100px;margin:16px auto 0;padding:14px 18px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.share p{margin:0;font-size:14.5px}
+.share .acts{display:flex;gap:8px;flex-wrap:wrap}
+
+/* FAQ */
+.acc{max-width:880px;margin:0 auto}
+.acc details{background:var(--cc-surface);border:1px solid var(--cc-line);border-radius:10px;margin-bottom:10px}
+.acc summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:12px;padding:14px 16px}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary h3{margin:0;font-size:16.5px;flex:1}
+.acc summary .ch{transition:transform .15s}
+.acc details[open] summary .ch{transform:rotate(180deg)}
+.acc .a{padding:0 16px 14px;font-size:15px;color:var(--cc-ink)}
+.acc .a p{margin:0 0 8px}
+
+/* footer */
+.foot{background:var(--cc-surface-dark);color:var(--cc-on-dark);padding:56px 0 28px;font-size:14px}
+.foot a{color:var(--cc-on-dark)}
+.foot-top{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;border-bottom:1px solid rgb(255 255 255 / .15);padding-bottom:28px;margin-bottom:28px}
+.foot-top p{font-size:24px;font-weight:800;margin:0;letter-spacing:-.02em}
+.foot .btn.secondary{background:transparent;color:var(--cc-on-dark);border-color:rgb(255 255 255 / .6)}
+.foot-grid{display:grid;gap:24px;grid-template-columns:1fr 1fr}
+@media(min-width:900px){.foot-grid{grid-template-columns:1.4fr 1fr 1fr 1fr}}
+.foot .fk{font-weight:800;text-transform:uppercase;letter-spacing:.08em;font-size:12px;opacity:.8;margin:0 0 10px}
+.foot ul{list-style:none;margin:0;padding:0}
+.foot li{margin:6px 0}
+.foot .disc{opacity:.8;font-size:13px;margin:22px 0 0;max-width:900px}
+.foot .copy{opacity:.75;font-size:13px;margin-top:14px}
+</style>
+</head>
+<body class="show-marks">
+<a class="skip" href="#main">Skip to content</a>
+
+<!-- ======================= mock-up chrome (not part of the page) ======================= -->
+<div class="mk" role="region" aria-label="Mock-up controls">
+  <div class="wrap">
+    <p style="margin:0"><b>Landing page 3.5 · mock-up v1</b> · 13.11.2026 · evolutionary, not a redesign</p>
+    <div class="grp" role="group" aria-label="Hero picture variant"><span>Hero:</span>
+      <button type="button" data-hero="a" aria-pressed="true">A · product picture</button>
+      <button type="button" data-hero="b" aria-pressed="false">B · map builds up</button>
+    </div>
+    <div class="grp" role="group" aria-label="Section order variant"><span>Order:</span>
+      <button type="button" data-order="1" aria-pressed="true">1 · story, then price</button>
+      <button type="button" data-order="2" aria-pressed="false">2 · price right after the map</button>
+    </div>
+    <div class="grp" role="group" aria-label="Hero call-to-action wording"><span>CTA words:</span>
+      <button type="button" data-cta="1" aria-pressed="true">1</button>
+      <button type="button" data-cta="2" aria-pressed="false">2</button>
+      <button type="button" data-cta="3" aria-pressed="false">3</button>
+    </div>
+    <label><input type="checkbox" id="marks" checked> Change marks</label>
+    <p class="note">Panels bottom right: <b>What changed</b> · <b>Conversion</b> · <b>For the owner</b>. Product pictures are drawn after the accepted 3.5 mock-ups; the real page shows captures (AB-12).</p>
+  </div>
+</div>
+
+<!-- ======================= the page ======================= -->
+<header class="ph">
+  <div class="wrap">
+    <a class="logo" href="#hero" aria-label="Clean-Core.io home">
+      <span class="m" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 12a8 8 0 1 1-2.3-5.6"/><path d="M20 4v5h-5"/></svg></span>
+      <span><span class="nm">Clean-Core<em>.io</em></span><span class="sub">Free Community Edition</span></span>
+    </a>
+    <nav aria-label="Main">
+      <a href="#clean-core">Clean core explained</a>
+      <a href="#process">How it works</a>
+      <a href="#clean-core">SAP object catalog</a>
+      <a href="#faq">Knowledge base</a>
+    </nav>
+    <div class="acts">
+      <!-- Both open the existing dialog "Sign in or create a free account" (?auth=signin); sign-up itself is unchanged. -->
+      <a class="si" href="#start">Sign in</a>
+      <a class="btn secondary small" href="#start" data-cta-do-short>Start free</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- 0 · hero ............................................................... -->
+<section class="hero" id="hero" aria-labelledby="hero-title">
+  <span class="mark changed">Changed</span>
+  <div class="wrap">
+    <div class="hero-copy">
+      <p class="kicker"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.3-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14.6c2 .7 3.2 2.5 3.6 5.4"/></svg>Free for the SAP community</p>
+      <h1 id="hero-title">
+        <span class="h1k">SAP Clean Core Accelerator</span>
+        <span class="h1m">Know what your custom ABAP does — and what to do with it.</span>
+      </h1>
+      <p class="hero-lead">Clean-Core.io reads a Z program and shows the business process it runs, the rules hidden in it and what stands between it and a clean core. Every step points to its line of code.</p>
+      <div class="cta-row">
+        <!-- "see it": /demo, the public showcase (docs/roadmap/demo-showcase-mockup.html, night/demo-showcase 3ea87884): no account, no third-party request, no AI call. Link text and "2-minute" are that mock-up's (FUNNEL, CTAW); a plain link, no AuthLink. -->
+        <a class="btn primary" href="#showcase-link" data-cta-see>Watch the 2-minute demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <!-- "do it": the existing sign-up dialog, unchanged. -->
+        <a class="btn secondary" href="#start" data-cta-do>Analyse your own Z program — free account</a>
+      </div>
+      <p class="cta-note"><b>The demo needs no account</b> — one fictitious program, read end to end. <b>Free to start:</b> five analysis runs of your own code and every example once, no card.</p>
+      <!-- "five": COMMUNITY_QUOTA = 5, lib/constants.ts:52, and today's page "five free analysis runs per account — once, not per month" (app/page.tsx:1241). "every example once": app/page.tsx:1245. -->
+    </div>
+
+    <figure class="shot" aria-labelledby="shot-cap">
+      <figcaption id="shot-cap">Example · Z_MM_PO_APPROVAL, a fictitious program shipped with the product · Analyze, Business view</figcaption>
+      <div class="win" id="heroWin">
+        <div class="wbar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">My workspace › <b>Emergency purchase approval</b> › Analyze</span>
+          <span class="seg" aria-hidden="true"><span class="on">Business</span><span>IT</span><span>Management</span></span></div>
+        <div class="wbody">
+          <div class="does">
+            <div class="t">
+              <h3>What this program does <span class="chip rec">read from the code</span></h3>
+              <!-- Wording after the summary of analyze-business-first-mockup.html (SUMMARY, line 635); the page shows the engine's sentence (ADR-116). -->
+              <p>It approves emergency purchase requisitions and creates the purchase order in SAP. A price more than 5&nbsp;% above the agreed one holds the requisition for a buyer <span class="ln">L315</span>.</p>
+            </div>
+            <span class="fakebtn pri" aria-hidden="true">▶ Walk me through it</span>
+          </div>
+          <div class="map" style="margin-top:12px">
+            <p class="part">The main flow · 6 of its 11 steps</p>
+            <!-- Elements, names and line anchors: the engine's map of Z_MM_PO_APPROVAL (scratchpad demo-mock/engine.json = lib/demo-release.json, top level: plain names, call lines L41–L55). The on-hold branch is the gateway "Not on hold?" (L52) and the rule lv_dev_pct > 5 (L315). -->
+            <ol class="flow" aria-label="The main flow of Z_MM_PO_APPROVAL as a map, every step with its line">
+              <li class="evt" style="--i:0"><span class="n ev" aria-hidden="true"></span><span class="evl">Run starts with the entered selection <span class="ln">L41</span></span></li>
+              <li style="--i:1"><div class="n task"><b><span class="eng">CHECK_AUTHORITY</span><span class="biz">Check authority</span></b><span class="ln">L42</span></div></li>
+              <li class="wonly" style="--i:2"><div class="n task"><b><span class="eng">CHECK_REQUISITION</span><span class="biz">Check requisition</span></b><span class="ln">L44</span></div></li>
+              <li class="nonly"><span class="more">⋯ four more steps</span></li>
+              <li class="wonly" style="--i:3"><div class="n task"><b><span class="eng">CHECK_VENDOR</span><span class="biz">Check vendor</span></b><span class="ln">L48</span></div></li>
+              <li style="--i:4"><div class="n task hot"><b><span class="eng">CHECK_PRICE</span><span class="biz">Check price</span></b><span class="ln">L51</span></div>
+                <div class="branch"><span class="n ev end" aria-hidden="true"></span><span>on hold <span class="ln">L52</span> · waits for a buyer</span></div></li>
+              <li style="--i:5"><div class="n task"><b><span class="eng">DECIDE_APPROVAL</span><span class="biz">Decide approval</span></b><span class="ln">L53</span></div></li>
+              <li style="--i:6"><div class="n task"><b><span class="eng">NOTIFY_REQUESTER</span><span class="biz">Notify requester</span></b><span class="ln">L54</span></div></li>
+              <li class="evt" style="--i:7"><span class="n ev end" aria-hidden="true"></span><span class="evl">Done <span class="ln">L55</span></span></li>
+            </ol>
+            <div class="legend"><span><span class="ln">L315</span> line of code</span><span><span class="chip ai">✎ AI-generated</span> name written by a model from the code's facts</span><span>□ step · ◇ decision · ○ start and end</span></div>
+          </div>
+          <p class="statusline" id="heroStatus">The engine names each step from the code; a model’s checked name may swap in, marked ✎. Excerpt of the main flow.</p>
+        </div>
+      </div>
+    </figure>
+
+    <!-- The three reader entries: orientation (jump links), never a gate. -->
+    <nav class="readers" aria-labelledby="readers-k">
+      <p class="k" id="readers-k">One page for three questions</p>
+      <ul>
+        <li><a href="#process"><span class="who">Business</span><span class="q">What does this program do in our process, and which rules are hidden in it?</span><span class="gets">The process as a map in plain words, and every hard-coded rule to keep, change or drop.</span><span class="go">Read the process →</span></a></li>
+        <li><a href="#for-it"><span class="who">IT</span><span class="q">What does it touch, where does it break clean core, how do we rebuild it?</span><span class="gets">Findings at their line, SAP objects graded A–D, the route, a code draft and tests.</span><span class="go">The facts for IT →</span></a></li>
+        <li><a href="#decide"><span class="who">Management</span><span class="q">What do we risk, what does it cost, what do we decide?</span><span class="gets">One page: what it is for, an indication, the risk and the options to decide on.</span><span class="go">The decision →</span></a></li>
+      </ul>
+    </nav>
+  </div>
+</section>
+
+<div id="flowSections">
+<!-- 1 · process ............................................................ -->
+<section class="sec alt" id="process" aria-labelledby="process-title" data-sec="process">
+  <span class="mark changed">Changed · merges 2 + 3 + 6</span>
+  <div class="wrap">
+    <div class="sh"><span class="eb" data-section-eyebrow>From code to process</span>
+      <h2 id="process-title" data-section-heading>What does this program actually do?</h2>
+      <p class="lead">Clean-Core.io draws the process the code runs as a map you can walk through, and writes what it does in plain words, with every sentence pointing to its line.</p></div>
+    <ul class="foryou" aria-label="What each reader finds here">
+      <li><span class="who">Business</span><span>The steps in your words, who is involved, and how a case can end.</span></li>
+      <li><span class="who">IT</span><span>Every element carries its line, read by the engine before any model.</span></li>
+      <li><span class="who">Management</span><span>What the program is for, before anyone decides about it.</span></li>
+    </ul>
+
+    <figure class="shot" style="margin-top:0" aria-label="Product picture: the walk-through on the map, the text around it and the two charts">
+      <div class="win">
+        <div class="wbar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">Analyze · <b>walk-through, at a decision point</b></span><span class="seg" aria-hidden="true"><span class="on">Business</span><span>IT</span><span>Management</span></span></div>
+        <div class="wbody">
+          <div class="tools" aria-hidden="true"><span class="on">Map</span><span>Steps</span><span>Zoom</span><span>Fit</span><span class="r">⤢ Full screen · Edit</span></div>
+          <div class="pgrid">
+            <div class="tour" role="note" aria-label="Walk-through card">
+              <!-- The station shown is the gateway "Not on hold?" (L52) of the engine map; the number of stations is not stated here. -->
+              <span class="st">Walk-through · decision point</span>
+              <h3>Is the price more than 5 % above the agreed price?</h3>
+              <p>If it is, the requisition goes on hold and waits for a buyer. The limit is written into the program <span class="ln">L315</span>.</p>
+              <div class="ca" aria-hidden="true"><span class="fakebtn">Back</span><span class="fakebtn">Pause</span><span class="fakebtn pri">Next</span></div>
+            </div>
+            <div class="map">
+              <p class="part">You are here · main flow</p>
+              <ol class="flow" aria-label="Map excerpt around the decision point">
+                <li><div class="n task"><b>Read info record</b><span class="ln">L50</span></div></li>
+                <li><div class="n task"><b>Check price</b><span class="ln">L51</span></div></li>
+                <li class="gwy"><span class="n gw" aria-hidden="true"></span><span class="gwl">Not on hold? <span class="ln">L52</span></span>
+                  <div class="branch"><span class="n ev end" aria-hidden="true"></span>no: waits for a buyer</div></li>
+                <li><div class="n task"><b>Decide approval</b><span class="ln">L53</span></div></li>
+              </ol>
+            </div>
+          </div>
+          <div class="around">
+            <!-- The text around the map: five blocks, every sentence with its line, the AI chip only on a block a model wrote (ADR-116). Lines checked in the source and in the engine map (engine.json). -->
+            <div class="card"><h4>How it runs <span class="chip ai">✎ AI-generated</span></h4><p>It checks four things in order — who may approve, the requisition, the vendor and the price — before anyone approves <span class="ln">L42–51</span>.</p></div>
+            <div class="card"><h4>Who is involved <span class="chip rec">read from the code</span></h4><p>Emergencies up to 50,000.00 go to the department head <span class="ln">L325</span>. The code names roles, not people.</p></div>
+            <div class="card"><h4>Questions for the business <span class="chip nd">not determined</span></h4><p>The code calls plant 1000 the central warehouse and skips its limit check <span class="ln">L94–96</span>. Does that still hold?</p></div>
+          </div>
+          <div class="charts">
+            <!-- Real figures: the engine's run of Z_MM_PO_APPROVAL (scratchpad demo-mock/engine.json, equal to lib/demo-release.json): caseEnds (9: 1 normal, 8 stopped) and dataUse (5 changes, 11 only read), with their lines. -->
+            <section class="card chart" aria-labelledby="c1"><h3 id="c1">How a case can end</h3><p class="take">A case can end in 9 ways: 1 at the program’s normal end, 8 stopped on the way.</p>
+              <div class="brow"><span class="lab">Runs to its end <small>L55</small></span><span class="track"><i style="width:33%"></i></span><span class="v">1</span></div>
+              <div class="brow"><span class="lab">Stopped in “Check requisition” <small>rejected, no material · L80, L88, L92</small></span><span class="track"><i style="width:100%"></i></span><span class="v">3</span></div>
+              <div class="brow"><span class="lab">Stopped in “Check authority” <small>not authorized, no requisition · L110, L120</small></span><span class="track"><i style="width:67%"></i></span><span class="v">2</span></div>
+              <div class="brow"><span class="lab">Stopped in “Read requisition” <small>L66</small></span><span class="track"><i style="width:33%"></i></span><span class="v">1</span></div>
+              <div class="brow"><span class="lab">Stopped in “Read vendor” <small>no supplier found · L158</small></span><span class="track"><i style="width:33%"></i></span><span class="v">1</span></div>
+              <div class="brow"><span class="lab">Stopped in “Read info record” <small>no info record · L259</small></span><span class="track"><i style="width:33%"></i></span><span class="v">1</span></div>
+              <p class="cfoot">Counted from the code’s branches and messages <span class="chip rec">read from the code</span></p></section>
+            <section class="card chart" aria-labelledby="c2"><h3 id="c2">What it changes, what it only reads</h3><p class="take">It changes 5 kinds of records and only reads 11 others.</p>
+              <div class="stack1" role="img" aria-label="5 changed, 11 only read"><i class="a" style="flex:5"></i><i class="b" style="flex:11"></i></div>
+              <p class="keyrow"><span><i></i>Changes 5</span><span><i class="b"></i>Only reads 11</span></p>
+              <div class="brow" style="grid-template-columns:1fr auto"><span class="lab">Purchase requisition <small>changes table EBAN · L240</small></span><span class="v" style="font-weight:600;font-size:12px">changes</span></div>
+              <div class="brow" style="grid-template-columns:1fr auto"><span class="lab">Purchase order <small>posts through BAPI_PO_CREATE1 · L475; batch input in ME21N · L515</small></span><span class="v" style="font-weight:600;font-size:12px">changes</span></div>
+              <div class="brow" style="grid-template-columns:1fr auto"><span class="lab">Its own tables <small>ZMM_PO_APPR · L353, ZMM_PO_ATTACH · L531</small></span><span class="v" style="font-weight:600;font-size:12px">changes</span></div>
+              <p class="cfoot">From the program’s reads and writes <span class="chip rec">read from the code</span></p></section>
+          </div>
+          <div class="ends" aria-label="The two endings after the walk-through">
+            <!-- ADR-118: two equal endings, both secondary. -->
+            <div class="e"><b>Re-design this program</b><span>Design, a code draft and tests, on the same evidence.</span></div>
+            <div class="e"><b>Analyse another Z program</b><span>Your own code, or another example.</span></div>
+          </div>
+        </div>
+      </div>
+    </figure>
+
+    <details class="deep">
+      <summary><span class="lv">For IT</span> How the map is built, and what leaves as a file <span class="ch" aria-hidden="true">▾</span></summary>
+      <div class="in"><ul>
+        <li>A deterministic ABAP engine parses the program first — no model. The same file gives the same map. Start and end events, tasks, decision points and sub-processes each carry a line anchor, or the reason they have none.</li>
+        <li>Business names come from a model only with the engine's facts per element, swap in visibly and carry the <span class="chip ai">✎ AI-generated</span> mark. Without facts, the engine's own label stays.</li>
+        <li>Object-oriented programs: classes, methods and a status field with its transitions read as the process; technical methods fold into their caller.</li>
+        <li>Full screen with the step list, search and an <b>Edit</b> switch; every save is a new revision, the reconstruction stays revision 1.</li>
+        <li>Export and import as standard BPMN 2.0 XML. Import into SAP Signavio is not verified; there is no connection to a Signavio workspace.</li>
+      </ul></div>
+    </details>
+  </div>
+</section>
+
+<!-- 2 · rules .............................................................. -->
+<section class="sec" id="rules" aria-labelledby="rules-title" data-sec="rules">
+  <span class="mark new">New as a section</span>
+  <div class="wrap">
+    <div class="sh"><span class="eb" data-section-eyebrow>Rules in the code</span>
+      <h2 id="rules-title" data-section-heading>Which business rules are hidden in the code?</h2>
+      <p class="lead">Limits, plants and tolerances written into a program decide real cases. Clean-Core.io lists each one with its line, so the business can say what still holds.</p></div>
+    <ul class="foryou" aria-label="What each reader finds here">
+      <li><span class="who">Business</span><span>Answer each rule: keep, change, drop or clarify.</span></li>
+      <li><span class="who">IT</span><span>Hard-coded literals, not customizing, with their line.</span></li>
+      <li><span class="who">Management</span><span>Which decisions are the business's to make before a rebuild.</span></li>
+    </ul>
+    <div class="rules" role="list" aria-label="Three rules of the example, read from the code">
+      <!-- The three rules pickHeroRules() names for the demo: tests/landing-hero-rules.spec.ts (lv_dev_pct > 5 at L315, werks = '1000' at L95, gv_emergency AND gv_amount <= '50000.00' at L325, checked in the source). -->
+      <div class="card rule" role="listitem"><div><p class="rt">A price more than 5 % above the agreed price holds the requisition for a buyer.</p>
+        <p class="rm"><span class="ln">L315</span><span class="chip rec">read from the code</span><span>changes the outcome</span></p></div>
+        <div class="answer" role="group" aria-label="Your answer to this rule"><button type="button" aria-pressed="true">Keep</button><button type="button" aria-pressed="false">Change</button><button type="button" aria-pressed="false">Drop</button><button type="button" aria-pressed="false">Clarify</button></div></div>
+      <div class="card rule" role="listitem"><div><p class="rt">Requisitions for plant 1000 skip the limit check.</p>
+        <p class="rm"><span class="ln">L95</span><span class="chip rec">read from the code</span><span>hard-coded in the program</span></p></div>
+        <div class="answer" role="group" aria-label="Your answer to this rule"><button type="button" aria-pressed="false">Keep</button><button type="button" aria-pressed="false">Change</button><button type="button" aria-pressed="false">Drop</button><button type="button" aria-pressed="true">Clarify</button></div></div>
+      <div class="card rule" role="listitem"><div><p class="rt">Emergencies up to 50,000.00 are approved by the department head.</p>
+        <p class="rm"><span class="ln">L325</span><span class="chip rec">read from the code</span><span>decides who approves</span></p></div>
+        <div class="answer" role="group" aria-label="Your answer to this rule"><button type="button" aria-pressed="false">Keep</button><button type="button" aria-pressed="false">Change</button><button type="button" aria-pressed="false">Drop</button><button type="button" aria-pressed="false">Clarify</button></div></div>
+    </div>
+    <p class="honest">Three of the 12 rules the engine reads from the fictitious demo program.<!-- 12: engine.json rules / counts.rules -->  The answers here are only a picture; in the product they are recorded as the signed-in account — a self-declaration, not a mandate.</p>
+  </div>
+</section>
+
+<!-- 3 · clean core ......................................................... -->
+<section class="sec alt" id="clean-core" aria-labelledby="cc-title" data-sec="clean-core">
+  <span class="mark changed">Changed · merges 4 + 5</span>
+  <div class="wrap">
+    <div class="sh"><span class="eb" data-section-eyebrow>SAP clean core</span>
+      <h2 id="cc-title" data-section-heading>How far is it from a clean core, and where can it go?</h2>
+      <p class="lead">Clean core keeps SAP standard untouched: extensions use only what SAP releases for them. Clean-Core.io shows, object by object, how far a program is from that, and the route that fits.</p></div>
+    <ul class="foryou" aria-label="What each reader finds here">
+      <li><span class="who">Business</span><span>Why an upgrade can hurt, in one sentence per part.</span></li>
+      <li><span class="who">IT</span><span>Level A–D per SAP object from SAP's published data; the route with its reason.</span></li>
+      <li><span class="who">Management</span><span>How much of it can stay, and what has to be rebuilt.</span></li>
+    </ul>
+    <div class="cc">
+      <div class="card ladder">
+        <h3>Four levels, the SAP objects of the example</h3>
+        <p class="sub2">A is what SAP releases for extensions; D is what SAP advises against.</p>
+        <!-- Level words: the FAQ "What is SAP clean core?" (lib/landing-faq.ts). BAPI_PO_CREATE1 is today's level-B example (LEVEL_EXAMPLES, app/page.tsx:126–131, graded at render by getObjectDimensions) and is called at L475. The EBAN write is L240; "writes to SAP tables" are D in the FAQ's wording. Levels checked against the engine run (engine.json levels: EBAN@write D, BAPI_PO_CREATE1 B, ME21N C, no object on A). -->
+        <div class="lv"><span class="g A" aria-hidden="true">A</span><div><b>Level A · released APIs and extension points</b><p>Upgrade-stable. What a rebuild aims for. No object of the example is on A yet.</p></div></div>
+        <div class="lv"><span class="g B" aria-hidden="true">B</span><div><b>Level B · classic APIs SAP still recommends</b><div class="obj"><code>BAPI_PO_CREATE1</code><span class="ln">L475</span><span class="chip imp">SAP release data</span></div></div></div>
+        <div class="lv"><span class="g C" aria-hidden="true">C</span><div><b>Level C · internal SAP objects</b><div class="obj">Batch input into <code>ME21N</code><span class="ln">L515</span><span class="chip imp">SAP release data</span></div></div></div>
+        <div class="lv"><span class="g D" aria-hidden="true">D</span><div><b>Level D · not recommended</b><div class="obj">Direct write to SAP table <code>EBAN</code><span class="ln">L240</span><span class="chip rec">read from the code</span></div></div></div>
+      </div>
+      <div class="card routes">
+        <h3>Where it can go</h3>
+        <p class="sub2">The route follows the evidence. You choose; ATC stays the authority.</p>
+        <div class="route"><b>Key user tools</b><p>Small changes SAP's key user tools cover: custom fields, custom logic, custom CDS views. Each candidate with its limit.</p></div>
+        <div class="route ind"><span class="tag">indicated for the example</span><b>In-app with ABAP Cloud</b><p>On the stack, with released APIs; a RAP draft as an abapGit package.</p></div>
+        <div class="route"><b>Side-by-side on SAP BTP</b><p>Beside the core, on SAP BTP, part of the SAP Business AI Platform; a CAP draft.</p></div>
+        <p class="honest" style="text-align:left;margin:12px 0 0">Why, in the engine's words: two writes to its own tables are on-stack extensibility, a RAP business object on them; the two COMMIT WORK have to go.<!-- engine.json route.rec "In-App (ABAP Cloud)" and route.rationale, shortened --></p>
+      </div>
+    </div>
+    <details class="deep">
+      <summary><span class="lv">For IT</span> Where the levels come from, and the free SAP object catalog <span class="ch" aria-hidden="true">▾</span></summary>
+      <div class="in"><ul>
+        <li>Levels are Clean-Core.io's versioned reading of the states SAP publishes in its Cloudification Repository and object classification — an orientation, never part of a signed audit pack. Confirm with ABAP Test Cockpit; import ATC results to compare them with the engine.</li>
+        <li>The free SAP object catalog shows each object's release state, level and successor, without an account. <!-- object count: formatObjectCount(getFacts()) at build, lib/facts.ts — not typed here --> <a class="textlink" href="#clean-core">Open the SAP object catalog →</a></li>
+        <li>Target platforms: SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) keeps level A only; SAP Cloud ERP Private keeps level A or B. Change the target and the page says what moved.</li>
+      </ul></div>
+    </details>
+    <p class="linkrow"><a class="textlink" href="#clean-core">Clean core, explained without the jargon →</a><a class="textlink" href="#clean-core">How levels are assigned</a></p>
+  </div>
+</section>
+
+<!-- 4 · decide ............................................................. -->
+<section class="sec" id="decide" aria-labelledby="decide-title" data-sec="decide">
+  <span class="mark new">New · was the Management card of 3 and the buckets of 8</span>
+  <div class="wrap">
+    <div class="sh"><span class="eb" data-section-eyebrow>The decision</span>
+      <h2 id="decide-title" data-section-heading>What do we risk, and what do we decide?</h2>
+      <p class="lead">Keep it, rebuild it, move to SAP standard or retire it. Clean-Core.io gives an indication with its reasons — the decision stays yours.</p></div>
+    <ul class="foryou" aria-label="What each reader finds here">
+      <li><span class="who">Business</span><span>The open questions that block a decision, in plain words.</span></li>
+      <li><span class="who">IT</span><span>One rule per object decides its bucket; every assignment shows its evidence.</span></li>
+      <li><span class="who">Management</span><span>Everything on one page: indication, risk, options, next steps.</span></li>
+    </ul>
+    <figure class="shot" style="margin-top:0" aria-label="Product picture: the Management view on one page">
+      <div class="win">
+        <div class="wbar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">Analyze · <b>Management</b></span><span class="seg" aria-hidden="true"><span>Business</span><span>IT</span><span class="on">Management</span></span></div>
+        <div class="wbody">
+          <!-- Layout after analyze-business-first-mockup.html state 13. Figures from the engine run (engine.json = lib/demo-release.json): 5 changes, 12 rules, score 40, route In-App (ABAP Cloud); the EBAN write (L240) is Rebuild by the bucket rule (app/page.tsx BUCKET_RULE). Effort only where Economics computes it (roadmap 3.5.0 (2), money-honesty guard): no amount shown here. -->
+          <div class="mg">
+            <div class="card"><p class="k">What it is for</p><p class="big">It approves emergency purchase requisitions and creates the purchase orders in one run.</p></div>
+            <div class="card indic"><p class="k">Indication from the analysis</p><p class="big">Rebuild, in-app with ABAP Cloud</p><p style="font-size:13.5px;margin:6px 0 0">It writes directly to the SAP table EBAN <span class="ln">L240</span>; its own tables can stay on the stack as a RAP business object.</p><p class="note">This is an indication, not a decision. You decide.</p></div>
+          </div>
+          <div class="tiles">
+            <div class="card tile"><p class="k" style="font:700 11px/1.2 var(--font);text-transform:uppercase;letter-spacing:.06em;color:var(--cc-ink-muted)">Records it changes</p><p class="v">5 <small>kinds</small></p><p>Requisitions, purchase orders, two of its own tables.</p></div>
+            <div class="card tile"><p class="k" style="font:700 11px/1.2 var(--font);text-transform:uppercase;letter-spacing:.06em;color:var(--cc-ink-muted)">Rules in the code</p><p class="v">12 <small>rules</small></p><p>Among them 5 %, plant 1000, 50,000.00.</p></div>
+            <div class="card tile"><p class="k" style="font:700 11px/1.2 var(--font);text-transform:uppercase;letter-spacing:.06em;color:var(--cc-ink-muted)">Clean Core Score</p><p class="v">40 <small>of 100</small></p><p>Higher is better; 26 findings.</p></div>
+            <div class="card tile"><p class="k" style="font:700 11px/1.2 var(--font);text-transform:uppercase;letter-spacing:.06em;color:var(--cc-ink-muted)">How often it runs</p><p class="v" style="font-size:16px">Not known</p><p><span class="chip nd">not determined</span> IT can add usage data.</p></div>
+          </div>
+          <div class="card opts">
+            <table><caption class="sr">Options to decide on</caption>
+              <thead><tr><th scope="col"></th><th scope="col">Keep</th><th scope="col" class="on">Rebuild in-app · indicated</th><th scope="col">Retire</th></tr></thead>
+              <tbody>
+                <tr><th scope="row">What it means</th><td data-l="Keep">Leave it, retest with every upgrade</td><td class="on" data-l="Rebuild in-app · indicated">ABAP Cloud on the stack; the write to EBAN and the two COMMIT WORK replaced</td><td data-l="Retire">Switch it off; urgent purchases go the normal way</td></tr>
+                <tr><th scope="row">Effort</th><td colspan="3"><span class="chip sim">simulation</span> Economics works it out with your own rates — no figure before that.</td></tr>
+              </tbody></table>
+          </div>
+        </div>
+      </div>
+    </figure>
+    <details class="deep">
+      <summary><span class="lv">For IT</span> Four buckets, one rule per object <span class="ch" aria-hidden="true">▾</span></summary>
+      <div class="in">
+        <!-- Bucket words: BUCKET_RULE of app/page.tsx:159–167 and PUBLIC_CLOUD_FIT_BUCKETS (lib/abap/public-cloud-fit.ts). -->
+        <div class="buckets">
+          <div class="card bucket"><b>Retire</b><p>The rule it serves is confirmed "Drop", or usage data shows no execution over at least 13 months — a candidate, not a verdict.</p></div>
+          <div class="card bucket"><b>No catalogued path</b><p>Needed, below the target's bar, and SAP names no released API and no successor.</p></div>
+          <div class="card bucket"><b>Rebuild</b><p>Needed, below the bar, a successor or extension path named — and every own write to an SAP table.</p></div>
+          <div class="card bucket"><b>Keep</b><p>Needed and permitted on the target platform.</p></div>
+        </div>
+        <p style="margin:10px 0 0">The first rule that applies wins. Why 13 months: period-end and year-end programs run once a year.</p>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 5 · after the decision ................................................. -->
+<section class="sec alt" id="after" aria-labelledby="after-title" data-sec="after">
+  <span class="mark changed">Changed · was 11, the seven stages</span>
+  <div class="wrap">
+    <div class="sh"><span class="eb" data-section-eyebrow>After the decision</span>
+      <h2 id="after-title" data-section-heading>What happens after the decision?</h2>
+      <p class="lead">The same evidence carries on: a target design, a code draft, tests, documentation your company can use, the costs and a handover. Each tool produces something you can read and check.</p></div>
+    <!-- Seven tools: lib/workflow-steps.ts order (CLAUDE.md "Layout"). -->
+    <ol class="stages" aria-label="The seven tools of a project">
+      <li class="cur"><span class="no">1</span>Analyze</li><li><span class="no">2</span>Design</li><li><span class="no">3</span>Transformation</li><li><span class="no">4</span>Documentation</li><li><span class="no">5</span>Testing</li><li><span class="no">6</span>Economics</li><li><span class="no">7</span>Delivery</li>
+    </ol>
+    <ul class="foryou" aria-label="What each reader finds here">
+      <li><span class="who">Business</span><span>Documentation that answers first, ready for your own template.</span></li>
+      <li><span class="who">IT</span><span>A RAP or CAP draft, test scenarios, an abapGit package.</span></li>
+      <li><span class="who">Management</span><span>Costs only as a simulation on your own assumptions.</span></li>
+    </ul>
+    <div class="after">
+      <figure class="win docwin" style="margin:0" aria-label="Product picture: Documentation, answer first in five tabs">
+        <div class="wbar"><span class="dots" aria-hidden="true"><i></i><i></i><i></i></span><span class="path">Documentation · <b>Overview</b></span><span class="fakebtn pri" style="margin-left:auto" aria-hidden="true">⤓ Export</span></div>
+        <div class="wbody">
+          <!-- ADR-107 and docs/roadmap/documentation-next-mockup.html: five tabs with counts, Export the one primary action. The open-question count is left out: it is not in the engine data. -->
+          <div class="tabs" aria-hidden="true"><span class="on">Overview</span><span>The process <em>11</em><!-- 11 steps on the top level of the engine map --></span><span>Roles &amp; controls</span><span>Open questions</span><span>Evidence</span></div>
+          <p style="margin:0 0 4px;font-weight:800;font-size:17px">Emergency purchase approval</p>
+          <p style="margin:0 0 12px;font-size:14px">Checks a purchase requisition, its vendor and its price, then asks the right person to approve and creates the purchase order in SAP. <span class="ln">L41–55</span></p>
+          <div class="tiles2" aria-label="The process as tiles">
+            <!-- Step names: the engine map (engine.json); ranges: the routines FORM…ENDFORM in public/starter-examples/Z_MM_PO_APPROVAL.abap. -->
+            <div class="st2"><span><span class="no">1</span>Check authority</span><span class="ln">L103–122</span></div>
+            <div class="st2"><span><span class="no">3</span>Check requisition</span><span class="ln">L77–98</span></div>
+            <div class="st2"><span><span class="no">8</span>Check price</span><span class="ln">L303–319</span></div>
+          </div>
+          <p class="statusline">Who carries out the steps is not provable from the code <span class="chip nd">not determined</span></p>
+        </div>
+      </figure>
+      <div class="card limits">
+        <h3>What it is, and what it is not</h3>
+        <!-- Limits: today's hero limits line and FAQ "Is the generated code ready to go live?" (app/page.tsx:549–552, lib/landing-faq.ts). -->
+        <ul>
+          <li>The code is a <b>draft for review</b>, not a finished product.</li>
+          <li>CAP tests run in an isolated runner against mocks — not in your SAP system.</li>
+          <li>RAP tests are an ABAP Unit class for your own system; you record its result there.</li>
+          <li>Costs appear only as a <span class="chip sim">simulation</span> on your assumptions.</li>
+          <li>A person signs the result, not the tool.</li>
+        </ul>
+        <p class="linkrow" style="justify-content:flex-start"><a class="textlink" href="#process">How it works, and its limits →</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 · evidence ........................................................... -->
+<section class="sec" id="evidence" aria-labelledby="evidence-title" data-sec="evidence">
+  <span class="mark changed">Changed · merges 7 + 8</span>
+  <div class="wrap">
+    <div class="sh"><span class="eb" data-section-eyebrow>Evidence you can check</span>
+      <h2 id="evidence-title" data-section-heading>Can we check what it says?</h2>
+      <p class="lead">Yes. Every statement says where it comes from, and every completed analysis is sealed as a signed run that anyone can verify — also years later, also outside the product.</p></div>
+    <ul class="foryou" aria-label="What each reader finds here">
+      <li><span class="who">Business</span><span>What is read from the code, what AI wrote, what is still open.</span></li>
+      <li><span class="who">IT</span><span>Signed runs and an audit pack with an offline verifier.</span></li>
+      <li><span class="who">Management</span><span>A decision you can defend in an audit.</span></li>
+    </ul>
+    <div class="ev">
+      <div class="card prov">
+        <h3>Where a statement comes from</h3>
+        <!-- Provenance words: lib/provenance.ts groups on app/page.tsx:169–173; "AI-generated" is ADR-104. -->
+        <div class="prow"><span><span class="chip rec">read from the code</span></span><span>Reconstructed by the engine, with its line.</span></div>
+        <div class="prow"><span><span class="chip imp">imported</span></span><span>SAP's data, or your ATC and usage files.</span></div>
+        <div class="prow"><span><span class="chip ai">✎ AI-generated</span></span><span>Written by a model; marked until someone confirms it.</span></div>
+        <div class="prow"><span><span class="chip nd">not determined</span></span><span>The code cannot show it — said, not guessed.</span></div>
+        <div class="prow"><span><span class="chip sim">simulation</span></span><span>Your assumptions, never passed off as fact.</span></div>
+      </div>
+      <div class="card receipt">
+        <h3>Signed run <span class="chip pv">proven</span></h3>
+        <dl>
+          <dt>Program</dt><dd><code>Z_MM_PO_APPROVAL</code> · 552 lines<!-- 552: lib/starter-examples.ts:77 --></dd>
+          <dt>Findings</dt><dd>26 (23 distinct) · Clean Core Score 40<!-- engine.json findings, distinct, score --></dd>
+          <dt>Engine</dt><dd>deterministic · version named in the run</dd>
+          <dt>Signed by</dt><dd>the server, with HMAC and Ed25519</dd>
+          <dt>Account</dt><dd>the signed-in account — a self-declaration</dd>
+        </dl>
+        <p class="ok"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>Audit pack verified: unchanged since it was signed</p>
+        <p style="font-size:13px;color:var(--cc-ink-muted);margin:10px 0 0">A signature proves where a run came from and that it is unchanged — not that it is right. A demo run is never signed.</p>
+      </div>
+    </div>
+    <p class="linkrow"><a class="textlink" href="#evidence">Verify an audit pack →</a><a class="textlink" href="#evidence">Open the reference run</a></p>
+  </div>
+</section>
+
+<!-- 7 · trust and the facts for IT ......................................... -->
+<section class="sec alt" id="for-it" aria-labelledby="forit-title" data-sec="for-it">
+  <span class="mark changed">Changed · merges 9 + 12, new IT facts</span>
+  <div class="wrap">
+    <div class="sh"><span class="eb" data-section-eyebrow>Your code · for IT in depth</span>
+      <h2 id="forit-title" data-section-heading>What happens to our code?</h2>
+      <p class="lead">It is stored in the EU, only you and the people you invite can open it, and it is never sold. Below, the facts IT asks for before anyone uploads a line.</p></div>
+    <ul class="foryou" aria-label="What each reader finds here">
+      <li><span class="who">Business</span><span>Whether you may upload the program, and who will see it.</span></li>
+      <li><span class="who">IT</span><span>What is deterministic, what a model writes, what leaves your system.</span></li>
+      <li><span class="who">Management</span><span>Where the data lives and who answers for it, for your risk register.</span></li>
+    </ul>
+    <!-- Trust lines: verbatim from lib/trust-claims.ts (residency, tracking, access, training, free); each links the document that says so. -->
+    <ul class="trust3">
+      <li class="card"><b>Stored in the EU</b><p>Stored in the EU — Google Cloud, Belgium (europe-west1). No analytics, advertising or tracking cookies.</p><p class="src"><a href="#for-it">Privacy Policy §4</a> · <a href="#for-it">§7</a></p></li>
+      <li class="card"><b>Only you, and whom you invite</b><p>Only the account that created this project can open it, and anyone that account chooses to invite; no one else has standing access.</p><p class="src"><a href="#for-it">Privacy Policy §8</a></p></li>
+      <li class="card"><b>Not for training, not for sale</b><p>With our community key, Google does not use your code to train its models — the paid Gemini API terms apply. With your own key, the terms of your own account with that key's provider apply. We do not sell, rent or commercially use your code.</p><p class="src"><a href="#for-it">Privacy Policy</a> · <a href="#for-it">Terms</a></p></li>
+    </ul>
+    <div class="card itfacts">
+      <h3><span class="pill changed" style="font-size:11px">For IT</span> The facts, precisely</h3>
+      <p>Everything here is in the code, the Privacy Policy or SECURITY.md — follow the links.</p>
+      <dl class="facts2">
+        <!-- Sources: CLAUDE.md "What this is" / "Key lib modules"; lib/legal/texts/privacy.en.ts §3, §7, §8, §9; SECURITY.md §3–§7; lib/model-providers.ts (ANTHROPIC_OWN_KEY_OFFERED, switched on 23.12.2026 per roadmap row "23.12.2026 — a switch"). -->
+        <div class="fx"><dt>Engine first</dt><dd>A deterministic ABAP engine reads the program before any model: findings at their line, the route, the score. Analysing with it sends nothing to a model provider.</dd></div>
+        <div class="fx"><dt>What a model writes</dt><dd>Business names, text, designs and code drafts — marked <span class="chip ai">✎ AI-generated</span>, and in every exported artefact as a header comment and a metadata field.</dd></div>
+        <div class="fx"><dt>Line anchors</dt><dd>Every element of the map, every finding and every sentence of the text points to program, include and line, or says why it cannot.</dd></div>
+        <div class="fx"><dt>Levels A–D</dt><dd>From SAP's Cloudification Repository and object classification, by a versioned rule. ATC stays the authority; import ATC results to compare.</dd></div>
+        <div class="fx"><dt>Routes</dt><dd>Key user candidates, in-app with ABAP Cloud (RAP), side-by-side on SAP BTP (CAP) — each with its reasons and limits.</dd></div>
+        <div class="fx"><dt>Signed runs</dt><dd>Every completed analysis is an immutable run, signed by the server with HMAC and Ed25519. The audit pack is signed over the run and verifies offline.</dd></div>
+        <div class="fx"><dt>abapGit</dt><dd>Upload an abapGit package (your dictionary texts stay with the project); drafts leave as an abapGit package for ADT.</dd></div>
+        <div class="fx"><dt>Model calls</dt><dd>Only through our server; keys never reach the browser. Platform model: Google Gemini.</dd></div>
+        <div class="fx"><dt>Own key (BYOK)</dt><dd>Your own Gemini key, stored encrypted; <span data-claude>from 23 December 2026 also your own Claude key (Anthropic)</span>. The provider bills you under your own agreement.</dd></div>
+        <div class="fx"><dt>What is kept</dt><dd>Your code and the generated artefacts, in the EU, until you delete them; backup copies age out within 30 days. Access logs as the Privacy Policy §9 says.</dd></div>
+        <div class="fx"><dt>Open by design</dt><dd>The source code is public, including the security rules (firestore.rules) and the security model in SECURITY.md.</dd></div>
+        <div class="fx"><dt>Not an SAP product</dt><dd>Independent, not affiliated with or endorsed by SAP SE.</dd></div>
+      </dl>
+    </div>
+    <details class="deep">
+      <summary><span class="lv">For IT</span> Next to SAP's own tools <span class="ch" aria-hidden="true">▾</span></summary>
+      <div class="in">
+        <!-- toolchainRows of app/page.tsx:358–384, shortened. -->
+        <table class="toolt"><thead><tr><th scope="col">SAP tool</th><th scope="col">How Clean-Core.io relates</th></tr></thead><tbody>
+          <tr><th scope="row">ABAP Test Cockpit (ATC)</th><td>Stays the authoritative check. Same SAP repository, read as level A–D; ATC results can be imported.</td></tr>
+          <tr><th scope="row">ABAP Development Tools (ADT)</th><td>Drafts arrive as an abapGit package you import, compile and test there.</td></tr>
+          <tr><th scope="row">Joule for Developers, Custom Code Migration Agent</th><td>They tell developers what to fix. Clean-Core.io shows the business what the code does and carries the evidence to a decision.</td></tr>
+          <tr><th scope="row">SAP Signavio</th><td>BPMN 2.0 XML files only; import into Signavio not verified, no connection.</td></tr>
+          <tr><th scope="row">SAP Cloud ALM</th><td>No adapter. The handover is a set of files.</td></tr>
+        </tbody></table>
+      </div>
+    </details>
+    <p class="linkrow"><a class="textlink" href="#for-it">SECURITY.md on GitHub →</a><a class="textlink" href="#for-it">Architecture</a><a class="textlink" href="#for-it">Trust and privacy</a></p>
+  </div>
+</section>
+
+<!-- 8 · start .............................................................. -->
+<section class="sec" id="start" aria-labelledby="start-title" data-sec="start">
+  <span class="mark changed">Changed · was 10 (demo) + 11 (start)</span>
+  <div class="wrap">
+    <div class="sh"><span class="eb" data-section-eyebrow>Start · free</span>
+      <h2 id="start-title" data-section-heading>What does it cost, and how do we start?</h2>
+      <p class="lead">Nothing. Watch the demo without an account; create a free account to analyse your own program.</p></div>
+    <ul class="foryou" aria-label="What each reader finds here">
+      <li><span class="who">Business</span><span>Bring the Z program nobody can explain any more.</span></li>
+      <li><span class="who">IT</span><span>A file, pasted code or an abapGit package; your own key after five runs.</span></li>
+      <li><span class="who">Management</span><span>No contract and no payment; or send the demo to IT.</span></li>
+    </ul>
+    <div class="start">
+      <ol class="card steps">
+        <li><span class="no" aria-hidden="true">1</span><div><h3>Watch the 2-minute demo</h3><p>One fictitious program, Z_MM_PO_APPROVAL, read end to end. No account, nothing saved, no AI call.</p></div></li>
+        <li><span class="no" aria-hidden="true">2</span><div><h3>Create a free account</h3><p>With Google, or with e-mail and password. No payment, no card.</p></div></li>
+        <li><span class="no" aria-hidden="true">3</span><div><h3>Bring your own Z program</h3><p>Upload a file or an abapGit package, or paste the code. The process map appears first.</p></div></li>
+      </ol>
+      <div class="card price" data-testid="card-price">
+        <h3>Free Community Edition</h3>
+        <ul>
+          <!-- 5: COMMUNITY_QUOTA (lib/constants.ts:52). 7 examples: STARTER_EXAMPLES (lib/starter-examples.ts, 7 entries). "once, not per month": app/page.tsx:1241. Gemini/Google billing: app/page.tsx:1272. Claude: roadmap row "23.12.2026 — a switch"; shown only while ANTHROPIC_OWN_KEY_OFFERED is true. -->
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span><b>Five free analysis runs</b> per account — once, not per month.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Each of the <b>7 examples</b> free the first time.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span>Every tool and every view included.</span></li>
+          <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg><span><b>No quota with your own key</b> — Google Gemini<span data-claude>, or Claude by Anthropic</span>. The provider bills it under your own agreement; we take no payment.</span></li>
+        </ul>
+        <div class="full">
+          <a class="btn primary" href="#start" data-cta-do>Analyse your own Z program — free account</a>
+          <a class="btn secondary" href="#showcase-link" data-cta-see>Watch the 2-minute demo</a>
+        </div>
+      </div>
+    </div>
+    <div class="card share">
+      <p><b>Not your decision alone?</b> Send the 2-minute demo on — it needs no account.</p>
+      <div class="acts">
+        <!-- mailto links and a copy button: nothing goes to our server, no sharing feature is invented (inside the product, sharing stays invitation by e-mail). Words and the #lens= hash as in demo-showcase-mockup.html (END.share). -->
+        <a class="btn secondary small" href="mailto:?subject=Clean-Core.io%20%E2%80%94%20what%20a%20Z%20program%20does&amp;body=A%202-minute%20demo%2C%20no%20account%20needed%3A%20https%3A%2F%2Fclean-core.io%2Fdemo%23lens%3Dit">Send to your IT colleague</a>
+        <a class="btn secondary small" href="mailto:?subject=Clean-Core.io%20%E2%80%94%20a%20decision%20basis%20for%20custom%20code&amp;body=A%202-minute%20demo%2C%20no%20account%20needed%3A%20https%3A%2F%2Fclean-core.io%2Fdemo%23lens%3Dmanagement">Send to your manager</a>
+        <button type="button" class="btn secondary small" id="copyLink">Copy the link</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 · FAQ ................................................................ -->
+<section class="sec alt" id="faq" aria-labelledby="faq-title" data-sec="faq">
+  <span class="mark changed">Changed · 19 → 10 questions</span>
+  <div class="wrap">
+    <div class="sh"><span class="eb" data-section-eyebrow>FAQ</span>
+      <h2 id="faq-title" data-section-heading>Questions people ask before they start</h2></div>
+    <div class="acc">
+      <!-- Answer as decided in demo-showcase-mockup.html (owner decisions, FAQ row): replaces lib/landing-faq.ts:109 "No. The demo project lives in your workspace …". -->
+      <details open><summary><h3>Is there a demo without an account?</h3><span class="ch" aria-hidden="true">▾</span></summary><div class="a"><p>Yes. A two-minute demo at /demo shows one program read end to end, no account. The interactive demo project lives in your workspace and needs a free account.</p></div></details>
+      <details><summary><h3>What does it cost?</h3><span class="ch" aria-hidden="true">▾</span></summary><div class="a"><p>Nothing. Clean-Core.io is a free community project with no paid tier, and we accept no payment. An account has five analysis runs; each starter example is free the first time you run it. After that you continue with your own model key, which its provider bills under your own agreement.</p></div></details>
+      <details><summary><h3>Is my code kept confidential?</h3><span class="ch" aria-hidden="true">▾</span></summary><div class="a"><p>Only the account that created a project, and anyone that account invites, can open it. An invitation is bound to one confirmed e-mail address, gives read access and can be withdrawn at any time. There are no public links. We do not sell, rent or commercially use your code.</p></div></details>
+      <details><summary><h3>Where is my code stored, and what leaves it?</h3><span class="ch" aria-hidden="true">▾</span></summary><div class="a"><p>Stored in the EU — Google Cloud, Belgium (europe-west1). The engine reads it without a model; text and code drafts are written by the model provider, reached only through our server — Google Gemini, or the provider of your own key. No analytics, advertising or tracking cookies.</p></div></details>
+      <details><summary><h3>Is my code used to train models?</h3><span class="ch" aria-hidden="true">▾</span></summary><div class="a"><p>With our community key, Google does not use your code to train its models — the paid Gemini API terms apply. With your own key, the terms of your own account with that key's provider apply.</p></div></details>
+      <details><summary><h3>What is SAP clean core?</h3><span class="ch" aria-hidden="true">▾</span></summary><div class="a"><p>Clean core keeps the SAP S/4HANA standard unmodified: extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP, part of the SAP Business AI Platform. SAP's clean core level concept grades what an extension uses from A (released APIs and extension points) to D (not recommended: modifications, implicit enhancements, writes to SAP tables).</p></div></details>
+      <details><summary><h3>Is the generated code ready to go live?</h3><span class="ch" aria-hidden="true">▾</span></summary><div class="a"><p>No. It is a draft for a person to review. CAP tests run in an isolated runner against mocks, not in a real SAP S/4HANA system; RAP tests are an ABAP Unit class that runs only in your own system. A signed run proves where a result came from and that it has not changed — not that it is correct.</p></div></details>
+      <details><summary><h3>Does it replace ABAP Test Cockpit or SAP's own tools?</h3><span class="ch" aria-hidden="true">▾</span></summary><div class="a"><p>No. ABAP Test Cockpit stays the check to rely on; the level Clean-Core.io shows is an orientation. SAP's agents tell developers what to fix; Clean-Core.io shows the business what the code does and carries the evidence to a decision.</p></div></details>
+      <details><summary><h3>Does it work with SAP Signavio?</h3><span class="ch" aria-hidden="true">▾</span></summary><div class="a"><p>Clean-Core.io exchanges standard BPMN 2.0 XML files. Import into SAP Signavio has not been verified yet, so we do not claim it, and there is no connection to a Signavio workspace.</p></div></details>
+      <details><summary><h3>Is Clean-Core.io an SAP product?</h3><span class="ch" aria-hidden="true">▾</span></summary><div class="a"><p>No. It is an independent community project, not affiliated with or endorsed by SAP SE. It follows SAP's clean core level concept and reads SAP's published Cloudification Repository.</p></div></details>
+    </div>
+  </div>
+</section>
+</div>
+</main>
+
+<footer class="foot" id="site-footer">
+  <span class="mark changed" style="position:relative;left:auto;top:auto;margin:0 0 16px 16px">Changed · CTA</span>
+  <div class="wrap">
+    <div class="foot-top">
+      <p>Read the code before you decide.</p>
+      <div class="cta-row" style="margin:0">
+        <a class="btn primary" href="#showcase-link" data-cta-see>Watch the 2-minute demo</a>
+        <a class="btn secondary" href="#start" data-cta-do-short>Start free</a>
+      </div>
+    </div>
+    <nav class="foot-grid" aria-label="Footer">
+      <div><p style="font-weight:800;font-size:18px;margin:0 0 8px">Clean-Core<span style="color:var(--cc-brand)">.io</span></p><p style="opacity:.8;margin:0">A free community project for the SAP community: from a custom ABAP program nobody can explain to a decision with evidence.</p></div>
+      <div><p class="fk">Learn</p><ul><li><a href="#clean-core">Clean core explained</a></li><li><a href="#process">How it works</a></li><li><a href="#evidence">Whitepaper</a></li></ul></div>
+      <div><p class="fk">Tools</p><ul><li><a href="#clean-core">SAP object catalog</a></li><li><a href="#evidence">Verify a pack</a></li><li><a href="#evidence">Reference run</a></li></ul></div>
+      <div><p class="fk">Legal</p><ul><li><a href="#for-it">Privacy Policy</a></li><li><a href="#for-it">Terms of Service</a></li><li><a href="#for-it">Imprint</a></li><li><a href="#for-it">SECURITY.md on GitHub</a></li></ul></div>
+    </nav>
+    <p class="disc">Generated output is a draft that you review, test and approve before any productive use. The platform is provided free of charge and without warranty. SAP, ABAP, SAP S/4HANA and SAP BTP are trademarks of SAP SE; Clean-Core.io is not affiliated with SAP SE.</p>
+    <p class="copy">© 2026 Clean-Core.io · Version v3.5.0 · 23 December 2026</p>
+  </div>
+</footer>
+
+<!-- ======================= panels (mock-up only) ======================= -->
+<div class="panels-fab" role="group" aria-label="Mock-up panels">
+  <button type="button" data-open="p-changed">What changed</button>
+  <button type="button" data-open="p-conv">Conversion</button>
+  <button type="button" data-open="p-owner">For the owner</button>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<aside class="drawer" id="p-changed" aria-labelledby="p-changed-h" tabindex="-1" hidden>
+  <header><h2 id="p-changed-h">What changed vs today (v3.0.23)</h2><button type="button" data-close>Close</button></header>
+  <div class="body">
+    <h3>Measured, today against this mock-up</h3>
+    <!-- Today: measured on https://clean-core.io 13.11.2026 (scratchpad measure-live.cjs). Mock-up: the same script on this file, details closed, FAQ closed but the first. -->
+    <table>
+      <thead><tr><th>Measure</th><th>Today</th><th>Mock-up (without its own control bar)</th></tr></thead>
+      <tbody>
+        <tr><td>Sections (with the hero)</td><td class="num">14</td><td class="num" data-m="sections">10</td></tr>
+        <tr><td>Words in the page</td><td class="num">4,301</td><td class="num" data-m="words">2,865</td></tr>
+        <tr><td>Words without product pictures and folds</td><td class="num">3,739</td><td class="num">2,015</td></tr>
+        <tr><td>Controls in the page</td><td class="num">192</td><td class="num" data-m="controls">50</td></tr>
+        <tr><td>Page height at 1440 px</td><td class="num">21,223 px</td><td class="num" data-m="h1440">about 12,050 px</td></tr>
+        <tr><td>Page height at 390 px</td><td class="num">34,469 px</td><td class="num" data-m="h390">about 20,370 px</td></tr>
+        <tr><td>Hero words</td><td class="num">482</td><td class="num" data-m="hero">368 (incl. picture and reader entries)</td></tr>
+        <tr><td>First call to action from the top, 1440 px</td><td class="num">693 px</td><td class="num" data-m="cta">474 px (390: 457 px)</td></tr>
+        <tr><td>Technical terms in the hero</td><td>ABAP Unit, mocks, isolated runner, S/4HANA, model</td><td>ABAP, SAP (the h1 kicker stays for search)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Section by section</h3>
+    <table>
+      <thead><tr><th>Today</th><th>3.5</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td>1 Hero</td><td><span class="pill changed">changed</span></td><td>h1 says the outcome for all three readers; lead 35 instead of 70 words; the chain of five and the limits line go to the sections that show them; the picture is the 3.5 Analyze page; the three reader entries are new.</td></tr>
+        <tr><td>2 What is Clean-Core.io (contrast, chain)</td><td><span class="pill removed">merged</span> → Process, Evidence</td><td>Said the same as the hero; the chain is now the order of the page itself.</td></tr>
+        <tr><td>3 One case, three views</td><td><span class="pill removed">merged</span> → reader entries + "for you" line in every section</td><td>The views are the page's structure now, not a widget.</td></tr>
+        <tr><td>4 What does clean core mean</td><td><span class="pill changed">changed</span> → Clean core</td><td>One picture: the example's own objects on the ladder, and the routes. Schema and evidence stepper go to /clean-core-explained.</td></tr>
+        <tr><td>5 SAP object catalog lookup</td><td><span class="pill removed">folded</span> into Clean core "For IT"</td><td>Own page with its own search reach (/catalog); a link keeps the way.</td></tr>
+        <tr><td>6 Process from ABAP</td><td><span class="pill changed">changed</span> → Process</td><td>3.2 product: walk-through, text around the map, two charts, two endings, full screen with editing.</td></tr>
+        <tr><td>—</td><td><span class="pill new">new</span> Rules</td><td>Hidden rules are the first business question; a decision card instead of a feature tile.</td></tr>
+        <tr><td>—</td><td><span class="pill new">new</span> Decide</td><td>3.5: Management on one page; the buckets move into its IT fold.</td></tr>
+        <tr><td>7 Verify it yourself</td><td><span class="pill changed">changed</span> → Evidence</td><td>Signed run + provenance in one place; the reference run is a link.</td></tr>
+        <tr><td>8 Honest by design</td><td><span class="pill changed">changed</span> → Evidence and Decide</td><td>Nine provenance rows → five; buckets → Decide.</td></tr>
+        <tr><td>9 Next to SAP tools</td><td><span class="pill changed">folded</span> into "What happens to our code" (IT)</td><td>An IT question; kept complete, one fold down.</td></tr>
+        <tr><td>10 Demo project</td><td><span class="pill removed">removed</span> → showcase page</td><td>The demo promised "try it" and ended at a sign-in. The showcase is public; the landing links it.</td></tr>
+        <tr><td>11 Seven stages (captures)</td><td><span class="pill changed">changed</span> → After the decision</td><td>Seven captures of the 3.0 workspace → one row of seven tools and the Documentation picture (ADR-107).</td></tr>
+        <tr><td>12 Start and cost</td><td><span class="pill changed">changed</span> → Start</td><td>Same quota words; Claude added from 23.12; "send to a colleague".</td></tr>
+        <tr><td>13 Your data stays yours</td><td><span class="pill changed">changed</span> → What happens to our code</td><td>Three plain lines for everyone, the dense facts for IT below.</td></tr>
+        <tr><td>14 FAQ (19)</td><td><span class="pill changed">changed</span> (10)</td><td>The real objections first; the other nine stay in /llms-full.txt and on /how-it-works (owner decision O6).</td></tr>
+        <tr><td>Footer</td><td><span class="pill changed">changed</span></td><td>"See it" and "Start free" instead of "Explore the demo".</td></tr>
+        <tr><td>Header button</td><td><span class="pill changed">changed</span></td><td>"Get Free Access or Login" → "Sign in" + "Start free" (secondary style, so the hero keeps the one filled button). Both open the unchanged dialog.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Every call to action that changes</h3>
+    <!-- Inventory from app/page.tsx (line numbers of integrate/3.2.0) and lib/landing-faq.ts. -->
+    <table>
+      <thead><tr><th>Where today</th><th>Today</th><th>3.5</th></tr></thead>
+      <tbody>
+        <tr><td>Hero, app/page.tsx:520</td><td>"See the whole chain in the demo" → sign-in → /demo/workspace</td><td>"Watch the 2-minute demo" → showcase, no account</td></tr>
+        <tr><td>Hero, :523</td><td>"Start with your own code" → #start, eleven sections down</td><td>"Analyse your own Z program — free account" → the sign-up dialog</td></tr>
+        <tr><td>Hero note, :554</td><td>"The demo project is waiting in your workspace after you sign in"</td><td>"No account to look … Free to start: five analyses …"</td></tr>
+        <tr><td>Demo section, :1146–1149</td><td>"Explore the demo" + "Needs a free account."</td><td>Section removed; the showcase is linked from hero, Start, footer</td></tr>
+        <tr><td>Stages, :1171</td><td>"Take the tour in the demo" → sign-in</td><td>Removed with the timeline</td></tr>
+        <tr><td>Start, :1225 / :1253 / :1276</td><td>"Open an example", "Get Started", "Add Your Gemini Key" — three auth links</td><td>One primary "Analyse your own Z program — free account", one secondary "Watch the 2-minute demo"</td></tr>
+        <tr><td>Footer, :1394</td><td>"Explore the demo" → sign-in</td><td>"Watch the 2-minute demo" + "Start free"</td></tr>
+        <tr><td>FAQ, lib/landing-faq.ts:109</td><td>"Can I try the demo without an account? — No …"</td><td>"Is there a demo without an account? — Yes. A two-minute demo at /demo …" (the showcase's wording)</td></tr>
+        <tr><td>Whitepaper and other public pages</td><td>link "/demo/workspace" through sign-in</td><td>link the showcase (inventory per page with the build)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</aside>
+
+<aside class="drawer" id="p-conv" aria-labelledby="p-conv-h" tabindex="-1" hidden>
+  <header><h2 id="p-conv-h">Conversion: from a visit to a first analysis</h2><button type="button" data-close>Close</button></header>
+  <div class="body">
+    <h3>The two paths, in the same words as the showcase</h3>
+    <ul>
+      <li><b>See it</b> — "Watch the 2-minute demo" → the showcase story of Z_MM_PO_APPROVAL → its end: "Analyse your own Z program — free account" (and "Sign in").</li>
+      <li><b>Do it</b> — "Analyse your own Z program — free account" → the existing dialog "Sign in or create a free account" → My workspace, first view (ADR-110) → "Start this example" or your own program → Analyze, Business.</li>
+    </ul>
+    <p class="callout">Aligned with docs/roadmap/demo-showcase-mockup.html (night/demo-showcase, 3ea87884): the link text, both CTAs, the funnel stages, the quota line, the FAQ answer, the share words and the route /demo are the same in both files.</p>
+
+    <h3>Today's friction (measured on v3.0.23)</h3>
+    <ul>
+      <li><b>Promise ≠ outcome:</b> four demo buttons and the footer say "demo" and end at a sign-in dialog; the demo section itself says "Needs a free account".</li>
+      <li><b>Competing paths:</b> 11 distinct call-to-action texts on one page; the hero's second button jumps eleven sections down instead of starting anything.</li>
+      <li><b>Text before value:</b> 482 words in the hero; the first button sits at 693 px — on a 768 px-high laptop it is the last line.</li>
+      <li><b>Technical first screen:</b> mocks, isolated runner, ABAP Unit and S/4HANA in the hero lead and limits line.</li>
+      <li><b>Cost found late:</b> the quota and the key are in section 12 of 14.</li>
+      <li><b>No way to pass it on:</b> the reader who is not the decider has nothing to send that works without an account.</li>
+    </ul>
+
+    <h3>The funnel, step by step (stage names as in the showcase)</h3>
+    <table>
+      <thead><tr><th>Stage</th><th>The landing's part in 3.5</th><th>Hypothesis</th><th>Measure (if decided)</th></tr></thead>
+      <tbody>
+        <tr><td>0 Landing seen <i>(landing only)</i></td><td>h1 states the outcome; 35-word lead; a picture of the real page; the three reader entries</td><td>fewer leave without a click</td><td>page views, aggregated (A); reader entries reached (B)</td></tr>
+        <tr><td>1 Landing click</td><td>one filled button "Watch the 2-minute demo", one outline "Analyse your own Z program — free account"; 2 texts instead of 11</td><td>H1 of the showcase: more showcase starts, fewer bounces at the sign-in dialog</td><td>clicks per button (B)</td></tr>
+        <tr><td>2 Showcase start</td><td>the link opens /demo, no account</td><td>"demo" stops being a dead end</td><td>/demo served per day (A)</td></tr>
+        <tr><td>3 Chapters seen</td><td>— (showcase)</td><td>—</td><td>per chapter (showcase beacon)</td></tr>
+        <tr><td>4 Moment of conviction</td><td>the landing's Rules section shows the same rules (L95, L315, L325) as chapter 3</td><td>a reader who saw the rules here recognises them there</td><td>chapter 3 → CTA (showcase)</td></tr>
+        <tr><td>5 CTA click</td><td>the honest quota line in the hero note and in Start, before the click</td><td>H6: fewer "it costs after all" surprises</td><td>clicks per CTA (B)</td></tr>
+        <tr><td>6 Sign-up</td><td>unchanged (binding)</td><td>higher completion, because cost and steps were read first</td><td>new accounts per day, already in Firestore (A)</td></tr>
+        <tr><td>7 First own project</td><td>— (product: first view, ADR-110; showcase H2 "continue where the demo left off")</td><td>—</td><td>accounts with a first project (A)</td></tr>
+        <tr><td>8 First own analysis</td><td>the For IT facts answer the upload doubt before sign-up</td><td>more own code, not only the example</td><td>first signed runs, own code vs example (A)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Per reader, where the path differs</h3>
+    <table>
+      <thead><tr><th>Reader</th><th>Typical path</th><th>Needs before the next step</th></tr></thead>
+      <tbody>
+        <tr><td>Business</td><td>hero → Process → Rules → showcase → sends it on, or starts an example</td><td>the process in plain words; that nothing is decided for them</td></tr>
+        <tr><td>IT</td><td>IT entry → What happens to our code → Evidence → sign-up → own program</td><td>deterministic vs model and how it is marked; what leaves the system; the signed runs and the open verifier; SECURITY.md; abapGit in and out; BYOK. This is the reader who brings a Z program — the For IT block is their conversion step.</td></tr>
+        <tr><td>Management</td><td>Management entry → Decide → Evidence → forwards to IT</td><td>an indication that is not a decision; no invented money. Their "conversion" is the forward to IT, not an account.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Hero wording (toggle "CTA words" in the bar)</h3>
+    <table>
+      <thead><tr><th></th><th>See it</th><th>Do it</th></tr></thead>
+      <tbody>
+        <tr><td>1 · recommended, same as the showcase</td><td>Watch the 2-minute demo</td><td>Analyse your own Z program — free account</td></tr>
+        <tr><td>2 · the showcase's alternative</td><td>See the demo · no account</td><td>Try it on your own code · Start free</td></tr>
+        <tr><td>3</td><td>See it on an example</td><td>Start free with your own program</td></tr>
+      </tbody>
+    </table>
+    <p>Recommendation 1: the time is the stronger promise and must stay true (the showcase counts its words); the do-path names the object the reader owns and the price at once. The lens words of the showcase's end — Business "Understand your own Z program", IT "Analyse your custom code", Management "Get a decision basis for your custom code" — stay there: the landing has one shared story, so it keeps the one shared wording; the reader entries are jump links, not three buttons.</p>
+
+    <h3>Measurement without third parties — owner and lawyer decision</h3>
+    <ul>
+      <li><b>Option 0 — nothing new.</b> No change to the privacy texts.</li>
+      <li><b>Option A — counts the server already has (recommended first).</b> Per day: new accounts, accounts with a first project, first signed runs (own code vs example), showcase chapters requested. Read as aggregates from Firestore and the access logs; no cookie, no identifier, no client code.</li>
+      <li><b>Option B — a first-party click counter.</b> A request to our own origin carrying only an event name (section reached, button id, dialog opened); the server increments a daily counter and stores no IP, no identifier, no user agent. Measures stages 0, 1 and 5 on the landing — the same mechanism the showcase proposes for its chapters (a 204 beacon to its own origin, e.g. /api/demo-count), so there is one decision for both pages.</li>
+    </ul>
+    <p class="callout"><b>Legal:</b> the Privacy Policy §7 says today "no performance or usage measurement", and §9 says server logs are not used "to analyse your behaviour". Option A uses the logs for a new purpose (aggregated statistics) and needs a line in §9; option B contradicts §7 and needs §7 rewritten (likely Art. 6(1)(f) GDPR; § 25 TDDDG: with no storage on and no read from the device, no consent banner — the lawyer to confirm). Either way a "signed-out visit contacts only its own origin" stays true; no analytics script, no pixel.</p>
+  </div>
+</aside>
+
+<aside class="drawer" id="p-owner" aria-labelledby="p-owner-h" tabindex="-1" hidden>
+  <header><h2 id="p-owner-h">For the owner</h2><button type="button" data-close>Close</button></header>
+  <div class="body">
+    <h3>Decisions</h3>
+    <ol>
+      <li><b>O1 Hero picture:</b> A, the static Analyze picture (recommended: loads at once, reads on a phone, matches the capture), or B, the map building up with the names swapping in (the showcase already tells it as a story; B repeats it and needs motion work; and since engine 3.1.0 the engine labels are already business words, so the routine names B starts with overstate the swap).</li>
+      <li><b>O2 Section order:</b> 1, the story then the price (recommended: value before the ask; cost is still in the hero note), or 2, Start right after Process.</li>
+      <li><b>O3 Hero wording:</b> variant 1, 2 or 3 (Conversion panel); recommended 1.</li>
+      <li><b>O4 Showcase:</b> /demo becomes the showcase (proposed in demo-showcase-mockup.html); "Watch the 2-minute demo" must stay true — if the story grows, the words change on both pages.</li>
+      <li><b>O5 Measurement:</b> option 0, A or B (Conversion panel) — with the lawyer.</li>
+      <li><b>O6 FAQ:</b> 10 on the page; the other 9 (incl. "What is … as of version" and "What changed", 3.0.8) stay in /llms-full.txt and /how-it-works?</li>
+      <li><b>O7 Catalog:</b> the lookup leaves the start page for its own page; one link stays. The h2 "Look up an SAP object's release state and successor" leaves with it — check search reach first.</li>
+      <li><b>O8 Claude lines:</b> rendered only while ANTHROPIC_OWN_KEY_OFFERED is true; if the 23.12 gate fails, the page says Gemini only.</li>
+      <li><b>O9 Header:</b> "Sign in" + "Start free" (secondary) instead of "Get Free Access or Login".</li>
+      <li><b>O10 Release:</b> pictures are already 3.5.0 scope (row 3.5.0 (4)); the restructure adds about 4 working days in a release the roadmap calls at risk. Ship it with 3.5.0, or the pictures and the CTA fix in 3.5.0 and the restructure in 3.5.1?</li>
+    </ol>
+
+    <h3>Product captures needed for 3.5 (AB-12)</h3>
+    <p>All from the demo or a public example, no customer code; replace every drawn picture in this file.</p>
+    <ol>
+      <li>Analyze, Business, done state, names ready — hero (1440 and 390).</li>
+      <li>Walk-through inline at the decision point "Not on hold?" (L52).</li>
+      <li>The text around the map (How it runs, Who is involved, Questions).</li>
+      <li>The two charts "How a case can end" and "What it changes, what it only reads".</li>
+      <li>The two endings and "What you can do next".</li>
+      <li>Full screen with Edit on (for the Process fold or the showcase).</li>
+      <li>Rules with Keep / Change / Drop / Clarify.</li>
+      <li>IT on one page, code first (findings beside their code, level A–D).</li>
+      <li>Management on one page.</li>
+      <li>Documentation, Overview tab (ADR-107).</li>
+      <li>A signed run's receipt and /verify-pack with a verified pack.</li>
+      <li>Settings with Gemini and Claude side by side (only after the 23.12 switch).</li>
+      <li>My workspace, first view (home v2) — for the showcase's end and the social card.</li>
+    </ol>
+    <p>The eleven files in public/landing/ (demo-tour, seven stages, three views) show the 3.0 workspace and retire; tests/capture-screens.spec.ts "landing" changes with them.</p>
+
+    <h3>Legal touch points (the lawyer is involved)</h3>
+    <ul>
+      <li><b>AI notice (AI Act Art. 50):</b> the page says what a model writes and that it is marked; the showcase makes no AI call. The notice before the first AI call (lawyer's A10) is in the product, not on this page — the page must not suggest analysing without it.</li>
+      <li><b>"Names paused":</b> Privacy Policy §3 says business names "are paused until they can be built from the code's facts alone". This page shows names written from the code's facts; that sentence must be rewritten with 3.1.0 before the page goes live.</li>
+      <li><b>Claude / Anthropic:</b> named as a provider only from 23.12.2026, when the terms v2.3.0 take effect and the switch is on.</li>
+      <li><b>Trust lines:</b> every line in "What happens to our code" must stay verbatim with its source (tests/trust-card-guard.spec.ts, lib/trust-claims.ts).</li>
+      <li><b>Measurement:</b> Privacy Policy §7 / §9 (Conversion panel).</li>
+      <li><b>"No request to anyone but us"</b> (Privacy §7) must hold for the showcase and for the mailto/copy buttons (they send nothing).</li>
+    </ul>
+
+    <h3>SEO and GEO</h3>
+    <ul>
+      <li>Every h2 is a question a searcher or an answer engine asks; the h1 keeps "SAP Clean Core Accelerator" (the searches that reach the page today).</li>
+      <li>JSON-LD @graph, kept: Organization (with disambiguatingDescription), WebSite, SoftwareApplication (featureList updated: walk-through, IT and Management pages, Documentation, Claude BYOK from 23.12; offers price 0; screenshots = the new captures; softwareVersion v3.5.0), FAQPage (the 10 visible questions, same list as the accordion and /llms-full.txt), BreadcrumbList. Add a VideoObject only once the 3.5 click-through video is published.</li>
+      <li>Title and description stay; the social card text follows the new h1.</li>
+      <li>Guards to change: landing-style-guard (unchanged rule), landing-consistency-guard, landing-hero-rules, hero-preview-claims, landing-process-guard, landing-stage-timeline (retires), landing-fragment-guard, claims-honesty-guard, usp-claims-guard, signavio-claims-guard, money-honesty-guard (no amount on the page).</li>
+    </ul>
+
+    <h3>Effort</h3>
+    <ul>
+      <li>Page rewrite on the existing components and SectionHeader: about 2 days.</li>
+      <li>Captures (AB-12) and their alt texts: about 1 day, after 3.5 is green on dev.</li>
+      <li>Guards, FAQ module, JSON-LD, llms texts, CTA inventory on other public pages: about 1–1.5 days.</li>
+      <li>Measurement option A: about 0.5 day; option B: about 1 day; plus the privacy text with the lawyer.</li>
+    </ul>
+  </div>
+</aside>
+
+<script>
+(function(){
+  'use strict';
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* change marks */
+  var marks = document.getElementById('marks');
+  marks.addEventListener('change', function(){ document.body.classList.toggle('show-marks', marks.checked); });
+
+  function press(group, btn){ document.querySelectorAll('[data-' + group + ']').forEach(function(b){ b.setAttribute('aria-pressed', String(b === btn)); }); }
+
+  /* hero variant: A static picture, B the map builds up and the checked names swap in */
+  var win = document.getElementById('heroWin'), status = document.getElementById('heroStatus'), timer;
+  document.querySelectorAll('[data-hero]').forEach(function(b){
+    b.addEventListener('click', function(){
+      press('hero', b); clearTimeout(timer);
+      win.classList.remove('anim','named');
+      if (b.dataset.hero === 'b' && !reduce){
+        void win.offsetWidth; win.classList.add('anim');
+        status.textContent = 'Reading the code … engine names first.';
+        timer = setTimeout(function(){ win.classList.add('named'); status.textContent = 'Business names in place. Each keeps its line.'; }, 2400);
+      } else {
+        status.textContent = b.dataset.hero === 'b' ? 'Reduced motion: the map is shown in its end state.' : 'The engine names each step from the code; a model’s checked name may swap in, marked ✎. Excerpt of the main flow.';
+      }
+    });
+  });
+
+  /* section order: 1 story then price, 2 price right after the map */
+  var box = document.getElementById('flowSections');
+  var order = { '1': ['process','rules','clean-core','decide','after','evidence','for-it','start','faq'],
+                '2': ['process','start','rules','clean-core','decide','after','evidence','for-it','faq'] };
+  document.querySelectorAll('[data-order]').forEach(function(b){
+    b.addEventListener('click', function(){
+      press('order', b);
+      order[b.dataset.order].forEach(function(id, i){
+        var s = box.querySelector('[data-sec="' + id + '"]'); box.appendChild(s);
+        s.classList.toggle('alt', i % 2 === 0);
+      });
+    });
+  });
+
+  /* call-to-action wording variants */
+  var words = { '1': ['Watch the 2-minute demo','Analyse your own Z program — free account'],
+                '2': ['See the demo · no account','Try it on your own code · Start free'],
+                '3': ['See it on an example','Start free with your own program'] };
+  document.querySelectorAll('[data-cta]').forEach(function(b){
+    b.addEventListener('click', function(){
+      press('cta', b);
+      var w = words[b.dataset.cta];
+      document.querySelectorAll('a[data-cta-see]').forEach(function(a){ var svg = a.querySelector('svg'); a.textContent = w[0] + ' '; if (svg) a.appendChild(svg); });
+      document.querySelectorAll('a[data-cta-do]').forEach(function(a){ a.textContent = w[1]; });
+    });
+  });
+
+  /* the rule answers: one pressed per rule, local only */
+  document.querySelectorAll('.answer').forEach(function(g){
+    g.addEventListener('click', function(e){
+      var t = e.target.closest('button'); if (!t) return;
+      g.querySelectorAll('button').forEach(function(x){ x.setAttribute('aria-pressed', String(x === t)); });
+    });
+  });
+
+  /* copy the showcase link: clipboard only, nothing is sent */
+  var copy = document.getElementById('copyLink');
+  copy.addEventListener('click', function(){
+    var url = 'https://clean-core.io/demo';
+    try { navigator.clipboard.writeText(url).then(function(){ copy.textContent = 'Link copied'; }, function(){ copy.textContent = url; }); }
+    catch (e) { copy.textContent = url; }
+  });
+
+  /* the "see it" links point at the showcase in the product; in the mock-up they explain themselves */
+  document.querySelectorAll('a[href="#showcase-link"]').forEach(function(a){
+    a.addEventListener('click', function(e){ e.preventDefault(); alert('Opens /demo, the public showcase (docs/roadmap/demo-showcase-mockup.html): six chapters and "Your turn" on Z_MM_PO_APPROVAL, no account, no AI call, ending in "Analyse your own Z program — free account".'); });
+  });
+
+  /* drawers: one open at a time, Escape closes, focus returns */
+  var scrim = document.getElementById('scrim'), opener = null, openD = null;
+  function closeD(){ if (!openD) return; openD.classList.remove('open'); var d = openD; setTimeout(function(){ d.hidden = true; }, 200); scrim.classList.remove('open'); openD = null; if (opener) opener.focus(); }
+  document.querySelectorAll('[data-open]').forEach(function(b){
+    b.addEventListener('click', function(){
+      if (openD) closeD();
+      var d = document.getElementById(b.dataset.open); opener = b; d.hidden = false;
+      requestAnimationFrame(function(){ d.classList.add('open'); scrim.classList.add('open'); d.focus(); });
+      openD = d;
+    });
+  });
+  document.querySelectorAll('[data-close]').forEach(function(b){ b.addEventListener('click', closeD); });
+  scrim.addEventListener('click', closeD);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape') closeD(); });
+})();
+</script>
+</body>
+</html>

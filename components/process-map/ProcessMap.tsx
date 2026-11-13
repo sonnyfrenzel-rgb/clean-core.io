@@ -450,7 +450,13 @@ export default function ProcessMap({
    * modeller talked into forgetting. Neither of the two ever touches `model` —
    * the as-is revision after editing is the as-is revision before it.
    */
-  const [editing, setEditing] = useState(false);
+  const [editingAsked, setEditingAsked] = useState(false);
+  /**
+   * Editing is what the reader asked for *and* what this project allows. The instance can outlive a
+   * change of project or of ownership (see the draft below), and a mode asked for on one project must
+   * not open the modeller, with its save, on a project this account may only read.
+   */
+  const editing = editingAsked && canEdit;
   const ownerOnlyId = useId();
   const [session, setSession] = useState(0);
 
@@ -876,7 +882,7 @@ export default function ProcessMap({
           setView('map');
           // AB-5: on Analyze, Business the editor is full screen's, behind its *Edit* switch.
           if (page) openEditing();
-          else setEditing((was) => !was);
+          else setEditingAsked(!editing);
         }}
       >
         {wt(editing ? 'map.stopEditing' : 'map.editModel')}

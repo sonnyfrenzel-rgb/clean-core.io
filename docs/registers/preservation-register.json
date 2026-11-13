@@ -571,6 +571,8 @@
         "extensibilityRoute"
       ],
       "rendered": {
+        "view": "it",
+        "viewWhy": "since 3.1.0 Business is the map page of Analyze (AnalyzeBusiness, ADR-109 (1) and (2): no score, no findings before a click); the Extensibility Router card stays on the score page, which IT and Management keep",
         "shows": [
           {
             "field": "extensibilityRoute",

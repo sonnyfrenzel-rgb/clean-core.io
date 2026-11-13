@@ -89,3 +89,23 @@ test('a row the engine draws as the yes of an arm goes into the result list, sai
   expect(now.some((n) => /^Add the .* to the list$/.test(n)), now.join(' | ')).toBe(false);
   expect(now.some((n) => /^Put the (?:sales order|row) in the result list$/.test(n)), now.join(' | ')).toBe(true);
 });
+
+test('a table typed on a local row type and filled by a SELECT is said by the table it is read from (QA f8200d0e40c6)', () => {
+  const src = [
+    'REPORT zt_src.',
+    'TYPES: BEGIN OF ty_row, vbeln TYPE vbeln, netwr TYPE netwr, END OF ty_row.',
+    'DATA: lt_data TYPE STANDARD TABLE OF ty_row, ls_data TYPE ty_row.',
+    'PARAMETERS p_limit TYPE p DECIMALS 2.',
+    'START-OF-SELECTION.',
+    '  SELECT vbeln, netwr FROM vbak INTO TABLE @lt_data.',
+    '  LOOP AT lt_data INTO ls_data.',
+    '    IF ls_data-netwr > p_limit.',
+    '      WRITE / ls_data-vbeln.',
+    '    ENDIF.',
+    '  ENDLOOP.',
+  ].join('\n');
+  // The local row type `ty_row` names no table; the SELECT says the rows are VBAK's.
+  const now = names(src, NEW);
+  expect(now, now.join(' | ')).toContain('For each sales order');
+  expect(now, now.join(' | ')).not.toContain('For each data');
+});

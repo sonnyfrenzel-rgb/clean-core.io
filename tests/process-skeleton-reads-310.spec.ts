@@ -353,3 +353,33 @@ test('a source whose every entry is empty still shows them, and a reporting even
   const report = ['REPORT zempty_event.', 'INITIALIZATION.', 'START-OF-SELECTION.', "  CALL FUNCTION 'Z_RUN'."].join('\n');
   expect(buildProcessSkeleton(report, NEW).regions.some((r) => r.drawsNothing)).toBe(false);
 });
+
+/**
+ * QA review of 0c6b49ec357c (88a18f0877ee, 3b18d9039dd5 — refuted): a chained declaration is no blind spot. The
+ * statement reader expands `DATA: a …, b ….` and `CONSTANTS: a …, b ….` into one statement per name, so the second
+ * name is read exactly as a declaration of its own.
+ */
+test('the second name of a chained DATA is local, the second of a chained CONSTANTS a constant', () => {
+  const collect = (decl: string) => [
+    'REPORT z.', 'DATA gv_x TYPE i.', 'START-OF-SELECTION.', '  PERFORM run.', 'FORM run.', decl,
+    '  SELECT * FROM mara INTO TABLE @DATA(lt_mara).', '  LOOP AT lt_mara INTO DATA(ls).', '    IF ls-brgew > 10.',
+    '      APPEND ls-matnr TO lt_result.', '    ENDIF.', '  ENDLOOP.', '  PERFORM save TABLES lt_result.', 'ENDFORM.',
+    'FORM save TABLES it.', '  MODIFY zt FROM TABLE it.', 'ENDFORM.',
+  ].join('\n');
+  const collected = (decl: string) =>
+    buildProcessSkeleton(collect(decl), NEW).nodes.filter((n) => n.detail?.collects).map((n) => n.label);
+  expect(collected('  DATA: lt_keys TYPE string_table,\n        lt_result TYPE string_table.')).toEqual([]);
+  // The control: declared elsewhere, the same append is drawn — the check above can fail.
+  expect(collected('  DATA lt_keys TYPE string_table.')).toEqual(['LT_RESULT']);
+
+  const flag = (decl: string) => [
+    'REPORT z.', decl, 'DATA gv_ok TYPE c.', 'START-OF-SELECTION.', "  IF sy-uname = 'X'.", '    PERFORM a.', '  ELSE.',
+    '    gv_ok = gc_b.', '  ENDIF.', '  IF gv_ok = gc_b.', '    PERFORM b.', '  ENDIF.',
+    'FORM a.', '  MODIFY zt FROM TABLE gt.', 'ENDFORM.', 'FORM b.', '  DELETE FROM zt WHERE a = 1.', 'ENDFORM.',
+  ].join('\n');
+  const flagged = (decl: string) =>
+    buildProcessSkeleton(flag(decl), NEW).nodes.filter((n) => n.detail?.flagStep).map((n) => n.label);
+  expect(flagged("CONSTANTS: gc_a TYPE c VALUE 'A',\n           gc_b TYPE c VALUE 'B'.")).toEqual(['gv_ok = gc_b']);
+  // The control: a variable of that name is a copy, not a flag value.
+  expect(flagged('DATA gc_b TYPE c.')).toEqual([]);
+});

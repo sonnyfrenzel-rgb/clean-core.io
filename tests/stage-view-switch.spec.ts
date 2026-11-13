@@ -146,4 +146,68 @@ createRoot(document.getElementById('root')!).render(<App />);
     await expect(group.getByRole('radio', { name: 'Business' })).toHaveAttribute('aria-checked', 'true');
     expect(page.url()).toContain('view=business');
   });
+
+  test('rendered: a navigation that writes the address only when it commits is read too', async ({ page }) => {
+    // The App Router renders the new route state first and writes the address in an insertion effect of that
+    // commit, without an event. Analyze's first run ends in such a push within the same route (`?view=it` to
+    // `?first=1`, Business by default; ADR-109): a reader that trusted the render-time address stayed in IT
+    // (CI of the 3.1.0 push, `[data-analyze-business="ready"]` never appeared). Modelled here without Next.js:
+    // a state change in a transition, and the address written in `useInsertionEffect`, as the router does.
+    test.setTimeout(120_000);
+    const out = path.resolve(ROOT, 'tmp', 'stage-view-switch', `${process.pid}-push`);
+    fs.mkdirSync(out, { recursive: true });
+    const entry = path.join(out, 'entry.tsx');
+    fs.writeFileSync(
+      entry,
+      `import React from 'react';
+import { createRoot } from 'react-dom/client';
+import { stageViewOf, useLocationSearch } from '@/lib/location-search';
+function Reader() {
+  return <span data-test-view={stageViewOf(useLocationSearch())} />;
+}
+function App() {
+  const [href, setHref] = React.useState(window.location.pathname + window.location.search);
+  React.useInsertionEffect(() => {
+    if (window.location.pathname + window.location.search !== href) window.history.pushState(null, '', href);
+  }, [href]);
+  return (
+    <div>
+      <button data-test-push="" onClick={() => React.startTransition(() => setHref('/project/p-1/analyze?first=1'))}>push</button>
+      <Reader />
+    </div>
+  );
+}
+createRoot(document.getElementById('root')!).render(<App />);
+`,
+    );
+    const { build } = await import('esbuild');
+    const code = (
+      await build({
+        entryPoints: [entry],
+        bundle: true,
+        write: false,
+        format: 'iife',
+        platform: 'browser',
+        jsx: 'automatic',
+        alias: { '@': ROOT },
+        define: { 'process.env.NODE_ENV': '"production"' },
+        banner: { js: 'var process = { env: {} };' },
+        logLevel: 'silent',
+      })
+    ).outputFiles[0].text;
+    await page.route('http://views.test/**', (route) =>
+      route.fulfill({
+        contentType: 'text/html',
+        body: `<!doctype html><html><body><div id="root"></div><script>${code.replace(/<\/script/g, '<\\/script')}</script></body></html>`,
+      }),
+    );
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(e.message));
+    await page.goto('http://views.test/project/p-1/analyze?view=it');
+    await expect(page.locator('[data-test-view]')).toHaveAttribute('data-test-view', 'it');
+    await page.locator('[data-test-push]').click();
+    await expect.poll(() => page.url()).toBe('http://views.test/project/p-1/analyze?first=1');
+    await expect(page.locator('[data-test-view]')).toHaveAttribute('data-test-view', 'business');
+    expect(errors).toEqual([]);
+  });
 });

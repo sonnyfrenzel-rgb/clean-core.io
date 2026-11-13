@@ -35,6 +35,26 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
   off a step at its bottom edge. Full screen is unchanged.
 - An old IT address to the process (`?view=it#need`) opened inside the workspace now lands on Analyze's map
   (`#process-map`), as the direct link does.
+- After a project's first run on Analyze, the page lands in the Business view (the map) that the address names.
+  Before, it stayed in IT, because the view reader read the address before the router had written it.
+- Status workflow: a CHECK inside a loop guards only the rest of that pass. It no longer applies to the status moves
+  after ENDLOOP.
+- Business wording: two bounds on one field read "between" or "outside" only where those words keep each endpoint;
+  otherwise the strict and inclusive bounds keep their operators.
+- Customer texts: a decision whose question uses a customer text carries the "Customer text" marker, and a value
+  map sent as an array is refused.
+- Dictionary: RFC_READ_TABLE reads "Read a table via RFC" and no longer claims another system.
+- Demo: Analyze, Business draws the map in the page layout with the code panel beside it, as a project does, and
+  opening it clears "result ready" on the demo workspace's Analyze tool.
+- The process modeller no longer stays open, with its Save, when the same map is shown for a project the account may
+  only read.
+- A link to the process map on Analyze, Business now reaches the map even when the project takes longer than five
+  seconds to load.
+- A table declared with a local row type and filled by a SELECT is now named after the table it is read from ("For
+  each sales order" instead of "For each data").
+- Status workflow: an authority check inside a loop is no longer reported as guarding status moves after the loop,
+  and when two classes implement a method of the same name, a status precondition from a call to one is no longer
+  attributed to the other.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
@@ -369,6 +389,7 @@ The first insights are for understanding only: they explain, they ask for no dec
   rule register of the IT view; Design names them in one line with a link.
 - **The run limit a page shows is the one the server counts against.** An account whose limit the operator raised
   was blocked by the page at five runs while the server would have let it run.
+
 
 ### Removed
 
@@ -6905,6 +6926,7 @@ the analysis engine or the trust chain changed.
   and the setting is tighter — body leading 1.62 → 1.52, a narrower term column —
   so the vocabulary list and the FAQ each fit their page.
 
+
 ### Removed
 - **`/api/share/guide`, the mail-the-PDF endpoint.** Removed at the owner's call
   before it saw real traffic. An unauthenticated endpoint that sends mail from this
@@ -6980,6 +7002,7 @@ Admin Control Room gained a live view of that consumption per user.
 - `tests/admin-usage-panel.spec.ts` — E2E coverage of the panel against a seeded cohort
   (fresh, partial, exhausted, BYOK, pending), including a clipping measurement on the
   expanded detail row.
+
 
 ### Removed
 - The dead client-side charging path: the `incrementTransformations()` no-op in
@@ -7110,6 +7133,7 @@ Promo-Readiness Delta review (2026-07-06). No feature changes.
 - **Footer & sitemap**: added `/terms` and `/licenses` to the shared site footer and sitemap.
 - **Terms consent**: record `termsVersionAccepted` + `termsAcceptedAt` at signup (additive
   Firestore rule, deployed to all databases); `COMMUNITY_QUOTA` centralized.
+
 
 ### Removed
 - **Stale public self-certification / marketing artifacts** carrying unsupported claims:
@@ -7346,6 +7370,7 @@ Special milestone release: a **security-hardened, audit-friendly trust chain and
 ### Changed
 - Auth modal now fully responsive with `max-h-[95vh]`, scroll support, and mobile-optimized padding.
 - Signup form requires GDPR + Terms acceptance before the Register button enables.
+
 
 ### Removed
 - **Pilot Registration Modal (`UserOnboarding.tsx`):** The blocking post-login onboarding modal is removed from `layout.tsx`. Profile creation is now handled inline during authentication.

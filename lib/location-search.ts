@@ -1,4 +1,4 @@
-import { useSyncExternalStore } from 'react';
+import { useEffect, useReducer, useSyncExternalStore } from 'react';
 import { isWorkspaceView, DEFAULT_VIEW, type WorkspaceView } from '@/lib/workspace-model';
 
 /**
@@ -29,9 +29,24 @@ function subscribe(onChange: () => void): () => void {
 const readSearch = () => window.location.search;
 const serverSearch = () => '';
 
-/** `location.search`, current after a view switch and after Back/Forward; `''` on the server. */
+/**
+ * `location.search`, current after a view switch, after Back/Forward and after a `router.push` within the same
+ * route; `''` on the server.
+ *
+ * The last one has no event: the App Router renders the new route state first and writes the address only when that
+ * render commits (`window.history.pushState` in an insertion effect), so a reader rendered by that navigation still
+ * finds the old query in `location.search` — and nothing tells it later. Analyze's first run ends in exactly that
+ * push (IT, `?view=it`, to `?first=1`, which is Business by default; ADR-109): the address said Business and the page
+ * stayed in IT. After every commit the hook compares what it rendered with the address and reads again on a
+ * difference; equal, it does nothing.
+ */
 export function useLocationSearch(): string {
-  return useSyncExternalStore(subscribe, readSearch, serverSearch);
+  const search = useSyncExternalStore(subscribe, readSearch, serverSearch);
+  const [, readAgain] = useReducer((n: number) => n + 1, 0);
+  useEffect(() => {
+    if (window.location.search !== search) readAgain();
+  });
+  return search;
 }
 
 /**

@@ -21,6 +21,7 @@ import { LIVE_TEST_EXECUTION } from '../lib/locked-paths';
 import type { Project } from '../lib/types';
 import { countSourceLines } from '../lib/source-lines';
 import { signInViaLanding } from './helpers/sign-in';
+import { isWorkspaceView, type WorkspaceView } from '../lib/workspace-model';
 
 /**
  * The preservation register, checked against the code (roadmap 1.1, QA24-A04, W22-A04).
@@ -95,6 +96,13 @@ interface ShowsEntry {
 interface RenderedBlock {
   /** Reference case used to prove this stage's outputs; defaults to the stage's own. */
   provenBy?: string;
+  /**
+   * The view the stage's outputs are on, when its default view is another page: Analyze's Business is the map
+   * (ADR-109), its outputs stand on the score page of IT. Absent means the stage's default address.
+   */
+  view?: WorkspaceView;
+  /** Why the outputs are in that view; required with `view`. */
+  viewWhy?: string;
   shows: ShowsEntry[];
   onlyAfterARun: Array<{ field: string; why: string }>;
   notShown: Array<{ field: string; why: string }>;
@@ -828,10 +836,34 @@ test.describe('the register matches the code', () => {
       for (const entry of stage.rendered.notYetAnchored) {
         expect(entry.where.length, `${stage.key}: ${entry.field} does not say where it is`).toBeGreaterThan(0);
       }
+      if (stage.rendered.view !== undefined) {
+        expect(isWorkspaceView(stage.rendered.view), `${stage.key}: rendered.view is not a view`).toBe(true);
+        expect(stage.rendered.viewWhy?.length ?? 0, `${stage.key}: rendered.view without a reason`).toBeGreaterThan(20);
+      }
       // The proving reference case has to exist, and has to carry at least one
       // of the outputs — otherwise the rendered layer below looks at nothing.
       const rc = provingCase(stage);
       expect(rc, `${stage.key}: rendered.provenBy names an unknown reference case`).toBeTruthy();
+    }
+  });
+
+  test('a stage whose Business view is another page opens its outputs in the view that has them', () => {
+    // Since 3.1.0 Analyze renders a component of its own for Business (ADR-109): the map, no score, no findings
+    // before a click. The register's outputs stay on the score page, so opening the stage's bare address looks
+    // for them on a page that never had them (CI of the 3.1.0 push: extensibilityRoute "not on the screen").
+    for (const stage of register.stages) {
+      const page = src(stage.page);
+      const businessPage = /view === 'business'[\s\S]{0,400}?return \(\s*<(\w+)/.exec(page)?.[1];
+      if (!businessPage || stage.rendered.shows.length === 0) continue;
+      const businessModule = new RegExp(`import ${businessPage} from '@/([^']+)'`).exec(page)?.[1];
+      expect(businessModule, `${stage.key}: where ${businessPage} comes from`).toBeTruthy();
+      const view = stage.rendered.view;
+      expect(view, `${stage.key}: Business is ${businessPage}; the register must name the view its outputs are on`).toBeDefined();
+      expect(view, `${stage.key}: the outputs are not on the Business page`).not.toBe('business');
+      for (const entry of stage.rendered.shows) {
+        const anchor = /data-stage-output="([^"]+)"/.exec(entry.locator)?.[1];
+        if (anchor) expect(src(`${businessModule}.tsx`),`${stage.key}: ${entry.field} is on ${businessPage} after all`).not.toContain(anchor);
+      }
     }
   });
 
@@ -1097,7 +1129,9 @@ test.describe('the reference cases, seeded and opened', () => {
       const projectId = projectIdOf(rc);
       const seed = seedDocuments(rc, 'uid-not-used-here', projectId);
 
-      await page.goto(`/project/${projectId}/${stage.key}`, { waitUntil: 'domcontentloaded' });
+      // The view the outputs are on, where the stage's default view is another page (Analyze since ADR-109).
+      const view = stage.rendered.view ? `?view=${stage.rendered.view}` : '';
+      await page.goto(`/project/${projectId}/${stage.key}${view}`, { waitUntil: 'domcontentloaded' });
       await page.locator('[data-stage-tools="open"]').waitFor({ timeout: 60000 });
 
       let proven = 0;

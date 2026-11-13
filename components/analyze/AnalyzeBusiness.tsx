@@ -27,6 +27,7 @@ import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
 import { useAnalyzeProgress } from '@/hooks/useAnalyzeProgress';
 import { analyzeStage, softGateShown, walkedDayLabel, whatNextShown } from '@/lib/analyze-progress';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
+import { mapFollowGoesOn } from '@/lib/map-follow';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import { requestProcessWalk } from '@/lib/process-walk-request';
 import type { DraftHolder } from '@/lib/process-map-draft';
@@ -199,12 +200,16 @@ export default function AnalyzeBusiness({
       stop = true;
       if (!onMap()) return;
       stop = false;
-      const started = performance.now();
+      // The five seconds start when the map stands on the page, not when the address asked for it: the map
+      // is drawn only after the project and its run are loaded (`lib/map-follow.ts`).
+      const asked = performance.now();
+      let seen: number | null = null;
       let lastTop: number | null = null;
       const tick = (now: number) => {
-        if (stop || !onMap() || now - started > 5000) return;
+        if (stop || !onMap() || !mapFollowGoesOn(asked, seen, now)) return;
         const map = document.getElementById(BUSINESS_MAP_ID);
         if (map) {
+          if (seen === null) seen = now;
           const top = Math.round(map.getBoundingClientRect().top);
           if (lastTop === null || Math.abs(top - lastTop) > 1) {
             map.scrollIntoView({ block: 'start' });

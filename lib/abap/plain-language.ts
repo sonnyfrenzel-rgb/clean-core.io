@@ -236,8 +236,10 @@ export function plainContext(source: string, options: PlainOptions = {}): PlainC
     const reads310 = engineReads310Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion);
     const sources = new Map<string, string>();
     const selected = new Set<string>();
+    /** Tables whose `sources` entry is only their declared row type: a `SELECT` that fills them says more. */
+    const rowTyped = new Set<string>();
     for (const statement of statements) {
-      if (reads310) readSelectSource(statement.text, sources, selected);
+      if (reads310) readSelectSource(statement.text, sources, selected, rowTyped);
       const m = DECLARATION.exec(statement.text);
       if (!m) continue;
       const keyword = m[1].toUpperCase();
@@ -266,7 +268,10 @@ export function plainContext(source: string, options: PlainOptions = {}): PlainC
         if (/\b(?:TABLE\s+OF|RANGE\s+OF)\b/i.test(rest)) tables.add(name);
         // 3.1.0: the row type of a table typed on a database table — `TYPE STANDARD TABLE OF vbak`.
         const row = /\bTABLE\s+OF\s+(?!REF\b)([\w/]+)/i.exec(rest)?.[1]?.toLowerCase();
-        if (reads310 && row && !sources.has(name)) sources.set(name, row);
+        if (reads310 && row && !sources.has(name)) {
+          sources.set(name, row);
+          rowTyped.add(name);
+        }
         const type = /\b(?:TYPE|LIKE)\s+(?:REF\s+TO\s+)?([\w/-]+)/i.exec(rest)?.[1]?.toLowerCase();
         if (type) {
           types.set(name, type);
@@ -290,14 +295,19 @@ export function plainContext(source: string, options: PlainOptions = {}): PlainC
  * gt_auftr` (or `APPENDING`, `CORRESPONDING FIELDS OF`, `@DATA(…)`) makes `gt_auftr` rows of VBAK. A join records
  * the table it reads, never a source.
  */
-function readSelectSource(text: string, sources: Map<string, string>, selected: Set<string>): void {
+function readSelectSource(text: string, sources: Map<string, string>, selected: Set<string>, rowTyped: Set<string>): void {
   if (!/^SELECT\b/i.test(text)) return;
   const from = /\bFROM\s+([\w/]+)/i.exec(text)?.[1]?.toLowerCase();
   if (!from) return;
   selected.add(from);
   if (/\bJOIN\b/i.test(text)) return;
   const into = /\b(?:INTO|APPENDING)\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?TABLE\s+@?(?:DATA\(\s*)?([\w<>/]+)/i.exec(text)?.[1]?.toLowerCase();
-  if (into && !sources.has(into)) sources.set(into, from);
+  // The table a SELECT fills a table from wins over its declared row type, which may be a local type (`ty_row`) that
+  // names no table at all; the first SELECT still wins over a later one.
+  if (into && (!sources.has(into) || rowTyped.has(into))) {
+    sources.set(into, from);
+    rowTyped.delete(into);
+  }
 }
 
 function contextOf(ctx?: PlainContext): PlainContext {
@@ -1678,6 +1688,9 @@ function rangeOf(parts: ReadonlyArray<Extract<Cond, { k: 'cmp' }>>, joiner: 'and
   const lowPart = low(a.op) ? a : low(b.op) ? b : null;
   const highPart = high(a.op) ? a : high(b.op) ? b : null;
   if (!lowPart || !highPart || lowPart === highPart) return null;
+  // Only where the words keep each endpoint as the code has it: "between" includes both, "outside" excludes both.
+  // `x > 5 AND x < 10` or `x <= 5 OR x >= 10` keeps its operators instead.
+  if (joiner === 'and' ? lowPart.op !== '<=' || highPart.op !== '>=' : lowPart.op !== '<' || highPart.op !== '>') return null;
   const lo = valueText(lowPart.right, env).text;
   const hi = valueText(highPart.right, env).text;
   if (joiner === 'or') return `outside ${lo} to ${hi}`;
@@ -2853,13 +2866,17 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     };
   };
 
+  /** 3.1.0 (H5b): the customer texts each decision's question was built from, kept until its label is set. */
+  const planCustomer = new Map<string, Array<[string, string]>>();
   for (const node of skeletonNodes) {
     if (isDecision(node)) {
+      ctx.customerUsed?.clear();
       try {
         plans.set(node.id, planFor(node));
       } catch {
         plans.set(node.id, { question: 'Condition met?', arm: (edge) => (edge.condition ? 'Yes' : 'No') });
       }
+      if (ctx.customerUsed?.size) planCustomer.set(node.id, [...ctx.customerUsed]);
     }
   }
 
@@ -2901,6 +2918,7 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     try {
       if (isDecision(node)) {
         label = plans.get(node.id)?.question ?? 'Condition met?';
+        for (const [code, text] of planCustomer.get(node.id) ?? []) ctx.customerUsed?.set(code, text);
       } else if (node.kind === 'end-error' || (node.kind === 'end' && node.detail?.early === true)) {
         const { lead, rejected, line } = leadingOf(node);
         label = outcomeName(node, lead, ctx, { rejected, line });

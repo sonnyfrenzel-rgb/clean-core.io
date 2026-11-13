@@ -12,6 +12,9 @@ import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { buildProcessDocumentation } from '../lib/process-documentation-build';
 import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
 import { CUSTOMER_TEXT_LABEL, readCustomerTexts } from '../lib/abap/customer-texts';
+import { questionRuleCountsOf } from '../lib/rule-counts';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * One synthetic abapGit package changes every surface that phrases business text (owner decision 06.11.2026, H5b):
@@ -93,4 +96,22 @@ test('without the package, and for a 3.0.22 hotfix, no surface says a customer w
     expect(all).not.toContain('Minimum quantities per customer group');
     expect(all).not.toContain(CUSTOMER_TEXT_LABEL);
   }
+});
+
+/**
+ * QA review of 0c6b49ec357c (5ed2831101ea, refuted): `RuleBasketLine` explains the rules without the customer texts
+ * because it shows only counts, and the texts change words and marks, never which rules and questions there are.
+ * Should a count ever come to depend on them, this fails and the line has to be handed the texts.
+ */
+test('the rule basket\'s counts are the same with the customer texts and without them', () => {
+  const skeleton = buildProcessSkeleton(PROGRAM, { engineVersion: NEW });
+  const facts = buildProcessFacts(PROGRAM);
+  const ruleSet = deriveBusinessRulesFrom(PROGRAM, facts, skeleton, NEW);
+  const withTexts = explainBusinessRules(PROGRAM, ruleSet, facts, NEW, TEXTS);
+  const without = explainBusinessRules(PROGRAM, ruleSet, facts, NEW);
+  // The texts are read: a question or a rule says one (otherwise this test would compare two equal runs).
+  expect([...withTexts.rules, ...withTexts.questions].some((x) => x.customerText)).toBe(true);
+  expect(questionRuleCountsOf(withTexts, 0)).toEqual(questionRuleCountsOf(without, 0));
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'workspace', 'RuleBasketLine.tsx'), 'utf8');
+  expect(src).toMatch(/const c = questionRuleCountsOf\(ex, 0\);/);
 });
