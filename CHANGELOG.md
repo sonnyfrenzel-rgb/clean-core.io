@@ -5,6 +5,41 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — v3.1.0, Analyze opens business first
+
+Built on `dev`; the version stays v3.0.23 until the release. Every new engine reading is gated from 3.1.0, so
+it shows only once the version says so. Signed runs and the audit pack do not change.
+
+### Changed
+- A project opens in Analyze, Business. The process map is the page, and the map starts within the first screen at
+  1440 × 900. Its tools sit in the canvas's own row, and what describes the map sits under it. With one code panel
+  open beside it, the canvas stays wide (plan AB-2, ADR-109).
+- Step names come from the code's facts at once. Checked AI names replace them visibly, with a status line
+  (AB-1, AB-3, ADR-108). The tour's map, the main map and its step list show the same names.
+- The paced build-up at the start is retired. The first insights stand in their end state below the map.
+- The workspace page keeps only the IT and Management views. The demo opens at `/demo/analyze`, like a project.
+- A new account lands on the home page's new first view with the start built in (AB-14a, ADR-110).
+- An object-oriented program shows its moves as the process: Create, Save, Submit, Approve, Cancel, Apply. Its
+  technical methods are folded (AB-15a, ADR-112).
+- "What this program does" opens on the program's status workflow when it keeps its data in its own objects.
+- Shell bar below 1024 px: inside a project the path starts at the project, without the "My workspace" step, so
+  the project's name is no longer cut off. Help shows as its "?" icon and keeps its name and tooltip (ADR-115).
+
+### Fixed
+- A click on a step with an AI name opens its code. Before, the name's label took the click.
+- Analyze no longer gets refused requests (HTTP 401) while the sign-in is restored.
+- The project search (Ctrl+K) is back where a project opens.
+- AI names in the delivery package's process documentation name the model that wrote them.
+- Leaving the first view of a new account no longer throws a page error.
+- On a phone, and at 1024 px beside the code panel, Analyze's map grows to show its whole level instead of cutting
+  off a step at its bottom edge. Full screen is unchanged.
+- An old IT address to the process (`?view=it#need`) opened inside the workspace now lands on Analyze's map
+  (`#process-map`), as the direct link does.
+
+### Removed
+- The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
+  them (AB-11, brought forward to 3.1.0).
+
 ## [v3.0.23] — 2026-11-13
 
 A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findings scheduled for it
