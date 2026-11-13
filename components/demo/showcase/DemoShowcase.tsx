@@ -87,8 +87,10 @@ function readHash(hash: string, n: number): { i: number; lens: ShowcaseLens } | 
 function fitPart(host: HTMLElement, box: HTMLElement | null): void {
   const frame = host.querySelector<HTMLElement>('.app, .endwrap');
   if (!frame) return;
-  const target = host.querySelector<HTMLElement>('[data-showcase-target]');
-  if (!target) {
+  // A step that explains two cards (step 5) is fitted by the first, as the mockup measured it:
+  // side by side they share its top; stacked on a phone the second follows below it.
+  const targets = [...host.querySelectorAll<HTMLElement>('[data-showcase-target]')].slice(0, 1);
+  if (!targets.length) {
     frame.style.zoom = '';
     host.scrollTop = 0;
     return;
@@ -98,9 +100,9 @@ function fitPart(host: HTMLElement, box: HTMLElement | null): void {
     frame.style.zoom = z === 1 ? '' : String(z);
     host.scrollTop = 0;
     const s = host.getBoundingClientRect();
-    let r = target.getBoundingClientRect();
+    let r = unionRect(targets);
     host.scrollTop = Math.max(0, r.top - s.top - 12);
-    r = target.getBoundingClientRect();
+    r = unionRect(targets);
     let covered = 0;
     if (box && box.offsetParent !== null) {
       const b = box.getBoundingClientRect();
@@ -117,9 +119,19 @@ function fitPart(host: HTMLElement, box: HTMLElement | null): void {
   frame.style.zoom = z === 1 ? '' : String(z);
   host.scrollTop = 0;
   const s2 = host.getBoundingClientRect();
-  const r2 = target.getBoundingClientRect();
+  const r2 = unionRect(targets);
   host.scrollTop = Math.max(0, r2.top - s2.top - 12);
   frame.dataset.showcaseZoom = String(z);
+}
+
+/** The rectangle around every element a step explains (step 5 explains two cards side by side). */
+function unionRect(els: Element[]): { top: number; left: number; right: number; bottom: number; width: number } {
+  const rs = els.map((e) => e.getBoundingClientRect());
+  const top = Math.min(...rs.map((r) => r.top));
+  const left = Math.min(...rs.map((r) => r.left));
+  const right = Math.max(...rs.map((r) => r.right));
+  const bottom = Math.max(...rs.map((r) => r.bottom));
+  return { top, left, right, bottom, width: right - left };
 }
 
 function Details({ items }: { items: string[] }) {
@@ -198,11 +210,10 @@ export default function DemoShowcase({ data }: { data: ShowcaseData }) {
     });
     const st = steps[state.i];
     if (st) {
-      const el = host.querySelector<HTMLElement>(`[data-showcase-part="${st.part}"]`);
-      if (el) {
+      host.querySelectorAll<HTMLElement>(`[data-showcase-part="${st.part}"]`).forEach((el) => {
         el.setAttribute('data-showcase-target', '');
         el.classList.add('tt');
-      }
+      });
     }
     if (fittedFor.current !== state.i) {
       fittedFor.current = state.i;
@@ -224,7 +235,15 @@ export default function DemoShowcase({ data }: { data: ShowcaseData }) {
       if (hostRef.current) fitPart(hostRef.current, boxRef.current);
     };
     window.addEventListener('resize', onResize);
-    return () => window.removeEventListener('resize', onResize);
+    // The site's web font replaces its fallback after the first fit; the heights it changes are fitted again.
+    let live = true;
+    document.fonts?.ready.then(() => {
+      if (live) onResize();
+    });
+    return () => {
+      live = false;
+      window.removeEventListener('resize', onResize);
+    };
   }, []);
 
   // The map's elements are buttons: named, focusable, and marked as selected or counted.

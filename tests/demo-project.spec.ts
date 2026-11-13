@@ -169,7 +169,14 @@ test.describe('the demo can never be mistaken for a signed run', () => {
       [/\bfetch\s*\(/, 'a network call'],
     ];
 
-    const owned: string[] = ['lib/demo-marks.ts', 'lib/demo-project.ts'];
+    // Since 3.5.0 the public showcase (app/demo, components/demo/showcase, lib/demo-showcase*) is demo code too.
+    const owned: string[] = [
+      'lib/demo-marks.ts',
+      'lib/demo-project.ts',
+      'lib/demo-showcase.ts',
+      'lib/demo-showcase-copy.ts',
+      'lib/demo-showcase-planes.ts',
+    ];
     const walk = (rel: string) => {
       for (const e of fs.readdirSync(path.resolve(ROOT, rel), { withFileTypes: true })) {
         const child = path.posix.join(rel, e.name);
@@ -179,6 +186,7 @@ test.describe('the demo can never be mistaken for a signed run', () => {
     };
     walk('components/demo');
     walk('app/(app)/demo');
+    walk('app/demo');
 
     const offenders: string[] = [];
     for (const rel of owned) {

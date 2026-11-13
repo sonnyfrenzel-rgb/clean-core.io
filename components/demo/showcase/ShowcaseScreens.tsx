@@ -342,7 +342,7 @@ export function BusinessScreen({ data, state, actions }: { data: ShowcaseData; s
             Lines {endLines.join(', ')} · <CcProvenanceChip value="reconstructed" />
           </div>
         </div>
-        <div className="card">
+        <div className="card" {...part('ends')}>
           <h3>What it changes, what it only reads</h3>
           <p className="s">
             It changes {changes.length} kinds of records and only reads {facts.readsOnly.length} others.
