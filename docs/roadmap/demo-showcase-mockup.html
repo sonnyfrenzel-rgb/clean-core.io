@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo showcase · mock-up v1</title>
+<style>
+/* =====================================================================
+   Mock-up v1, not product code. The public demo showcase (owner decision
+   13.11.2026, "option B"): a page outside the real tools that tells the
+   story of one program in about two minutes and leads to sign-up.
+   Content: only the shipped starter example Z_MM_PO_APPROVAL and the
+   engine's real reading of it (lib/demo-release.json v3.0.23, engine run
+   of lib/demo-project.ts, lib/process-fact-charts.ts,
+   lib/abap/business-rule-set.ts over public/starter-examples/).
+   Self-contained: no font, script, image or request from anywhere.
+   Look: DESIGN.md tokens (app/globals.css), public-page radius, the
+   mock-up chrome of docs/roadmap/analyze-business-first-mockup.html.
+   ===================================================================== */
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-deep:#006b2c;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --cc-code-bg:#030712;--cc-code-ink:#e5e7eb;--cc-code-muted:#9ca3af;--cc-code-keyword:#c4b5fd;--cc-code-literal:#fcd34d;--cc-code-name:#93c5fd;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --r-card:22px;--r-inner:12px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{transition:none!important;animation:none!important}}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:15px;line-height:1.55;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+p{margin:0}h1,h2,h3,h4{margin:0}
+button{font-family:inherit;cursor:pointer;font-size:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+h2[tabindex="-1"]:focus{outline:none}
+.code :focus-visible{outline-color:var(--cc-code-name)}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- mock-up chrome (not part of the page) ---------- */
+.mock{position:sticky;top:0;z-index:200;background:#1f1147;color:#fff;font-size:12px;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin-right:6px}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}
+.mock button[aria-pressed="true"]{background:#e9e5ff;color:#1f1147}
+.mock .d{flex-basis:100%;color:#cfc8f3;font-weight:500}
+.mock :focus-visible{outline-color:#fff}
+
+/* ---------- the showcase's own header ---------- */
+.top{position:sticky;top:var(--mockh,0px);z-index:100;background:rgb(255 255 255 / .96);border-bottom:1px solid var(--cc-line)}
+.top .in{max-width:1200px;margin:0 auto;height:60px;display:flex;align-items:center;gap:16px;padding:0 24px}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;flex:none}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{font-weight:800;font-size:16px;letter-spacing:-.02em}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.demo-tag{font-size:12px;font-weight:600;color:var(--cc-information);background:var(--cc-information-bg);border:1px solid var(--cc-information);border-radius:999px;padding:2px 10px;white-space:nowrap}
+.top .r{margin-left:auto;display:flex;align-items:center;gap:8px}
+.lnk{font-size:14px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none;padding:8px 10px;border-radius:999px;background:none;border:0}
+.lnk:hover{color:var(--cc-ink);text-decoration:underline}
+
+/* ---------- buttons: exactly four (DESIGN §1.5), public pages: pill ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 18px;border-radius:999px;font-weight:700;font-size:14px;border:1px solid transparent;text-decoration:none;white-space:nowrap}
+.btn.primary{background:var(--cc-brand-strong);color:#fff}
+.btn.primary:hover{background:var(--cc-brand-deep)}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink-muted)}
+.btn.lg{min-height:48px;padding:0 24px;font-size:15px}
+.btn[disabled]{opacity:.45;cursor:default}
+
+/* ---------- lens switch (segmented control, DESIGN §1.5) ---------- */
+.lensbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.lensbar .lb{font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:999px;padding:2px;background:#fff}
+.seg button{border:0;background:none;border-radius:999px;padding:5px 12px;font-size:13px;font-weight:600;color:var(--cc-ink-muted)}
+.seg button[aria-checked="true"]{background:var(--cc-ink);color:#fff}
+
+/* ---------- variant A: stepper with a fixed stage ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:0 24px}
+.prog{display:flex;align-items:center;gap:12px;padding:20px 0 8px;flex-wrap:wrap}
+.dots{display:flex;gap:6px;list-style:none;margin:0;padding:0}
+.dots button{width:30px;height:30px;border-radius:999px;border:1px solid var(--cc-field-border);background:#fff;font-size:12px;font-weight:700;color:var(--cc-ink-muted)}
+.dots button[aria-current="step"]{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.dots button.seen{border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.prog .cnt{font-size:13px;font-weight:600;color:var(--cc-ink-muted)}
+.prog .skip{margin-left:auto}
+.bar{height:3px;background:var(--cc-line);border-radius:3px;overflow:hidden;margin-bottom:16px}
+.bar i{display:block;height:100%;background:var(--cc-brand-strong);transition:width .25s}
+
+.stage{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:32px;background:#fff;border:1px solid var(--cc-line);border-radius:var(--r-card);padding:32px;min-height:520px;box-shadow:0 1px 2px rgb(0 0 0 / .04)}
+.txt{display:flex;flex-direction:column;gap:16px;min-width:0}
+.eyebrow{display:inline-flex;align-self:flex-start;font-size:12px;font-weight:600;color:var(--cc-brand-strong);background:var(--cc-brand-surface);border-radius:999px;padding:3px 12px}
+.txt h2{font-size:30px;line-height:1.2;font-weight:800;letter-spacing:-.02em}
+.lead{font-size:17px;line-height:1.6;color:var(--cc-ink)}
+.lead p+p{margin-top:8px}
+.lenses{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--cc-line);padding-top:14px}
+.lens{display:grid;grid-template-columns:96px 1fr;gap:10px;font-size:14px;color:var(--cc-ink-muted);padding:6px 8px;border-radius:8px}
+.lens b{font-size:12px;font-weight:600;color:var(--cc-ink-muted);padding-top:2px}
+.lens.on{background:var(--cc-surface-muted);color:var(--cc-ink);box-shadow:inset 3px 0 0 var(--cc-ink)}
+.lens.on b{color:var(--cc-ink)}
+.lens.dim{opacity:.72}
+.itd{border:1px solid var(--cc-line);border-radius:var(--r-inner);background:var(--cc-surface-muted)}
+.itd summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;font-weight:700;color:var(--cc-ink-muted);border-radius:var(--r-inner)}
+.itd summary::-webkit-details-marker{display:none}
+.itd summary .chev{transition:transform .2s}
+.itd[open] summary .chev{transform:rotate(90deg)}
+.itd .body{padding:0 14px 14px;font-size:13px;line-height:1.55;color:var(--cc-ink);display:flex;flex-direction:column;gap:8px}
+.itd .body ul{margin:0;padding-left:18px}
+.itd .body li+li{margin-top:4px}
+.mono,.itd code{font-family:var(--mono);font-size:12px}
+.itd code{background:#fff;border:1px solid var(--cc-line);border-radius:4px;padding:0 4px}
+.nav{display:flex;gap:8px;align-items:center;margin-top:auto;padding-top:8px}
+.nav .kb{font-size:12px;color:var(--cc-ink-muted);margin-left:auto}
+.pic{min-width:0;display:flex;flex-direction:column;gap:12px;justify-content:center}
+.quiet{font-size:12px;color:var(--cc-ink-muted)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;border-radius:999px;padding:2px 10px;border:1px solid}
+.chip.recon{color:var(--cc-information);background:var(--cc-information-bg);border-color:var(--cc-information)}
+.chip.imp{color:var(--cc-neutral);background:var(--cc-neutral-bg);border-color:var(--cc-field-border)}
+.chip.nd{color:var(--cc-neutral);background:#fff;border-color:var(--cc-field-border);border-style:dashed}
+.anim{transition:opacity .25s,transform .25s}
+.enter{opacity:0;transform:translateY(6px)}
+
+/* pictures */
+.code{background:var(--cc-code-bg);color:var(--cc-code-ink);border-radius:var(--r-inner);padding:14px 0;font-family:var(--mono);font-size:12.5px;line-height:1.7;overflow:auto}
+.code .ln{display:grid;grid-template-columns:44px 1fr;padding:0 14px 0 0;white-space:pre}
+.code .ln span:first-child{color:var(--cc-code-muted);text-align:right;padding-right:14px;user-select:none}
+.code .k{color:var(--cc-code-keyword)}.code .n{color:var(--cc-code-name)}.code .l{color:var(--cc-code-literal)}.code .c{color:var(--cc-code-muted)}
+.code .ln.hl{background:rgb(59 130 246 / .28);box-shadow:inset 3px 0 0 #93c5fd}
+.fade{position:relative}
+.fade::after{content:"";position:absolute;left:0;right:0;bottom:0;height:56px;background:linear-gradient(transparent,var(--cc-code-bg));border-radius:0 0 12px 12px;pointer-events:none}
+.bigfig{display:flex;gap:24px;flex-wrap:wrap}
+.bigfig div{display:flex;flex-direction:column}
+.bigfig strong{font-size:34px;font-weight:800;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}
+.bigfig span{font-size:13px;color:var(--cc-ink-muted)}
+
+.map{display:flex;flex-wrap:wrap;align-items:center;gap:6px 4px;padding:16px;border:1px solid var(--cc-line);border-radius:var(--r-inner);background:linear-gradient(#fff,#fff) padding-box}
+.ev{width:22px;height:22px;border-radius:50%;border:2px solid var(--cc-ink-muted);flex:none}
+.ev.end{border-width:4px;border-color:var(--cc-ink)}
+.arr{color:#9ca3af;font-size:12px;flex:none}
+.step{border:1.5px solid var(--cc-ink);background:#fff;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600;text-align:left;line-height:1.3;max-width:150px}
+.step.sub{box-shadow:3px 3px 0 -1px #fff,3px 3px 0 0 var(--cc-ink)}
+.step:hover{background:var(--cc-surface-muted)}
+.step[aria-pressed="true"]{background:var(--cc-ink);color:#fff}
+.gw{width:26px;height:26px;transform:rotate(45deg);border:1.5px solid var(--cc-ink-muted);background:#fff;flex:none;margin:0 4px}
+.detail{border:1px solid var(--cc-line);border-radius:var(--r-inner);padding:14px 16px;background:var(--cc-surface-muted);min-height:96px}
+.detail h3{font-size:15px;font-weight:700}
+.detail .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;font-size:14px;color:var(--cc-ink-muted)}
+.detail .incode{margin-top:10px}
+.detail .incode summary{font-size:13px;font-weight:600;color:var(--cc-information);cursor:pointer}
+
+.rules{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rule{border:1px solid var(--cc-line);border-radius:var(--r-inner);padding:14px 16px;background:#fff;display:flex;flex-direction:column;gap:6px}
+.rule .v{font-size:24px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.rule p{font-size:14px;color:var(--cc-ink)}
+.rule .src{font-size:12px;color:var(--cc-ink-muted);margin-top:auto}
+
+.charts{display:grid;grid-template-columns:1fr;gap:12px}
+.mi{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.chart{border:1px solid var(--cc-line);border-radius:var(--r-inner);padding:14px 16px;background:#fff}
+.chart h3{font-size:15px;font-weight:700}
+.chart .s{font-size:13px;color:var(--cc-ink-muted);margin:2px 0 10px}
+.crow{display:grid;grid-template-columns:minmax(0,1fr) 140px 22px;gap:10px;align-items:center;font-size:13px;padding:3px 0}
+.crow .lab{min-width:0}
+.crow .b{height:12px;border-radius:3px;background:var(--cc-ink)}
+.crow .b.stop{background:var(--cc-warning-mark)}
+.crow .b.read{background:#9ca3af}
+.crow .n{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.crow small{display:inline;color:var(--cc-ink-muted);font-size:12px;margin-left:6px}
+.chart .split{font-size:12px;font-weight:600;color:var(--cc-ink-muted);margin:8px 0 2px}
+
+.cc{display:grid;grid-template-columns:200px 1fr;gap:20px;align-items:center}
+.gauge{position:relative;width:200px;height:120px}
+.gauge svg{width:200px;height:120px}
+.gauge .v{position:absolute;left:0;right:0;bottom:4px;text-align:center}
+.gauge .v strong{font-size:48px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.gauge .v span{display:block;font-size:12px;color:var(--cc-ink-muted)}
+.route{border:1px solid var(--cc-line);border-radius:var(--r-inner);padding:16px;background:#fff;display:flex;flex-direction:column;gap:8px}
+.route .t{font-size:18px;font-weight:800;letter-spacing:-.01em}
+.route .blk{display:flex;gap:8px;align-items:flex-start;font-size:14px}
+.sev{display:flex;gap:6px;flex-wrap:wrap}
+.sev span{font-size:12px;font-weight:600;border-radius:4px;padding:1px 8px;border:1px solid}
+.sev .e{color:var(--cc-error);background:var(--cc-error-bg);border-color:var(--cc-error)}
+.sev .w{color:var(--cc-warning);background:var(--cc-warning-bg);border-color:#b45309}
+.sev .ne{color:var(--cc-neutral);background:var(--cc-neutral-bg);border-color:var(--cc-field-border)}
+.sev .in{color:var(--cc-information);background:var(--cc-information-bg);border-color:var(--cc-information)}
+
+.decide{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.opt{border:1px solid var(--cc-line);border-radius:var(--r-inner);padding:14px;background:#fff}
+.opt b{display:block;font-size:16px}
+.opt span{font-size:13px;color:var(--cc-ink-muted)}
+.seal{display:flex;gap:12px;align-items:center;border:1px dashed var(--cc-field-border);border-radius:var(--r-inner);padding:14px 16px;background:#fff}
+.seal .ic{width:40px;height:40px;border-radius:10px;background:var(--cc-surface-muted);display:flex;align-items:center;justify-content:center;flex:none}
+.seal p{font-size:14px}
+
+/* the end: call to action */
+.end{display:grid;grid-template-columns:minmax(0,6fr) minmax(0,5fr);gap:32px}
+.end h2{font-size:34px}
+.ctas{display:flex;gap:10px;flex-wrap:wrap}
+.steps3{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.steps3 li{display:grid;grid-template-columns:32px 1fr;gap:12px;align-items:start}
+.steps3 .no{width:32px;height:32px;border-radius:999px;background:var(--cc-brand-surface);color:var(--cc-brand-strong);font-weight:800;display:flex;align-items:center;justify-content:center}
+.steps3 b{display:block;font-size:15px}
+.steps3 span{font-size:14px;color:var(--cc-ink-muted)}
+.acct{border:1px solid var(--cc-line);border-radius:var(--r-inner);padding:18px;background:var(--cc-surface-muted);display:flex;flex-direction:column;gap:10px}
+.acct h3{font-size:16px;font-weight:800}
+.acct ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.acct li{display:flex;gap:8px}
+.acct li svg{color:var(--cc-brand-strong);margin-top:3px}
+.share{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--cc-ink-muted)}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0b1c30;color:#fff;border-radius:999px;padding:8px 16px;font-size:13px;font-weight:600;z-index:300;display:none}
+.recline{font-size:12px;color:var(--cc-ink-muted);text-align:center;padding:16px 0 32px}
+
+/* ---------- variant B: scroll story ---------- */
+.scroll .sec{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:32px;padding:56px 0;border-bottom:1px solid var(--cc-line)}
+.scroll .sec .pic{position:sticky;top:140px;align-self:start}
+.scroll .sec h2{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.2}
+.scroll .hero{padding:56px 0 24px;text-align:center}
+.scroll .hero h1{font-size:40px;font-weight:800;letter-spacing:-.02em}
+.scroll .hero p{color:var(--cc-ink-muted);font-size:17px;margin-top:8px}
+
+/* ---------- panels for the owner (compare, conversion, owner) ---------- */
+.panel{max-width:1200px;margin:24px auto 48px;padding:0 24px}
+.panel h1{font-size:28px;font-weight:800;letter-spacing:-.02em}
+.panel h2{font-size:20px;font-weight:800;margin:28px 0 8px}
+.panel h3{font-size:15px;font-weight:700;margin:16px 0 6px}
+.panel p,.panel li{font-size:14px}
+.panel .sub{color:var(--cc-ink-muted);margin-top:4px}
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:var(--r-inner);padding:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mini h4{font-size:12px;font-weight:600;color:var(--cc-ink-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.mini .t{font-size:16px;font-weight:800;line-height:1.3;margin-bottom:6px}
+.mini p{font-size:13px}
+.mini .ll{margin-top:8px;font-size:12px;color:var(--cc-ink-muted)}
+.mini .ll b{color:var(--cc-ink)}
+.mini .cta{margin-top:10px;font-size:13px;font-weight:700;color:var(--cc-brand-strong)}
+table{border-collapse:collapse;width:100%;font-size:13px;background:#fff}
+th,td{border:1px solid var(--cc-line);padding:8px 10px;text-align:left;vertical-align:top}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--cc-ink-muted);background:var(--cc-surface-muted)}
+.tw{overflow-x:auto}
+.funnel{display:flex;flex-direction:column;gap:4px}
+.fs{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:center}
+.fs .k{width:28px;height:28px;border-radius:999px;background:var(--cc-ink);color:#fff;font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+.fs .bx{border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:8px 12px;font-size:14px;font-weight:600;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.fs .bx span{font-weight:500;color:var(--cc-ink-muted);font-size:13px}
+.fs.page .bx{border-color:var(--cc-brand-strong);background:var(--cc-brand-surface)}
+.fs.prod .bx{border-style:dashed}
+.rec{border-left:3px solid var(--cc-brand-strong);padding:10px 14px;background:var(--cc-brand-surface);border-radius:0 8px 8px 0;margin:8px 0}
+.warn{border-left:3px solid #b45309;padding:10px 14px;background:var(--cc-warning-bg);border-radius:0 8px 8px 0;margin:8px 0;color:var(--cc-warning)}
+.stat{display:flex;gap:24px;flex-wrap:wrap}
+.stat div strong{font-size:28px;font-weight:800;display:block;line-height:1.1}
+.stat div span{font-size:12px;color:var(--cc-ink-muted)}
+
+[hidden]{display:none!important}
+
+/* ---------- breakpoints: 1280 · 768 · 390 ---------- */
+@media (max-width:1100px){
+  .stage{display:flex;flex-direction:column;gap:16px;min-height:0}
+  .stage .txt{display:contents}
+  .stage .eyebrow,.stage .txt h2,.stage .lead,.stage .ctas,.stage .steps3{order:1}
+  .stage .pic{order:2}
+  .stage .lenses,.stage .itd,.stage .share,.stage .txt>.quiet{order:3}
+  .stage .nav{order:4}
+  .end{grid-template-columns:1fr}
+  .scroll .sec{grid-template-columns:1fr}
+  .scroll .sec .pic{position:static}
+  .grid4{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:760px){
+  .top .in{padding:0 16px;gap:10px;height:56px}
+  .wrap,.panel{padding:0 16px}
+  .stage{padding:20px;border-radius:16px}
+  .txt h2{font-size:24px}
+  .lead{font-size:16px}
+  .lens{grid-template-columns:1fr;gap:0}
+  .rules,.charts,.decide,.grid3,.grid2{grid-template-columns:1fr}
+  .cc{grid-template-columns:1fr;justify-items:center}
+  .route{width:100%}
+  .nav{position:sticky;bottom:0;background:#fff;margin:0 -20px -20px;padding:12px 20px;border-top:1px solid var(--cc-line);border-radius:0 0 16px 16px}
+  .nav .kb{display:none}
+  .nav .btn{flex:1}
+  .logo .n{display:none}
+  .lnk{font-size:13px;padding:8px 6px}
+  .end h2{font-size:26px}
+  .scroll .hero h1{font-size:28px}
+  .prog .skip{margin-left:0}
+}
+@media (max-width:480px){
+  .grid4{grid-template-columns:1fr}
+  .dots button{width:28px;height:28px}
+  .crow{grid-template-columns:minmax(0,1fr) 64px 22px}
+  .step{max-width:none}
+}
+@media print{
+  .mock,.top,.prog,.bar,.nav,.lensbar,.ctas,.share,#v-compare,#v-conv,#v-owner{display:none!important}
+  .stage{border:0;padding:0;break-inside:avoid;min-height:0}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<!-- ======================= mock-up chrome ======================= -->
+<div class="mock" id="mock" role="navigation" aria-label="Mock-up views">
+  <b>Mock-up · not part of the page</b>
+  <button type="button" data-view="a" aria-pressed="true">A · Stepper with a fixed stage (recommended)</button>
+  <button type="button" data-view="b" aria-pressed="false">B · Scroll story</button>
+  <button type="button" data-view="compare" aria-pressed="false">All together vs. lens</button>
+  <button type="button" data-view="conv" aria-pressed="false">Conversion</button>
+  <button type="button" data-view="owner" aria-pressed="false">For the owner</button>
+  <span class="d">Public demo showcase for /demo. Everything shown comes from the engine's reading of the shipped example Z_MM_PO_APPROVAL (demo record v3.0.23). The page makes no request.</span>
+</div>
+
+<!-- ======================= the showcase's own header ======================= -->
+<header class="top" id="top">
+  <div class="in">
+    <a class="logo" href="/" aria-label="Clean-Core.io, to the home page">
+      <span class="lg"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span>
+      <span class="n">Clean-Core<em>.io</em></span>
+    </a>
+    <span class="demo-tag">Demo · recorded</span>
+    <div class="r">
+      <a class="lnk hide-s" href="#end" data-skip>Skip to the end</a>
+      <a class="lnk" href="/?auth=signin">Sign in</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<!-- ======================= VARIANT A ======================= -->
+<section id="v-a" aria-label="Demo, step by step">
+  <div class="wrap">
+    <div class="prog">
+      <ol class="dots" id="dots" aria-label="Chapters"></ol>
+      <span class="cnt" id="cnt" aria-live="polite"></span>
+      <div class="lensbar skip">
+        <span class="lb" id="lens-lb">Read it as</span>
+        <div class="seg" role="radiogroup" aria-labelledby="lens-lb" data-lens-seg></div>
+      </div>
+    </div>
+    <div class="bar" aria-hidden="true"><i id="barfill"></i></div>
+    <div id="stage"></div>
+    <p class="recline">Recorded from the engine's real reading of a sample program; no AI was called to show you this.</p>
+  </div>
+</section>
+
+<!-- ======================= VARIANT B ======================= -->
+<section id="v-b" class="scroll" hidden aria-label="Demo, as one page">
+  <div class="wrap">
+    <div class="hero">
+      <h1>One program. Two minutes.</h1>
+      <p>What a custom SAP program really does, read from its own code.</p>
+      <div class="lensbar" style="justify-content:center;margin-top:16px">
+        <span class="lb">Read it as</span>
+        <div class="seg" role="radiogroup" aria-label="Read it as" data-lens-seg></div>
+      </div>
+    </div>
+    <div id="scroll"></div>
+    <p class="recline">Recorded from the engine's real reading of a sample program; no AI was called to show you this.</p>
+  </div>
+</section>
+
+<!-- ======================= COMPARE ======================= -->
+<section id="v-compare" class="panel" hidden aria-labelledby="cmp-h">
+  <h1 id="cmp-h">All together (default) next to a lens</h1>
+  <p class="sub">The owner's summary: one story for all three readers, like one project with three views. "All together" is the default; a lens only shifts the emphasis and the closing call, it never hides the other two lines. Two chapters, four ways.</p>
+  <div id="cmp"></div>
+  <h2>The start: lens first, or all together?</h2>
+  <div class="grid2">
+    <div class="card mini"><h4>Rejected · lens as a first choice</h4><div class="t">"I'm from the business side / from IT / from management"</div><p>A question before any value. A reader who is two of the three, or forwards it, has to choose wrongly. It also implies the other views are hidden, which the product does not do.</p></div>
+    <div class="card mini"><h4>Recommended · all together, lens optional</h4><div class="t">The story starts at once; "Read it as" sits quietly in the progress bar</div><p>Same as the product's view switch: Business · IT · Management, in that order (ADR-044). A shared link can carry a lens (<span class="mono">/demo#lens=it</span>), so "send this to your IT colleague" opens with IT emphasised.</p></div>
+  </div>
+</section>
+
+<!-- ======================= CONVERSION ======================= -->
+<section id="v-conv" class="panel" hidden aria-labelledby="conv-h">
+  <h1 id="conv-h">Conversion: from a click to a real user</h1>
+  <p class="sub">Owner, 13.11.2026: "look closely at how we can get even better from clicks to real users." Within the binding rules: sign-up and account unchanged, no third-party tracking, a signed-out visit contacts only its own origin.</p>
+
+  <h2>The funnel and its words</h2>
+  <p class="sub">These step names and the CTA texts below are the shared vocabulary with the landing mock-up (night/landing-35); use the same words on both pages.</p>
+  <div class="grid2" style="margin-top:12px">
+    <div class="funnel" id="funnel"></div>
+    <div class="card">
+      <h3 style="margin-top:0">Legend</h3>
+      <p><b>Green</b>: steps on this page. <b>Solid</b>: the landing page. <b>Dashed</b>: in the product, after sign-up.</p>
+      <p style="margin-top:8px">No figures are drawn: there are none yet. What would produce them is under "What to measure", and that is an owner and lawyer decision.</p>
+      <div class="rec"><b>Moment of conviction (hypothesis):</b> chapter 3, the rules nobody wrote down. "Plant 1000 skips the limit check" is the sentence a business reader recognises from his own system, and the landing hero already uses that rule. The page places its first quiet CTA right after it.</div>
+    </div>
+  </div>
+
+  <h2>Friction per step, and what the page does about it</h2>
+  <div class="tw"><table id="frict"></table></div>
+
+  <h2>Handover into the product: no cold start after sign-up</h2>
+  <p class="sub">Read from: <span class="mono">components/workspace/HomeFirstView.tsx</span> (AB-14a, the first view without a project: "Try an example" with Z_MM_PO_APPROVAL recommended as the only filled button, and "Analyse your own program" handing the file to <span class="mono">/admin/new-project/upload</span>), <span class="mono">lib/starter-examples.ts</span>, <span class="mono">lib/run-quota-rule.ts</span> (an example is free the first time), <span class="mono">components/landing/AuthLink.tsx</span> and <span class="mono">lib/return-path.ts</span> (sign-in carries <span class="mono">?next=</span>, only exact route shapes of the app pass).</p>
+  <div class="grid3" style="margin-top:12px">
+    <div class="card mini"><h4>H1 · no code change</h4><div class="t">CTA → sign-in dialog → <span class="mono">/dashboard</span></div><p>The first view already recommends this very example. Works today. Weakness: the visitor arrives at "My workspace" and must recognise that the recommended row is the program he just saw.</p></div>
+    <div class="card mini" style="border-color:var(--cc-brand-strong)"><h4>H2 · recommended</h4><div class="t">"Continue where the demo left off"</div><p>The CTA carries <span class="mono">next=/dashboard?from=demo</span> (one new exact shape in <span class="mono">lib/return-path.ts</span>). HomeFirstView reads it from the URL only and shows one line above its two ways: "You have seen Z_MM_PO_APPROVAL. Open it as your own project (free the first time), or bring your own program." Nothing stored, no field, no migration.</p></div>
+    <div class="card mini"><h4>H3 · secondary path</h4><div class="t">"See it with your own code: 3 steps" → <span class="mono">next=/admin/new-project/upload</span></div><p>For the reader who is convinced already: sign-up returns straight to the own-code start, which still states edition, cost and visibility before anything is read (ADR-042). Needs the same exact-shape entry.</p></div>
+  </div>
+  <p style="margin-top:10px" class="quiet">Not proposed: copying the example into the new account automatically (it would spend a run without the reader's click, against "nothing spends quota without saying so first"), and a "demo progress" field on the account (forbidden: account unchanged).</p>
+
+  <h2>Hypotheses, and what each would move</h2>
+  <div class="tw"><table id="hyp"></table></div>
+
+  <h2>CTA wording: where a real choice exists</h2>
+  <div class="tw"><table id="ctaw"></table></div>
+
+  <h2>What to measure, without a third party · <span style="color:var(--cc-warning)">owner and lawyer decision</span></h2>
+  <div class="warn">Nothing below is presumed or built. Today the page counts nothing. Any count needs the owner's go and the lawyer's view, and the privacy notice would need a line before the first count is taken.</div>
+  <div class="tw"><table id="meas"></table></div>
+  <h3>What it means legally (for the conversation with the lawyer, not a legal assessment)</h3>
+  <ul>
+    <li>No cookie and nothing written to the visitor's device: the counts are increments on the server when the page asks its own origin for a chapter. A design without device access avoids the consent question for the device; whether a server-side count of a request is processing of personal data depends on whether IP or user agent is kept, and the proposal keeps neither.</li>
+    <li>The request itself still carries the IP to Cloud Run as every page request does; the count must not log it beyond what the platform already logs.</li>
+    <li>The privacy notice needs one sentence: which counts, that they are aggregated per day, no cookie, no profile, retention.</li>
+    <li>Product-side counts (sign-up, first project, first analysis) already exist as data; reading them as daily totals adds no new processing, but linking a sign-up to a showcase visit would. The proposal does not link them.</li>
+  </ul>
+</section>
+
+<!-- ======================= FOR THE OWNER ======================= -->
+<section id="v-owner" class="panel" hidden aria-labelledby="own-h">
+  <h1 id="own-h">For the owner</h1>
+  <p class="sub">The decisions this mock-up asks for, each with a recommendation. Facts about today's demo: one demo, computed on the server from <span class="mono">public/starter-examples/Z_MM_PO_APPROVAL.abap</span> (<span class="mono">lib/demo-project.ts</span>, <span class="mono">lib/demo-workspace.ts</span>), no model call, nothing written, reader state in the browser only.</p>
+
+  <h2>Size of the story</h2>
+  <div class="card"><div class="stat" id="ownstat"></div><p class="quiet" style="margin-top:8px">Counted live from the chapter texts in this file: headline, the two sentences for everyone and the three short lines (the main line). IT details are on demand and counted apart. Reading time at 200 words a minute, plus about 5 seconds per picture.</p></div>
+
+  <h2>Variants</h2>
+  <div class="rec"><b>Recommendation: A, the stepper with a fixed stage.</b> One message and one picture at a time is the calm the owner asked for; the progress line shows how short it is; each chapter has an address, so a link can open chapter 3 with the IT lens; and the chapters are the shots of the 3.5 video one to one. B (scroll story) reads well on a phone but shows the whole length at once, which is what made today's landing feel loaded, and its sticky pictures need more height than a laptop has.</div>
+
+  <h2>Decisions</h2>
+  <div class="tw"><table id="dec"></table></div>
+</section>
+
+</main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+'use strict';
+/* ==================================================================
+   Facts. Every figure below is the engine's, with its source.
+   demo-release.json (v3.0.23): findings 26, distinct 23, critical 1,
+   high 3, medium 17, low 4, info 1, cleanCoreScore 40, route In-App
+   (ABAP Cloud), notDetermined 7, rulesRevealed 12, processSteps 94,
+   processLevels 11. Lines 552 (447 without blanks and comments):
+   lib/demo-project.ts. Charts: lib/process-fact-charts.ts over the
+   demo map. Rules: lib/abap/business-rule-set.ts. Levels and score
+   breakdown: buildDemoProject().analyze. Quota: app/page.tsx §start.
+   ================================================================== */
+var ICON = {
+  check:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
+  chev:'<svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>',
+  code:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/></svg>',
+  seal:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',
+  arrow:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',
+  back:'<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>'
+};
+var LENSES = [['all','All together'],['business','Business'],['it','IT'],['management','Management']];
+
+/* The top level of the map: lib/demo-project.ts → process.model, plane null (lines 41–55). */
+var MAP = [
+  {t:'ev'},
+  {t:'sub',name:'Check authority',line:42,code:'PERFORM check_authority.',inner:7,stops:'Can stop here: not authorised, or no purchase requisition found (2 ways).'},
+  {t:'sub',name:'Read requisition',line:43,code:'PERFORM read_requisition.',inner:8,stops:'Can stop here: no purchase requisition found.'},
+  {t:'sub',name:'Check requisition',line:44,code:'PERFORM check_requisition.',inner:12,stops:'Can stop here: rejected, for example when the material is missing (3 ways).'},
+  {t:'gw',name:'Not rejected?',line:45},
+  {t:'sub',name:'Upload attachment',line:46,code:'PERFORM upload_attachment.',inner:5,stops:null},
+  {t:'sub',name:'Read vendor',line:47,code:'PERFORM read_vendor.',inner:9,stops:'Can stop here: no supplier found.'},
+  {t:'task',name:'Check vendor',line:48,code:'PERFORM check_vendor.',inner:0,stops:null},
+  {t:'gw',name:'Not rejected?',line:49},
+  {t:'sub',name:'Read info record',line:50,code:'PERFORM read_info_record.',inner:7,stops:'Can stop here: no purchasing info record found.'},
+  {t:'task',name:'Check price',line:51,code:'PERFORM check_price.',inner:0,stops:'Puts the requisition on hold for the buyer when the price is off.'},
+  {t:'gw',name:'Not on hold?',line:52},
+  {t:'sub',name:'Decide approval',line:53,code:'PERFORM decide_approval.',inner:11,stops:null},
+  {t:'sub',name:'Notify requester',line:54,code:'PERFORM notify_requester.',inner:6,stops:null},
+  {t:'task',name:'Write result list',line:55,code:'PERFORM write_result_list.',inner:0,stops:null},
+  {t:'end'}
+];
+
+var CHAPTERS = [
+ { id:'problem', eyebrow:'1 · The program',
+   title:'A program decides how emergency purchases get approved. Nobody can say how.',
+   all:['It is written in SAP’s programming language. The people who rely on it cannot read it.','So we gave it to Clean-Core.io, as it is.'],
+   emph:{business:['Your purchasing runs through it every day. What it checks, and when it says no, is written only in code.','So we gave it to Clean-Core.io, as it is.'],
+         it:['552 lines of classic ABAP, one report, nothing beside it but a header comment.','We uploaded the file unchanged. A deterministic engine reads it first.'],
+         management:['Nobody can say what this program decides, so nobody can say what changing it costs.','So we gave it to Clean-Core.io, as it is.']},
+   lens:{business:'A process you rely on, written down only in code.',it:'One report, 552 lines, classic ABAP.',management:'Unknown code is a risk you carry into every upgrade.'},
+   pic:'code',
+   itd:['<li>Program <code>Z_MM_PO_APPROVAL</code>, “Emergency purchase approval”: the shipped starter example, fictitious code (<span class="mono">public/starter-examples/</span>). 552 lines, 447 without blank and comment lines.</li>',
+        '<li>Read by the deterministic engine of v3.0.23: no model is involved in anything this demo shows. Source fingerprint <span class="mono">sha256 149310e0…</span>.</li>',
+        '<li>In a real run, text a model writes is marked with the chip <span class="chip imp" style="font-size:11px">AI-generated</span>; everything the engine reads carries <span class="chip recon" style="font-size:11px">Reconstructed</span> and its line.</li>']
+ },
+ { id:'map', eyebrow:'2 · The process',
+   title:'Out comes the process, step by step.',
+   all:['Eleven steps, from the first check to the message to the requester, each tied to its place in the code.'],
+   emph:{business:['Eleven steps, in your words: check, read, decide, notify. Tap a step to see what can stop a case there.'],
+         it:['The main flow of START-OF-SELECTION as a process model. Tap a step to see its line and its call.'],
+         management:['For the first time the program has a picture everyone can check. Each step is tied to its code, so nobody has to trust a summary.']},
+   lens:{business:'Your process, readable, in the order it runs.',it:'Every step carries its line; nothing is drawn that the code does not say.',management:'A shared picture that does not depend on one expert.'},
+   pic:'map',
+   itd:['<li>The map has 94 elements on 11 levels; the eleven steps here are its top level, lines 41 to 55.</li>',
+        '<li>Reconstructed by the engine from the statements, not drawn by a model. Each element carries its line anchor.</li>',
+        '<li>Exchanged with SAP Signavio as a BPMN 2.0 XML file (export and import). There is no Signavio API connection.</li>']
+ },
+ { id:'rules', eyebrow:'3 · The hidden rules',
+   title:'And the rules nobody wrote down.',
+   all:['Limits and fixed values the program decides with, found in the code. Twelve of them in this program.'],
+   emph:{business:['Twelve rules your purchasing follows, written only in code. Confirm, change or drop each one.'],
+         it:['Twelve hard-coded values and conditions, each with its line, as candidates for configuration.'],
+         management:['Twelve decisions that sit in code, not in a policy. Each one is now visible and can be owned.']},
+   lens:{business:'Rules you can now confirm, change or drop.',it:'Hard-coded values that belong in configuration.',management:'Policy that sits in code is policy nobody owns.'},
+   pic:'rules',
+   itd:['<li>12 rules (11 rules, 1 control) from <span class="mono">lib/abap/business-rule-set.ts</span>. Shown here: line 325 (<code>gv_amount &lt;= ’50000.00’</code>, the code does not state the currency), 95 (<code>werks = ’1000’</code>), 315 (<code>lv_dev_pct &gt; 5</code>), 72 (<code>dispo = ’EMG’ OR bednr CP ’EMERG*’</code>).</li>',
+        '<li>The others: constants at lines 17 to 19 (document type NB, release group ZE, purchasing organisation 1000), currency at 69, account assignment K and F at 203 and 205, material status at 277, role DEPT_HEAD at 432.</li>',
+        '<li>The rule sentences are the engine’s. The business wording on the cards is this mock-up’s plain reading of them; in the product a reader confirms each rule.</li>']
+ },
+ { id:'facts', eyebrow:'4 · Where it ends, what it touches',
+   title:'How a case can end, and what it changes.',
+   all:['A case can end in 9 ways: once at the normal end, 8 times stopped on the way.','It changes 5 kinds of records and only reads 11 others.'],
+   emph:{business:['The requisition checks stop more cases than any other step: 3 of the 8 ways.','It changes the purchase requisition and creates the purchase order.'],
+         it:['9 end events: 1 normal end, 8 stops by message or RETURN. Writes reached: 5; tables only read: 11.','Two of the writes go straight into SAP: the requisition table and a transaction recorded as batch input.'],
+         management:['Eight ways to stop a case are eight places a user can be stuck.','Five kinds of records changed: that is the reach of a mistake in this program.']},
+   lens:{business:'Where a requisition can get stuck, and why.',it:'What it writes and what it only reads.',management:'The reach of this program in your data.'},
+   pic:'charts',
+   itd:['<li>Ends: lines 55 (normal end), 110 and 120, 66, 80, 88 and 92, 158, 259. A sub-process’s own end is no end of the case.</li>',
+        '<li>Changes are the writes a run reaches: table EBAN (line 240), ZMM_PO_APPR (353), ZMM_PO_ATTACH (531), BAPI_PO_CREATE1 (475), batch input in ME21N (515). Reads come from the data coupling and are not proven reachable.</li>',
+        '<li>Source: <span class="mono">lib/process-fact-charts.ts</span>, computed from the map and the source; nothing here is signed.</li>']
+ },
+ { id:'core', eyebrow:'5 · Clean core',
+   title:'Can it stay in a clean core? Yes, rebuilt on what SAP releases.',
+   all:['Today it scores 40 of 100. It can stay inside SAP; what blocks it is one direct change to SAP’s own purchase requisitions.'],
+   emph:{business:['The approval can stay where your people use it, inside SAP. One thing has to change: how it changes the requisition.'],
+         it:['Route: In-App (ABAP Cloud). The hardest point is the direct UPDATE on EBAN, level D. Seven places the engine could not judge are named, not guessed.'],
+         management:['40 of 100 today. 1 critical and 3 high findings; seven places are open and named. No move off the system is needed.']},
+   lens:{business:'It stays in SAP; one step changes how it works.',it:'Stays on the system, on released interfaces; one direct table write blocks it.',management:'Fixable on the system you have, with named risks.'},
+   pic:'core',
+   itd:['<li>Score 40 = 100 − 20 (1 direct write to an SAP standard table) − 10 (batch input) − 5 (file transfer through the SAP GUI) − 5 (11 direct reads of SAP tables) − 20 (4 kinds of code not assessed). Two writes to own tables cost nothing.</li>',
+        '<li>Level from SAP’s classification file, <span class="chip imp" style="font-size:11px">Imported</span>, never signed: EBAN write D; reads of EBAN, PA0105, LFA1, LFM1, CSKS, EINA, EINE, MARC, T16FS and ME21N C; ZMM_PO_APPR and ZMM_PO_ATTACH writes, GUI_UPLOAD, SAP_WAPI_CREATE_EVENT, BAPI_PO_CREATE1 B; ZMM_VEND_BLOCK, ZMM_DEPT_HEAD, ZMM_NOTIFY_CFG unknown.</li>',
+        '<li>Findings: 26 places, 23 distinct (1 critical, 3 high, 17 medium, 4 low, 1 info). Not determined: 7, among them two includes that were not uploaded (Z_MM_PO_NOTIFY, Z_MM_PO_LOG) and a dynamic call at line 386.</li>',
+        '<li>Route reasoning (engine): the BDC from line 515 and GUI_UPLOAD from line 129 force no side-by-side split; COMMIT WORK (2×) gives way to the RAP save sequence.</li>']
+ },
+ { id:'decide', eyebrow:'6 · The decision',
+   title:'Then you decide, and the evidence holds.',
+   all:['Keep it, rebuild it or retire it: the decision is yours, not the tool’s.','Every real analysis is sealed, so anyone can check later what it was based on.'],
+   emph:{business:['You decide per rule and for the whole program; the reasons stay next to the decision.','Every real analysis is sealed, so the basis cannot quietly change.'],
+         it:['The decision is recorded against a signed, unchangeable run. You can verify the audit pack yourself, offline.','This demo is recorded, not signed: only a run of your own code is.'],
+         management:['A decision basis you can hand on: what the program does, what blocks it, what is still open.','Effort and cost come from your own two day rates. The product guesses none.']},
+   lens:{business:'Your decision, with its reasons.',it:'A signed run you can check yourself.',management:'A basis you can sign, and defend later.'},
+   pic:'decide',
+   itd:['<li>A run is hashed (SHA-256) and signed with HMAC-SHA256; the audit pack’s manifest is signed again, with Ed25519 where configured. The Clean Core Score is covered; the level A–D is not.</li>',
+        '<li>Verify it yourself: in the browser at <span class="mono">/verify-pack</span> (the archive is never uploaded), or offline with <span class="mono">node scripts/verify-pack.mjs &lt;pack.zip&gt;</span> against the published key at <span class="mono">/.well-known/clean-core-io-signing.json</span>.</li>',
+        '<li>Where data goes: stored in Firestore europe-west1 (EU); the browser never talks to a model provider, every model call goes through the server; an own key is stored encrypted and used only on the server. A project is the account’s own; the administrator cannot read it through the database rules.</li>',
+        '<li>Economics computes no euro figure until both day rates and the investment are entered (<span class="mono">lib/tco-model.ts</span>); this demo has none entered.</li>']
+ }
+];
+var END = {
+  title:{all:'Analyse your own Z program — free account',business:'Understand your own Z program',it:'Analyse your custom code',management:'Get a decision basis for your custom code'},
+  lead:{all:'The same reading, for a program from your own system, before you decide anything.',
+        business:'See your own program as a process, with the rules it follows, before anyone decides anything.',
+        it:'Upload one program. The engine reads it first; every step and finding carries its line.',
+        management:'One program, one picture, one sealed basis for keep, rebuild or retire.'},
+  share:{all:null,business:['it','Send this to your IT colleague'],it:['management','Send this to your manager'],management:['it','Send this to your IT colleague']}
+};
+
+/* ---------------- state ---------------- */
+var state = { ch:0, lens:'all', seen:{} };
+function readHash(){
+  var h = new URLSearchParams(location.hash.slice(1));
+  var c = h.get('ch'); var l = h.get('lens');
+  if (c === 'end') state.ch = CHAPTERS.length;
+  else if (c && +c >= 1 && +c <= CHAPTERS.length) state.ch = +c - 1;
+  if (l && LENSES.some(function(x){return x[0]===l;})) state.lens = l;
+}
+function writeHash(){
+  var c = state.ch >= CHAPTERS.length ? 'end' : String(state.ch + 1);
+  var s = 'ch=' + c + (state.lens !== 'all' ? '&lens=' + state.lens : '');
+  try { history.replaceState(null, '', '#' + s); } catch(e) { /* file:// in some browsers */ }
+}
+function shareUrl(lens){
+  var base = location.href.split('#')[0];
+  return base + '#ch=1' + (lens && lens !== 'all' ? '&lens=' + lens : '');
+}
+function toast(msg){ var t = document.getElementById('toast'); t.textContent = msg; t.style.display = 'block'; setTimeout(function(){ t.style.display = 'none'; }, 2400); }
+
+/* ---------------- pictures ---------------- */
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function picCode(){
+  var lines = [
+    [41,'<span class="k">START-OF-SELECTION</span>.'],
+    [42,'  <span class="k">PERFORM</span> <span class="n">check_authority</span>.'],
+    [43,'  <span class="k">PERFORM</span> <span class="n">read_requisition</span>.'],
+    [44,'  <span class="k">PERFORM</span> <span class="n">check_requisition</span>.'],
+    [45,'  <span class="k">CHECK</span> gv_rejected = abap_false.'],
+    [46,'  <span class="k">PERFORM</span> <span class="n">upload_attachment</span>.'],
+    [47,'  <span class="k">PERFORM</span> <span class="n">read_vendor</span>.'],
+    [48,'  <span class="k">PERFORM</span> <span class="n">check_vendor</span>.'],
+    [49,'  <span class="k">CHECK</span> gv_rejected = abap_false.'],
+    [50,'  <span class="k">PERFORM</span> <span class="n">read_info_record</span>.'],
+    [51,'  <span class="k">PERFORM</span> <span class="n">check_price</span>.'],
+    [52,'  <span class="k">CHECK</span> gv_on_hold = abap_false.'],
+    [53,'  <span class="k">PERFORM</span> <span class="n">decide_approval</span>.'],
+    [54,'  <span class="k">PERFORM</span> <span class="n">notify_requester</span>.'],
+    [55,'  <span class="k">PERFORM</span> <span class="n">write_result_list</span>.']
+  ];
+  return '<div class="code fade" role="img" aria-label="The program’s code, lines 41 to 55, as it was uploaded">' +
+    lines.map(function(l){ return '<div class="ln"><span>'+l[0]+'</span><span>'+l[1]+'</span></div>'; }).join('') + '</div>' +
+    '<div class="bigfig"><div><strong>552</strong><span>lines of code</span></div><div><strong>0</strong><span>AI calls to show you this</span></div><div><strong>1</strong><span>file uploaded, unchanged</span></div></div>';
+}
+function picMap(sel){
+  var parts = MAP.map(function(m, i){
+    var a = i < MAP.length - 1 ? '<span class="arr" aria-hidden="true">→</span>' : '';
+    if (m.t === 'ev') return '<span class="mi"><span class="ev" title="Start"></span><span class="sr">Start</span>' + a + '</span>';
+    if (m.t === 'end') return '<span class="mi"><span class="ev end" title="End"></span><span class="sr">End</span></span>';
+    if (m.t === 'gw') return '<span class="mi"><span class="gw" title="'+esc(m.name)+'" aria-hidden="true"></span>' + a + '</span>';
+    return '<span class="mi"><button type="button" class="step'+(m.t==='sub'?' sub':'')+'" data-step="'+i+'" aria-pressed="'+(sel===i)+'">'+esc(m.name)+'</button>' + a + '</span>';
+  }).join('');
+  var m = MAP[sel] || null;
+  var det = m ? '<h3>'+esc(m.name)+'</h3>' +
+      '<div class="row">'+(m.inner ? m.inner + ' steps inside. ' : 'A single step. ')+(m.stops ? esc(m.stops) : 'No case ends here.')+'</div>' +
+      '<details class="incode"'+(state.lens==='it'?' open':'')+'><summary>Show where it is in the code</summary><div class="code" style="margin-top:8px"><div class="ln hl"><span>'+m.line+'</span><span><span class="k">PERFORM</span> <span class="n">'+esc(m.code.replace('PERFORM ','').replace('.',''))+'</span>.</span></div></div></details>'
+    : '<h3>Tap a step</h3><div class="row">Each step shows what happens inside it and where a case can stop.</div>';
+  return '<div class="map" role="group" aria-label="The process, top level, read from the code">'+parts+'</div>' +
+    '<div class="detail" aria-live="polite">'+det+'</div>' +
+    '<p class="quiet"><span class="chip recon">Reconstructed</span> from the code, not drawn by AI. 11 steps on this level; the full map has more inside each.</p>';
+}
+function picRules(){
+  var r = [
+    ['≤ 50,000','Up to this amount, an emergency goes to the department head for approval.','line 325'],
+    ['Plant 1000','The central warehouse skips the limit check and is approved straight away.','line 95'],
+    ['> 5 %','A price more than 5 % above the info record puts the requisition on hold for the buyer.','line 315'],
+    ['“EMG”','A requisition counts as an emergency when it is marked EMG or its tracking number starts with EMERG.','line 72']
+  ];
+  return '<div class="rules">' + r.map(function(x){ return '<div class="rule"><div class="v">'+x[0]+'</div><p>'+x[1]+'</p><span class="src">In the code, '+x[2]+'</span></div>'; }).join('') + '</div>' +
+    '<p class="quiet"><span class="chip recon">Reconstructed</span> 4 of the 12 rules found. In your own project you confirm, change or drop each one. <a href="#ch=end" data-goend>Find the rules in your own program</a></p>';
+}
+function bar(n, max, cls){ return '<span class="b'+(cls?' '+cls:'')+'" style="width:'+Math.round(n/max*100)+'%"></span>'; }
+function picCharts(){
+  var ends = [['Runs to its end','',1,''],['Stopped in “Check requisition”','rejected · rejected: no material',3,'stop'],['Stopped in “Check authority”','not authorised · no requisition found',2,'stop'],['Stopped in “Read requisition”','no purchase requisition found',1,'stop'],['Stopped in “Read vendor”','rejected: no supplier found',1,'stop'],['Stopped in “Read info record”','no purchasing info record found',1,'stop']];
+  var ch = [['Purchase requisition','changes table EBAN'],['Approval record','changes ZMM_PO_APPR'],['Purchase order','posts through BAPI_PO_CREATE1'],['Purchase order, by screen','enters through batch input in ME21N'],['Attachment','changes ZMM_PO_ATTACH']];
+  var rd = ['Cost center','Supplier','Plant record of a material','Info record (EINA, EINE)','and 7 more'];
+  function row(lab, det, n, max, cls){ return '<div class="crow"><span class="lab">'+esc(lab)+(det?'<small>'+esc(det)+'</small>':'')+'</span>'+'<span>'+bar(n,max,cls)+'</span><span class="n">'+n+'</span></div>'; }
+  return '<div class="charts">' +
+    '<div class="chart"><h3>How a case can end</h3><p class="s">9 ways: 1 at the normal end, 8 stopped on the way.</p>' + ends.map(function(e){ return row(e[0],e[1],e[2],3,e[3]); }).join('') + '</div>' +
+    '<div class="chart"><h3>What it changes, what it only reads</h3><p class="s">Changes 5 kinds of records, only reads 11.</p><div class="split">Changes · 5</div>' + ch.map(function(e){ return row(e[0],e[1],1,1); }).join('') +
+      '<div class="split">Only reads · 11</div><p style="font-size:13px;color:var(--cc-ink-muted)">'+rd.join(' · ')+'</p></div>' +
+    '</div><p class="quiet"><span class="chip recon">Reconstructed</span> Counted from the map and the code. Names the business dictionary does not know (ZMM_…) are labelled in plain words here; the product shows the code’s own name.</p>';
+}
+function picCore(){
+  var pct = 40/100, R = 80, cx = 100, cy = 104;
+  var a = Math.PI * (1 - pct), x = cx + R*Math.cos(a), y = cy - R*Math.sin(a);
+  return '<div class="cc"><div class="gauge" role="img" aria-label="Clean core score 40 of 100">' +
+    '<svg viewBox="0 0 200 120" aria-hidden="true"><path d="M20 104 A80 80 0 0 1 180 104" fill="none" stroke="#e5e7eb" stroke-width="14" stroke-linecap="round"/>' +
+    '<path d="M20 104 A80 80 0 0 1 '+x.toFixed(1)+' '+y.toFixed(1)+'" fill="none" stroke="#d97706" stroke-width="14" stroke-linecap="round"/></svg>' +
+    '<div class="v"><strong>40</strong><span>of 100 today</span></div></div>' +
+    '<div class="route"><span class="quiet">Recommended route</span><div class="t">Stays inside SAP, rebuilt on released interfaces</div>' +
+    '<div class="blk"><span style="color:var(--cc-error)">■</span><span>Blocks it: it changes SAP’s own purchase requisitions directly.</span></div>' +
+    '<div class="blk"><span style="color:var(--cc-neutral)">□</span><span>7 places could not be judged; they are named, not guessed.</span></div>' +
+    '<div class="sev" aria-label="Findings by severity"><span class="e">1 critical</span><span class="e">3 high</span><span class="w">17 medium</span><span class="ne">4 low</span><span class="in">1 info</span></div></div></div>';
+}
+function picDecide(){
+  return '<div class="decide" role="list"><div class="opt" role="listitem"><b>Keep</b><span>it stays, with its rules confirmed</span></div><div class="opt" role="listitem"><b>Rebuild</b><span>on the route above</span></div><div class="opt" role="listitem"><b>Retire</b><span>when nobody needs it any more</span></div></div>' +
+    '<div class="seal"><span class="ic">'+ICON.seal+'</span><p><b>Sealed and checkable.</b> A real analysis becomes a signed record that cannot be changed afterwards. Anyone you give it to can check it without asking us.</p></div>' +
+    '<p class="quiet">This demo is recorded, not signed, and records no decision. That starts with your own program.</p>';
+}
+var PIC = { code:picCode, map:function(){ return picMap(state.step); }, rules:picRules, charts:picCharts, core:picCore, decide:picDecide };
+
+/* ---------------- one chapter ---------------- */
+function sentences(c){ return state.lens === 'all' ? c.all : c.emph[state.lens]; }
+function lensLines(c){
+  return ['business','it','management'].map(function(k){
+    var on = state.lens === k, dim = state.lens !== 'all' && !on;
+    return '<div class="lens'+(on?' on':'')+(dim?' dim':'')+'"><b>'+(k==='it'?'IT':k[0].toUpperCase()+k.slice(1))+'</b><span>'+esc(c.lens[k])+'</span></div>';
+  }).join('');
+}
+function itDetails(c){
+  return '<details class="itd"'+(state.lens==='it'?' open':'')+'><summary>'+ICON.chev+' IT details</summary><div class="body"><ul>'+c.itd.join('')+'</ul></div></details>';
+}
+function chapterHtml(c, i, headingTag){
+  var h = headingTag || 'h2';
+  return '<div class="txt"><span class="eyebrow">'+c.eyebrow+'</span><'+h+' id="ch-h-'+i+'" tabindex="-1">'+esc(c.title)+'</'+h+'>' +
+    '<div class="lead">'+sentences(c).map(function(s){ return '<p>'+esc(s)+'</p>'; }).join('')+'</div>' +
+    '<div class="lenses" aria-label="For each reader">'+lensLines(c)+'</div>' + itDetails(c) + '%NAV%</div>' +
+    '<div class="pic">'+PIC[c.pic]()+'</div>';
+}
+function endHtml(headingTag){
+  var h = headingTag || 'h2', L = state.lens, sh = END.share[L];
+  var share = sh ? '<a class="btn ghost" href="'+esc(shareUrl(sh[0]))+'" data-share="'+sh[0]+'">'+sh[1]+'</a>'
+                 : '<a class="btn ghost" href="'+esc(shareUrl('it'))+'" data-share="it">Send to your IT colleague</a><a class="btn ghost" href="'+esc(shareUrl('management'))+'" data-share="management">Send to your manager</a>';
+  return '<div class="txt"><span class="eyebrow">Your turn</span><'+h+' id="ch-h-end" tabindex="-1" style="font-size:inherit"><span style="display:block;font-size:34px;line-height:1.15;font-weight:800;letter-spacing:-.02em">'+esc(END.title[L])+'</span></'+h+'>' +
+    '<p class="lead">'+esc(END.lead[L])+'</p>' +
+    '<div class="ctas"><a class="btn primary lg" href="/?auth=signin&amp;next=/dashboard?from=demo" data-cta="primary">'+esc(L==='all'?'Create a free account':END.title[L])+' '+ICON.arrow+'</a>' +
+    '<button type="button" class="btn secondary lg" aria-expanded="false" aria-controls="own3" data-own3>See it with your own code: 3 steps</button></div>' +
+    '<ol class="steps3" id="own3" hidden><li><span class="no">1</span><div><b>Create a free account</b><span>With Google or with e-mail and password. No payment, no card.</span></div></li>' +
+    '<li><span class="no">2</span><div><b>Upload one program</b><span>A file or pasted code. You are told what is read, stored and counted before it starts.</span></div></li>' +
+    '<li><span class="no">3</span><div><b>Read its process</b><span>The steps, the rules and the route of your own program, each tied to its code.</span></div></li></ol>' +
+    '<div class="share"><span>Not your decision alone?</span>'+share+'<button type="button" class="btn ghost" data-print>Print the story</button></div>' +
+    '<p class="quiet">Already have an account? <a href="/?auth=signin&amp;next=/dashboard?from=demo">Sign in</a>, and the example waits in your workspace.</p>' +
+    '%NAV%</div>' +
+    '<div class="pic"><div class="acct"><h3>What the free account gives you</h3><ul>' +
+    '<li>'+ICON.check+'<span>Every stage and every view: Business, IT and Management</span></li>' +
+    '<li>'+ICON.check+'<span>This example, and every other, free the first time you run it</span></li>' +
+    '<li>'+ICON.check+'<span>Five free analysis runs for your own code, once, not per month</span></li>' +
+    '<li>'+ICON.check+'<span>After that, no quota with your own Gemini API key</span></li>' +
+    '<li>'+ICON.check+'<span>Your projects are yours alone, stored in the EU; you share by invitation</span></li></ul>' +
+    '<p class="quiet">Free for the SAP community. No paid tier.</p></div></div>';
+}
+
+/* ---------------- variant A ---------------- */
+function navHtml(){
+  var last = state.ch >= CHAPTERS.length;
+  return '<div class="nav"><button type="button" class="btn ghost" data-go="-1"'+(state.ch===0?' disabled':'')+'>'+ICON.back+' Back</button>' +
+    (last ? '' : '<button type="button" class="btn primary" data-go="1">'+(state.ch===CHAPTERS.length-1?'To the end':'Next')+' '+ICON.arrow+'</button>') +
+    '<span class="kb">← → to step</span></div>';
+}
+function renderA(focus){
+  var total = CHAPTERS.length + 1;
+  document.getElementById('dots').innerHTML = CHAPTERS.map(function(c,i){
+    return '<li><button type="button" data-ch="'+i+'" aria-label="Chapter '+(i+1)+': '+esc(c.eyebrow.replace(/^\d+ · /,''))+'"'+(i===state.ch?' aria-current="step"':'')+(state.seen[i]&&i!==state.ch?' class="seen"':'')+'>'+(i+1)+'</button></li>';
+  }).join('') + '<li><button type="button" data-ch="'+CHAPTERS.length+'" aria-label="The end: your turn"'+(state.ch===CHAPTERS.length?' aria-current="step"':'')+'>'+'✓'+'</button></li>';
+  document.getElementById('cnt').textContent = state.ch < CHAPTERS.length ? 'Chapter '+(state.ch+1)+' of '+CHAPTERS.length+' · about 2 minutes' : 'The end · your turn';
+  document.getElementById('barfill').style.width = Math.round((state.ch+1)/total*100)+'%';
+  var html = state.ch < CHAPTERS.length ? chapterHtml(CHAPTERS[state.ch], state.ch) : endHtml();
+  var st = document.getElementById('stage');
+  st.innerHTML = '<article class="stage anim enter" aria-labelledby="'+(state.ch<CHAPTERS.length?'ch-h-'+state.ch:'ch-h-end')+'">'+html.replace('%NAV%', navHtml())+'</article>';
+  requestAnimationFrame(function(){ var a = st.firstChild; if (a) a.classList.remove('enter'); });
+  state.seen[state.ch] = true;
+  if (focus) { var h = st.querySelector('[tabindex="-1"]'); if (h) h.focus({preventScroll:false}); }
+  writeHash();
+}
+function go(n, focus){ state.ch = Math.max(0, Math.min(CHAPTERS.length, n)); state.step = undefined; renderA(focus); }
+
+/* ---------------- variant B ---------------- */
+function renderB(){
+  document.getElementById('scroll').innerHTML = CHAPTERS.map(function(c,i){
+    return '<article class="sec" aria-labelledby="ch-h-'+i+'">'+chapterHtml(c,i).replace('%NAV%','')+'</article>';
+  }).join('') + '<article class="sec" id="end-b" aria-labelledby="ch-h-end">'+endHtml().replace('%NAV%','')+'</article>';
+}
+
+/* ---------------- lens switches ---------------- */
+function renderSegs(){
+  document.querySelectorAll('[data-lens-seg]').forEach(function(seg){
+    seg.innerHTML = LENSES.map(function(l){ return '<button type="button" role="radio" aria-checked="'+(state.lens===l[0])+'" data-lens="'+l[0]+'">'+l[1]+'</button>'; }).join('');
+  });
+}
+function setLens(l){ state.lens = l; renderSegs(); renderA(false); renderB(); }
+
+/* ---------------- compare panel ---------------- */
+function renderCompare(){
+  var pick = [1,4];
+  document.getElementById('cmp').innerHTML = pick.map(function(i){
+    var c = CHAPTERS[i];
+    var cols = LENSES.map(function(l){
+      var s = l[0]==='all' ? c.all : c.emph[l[0]];
+      var lines = ['business','it','management'].map(function(k){
+        var on = l[0]===k; return '<div'+(l[0]!=='all'&&!on?' style="opacity:.6"':'')+'>'+(on?'<b>':'')+(k==='it'?'IT':k[0].toUpperCase()+k.slice(1))+': '+esc(c.lens[k])+(on?'</b>':'')+'</div>';
+      }).join('');
+      return '<div class="card mini"'+(l[0]==='all'?' style="border-color:var(--cc-brand-strong)"':'')+'><h4>'+(l[0]==='all'?'All together · default':l[1]+' emphasised')+'</h4><div class="t">'+esc(c.title)+'</div><p>'+s.map(esc).join(' ')+'</p><div class="ll">'+lines+'</div><div class="ll">IT details: '+(l[0]==='it'?'open':'closed, one click')+'</div><div class="cta">Closing call: '+esc(l[0]==='all'?END.title.all:END.title[l[0]])+'</div></div>';
+    }).join('');
+    return '<h2>Chapter '+(i+1)+' · '+esc(c.eyebrow.replace(/^\d+ · /,''))+'</h2><div class="grid4">'+cols+'</div>';
+  }).join('');
+}
+
+/* ---------------- conversion panel ---------------- */
+var FUNNEL = [
+  ['Landing click','"Watch the 2-minute demo" on clean-core.io',''],
+  ['Showcase start','chapter 1 opens, no account, no request','page'],
+  ['Chapters seen','1 to 6, or skipped to the end','page'],
+  ['Moment of conviction','chapter 3: the rules nobody wrote down','page'],
+  ['CTA click','"Analyse your own Z program — free account"','page'],
+  ['Sign-up','today’s dialog, unchanged','prod'],
+  ['First own project','the example (free) or own code','prod'],
+  ['First own analysis','a sealed run of the reader’s own program','prod']
+];
+var FRICTION = [
+  ['Landing click','"Demo" promises something open, then asks for sign-in (since 3.1.0).','The link goes to a page that needs nothing. Its text says what it is: "Watch the 2-minute demo", no account.'],
+  ['Showcase start','A tour that looks long, a product shell that looks like work.','Own simple header, no tool bar; the progress line shows 6 chapters and "about 2 minutes" up front; value in the first picture, no question first.'],
+  ['Chapters seen','Technical words; one reader is not all three.','One message, one picture, two sentences per chapter; one line each for Business, IT, Management; IT details on demand; "Skip to the end" in the header.'],
+  ['Moment of conviction','A demo on someone else’s code is easy to dismiss.','Rules a reader recognises from his own system ("plant 1000 skips the limit check"); each tied to its line for the sceptic.'],
+  ['CTA click','Unclear cost and commitment.','One primary CTA per chapter end (Next, then the CTA at the end); the honest quota line and "what the free account gives you" before the click.'],
+  ['Sign-up','A form between conviction and value.','Unchanged (binding). The time-to-value promise "your own Z program in 3 steps" names sign-up as step 1 of 3, so it is expected.'],
+  ['First own project','Cold start in an empty workspace.','H2: return to "My workspace" with one line "continue where the demo left off"; the same example opens as a real project, free the first time.'],
+  ['First own analysis','Doubt about uploading own code.','Unchanged trust card before the upload (ADR-042): EU storage, access only for the account, signed runs, public security model.']
+];
+var HYP = [
+  ['H1','Pointing the landing "Demo" link to the showcase instead of sign-in','more showcase starts per landing click; fewer bounces at the sign-in dialog','landing click → showcase start'],
+  ['H2','Chapter 3 as the moment of conviction, with a quiet "Find the rules in your own program" link under it','more CTA clicks from readers who stop after chapter 3','chapter 3 seen → CTA click'],
+  ['H3','Lens-specific closing call (Business / IT / Management)','higher CTA click rate for lens readers than for "all together"','CTA click by lens'],
+  ['H4','"Send this to your IT colleague / manager" as a plain link with the lens','second readers who arrive by a shared link and start the showcase','showcase start with #lens from a share'],
+  ['H5','"Continue where the demo left off" after sign-up','more first projects within the first session','sign-up → first own project'],
+  ['H6','Honest quota line before the click','fewer abandoned sign-ups; no "it costs after all" surprises','CTA click → sign-up']
+];
+var CTAW = [
+  ['Primary, all together','Analyse your own Z program — free account','Try it on your own code · Start free','Names the object the reader owns ("Z program") and the price at once. Recommended.'],
+  ['Primary, Business lens','Understand your own Z program','See your own process','"Understand" is the business reader’s gain; "process" alone undersells the rules.'],
+  ['Primary, IT lens','Analyse your custom code','Run the engine on your code','"Run the engine" is technical; recommended stays plain.'],
+  ['Primary, Management lens','Get a decision basis for your custom code','Decide on your custom code','"Decide" promises a verdict the product leaves to the reader; "decision basis" is accurate.'],
+  ['Secondary','See it with your own code: 3 steps','How it works with your code','The number promises shortness; recommended.'],
+  ['Landing link to this page','Watch the 2-minute demo','See the demo · no account','Both honest; the time is the stronger promise and must stay true (word count below).']
+];
+var MEAS = [
+  ['Showcase start','one server-side counter per day, incremented when /demo is served','page views per day','no cookie, no IP or user agent kept, aggregate only'],
+  ['Chapters seen','a count per chapter, when the page asks its own origin for the chapter (e.g. a 204 beacon to /api/demo-count?c=3)','where readers stop','same; the beacon carries only the chapter number and lens'],
+  ['Skipped to the end','a count of jumps to the end','whether the story is too long','same'],
+  ['CTA click','a count per CTA and lens, before the sign-in dialog opens','which wording works','same'],
+  ['Sign-up → first own project → first own analysis','daily totals from data the product already holds (accounts created, projects created, runs created)','the product half of the funnel','no new data; not linked to a showcase visit']
+];
+var DEC = [
+  ['URL','/demo becomes the showcase; chapters and lens in the hash (/demo#ch=3&lens=it), so a link opens a chapter without a server round-trip and nothing is logged per chapter unless the count decision says so.','Recommended. /demo today only redirects to the first stage.'],
+  ['/demo/workspace','Stays, behind sign-in, as today (ADR-061). It becomes "the demo project in your workspace", reached after sign-up. Fix SECURITY.md:554, which still says it is admin-only and answers 404.','Keep; doc fix.'],
+  ['/demo/[stage] and /demo/design/requirements (public today; /demo/analyze public only with ?view=it|management in 3.1.0)','Redirect each to its showcase chapter (analyze → 2, design → 5, documentation → 3, transformation/testing/tco/delivery → 6). Smaller public surface (SECURITY.md §16), one public demo instead of two.','Recommended: 308 redirects. Alternative: keep them public as "deep pages" linked from IT details.'],
+  ['How-to links "See {stage} in the demo project" (components/HowToClient.tsx:136)','Point to /demo/workspace for signed-in readers (they are in the product); signed out, to the showcase chapter.','Recommended.'],
+  ['FAQ "Is there a demo without an account?" (lib/landing-faq.ts:109)','New answer: "Yes. A two-minute demo at /demo shows one program read end to end, no account. The interactive demo project lives in your workspace and needs a free account."','Recommended, together with the landing link texts.'],
+  ['Landing link texts (app/page.tsx:520, 1146, 1171, 1394, whitepaper)','Hero: "Watch the 2-minute demo" (no AuthLink, plain link to /demo). Elsewhere: "See the demo" to /demo; "Open the demo project" only where sign-in is intended.','Same words as landing-35.'],
+  ['3.1.0 interim','Until the showcase ships, the landing’s demo promise must not lead to a sign-in by surprise. Option 1: change the link texts to "Open the demo project (free account)" (text only, no risk). Option 2: point the hero link to the public /demo/documentation stage.','Recommended: option 1 at once; option 2 opens a stage page out of context.'],
+  ['Build effort (estimate, not measured)','Static page plus a generated lib/demo-showcase.json written by npm run demo:regenerate from the same engine run, a guard spec that the figures match, CSP-clean (no third party), redirects, FAQ/landing texts, How-to links. About 3–4 days with specs; counts (if decided) about 1 day more.','For the roadmap step.'],
+  ['O10 ("the demo follows every package")','Retired as a manual duty: the showcase’s figures come from the regenerated demo record, and the guard fails when the engine moves. What remains is editorial: a chapter text that no longer matches a changed figure fails the same guard.','Recommended: retire O10, replace by the guard.'],
+  ['Measurement','Counts per chapter and CTA, server-side, no cookie, no personal data (Conversion tab).','Owner and lawyer decision. Not built.'],
+  ['3.5 video','The six chapters and the end are the video’s shots; the same texts serve as captions.','For the video brief.']
+];
+function table(id, head, rows){
+  document.getElementById(id).innerHTML = '<thead><tr>'+head.map(function(h){return '<th scope="col">'+h+'</th>';}).join('')+'</tr></thead><tbody>'+rows.map(function(r){ return '<tr>'+r.map(function(c,i){ return i===0?'<th scope="row" style="text-transform:none;letter-spacing:0;font-size:13px;color:var(--cc-ink)">'+esc(c)+'</th>':'<td>'+esc(c)+'</td>'; }).join('')+'</tr>'; }).join('')+'</tbody>';
+}
+function renderConv(){
+  document.getElementById('funnel').innerHTML = FUNNEL.map(function(f,i){ return '<div class="fs '+f[2]+'"><span class="k">'+(i+1)+'</span><div class="bx">'+esc(f[0])+'<span>'+esc(f[1])+'</span></div></div>'; }).join('');
+  table('frict',['Step','Friction','How the page lowers it'],FRICTION);
+  table('hyp',['#','Change','What it would move','Read off'],HYP);
+  table('ctaw',['Place','Recommended','Alternative','Why'],CTAW);
+  table('meas',['Funnel step','Count','Shows','Privacy'],MEAS);
+}
+function wordsOf(s){ return (s.match(/[A-Za-z0-9À-ɏ’'%.,≤>]+/g)||[]).filter(function(w){return /[A-Za-z0-9]/.test(w);}).length; }
+function renderOwner(){
+  var main = 0, itw = 0;
+  CHAPTERS.forEach(function(c){
+    main += wordsOf(c.title) + c.all.reduce(function(a,s){return a+wordsOf(s);},0) + ['business','it','management'].reduce(function(a,k){return a+wordsOf(c.lens[k]);},0);
+    itw += c.itd.reduce(function(a,s){ return a + wordsOf(s.replace(/<[^>]+>/g,' ')); },0);
+  });
+  main += wordsOf(END.title.all) + wordsOf(END.lead.all);
+  var own = main - Math.round(CHAPTERS.reduce(function(a,c){ return a + (wordsOf(c.lens.business)+wordsOf(c.lens.it)+wordsOf(c.lens.management))*2/3; },0));
+  var secs = Math.round(main/200*60 + (CHAPTERS.length+1)*5);
+  var secsOwn = Math.round(own/200*60 + (CHAPTERS.length+1)*5);
+  document.getElementById('ownstat').innerHTML =
+    '<div><strong>'+CHAPTERS.length+' + 1</strong><span>chapters + the end (was 8 in the brief)</span></div>' +
+    '<div><strong>'+main+'</strong><span>words in the main line</span></div>' +
+    '<div><strong>~'+Math.floor(secsOwn/60)+':'+String(secsOwn%60).padStart(2,'0')+'</strong><span>minutes: headline, two sentences, picture, own line ('+own+' words)</span></div>' +
+    '<div><strong>~'+Math.floor(secs/60)+':'+String(secs%60).padStart(2,'0')+'</strong><span>minutes, reading all three lines</span></div>' +
+    '<div><strong>'+itw+'</strong><span>words in IT details, on demand</span></div>';
+  table('dec',['Decision','Proposal','Recommendation'],DEC);
+}
+
+/* ---------------- views of the mock-up ---------------- */
+function setView(v){
+  ['a','b','compare','conv','owner'].forEach(function(k){ document.getElementById('v-'+k).hidden = k !== v; });
+  document.querySelectorAll('#mock [data-view]').forEach(function(b){ b.setAttribute('aria-pressed', String(b.dataset.view===v)); });
+  document.getElementById('top').hidden = !(v==='a'||v==='b');
+  window.scrollTo(0,0);
+}
+
+/* ---------------- events ---------------- */
+document.addEventListener('click', function(e){
+  var t = e.target.closest('button, a'); if (!t) return;
+  if (t.dataset.view) { setView(t.dataset.view); return; }
+  if (t.dataset.go) { go(state.ch + (+t.dataset.go), true); return; }
+  if (t.dataset.ch !== undefined && t.closest('#dots')) { go(+t.dataset.ch, true); return; }
+  if (t.dataset.lens) { setLens(t.dataset.lens); return; }
+  if (t.dataset.step !== undefined) { state.step = (state.step === +t.dataset.step) ? undefined : +t.dataset.step; var pic = t.closest('.pic'); pic.innerHTML = picMap(state.step); var b = pic.querySelector('[data-step="'+t.dataset.step+'"]'); if (b) b.focus(); return; }
+  if (t.hasAttribute('data-skip')) { e.preventDefault(); if (!document.getElementById('v-b').hidden) { document.getElementById('end-b').scrollIntoView(); } else go(CHAPTERS.length, true); return; }
+  if (t.hasAttribute('data-own3')) { var o = t.closest('.txt').querySelector('.steps3'); o.hidden = !o.hidden; t.setAttribute('aria-expanded', String(!o.hidden)); return; }
+  if (t.hasAttribute('data-goend')) { e.preventDefault(); if (!document.getElementById('v-b').hidden) document.getElementById('end-b').scrollIntoView(); else go(CHAPTERS.length, true); return; }
+  if (t.hasAttribute('data-print')) { window.print(); return; }
+  if (t.dataset.share) { e.preventDefault(); var u = shareUrl(t.dataset.share); try { navigator.clipboard.writeText(u).then(function(){ toast('Link copied: opens the demo with the '+(t.dataset.share==='it'?'IT':'Management')+' lens'); }, function(){ toast(u); }); } catch(x){ toast(u); } return; }
+  if (t.dataset.cta || (t.tagName==='A' && t.getAttribute('href') && t.getAttribute('href').charAt(0)==='/')) { e.preventDefault(); toast('Mock-up: would open '+t.getAttribute('href')); }
+});
+document.addEventListener('keydown', function(e){
+  if (document.getElementById('v-a').hidden) return;
+  var tag = (e.target.tagName||'').toLowerCase(); if (tag==='input'||tag==='textarea') return;
+  if (e.target.closest && e.target.closest('[role="radiogroup"]') && (e.key==='ArrowLeft'||e.key==='ArrowRight')) {
+    var i = LENSES.findIndex(function(l){return l[0]===state.lens;}); i = (i + (e.key==='ArrowRight'?1:LENSES.length-1)) % LENSES.length; setLens(LENSES[i][0]);
+    var b = e.target.closest('[role="radiogroup"]').querySelector('[aria-checked="true"]'); if (b) b.focus(); e.preventDefault(); return;
+  }
+  if (e.key==='ArrowRight') { go(state.ch+1, true); e.preventDefault(); }
+  else if (e.key==='ArrowLeft') { go(state.ch-1, true); e.preventDefault(); }
+  else if (e.key==='End') { go(CHAPTERS.length, true); e.preventDefault(); }
+  else if (e.key==='Home') { go(0, true); e.preventDefault(); }
+});
+function mockH(){ document.documentElement.style.setProperty('--mockh', document.getElementById('mock').offsetHeight+'px'); }
+window.addEventListener('resize', mockH);
+
+readHash(); renderSegs(); renderA(false); renderB(); renderCompare(); renderConv(); renderOwner(); mockH();
+var pv = new URLSearchParams(location.search).get('view'); if (pv) setView(pv);
+})();
+</script>
+</body>
+</html>
