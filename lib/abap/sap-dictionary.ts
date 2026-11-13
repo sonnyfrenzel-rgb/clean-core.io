@@ -288,7 +288,7 @@ export const SAP_FUNCTIONS: Readonly<Record<string, string>> = Object.freeze({
   CALCULATE_TAX_FROM_GROSSAMOUNT: 'Calculate tax', SSF_FUNCTION_MODULE_NAME: 'Find the form', FP_FUNCTION_MODULE_NAME: 'Find the form',
   FP_JOB_OPEN: 'Start form output', FP_JOB_CLOSE: 'Finish form output', OPEN_FORM: 'Start form output', CLOSE_FORM: 'Finish form output',
   START_FORM: 'Start form output', END_FORM: 'Finish form output', WRITE_FORM: 'Print form text',
-  IDOC_STATUS_WRITE_TO_DATABASE: 'Set IDoc status', RFC_READ_TABLE: 'Read a table in another system',
+  IDOC_STATUS_WRITE_TO_DATABASE: 'Set IDoc status', RFC_READ_TABLE: 'Read a table via RFC',
   BAPI_USER_GET_DETAIL: 'Read user details', POPUP_TO_DISPLAY_TEXT: 'Show information', SAPGUI_PROGRESS_INDICATOR: 'Show progress',
   READ_EXCHANGE_RATE: 'Read exchange rate', BAPI_EXCHANGERATE_GETDETAIL: 'Read exchange rate', FI_PERIOD_DETERMINE: 'Determine posting period',
   DATE_TO_PERIOD_CONVERT: 'Determine posting period', FI_PERIOD_CHECK: 'Check posting period',

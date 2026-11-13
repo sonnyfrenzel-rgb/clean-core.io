@@ -510,8 +510,10 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
         const condition = conditionOf(s) ?? '';
         noteRead(s.lineStart, condition);
         const guard: Guard = { line: s.lineStart, condition, stopped: true, status: comparisons(condition, constants).length > 0, check: true };
-        if (!decisionOpen(frames)) guards.push(guard);
-        else innermostDecision()?.armGuards.push(guard);
+        // A CHECK in a loop skips only that pass: it guards the rest of the pass and is forgotten at ENDLOOP.
+        const scope = [...frames].reverse().find((f) => f.kind !== 'try');
+        if (scope) scope.armGuards.push(guard);
+        else guards.push(guard);
         continue;
       }
 

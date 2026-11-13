@@ -199,7 +199,7 @@ export function isCustomerTexts(value: unknown): value is CustomerTexts {
     && Object.keys(m).length <= MAX_ENTRIES
     && Object.entries(m as Record<string, unknown>).every(([k, t]) => NAME.test(k) && typeof t === 'string' && t.length <= MAX_TEXT);
   const nested = (m: unknown) => !!m && typeof m === 'object' && !Array.isArray(m) && Object.keys(m).length <= MAX_ENTRIES
-    && Object.entries(m as Record<string, unknown>).every(([k, vals]) => NAME.test(k) && !!vals && typeof vals === 'object'
+    && Object.entries(m as Record<string, unknown>).every(([k, vals]) => NAME.test(k) && !!vals && typeof vals === 'object' && !Array.isArray(vals)
       && Object.keys(vals as object).length <= 200
       && Object.entries(vals as Record<string, unknown>).every(([val, t]) => val.length <= 10 && typeof t === 'string' && t.length <= MAX_TEXT));
   return flat(v.fields) && flat(v.tables) && nested(v.values) && flat(v.selections) && flat(v.textSymbols);

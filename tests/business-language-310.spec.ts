@@ -1,6 +1,6 @@
 import { expect, test } from './helpers/test';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
-import { plainLabels } from '../lib/abap/plain-language';
+import { conditionToQuestion, plainContext, plainLabels } from '../lib/abap/plain-language';
 import { buildExportModel, type ExportNode } from '../lib/bpmn/model';
 import { businessLevelOf } from '../lib/bpmn/export';
 import { ENGINE_READS_310_FROM, engineReads310Apply } from '../lib/abap/engine-reads-310-gate';
@@ -250,4 +250,14 @@ test('In short: batch input is a change, said by its transaction; a started repo
   ].join('\n');
   expect(said(submit, NEW)).not.toMatch(/does not post or change data/);
   expect(said(submit, NEW)).toMatch(/starts the report ZT_OTHER_REPORT; what that report changes in SAP is not visible in this code/);
+});
+
+test('two bounds on one field read as a range only where the words keep each endpoint (QA review 268ed7624e53)', () => {
+  const ctx = plainContext(['REPORT zt_range.', 'DATA lv_amount TYPE i.'].join('\n'), { engineVersion: NEW });
+  const ask = (condition: string) => conditionToQuestion(condition, ctx, 2).question;
+  expect(ask('lv_amount >= 5 AND lv_amount <= 10')).toBe('Amount between 5 and 10?');
+  expect(ask('lv_amount < 5 OR lv_amount > 10')).toBe('Amount outside 5 to 10?');
+  // Strict bounds inside, inclusive bounds outside: the reader must be able to tell them apart.
+  expect(ask('lv_amount > 5 AND lv_amount < 10')).not.toMatch(/between/i);
+  expect(ask('lv_amount <= 5 OR lv_amount >= 10')).not.toMatch(/outside/i);
 });

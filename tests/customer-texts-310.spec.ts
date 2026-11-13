@@ -5,6 +5,7 @@ import { expect, test } from './helpers/test';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { buildExportModel } from '../lib/bpmn/model';
 import { buildBpmnExport, businessLevelOf } from '../lib/bpmn/export';
+import { plainLabels } from '../lib/abap/plain-language';
 import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
 import { CUSTOMER_TEXT_LABEL, isCustomerTexts, readCustomerTexts, type CustomerTexts } from '../lib/abap/customer-texts';
 import { readZipSources } from '../lib/own-code-zip';
@@ -66,6 +67,13 @@ test('the abapGit XML files give the customer\'s texts: table, data element thro
   expect(isCustomerTexts({ ...t, fields: { 'bad key!': 'x' } })).toBe(false);
 });
 
+test('a value map that is an array is not customer texts (QA review 268ed7624e53)', () => {
+  const t = readCustomerTexts(FILES)!;
+  // An array would pass as an object and read its index `0` as a domain value code.
+  expect(isCustomerTexts({ ...t, values: { status: ['Approved'] } })).toBe(false);
+  expect(isCustomerTexts({ ...t, values: { status: { A: 'Approved' } } })).toBe(true);
+});
+
 test('the ZIP import reads them beside the sources, and several files merge', async () => {
   const zip = new JSZip();
   zip.file('src/zsd_check_minimum.prog.abap', PROGRAM);
@@ -88,6 +96,14 @@ test('from 3.1.0 the customer\'s words come first and are marked; a 3.0.22 hotfi
     processName: 't', sourceFileName: 't.abap', source: PROGRAM, names: 'plain', exporterVersion: NEW, customerTexts: texts,
   }).xml;
   expect(xmlFile).toContain(`${CUSTOMER_TEXT_LABEL}: ZSD_MINMENGE “Minimum quantities per customer group”`);
+});
+
+test('a decision whose question says a customer text is marked as one (QA review 268ed7624e53)', () => {
+  const skeleton = buildProcessSkeleton(PROGRAM, { engineVersion: NEW });
+  const plain = plainLabels(skeleton, PROGRAM, { engineVersion: NEW, customerTexts: readCustomerTexts(FILES) });
+  const hold = skeleton.nodes.find((n) => n.kind === 'gateway' && /^Quality hold/.test(plain.nodes.get(n.id) ?? ''));
+  expect(hold, 'the decision on ZZQX says the customer word').toBeTruthy();
+  expect(plain.detail?.(hold!.id)).toContain(`${CUSTOMER_TEXT_LABEL}: ZZQX “Quality hold for the customer group”`);
 });
 
 test('measured on this package: the raw identifiers of the Business view with and without the customer texts', () => {

@@ -282,3 +282,30 @@ test('signed artefacts stay out of it: the skeleton, the runs and the audit pack
     expect(read(file), file).not.toMatch(/state-machine|technical-methods/);
   }
 });
+
+test('a CHECK inside a loop guards only the rest of that pass, not the moves after ENDLOOP (QA review 268ed7624e53)', () => {
+  const src = [
+    'REPORT zt_loop_check.',
+    "CONSTANTS: gc_draft TYPE char10 VALUE 'DRAFT', gc_open TYPE char10 VALUE 'OPEN', gc_done TYPE char10 VALUE 'DONE'.",
+    'DATA: gs_req TYPE zt_req, gt_items TYPE STANDARD TABLE OF zt_item, gs_item TYPE zt_item.',
+    'START-OF-SELECTION.',
+    '  PERFORM process.',
+    'FORM process.',
+    '  LOOP AT gt_items INTO gs_item.',
+    '    CHECK gs_req-status = gc_draft.',
+    '    gs_req-status = gc_open.',
+    '  ENDLOOP.',
+    '  IF gs_req-status = gc_open.',
+    '    gs_req-status = gc_done.',
+    '  ELSE.',
+    '    gs_req-status = gc_draft.',
+    '  ENDIF.',
+    '  UPDATE zt_req FROM gs_req.',
+    'ENDFORM.',
+  ].join('\n');
+  const machine = readStateMachine(src);
+  // Inside the pass the CHECK still names where the move comes from; after the loop it says nothing.
+  expect(machine?.transitions.map((t) => `${t.routine}:${t.from.join('/')}>${t.to}`)).toEqual([
+    'PROCESS:DRAFT>OPEN', 'PROCESS:OPEN>DONE', 'PROCESS:>DRAFT',
+  ]);
+});

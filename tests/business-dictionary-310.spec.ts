@@ -75,6 +75,20 @@ test('a standard table, a function module and a transaction the glossary does no
   expect(names(src, '3.0.22')).toContain('Read REGUV');
 });
 
+test('RFC_READ_TABLE is said by what its name shows, not as a call to another system (QA review 268ed7624e53)', () => {
+  // DESTINATION 'NONE' runs in the calling system: the function's name alone does not say where the table is.
+  const src = [
+    'REPORT zt_rfc.',
+    'DATA lt_data TYPE STANDARD TABLE OF tab512.',
+    'START-OF-SELECTION.',
+    "  CALL FUNCTION 'RFC_READ_TABLE' DESTINATION 'NONE' EXPORTING query_table = 'VBAK' TABLES data = lt_data.",
+  ].join('\n');
+  const now = names(src, NEW);
+  expect(now.some((n) => /read a table/i.test(n)), now.join(' | ')).toBe(true);
+  expect(now.some((n) => /another system/i.test(n)), now.join(' | ')).toBe(false);
+  expect(SAP_FUNCTIONS.RFC_READ_TABLE).not.toMatch(/another system/i);
+});
+
 test('a value of a fixed SAP domain carries its meaning; a check on a field whose purpose the code does not state says so in its documentation', () => {
   const src = [
     'REPORT zt_status.',
