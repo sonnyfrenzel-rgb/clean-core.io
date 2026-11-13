@@ -16,6 +16,7 @@ import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { buildExportModel } from '../lib/bpmn/model';
 import { sliceModel } from '../lib/bpmn/slice';
 import { computeHomeMapSlice, HOME_SLICE_ELEMENTS } from '../lib/home-map-slice';
+import { MAX_HEIGHT, MIN_SCALE, sliceScale, sliceViewbox } from '../components/process-map/MapSlice';
 import { leaveHomeStart, pastedFileName, takeHomeStart } from '../lib/home-start-handoff';
 import { WORKSPACE_PAGE_MESSAGES } from '../lib/messages/workspace';
 import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
@@ -117,6 +118,63 @@ test.describe('the slice of the demo map (H-O1)', () => {
     const home = code('components/workspace/HomeFirstView.tsx');
     expect(home).toContain("import('@/components/process-map/MapSlice')");
     expect(home).not.toMatch(/<svg|<path|<rect/);
+  });
+});
+
+test.describe('a narrow slice scrolls rather than shrinking below the floor or being cut (ADR-110)', () => {
+  test('the scale never drops below MIN_SCALE, and the drawing at that scale is laid out whole', () => {
+    expect(MIN_SCALE).toBe(0.75);
+    // Fits: drawn at the width the frame allows, no wider than the frame.
+    const small = { x: 0, y: 0, width: 200, height: 150 };
+    expect(sliceScale(small, 320)).toBe(1);
+    expect(sliceViewbox(small, 320)!.width).toBe(320);
+    // Too wide for a phone card at the floor: the drawing keeps the floor and grows wider than the frame.
+    const wide = { x: 40, y: 10, width: 900, height: 200 };
+    const frame = 300;
+    expect(sliceScale(wide, frame)).toBe(MIN_SCALE);
+    const placed = sliceViewbox(wide, frame)!;
+    expect(placed.scale).toBe(MIN_SCALE);
+    expect(placed.width).toBeGreaterThan(frame);
+    expect(placed.width).toBeGreaterThanOrEqual((wide.width + 24) * MIN_SCALE);
+    // The camera sees the whole drawing across: nothing left of it or right of it is cut.
+    expect(placed.viewbox.x).toBeLessThanOrEqual(wide.x);
+    expect(placed.viewbox.x + placed.viewbox.width).toBeGreaterThanOrEqual(wide.x + wide.width);
+    expect(placed.viewbox.width * placed.scale).toBeCloseTo(placed.width, 5);
+    // Too tall for the height cap at the floor: taller than MAX_HEIGHT, and all of it in the view box.
+    const tall = { x: 0, y: 30, width: 200, height: 900 };
+    const high = sliceViewbox(tall, 320)!;
+    expect(high.scale).toBe(MIN_SCALE);
+    expect(high.height).toBeGreaterThan(MAX_HEIGHT);
+    expect(high.viewbox.y).toBeLessThanOrEqual(tall.y);
+    expect(high.viewbox.y + high.viewbox.height).toBeGreaterThanOrEqual(tall.y + tall.height);
+    // Between floor and cap the drawing is scaled to the cap, not cut by it.
+    const capped = sliceViewbox({ x: 0, y: 0, width: 200, height: 450 }, 320)!;
+    expect(capped.scale).toBeGreaterThanOrEqual(MIN_SCALE);
+    expect(capped.height).toBeLessThanOrEqual(MAX_HEIGHT + 1);
+  });
+
+  test('the frame scrolls instead of clipping, is reachable by keyboard, and leaves the wheel to the page at its edge', () => {
+    const src = code('components/process-map/MapSlice.tsx');
+    expect(src).toContain('Math.max(MIN_SCALE, fit)');
+    // The frame scrolls; nothing in the component clips the drawing.
+    expect(src).toMatch(/className=\{`[^`]*\boverflow-auto\b/);
+    expect(src).not.toMatch(/overflow-hidden|overflow-x-hidden|overflow-y-hidden|overflow:\s*'hidden'/);
+    expect(src).toMatch(/maxHeight:\s*MAX_HEIGHT/);
+    // Keyboard: focusable while it scrolls, named, with a visible focus ring.
+    expect(src).toMatch(/tabIndex=\{scrolls \? 0 : undefined\}/);
+    expect(src).toMatch(/aria-label=\{/);
+    expect(src).toMatch(/focus-visible:outline-cc-focus/);
+    // The wheel is the browser's: no handler, no containment that would swallow the page's scroll.
+    expect(src).not.toMatch(/onWheel|addEventListener\(\s*'wheel'|overscroll-(?:contain|none)|overscrollBehavior/);
+    // The drawing takes no pointer, so wheel and touch reach the frame; the frame itself does not disable them.
+    expect(src).toMatch(/data-map-slice-drawing=""[^>]*pointer-events-none/);
+    const frameTag = /<div\s+ref=\{frameRef\}[\s\S]*?\n\s*>/.exec(src)?.[0] ?? '';
+    expect(frameTag).toContain('data-home-map-slice');
+    expect(frameTag).not.toContain('pointer-events-none');
+    expect(src).not.toMatch(/touch-none|touchAction/);
+    // Opens on the first element without moving the page.
+    expect(src).toContain('openOn(viewer, frame, elements[0]?.id)');
+    expect(src).not.toContain('scrollIntoView(');
   });
 });
 
@@ -319,6 +377,77 @@ test.describe('a fresh account lands on the first view', () => {
       }
     }
     expect(failures).toEqual([]);
+  });
+
+  test('on a phone the slice is drawn at the readability floor or above and scrolls to every element, never cut (ADR-110)', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signInViaLanding(page, EMAIL, PASSWORD);
+    await page.setViewportSize({ width: 390, height: 844 });
+    const view = await openHome(page);
+    const frame = view.locator('[data-home-map-slice="drawn"]');
+    await frame.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(400);
+    const slice = computeHomeMapSlice(HOME_SLICE_ELEMENTS)!;
+
+    const measure = (ids: string[]) =>
+      frame.evaluate((el, shapeIds) => {
+        const box = el.getBoundingClientRect();
+        const drawing = el.querySelector<HTMLElement>('[data-map-slice-drawing]')!;
+        const viewport = el.querySelector<SVGGElement>('svg .viewport')!;
+        const scale = viewport.getCTM()!.a;
+        const shapes = shapeIds.map((id) => {
+          const r = el.querySelector(`[data-element-id="${id}"]`)!.getBoundingClientRect();
+          // Content coordinates: where the shape sits in the scrolled area, independent of the scroll position.
+          return { id, left: r.left - box.left - el.clientLeft + el.scrollLeft, right: r.right - box.left - el.clientLeft + el.scrollLeft,
+            top: r.top - box.top - el.clientTop + el.scrollTop, bottom: r.bottom - box.top - el.clientTop + el.scrollTop,
+            visible: r.right > box.left && r.left < box.right && r.bottom > box.top && r.top < box.bottom };
+        });
+        return {
+          scale, scrollWidth: el.scrollWidth, scrollHeight: el.scrollHeight, clientWidth: el.clientWidth, clientHeight: el.clientHeight,
+          drawingWidth: drawing.offsetWidth, drawingHeight: drawing.offsetHeight, overflow: getComputedStyle(el).overflowX,
+          tabIndex: el.getAttribute('tabindex'), scrolls: el.getAttribute('data-map-slice-scrolls'), shapes,
+          pageOverflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        };
+      }, ids);
+
+    const ids = slice.elements.map((e) => e.id);
+    const opened = await measure(ids);
+    expect(opened.pageOverflowX, 'the page scrolls sideways at 390 px').toBeLessThanOrEqual(0);
+    expect(opened.scale, 'drawn below the readability floor').toBeGreaterThanOrEqual(0.75 - 1e-3);
+    expect(opened.overflow).toBe('auto');
+    // Nothing cut: the scrolled area holds the whole drawing, and every element lies inside it.
+    expect(opened.scrollWidth).toBeGreaterThanOrEqual(opened.drawingWidth);
+    expect(opened.scrollHeight).toBeGreaterThanOrEqual(opened.drawingHeight);
+    for (const s of opened.shapes) {
+      expect(s.left, `${s.id} is cut on the left`).toBeGreaterThanOrEqual(-1);
+      expect(s.right, `${s.id} is cut on the right`).toBeLessThanOrEqual(opened.scrollWidth + 1);
+      expect(s.top, `${s.id} is cut at the top`).toBeGreaterThanOrEqual(-1);
+      expect(s.bottom, `${s.id} is cut at the bottom`).toBeLessThanOrEqual(opened.scrollHeight + 1);
+    }
+    // Opens on the first element.
+    expect(opened.shapes[0].visible, 'the first element is not in view on open').toBe(true);
+    const overflows = opened.scrollWidth > opened.clientWidth || opened.scrollHeight > opened.clientHeight;
+    expect(opened.scrolls).toBe(overflows ? 'true' : 'false');
+    if (overflows) {
+      // Reachable by keyboard: focus it, and the arrow keys move it.
+      expect(opened.tabIndex).toBe('0');
+      await frame.focus();
+      await page.keyboard.press('Shift+Tab');
+      await page.keyboard.press('Tab');
+      expect(await frame.evaluate((el) => document.activeElement === el && el.matches(':focus-visible'))).toBe(true);
+      const ring = await frame.evaluate((el) => getComputedStyle(el).outlineStyle);
+      expect(ring, 'no visible focus on the scrolling slice').not.toBe('none');
+      // Every element can be brought into view by scrolling the slice.
+      for (const s of opened.shapes) {
+        await frame.evaluate((el, at) => {
+          el.scrollLeft = Math.max(0, (at.left + at.right) / 2 - el.clientWidth / 2);
+          el.scrollTop = Math.max(0, (at.top + at.bottom) / 2 - el.clientHeight / 2);
+        }, s);
+        const after = await measure([s.id]);
+        expect(after.shapes[0].visible, `${s.id} cannot be scrolled into view`).toBe(true);
+      }
+    }
   });
 
   test('"Choose a file" opens today\'s start with the file in it', async ({ page }) => {
