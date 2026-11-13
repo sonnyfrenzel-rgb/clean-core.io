@@ -6,6 +6,7 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { DEMO_TITLE_PREFIX } from '../lib/demo-marks';
 import { TOUR_STATIONS, TOUR_STORAGE_KEY } from '../lib/demo-tour';
+import { ANALYSIS_READ_KEY } from '../lib/analysis-read';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -266,4 +267,37 @@ test('answering the rules as the product asks them changes this browser only, an
   await expect(row(first)).toHaveAttribute('data-demo-rule-answer', 'keep', { timeout: 60000 });
   await page.click('[data-demo-reset]');
   await expect(row(first)).toHaveAttribute('data-demo-rule-answer', 'none');
+});
+
+test('the demo\'s Analyze, Business draws the map as a project\'s: the page layout, a chosen step\'s code in one panel beside it (QA review 268ed7624e53)', async ({ page }) => {
+  test.setTimeout(240 * 1000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page, ADMIN);
+  await openDemo(page, '?view=business');
+  const map = page.locator('[data-demo-business-map] [data-process-map]');
+  await expect(map).toHaveAttribute('data-process-map-layout-kind', 'page', { timeout: 90000 });
+  // No code before a click, and the map draws no code card of its own.
+  await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
+  await page.locator('[data-demo-business-map] [data-map-node]').nth(1).click();
+  const panel = page.locator('[data-analyze-code-panel]');
+  await expect(panel, 'a click on a step opened no code').toBeVisible({ timeout: 30000 });
+  await expect(page.locator('[data-process-map-details]')).toHaveCount(0);
+  const [card, side] = await Promise.all([map.boundingBox(), panel.boundingBox()]);
+  const overlaps = !!card && !!side && card.x < side.x + side.width && side.x < card.x + card.width && card.y < side.y + side.height && side.y < card.y + card.height;
+  expect(overlaps, 'the code panel covers the map').toBe(false);
+  await page.locator('[data-analyze-code-close]').click();
+  await expect(panel).toHaveCount(0);
+});
+
+test('opening the demo\'s Analyze, Business clears "result ready" on the demo workspace\'s Analyze tool (QA review 268ed7624e53)', async ({ page }) => {
+  test.setTimeout(240 * 1000);
+  await signIn(page, ADMIN);
+  await openDemo(page, '?view=it');
+  await page.evaluate((key) => window.localStorage.removeItem(key), ANALYSIS_READ_KEY);
+  await openDemo(page, '?view=it');
+  const ready = page.locator('[data-demo-stages] [data-workspace-tool-result-ready]');
+  await expect(ready, 'the marker is there before Analyze was opened').toHaveCount(1);
+  await openDemo(page, '?view=business');
+  await openDemo(page, '?view=it');
+  await expect(ready).toHaveCount(0);
 });

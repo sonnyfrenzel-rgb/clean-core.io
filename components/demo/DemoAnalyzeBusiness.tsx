@@ -4,12 +4,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Play, RotateCcw } from 'lucide-react';
+import { Play, RotateCcw, X } from 'lucide-react';
 import StageFrame from '@/components/StageFrame';
 import StageHeader from '@/components/StageHeader';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
+import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
@@ -24,6 +25,8 @@ import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDemoTour } from '@/hooks/useDemoTour';
 import { BUSINESS_MAP_ID } from '@/lib/business-layers';
+import { DEMO_ANALYSIS_KEY, markAnalysisRead } from '@/lib/analysis-read';
+import { codeCardLabel, codeCardLines, tokenizeAbapLine } from '@/lib/process-map';
 import { plainWordingFor } from '@/lib/business-card';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
@@ -59,10 +62,13 @@ import {
   type WorkspaceDemoState,
 } from '@/lib/demo-workspace-state';
 import type { DemoWorkspaceData } from '@/lib/demo-workspace';
-import { tourContinuesIn, tourPausedAt, wt } from '@/lib/workspace-messages';
+import { bizLinesLabel, tourContinuesIn, tourPausedAt, wt } from '@/lib/workspace-messages';
 
 /** The map pulls bpmn-js: client only and on demand, as in a project's Analyze. */
 const ProcessMap = dynamic(() => import('@/components/process-map/ProcessMap'), { ssr: false });
+
+/** The lines around a chosen step in the code panel, as in a project's Analyze (`WorkspaceProcess`). */
+const SOURCE_CONTEXT = 6;
 
 /** A region the tour can stand in, with its slot directly above it. */
 function Place({ place, children, className }: { place: TourPlace; children: React.ReactNode; className?: string }) {
@@ -188,6 +194,32 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
   }, [demo.rail]);
   const [plane, setPlane] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+
+  // The reader has the analysis in front of them, as on a project's Analyze: the demo workspace's tool bar stops
+  // saying "result ready" (ADR-090). Browser only.
+  useEffect(() => {
+    markAnalysisRead(DEMO_ANALYSIS_KEY);
+  }, []);
+
+  /* ------------------------------------------- the code on demand (mockup state 7) */
+  // As a project's Analyze, Business: the map draws no code of its own (`layout="page"`); the chosen step's lines
+  // stand in a panel beside it, closed by its own button (`WorkspaceProcess` `codeOnClick`).
+  const [fullSource, setFullSource] = useState(false);
+  const selectedElement = selected ? processMap.elements.find((e) => e.id === selected) ?? null : null;
+  const marked = selectedElement?.anchor ?? null;
+  const codeLines: CcCodeLine[] = useMemo(() => {
+    if (!marked) return [];
+    if (!fullSource) return codeCardLines(source, marked, SOURCE_CONTEXT);
+    return source.split(/\r\n|\r|\n/).map((text, i) => {
+      const number = i + 1;
+      const highlighted = number >= marked.lineStart && number <= marked.lineEnd;
+      return { number, tokens: tokenizeAbapLine(text), ...(highlighted ? { highlighted: true } : {}) };
+    });
+  }, [source, marked, fullSource]);
+  const closeCode = useCallback(() => {
+    setSelected(null);
+    setFullSource(false);
+  }, []);
 
   /* ------------------------------------------------- the invitation, the walk */
   const [walkOpen, setWalkOpen] = useState(false);
@@ -358,19 +390,66 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
         <div id={BUSINESS_MAP_ID} data-analyze-map="" data-demo-business-map="" className="scroll-mt-20">
           <Place place="process-map" className="">
             <div className="max-w-3xl">{stop('process-map')}</div>
-            <CcCard title={wt('demo.processMap')} meta={<CcProvenanceChip value="reconstructed" />}>
-              <ProcessMap
-                model={processMap}
-                source={source}
-                catalogTarget={catalogLookupTargetOf(project)}
-                engineVersion={engineVersion}
-                plane={plane}
-                onPlaneChange={setPlane}
-                selected={selected}
-                onSelectedChange={setSelected}
-                exportable={false}
-              />
-            </CcCard>
+            <div
+              className={
+                marked
+                  ? 'grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]'
+                  : undefined
+              }
+            >
+              <div className="min-w-0">
+                <CcCard title={wt('demo.processMap')} meta={<CcProvenanceChip value="reconstructed" />} density="compact">
+                  <ProcessMap
+                    model={processMap}
+                    source={source}
+                    catalogTarget={catalogLookupTargetOf(project)}
+                    engineVersion={engineVersion}
+                    plane={plane}
+                    onPlaneChange={setPlane}
+                    selected={selected}
+                    onSelectedChange={setSelected}
+                    defaultView="map"
+                    canvasControls
+                    layout="page"
+                    exportable={false}
+                  />
+                </CcCard>
+                <p data-analyze-map-hint="" className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
+                  {wt('abiz.mapHint')}
+                </p>
+              </div>
+              {marked ? (
+                <aside
+                  data-workspace-source-column="panel"
+                  data-analyze-code-panel=""
+                  aria-labelledby="analyze-code-panel-title"
+                  className="flex min-w-0 flex-col gap-3 self-start rounded-cc-card border border-cc-line bg-cc-surface p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="m-0 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+                        {`${wt('abiz.codeTitle')} · ${bizLinesLabel(marked.lineStart, marked.lineEnd)}`}
+                      </p>
+                      <h3 id="analyze-code-panel-title" className="m-0 mt-1 text-[15px] leading-snug font-bold break-words text-cc-ink">
+                        {selectedElement?.label ?? processMap.fileName}
+                      </h3>
+                    </div>
+                    <CcButton variant="ghost" onClick={closeCode} aria-label={wt('abiz.codeClose')} data-analyze-code-close="">
+                      <X size={16} aria-hidden={true} />
+                    </CcButton>
+                  </div>
+                  <div className={fullSource ? 'max-h-112 overflow-y-auto' : 'overflow-x-auto'}>
+                    <CcCodeSurface lines={codeLines} label={codeCardLabel(processMap.fileName, marked, source)} />
+                  </div>
+                  <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('abiz.codeLine')}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <CcButton onClick={() => setFullSource((v) => !v)} aria-pressed={fullSource} data-workspace-source-full="">
+                      {fullSource ? wt('biz.showMarkedOnly') : wt('biz.showFullSource')}
+                    </CcButton>
+                  </div>
+                </aside>
+              ) : null}
+            </div>
           </Place>
           {lookingAround ? (
             <p data-analyze-look-around-line="" className="cc-no-print m-0 mt-2 flex flex-wrap items-center gap-2 text-[13px] leading-snug font-medium text-cc-ink-muted">
