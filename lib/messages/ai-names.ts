@@ -37,7 +37,7 @@ export function aiLaneMark(lang: UiLanguage = UI_LANGUAGE): string {
   return lang === 'de' ? 'KI-generierte Rollen-Bahn' : 'AI-generated role lane';
 }
 
-/** Provider and model as the receipt recorded them, e.g. "Google Gemini gemini-2.5-flash"; null when not recorded. */
+/** Provider and model as the receipt recorded them, "Google Gemini <model id>"; null when not recorded. */
 export function aiOriginWords(origin: AiNameOrigin | null | undefined): string | null {
   if (!origin || !origin.provider || !origin.modelId) return null;
   return `${providerLabelOfReceiptId(origin.provider) ?? origin.provider} ${origin.modelId}`;
