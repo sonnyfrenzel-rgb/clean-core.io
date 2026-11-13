@@ -74,6 +74,12 @@ import { isModelCallStage, STAGE_MAX_OUTPUT_TOKENS } from '@/lib/model-call-stag
 import { NAMING_PAUSED_CODE, NAMING_PAUSED_REASON, NAMING_STAGE, namingPromptAllowed } from '@/lib/process-naming';
 import { PLATFORM_BUDGET_CODE, platformBudgetMessage, reservePlatformModelCall, returnPlatformModelCall } from '@/lib/platform-model-budget';
 import { AUTO_MODEL_STEPS_OFF_CODE, autoModelStepsOffMessage, autoModelStepsOn } from '@/lib/auto-model-steps';
+import {
+  AUTO_STEPS_NOTICE_PENDING_CODE,
+  automaticNamingAwaitsNotice,
+  autoStepsNoticePendingMessage,
+  confirmedNoticeWordingOf,
+} from '@/lib/auto-steps-notice';
 
 /**
  * Server-side API route for all Gemini AI calls.
@@ -496,6 +502,21 @@ export async function POST(request: NextRequest) {
     // switch off the platform calls no model for the account from it.
     if ((automatic || startNarrative || stage === 'glossary') && !autoModelStepsOn(profile.exists ? (profile.data() as { autoModelSteps?: unknown }) : null)) {
       return NextResponse.json({ error: autoModelStepsOffMessage(), code: AUTO_MODEL_STEPS_OFF_CODE }, { status: 403 });
+    }
+
+    // The one-time notice before the first automatic model call (C14, `lib/auto-steps-notice.ts`): the business
+    // names start by themselves only for an account that confirmed the wording of this build, which names them.
+    // A confirmation of the earlier wording (one step, plain business sentences) does not cover them. Refused
+    // before any key is loaded, so nothing is sent; the map keeps the engine's names. A click is no automatic
+    // call and is not held here.
+    if (
+      automatic
+      && stage === NAMING_STAGE
+      && automaticNamingAwaitsNotice(
+        confirmedNoticeWordingOf(profile.exists ? (profile.data() as { autoStepsNoticeAt?: unknown; autoStepsNoticeWording?: unknown }) : null),
+      )
+    ) {
+      return NextResponse.json({ error: autoStepsNoticePendingMessage(), code: AUTO_STEPS_NOTICE_PENDING_CODE }, { status: 403 });
     }
 
     // A lease is bought for the Transformation stage and spends on nothing else.

@@ -6,6 +6,7 @@ import {
   automaticStagesInThisBuild,
   autoStepsNoticeValues,
   autoStepsNoticeWanted,
+  AUTO_STEPS_NOTICE_WORDING,
   autoStepsSwitchBody,
   autoStepsSwitchOn,
 } from '../lib/auto-steps-notice';
@@ -77,7 +78,7 @@ test.describe('A10 — one automatic step on opening a project while names are p
   test('shown once, only when something would run by itself', () => {
     const base = { known: true, keyAvailable: true, autoSteps: true, stages: ALL_ON, seen: false };
     expect(autoStepsNoticeWanted(base)).toBe(true);
-    expect(autoStepsNoticeWanted({ ...base, seen: true }), 'answered or closed before').toBe(false);
+    expect(autoStepsNoticeWanted({ ...base, seen: true, wording: AUTO_STEPS_NOTICE_WORDING }), 'answered or closed before, in the wording of this build').toBe(false);
     expect(autoStepsNoticeWanted({ ...base, known: false }), 'never on a guess').toBe(false);
     expect(autoStepsNoticeWanted({ ...base, reader: true }), 'never to an invited reader').toBe(false);
     expect(autoStepsNoticeWanted({ ...base, autoSteps: false }), 'own key with "Automatic steps" off: nothing runs by itself').toBe(false);
@@ -98,8 +99,9 @@ test.describe('A10 — one automatic step on opening a project while names are p
 
   test('the switch writes the main switch Settings shows, and records the notice as answered', () => {
     // Since 06.11.2026 (item 2): one stored setting, `users/{uid}.autoModelSteps` (tests/auto-model-steps-3021.spec.ts).
-    expect(autoStepsSwitchBody(false)).toEqual({ autoModelSteps: false, autoStepsNotice: 'seen' });
-    expect(autoStepsSwitchBody(true)).toEqual({ autoModelSteps: true, autoStepsNotice: 'seen' });
+    // The notice is recorded with the wording it showed (`autoStepsNoticeWording`, tests/legal-names-wording.spec.ts).
+    expect(autoStepsSwitchBody(false)).toEqual({ autoModelSteps: false, autoStepsNotice: 'seen', autoStepsNoticeWording: AUTO_STEPS_NOTICE_WORDING });
+    expect(autoStepsSwitchBody(true)).toEqual({ autoModelSteps: true, autoStepsNotice: 'seen', autoStepsNoticeWording: AUTO_STEPS_NOTICE_WORDING });
     expect(autoStepsSwitchOn({ autoModelSteps: true })).toBe(true);
     expect(autoStepsSwitchOn({ autoModelSteps: false })).toBe(false);
   });
