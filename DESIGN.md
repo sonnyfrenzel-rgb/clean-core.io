@@ -230,7 +230,7 @@ Fiori app and never says so.
 
 ### 2.1 Shell
 
-- **Shell bar** at the top: logo and product name on the left, path (Workspace › Project), search ⌘K, help, account menu on the right.
+- **Shell bar** at the top: logo and product name on the left, path (Workspace › Project), search ⌘K, help, account menu on the right. Below 1024 px (lg) the path starts at the project — no "My workspace" crumb before it, the way back to the list is the page's own "Back to My workspace" and the logo — and Help is its "?" alone, square (44 px on touch), named by its word and with the word as tooltip (ADR-115).
 - No side navigation in 3.0: a project is one case, the depth lies in the workspace.
 
 ### 2.2 Floorplans
@@ -1288,6 +1288,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.17 | 13.11.2026 | Shell bar below 1024 px (§2.1, ADR-115, owner decision 13.11.2026): the path drops the "My workspace" crumb before a project and shows the project and what follows it; Help shows its "?" alone, with its word as accessible name and tooltip. From 1024 px up unchanged. |
 | 1.8.16 | 13.11.2026 | Analyze, Business after the 3.1.0 acceptance run (§5): the canvas first with Map | Steps in its row and everything about the map under it; the tool bar compact in one row with the soft-gate hint; one code panel beside the map (no card inside it); a name over a step lets its click through; the project search on this page |
 | 1.8.15 | 13.11.2026 | The paced build-up retires (plan AB-3): the First insights below the map stand in their end state from the first frame; the start's model wait is said at the map's place (§5.2). The workspace's Business view, its "Work from this process" hub and "Your analysis is ready" line leave the app (ADR-090 retired, AB-2). The demo opens like a project, on its Analyze, Business (O10, §6.1.2) |
 | 1.8.14 | 12.11.2026 | Analyze opens in the Business view and is the project's entry (ADR-109, plan AB-2): the map is the page under "What this program does" and one invitation; code on demand beside the map; the workspace sends Business there; the First insights blocks and "Next step" below the map until v3.2.0; no coach marks in Analyze (§5) |
