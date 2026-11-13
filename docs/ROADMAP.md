@@ -1714,6 +1714,12 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-972 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 | SEC-2026-973 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 | SEC-2026-974 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-975 | medium | P2 | next patch after 3.1.0 · pack-verifier hardening | scheduled |
+| SEC-2026-976 | low | P3 | next patch after 3.1.0 · pack-verifier hardening | scheduled |
+| SEC-2026-977 | low | P3 | next patch after 3.1.0 · model-call hardening | scheduled |
+| SEC-2026-978 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+
+**Audit of v3.0.23 (`0ba01d7`), 13.11.2026: 0 critical, 0 high, 1 medium, 2 low, 1 info — all 33 candidates verified by the agent, all 4 findings checked by hand.** SEC-2026-975 to -977 go to the next patch after 3.1.0 (pack-verifier and model-call hardening); SEC-2026-978 joins the comment-hygiene decision. The reasons are in the sealed register.
 
 **Audit of v3.0.22 (`377837c`), 12.11.2026: 0 critical, 0 high, 2 medium, 0 low, 5 info — all 63 candidates verified by the agent, all 7 findings checked by hand.** SEC-2026-969 goes to 3.0.23 with the QA finding `c12ee6c4bf32`; SEC-2026-970 to -974 join the comment-hygiene decision. SEC-2026-968 was refuted against the code. The reasons are in the sealed register.
 
