@@ -66,6 +66,13 @@ test('the abapGit XML files give the customer\'s texts: table, data element thro
   expect(isCustomerTexts({ ...t, fields: { 'bad key!': 'x' } })).toBe(false);
 });
 
+test('a value map that is an array is not customer texts (QA review 268ed7624e53)', () => {
+  const t = readCustomerTexts(FILES)!;
+  // An array would pass as an object and read its index `0` as a domain value code.
+  expect(isCustomerTexts({ ...t, values: { status: ['Approved'] } })).toBe(false);
+  expect(isCustomerTexts({ ...t, values: { status: { A: 'Approved' } } })).toBe(true);
+});
+
 test('the ZIP import reads them beside the sources, and several files merge', async () => {
   const zip = new JSZip();
   zip.file('src/zsd_check_minimum.prog.abap', PROGRAM);
