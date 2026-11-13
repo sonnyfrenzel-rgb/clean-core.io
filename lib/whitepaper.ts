@@ -9,7 +9,9 @@ import type { ProvenanceValue } from './provenance';
  * Two kinds of text live here:
  *
  *   - **`FROM_LANDING`** — sentences the landing page (`app/page.tsx`) already
- *     says. They are not reworded for the whitepaper; they are the same
+ *     says (since the landing page 3.5 only the toolchain rows, the bucket
+ *     rules and the closing line; the rest of the 3.0 wording is `WHITEPAPER_30`).
+ *     They are not reworded for the whitepaper; they are the same
  *     sentence. The landing keeps its own copy (its guards want its arrays
  *     inline), so `tests/whitepaper-guard.spec.ts` reads `app/page.tsx` and
  *     fails when one of these strings is no longer in it — the place to change
@@ -78,7 +80,14 @@ export interface ChainStep {
   mark: string;
 }
 
-export const FROM_LANDING = {
+/**
+ * The whitepaper's text that the 3.0 landing page said word for word. The
+ * landing page 3.5 tells the story differently, so these sentences are no
+ * longer held equal to it; the whitepaper keeps them until it is rewritten for
+ * 3.5 (an owner decision). What the 3.5 landing still says is `FROM_LANDING`
+ * below, and that stays guarded.
+ */
+export const WHITEPAPER_30 = {
   /** The hero's limits line, and the chain band's closing line. */
   limits:
     'The code is a draft for review. Tests here run in an isolated runner against mocks, not in your S/4HANA system; an ABAP Unit result from your own system is recorded as imported or self-declared. A signature proves where a run came from and that it is unchanged — not that it is right.',
@@ -176,6 +185,17 @@ export const FROM_LANDING = {
   startLead:
     'Nothing — Clean-Core.io is free. Each of the {examples} examples runs once at no cost, your own code uses one of five free analysis runs, and after that you continue with your own Gemini API key.',
   closing: 'Read the code before you decide.',
+} as const;
+
+/**
+ * Sentences the landing page (`app/page.tsx`) says today and the whitepaper
+ * repeats — `tests/whitepaper-guard.spec.ts` fails when one of them is no
+ * longer on the landing. Change the sentence there first, then here.
+ */
+export const FROM_LANDING = {
+  toolchain: WHITEPAPER_30.toolchain,
+  bucketRules: WHITEPAPER_30.bucketRules,
+  closing: WHITEPAPER_30.closing,
 } as const;
 
 /* ------------------------------------------------------------------------ */

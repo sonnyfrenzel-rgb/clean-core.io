@@ -63,7 +63,7 @@ test.describe('the reference run is read, not typed', () => {
     // the section makes too, so they are checked as rendered, not as field names.
     const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
     expect(norm(card), 'the rendered total is not the run’s').toMatch(new RegExp(`(^|\\D)${r.totalFindings} ?findings`));
-    const quote = browser.locator('.pcard:has([data-landing-rollcall]) p.honest');
+    const quote = browser.locator('[data-landing-rollcall-card] p.honest');
     const first = r.businessDecisions[0];
     if (!first) {
       await expect(quote).toHaveCount(0);
@@ -112,10 +112,10 @@ test.describe('the section fits a phone', () => {
       test.setTimeout(240_000);
       await browser.setViewportSize({ width, height: 900 });
       await browser.goto('/', { waitUntil: 'domcontentloaded', timeout: 200_000 });
-      const section = browser.locator('#verify');
+      const section = browser.locator('#evidence');
       await section.scrollIntoViewIfNeeded();
       const overflow = await section.evaluate((el) => el.scrollWidth - el.clientWidth);
-      expect(overflow, `#verify scrolls sideways by ${overflow}px`).toBeLessThanOrEqual(0);
+      expect(overflow, `#evidence scrolls sideways by ${overflow}px`).toBeLessThanOrEqual(0);
     });
   }
 });

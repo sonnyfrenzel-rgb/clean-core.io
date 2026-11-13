@@ -3,100 +3,69 @@ import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import {
-  ArrowRight,
-  Archive,
-  BarChart3,
-  BookOpen,
-  Briefcase,
-  Check,
-  ChevronDown,
-  Code2,
-  EyeOff,
-  FileCheck,
-  Hammer,
-  Info,
-  Key,
-  Layers,
-  Link2,
-  ListChecks,
-  Lock,
-  MapPin,
-  RefreshCw,
-  Server,
-  Trash2,
-  Users,
-} from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, Users } from 'lucide-react';
 import PublicHeader from '@/components/PublicHeader';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import LandingModalsLazy from '@/components/landing/LandingModalsLazy';
 import SectionHeader from '@/components/SectionHeader';
 import { SITE_FOOTER_COLUMNS } from '@/components/SiteFooter';
 import AuthLink from '@/components/landing/AuthLink';
-import StageTimeline, { type TimelineStage } from '@/components/landing/StageTimeline';
 import { publicButton } from '@/components/landing/public-button';
-import HeroWorkspace from '@/components/landing/HeroWorkspace';
-import BpmnPlaneSvg from '@/components/landing/BpmnPlaneSvg';
-import ProcessMapPanel from '@/components/landing/ProcessMapPanel';
-import CleanCoreSchema from '@/components/landing/CleanCoreSchema';
-import ViewsStageCard, { type StageCardView } from '@/components/landing/ViewsStageCard';
-import { LevelLadder, EvidenceStepper, ExamplePicker } from '@/components/landing/LandingPickers';
-import CatalogLookup from '@/components/landing/CatalogLookup';
+import HeroMapBuild from '@/components/landing/HeroMapBuild';
+import RuleAnswer from '@/components/landing/RuleAnswer';
+import CopyLinkButton from '@/components/landing/CopyLinkButton';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import { APP_VERSION, APP_RELEASE_DATE, APP_RELEASE_DATE_ISO } from '@/lib/version';
 import { getFacts, formatObjectCount } from '@/lib/facts';
 import { getReferenceAnalysis } from '@/lib/reference-analysis';
-import { getObjectDimensions } from '@/lib/abap/catalog-service';
 import { getAllCatalogObjectNames, objectToSlug } from '@/lib/abap/catalog-index';
 import { CLEAN_CORE_LEVEL } from '@/lib/clean-core-level';
-import { PROVENANCE, type ProvenanceValue } from '@/lib/provenance';
-import { PUBLIC_CLOUD_FIT_BUCKETS, PUBLIC_CLOUD_FIT_BUCKET_LABELS, PUBLIC_CLOUD_FIT_BUCKET_MEANINGS } from '@/lib/abap/public-cloud-fit';
+import { PUBLIC_CLOUD_FIT_BUCKETS, PUBLIC_CLOUD_FIT_BUCKET_LABELS } from '@/lib/abap/public-cloud-fit';
 import { STARTER_EXAMPLES } from '@/lib/starter-examples';
-import { TRUST_CLAIMS, TRUST_PLEDGE, SECURITY_MODEL_URL, type TrustClaim } from '@/lib/trust-claims';
-import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_SOURCE_FILE, DEMO_STRIP_NOTICE, DEMO_INVITATION, DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
-import { TOUR_STATIONS, TOUR_INVITATION_TITLE, TOUR_INVITATION_ACTION, tourPositionLabel } from '@/lib/demo-tour';
-import { landingHero, landingProcess } from '@/lib/landing-process';
-import { heroSnippets } from '@/lib/landing-hero';
-import { STAGE_SHOT_CAPTION, STAGE_SHOT_SOURCE, landingShotSrc, stageShot } from '@/lib/landing-shots';
-import { landingStages, STAGE_WORKER_LABEL } from '@/lib/landing-stages';
-import { landingShotSize } from '@/lib/landing-shot-size';
+import { TRUST_CLAIMS, SECURITY_MODEL_URL } from '@/lib/trust-claims';
+import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_SOURCE_FILE } from '@/lib/demo-marks';
+import { landingHero } from '@/lib/landing-process';
+import { heroBuild, demoLadder, DEMO_FIGURES, RULE_SENTENCES } from '@/lib/landing-35';
+import { PHASES } from '@/lib/workflow-steps';
+import { BTP, BTP_FIRST } from '@/lib/sap-naming';
 import { LANDING_FAQ } from '@/lib/landing-faq';
-import '@/components/landing/landing.css';
+import '@/components/landing/landing-35.css';
 
 /**
- * The public start page — roadmap 3.0.6, a faithful build of
- * `docs/roadmap/clean-core-landing-v3_0.html` (accepted 15.09.2026) on the
- * design tokens. Layout, density and behaviour are the mockup's; the styles are
- * its stylesheet moved onto tokens in `components/landing/landing.css`.
+ * The public start page — landing page 3.5 (roadmap row 3.5.0, item 7), a
+ * build of the accepted mockup `docs/roadmap/landing-35-mockup.html` with the
+ * owner's decisions of 13.11.2026: the hero picture is the map building up
+ * (O1 = B), the story comes before the price (O2), the calls to action are the
+ * showcase's own words (O3), the catalog lookup lives on its own page (O7),
+ * the header offers "Sign in" and "Start free" (O9).
  *
- * Three rules hold the page together:
+ * One shared story for Business, IT and Management: a plain headline for
+ * everyone, one line per reader in every section, details on demand in the
+ * "For IT" folds. No reader gate, no measurement: a signed-out visit contacts
+ * only its own origin.
  *
- *   - **Every product picture is the product's own output.** The hero and the
- *     process section draw the BPMN the export writes for the shipped examples
- *     (`lib/landing-process.ts`); the seven stages are captures of the demo
- *     project or of a real run of the example, each captioned as such
- *     (`lib/landing-shots.ts`). Nothing is drawn for the page.
- *   - **Every figure and every claim is read, not typed.** Object counts from
- *     `lib/facts.ts`, the reference run from `lib/reference-analysis.ts`, levels
- *     and successors from the catalog at render time, provenance words from
- *     `lib/provenance.ts`, the four buckets from `lib/abap/public-cloud-fit.ts`,
- *     the trust lines from `lib/trust-claims.ts`, the tour from
- *     `lib/demo-tour.ts` — each of those has its own guard.
+ * What holds the page together, as before:
+ *
+ *   - **Every figure and every claim is read, not typed.** The hero map and its
+ *     names from the engine (`lib/landing-35.ts`), the rules from
+ *     `pickHeroRules`, levels from the catalog at render time, the demo's
+ *     figures from `lib/demo-release.json`, the reference run from
+ *     `lib/reference-analysis.ts`, the trust lines from `lib/trust-claims.ts`,
+ *     the FAQ from `lib/landing-faq.ts`.
+ *   - **No drawn product picture.** Where the mockup draws a screen of the
+ *     product, the page keeps a marked place for the capture that will show it.
  *   - **One header.** Every section title comes from `SectionHeader`
  *     (`tests/landing-style-guard.spec.ts`).
- *
- * SAP BTP is called "SAP BTP, part of the SAP Business AI Platform" at its
- * first mention and "SAP BTP" after it (roadmap 3.0.15, ADR-064). A quote of the engine's own
- * recommendation keeps the words the engine wrote.
  */
 export const revalidate = 300;
 
 /**
  * Title and description follow the searches that already reach this page
- * (roadmap 3.0.6: "SAP Clean Core Accelerator", "ABAP code analysis") and say
- * the approved USP. The description stays under ~160 characters so Google
- * shows it whole; the social card carries the full short USP.
+ * ("SAP Clean Core Accelerator", "ABAP code analysis"). The description stays
+ * under ~160 characters so Google shows it whole; the social card carries the
+ * approved short USP (owner decision 01.10.2026), which the whitepaper's
+ * title repeats.
  */
 const HOME_TITLE = 'SAP Clean Core Accelerator · ABAP Analysis | Clean-Core.io';
 const HOME_SHARE_TITLE = 'Clean-Core.io — SAP Clean Core Accelerator for custom ABAP';
@@ -119,41 +88,13 @@ export const metadata: Metadata = withTwitterCard({
   },
 });
 
-/**
- * One real SAP object per level for the ladder, graded at render time. An
- * object is shown under a level only while the catalog still puts it there.
- */
-const LEVEL_EXAMPLES: Array<{ name: string; note: string }> = [
-  { name: 'I_SALESDOCUMENT', note: 'Released CDS view.' },
-  { name: 'BAPI_PO_CREATE1', note: 'Classic BAPI SAP still recommends for classic ABAP.' },
-  { name: 'REUSE_ALV_GRID_DISPLAY', note: 'An SAP object neither repository file lists — internal by default.' },
-  { name: 'VBAK', note: 'Sales document table, not to be released.' },
-];
-
-/** Objects with a catalog page the lookup offers as a first click. */
-const CATALOG_EXAMPLES = ['VBAK', 'BSEG', 'KNA1', 'CDHDR', 'DD07T'];
-/** Objects the lookup's "Try" chips fill in. */
-const LOOKUP_TRY = ['BAPI_PO_CREATE1', 'GUI_UPLOAD', 'BSEG'];
-
-/** The icon a trust line carries — `lib/trust-claims.ts` keeps icons out of the claim. */
-const TRUST_ICON: Record<TrustClaim['icon'], React.ReactNode> = {
-  residency: <MapPin size={18} aria-hidden="true" />,
-  access: <Lock size={18} aria-hidden="true" />,
-  proxy: <Server size={18} aria-hidden="true" />,
-  seal: <FileCheck size={18} aria-hidden="true" />,
-  tracking: <EyeOff size={18} aria-hidden="true" />,
-  erasure: <Trash2 size={18} aria-hidden="true" />,
-  training: <Key size={18} aria-hidden="true" />,
-  security: <BookOpen size={18} aria-hidden="true" />,
-  free: <Users size={18} aria-hidden="true" />,
-};
-
-const BUCKET_ICON: Record<string, React.ReactNode> = {
-  retire: <Archive size={18} aria-hidden="true" />,
-  'no-catalogued-path': <Lock size={18} aria-hidden="true" />,
-  rebuild: <Hammer size={18} aria-hidden="true" />,
-  keep: <Check size={18} aria-hidden="true" />,
-};
+/** The public showcase (roadmap row 3.5.0, item 8): no account, no third-party request, no model call. */
+const SHOWCASE = '/demo';
+/** The showcase's length, as its story is counted — the link text must stay true (owner, 13.11.2026). */
+const SHOWCASE_CTA = 'Watch the 4-minute demo';
+const DO_CTA = 'Analyse your own Z program — free account';
+/** The repository the product publishes as its own. */
+const REPO = 'https://github.com/sonnyfrenzel-rgb/clean-core.io';
 
 /** When an object lands in a bucket — `DESIGN.md` §5.6, as `lib/abap/public-cloud-fit.ts` checks it. */
 const BUCKET_RULE: Record<string, string> = {
@@ -166,15 +107,63 @@ const BUCKET_RULE: Record<string, string> = {
   keep: 'Needed and permitted on the target platform: SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) level A only, SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition) level A or B.',
 };
 
-const PROVENANCE_GROUPS: Array<{ form: string; meaning: string; values: ProvenanceValue[] }> = [
-  { form: 'Filled', meaning: 'settled', values: ['proven', 'confirmed', 'stale'] },
-  { form: 'Outline', meaning: 'derived or imported', values: ['reconstructed', 'imported', 'not-determined'] },
-  { form: 'Dashed', meaning: 'provisional', values: ['proposed', 'simulation', 'demonstrated-mock'] },
-];
+const ARROW = <ArrowRight size={18} aria-hidden="true" />;
+
+/** What each reader finds in a section: one line each, never a gate. */
+function ForYou({ business, it, management }: { business: React.ReactNode; it: React.ReactNode; management: React.ReactNode }) {
+  return (
+    <ul className="foryou" aria-label="What each reader finds here">
+      <li>
+        <span className="who">Business</span>
+        <span>{business}</span>
+      </li>
+      <li>
+        <span className="who">IT</span>
+        <span>{it}</span>
+      </li>
+      <li>
+        <span className="who">Management</span>
+        <span>{management}</span>
+      </li>
+    </ul>
+  );
+}
+
+/** A "For IT" fold: the dense facts, one click down. */
+function ForIt({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <details className="deep">
+      <summary>
+        <span className="lv">For IT</span>
+        {title}
+        <ChevronDown size={18} className="ch" aria-hidden="true" />
+      </summary>
+      <div className="in">{children}</div>
+    </details>
+  );
+}
+
+/**
+ * The place a product picture will stand. The mockup draws these screens; the
+ * page shows only captures of the product (roadmap row 3.5.0, item 4), so until
+ * those exist the place says what it will show.
+ */
+function CaptureToCome({ name, shows }: { name: string; shows: string[] }) {
+  return (
+    <figure className="capture-todo" data-capture-todo={name} aria-label={`Product picture to come: ${name}`}>
+      <span className="k">Picture follows with the 3.5 captures</span>
+      <b>{name}</b>
+      <ul>
+        {shows.map((s) => (
+          <li key={s}>{s}</li>
+        ))}
+      </ul>
+    </figure>
+  );
+}
 
 function TextLink({ href, children }: { href: string; children: React.ReactNode }) {
-  const external = href.startsWith('http');
-  return external ? (
+  return href.startsWith('http') ? (
     <a href={href} className="textlink" rel="noopener noreferrer" target="_blank">
       {children}
     </a>
@@ -185,175 +174,25 @@ function TextLink({ href, children }: { href: string; children: React.ReactNode 
   );
 }
 
-const ARROW = <ArrowRight className="i" aria-hidden="true" />;
-
 export default function Home() {
   const facts = getFacts();
   const catalogObjects = formatObjectCount(facts);
   const reference = getReferenceAnalysis();
   const withPage = new Set(getAllCatalogObjectNames());
-  const referenceExample = STARTER_EXAMPLES.find((e) => e.name === reference.fileName.replace(/(_\d+LOC)?\.abap$/i, '')) ?? STARTER_EXAMPLES[STARTER_EXAMPLES.length - 1];
   const lines = (n: number) => n.toLocaleString('en-US');
   const hero = landingHero(DEMO_SOURCE_FILE, DEMO_OBJECT_NAME);
-  const heroData = heroSnippets(hero, DEMO_SOURCE_FILE);
-  const referenceProcess = landingProcess(reference.fileName, reference.fileName.replace(/(_\d+LOC)?\.abap$/i, ''));
+  const build = heroBuild(DEMO_SOURCE_FILE, DEMO_OBJECT_NAME);
+  const ladder = demoLadder();
+  const demoExample = STARTER_EXAMPLES.find((e) => e.name === DEMO_OBJECT_NAME);
+  const holdRule = hero.rules.shown[0];
+  const trust = (id: string) => TRUST_CLAIMS.find((c) => c.id === id)!;
+  const architectureUrl = SECURITY_MODEL_URL.replace(/SECURITY\.md$/, 'docs/ARCHITECTURE.md');
   const catalogHref = (name: string) => (withPage.has(name) ? `/catalog/${objectToSlug(name)}` : '/sap-clean-core-object-classification');
-  const referenceTechnical = landingProcess(reference.fileName, referenceProcess.program, 'technical');
-  // A phone reads the same levels top to bottom rather than scrolling sideways.
-  const referenceVertical = {
-    plain: landingProcess(reference.fileName, referenceProcess.program, 'plain', 'TB'),
-    technical: landingProcess(reference.fileName, referenceProcess.program, 'technical', 'TB'),
-  };
-
-  /* The A–D ladder: each level with a real object the catalog puts there today. */
-  const ladder = (['A', 'B', 'C', 'D'] as const).map((level) => {
-    const example = LEVEL_EXAMPLES.find((e) => getObjectDimensions(e.name).graded.grade === level);
-    const dims = example ? getObjectDimensions(example.name) : null;
-    const predecessor = example
-      ? ['VBAK', 'VBAP', 'MARA', 'KNA1'].find((t) => getObjectDimensions(t).successors.some((s) => s.name === example.name))
-      : undefined;
-    return {
-      level,
-      levelChip: <CcCleanCoreLevel value={level} />,
-      label: CLEAN_CORE_LEVEL[level].label,
-      detail: example ? (
-        <>
-          <p className="ex-label">Example</p>
-          <div className="obj">
-            <CcCleanCoreLevel value={level} />
-            {withPage.has(example.name) ? (
-              <Link href={catalogHref(example.name)}>
-                <code>{example.name}</code>
-              </Link>
-            ) : (
-              <code>{example.name}</code>
-            )}
-            <CcProvenanceChip value="imported" note="SAP release data" />
-          </div>
-          <p>
-            {example.note}
-            {predecessor ? (
-              <>
-                {' '}
-                SAP&apos;s own release data names it as the successor of table <Link href={catalogHref(predecessor)}>{predecessor}</Link>.
-              </>
-            ) : dims?.releaseState ? (
-              <> Release state in SAP&apos;s data: {dims.releaseState}.</>
-            ) : null}
-          </p>
-        </>
-      ) : (
-        <p>No example object on this level in the catalog today.</p>
-      ),
-    };
-  });
-
-  /* The catalog lookup: real values for the objects this page carries. */
-  const lookupNames = [...new Set([...CATALOG_EXAMPLES, ...LOOKUP_TRY])];
-  const lookupHits = lookupNames.map((name) => {
-    const d = getObjectDimensions(name);
-    return {
-      name,
-      levelChip: <CcCleanCoreLevel value={d.graded.grade} />,
-      state: d.releaseState ?? d.classificationState ?? 'not listed',
-      successor: d.successors[0]?.name ?? null,
-      href: catalogHref(name),
-      hrefLabel: withPage.has(name) ? 'Open catalog page' : 'How objects are classified',
-    };
-  });
-
-  /* The three views of one real rule of the demo: plant 1000 skips the limit check. */
-  const plantRule = hero.rules.shown.find((r) => r.label.includes("'1000'")) ?? hero.rules.shown[0];
-  const views: StageCardView[] = [
-    {
-      key: 'business',
-      label: 'Business',
-      question: 'Do I still need this?',
-      answer: 'Requisitions for plant 1000 are approved without the limit check',
-      detail: (
-        <>
-          <span className="tag">hard-coded in program</span>
-          <span className="seg" aria-label="Answers to the rule: Keep, Change, Drop or Clarify">
-            <span>Keep</span>
-            <span>Change</span>
-            <span>Drop</span>
-            <span>Clarify</span>
-          </span>
-        </>
-      ),
-    },
-    {
-      key: 'it',
-      label: 'IT',
-      question: 'What exactly, where to?',
-      answer: 'Sets gv_skip_limit, and DECIDE_APPROVAL then leaves out CHECK_LIMIT',
-      detail: (
-        <>
-          <code>{DEMO_OBJECT_NAME}</code>
-          <span className="anc">L88</span>
-          <span className="anc">L425</span>
-          <span>a literal in the code, not customizing</span>
-        </>
-      ),
-    },
-    {
-      key: 'management',
-      label: 'Management',
-      question: 'What do I risk, what do I decide?',
-      answer: 'Not decided yet — keep, rebuild, move to SAP standard or retire is yours',
-      detail: (
-        <>
-          <span>Costs appear only as</span>
-          <CcProvenanceChip value="simulation" note="your assumptions" />
-        </>
-      ),
-    },
-  ];
-
-  /* The demo window: the real tour, at its third station. */
-  const tourIndex = 2;
-  const station = TOUR_STATIONS[tourIndex];
-  const demoSteps = hero.process.planes[0].nodes
-    .filter((n) => n.tag !== 'startEvent' && n.tag !== 'endEvent' && n.tag !== 'boundaryEvent' && n.anchor)
-    .sort((a, b) => a.box.x - b.box.x)
-    .slice(0, 4);
-
-  /** The seven stages for the timeline: words from `lib/landing-stages.ts`, one capture each. */
-  const stages: TimelineStage[] = landingStages().map((stage) => ({
-    ...stage,
-    src: landingShotSrc(stageShot(stage.key)),
-    alt: `${stage.title} stage of ${STAGE_SHOT_SOURCE[stage.key] === 'run' ? 'a real run of the example program' : 'the demo project'} ${DEMO_OBJECT_NAME}: ${stage.shows}.`,
-    caption: STAGE_SHOT_CAPTION[STAGE_SHOT_SOURCE[stage.key]],
-    workerLabel: STAGE_WORKER_LABEL[stage.worker],
-    ...landingShotSize(stageShot(stage.key)),
-  }));
-
-  const examples = [...STARTER_EXAMPLES].sort((a, b) => (a.name === DEMO_OBJECT_NAME ? -1 : b.name === DEMO_OBJECT_NAME ? 1 : b.lines - a.lines));
-
-  /**
-   * The chain of evidence: process → design → code draft → tests → handover,
-   * each with the provenance it really carries. Nothing here claims more than
-   * `lib/landing-stages.ts` and `lib/evidence-chain.ts` say of the same stage.
-   */
-  const chainSteps: Array<{ key: string; t: string; d: string; pv: ProvenanceValue; mark: string; href: string }> = [
-    { key: 'process', t: 'Process', d: `The business process as BPMN, read from the code. Every element points to its line, or says why it has none — the plant 1000 rule of the demo to L${plantRule.line}.`, pv: 'reconstructed', mark: 'line anchor', href: '#process' },
-    { key: 'design', t: 'Design', d: 'A target design for the route the evidence points to, built on the run the server signed — a proposal until you record the target you accept.', pv: 'proposed', mark: 'run reference', href: '#stage-design' },
-    { key: 'code', t: 'Code draft', d: 'The transformed code, generated from the source, the analysis and the design; its plan names every finding at its line. A draft you review, not a finished product.', pv: 'proposed', mark: 'line anchor', href: '#stage-transformation' },
-    { key: 'tests', t: 'Tests', d: 'Test scenarios for the generated code. On the CAP track they run in an isolated runner against mocks, and the server records what ran, on which code; on the RAP track you record the ABAP Unit result from your own SAP system.', pv: 'demonstrated-mock', mark: 'test receipt', href: '#stage-testing' },
-    { key: 'handover', t: 'Handover', d: 'An audit pack the server signs over the run, with HMAC and Ed25519, that anyone can verify offline.', pv: 'proven', mark: 'signature', href: '#stage-delivery' },
-  ];
-
-  /**
-   * The FAQ, once — `lib/landing-faq.ts`. The visible accordion, the JSON-LD
-   * `FAQPage` and `/llms-full.txt` read the same list, so they cannot say
-   * different things (roadmap 3.0.6).
-   */
-  const faq = LANDING_FAQ;
 
   /**
    * Where Clean-Core.io stands next to SAP's own tools. Defined once and
-   * rendered once — a table on wide screens that stacks on a phone through CSS,
-   * not a second copy (`tests/landing-consistency-guard.spec.ts`).
+   * rendered once — a table that stacks on a phone through CSS, not a second
+   * copy (`tests/landing-consistency-guard.spec.ts`).
    */
   const toolchainRows: Array<{ tool: string; purpose: string; relation: string }> = [
     {
@@ -384,9 +223,10 @@ export default function Home() {
   ];
 
   /**
-   * Structured data. Every sentence is one the page also says: the USP from
-   * `llms.txt`, the FAQ from `lib/landing-faq.ts`, version and date from
-   * `lib/version.ts`. No rating, no review, no figure typed in.
+   * Structured data. Every sentence is one the page also says; the FAQ is the
+   * visible list (`lib/landing-faq.ts`); version and date from `lib/version.ts`.
+   * No rating, no review, no figure typed in. The screenshots return with the
+   * 3.5 captures; a VideoObject only once the video is published.
    */
   const schemaJson = {
     '@context': 'https://schema.org',
@@ -395,10 +235,10 @@ export default function Home() {
         '@type': 'Organization',
         '@id': 'https://clean-core.io/#organization',
         name: 'Clean-Core.io',
-        // Roadmap 3.0.8, item 8: answer engines mixed the name up with a
-        // cleaning-business CRM and a listed company that use "CleanCore". The
-        // spelling with the domain, the topics and the disambiguating sentence
-        // say which Clean-Core this is; nothing here names the others.
+        // Answer engines mixed the name up with a cleaning-business CRM and a
+        // listed company that use "CleanCore". The spelling with the domain, the
+        // topics and the disambiguating sentence say which Clean-Core this is;
+        // nothing here names the others.
         alternateName: ['clean-core.io', 'Clean-Core.io SAP clean core accelerator'],
         disambiguatingDescription:
           'A free community web app for SAP custom ABAP and SAP clean core. Not the cleaning-business software or the listed company that use the name CleanCore.',
@@ -415,7 +255,7 @@ export default function Home() {
           'ABAP RESTful Application Programming Model (RAP)',
           'SAP Cloud Application Programming Model (CAP)',
         ],
-        sameAs: ['https://github.com/sonnyfrenzel-rgb/clean-core.io', 'https://www.linkedin.com/company/clean-core-io'],
+        sameAs: [REPO, 'https://www.linkedin.com/company/clean-core-io'],
         founder: {
           '@type': 'Person',
           name: 'Felix Frenzel',
@@ -448,20 +288,17 @@ export default function Home() {
           'Deterministic ABAP static code analysis that reads the program before any language model does',
           'Business process reconstructed from ABAP as BPMN 2.0, with a line anchor on every element or the reason it has none',
           'BPMN editor with revisions; BPMN 2.0 XML export and import (no SAP Signavio connection; import into SAP Signavio not verified)',
+          'Business rules hard-coded in the program, each with its line, to keep, change, drop or clarify',
           'SAP clean core level A–D for each SAP object the code uses, or Unknown where SAP’s published data holds no answer, derived by Clean-Core.io’s versioned rule from the states SAP publishes in its Cloudification Repository — an orientation; ABAP Test Cockpit stays the authority',
           'Clean Core Score, 5–100, higher is better, in four bands — published by Clean-Core.io, not an SAP metric',
-          'Business, IT and Management views of the same project',
+          'Business, IT and Management views of the same project; an indication for the decision, never the decision',
           'Target design, transformed RAP or CAP code draft and test scenarios — for CAP run against mocks in an isolated runner, for RAP an ABAP Unit class that runs only in your own system',
           'Every completed analysis sealed as a signed run (HMAC); audit pack for handover signed over the run with HMAC and Ed25519',
           'Read access by invitation, bound to one confirmed e-mail address, until it is withdrawn; an invitation link nobody accepts expires',
-          'Demo project with a guided tour',
+          'Own model key: Google Gemini; Claude by Anthropic from 23 December 2026',
+          'A four-minute demo without an account',
           'Stored in the EU; no analytics, advertising or tracking cookies',
         ],
-        screenshot: stages.slice(0, 3).map((st) => ({
-          '@type': 'ImageObject',
-          url: `https://clean-core.io${st.src}`,
-          caption: st.alt,
-        })),
         softwareVersion: APP_VERSION,
         datePublished: '2025-01-15',
         // Moves with every release instead of going stale at a typed date.
@@ -470,7 +307,7 @@ export default function Home() {
       {
         '@type': 'FAQPage',
         '@id': 'https://clean-core.io/#faq',
-        mainEntity: faq.map((f) => ({
+        mainEntity: LANDING_FAQ.map((f) => ({
           '@type': 'Question',
           name: f.q,
           ...(f.lang ? { inLanguage: f.lang } : {}),
@@ -478,424 +315,480 @@ export default function Home() {
         })),
       },
       {
-        // The start page is the root of the trail, so its trail is itself. The
-        // earlier list of six pages described a hierarchy the site does not
-        // have and would have shown as one under the start page's search result.
+        // The start page is the root of the trail, so its trail is itself.
         '@type': 'BreadcrumbList',
         itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Clean-Core.io', item: 'https://clean-core.io' }],
       },
     ],
   };
 
+  const shareBody = (lens: string) =>
+    `mailto:?subject=${encodeURIComponent(lens === 'it' ? 'Clean-Core.io — what a Z program does' : 'Clean-Core.io — a decision basis for custom code')}&body=${encodeURIComponent(
+      `A 4-minute demo, no account needed: https://clean-core.io${SHOWCASE}#lens=${lens}`,
+    )}`;
+
   return (
-    <div className="lp3 min-h-screen bg-cc-page text-cc-ink">
+    <div className="lp35 min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(schemaJson) }} />
 
-      {/* The public header (block D, D.24): logo, the pages with search reach,
-          and the sign-in button where it always was — `?auth=signin`. */}
       <PublicHeader signInHref="?auth=signin" />
 
       <main id="main">
-        {/* 1 · hero */}
+        {/* 0 · hero */}
         <section className="hero" id="hero" aria-labelledby="hero-title">
-          <div className="mesh" aria-hidden="true" />
-          <div className="gridbg" aria-hidden="true" />
           <div className="wrap">
             <div className="hero-copy">
               <p className="kicker">
-                <Users className="i" aria-hidden="true" />
-                Free for the SAP Community
+                <Users aria-hidden="true" />
+                Free for the SAP community
               </p>
               <h1 id="hero-title">
                 <span className="h1k">SAP Clean Core Accelerator</span>
-                <span className="h1m">From custom ABAP nobody understands to a reviewed, tested rebuild.</span>
+                <span className="h1m">Know what your custom ABAP does — and what to do with it.</span>
               </h1>
               <p className="hero-lead">
-                Clean-Core.io reads the program before any model does, draws the process it runs — and carries the same
-                evidence on to a target design, a transformed code draft and tests — run against mocks in an isolated runner, or
-                with ABAP Unit in your own SAP system. Every step
-                points to the line it came from; what a model suggested is marked; what could not be determined is said.
+                Clean-Core.io reads a Z program and shows the business process it runs, the rules hidden in it and what
+                stands between it and a clean core. Every step points to its line of code.
               </p>
               <div className="cta-row">
-                <AuthLink to={DEMO_WORKSPACE_ROUTE} testId="hero-demo">
-                  See the whole chain in the demo <ArrowRight size={18} aria-hidden="true" />
-                </AuthLink>
-                <Link href="#start" className={publicButton('secondary')}>
-                  Start with your own code
+                <Link href={SHOWCASE} className={publicButton('primary')} data-cta-see="">
+                  {SHOWCASE_CTA} {ARROW}
                 </Link>
+                <AuthLink to="/dashboard" variant="secondary" testId="hero-start">
+                  {DO_CTA}
+                </AuthLink>
               </div>
-              {/* The chain of evidence, compact (owner's USP decision, 01.10.2026): five real links,
-                  each to the place on this page that shows its step. The explanation stays in #what. */}
-              <div className="hchain" data-hero-chain="">
-                <p className="hchain-k" id="hchain-title">
-                  One chain of evidence
-                </p>
-                <ol aria-labelledby="hchain-title">
-                  {chainSteps.map((c, i) => (
-                    <li key={c.key}>
-                      <a href={c.href} data-hero-chain-step={c.key}>
-                        <span className="no" aria-hidden="true">
-                          {i + 1}
-                        </span>
-                        <span className="tx">
-                          <span className="t">{c.t}</span>
-                          <span className="m">{c.mark}</span>
-                        </span>
-                      </a>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-              <p className="hlimits" data-hero-limits="">
-                The code is a draft for review. Tests here run in an isolated runner against mocks, not in your S/4HANA
-                system; an ABAP Unit result from your own system is recorded as imported or self-declared. A signature proves where a run came from and that it is unchanged — not that it is right.
-              </p>
               <p className="cta-note">
-                Free for the SAP community. The demo project is waiting in your workspace after you sign in — nothing you do there is saved.
-              </p>
-              <p className="linkrow" style={{ justifyContent: 'center' }}>
-                <TextLink href="/how-it-works">How it works, and its limits{ARROW}</TextLink>
-                <TextLink href="/whitepaper">Read the whitepaper</TextLink>
+                <b>The demo needs no account</b> — one fictitious program, read end to end. <b>Free to start:</b> five
+                analysis runs of your own code and every example once, no card.
               </p>
             </div>
 
-            <figure className="hero-shot" aria-labelledby="shot-cap">
-              <figcaption className="shot-cap" id="shot-cap">
-                Demo project · fictitious code — tap or hover a rule, a line anchor or a step: its code line and its step
-                light up together. A tap keeps it.
+            <figure className="shot" aria-labelledby="shot-cap">
+              <figcaption id="shot-cap">
+                Example · {DEMO_OBJECT_NAME}, a fictitious program shipped with the product · the main flow as the engine
+                reads it
               </figcaption>
-              <HeroWorkspace
-                program={DEMO_OBJECT_NAME}
-                title={DEMO_PROJECT_TITLE}
-                rules={hero.rules}
-                notDetermined={heroData.notDetermined}
-                snippets={heroData.snippets}
-                initial={heroData.initial}
-                mapTitle={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code`}
-                mapNote="Excerpt · first steps"
-                anchoredSentence={`${hero.process.anchored} of ${hero.process.flowNodes} elements of the whole program carry a line anchor.`}
-                diagram={
-                  <>
-                    <div className="flow-wide">
-                      <BpmnPlaneSvg
-                        plane={hero.plane}
-                        idPrefix="hero"
-                        fit
-                        maxHeight={520}
-                        title={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code: each step with the decision points in it that end the process. Every element carries its line anchor.`}
-                      />
-                    </div>
-                    {/* A phone gets the same excerpt drawn narrow, at its own width, never scrolled sideways. */}
-                    <div className="flow-narrow">
-                      <BpmnPlaneSvg
-                        plane={hero.planeNarrow}
-                        idPrefix="hero-n"
-                        fit
-                        title={`The first steps of ${DEMO_OBJECT_NAME} as BPMN, reconstructed from the code. Every element carries its line anchor.`}
-                      />
-                    </div>
-                  </>
-                }
-              />
-            </figure>
-          </div>
-        </section>
-
-        {/* 2 · what */}
-        <section className="sec alt" id="what" aria-labelledby="what-title">
-          <div className="wrap">
-            <SectionHeader eyebrow="In one sentence" title="What is Clean-Core.io?" titleId="what-title">
-              Other tools explain code, or rewrite it. Clean-Core.io does both — on one chain of evidence.
-            </SectionHeader>
-            {/* The contrast (owner's USP decision, 01.10.2026): categories only — what each kind of tool
-                does, no names, nothing claimed about anyone else. */}
-            <ul className="diff" data-landing-contrast="">
-              {[
-                {
-                  icon: <BookOpen className="i" aria-hidden="true" />,
-                  title: 'Tools that explain code',
-                  text: 'Explain what a program does — in words, a summary or a diagram.',
-                },
-                {
-                  icon: <RefreshCw className="i" aria-hidden="true" />,
-                  title: 'Tools that rewrite code',
-                  text: 'Produce new code from the old program.',
-                },
-              ].map((d) => (
-                <li key={d.title} className="dcard">
-                  <span className="ic">{d.icon}</span>
-                  <h3>{d.title}</h3>
-                  <p>{d.text}</p>
-                </li>
-              ))}
-              <li className="dcard us">
-                <span className="ic">
-                  <Link2 className="i" aria-hidden="true" />
-                </span>
-                <h3>Clean-Core.io</h3>
-                <p>Explains, rebuilds, tests — one chain of evidence.</p>
-                <p className="more">
-                  Reads your code before any model does, so every finding points to a line. Says what it could not
-                  determine, and never passes an assumption off as a fact.
-                </p>
-              </li>
-            </ul>
-            {/* The chain of evidence: one band, five steps, each with the mark that says where it
-                stands — words from `lib/provenance.ts`. The hero carries the compact version. */}
-            <div className="chain" data-landing-chain="">
-              <h3>One chain of evidence</h3>
-              <p className="sub2">
-                Five steps on the same evidence. Each one says where it stands, and each points back to the line of
-                code it came from.
-              </p>
-              <ol className="chain5">
-                {chainSteps.map((c, i) => (
-                  <li key={c.key} data-chain-step={c.key}>
-                    <span className="no" aria-hidden="true">
-                      {i + 1}
-                    </span>
-                    <h4>{c.t}</h4>
-                    <p>{c.d}</p>
-                    <p className="mark">
-                      <CcProvenanceChip value={c.pv} />
-                      <span className="tag">{c.mark}</span>
-                    </p>
-                  </li>
-                ))}
-              </ol>
-              <p className="honest">
-                The code is a draft for review, not a finished product. On the CAP track the tests run in an isolated
-                runner against mocks: they check the generated code against test scenarios, not that it runs in your
-                S/4HANA system. On the RAP track nothing runs here: the ABAP Unit result comes from your own system, as an
-                imported file or your own confirmation, never as proven. A signature proves where a run came from and that it is unchanged — not that it is right.
-              </p>
-            </div>
-            <p className="deep">
-              Deep dives: <Link href="/abap-custom-code-analysis">ABAP code analysis</Link>
-              <Link href="/features/extensibility-routing">Extensibility routing</Link>
-              <Link href="/features/audit-evidence">Audit evidence</Link>
-              <Link href="/features/modernization-assessment">Modernization assessment</Link>
-              <Link href="/how-to">How-to guide</Link>
-            </p>
-          </div>
-        </section>
-
-        {/* 3 · views */}
-        <section className="sec" id="views" aria-labelledby="views-title">
-          <div className="wrap">
-            <SectionHeader eyebrow="Three views" title="One case, three views" titleId="views-title">
-              Business, IT and Management look at the same facts. Each view answers its own question — Do I still need
-              this? What exactly, where to? What do I risk, what do I decide? — and none of them changes a result.
-            </SectionHeader>
-            <div className="three" data-views="">
-              <div>
-                <ViewsStageCard
-                  views={views}
-                  label={`Example · ${DEMO_PROJECT_TITLE} · fictitious code`}
-                  fact={
-                    <>
-                      <span className="k">Rule {plantRule.id}</span> <code title={plantRule.label}>{plantRule.label.replace(/\b[a-z]{2}_[a-z0-9_]+-(?=[a-z])/g, '')}</code>
-                      <span className="anc hot">L{plantRule.line}</span>
-                    </>
-                  }
-                />
-                <p className="vnote">
-                  A view orders what you see. It is never stored with a project, a run, a signature or an audit pack, and
-                  it changes no result. You confirm as the signed-in account — a self-declaration, not an organisational
-                  mandate.
-                </p>
-              </div>
-              <ul className="vlist">
-                {[
-                  {
-                    icon: <Briefcase className="i" aria-hidden="true" />,
-                    name: 'Business',
-                    q: 'Do I still need this, and what changes for me?',
-                    a: 'Opens with one next step, then the process as numbered steps in plain words with their lines, what it decides and what it changes, and the business rules — the hard-coded ones too — unanswered first.',
-                  },
-                  {
-                    icon: <Code2 className="i" aria-hidden="true" />,
-                    name: 'IT',
-                    q: 'What exactly, where to, and is it right?',
-                    a: 'Opens with the findings at their line, the successor named and who names it, and the chain from requirement to anchor, finding and target draft.',
-                  },
-                  {
-                    icon: <BarChart3 className="i" aria-hidden="true" />,
-                    name: 'Management',
-                    q: 'What do I risk, what do I decide?',
-                    a: 'Opens with the decision — keep, rebuild, move to SAP standard or retire — what it rests on, the open conditions in plain words and what stands in the way of the SAP standard as one figure; costs only as a simulation.',
-                  },
-                ].map((v, i) => (
-                  <li key={v.name} data-view-item="" className={i === 0 ? 'cur' : undefined}>
-                    <h3>
-                      {v.icon}
-                      {v.name}
-                    </h3>
-                    <p className="q">{v.q}</p>
-                    <p className="a">{v.a}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        {/* 4 · clean core */}
-        <section className="sec alt" id="clean-core" aria-labelledby="cc-title">
-          <div className="wrap">
-            <SectionHeader eyebrow="SAP S/4HANA clean core" title="What does clean core mean?" titleId="cc-title">
-              Clean core keeps SAP S/4HANA standard. Clean core extensibility means extensions use only released,
-              upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP, part of the SAP
-              Business AI Platform.
-            </SectionHeader>
-            <div className="cc2">
-              <div className="pcard">
-                <h3>What clean core means</h3>
-                <p className="t">
-                  Keep the SAP core standard: extensions use only released, upgrade-stable interfaces — in-app with ABAP
-                  Cloud or side-by-side on SAP BTP.
-                </p>
-                <CleanCoreSchema />
-                <p className="linkrow">
-                  <TextLink href="/clean-core-explained">Clean core, explained without the jargon{ARROW}</TextLink>
-                  <TextLink href="/knowledge">Knowledge base</TextLink>
-                </p>
-              </div>
-              <div className="pcard">
-                <h3>The four levels</h3>
-                <p className="sub2">Select a level to see what it means and an example: a real SAP object on that level.</p>
-                <div data-landing-ladder="">
-                  <LevelLadder items={ladder} />
-                </div>
-                <p className="honest">
-                  Levels follow SAP&apos;s clean core level concept. The level shown for an object is our reading of
-                  SAP&apos;s published data — an orientation, never part of a signed audit pack. Confirm with ABAP Test
-                  Cockpit.
-                </p>
-                <p className="linkrow">
-                  <TextLink href="/method/levels">How levels are assigned</TextLink>
-                  <TextLink href="/sap-clean-core-object-classification">Object classification A–D</TextLink>
-                  <TextLink href="/clean-core-score">Clean Core Score — a grade, not a compliance percentage</TextLink>
-                </p>
-              </div>
-            </div>
-            <div className="pcard flowcard">
-              <h3>Where the evidence comes from</h3>
-              <p className="sub2">Select a station to see what it contributes.</p>
-              <EvidenceStepper
-                items={[
-                  { key: 'source', t: 'Your ABAP source', d: 'Every statement keeps its program, include and line — that is what a line anchor points to. Includes that were not uploaded are named as not determined.', pv: 'reconstructed' as const },
-                  { key: 'engine', t: 'Deterministic engine', d: 'Parses the code and finds the constructs, rules and SAP objects without a language model. The same file gives the same result.', pv: 'reconstructed' as const },
-                  { key: 'sap', t: 'SAP’s published data', d: `The Cloudification Repository and SAP’s object classification, ${catalogObjects}, synced ${facts.catalogSyncDate}.`, pv: 'imported' as const },
-                  { key: 'imports', t: 'Your imports, optional', d: 'ATC results and usage data you upload. They are marked as imported, never as proven.', pv: 'imported' as const },
-                  { key: 'model', t: 'A language model', d: 'Business names and drafts come last and are marked as AI-generated until someone confirms them.', pv: 'proposed' as const },
-                ].map((s) => ({
-                  key: s.key,
-                  title: s.t,
-                  detail: (
-                    <>
-                      <div className="top">
-                        <b>{s.t}</b>
-                        <CcProvenanceChip value={s.pv} />
-                      </div>
-                      <p>{s.d}</p>
-                    </>
-                  ),
-                }))}
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* 5 · catalog */}
-        <section className="sec" id="catalog" aria-labelledby="catalog-title">
-          <div className="wrap">
-            <SectionHeader eyebrow="SAP Cloudification Repository viewer" title="Look up an SAP object's release state and successor" titleId="catalog-title">
-              The SAP object catalog is a free viewer of SAP&apos;s Cloudification Repository and object classification:{' '}
-              {catalogObjects} classified, each with release state, clean core level and successor, synced {facts.catalogSyncDate}.
-            </SectionHeader>
-            <div className="pcard lookup">
-              <CatalogLookup hits={lookupHits} tryNames={LOOKUP_TRY} initial="VBAK" />
-              <p className="lk-examples">
-                Catalog pages:{' '}
-                {CATALOG_EXAMPLES.filter((n) => withPage.has(n)).map((n, i) => (
-                  <span key={n}>
-                    {i > 0 && ' · '}
-                    <Link href={`/catalog/${objectToSlug(n)}`}>{n}</Link>
+              <div className="win">
+                <div className="wbar">
+                  <span className="dots" aria-hidden="true">
+                    <i />
+                    <i />
+                    <i />
                   </span>
-                ))}
+                  <span className="path">
+                    My workspace › <b>{DEMO_PROJECT_TITLE}</b> › Analyze
+                  </span>
+                  <span className="seg" aria-hidden="true">
+                    <span className="on">Business</span>
+                    <span>IT</span>
+                    <span>Management</span>
+                  </span>
+                </div>
+                <div className="wbody">
+                  <div className="does">
+                    <div className="t">
+                      <h3>What this program does</h3>
+                      <p>
+                        It approves emergency purchase requisitions and creates the purchase order in SAP. A price more
+                        than 5&nbsp;% above the agreed one holds the requisition for a buyer{' '}
+                        <span className="ln">L{holdRule.line}</span>.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="map" data-hero-map="">
+                    <p className="part">
+                      The main flow · {build.shownSteps} of its {build.totalSteps} steps
+                    </p>
+                    <HeroMapBuild
+                      elements={build.elements}
+                      hiddenOnPhone={build.hiddenOnPhone}
+                      label={`The main flow of ${DEMO_OBJECT_NAME} as a map, every element with its line`}
+                    />
+                    <div className="legend">
+                      <span>
+                        <span className="ln">L{holdRule.line}</span> line of code
+                      </span>
+                      <span>□ step · ◇ decision · ○ start and end</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </figure>
+
+            {/* The three reader entries: orientation, never a gate. */}
+            <nav className="readers" aria-labelledby="readers-k">
+              <p className="k" id="readers-k">
+                One page for three questions
               </p>
-              <p className="linkrow">
-                <TextLink href="/catalog">Open the SAP object catalog{ARROW}</TextLink>
-                <TextLink href="/catalog/browse/a">Browse A–Z</TextLink>
-                <TextLink href="/catalog/module/mm">Materials Management</TextLink>
-                <TextLink href="/sap-cloudification">SAP cloudification, explained</TextLink>
-                <TextLink href="/features/cloudification-catalog">About the catalog</TextLink>
-              </p>
-            </div>
+              <ul>
+                <li>
+                  <a href="#process">
+                    <span className="who">Business</span>
+                    <span className="q">What does this program do in our process, and which rules are hidden in it?</span>
+                    <span className="gets">The process as a map in plain words, and every hard-coded rule to keep, change or drop.</span>
+                    <span className="go">Read the process →</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#for-it">
+                    <span className="who">IT</span>
+                    <span className="q">What does it touch, where does it break clean core, how do we rebuild it?</span>
+                    <span className="gets">Findings at their line, SAP objects graded A–D, the route, a code draft and tests.</span>
+                    <span className="go">The facts for IT →</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#decide">
+                    <span className="who">Management</span>
+                    <span className="q">What do we risk, what does it cost, what do we decide?</span>
+                    <span className="gets">One page: what it is for, an indication, the risk and the options to decide on.</span>
+                    <span className="go">The decision →</span>
+                  </a>
+                </li>
+              </ul>
+            </nav>
           </div>
         </section>
 
-        {/* 6 · process */}
+        {/* 1 · process */}
         <section className="sec alt" id="process" aria-labelledby="process-title">
           <div className="wrap">
-            <SectionHeader eyebrow="From code to process" title="How is the process reconstructed from ABAP?" titleId="process-title">
-              Clean-Core.io draws the process as BPMN from what the ABAP code does, puts a line anchor on every element, or the reason it has none,
-              and names what the code cannot show instead of drawing it.
+            <SectionHeader eyebrow="From code to process" title="What does this program actually do?" titleId="process-title">
+              Clean-Core.io draws the process the code runs as a map you can walk through, and writes what it does in
+              plain words, with every sentence pointing to its line.
             </SectionHeader>
-            <div className="lp-intro">
-              <h3>Large processes stay readable</h3>
-              <p>
-                Levels instead of zoom: the map opens as an overview of phases. Open a phase in place, follow the path
-                at the top, or read the same level as a list of steps. Try it on the {lines(referenceProcess.lines)}-line
-                example — with the mouse, the keyboard, or as a list of steps.
-              </p>
-            </div>
-            <ProcessMapPanel process={referenceProcess} technical={referenceTechnical} vertical={referenceVertical} title={referenceProcess.program} />
-            <div className="feat4">
-              {[
-                { t: 'Every element points to its lines', d: 'Start and end events, tasks, decision points and sub-processes each carry a line anchor. Decision points keep their condition from the code; proposed lanes are marked as proposals, never as your organisation.' },
-                { t: 'Business rules come out of the code', d: 'Literals in conditions — tolerances, plants, vendor lists, date limits — become rule candidates with their anchor. You keep, change or drop each one, or mark it to clarify.' },
-                { t: 'Unreached code is named, not drawn', d: 'Forms no entry point calls stay off the map and are listed underneath with their lines. Identical forms are grouped, technical helpers fold into their caller.' },
-                { t: 'Leaves as a BPMN 2.0 XML file', d: 'Export the process as standard BPMN 2.0 XML; collapsed sub-processes stay real sub-processes. Import into SAP Signavio has not been verified yet. There is no connection to a Signavio workspace — only files.' },
-              ].map((f) => (
-                <div key={f.t} className="feat">
-                  <h3>{f.t}</h3>
-                  <p>{f.d}</p>
-                </div>
-              ))}
-            </div>
-            <p className="deep">
-              Deep dives: <Link href="/features/process-blueprints">Process blueprints</Link>
-              <Link href="/features/rap-cap-engine">RAP and CAP drafts</Link>
-              <Link href="/features/cloudification-catalog">Cloudification catalog</Link>
+            <ForYou
+              business="The steps in your words, who is involved, and how a case can end."
+              it="Every element carries its line, read by the engine before any model."
+              management="What the program is for, before anyone decides about it."
+            />
+            <CaptureToCome
+              name="Analyze, Business view: the walk-through on the map"
+              shows={[
+                `The walk-through stopped at a decision point of ${DEMO_OBJECT_NAME}, with its line.`,
+                'The text around the map — how it runs, who is involved, questions for the business.',
+                'The two charts: how a case can end, and what it changes or only reads.',
+                'The two endings: re-design this program, or analyse another one.',
+              ]}
+            />
+            <ForIt title="How the map is built, and what leaves as a file">
+              <ul>
+                <li>
+                  A deterministic ABAP engine parses the program first — no model. The same file gives the same map.
+                  Start and end events, tasks, decision points and sub-processes each carry a line anchor, or the reason
+                  they have none.
+                </li>
+                <li>
+                  Business names come from a model only with the engine&apos;s facts per element, swap in visibly and
+                  carry the <CcProvenanceChip value="proposed" /> mark. Without facts, the engine&apos;s own label stays.
+                </li>
+                <li>
+                  Object-oriented programs: classes, methods and a status field with its transitions read as the process;
+                  technical methods fold into their caller.
+                </li>
+                <li>
+                  Full screen with the step list, search and an <b>Edit</b> switch; every save is a new revision, the
+                  reconstruction stays revision 1.
+                </li>
+                <li>
+                  Export and import as standard BPMN 2.0 XML. Import into SAP Signavio is not verified; there is no
+                  connection to a Signavio workspace.
+                </li>
+              </ul>
+            </ForIt>
+            <p className="linkrow">
+              Deep dives: <TextLink href="/features/process-blueprints">Process blueprints</TextLink>
+              <TextLink href="/abap-custom-code-analysis">ABAP code analysis</TextLink>
+              <TextLink href="/features/extensibility-routing">Extensibility routing</TextLink>
+              <TextLink href="/features/rap-cap-engine">RAP and CAP drafts</TextLink>
+              <TextLink href="/features/modernization-assessment">Modernization assessment</TextLink>
+              <TextLink href="/features/audit-evidence">Audit evidence</TextLink>
+              <TextLink href="/features/cloudification-catalog">Cloudification catalog</TextLink>
             </p>
           </div>
         </section>
 
-        {/* 7 · verify */}
-        <section className="sec" id="verify" aria-labelledby="verify-title">
+        {/* 2 · rules */}
+        <section className="sec" id="rules" aria-labelledby="rules-title">
           <div className="wrap">
-            <SectionHeader eyebrow="One reproducible run" title="Verify it yourself" titleId="verify-title">
-              Run the published {lines(referenceExample.lines)}-line example and you get the same result: the engine is
-              deterministic, the source file ships with the product, and every completed analysis is sealed as a signed run
-              you can verify.
+            <SectionHeader eyebrow="Rules in the code" title="Which business rules are hidden in the code?" titleId="rules-title">
+              Limits, plants and tolerances written into a program decide real cases. Clean-Core.io lists each one with
+              its line, so the business can say what still holds.
             </SectionHeader>
-            <div className="refgrid">
-              <div className="pcard" data-landing-reference="">
-                <h3>The reference run</h3>
-                <p className="sub2">
-                  <code>{reference.fileName}</code>, analysed by the same engine the product uses, computed from the file when
-                  the page is built.
-                </p>
-                <div className="bignum">
-                  <div>
-                    <b>{lines(reference.linesOfCode)}</b>lines of code
+            <ForYou
+              business="Answer each rule: keep, change, drop or clarify."
+              it="Hard-coded literals, not customizing, with their line."
+              management="Which decisions are the business's to make before a rebuild."
+            />
+            <div className="rules" role="list" aria-label="Three rules of the example, read from the code">
+              {hero.rules.shown.map((r, i) => {
+                const sentence = RULE_SENTENCES[r.label];
+                return (
+                  <div key={r.id} className="card rule" role="listitem" data-landing-rule={r.label}>
+                    <div>
+                      <p className="rt">{sentence?.text ?? r.plain}</p>
+                      <p className="rm">
+                        <span className="ln">L{r.line}</span>
+                        <code>{r.label}</code>
+                        <CcProvenanceChip value="reconstructed" />
+                        {sentence && <span>{sentence.effect}</span>}
+                      </p>
+                    </div>
+                    <RuleAnswer initial={i === 0 ? 'Keep' : i === 1 ? 'Clarify' : undefined} />
                   </div>
-                  <div>
-                    <b>{reference.totalFindings}</b>findings
+                );
+              })}
+            </div>
+            <p className="honest">
+              Three of the {hero.rules.total} rules the engine reads from the fictitious demo program. The answers here
+              are only a picture; in the product they are recorded as the signed-in account — a self-declaration, not a
+              mandate.
+            </p>
+            <p className="linkrow">
+              <TextLink href={SHOWCASE}>See the rules in the demo →</TextLink>
+            </p>
+          </div>
+        </section>
+
+        {/* 3 · clean core */}
+        <section className="sec alt" id="clean-core" aria-labelledby="cc-title">
+          <div className="wrap">
+            <SectionHeader eyebrow="SAP clean core" title="How far is it from a clean core, and where can it go?" titleId="cc-title">
+              Clean core keeps SAP standard untouched: extensions use only what SAP releases for them. Clean-Core.io
+              shows, object by object, how far a program is from that, and the route that fits.
+            </SectionHeader>
+            <ForYou
+              business="Why an upgrade can hurt, in one sentence per part."
+              it="Level A–D per SAP object from SAP's published data; the route with its reason."
+              management="How much of it can stay, and what has to be rebuilt."
+            />
+            <div className="cc">
+              <div className="card ladder" data-landing-ladder="">
+                <h3>Four levels, the SAP objects of the example</h3>
+                <p className="sub2">A is what SAP releases for extensions; D is what SAP advises against.</p>
+                {ladder.map((step) => (
+                  <div key={step.level} className="lv">
+                    <CcCleanCoreLevel value={step.level} />
+                    <div>
+                      <b>
+                        Level {step.level} · {CLEAN_CORE_LEVEL[step.level].label}
+                      </b>
+                      {step.objects.length === 0 ? (
+                        <p>
+                          {step.level === 'A'
+                            ? 'Upgrade-stable. What a rebuild aims for. No object of the example is on A yet.'
+                            : 'No object of the example on this level.'}
+                        </p>
+                      ) : (
+                        step.objects.map((o) => (
+                          <div key={o.code} className="obj">
+                            {o.label && <span>{o.label}</span>}
+                            {withPage.has(o.code) ? (
+                              <Link href={catalogHref(o.code)}>
+                                <code>{o.code}</code>
+                              </Link>
+                            ) : (
+                              <code>{o.code}</code>
+                            )}
+                            <span className="ln">L{o.line}</span>
+                            {o.source === 'catalog' ? <CcProvenanceChip value="imported" note="SAP release data" /> : <CcProvenanceChip value="reconstructed" />}
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
+                ))}
+              </div>
+              <div className="card routes">
+                <h3>Where it can go</h3>
+                <p className="sub2">The route follows the evidence. You choose; ATC stays the authority.</p>
+                <div className="route">
+                  <b>Key user tools</b>
+                  <p>Small changes SAP&apos;s key user tools cover: custom fields, custom logic, custom CDS views. Each candidate with its limit.</p>
                 </div>
+                <div className={`route${DEMO_FIGURES.recommendedRoute.startsWith('In-App') ? ' ind' : ''}`}>
+                  {DEMO_FIGURES.recommendedRoute.startsWith('In-App') && <span className="tag">indicated for the example</span>}
+                  <b>In-app with ABAP Cloud</b>
+                  <p>On the stack, with released APIs; a RAP draft as an abapGit package.</p>
+                </div>
+                <div className={`route${DEMO_FIGURES.recommendedRoute.startsWith('Side') ? ' ind' : ''}`}>
+                  {DEMO_FIGURES.recommendedRoute.startsWith('Side') && <span className="tag">indicated for the example</span>}
+                  <b>Side-by-side on {BTP}</b>
+                  <p>Beside the core, on {BTP_FIRST}; a CAP draft.</p>
+                </div>
+              </div>
+            </div>
+            <ForIt title="Where the levels come from, and the free SAP object catalog">
+              <ul>
+                <li>
+                  Levels are Clean-Core.io&apos;s versioned reading of the states SAP publishes in its Cloudification
+                  Repository and object classification — an orientation, never part of a signed audit pack. Confirm with
+                  ABAP Test Cockpit; import ATC results to compare them with the engine.
+                </li>
+                <li>
+                  The free SAP object catalog shows each object&apos;s release state, level and successor, without an
+                  account — {catalogObjects} classified, synced {facts.catalogSyncDate}.{' '}
+                  <TextLink href="/catalog">Open the SAP object catalog →</TextLink>
+                </li>
+                <li>
+                  Target platforms: SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) keeps level A only; SAP Cloud
+                  ERP Private keeps level A or B. Change the target and the page says what moved.
+                </li>
+              </ul>
+            </ForIt>
+            <p className="linkrow">
+              <TextLink href="/clean-core-explained">Clean core, explained without the jargon →</TextLink>
+              <TextLink href="/method/levels">How levels are assigned</TextLink>
+              <TextLink href="/sap-clean-core-object-classification">Object classification A–D</TextLink>
+              <TextLink href="/clean-core-score">Clean Core Score</TextLink>
+              <TextLink href="/knowledge">Knowledge base</TextLink>
+            </p>
+          </div>
+        </section>
+
+        {/* 4 · decide */}
+        <section className="sec" id="decide" aria-labelledby="decide-title">
+          <div className="wrap">
+            <SectionHeader eyebrow="The decision" title="What do we risk, and what do we decide?" titleId="decide-title">
+              Keep it, rebuild it, move to SAP standard or retire it. Clean-Core.io gives an indication with its reasons —
+              the decision stays yours.
+            </SectionHeader>
+            <ForYou
+              business="The open questions that block a decision, in plain words."
+              it="One rule per object decides its bucket; every assignment shows its evidence."
+              management="Everything on one page: indication, risk, options, next steps."
+            />
+            <CaptureToCome
+              name="Analyze, Management view: the decision on one page"
+              shows={[
+                'What the program is for, and the indication from the analysis — an indication, not a decision.',
+                `Four figures: records it changes, ${DEMO_FIGURES.rulesRevealed} rules in the code, Clean Core Score ${DEMO_FIGURES.cleanCoreScore} of 100, how often it runs.`,
+                'The options to decide on; effort only where Economics computes it with your own rates.',
+              ]}
+            />
+            <ForIt title="Four buckets, one rule per object">
+              <div className="buckets">
+                {PUBLIC_CLOUD_FIT_BUCKETS.map((b) => (
+                  <div key={b} className="card bucket">
+                    <b>{PUBLIC_CLOUD_FIT_BUCKET_LABELS[b]}</b>
+                    <p>{BUCKET_RULE[b]}</p>
+                  </div>
+                ))}
+              </div>
+              <p>The first rule that applies wins. Why 13 months: period-end and year-end programs run once a year.</p>
+            </ForIt>
+          </div>
+        </section>
+
+        {/* 5 · after the decision */}
+        <section className="sec alt" id="after" aria-labelledby="after-title">
+          <div className="wrap">
+            <SectionHeader eyebrow="After the decision" title="What happens after the decision?" titleId="after-title">
+              The same evidence carries on: a target design, a code draft, tests, documentation your company can use, the
+              costs and a handover. Each tool produces something you can read and check.
+            </SectionHeader>
+            <ol className="stages" aria-label="The seven tools of a project">
+              {PHASES.map((p, i) => (
+                <li key={p.key} className={i === 0 ? 'cur' : undefined} data-landing-phase={p.key}>
+                  <span className="no">{p.n}</span>
+                  <span data-landing-phase-title="">{p.label}</span>
+                </li>
+              ))}
+            </ol>
+            <ForYou
+              business="Documentation that answers first, ready for your own template."
+              it="A RAP or CAP draft, test scenarios, an abapGit package."
+              management="Costs only as a simulation on your own assumptions."
+            />
+            <div className="after">
+              <CaptureToCome
+                name="Documentation, Overview"
+                shows={['The answer first, five tabs with counts, the process as tiles with their lines.', 'Export as the one primary action.']}
+              />
+              <div className="card limits">
+                <h3>What it is, and what it is not</h3>
+                <ul>
+                  <li>
+                    The code is a <b>draft for review</b>, not a finished product.
+                  </li>
+                  <li>CAP tests run in an isolated runner against mocks — not in your SAP system.</li>
+                  <li>On the RAP track the tests are an ABAP Unit class for your own system; you record its result there.</li>
+                  <li>
+                    Costs appear only as a <CcProvenanceChip value="simulation" /> on your assumptions.
+                  </li>
+                  <li>A person signs the result, not the tool.</li>
+                </ul>
+                <p className="linkrow">
+                  <TextLink href="/how-it-works">How it works, and its limits →</TextLink>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* 6 · evidence */}
+        <section className="sec" id="evidence" aria-labelledby="evidence-title">
+          <div className="wrap">
+            <SectionHeader eyebrow="Evidence you can check" title="Can we check what it says?" titleId="evidence-title">
+              Yes. Every statement says where it comes from, and every completed analysis is sealed as a signed run that
+              anyone can verify — also years later, also outside the product.
+            </SectionHeader>
+            <ForYou
+              business="What is read from the code, what AI wrote, what is still open."
+              it="Signed runs and an audit pack with an offline verifier."
+              management="A decision you can defend in an audit."
+            />
+            <div className="ev">
+              <div className="card prov">
+                <h3>Where a statement comes from</h3>
+                <div className="prow">
+                  <span>
+                    <CcProvenanceChip value="reconstructed" />
+                  </span>
+                  <span>Read from the code by the engine, with its line.</span>
+                </div>
+                <div className="prow">
+                  <span>
+                    <CcProvenanceChip value="imported" />
+                  </span>
+                  <span>SAP&apos;s data, or your ATC and usage files.</span>
+                </div>
+                <div className="prow">
+                  <span>
+                    <CcProvenanceChip value="proposed" />
+                  </span>
+                  <span>Written by a model; marked until someone confirms it.</span>
+                </div>
+                <div className="prow">
+                  <span>
+                    <CcProvenanceChip value="not-determined" />
+                  </span>
+                  <span>The code cannot show it — said, not guessed.</span>
+                </div>
+                <div className="prow">
+                  <span>
+                    <CcProvenanceChip value="simulation" />
+                  </span>
+                  <span>Your assumptions, never passed off as fact.</span>
+                </div>
+              </div>
+              <div className="card receipt" data-landing-reference="">
+                <h3>
+                  The reference run <CcProvenanceChip value="reconstructed" />
+                </h3>
+                <dl>
+                  <dt>Program</dt>
+                  <dd>
+                    <code>{reference.fileName}</code> · {lines(reference.linesOfCode)} lines of code
+                  </dd>
+                  <dt>Findings</dt>
+                  <dd>{reference.totalFindings} findings</dd>
+                  <dt>Engine</dt>
+                  <dd>deterministic · the same file gives the same result, computed when the page is built</dd>
+                  <dt>In the product</dt>
+                  <dd>every completed analysis is a signed run (HMAC); its audit pack is signed with HMAC and Ed25519 and verifies offline</dd>
+                </dl>
                 <ul className="bucket3">
                   {[reference.resolved, reference.decision, reference.handedBack].map((b) => (
                     <li key={b.label}>
@@ -908,13 +801,15 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                <p className="linkrow">
-                  <TextLink href="/reference-analysis">Open the reference run{ARROW}</TextLink>
+                <p className="note">
+                  A signature proves where a run came from and that it is unchanged — not that it is right. A demo run is
+                  never signed.
                 </p>
               </div>
-              <div className="pcard">
-                <h3>SAP objects this run touched</h3>
-                <p className="sub2">
+            </div>
+            <ForIt title="The reference run in detail: the SAP objects it touched">
+              <div data-landing-rollcall-card="">
+                <p>
                   With the successor from SAP&apos;s own release data. Where the engine uses a curated field-level mapping
                   instead, the finding says so.
                 </p>
@@ -924,453 +819,279 @@ export default function Home() {
                     .slice(0, 8)
                     .map((o) => (
                       <li key={o.name}>
-                        {withPage.has(o.name) ? <Link href={`/catalog/${objectToSlug(o.name)}`}>{o.name}</Link> : <span className="nm">{o.name}</span>}
-                        <ArrowRight className="i" aria-hidden="true" />
+                        {withPage.has(o.name) ? <Link href={`/catalog/${objectToSlug(o.name)}`}>{o.name}</Link> : <span>{o.name}</span>}
+                        <ArrowRight aria-hidden="true" />
                         <code>{o.successor}</code>
                       </li>
                     ))}
                 </ul>
                 {reference.businessDecisions[0] && (
                   <p className="honest">
-                    One finding lands on the business: {reference.businessDecisions[0].title}{' '}
-                    (L{reference.businessDecisions[0].lineStart}). The engine&apos;s recommendation, quoted unedited:
-                    &ldquo;{reference.businessDecisions[0].recommendation}&rdquo;
+                    One finding lands on the business: {reference.businessDecisions[0].title} (L
+                    {reference.businessDecisions[0].lineStart}). The engine&apos;s recommendation, quoted unedited: &ldquo;
+                    {reference.businessDecisions[0].recommendation}&rdquo;
                   </p>
                 )}
               </div>
-            </div>
-            <ol className="verify3">
-              <li>
-                <b>1 · Import the draft</b>Import the generated abapGit package into Eclipse ADT.
-              </li>
-              <li>
-                <b>2 · Compile and test</b>Compile the code, run the ABAP Unit tests in your own sandbox and record the result in Testing.
-              </li>
-              <li>
-                <b>3 · Check the seal</b>Verify the signed audit pack — <TextLink href="/verify-pack">verify a pack</TextLink>.
-              </li>
-            </ol>
+            </ForIt>
+            <p className="linkrow">
+              <TextLink href="/verify-pack">Verify an audit pack →</TextLink>
+              <TextLink href="/reference-analysis">Open the reference run</TextLink>
+            </p>
           </div>
         </section>
 
-        {/* 8 · honest */}
-        <section className="sec alt" id="honest" aria-labelledby="honest-title">
+        {/* 7 · your code, and the facts for IT */}
+        <section className="sec alt" id="for-it" aria-labelledby="forit-title">
           <div className="wrap">
-            <SectionHeader eyebrow="Honest by design" title="How do I know what is proven and what is not?" titleId="honest-title">
-              Every statement carries its source as a word, an icon and a shape. Nothing simulated passes as proven:
-              missing stays missing, simulated stays simulated, reconstructed stays reconstructed.
+            <SectionHeader eyebrow="Your code · for IT in depth" title="What happens to your code?" titleId="forit-title">
+              It is stored in the EU, only you and the people you invite can open it, and it is never sold. Below, the
+              facts IT asks for before anyone uploads a line.
             </SectionHeader>
-            <div className="hon">
-              <div className="pcard">
-                <h3>Where a statement comes from</h3>
-                <p className="sub2">One fixed list. The shape says how firm a statement is.</p>
-                {PROVENANCE_GROUPS.map((g) => (
-                  <div key={g.form} className="pvgroup">
-                    <p className="gk">
-                      <span className="k">{g.form}</span>
-                      <span>{g.meaning}</span>
-                    </p>
-                    {g.values.map((v) => (
-                      <div key={v} className="pvrow">
-                        <span>
-                          <CcProvenanceChip value={v} />
-                        </span>
-                        <span>{PROVENANCE[v].meaning}</span>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-              </div>
-              <div className="pcard">
-                <h3>Four buckets, one rule per object</h3>
-                <p className="sub2">
-                  The first rule that applies wins, and every assignment shows its evidence. The buckets depend on the
-                  project&apos;s target platform.
-                </p>
-                {PUBLIC_CLOUD_FIT_BUCKETS.map((b, i) => (
-                  <div key={b} className={`bucket${i === 0 ? ' first' : ''}`}>
-                    <span className="bi">{BUCKET_ICON[b]}</span>
-                    <div>
-                      <h4>{PUBLIC_CLOUD_FIT_BUCKET_LABELS[b]}</h4>
-                      <p>{BUCKET_RULE[b]}</p>
-                      <p className="m">{PUBLIC_CLOUD_FIT_BUCKET_MEANINGS[b]}</p>
-                      {b === 'retire' && (
-                        <p className="why13">
-                          <b>Why 13 months:</b> period-end and year-end programs run once a year, so a shorter usage
-                          window never makes an object a retire candidate.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <p className="honest">
-                  The same level B object is Keep in SAP Cloud ERP Private and Rebuild or {PUBLIC_CLOUD_FIT_BUCKET_LABELS['no-catalogued-path']} in Public
-                  Edition. Change the target platform and the page says what moved.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 9 · toolchain — one array, one renderer; it stacks on a phone through CSS. */}
-        <section className="sec" id="toolchain" aria-labelledby="tools-title">
-          <div className="wrap">
-            <SectionHeader eyebrow="Next to your SAP tools" title="Does it replace SAP's own tools?" titleId="tools-title">
-              No. ABAP Test Cockpit stays the authoritative check, ADT stays where code is built and tested, and SAP&apos;s
-              agents fix code inside your system; Clean-Core.io prepares the evidence and the decision around them.
-            </SectionHeader>
-            <div className="tools" role="table" aria-label="SAP tools and how Clean-Core.io relates to them" data-landing-tools="">
-              <div className="tools-row head" role="row">
-                <span role="columnheader">SAP tool</span>
-                <span role="columnheader">What it is for</span>
-                <span role="columnheader">How Clean-Core.io relates</span>
-              </div>
-              {toolchainRows.map((row) => (
-                <div key={row.tool} className="tools-row" role="row">
-                  <span role="rowheader">{row.tool}</span>
-                  <span role="cell">
-                    <span className="h">What it is for</span>
-                    {row.purpose}
-                  </span>
-                  <span role="cell">
-                    <span className="h">How Clean-Core.io relates</span>
-                    {row.relation}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* 10 · demo */}
-        <section className="sec alt" id="demo" aria-labelledby="demo-title">
-          <div className="wrap">
-            <SectionHeader eyebrow="Demo project" title="Can I try it before I upload my own code?" titleId="demo-title">
-              Yes. Every account has the same demo project: the engine&apos;s reading of the example{' '}
-              {DEMO_OBJECT_NAME} on every stage — fictitious code, a guided tour, and nothing you do there is saved or counted.
-            </SectionHeader>
-            <div className="demo">
-              <figure className="win" aria-label={`Preview: the demo project with the guided tour at station ${tourPositionLabel(tourIndex)}`}>
-                <div className="wbar">
-                  <span className="wlogo">
-                    <span className="m">
-                      <RefreshCw className="i" aria-hidden="true" />
-                    </span>
-                    <span>
-                      Clean-Core<em>.io</em>
-                    </span>
-                  </span>
-                  <span className="wpath">
-                    My workspace <ArrowRight className="i" aria-hidden="true" /> <b>{DEMO_PROJECT_TITLE}</b>
-                  </span>
-                </div>
-                <div className="wbody">
-                  <div className="strip">
-                    <Info className="i" aria-hidden="true" />
-                    <span style={{ flex: 1, minWidth: 220 }}>
-                      <b>{DEMO_STRIP_NOTICE}</b> <span className="u">{DEMO_INVITATION}</span>
-                    </span>
-                    <span className="wbtn">
-                      <RefreshCw className="i" aria-hidden="true" />
-                      Reset demo
-                    </span>
-                  </div>
-                  <div className="demo-head">
-                    <div>
-                      <p className="w-eyebrow">Demo project</p>
-                      <div className="w-title">
-                        <p className="tt">{DEMO_PROJECT_TITLE}</p>
-                        <span className="tag">Demo</span>
-                      </div>
-                    </div>
-                    <span className="views" aria-label="View: Business">
-                      <span className="on">Business</span>
-                      <span>IT</span>
-                      <span>Management</span>
-                    </span>
-                  </div>
-                  <div className="nextin">
-                    <ListChecks className="i" aria-hidden="true" />
-                    <div style={{ minWidth: 0 }}>
-                      <p className="k">At the end of the tour</p>
-                      <p className="nt">{TOUR_INVITATION_TITLE}</p>
-                    </div>
-                    <span className="wbtn primary">{TOUR_INVITATION_ACTION}</span>
-                  </div>
-                  <div className="coachzone">
-                    <div className="minimap" aria-label="Process steps">
-                      {demoSteps.map((n, i) => (
-                        <span key={n.id} style={{ display: 'contents' }}>
-                          <span className={`mn${i === 2 ? ' sel' : ''}`}>
-                            {n.name} <span className="a">L{n.anchor?.lineStart}</span>
-                          </span>
-                          <span className="mnar">{i < demoSteps.length - 1 ? '→' : '→ …'}</span>
-                        </span>
-                      ))}
-                    </div>
-                    <div className="coach" role="note">
-                      <span className="cn">{tourPositionLabel(tourIndex)}</span>
-                      <b>{station.title}</b>
-                      <p>{station.body}</p>
-                      <div className="ca">
-                        <span className="wbtn">Next</span>
-                        <span>Pause tour</span>
-                        <span>End tour</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </figure>
-              <div className="dside">
-                <h3>What the tour walks through</h3>
-                <ol className="stations">
-                  {TOUR_STATIONS.map((s) => (
-                    <li key={s.place}>{s.title}</li>
-                  ))}
-                </ol>
-                <ul className="facts">
-                  <li>
-                    <RefreshCw className="i" aria-hidden="true" />
-                    <span>Confirm, decide, filter and edit. The state lives only in your browser and is gone with “Reset demo”.</span>
-                  </li>
-                  <li>
-                    <Check className="i" aria-hidden="true" />
-                    <span>Nothing counts against your analysis runs, and a demo run is never signed.</span>
-                  </li>
-                  <li>
-                    <Layers className="i" aria-hidden="true" />
-                    <span>One demo for every account, rebuilt when the engine or its rules change — always on the current product.</span>
-                  </li>
-                </ul>
-                <div className="dcta">
-                  <AuthLink to={DEMO_WORKSPACE_ROUTE}>
-                    Explore the demo <ArrowRight size={18} aria-hidden="true" />
-                  </AuthLink>
-                  <p>Needs a free account. The demo is the first row in My workspace.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/*
-          The seven stages, as the tools of the workspace, and the way into them —
-          not in the mockup; kept by Sonny's decision of 24.09.2026 as the place the
-          seven stages are shown, each with a capture of the demo project.
-        */}
-        <section id="workspace-tools" aria-labelledby="workspace-tools-title" className="sec">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6">
-            <SectionHeader eyebrow="The seven stages" title="The tools in your workspace" titleId="workspace-tools-title">
-              Behind the three views sit seven stages, each a tool you open from the workspace. Each one produces
-              something you can read and check before the next — and a person signs the result, not the tool. The
-              demo project walks through all of them with a guided tour.
-            </SectionHeader>
-          </div>
-          <StageTimeline stages={stages} />
-          <div className="mx-auto mt-10 max-w-7xl px-4 text-center sm:px-6">
-            <AuthLink to={DEMO_WORKSPACE_ROUTE} testId="tools-demo">
-              Take the tour in the demo <ArrowRight size={18} aria-hidden="true" />
-            </AuthLink>
-          </div>
-        </section>
-
-        {/* 11 · start */}
-        <section className="sec" id="start" aria-labelledby="start-title">
-          <div className="wrap">
-            <SectionHeader eyebrow="Start · free" title="How do I start, and what does it cost?" titleId="start-title">
-              Nothing — Clean-Core.io is free. Each of the {STARTER_EXAMPLES.length} examples runs once at no cost, your own
-              code uses one of five free analysis runs, and after that you continue with your own Gemini API key.
-            </SectionHeader>
-            <ol className="steps3">
+            <ForYou
+              business="Whether you may upload the program, and who will see it."
+              it="What is deterministic, what a model writes, what leaves your system."
+              management="Where the data lives and who answers for it, for your risk register."
+            />
+            {/* The trust lines verbatim from lib/trust-claims.ts, each with the document that says so. */}
+            <ul className="trust3" data-landing-trust="">
               {[
-                { t: 'Create a free account', d: 'Sign up with Google or with e-mail and password. No payment, no card.' },
-                { t: 'Open the demo, an example or your code', d: 'The engine reads the source first. The process, its rules and what could not be determined appear with line anchors.' },
-                { t: 'Answer and decide', d: 'Answer the rules — keep, change, drop or clarify — record the decision for the program and hand over. Every completed analysis is sealed as a signed, unchangeable run.' },
-              ].map((s, i) => (
-                <li key={s.t}>
-                  <span className="no" aria-hidden="true">
-                    {i + 1}
-                  </span>
-                  <div>
-                    <h3>{s.t}</h3>
-                    <p>{s.d}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-            <div className="start3">
-              <div className="pcard">
-                <h3>Try an example</h3>
-                <p className="sub2">{STARTER_EXAMPLES.length} fictitious programs. Select one to see what it shows.</p>
-                <ExamplePicker
-                  items={examples.map((e) => ({
-                    key: e.name,
-                    name: e.name,
-                    meta: `${lines(e.lines)} · ${e.size}`,
-                    detail: (
-                      <>
-                        <p className="nm">{e.name}</p>
-                        <div className="meta">
-                          <span className="tag">{lines(e.lines)} lines</span>
-                          <span className="tag">{e.size}</span>
-                          {e.name === DEMO_OBJECT_NAME && <span className="tag">basis of the demo project</span>}
-                        </div>
-                        <p>{e.summary}</p>
-                        <p className="shows">Shows: {e.demonstrates}</p>
-                        <p className="free">
-                          <Check className="i" aria-hidden="true" />
-                          <span>Free the first time you run it. Running it again uses one of your analysis runs — you are told before it starts.</span>
-                        </p>
-                        <div className="go">
-                          <AuthLink to="/dashboard" variant="primary">
-                            Open an example
-                          </AuthLink>
-                        </div>
-                      </>
-                    ),
-                  }))}
-                />
-              </div>
-              <div className="access">
-                <div data-testid="card-sandbox" className="acard">
-                  <span className="tag2">No API key needed</span>
-                  <h3>Free Community Edition</h3>
-                  <ul>
-                    <li>
-                      <ListChecks className="i" aria-hidden="true" />
-                      <span>Five free analysis runs per account — once, not per month</span>
-                    </li>
-                    <li>
-                      <Check className="i" aria-hidden="true" />
-                      <span>Each example free the first time</span>
-                    </li>
-                    <li>
-                      <Layers className="i" aria-hidden="true" />
-                      <span>Every stage and every view included</span>
-                    </li>
-                  </ul>
-                  <div className="full">
-                    <AuthLink to="/dashboard" variant="secondary">
-                      Get Started
-                    </AuthLink>
-                  </div>
-                </div>
-                <div data-testid="card-developer" className="acard key">
-                  <span className="tag2">Your own Gemini key</span>
-                  <h3>Free, with your own key</h3>
-                  <ul>
-                    <li>
-                      <Key className="i" aria-hidden="true" />
-                      <span>No quota on analysis runs</span>
-                    </li>
-                    <li>
-                      <Lock className="i" aria-hidden="true" />
-                      <span>Your key is stored encrypted and used only through our server</span>
-                    </li>
-                    <li>
-                      <Info className="i" aria-hidden="true" />
-                      <span>Google bills your key under your own agreement with Google</span>
-                    </li>
-                  </ul>
-                  <div className="full">
-                    <AuthLink to="/settings" variant="secondary">
-                      Add Your Gemini Key
-                    </AuthLink>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 12 · trust — the lines of `lib/trust-claims.ts`, each with the document that says so. */}
-        <section className="sec alt" id="trust" aria-labelledby="trust-title">
-          <div className="wrap">
-            <SectionHeader eyebrow="Your code and your trust" title="Your data stays yours" titleId="trust-title">
-              Your code is stored in the EU, reaches the Google Gemini API only through our server, and is never sold or
-              commercially used. Each line below links to the document that says so.
-            </SectionHeader>
-            <div className="trust">
-              <div className="pcard">
-                <h3>What you confirm</h3>
-                <p className="confirm">
-                  {TRUST_PLEDGE.text} (
-                  {TRUST_PLEDGE.sources.map((s, i) => (
-                    <span key={s.href}>
-                      {i > 0 && ', '}
-                      <Link href={s.href}>{s.label}</Link>
-                    </span>
+                { title: 'Stored in the EU', claims: [trust('residency'), trust('tracking')] },
+                { title: 'Only you, and whom you invite', claims: [trust('access')] },
+                { title: 'Never sold; training under your key’s terms', claims: [trust('training'), trust('free')] },
+              ].map((card) => (
+                <li key={card.title} className="card">
+                  <b>{card.title}</b>
+                  {card.claims.map((c) => (
+                    <p key={c.id}>{c.text}</p>
                   ))}
-                  )
-                </p>
-                <h3 className="h3gap">What we do so you can trust us</h3>
-                <div data-landing-trust="">
-                  {TRUST_CLAIMS.filter((c) => c.id !== 'free').map((c, i) => (
-                    <div key={c.id} className={`tline${i === 0 ? ' first' : ''}`}>
-                      <span className="ti">{TRUST_ICON[c.icon]}</span>
-                      <div>
-                        <p>{c.text}</p>
-                        <p className="src">
-                          {c.sources.map((s, k) => (
-                            <span key={s.href + s.label}>
-                              {k > 0 && ' · '}
-                              {s.href.startsWith('http') ? (
-                                <a href={s.href} rel="noopener noreferrer" target="_blank">
-                                  {s.label}
-                                </a>
-                              ) : (
-                                <Link href={s.href}>{s.label}</Link>
-                              )}
-                            </span>
-                          ))}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="pcard freecard">
-                <h3>A free community project</h3>
-                {TRUST_CLAIMS.filter((c) => c.id === 'free').map((c) => (
-                  <div key={c.id}>
-                    <p className="big">{c.text}</p>
-                    <p className="src">
-                      {c.sources.map((s, k) => (
+                  <p className="src">
+                    {card.claims
+                      .flatMap((c) => c.sources)
+                      .map((s, k) => (
                         <span key={s.href + s.label}>
                           {k > 0 && ' · '}
                           <Link href={s.href}>{s.label}</Link>
                         </span>
                       ))}
-                    </p>
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <div className="card itfacts">
+              <h3>
+                <span className="pill">For IT</span> The facts, precisely
+              </h3>
+              <p>Everything here is in the code, the Privacy Policy or SECURITY.md — follow the links.</p>
+              <dl className="facts2">
+                <div className="fx">
+                  <dt>Engine first</dt>
+                  <dd>
+                    A deterministic ABAP engine reads the program before any model: findings at their line, the route, the
+                    score. The engine itself calls no model.
+                  </dd>
+                </div>
+                <div className="fx">
+                  <dt>What a model writes</dt>
+                  <dd>
+                    Business names, text, designs and code drafts — marked <CcProvenanceChip value="proposed" />, and in
+                    every exported artefact as a header comment and a metadata field.
+                  </dd>
+                </div>
+                <div className="fx">
+                  <dt>Line anchors</dt>
+                  <dd>Every element of the map, every finding and every sentence of the text points to program, include and line, or says why it cannot.</dd>
+                </div>
+                <div className="fx">
+                  <dt>Levels A–D</dt>
+                  <dd>From SAP&apos;s Cloudification Repository and object classification, by a versioned rule. ATC stays the authority; import ATC results to compare.</dd>
+                </div>
+                <div className="fx">
+                  <dt>Routes</dt>
+                  <dd>Key user candidates, in-app with ABAP Cloud (RAP), side-by-side on {BTP} (CAP) — each with its reasons and limits.</dd>
+                </div>
+                <div className="fx">
+                  <dt>Signed runs</dt>
+                  <dd>Every completed analysis is an immutable run, signed by the server with HMAC. The audit pack exported from it is signed with HMAC and Ed25519 and verifies offline.</dd>
+                </div>
+                <div className="fx">
+                  <dt>abapGit</dt>
+                  <dd>Upload an abapGit package (your dictionary texts stay with the project); drafts leave as an abapGit package for ADT.</dd>
+                </div>
+                <div className="fx">
+                  <dt>Model calls</dt>
+                  <dd>Only through our server; keys never reach the browser. Platform model: Google Gemini.</dd>
+                </div>
+                <div className="fx">
+                  <dt>Own key (BYOK)</dt>
+                  <dd>
+                    Your own Gemini key, stored encrypted; from 23 December 2026 also your own Claude key (Anthropic). The
+                    provider bills you under your own agreement.
+                  </dd>
+                </div>
+                <div className="fx">
+                  <dt>What is kept</dt>
+                  <dd>Your code and the generated artefacts, in the EU, until you delete them; backup copies age out within 30 days. Access logs as the Privacy Policy §9 says.</dd>
+                </div>
+                <div className="fx">
+                  <dt>Open by design</dt>
+                  <dd>
+                    The source code is public, including the security rules (firestore.rules) and the security model in
+                    SECURITY.md: <TextLink href={REPO}>github.com/sonnyfrenzel-rgb/clean-core.io</TextLink>.
+                  </dd>
+                </div>
+                <div className="fx">
+                  <dt>Not an SAP product</dt>
+                  <dd>Independent, not affiliated with or endorsed by SAP SE.</dd>
+                </div>
+              </dl>
+            </div>
+            <ForIt title="Next to SAP's own tools">
+              <div className="toolt" role="table" aria-label="SAP tools and how Clean-Core.io relates to them" data-landing-tools="">
+                <div className="tr head" role="row">
+                  <span role="columnheader">SAP tool</span>
+                  <span role="columnheader">How Clean-Core.io relates</span>
+                </div>
+                {toolchainRows.map((row) => (
+                  <div key={row.tool} className="tr" role="row">
+                    <span role="rowheader">
+                      <b>{row.tool}</b>
+                      <small>{row.purpose}</small>
+                    </span>
+                    <span role="cell">{row.relation}</span>
                   </div>
                 ))}
-                <p className="honest">
-                  Clean-Core.io is independent and not affiliated with or endorsed by SAP SE. Generated output is a draft
-                  that you review before any productive use. The code of this product is public:{' '}
-                  <a href="https://github.com/sonnyfrenzel-rgb/clean-core.io" rel="noopener noreferrer" target="_blank" className="textlink">
-                    github.com/sonnyfrenzel-rgb/clean-core.io
-                  </a>
-                  .
-                </p>
+              </div>
+            </ForIt>
+            <div className="card itpath" data-landing-it-path="">
+              <p>
+                <b>See it with your own code: 3 steps.</b> Create a free account, upload a file or an abapGit package, and
+                the process map appears first.
+              </p>
+              <AuthLink to="/admin/new-project/upload" variant="secondary" size="sm" testId="it-own-code">
+                Analyse your own Z program
+              </AuthLink>
+            </div>
+            <p className="linkrow">
+              <TextLink href={SECURITY_MODEL_URL}>SECURITY.md on GitHub →</TextLink>
+              <TextLink href={architectureUrl}>Architecture</TextLink>
+              <TextLink href="/trust">Trust and privacy</TextLink>
+            </p>
+          </div>
+        </section>
+
+        {/* 8 · start */}
+        <section className="sec" id="start" aria-labelledby="start-title">
+          <div className="wrap">
+            <SectionHeader eyebrow="Start · free" title="What does it cost, and how do we start?" titleId="start-title">
+              Nothing. Watch the demo without an account; create a free account to analyse your own program.
+            </SectionHeader>
+            <ForYou
+              business="Bring the Z program nobody can explain any more."
+              it="A file, pasted code or an abapGit package; your own key after five runs."
+              management="No contract and no payment; or send the demo to IT."
+            />
+            <div className="start">
+              <ol className="card steps">
+                <li>
+                  <span className="no" aria-hidden="true">
+                    1
+                  </span>
+                  <div>
+                    <h3>{SHOWCASE_CTA}</h3>
+                    <p>
+                      One fictitious program, {DEMO_OBJECT_NAME}
+                      {demoExample ? ` (${lines(demoExample.lines)} lines)` : ''}, read end to end. No account, nothing
+                      saved, no AI call.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span className="no" aria-hidden="true">
+                    2
+                  </span>
+                  <div>
+                    <h3>Create a free account</h3>
+                    <p>With Google, or with e-mail and password. No payment, no card.</p>
+                  </div>
+                </li>
+                <li>
+                  <span className="no" aria-hidden="true">
+                    3
+                  </span>
+                  <div>
+                    <h3>Bring your own Z program</h3>
+                    <p>Upload a file or an abapGit package, or paste the code. The process map appears first.</p>
+                  </div>
+                </li>
+              </ol>
+              <div className="card price" data-testid="card-price">
+                <h3>Free Community Edition</h3>
+                <ul>
+                  <li>
+                    <Check aria-hidden="true" />
+                    <span>
+                      <b>Five free analysis runs</b> per account — once, not per month.
+                    </span>
+                  </li>
+                  <li>
+                    <Check aria-hidden="true" />
+                    <span>
+                      Each of the <b>{STARTER_EXAMPLES.length} examples</b> free the first time.
+                    </span>
+                  </li>
+                  <li>
+                    <Check aria-hidden="true" />
+                    <span>Every tool and every view included.</span>
+                  </li>
+                  <li>
+                    <Check aria-hidden="true" />
+                    <span>
+                      <b>No quota with your own key</b> — Google Gemini, or from 23 December 2026 Claude by Anthropic. The
+                      provider bills it under your own agreement; we take no payment.
+                    </span>
+                  </li>
+                </ul>
+                <div className="full">
+                  <AuthLink to="/dashboard" variant="primary" testId="start-own-code">
+                    {DO_CTA}
+                  </AuthLink>
+                  <Link href={SHOWCASE} className={publicButton('secondary')} data-cta-see="">
+                    {SHOWCASE_CTA}
+                  </Link>
+                </div>
+              </div>
+            </div>
+            <div className="card share">
+              <p>
+                <b>Not your decision alone?</b> Send the 4-minute demo on — it needs no account.
+              </p>
+              {/* mailto links and a copy button: nothing goes to our server. */}
+              <div className="acts">
+                <a className={publicButton('secondary', 'sm')} href={shareBody('it')}>
+                  Send to your IT colleague
+                </a>
+                <a className={publicButton('secondary', 'sm')} href={shareBody('management')}>
+                  Send to your manager
+                </a>
+                <CopyLinkButton url={`https://clean-core.io${SHOWCASE}`}>Copy the link</CopyLinkButton>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 13 · FAQ — the same list as the JSON-LD FAQPage above. */}
-        <section className="sec" id="faq" aria-labelledby="faq-title">
+        {/* 9 · FAQ — the same list as the JSON-LD FAQPage above. */}
+        <section className="sec alt" id="faq" aria-labelledby="faq-title">
           <div className="wrap">
-            <SectionHeader eyebrow="FAQ" title="Questions people ask first" titleId="faq-title" />
+            <SectionHeader eyebrow="FAQ" title="Questions people ask before they start" titleId="faq-title" />
             <div className="acc" data-landing-faq="">
-              {faq.map((f, i) => (
-                <details key={f.q} open={i === 0} lang={f.lang} className="acc-item">
+              {LANDING_FAQ.map((f, i) => (
+                <details key={f.q} open={i === 0} lang={f.lang}>
                   <summary>
                     <h3 data-faq-question="">{f.q}</h3>
-                    <span className="chev" aria-hidden="true">
-                      <ChevronDown className="i" />
-                    </span>
+                    <ChevronDown size={18} className="ch" aria-hidden="true" />
                   </summary>
-                  <div className="acc-a">
+                  <div className="a">
                     <p data-faq-answer="">{f.a}</p>
                     {f.more && (
                       <p>
@@ -1391,27 +1112,19 @@ export default function Home() {
           <div className="foot-top">
             <p>Read the code before you decide.</p>
             <div className="cta-row">
-              <AuthLink to={DEMO_WORKSPACE_ROUTE}>
-                Explore the demo <ArrowRight size={18} aria-hidden="true" />
-              </AuthLink>
-              <Link href="/whitepaper" className={publicButton('ghost')}>
-                Read the whitepaper
+              <Link href={SHOWCASE} className={publicButton('primary')} data-cta-see="">
+                {SHOWCASE_CTA}
               </Link>
+              <AuthLink to="/dashboard" variant="ghost" testId="footer-start">
+                Start free
+              </AuthLink>
             </div>
           </div>
-          <nav className="foot-grid4" aria-label="Footer">
+          <nav className="foot-grid" aria-label="Footer">
             <div>
-              <Link href="/" className="brand" aria-label="Clean-Core.io home">
-                <span className="mark">
-                  <RefreshCw className="i" aria-hidden="true" />
-                </span>
-                <span>
-                  <span className="nm">
-                    Clean-Core<em>.io</em>
-                  </span>
-                  <span className="sub">Free Community Edition · complementary to SAP tooling</span>
-                </span>
-              </Link>
+              <p className="brand">
+                Clean-Core<em>.io</em>
+              </p>
               <p className="blurb">
                 A free community project for the SAP community: from a custom ABAP program nobody can explain to a
                 decision with evidence.

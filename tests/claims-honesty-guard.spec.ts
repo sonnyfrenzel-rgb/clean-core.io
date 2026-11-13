@@ -507,7 +507,7 @@ test.describe('the public pages claim only what the product does', () => {
       expect(fs.existsSync(path.join(ROOT, rel)), `${rel} is back`).toBe(false);
     }
     await page.goto('/', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('#workspace-tools')).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('#after')).toBeVisible({ timeout: 60_000 });
     await expect(page.locator('#showroom')).toHaveCount(0);
     await expect(page.getByTestId('transformation-replay')).toHaveCount(0);
     await expect(page.getByTestId('sample-package-download')).toHaveCount(0);
