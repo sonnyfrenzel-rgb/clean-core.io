@@ -9,20 +9,29 @@ judge inputs and verdicts, ledgers) lives under `scratch/model-combo/` (gitignor
 `bericht.md`. Nothing here changes what the product calls today: production stays on `gemini-3.8-flash` until the
 owner decides, and every rule below is **off unless the deployment sets it**.
 
-## 0. Verdict in four sentences
+## 0. Verdict in five sentences
 
-1. Per stage, the right thinking level matters more than the model: `gemini-4-hydrogen` at **MEDIUM** writes the
-   statements as well as at the provider's default (84.1 % against 83.3 % equal on the seven largest learn cases),
-   less technically, 28 % cheaper and 28 % faster, and never near the output bound; the product model is best at
-   its **default** (it beat LOW 19:5 and MEDIUM 17:10 per statement where it answered) and loses cases only to its
-   own thinking loop.
-2. The one combination that is clearly better than both singles is **routing by program size plus a fallback on
-   an incomplete answer** — §2 has the numbers against the corrected Hydrogen baseline.
-3. An ensemble (both models answer) is not worth it: the union doubles the wrong sentences, a deterministic merge
-   adds under a point for 50 % more cost.
-4. The combination is two deterministic rules in `/api/gemini` (`lib/model-combination.ts`), both decided by the
-   prompt's length and the answer's finish reason and by nothing a client sent; the receipt names the model that
-   answered.
+1. Per stage, the right thinking level matters more than any combination: `gemini-4-hydrogen` at **MEDIUM** writes
+   the statements as well as at the provider's default (84.1 % against 83.3 % equal on the seven largest learn
+   cases), 33 % cheaper (0.074 $ a case), 2.4× faster (30 s median) and never near the output bound; the product
+   model is best at its **default** (it beat LOW 19:5 and MEDIUM 17:10 per statement where it answered) and loses
+   cases only to its own thinking loop.
+2. Against that corrected baseline, judged in one blind round over all 150 learn cases, Hydrogen MEDIUM alone beats
+   the product model by **8.0 points** equal (85.2 % against 77.2 %), with half the sentences that contradict the
+   code (5 against 10) and no dropout (0 against 5) — at 0.074 $ against 0.052 $ today and against 0.103 $ from
+   1.1.2027.
+3. The one combination that adds to it is **draft and rewording**: Hydrogen MEDIUM writes the statements, the
+   product model at LOW rewords them for a business reader, anchors and facts guarded. It is better than Hydrogen
+   alone on 50 statements and worse on 9 (sign test p = 5·10⁻⁸), **+2.6 points** equal (87.8 %), and it cuts the
+   technical sentences from 48 % to **20 %** — the weakness the owner named. It costs +15 % (0.085 $; 0.096 $ from
+   2027, still under the product model's 0.103 $), +13 s median, and it contradicted the code once more than the
+   draft (6 against 5: one rewording turned "start-of-selection is left" into "processing ends").
+4. Routing by program size, the offline front-runner against yesterday's Hydrogen, adds **0.8 points** over Hydrogen
+   MEDIUM alone at the same cost today and a higher one from 2027; a cascade on the product model's dropouts adds
+   2.8 points to the product model and stays 5 points under Hydrogen alone; an ensemble is not worth it (§4).
+5. The mechanics are two deterministic rules in `/api/gemini` (`lib/model-combination.ts`), decided by the prompt's
+   length and the answer's finish reason and by nothing a client sent, with the receipt naming the model that
+   answered; the rewording step is designed in §3.6 and measured, but not yet built into the product.
 
 ## 1. What was measured
 
@@ -63,7 +72,41 @@ thinking-level matter; it is not part of this design.
 
 ## 2. The strategies, offline and live
 
-[FILLED IN FROM THE FINAL JUDGE ROUND — see bericht.md until then]
+**Offline first** (no new call): yesterday's verdicts for the product model and Hydrogen at its default, unblinded
+per statement, give every strategy's ceiling and cost. Oracle per statement 95.0 % equal; oracle per case 92.9 %;
+a cascade on dropout 87.7 % (+2.9 on Flash, 5 of 150 cases); routing by lines > 200 plus the cascade 91.0 % at
+0.097 $; union of both answers 94.7 % equal but 18 wrong sentences; Hydrogen-primary merge 89.3 % at 0.162 $. The
+advantage of Hydrogen grows with the program (correlation 0.48 with the line count), so routing by size looked like
+the winner — against a Hydrogen that was still at the wrong level.
+
+**Live** (the corrected baseline): Hydrogen rerun at MEDIUM on all 150 learn cases (150 of 150 `STOP`, 0 at the
+bound, 6,555 thinking tokens a case against 11,165); the product model's answers of 12.11. reused, since its right
+level is the one they were made with; the rewording pass over the rerun; all three judged blind, side by side, in
+one round (1,656 statements, six judges, mapping opened after the last verdict). Combinations are built from the
+three variants by the signals the product has: the answer's completeness, the prompt's length.
+
+| Strategy | equal | partial | missing | wrong | dropouts | technical | $/case today | $/case 2027 | median s | p90 s |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Flash 3.8 default — single | 77.2 % | 15.0 % | 7.5 % | 10 | 5 | 41 % | 0.052 | 0.103 | 72.5 | 180.5 |
+| **Hydrogen MEDIUM — single** | **85.2 %** | 13.0 % | 1.6 % | **5** | 0 | 48 % | 0.074 | 0.074 | **30.3** | **50.3** |
+| **c  Hydrogen MEDIUM draft → Flash LOW rewording** | **87.8 %** | 10.3 % | 1.6 % | 6 | 0 | **20 %** | 0.085 | 0.096 | 43.5 | 73.7 |
+| a1 Cascade: Flash, Hydrogen on dropout | 80.0 % | 15.6 % | 4.2 % | 10 | 0 | 42 % | 0.055 | 0.106 | 72.5 | 180.5 |
+| a0 Cascade: Flash, Flash LOW on dropout (retry verdicts from the level round) | 78.9 % | — | 4.7 % | 10 | 0 | — | 0.052 | 0.104 | 72.5 | 180.5 |
+| b+a1 Routing prompt > 12,500 chars → Hydrogen, else Flash + cascade | 86.0 % | 12.1 % | 1.8 % | 5 | 0 | 42 % | 0.075 | 0.099 | 43.8 | 137.9 |
+| b+a1 Routing prompt > 10,000 chars | 86.1 % | 12.1 % | 1.7 % | 5 | 0 | 44 % | 0.077 | 0.096 | 41.8 | 135.8 |
+| b+a1+c Routing > 12,500 → Hydrogen + rewording, else Flash + cascade | 86.5 % | 11.5 % | 1.9 % | 6 | 0 | 25 % | 0.084 | 0.116 | 60.8 | 143.2 |
+| Oracle per case over the three variants (ceiling) | 89.8 % | 8.9 % | 1.3 % | 3 | 0 | 42 % | 0.074 | 0.096 | 41.9 | 123.8 |
+
+Head to head per statement: Hydrogen MEDIUM against Flash 244:91 (p = 3·10⁻¹⁷); rewording against Hydrogen 50:9
+(p = 5·10⁻⁸); rewording against Flash 253:62. Both waves agree: W1+W2 88.3 / 85.1 / 78.5, W3 86.9 / 85.5 / 74.6
+(rewording / Hydrogen / Flash). The rewording kept the draft's sentence for 13 % of the statements (guard: anchors,
+element, every number and quoted literal, length) — most in cases whose sentences carry many literals.
+
+This judge round is stricter than yesterday's (the same Flash answers scored 84.8 % then, 77.2 % now); only
+differences within one round are read. **The holdout was not spent**: the rule asks for a strategy that clearly
+beats both singles — at least about 3 points and fewer wrong sentences than the better single — and the rewording
+is +2.6 points with one wrong sentence more. The owner decides whether to measure it there once (about 13 $ of
+calls plus a judge round).
 
 ## 3. The design
 
@@ -133,24 +176,69 @@ What did **not** change: the register and `EVALUATION_ONLY_MODELS`, `productMode
 
 ### 3.5 Switching it on
 
+What the measurement supports, in the order of gain:
+
 ```
-GEMINI_LARGE_PROMPT_MODEL=gemini-4-hydrogen     # routing by size (statements)
-GEMINI_LARGE_PROMPT_CHARS=12500                 # optional; the measured default
-GEMINI_FALLBACK_MODEL=gemini-4-hydrogen         # cascade on an incomplete answer (statements)
+# (1) the statements stage on Hydrogen MEDIUM, every other stage on the product model — +8 points, 0.074 $
+GEMINI_LARGE_PROMPT_MODEL=gemini-4-hydrogen
+GEMINI_LARGE_PROMPT_CHARS=0                      # 0 = every prompt of the stage
+
+# (2) alternatively, while the product model keeps the stage: Hydrogen on its dropouts — +2.8 points, +0.003 $
+GEMINI_FALLBACK_MODEL=gemini-4-hydrogen
 ```
 
-On `dev` first, with `scripts/check-gemini-register.mjs` green and the usage log watched for `MAX_TOKENS` lines
-and fallback calls. Owner decisions before `main`: whether `gemini-4-hydrogen` leaves evaluation for this one stage
-at all, the threshold, and whether the fallback alone (cheap, +2.9 points) or routing plus fallback (the full gain,
-about twice the cost today, about the same from 1.1.2027) is wanted.
+Routing by size (`GEMINI_LARGE_PROMPT_CHARS=12500`) stays possible and is not recommended: +0.8 points over (1) at
+the same cost today and 0.099 $ from 2027. On `dev` first, with `scripts/check-gemini-register.mjs` green and the
+usage log watched for `MAX_TOKENS` lines and fallback calls. Owner decisions before `main`: whether
+`gemini-4-hydrogen` leaves evaluation for this one stage at all; (1) or (2); and whether the rewording (§3.6) is
+built.
+
+### 3.6 Draft and rewording — how c is built (designed, measured, not yet in the product)
+
+The measured step: the validated statements of the draft go back to the product model at LOW with the source and
+the rule "say it for a business reader, keep every fact, keep anchors, element and uncertainty as given, one
+sentence per sentence" (`buildRewritePrompt` in `tests/prozess-benchmark/weg-b-model.ts`); the answer is read
+sentence by sentence, and a rewording that moved an anchor, dropped a number or a quoted literal, or grew past the
+bound keeps the draft's sentence (`mergeRewrite`). In the product:
+
+- **Where.** The browser, in `lib/statement-proposal-client.ts`: after the statements call comes back complete, a
+  second `/api/gemini` call under `stage: 'statements'` with a new answer shape `statements-rewording`
+  (`lib/model-response-schema.ts`: a schema of `{ statements: [{ text, anchors, element, uncertainty }] }`;
+  `lib/model-thinking.ts`: LOW, as `plain-wording`). The route needs no new logic beyond the shape; the plan of §3.1
+  applies to the draft call only (`COMBINATION_STAGES` by shape: the rewording shape is never routed, never
+  cascaded — its draft is the fallback).
+- **The guard** moves from the harness into `lib/statement-rewording.ts` (pure): anchors as a set, element,
+  uncertainty, every number and quoted literal, length — **plus one rule the measurement asked for**: a rewording
+  that introduces a control-flow word the draft did not have (`ends`, `terminates`, `stops`, `exits`, `aborts`,
+  `is skipped`) keeps the draft's sentence. The one wrong sentence the rewording added (BM-076-B05) was exactly
+  that: "start-of-selection is left" became "processing ends". The same guard reads the draft's negations the way
+  `lib/plain-wording.ts` does ("not", "only", "without", "unless").
+- **Store and origin.** `POST /api/projects/{id}/statement-proposal` takes `{ digest, text, receipt, draft? }`: the
+  final text with the rewording call's receipt (it wrote these bytes; `textSha256` binds it), and the draft's
+  receipt as a second verified receipt of the same stage and account. `StatementProposalOrigin` gains
+  `draft?: { provider, modelId, textSha256, issuedAt }`, written only from a verifying receipt. The receipt module
+  and its claim set do not change.
+- **Marking.** `ProvenanceChip`'s tooltip reads the origin: "Written by Google Gemini · gemini-3.8-flash, from a
+  draft by Google Gemini · gemini-4-hydrogen" when `draft` is present. Settings' "Last answered by" names the model
+  of the last call, as it does.
+- **Cost line.** The button's line (`lib/statement-proposal.ts`, `STATEMENT_PROPOSAL_COST_*`) says "Two model
+  calls" when the deployment rewords; the deployment flag `GEMINI_STATEMENTS_REWORDING=on` reaches the browser
+  through `GET /api/model-stages` (one boolean beside `keySource`).
+- **Cost and time.** Measured: +0.011 $ a case today (+0.022 $ from 2027), +12 s median; the draft at Hydrogen
+  MEDIUM is 30 s, so the business sentences arrive in about 45 s where the product model alone takes 72 s today.
 
 ## 4. Not built, and why
 
 - **Ensemble** (both models answer, merge or verifier picks): the union raises equal to 94.7 % but doubles the
   wrong sentences (18 against 6–14) and the forbidden inferences; a Hydrogen-primary deterministic merge adds
   0.9 points for 50 % more cost. A verifier call on top would cost a third model call per case.
+- **Routing by size** against a Hydrogen at its right level: +0.8 points at the same cost today and a higher one from
+  2027, p90 latency 138 s instead of 50 s — the product model's slow tail stays in. The mechanism is kept (it is the
+  stage switch with threshold 0) and the threshold is not recommended.
 - **Routing by case features other than size** (decision points, element count): correlated with size (0.42–0.46
-  against 0.48 for lines) and no better; one threshold on the prompt length is the simplest rule that holds on
-  both waves.
+  against 0.48 for lines) and no better.
 - **A thinking level for Flash as the dropout cure**: LOW cures the dropouts and costs 15 points where the default
-  answers; a fallback is strictly better.
+  answers; MEDIUM cures 4 of 5 and costs 7; a fallback is strictly better.
+- **The rewording in the product**: designed above, measured on the learn set, not built — the store, the origin,
+  the chip and the cost line are four more files, and the owner decides first whether the stage leaves the product
+  model at all.

@@ -46,7 +46,12 @@ test.describe('the planner', () => {
     expect(largePromptThreshold({ [LARGE_PROMPT_CHARS_ENV]: '30000' })).toBe(30_000);
     expect(largePromptThreshold({ [LARGE_PROMPT_CHARS_ENV]: 'lots' })).toBe(DEFAULT_LARGE_PROMPT_CHARS);
     expect(largePromptThreshold({ [LARGE_PROMPT_CHARS_ENV]: '-1' })).toBe(DEFAULT_LARGE_PROMPT_CHARS);
+    expect(largePromptThreshold({ [LARGE_PROMPT_CHARS_ENV]: '  ' })).toBe(DEFAULT_LARGE_PROMPT_CHARS);
     expect(planModelCall({ ...base, env: { ...env, [LARGE_PROMPT_CHARS_ENV]: '30000' } })).toMatchObject({ routed: false });
+    // `0`, set explicitly: the whole stage runs on the named model — the study's recommendation for the statements.
+    expect(largePromptThreshold({ [LARGE_PROMPT_CHARS_ENV]: '0' })).toBe(0);
+    expect(planModelCall({ ...base, env: { ...env, [LARGE_PROMPT_CHARS_ENV]: '0' }, promptLength: 1 })).toMatchObject({ model: 'gemini-4-hydrogen', routed: true });
+    expect(planModelCall({ ...base, env: { ...env, [LARGE_PROMPT_CHARS_ENV]: '0' }, stage: 'analyze' })).toMatchObject({ model: 'gemini-3.8-flash', routed: false });
   });
 
   test('the fallback is the named model, unless it is the model just asked', () => {

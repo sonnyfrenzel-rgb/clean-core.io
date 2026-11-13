@@ -60,9 +60,19 @@ export function deploymentModelOf(named: string | undefined, register: ReadonlyS
   return name && register.has(name) ? name : null;
 }
 
+/**
+ * The length above which a prompt is "large". `0`, set explicitly, means every
+ * prompt of the stage — the stage runs on the named model, and the rest of the
+ * product stays on the product model. That is what the study recommends for
+ * the statements (`docs/design/model-combination.md` §2): against the second
+ * model's own best level, routing by size gained nothing over giving it the
+ * whole stage. Unset or invalid: the measured default.
+ */
 export function largePromptThreshold(env: Readonly<Record<string, string | undefined>>): number {
-  const n = Number(env[LARGE_PROMPT_CHARS_ENV]);
-  return Number.isFinite(n) && n > 0 ? n : DEFAULT_LARGE_PROMPT_CHARS;
+  const raw = (env[LARGE_PROMPT_CHARS_ENV] ?? '').trim();
+  if (raw === '') return DEFAULT_LARGE_PROMPT_CHARS;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : DEFAULT_LARGE_PROMPT_CHARS;
 }
 
 export function planModelCall(input: {

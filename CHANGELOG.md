@@ -14,11 +14,15 @@ changes**: production stays on `gemini-3.8-flash`, and every rule below is off u
 ### Added
 
 - **Two deterministic rules for the statements stage in `/api/gemini`, off by default** (`lib/model-combination.ts`):
-  a prompt longer than `GEMINI_LARGE_PROMPT_CHARS` (default 12,500 characters, about 200 ABAP lines) is answered by
-  `GEMINI_LARGE_PROMPT_MODEL`; an answer the first model did not finish (output bound, empty, unfinished — not the
-  provider's filter) is asked once more of `GEMINI_FALLBACK_MODEL`, under the same bound and deadline. Both decide
-  by the prompt's length and the answer's finish reason and by nothing a client sent; both run only on the
-  platform key; a named model must be in the register.
+  a prompt longer than `GEMINI_LARGE_PROMPT_CHARS` (default 12,500 characters, about 200 ABAP lines; `0` = every
+  prompt of the stage, which is what the study recommends) is answered by `GEMINI_LARGE_PROMPT_MODEL`; an answer the
+  first model did not finish (output bound, empty, unfinished — not the provider's filter) is asked once more of
+  `GEMINI_FALLBACK_MODEL`, under the same bound and deadline. Both decide by the prompt's length and the answer's
+  finish reason and by nothing a client sent; both run only on the platform key; a named model must be in the
+  register. Measured on 150 learn cases, judged blind in one round: the statements on `gemini-4-hydrogen` at MEDIUM
+  85.2 % equal against 77.2 % on the product model, 5 against 10 sentences contradicting the code, no dropout
+  against 5, 30 s against 72 s median; a rewording of that draft by the product model at LOW (designed, not built)
+  87.8 % and a fifth as many technical sentences.
 - **A thinking level per model and stage** (`lib/model-thinking.ts`): `gemini-4-hydrogen` thinks MEDIUM for the
   statements (measured blind on the seven largest learn cases: as many statements equal as the default, fewer
   technical ones, 28 % cheaper and faster, never near the output bound). The product model keeps its default.
