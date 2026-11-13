@@ -5,6 +5,52 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.0.23] — 2026-11-13
+
+A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findings scheduled for it
+(`docs/ROADMAP.md`, row 3.0.23), and a model register whose emergency exit works again. No engine-version
+gate: what a signed run says does not move.
+
+### Fixed
+
+- **A model call the generation lease refuses no longer costs the community key's daily budget.** The budget counts
+  a call before the lease checks it; a call the lease then refuses never reaches the provider and is now given back
+  to the day it was counted on, also when the lease check itself fails.
+- **The delivery-package verdict says only what was checked.** Checked against an authentic audit pack, a delivery
+  package is reported as matching its own manifest, which names the run and source digest the pack signed — no
+  longer as coming from the signed run, because the pack's signature does not cover the package's files. The
+  offline verifier exits 2 for it (consistent but not signed), the verify page shows it as a warning, and the
+  archive name is printed with control characters escaped.
+- **One status per function in Transformation.** STATUS.md, TRACE.md and the page decide each function's status
+  once: a function whose body was written but whose guard predicate was not is "written, a check still fails"
+  everywhere, and the counts agree.
+- **A function the model left without a statement is "left empty by the model".** Its comment is shown as plain text;
+  it is no longer counted as written or traced as model-written.
+- **The rule line adds up.** The Business view's line counts rules, not questions ("5 questions for the business
+  cover 16 rules · 4 technical rules stay as coded · 21 not determined"), so it matches the business-rule count
+  beside it.
+- **No "Code generated" tick while the code is not activatable.** Transformation's "Status of the code" says what
+  the tool bar says.
+- **Delivery labels the signed-off target "Design target".** It no longer shows "Architecture decision: Confirmed"
+  beside the unconfirmed keep, rebuild or retire decision.
+- **"When the the value is below 3" reads "When the value is below 3".** Rule statements add the article once
+  where the code tests an expression without a field name.
+- **Who may act is read once in the process documentation.** Without an AUTHORITY-CHECK, the "Roles" gap no longer
+  says the source proves authorization objects; it repeats the Controls line (the program's own role check, or "No
+  AUTHORITY-CHECK and no role check in the code") in the delivery package, on screen and in the description's
+  question. The stored document is unchanged.
+- **The handbook's roles block names the RACI when there is one.** It no longer says "No AI-generated draft for
+  roles exists" beside a RACI the SOP and RACI step wrote, and a RACI a person edited is not called the AI-generated draft;
+  without a RACI it says what the code shows.
+
+### Changed
+
+- **The model register's emergency exit works again.** `gemini-2.5-flash` (refuses the thinking level the fill and
+  wording calls send; shut down by Google on 1 December 2026) and `gemini-3.5-flash` (rerouted by Google to
+  `gemini-3.6-flash`, so a receipt would name a model that did not answer) are struck; `gemini-3.6-flash` is the
+  exit. `gemini-4-hydrogen` is registered for evaluation; the product model stays `gemini-3.8-flash`. The register
+  probe now sends a thinking level and counts a rerouted answer as not answered.
+
 ## [v3.0.22] — 2026-11-12
 
 A hotfix from an end-to-end run of an owner example: a 936-line object-oriented program with a status workflow and

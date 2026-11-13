@@ -270,7 +270,7 @@ test.describe('the lease branch of /api/gemini', () => {
       'assertAccountActive(',
       'modelStageEnabled(',
       "if (lease && stage !== 'transformation')",
-      'ALLOWED_MODELS.has(model)',
+      'modelServable(model, productModel(), ALLOWED_MODELS, EVALUATION_ONLY_MODELS)',
       'prompt.length > MAX_PROMPT_LENGTH',
       'loadOwnModelKey(decodedToken.uid',
     ]) {
@@ -327,7 +327,8 @@ test.describe('the lease branch of /api/gemini', () => {
 
   test('a refusal carries the lease\'s code and status', () => {
     expect(src).toMatch(/if \(!peek\.ok\) \{\s*return NextResponse\.json\(\{ error: peek\.error, code: peek\.code \}, \{ status: peek\.status \}\);/);
-    expect(src).toMatch(/if \(!counted\.ok\) \{\s*return NextResponse\.json\(\{ error: counted\.error, code: counted\.code \}, \{ status: counted\.status \}\);/);
+    // The refusal first gives back the community budget's count (3.0.23), then answers with the lease's code.
+    expect(src).toMatch(/if \(!counted\.ok\) \{\s*await giveBack\(\);\s*return NextResponse\.json\(\{ error: counted\.error, code: counted\.code \}, \{ status: counted\.status \}\);/);
   });
 
   test('a call marked gate repair is honoured only under a lease and only on a repair of gate errors, checked before the lease is read (14.10.2026)', () => {

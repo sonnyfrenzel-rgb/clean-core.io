@@ -1502,7 +1502,7 @@ export function howBuiltLines(g: DeliveryFacts['generation'] | null): string[] {
   lines.push(
     'Clean-Core.io wrote the frame of every function from the original ABAP — types with their places, the input contract, the guards with their rule ids, the run store, the CSV writer and the call contract the tests run through. A model wrote only the bodies between the fill markers; every body is AI-generated, never proven.',
     '',
-    `- Functions: ${e.units} — ${e.written} written${e.repaired ? ` (${e.repaired} after a repair round)` : ''}, ${e.notWritten.length} left as stubs. The generation is **${generationStatusWords(g)}**.`,
+    `- Functions: ${e.units} — ${e.written} written${e.repaired ? ` (${e.repaired} after a repair round)` : ''}, ${e.empty?.length ? `${e.empty.length} left empty by the model, ` : ''}${e.notWritten.length} left as stubs. The generation is **${generationStatusWords(g)}**.`,
   );
   if (g.activation) lines.push(...activationLines(g.activation));
   if (g.typeCheck) lines.push(...typeCheckLines(g.typeCheck));
@@ -1511,6 +1511,7 @@ export function howBuiltLines(g: DeliveryFacts['generation'] | null): string[] {
   for (const s of e.sapIds ?? []) lines.push(`- SAP identifier in \`${s.unitId}\` to check before use: ${s.id} — ${s.state}${s.sapName ? ` (SAP: ${s.sapName})` : ''}.`);
   for (const n of e.notWritten) lines.push(`- Not written: \`${n.unitId}\` ${n.title} — ${n.reason}`);
   for (const f of e.failing) lines.push(`- Written, a check still fails: \`${f.unitId}\` ${f.title} — ${f.failure}`);
+  for (const n of e.empty ?? []) lines.push(`- Left empty by the model (no statement, not counted as written): \`${n.unitId}\` ${n.title}${n.comment ? ` — its comment: ${n.comment}` : ''}`);
   for (const c of orderedChecks(e.checks)) lines.push(`- Check before saving — ${checkPhrase(c)}.`);
   if (e.checks.some((c) => c.scope === 'engine-code')) lines.push(`- ${ENGINE_CODE_NOTE}`);
   for (const n of e.notRun) lines.push(`- Not run before saving — ${n.kind}: ${n.reason}`);

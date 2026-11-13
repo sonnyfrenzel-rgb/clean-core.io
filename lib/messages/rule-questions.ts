@@ -104,11 +104,26 @@ export function questionsPanelSummary(answered: number, total: number): string {
   return `Business questions · ${answered} of ${total} answered`;
 }
 
-/** "7 questions for the business · 6 technical rules stay as coded". */
-export function basketLineText(questions: number, technical: number): string {
-  const q = questions === 1 ? '1 question for the business' : `${questions} questions for the business`;
+/**
+ * "7 questions for the business cover 12 rules · 6 technical rules stay as coded" — counted in rules, so with the
+ * not-determined count beside it the line adds up to the business-rule count it stands beside (3.0.23): a question
+ * covers several rules and is never counted as one.
+ */
+export function basketLineText(questions: number, rulesAsked: number, technical: number): string {
+  const covered = rulesAsked === 1 ? '1 rule' : `${rulesAsked} rules`;
+  const q =
+    questions === 0
+      ? '0 questions for the business'
+      : questions === 1
+        ? `1 question for the business covers ${covered}`
+        : `${questions} questions for the business cover ${covered}`;
   const t = technical === 1 ? '1 technical rule stays as coded' : `${technical} technical rules stay as coded`;
   return `${q} · ${t}`;
+}
+
+/** "3 more in the rule register" — business rules no question covers that are neither technical nor not determined. */
+export function basketOther(n: number): string {
+  return `${n} more in the rule register`;
 }
 
 /** "2 not determined". */

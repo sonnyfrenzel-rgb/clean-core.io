@@ -24,6 +24,8 @@ import type {
   HandbookObject,
   ProcessHandbook,
 } from '@/lib/process-handbook';
+import { handbookRolesNote, type AuthorizationBasis } from '@/lib/process-documentation';
+import { DOCUMENTATION_PROPOSALS_ID } from '@/lib/page-anchors';
 import { cn } from '@/lib/utils';
 import './handbook.css';
 
@@ -81,6 +83,12 @@ export interface HandbookStageProps {
   onSelect: (elementId: string | null) => void;
   /** The signed source — the code card shows its lines and nothing else. */
   source: string | null;
+  /** The roles of the SOP and RACI on record (`rolesOfLayer`); the roles block points to it where it exists. */
+  raciRoles?: readonly string[];
+  /** How the code limits who may act (`authorizationBasisOf` of the document); null while it is not built. */
+  authorization?: AuthorizationBasis | null;
+  /** True when a person's edit of the RACI applies (`raciEditApplies`). */
+  raciEdited?: boolean;
 }
 
 export default function HandbookStage({
@@ -91,6 +99,9 @@ export default function HandbookStage({
   selected,
   onSelect,
   source,
+  raciRoles = [],
+  authorization = null,
+  raciEdited = false,
 }: HandbookStageProps) {
   const byId = useMemo(() => new Map((model?.elements ?? []).map((e) => [e.id, e])), [model]);
   const chapters = handbook?.chapters ?? [];
@@ -151,7 +162,7 @@ export default function HandbookStage({
         onSelect={onSelect}
         source={source}
         fileName={model?.fileName ?? ''}
-        namingState={model?.naming.state ?? 'not-named'}
+        rolesNote={handbookRolesNote({ namingState: model?.naming.state ?? 'not-named', raciRoles, authorization, raciEdited })}
       />
     </section>
   );
@@ -272,10 +283,17 @@ function DataBlock({ chapter }: { chapter: HandbookChapter }) {
   );
 }
 
-function Roles({ chapter, namingState }: { chapter: HandbookChapter; namingState: string }) {
+function Roles({ chapter, note }: { chapter: HandbookChapter; note: { text: string; raci: boolean } }) {
+  const raciLink = note.raci ? (
+    <a href={`#${DOCUMENTATION_PROPOSALS_ID}`} data-handbook-raci-link="" className="text-cc-ink underline underline-offset-2">
+      Read the RACI
+    </a>
+  ) : null;
+  // The chapter's proposed roles are the model's draft; the RACI note speaks for itself (it may be edited).
+  const proposed = chapter.proposedRoles.length > 0;
   return (
-    <Block label="Roles · AI-generated draft only">
-      {chapter.proposedRoles.length > 0 ? (
+    <Block label={proposed || !note.raci ? 'Roles · AI-generated draft only' : 'Roles'}>
+      {proposed ? (
         <div className="flex flex-wrap items-center gap-2">
           {chapter.proposedRoles.map((role) => (
             <span key={role} className="inline-flex items-center gap-1 cc-text-cell text-cc-ink">
@@ -284,12 +302,12 @@ function Roles({ chapter, namingState }: { chapter: HandbookChapter; namingState
             </span>
           ))}
           <CcProvenanceChip value="proposed" />
+          {raciLink}
         </div>
       ) : (
         <p className="m-0 cc-text-meta text-cc-ink-muted">
-          {namingState === 'named'
-            ? 'The stored AI-generated draft names no role for this chapter.'
-            : 'No AI-generated draft for roles exists for this run. The code names authorizations, not people.'}
+          {note.text}
+          {raciLink ? <>{' '}{raciLink}</> : null}
         </p>
       )}
     </Block>
@@ -305,7 +323,7 @@ function ChapterPanel({
   onSelect,
   source,
   fileName,
-  namingState,
+  rolesNote,
 }: {
   chapter: HandbookChapter | null;
   chapters: HandbookChapter[];
@@ -315,7 +333,7 @@ function ChapterPanel({
   onSelect: (id: string | null) => void;
   source: string | null;
   fileName: string;
-  namingState: string;
+  rolesNote: { text: string; raci: boolean };
 }) {
   const [tab, setTab] = useState<PanelTab>('chapter');
   const index = chapter ? chapters.findIndex((c) => c.id === chapter.id) : -1;
@@ -388,7 +406,7 @@ function ChapterPanel({
                       <Block label="Business rules">
                         <RuleList chapter={chapter} limit={3} />
                       </Block>
-                      <Roles chapter={chapter} namingState={namingState} />
+                      <Roles chapter={chapter} note={rolesNote} />
                       <Block label="Reads · writes">
                         <DataBlock chapter={chapter} />
                       </Block>

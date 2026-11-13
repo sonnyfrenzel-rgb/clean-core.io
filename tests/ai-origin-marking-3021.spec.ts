@@ -314,20 +314,57 @@ test.describe('the offline verifier: a delivery package against its signed run',
     expect(row('docs/decision.md').ai).toBeNull();
   });
 
-  test('a genuine package against its pack: both verifiers say it comes from the signed run, and name the models', async () => {
+  test('a genuine package against its pack: both verifiers say it names the signed run, not that it comes from it, and name the models', async () => {
     const pkg = await deliveryZip();
     const pack = await auditPack();
     const check = await web(pkg.buf, pack);
-    expect(check.verdict, check.problems.join(' | ')).toBe('from-signed-run');
+    expect(check.verdict, check.problems.join(' | ')).toBe('names-signed-run');
     expect(check.against).toEqual({ packAuthentic: true, runMatches: true, sourceMatches: true, narrativeMatches: true });
     expect(check.models.find((m) => m.source === 'code')).toMatchObject({ provider: 'google-gemini', model: 'gemini-test' });
-    expect(deliveryVerdictHeadline(check)).toContain('comes from the signed run');
-    expect(deliveryVerdictHeadline(check)).toContain('The package itself is not signed.');
+    expect(deliveryVerdictHeadline(check)).toContain('the manifest names the run and the source the audit pack signed');
+    expect(deliveryVerdictHeadline(check)).toContain('The package itself is not signed');
+    expect(deliveryVerdictHeadline(check)).not.toContain('comes from the signed run');
     const out = cli(pack.path, '--key', pack.publicKey, '--package', pkg.path);
-    expect(out.out).toContain('The package comes from the signed run');
+    expect(out.out).toContain('the manifest names the run and the source the audit pack signed');
+    expect(out.out).not.toContain('comes from the signed run');
     expect(out.out).toContain('Generated with AI assistance (Google Gemini gemini-test)');
     expect(out.out).toContain('Generated with AI assistance (Google Gemini gemini-analysis)');
+    // The pack verified; the package is covered by no signature, so the run is not "verified" (0).
+    expect(out.status, out.out).toBe(2);
+  });
+
+  test("a package file changed together with the package's own manifest never reads as coming from the signed run", async () => {
+    const pack = await auditPack();
+    // Every check the package can make of itself agrees: the file and its row in manifest.json changed together,
+    // run id and source digest left as they were. Nothing signed binds the package, so this cannot be told
+    // from a genuine package; the verdict must not claim more than that.
+    const pkg = await deliveryZip((fs) => {
+      const f = fs.find((x) => x.path === 'README.md')!;
+      f.content += '\nChanged after the package was built.\n';
+      const m = fs.find((x) => x.path === 'manifest.json')!;
+      const parsed = JSON.parse(m.content);
+      parsed.files.find((r: { path: string }) => r.path === f.path).sha256 = sha(f.content);
+      m.content = JSON.stringify(parsed);
+    });
+    const check = await web(pkg.buf, pack);
+    expect(check.verdict, check.problems.join(' | ')).not.toBe('from-signed-run');
+    expect(check.verdict).toBe('names-signed-run');
+    expect(deliveryVerdictHeadline(check)).not.toContain('comes from the signed run');
+    const out = cli(pack.path, '--key', pack.publicKey, '--package', pkg.path);
+    expect(out.out).not.toContain('comes from the signed run');
+    expect(out.status, out.out).not.toBe(0);
+  });
+
+  test('the archive name is printed with its control and direction characters escaped', async () => {
+    const pack = await auditPack();
+    // U+202E reverses what follows it on the terminal; U+200F is a right-to-left mark. Both are legal in a file name.
+    const odd = join(mkdtempSync(join(tmpdir(), 'pack-name-')), 'pack\u202egpj.\u200fzip');
+    writeFileSync(odd, readFileSync(pack.path));
+    const out = cli(odd, '--key', pack.publicKey);
     expect(out.status, out.out).toBe(0);
+    const line = out.out.split(/\r?\n/).find((l) => l.startsWith('Pack '))!;
+    expect(line).toContain('pack\\u202egpj.\\u200fzip');
+    expect(line).not.toMatch(/[\u202e\u200f]/);
   });
 
   test('each way a package can leave its run fails both verifiers alike', async () => {
@@ -388,8 +425,8 @@ test.describe('the offline verifier: a delivery package against its signed run',
     const pack = await auditPack();
     const check = await web(pkg.buf, pack);
     expect(check.version).toBe(1);
-    expect(check.verdict, check.problems.join(' | ')).toBe('from-signed-run');
-    expect(cli(pack.path, '--key', pack.publicKey, '--package', pkg.path).status).toBe(0);
+    expect(check.verdict, check.problems.join(' | ')).toBe('names-signed-run');
+    expect(cli(pack.path, '--key', pack.publicKey, '--package', pkg.path).status).toBe(2);
   });
 
   test('an audit pack checked without --package verifies exactly as before', async () => {

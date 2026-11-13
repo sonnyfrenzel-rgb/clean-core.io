@@ -6,6 +6,7 @@ import {
   NOT_DETERMINED_LABEL,
   anchorsWords,
   commitWaitWords,
+  notDeterminedOf,
   processDocumentationDisclaimer,
   rangeWords,
   stepEvidence,
@@ -322,7 +323,7 @@ export default function ProcessDocumentationView({
         summary={gapsSummary(doc.notDetermined)}
       >
         <ul className="space-y-2 text-sm text-cc-ink">
-          {doc.notDetermined.map((gap) => (
+          {notDeterminedOf(doc).map((gap) => (
             <li key={gap.subject} className="flex flex-col gap-1 md:flex-row md:items-start md:gap-3">
               <span className="inline-flex items-center gap-2 md:w-48 shrink-0">
                 <CcProvenanceChip value="not-determined" />

@@ -59,7 +59,7 @@ import {
 } from '@/lib/gemini-test-stub';
 import { incompleteAnswerMessage, modelCompletion, MODEL_INCOMPLETE_CODE, type ModelAnswer } from '@/lib/model-completion';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
-import { resolveRequestedModel } from '@/lib/gemini-model-choice';
+import { modelServable, resolveRequestedModel } from '@/lib/gemini-model-choice';
 import { RESPONSE_SHAPE_STAGE, isResponseShape, responseSchemaForStage } from '@/lib/model-response-schema';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
@@ -72,7 +72,7 @@ import { thinkingConfigFor } from '@/lib/model-thinking';
 import { MODEL_CALL_DEADLINE_MS, MODEL_NETWORK_CODE, MODEL_TIMEOUT_CODE, errorCodes, modelDeadline, modelTimeoutMessage, providerConnectionFailure, type ModelDeadline } from '@/lib/model-deadline';
 import { isModelCallStage, STAGE_MAX_OUTPUT_TOKENS } from '@/lib/model-call-stage';
 import { NAMING_PAUSED_CODE, NAMING_PAUSED_REASON, NAMING_STAGE, namingPromptAllowed } from '@/lib/process-naming';
-import { PLATFORM_BUDGET_CODE, platformBudgetMessage, reservePlatformModelCall } from '@/lib/platform-model-budget';
+import { PLATFORM_BUDGET_CODE, platformBudgetMessage, reservePlatformModelCall, returnPlatformModelCall } from '@/lib/platform-model-budget';
 import { AUTO_MODEL_STEPS_OFF_CODE, autoModelStepsOffMessage, autoModelStepsOn } from '@/lib/auto-model-steps';
 
 /**
@@ -172,6 +172,13 @@ function getDefaultAI(): GoogleGenAI | null {
  * naming the permitted models instead of a 500 from a provider 404, and
  * `GEMINI_MODEL` can no longer be pointed at an emergency exit that is walled up.
  *
+ * The same happened twice more, found 12.11.2026: `gemini-3.5-flash` answered
+ * but was served by `gemini-3.6-flash` (Google reroutes it), so a receipt would
+ * have named a model that did not answer; `gemini-2.5-flash` refuses a thinking
+ * level, which the fill and wording calls send, and shuts down on 1.12.2026.
+ * Both were struck; `gemini-3.6-flash` is the exit. The probe now sends a
+ * thinking level and counts a rerouted answer as not answered.
+ *
  * `scripts/check-gemini-register.mjs` makes the call for every entry here and
  * writes what came back to `tests/gemini-register-liveness.json`;
  * `tests/gemini-model-pin.spec.ts` holds the register and that record together
@@ -179,11 +186,14 @@ function getDefaultAI(): GoogleGenAI | null {
  */
 const ALLOWED_MODELS = new Set([
   'gemini-3.8-flash',       // GA — the product default (lib/constants.ts)
-  'gemini-3.5-flash',       // GA — the longest-standing GA of the 3 line
-  'gemini-2.5-flash',       // GA — stable fallback
+  'gemini-3.6-flash',       // GA — the emergency exit: serves itself and takes a thinking level
+  'gemini-4-hydrogen',      // NEW — under evaluation as the next product model, via GEMINI_MODEL only
   'gemini-3-flash-preview', // PREVIEW — the former default, kept for callers that pin it
   'gemini-3.5-flash-lite',  // GA — the naming stage only (lib/constants.ts, roadmap 17.3)
 ]);
+
+/** Registered, but served only when `GEMINI_MODEL` makes it the product model; a request naming it is refused. */
+const EVALUATION_ONLY_MODELS = new Set(['gemini-4-hydrogen']);
 
 /**
  * The model this deployment actually calls, and why it can be moved without a deploy.
@@ -527,8 +537,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: NAMING_PAUSED_REASON, code: NAMING_PAUSED_CODE }, { status: 403 });
     }
 
-    // F-07: Validate model against server-side allowlist
-    if (!ALLOWED_MODELS.has(model)) {
+    // F-07: Validate model against server-side allowlist. A model under
+    // evaluation runs only as this deployment's product model (`GEMINI_MODEL`),
+    // never because a client asked for it by name.
+    if (!modelServable(model, productModel(), ALLOWED_MODELS, EVALUATION_ONLY_MODELS)) {
       return NextResponse.json(
         { error: `Model "${model}" is not permitted. Allowed: ${[...ALLOWED_MODELS].join(', ')}` },
         { status: 400 },
@@ -650,25 +662,45 @@ export async function POST(request: NextRequest) {
     // SEC-01 (3.0.21): the community key's daily budget, with its breaker
     // (`lib/platform-model-budget.ts`). Only a call the platform key would pay
     // for is counted; an own key is never counted or refused here. Asked
-    // before a lease counts the call, so a refused call costs the lease nothing.
+    // before a lease counts the call, so a refused call costs the lease nothing;
+    // a call the lease then refuses is given back to the budget below.
+    // The day the community budget counted this call on, when it did.
+    let platformDay: string | null = null;
     if (!ownKey && !stubbed) {
-      let admitted: boolean;
       try {
         const { db, FieldValue } = await getAdminDb();
-        admitted = (await reservePlatformModelCall(db, (n) => FieldValue.increment(n))).ok;
+        const reserved = await reservePlatformModelCall(db, (n) => FieldValue.increment(n));
+        platformDay = reserved.ok ? reserved.day : null;
       } catch (budgetErr: unknown) {
         logger.error('platform model budget check failed', { route: 'api/gemini', error: budgetErr instanceof Error ? budgetErr.name : 'unknown' });
         return NextResponse.json({ error: 'The usage check could not run. Please try again shortly.' }, { status: 503 });
       }
-      if (!admitted) {
+      if (!platformDay) {
         return NextResponse.json({ error: platformBudgetMessage(), code: PLATFORM_BUDGET_CODE }, { status: 503 });
       }
     }
 
     if (lease) {
-      const { db } = await getAdminDb();
-      const counted = await acquireLeaseCall(db, lease, { uid: decodedToken.uid, now: Date.now(), gateRepair });
+      const { db, FieldValue } = await getAdminDb();
+      // A call the lease refuses (or cannot check) never reaches the provider,
+      // so the community budget gets back the call it counted above.
+      const giveBack = async () => {
+        if (!platformDay) return;
+        try {
+          await returnPlatformModelCall(db, (n) => FieldValue.increment(n), platformDay);
+        } catch (returnErr: unknown) {
+          logger.warn('platform model budget return failed', { route: 'api/gemini', error: returnErr instanceof Error ? returnErr.name : 'unknown' });
+        }
+      };
+      let counted: Awaited<ReturnType<typeof acquireLeaseCall>>;
+      try {
+        counted = await acquireLeaseCall(db, lease, { uid: decodedToken.uid, now: Date.now(), gateRepair });
+      } catch (leaseErr: unknown) {
+        await giveBack();
+        throw leaseErr;
+      }
       if (!counted.ok) {
+        await giveBack();
         return NextResponse.json({ error: counted.error, code: counted.code }, { status: counted.status });
       }
       // The slot this call took, by its time, so the release frees exactly it.

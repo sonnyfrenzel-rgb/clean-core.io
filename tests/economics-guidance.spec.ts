@@ -302,7 +302,8 @@ test.describe('the guided stage', () => {
     // factor that gives 0.668 × 5 = 3.3400000000000003 (hotfix 3.0.22, HF-e: Move to SAP standard has its own, lower
     // factors since, so its field reads 2 — the option's own proposal, also rounded).
     await page.click('[data-cost-option-edit="standard"]');
-    await expect(page.locator('[data-cost-field="standard-oneoff-high-dev"]')).toHaveValue(String(roundDays(proposeEffort(LOC, 'standard')!.oneOff.high.devDays)));
+    // 668 lines × 3 days per 1,000 (Move to SAP standard's own high factor) = 2.004, shown as 2.
+    await expect(page.locator('[data-cost-field="standard-oneoff-high-dev"]')).toHaveValue('2');
     await page.click('[data-cost-option-edit="standard"]');
     await page.click('[data-cost-option-edit="rebuild"]');
     const high = page.locator('[data-cost-field="rebuild-oneoff-high-dev"]');
@@ -310,6 +311,11 @@ test.describe('the guided stage', () => {
     await high.fill('4');
     await expect(page.locator('[data-cost-option="rebuild"]')).toHaveAttribute('data-effort-provenance', 'stated');
     await expect(page.locator('[data-cost-option="rebuild"] [data-effort-chip="stated"]')).toContainText('your figure');
+    // Every option's own field does the same: typing over Move to SAP standard's proposal makes it the reader's figure.
+    await page.click('[data-cost-option-edit="standard"]');
+    await page.locator('[data-cost-field="standard-oneoff-high-dev"]').fill('3');
+    await expect(page.locator('[data-cost-option="standard"]')).toHaveAttribute('data-effort-provenance', 'stated');
+    await expect(page.locator('[data-cost-option="standard"] [data-effort-chip="stated"]')).toContainText('your figure');
     expect(await rawNumbers(page), 'a raw float on the stage').toEqual([]);
   });
 

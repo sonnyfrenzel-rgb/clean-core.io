@@ -326,6 +326,94 @@ export function isEngineDocumentation(raw: unknown): boolean {
   return isObject(parsed) && parsed.format === PROCESS_DOCUMENTATION_FORMAT && checkProcessDocumentationShape(parsed).ok;
 }
 
+/* ------------------------------------------------- who may act, one reading */
+
+/**
+ * How the code limits who may act — one reading for every sentence that says it (3.0.23): the Controls line and the
+ * "Roles" gap of the Markdown file, the gap list on screen and the roles block of the handbook. The stored gap reason
+ * says "The source proves authorization objects (AUTHORITY-CHECK)", which is only true of the first kind; a program
+ * that checks a role in its own code, or nothing, was told it does, three lines below "No AUTHORITY-CHECK".
+ *
+ *   - `authority-check`     an AUTHORITY-CHECK sentence, or an object the facts read;
+ *   - `own-check`           no AUTHORITY-CHECK, but the code names an authorization or a role it checks;
+ *   - `none`                neither;
+ *   - `no-authority-check`  no AUTHORITY-CHECK, and the document was read before role checks were recorded.
+ */
+export type AuthorizationBasis =
+  | { kind: 'authority-check' }
+  | { kind: 'own-check'; names: Array<{ name: string; line: number }> }
+  | { kind: 'none' }
+  | { kind: 'no-authority-check' };
+
+export function authorizationBasisOf(doc: Pick<ProcessDocumentation, 'statements' | 'facts'>): AuthorizationBasis {
+  const facts = readCapabilityFacts(doc.facts);
+  if (doc.statements.some((s) => statementKind(s.text) === 'control') || (facts?.authority.length ?? 0) > 0) {
+    return { kind: 'authority-check' };
+  }
+  const own = facts?.ownAuthorization;
+  if (own?.length) return { kind: 'own-check', names: own };
+  return own ? { kind: 'none' } : { kind: 'no-authority-check' };
+}
+
+/** The sentence for a code without AUTHORITY-CHECK; null when it has one (its checks are listed instead). */
+export function authorizationAbsenceLine(basis: AuthorizationBasis): string | null {
+  switch (basis.kind) {
+    case 'own-check':
+      return `No AUTHORITY-CHECK; its own code names an authorization or a role it checks: ${basis.names.map((o) => `${o.name} (L${o.line})`).join(', ')}.`;
+    case 'none':
+      return 'No AUTHORITY-CHECK and no role check in the code.';
+    case 'no-authority-check':
+      return 'No AUTHORITY-CHECK in the code.';
+    default:
+      return null;
+  }
+}
+
+/** The not-determined list with the "Roles" reason said from the same reading as the Controls line. */
+export function notDeterminedOf(doc: Pick<ProcessDocumentation, 'statements' | 'facts' | 'notDetermined'>): DocGap[] {
+  const absence = authorizationAbsenceLine(authorizationBasisOf(doc));
+  if (!absence) return doc.notDetermined;
+  return doc.notDetermined.map((gap) => (gap.subject === 'Roles'
+    ? { ...gap, reason: `${absence} Who holds an authorization is not in the source; no job title is derived from it.` }
+    : gap));
+}
+
+/**
+ * The roles block of a handbook chapter when the chapter has no AI-generated role of its own (3.0.23). Where the SOP
+ * and RACI step wrote a matrix, the block points to it and names its roles instead of saying no draft exists; where
+ * none was written, it says what the code shows about who may act — from `authorizationBasisOf`, not a fixed claim.
+ */
+export function handbookRolesNote(input: {
+  namingState: string;
+  /** The roles of the SOP and RACI on record (`rolesOfLayer`), empty when none is. */
+  raciRoles: readonly string[];
+  /** The reading of the document; null while it is not built. */
+  authorization: AuthorizationBasis | null;
+  /** True when a person's edit of the RACI applies: it is then no longer only the model's draft. */
+  raciEdited?: boolean;
+}): { text: string; raci: boolean } {
+  if (input.raciRoles.length > 0) {
+    const shown = input.raciRoles.slice(0, 6).join(', ');
+    const more = input.raciRoles.length > 6 ? ` and ${input.raciRoles.length - 6} more` : '';
+    const n = input.raciRoles.length;
+    const source = input.raciEdited ? 'The edited RACI on record' : 'The AI-generated SOP and RACI draft';
+    return {
+      text: `${source} names ${n === 1 ? '1 role' : `${n} roles`} for the whole process: ${shown}${more}. It does not assign them to the lines of this chapter.`,
+      raci: true,
+    };
+  }
+  if (input.namingState === 'named') return { text: 'The stored AI-generated draft names no role for this chapter.', raci: false };
+  const code = (() => {
+    switch (input.authorization?.kind) {
+      case 'authority-check': return 'The code names authorization objects, not people.';
+      case 'own-check': return 'The code checks an authorization or a role of its own, not who holds it.';
+      case 'none': return 'The code has no AUTHORITY-CHECK and no role check, and names no people.';
+      default: return 'The code names no people.';
+    }
+  })();
+  return { text: `No AI-generated draft for roles exists for this run. ${code}`, raci: false };
+}
+
 /* ---------------------------------------------------------- the words */
 
 /** `line 8` / `lines 224 to 232` — the wording of the brief and the target model. */
@@ -641,10 +729,11 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation, opts: 
     out.push(`${facts.calls.map((c) => `${c.name} (${c.kind}${c.destination ? `, destination ${c.destination}` : ''}, L${c.line})`).join(', ')}.`, '');
   }
   out.push('### Controls', '');
+  // One reading for this line and the "Roles" gap below (`authorizationBasisOf`).
+  const absence = authorizationAbsenceLine(authorizationBasisOf(doc));
   if (controls.length) for (const g of controls) out.push(`- ${groupLine(g)}`);
-  else if (facts?.ownAuthorization?.length) {
-    out.push(`No AUTHORITY-CHECK; its own code names an authorization or a role it checks: ${facts.ownAuthorization.map((o) => `${o.name} (L${o.line})`).join(', ')}.`);
-  } else out.push('No AUTHORITY-CHECK in the code.');
+  else if (absence) out.push(absence);
+  else if (facts?.authority.length) out.push(`- AUTHORITY-CHECK: ${facts.authority.map((o) => `${o.name} (L${o.line})`).join(', ')}.`);
   out.push('', '### Who acts', '');
   out.push('Read from the code (Reconstructed). A lane is the token the source writes, never a job title.', '');
   for (const lane of doc.lanes) {
@@ -666,7 +755,7 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation, opts: 
   out.push(`- **Traceability:** ${doc.traceability.sentence} A line anchor proves where a shape comes from, not that it is right for the business.`);
   if (doc.naming.notice) out.push(`- **Business names:** ${doc.naming.notice}`);
   out.push('', '**Not determined**', '');
-  for (const gap of doc.notDetermined) {
+  for (const gap of notDeterminedOf(doc)) {
     out.push(`- **${gap.subject}:** ${NOT_DETERMINED_LABEL} — ${gap.reason}`);
   }
   out.push('', '---', '');
