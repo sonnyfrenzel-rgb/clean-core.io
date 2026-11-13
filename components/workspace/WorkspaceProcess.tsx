@@ -23,6 +23,7 @@ import type { WalkGuide } from '@/lib/process-walk-guide';
 import type { ProcessTour as Tour } from '@/lib/process-tour';
 import { OPEN_WALK_EVENT, requestProcessWalk, takeProcessWalkRequest } from '@/lib/process-walk-request';
 import ProcessTour, { type TourMove } from './ProcessTour';
+import { ccModalOpen } from '@/components/cc/modal';
 import {
   MAP_SPOTLIGHT_EVENT,
   announceProcessMapModel,
@@ -320,6 +321,36 @@ export default function WorkspaceProcess({
     setTourOpen(false);
     setPausedAt(at);
     setMove(null);
+  }, []);
+  /**
+   * The walk-through beside the map's full screen (3.2.0, ADR-119 (d), owner decision O5): asked for from full screen,
+   * it runs in the side column and the full-screen canvas follows its stations; full screen stays. Leaving full screen
+   * while it runs continues it on the page at the same station — the tour is one, only its place changes.
+   */
+  const [mapFull, setMapFull] = useState(false);
+  const tourInFullScreen = tourOpen && mapFull && codeOnClick;
+  /** Where a tour opened in another place starts: the station it stood at, else where it was paused. */
+  const tourFrom = move ? move.at : (pausedAt ?? -1);
+  // While it runs in full screen, Escape ends the walk-through first — full screen stays; the next Escape leaves it
+  // (ADR-072's order: the innermost first). A dialog over full screen, the phone's tool sheet and the editor's own
+  // Escape go before it.
+  useEffect(() => {
+    if (!tourInFullScreen) return undefined;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || ccModalOpen()) return;
+      if (document.querySelector('[data-map-fullscreen-sheet]')) return;
+      if ((event.target as Element | null)?.closest?.('[data-map-fullscreen-body]')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeTour();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [tourInFullScreen, closeTour]);
+  /** In full screen the map follows the station to its level; the camera and the light are the map's (`tourStation`). */
+  const followInFullScreen = useCallback((next: TourMove) => {
+    setMove(next);
+    if (next.station) setPlane(next.station.plane);
   }, []);
   const told = useRef(onTourChange);
   useEffect(() => {
@@ -888,8 +919,9 @@ export default function WorkspaceProcess({
         <ProcessTour tour={tour} model={model} onClose={closeTour} say={wording.say} designHref={designHref} askWording={wording.askNow} />
       ) : null}
       {coach}
-      {/* Analyze, Business (plan AB-4, mockup states 4–6): the tour runs on the page, where the map stands. */}
-      {tourOpen && model && codeOnClick ? (
+      {/* Analyze, Business (plan AB-4, mockup states 4–6): the tour runs on the page, where the map stands — unless it
+          was asked for in the map's full screen, where it runs in the side column (ADR-119 (d)). */}
+      {tourOpen && model && codeOnClick && !mapFull ? (
         <ProcessTour
           inline
           tour={tour}
@@ -897,7 +929,7 @@ export default function WorkspaceProcess({
           onClose={closeTour}
           onPause={pauseTour}
           onMove={setMove}
-          initialStation={pausedAt ?? -1}
+          initialStation={tourFrom}
           say={wording.say}
           designHref={designHref}
           askWording={wording.askNow}
@@ -943,6 +975,25 @@ export default function WorkspaceProcess({
               onClearSpotlight={clearSpotlight}
               // AB-5: *Walk me through it* in the map's full screen starts the same tour as the page's button.
               onWalk={codeOnClick ? () => requestProcessWalk(projectId) : null}
+              onFullScreenChange={codeOnClick ? setMapFull : undefined}
+              tourPanel={tourInFullScreen ? (
+                <ProcessTour
+                  inline
+                  panel
+                  tour={tour}
+                  model={model}
+                  onClose={closeTour}
+                  onPause={pauseTour}
+                  onMove={followInFullScreen}
+                  initialStation={tourFrom}
+                  say={wording.say}
+                  designHref={designHref}
+                  askWording={wording.askNow}
+                  endings={tourEndings}
+                />
+              ) : null}
+              tourStation={tourInFullScreen && move?.station ? { id: move.station.id, plane: move.station.plane } : null}
+              onTourClose={closeTour}
             />
           ) : map.status === 'failed' ? (
             <p data-workspace-process-failed="" className="m-0 text-[13px] font-medium text-cc-ink-muted">

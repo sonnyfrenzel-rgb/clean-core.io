@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useId } from 'react';
-import { Map as MapIcon, Play } from 'lucide-react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { Map as MapIcon, Play, SlidersHorizontal } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcIconButton from '@/components/cc/IconButton';
@@ -24,6 +24,12 @@ import type { ProcessSearchResults } from './ProcessSearch';
  * import, the downloads and its overview, so this bar keeps only what is not the editor's. On a phone *Edit* is
  * disabled with the sentence why (P3, `DESIGN.md` §5.7); an invited reader's with the owner-only sentence (P8).
  *
+ * **On a phone, one row** (3.2.0, ADR-119): the process and the level path, one button that opens a sheet with
+ * "Map | Steps", find, zoom, fit and the overview map, the *Edit* switch (its sentence said to a screen reader in the
+ * row and shown in the sheet), *Walk me through it* and the way out as 44 px squares with their names — the bar that
+ * wrapped to some 550 px left the canvas a sliver. The sheet lies over the top of the canvas and pushes nothing;
+ * opening it moves the focus into it, Escape or the button closes it and the focus returns to the button.
+ *
  * **One side column.** The walk-through when it runs (the caller's card, `tour`), else the code of the chosen step
  * (a click on the map opens it here; full screen stays), else the hits of a search by the name the map shows, else a
  * line that says what a click does — and under it the overview map while it is on.
@@ -34,8 +40,12 @@ import type { ProcessSearchResults } from './ProcessSearch';
 export interface FullScreenBarProps {
   tools: CanvasFullscreenTools;
   processName: string;
-  /** "Map | Steps" and the level path with the way up — where the reader is. */
+  /** The level path with the way up — where the reader is. */
   place: React.ReactNode;
+  /** "Map | Steps": beside the level path on a wide screen, in the sheet on a phone. */
+  viewSwitch?: React.ReactNode;
+  /** A phone (breakpoint S): one row, the tools behind one button. */
+  compact?: boolean;
   /** The step list stands in the canvas's place: zoom, fit and the overview have nothing to act on. */
   steps: boolean;
   /** The field that finds a step (`ProcessSearch` `compact`); absent while editing. */
@@ -53,10 +63,15 @@ export interface FullScreenBarProps {
   onWalk?: (() => void) | null;
 }
 
-export function FullScreenBar({
+export function FullScreenBar(props: FullScreenBarProps) {
+  return props.compact ? <CompactFullScreenBar {...props} /> : <WideFullScreenBar {...props} />;
+}
+
+function WideFullScreenBar({
   tools,
   processName,
   place,
+  viewSwitch = null,
   steps,
   search,
   editing,
@@ -78,7 +93,14 @@ export function FullScreenBar({
       <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-2">
         <div data-map-fullscreen-title="" className="flex min-w-0 flex-col">
           <span className="truncate text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{processName}</span>
-          <div data-map-level-path="" className="min-w-0">{place}</div>
+          <div data-map-level-path="" className="min-w-0">
+            {viewSwitch ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {viewSwitch}
+                {place}
+              </div>
+            ) : place}
+          </div>
         </div>
         {editing ? null : (
           <>
@@ -120,6 +142,139 @@ export function FullScreenBar({
       <span className="shrink-0">
         <CanvasFullscreenToggle scope="map" filled={true} onToggle={tools.leave} buttonRef={tools.leaveRef} />
       </span>
+    </div>
+  );
+}
+
+/** The phone's bar: one row, the tools in a sheet behind one button (3.2.0, ADR-119). */
+function CompactFullScreenBar({
+  tools,
+  processName,
+  place,
+  viewSwitch = null,
+  steps,
+  search,
+  editing,
+  overview,
+  onOverviewChange,
+  editBlocked,
+  onEditingChange,
+  onWalk,
+}: FullScreenBarProps) {
+  const sheetId = useId();
+  const [open, setOpen] = useState(false);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const close = useCallback((returnFocus: boolean) => {
+    setOpen(false);
+    if (returnFocus) window.requestAnimationFrame(() => buttonRef.current?.focus());
+  }, []);
+  // Editing hides the tools the sheet holds: it closes with them.
+  const sheetShown = open && !editing;
+  // Open: the focus goes to the first control in the sheet.
+  useEffect(() => {
+    if (!sheetShown) return undefined;
+    const frame = window.requestAnimationFrame(() => {
+      sheetRef.current?.querySelector<HTMLElement>('input, button:not([disabled]), [tabindex="0"]')?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [sheetShown]);
+  // Escape closes the sheet first, wherever the focus is in full screen, before anything behind it; a press outside
+  // the bar closes it too.
+  useEffect(() => {
+    if (!sheetShown) return undefined;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented) return;
+      event.preventDefault();
+      event.stopPropagation();
+      close(true);
+    };
+    const onPointer = (event: PointerEvent) => {
+      if (!barRef.current?.contains(event.target as Node | null)) close(false);
+    };
+    window.addEventListener('keydown', onKey, true);
+    document.addEventListener('pointerdown', onPointer);
+    return () => {
+      window.removeEventListener('keydown', onKey, true);
+      document.removeEventListener('pointerdown', onPointer);
+    };
+  }, [sheetShown, close]);
+  return (
+    <div
+      ref={barRef}
+      data-map-fullscreen-bar="compact"
+      role="group"
+      aria-label={wt('fullScreen.barLabel')}
+      className="relative flex shrink-0 items-center gap-1 rounded-cc-card border border-cc-line bg-cc-surface p-1"
+    >
+      <div data-map-fullscreen-title="" className="flex min-w-0 flex-1 flex-col pl-1">
+        <span className="truncate text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{processName}</span>
+        <div data-map-level-path="" className="min-w-0">{place}</div>
+      </div>
+      {editing ? null : (
+        <CcIconButton
+          ref={buttonRef}
+          data-map-fullscreen-tools=""
+          density="cozy"
+          label={wt('fullScreen.tools')}
+          aria-expanded={sheetShown}
+          aria-controls={sheetShown ? sheetId : undefined}
+          onClick={() => (sheetShown ? close(false) : setOpen(true))}
+        >
+          <SlidersHorizontal size={16} aria-hidden={true} />
+        </CcIconButton>
+      )}
+      {/* The switch keeps its sentence for a screen reader; on screen the sentence stands in the sheet, not in a row. */}
+      <div
+        data-map-fullscreen-edit={editBlocked ? 'blocked' : editing ? 'on' : 'off'}
+        className="shrink-0 [&_[data-cc-switch]>div]:sr-only"
+      >
+        <CcSwitch
+          data-map-fullscreen-edit-switch=""
+          label={wt('fullScreen.edit')}
+          checked={editing}
+          disabled={editBlocked !== null}
+          onChange={onEditingChange}
+          help={editBlocked ?? undefined}
+        />
+      </div>
+      {onWalk ? (
+        <CcIconButton data-map-fullscreen-walk="" density="cozy" label={wt('abiz.walk')} onClick={onWalk}>
+          <Play size={16} aria-hidden={true} />
+        </CcIconButton>
+      ) : null}
+      <CanvasFullscreenToggle scope="map" filled={true} compact={true} onToggle={tools.leave} buttonRef={tools.leaveRef} />
+      {sheetShown ? (
+        <div
+          ref={sheetRef}
+          id={sheetId}
+          data-map-fullscreen-sheet=""
+          role="group"
+          aria-label={wt('fullScreen.toolsSheet')}
+          className="absolute top-full right-0 left-0 z-cc-popover mt-1 flex flex-col gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-3 shadow-cc-dialog"
+        >
+          {viewSwitch}
+          {search}
+          <div className={steps ? 'hidden' : 'flex flex-wrap items-center gap-2'}>
+            <CanvasZoomControls scope="map" zoom={tools.zoom} onZoomBy={tools.zoomBy} onFit={tools.fit} />
+            <CcIconButton
+              data-map-fullscreen-overview=""
+              label={wt('fullScreen.overview')}
+              text={wt('fullScreen.overview')}
+              aria-pressed={overview}
+              onClick={() => onOverviewChange(!overview)}
+            >
+              <MapIcon size={16} aria-hidden={true} />
+            </CcIconButton>
+          </div>
+          {editBlocked ? (
+            <p data-map-fullscreen-sheet-edit="" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
+              {editBlocked}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

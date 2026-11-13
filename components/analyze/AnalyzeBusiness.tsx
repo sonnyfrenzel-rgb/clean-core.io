@@ -276,11 +276,23 @@ export default function AnalyzeBusiness({
     const station = walkState.move?.station ?? null;
     return station ? { nodeId: station.id, line: station.anchor?.lineStart ?? null } : null;
   }, [walkState.move]);
-  /** When the tour closes or pauses the focus returns to "Walk me through it" (or "Walk through again"). */
+  /**
+   * When the tour closes or pauses the focus returns to "Walk me through it" (or "Walk through again") — in the map's
+   * full screen to its own (ADR-119 (d)), never to the page behind it. A focus the reader has put elsewhere (the
+   * canvas, the *Edit* switch) stays where it is.
+   */
   const wasTouring = useRef(false);
   useEffect(() => {
     if (wasTouring.current && !touring) {
-      window.requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-analyze-walk]')?.focus());
+      window.requestAnimationFrame(() => {
+        const now = document.activeElement;
+        if (now && now !== document.body && now.isConnected) return;
+        const full = document.querySelector<HTMLElement>('[data-map-fullscreen="true"]');
+        const target = full
+          ? full.querySelector<HTMLElement>('[data-map-fullscreen-walk]')
+          : document.querySelector<HTMLElement>('[data-analyze-walk]');
+        target?.focus();
+      });
     }
     wasTouring.current = touring;
   }, [touring]);

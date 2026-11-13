@@ -37,9 +37,14 @@ export interface ProcessBreadcrumbCrumb {
 export interface ProcessBreadcrumbProps {
   crumbs: readonly ProcessBreadcrumbCrumb[];
   onOpen: (plane: string | null) => void;
+  /**
+   * One line (the phone's full-screen bar, 3.2.0): the way up and the level on show; the levels above stay in the
+   * list for a screen reader, which still hears how deep the reader stands, and are reached by the way up.
+   */
+  compact?: boolean;
 }
 
-export default function ProcessBreadcrumb({ crumbs, onOpen }: ProcessBreadcrumbProps) {
+export default function ProcessBreadcrumb({ crumbs, onOpen, compact = false }: ProcessBreadcrumbProps) {
   const last = crumbs.length - 1;
   const parent = crumbs.length > 1 ? crumbs[last - 1] : null;
 
@@ -56,11 +61,16 @@ export default function ProcessBreadcrumb({ crumbs, onOpen }: ProcessBreadcrumbP
   }, [parent]);
 
   return (
-    <nav ref={navRef} data-process-path="" aria-label={wt('map.levelNav')} className="flex min-w-0 flex-wrap items-center gap-2">
-      <ol className="flex min-w-0 flex-wrap items-center gap-1">
+    <nav
+      ref={navRef}
+      data-process-path={compact ? 'compact' : ''}
+      aria-label={wt('map.levelNav')}
+      className={cn('flex min-w-0 items-center gap-2', compact ? 'flex-nowrap' : 'flex-wrap')}
+    >
+      <ol className={cn('flex min-w-0 items-center gap-1', compact ? 'flex-nowrap' : 'flex-wrap')}>
         {crumbs.map((crumb, index) => (
-          <li key={crumb.plane ?? 'top'} className="flex min-w-0 items-center gap-1">
-            {index > 0 ? (
+          <li key={crumb.plane ?? 'top'} className={cn('flex min-w-0 items-center gap-1', compact && index !== last && 'sr-only')}>
+            {index > 0 && !compact ? (
               <ChevronRight size={12} aria-hidden={true} className="shrink-0 text-cc-ink-muted" />
             ) : null}
             {index === last ? (

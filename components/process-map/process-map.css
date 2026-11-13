@@ -333,6 +333,14 @@
   background: var(--cc-page);
 }
 
+/* On a phone the frame gives its edge to the map: half the padding, the safe areas kept (3.2.0, ADR-119). */
+@media (max-width: 600px) {
+  .cc-editor-fullscreen {
+    padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
+      max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
+  }
+}
+
 /*
  * The guided tour (`TourCanvas`): the station's element is marked in ink and a
  * thicker line, with a light fill, and everything else steps back to the
@@ -351,13 +359,16 @@
   fill: var(--cc-ink-muted) !important;
 }
 
-.cc-tour-canvas .cc-tour-here .djs-visual > :first-child {
+/* The same mark on the full-screen map while the walk-through runs there (ADR-119 (d), `BpmnCanvas` `follow`). */
+.cc-tour-canvas .cc-tour-here .djs-visual > :first-child,
+.cc-map-canvas .cc-tour-here .djs-visual > :first-child {
   stroke: var(--cc-ink) !important;
   stroke-width: 3px !important;
   fill: var(--cc-information-bg);
 }
 
-.cc-tour-canvas .cc-tour-here .djs-visual text {
+.cc-tour-canvas .cc-tour-here .djs-visual text,
+.cc-map-canvas .cc-tour-here .djs-visual text {
   fill: var(--cc-ink) !important;
   font-weight: 600;
 }

@@ -270,6 +270,15 @@ export interface ProcessMapProps {
    * the tour; given, it stands first in the column and the bar offers no second start.
    */
   tourPanel?: React.ReactNode;
+  /**
+   * The station the walk-through in the side column shows (3.2.0, ADR-119 (d)): full screen opens its level, lights
+   * it and the canvas moves to it, as the inline tour's own map does. Null between stations and outside a tour.
+   */
+  tourStation?: { id: string; plane: string | null } | null;
+  /** Ends the walk-through running in full screen — *Edit* switched on ends it (the editor takes the canvas). */
+  onTourClose?: () => void;
+  /** Told when the page layout's full screen begins and ends, so the caller places its tour beside it or on the page. */
+  onFullScreenChange?: (open: boolean) => void;
 }
 
 export default function ProcessMap({
@@ -299,6 +308,9 @@ export default function ProcessMap({
   onClearSpotlight,
   onWalk = null,
   tourPanel = null,
+  tourStation = null,
+  onTourClose,
+  onFullScreenChange,
 }: ProcessMapProps) {
   const stage = layout === 'stage';
   /** Analyze, Business: the canvas first, everything about it under it, the code in the caller's panel. */
@@ -546,12 +558,16 @@ export default function ProcessMap({
     () => (spotlight && spotlight.ids.length > 0 ? spotlightSet(model, spotlight.ids) : null),
     [spotlight, model],
   );
+  /** The walk-through's station in full screen (ADR-119 (d)): it alone is lit while the tour stands on it. */
+  const tourId = tourStation?.id ?? null;
+  const tourLit = useMemo(() => (tourId ? new Set([tourId]) : null), [tourId]);
   const lit = useMemo(() => {
+    if (tourLit) return tourLit;
     if (spotlit) return spotlit;
     if (highlight === 'main') return new Set(mainPath(model, nav, plane));
     if (highlight === 'to-selected' && selected) return pathsToHere(model, nav, plane, selected);
     return null;
-  }, [spotlit, highlight, model, nav, plane, selected]);
+  }, [tourLit, spotlit, highlight, model, nav, plane, selected]);
 
   /* ---------------- setters ---------------- */
 
@@ -668,7 +684,14 @@ export default function ProcessMap({
   useEffect(() => {
     phoneRef.current = isPhone;
   });
+  const fullScreenTold = useRef(onFullScreenChange);
+  useEffect(() => {
+    fullScreenTold.current = onFullScreenChange;
+  });
+  // A map that goes while in full screen is no longer in it: the caller's tour returns to the page.
+  useEffect(() => () => fullScreenTold.current?.(false), []);
   const onFullscreenChange = useCallback((filled: boolean) => {
+    fullScreenTold.current?.(filled);
     setFsOpen(filled);
     // The overview map stands beside the canvas from a tablet up; on a phone it would take the canvas's height.
     if (filled) setFsOverview(!phoneRef.current);
@@ -689,6 +712,11 @@ export default function ProcessMap({
     setFsView('map');
     onWalk?.();
   }, [onWalk]);
+  /** *Edit* on during a walk-through in full screen: the editor takes the canvas, so the walk-through ends. */
+  const fsEditingChange = useCallback((on: boolean) => {
+    if (on && tourPanel) onTourClose?.();
+    setFsEditing(on);
+  }, [tourPanel, onTourClose]);
 
   /**
    * Open a step: its level, its selection and the focus, in that order.
@@ -947,20 +975,19 @@ export default function ProcessMap({
       <FullScreenBar
         tools={tools}
         processName={model.processName}
-        place={(
-          <div className="flex flex-wrap items-center gap-2">
-            <CcSegmentedControl<ProcessMapView>
-              label={wt('map.viewLabel')}
-              value={fsView}
-              onChange={setFsView}
-              segments={[
-                { value: 'map', label: wt('map.viewMap'), icon: <MapIcon size={14} aria-hidden={true} /> },
-                { value: 'steps', label: wt('map.viewSteps'), icon: <List size={14} aria-hidden={true} /> },
-              ]}
-            />
-            <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />
-          </div>
+        compact={isPhone}
+        viewSwitch={(
+          <CcSegmentedControl<ProcessMapView>
+            label={wt('map.viewLabel')}
+            value={fsView}
+            onChange={setFsView}
+            segments={[
+              { value: 'map', label: wt('map.viewMap'), icon: <MapIcon size={14} aria-hidden={true} /> },
+              { value: 'steps', label: wt('map.viewSteps'), icon: <List size={14} aria-hidden={true} /> },
+            ]}
+          />
         )}
+        place={<ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} compact={isPhone} />}
         steps={fsView === 'steps'}
         search={<ProcessSearch model={model} nav={nav} onJump={onJumpInFullScreen} compact onResults={setFsResults} listId={fsListId} />}
         editing={fsEditBody}
@@ -981,7 +1008,7 @@ export default function ProcessMap({
           </span>
         )}
         editBlocked={fsEditBlocked}
-        onEditingChange={setFsEditing}
+        onEditingChange={fsEditingChange}
         onWalk={onWalk && !tourPanel ? walkInFullScreen : null}
       />
     ),
@@ -1265,6 +1292,7 @@ export default function ProcessMap({
               growToLevel={page}
               fullscreenParts={fullscreenParts}
               fullscreenRequest={fsRequest}
+              follow={page && fsOpen && !fsEditBody ? tourId : null}
               onFullscreenChange={page ? onFullscreenChange : undefined}
               toolsPanel={helpOpen ? (
                 <p

@@ -57,15 +57,16 @@ export interface TourCanvasProps {
   className?: string;
 }
 
-interface Shape {
+export interface StationShape {
   id: string;
   x: number;
   y: number;
   width: number;
   height: number;
-  label?: Shape;
+  label?: StationShape;
   waypoints?: unknown;
 }
+type Shape = StationShape;
 
 interface Canvas extends ViewboxCanvas {
   resized(): void;
@@ -110,8 +111,11 @@ const reducedMotion = (): boolean => {
   }
 };
 
-/** The element with its outside label, in diagram units. */
-function boundsOf(shape: Shape): Box {
+/**
+ * The element with its outside label, in diagram units. Exported for the full-screen canvas, whose camera follows the
+ * tour's stations the same way (`BpmnCanvas` `follow`, ADR-119 (d)).
+ */
+export function stationBounds(shape: Shape): Box {
   const parts = [shape, ...(shape.label && shape.label.width ? [shape.label] : [])];
   const x = Math.min(...parts.map((p) => p.x));
   const y = Math.min(...parts.map((p) => p.y));
@@ -249,7 +253,7 @@ export default function TourCanvas({ xml, plane, focus, align, label, onPlaced, 
     }
     canvas.addMarker(shape.id, 'cc-tour-here');
 
-    const bounds = boundsOf(shape);
+    const bounds = stationBounds(shape);
     const outer = canvas.viewbox().outer;
     const target = cameraFor(bounds, outer, align);
     const report = () => placed.current?.(placedBox(bounds, target, outer));

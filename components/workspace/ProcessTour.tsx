@@ -94,6 +94,12 @@ export interface ProcessTourProps {
   onPause?: (at: number) => void;
   /** Where the tour stands, at every move (inline): the page says "you are here" and counts the walk-through as done. */
   onMove?: (move: TourMove) => void;
+  /**
+   * Inline, in the side column of the map's full screen (3.2.0, ADR-119 (d)): the card only — the full-screen canvas
+   * beside it is the tour's map and follows the station (`ProcessMap` `tourStation`), so no second map is drawn and
+   * the page behind is never scrolled.
+   */
+  panel?: boolean;
 }
 
 /** Where the tour stands: the station's index (-1 the overview, `total` the end), its station, the count. */
@@ -745,6 +751,7 @@ export function ProcessTourInline({
   endings = null,
   onPause,
   onMove,
+  panel = false,
 }: ProcessTourProps) {
   const stations = tour?.stations ?? [];
   const end = stations.length;
@@ -784,12 +791,15 @@ export function ProcessTourInline({
     } catch {
       /* no media queries: jump */
     }
-    if (section && typeof section.scrollIntoView === 'function') {
+    if (panel) {
+      // In full screen's side column the card stands first: the column goes back to its top, the page stays put.
+      section?.closest('[data-map-fullscreen-rail]')?.scrollTo({ top: 0 });
+    } else if (section && typeof section.scrollIntoView === 'function') {
       section.scrollIntoView({ block: opened.current ? 'nearest' : 'start', behavior: still || !opened.current ? 'auto' : 'smooth' });
     }
     opened.current = true;
     headingRef.current?.focus({ preventScroll: true });
-  }, [shownAt, tour]);
+  }, [shownAt, tour, panel]);
 
   const onKeyDown = (event: React.KeyboardEvent<HTMLElement>) => {
     const tag = (event.target as HTMLElement).tagName;
@@ -818,15 +828,19 @@ export function ProcessTourInline({
       aria-label={wt('walk.regionLabel')}
       onKeyDown={onKeyDown}
       data-process-tour=""
-      data-tour-mode="inline"
+      data-tour-mode={panel ? 'fullscreen' : 'inline'}
       data-tour-at={!tour ? 'reading' : overview ? 'overview' : station ? shownAt + 1 : 'end'}
-      className="cc grid scroll-mt-20 grid-cols-1 items-start gap-4 min-[1101px]:grid-cols-[minmax(0,1fr)_320px] min-[1281px]:grid-cols-[minmax(0,1fr)_360px]"
+      className={panel
+        ? 'cc flex min-w-0 flex-col'
+        : 'cc grid scroll-mt-20 grid-cols-1 items-start gap-4 min-[1101px]:grid-cols-[minmax(0,1fr)_320px] min-[1281px]:grid-cols-[minmax(0,1fr)_360px]'}
     >
       {/* The card first in the reading order: above the map up to 1100 px, in the right column from there (by grid
           placement, never by `order`, so the focus order stays the reading order). */}
       <div
         data-tour-sheet=""
-        className="flex min-w-0 flex-col rounded-cc-card border border-cc-line bg-cc-surface shadow-cc min-[1101px]:sticky min-[1101px]:top-20 min-[1101px]:col-start-2 min-[1101px]:row-start-1"
+        className={panel
+          ? 'flex min-w-0 flex-col rounded-cc-card border border-cc-line bg-cc-surface'
+          : 'flex min-w-0 flex-col rounded-cc-card border border-cc-line bg-cc-surface shadow-cc min-[1101px]:sticky min-[1101px]:top-20 min-[1101px]:col-start-2 min-[1101px]:row-start-1'}
       >
         <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-cc-line px-4 py-3">
           <span className="inline-flex items-center gap-2 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
@@ -924,7 +938,11 @@ export function ProcessTourInline({
         </article>
 
         {tour ? (
-          <div data-tour-nav="" className="cc-no-print flex flex-wrap items-center gap-2 border-t border-cc-line px-4 py-3">
+          <div
+            data-tour-nav=""
+            // In the side column, which scrolls on a phone, Back and Next stay at its foot.
+            className={`cc-no-print flex flex-wrap items-center gap-2 border-t border-cc-line px-4 py-3${panel ? ' sticky bottom-0 rounded-b-cc-card bg-cc-surface' : ''}`}
+          >
             <CcButton
               variant="ghost"
               icon={<ChevronLeft size={16} aria-hidden={true} />}
@@ -962,7 +980,9 @@ export function ProcessTourInline({
         ) : null}
       </div>
 
-      {/* The map of the tour, where the map stood. A picture: nothing in it takes the focus. */}
+      {/* The map of the tour, where the map stood. A picture: nothing in it takes the focus. In full screen the canvas
+          beside the column is the map. */}
+      {panel ? null : (
       <div
         data-tour-inline-map=""
         className="min-w-0 overflow-hidden rounded-cc-card border border-cc-line bg-cc-surface min-[1101px]:col-start-1 min-[1101px]:row-start-1"
@@ -976,6 +996,7 @@ export function ProcessTourInline({
           className="h-[min(64dvh,560px)] w-full max-[600px]:h-[48dvh]"
         />
       </div>
+      )}
     </section>
   );
 }

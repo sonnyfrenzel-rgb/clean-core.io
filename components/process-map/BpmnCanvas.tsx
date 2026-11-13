@@ -11,6 +11,7 @@ import { MapViewTools } from './CanvasViewControls';
 import { FOCUSABLE } from '@/components/cc/modal';
 import { useCanvasFullscreen } from './useCanvasFullscreen';
 import { useTouchViewport } from './useTouchViewport';
+import { cameraFor, stationBounds, type StationShape } from './TourCanvas';
 import { applyCanvasNames, clearNameTimers, drawnNames, type CanvasNames, type SwapViewer } from './naming-swap';
 
 /**
@@ -150,6 +151,12 @@ export interface BpmnCanvasProps {
   fullscreenRequest?: number;
   /** Told whenever full screen begins or ends. */
   onFullscreenChange?: (filled: boolean) => void;
+  /**
+   * The walk-through's station while it runs in full screen (3.2.0, ADR-119 (d)): the camera centres this element at
+   * the reading scale the inline tour uses (`cameraFor`, `inline`) and marks it as the tour marks it, and keeps it
+   * there when the box changes size. Null: the canvas fits its level as before.
+   */
+  follow?: string | null;
 }
 
 /** What the full-screen bar of {@link CanvasFullscreenParts} is handed: the canvas's own moves and the way out. */
@@ -229,6 +236,8 @@ interface OverlaysService {
 
 interface Shape {
   id: string;
+  x?: number;
+  y?: number;
   width?: number;
   height?: number;
   label?: Shape;
@@ -318,6 +327,7 @@ export default function BpmnCanvas({
   fullscreenParts = null,
   fullscreenRequest = 0,
   onFullscreenChange,
+  follow = null,
 }: BpmnCanvasProps) {
   const fitOnOpen = openFit ?? (controls ? 'whole' : 'readable');
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -357,6 +367,26 @@ export default function BpmnCanvas({
   }, [exitFullscreen]);
   const viewerRef = useRef<ViewerLike | null>(null);
   const rootRef = useRef<{ id: string } | null>(null);
+  /** The station the camera follows (`follow`), read by the resize paths below. */
+  const followRef = useRef<string | null>(follow);
+  /**
+   * The followed station in the middle of the canvas at the tour's reading scale; false when there is none to show
+   * (nothing followed, no viewer yet, an element this file does not draw) — the caller then fits as before.
+   */
+  const showFollowed = useCallback((): boolean => {
+    const id = followRef.current;
+    const viewer = viewerRef.current;
+    if (!id || !viewer) return false;
+    try {
+      const shape = viewer.get('elementRegistry').get(id);
+      if (!shape || typeof shape.x !== 'number' || typeof shape.y !== 'number' || !shape.width || !shape.height) return false;
+      const canvas = viewer.get('canvas');
+      canvas.viewbox(cameraFor(stationBounds(shape as StationShape), canvas.viewbox().outer, 'inline'));
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
   /**
    * The level the parent asked for, read when a new viewer has finished its
    * import. The effect below applies a change of level to a viewer that
@@ -422,6 +452,7 @@ export default function BpmnCanvas({
     controlsRef.current = controls;
     fitOnOpenRef.current = fitOnOpen;
     partsRef.current = fullscreenParts !== null;
+    followRef.current = follow;
   });
 
   /**
@@ -688,6 +719,7 @@ export default function BpmnCanvas({
       try {
         const canvas = viewer.get('canvas');
         canvas.resized();
+        if (showFollowed()) return;
         if (filledRef.current || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
         else fitWithPadding(canvas);
       } catch {
@@ -696,7 +728,7 @@ export default function BpmnCanvas({
     });
     observer.observe(host);
     return () => observer.disconnect();
-  }, []);
+  }, [showFollowed]);
 
   /** Full screen changed the box: measure again, and show the whole level in it. */
   useEffect(() => {
@@ -706,13 +738,48 @@ export default function BpmnCanvas({
     try {
       const canvas = viewer.get('canvas');
       canvas.resized();
+      if (showFollowed()) return;
       // Full screen shows the whole level; back on the page, the level opens as it did.
       if (filled || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filled);
       else fitWithPadding(canvas);
     } catch {
       /* a viewer still importing has nothing to measure */
     }
-  }, [filled, controls]);
+  }, [filled, controls, showFollowed]);
+
+  /**
+   * The walk-through's station in full screen (ADR-119 (d)): after the level is on show (the effect above), the camera
+   * moves to the station and marks it as the tour's own map does (`cc-tour-here`); the mark moves on with the tour and
+   * goes with it.
+   */
+  const markedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+    let canvas: CanvasService;
+    try {
+      canvas = viewer.get('canvas');
+    } catch {
+      return;
+    }
+    const before = markedRef.current;
+    if (before && before !== follow) {
+      try {
+        canvas.removeMarker(before, 'cc-tour-here');
+      } catch {
+        /* drawn by a viewer that is gone */
+      }
+    }
+    markedRef.current = null;
+    if (!follow) return;
+    try {
+      canvas.addMarker(follow, 'cc-tour-here');
+      markedRef.current = follow;
+    } catch {
+      /* not an element of this file */
+    }
+    showFollowed();
+  }, [follow, plane, drawnPass, showFollowed]);
 
   const zoomBy = useCallback((factor: number) => {
     const canvas = viewerRef.current?.get('canvas');
@@ -861,6 +928,7 @@ export default function BpmnCanvas({
       data-map-fullscreen={filled ? 'true' : 'false'}
       data-map-fullscreen-editing={own ? (editing ? 'true' : 'false') : undefined}
       data-map-plane={plane ?? 'top'}
+      data-map-follow={follow ?? undefined}
       role={own ? 'dialog' : undefined}
       aria-label={own ? fullscreenParts.label : undefined}
       onKeyDown={own ? keepTabInside : undefined}

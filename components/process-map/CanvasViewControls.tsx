@@ -59,12 +59,29 @@ export function CanvasFullscreenToggle({
   filled,
   onToggle,
   buttonRef,
+  compact = false,
 }: {
   scope: Scope;
   filled: boolean;
   onToggle: () => void;
   buttonRef?: React.Ref<HTMLButtonElement>;
+  /** The phone's one-row bar of the map's full screen (3.2.0, ADR-119): the way out as a 44 px square with its name. */
+  compact?: boolean;
 }) {
+  if (filled && compact) {
+    return (
+      <CcIconButton
+        {...hook(scope, 'fullscreen-toggle')}
+        ref={buttonRef}
+        density="cozy"
+        label={wt('editor.exitFullscreen')}
+        aria-pressed={true}
+        onClick={onToggle}
+      >
+        <Minimize2 size={16} aria-hidden={true} />
+      </CcIconButton>
+    );
+  }
   // In full screen the way out is said in words (owner 03.10.2026: "get back
   // again easily"): a labelled button at the right end of the row, top right
   // of the screen, 44 px on touch — not an icon a reader has to decode.

@@ -129,6 +129,42 @@ test.describe('the source: full screen is the page layout\'s, everything else ke
     expect(map).toContain('onWalk={onWalk && !tourPanel ? walkInFullScreen : null}');
     expect(map).toContain('tour={tourPanel}');
   });
+
+  test('ADR-119 (d): asked for in full screen, the walk-through is the inline tour\'s card in the side column, and the canvas follows it', () => {
+    const process = code('components/workspace/WorkspaceProcess.tsx');
+    // One tour: the same component, stations and texts, placed in the column (`panel`) or on the page.
+    expect(process).toContain('const tourInFullScreen = tourOpen && mapFull && codeOnClick;');
+    expect(process).toContain('{tourOpen && model && codeOnClick && !mapFull ? (');
+    const panel = process.slice(process.indexOf('tourPanel={tourInFullScreen ? ('), process.indexOf('tourStation={'));
+    expect(panel).toContain('<ProcessTour');
+    expect(panel).toMatch(/\binline\b[\s\S]*\bpanel\b/);
+    // Leaving full screen continues on the page at the station it stood at.
+    expect(process).toContain('const tourFrom = move ? move.at : (pausedAt ?? -1);');
+    expect(process.match(/initialStation=\{tourFrom\}/g) ?? []).toHaveLength(2);
+    // The canvas: the station's level, its light and the camera.
+    expect(process).toContain('if (next.station) setPlane(next.station.plane);');
+    const map = code(MAP);
+    expect(map).toContain('if (tourLit) return tourLit;');
+    expect(map).toContain('follow={page && fsOpen && !fsEditBody ? tourId : null}');
+    const canvas = code(CANVAS);
+    expect(canvas).toContain("canvas.viewbox(cameraFor(stationBounds(shape as StationShape), canvas.viewbox().outer, 'inline'));");
+    expect(canvas).toContain("canvas.addMarker(follow, 'cc-tour-here');");
+    // The card in the column draws no second map.
+    const tour = code('components/workspace/ProcessTour.tsx');
+    expect(tour).toContain('{panel ? null : (');
+  });
+
+  test('Escape in full screen with the walk-through: the phone\'s sheet first, then the walk-through, then full screen', () => {
+    const process = code('components/workspace/WorkspaceProcess.tsx');
+    const esc = process.slice(process.indexOf('if (!tourInFullScreen) return undefined;'), process.indexOf("window.removeEventListener('keydown', onKey, true);"));
+    expect(esc).toContain("if (event.key !== 'Escape' || event.defaultPrevented || ccModalOpen()) return;");
+    expect(esc).toContain("if (document.querySelector('[data-map-fullscreen-sheet]')) return;");
+    expect(esc).toContain('closeTour();');
+    expect(esc).toContain("window.addEventListener('keydown', onKey, true);");
+    // The sheet closes on Escape before anything behind it and gives the focus back to its button.
+    const bar = code('components/process-map/ProcessFullScreen.tsx');
+    expect(bar).toMatch(/const onKey = \(event: KeyboardEvent\) => \{\s*if \(event\.key !== 'Escape'[\s\S]*?close\(true\);/);
+  });
 });
 
 test.describe('an unsaved draft survives leaving full screen', () => {
@@ -407,19 +443,71 @@ test.describe('@rendered full screen on Analyze, Business', () => {
     expect(one?.xml).not.toContain(drawnId!);
   });
 
-  test('state 16: "Walk me through it" starts the tour from full screen', async ({ page }) => {
-    test.setTimeout(300 * 1000);
+  test('state 16: "Walk me through it" runs the tour in the side column; the canvas follows the station; Escape order; leaving continues on the page', async ({ page }) => {
+    test.setTimeout(360 * 1000);
     const seeded = await seedLayoutProject('ab5-tour');
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInThroughForm(page, seeded);
     const frame = await openAnalyze(page, seeded.po);
     await frame.locator('[data-map-fullscreen-toggle]').click();
-    const walk = page.locator('[data-map-fullscreen-walk]');
-    await walk.click();
-    // Until AB-4's card fills the side column (`tourPanel`), the tour is today's layer over full screen.
-    await expect(page.locator('[data-tour-card], [data-tour-mode]').first()).toBeVisible({ timeout: 60000 });
-    await page.keyboard.press('Escape');
+    const dialog = page.getByRole('dialog', { name: 'Process map, full screen' });
+    await dialog.locator('[data-map-fullscreen-walk]').click();
+
+    // The card stands first in the side column; full screen stays, and no second map is drawn.
+    const card = dialog.locator('[data-map-fullscreen-column] [data-process-tour][data-tour-mode="fullscreen"]');
+    await expect(card).toBeVisible({ timeout: 60000 });
+    await expect(card.locator('[data-tour-card="overview"]')).toBeVisible({ timeout: 60000 });
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
+    await expect(page.locator('[data-tour-inline-map]')).toHaveCount(0);
+    await expect(dialog.locator('[data-map-fullscreen-walk]')).toHaveCount(0);
+
+    // Next, and the arrow key: station 2. The canvas follows it — the station's element is marked, in view and near
+    // the middle of the canvas, and its node is drawn on the level on show.
+    await card.locator('[data-tour-next]').click();
+    await expect(card).toHaveAttribute('data-tour-at', '1');
+    await page.keyboard.press('ArrowRight');
+    await expect(card).toHaveAttribute('data-tour-at', '2');
+    const station = await card.locator('[data-tour-card]').getAttribute('data-tour-card');
+    expect(station).toBeTruthy();
+    await expect(frame).toHaveAttribute('data-map-follow', station!);
+    const marked = frame.locator(`[data-process-map-canvas] .djs-element.cc-tour-here[data-element-id="${station}"]`);
+    await expect(marked).toHaveCount(1);
+    await expect.poll(async () => {
+      const box = await marked.boundingBox();
+      const canvas = await frame.locator('[data-process-map-canvas]').boundingBox();
+      if (!box || !canvas) return 'not drawn';
+      const cx = box.x + box.width / 2;
+      const cy = box.y + box.height / 2;
+      const inX = Math.abs(cx - (canvas.x + canvas.width / 2)) <= canvas.width * 0.2;
+      const inY = Math.abs(cy - (canvas.y + canvas.height / 2)) <= canvas.height * 0.2;
+      return inX && inY ? 'centred' : `at ${Math.round(cx)},${Math.round(cy)} in ${JSON.stringify(canvas)}`;
+    }, { timeout: 10000 }).toBe('centred');
+    await expect(frame.locator(`[data-map-node="${station}"]`)).toBeVisible();
+    if (process.env.FS_SHOTS) await page.screenshot({ path: `${process.env.FS_SHOTS}/fullscreen-tour-station2-1440.png` });
+
+    // Escape: the innermost first — the walk-through ends, full screen stays and the focus is on its "Walk me through it".
+    await page.keyboard.press('Escape');
+    await expect(dialog.locator('[data-process-tour]')).toHaveCount(0);
+    await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
+    await expect(dialog.locator('[data-map-fullscreen-walk]')).toBeFocused();
+    await expect(frame.locator('[data-process-map-canvas] .cc-tour-here')).toHaveCount(0);
+    // The next Escape leaves full screen.
+    await page.keyboard.press('Escape');
+    await expect(frame).toHaveAttribute('data-map-fullscreen', 'false');
+
+    // Leaving full screen while the walk-through runs continues it on the page at the same station.
+    await frame.locator('[data-map-fullscreen-toggle]').click();
+    await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
+    await page.locator('[data-map-fullscreen-walk]').click();
+    const again = page.locator('[data-process-tour][data-tour-mode="fullscreen"]');
+    await expect(again).toBeVisible({ timeout: 60000 });
+    await again.locator('[data-tour-next]').click();
+    await expect(again).toHaveAttribute('data-tour-at', '1');
+    await page.locator('[data-map-fullscreen-toggle]').click();
+    const inline = page.locator('[data-process-tour][data-tour-mode="inline"]');
+    await expect(inline).toBeVisible({ timeout: 60000 });
+    await expect(inline).toHaveAttribute('data-tour-at', '1');
+    await expect(page.locator('[data-map-fullscreen="true"]')).toHaveCount(0);
   });
 
   test('P3: on a phone "Edit" is disabled with the sentence why; the map and the way out are there', async ({ page }) => {

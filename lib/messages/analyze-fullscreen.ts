@@ -22,6 +22,9 @@ export const ANALYZE_FULLSCREEN_MESSAGES = {
   'fullScreen.nothingBody': 'Click a step to see its code lines.',
   'fullScreen.hitsHint': 'Click a hit to jump to it on the map.',
   'fullScreen.hitsLabel': 'Steps found',
+  // The phone's one-row bar (3.2.0): find, zoom and the overview map behind one button.
+  'fullScreen.tools': 'Find, zoom and overview',
+  'fullScreen.toolsSheet': 'Find a step, zoom and the overview map',
 } as const;
 
 /** "3 steps match “order”" — the side column's heading while a search is typed. */
