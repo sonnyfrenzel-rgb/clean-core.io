@@ -649,8 +649,16 @@ is neither provenance nor object status, and no finding carries a severity that 
    of its own on this page, so the canvas keeps its width (mockup state 7). A name laid over a step never takes its
    click. No score, no findings, no code before a click: those are IT's. The project search (⌘K) stands here too.
 
-Until v3.2.0 the First insights blocks (`BusinessOpening`) and *Next step* stand unchanged below the map; AB-4 and AB-6
-replace them in place, in their end state from the first frame. Analyze shows no coach marks. The paced build-up
+**Since v3.2.0 the text around the map** (AB-6, ADR-116, `components/analyze/AroundTheMap.tsx`) replaces the First
+insights blocks of v3.1.0: *What this program does* above the map — two sentences, the engine's or a model's wording
+that passed the fact check (AI-generated), hidden while the walk-through runs — and under the map *How it runs* (at
+most four paragraphs in the code's order, "you are here" during the tour), *Why it exists* (the purpose from the
+program's names and the header comment, with the fixed sentence *The code does not say this in words. Confirm it with
+the process owner.*), *Who is involved* (*Reconstructed*) and *Questions to settle with the business* (the code's
+surprises for the business, then the rule questions, the basket line into Design). Every sentence carries its line,
+which opens the code beside the map; each block stands as a placeholder that says what it is reading until its text
+is in; the AI chip stands only on a block a model wrote. *Next step* stands under it until AB-4's two endings replace
+it. Analyze shows no coach marks. The paced build-up
 described in §5.1–§5.2 retired with v3.1.0 (AB-3): the names arrive on the map itself (below), and the sections
 describing the build-up stand as the record of what it was. The workspace keeps IT and Management until v3.5.0; its
 Business view, the "Work from this process" hub and the "Your analysis is ready" line are gone (ADR-090 retired). The

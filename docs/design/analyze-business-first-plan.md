@@ -205,7 +205,7 @@ produces yet.
 | "How it runs" | 4 paragraphs with anchors | `lib/process-story.ts` (5–8 engine steps), `lib/plain-wording.ts` (checked rewording) | grouping into the map's parts; "you are here" during the tour | AB-6 |
 | "Why it exists" | purpose, marked as not said in the code | `purposeProposalOf` | the sentence "The code does not say this in words. Confirm it with the process owner." as fixed text | AB-6 |
 | "Who is involved" | roles with lines | lanes of the skeleton (`ProcessSkeleton.lanes`, `laneEvidence`, `lib/abap/process-skeleton.ts:408`) | role sentences (engine only, *Reconstructed*) | AB-6 |
-| "Questions to settle with the business" | questions with anchors | `lib/rule-questions.ts`, `lib/first-look-findings.ts` ("What the code gives away", ADR-103) | assumption: which of the mockup's six questions the engine produces today is not measured; AB-6 measures it on the examples | AB-6 |
+| "Questions to settle with the business" | questions with anchors | `lib/rule-questions.ts`, `lib/first-look-findings.ts` ("What the code gives away", ADR-103) | measured 13.11.2026 (AB-6 status): limits and fixed values yes; the approval-before-order consequence, the test run and the missing parts no | AB-6 |
 | Chart "How a case can end" | ends with their reason | early ends (`process-skeleton.ts`, `earlyEnds`; ADR-054), stop texts (`lib/abap/branch-messages.ts`, `messageOf`, `decisionArmsAt`) | counting ends (P9), grouping by reason | AB-7 |
 | Chart "What it changes, what it only reads" | writes, reads, a business word per table | writes: `lib/abap/reachable-writes.ts` (`ProgramWriteKind`); reads: `extractDataCoupling` (`accessType`, `lib/types.ts:338`); words: `lib/abap/business-glossary.ts` (`tableTerm`) | reads are not in `CallGraphReport` (`lib/abap/call-graph.ts:147`); use the data coupling; "reachable" for reads is not proven | AB-7 |
 | Chart "The rules it applies" | rules by kind with their values | `explainBusinessRules` (`business-rule-set-explain.ts`) | the kind classification (N6) | AB-8 |
@@ -598,6 +598,23 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   produces (the assumption in §3 resolved); no sentence without its line.
 - **Risk:** medium. Model text that passes the narrow check can still be dull or vague; the copy guard catches words,
   not quality — Sonny reads the examples before release.
+- **Status (13.11.2026, branch `night/320-ab6`, not on `dev`):** built (ADR-116). `components/analyze/AroundTheMap.tsx`
+  (`WhatThisProgramDoes` above the map with a `hidden` prop for the tour; the four blocks below it with a `here` prop —
+  the "you are here" hook AB-4 drives, `runAt` in `lib/around-the-map.ts`), read once per source by
+  `hooks/useAroundTheMap.ts`; `FirstLook.tsx` and `BusinessOpening.tsx` deleted from Analyze and the demo;
+  `unreadCodesOf` added to `lib/program-summary-check.ts` (the check that a model's wording names only objects the
+  engine read). No new engine reading, so no gate. **Deviations:** *Why it exists* is the engine's (purpose from the
+  names, the quoted header comment, the fixed caution) — the narrative has no field for why a program exists, so no
+  model text there; `ProgramInShort.tsx` stays for the IT and Management page until AB-9/AB-10. **Measured (§3
+  assumption) on the seven starter examples, engine 3.1.0:** of the mockup's six question kinds the engine asks
+  *limits* (5 %, 50,000.00 on the PO example; risk score, amount and days on the 1,000-line example; 2,500 kg and
+  5/15 % on freight) and *fixed values / exceptions* (plant 1000 on PO; sales organisation 1000, order types, country
+  lists on 1,000-line; countries, units on freight; material types on stock); the department head's approval set at
+  once (PO, line 432) only as the fact ("marks the case as approved"), not as the mockup's consequence ("the order is
+  created before anyone approves"); the *test run that still creates a real order* and the *two missing parts* on no
+  example (missing includes and dynamic calls are IT's findings). Business findings: one (fixed scope, 1,000-line
+  example). No business question at all on the invoice extractor, the sales order creator and delivery priority.
+  Server-free specs green; the rendered list of §4.2 to run on the production build.
 
 #### AB-7 — Two charts under the map, and the flag-only branch · M
 
