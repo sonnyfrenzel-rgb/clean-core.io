@@ -99,13 +99,15 @@ test.describe('the source: Business on Analyze is the map, not the score', () =>
     expect(BUSINESS).toContain('setAutoStart(first && !firstLookSeen(projectId));');
   });
 
-  test('since v3.2.0 the text around the map stands where the First insights blocks stood; Next step under it until AB-4', () => {
+  test('since 3.2.0 the text around the map stands where the First insights blocks stood; the two endings under it (AB-4)', () => {
     // The interim of v3.1.0 (`FirstLook` with `BusinessOpening` below the map) gave way to AB-6's text around the
     // map: "What this program does" above it, the four blocks below it (tests/analyze-around-the-map.spec.ts).
     const summary = BUSINESS.indexOf('<WhatThisProgramDoes');
     const map = BUSINESS.indexOf('<WorkspaceProcess');
     const around = BUSINESS.indexOf('<AroundTheMap');
-    const next = BUSINESS.indexOf('<BusinessNextStep');
+    // AB-4: the endings in full replaced "Next step" under the text; the bar and its module are gone.
+    const next = BUSINESS.indexOf('data-analyze-what-next-show');
+    expect(BUSINESS).not.toContain('<BusinessNextStep');
     expect(summary).toBeGreaterThan(-1);
     expect(map).toBeGreaterThan(summary);
     expect(around).toBeGreaterThan(map);
@@ -177,8 +179,8 @@ test.describe('rendered: the seeded PO approval project in Analyze, Business', (
     await expect(page.locator('[data-analysis-answer]')).toHaveCount(0);
     await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
 
-    // One primary button in the first screen: the invitation. (Today's "Next step" bar, with its own
-    // primary, stands far below the map until AB-4 replaces it with the two endings.)
+    // One primary button in the first screen: the invitation — and, since 3.2.0 (AB-4), on the whole page: the
+    // "Next step" bar with its own primary is gone, and the endings that replaced it are secondary.
     const primaries = await page.evaluate(() =>
       [...document.querySelectorAll('main [data-cc-button="primary"]')]
         .filter((el) => {
@@ -188,6 +190,8 @@ test.describe('rendered: the seeded PO approval project in Analyze, Business', (
         .map((el) => el.hasAttribute('data-analyze-walk')),
     );
     expect(primaries).toEqual([true]);
+    await expect(page.locator('main [data-cc-button="primary"]:visible')).toHaveCount(1);
+    await expect(page.locator('main [data-next-step]')).toHaveCount(0);
 
     // `#L42` opens the code beside the map, never over it; its button closes it.
     await page.goto(`/project/${seeded.po}/analyze#L42`, { waitUntil: 'domcontentloaded' });

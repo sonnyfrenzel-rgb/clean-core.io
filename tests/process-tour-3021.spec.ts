@@ -288,6 +288,18 @@ test.describe('on screen (server-free render)', () => {
     expect(textOf(html)).not.toContain(PO.tour.overview.purpose[0].text);
     expect(read('components/workspace/ProcessTour.tsx')).toMatch(/onClick=\{\(\) => go\(OVERVIEW\)\} data-tour-again=""/);
   });
+
+  test('on the page (3.2.0, AB-4) the end says the two endings instead of the one link to Design, and recaps nothing', async () => {
+    const Inline = await load('components/workspace/ProcessTour.tsx', 'ProcessTourInline');
+    const endings = React.createElement('div', { 'data-x-endings': '' }, 'Re-design this program · Analyse another Z program');
+    const html = renderToStaticMarkup(
+      React.createElement(Inline, { tour: PO.tour, model: PO.model, onClose: () => {}, initialStation: PO.tour.stations.length, designHref: '/d', endings }),
+    );
+    expect(textOf(html)).toContain('That was the process');
+    expect(html).toContain('data-x-endings=""');
+    expect(html).not.toContain('data-tour-to-design');
+    expect(textOf(html)).not.toContain(PO.tour.overview.purpose[0].text);
+  });
 });
 
 test.describe('the layouts, the swipe and the first paint (pure and source)', () => {

@@ -22,7 +22,7 @@ import { elementEntries, walkOrder } from '@/lib/process-walk';
 import type { WalkGuide } from '@/lib/process-walk-guide';
 import type { ProcessTour as Tour } from '@/lib/process-tour';
 import { OPEN_WALK_EVENT, takeProcessWalkRequest } from '@/lib/process-walk-request';
-import ProcessTour from './ProcessTour';
+import ProcessTour, { type TourMove } from './ProcessTour';
 import {
   MAP_SPOTLIGHT_EVENT,
   announceProcessMapModel,
@@ -73,6 +73,15 @@ const SOURCE_CONTEXT = 6;
 
 type Range = { lineStart: number; lineEnd: number };
 
+/** The walk-through as the page around the map sees it (plan AB-4). */
+export interface WalkState {
+  open: boolean;
+  /** Paused at this station (-1 the overview); null when not paused. */
+  pausedAt: number | null;
+  /** Where the open tour stands; null while it is read or closed. */
+  move: TourMove | null;
+}
+
 /**
  * The process map and its source column in the Business view of a real
  * project — mockup s1, `DESIGN.md` §5.5 and §5.7.
@@ -106,6 +115,8 @@ export default function WorkspaceProcess({
   coach,
   codeOnClick = false,
   openLines = null,
+  tourEndings = null,
+  onTourChange,
 }: {
   project: Project | null;
   projectId: string;
@@ -152,6 +163,13 @@ export default function WorkspaceProcess({
    * same lines can be opened again after the panel was closed.
    */
   openLines?: { lineStart: number; lineEnd: number; key: number } | null;
+  /**
+   * The two endings, said on the tour's last card (plan AB-4, mockup state 6). With `codeOnClick` the tour runs on
+   * the page where the map stands (`ProcessTour` `inline`), not as a layer over it.
+   */
+  tourEndings?: React.ReactNode;
+  /** Where the walk-through stands, for the page around the map: open or not, paused where, at which station. */
+  onTourChange?: (state: WalkState) => void;
 }) {
   const signed = useMemo(() => signedSourceOf(project), [project]);
   const absence = useMemo(() => signedSourceAbsence(project), [project]);
@@ -275,10 +293,9 @@ export default function WorkspaceProcess({
     [projectId, stateView, reloadStates],
   );
   /**
-   * "Walk through the process" from the top of the Business view or the First
-   * insights (`ProcessTourEntry`): the tour opens at its first step, over the
-   * page — while it is still being read it says so. Only on that click; it
-   * never opens by itself.
+   * "Walk me through it" from the summary above the map in Analyze, Business:
+   * the tour opens on the page where the map stands (plan AB-4) — while it is
+   * still being read it says so. Only on that click; it never opens by itself.
    */
   useEffect(() => {
     const hear = () => {
@@ -288,7 +305,29 @@ export default function WorkspaceProcess({
     window.addEventListener(OPEN_WALK_EVENT, hear);
     return () => window.removeEventListener(OPEN_WALK_EVENT, hear);
   }, [projectId]);
-  const closeTour = useCallback(() => setTourOpen(false), []);
+  /**
+   * Pause (inline, plan AB-4): the tour steps aside and the next "Walk me through it" opens it where it was. Close and
+   * Escape end it; the next one starts at the overview.
+   */
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
+  const [move, setMove] = useState<TourMove | null>(null);
+  const closeTour = useCallback(() => {
+    setTourOpen(false);
+    setPausedAt(null);
+    setMove(null);
+  }, []);
+  const pauseTour = useCallback((at: number) => {
+    setTourOpen(false);
+    setPausedAt(at);
+    setMove(null);
+  }, []);
+  const told = useRef(onTourChange);
+  useEffect(() => {
+    told.current = onTourChange;
+  });
+  useEffect(() => {
+    told.current?.({ open: tourOpen, pausedAt, move: tourOpen ? move : null });
+  }, [tourOpen, pausedAt, move]);
   /**
    * The charts under the map (plan AB-7): the map announces the model it draws, so the charts count by its ids, and
    * lights what a chart row asks for — on the one level its elements share, when they share one.
@@ -845,10 +884,26 @@ export default function WorkspaceProcess({
       </div>
       {/* The guided tour, over the page while it is open (owner decision
           21.10.2026): the map and the narration on one screen. */}
-      {tourOpen && model ? (
+      {tourOpen && model && !codeOnClick ? (
         <ProcessTour tour={tour} model={model} onClose={closeTour} say={wording.say} designHref={designHref} askWording={wording.askNow} />
       ) : null}
       {coach}
+      {/* Analyze, Business (plan AB-4, mockup states 4–6): the tour runs on the page, where the map stands. */}
+      {tourOpen && model && codeOnClick ? (
+        <ProcessTour
+          inline
+          tour={tour}
+          model={model}
+          onClose={closeTour}
+          onPause={pauseTour}
+          onMove={setMove}
+          initialStation={pausedAt ?? -1}
+          say={wording.say}
+          designHref={designHref}
+          askWording={wording.askNow}
+          endings={tourEndings}
+        />
+      ) : (
       <div
         className={
           codeOnClick && codePanel
@@ -906,6 +961,7 @@ export default function WorkspaceProcess({
       </div>
       {codePanel}
       </div>
+      )}
       {model && !codeOnClick ? column : null}
     </div>
   );

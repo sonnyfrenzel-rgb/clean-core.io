@@ -236,12 +236,34 @@ test.describe('the tour on screen (server-free render)', () => {
     expect(textOf(html)).toContain(PO.tour.stations[0].happens.text);
   });
 
-  test('the entry opens the tour, and says nothing about answers', async () => {
-    const Entry = await load('components/workspace/ProcessTourEntry.tsx');
-    const html = renderToStaticMarkup(React.createElement(Entry, { projectId: 'p1' }));
-    expect(html).toContain('data-tour-entry-open=""');
-    expect(textOf(html)).toContain('Walk through the process');
-    expect(textOf(html)).not.toMatch(/answered/);
+  test('a chapter chip of the layer wraps its name instead of widening the page (moved from walk-layout-3020)', async () => {
+    // CI of 18a3d8e3: a long chapter name pushed a 390 px phone sideways. The spec that pinned the fix retired with
+    // AB-4 (its other half, the walk entry's place, went with the entry card); the chip half is kept here.
+    const Layer = await load('components/workspace/ProcessTour.tsx', 'ProcessTourLayer');
+    const html = renderToStaticMarkup(React.createElement(Layer, { tour: PO.tour, model: PO.model, onClose: () => {} }));
+    const chips = [...html.matchAll(/<li class="([^"]*)"><button[^>]*data-tour-chapter="\d+"[^>]*>([\s\S]*?)<\/button>/g)];
+    expect(chips.length).toBe(PO.tour.chapters.length);
+    for (const [, li, inner] of chips) {
+      expect(li.split(' ')).toEqual(expect.arrayContaining(['min-w-0', 'max-w-full']));
+      expect(inner).toMatch(/<span class="[^"]*\bwhitespace-normal\b[^"]*">/);
+    }
+  });
+
+  test('on the page (3.2.0, AB-4): the same card beside the map, with Back, Pause and Next — no dialog, no entry card', async () => {
+    const Inline = await load('components/workspace/ProcessTour.tsx', 'ProcessTourInline');
+    const at = PO.tour.stations.findIndex((s) => s.title === 'Currency not EUR?');
+    const html = renderToStaticMarkup(React.createElement(Inline, { tour: PO.tour, model: PO.model, onClose: () => {}, initialStation: at }));
+    const text = textOf(html);
+    expect(html).toContain('data-tour-mode="inline"');
+    expect(html).toContain(`data-tour-at="${at + 1}"`);
+    expect(html).not.toContain('role="dialog"');
+    expect(html).not.toContain('aria-modal');
+    expect(text).toContain(`Step ${at + 1} of ${PO.tour.stations.length}`);
+    expect(text).toContain('It checks: Currency not EUR?');
+    for (const hook of ['data-tour-back=""', 'data-tour-pause=""', 'data-tour-next=""']) expect(html).toContain(hook);
+    expect(html).toContain('aria-label="Process map, highlighted: Currency not EUR?"');
+    // The entry card retired with AB-4: the summary's "Walk me through it" is the way in.
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/ProcessTourEntry.tsx'))).toBe(false);
   });
 });
 
@@ -305,7 +327,7 @@ test.describe('where it stands and what it writes', () => {
   });
 
   test('the tour writes nothing and reads no answer; reduced motion jumps instead of gliding', () => {
-    for (const rel of ['components/workspace/ProcessTour.tsx', 'components/workspace/ProcessTourEntry.tsx', 'components/process-map/TourCanvas.tsx', 'lib/process-tour.ts', 'components/demo/DemoWalkThrough.tsx']) {
+    for (const rel of ['components/workspace/ProcessTour.tsx', 'components/process-map/TourCanvas.tsx', 'lib/process-tour.ts', 'components/demo/DemoWalkThrough.tsx']) {
       const src = read(rel);
       expect(src, rel).not.toMatch(/firebase|setDoc|updateDoc|addDoc|fetch\(|confirmProcessStates|StateChoice|process-states/);
     }
@@ -319,7 +341,7 @@ test.describe('where it stands and what it writes', () => {
     expect(business.indexOf('<DemoWalkThrough')).toBeGreaterThan(-1);
     expect(business.indexOf('<DemoWalkThrough')).toBeLessThan(business.indexOf('<ProcessMap'));
     const demo = read('components/demo/DemoWalkThrough.tsx');
-    expect(demo).toContain('<ProcessTour ');
+    expect(demo).toMatch(/<ProcessTour\s/);
     expect(demo).toContain('demo={true}');
     expect(demo).not.toMatch(/usePlainWording|gemini|-client'/);
   });

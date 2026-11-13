@@ -2,7 +2,6 @@ import { expect, test, type Page } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { readProcess, readRules } from '../lib/first-look';
-import { businessNextStep } from '../lib/business-next-step';
 import { rulesStatus, draftProblems, draftFrom, editorRules } from '../lib/rules-editor';
 import { processStory, processChanges } from '../lib/process-story';
 import { preAnsweredQuestion } from '../lib/ask-this-case';
@@ -69,25 +68,23 @@ function view(ruleIds: string[], answered: Array<[string, StateEntry['state']]>)
 
 /* ------------------------------------------------------------ pure parts */
 
-test.describe('the next step of the Business view, as a pure function', () => {
-  const analysed = { name: 'P', legacyCode: PO, activeRunId: 'r1', status: 'analyzed' } as unknown as Project;
-  const point = nextOpenPoint(analysed);
-
-  test('open rules come first, with their count, while the owner can answer them', () => {
-    const status = rulesStatus({ ok: true, view: view(['BR-001', 'BR-002', 'BR-003'], [['BR-001', 'keep']]) }, null);
-    const step = businessNextStep({ point, rules: status, owner: true });
-    expect(step.kind).toBe('rules');
-    if (step.kind === 'rules') {
-      expect(step.open).toEqual(['BR-002', 'BR-003']);
-      expect(step.then?.key).toBe(point?.key);
-    }
+test.describe('the rules status the Business view once ranked its next step by, as a pure function', () => {
+  // Since 3.2.0 (plan AB-4) Analyze, Business has no "Next step": the two endings replaced it and
+  // `lib/business-next-step.ts` is gone. The rules status it read stays the one count of open rules (Design, IT).
+  test('the ranking module is gone; the endings carry no rule step', () => {
+    expect(fs.existsSync(path.join(process.cwd(), 'lib/business-next-step.ts'))).toBe(false);
+    expect(fs.readFileSync(path.join(process.cwd(), 'components/analyze/AnalyzeEndings.tsx'), 'utf8')).not.toMatch(/rulesStatus|requestRuleEditing/);
   });
 
-  test('with every rule answered there is no rule step — the phase step is the one action', () => {
+  test('open rules are counted, an answer closes one', () => {
+    const status = rulesStatus({ ok: true, view: view(['BR-001', 'BR-002', 'BR-003'], [['BR-001', 'keep']]) }, null);
+    expect(status?.open).toEqual(['BR-002', 'BR-003']);
+  });
+
+  test('with every rule answered nothing is open, and who answered is kept', () => {
     const status = rulesStatus({ ok: true, view: view(['BR-001'], [['BR-001', 'keep']]) }, null);
     expect(status).toMatchObject({ total: 1, confirmed: 1, open: [], lastAt: '2026-10-01T08:00:00.000Z' });
     expect(status?.by).toEqual([{ uid: 'u1', name: 'Mara Weber' }]);
-    expect(businessNextStep({ point, rules: status, owner: true })).toEqual({ kind: 'phase', point });
   });
 
   test('a Clarify is an open question, not an answer', () => {
@@ -95,15 +92,11 @@ test.describe('the next step of the Business view, as a pure function', () => {
     expect(status?.open).toEqual(['BR-001']);
   });
 
-  test('no rules, a reader, or Analyze still open: the phase step', () => {
-    const none = rulesStatus({ ok: true, view: view([], []) }, null);
-    expect(businessNextStep({ point, rules: none, owner: true }).kind).toBe('phase');
+  test('before the process is reconstructed every rule is open; a fresh project is still at Analyze', () => {
     const open = rulesStatus({ ok: false, code: 'no-baseline' }, ['BR-001']);
     expect(open?.open).toEqual(['BR-001']);
-    expect(businessNextStep({ point, rules: open, owner: false }).kind).toBe('phase');
     const fresh = nextOpenPoint({ name: 'P', legacyCode: PO } as unknown as Project);
     expect(fresh?.key).toBe('analyze');
-    expect(businessNextStep({ point: fresh, rules: open, owner: true }).kind).toBe('phase');
   });
 
   test('nothing is known while the answers are not read — no action is offered as if it were', () => {
@@ -264,12 +257,16 @@ test.describe('the Business view on screen', () => {
     );
   }
 
-  /** The Business view: Analyze's page since v3.1.0 (plan AB-2, ADR-109), the text around the map (AB-6) and Next step below it. */
+  /**
+   * The Business view: Analyze's page since 3.1.0 (plan AB-2, ADR-109) and the text around the map (AB-6). Since 3.2.0
+   * (AB-4) no "Next step" stands below it: the two endings do, once the walk-through is done.
+   */
   async function open(page: Page, id: string) {
     await page.goto(`/project/${id}/analyze?view=business`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90_000 });
     await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible({ timeout: 90_000 });
-    await expect(page.locator('[data-analyze-interim] [data-next-step]')).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-analyze-invitation]')).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-next-step]')).toHaveCount(0);
   }
 
   test.beforeAll(async () => {
@@ -314,13 +311,9 @@ test.describe('the Business view on screen', () => {
     await expect(line).toHaveAttribute('data-questions', '1', { timeout: 60_000 });
     await expect(line).toContainText('1 question for the business');
     await noRuleDecisionInBusiness(page);
-    // One primary on the page outside the interim blocks: the invitation. (Today's "Next step" bar under the map keeps
-    // its own primary until AB-4 replaces it with the two endings — analyze-business-first counts the same way.)
-    expect(
-      await page.locator('[data-analyze-business] [data-cc-button="primary"]:visible').evaluateAll((els) =>
-        els.filter((el) => !el.closest('[data-analyze-interim]')).length,
-      ),
-    ).toBe(1);
+    // One primary on the page: the invitation. Since 3.2.0 (AB-4) the "Next step" bar is gone; the two endings that
+    // replaced it are both secondary.
+    await expect(page.locator('[data-analyze-business] [data-cc-button="primary"]:visible')).toHaveCount(1);
     // The First insights' strip of figures ("rules confirmed n of m") left with them in v3.2.0 (AB-6, plan §1.1);
     // the answers on record are read where they are given and shown — the register in IT and Design, below.
 
@@ -357,13 +350,8 @@ test.describe('the Business view on screen', () => {
     await noRuleDecisionInBusiness(page);
     // The one primary is not a rule action (AB-2: the page keeps one primary).
     await expect(page.locator('[data-next-step-rules]')).toHaveCount(0);
-    // One primary on the page outside the interim blocks: the invitation. (Today's "Next step" bar under the map keeps
-    // its own primary until AB-4 replaces it with the two endings — analyze-business-first counts the same way.)
-    expect(
-      await page.locator('[data-analyze-business] [data-cc-button="primary"]:visible').evaluateAll((els) =>
-        els.filter((el) => !el.closest('[data-analyze-interim]')).length,
-      ),
-    ).toBe(1);
+    // One primary on the page: the invitation (AB-4: the endings that replaced "Next step" are secondary).
+    await expect(page.locator('[data-analyze-business] [data-cc-button="primary"]:visible')).toHaveCount(1);
 
     // The First insights' strip of figures left with them in v3.2.0 (AB-6); Design below says what is open.
     // Need & process is not a section of Business (ADR-080): the map is the
@@ -609,10 +597,10 @@ test.describe('the Business view on screen', () => {
     await signInThroughForm(page, account);
     await open(page, ids.po);
     await expect(page.locator('[data-coach-mark]')).toHaveCount(0);
-    // Analyze, Business since v3.1.0 (AB-2): the summary with the invitation, then the map, then the
-    // text around it (AB-6, v3.2.0) and "Next step" below it (until AB-4's endings).
+    // Analyze, Business since 3.1.0 (AB-2): the summary with the invitation, then the map, then the text around it
+    // (AB-6). Since 3.2.0 (AB-4) no "Next step" stands under it: the endings follow the walk-through.
     const tops = await page.evaluate(() =>
-      ['[data-analyze-summary]', '[data-analyze-map]', '[data-around-the-map]', '[data-analyze-interim] [data-next-step]'].map(
+      ['[data-analyze-summary]', '[data-analyze-map]', '[data-around-the-map]'].map(
         (sel) => document.querySelector(sel)?.getBoundingClientRect().top ?? -1,
       ),
     );

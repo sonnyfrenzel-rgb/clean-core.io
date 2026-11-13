@@ -20,10 +20,20 @@ import path from 'path';
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
-test('Analyze, Business marks Analyze as running while the start run is with the server', () => {
+test('Analyze, Business offers nothing that could start a second run while the start run is with the server', () => {
+  // Since 3.2.0 (plan AB-4) Analyze, Business has no "Next step": the two endings replaced it, and they stand only
+  // once the walk-through is done — which needs a signed map. While the start run is with the server the map's place
+  // says so (`data-workspace-process="signing"`) and no ending, no invitation and no start button stands.
   const business = read('components/analyze/AnalyzeBusiness.tsx');
-  expect(business).toMatch(/point && point\.key === 'analyze' && startRun\.phase === 'running' \? \{ \.\.\.point, running: true as const \} : point/);
-  expect(business).toContain('businessNextStep({ point: running, rules: null, owner })');
+  expect(business).not.toMatch(/businessNextStep|<BusinessNextStep|NextStepCard|nextOpenPoint/);
+  expect(fs.existsSync(path.join(ROOT, 'lib/business-next-step.ts'))).toBe(false);
+  // The endings and the invitation both wait for a signed source.
+  expect(business).toContain('const invitation = signed !== null && !lookingAround;');
+  expect(business).toMatch(/signed !== null && walked \? \(/);
+  expect(business).toMatch(/\{signed !== null && walked && !touring \? \(/);
+  // The endings link, they never start a run.
+  const endings = read('components/analyze/AnalyzeEndings.tsx');
+  expect(endings).not.toMatch(/startRun|useStartRun|runs\/create|onClick/);
   // The workspace starts no run, so it has nothing to mark.
   const shell = read('components/workspace/WorkspaceShell.tsx');
   expect(shell).not.toMatch(/startRun|useStartRun/);

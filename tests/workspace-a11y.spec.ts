@@ -368,16 +368,15 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await openWorkspace(page, 'business');
 
     // Business is Analyze's page since v3.1.0 (AB-2, ADR-109): what the program
-    // does → the map → the text around it (AB-6, v3.2.0) → "Next step" (until
-    // AB-4's endings), in the DOM and on the screen — so the focus order is the reading
-    // order (§1.6), on a phone too.
+    // does → the map → the text around it (AB-6, 3.2.0), in the DOM and on the
+    // screen — so the focus order is the reading order (§1.6), on a phone too.
+    // AB-4 took "Next step" out: the endings follow the walk-through.
     const order = await page.evaluate(() => {
       const pick = (selector: string) => document.querySelector(selector);
       const blocks = [
         pick('[data-analyze-summary]'),
         pick('[data-analyze-map]'),
         pick('[data-around-the-map]'),
-        pick('[data-analyze-interim] [data-next-step]'),
       ];
       const tops = blocks.map((el) => (el ? el.getBoundingClientRect().top + window.scrollY : -1));
       const dom = blocks.every((el, i) =>

@@ -300,7 +300,9 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
     const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
     // The map is Analyze, Business's since v3.1.0 (AB-2): the records stand in its block, under the map.
     const business = read('components/analyze/AnalyzeBusiness.tsx');
-    const block = business.slice(business.indexOf('data-analyze-map=""'), business.indexOf('data-analyze-interim'));
+    // The map's block ends where the charts begin (the interim "Next step" section it once ended at left with AB-4).
+    const block = business.slice(business.indexOf('data-analyze-map=""'), business.indexOf('<ProcessFactCharts'));
+    expect(block.length).toBeGreaterThan(0);
     expect(block).toContain('<UsageRecords project={project}');
     // The layer section that also drew them had no user since AB-2 and was retired with v3.1.0 (AB-11, ADR-080):
     // the records stand once, beside the map.
