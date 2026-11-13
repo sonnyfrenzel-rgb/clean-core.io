@@ -3601,13 +3601,35 @@ class SkeletonBuilder {
     return out;
   }
 
-  /** The lines of the decisions outside `own` whose condition, selector or `CHECK` reads `field`. */
+  /**
+   * The lines of the decisions outside `own` whose condition, selector or `CHECK` reads `field` — the same
+   * variable, not only the same name: a decision in another routine counts only when neither routine declares
+   * the field for itself (`DATA lv_ok …` in two methods are two variables).
+   */
   private decisionsReading(field: string, own: Block): number[] {
     const key = field.toUpperCase();
     const cached = this.flagReaderCache.get(key);
     const all = cached ?? this.computeDecisionsReading(key);
     if (!cached) this.flagReaderCache.set(key, all);
-    return all.filter((r) => r.index < own.openIndex || r.index > own.closeIndex).map((r) => r.line);
+    const ownRoutine = this.routineAround(own.openIndex);
+    return all
+      .filter((r) => r.index < own.openIndex || r.index > own.closeIndex)
+      .filter((r) => {
+        const readerRoutine = this.routineAround(r.index);
+        if (readerRoutine === ownRoutine) return true;
+        return !(ownRoutine && this.declaresLocally(ownRoutine, key))
+          && !(readerRoutine && this.declaresLocally(readerRoutine, key));
+      })
+      .map((r) => r.line);
+  }
+
+  /** The innermost `FORM` or `METHOD` around statement `index`, or null outside any routine. */
+  private routineAround(index: number): Block | null {
+    const around = this.structure.enclosing[index] ?? [];
+    for (let i = around.length - 1; i >= 0; i--) {
+      if (around[i].kind === 'form' || around[i].kind === 'method') return around[i];
+    }
+    return null;
   }
 
   private computeDecisionsReading(key: string): Array<{ index: number; line: number }> {

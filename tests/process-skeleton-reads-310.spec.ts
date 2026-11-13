@@ -86,6 +86,38 @@ test('no flag step where nothing reads the field, where the value is computed or
   expect(skeleton.nodes.filter((n) => n.detail?.flagStep === true)).toHaveLength(0);
 });
 
+test('a local of one routine is not the field a decision of another routine reads', () => {
+  const source = [
+    'REPORT zflag_scope.', //                                                     1
+    'START-OF-SELECTION.', //                                                     2
+    '  PERFORM check_a.', //                                                      3
+    '  PERFORM check_b.', //                                                      4
+    'FORM check_a.', //                                                           5
+    '  DATA lv_approved TYPE abap_bool.', //                                      6
+    '  IF p_a > 1.', //                                                           7
+    "    CALL FUNCTION 'Z_ASK'.", //                                              8
+    '  ELSE.', //                                                                 9
+    '    lv_approved = abap_true.', //                                            10
+    '  ENDIF.', //                                                                11
+    "  CALL FUNCTION 'Z_NEXT_A'.", //                                             12
+    'ENDFORM.', //                                                                13
+    'FORM check_b.', //                                                           14
+    '  DATA lv_approved TYPE abap_bool.', //                                      15
+    "  CALL FUNCTION 'Z_READ' IMPORTING ev_ok = lv_approved.", //                16
+    '  IF lv_approved = abap_true.', //                                           17
+    "    CALL FUNCTION 'Z_DONE'.", //                                             18
+    '  ENDIF.', //                                                                19
+    'ENDFORM.', //                                                                20
+  ].join('\n');
+  const skeleton = buildProcessSkeleton(source, NEW);
+  expect(skeleton.nodes.filter((n) => n.detail?.flagStep === true)).toHaveLength(0);
+  // The same field read in its own routine is still the outcome of the earlier decision.
+  const same = source.replace("  CALL FUNCTION 'Z_NEXT_A'.", "  IF lv_approved = abap_true. CALL FUNCTION 'Z_NEXT_A'. ENDIF.");
+  const step = buildProcessSkeleton(same, NEW).nodes.find((n) => n.detail?.flagStep === true);
+  expect(step?.anchor?.lineStart).toBe(10);
+  expect(step?.detail?.readAtLines).toEqual(['12']);
+});
+
 test('a constant of the source is a flag value; a decision table stays one classification', () => {
   const source = [
     'REPORT zflag_const.', //                                                     1
