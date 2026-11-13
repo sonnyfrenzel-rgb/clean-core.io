@@ -59,6 +59,9 @@ export function thinkingConfigFor(
   // sentences took 124 s with the default thinking (13,079 thinking tokens) — past the 120 s
   // the service allows a request — and 36 s at LOW, with no thinking tokens.
   if (shape === 'plain-wording') return { thinkingLevel: ThinkingLevel.LOW };
+  // 13.11.2026 (owner decision): the rewording of the business statements for a business reader
+  // (`lib/statement-rewording.ts`) — measured at LOW: 12 s median, no thinking tokens, 87.8 % equal.
+  if (shape === 'statements-rewording') return { thinkingLevel: ThinkingLevel.LOW };
   if (shape === 'documentation-business') {
     const level = CONFIGURABLE[(env[DOCUMENTATION_BUSINESS_THINKING_ENV] ?? '').trim().toLowerCase()];
     return level ? { thinkingLevel: level } : undefined;

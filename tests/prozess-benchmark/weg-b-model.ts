@@ -33,8 +33,8 @@ import {
   buildStatementContext,
   buildStatementPrompt,
   validateStatementAnswer,
-  type StatementContext,
 } from '../../lib/business-statement-prompt';
+import { buildStatementRewordingPrompt, mergeStatementRewording, type RewordableStatement } from '../../lib/statement-rewording';
 
 const arg = (name: string, fallback: string) => {
   const i = process.argv.indexOf(name);
@@ -48,8 +48,10 @@ const MAX_OUT = Number(arg('--max-out', String(STAGE_MAX_OUTPUT_TOKENS.statement
 const PARALLEL = Number(arg('--parallel', '3'));
 const LEDGER = arg('--ledger', '');
 const CAP_USD = Number(arg('--cap-usd', '0'));
+/** `write` (the draft), `rewrite` (strategy c, a call per case) or `remerge` (no call: the stored raw rewordings of `--raw` read again against the drafts of `--from`, with the product's current guard). */
 const MODE = arg('--mode', 'write');
 const FROM = arg('--from', '');
+const RAW = arg('--raw', '');
 const ROOT = join(process.cwd(), 'tests/prozess-benchmark/cases');
 
 const LEVELS: Record<string, ThinkingLevel> = {
@@ -118,6 +120,7 @@ function record(entry: Record<string, unknown>): void {
 
 /* ------------------------------------------------------------------ rewrite (strategy c) */
 
+/** A checked sentence as this harness records it. */
 interface RawStatement {
   text: string;
   anchors: string;
@@ -126,85 +129,17 @@ interface RawStatement {
   element: string | null;
 }
 
-/** Numbers and quoted literals a rewording must keep. */
-function facts(text: string): string[] {
-  const out: string[] = [];
-  for (const m of text.matchAll(/'[^']*'|"[^"]*"|\b\d+(?:[.,]\d+)?\b/g)) out.push(m[0].replace(/^"|"$/g, "'").replace(/^(?!')/, '').trim());
-  return out;
-}
-
 /**
- * The checked sentence carries its open rest already ("<core>; <note>", `validateStatementAnswer`), and the raw
- * record keeps the note as an object; so the rewording sees the whole sentence and no separate uncertainty, and
- * passes none back.
+ * The product's view of a draft sentence (`lib/statement-rewording.ts`): the checked text, which carries its
+ * open rest already, the anchors and the element. Prompt and guard are the product's own, so what is measured
+ * here is what the store route does.
  */
-function buildRewritePrompt(context: StatementContext, statements: RawStatement[]): string {
-  const given = statements.map((s) => ({
+function rewordable(raw: RawStatement[]): RewordableStatement[] {
+  return raw.map((s) => ({
     text: s.text,
-    anchors: s.anchors.split(','),
-    element: s.element,
-    uncertainty: null,
+    anchors: s.ranges.map(([file, lineStart]) => ({ file, lineStart })),
+    element: s.element ? { id: s.element } : null,
   }));
-  const lines: string[] = [
-    'You reword business statements about a piece of ABAP code for a business reader who does not read ABAP.',
-    '',
-    'Below is a JSON list of statements. Each is anchored to code lines and may name a process element. Reword only the "text":',
-    '1. Say what happens in business terms: name the business thing (the customer, the order quantity, the posting date), not the',
-    '   variable or the technical field. A table or field name may stay at most once, in parentheses, where no business term is evident.',
-    '2. Keep every fact: every literal value, number, comparison boundary, condition and outcome, every "not", "only", "unless".',
-    '   Do not add a fact, an assessment or a consequence the statement does not state. Do not drop a clause.',
-    '3. One sentence, English, passive voice, plain words, no Markdown, no backticks, at most 300 characters. Merge nothing, split nothing.',
-    '4. Keep "anchors", "element" and "uncertainty" exactly as given, in the same order: one output statement per input statement.',
-    '',
-    'Answer with JSON only, in exactly this shape and with no other keys:',
-    '{"statements":[{"text":"<reworded statement>","anchors":["<file>:<line>"],"element":"<as given>","uncertainty":"<as given>"}]}',
-    '',
-    'Statements:',
-    JSON.stringify(given),
-  ];
-  for (const src of context.sources) {
-    lines.push('', `Source ${src.name}, with line numbers (for the facts; describe nothing that is not in a statement above):`);
-    src.code.split('\n').slice(0, src.lineCount).forEach((text, index) => {
-      lines.push(`${String(index + 1).padStart(4)}  ${text}`);
-    });
-  }
-  return lines.join('\n');
-}
-
-/**
- * The reworded answer, statement by statement against the original: a rewording that moved an anchor, changed the
- * element or the uncertainty, lost a number or a literal, or grew past the product's bound keeps the original text.
- */
-function mergeRewrite(original: RawStatement[], answer: string): { text: string; kept: number; reworded: number } {
-  let parsed: { statements?: unknown } = {};
-  try {
-    parsed = JSON.parse(answer) as { statements?: unknown };
-  } catch {
-    parsed = {};
-  }
-  const got = Array.isArray(parsed.statements) ? (parsed.statements as Array<Record<string, unknown>>) : [];
-  let kept = 0;
-  let reworded = 0;
-  const merged = original.map((o, i) => {
-    const r = got[i];
-    const anchors = o.anchors.split(',');
-    const same =
-      r &&
-      typeof r.text === 'string' &&
-      Array.isArray(r.anchors) &&
-      JSON.stringify([...(r.anchors as string[])].sort()) === JSON.stringify([...anchors].sort()) &&
-      (r.element ?? null) === (o.element ?? null) &&
-      (r.uncertainty ?? null) === null;
-    const text = same ? (r.text as string).trim() : '';
-    const keepsFacts = text && facts(o.text).every((f) => text.includes(f));
-    if (same && keepsFacts && text.length > 0 && text.length <= 400) {
-      reworded += 1;
-      return { text, anchors, element: o.element, uncertainty: null };
-    }
-    kept += 1;
-    return { text: o.text, anchors, element: o.element, uncertainty: null };
-  });
-  return { text: JSON.stringify({ statements: merged }), kept, reworded };
 }
 
 /* ------------------------------------------------------------------ run */
@@ -216,7 +151,8 @@ const ids = readdirSync(ROOT)
   .filter((n) => /^BM-\d{3}$/.test(n) && (!wanted || wanted.has(n)))
   .sort()
   .filter((id) => !existsSync(join(OUT, `${id}.json`)))
-  .filter((id) => MODE !== 'rewrite' || existsSync(join(FROM, `${id}.json`)));
+  .filter((id) => MODE === 'write' || existsSync(join(FROM, `${id}.json`)))
+  .filter((id) => MODE !== 'remerge' || existsSync(join(RAW, `${id}.json`)));
 
 let done = 0;
 let stopped = false;
@@ -230,14 +166,14 @@ async function one(id: string): Promise<void> {
   const context = buildStatementContext([source(id)]);
   let original: RawStatement[] = [];
   let prompt: string;
-  if (MODE === 'rewrite') {
+  if (MODE === 'rewrite' || MODE === 'remerge') {
     const from = JSON.parse(readFileSync(join(FROM, `${id}.json`), 'utf8')) as { complete: boolean; statements: RawStatement[] };
     original = from.complete ? from.statements : [];
     if (original.length === 0) {
       writeFileSync(join(OUT, `${id}.json`), JSON.stringify({ id, model: MODEL, mode: MODE, from: FROM, complete: false, statements: [], discarded: { total: 0, byRule: {} }, error: 'nothing to reword' }, null, 1));
       return;
     }
-    prompt = buildRewritePrompt(context, original);
+    prompt = buildStatementRewordingPrompt(context, rewordable(original));
   } else {
     prompt = buildStatementPrompt(context);
   }
@@ -248,7 +184,16 @@ async function one(id: string): Promise<void> {
   let modelVersion: string | null = null;
   let latencyMs: number | null = null;
   let attempts = 0;
-  for (let attempt = 1; attempt <= 6; attempt++) {
+  if (MODE === 'remerge') {
+    // No call: the stored raw rewording, read again with the product's current guard.
+    const stored = JSON.parse(readFileSync(join(RAW, `${id}.json`), 'utf8')) as { raw?: string; finishReason?: string | null; usage?: Record<string, unknown>; latencyMs?: number | null; modelVersion?: string | null };
+    text = stored.raw ?? '';
+    finishReason = stored.finishReason ?? null;
+    usage = stored.usage ?? {};
+    latencyMs = stored.latencyMs ?? null;
+    modelVersion = stored.modelVersion ?? null;
+  }
+  for (let attempt = 1; MODE !== 'remerge' && attempt <= 6; attempt++) {
     attempts = attempt;
     const t0 = Date.now();
     try {
@@ -281,13 +226,13 @@ async function one(id: string): Promise<void> {
     }
   }
   const complete = finishReason === 'STOP' && !!text;
-  let rewrite: { kept: number; reworded: number } | null = null;
+  let rewrite: { kept: number; reworded: number; rejected: Record<string, number> } | null = null;
   let answer = text;
-  if (MODE === 'rewrite') {
-    // An incomplete rewording keeps every original sentence; the fallback is what the product would show.
-    const merged = complete ? mergeRewrite(original, text) : { text: JSON.stringify({ statements: original.map((o) => ({ text: o.text, anchors: o.anchors.split(','), element: o.element, uncertainty: null })) }), kept: original.length, reworded: 0 };
+  if (MODE === 'rewrite' || MODE === 'remerge') {
+    // The product's merge: an incomplete rewording keeps every draft sentence, like any answer the guard refuses.
+    const merged = mergeStatementRewording(rewordable(original), complete ? text : '');
     answer = merged.text;
-    rewrite = { kept: merged.kept, reworded: merged.reworded };
+    rewrite = { kept: merged.kept, reworded: merged.reworded, rejected: merged.rejected as Record<string, number> };
   }
   const validated = validateStatementAnswer(context, answer);
   writeFileSync(
@@ -300,10 +245,11 @@ async function one(id: string): Promise<void> {
         thinking: THINKING_ARG,
         maxOut: MAX_OUT,
         mode: MODE,
-        ...(MODE === 'rewrite' ? { from: FROM, rewrite } : {}),
+        ...(MODE !== 'write' ? { from: FROM, rewrite } : {}),
+        ...(MODE === 'remerge' ? { rawFrom: RAW } : {}),
         finishReason,
         // A rewording run is complete when its sentences stand, reworded or kept: the fallback is deterministic.
-        complete: MODE === 'rewrite' ? original.length > 0 : complete,
+        complete: MODE !== 'write' ? original.length > 0 : complete,
         latencyMs,
         attempts,
         promptChars: prompt.length,

@@ -193,39 +193,44 @@ usage log watched for `MAX_TOKENS` lines and fallback calls. Owner decisions bef
 `gemini-4-hydrogen` leaves evaluation for this one stage at all; (1) or (2); and whether the rewording (§3.6) is
 built.
 
-### 3.6 Draft and rewording — how c is built (designed, measured, not yet in the product)
+### 3.6 Draft and rewording — how c is built (built 13.11.2026, owner decision 2)
 
-The measured step: the validated statements of the draft go back to the product model at LOW with the source and
-the rule "say it for a business reader, keep every fact, keep anchors, element and uncertainty as given, one
-sentence per sentence" (`buildRewritePrompt` in `tests/prozess-benchmark/weg-b-model.ts`); the answer is read
-sentence by sentence, and a rewording that moved an anchor, dropped a number or a quoted literal, or grew past the
-bound keeps the draft's sentence (`mergeRewrite`). In the product:
+`lib/statement-rewording.ts` (pure; the browser and the store route both read it):
 
-- **Where.** The browser, in `lib/statement-proposal-client.ts`: after the statements call comes back complete, a
-  second `/api/gemini` call under `stage: 'statements'` with a new answer shape `statements-rewording`
-  (`lib/model-response-schema.ts`: a schema of `{ statements: [{ text, anchors, element, uncertainty }] }`;
-  `lib/model-thinking.ts`: LOW, as `plain-wording`). The route needs no new logic beyond the shape; the plan of §3.1
-  applies to the draft call only (`COMBINATION_STAGES` by shape: the rewording shape is never routed, never
-  cascaded — its draft is the fallback).
-- **The guard** moves from the harness into `lib/statement-rewording.ts` (pure): anchors as a set, element,
-  uncertainty, every number and quoted literal, length — **plus one rule the measurement asked for**: a rewording
-  that introduces a control-flow word the draft did not have (`ends`, `terminates`, `stops`, `exits`, `aborts`,
-  `is skipped`) keeps the draft's sentence. The one wrong sentence the rewording added (BM-076-B05) was exactly
-  that: "start-of-selection is left" became "processing ends". The same guard reads the draft's negations the way
-  `lib/plain-wording.ts` does ("not", "only", "without", "unless").
-- **Store and origin.** `POST /api/projects/{id}/statement-proposal` takes `{ digest, text, receipt, draft? }`: the
-  final text with the rewording call's receipt (it wrote these bytes; `textSha256` binds it), and the draft's
-  receipt as a second verified receipt of the same stage and account. `StatementProposalOrigin` gains
-  `draft?: { provider, modelId, textSha256, issuedAt }`, written only from a verifying receipt. The receipt module
-  and its claim set do not change.
-- **Marking.** `ProvenanceChip`'s tooltip reads the origin: "Written by Google Gemini · gemini-3.8-flash, from a
-  draft by Google Gemini · gemini-4-hydrogen" when `draft` is present. Settings' "Last answered by" names the model
-  of the last call, as it does.
-- **Cost line.** The button's line (`lib/statement-proposal.ts`, `STATEMENT_PROPOSAL_COST_*`) says "Two model
-  calls" when the deployment rewords; the deployment flag `GEMINI_STATEMENTS_REWORDING=on` reaches the browser
-  through `GET /api/model-stages` (one boolean beside `keySource`).
-- **Cost and time.** Measured: +0.011 $ a case today (+0.022 $ from 2027), +12 s median; the draft at Hydrogen
-  MEDIUM is 30 s, so the business sentences arrive in about 45 s where the product model alone takes 72 s today.
+- **The call.** `lib/statement-proposal.ts` (`runStatementRequest`): after the draft comes back, when the
+  availability says the deployment rewords, the checked draft sentences go back to the model in a second
+  `/api/gemini` call under `stage: 'statements'` with the answer shape `statements-rewording`
+  (`lib/model-response-schema.ts`; thinking LOW in `lib/model-thinking.ts`; **no schema**, like the draft — the
+  measurement was made in JSON mode alone and the guard is the defence). The prompt is the measured one, character
+  for character (`buildStatementRewordingPrompt`; `STATEMENT_REWORDING_PROMPT_VERSION` 1). A shaped call is never
+  routed or cascaded (`planModelCall`, `shape`): the rewording is the product model's work by design, and its draft
+  is its fallback. A rewording call that fails costs the rewording and nothing else — the draft is stored as it came.
+- **The guard** (`rewordingProblem`, `mergeStatementRewording`): a rewording stands only when its anchors, element
+  and (absent) uncertainty are the draft's; every number and quoted literal of the draft is in it; no identifier the
+  draft did not name; one sentence of at most 400 characters, no Markdown; **the same control-flow families on
+  both sides** (leave/left, exit, return — not "return code" —, stop/halt, end/terminate/finish, abort,
+  skip/bypass/omit, continue/proceed/resume/go on, loop/repeat/iterate/one by one/in turn); **as many negations
+  and limits** as the draft, counted per family as `lib/plain-wording.ts` counts them. Everything else keeps the
+  draft's sentence, counted by reason. The one wrong sentence the measured rewording had added (BM-076-B05,
+  "start-of-selection processing is exited" → "processing is stopped") is rejected by the control-flow rule;
+  `tests/statement-rewording.spec.ts` holds that case and fails without the rule.
+- **Store and origin.** `POST /api/projects/{id}/statement-proposal` takes `{ digest, text, receipt, rewording?: {
+  text, receipt } }` — both answers **as they came back**, each with its receipt. The server verifies both under the
+  statements stage and the account, merges deterministically with the guard, validates the merged answer like a
+  draft (so no anchor enters that the draft did not have), and stores: `origin.provider/modelId/byok/issuedAt/
+  textSha256` of the rewording call, `origin.draft` of the draft call, `rewording: { reworded, kept, rejected }`.
+  Without a verifying second receipt the draft is stored as it came and nothing claims a second model. The receipt
+  module and its claim set do not change.
+- **Marking.** The chip's tooltip (`ProvenanceChip`, `provenanceTitle`) reads the origin: "Written by Google Gemini
+  · gemini-3.8-flash, from a draft by Google Gemini · gemini-4-hydrogen"; the panel's summary says
+  "(gemini-3.8-flash, from a draft by gemini-4-hydrogen, date) · 39 worded for a business reader, 5 kept as drafted".
+- **Cost line.** `statementCostLine(byok, rewording)`: "Two model calls: a draft of the sentences, then their
+  wording for a business reader …" where the deployment rewords. The deployment flag
+  `GEMINI_STATEMENTS_REWORDING=on` reaches the browser through `GET /api/model-stages` (`statementsRewording`),
+  `useModelAvailability` → `useStatementProposal` → the request's availability.
+- **Measured** (§2): +0.011 $ a case today (+0.022 $ from 2027), +12 s median; with the guard as built, the stored
+  learn rewordings re-read keep more of the draft than the harness's first guard did — the numbers are in
+  `scratch/model-combo/bericht.md` and the holdout round measures the guarded rewording directly.
 
 ## 4. Not built, and why
 

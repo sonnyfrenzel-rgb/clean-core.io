@@ -50,6 +50,8 @@ export interface ModelAvailability {
    * whenever it is off, on every key.
    */
   autoModelSteps: boolean;
+  /** 13.11.2026 — the deployment rewords the draft of the business statements (`lib/statement-rewording.ts`). False until known. */
+  statementsRewording: boolean;
   /** The whole point: may this stage generate, given both facts? */
   enabled: (stage: ModelStage) => boolean;
   refresh: () => Promise<void>;
@@ -70,6 +72,7 @@ export function useModelAvailability(): ModelAvailability {
   const [suspendedNotice, setSuspendedNotice] = useState<string | null>(null);
   const [autoStepsNoticeSeen, setAutoStepsNoticeSeen] = useState(true);
   const [autoModelSteps, setAutoModelSteps] = useState(true);
+  const [statementsRewording, setStatementsRewording] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -95,6 +98,7 @@ export function useModelAvailability(): ModelAvailability {
         suspendedNotice?: unknown;
         autoStepsNoticeSeen?: unknown;
         autoModelSteps?: unknown;
+        statementsRewording?: unknown;
       };
       setStages(modelStagesOf({ modelStages: data.stages }));
       setKeyAvailable(data.keyAvailable === true);
@@ -112,6 +116,8 @@ export function useModelAvailability(): ModelAvailability {
       setAutoStepsNoticeSeen(data.autoStepsNoticeSeen !== false);
       // Absent (an older server) reads as on, as the stored field does.
       setAutoModelSteps(data.autoModelSteps !== false);
+      // Absent (an older server) reads as off: a second call is never made on a guess.
+      setStatementsRewording(data.statementsRewording === true);
       setKnown(true);
     } catch {
       /* the screen falls back to "assume it works and let the server answer" */
@@ -146,7 +152,7 @@ export function useModelAvailability(): ModelAvailability {
     [known, keyAvailable, stages],
   );
 
-  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoModelSteps, enabled, refresh: load };
+  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoModelSteps, statementsRewording, enabled, refresh: load };
 }
 
 export { MODEL_STAGES };

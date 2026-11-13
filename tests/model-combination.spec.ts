@@ -74,9 +74,14 @@ test.describe('the planner', () => {
     expect(planModelCall({ ...base, env })).toEqual({ model: 'gemini-3.8-flash', routed: false, fallback: null });
   });
 
-  test('only the platform key, only the stages the study measured', () => {
+  test('only the platform key, only the stages the study measured, never a shaped call', () => {
     const env = { [LARGE_PROMPT_MODEL_ENV]: 'gemini-4-hydrogen', [FALLBACK_MODEL_ENV]: 'gemini-4-hydrogen' };
     expect(planModelCall({ ...base, env, platformKey: false })).toEqual({ model: 'gemini-3.8-flash', routed: false, fallback: null });
+    // The rewording of the statements (and every other shaped call) runs as asked: it is the
+    // product model's work by design, and its draft is its fallback.
+    for (const shape of ['statements-rewording', 'plain-wording']) {
+      expect(planModelCall({ ...base, env, shape }), shape).toEqual({ model: 'gemini-3.8-flash', routed: false, fallback: null });
+    }
     expect([...COMBINATION_STAGES]).toEqual(['statements']);
     for (const stage of ['analyze', 'naming', 'design', 'transformation', 'documentation', 'testing', 'glossary']) {
       expect(planModelCall({ ...base, env, stage }), stage).toEqual({ model: 'gemini-3.8-flash', routed: false, fallback: null });
@@ -105,7 +110,7 @@ test.describe('the route', () => {
 
   test('plans the call after the register check, from the prompt length and the platform key, and asks the planned model', () => {
     const check = route.indexOf('if (!modelServable(model, productModel(), ALLOWED_MODELS, EVALUATION_ONLY_MODELS)) {');
-    const plan = route.indexOf('planModelCall({ stage, promptLength: prompt.length, model: servedModel, platformKey: !ownKey, env: process.env, register: ALLOWED_MODELS })');
+    const plan = route.indexOf('planModelCall({ stage, shape, promptLength: prompt.length, model: servedModel, platformKey: !ownKey, env: process.env, register: ALLOWED_MODELS })');
     expect(check).toBeGreaterThan(-1);
     expect(plan).toBeGreaterThan(check);
     expect(route).toContain('let answeredModel = plan.model;');

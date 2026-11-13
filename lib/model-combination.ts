@@ -77,6 +77,13 @@ export function largePromptThreshold(env: Readonly<Record<string, string | undef
 
 export function planModelCall(input: {
   stage: string;
+  /**
+   * The answer shape within the stage, when the request named one. A shaped
+   * call — the rewording of the statements, a fill, a plain wording — runs as
+   * asked: the rules are measured for the stage's own answer, and the rewording
+   * is the second model's work by design, with the draft as its fallback.
+   */
+  shape?: string;
   promptLength: number;
   /** The model the request resolved to and the register admitted. */
   model: string;
@@ -86,7 +93,7 @@ export function planModelCall(input: {
   register: ReadonlySet<string>;
 }): ModelCallPlan {
   const asAsked: ModelCallPlan = { model: input.model, routed: false, fallback: null };
-  if (!input.platformKey || !COMBINATION_STAGES.has(input.stage)) return asAsked;
+  if (!input.platformKey || input.shape !== undefined || !COMBINATION_STAGES.has(input.stage)) return asAsked;
   const large = deploymentModelOf(input.env[LARGE_PROMPT_MODEL_ENV], input.register);
   const routed = large !== null && large !== input.model && input.promptLength > largePromptThreshold(input.env);
   const model = routed && large ? large : input.model;

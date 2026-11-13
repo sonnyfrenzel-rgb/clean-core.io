@@ -641,7 +641,7 @@ export async function POST(request: NextRequest) {
     // end: the receipt, the stage record and `answeredBy` name it, never the
     // model that was asked first and did not finish.
     const plan: ModelCallPlan = provider === 'gemini'
-      ? planModelCall({ stage, promptLength: prompt.length, model: servedModel, platformKey: !ownKey, env: process.env, register: ALLOWED_MODELS })
+      ? planModelCall({ stage, shape, promptLength: prompt.length, model: servedModel, platformKey: !ownKey, env: process.env, register: ALLOWED_MODELS })
       : { model: servedModel, routed: false, fallback: null };
     let answeredModel = plan.model;
     const ai = provider !== 'gemini'

@@ -22,6 +22,7 @@ import {
   statementProposalContextOf,
   type StatementProposalRecord,
 } from '@/lib/statement-proposal';
+import { mergeStatementRewording } from '@/lib/statement-rewording';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedRequestJson } from '@/lib/url-validation';
 
@@ -216,7 +217,7 @@ export async function POST(
 
     const read = await readBoundedRequestJson(req, ANSWER_BODY_LIMITS);
     if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
-    const body = read.body as { digest?: unknown; text?: unknown; receipt?: unknown } | null;
+    const body = read.body as { digest?: unknown; text?: unknown; receipt?: unknown; rewording?: unknown } | null;
     if (!body || typeof body.text !== 'string' || typeof body.digest !== 'string') {
       return NextResponse.json(
         { error: 'Expected { digest, text, receipt }: the answer from /api/gemini as it came back.', code: 'bad-request' },
@@ -225,6 +226,15 @@ export async function POST(
     }
     if (body.text.length > MAX_ANSWER_LENGTH) {
       return NextResponse.json({ error: 'The answer is too large to read.', code: 'too-large' }, { status: 413 });
+    }
+    // 13.11.2026 — the second answer: the draft reworded for a business reader, as it came back,
+    // with its own receipt (`lib/statement-rewording.ts`). Read below against the draft's checked
+    // sentences; anything else in its place is ignored, and the draft stands as it came.
+    const rewordingBody = body.rewording && typeof body.rewording === 'object' && !Array.isArray(body.rewording)
+      ? (body.rewording as { text?: unknown; receipt?: unknown })
+      : null;
+    if (rewordingBody && (typeof rewordingBody.text !== 'string' || rewordingBody.text.length > MAX_ANSWER_LENGTH)) {
+      return NextResponse.json({ error: 'The rewording is not an answer this route can read.', code: 'bad-request' }, { status: 400 });
     }
 
     if (typeof gate.legacyCode !== 'string' || gate.legacyCode.trim() === '') {
@@ -270,22 +280,52 @@ export async function POST(
     }
 
     const validated = validateStatementAnswer(context.statementContext, body.text);
-    const record: StatementProposalRecord = {
+    const draftOrigin = {
+      provider: verdict.receipt.provider,
+      modelId: verdict.receipt.modelId,
+      byok: verdict.receipt.byok,
+      issuedAt: verdict.receipt.iat,
+      textSha256: verdict.receipt.textSha256,
+    };
+    let record: StatementProposalRecord = {
       formatVersion: STATEMENT_PROPOSAL_FORMAT_VERSION,
       digest: context.digest,
       statements: validated.statements,
       discarded: validated.discarded,
-      origin: {
-        source: 'model',
-        receipt: 'verified',
-        provider: verdict.receipt.provider,
-        modelId: verdict.receipt.modelId,
-        byok: verdict.receipt.byok,
-        issuedAt: verdict.receipt.iat,
-        textSha256: verdict.receipt.textSha256,
-      },
+      origin: { source: 'model', receipt: 'verified', ...draftOrigin },
       proposedAt: new Date().toISOString(),
     };
+    // The rewording stands only with a verifying receipt of its own, under the same stage and
+    // account; without one the draft is stored as it came, and nothing claims a second model.
+    // The merge is deterministic (`mergeStatementRewording`): every sentence the rewording
+    // moved, shortened of a fact or changed in its flow keeps the draft's words, and the merged
+    // answer is validated like a draft, so no anchor enters that the draft did not have.
+    if (rewordingBody && typeof rewordingBody.text === 'string' && validated.statements.length > 0) {
+      const second = verifyModelReceipt(rewordingBody.receipt, { uid: gate.uid, text: rewordingBody.text, key, stage: STATEMENT_STAGE });
+      if (second.ok) {
+        const merge = mergeStatementRewording(validated.statements, rewordingBody.text);
+        const merged = validateStatementAnswer(context.statementContext, merge.text);
+        if (merged.statements.length === validated.statements.length) {
+          record = {
+            ...record,
+            statements: merged.statements,
+            rewording: { reworded: merge.reworded, kept: merge.kept, rejected: merge.rejected },
+            origin: {
+              source: 'model',
+              receipt: 'verified',
+              provider: second.receipt.provider,
+              modelId: second.receipt.modelId,
+              byok: second.receipt.byok,
+              issuedAt: second.receipt.iat,
+              textSha256: second.receipt.textSha256,
+              draft: draftOrigin,
+            },
+          };
+        }
+      } else {
+        logger.warn('statement-proposal rewording receipt refused; the draft is stored as it came', { route: 'api/projects/statement-proposal', refusal: second.refusal });
+      }
+    }
 
     const { db } = await getAdminDb();
     // `set` without merge: a new proposal replaces the old one whole. Keeping a

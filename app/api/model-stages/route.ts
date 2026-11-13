@@ -24,6 +24,7 @@ import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/li
 import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 import { AUTO_STEPS_NOTICE_FIELD, AUTO_STEPS_NOTICE_SEEN } from '@/lib/auto-steps-notice';
 import { AUTO_MODEL_STEPS_FIELD, autoModelStepsOn, automaticStepsAllowed } from '@/lib/auto-model-steps';
+import { statementsRewordingOn } from '@/lib/statement-rewording';
 
 /**
  * The per-stage model switch, and whether there is a key to switch on.
@@ -91,6 +92,13 @@ interface StageAnswer {
    * on unless switched off. `autoSteps` above is false whenever it is off.
    */
   autoModelSteps: boolean;
+  /**
+   * 13.11.2026 (owner decision) — the deployment rewords the draft of the business
+   * statements for a business reader (`GEMINI_STATEMENTS_REWORDING=on`,
+   * `lib/statement-rewording.ts`): the browser then makes the second call and the
+   * button says two calls. A deployment fact, the same for every account.
+   */
+  statementsRewording: boolean;
 }
 
 const UNREADABLE = Symbol('byok-key-unreadable');
@@ -116,7 +124,8 @@ async function answerFor(uid: string): Promise<StageAnswer> {
     if (err instanceof ByokKeyUnreadableError || err instanceof OwnModelKeyMissingError) return UNREADABLE;
     throw err;
   });
-  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null, autoStepsNoticeSeen, autoModelSteps };
+  const statementsRewording = statementsRewordingOn(process.env);
+  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null, autoStepsNoticeSeen, autoModelSteps, statementsRewording };
   const keySource: StageAnswer['keySource'] = ownKey
     ? 'byok'
     : process.env.GEMINI_API_KEY
@@ -130,7 +139,7 @@ async function answerFor(uid: string): Promise<StageAnswer> {
 
   const suspendedNotice = suspendedProvider ? providerSuspendedNotice(suspendedProvider, suspensionDetailsOf(process.env)) : null;
 
-  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoModelSteps };
+  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoModelSteps, statementsRewording };
 }
 
 export async function GET(req: NextRequest) {

@@ -3,10 +3,12 @@ import {
   STATEMENT_PROMPT_FORMAT_VERSION,
   buildStatementContext,
   buildStatementPrompt,
+  validateStatementAnswer,
   type ProposedStatement,
   type StatementContext,
   type StatementDiscardTally,
 } from './business-statement-prompt';
+import { buildStatementRewordingPrompt, type RewordingRejection } from './statement-rewording';
 import {
   NOT_GENERATED,
   absenceFromError,
@@ -76,6 +78,17 @@ export const STATEMENT_COST_LINE =
   'One model call. Not counted against your analysis runs; it counts toward the hourly limit on model calls of this account.';
 export const STATEMENT_COST_LINE_BYOK =
   'One model call, with your own Gemini key. Not counted against your analysis runs; it counts toward the hourly limit on model calls of this account.';
+/** 13.11.2026 (owner decision): where the deployment rewords the draft for a business reader, the button says both calls. */
+export const STATEMENT_COST_LINE_REWORDED =
+  'Two model calls: a draft of the sentences, then their wording for a business reader. Not counted against your analysis runs; both count toward the hourly limit on model calls of this account.';
+export const STATEMENT_COST_LINE_REWORDED_BYOK =
+  'Two model calls, with your own Gemini key: a draft of the sentences, then their wording for a business reader. Not counted against your analysis runs; both count toward the hourly limit on model calls of this account.';
+
+/** The line beside the button, for the key and for whether the deployment rewords (`GET /api/model-stages`, `statementsRewording`). */
+export function statementCostLine(byok: boolean, rewording: boolean): string {
+  if (rewording) return byok ? STATEMENT_COST_LINE_REWORDED_BYOK : STATEMENT_COST_LINE_REWORDED;
+  return byok ? STATEMENT_COST_LINE_BYOK : STATEMENT_COST_LINE;
+}
 
 /** What the reader keeps when there is no proposal. */
 export const EVIDENCE_KEPT = 'The sentences reconstructed from the code stand as they are.';
@@ -128,6 +141,29 @@ export interface StatementProposalOrigin {
   issuedAt: number;
   /** SHA-256 of the answer. The answer itself is not kept. */
   textSha256: string;
+  /**
+   * 13.11.2026 — when the sentences were reworded for a business reader
+   * (`lib/statement-rewording.ts`): the model that wrote the draft the
+   * rewording was read against, from its own verified receipt. `provider`,
+   * `modelId`, `byok`, `issuedAt` and `textSha256` above are then the rewording
+   * call's. Absent when the draft stands as it came.
+   */
+  draft?: StatementProposalDraftOrigin;
+}
+
+export interface StatementProposalDraftOrigin {
+  provider: string;
+  modelId: string;
+  byok: boolean;
+  issuedAt: number;
+  textSha256: string;
+}
+
+/** What the rewording did to the draft, for the record and the screen (`mergeStatementRewording`). */
+export interface StatementRewordingTally {
+  reworded: number;
+  kept: number;
+  rejected: Partial<Record<RewordingRejection, number>>;
 }
 
 export interface StatementProposalRecord {
@@ -135,6 +171,8 @@ export interface StatementProposalRecord {
   /** `statementDigestOf` of the source the sentences were validated against. */
   digest: string;
   statements: ProposedStatement[];
+  /** Present when the deployment reworded the draft; absent otherwise. */
+  rewording?: StatementRewordingTally;
   discarded: StatementDiscardTally;
   origin: StatementProposalOrigin;
   /** ISO time the server stored the proposal. */
@@ -169,7 +207,13 @@ export function isStatementProposalRecord(value: unknown): value is StatementPro
     && Array.isArray(value.statements) && value.statements.every(isProposedStatement)
     && isPlainObject(discarded) && typeof discarded.total === 'number' && isPlainObject(discarded.byRule)
     && isPlainObject(origin) && origin.source === 'model' && origin.receipt === 'verified'
-    && typeof origin.modelId === 'string' && typeof origin.provider === 'string';
+    && typeof origin.modelId === 'string' && typeof origin.provider === 'string'
+    && (origin.draft === undefined || isDraftOrigin(origin.draft));
+}
+
+function isDraftOrigin(value: unknown): value is StatementProposalDraftOrigin {
+  return isPlainObject(value) && typeof value.provider === 'string' && typeof value.modelId === 'string'
+    && typeof value.byok === 'boolean' && typeof value.issuedAt === 'number' && typeof value.textSha256 === 'string';
 }
 
 /* ------------------------------------------------------------------ *
@@ -196,6 +240,8 @@ export interface ProposalView {
   counts: { statements: number; discarded: number | null; contradicts: number; unsupported: number };
   origin: StatementProposalOrigin | null;
   proposedAt: string | null;
+  /** 13.11.2026 — what the rewording did to the draft, when the deployment reworded; null otherwise. */
+  rewording: StatementRewordingTally | null;
 }
 
 const firstLine = (s: ProposedStatement) => Math.min(...s.anchors.map((a) => a.lineStart));
@@ -243,6 +289,7 @@ export function applyStatementProposal(
     },
     origin: usable?.origin ?? null,
     proposedAt: usable?.proposedAt ?? null,
+    rewording: usable?.rewording ?? null,
   };
 }
 
@@ -310,17 +357,33 @@ export interface StatementSubmission {
   digest: string;
   text: string;
   receipt: unknown;
+  /**
+   * 13.11.2026 — the second answer, as it came back, with its receipt: the
+   * draft reworded for a business reader (`lib/statement-rewording.ts`). The
+   * server reads it against the draft and keeps the draft's sentence wherever
+   * the rewording does not hold. Absent when the deployment does not reword.
+   */
+  rewording?: { text: string; receipt: unknown };
 }
 
 export interface StatementAvailability {
   known: boolean;
   keyAvailable: boolean;
   stages: Partial<Record<string, boolean>>;
+  /** 13.11.2026 — the deployment rewords the draft (`GET /api/model-stages`, `statementsRewording`). */
+  rewording?: boolean;
 }
 
 export interface StatementRequestDeps {
   /** `/api/gemini` with `stage: 'statements'`. Throws with the route's message on refusal. */
   callModel: (prompt: string) => Promise<{ text: string; receipt: unknown }>;
+  /**
+   * `/api/gemini` with `stage: 'statements'` and the `statements-rewording`
+   * shape. Asked only when the availability says the deployment rewords; a
+   * refusal or a failure here costs the rewording and nothing else — the draft
+   * is stored as it came.
+   */
+  rewordModel?: (prompt: string) => Promise<{ text: string; receipt: unknown }>;
   /** `POST /api/projects/{id}/statement-proposal`. */
   store: (submission: StatementSubmission) => Promise<
     { ok: true; record: StatementProposalRecord } | { ok: false; status: number; error: string }
@@ -361,8 +424,23 @@ export async function runStatementRequest(
     return { ok: false, absence: absence === 'declined' ? 'failed' : absence, message: reason };
   }
 
+  // The rewording (13.11.2026): the checked draft goes back to the model for a business reader's
+  // wording. Only sentences the check kept are reworded — a dropped one has no anchor to keep —
+  // and a draft without any sentence is stored as it came, so the reader sees the same absence.
+  let rewording: StatementSubmission['rewording'];
+  if (availability?.rewording === true && deps.rewordModel) {
+    const draft = validateStatementAnswer(context.statementContext, answer.text);
+    if (draft.statements.length > 0) {
+      try {
+        rewording = await deps.rewordModel(buildStatementRewordingPrompt(context.statementContext, draft.statements));
+      } catch {
+        rewording = undefined;
+      }
+    }
+  }
+
   try {
-    const stored = await deps.store({ digest: context.digest, text: answer.text, receipt: answer.receipt });
+    const stored = await deps.store({ digest: context.digest, text: answer.text, receipt: answer.receipt, ...(rewording ? { rewording } : {}) });
     if (stored.ok) return stored;
     return { ok: false, absence: 'failed', message: stored.error };
   } catch (err) {

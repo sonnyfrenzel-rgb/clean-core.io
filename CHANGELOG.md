@@ -28,8 +28,19 @@ changes**: production stays on `gemini-3.8-flash`, and every rule below is off u
   technical ones, 28 % cheaper and faster, never near the output bound). The product model keeps its default.
 - **The usage log line says how the provider ended the answer** (`finishReason`): a call cut off at the output
   bound used to read `failed: false` with 32,768 tokens and nothing more.
+- **The business statements reworded for a business reader, off unless `GEMINI_STATEMENTS_REWORDING=on`**
+  (`lib/statement-rewording.ts`, owner decision 13.11.2026): after the draft, a second call of the statements stage
+  in the shape `statements-rewording` (product model, thinking LOW, no schema) rewords every checked sentence; a
+  guard keeps the draft's sentence wherever the rewording moved an anchor, changed the element, lost a number, a
+  quoted literal, a negation or a limit, added an identifier or changed the control flow (a sentence that "ends",
+  "stops", "is left", "is skipped" or "continues" where the draft did not, or no longer does). The store verifies
+  both receipts, merges deterministically on the server and records the draft's model as `origin.draft`; the chip
+  says "Written by … from a draft by …", the panel counts the sentences worded and kept, the button says "Two model
+  calls". Measured blind on 150 learn cases before the guard: 87.8 % equal against 85.2 % for the draft alone, a
+  fifth as many technical sentences.
 - **`tests/prozess-benchmark/weg-b-model.ts`**: the Weg B harness with a selectable model, thinking level and output
-  bound, a spend ledger with a cap, and a rewording mode.
+  bound, a spend ledger with a cap, a rewording mode on the product's prompt and guard, and a re-read mode that
+  applies the current guard to stored rewordings without a call.
 
 ### Changed
 

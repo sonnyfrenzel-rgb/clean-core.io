@@ -1402,6 +1402,8 @@ export default function DocumentationPage() {
     view: statementProposal.view,
     canRequest: isOwner,
     byok: modelAvailability.keySource === 'byok',
+    // 13.11.2026 — the deployment rewords the draft for a business reader: two calls, and the line says so.
+    rewording: modelAvailability.statementsRewording,
     requesting: statementProposal.requesting,
     message: statementProposal.message,
     onRequest: statementProposal.request,
