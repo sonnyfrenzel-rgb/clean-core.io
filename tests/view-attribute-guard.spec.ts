@@ -490,7 +490,7 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     await view('Business').click();
     // Business is Analyze's page since v3.1.0 (ADR-109): the switch lands there, at its top, with no layer and no bar
     // (ADR-096, ADR-080 — the map is the page).
-    await page.waitForURL(new RegExp(`/project/${PROJECT_UI}/analyze\?view=business`), { timeout: 30000, waitUntil: 'commit' });
+    await expect(page).toHaveURL(new RegExp(`/project/${PROJECT_UI}/analyze\\?view=business`), { timeout: 30000 });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
     expect(new URL(page.url()).hash).toBe('');
     await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
