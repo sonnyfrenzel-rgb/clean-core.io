@@ -315,7 +315,7 @@ test.describe('on screen (server-free render)', () => {
   });
 });
 
-test.describe('scope "firstlook" since v3.2.0: the text around the map (AB-6)', () => {
+test.describe('scope "firstlook" since 3.2.0: the text around the map (AB-6)', () => {
   test('the sentences offered are the engine\'s summary and steps on the page — each passes the server\'s check of keys and lines', async () => {
     const { aroundPlainSentences, aroundTheMap } = await import('../lib/around-the-map');
     const { readProcess, readRules } = await import('../lib/first-look');

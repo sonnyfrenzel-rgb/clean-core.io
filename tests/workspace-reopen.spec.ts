@@ -105,7 +105,7 @@ async function watchReopen(page: Page) {
         const settled = card.querySelector('[data-next-step-state="open"], [data-next-step-state="none"]');
         if (settled && (settled.textContent ?? '').trim() && w.__reopen.nextAt === null) w.__reopen.nextAt = now;
       }
-      // The text around the map (v3.2.0, AB-6, where the first look stood): its end state or its failure — never
+      // The text around the map (3.2.0, AB-6, where the first look stood): its end state or its failure — never
       // 'reading' for good.
       const state = document.querySelector('[data-around-the-map]')?.getAttribute('data-around-the-map');
       if ((state === 'ready' || state === 'failed') && w.__reopen.firstLookAt === null) {

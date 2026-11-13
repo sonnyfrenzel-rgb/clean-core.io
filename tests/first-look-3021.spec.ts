@@ -44,8 +44,8 @@ function opening(source: string) {
 }
 
 /**
- * `AroundTheMap` (plan AB-6, v3.2.0), bundled for a static render; `tag` keeps parallel describes apart. The
- * First insights opening (`BusinessOpening`) it replaced stood below the map until v3.1.0.
+ * `AroundTheMap` (plan AB-6, 3.2.0), bundled for a static render; `tag` keeps parallel describes apart. The
+ * First insights opening (`BusinessOpening`) it replaced stood below the map until 3.1.0.
  */
 async function loadAroundFor(tag: string): Promise<{
   default: (props: Record<string, unknown>) => React.ReactElement | null;
@@ -158,7 +158,7 @@ test.describe('"In short" never leads with what the program does not do (owner, 
   });
 
   test('a plain wording on record of an engine sentence stands in its place, with the AI-generated chip (AB-6)', async () => {
-    // Since v3.2.0 "What this program does" above the map carries the engine's sentences (AB-6); a plain wording on
+    // Since 3.2.0 "What this program does" above the map carries the engine's sentences (AB-6); a plain wording on
     // record stands in place with the chip, the engine's sentence one fold down — as "In short" did in the opening.
     const { WhatThisProgramDoes } = await loadAroundFor('in-short');
     const text = aroundOf(BROKER);

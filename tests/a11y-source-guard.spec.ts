@@ -174,7 +174,7 @@ test.describe('the two shell menus are menus in the WAI-ARIA sense (§1.6, block
 
 test.describe('the workspace (roadmap 3.0.4)', () => {
   test('the text around the map announces nothing of its own: the names arrive in the one status line of the map (§2.8)', () => {
-    // The first look's staged card, with its one live region for the newest stage, left with v3.2.0 (AB-6): its
+    // The first look's staged card, with its one live region for the newest stage, left with 3.2.0 (AB-6): its
     // text is the text around the map, which arrives in place. The one announcement on the page is the map's
     // naming status line (ADR-108); a second live region here would make a screen reader repeat it.
     expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLook.tsx'))).toBe(false);
@@ -205,7 +205,7 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
       expect(i, `${needle} is not on the page`).toBeGreaterThan(-1);
       return i;
     };
-    // Since v3.2.0 (AB-6) the text around the map stands where the first insights stood.
+    // Since 3.2.0 (AB-6) the text around the map stands where the first insights stood.
     const order = [at('<WhatThisProgramDoes'), at('<WorkspaceProcess'), at('<AroundTheMap'), at('<BusinessNextStep')];
     for (let i = 1; i < order.length; i++) expect(order[i], `block ${i} stands before block ${i - 1}`).toBeGreaterThan(order[i - 1]);
     expect(page).not.toMatch(/\border-(first|last|\d+)\b/);

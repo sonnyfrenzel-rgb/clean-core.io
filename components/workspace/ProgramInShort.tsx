@@ -12,7 +12,7 @@ import { wt } from '@/lib/workspace-messages';
  * "In short" — what the program is for, in two to four sentences, before
  * anything else a business reader sees (owner, 12.10.2026: *"the business
  * high-level texts about what a Z program does … must get clearly better"*;
- * roadmap 3.0.11). Since v3.2.0 only Analyze's IT and Management page (the
+ * roadmap 3.0.11). Since 3.2.0 only Analyze's IT and Management page (the
  * score page) renders it, from the one text model (`lib/program-summary-text.ts`);
  * the Business view says the same facts in the text around the map
  * (`components/analyze/AroundTheMap.tsx`, AB-6). AB-9 and AB-10 rebuild IT and

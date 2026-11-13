@@ -428,7 +428,7 @@ test.describe('the first look on screen', () => {
       route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'held by the spec' }) }),
     );
 
-    // The project opens in Analyze, Business (AB-2, ADR-109). Since v3.2.0 (AB-6) the text around the map stands
+    // The project opens in Analyze, Business (AB-2, ADR-109). Since 3.2.0 (AB-6) the text around the map stands
     // where the first insights stood; their four-stage receipt and its strip of figures left with them (plan §1.1).
     await page.goto(`/project/${PROJECT_ID}?first=1`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 60000 });

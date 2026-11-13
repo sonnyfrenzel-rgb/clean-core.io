@@ -427,7 +427,7 @@ test.describe('rendered (AroundTheMap, static markup) — the rules of the panel
   const runsOf = (html: string): string => html.slice(html.indexOf('data-around-runs='), html.indexOf('data-around-why-who'));
 
   // 3.0.20 (owner report 21.10.2026): the demo cases are test data, said apart from the steps; technical checks are
-  // counted, never listed. Since v3.2.0 (AB-6) the steps stand in "How it runs" below the map, the test data line
+  // counted, never listed. Since 3.2.0 (AB-6) the steps stand in "How it runs" below the map, the test data line
   // under them with its line; what a step checks is said beside the step, business checks only.
   test('the test data switch stands apart, with its line; technical checks are not listed', async () => {
     const Around = await loadAround();

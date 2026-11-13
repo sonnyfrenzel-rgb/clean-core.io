@@ -41,7 +41,7 @@ async function firstScreen(page: Page) {
   // Since AB-2 (ADR-109) the project opens in Analyze, Business: "What this
   // program does", then the map from the signed run — the first block under it,
   // starting in the first screen. The text around the map stands below it
-  // (v3.2.0, AB-6, where the first look's blocks stood until then).
+  // (3.2.0, AB-6, where the first look's blocks stood until then).
   await expect(page.locator('[data-analyze-summary]')).toBeInViewport();
   await expect(page.locator('[data-analyze-map]')).toBeInViewport();
   await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible();

@@ -99,8 +99,8 @@ test.describe('the source: Business on Analyze is the map, not the score', () =>
     expect(BUSINESS).toContain('setAutoStart(first && !firstLookSeen(projectId));');
   });
 
-  test('since v3.2.0 the text around the map stands where the First insights blocks stood; Next step under it until AB-4', () => {
-    // The interim of v3.1.0 (`FirstLook` with `BusinessOpening` below the map) gave way to AB-6's text around the
+  test('since 3.2.0 the text around the map stands where the First insights blocks stood; Next step under it until AB-4', () => {
+    // The interim of 3.1.0 (`FirstLook` with `BusinessOpening` below the map) gave way to AB-6's text around the
     // map: "What this program does" above it, the four blocks below it (tests/analyze-around-the-map.spec.ts).
     const summary = BUSINESS.indexOf('<WhatThisProgramDoes');
     const map = BUSINESS.indexOf('<WorkspaceProcess');

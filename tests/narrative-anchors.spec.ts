@@ -249,7 +249,7 @@ test.describe('with ids the engine really assigns (roadmap step 1.3)', () => {
   });
 });
 
-test.describe('the model\'s wording around the map stands on the engine\'s lines, never on its own citations (v3.2.0, AB-6)', () => {
+test.describe('the model\'s wording around the map stands on the engine\'s lines, never on its own citations (3.2.0, AB-6)', () => {
   test('a citation in the narrative is not taken as the line: each sentence carries the line of the engine sentence it was checked against', async () => {
     const { aroundTheMap } = await import('../lib/around-the-map');
     const { readProcess, readRules } = await import('../lib/first-look');

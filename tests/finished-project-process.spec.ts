@@ -94,7 +94,7 @@ test.describe('a finished project reopens on its process', () => {
     // The map with no phase condition: only "nothing to draw" (no source, no run) falls back.
     expect(page).toContain("if (!legacyCode.trim() && !signed) return <>{fallback}</>;");
     expect(page).toMatch(/<div id=\{BUSINESS_MAP_ID\} data-analyze-map=""/);
-    // The text around the map (AB-6, v3.2.0, where the first insights stood), likewise, whatever the phase or the next step.
+    // The text around the map (AB-6, 3.2.0, where the first insights stood), likewise, whatever the phase or the next step.
     expect(page).toContain('<WhatThisProgramDoes');
     expect(page).toContain('<AroundTheMap');
     expect(page).not.toMatch(/nextOpenPoint\([^)]*\)[^\n]*(?:AroundTheMap|WhatThisProgramDoes)|workflowSteps\(project\)[^\n]*(?:AroundTheMap|WhatThisProgramDoes)/);

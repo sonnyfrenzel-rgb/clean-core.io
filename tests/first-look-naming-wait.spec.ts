@@ -8,7 +8,7 @@ import path from 'path';
  * The first look's end state needed stage 3's naming, or the decision to stand without one; a naming read that
  * never settled once kept it on "reading" for good, and the fix was a short wait of its own (`NAMING_WAIT_MS`).
  *
- * Since v3.2.0 (plan AB-6) the first look is gone: the text around the map is read from the engine alone and waits
+ * Since 3.2.0 (plan AB-6) the first look is gone: the text around the map is read from the engine alone and waits
  * for no naming at all — the names arrive on the map itself (ADR-108). What this spec held is now stronger: nothing
  * in the text around the map reads a naming, so nothing can wait for one. Server-free.
  */

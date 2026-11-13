@@ -144,7 +144,7 @@ test.describe('every automatic call path is covered', () => {
     for (const rel of ['hooks/usePlainWording.ts', 'hooks/useAutoProcessNaming.ts']) {
       expect(read(rel), rel).toContain('askModeOf(');
     }
-    // The text around the map (AB-6, v3.2.0) asks for the plain wording where the first insights did.
+    // The text around the map (AB-6, 3.2.0) asks for the plain wording where the first insights did.
     for (const rel of ['hooks/useAroundTheMap.ts', 'components/workspace/WorkspaceProcess.tsx', 'components/workspace/RuleDecisionFlow.tsx', 'components/design/RuleQuestions.tsx']) {
       expect(read(rel), rel).toContain('autoAllowed: availability.autoSteps,');
     }

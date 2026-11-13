@@ -125,7 +125,7 @@ test.describe('the Business view of a real project (Analyze, Business; mockup st
     // No layer bar: Business has one section, and it is not on this page's first screen (ADR-096, AB-2).
     await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
 
-    // The order of AB-2 with AB-6 (v3.2.0): what the program does → the map → the text around it → Next step (until AB-4).
+    // The order of AB-2 with AB-6 (3.2.0): what the program does → the map → the text around it → Next step (until AB-4).
     const tops = await page.evaluate(() =>
       ['[data-analyze-summary]', '[data-analyze-map]', '[data-around-the-map]', '[data-analyze-interim] [data-next-step]'].map(
         (sel) => {

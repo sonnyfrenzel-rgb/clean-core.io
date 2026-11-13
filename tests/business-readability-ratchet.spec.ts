@@ -91,7 +91,7 @@ test.describe('Business readability of the seven examples — never worse (engin
     expect(r.questions.raw).toBeLessThanOrEqual(4);
   });
 
-  test('the text around the map (v3.2.0, AB-6): what it does, how it runs, why, who — no more raw identifiers than today', () => {
+  test('the text around the map (3.2.0, AB-6): what it does, how it runs, why, who — no more raw identifiers than today', () => {
     // Measured 13.11.2026 on the seven examples: 98 sentences, 1 raw — "AT" among the country codes of a check of
     // the 1,000-line example ("country not DE, AT or CH"), the engine's own label of that decision point.
     const a = examples().around;

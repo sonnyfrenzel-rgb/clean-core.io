@@ -65,7 +65,7 @@ export interface RouteDef {
 /** The catalogue object the walk opens: a table every S/4 system has. */
 export const CATALOG_OBJECT = 'vbak';
 
-/** The text around the map stands in its end state (`components/analyze/AroundTheMap.tsx`, v3.2.0, AB-6 — where the first insights stood). */
+/** The text around the map stands in its end state (`components/analyze/AroundTheMap.tsx`, 3.2.0, AB-6 — where the first insights stood). */
 const FIRST_LOOK_DONE = '[data-around-the-map="ready"]';
 
 /**

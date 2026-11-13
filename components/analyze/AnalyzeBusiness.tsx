@@ -60,7 +60,7 @@ const WorkspaceProcess = dynamic(() => import('@/components/workspace/WorkspaceP
  * does* above the map, and under it *How it runs*, *Why it exists*, *Who is
  * involved* and *Questions to settle with the business* (`AroundTheMap`, read by
  * `useAroundTheMap`), every sentence with its line. It replaced the interim First
- * insights blocks (`FirstLook`, `BusinessOpening`) of v3.1.0. `BusinessNextStep`
+ * insights blocks (`FirstLook`, `BusinessOpening`) of 3.1.0. `BusinessNextStep`
  * stands under it until AB-4's two endings replace it.
  *
  * **The start run of ADR-072 lives here** (moved from the workspace page): a
@@ -224,7 +224,7 @@ export default function AnalyzeBusiness({
 
   /**
    * The reading the text around the map was read from, for the project search (⌘K, roadmap 6.6) — the search the
-   * workspace's Business view carried until v3.1.0 stands here, where a project opens (mockup state 3: "Search this
+   * workspace's Business view carried until 3.1.0 stands here, where a project opens (mockup state 3: "Search this
    * project" in the shell bar).
    */
   const reading = around.reading;

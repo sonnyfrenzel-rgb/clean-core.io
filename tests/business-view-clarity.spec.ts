@@ -264,7 +264,7 @@ test.describe('the Business view on screen', () => {
     );
   }
 
-  /** The Business view: Analyze's page since v3.1.0 (plan AB-2, ADR-109), the text around the map (AB-6) and Next step below it. */
+  /** The Business view: Analyze's page since 3.1.0 (plan AB-2, ADR-109), the text around the map (AB-6) and Next step below it. */
   async function open(page: Page, id: string) {
     await page.goto(`/project/${id}/analyze?view=business`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90_000 });
@@ -321,7 +321,7 @@ test.describe('the Business view on screen', () => {
         els.filter((el) => !el.closest('[data-analyze-interim]')).length,
       ),
     ).toBe(1);
-    // The First insights' strip of figures ("rules confirmed n of m") left with them in v3.2.0 (AB-6, plan §1.1);
+    // The First insights' strip of figures ("rules confirmed n of m") left with them in 3.2.0 (AB-6, plan §1.1);
     // the answers on record are read where they are given and shown — the register in IT and Design, below.
 
     // The done state — who and when, never a confirm button — stands in the rule register of the IT view.
@@ -365,7 +365,7 @@ test.describe('the Business view on screen', () => {
       ),
     ).toBe(1);
 
-    // The First insights' strip of figures left with them in v3.2.0 (AB-6); Design below says what is open.
+    // The First insights' strip of figures left with them in 3.2.0 (AB-6); Design below says what is open.
     // Need & process is not a section of Business (ADR-080): the map is the
     // process, and nothing summarises it a second time.
     await expect(page.locator('[data-workspace-layer="need"]')).toHaveCount(0);
@@ -420,7 +420,7 @@ test.describe('the Business view on screen', () => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
     await open(page, ids.po);
-    // "How it runs" (v3.2.0, AB-6): every sentence with its line; the First insights' "How this was read" fold
+    // "How it runs" (3.2.0, AB-6): every sentence with its line; the First insights' "How this was read" fold
     // with its figures left with them (plan §1.1) — the map's own traceability sentence stands under the map.
     const opening = page.locator('[data-around-runs]');
     const steps = opening.locator('[data-around-sentence]');
@@ -610,7 +610,7 @@ test.describe('the Business view on screen', () => {
     await open(page, ids.po);
     await expect(page.locator('[data-coach-mark]')).toHaveCount(0);
     // Analyze, Business since v3.1.0 (AB-2): the summary with the invitation, then the map, then the
-    // text around it (AB-6, v3.2.0) and "Next step" below it (until AB-4's endings).
+    // text around it (AB-6, 3.2.0) and "Next step" below it (until AB-4's endings).
     const tops = await page.evaluate(() =>
       ['[data-analyze-summary]', '[data-analyze-map]', '[data-around-the-map]', '[data-analyze-interim] [data-next-step]'].map(
         (sel) => document.querySelector(sel)?.getBoundingClientRect().top ?? -1,

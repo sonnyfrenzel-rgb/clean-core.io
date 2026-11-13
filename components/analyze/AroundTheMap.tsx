@@ -15,7 +15,7 @@ import { aroundMoreQuestions, bizStoryWithin, wt } from '@/lib/workspace-message
 /**
  * The text around the map — Analyze, Business view (plan `docs/design/analyze-business-first-plan.md` §4.2, AB-6;
  * mockup `docs/roadmap/analyze-business-first-mockup.html`, states 3, 5 and 9; ADR-116). It replaces the interim
- * First insights blocks (`BusinessOpening`, `ProgramInShort`) that stood below the map in v3.1.0.
+ * First insights blocks (`BusinessOpening`, `ProgramInShort`) that stood below the map in 3.1.0.
  *
  * Two parts, one text (`lib/around-the-map.ts`, read by `hooks/useAroundTheMap.ts`):
  *
@@ -209,17 +209,18 @@ export default function AroundTheMap({
                 <p className="m-0 mt-1 text-[14px] leading-relaxed font-medium text-cc-ink">
                   {run.steps.map((s, k) => (
                     <React.Fragment key={`${s.step.anchor}-${k}`}>
+                      {/* One step: its sentence, what it checks and where it can end — all read from the same
+                          lines — then that line, once. Every element marked as a sentence carries its line. */}
                       <span data-around-sentence="" data-anchor={s.step.anchor}>
                         {s.within ? `${bizStoryWithin(s.within)} ` : null}
-                        <Said sentence={s.step} text={stepSaid[i]?.[k]?.text} onAnchor={onAnchor} />
+                        <span className="break-words">{stepSaid[i]?.[k]?.text ?? s.step.text}</span>
+                        {s.more.map((m, j) => (
+                          <span key={`${m.anchor}-${j}`} data-around-step-detail="" className="break-words text-cc-ink-muted">
+                            {` ${m.text}`}
+                          </span>
+                        ))}{' '}
+                        <Line anchor={s.step.anchor} onAnchor={onAnchor} />
                       </span>{' '}
-                      {s.more.map((m, j) => (
-                        <React.Fragment key={`${m.anchor}-${j}`}>
-                          <span data-around-sentence="" data-anchor={m.anchor} className="text-cc-ink-muted">
-                            {m.text}
-                          </span>{' '}
-                        </React.Fragment>
-                      ))}
                     </React.Fragment>
                   ))}
                 </p>

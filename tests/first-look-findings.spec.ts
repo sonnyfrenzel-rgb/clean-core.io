@@ -297,7 +297,7 @@ test.describe('what the code gives away', () => {
   });
 });
 
-test.describe('where the findings stand since v3.2.0: the questions around the map (AB-6)', () => {
+test.describe('where the findings stand since 3.2.0: the questions around the map (AB-6)', () => {
   test('every finding for the business or the users is a question to settle, with its line; IT keeps its own', async () => {
     const { aroundTheMap, QUESTIONS_SHOWN } = await import('../lib/around-the-map');
     const { readRules } = await import('../lib/first-look');

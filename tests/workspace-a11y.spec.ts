@@ -165,7 +165,7 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
       };
       new MutationObserver(watch).observe(document, { subtree: true, childList: true, characterData: true });
     });
-    // A first visit, in Analyze, Business. The first insights' staged live region left with v3.2.0 (AB-6): the text
+    // A first visit, in Analyze, Business. The first insights' staged live region left with 3.2.0 (AB-6): the text
     // around the map arrives in place, and the one announcement on the page is the map's naming status line (ADR-108).
     await page.goto(`/project/${PROJECT_ID}/analyze?view=business&first=1`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible({ timeout: 60000 });
@@ -368,7 +368,7 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await openWorkspace(page, 'business');
 
     // Business is Analyze's page since v3.1.0 (AB-2, ADR-109): what the program
-    // does → the map → the text around it (AB-6, v3.2.0) → "Next step" (until
+    // does → the map → the text around it (AB-6, 3.2.0) → "Next step" (until
     // AB-4's endings), in the DOM and on the screen — so the focus order is the reading
     // order (§1.6), on a phone too.
     const order = await page.evaluate(() => {
