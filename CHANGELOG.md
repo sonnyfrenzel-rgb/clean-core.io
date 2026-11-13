@@ -55,6 +55,16 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
 - Status workflow: an authority check inside a loop is no longer reported as guarding status moves after the loop,
   and when two classes implement a method of the same name, a status precondition from a call to one is no longer
   attributed to the other.
+- The demo's Analyze summary: each line anchor now opens its lines in the code panel beside the map, as in a project.
+- Process map: an arm that only sets a flag becomes a step only when a later decision reads the same variable; a
+  same-named local in another routine no longer counts.
+- Status workflow: a stopping check inside a loop no longer supplies a "from" state to a move after the loop, and a
+  qualified constant (`zif_a=>c_status`) resolves in its own interface or class, never to another type's same-named
+  constant.
+- Customer-text markers match whole words only; a text such as "Plan" is no longer credited to a sentence that says
+  "planned".
+- Business view: methods named `refresh_<something>` are folded as technique only when they refresh the screen
+  (`refresh_alv`, `refresh_grid`, …); a method such as `refresh_credit_limit` stays a step of the process.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
