@@ -309,3 +309,70 @@ test('a CHECK inside a loop guards only the rest of that pass, not the moves aft
     'PROCESS:DRAFT>OPEN', 'PROCESS:OPEN>DONE', 'PROCESS:>DRAFT',
   ]);
 });
+
+test('an AUTHORITY-CHECK inside a loop is not a role of the moves after ENDLOOP (QA review 0c6b49ec357c, f75ddb5ecfa9)', () => {
+  const src = [
+    'REPORT zt_loop_auth.',
+    "CONSTANTS: gc_draft TYPE char10 VALUE 'DRAFT', gc_open TYPE char10 VALUE 'OPEN', gc_done TYPE char10 VALUE 'DONE'.",
+    'DATA: gs_req TYPE zt_req, gt_items TYPE STANDARD TABLE OF zt_item, gs_item TYPE zt_item.',
+    'START-OF-SELECTION.',
+    '  PERFORM process.',
+    'FORM process.',
+    '  LOOP AT gt_items INTO gs_item.',
+    "    AUTHORITY-CHECK OBJECT 'Z_ITEM' ID 'ACTVT' FIELD '02'.",
+    '    IF gs_req-status = gc_draft.',
+    '      gs_req-status = gc_open.',
+    '    ENDIF.',
+    '  ENDLOOP.',
+    '  IF gs_req-status = gc_open.',
+    '    gs_req-status = gc_done.',
+    '  ELSE.',
+    '    gs_req-status = gc_draft.',
+    '  ENDIF.',
+    '  UPDATE zt_req FROM gs_req.',
+    'ENDFORM.',
+  ].join('\n');
+  const machine = readStateMachine(src);
+  // Inside the pass the check stands before the move; a loop may make no pass, so after it the check says nothing.
+  expect(machine?.transitions.map((t) => `${t.from.join('/')}>${t.to}:${t.roles.map((r) => r.object).join(',')}`)).toEqual([
+    'DRAFT>OPEN:Z_ITEM', 'OPEN>DONE:', '>DRAFT:',
+  ]);
+});
+
+test('callers of a method name two classes implement hand neither one a from-value (QA review 0c6b49ec357c, 519e1e20ddf3)', () => {
+  const src = (secondClass: boolean) => [
+    'REPORT zt_same_name.',
+    "CONSTANTS: gc_draft TYPE char10 VALUE 'DRAFT', gc_open TYPE char10 VALUE 'OPEN', gc_done TYPE char10 VALUE 'DONE'.",
+    'DATA gs_req TYPE zt_req.',
+    'CLASS lcl_a DEFINITION. PUBLIC SECTION. CLASS-METHODS: submit, close. ENDCLASS.',
+    ...(secondClass ? ['CLASS lcl_b DEFINITION. PUBLIC SECTION. CLASS-METHODS submit. ENDCLASS.'] : []),
+    'CLASS lcl_a IMPLEMENTATION.',
+    '  METHOD submit.',
+    '    gs_req-status = gc_open.',
+    '  ENDMETHOD.',
+    '  METHOD close.',
+    '    IF gs_req-status = gc_open.',
+    '      gs_req-status = gc_done.',
+    '    ENDIF.',
+    '  ENDMETHOD.',
+    'ENDCLASS.',
+    ...(secondClass ? [
+      'CLASS lcl_b IMPLEMENTATION.',
+      '  METHOD submit.',
+      "    WRITE / 'other'.",
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+    ] : []),
+    'START-OF-SELECTION.',
+    '  gs_req-status = gc_draft.',
+    '  IF gs_req-status = gc_draft.',
+    `    ${secondClass ? 'lcl_b' : 'lcl_a'}=>submit( ).`,
+    '  ENDIF.',
+    '  lcl_a=>close( ).',
+  ].join('\n');
+  const moves = (s: string) => readStateMachine(s)?.transitions.map((t) => `${t.routine}:${t.from.join('/')}>${t.to}`);
+  // One class: the call under `IF status = draft` says where SUBMIT's move comes from.
+  expect(moves(src(false))).toContain('LCL_A=>SUBMIT:DRAFT>OPEN');
+  // Two classes: the call is lcl_b's, and lcl_a's SUBMIT states no from-value of its own — none is lent to it.
+  expect(moves(src(true))).toContain('LCL_A=>SUBMIT:>OPEN');
+});
