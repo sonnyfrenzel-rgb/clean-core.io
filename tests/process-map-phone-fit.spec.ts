@@ -154,6 +154,13 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     // Full screen on a phone: the same narrow layout, the whole width in view.
     await frame.locator('[data-map-fullscreen-toggle]').click();
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
+    // Since 3.2.0 (AB-5) full screen on Analyze, Business is a named dialog with one bar; on a phone "Edit" is
+    // disabled with the sentence why (P3), and the overview map is off so the canvas keeps the height.
+    await expect(frame).toHaveAttribute('role', 'dialog');
+    await expect(frame).toHaveAttribute('aria-label', 'Process map, full screen');
+    await expect(frame.getByRole('switch', { name: 'Edit' })).toBeDisabled();
+    await expect(frame.locator('[data-map-fullscreen-edit="blocked"]')).toContainText('Editing needs a larger screen.');
+    await expect(frame.locator('[data-map-fullscreen-overview-panel]')).toHaveCount(0);
     await page.waitForTimeout(500);
     await expectFits(frame, 'workspace full screen, Z_MM_PO_APPROVAL');
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/workspace-big-fullscreen-390.png` });
