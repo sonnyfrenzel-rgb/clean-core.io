@@ -317,7 +317,7 @@ export default function AnalyzeBusiness({
               </h2>
               {inShort && inShort.length > 0 ? <CcProvenanceChip value="reconstructed" /> : null}
             </div>
-            <p data-analyze-summary-text="" className="m-0 mt-1 max-w-3xl text-[14px] leading-relaxed font-medium text-cc-ink">
+            <p data-analyze-summary-text="" className="m-0 mt-1 max-w-[60rem] text-[14px] leading-relaxed font-medium text-cc-ink">
               {inShort && inShort.length > 0
                 ? inShort.map((line, i) => (
                     <React.Fragment key={`${line.key}-${i}`}>

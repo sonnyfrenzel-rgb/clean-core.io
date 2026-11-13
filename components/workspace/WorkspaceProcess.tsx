@@ -826,7 +826,7 @@ export default function WorkspaceProcess({
         }
       >
       <div data-coach-target="decision" className="min-w-0">
-        <CcCard>
+        <CcCard density={codeOnClick ? 'compact' : 'cozy'}>
           {model ? (
             <ProcessMap
               key={isS ? 'steps' : 'map'}
