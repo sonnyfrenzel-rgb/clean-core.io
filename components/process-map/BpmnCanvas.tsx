@@ -8,6 +8,7 @@ import './process-map.css';
 import { MAP_REVEAL_EVENT, NARROW_CANVAS, fitWhole, fitWithPadding, flooredLevelHeight, phoneFitWidth, placeAnchor, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
 import type { PhoneXml } from './phone-layout';
 import { MapViewTools } from './CanvasViewControls';
+import { FOCUSABLE } from '@/components/cc/modal';
 import { useCanvasFullscreen } from './useCanvasFullscreen';
 import { useTouchViewport } from './useTouchViewport';
 import { applyCanvasNames, clearNameTimers, drawnNames, type CanvasNames, type SwapViewer } from './naming-swap';
@@ -138,6 +139,50 @@ export interface BpmnCanvasProps {
    * is the page (ADR-109; mockup v4.1, phone). Every other map keeps its card.
    */
   growToLevel?: boolean;
+  /**
+   * Plan AB-5 (3.2.0, Analyze, Business): what full screen shows in place of the inline row — one bar, a side
+   * column and, while editing, the editor over the canvas. Given, the frame in full screen is a named dialog, a step
+   * chosen there stays in full screen (its code is the side column's), and Tab stays inside it. Absent: full screen
+   * is what it was (the Documentation stage, the workspace, the demo).
+   */
+  fullscreenParts?: CanvasFullscreenParts | null;
+  /** Bumped by the parent to go into full screen (*Edit model* on Analyze, Business, opens the editor there). */
+  fullscreenRequest?: number;
+  /** Told whenever full screen begins or ends. */
+  onFullscreenChange?: (filled: boolean) => void;
+}
+
+/** What the full-screen bar of {@link CanvasFullscreenParts} is handed: the canvas's own moves and the way out. */
+export interface CanvasFullscreenTools {
+  zoom: number;
+  zoomBy: (factor: number) => void;
+  fit: () => void;
+  leave: () => void;
+  /** The way out takes the focus on the way in (`useCanvasFullscreen`): put it on the *Leave full screen* button. */
+  leaveRef: React.RefObject<HTMLButtonElement | null>;
+  /** The level path and the way up, as the inline row has them. */
+  levelPath?: React.ReactNode;
+}
+
+export interface CanvasFullscreenParts {
+  /** The dialog's accessible name. */
+  label: string;
+  /** The one bar on top. */
+  bar: (tools: CanvasFullscreenTools) => React.ReactNode;
+  /** The side column beside the canvas (under it on a narrow screen). */
+  rail?: React.ReactNode;
+  /**
+   * Shown in place of the canvas — the editor. The reading canvas stays mounted, hidden, so leaving the editor
+   * finds the map as it was. Escape inside it is the body's (the editor ends a tool with it).
+   */
+  body?: React.ReactNode | null;
+  /** Shown in the canvas's place beside the side column — the step list ("Map | Steps" in full screen, O9). */
+  alternate?: React.ReactNode | null;
+}
+
+/** The bar of {@link CanvasFullscreenParts}, drawn as an element: its tools, the way-out ref among them, are props. */
+function FullscreenBarSlot({ render, ...tools }: CanvasFullscreenTools & { render: CanvasFullscreenParts['bar'] }) {
+  return <>{render(tools)}</>;
 }
 
 interface CanvasService extends ViewboxCanvas {
@@ -270,6 +315,9 @@ export default function BpmnCanvas({
   toolsPanel,
   names = null,
   growToLevel = false,
+  fullscreenParts = null,
+  fullscreenRequest = 0,
+  onFullscreenChange,
 }: BpmnCanvasProps) {
   const fitOnOpen = openFit ?? (controls ? 'whole' : 'readable');
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -283,11 +331,16 @@ export default function BpmnCanvas({
     planeHandler.current = onPlaneChange;
   });
   const setLevel = useCallback((next: string | null) => planeHandler.current(next), []);
+  /** The editor in full screen (AB-5): Escape inside it ends a tool, not full screen. */
+  const bodyRef = useRef<HTMLDivElement | null>(null);
   const { filled, toggle: toggleFullscreen, exit: exitFullscreen, toggleRef } = useCanvasFullscreen({
     rootRef: frameRef,
+    escapeInside: bodyRef,
     level: { current: plane, set: setLevel },
   });
   const filledRef = useRef(filled);
+  /** Full screen with its own bar and side column (AB-5): a chosen step stays in full screen. */
+  const partsRef = useRef(fullscreenParts !== null);
   const controlsRef = useRef(controls);
   const fitOnOpenRef = useRef(fitOnOpen);
   /**
@@ -353,7 +406,7 @@ export default function BpmnCanvas({
   useEffect(() => {
     phoneRef.current = phoneXml;
     handlers.current = {
-      onActivate: (id) => (filledRef.current ? chooseOutOfFullscreen(() => onActivate(id)) : onActivate(id)),
+      onActivate: (id) => (filledRef.current && !partsRef.current ? chooseOutOfFullscreen(() => onActivate(id)) : onActivate(id)),
       onActiveChange,
       onPlaneChange,
       // In full screen a sub-process opens its level in place — the reader
@@ -368,7 +421,42 @@ export default function BpmnCanvas({
     filledRef.current = filled;
     controlsRef.current = controls;
     fitOnOpenRef.current = fitOnOpen;
+    partsRef.current = fullscreenParts !== null;
   });
+
+  /**
+   * Into full screen when the parent asks (AB-5), and the element that asked gets the focus back on the way out —
+   * *Edit model* rather than the full-screen toggle it did not press.
+   */
+  // From 0, so an ask made while the canvas was not mounted (the steps were on show) is taken on mount; the parent
+  // sets the request back to 0 once full screen stands, so a later mount does not open it again.
+  const askedRef = useRef(0);
+  const openerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!fullscreenRequest || fullscreenRequest === askedRef.current) return;
+    askedRef.current = fullscreenRequest;
+    if (filled) return;
+    openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    toggleFullscreen();
+  }, [fullscreenRequest, filled, toggleFullscreen]);
+  const fullscreenChanged = useRef(onFullscreenChange);
+  useEffect(() => {
+    fullscreenChanged.current = onFullscreenChange;
+  });
+  const wasFilledRef = useRef(false);
+  useEffect(() => {
+    if (wasFilledRef.current === filled) return;
+    wasFilledRef.current = filled;
+    fullscreenChanged.current?.(filled);
+    if (filled) return;
+    const opener = openerRef.current;
+    openerRef.current = null;
+    if (!opener) return;
+    // After the hook has put the focus on the toggle: the opener, where it is still on the page.
+    window.requestAnimationFrame(() => {
+      if (opener.isConnected && opener.getClientRects().length > 0) opener.focus();
+    });
+  }, [filled]);
 
   useEffect(() => {
     let cancelled = false;
@@ -666,11 +754,32 @@ export default function BpmnCanvas({
   const keyDown = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
     const choosing = event.key === 'Enter' || event.key === ' ';
     const id = (event.target as HTMLElement).dataset?.mapNode;
-    if (controls && filled && choosing && id && !nodes.get(id)?.opensPlane) {
+    if (controls && filled && !fullscreenParts && choosing && id && !nodes.get(id)?.opensPlane) {
       chooseOutOfFullscreen(() => undefined);
     }
     onKeyDown(event);
-  }, [chooseOutOfFullscreen, controls, filled, nodes, onKeyDown]);
+  }, [chooseOutOfFullscreen, controls, filled, fullscreenParts, nodes, onKeyDown]);
+
+  /** The way out of the full-screen bar is the button the hook gives the focus to. */
+  const leaveRef = toggleRef;
+
+  /** Tab stays inside the full-screen dialog (AB-5): it covers the page, so a stop behind it is a stop nobody sees. */
+  const keepTabInside = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Tab') return;
+    const frame = frameRef.current;
+    if (!frame) return;
+    const stops = [...frame.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.getClientRects().length > 0);
+    if (stops.length === 0) return;
+    const first = stops[0];
+    const last = stops[stops.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }, []);
 
   /** Roving tabindex and the selection mark, read back off the diagram's own DOM. */
   useEffect(() => {
@@ -738,26 +847,78 @@ export default function BpmnCanvas({
     />
   );
   if (!controls) return canvasElement;
+  /*
+   * Full screen with its own parts (AB-5) is the same frame and the same canvas element as inline — the browser holds
+   * the frame in full screen and the viewer lives in the canvas, so neither may be replaced on the way in. Only the
+   * row changes, and the side column and the editor are added around the canvas.
+   */
+  const own = fullscreenParts !== null && filled;
+  const editing = own && fullscreenParts.body != null;
   return (
     <div
       ref={frameRef}
       data-map-canvas-frame=""
       data-map-fullscreen={filled ? 'true' : 'false'}
+      data-map-fullscreen-editing={own ? (editing ? 'true' : 'false') : undefined}
       data-map-plane={plane ?? 'top'}
+      role={own ? 'dialog' : undefined}
+      aria-label={own ? fullscreenParts.label : undefined}
+      onKeyDown={own ? keepTabInside : undefined}
       className={filled ? 'cc-editor-fullscreen flex min-w-0 flex-col gap-2 overflow-hidden' : 'flex min-w-0 flex-col gap-2'}
     >
-      <MapViewTools
-        zoom={zoom}
-        onZoomBy={zoomBy}
-        onFit={fit}
-        filled={filled}
-        onToggleFullscreen={toggleFullscreen}
-        fullscreenRef={toggleRef}
-        levelPath={levelPath}
-        tools={tools}
-      />
-      {toolsPanel}
-      {canvasElement}
+      {own ? (
+        <FullscreenBarSlot
+          render={fullscreenParts.bar}
+          zoom={zoom}
+          zoomBy={zoomBy}
+          fit={fit}
+          leave={toggleFullscreen}
+          leaveRef={leaveRef}
+          levelPath={levelPath}
+        />
+      ) : (
+        <MapViewTools
+          zoom={zoom}
+          onZoomBy={zoomBy}
+          onFit={fit}
+          filled={filled}
+          onToggleFullscreen={toggleFullscreen}
+          fullscreenRef={toggleRef}
+          levelPath={levelPath}
+          tools={tools}
+        />
+      )}
+      {own ? null : toolsPanel}
+      {editing ? (
+        <div ref={bodyRef} data-map-fullscreen-body="" className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {fullscreenParts.body}
+        </div>
+      ) : null}
+      <div
+        data-map-fullscreen-reading={own ? '' : undefined}
+        className={!own
+          ? 'contents'
+          : editing
+            ? 'hidden'
+            : 'grid min-h-0 min-w-0 flex-1 grid-rows-[minmax(0,1fr)_auto] gap-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)] lg:grid-rows-[minmax(0,1fr)]'}
+      >
+        <div className={own ? 'flex min-h-0 min-w-0 flex-col' : 'contents'}>
+          {own && fullscreenParts.alternate ? (
+            <div data-map-fullscreen-alternate="" className="min-h-0 flex-1 overflow-y-auto">
+              {fullscreenParts.alternate}
+            </div>
+          ) : null}
+          <div className={own && fullscreenParts.alternate ? 'hidden' : 'contents'}>{canvasElement}</div>
+        </div>
+        {own && fullscreenParts.rail ? (
+          <div
+            data-map-fullscreen-rail=""
+            className="flex max-h-[40dvh] min-h-0 min-w-0 flex-col gap-2 overflow-y-auto lg:max-h-none"
+          >
+            {fullscreenParts.rail}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

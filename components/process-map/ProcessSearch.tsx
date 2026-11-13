@@ -36,19 +36,46 @@ export interface ProcessSearchProps {
   nav: ProcessNavigation;
   /** Open the level of the hit, select it, and put the focus on it. */
   onJump: (hit: ProcessSearchHit) => void;
+  /**
+   * Plan AB-5 (3.2.0): the field in the full-screen bar. A narrow field that says "Find a step"; its hits are listed
+   * by the caller in the side column (`onResults`, the list's id in `listId`), by the name the map shows.
+   */
+  compact?: boolean;
+  /** Every change of the query, the hits and the hit Enter goes to next. Given, this field draws no list of its own. */
+  onResults?: (results: ProcessSearchResults) => void;
+  /** The id of the caller's list of hits, for `aria-controls`. */
+  listId?: string;
+}
+
+/** What a field that lists its hits elsewhere reports. */
+export interface ProcessSearchResults {
+  query: string;
+  hits: ProcessSearchHit[];
+  /** The hit Enter goes to next. */
+  at: number;
 }
 
 /** How many hits are listed. The count above the list always names them all. */
 const LISTED = 8;
 
-export default function ProcessSearch({ model, nav, onJump }: ProcessSearchProps) {
+export default function ProcessSearch({ model, nav, onJump, compact = false, onResults, listId: listedAt }: ProcessSearchProps) {
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState(0);
   const input = useRef<HTMLInputElement | null>(null);
-  const listId = useId();
+  const ownListId = useId();
+  const listId = listedAt ?? ownListId;
 
   const hits = useMemo(() => searchProcess(model, nav, query), [model, nav, query]);
   const at = hits.length ? Math.min(cursor, hits.length - 1) : 0;
+
+  /** The caller lists the hits (the full-screen side column): it hears every change. */
+  const report = useRef(onResults);
+  useEffect(() => {
+    report.current = onResults;
+  });
+  useEffect(() => {
+    report.current?.({ query: query.trim(), hits, at });
+  }, [query, hits, at]);
 
   /** A new query is a new list: the cursor goes back to the best hit with it. */
   const setQueryAndReset = useCallback((next: string) => {
@@ -109,7 +136,7 @@ export default function ProcessSearch({ model, nav, onJump }: ProcessSearchProps
   }, [at, hits.length, jump, setQueryAndReset]);
 
   return (
-    <div data-process-search="" className="flex min-w-0 flex-col gap-1">
+    <div data-process-search={compact ? 'bar' : ''} className={compact ? 'flex w-full min-w-0 flex-col gap-1 sm:w-56' : 'flex min-w-0 flex-col gap-1'}>
       {/* The input is the field — its border and its focus ring (§1.6) are
           its own; the icon sits inside it. */}
       <div className="relative flex items-center gap-2">
@@ -125,12 +152,15 @@ export default function ProcessSearch({ model, nav, onJump }: ProcessSearchProps
           aria-expanded={hits.length > 0}
           aria-controls={listId}
           aria-label={wt('mapSearch.label')}
-          placeholder={wt('mapSearch.placeholder')}
+          placeholder={wt(compact ? 'fullScreen.findPlaceholder' : 'mapSearch.placeholder')}
           data-process-search-input=""
           value={query}
           onChange={(event) => setQueryAndReset(event.target.value)}
           onKeyDown={onKeyDown}
-          className="min-w-0 flex-1 rounded-cc-row border border-cc-field-border bg-cc-surface py-1 pr-2 pl-7 text-[12px] font-medium text-cc-ink placeholder:text-cc-ink-muted"
+          className={cn(
+            'min-w-0 flex-1 rounded-cc-row border border-cc-field-border bg-cc-surface pr-2 pl-7 font-medium text-cc-ink placeholder:text-cc-ink-muted',
+            compact ? 'h-8 py-1 text-[13px] pointer-coarse:h-11' : 'py-1 text-[12px]',
+          )}
         />
         {query ? (
           <span data-process-search-count className="shrink-0 font-cc-mono text-[11px] font-semibold text-cc-ink-muted">
@@ -139,7 +169,7 @@ export default function ProcessSearch({ model, nav, onJump }: ProcessSearchProps
         ) : null}
       </div>
 
-      {query && hits.length > 0 ? (
+      {!onResults && query && hits.length > 0 ? (
         <ul
           id={listId}
           role="listbox"
