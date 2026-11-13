@@ -103,7 +103,7 @@ test('a decision whose question says a customer text is marked as one (QA review
   const plain = plainLabels(skeleton, PROGRAM, { engineVersion: NEW, customerTexts: readCustomerTexts(FILES) });
   const hold = skeleton.nodes.find((n) => n.kind === 'gateway' && /^Quality hold/.test(plain.nodes.get(n.id) ?? ''));
   expect(hold, 'the decision on ZZQX says the customer word').toBeTruthy();
-  expect(plain.detail(hold!.id)).toContain(`${CUSTOMER_TEXT_LABEL}: ZZQX “Quality hold for the customer group”`);
+  expect(plain.detail?.(hold!.id)).toContain(`${CUSTOMER_TEXT_LABEL}: ZZQX “Quality hold for the customer group”`);
 });
 
 test('measured on this package: the raw identifiers of the Business view with and without the customer texts', () => {
