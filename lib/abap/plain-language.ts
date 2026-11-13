@@ -1678,6 +1678,9 @@ function rangeOf(parts: ReadonlyArray<Extract<Cond, { k: 'cmp' }>>, joiner: 'and
   const lowPart = low(a.op) ? a : low(b.op) ? b : null;
   const highPart = high(a.op) ? a : high(b.op) ? b : null;
   if (!lowPart || !highPart || lowPart === highPart) return null;
+  // Only where the words keep each endpoint as the code has it: "between" includes both, "outside" excludes both.
+  // `x > 5 AND x < 10` or `x <= 5 OR x >= 10` keeps its operators instead.
+  if (joiner === 'and' ? lowPart.op !== '<=' || highPart.op !== '>=' : lowPart.op !== '<' || highPart.op !== '>') return null;
   const lo = valueText(lowPart.right, env).text;
   const hi = valueText(highPart.right, env).text;
   if (joiner === 'or') return `outside ${lo} to ${hi}`;
