@@ -36,7 +36,7 @@ export const PUBLIC_SHELL_ROUTES: readonly string[] = [
   '/admin/design-system/first-render',
   '/clean-core-explained',
   '/clean-core-score',
-  '/demo',
+  // `/demo` itself is the public showcase since 3.5.0, outside the shell (app/demo/page.tsx).
   '/demo/[stage]',
   '/demo/[stage]/requirements',
   '/demo/analyze',

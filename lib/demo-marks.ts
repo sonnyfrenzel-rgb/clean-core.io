@@ -27,7 +27,11 @@
  * the ABAP engine, so the strings a browser component needs cannot live there.
  */
 
-/** Where the demo lives. One route, one demo, for every account. */
+/**
+ * Where the demo lives. One route, one demo, for every account: `/demo` itself is
+ * the public showcase since 3.5.0 (`app/demo/page.tsx`, no account), and the demo
+ * project's own pages stand under it (`/demo/analyze`, `/demo/workspace`, a stage).
+ */
 export const DEMO_ROUTE = '/demo';
 
 /**
