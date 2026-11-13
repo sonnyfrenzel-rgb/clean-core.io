@@ -189,7 +189,7 @@ function getDefaultAI(): GoogleGenAI | null {
 const ALLOWED_MODELS = new Set([
   'gemini-3.8-flash',       // GA — the product default (lib/constants.ts)
   'gemini-3.6-flash',       // GA — the emergency exit: serves itself and takes a thinking level
-  'gemini-4-hydrogen',      // NEW — under evaluation as the next product model, via GEMINI_MODEL only
+  'gemini-4-hydrogen',      // NEW — under evaluation; served on the platform key only where the deployment names it (GEMINI_MODEL, GEMINI_STAGE_MODELS)
   'gemini-3-flash-preview', // PREVIEW — the former default, kept for callers that pin it
   'gemini-3.5-flash-lite',  // GA — the naming stage only (lib/constants.ts, roadmap 17.3)
 ]);

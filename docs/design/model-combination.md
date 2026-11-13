@@ -258,6 +258,36 @@ built.
   learn rewordings re-read keep more of the draft than the harness's first guard did — the numbers are in
   `scratch/model-combo/bericht.md` and the holdout round measures the guarded rewording directly.
 
+## 3.7 The model per stage, shipped through the pipeline (owner decision 13.11.2026, evening)
+
+Owner: Hydrogen MEDIUM alone — no rewording (`GEMINI_STATEMENTS_REWORDING` stays unset) — on **all** model stages,
+"robust tests on dev first", then production.
+
+- **The switch.** `GEMINI_STAGE_MODELS=stage=model,stage=model` (`lib/model-combination.ts`, `stageModelsOf`,
+  `planModelCall`): every call of a named stage runs on that model, its answer shapes included (a fill, a plain
+  wording, the business layer), except `statements-rewording`. Register-checked; unknown stages and models are
+  ignored; only on the platform key; the deployment's fallback still applies. The thinking level per model and
+  stage comes from `lib/model-thinking.ts` (`MODEL_STAGE_LEVELS`), set per stage from its measurement.
+- **Per environment, as a reviewed commit.** `.github/workflows/deploy.yml`, step `env-ctx`, writes
+  `gemini_stage_models` per branch and the deploy step passes it as `GEMINI_STAGE_MODELS`: **dev** names the stages
+  whose measurement is in; **main** names nothing until the owner approves a stage. The guard in
+  `tests/model-combination.spec.ts` holds the env line and that production's value is empty. `GEMINI_MODEL`
+  (the whole product on one model) and the hand-set Cloud Run variables are unchanged; nothing here needs them.
+- **The register.** `gemini-4-hydrogen` stays `EVALUATION_ONLY`: a client naming it is refused as before; the
+  deployment names it per stage. `scripts/check-gemini-register.mjs` reads the register unchanged;
+  `tests/gemini-model-pin.spec.ts` holds the register, the evaluation set and the probe record as before.
+- **BYOK accounts: unchanged.** An own Gemini key runs every stage on the model the client asked for — the account
+  chose a key, not a second model, and the platform's choice does not reach that key. An own Claude key is
+  untouched (its one model is set in `lib/model-providers.ts`).
+- **Who answered.** Receipt, stage record ("Last answered by") and `answeredBy` carry `answeredModel`, so the
+  Settings line and the AI chips name the model per stage without further change. Open (§3.3): the
+  Documentation page's cost line still names the constant; with stages on another model it should take the
+  stage's model from `GET /api/model-stages`.
+- **Measured before a stage joins the dev list** (`tests/prozess-benchmark/stage-bench.ts`, §5): the product's
+  own prompt and validator per stage, Hydrogen MEDIUM against the product model's setting of today, on benchmark
+  cases and the starter examples; schema validity, failure and MAX_TOKENS rate, latency p50/p90, cost per call today
+  and from 1.1.2027, and a blind A/B judgement where the stage's output is gradeable.
+
 ## 4. Not built, and why
 
 - **Ensemble** (both models answer, merge or verifier picks): the union raises equal to 94.7 % but doubles the

@@ -46,6 +46,14 @@ changes**: production stays on `gemini-3.8-flash`, and every rule below is off u
   bound, a spend ledger with a cap, a rewording mode on the product's prompt and guard, and a re-read mode that
   applies the current guard to stored rewordings without a call.
 
+- **The model per stage, written by the deploy pipeline per environment** (`GEMINI_STAGE_MODELS`,
+  `lib/model-combination.ts`; owner decision 13.11.2026): every call of a named stage runs on that model, answer
+  shapes included, except the rewording of the statements; register-checked, platform key only. `env-ctx` in
+  `.github/workflows/deploy.yml` names the stages per branch — dev the measured ones, main none until the owner
+  approves a stage. `gemini-4-hydrogen` stays under evaluation for clients and is served where the deployment
+  names it. BYOK accounts are unchanged. `tests/prozess-benchmark/stage-bench.ts` measures a stage with the
+  product's own prompt builders and validators before it joins the list.
+
 ### Changed
 
 - **The receipt, the stage record and `answeredBy` name the model that answered** (`answeredModel`): the planned
