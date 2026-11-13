@@ -427,26 +427,45 @@ test.describe('a fresh account lands on the first view', () => {
     }
     // Opens on the first element.
     expect(opened.shapes[0].visible, 'the first element is not in view on open').toBe(true);
-    const overflows = opened.scrollWidth > opened.clientWidth || opened.scrollHeight > opened.clientHeight;
-    expect(opened.scrolls).toBe(overflows ? 'true' : 'false');
-    if (overflows) {
-      // Reachable by keyboard: focus it, and the arrow keys move it.
-      expect(opened.tabIndex).toBe('0');
-      await frame.focus();
-      await page.keyboard.press('Shift+Tab');
-      await page.keyboard.press('Tab');
-      expect(await frame.evaluate((el) => document.activeElement === el && el.matches(':focus-visible'))).toBe(true);
-      const ring = await frame.evaluate((el) => getComputedStyle(el).outlineStyle);
-      expect(ring, 'no visible focus on the scrolling slice').not.toBe('none');
-      // Every element can be brought into view by scrolling the slice.
-      for (const s of opened.shapes) {
-        await frame.evaluate((el, at) => {
-          el.scrollLeft = Math.max(0, (at.left + at.right) / 2 - el.clientWidth / 2);
-          el.scrollTop = Math.max(0, (at.top + at.bottom) / 2 - el.clientHeight / 2);
-        }, s);
-        const after = await measure([s.id]);
-        expect(after.shapes[0].visible, `${s.id} cannot be scrolled into view`).toBe(true);
-      }
+    expect(opened.scrolls).toBe(opened.scrollWidth > opened.clientWidth || opened.scrollHeight > opened.clientHeight ? 'true' : 'false');
+
+    // Today's demo slice fits a phone card at the floor. A narrower card must not shrink it below the floor
+    // or cut it: the card is narrowed in place and the slice, refitted by its own resize handling, has to scroll.
+    await frame.evaluate((el) => {
+      (el.parentElement as HTMLElement).style.width = '200px';
+    });
+    await expect(frame).toHaveAttribute('data-map-slice-scrolls', 'true', { timeout: 10_000 });
+    const narrow = await measure(ids);
+    expect(narrow.pageOverflowX, 'the page scrolls sideways with a narrow slice').toBeLessThanOrEqual(0);
+    expect(narrow.scale, 'a narrow slice drawn below the readability floor').toBeGreaterThanOrEqual(0.75 - 1e-3);
+    expect(narrow.scrollWidth, 'a narrow slice does not scroll across').toBeGreaterThan(narrow.clientWidth);
+    expect(narrow.scrollWidth).toBeGreaterThanOrEqual(narrow.drawingWidth);
+    for (const s of narrow.shapes) {
+      expect(s.left, `${s.id} is cut on the left`).toBeGreaterThanOrEqual(-1);
+      expect(s.right, `${s.id} is cut on the right`).toBeLessThanOrEqual(narrow.scrollWidth + 1);
+      expect(s.bottom, `${s.id} is cut at the bottom`).toBeLessThanOrEqual(narrow.scrollHeight + 1);
+    }
+    // Reachable by keyboard: a Tab lands on it with a visible ring, and the arrow keys move it.
+    expect(narrow.tabIndex).toBe('0');
+    await frame.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    expect(await frame.evaluate((el) => document.activeElement === el && el.matches(':focus-visible'))).toBe(true);
+    const ring = await frame.evaluate((el) => getComputedStyle(el).outlineStyle);
+    expect(ring, 'no visible focus on the scrolling slice').not.toBe('none');
+    await frame.evaluate((el) => {
+      el.scrollLeft = 0;
+    });
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(() => frame.evaluate((el) => el.scrollLeft), { timeout: 5_000 }).toBeGreaterThan(0);
+    // Every element can be brought into view by scrolling the slice.
+    for (const s of narrow.shapes) {
+      await frame.evaluate((el, at) => {
+        el.scrollLeft = Math.max(0, (at.left + at.right) / 2 - el.clientWidth / 2);
+        el.scrollTop = Math.max(0, (at.top + at.bottom) / 2 - el.clientHeight / 2);
+      }, s);
+      const after = await measure([s.id]);
+      expect(after.shapes[0].visible, `${s.id} cannot be scrolled into view`).toBe(true);
     }
   });
 
