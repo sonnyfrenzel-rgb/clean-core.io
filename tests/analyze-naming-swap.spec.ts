@@ -135,9 +135,10 @@ test.describe('the AI names swap in on the map', () => {
     await expect(page.locator('.cc-map-name-wait')).toHaveCount(0);
     await expect(page.locator('[data-naming-legend]')).toHaveText("Names: AI-generated from the code's facts, checked against them");
 
-    // The map stayed usable: a step opens its code card with the name it now has.
+    // The map stayed usable: a step opens its code beside the map (Analyze, Business — mockup state 7) with the name it
+    // now has. A plain click, as a reader's: the name laid over the step must not take it (3.1.0 acceptance run).
     await marked.first().click();
-    await expect(page.locator('[data-process-map-details]')).toContainText(/Probe (step|question) \d+/);
+    await expect(page.locator('[data-analyze-code-panel] #analyze-code-panel-title')).toHaveText(/Probe (step|question) \d+/);
   });
 
   test('a failed model leaves every engine name, and the status line says so in one sentence', async ({ page }) => {
@@ -161,9 +162,9 @@ test.describe('the AI names swap in on the map', () => {
     await open(page);
     const status = page.locator('[data-naming-status]');
     await expect(status).toHaveAttribute('data-naming-status', 'waiting', { timeout: 30_000 });
-    // Waiting does not block: a step opens its code card while the names are on their way.
+    // Waiting does not block: a step opens its code beside the map while the names are on their way.
     await page.locator('[data-map-node]').nth(1).click();
-    await expect(page.locator('[data-process-map-details]')).toBeVisible();
+    await expect(page.locator('[data-analyze-code-panel]')).toBeVisible();
     await expect(status).toHaveAttribute('data-naming-status', 'timeout', { timeout: NAMING_CEILING_MS + 30_000 });
     await expect(page.locator('[data-naming-status-text]')).toHaveText('The AI names took longer than 45 s. The steps keep their technical name for now.');
     await expect(page.locator('[data-map-named="ai"]')).toHaveCount(0);

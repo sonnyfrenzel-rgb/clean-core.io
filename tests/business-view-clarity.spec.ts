@@ -314,7 +314,13 @@ test.describe('the Business view on screen', () => {
     await expect(line).toHaveAttribute('data-questions', '1', { timeout: 60_000 });
     await expect(line).toContainText('1 question for the business');
     await noRuleDecisionInBusiness(page);
-    await expect(page.locator('[data-analyze-business] [data-cc-button="primary"]:visible')).toHaveCount(1);
+    // One primary on the page outside the interim blocks: the invitation. (Today's "Next step" bar under the map keeps
+    // its own primary until AB-4 replaces it with the two endings — analyze-business-first counts the same way.)
+    expect(
+      await page.locator('[data-analyze-business] [data-cc-button="primary"]:visible').evaluateAll((els) =>
+        els.filter((el) => !el.closest('[data-analyze-interim]')).length,
+      ),
+    ).toBe(1);
     // The figures one fold down agree with the answers on record.
     const fact = page.locator('[data-first-look-fact="rules-confirmed"]');
     await expect(fact).toHaveAttribute('data-confirmed', '1', { timeout: 60_000 });
@@ -353,7 +359,13 @@ test.describe('the Business view on screen', () => {
     await noRuleDecisionInBusiness(page);
     // The one primary is not a rule action (AB-2: the page keeps one primary).
     await expect(page.locator('[data-next-step-rules]')).toHaveCount(0);
-    await expect(page.locator('[data-analyze-business] [data-cc-button="primary"]:visible')).toHaveCount(1);
+    // One primary on the page outside the interim blocks: the invitation. (Today's "Next step" bar under the map keeps
+    // its own primary until AB-4 replaces it with the two endings — analyze-business-first counts the same way.)
+    expect(
+      await page.locator('[data-analyze-business] [data-cc-button="primary"]:visible').evaluateAll((els) =>
+        els.filter((el) => !el.closest('[data-analyze-interim]')).length,
+      ),
+    ).toBe(1);
 
     // The figures are one fold down, and agree with what is on record.
     const fact = page.locator('[data-first-look-fact="rules-confirmed"]');

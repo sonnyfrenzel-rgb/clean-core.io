@@ -446,8 +446,10 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
 
     await signInViaLanding(page, EMAIL_UI, PASSWORD_UI);
 
-    await page.goto(`/project/${PROJECT_UI}`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    // Since v3.1.0 a project opens in Analyze, Business (ADR-109) and the workspace holds IT and Management: the walk
+    // starts in Management, goes to IT, and ends on Business, which is Analyze's page.
+    await page.goto(`/project/${PROJECT_UI}?view=management`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'management', { timeout: 60000 });
 
     // Everything before this line — signing in, loading the project — is
     // allowed to write; the measurement starts here.
@@ -486,28 +488,19 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
 
     await view('Business').click();
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
-      'data-workspace-shell',
-      'business',
-      { timeout: 30000 },
-    );
-    // A plain view switch starts the new view at its top and leaves the old
-    // view's place behind (owner 10.10.2026). Business has one layer and no bar
-    // since ADR-096 (owner, 12.10.2026): its section stands there without a click.
+    // Business is Analyze's page since v3.1.0 (ADR-109): the switch lands there, at its top, with no layer and no bar
+    // (ADR-096, ADR-080 — the map is the page).
+    await expect(page).toHaveURL(new RegExp(`/project/${PROJECT_UI}/analyze\\?view=business`), { timeout: 30000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
     expect(new URL(page.url()).hash).toBe('');
     await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', {
-      timeout: 15000,
-    });
+    await expect(page.locator('[data-workspace-layer-title]')).toHaveCount(0);
 
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
-    // The reload is also the "kept in URL and browser" check: the view and
-    // the layer come back because the address carried them, not because
-    // anything remembered them for the account.
-    await expect(page.locator('[data-workspace-layer-title]')).toHaveText('Evidence & controls', {
-      timeout: 60000,
-    });
+    // The reload is also the "kept in URL and browser" check: the view comes back because the address carried it,
+    // not because anything remembered it for the account.
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
+    expect(new URL(page.url()).searchParams.get('view')).toBe('business');
 
     expect(
       writes,

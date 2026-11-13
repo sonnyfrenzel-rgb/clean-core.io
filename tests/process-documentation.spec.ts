@@ -197,8 +197,11 @@ test.describe('nothing the code does not give', () => {
       expect.objectContaining({ name: 'Purchasing group check', authorityObject: 'M_BANF_EKG', anchor: { lineStart: 108, lineEnd: 110 }, provenance: 'proposed' }),
     ]);
     const md = processDocumentationToMarkdown(doc);
-    // 3.0.21 (T08): the name is the naming model's, marked where it stands; its call is not recorded per project.
-    expect(md).toContain(`<!-- cc:origin value="ai" ai_provider="not-recorded" ai_model="not-recorded" -->Emergency within the limit?<!-- /cc:origin --> (${named[0].technicalName}) — ${PROVENANCE.proposed.label}`);
+    // 3.0.21 (T08): the name is the naming model's, marked where it stands — since v3.1.0 with the provider and model the
+    // server recorded from the naming's receipt (`naming.origin`), no longer "not-recorded".
+    expect(doc.naming.origin).toEqual({ provider: 'google-gemini', modelId: 'gemini-3-flash-preview' });
+    expect(md).not.toContain('ai_provider="not-recorded"');
+    expect(md).toContain(`<!-- cc:origin value="ai" ai_provider="google-gemini" ai_model="gemini-3-flash-preview" -->Emergency within the limit?<!-- /cc:origin --> (${named[0].technicalName}) — ${PROVENANCE.proposed.label}`);
   });
 
   test('a naming made for another source is not applied', () => {

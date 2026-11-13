@@ -157,7 +157,9 @@ test.describe('every stage renders its title identically', () => {
       // "Back to workspace" above the title — a link, not a button.
       const back = page.locator('[data-stage-back]');
       await expect(back, `${stage} has no way back to the workspace`).toHaveCount(1);
-      await expect(back).toHaveText(/Back to project workspace/);
+      // ADR-109's one exception: Analyze in the Business view is where a project opens, so its way back is My workspace.
+      if (stage === 'analyze') await expect(back).toHaveText(/Back to My workspace/);
+      else await expect(back).toHaveText(/Back to project workspace/);
       expect(await back.evaluate((el) => el.tagName), `${stage}: the way back is not a link`).toBe('A');
       // …and it leads where its kind says (QA 472315d93455, e5483b2e4ca7).
       const kind = await back.getAttribute('data-stage-back');
@@ -242,7 +244,8 @@ test.describe('every stage stays on the type scale', () => {
     const found: string[] = [];
     let measured = 0;
     for (const stage of STAGES) {
-      await page.goto(`/project/${seeded.projectId}/${stage}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
+      // Analyze's "On this page" bar is its IT page's; its Business view is the map (ADR-109, the map is the page).
+      await page.goto(`/project/${seeded.projectId}/${stage}${stage === 'analyze' ? '?view=it' : ''}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
       await page.locator('[data-stage-title]').first().waitFor({ timeout: 90_000 });
       await page.waitForFunction(pageSettled, 750, { polling: 150, timeout: 60_000 });
       const r = await page.evaluate(
@@ -316,7 +319,7 @@ test.describe('the "On this page" bar stands in the same place on every tool', (
     const WITH_BAR = ['analyze', 'transformation', 'testing', 'delivery'];
     const offSpec: string[] = [];
     for (const stage of STAGES) {
-      await page.goto(`/project/${seeded.projectId}/${stage}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
+      await page.goto(`/project/${seeded.projectId}/${stage}${stage === 'analyze' ? '?view=it' : ''}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
       await page.locator('[data-stage-title]').first().waitFor({ timeout: 90_000 });
       await page.waitForFunction(pageSettled, 750, { polling: 150, timeout: 60_000 });
       const bars = page.locator('[data-page-anchors]');

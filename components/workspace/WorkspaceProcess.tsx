@@ -341,11 +341,13 @@ export default function WorkspaceProcess({
         ),
     };
   }, [arrival?.model, answers]);
+  // The names the reader sees on the map, so the code panel's title says what the canvas and the step list say
+  // (one source of the shown name, v3.1.0): an AI name only once its swap has begun.
   const byId = useMemo(() => {
     const out = new Map<string, ProcessMapElement>();
-    for (const element of model?.elements ?? []) out.set(element.id, element);
+    for (const element of (shownModel ?? model)?.elements ?? []) out.set(element.id, element);
     return out;
-  }, [model]);
+  }, [shownModel, model]);
   const selectedElement = selected ? byId.get(selected) ?? null : null;
   /**
    * The step answered beside the map. Listed by the need view once the process
@@ -797,11 +799,14 @@ export default function WorkspaceProcess({
   return (
     <div data-workspace-process={model ? 'ready' : map.status} className="flex flex-col gap-4">
       {/* The eyebrow of mockup s1. The map names itself (its own title,
-          legend and provenance counts), so the card around it carries none. */}
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          legend and provenance counts), so the card around it carries none.
+          On Analyze, Business (`codeOnClick`) the map follows the summary
+          straight away, as in mockup state 3: the heading is for a screen
+          reader only. */}
+      <div className={codeOnClick ? 'contents' : 'flex flex-wrap items-center justify-between gap-x-4 gap-y-2'}>
         <h2
           id="workspace-process-title"
-          className="m-0 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
+          className={codeOnClick ? 'sr-only' : 'm-0 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase'}
         >
           {wt('biz.needAndProcess')}
         </h2>
@@ -821,7 +826,7 @@ export default function WorkspaceProcess({
         }
       >
       <div data-coach-target="decision" className="min-w-0">
-        <CcCard>
+        <CcCard density={codeOnClick ? 'compact' : 'cozy'}>
           {model ? (
             <ProcessMap
               key={isS ? 'steps' : 'map'}
@@ -841,6 +846,8 @@ export default function WorkspaceProcess({
               // step list stays one tab away.
               defaultView="map"
               canvasControls
+              // Analyze, Business: the canvas first, its code in the panel beside it (mockup states 3 and 7).
+              layout={codeOnClick ? 'page' : 'workspace'}
               save={save}
               openLatest={openLatest}
               projectId={projectId || null}

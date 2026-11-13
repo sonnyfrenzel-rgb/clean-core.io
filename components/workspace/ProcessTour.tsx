@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Footprints, RotateCcw, X } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
@@ -12,7 +12,7 @@ import { useCcModal, useCcPortalTarget } from '@/components/cc/modal';
 import TourCanvas, { type TourBox } from '@/components/process-map/TourCanvas';
 import { AsReadFromCode, WordedChip } from './WordedText';
 import { ENGINE_ONLY, type WordedSentence } from '@/lib/plain-wording';
-import type { ProcessMapModel } from '@/lib/process-map';
+import { xmlWithShownNames, type ProcessMapModel } from '@/lib/process-map';
 import type { ProcessTour as Tour, TourOverview, TourStation } from '@/lib/process-tour';
 import type { WalkLine, WalkRange } from '@/lib/process-walk-guide';
 import { withoutCodes } from '@/lib/program-summary-text';
@@ -167,6 +167,8 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
   const station: TourStation | null = tour && at >= 0 && at < end ? stations[at] : null;
   const overview = !!tour && at === OVERVIEW;
   const titleId = useId();
+  // The tour's map says the names its chips and the map's step list say (one source of the shown name, v3.1.0).
+  const tourXml = useMemo(() => xmlWithShownNames(model), [model]);
   const moreId = useId();
   const mode = useMode();
   const wide = mode === 'wide';
@@ -356,7 +358,7 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
         {/* The map, and the card with its buttons: beside the element, under the map, or beside the map. */}
         <div ref={areaRef} className="cc-tour-body">
           <TourCanvas
-            xml={model.xml}
+            xml={tourXml}
             plane={station?.plane ?? null}
             focus={station?.id ?? null}
             align={wide ? 'side' : 'center'}

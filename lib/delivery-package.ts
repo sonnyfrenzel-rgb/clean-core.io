@@ -73,7 +73,7 @@ import { capAuthorizationIn, capAuthorizationWords } from './transformation/cap-
 import { RAP_SAVE_NOT_WIRED, rapNoInputIn, rapNoInputWords, rapSaverUnwired, rapUnresolvedTypesIn, rapUnresolvedTypesWords } from './transformation/rap-save';
 
 import { TARGET_EDITION_NAMES } from './sap-naming';
-import { AI_MARKING_BASIS, AI_ORIGIN_MARKDOWN_CLOSE, aiMarkingField, aiOriginMarkdownOpen, aiOriginMarksIn, aiMarkingStatement, commentSyntaxOf, hasAiMarking, UNRECORDED_AI, withAiMarking, type AiAuthorship, type AiMarkingField } from './ai-marking';
+import { AI_MARKING_BASIS, AI_ORIGIN_MARKDOWN_CLOSE, AI_ORIGIN_NOT_RECORDED, aiMarkingField, aiOriginMarkdownOpen, aiOriginMarksIn, aiMarkingStatement, commentSyntaxOf, hasAiMarking, UNRECORDED_AI, withAiMarking, type AiAuthorship, type AiMarkingField } from './ai-marking';
 import { modelFilledFiles, UNRECORDED_AUTHORSHIP, type AiAuthorshipFacts, type AiSource } from './ai-authorship';
 import { KEY_USER_STEPS_PATH } from './key-user-route';
 
@@ -2149,6 +2149,18 @@ function namesFromNamingStage(e: BundleEntry): boolean {
   return /^docs\/process-[\w-]+\.md$/.test(e.path) && aiOriginMarksIn(e.content).length > 0;
 }
 
+/**
+ * The naming stage's model as the process documentation's marks name it (v3.1.0): one recorded provider and model
+ * on every mark, else null — two models, or a mark that says "not-recorded", leave the file's statement unrecorded.
+ */
+function namingAuthorshipOf(entries: readonly BundleEntry[]): AiAuthorship | null {
+  const marks = entries.filter(namesFromNamingStage).flatMap((e) => aiOriginMarksIn(e.content));
+  const first = marks[0];
+  if (!first || first.provider === AI_ORIGIN_NOT_RECORDED || first.model === AI_ORIGIN_NOT_RECORDED) return null;
+  if (!marks.every((m) => m.provider === first.provider && m.model === first.model)) return null;
+  return { provider: first.provider, modelId: first.model, byok: null, generatedAt: null, appVersion: null };
+}
+
 /** True for the decision record when its weighing shows the design's comparison (a model-written element per cell). */
 function designInDecisionRecord(e: BundleEntry): boolean {
   return e.path === 'docs/decision.md' && aiOriginMarksIn(e.content).length > 0;
@@ -2172,8 +2184,9 @@ export function markModelWrittenFiles(
   const read = facts.ai ?? UNRECORDED_AUTHORSHIP;
   // The naming stage's call is not recorded per project: an engine documentation that prints its names is marked
   // "provider and model not recorded" under the documentation source.
+  // v3.1.0: where every name the files mark carries the same recorded model (`naming.origin`), the file says that model.
   const withNames: AiAuthorshipFacts = read.documentation === null && entries.some(namesFromNamingStage)
-    ? { ...read, documentation: UNRECORDED_AUTHORSHIP.documentation }
+    ? { ...read, documentation: namingAuthorshipOf(entries) ?? UNRECORDED_AUTHORSHIP.documentation }
     : read;
   // 3.0.21 (T08): the decision record's weighing carries the design's comparison, marked per cell with the design's
   // authorship or "not-recorded" (`buildDecisionRecord`); the file names the same source.

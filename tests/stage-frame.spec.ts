@@ -149,8 +149,14 @@ test.describe('a stage as a tool, rendered', () => {
       });
       await page.waitForSelector('[data-stage-title]', { timeout: 60000 });
       const back = page.locator('[data-stage-back]');
-      await expect(back, `${st}: the way back`).toHaveText(/Back to project workspace\s·\s.+\s·\sBusiness view, Evidence & controls/, { timeout: 30000 });
-      await expect(back).toHaveAttribute('href', `/project/${acct.projectId}?view=business#evidence`);
+      if (st === 'analyze') {
+        // ADR-109's one exception: Analyze in the Business view is where a project opens; its way back is My workspace.
+        await expect(back, `${st}: the way back`).toHaveText('Back to My workspace', { timeout: 30000 });
+        await expect(back).toHaveAttribute('href', '/dashboard');
+      } else {
+        await expect(back, `${st}: the way back`).toHaveText(/Back to project workspace\s·\s.+\s·\sBusiness view, Evidence & controls/, { timeout: 30000 });
+        await expect(back).toHaveAttribute('href', `/project/${acct.projectId}?view=business#evidence`);
+      }
       await expect(page.locator('[data-stage-tool]'), `${st}: the tool eyebrow`).toContainText('Tool ·');
       await expect(page.locator('nav[aria-label="Workflow phases"]'), `${st}: the old stepper`).toHaveCount(0);
       await expect(page.locator('[aria-label^="Workflow progress"], [data-rail-phase]'), `${st}: the rail`).toHaveCount(0);

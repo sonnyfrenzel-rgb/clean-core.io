@@ -442,14 +442,15 @@ test.describe('the open gaps are still open — closing one has to update the re
     expect(header).toContain('const back = stageBackLink({ projectId, search, demo });');
     // ADR-109 (3.1.0) gives exactly one stage another way back: Analyze in the
     // Business view is the project's entry, so its link leads to My workspace.
-    // The flag is off by default, never on in the demo, and set by that one page.
+    // The flag is off by default and set by that one page — and by the demo's Analyze, Business, which is where the
+    // demo opens since v3.1.0 (O10, the demo opens like a project).
     expect(register.workspace.reachability).toContain('ADR-109');
     expect(header).toContain('href={toMyWorkspace ? myWorkspaceHref() : back.href}');
     expect(header).toContain('backToMyWorkspace = false,');
-    expect(header).toContain('const toMyWorkspace = backToMyWorkspace && !demo;');
+    expect(header).toContain('const toMyWorkspace = backToMyWorkspace;');
     const setters = ['app', 'components', 'lib'].flatMap((dir) => grepTsx(dir, /(?<![.\w])backToMyWorkspace\b/))
       .filter((f) => f !== 'components/StageHeader.tsx');
-    expect(setters).toEqual(['components/analyze/AnalyzeBusiness.tsx']);
+    expect(setters.sort()).toEqual(['components/analyze/AnalyzeBusiness.tsx', 'components/demo/DemoAnalyzeBusiness.tsx']);
   });
 
   test('WG-03: the "Why?" of a status is still its own 24-px target (3.0.4)', () => {

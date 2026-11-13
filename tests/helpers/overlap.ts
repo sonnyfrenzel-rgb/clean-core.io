@@ -113,7 +113,9 @@ export function layoutCheck(options: LayoutCheckOptions): LayoutReport {
   for (const e of ITEMS ? document.querySelectorAll(ITEMS) : []) {
     if (IGNORE && e.closest(IGNORE)) continue;
     const r = e.getBoundingClientRect();
-    if (r.width < 1 || r.height < 1) continue;
+    // A box of one pixel is the screen-reader-only pattern (`sr-only`, the skip link until it has the focus): text
+    // a sighted reader never sees, not an item that can be clipped or covered.
+    if (r.width <= 1 || r.height <= 1) continue;
     if (opacity(e) < 0.05) continue;
     let box: Box = { l: r.left, t: r.top, r: r.right, b: r.bottom };
     let hidden = false;

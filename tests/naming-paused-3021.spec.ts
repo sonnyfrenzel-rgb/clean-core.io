@@ -212,7 +212,8 @@ test.describe('3.0.21: business names paused until they are built from the code\
     expect(reading.technical.xml).not.toContain('cc:origin');
 
     const map = buildProcessMapModel({ bpmn: reading.bpmn, technical: reading.technical, named: applyNaming(context, EARLIER), fileName: 'z_paused_probe.abap' });
-    expect(map.naming).toEqual({ state: 'not-named', notice: PAUSED_NOTICE, named: 0 });
+    // origin: since v3.1.0 the model carries who wrote the names; no naming applied, nobody wrote one.
+    expect(map.naming).toEqual({ state: 'not-named', notice: PAUSED_NOTICE, named: 0, origin: null });
     expect(map.elements.every((e) => e.businessName === null)).toBe(true);
   });
 

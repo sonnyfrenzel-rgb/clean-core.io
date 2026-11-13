@@ -634,15 +634,20 @@ is neither provenance nor object status, and no finding carries a severity that 
 `docs/roadmap/analyze-business-first-mockup.html` states 3, 7 and 17)** a project opens in **Analyze, Business view**
 — after a code import, an example, a link to `/project/<id>` and on every return visit — and **the map is the page**:
 
-1. the stage header: the way back to *My workspace*, the view switch, the seven tools with the quiet hint *Best after
-   the business walk-through* (a hint, never a lock);
+1. the stage header: the way back to *My workspace*, the view switch, the seven tools in **one compact row** (marks,
+   *Next* tag and legend, no hint line, no *What the tools do*) ending in the quiet hint *Best after the business
+   walk-through* (a hint, never a lock);
 2. *What this program does* in the engine's sentence (*Reconstructed*), with the one invitation: *Walk me through it*
    (the page's only `primary`) and *I'll look around myself*;
-3. the reconstructed BPMN map from the signed run, with its own tool row (Map | Steps, zoom, fit, full screen), legend
-   and status below;
-4. the code **on demand**: a step or a line clicked — or `#L42` in the address — opens its lines in a panel beside the
-   map (below it on a narrow screen), never over it, closed by its own button. No score, no findings, no code before
-   a click: those are IT's.
+3. the reconstructed BPMN map from the signed run, **the canvas first** (`ProcessMap` `layout="page"`): its own tool
+   row (Map | Steps, the level path, zoom, fit, Outline, Keyboard, *Technical names*, *Edit model*, full screen), then
+   the canvas, then the naming status line; the map's title and counts, the traceability sentence, the legend, the
+   notes, the level's line and the filters stand **under** the canvas. At 1440 × 900 the canvas starts in the first
+   screen (mockup state 3: about y = 410). The outline column starts folded there (its own remembered choice);
+4. the code **on demand**: a step or a line clicked — or `#L42` in the address — opens its lines in **one** panel
+   beside the map (below it on a narrow screen), never over it, closed by its own button; the map draws no code card
+   of its own on this page, so the canvas keeps its width (mockup state 7). A name laid over a step never takes its
+   click. No score, no findings, no code before a click: those are IT's. The project search (⌘K) stands here too.
 
 Until v3.2.0 the First insights blocks (`BusinessOpening`) and *Next step* stand unchanged below the map; AB-4 and AB-6
 replace them in place, in their end state from the first frame. Analyze shows no coach marks. The paced build-up
@@ -1283,6 +1288,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.16 | 13.11.2026 | Analyze, Business after the 3.1.0 acceptance run (§5): the canvas first with Map | Steps in its row and everything about the map under it; the tool bar compact in one row with the soft-gate hint; one code panel beside the map (no card inside it); a name over a step lets its click through; the project search on this page |
 | 1.8.15 | 13.11.2026 | The paced build-up retires (plan AB-3): the First insights below the map stand in their end state from the first frame; the start's model wait is said at the map's place (§5.2). The workspace's Business view, its "Work from this process" hub and "Your analysis is ready" line leave the app (ADR-090 retired, AB-2). The demo opens like a project, on its Analyze, Business (O10, §6.1.2) |
 | 1.8.14 | 12.11.2026 | Analyze opens in the Business view and is the project's entry (ADR-109, plan AB-2): the map is the page under "What this program does" and one invitation; code on demand beside the map; the workspace sends Business there; the First insights blocks and "Next step" below the map until v3.2.0; no coach marks in Analyze (§5) |
 | 1.8.13 | 12.10.2026 | Re-entry in Business (ADR-099, owner 12.10.2026, amending ADR-072): one fixed line under the title says what the page is, and a compact tool bar — the same tools, marks and "Next" tag, with the legend — stands in the header above "Next step"; below L the "Tools" menu. The full bar stays in the work area under the map: §2.3 item 3, §2.11, §5.5 |
