@@ -1011,7 +1011,7 @@ export default function ProcessMap({
                   {/* The outline stands outside the full-screen frame, so in
                       full screen the toggle would act on nothing in sight. */}
                   {filled ? null : (
-                    <span className={page ? 'inline-flex' : 'hidden lg:inline-flex'}>
+                    <span className="hidden lg:inline-flex">
                       <CcIconButton
                         data-process-outline-toggle=""
                         label={wt(outlineOpen ? 'map.outlineHide' : 'map.outlineShow')}

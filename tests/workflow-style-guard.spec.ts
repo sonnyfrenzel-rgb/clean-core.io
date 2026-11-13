@@ -319,7 +319,7 @@ test.describe('the "On this page" bar stands in the same place on every tool', (
     const WITH_BAR = ['analyze', 'transformation', 'testing', 'delivery'];
     const offSpec: string[] = [];
     for (const stage of STAGES) {
-      await page.goto(`/project/${seeded.projectId}/${stage}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
+      await page.goto(`/project/${seeded.projectId}/${stage}${stage === 'analyze' ? '?view=it' : ''}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
       await page.locator('[data-stage-title]').first().waitFor({ timeout: 90_000 });
       await page.waitForFunction(pageSettled, 750, { polling: 150, timeout: 60_000 });
       const bars = page.locator('[data-page-anchors]');

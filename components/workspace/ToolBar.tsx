@@ -367,7 +367,7 @@ function ToolsNav({
         {barItems}
         {/* Compact (ADR-099): the legend in the same row, so no mark rests on
             colour alone; the hint and the guide stay with the full bar. */}
-        {compact ? <ToolsLegend place="head" /> : null}
+        {compact ? <ToolsLegend place={surface === 'workspace-head' ? 'head' : undefined} /> : null}
         {/* One line under the tools: the next one and what it does, what the
             marks mean, and the one way to read what every tool does. */}
         {compact ? null : (

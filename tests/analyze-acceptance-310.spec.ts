@@ -294,7 +294,8 @@ test.describe('rendered: Analyze, Business on the seeded PO example at 1440 × 9
     await expect(tourMap.locator('svg text').first()).toBeAttached({ timeout: 60_000 });
     await expect
       .poll(async () => (await tourMap.locator('svg text').allTextContents()).join(' '), { timeout: 30_000 })
-      .toMatch(/Probe (step|question) \d+/);
+      // An SVG label wraps into lines, and the lines' text runs together: "Probe question12?".
+      .toMatch(/Probe (step|question)\s*\d+/);
   });
 });
 
