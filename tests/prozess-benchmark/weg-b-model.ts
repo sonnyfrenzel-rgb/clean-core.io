@@ -133,12 +133,17 @@ function facts(text: string): string[] {
   return out;
 }
 
+/**
+ * The checked sentence carries its open rest already ("<core>; <note>", `validateStatementAnswer`), and the raw
+ * record keeps the note as an object; so the rewording sees the whole sentence and no separate uncertainty, and
+ * passes none back.
+ */
 function buildRewritePrompt(context: StatementContext, statements: RawStatement[]): string {
   const given = statements.map((s) => ({
     text: s.text,
     anchors: s.anchors.split(','),
     element: s.element,
-    uncertainty: s.uncertainty ?? null,
+    uncertainty: null,
   }));
   const lines: string[] = [
     'You reword business statements about a piece of ABAP code for a business reader who does not read ABAP.',
@@ -189,15 +194,15 @@ function mergeRewrite(original: RawStatement[], answer: string): { text: string;
       Array.isArray(r.anchors) &&
       JSON.stringify([...(r.anchors as string[])].sort()) === JSON.stringify([...anchors].sort()) &&
       (r.element ?? null) === (o.element ?? null) &&
-      (r.uncertainty ?? null) === (o.uncertainty ?? null);
+      (r.uncertainty ?? null) === null;
     const text = same ? (r.text as string).trim() : '';
     const keepsFacts = text && facts(o.text).every((f) => text.includes(f));
     if (same && keepsFacts && text.length > 0 && text.length <= 400) {
       reworded += 1;
-      return { text, anchors, element: o.element, uncertainty: o.uncertainty ?? null };
+      return { text, anchors, element: o.element, uncertainty: null };
     }
     kept += 1;
-    return { text: o.text, anchors, element: o.element, uncertainty: o.uncertainty ?? null };
+    return { text: o.text, anchors, element: o.element, uncertainty: null };
   });
   return { text: JSON.stringify({ statements: merged }), kept, reworded };
 }
@@ -280,7 +285,7 @@ async function one(id: string): Promise<void> {
   let answer = text;
   if (MODE === 'rewrite') {
     // An incomplete rewording keeps every original sentence; the fallback is what the product would show.
-    const merged = complete ? mergeRewrite(original, text) : { text: JSON.stringify({ statements: original.map((o) => ({ text: o.text, anchors: o.anchors.split(','), element: o.element, uncertainty: o.uncertainty ?? null })) }), kept: original.length, reworded: 0 };
+    const merged = complete ? mergeRewrite(original, text) : { text: JSON.stringify({ statements: original.map((o) => ({ text: o.text, anchors: o.anchors.split(','), element: o.element, uncertainty: null })) }), kept: original.length, reworded: 0 };
     answer = merged.text;
     rewrite = { kept: merged.kept, reworded: merged.reworded };
   }
