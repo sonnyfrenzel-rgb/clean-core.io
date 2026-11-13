@@ -444,6 +444,15 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   rendered specs that read the workspace's Business view were rewritten for Analyze, Business or the IT view (listed in
   the branch's report); none was run on the branch. Left: the workspace no longer marks a start run that Analyze is
   signing as running in IT and Management (it starts none); `LayerBar`/`LayerSection` have no user left (AB-11, O3).
+  **Status (13.11.2026, branch `night/310-ui`, after the acceptance run on owner example A):** the eight findings
+  are fixed, each with a check that fails without it (`analyze-acceptance-310`): the canvas first at 1440 × 900
+  (`ProcessMap` `layout="page"`, the compact one-row tool bar with the soft-gate hint), one code panel beside the map
+  (no card inside it, outline folded), a name over a step lets the click through, the tour draws the names the chips
+  say, the summary opens on a status workflow where names and shape say nothing (3.1.0 gate), no 401 on load (the
+  token readers wait for the session), the AI mark per name carries the recorded model, no page error when the home
+  slice leaves. The project search (⌘K) stands on Analyze, Business. Not changed: state 17 (welcome back, two ways)
+  is AB-4 (v3.2.0); the OO first level of example A (AB-15a) and the RACI on method steps are engine work, not UI.
+  `layer-back-to-top` tests `LayerSection`, which has no user since AB-2: to be retired with AB-11 or re-homed.
 - **Scope:** the Business view of Analyze per mockup states 3, 7 and 17 without the tour, the swap and the text
   blocks: header as today's `StageHeader` (way back, view switch, tools, soft-gate hint), "What this program does"
   with the engine sentence, the invitation bar ("Walk me through it" starts today's tour layer until AB-4; "I'll look
