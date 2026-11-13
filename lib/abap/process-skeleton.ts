@@ -467,6 +467,9 @@ export interface SkeletonLuw {
  */
 const CANDIDATE_TRIGGER = 'candidate of ';
 
+/** Engine 3.2.0: the two statements that call an enhancement outside this source (`walkEnhancementCall`). */
+const ENHANCEMENT_CALL = /^CALL\s+(?:BADI|CUSTOMER-FUNCTION)\b/i;
+
 /** The classic event blocks, in the order ABAP runs them (rule 4). */
 const RUNTIME_ORDER: Array<{ test: RegExp; rank: number }> = [
   { test: /^LOAD-OF-PROGRAM$/i, rank: 0 },
@@ -1712,6 +1715,8 @@ class SkeletonBuilder {
         else out.add('call');
       }
       if (/^CALL\s+TRANSACTION\b/i.test(text) || statement.keyword === 'SUBMIT') out.add('call');
+      // Engine 3.2.0: a BAdI call or a customer-function call reaches an enhancement outside this source.
+      if (this.reads320 && ENHANCEMENT_CALL.test(text)) out.add('call');
       if (receivesResults(text)) out.add('call');
       if (/^CALL\s+SCREEN\b/i.test(text)) out.add('human');
       if (isListOutput(statement) || isFileOutput(statement)) out.add('file');
@@ -4196,6 +4201,8 @@ class SkeletonBuilder {
 
     if (/^CALL\s+FUNCTION\b/i.test(text)) return { ...this.walkFunction(statement, ctx, incoming), outputRun: null };
 
+    if (this.reads320 && ENHANCEMENT_CALL.test(text)) return { ...this.walkEnhancementCall(statement, ctx, incoming), outputRun: null };
+
     if (/^CALL\s+TRANSACTION\b/i.test(text)) {
       // The line alone does not name the statement: `CALL TRANSACTION 'VA01'.
       // CALL TRANSACTION 'ME21N'.` on one line labelled both VA01.
@@ -4940,6 +4947,36 @@ class SkeletonBuilder {
     this.recordCallback(statement);
     const exits: Exit[] = [{ from: node.id, condition: '', kind: 'sequence' }];
 
+    if (/\bEXCEPTIONS\b/i.test(statement.text) && this.handlesSubrcAfter(statement.index)) {
+      const boundary = this.addNode('error-boundary', label,
+        anchorOf(statement, tokenIndexOf(statement, /^EXCEPTIONS$/i)), ctx.region, ctx.container, {
+          detail: { attachedTo: node.id, exceptions: this.exceptionNames(statement.text) },
+        });
+      this.edges.push({ from: node.id, to: boundary.id, kind: 'boundary', condition: '' });
+      exits.push({ from: boundary.id, condition: '', kind: 'sequence' });
+    }
+    return { exits };
+  }
+
+  /**
+   * Engine 3.2.0 — `CALL BADI lo_badi->method …` and `CALL CUSTOMER-FUNCTION '001' …`: a call into an enhancement
+   * outside this source. `CALL BADI` runs every active implementation of the BAdI method — which ones is configured
+   * in the system, not written here; `CALL CUSTOMER-FUNCTION 'nnn'` runs the customer exit `EXIT_<program>_nnn` when
+   * an enhancement project activates it. Both return. Drawn as a service task, exactly as a `CALL FUNCTION` whose
+   * module is not in this source is (the statement reveals the kind — a service another unit performs — and the
+   * implementation is elsewhere; `detail.enhancement` says which kind of enhancement). Before 3.2.0 neither drew
+   * anything, and a check or a posting the program delegates to its enhancement was missing from the map.
+   * `EXCEPTIONS` with a `sy-subrc` check right after it hangs the error boundary on the call, as on a function call.
+   */
+  private walkEnhancementCall(statement: AbapStatement, ctx: WalkContext, incoming: Exit[]): { exits: Exit[] } {
+    const badi = /^CALL\s+BADI\s+([\w/]+|<[\w/]+>)->([\w/~]+)/i.exec(maskLiterals(statement.text));
+    const exit = /^CALL\s+CUSTOMER-FUNCTION\s+'(\d+)'/i.exec(statement.text);
+    const label = badi ? `${badi[1]}->${badi[2]}`.toUpperCase() : exit ? `CUSTOMER-FUNCTION ${exit[1]}` : statement.keyword;
+    const node = this.addNode('service-task', label, anchorOf(statement, 2), ctx.region, ctx.container, {
+      detail: { enhancement: badi ? 'badi' : 'customer-function', ...(badi ? { method: true } : {}), returns: true },
+    });
+    this.connect(incoming, node.id);
+    const exits: Exit[] = [{ from: node.id, condition: '', kind: 'sequence' }];
     if (/\bEXCEPTIONS\b/i.test(statement.text) && this.handlesSubrcAfter(statement.index)) {
       const boundary = this.addNode('error-boundary', label,
         anchorOf(statement, tokenIndexOf(statement, /^EXCEPTIONS$/i)), ctx.region, ctx.container, {

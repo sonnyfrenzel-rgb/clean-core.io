@@ -391,6 +391,54 @@ test.describe('5. MESSAGE and TYPE are read in any case', () => {
   });
 });
 
+test.describe('6. a BAdI call and a customer-function call are calls into an enhancement outside this source', () => {
+  const source = [
+    'REPORT zexit.', //                                                         1
+    'DATA lo_check TYPE REF TO zbadi_order_check.', //                          2
+    'START-OF-SELECTION.', //                                                   3
+    '  GET BADI lo_check.', //                                                  4
+    '  CALL BADI lo_check->check_order', //                                     5
+    '    EXPORTING is_order = gs_order', //                                     6
+    '    CHANGING  cv_ok    = gv_ok.', //                                       7
+    "  CALL CUSTOMER-FUNCTION '001'", //                                        8
+    '    EXPORTING i_order = gs_order', //                                      9
+    '    EXCEPTIONS not_allowed = 1 OTHERS = 2.', //                            10
+    '  IF sy-subrc <> 0.', //                                                   11
+    "    MESSAGE e010(zz).", //                                                 12
+    '  ENDIF.', //                                                              13
+    "  CALL FUNCTION 'Z_POST'.", //                                             14
+  ].join('\n');
+
+  test('3.2.0: both are service tasks that return, as a CALL FUNCTION of a module not in the slice is; the EXCEPTIONS with a sy-subrc check hang the error boundary on the customer function', () => {
+    const skeleton = buildProcessSkeleton(source, NEW);
+    const badi = nodesAt(skeleton, 5);
+    expect(badi.map((n) => n.kind)).toEqual(['service-task']);
+    expect(badi[0].label).toBe('LO_CHECK->CHECK_ORDER');
+    expect(badi[0].detail).toMatchObject({ enhancement: 'badi', method: true, returns: true });
+    const exit = nodesAt(skeleton, 8);
+    expect(exit.map((n) => n.kind).sort()).toEqual(['error-boundary', 'service-task']);
+    expect(exit.find((n) => n.kind === 'service-task')!.label).toBe('CUSTOMER-FUNCTION 001');
+    expect(exit.find((n) => n.kind === 'service-task')!.detail).toMatchObject({ enhancement: 'customer-function', returns: true });
+    expect(exit.find((n) => n.kind === 'error-boundary')!.detail).toMatchObject({ exceptions: ['NOT_ALLOWED', 'OTHERS'] });
+    // The flow runs on: BAdI → customer function → the posting.
+    const ids = [badi[0].id, exit.find((n) => n.kind === 'service-task')!.id, nodesAt(skeleton, 14)[0].id];
+    expect(skeleton.edges.some((e) => e.from === ids[0] && e.to === ids[1])).toBe(true);
+    // A routine whose only effect is the enhancement call is a step, not a technical helper.
+    const routine = source.replace("  CALL BADI lo_check->check_order\n    EXPORTING is_order = gs_order\n    CHANGING  cv_ok    = gv_ok.", '  PERFORM check.')
+      + "\nFORM check.\n  CALL BADI lo_check->check_order EXPORTING is_order = gs_order CHANGING cv_ok = gv_ok.\nENDFORM.";
+    const withForm = buildProcessSkeleton(routine, NEW);
+    expect(withForm.notDrawn.technicalHelpers).toEqual([]);
+    expect(nodesAt(withForm, 5).length).toBeGreaterThan(0);
+  });
+
+  test('3.1.0 keeps its map: neither call draws a node', () => {
+    const skeleton = buildProcessSkeleton(source, OLD);
+    expect(nodesAt(skeleton, 5)).toEqual([]);
+    expect(nodesAt(skeleton, 8)).toEqual([]);
+    expect(nodesAt(skeleton, 14).map((n) => n.kind)).toContain('service-task');
+  });
+});
+
 test.describe('the readings travel with the skeleton', () => {
   test('a skeleton read for 3.1.0 is rebuilt when asked for 3.2.0, and kept when asked for 3.1.0 or a 3.0.x hotfix', () => {
     const facts = buildProcessFacts(STRATEGY);
