@@ -59,7 +59,7 @@ import {
 } from '@/lib/gemini-test-stub';
 import { incompleteAnswerMessage, modelCompletion, MODEL_INCOMPLETE_CODE, type ModelAnswer } from '@/lib/model-completion';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
-import { resolveRequestedModel } from '@/lib/gemini-model-choice';
+import { modelServable, resolveRequestedModel } from '@/lib/gemini-model-choice';
 import { RESPONSE_SHAPE_STAGE, isResponseShape, responseSchemaForStage } from '@/lib/model-response-schema';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedJson, ResponseLimitError } from '@/lib/url-validation';
@@ -191,6 +191,9 @@ const ALLOWED_MODELS = new Set([
   'gemini-3-flash-preview', // PREVIEW — the former default, kept for callers that pin it
   'gemini-3.5-flash-lite',  // GA — the naming stage only (lib/constants.ts, roadmap 17.3)
 ]);
+
+/** Registered, but served only when `GEMINI_MODEL` makes it the product model; a request naming it is refused. */
+const EVALUATION_ONLY_MODELS = new Set(['gemini-4-hydrogen']);
 
 /**
  * The model this deployment actually calls, and why it can be moved without a deploy.
@@ -534,8 +537,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: NAMING_PAUSED_REASON, code: NAMING_PAUSED_CODE }, { status: 403 });
     }
 
-    // F-07: Validate model against server-side allowlist
-    if (!ALLOWED_MODELS.has(model)) {
+    // F-07: Validate model against server-side allowlist. A model under
+    // evaluation runs only as this deployment's product model (`GEMINI_MODEL`),
+    // never because a client asked for it by name.
+    if (!modelServable(model, productModel(), ALLOWED_MODELS, EVALUATION_ONLY_MODELS)) {
       return NextResponse.json(
         { error: `Model "${model}" is not permitted. Allowed: ${[...ALLOWED_MODELS].join(', ')}` },
         { status: 400 },

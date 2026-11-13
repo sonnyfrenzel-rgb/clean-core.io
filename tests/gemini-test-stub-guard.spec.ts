@@ -96,7 +96,7 @@ test('the route asks after every gate, and replaces the provider call and nothin
     'assertMfaSatisfied(',
     'assertAccountActive(',
     'modelStageEnabled(',
-    'ALLOWED_MODELS.has(model)',
+    'modelServable(model, productModel(), ALLOWED_MODELS, EVALUATION_ONLY_MODELS)',
     'prompt.length > MAX_PROMPT_LENGTH',
   ]) {
     const at = route.indexOf(gate);

@@ -64,9 +64,23 @@ function readKey() {
   return null;
 }
 
-async function probe(model, key) {
+/**
+ * Whether a 200 answer came from the model that was asked. Google reroutes some
+ * retired ids to a successor while still answering 200; a receipt would then
+ * name a model that did not answer, so a rerouted answer does not count as
+ * answered — and neither does one that does not say who answered.
+ */
+export function servedVerdict(model, body) {
+  const servedBy = typeof body?.modelVersion === 'string' ? body.modelVersion : null;
+  if (!servedBy) return { answered: false, providerMessage: 'answered, but did not say which model answered (no modelVersion)' };
+  if (servedBy !== model && !servedBy.startsWith(`${model}-`)) return { answered: false, servedBy, providerMessage: `answered, but served by ${servedBy}` };
+  return { answered: true, servedBy };
+}
+
+/** One probe call; `fetchImpl` is the network, handed in so a test can stand in for the provider. */
+export async function probe(model, key, fetchImpl = fetch) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${key}`;
-  const res = await fetch(url, {
+  const res = await fetchImpl(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     // A thinking level, as the fill and wording calls send it (lib/model-thinking.ts):
@@ -79,16 +93,7 @@ async function probe(model, key) {
   });
   const record = { httpStatus: res.status, answered: res.status === 200 };
   if (record.answered) {
-    // The model that actually answered. Google reroutes some retired ids to a
-    // successor while still answering 200; a receipt would then name a model
-    // that did not answer, so a rerouted answer does not count as answered.
-    const body = await res.json().catch(() => ({}));
-    const servedBy = typeof body?.modelVersion === 'string' ? body.modelVersion : null;
-    if (servedBy) record.servedBy = servedBy;
-    if (servedBy && servedBy !== model && !servedBy.startsWith(`${model}-`)) {
-      record.answered = false;
-      record.providerMessage = `answered, but served by ${servedBy}`;
-    }
+    Object.assign(record, servedVerdict(model, await res.json().catch(() => ({}))));
   } else {
     const body = await res.text();
     let message = body.slice(0, 400);
