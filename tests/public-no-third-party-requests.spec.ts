@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import { test, expect, devices, type Browser } from './helpers/test';
 import { PUBLIC_SHELL_ROUTES } from '../lib/shell-routes';
 import { PHASES } from '../lib/workflow-steps';
@@ -27,8 +29,12 @@ import { SIGNED_IN_HINT_KEY } from '../lib/auth-hint';
  * shell is captured without an edit here. `/demo/workspace` needs an account
  * and sends a visitor without the hint to the sign-in dialog; so does
  * `/demo/analyze` in its Business view, where the demo opens since v3.1.0 (AB-2,
- * O10) — both have a test of their own below. The demo's Analyze stage in IT
- * (`/demo/analyze?view=it`) stays public and is captured with the rest.
+ * O10) — both have a test of their own below. `/demo` itself redirects to the
+ * first stage (app/(app)/demo/page.tsx), so it is that stage's visit: since
+ * Analyze is the first stage and opens in Business, `/demo` sends a visitor
+ * without the hint to sign in too, and is tested with those two. The demo's
+ * Analyze stage in IT (`/demo/analyze?view=it`) stays public and is captured
+ * with the rest.
  */
 
 /** A route of lib/shell-routes.ts as addresses to visit: a dynamic segment becomes every value the page renders. */
@@ -41,8 +47,16 @@ function shellAddresses(route: string): string[] {
   return [route];
 }
 
+/** Where `/demo` redirects (app/(app)/demo/page.tsx; held by the first test below). */
+const DEMO_ENTRY_TARGET = `/demo/${PHASES[0].key}`;
+
 /** Sends a visitor without the hint to sign in, which starts Auth by design; see its own test. */
 const SIGN_IN_FIRST = new Set(['/demo/workspace', '/demo/analyze']);
+// The entry is its first stage's visit: a redirect to a page that sends the visitor to sign in does the same.
+if (SIGN_IN_FIRST.has(DEMO_ENTRY_TARGET)) SIGN_IN_FIRST.add('/demo');
+
+/** A demo address, which a sign-in-first visit is counted on until it leaves for the sign-in. */
+const isDemoPath = (pathname: string) => pathname === '/demo' || pathname.startsWith('/demo/');
 
 const SHELL_PAGES = PUBLIC_SHELL_ROUTES.filter((route) => !SIGN_IN_FIRST.has(route)).flatMap(shellAddresses);
 
@@ -107,6 +121,11 @@ async function foreignRequests(browser: Browser, profile: keyof typeof PROFILES,
   return foreign;
 }
 
+test("the demo's entry redirects to its first stage, the address the capture classifies it by", () => {
+  const entry = fs.readFileSync(path.resolve(__dirname, '..', 'app', '(app)', 'demo', 'page.tsx'), 'utf8');
+  expect(entry).toContain('redirect(`/demo/${PHASES[0].key}`)');
+});
+
 test.describe('a signed-out visit contacts only its own origin', () => {
   test.beforeEach(() => {
     test.setTimeout(120000);
@@ -133,7 +152,8 @@ test.describe('a signed-out visit contacts only its own origin', () => {
 
   // `/demo/analyze` is the demo's Analyze, Business since v3.1.0 (components/demo/DemoAnalyzeBusiness.tsx), with
   // the same gate as the demo workspace; both send the reader back to the demo workspace after the sign-in.
-  for (const address of ['/demo/workspace', '/demo/analyze']) {
+  // `/demo` with them while its first stage is Analyze: the redirect is the same visit.
+  for (const address of [...SIGN_IN_FIRST]) {
     test(`${address} sends a visitor without the hint to sign in, and asks nobody on the way`, async ({ browser, baseURL }) => {
       // It needs an account (components/demo/DemoWorkspaceShell.tsx, DemoAnalyzeBusiness.tsx). Without the
       // hint the shell reports "signed out" without starting Auth, and the page
@@ -149,7 +169,7 @@ test.describe('a signed-out visit contacts only its own origin', () => {
           const target = request.url();
           if (/^(data|blob|about):/.test(target)) return;
           if (new URL(target).origin === own) return;
-          if (new URL(page.url()).pathname === address) foreign.push(`${request.resourceType()} ${target.split('?')[0]}`);
+          if (isDemoPath(new URL(page.url()).pathname)) foreign.push(`${request.resourceType()} ${target.split('?')[0]}`);
         });
         await page.goto(address, { waitUntil: 'load' });
         await expect.poll(() => new URL(page.url()).searchParams.get('auth'), { timeout: 20000 }).toBe('signin');
