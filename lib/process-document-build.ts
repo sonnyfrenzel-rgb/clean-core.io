@@ -1,4 +1,5 @@
 import type { CustomerTexts } from '@/lib/abap/customer-texts';
+import { aiModelWords, UNRECORDED_AI } from '@/lib/ai-marking';
 import { readCallGraph, type CallGraphReport } from '@/lib/abap/call-graph';
 import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import { deriveBusinessRules, type BusinessRuleSet } from '@/lib/abap/business-rule-set';
@@ -1659,7 +1660,8 @@ export function technicalTrace(engine: ProcessDocumentation, ctx: TraceContext):
   ];
   const lanes: PdText[] = [
     ...engine.lanes.map((l) => ({ text: `${l.name || '(program)'} — ${l.kind}${l.basis.length ? `, from ${l.basis.join(', ')}` : ''}.`, anchors: [copy(l.anchor)] })),
-    ...engine.proposedLanes.filter((l) => l.anchor).map((l) => ({ text: `${l.name}${l.authorityObject ? ` (${l.authorityObject})` : ''} — AI-generated.`, anchors: [copy(l.anchor!)] })),
+    // A role lane the naming stage proposed carries the provider and the model its receipt recorded, as the names do.
+    ...engine.proposedLanes.filter((l) => l.anchor).map((l) => ({ text: `${l.name}${l.authorityObject ? ` (${l.authorityObject})` : ''} — AI-generated (${aiModelWords(engine.naming.origin ?? UNRECORDED_AI)}).`, anchors: [copy(l.anchor!)] })),
   ];
   return { elements, groups: ordered, merged, luw, lanes };
 }

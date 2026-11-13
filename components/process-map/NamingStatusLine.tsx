@@ -4,7 +4,7 @@ import React from 'react';
 import { PenLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { MapNameArrival } from '@/lib/naming-arrival';
-import { wt } from '@/lib/workspace-messages';
+import { aiNamesLegend } from '@/lib/messages/ai-names';
 
 /**
  * The one status line under the map while the AI names arrive, and after — roadmap 3.1.0 item 4, mockup states 1, 2,
@@ -49,7 +49,7 @@ export default function NamingStatusLine({ arrival }: { arrival: MapNameArrival 
       {arrival.shown.size > 0 ? (
         <p data-naming-legend="" className="m-0 flex items-center gap-2 text-[12px] font-medium text-cc-ink-muted">
           <PenLine size={14} aria-hidden={true} className="shrink-0 text-cc-warning" />
-          {wt('mapNaming.legend')}
+          {aiNamesLegend()}
         </p>
       ) : null}
     </div>

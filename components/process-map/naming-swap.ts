@@ -28,8 +28,13 @@ export interface CanvasNames {
   accessibleNames: ReadonlyMap<string, string>;
   /** Elements whose name must not change under the reader right now (the open code card). */
   hold: ReadonlySet<string>;
-  /** Said after the accessible name of a named element, and the pen mark's tooltip. */
+  /** The mark of a name a model wrote, in the interface language (`aiNameMark`). */
   penLabel: string;
+  /**
+   * The pen mark's tooltip and what is said after the accessible name of a named element: the mark, then provider
+   * and model as the naming's receipt recorded them (`aiMarkTooltip`).
+   */
+  penTitle: string;
   /** The waiting mark's tooltip. */
   waitingLabel: string;
 }
@@ -171,7 +176,7 @@ export function applyCanvasNames(
           const swap = names!.motion && have === null;
           canvas.addMarker(box.target, 'cc-name-replaced');
           overlays.add(box.target, 'cc-name', { position: { top: box.top, left: box.left }, scale: true, html: nameOverlay(want, box, swap) });
-          const pen = penMark(names!.penLabel);
+          const pen = penMark(names!.penTitle);
           const corner = shape.label ? { top: -6, left: (shape.width ?? 0) - 2 } : { top: 3, left: (shape.width ?? 0) - 17 };
           overlays.add(id, 'cc-name-pen', { position: corner, scale: true, html: pen });
           if (swap) {
@@ -204,7 +209,7 @@ export function applyCanvasNames(
     if (button) {
       const named = drawn.names.has(id);
       const spoken = named
-        ? `${names?.accessibleNames.get(id) ?? engineNames.get(id) ?? ''} ${names?.penLabel ?? ''}`.trim()
+        ? `${names?.accessibleNames.get(id) ?? engineNames.get(id) ?? ''} ${names?.penTitle ?? ''}`.trim()
         : engineNames.get(id);
       if (spoken && button.getAttribute('aria-label') !== spoken) button.setAttribute('aria-label', spoken);
       if (named) button.dataset.mapNamed = 'ai';

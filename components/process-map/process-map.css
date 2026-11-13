@@ -643,7 +643,9 @@
   height: 14px;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
+  /* Hoverable, so its tooltip names the provider and the model of the naming. */
+  pointer-events: auto;
+  cursor: help;
 }
 
 .cc-map-name-pen svg {
