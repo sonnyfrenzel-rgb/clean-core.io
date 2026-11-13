@@ -1040,6 +1040,7 @@ export default function ProcessMap({
                 </>
               )}
               names={canvasNames}
+              growToLevel={page}
               toolsPanel={helpOpen ? (
                 <p
                   data-process-map-hint=""

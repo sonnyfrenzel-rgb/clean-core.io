@@ -5,7 +5,7 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './process-map.css';
-import { MAP_REVEAL_EVENT, NARROW_CANVAS, fitWhole, fitWithPadding, phoneFitWidth, placeAnchor, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
+import { MAP_REVEAL_EVENT, NARROW_CANVAS, fitWhole, fitWithPadding, flooredLevelHeight, phoneFitWidth, placeAnchor, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
 import type { PhoneXml } from './phone-layout';
 import { MapViewTools } from './CanvasViewControls';
 import { useCanvasFullscreen } from './useCanvasFullscreen';
@@ -132,6 +132,12 @@ export interface BpmnCanvasProps {
    * rebuilding the viewer. Null or absent: the canvas shows the engine's names only, as before.
    */
   names?: CanvasNames | null;
+  /**
+   * Inline on a phone-wide canvas, grow to show the level whole from top to
+   * bottom at the floor (`flooredLevelHeight`) — Analyze, Business, whose map
+   * is the page (ADR-109; mockup v4.1, phone). Every other map keeps its card.
+   */
+  growToLevel?: boolean;
 }
 
 interface CanvasService extends ViewboxCanvas {
@@ -144,6 +150,26 @@ interface CanvasService extends ViewboxCanvas {
   setRootElement(element: object): void;
   findRoot(id: string): object | undefined;
   getRootElement(): { id: string } | null;
+}
+
+/**
+ * The whole level (`fitWhole`), and — for a map that asks (`growToLevel`) — inline on a phone-wide canvas the height to
+ * show it from top to bottom at the floor (`flooredLevelHeight`): a vertical
+ * swipe there scrolls the page, so a level cut at the bottom edge could not be
+ * read on without full screen. Full screen takes the height its frame gives
+ * (v3.1.0).
+ */
+function showWhole(canvas: CanvasService, host: HTMLElement | null, inFullscreen: boolean): void {
+  // In full screen the frame gives the height (`flex-1` wins over a set height), and the grown height
+  // stays: the page behind keeps its length, so leaving full screen returns to the same place.
+  if (host && !inFullscreen && host.dataset.growToLevel === 'true') {
+    const grown = host.style.height !== '';
+    if (grown) host.style.height = '';
+    const height = flooredLevelHeight(canvas.viewbox().inner, host.clientWidth, host.clientHeight, 3 * window.innerHeight);
+    if (height !== null) host.style.height = `${height}px`;
+    if (grown || height !== null) canvas.resized();
+  }
+  fitWhole(canvas);
 }
 
 interface OverlayAttrs {
@@ -243,6 +269,7 @@ export default function BpmnCanvas({
   tools,
   toolsPanel,
   names = null,
+  growToLevel = false,
 }: BpmnCanvasProps) {
   const fitOnOpen = openFit ?? (controls ? 'whole' : 'readable');
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -446,7 +473,7 @@ export default function BpmnCanvas({
           // the page is shown, after bpmn-js has placed it.
           requestAnimationFrame(() => {
             try {
-              if (filledRef.current || fitOnOpenRef.current === 'whole') fitWhole(canvas);
+              if (filledRef.current || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
               else fitWithPadding(canvas);
             } catch {
               /* the viewer went in the meantime */
@@ -473,7 +500,7 @@ export default function BpmnCanvas({
         const asked = canvas.findRoot(`${planeRef.current}_plane`) ?? canvas.findRoot(planeRef.current);
         if (asked) canvas.setRootElement(asked);
       }
-      if (fitOnOpenRef.current === 'whole') fitWhole(canvas);
+      if (fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
       else fitWithPadding(canvas);
 
       if (controlsRef.current) {
@@ -544,7 +571,7 @@ export default function BpmnCanvas({
     const current = canvas.getRootElement();
     if (current && (target as { id?: string }).id === current.id) return;
     canvas.setRootElement(target);
-    if (filledRef.current || fitOnOpenRef.current === 'whole') fitWhole(canvas);
+    if (filledRef.current || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
     else fitWithPadding(canvas);
   }, [plane]);
 
@@ -573,7 +600,7 @@ export default function BpmnCanvas({
       try {
         const canvas = viewer.get('canvas');
         canvas.resized();
-        if (filledRef.current || fitOnOpenRef.current === 'whole') fitWhole(canvas);
+        if (filledRef.current || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
         else fitWithPadding(canvas);
       } catch {
         /* a viewer still importing has nothing to measure */
@@ -592,7 +619,7 @@ export default function BpmnCanvas({
       const canvas = viewer.get('canvas');
       canvas.resized();
       // Full screen shows the whole level; back on the page, the level opens as it did.
-      if (filled || fitOnOpenRef.current === 'whole') fitWhole(canvas);
+      if (filled || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filled);
       else fitWithPadding(canvas);
     } catch {
       /* a viewer still importing has nothing to measure */
@@ -605,7 +632,7 @@ export default function BpmnCanvas({
   }, []);
   const fit = useCallback(() => {
     const canvas = viewerRef.current?.get('canvas');
-    if (canvas) fitWhole(canvas);
+    if (canvas) showWhole(canvas, hostRef.current, filledRef.current);
   }, []);
 
   /**
@@ -625,7 +652,7 @@ export default function BpmnCanvas({
       fit: () => {
         const canvas = viewerRef.current?.get('canvas');
         if (!canvas) return;
-        if (controlsRef.current) fitWhole(canvas);
+        if (controlsRef.current) showWhole(canvas, hostRef.current, filledRef.current);
         else fitWithPadding(canvas);
       },
     },
@@ -695,6 +722,7 @@ export default function BpmnCanvas({
   const canvasElement = (
     <div
       data-process-map-canvas=""
+      data-grow-to-level={growToLevel ? 'true' : undefined}
       role="group"
       aria-label={label}
       onKeyDown={controls ? keyDown : onKeyDown}

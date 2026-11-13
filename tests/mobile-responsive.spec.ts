@@ -697,7 +697,9 @@ async function fullscreenRoundTrip(page: Page, label: string, phone: boolean): P
   const frame = page.locator('[data-workspace-process] [data-map-canvas-frame]').first();
   const toggle = frame.locator('[data-map-fullscreen-toggle]');
   if ((await toggle.count()) === 0) return [`${label}: the layer map has no full-screen control`];
-  await frame.scrollIntoViewIfNeeded();
+  // The control, not the frame: on a phone Analyze's map grows to its level (ADR-109, mockup v4.1), taller than
+  // the window, and centring the frame left the control above it — the click then scrolled the page first.
+  await toggle.scrollIntoViewIfNeeded();
   const size = page.viewportSize()!;
   const exits: ('button' | 'escape' | 'back')[] = phone ? ['button', 'escape', 'back'] : ['button', 'escape'];
   for (const exit of exits) {

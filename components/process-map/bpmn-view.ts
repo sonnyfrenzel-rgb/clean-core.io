@@ -98,6 +98,31 @@ export function fitWhole(canvas: ViewboxCanvas): void {
 }
 
 /**
+ * The height an inline canvas this wide needs to show the level whole from top
+ * to bottom at the phone's floor, or null where the floor does not apply (a
+ * canvas from {@link NARROW_CANVAS} up) or the level is no taller than `base`.
+ * Inline a vertical swipe scrolls the page and never pans the map
+ * (`useTouchViewport`), so a level cut at the canvas's bottom edge could only
+ * be read further in full screen; the canvas grows instead and the page
+ * scrolls, as the accepted mockup v4.1 draws the phone's map (plan
+ * `docs/design/analyze-business-first-plan.md` N2: scroll, do not shrink).
+ * Depends on the width alone, so growing does not change the answer, and never
+ * above `ceiling`.
+ */
+export function flooredLevelHeight(
+  inner: { width: number; height: number },
+  canvasWidth: number,
+  base: number,
+  ceiling: number,
+): number | null {
+  if (!inner.width || !inner.height || canvasWidth <= 0 || canvasWidth >= NARROW_CANVAS) return null;
+  const scale = Math.max(NARROW_MIN_SCALE, Math.min(1, (canvasWidth - 2 * MARGIN) / inner.width));
+  const needed = Math.ceil(inner.height * scale + 2 * MARGIN);
+  if (needed <= base) return null;
+  return Math.min(needed, Math.max(base, ceiling));
+}
+
+/**
  * The widest drawing, in BPMN units, a canvas this wide shows across at the
  * phone's floor — what the phone's narrow layout is laid out for.
  */

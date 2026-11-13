@@ -11,7 +11,7 @@ import {
 } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
-import { phoneFitWidth } from '../components/process-map/bpmn-view';
+import { flooredLevelHeight, phoneFitWidth } from '../components/process-map/bpmn-view';
 import { examplePath } from './helpers/starter-example-files';
 
 /**
@@ -152,4 +152,18 @@ test('only the read-only canvas draws the phone layout: no export, editor, draft
   const map = fs.readFileSync(path.join(ROOT, 'components', 'process-map', 'ProcessMap.tsx'), 'utf8');
   expect(map).toMatch(/baseXml=\{modelProp\.technicalXml \?\? modelProp\.xml\}/);
   expect(map).toMatch(/istXml=\{modelProp\.xml\}/);
+});
+
+test('inline on a phone-wide canvas the level is shown whole from top to bottom: the canvas grows, within a ceiling', () => {
+  // 330 px wide, a level 760 × 2000 units: 40 % → 800 px drawn + 48 px margin.
+  expect(flooredLevelHeight({ width: 760, height: 2000 }, 330, 420, 2532)).toBe(848);
+  // The answer depends on the width alone: the grown canvas asks for the same height again.
+  expect(flooredLevelHeight({ width: 760, height: 2000 }, 330, 848, 2532)).toBeNull();
+  // Never above the ceiling …
+  expect(flooredLevelHeight({ width: 760, height: 20000 }, 330, 420, 2532)).toBe(2532);
+  // … nothing for a level that fits, and nothing from 640 px up (no floor there).
+  expect(flooredLevelHeight({ width: 760, height: 600 }, 330, 420, 2532)).toBeNull();
+  expect(flooredLevelHeight({ width: 760, height: 2000 }, 640, 420, 2532)).toBeNull();
+  // A level narrower than the canvas is drawn at its width's scale (at most 100 %), not at the floor.
+  expect(flooredLevelHeight({ width: 200, height: 1000 }, 330, 420, 2532)).toBe(1048);
 });
