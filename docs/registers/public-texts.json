@@ -415,8 +415,6 @@
         "components/workspace/FirstLook.tsx",
         "components/workspace/GlossaryText.tsx",
         "components/workspace/ItAnswers.tsx",
-        "components/workspace/LayerBar.tsx",
-        "components/workspace/LayerSection.tsx",
         "components/workspace/MetaLine.tsx",
         "components/workspace/NewProject.tsx",
         "components/workspace/NextStepCard.tsx",

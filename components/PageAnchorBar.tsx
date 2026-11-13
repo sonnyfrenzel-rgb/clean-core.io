@@ -16,7 +16,7 @@ export type { PageAnchor } from '@/lib/page-anchors';
  * which id, is `lib/page-anchors.ts` (IT: `lib/it-sections.ts`; Documentation:
  * the outline's chapters).
  *
- * It looks like the layer bar (`components/workspace/LayerBar.tsx`) so the views
+ * It took the look of the workspace's layer bar (retired with v3.1.0, AB-11) so the views
  * and the tools share one navigation strip: a delimited surface with its
  * eyebrow ("On this page", the same words on every page — the component says
  * it, a page cannot), a muted track, and the section the reader is in

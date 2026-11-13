@@ -296,17 +296,15 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
     expect(usageRecordRows({ name: 'none' })).toEqual([]);
   });
 
-  test('the usage records stand beside the map in Business and in the section elsewhere (ADR-080)', () => {
+  test('the usage records stand beside the map in Business (ADR-080)', () => {
     const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
     // The map is Analyze, Business's since v3.1.0 (AB-2): the records stand in its block, under the map.
     const business = read('components/analyze/AnalyzeBusiness.tsx');
     const block = business.slice(business.indexOf('data-analyze-map=""'), business.indexOf('data-analyze-interim'));
     expect(block).toContain('<UsageRecords project={project}');
-    const section = read('components/workspace/LayerSection.tsx');
-    expect(section).toContain('<UsageRecords project={project}');
-    // The section never prints the usage rows of the cut list itself.
-    expect(section).toContain("!row.key.startsWith('usage-')");
-    expect(section).not.toContain('aboveInView');
+    // The layer section that also drew them had no user since AB-2 and was retired with v3.1.0 (AB-11, ADR-080):
+    // the records stand once, beside the map.
+    expect(fs.existsSync(path.resolve(__dirname, '..', 'components/workspace/LayerSection.tsx'))).toBe(false);
   });
 });
 

@@ -69,7 +69,8 @@ test.describe('Standard fit is an IT section, not a Business layer (ADR-096)', (
     expect(read('components/demo/DemoWorkspaceShell.tsx')).not.toContain('standardLayer=');
     // The table is gone; the Business layer section does not draw it either.
     expect(fs.existsSync(path.resolve(__dirname, '..', 'components/workspace/ItStandardFit.tsx'))).toBe(false);
-    expect(read('components/workspace/LayerSection.tsx')).not.toContain('StandardFitTable');
+    // The Business layer section is gone too (retired with v3.1.0, AB-11).
+    expect(fs.existsSync(path.resolve(__dirname, '..', 'components/workspace/LayerSection.tsx'))).toBe(false);
     // One layer is no bar: the bar is drawn only where there are two or more. The workspace draws no layer
     // bar at all since v3.1.0 (its Business view is Analyze's, AB-2); the demo keeps the rule.
     expect(read('components/workspace/WorkspaceShell.tsx')).not.toContain('<WorkspaceLayerBar');

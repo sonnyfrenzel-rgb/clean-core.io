@@ -28,18 +28,6 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'coach.next': 'Next',
   'coach.done': 'Done',
   'coach.dismissAll': 'Dismiss all',
-  // LayerBar
-  'layerBar.label': 'Sections of this process',
-  'layerBar.lead': 'Sections',
-  'layerBar.empty': 'empty',
-  'layerBar.more': 'More',
-  // LayerSection
-  'layerSection.nothingOnRecord': 'Nothing on record for this layer',
-  'layerSection.processNote':
-    'Read from the source the signed run analysed, without a model — a reconstruction of the code, not evidence of how the process runs in production. What to do next stands under Next step.',
-  'layerSection.showMap': 'Show the map',
-  'layerSection.showMapBusiness': 'Show the map in Business',
-  'layerSection.backToTop': 'Back to top of section',
   // UsageRecords — beside the map in Business, inside Need & process elsewhere (ADR-080)
   'usage.title': 'Usage records',
   'usage.lead':
@@ -457,12 +445,7 @@ export function askRulesLabel(n: number): string {
   return n === 1 ? WORKSPACE_PAGE_MESSAGES['ask.oneRule'] : `${n} rules stand on this decision point:`;
 }
 
-/** LayerBar — how many layers wait under "More". */
-export function layerBarEmptyCount(n: number): string {
-  return `${n} ${WORKSPACE_PAGE_MESSAGES['layerBar.empty']}`;
-}
-
-/** LayerSection — the first rows of a layer, and how many stand behind them. */
+/** UsageRecords — the first rows of a list, and how many stand behind them. */
 export function layerSectionShowing(shown: number, total: number): string {
   return `Showing ${shown} of ${total}.`;
 }

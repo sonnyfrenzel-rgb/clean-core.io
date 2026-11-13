@@ -65,7 +65,6 @@ const KNOWN_BANNED: Readonly<Record<string, readonly string[]>> = {
 const KNOWN_DASH: Readonly<Record<(typeof SCOPE)[number], readonly string[]>> = {
   workspace: [
     'access.empty',
-    'layerSection.processNote',
     'usage.lead',
     'notDetermined.none',
     'oq.none',

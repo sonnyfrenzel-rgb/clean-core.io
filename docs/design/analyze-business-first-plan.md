@@ -76,7 +76,7 @@ hub leave the app.
 | `components/workspace/BusinessNextStep.tsx` + `lib/business-next-step.ts` | 104 + 51 | `WorkspaceShell`, demo | AB-4 | the two endings |
 | `components/workspace/WorkspaceHub.tsx` + `AnalysisReady.tsx` + `lib/analysis-read.ts` | 321 + 53 + 119 | `WorkspaceShell`, demo | AB-2 | nothing: the project opens on the result (ADR-090 retires) |
 | `components/workspace/CoachMarks.tsx` + `lib/coach-marks.ts` | 390 + 330 | `WorkspaceShell` | AB-11, if P7 | the tour and the invitation bar |
-| `components/workspace/LayerBar.tsx`, `LayerSection.tsx` | 160 + 245 | workspace, demo | AB-11, if O3 | Business has one layer left (`BUSINESS_LAYERS = ['evidence']`, `lib/business-layers.ts`); its content is IT's "Run & trust" |
+| `components/workspace/LayerBar.tsx`, `LayerSection.tsx` | 160 + 245 | workspace, demo | AB-11, if O3 — retired 13.11.2026 (owner decision) | Business has one layer left (`BUSINESS_LAYERS = ['evidence']`, `lib/business-layers.ts`); its content is IT's "Run & trust" |
 | `components/analyze/AnchoredNarrative.tsx` | 130 | Analyze page | AB-9, if P4 | the checked text around the map |
 | `components/analyze/ProgramMap.tsx` | 206 | `EvidenceFindingsTable` | AB-9 (assumption: IT's findings beside their code replace it) | findings with their code |
 | **Sum** | **≈ 5,900** | 18 files (12 components, 6 lib modules) | | |
@@ -452,7 +452,9 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   token readers wait for the session), the AI mark per name carries the recorded model, no page error when the home
   slice leaves. The project search (⌘K) stands on Analyze, Business. Not changed: state 17 (welcome back, two ways)
   is AB-4 (v3.2.0); the OO first level of example A (AB-15a) and the RACI on method steps are engine work, not UI.
-  `layer-back-to-top` tests `LayerSection`, which has no user since AB-2: to be retired with AB-11 or re-homed.
+  `layer-back-to-top` tested `LayerSection`, which has no user since AB-2. **Decided (owner, 13.11.2026): retired with
+  v3.1.0 as the first part of AB-11** — the spec, `LayerSection.tsx`, `LayerBar.tsx` (also without a user) and their
+  message strings are deleted on `night/310-ui`; the rest of AB-11 stays in v3.5.0.
 - **Scope:** the Business view of Analyze per mockup states 3, 7 and 17 without the tour, the swap and the text
   blocks: header as today's `StageHeader` (way back, view switch, tools, soft-gate hint), "What this program does"
   with the engine sentence, the invitation bar ("Walk me through it" starts today's tour layer until AB-4; "I'll look
@@ -700,7 +702,9 @@ dates do not hold. Until it ships, Business shows two charts.*
 - **Files:** `app/(app)/project/[projectId]/page.tsx`, `components/workspace/WorkspaceShell.tsx`, `LayerBar.tsx`,
   `LayerSection.tsx`, `CoachMarks.tsx`, `lib/coach-marks.ts`, `lib/layer-redirect.ts`, `lib/workspace-back-href.ts`,
   `lib/choice-addresses.ts`, the docs above.
-- **Specs:** change `workspace-shell-guard` (to the redirect), `workspace-layers`, `layer-back-to-top`,
+- **Status (13.11.2026):** `LayerBar.tsx`, `LayerSection.tsx` and `layer-back-to-top` are retired already with v3.1.0
+  (owner decision 13.11.2026; dead code since AB-2). Everything else below is open.
+- **Specs:** change `workspace-shell-guard` (to the redirect), `workspace-layers`, `layer-back-to-top` (retired 13.11.2026),
   `workspace-fragment-guard`, `workspace-view-switch`, `workspace-view-switch-from-layer`, `choice-walk`,
   `choice-addresses`, `follow-hash-scrollbar`, `coach-mark-placement` (retire), `it-view`, `it-findings`,
   `it-view-uses`, `standard-fit-in-it`, `workspace-a11y`, `view-attribute-guard` (stays green unchanged).

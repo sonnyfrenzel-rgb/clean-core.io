@@ -182,7 +182,7 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
   test('disclosures are not dressed up as ARIA menus', () => {
     for (const rel of [
       'components/workspace/ToolBar.tsx',
-      'components/workspace/LayerBar.tsx',
+      // `components/workspace/LayerBar.tsx` stood here; it had no user since AB-2 and was retired with v3.1.0 (AB-11).
     ]) {
       const src = code(rel);
       expect(src, `${rel}: role="menu" without menuitems`).not.toContain('role="menu"');
