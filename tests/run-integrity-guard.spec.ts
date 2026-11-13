@@ -156,7 +156,8 @@ test.describe('consent records what the server knows, not what the caller says',
     const lib = read('lib/consent.ts');
     const route = read('app/api/consent/route.ts');
     // Both were written verbatim into the append-only record.
-    expect(lib).toContain('privacyVersion: TERMS_VERSION');
+    // Derived on the server: the privacy policy's own version id (lib/legal/privacy-versions.ts), never the body's.
+    expect(lib).toContain('privacyVersion: PRIVACY_POLICY_CURRENT.recordId');
     // `contentSha256` was a literal null until the Terms archive existed; it is
     // now derived on the server from the version being recorded, which is the
     // same rule and a better record. What must never come back is a value the

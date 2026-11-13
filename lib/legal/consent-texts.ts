@@ -42,9 +42,19 @@ export const CONSENT_TEXTS = {
       de: 'Bitte lesen Sie beide Texte. Mit dem Klick unten schließen Sie einen Vertrag über die unentgeltliche Nutzung von Clean-Core.io; eine Bestätigung mit einem Link auf den Wortlaut der angenommenen Fassung erhalten Sie anschließend per E-Mail.',
       en: 'Please read both texts. By clicking below you conclude a contract on the free use of Clean-Core.io; you will receive a confirmation by e-mail afterwards with a link to the wording of the version you accepted.',
     },
+    /**
+     * Names the version of the privacy policy, not the date of the Terms: its own version and date and its fixed
+     * address from version 1.2 (`lib/legal/privacy-versions.ts`), switched with the build like the policy itself.
+     */
     privacyCheckbox: {
-      de: 'Ich habe die Datenschutzerklärung (Stand {{releaseDate}}, Wortlaut: clean-core.io/datenschutz/de) zur Kenntnis genommen.',
-      en: 'I have taken note of the Privacy Policy (version of {{releaseDate}}, wording: clean-core.io/datenschutz).',
+      de: namesWording(
+        'Ich habe die Datenschutzerklärung (Fassung 1.2, Stand 20.11.2026, Wortlaut: clean-core.io/datenschutz/versions/1.2/de) zur Kenntnis genommen.',
+        'Ich habe die Datenschutzerklärung (Stand {{releaseDate}}, Wortlaut: clean-core.io/datenschutz/de) zur Kenntnis genommen.',
+      ),
+      en: namesWording(
+        'I have taken note of the Privacy Policy (version 1.2, as of 20 November 2026, wording: clean-core.io/datenschutz/versions/1.2).',
+        'I have taken note of the Privacy Policy (version of {{releaseDate}}, wording: clean-core.io/datenschutz).',
+      ),
     },
     termsCheckbox: {
       de: 'Ich nehme die Nutzungsbedingungen und Community-Richtlinien von Clean-Core.io (Fassung v2.3.0, deutsche Fassung, Wortlaut: clean-core.io/terms/de) an.',

@@ -16,7 +16,11 @@ import { APP_VERSION } from '../version';
  */
 export const LEGAL_TEXTS_NAMES_AUTOMATIC: boolean = engineReads310Apply(APP_VERSION);
 
-/** The wording for this build: `automatic` once names start by themselves, `paused` before. */
-export function namesWording(automatic: string, paused: string): string {
-  return LEGAL_TEXTS_NAMES_AUTOMATIC ? automatic : paused;
+/**
+ * The wording for this build: `automatic` once names start by themselves, `paused` before. `namesAutomatic` names
+ * the side for a text rendered for another version than this build's — the archive of the privacy policy
+ * (`lib/legal/privacy-versions.ts`) renders both.
+ */
+export function namesWording(automatic: string, paused: string, namesAutomatic: boolean = LEGAL_TEXTS_NAMES_AUTOMATIC): string {
+  return namesAutomatic ? automatic : paused;
 }
