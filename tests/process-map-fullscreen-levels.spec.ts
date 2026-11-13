@@ -94,6 +94,39 @@ async function openWorkspaceMap(page: Page, acct: SeededProject, phone = false):
   return frame;
 }
 
+/**
+ * Taps an inline control where a finger can reach it. Below `sm` the floating
+ * assistant button stands at the window's bottom right on every page
+ * (`components/GlossaryChatbot.tsx`, block D D.8: the one direct way in on a
+ * phone), so a control scrolled to that corner is under it — and Playwright's
+ * tap does not check the hit target (it tapped "Ask this case" here). The
+ * control is brought to the middle of the window and must be what the finger
+ * hits.
+ */
+async function tapInline(control: Locator) {
+  await control.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const hit = await control.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return at !== null && el.contains(at);
+  });
+  expect(hit, 'something covers the control').toBe(true);
+  await control.tap();
+}
+
+/**
+ * Back as a reader presses it: a frame after the level is on screen. Full
+ * screen records a level's history entry after the page had its turn
+ * (`components/process-map/useCanvasFullscreen.ts`, a macrotask after the
+ * commit); Playwright's Back could come in those few milliseconds — measured
+ * on Analyze, the arrow's entry was pushed 10 ms after the level showed and
+ * Back came first, so it skipped the level (3.1.0).
+ */
+async function backAsReader(page: Page) {
+  await page.evaluate(() => new Promise<void>((done) => requestAnimationFrame(() => setTimeout(done, 0))));
+  await page.goBack();
+}
+
 /** A collapsed sub-process on the level on show, by its drill-down arrow. */
 async function subProcessOnLevel(scope: Locator): Promise<string> {
   const id = await scope.evaluate((root) => {
@@ -421,7 +454,7 @@ test.describe('levels in full screen — phone, touch', () => {
     const url = page.url();
     const sub = await subProcessOnLevel(frame);
 
-    await toggle.tap();
+    await tapInline(toggle);
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
     await frame.locator(`[data-map-node="${sub}"]`).tap();
     await expect.poll(() => levelOf(frame)).toBe(sub);
@@ -441,24 +474,24 @@ test.describe('levels in full screen — phone, touch', () => {
     await expect.poll(() => levelOf(frame)).toBe(sub);
 
     // Back: first the level opened in full screen …
-    await page.goBack();
+    await backAsReader(page);
     await expect.poll(() => levelOf(frame)).toBe('top');
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
     // … then the level opened before it (by the control, also in full screen) …
-    await page.goBack();
+    await backAsReader(page);
     await expect.poll(() => levelOf(frame)).toBe(sub);
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
     // … then full screen itself, on the level it was entered on, at the same address.
-    await page.goBack();
+    await backAsReader(page);
     await expect.poll(() => levelOf(frame)).toBe('top');
-    await page.goBack();
+    await backAsReader(page);
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'false', { timeout: 10_000 });
     await page.waitForTimeout(400);
     expect(page.url()).toBe(url);
     expect(await levelOf(frame)).toBe('top');
 
     // Leaving by the button keeps the level open in full screen.
-    await toggle.tap();
+    await tapInline(toggle);
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
     await frame.locator(`[data-map-node="${sub}"]`).tap();
     await expect.poll(() => levelOf(frame)).toBe(sub);
