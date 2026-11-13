@@ -9,6 +9,7 @@ import { preAnsweredQuestion } from '../lib/ask-this-case';
 import { summaryWithoutTables, programInputsOf, plainWordingFor } from '../lib/business-card';
 import { BUSINESS_LAYERS, BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from '../lib/business-layers';
 import { walkOrder, walkProgress } from '../lib/process-walk';
+import { MAP_FOLLOW_HOLD_MS, MAP_FOLLOW_WAIT_MS, mapFollowGoesOn } from '../lib/map-follow';
 import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf, NAMING_FORMAT_VERSION } from '../lib/process-naming';
@@ -745,5 +746,19 @@ test('the map follow stops as soon as the hash leaves the map (QA 6eaa3be7e7ad)'
   // A hash change cancels the running loop before it decides anything …
   expect(body).toMatch(/const follow = \(\) => \{[\s\S]*?window\.cancelAnimationFrame\(frame\);[\s\S]*?stop = true;[\s\S]*?if \(!onMap\(\)\) return;/);
   // … and every frame re-reads the hash before it scrolls.
-  expect(body).toMatch(/if \(stop \|\| !onMap\(\) \|\| now - started > 5000\) return;/);
+  expect(body).toMatch(/if \(stop \|\| !onMap\(\) \|\| !mapFollowGoesOn\(asked, seen, now\)\) return;/);
+  // The hold starts when the map is first found, not when the address asked for it (QA 7470c349e342).
+  expect(body).toMatch(/if \(map\) \{\s*if \(seen === null\) seen = now;/);
+});
+
+test('the map follow waits for a map that loads late, then holds it five seconds (QA 7470c349e342)', () => {
+  const asked = 1000;
+  // Eight seconds of loading with no map on the page: still waiting, where the old window had closed at five.
+  expect(mapFollowGoesOn(asked, null, asked + 8000)).toBe(true);
+  expect(mapFollowGoesOn(asked, null, asked + MAP_FOLLOW_WAIT_MS + 1)).toBe(false);
+  // The map appears at eight seconds: held for five from there.
+  const seen = asked + 8000;
+  expect(mapFollowGoesOn(asked, seen, seen + MAP_FOLLOW_HOLD_MS)).toBe(true);
+  expect(mapFollowGoesOn(asked, seen, seen + MAP_FOLLOW_HOLD_MS + 1)).toBe(false);
+  expect(MAP_FOLLOW_HOLD_MS).toBe(5000);
 });

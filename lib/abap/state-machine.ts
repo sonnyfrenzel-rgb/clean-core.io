@@ -142,8 +142,16 @@ interface Constants {
 
 function readConstants(statements: readonly AbapStatement[]): Constants {
   const values = new Map<string, string>();
+  /** Per class or interface (lower case), the constants it declares — what `zif_x=>c_approved` resolves against. */
+  const owned = new Map<string, Map<string, string>>();
+  /** Per name, every value a declaration of that name gives it, whoever declares it. */
+  const declared = new Map<string, Set<string>>();
   let group: string[] = [];
+  let owner: string | null = null;
   for (const s of statements) {
+    const opens = /^(?:INTERFACE\s+([\w/]+)(?!\s+(?:DEFERRED|LOAD)\b)|CLASS\s+([\w/]+)\s+(?:DEFINITION(?!\s+(?:DEFERRED|LOAD)\b)|IMPLEMENTATION)\b)/i.exec(s.text);
+    if (opens) { owner = (opens[1] ?? opens[2]).toLowerCase(); continue; }
+    if (/^END(?:INTERFACE|CLASS)\b/i.test(s.text)) { owner = null; continue; }
     if (!/^CONSTANTS\b/i.test(s.text)) continue;
     const body = s.text.replace(/^CONSTANTS\s*:?\s*/i, '');
     const begin = /^BEGIN\s+OF\s+([\w/]+)/i.exec(body);
@@ -152,15 +160,24 @@ function readConstants(statements: readonly AbapStatement[]): Constants {
     const m = /^([\w/]+)\b[\s\S]*?\bVALUE\s+('(?:[^']|'')*'|`[^`]*`|-?\d+)/i.exec(body);
     if (!m) continue;
     const name = [...group, m[1].toLowerCase()].join('-');
-    values.set(name, unquote(m[2]));
+    const value = unquote(m[2]);
+    values.set(name, value);
+    declared.set(name, (declared.get(name) ?? new Set<string>()).add(value));
+    if (owner) owned.set(owner, (owned.get(owner) ?? new Map<string, string>()).set(name, value));
   }
   return {
     value(name: string) {
       const key = name.toLowerCase();
       if (values.has(key)) return values.get(key) ?? null;
-      // An interface or class constant `zif_x=>c_approved` is read where this source defines it.
-      const tail = key.split('=>').pop() ?? key;
-      return values.get(tail) ?? null;
+      // An interface or class constant `zif_x=>c_approved` is read where this source defines it: in that type when
+      // the type declares it, else only when every declaration of the name agrees — never another type's value.
+      const parts = key.split('=>');
+      const tail = parts.pop() ?? key;
+      const type = parts.pop();
+      const own = type ? owned.get(type)?.get(tail) : undefined;
+      if (own !== undefined) return own;
+      const all = declared.get(tail);
+      return all && all.size === 1 ? [...all][0] : null;
     },
   };
 }
@@ -264,11 +281,6 @@ function calledRoutine(text: string): string | null {
   const call = /^(?:CALL\s+METHOD\s+)?(?:(?:me|[\w/]+)(?:->|=>))?([\w/~]+)\s*\(/i.exec(text) ?? /^CALL\s+METHOD\s+(?:(?:me|[\w/]+)(?:->|=>))?([\w/~]+)\b/i.exec(text);
   if (!call) return null;
   return (call[1].split('~').pop() ?? call[1]).toUpperCase();
-}
-
-/** Is a decision (`IF`, `CASE`) open — then a check closed inside it guards only that arm, not the routine. */
-function decisionOpen(frames: readonly Frame[]): boolean {
-  return frames.some((f) => f.kind === 'if' || f.kind === 'case');
 }
 
 /** Does the body between `from` and `to` (statement indices) stop: an error message, RETURN, RAISE, EXIT, LEAVE? */
@@ -379,8 +391,11 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
     const arms: ArmRead[] = [];
     const frame = (kind: Frame['kind'], start: number, condition: string | null, subject: string | null): Frame =>
       ({ kind, start, condition, subject, when: null, armGuards: [], armRoles: [], arm: -1, opened: start });
-    /** The innermost decision: where a guard or a role check closed inside it belongs. */
-    const innermostDecision = () => [...frames].reverse().find((f) => f.kind === 'if' || f.kind === 'case');
+    /**
+     * Where a role check belongs: the innermost decision arm or loop around it — a check in a loop runs only in a
+     * pass, and a loop may make none, so it is forgotten at ENDLOOP as a CHECK is — else the routine.
+     */
+    const roleScope = () => [...frames].reverse().find((f) => f.kind !== 'try')?.armRoles ?? roles;
     const closeArm = (f: Frame | undefined, i: number) => {
       if (!f || f.arm < 0) return;
       const a = arms[f.arm];
@@ -422,8 +437,8 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
       }
       if (kw === 'AUTHORITY-CHECK') {
         const object = /\bOBJECT\s+('(?:[^']|'')*'|[\w/]+)/i.exec(t)?.[1];
-        // A check inside a decision guards that arm only.
-        if (object) (innermostDecision()?.armRoles ?? roles).push({ object: unquote(object).toUpperCase(), line: s.lineStart });
+        // A check inside a decision guards that arm only; inside a loop, that pass only.
+        if (object) roleScope().push({ object: unquote(object).toUpperCase(), line: s.lineStart });
         continue;
       }
       if (kw === 'IF') {
@@ -458,9 +473,11 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
           const status = comparisons(top.condition, constants).length > 0;
           // A decision over the command is no check of a move: it chooses the arm (`IF verb = 'GRANT'. … RETURN.`).
           const guard: Guard = { line: opener.lineStart, condition: top.condition, stopped: stops(statements, top.start + 1, i) && !commandCondition(top.condition, constants), status };
-          // A check closed inside a decision guards only what follows it in that arm, not the routine.
-          if (!decisionOpen(frames)) guards.push(guard);
-          else innermostDecision()?.armGuards.push(guard);
+          // A check closed inside a decision guards only what follows it in that arm, not the routine; inside a loop,
+          // only the rest of that pass — a loop may make none, so it is forgotten at ENDLOOP as a CHECK is.
+          const scope = [...frames].reverse().find((f) => f.kind !== 'try');
+          if (scope) scope.armGuards.push(guard);
+          else guards.push(guard);
         }
         continue;
       }
@@ -524,7 +541,7 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
       // A role check of the program's own: `assert_permission( … iv_perm = 'GRANT' )` — the role it names, else its name.
       if (called && !assignment && ROLE_CHECK.test(called)) {
         const role = /\b\w*(?:role|perm|auth|right)\w*\s*=\s*('(?:[^']|'')*'|`[^`]*`)/i.exec(t)?.[1];
-        (innermostDecision()?.armRoles ?? roles).push({ object: role ? unquote(role).toUpperCase() : called, line: s.lineStart });
+        roleScope().push({ object: role ? unquote(role).toUpperCase() : called, line: s.lineStart });
       }
       if (called && !assignment) {
         const asked = enclosingStates(frames, statements, constants);
@@ -576,11 +593,20 @@ export function readStateMachine(source: string, statementsIn?: readonly AbapSta
     // The field: at least two transitions to two values, read in a condition, and at least one move the code makes
     // only from a stated value — a field that is set from a result (a traffic light, a log severity, a dunning level)
     // is a classification, not a workflow. The most transitions wins, a tie none.
-    // A move whose routine states no from-value takes its callers' — only where every call of it asks for one.
+    // A move whose routine states no from-value takes its callers' — only where every call of it asks for one, and
+    // only where the name is one routine's: calls are read by the method's name alone, so two classes implementing
+    // it would hand one the other's callers.
+    const routinesByName = new Map<string, Set<string>>();
+    for (const key of routines) {
+      if (!key || key.startsWith('@')) continue;
+      const name = key.split(/=>|~/).pop() ?? key;
+      routinesByName.set(name, (routinesByName.get(name) ?? new Set<string>()).add(key));
+    }
     for (const f of found) {
       const t = f.transition;
       if (t.from.length || !t.routine) continue;
       const own = t.routine.split(/=>|~/).pop() ?? t.routine;
+      if ((routinesByName.get(own)?.size ?? 0) > 1) continue;
       const callers = callFrom.get(own);
       const values = callers?.values.get(f.word);
       if (!callers || !values?.length || callers.asked !== callers.sites) continue;

@@ -883,6 +883,8 @@ test('403-vs-404: what a refusal tells a stranger about a project they cannot se
       'app/api/projects/[projectId]/contract/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/repair-drafts/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/decision/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/customer-texts/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/customer-texts/route.ts#POST → 404 vs 404',
     ].sort(),
   );
   expect(oracle.sort(), 'a route told a stranger whether the project exists').toEqual([]);
