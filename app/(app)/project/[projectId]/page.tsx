@@ -54,6 +54,20 @@ function currentHash(): string {
  * no IT focus any more (ADR-057): an old link with `?focus=…` opens the
  * workspace as it would without it, because nothing here reads that parameter.
  */
+/**
+ * The fragment Business gives the address in the bar: an old layer address
+ * whose content is the map (`#need`) as the map's (`#process-map`), anything
+ * else as it is. A same-page arrival — `?view=it` then `?view=it#need`, no
+ * reload — sets no `arrival`; the shell sends it to Business, and this page
+ * renders that view while the bar may still read `#need` (Next writes the
+ * address after the render), so the place is read through the same rule
+ * (`lib/layer-redirect.ts`) rather than dropped (3.1.0).
+ */
+function businessPlaceOf(hash: string, hasActiveRun: boolean): string {
+  const there = layerRedirect('business', hash, { hasActiveRun });
+  return there?.kind === 'view' && there.view === 'business' ? `#${there.hash}` : hash;
+}
+
 export default function ProjectWorkspacePage() {
   const params = useParams();
   const router = useRouter();
@@ -130,7 +144,7 @@ export default function ProjectWorkspacePage() {
               ? `#${target.hash}`
               : typeof window === 'undefined'
                 ? ''
-                : window.location.hash,
+                : businessPlaceOf(window.location.hash, hasActiveRun),
         })
       : null;
   const sendTo = leavingHref !== null && !arrived ? leavingHref : toAnalyze;
