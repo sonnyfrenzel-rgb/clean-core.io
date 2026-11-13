@@ -121,3 +121,4 @@ export * from './messages/rule-questions';
 export * from './messages/first-look-findings';
 export * from './messages/portfolio';
 export * from './messages/analyze-business';
+export * from './messages/ai-names';

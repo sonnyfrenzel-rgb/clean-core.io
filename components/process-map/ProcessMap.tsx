@@ -46,8 +46,7 @@ import ProcessMiniMap from './ProcessMiniMap';
 import ProcessOutline from './ProcessOutline';
 import ProcessSearch from './ProcessSearch';
 import ProcessStepList from './ProcessStepList';
-import { mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
-import { aiLaneMark, aiMarkTooltip, aiNameMark } from '@/lib/messages/ai-names';
+import { aiLaneMark, aiMarkTooltip, aiNameMark, mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
 
 /** Where a viewer's choice to fold the outline is kept — this browser only. */
 const OUTLINE_KEY = 'cc.processMap.outline';

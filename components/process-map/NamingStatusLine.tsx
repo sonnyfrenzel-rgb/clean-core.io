@@ -4,7 +4,7 @@ import React from 'react';
 import { PenLine } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { MapNameArrival } from '@/lib/naming-arrival';
-import { aiNamesLegend } from '@/lib/messages/ai-names';
+import { aiNamesLegend } from '@/lib/workspace-messages';
 
 /**
  * The one status line under the map while the AI names arrive, and after — roadmap 3.1.0 item 4, mockup states 1, 2,

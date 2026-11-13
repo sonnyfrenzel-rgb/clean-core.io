@@ -33,7 +33,6 @@ import { useNamingArrival } from '@/hooks/useNamingArrival';
 import AskOnClick from './AskOnClick';
 import AutoStepsNotice from '@/components/AutoStepsNotice';
 import { namesWaitForNotice } from '@/lib/auto-steps-notice';
-import { namesWaitForNoticeNote } from '@/lib/messages/ai-names';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { StartRun } from '@/hooks/useStartRun';
 import { describeRunCost } from '@/lib/run-cost';
@@ -52,7 +51,7 @@ import type { OpenedRevision } from '@/components/process-map/BpmnEditor';
 import { signedSourceAbsence, signedSourceOf } from '@/lib/signed-source';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import type { NotDetermined, WorkspaceView } from '@/lib/workspace-model';
-import { bizLinesLabel, bizShowingLines, wt } from '@/lib/workspace-messages';
+import { bizLinesLabel, bizShowingLines, namesWaitForNoticeNote, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 import type { DraftHolder } from '@/lib/process-map-draft';
 
@@ -295,10 +294,11 @@ export default function WorkspaceProcess({
   const bumpNaming = useCallback(() => setNamingRead((n) => n + 1), []);
   /**
    * The business names wait for the one-time notice on automatic AI steps while the account has not confirmed the
-   * wording that names them (`lib/auto-steps-notice.ts`): the notice stands above the map, nothing is asked by
-   * itself or offered on a click, and the server refuses an automatic naming call until then.
+   * wording that names them (`lib/auto-steps-notice.ts`): the hook asks nothing by itself and offers no click, the
+   * notice stands above the map, and the server refuses an automatic naming call until then. Only where names would
+   * be asked for this map at all (`naming.waitsForNotice`): a map already named waits for nothing.
    */
-  const namesWait = !!owner && namesWaitForNotice({
+  const noticePending = !!owner && namesWaitForNotice({
     known: availability.known,
     keyAvailable: availability.keyAvailable,
     autoSteps: availability.autoSteps,
@@ -316,7 +316,8 @@ export default function WorkspaceProcess({
     onStored: bumpNaming,
     // 3.0.21 (owner decision B6): by itself only on the platform key or with
     // "Automatic steps" on for the own key; otherwise on a click.
-    autoAllowed: availability.autoSteps && !namesWait,
+    autoAllowed: availability.autoSteps,
+    awaitNotice: noticePending,
     engineVersion: engineVersionOfProject(project),
     // 3.1.0 (roadmap item 1): names only with the engine's facts — the ask hands
     // them over exactly when the context for this run's engine carries them.
@@ -827,9 +828,9 @@ export default function WorkspaceProcess({
         >
           {wt('biz.needAndProcess')}
         </h2>
-        <AskOnClick askNow={namesWait ? null : naming.askNow} step="names" />
+        <AskOnClick askNow={naming.askNow} step="names" />
       </div>
-      {namesWait ? (
+      {naming.waitsForNotice ? (
         <div data-names-wait-notice="" className="flex flex-col gap-2">
           <AutoStepsNotice model={availability} reader={!owner} />
           <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{namesWaitForNoticeNote()}</p>

@@ -242,11 +242,15 @@ test.describe('B2: the business names wait for the notice in the wording that na
 
   test('the page asks nothing by itself and offers no click while the names wait, and says so above the map', () => {
     const page = read('components/workspace/WorkspaceProcess.tsx');
-    expect(page).toContain('autoAllowed: availability.autoSteps && !namesWait,');
-    expect(page).toContain('<AskOnClick askNow={namesWait ? null : naming.askNow} step="names" />');
+    expect(page).toMatch(/const noticePending = !!owner && namesWaitForNotice\(\{/);
+    expect(page).toContain('awaitNotice: noticePending,');
+    expect(page).toContain('{naming.waitsForNotice ? (');
     expect(page).toContain('<AutoStepsNotice model={availability} reader={!owner} />');
     expect(page).toContain('{namesWaitForNoticeNote()}');
-    expect(page).toMatch(/const namesWait = !!owner && namesWaitForNotice\(\{/);
+    const hook = read('hooks/useAutoProcessNaming.ts');
+    // Waiting for the notice: no mode at all, so neither the automatic ask nor the click.
+    expect(hook).toContain('const mode = projectId && digest && !awaitNotice ? askModeOf({ wanted, autoAllowed }) : null;');
+    expect(hook).toContain('waitsForNotice: awaitNotice && wanted && !!projectId && !!digest,');
     expect(namesWaitForNoticeNote('en')).toBe(
       'The steps keep the names the engine read from the code. AI-generated names start only once you have confirmed the notice above.',
     );
