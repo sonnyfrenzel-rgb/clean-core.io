@@ -373,7 +373,7 @@ test.describe('the demo costs an account nothing', () => {
   test('an account finds it in the workspace, walks it, and still owns no project', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+    await page.click('[data-header-sign-in]');
     await page.waitForSelector('input[type="email"]');
     await page.fill('input[type="email"]', EMAIL);
     await page.fill('input[type="password"]', PASSWORD);

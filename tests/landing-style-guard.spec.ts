@@ -257,7 +257,7 @@ test.describe('the page does not scroll sideways', () => {
       const loading = await measureOverflow(page, width);
       await page
         .locator('header')
-        .getByRole('link', { name: /Get Free Access/i })
+        .getByRole('link', { name: /^Sign in$/ })
         .waitFor({ state: 'visible', timeout: 20_000 });
       const settled = await measureOverflow(page, width);
 

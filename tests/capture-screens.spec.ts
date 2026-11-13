@@ -253,7 +253,7 @@ test.describe('capture', () => {
     const notes: string[] = [];
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+    await page.click('[data-header-sign-in]');
     await page.waitForSelector('input[type="email"]');
     // The access dialog is the first thing a new user fills in.
     await page.waitForTimeout(800);
@@ -407,7 +407,7 @@ test.describe('capture the landing page views', () => {
 
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto('/');
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+    await page.click('[data-header-sign-in]');
     await page.waitForSelector('input[type="email"]');
     await page.fill('input[type="email"]', email);
     await page.fill('input[type="password"]', PASSWORD);

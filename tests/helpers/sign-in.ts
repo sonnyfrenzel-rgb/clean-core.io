@@ -47,7 +47,7 @@ export async function signInViaLanding(
   const { pauseMs = SIGN_IN_PAUSE_MS, alsoGermanLabel = false, gotoTimeout } = options;
   if (gotoTimeout === undefined) await page.goto('/');
   else await page.goto('/', { timeout: gotoTimeout });
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+  await page.click('[data-header-sign-in]');
   await page.waitForSelector('input[type="email"]');
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);

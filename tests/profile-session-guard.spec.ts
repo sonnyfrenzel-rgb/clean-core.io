@@ -159,7 +159,7 @@ const documentOf = (uid: string) => `users/${uid}`;
  * all.
  */
 async function signInOnCurrentPage(page: Page, account: Account) {
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+  await page.click('[data-header-sign-in]');
   await page.waitForSelector('input[type="email"]');
   await page.fill('input[type="email"]', account.email);
   await page.fill('input[type="password"]', PASSWORD);

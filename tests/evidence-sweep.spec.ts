@@ -132,7 +132,7 @@ async function startSweep(page: Page, projectId: string, { pauseClock }: { pause
   await page.route('**/api/runs/create', () => { /* never answered */ });
 
   await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+  await page.click('[data-header-sign-in]');
   await page.waitForSelector('input[type="email"]');
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', SIGN_IN);

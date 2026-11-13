@@ -55,7 +55,7 @@ const STEPS: Step[] = [
     where: 'clean-core.io',
     action: 'Sign in with the account you registered',
     detail:
-      'Use "Get Free Access" in the top right. Registering activates the account immediately — there is nothing to approve and no waiting list — and you land on the dashboard.',
+      'Use "Start free" in the top right. Registering activates the account immediately — there is nothing to approve and no waiting list — and you land on the dashboard.',
     // Roadmap 0.2 (UX-084). This line quoted the header as "0 / 5
     // Transformations" — used-of-total — while the header itself has said
     // remaining-of-total since the dashboard and the transformation stage were

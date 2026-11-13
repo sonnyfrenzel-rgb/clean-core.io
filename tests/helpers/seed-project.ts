@@ -200,7 +200,7 @@ export async function seedStageProject(options: SeedOptions): Promise<SeededProj
  */
 export async function signInThroughForm(page: Page, account: { email: string; password: string }): Promise<void> {
   await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+  await page.click('[data-header-sign-in]');
   await page.waitForSelector('input[type="email"]');
   await page.fill('input[type="email"]', account.email);
   await page.fill('input[type="password"]', account.password);

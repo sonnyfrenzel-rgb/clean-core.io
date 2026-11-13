@@ -55,7 +55,7 @@ const PROJECT_ID = unique('a11y-case');
 
 async function signIn(page: Page): Promise<void> {
   await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+  await page.click('[data-header-sign-in]');
   await page.waitForSelector('input[type="email"]');
   await page.fill('input[type="email"]', ADMIN);
   await page.fill('input[type="password"]', PASSWORD);

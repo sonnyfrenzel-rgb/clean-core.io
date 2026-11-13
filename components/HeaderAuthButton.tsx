@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type { User } from 'firebase/auth';
 import { subscribeToAuth } from '@/lib/auth-subscribe';
@@ -39,7 +40,7 @@ export default function HeaderAuthButton({ signInHref = '?auth=signin' }: { sign
     // button does. At 176px flat it was 21px wider than a 320px header could
     // hold, and the whole page scrolled sideways until auth resolved. It stands
     // still: a pulsing block is motion without a state change (§1.7, §5.4).
-    return <div aria-hidden={true} className="h-10 w-32 sm:w-44 rounded-cc-row bg-cc-surface-muted" />;
+    return <div aria-hidden={true} className="h-10 w-40 sm:w-44 rounded-cc-row bg-cc-surface-muted" />;
   }
 
   if (user) {
@@ -53,13 +54,18 @@ export default function HeaderAuthButton({ signInHref = '?auth=signin' }: { sign
     );
   }
 
+  // Landing page 3.5 (owner decision O9, 13.11.2026): "Sign in" as a text link
+  // and "Start free" in the secondary style, so a page's own filled button stays
+  // the one primary. Both open the same, unchanged dialog — sign-in and sign-up
+  // are one dialog. Together they fit a 320px header next to the mark.
   return (
-    <CcLinkButton href={signInHref} variant="primary" density="compact">
-      {/* The full label does not fit a 320px header next to the wordmark, and it
-          could not shrink, so it pushed the page sideways. Everything from `sm`
-          up — every width the page has been reviewed at — is unchanged. */}
-      <span className="sm:hidden">Get Free Access</span>
-      <span className="hidden sm:inline">Get Free Access or Login</span>
-    </CcLinkButton>
+    <span className="flex items-center gap-3 sm:gap-4">
+      <Link href={signInHref} data-header-sign-in="" className="whitespace-nowrap py-2 text-[15px] font-bold text-cc-ink underline-offset-4 hover:underline">
+        Sign in
+      </Link>
+      <CcLinkButton href={signInHref} variant="secondary" density="compact" data-header-start="">
+        Start free
+      </CcLinkButton>
+    </span>
   );
 }

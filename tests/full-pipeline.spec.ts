@@ -156,7 +156,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await expect(page).toHaveTitle(/Clean-Core/i);
 
     // Open Sign-In Modal
-    await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+    await page.click('[data-header-sign-in]');
     await page.waitForSelector('input[type="email"]');
 
     // Fill Credentials
