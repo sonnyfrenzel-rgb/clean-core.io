@@ -601,6 +601,15 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
 
 #### AB-7 — Two charts under the map, and the flag-only branch · M
 
+- **Status (13.11.2026, branch `night/320-ab7`, not on `dev`):** the **chart part is built**, the **engine part (N7)
+  is out** of this release by the owner decision of 06.11.2026 and not built. `lib/process-fact-charts.ts` (pure:
+  `caseEndsOf`, `dataUseOf`), `components/analyze/ProcessFactCharts.tsx` below the map, the map's spotlight
+  ("Showing: … · Clear", `lib/process-map-spotlight.ts`, the map's own `lit` highlight); written as **ADR-117** (the
+  plan's ADR-114 was taken), which records one deviation: the stops are grouped by the step a case stops in, with
+  the program's stop texts under each row. `process-fact-charts` added (server-free): the chart sums equal the map's
+  end events on all seven starter examples (Z_MM_PO_APPROVAL 9, Z_SD_FREIGHT_RATE_CHECK 5, the 1000-line example 9,
+  Z_INVOICE_EXTRACTOR 2, the other three 1). **Open:** [look] for states 8 and 9 and the rendered specs (coordinator).
+
 - **Scope:** "How a case can end" (ends grouped by reason, P9) and "What it changes, what it only reads", each with
   its sentence, its lines, *Reconstructed*, every row a button that highlights the elements ("Showing: … · Clear");
   style of `components/TestingCharts.tsx` and `DESIGN.md` §1.8. Engine: the label on a default arm whose body only sets
