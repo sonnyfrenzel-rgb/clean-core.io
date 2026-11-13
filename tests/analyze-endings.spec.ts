@@ -377,13 +377,17 @@ test.describe('"Hide" in a browser (server-free, intercepted origin)', () => {
 /* ------------------------------------------------------------------ rendered */
 
 test.describe('rendered: the endings and the soft gate in Analyze, Business (needs the emulators and a server)', () => {
-  test('the soft gate holds Design once, nothing locked; after the tour the endings and "What you can do next"; Hide survives a reload without a write', async ({ page }) => {
+  test('the soft gate holds Design once, nothing locked; after the tour the endings and "What you can do next"; Hide survives a reload without a write', async ({ page, browser }) => {
     test.setTimeout(420_000);
     const seeded = await seedLayoutProject('ab4-endings');
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInThroughForm(page, seeded);
+    // The page grades the findings' objects once on load (`/api/abcd-classify`, a read). On a fast server the
+    // whole walk below fits before that answer, so it is awaited here and cannot fall into the Hide window.
+    const levelLookup = page.waitForResponse((res) => res.url().includes('/api/abcd-classify'), { timeout: 120_000 });
     await page.goto(`/project/${seeded.po}/analyze`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-analyze-walk=""]')).toBeVisible({ timeout: 120_000 });
+    await levelLookup;
     await expect(page.locator('[data-stage-tools-note]')).toHaveText('Best after the business walk-through');
 
     // State 10: Design clicked before the walk-through — one calm note, the page stays.
@@ -422,6 +426,9 @@ test.describe('rendered: the endings and the soft gate in Analyze, Business (nee
     // 9b: Hide, a reload, still hidden — and no Firestore write on the way.
     const writes: string[] = [];
     page.on('request', (req) => {
+      // `/api/csp-report` is the browser's own report-only CSP telemetry (here a listener closing its channel to the
+      // emulator host): the browser sends it, not Hide, and it stores nothing (ADR-065).
+      if (req.url().includes('/api/csp-report')) return;
       if (/\/Write\/channel|:commit|documents\/[^?]*\?|\/api\//.test(req.url()) && req.method() !== 'GET') writes.push(`${req.method()} ${req.url()}`);
     });
     await page.locator('[data-analyze-what-next-hide]').click();
@@ -436,11 +443,20 @@ test.describe('rendered: the endings and the soft gate in Analyze, Business (nee
     // State 17 on a second visit: "Welcome back", no banner; a second project is unaffected.
     await expect(page.locator('[data-analyze-walked="return"]')).toContainText('Welcome back');
     const other = await seedLayoutProject('ab4-endings-other');
-    await signInThroughForm(page, other);
-    await page.goto(`/project/${other.po}/analyze`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-analyze-walk=""]')).toBeVisible({ timeout: 120_000 });
-    await expect(page.locator('[data-analyze-walked]')).toHaveCount(0);
-    await expect(page.locator('[data-stage-tools-note]')).toHaveText('Best after the business walk-through');
+    // The other account signs in through the form, which a signed-in browser does not show: the same browser's
+    // storage (where the walk-through is kept) in a new context, without the first account's session.
+    const second = await browser.newContext({ storageState: await page.context().storageState(), viewport: { width: 1440, height: 900 } });
+    const page2 = await second.newPage();
+    await signInThroughForm(page2, other);
+    await page2.goto(`/project/${other.po}/analyze`, { waitUntil: 'domcontentloaded' });
+    await expect(page2.locator('[data-analyze-walk=""]')).toBeVisible({ timeout: 120_000 });
+    await expect(page2.locator('[data-analyze-walked]')).toHaveCount(0);
+    await expect(page2.locator('[data-stage-tools-note]')).toHaveText('Best after the business walk-through');
+    expect(
+      await page2.evaluate((id) => window.localStorage.getItem(`cc.analyze.walked.${id}`), seeded.po),
+      'the walk-through of the first project is not in the browser the second project opens in',
+    ).not.toBeNull();
+    await second.close();
   });
 
   test('an invited reader: the owner can re-design it, the other ending opens the reader\'s own list (P8)', async ({ browser }) => {
