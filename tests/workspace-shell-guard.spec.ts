@@ -556,15 +556,18 @@ test.describe('every account opens its own projects in the workspace — and onl
 
     // A stage is a tool of it: the shell path names the project from the
     // stage's own read (D.29) and leads back to the workspace, the stage's own
-    // way back does too, and the seven tools stand under it. (Design: Analyze in
-    // Business is the entry, whose way back is My workspace, ADR-109.)
-    await page.goto(`/project/${PROJECT_ID}/design`, { waitUntil: 'domcontentloaded' });
+    // way back does too, and the seven tools stand under it. Analyze in IT:
+    // Analyze in Business is the entry, whose way back is My workspace, and IT
+    // stays on the workspace (ADR-109 (2), (3)); every later stage sends a
+    // project without a signed run to Analyze (`lib/run-guard.ts`), and this
+    // one has none.
+    await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60000 });
     const crumb = page.locator('header [data-shell-path] [data-shell-path-project]');
     await expect(crumb).toHaveText('A community project', { timeout: 30000 });
-    await expect(crumb).toHaveAttribute('href', `/project/${PROJECT_ID}`);
-    await expect(page.locator('header [data-shell-path] [aria-current="page"]')).toHaveText('Design');
-    await expect(page.locator('[data-stage-back]')).toHaveAttribute('href', `/project/${PROJECT_ID}`);
+    await expect(crumb).toHaveAttribute('href', `/project/${PROJECT_ID}?view=it`);
+    await expect(page.locator('header [data-shell-path] [aria-current="page"]')).toHaveText('Analyze');
+    await expect(page.locator('[data-stage-back]')).toHaveAttribute('href', `/project/${PROJECT_ID}?view=it`);
     await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool]')).toHaveCount(7);
     await expect(page.locator('nav[aria-label="Workflow phases"]'), 'the old stepper').toHaveCount(0);
     // No project search on a stage, so no search button in the shell.
