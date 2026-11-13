@@ -205,8 +205,10 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
   // As a project's Analyze, Business: the map draws no code of its own (`layout="page"`); the chosen step's lines
   // stand in a panel beside it, closed by its own button (`WorkspaceProcess` `codeOnClick`).
   const [fullSource, setFullSource] = useState(false);
+  // The lines an anchor of the summary opened, when no step of the map is chosen.
+  const [anchorLines, setAnchorLines] = useState<{ lineStart: number; lineEnd: number } | null>(null);
   const selectedElement = selected ? processMap.elements.find((e) => e.id === selected) ?? null : null;
-  const marked = selectedElement?.anchor ?? null;
+  const marked = selectedElement?.anchor ?? anchorLines;
   const codeLines: CcCodeLine[] = useMemo(() => {
     if (!marked) return [];
     if (!fullSource) return codeCardLines(source, marked, SOURCE_CONTEXT);
@@ -218,7 +220,17 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
   }, [source, marked, fullSource]);
   const closeCode = useCallback(() => {
     setSelected(null);
+    setAnchorLines(null);
     setFullSource(false);
+  }, []);
+  const selectStep = useCallback((id: string | null) => {
+    setAnchorLines(null);
+    setSelected(id);
+  }, []);
+  const openAnchor = useCallback((lineStart: number, lineEnd: number) => {
+    setSelected(null);
+    setAnchorLines({ lineStart, lineEnd });
+    document.getElementById(BUSINESS_MAP_ID)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   }, []);
 
   /* ------------------------------------------------- the invitation, the walk */
@@ -358,7 +370,10 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
                       {line.anchors[0] ? (
                         <>
                           {' '}
-                          <CcAnchor label={`${wt('firstLook.sourceLine')} L${line.anchors[0].lineStart}`}>{`L${line.anchors[0].lineStart}`}</CcAnchor>
+                          <CcAnchor
+                            label={`${wt('firstLook.sourceLine')} L${line.anchors[0].lineStart}`}
+                            onOpen={() => openAnchor(line.anchors[0].lineStart, line.anchors[0].lineEnd)}
+                          >{`L${line.anchors[0].lineStart}`}</CcAnchor>
                         </>
                       ) : null}
                       {i < inShort.length - 1 ? ' ' : null}
@@ -407,7 +422,7 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
                     plane={plane}
                     onPlaneChange={setPlane}
                     selected={selected}
-                    onSelectedChange={setSelected}
+                    onSelectedChange={selectStep}
                     defaultView="map"
                     canvasControls
                     layout="page"

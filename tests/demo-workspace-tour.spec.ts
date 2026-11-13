@@ -289,6 +289,23 @@ test('the demo\'s Analyze, Business draws the map as a project\'s: the page layo
   await expect(panel).toHaveCount(0);
 });
 
+test('a line anchor of the demo\'s summary opens its lines in the code panel', async ({ page }) => {
+  test.setTimeout(240 * 1000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page, ADMIN);
+  await openDemo(page, '?view=business');
+  const anchor = page.locator('[data-analyze-summary-text] button[data-cc-anchor]').first();
+  await expect(anchor, 'the summary\'s line anchor is no link').toBeVisible({ timeout: 90000 });
+  const line = Number((await anchor.textContent())?.replace(/^L/, ''));
+  await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
+  await anchor.click();
+  const panel = page.locator('[data-analyze-code-panel]');
+  await expect(panel, 'the anchor opened no code').toBeVisible({ timeout: 30000 });
+  await expect(panel.locator('[data-cc-code-line="highlighted"]').first()).toContainText(String(line));
+  await page.locator('[data-analyze-code-close]').click();
+  await expect(panel).toHaveCount(0);
+});
+
 test('opening the demo\'s Analyze, Business clears "result ready" on the demo workspace\'s Analyze tool (QA review 268ed7624e53)', async ({ page }) => {
   test.setTimeout(240 * 1000);
   await signIn(page, ADMIN);
