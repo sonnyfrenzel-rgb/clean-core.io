@@ -31,6 +31,23 @@ test('both screens with an editor set the base through it', () => {
   }
 });
 
+test("the editor in the map's full screen on Analyze saves through the same base (AB-5)", () => {
+  // Plan AB-5 (3.2.0): on Analyze, Business the editor is full screen's. It is the map's one editor mounting, handed
+  // the process block's `save` and `openLatest`, so its saves move the same base as before.
+  const map = fs.readFileSync(path.resolve(__dirname, '..', 'components/process-map/ProcessMap.tsx'), 'utf8');
+  expect(map.match(/<BpmnEditor\b/g) ?? []).toHaveLength(1);
+  const mount = map.slice(map.indexOf('<BpmnEditor'), map.indexOf('/>', map.indexOf('<BpmnEditor')));
+  expect(mount).toContain('save={save}');
+  expect(mount).toContain('openLatest={openLatest}');
+  expect(map).toContain('body: fsEditBody ? editorElement(true) : null,');
+  const process = fs.readFileSync(path.resolve(__dirname, '..', 'components/workspace/WorkspaceProcess.tsx'), 'utf8');
+  // The element, not a generic such as `useRef<ProcessMapModel | null>`.
+  const at = process.search(/<ProcessMap(?=[\s/>])/);
+  const props = process.slice(at, process.indexOf('/>', at));
+  expect(props).toContain('save={save}');
+  expect(props).toContain('openLatest={openLatest}');
+});
+
 test('the opening baseline on the documentation stage cannot set the base back either', () => {
   // Carried QA finding 85a623a08fcf: the baseline asked for on opening answered
   // after a Save had moved the base to 2, and set it back to 1.

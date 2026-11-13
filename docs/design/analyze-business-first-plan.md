@@ -582,6 +582,16 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
 
 #### AB-5 — Full screen: navigate, Edit, tour · M
 
+- **Status (13.11.2026, branch `night/320-ab5`, not on `dev`):** built (ADR-119). The map's own full screen on the page layout
+  carries one bar and a side column (`components/process-map/ProcessFullScreen.tsx`, `BpmnCanvas` `fullscreenParts`);
+  *Edit* (off on open) puts today's `BpmnEditor` (`embedded`: *Save as revision*, the N8 sentence) in the canvas's place
+  on the same draft and save; *Edit model* under the map opens it; a phone gets *Edit* disabled with a sentence (P3).
+  **Deviations:** the mechanism is the existing full screen re-dressed, not a new dialog; zoom, fit and the overview
+  are the editor's own row while editing; the tour in the side column is a slot (`tourPanel`) for AB-4's card — until
+  it is filled, *Walk me through it* starts today's tour over full screen; the demo keeps the old full screen (O10).
+  Server-free specs green; `analyze-fullscreen` (rendered half), `process-map-phone-fit`, `workspace-revision-stand`,
+  `process-map-fullscreen-levels` to run on the production build. **Open:** [look] for 14, 15, 16.
+
 - **Scope:** states 14, 15, 16: one bar (find a step with hits by displayed name, zoom, fit, overview map, "Edit"
   toggle off on open, "Walk me through it", "Leave full screen"), editing as today's `BpmnEditor` behind the toggle with
   "Save as revision" and the N8 sentence, the tour in the side column, code on click; "Leave full screen" returns to

@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { createDraftHolder, draftFor, type DraftHolder } from '@/lib/process-map-draft';
-import React, { useCallback, useId, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Code2, Keyboard, List, Map as MapIcon, PanelLeftClose, PanelLeftOpen, Pencil } from 'lucide-react';
 import CcIconButton from '@/components/cc/IconButton';
@@ -47,6 +47,9 @@ import ProcessMiniMap from './ProcessMiniMap';
 import ProcessOutline from './ProcessOutline';
 import ProcessSearch from './ProcessSearch';
 import ProcessStepList from './ProcessStepList';
+import type { CanvasFullscreenParts } from './BpmnCanvas';
+import { FullScreenBar, FullScreenRail } from './ProcessFullScreen';
+import type { ProcessSearchResults } from './ProcessSearch';
 import { mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
 
 /** Where a viewer's choice to fold the outline is kept — this browser only. */
@@ -257,6 +260,16 @@ export interface ProcessMapProps {
   spotlight?: MapSpotlight | null;
   /** *Clear* beside "Showing: …". */
   onClearSpotlight?: () => void;
+  /**
+   * Plan AB-5 (3.2.0, `layout="page"` only): *Walk me through it* in the full-screen bar — the caller starts its tour
+   * the way the page's own button does (`requestProcessWalk`). Absent: no such button in full screen.
+   */
+  onWalk?: (() => void) | null;
+  /**
+   * The walk-through's card while it runs, for the full-screen side column (AB-5, mockup state 16). The caller owns
+   * the tour; given, it stands first in the column and the bar offers no second start.
+   */
+  tourPanel?: React.ReactNode;
 }
 
 export default function ProcessMap({
@@ -284,6 +297,8 @@ export default function ProcessMap({
   nameArrival = null,
   spotlight = null,
   onClearSpotlight,
+  onWalk = null,
+  tourPanel = null,
 }: ProcessMapProps) {
   const stage = layout === 'stage';
   /** Analyze, Business: the canvas first, everything about it under it, the code in the caller's panel. */
@@ -621,6 +636,54 @@ export default function ProcessMap({
     setSession((token) => token + 1);
   }, [drafts]);
 
+  /* ---------------- full screen on Analyze, Business — plan AB-5 (3.2.0) ---------------- */
+
+  /**
+   * Full screen on the page layout is a dialog of its own (`ProcessFullScreen.tsx`, ADR-119): one bar, a side column,
+   * and editing behind *Edit*, which is off whenever full screen opens — unless *Edit model* opened it. The editor
+   * there is today's (`BpmnEditor` `embedded`), on the same draft as everywhere (`drafts`), so a draft left unsaved
+   * survives leaving full screen and opens again on the way back in. The frame, the focus and Escape are
+   * `BpmnCanvas`'s (`fullscreenParts`); leaving returns to the same level and selection, because they are this map's.
+   */
+  const [fsOpen, setFsOpen] = useState(false);
+  const [fsEditing, setFsEditing] = useState(false);
+  const [fsView, setFsView] = useState<ProcessMapView>('map');
+  const [fsOverview, setFsOverview] = useState(true);
+  const [fsResults, setFsResults] = useState<ProcessSearchResults | null>(null);
+  const fsListId = useId();
+  /** The request handed to the canvas: a fresh number per ask, 0 once full screen stands. */
+  const [fsRequest, setFsRequest] = useState(0);
+  const fsAsks = useRef(0);
+  const fsEditOnOpen = useRef(false);
+  /** Why *Edit* cannot be switched on here, or null: an invited reader (P8), a phone (P3, `DESIGN.md` §5.7). */
+  const fsEditBlocked = !canEdit ? wt('input.ownerOnly') : isPhone ? wt('fullScreen.editPhone') : null;
+  const fsEditBody = page && fsOpen && fsEditing && fsEditBlocked === null;
+  const phoneRef = useRef(isPhone);
+  useEffect(() => {
+    phoneRef.current = isPhone;
+  });
+  const onFullscreenChange = useCallback((filled: boolean) => {
+    setFsOpen(filled);
+    // The overview map stands beside the canvas from a tablet up; on a phone it would take the canvas's height.
+    if (filled) setFsOverview(!phoneRef.current);
+    setFsEditing(filled && fsEditOnOpen.current);
+    setFsView('map');
+    fsEditOnOpen.current = false;
+    if (filled) setFsRequest(0);
+  }, []);
+  /** *Edit model* on the page: full screen with *Edit* on — the one place the page edits. */
+  const openEditing = useCallback(() => {
+    fsEditOnOpen.current = true;
+    fsAsks.current += 1;
+    setFsRequest(fsAsks.current);
+  }, []);
+  /** *Walk me through it* in full screen: the reading map comes back first, the draft stays where it is. */
+  const walkInFullScreen = useCallback(() => {
+    setFsEditing(false);
+    setFsView('map');
+    onWalk?.();
+  }, [onWalk]);
+
   /**
    * Open a step: its level, its selection and the focus, in that order.
    *
@@ -642,6 +705,11 @@ export default function ProcessMap({
     setFound(new Set(searchProcess(model, nav, hit.outline).map((entry) => entry.id)));
     reach(hit.id, true);
   }, [model, nav, reach]);
+  /** A hit found in full screen (AB-5): the outline is behind the dialog, so the focus goes with the step's code card. */
+  const onJumpInFullScreen = useCallback((hit: ProcessSearchHit) => {
+    setFound(new Set(searchProcess(model, nav, hit.outline).map((entry) => entry.id)));
+    reach(hit.id, false);
+  }, [model, nav, reach]);
 
   /**
    * `Alt+↑` — one level up, from anywhere in the view (`DESIGN.md` §5.9 item
@@ -649,7 +717,7 @@ export default function ProcessMap({
    * levels are the ones it walks.
    */
   const planeEntry = plane ? nav.entries.get(plane) : null;
-  useLevelUpKey(planeEntry && !editing ? () => setPlane(planeEntry.plane) : null);
+  useLevelUpKey(planeEntry && !editing && !fsEditBody ? () => setPlane(planeEntry.plane) : null);
 
   /* ---------------- the map and the step list, unchanged from 2.5 ---------------- */
 
@@ -806,7 +874,9 @@ export default function ProcessMap({
         aria-describedby={!canEdit ? ownerOnlyId : undefined}
         onClick={() => {
           setView('map');
-          setEditing((was) => !was);
+          // AB-5: on Analyze, Business the editor is full screen's, behind its *Edit* switch.
+          if (page) openEditing();
+          else setEditing((was) => !was);
         }}
       >
         {wt(editing ? 'map.stopEditing' : 'map.editModel')}
@@ -830,6 +900,137 @@ export default function ProcessMap({
       {openProblem.counters}. {openProblem.text}
     </p>
   ) : null;
+
+  /**
+   * The modeller, inline (the workspace, the Documentation stage) or in full screen on the page layout (AB-5,
+   * `embedded`) — one mounting, so the draft, the key and the save are the same wherever it is drawn.
+   */
+  const editorElement = (embedded: boolean) => (
+          <BpmnEditor
+            // `session` is what *Discard* bumps; `source` is what a different
+            // process changes. Either one has to build a new modeller: keeping
+            // the old instance would keep the old drawing inside it, whatever
+            // `openWith` now returns.
+            key={`${session}|${projectId ?? ''}|${source}`}
+            openWith={openWith}
+            baseXml={modelProp.technicalXml ?? modelProp.xml}
+            istXml={modelProp.xml}
+            fileName={model.fileName}
+            source={source}
+            label={`${model.processName}. ${model.overview}`}
+            labels={plainLabels}
+            proposals={proposals}
+            proposedLanes={model.lanes}
+            technical={technical}
+            selected={selected}
+            onSelectedChange={setSelected}
+            onDraftChange={keepDraft}
+            onDiscard={discardDraft}
+            save={save}
+            openLatest={openLatest}
+            exportable={exportable}
+            processName={model.processName}
+            embedded={embedded}
+          />
+  );
+
+  /** AB-5: what full screen shows on the page layout — the bar, the side column, the steps and the editor. */
+  const fullscreenParts: CanvasFullscreenParts | null = page ? {
+    label: wt('fullScreen.dialogLabel'),
+    bar: (tools) => (
+      <FullScreenBar
+        tools={tools}
+        processName={model.processName}
+        place={(
+          <div className="flex flex-wrap items-center gap-2">
+            <CcSegmentedControl<ProcessMapView>
+              label={wt('map.viewLabel')}
+              value={fsView}
+              onChange={setFsView}
+              segments={[
+                { value: 'map', label: wt('map.viewMap'), icon: <MapIcon size={14} aria-hidden={true} /> },
+                { value: 'steps', label: wt('map.viewSteps'), icon: <List size={14} aria-hidden={true} /> },
+              ]}
+            />
+            <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />
+          </div>
+        )}
+        steps={fsView === 'steps'}
+        search={<ProcessSearch model={model} nav={nav} onJump={onJumpInFullScreen} compact onResults={setFsResults} listId={fsListId} />}
+        editing={fsEditBody}
+        overview={fsOverview}
+        onOverviewChange={setFsOverview}
+        extra={(
+          // The keyboard help, as in the inline row; its hint stands in the side column.
+          <span className="hidden md:inline-flex">
+            <CcIconButton
+              data-process-map-help-toggle=""
+              label={wt('map.keyboardHelp')}
+              text={wt('map.keyboardShort')}
+              aria-expanded={helpOpen}
+              onClick={() => setHelpOpen((was) => !was)}
+            >
+              <Keyboard size={16} aria-hidden={true} />
+            </CcIconButton>
+          </span>
+        )}
+        editBlocked={fsEditBlocked}
+        onEditingChange={setFsEditing}
+        onWalk={onWalk && !tourPanel ? walkInFullScreen : null}
+      />
+    ),
+    rail: (
+      <FullScreenRail
+        tour={tourPanel}
+        code={selectedElement ? (
+          <ProcessCodeCard
+            element={selectedElement}
+            source={source}
+            fileName={model.fileName}
+            onClose={() => {
+              setSelected(null);
+              setFocusToken((token) => token + 1);
+            }}
+          />
+        ) : null}
+        results={fsResults}
+        listId={fsListId}
+        byId={byId}
+        onJump={onJumpInFullScreen}
+        help={helpOpen ? (
+          <p
+            data-process-map-hint=""
+            className="m-0 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3 text-[13px] font-medium text-cc-ink-muted"
+          >
+            {mapKeyboardHint(true)}
+          </p>
+        ) : null}
+        overview={fsOverview ? (
+          <ProcessMiniMap
+            rows={rows}
+            plane={plane}
+            selected={selected}
+            found={found}
+            excluded={variant.excluded}
+            onSelect={(id) => reach(id, false)}
+          />
+        ) : null}
+      />
+    ),
+    alternate: fsView === 'steps' ? (
+      <ProcessStepList
+        elements={planeElements}
+        label={mapStepsLabel(model.overview)}
+        active={active}
+        selected={selected}
+        onActivate={activate}
+        onActiveChange={setActive}
+        focusToken={focusToken}
+        onKeyDown={handleKeyDown}
+      />
+    ) : null,
+    body: fsEditBody ? editorElement(true) : null,
+  } : null;
 
   return (
     <section data-process-map="" data-process-map-layout-kind={layout} aria-label={wt('map.sectionLabel')} className="flex flex-col gap-3">
@@ -894,31 +1095,7 @@ export default function ProcessMap({
           // Editing takes the whole width: the outline, the filters and the code
           // card belong to reading, and the properties panel shows the code of
           // the element on the canvas.
-          <BpmnEditor
-            // `session` is what *Discard* bumps; `source` is what a different
-            // process changes. Either one has to build a new modeller: keeping
-            // the old instance would keep the old drawing inside it, whatever
-            // `openWith` now returns.
-            key={`${session}|${projectId ?? ''}|${source}`}
-            openWith={openWith}
-            baseXml={modelProp.technicalXml ?? modelProp.xml}
-            istXml={modelProp.xml}
-            fileName={model.fileName}
-            source={source}
-            label={`${model.processName}. ${model.overview}`}
-            labels={plainLabels}
-            proposals={proposals}
-            proposedLanes={model.lanes}
-            technical={technical}
-            selected={selected}
-            onSelectedChange={setSelected}
-            onDraftChange={keepDraft}
-            onDiscard={discardDraft}
-            save={save}
-            openLatest={openLatest}
-            exportable={exportable}
-            processName={model.processName}
-          />
+          editorElement(false)
         )
       ) : (
         <>
@@ -1076,6 +1253,9 @@ export default function ProcessMap({
               )}
               names={canvasNames}
               growToLevel={page}
+              fullscreenParts={fullscreenParts}
+              fullscreenRequest={fsRequest}
+              onFullscreenChange={page ? onFullscreenChange : undefined}
               toolsPanel={helpOpen ? (
                 <p
                   data-process-map-hint=""

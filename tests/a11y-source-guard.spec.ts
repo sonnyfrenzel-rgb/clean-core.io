@@ -295,3 +295,48 @@ test.describe('the stylesheet (§1.1, §7.1)', () => {
     expect(read('app/(app)/clean-core-explained/page.tsx')).toContain('role="columnheader"');
   });
 });
+
+test.describe('the map in full screen on Analyze, Business (AB-5, 3.2.0)', () => {
+  const canvas = code('components/process-map/BpmnCanvas.tsx');
+  const bar = code('components/process-map/ProcessFullScreen.tsx');
+  const hook = code('components/process-map/useCanvasFullscreen.ts');
+
+  test('it is a dialog with a name', () => {
+    expect(canvas).toContain("role={own ? 'dialog' : undefined}");
+    expect(canvas).toContain('aria-label={own ? fullscreenParts.label : undefined}');
+    expect(read('lib/messages/analyze-fullscreen.ts')).toContain("'fullScreen.dialogLabel': 'Process map, full screen'");
+  });
+
+  test('the focus moves in on open (to the way out), Tab stays inside, and the focus comes back on leaving', () => {
+    // In: the hook focuses `toggleRef`; in full screen that is the bar's "Leave full screen".
+    expect(hook).toContain('toggleRef.current?.focus();');
+    expect(canvas).toContain('const leaveRef = toggleRef;');
+    expect(bar).toContain('buttonRef={tools.leaveRef}');
+    // Inside: Tab and Shift+Tab wrap at the dialog's edges.
+    expect(canvas).toContain('onKeyDown={own ? keepTabInside : undefined}');
+    expect(canvas).toMatch(/const keepTabInside = useCallback\(\(event[\s\S]*?event\.key !== 'Tab'[\s\S]*?last\.focus\(\)[\s\S]*?first\.focus\(\)/);
+    // Out: back to the toggle, or to the control that asked for full screen ("Edit model").
+    expect(hook).toMatch(/if \(lost\) toggleRef\.current\?\.focus\(\);/);
+    expect(canvas).toContain('if (opener.isConnected && opener.getClientRects().length > 0) opener.focus();');
+  });
+
+  test('Escape leaves it — except inside the editor, where Escape ends a tool', () => {
+    expect(hook.match(/event\.key !== 'Escape'/g) ?? []).toHaveLength(2);
+    expect(canvas).toContain('escapeInside: bodyRef,');
+    // Not marked aria-modal: that would make the hook's own Escape stand down (`ccModalOpen`).
+    expect(canvas).not.toMatch(/aria-modal=\{own/);
+  });
+
+  test('its controls are 44 px on touch: the library\'s buttons, switch and segments, and the search field and hits', () => {
+    for (const lib of ['CcButton', 'CcIconButton', 'CcSwitch']) expect(bar, `${lib} is not the bar's`).toContain(`<${lib}`);
+    expect(read('components/cc/Switch.tsx')).toContain('pointer-coarse:min-h-11');
+    expect(bar).toContain('pointer-coarse:min-h-11');
+    expect(code('components/process-map/ProcessSearch.tsx')).toContain("compact ? 'h-8 py-1 text-[13px] pointer-coarse:h-11'");
+  });
+
+  test('"Edit" disabled says why (P3 on a phone, P8 for a reader), as a description of the switch', () => {
+    expect(bar).toContain('disabled={editBlocked !== null}');
+    expect(bar).toContain('help={editBlocked ?? undefined}');
+    expect(read('components/cc/Switch.tsx')).toContain("aria-describedby={describedByOf({ helpId: !!help && helpId");
+  });
+});

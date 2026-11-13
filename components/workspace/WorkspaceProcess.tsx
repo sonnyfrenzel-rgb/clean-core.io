@@ -21,7 +21,7 @@ import { confirmOutcomeSentence, confirmProcessStates } from '@/lib/process-stat
 import { elementEntries, walkOrder } from '@/lib/process-walk';
 import type { WalkGuide } from '@/lib/process-walk-guide';
 import type { ProcessTour as Tour } from '@/lib/process-tour';
-import { OPEN_WALK_EVENT, takeProcessWalkRequest } from '@/lib/process-walk-request';
+import { OPEN_WALK_EVENT, requestProcessWalk, takeProcessWalkRequest } from '@/lib/process-walk-request';
 import ProcessTour, { type TourMove } from './ProcessTour';
 import {
   MAP_SPOTLIGHT_EVENT,
@@ -941,6 +941,8 @@ export default function WorkspaceProcess({
               canEdit={owner}
               spotlight={spotlight}
               onClearSpotlight={clearSpotlight}
+              // AB-5: *Walk me through it* in the map's full screen starts the same tour as the page's button.
+              onWalk={codeOnClick ? () => requestProcessWalk(projectId) : null}
             />
           ) : map.status === 'failed' ? (
             <p data-workspace-process-failed="" className="m-0 text-[13px] font-medium text-cc-ink-muted">

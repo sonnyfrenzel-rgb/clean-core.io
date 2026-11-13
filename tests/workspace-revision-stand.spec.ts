@@ -251,6 +251,17 @@ test.describe('where the Stand is asked (CR-15)', () => {
     const mounted = business.slice(business.indexOf('<WorkspaceProcess'), business.indexOf('/>', business.indexOf('<WorkspaceProcess')));
     expect(mounted).toContain('beforeWrite={stand.checkBeforeWrite}');
     expect(mounted).toContain('onWritten={stand.adopt}');
+
+    // Since 3.2.0 (AB-5) the page edits in the map's full screen, behind "Edit": the same one editor mounting, handed
+    // this `save`, so a save from full screen waits for the Stand like any other.
+    const map = read('components/process-map/ProcessMap.tsx');
+    expect(map.match(/<BpmnEditor\b/g) ?? []).toHaveLength(1);
+    const editor = map.slice(map.indexOf('<BpmnEditor'), map.indexOf('/>', map.indexOf('<BpmnEditor')));
+    expect(editor).toContain('save={save}');
+    expect(map).toContain('body: fsEditBody ? editorElement(true) : null,');
+    const mapAt = process.search(/<ProcessMap(?=[\s/>])/);
+    const block = process.slice(mapAt, process.indexOf('/>', mapAt));
+    expect(block).toContain('save={save}');
   });
 
   test('nothing about the Stand is stored, and nothing about it calls a model', () => {

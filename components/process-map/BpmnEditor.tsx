@@ -397,6 +397,13 @@ export interface BpmnEditorProps {
   exportable?: boolean;
   /** The name of the top level in the level path; the file name without it. */
   processName?: string;
+  /**
+   * Plan AB-5 (3.2.0): the editor inside the map's full screen on Analyze, Business, behind its "Edit" switch. It
+   * takes the height it is given, offers no full screen of its own (it is in one), names its save *Save as revision*
+   * and says the N8 sentence where it started from the reconstruction. Default `false`: everywhere else — the
+   * Documentation stage included — the editor is what it was.
+   */
+  embedded?: boolean;
 }
 
 /** A row of the list beside the canvas. */
@@ -456,6 +463,7 @@ export default function BpmnEditor({
   openLatest,
   exportable = true,
   processName,
+  embedded = false,
 }: BpmnEditorProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -973,8 +981,9 @@ export default function BpmnEditor({
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-    // The dialog opens over the page; in full screen only the editor is on show.
-    if (document.fullscreenElement) await document.exitFullscreen().catch(() => undefined);
+    // The dialog opens over the page; in full screen only the editor is on show. Embedded, the full screen is the
+    // map's, and the dialog opens inside it (`useCcPortalTarget`): leaving it would close the editor.
+    if (!embedded && document.fullscreenElement) await document.exitFullscreen().catch(() => undefined);
     setImporting({ fileName: file.name, outcome: null, saved: null });
     // Bytes before characters: a file larger than any revision is never read into memory as text.
     if (file.size > MAX_IMPORT_CHARS * 4) {
@@ -985,7 +994,7 @@ export default function BpmnEditor({
     const { importBpmn } = await import('@/lib/bpmn/import');
     const outcome = await importBpmn(text, { xml: istXml, revision: 1 });
     setImporting({ fileName: file.name, outcome, saved: null });
-  }, [istXml]);
+  }, [embedded, istXml]);
 
   const outsideOf = useCallback((xml: string) => new Set(
     parseBpmn(xml).elements.filter((e) => e.trace === null && !istById.has(e.id)).map((e) => e.id),
@@ -1038,11 +1047,13 @@ export default function BpmnEditor({
   useLevelUpKey(levelPath.length ? () => openLevel(levelPath.length > 1 ? levelPath[levelPath.length - 2].plane : null) : null);
 
   /** Full screen — the mechanism the reading map shares (`useCanvasFullscreen`), levels included. */
-  const { fullscreen, overlay, filled, toggle: toggleFullscreen, toggleRef: fullscreenToggleRef } = useCanvasFullscreen({
+  const { fullscreen, overlay, filled: ownFilled, toggle: toggleFullscreen, toggleRef: fullscreenToggleRef } = useCanvasFullscreen({
     rootRef,
     escapeInside: hostRef,
     level: { current: levelNow, set: openLevel },
   });
+  /** Embedded in the map's full screen, the editor is laid out as in its own (AB-5). */
+  const filled = embedded || ownFilled;
   useEffect(() => {
     // The canvas measures its box; after the box changed it has to measure again.
     modeler?.get<CanvasService>('canvas').resized();
@@ -1119,12 +1130,15 @@ export default function BpmnEditor({
     <div
       ref={rootRef}
       data-process-editor=""
-      data-editor-fullscreen={filled ? 'true' : 'false'}
+      data-editor-fullscreen={ownFilled ? 'true' : 'false'}
       data-editor-fullscreen-mode={fullscreen ? 'browser' : overlay ? 'overlay' : undefined}
+      data-editor-embedded={embedded ? 'true' : undefined}
       className={
-        filled
-          ? 'cc-editor-fullscreen flex min-w-0 flex-col gap-2 overflow-hidden'
-          : 'flex min-w-0 flex-col gap-2'
+        embedded
+          ? 'flex min-h-0 min-w-0 flex-1 flex-col gap-2 overflow-hidden'
+          : filled
+            ? 'cc-editor-fullscreen flex min-w-0 flex-col gap-2 overflow-hidden'
+            : 'flex min-w-0 flex-col gap-2'
       }
     >
       {/* ---------------- the toolbar ---------------- */}
@@ -1199,8 +1213,12 @@ export default function BpmnEditor({
             </CcButton>
           </>
         ) : null}
-        <span className="ml-auto" />
-        <CanvasFullscreenToggle scope="editor" filled={filled} onToggle={toggleFullscreen} buttonRef={fullscreenToggleRef} />
+        {embedded ? null : (
+          <>
+            <span className="ml-auto" />
+            <CanvasFullscreenToggle scope="editor" filled={filled} onToggle={toggleFullscreen} buttonRef={fullscreenToggleRef} />
+          </>
+        )}
       </div>
 
       {newer ? (
@@ -1223,7 +1241,8 @@ export default function BpmnEditor({
         </p>
       ) : (
         <p data-editor-started="1" className="m-0 shrink-0 text-[12px] font-medium text-cc-ink-muted">
-          {wt('editor.startedFromIst')}
+          {/* N8 (AB-5): in the map's full screen the sentence of the mockup, which says it is a draft. */}
+          {wt(embedded ? 'fullScreen.editNote' : 'editor.startedFromIst')}
         </p>
       )}
 
@@ -1408,7 +1427,7 @@ export default function BpmnEditor({
         className={`flex flex-wrap items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-2 ${keep}`}
       >
         <CcButton variant="primary" data-editor-save="" busy={saving} onClick={() => void onSave()}>
-          {wt('mapEditor.save')}
+          {wt(embedded ? 'fullScreen.saveAsRevision' : 'mapEditor.save')}
         </CcButton>
         <CcButton data-editor-discard="" onClick={onDiscard}>
           {wt('mapEditor.discard')}
