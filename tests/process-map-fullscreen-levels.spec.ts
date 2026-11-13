@@ -400,7 +400,8 @@ test.describe('levels in full screen and inline — desktop', () => {
     expect(step).not.toBe('');
     await frame.locator(`[data-map-node="${step}"]`).click();
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'false');
-    await expect(page.locator(`[data-process-code-card="${step}"]`)).toBeVisible();
+    // Analyze, Business since v3.1.0 (ADR-109): the step's code is the page's panel beside the map (mockup state 7).
+    await expect(page.locator('[data-analyze-code-panel]')).toBeVisible();
   });
 });
 

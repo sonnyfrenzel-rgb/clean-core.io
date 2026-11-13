@@ -217,7 +217,9 @@ test.describe('rendered: the seeded PO approval project in Analyze, Business', (
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     const model: string[] = [];
     page.on('request', (req) => {
-      if (req.url().includes('/api/gemini') || req.url().includes('/process-naming') || req.url().includes('/api/runs/create')) model.push(req.url());
+      // Reading the stored names (GET) is not asking for them; a model call, an ask for names or a signing is.
+      const asksNames = req.url().includes('/process-naming') && req.method() !== 'GET';
+      if (req.url().includes('/api/gemini') || asksNames || req.url().includes('/api/runs/create')) model.push(`${req.method()} ${req.url()}`);
     });
     await signInThroughForm(page, reader);
     await page.goto(`/project/${seeded.po}/analyze`, { waitUntil: 'domcontentloaded' });
