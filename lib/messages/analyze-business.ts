@@ -26,4 +26,30 @@ export const ANALYZE_BUSINESS_MESSAGES = {
   'abiz.loadFailed': 'This project could not be loaded',
   'abiz.loadFailedBody': 'The read failed, usually because of the connection. Nothing says the project is gone.',
   'abiz.retry': 'Try again',
+  // The text around the map — components/analyze/AroundTheMap.tsx (plan AB-6). The sentences are the engine's
+  // (lib/around-the-map.ts) or a checked model wording of them; only the frame is here.
+  'around.title': 'About this program',
+  'around.summaryWriting': 'Reading what the program does from its code …',
+  'around.runsTitle': 'How it runs',
+  'around.runsWaiting': 'Written step by step from the code …',
+  'around.runsNone': 'The code shows no steps with a line to tell this by. The map above shows what it does.',
+  'around.youAreHere': 'you are here',
+  'around.whyTitle': 'Why it exists',
+  'around.whyWaiting': 'Reading the program’s names …',
+  'around.whyNone': 'Why the program exists is not written in its code.',
+  'around.whyAuthor': 'The header comment says:',
+  'around.whoTitle': 'Who is involved',
+  'around.whoWaiting': 'Reading the roles …',
+  'around.whoNone': 'The code names no one who acts in it.',
+  'around.questionsTitle': 'Questions to settle with the business',
+  'around.questionsWaiting': 'Collecting the questions the code cannot answer …',
+  'around.questionsNone': 'The code raises no question for the business that the engine can name.',
+  'around.questionsFor': 'For the process owner. IT has its own questions in the IT view.',
+  'around.failed': 'The text around the map could not be read from this source. The map above is not affected.',
+  'around.modelNote': 'Worded by the model from the code’s facts and checked against them',
 } as const;
+
+/** "And 9 more." — the questions beyond the ones listed; the basket line under them leads into Design. */
+export function aroundMoreQuestions(n: number): string {
+  return `And ${n} more ${n === 1 ? 'question' : 'questions'}.`;
+}

@@ -99,19 +99,25 @@ test.describe('the source: Business on Analyze is the map, not the score', () =>
     expect(BUSINESS).toContain('setAutoStart(first && !firstLookSeen(projectId));');
   });
 
-  test('the interim until v3.2.0: today\'s First insights blocks and Next step stand below the map, unchanged', () => {
+  test('since v3.2.0 the text around the map stands where the First insights blocks stood; Next step under it until AB-4', () => {
+    // The interim of v3.1.0 (`FirstLook` with `BusinessOpening` below the map) gave way to AB-6's text around the
+    // map: "What this program does" above it, the four blocks below it (tests/analyze-around-the-map.spec.ts).
+    const summary = BUSINESS.indexOf('<WhatThisProgramDoes');
     const map = BUSINESS.indexOf('<WorkspaceProcess');
-    const look = BUSINESS.indexOf('<FirstLook');
+    const around = BUSINESS.indexOf('<AroundTheMap');
     const next = BUSINESS.indexOf('<BusinessNextStep');
-    expect(map).toBeGreaterThan(BUSINESS.indexOf('data-analyze-summary'));
-    expect(look).toBeGreaterThan(map);
-    expect(next).toBeGreaterThan(look);
+    expect(summary).toBeGreaterThan(-1);
+    expect(map).toBeGreaterThan(summary);
+    expect(around).toBeGreaterThan(map);
+    expect(next).toBeGreaterThan(around);
+    expect(BUSINESS).not.toContain('<FirstLook');
     // In their end state: the paced build-up retired with v3.1.0 (AB-3), so there is nothing to switch off.
     expect(BUSINESS).not.toContain('buildUp');
     expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLookBuildUp.tsx'))).toBe(false);
     expect(fs.existsSync(path.join(ROOT, 'lib/first-look-buildup.ts'))).toBe(false);
     expect(fs.existsSync(path.join(ROOT, 'lib/first-look-excerpt.ts'))).toBe(false);
-    expect(read('components/workspace/FirstLook.tsx')).not.toMatch(/buildUp|FirstLookBuildUp|firstLookExcerpt/);
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLook.tsx'))).toBe(false);
+    expect(read('components/analyze/AroundTheMap.tsx')).not.toMatch(/buildUp|FirstLookBuildUp|firstLookExcerpt/);
   });
 
   test('the first visit is marked seen once the project is ready here, not when it was asked for', () => {

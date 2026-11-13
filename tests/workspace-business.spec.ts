@@ -125,9 +125,9 @@ test.describe('the Business view of a real project (Analyze, Business; mockup st
     // No layer bar: Business has one section, and it is not on this page's first screen (ADR-096, AB-2).
     await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
 
-    // The order of AB-2: what the program does → the map → the first insights → Next step (interim until v3.2.0).
+    // The order of AB-2 with AB-6 (v3.2.0): what the program does → the map → the text around it → Next step (until AB-4).
     const tops = await page.evaluate(() =>
-      ['[data-analyze-summary]', '[data-analyze-map]', '[data-analyze-interim] [data-first-look]', '[data-analyze-interim] [data-next-step]'].map(
+      ['[data-analyze-summary]', '[data-analyze-map]', '[data-around-the-map]', '[data-analyze-interim] [data-next-step]'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;
@@ -218,7 +218,7 @@ test.describe('the Business view of a real project (Analyze, Business; mockup st
     await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60_000 });
     await expect(page.locator('[data-analyze-business="ready"]')).toHaveCount(0);
     await expect(page.locator('[data-process-map]')).toHaveCount(0);
-    await expect(page.locator('[data-first-look]')).toHaveCount(0);
+    await expect(page.locator('[data-first-look], [data-around-the-map]')).toHaveCount(0);
     // The workspace still says what is open: Analyze is the next step, the open questions say "no source".
     await page.goto(`/project/${empty}?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });

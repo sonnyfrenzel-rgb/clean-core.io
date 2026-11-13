@@ -105,9 +105,10 @@ async function watchReopen(page: Page) {
         const settled = card.querySelector('[data-next-step-state="open"], [data-next-step-state="none"]');
         if (settled && (settled.textContent ?? '').trim() && w.__reopen.nextAt === null) w.__reopen.nextAt = now;
       }
-      // Its end state or its failure — never 'waiting' (no build-up since v3.1.0).
-      const state = document.querySelector('[data-first-look]')?.getAttribute('data-first-look');
-      if ((state === 'end-state' || state === 'failed') && w.__reopen.firstLookAt === null) {
+      // The text around the map (v3.2.0, AB-6, where the first look stood): its end state or its failure — never
+      // 'reading' for good.
+      const state = document.querySelector('[data-around-the-map]')?.getAttribute('data-around-the-map');
+      if ((state === 'ready' || state === 'failed') && w.__reopen.firstLookAt === null) {
         w.__reopen.firstLookAt = now;
       }
       if (document.querySelector('[data-workspace-process="ready"] [data-process-map]') && w.__reopen.mapAt === null) {
@@ -172,8 +173,8 @@ test.describe('a project reopened far along its way', () => {
         await page.screenshot({ path: path.join(SHOTS, `${vp.name}-early.png`) });
       }
 
-      // The first look leaves "Reading …" and stands in its end state.
-      await expect(page.locator('[data-first-look="end-state"], [data-first-look="failed"]')).toBeVisible({ timeout: 120_000 });
+      // The text around the map leaves its placeholders and stands in its end state.
+      await expect(page.locator('[data-around-the-map="ready"], [data-around-the-map="failed"]')).toBeVisible({ timeout: 120_000 });
       // The next step settles on an action: a label, the reason for it, and
       // the control that starts it — not the pending sentence.
       const nextStep = page.locator('[data-analyze-interim] [data-next-step]');
@@ -198,8 +199,9 @@ test.describe('a project reopened far along its way', () => {
       expect.soft(seen.firstLookAt ?? Infinity, 'first insights landed before the map').toBeLessThanOrEqual(seen.mapAt ?? 0);
       expect.soft(seen.nextAt ?? Infinity, 'the next step settled before the map').toBeLessThanOrEqual(seen.mapAt ?? 0);
 
-      // The first insights hold a reading, not the waiting line.
-      await expect(page.locator('[data-first-look]').first()).not.toContainText(`Reading ${FILE_NAME}.`);
+      // The text around the map holds a reading, not its placeholders.
+      await expect(page.locator('[data-around-the-map] [data-around-waiting]')).toHaveCount(0);
+      await expect(page.locator('[data-analyze-summary] [data-around-waiting]')).toHaveCount(0);
 
       if (SHOTS) {
         // Where the seven tools stand on the settled page — said for a reader.

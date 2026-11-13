@@ -163,7 +163,7 @@ test.describe('the start, model on (owner decision 03.10.2026)', () => {
     const projectId = await startExample(page);
 
     await expect(page.locator('[data-analyze-map] [data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-analyze-interim] [data-first-look="end-state"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible({ timeout: 90000 });
     const sawBuilding = await page.evaluate(() => (window as unknown as { __sawBuilding: boolean }).__sawBuilding);
     expect(sawBuilding, 'a build-up played: it retired with v3.1.0').toBe(false);
 

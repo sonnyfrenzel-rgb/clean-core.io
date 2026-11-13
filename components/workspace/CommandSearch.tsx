@@ -71,7 +71,7 @@ import type { Project } from '@/lib/types';
 export interface CommandSearchProps {
   projectId: string;
   project: Project | null;
-  /** The process reading `FirstLook` computed for this screen, if any. */
+  /** The process reading the screen already made (Analyze: the text around the map, `useAroundTheMap`), if any. */
   reading: SourceReading | null;
 }
 

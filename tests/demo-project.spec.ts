@@ -391,7 +391,7 @@ test.describe('the demo costs an account nothing', () => {
     await expect(page.locator('[data-analyze-summary]')).toBeVisible();
     await expect(page.locator('[data-analyze-walk=""]')).toBeVisible();
     await expect(page.locator('[data-analyze-map] [data-process-map-canvas]').first()).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-analyze-interim] [data-first-look="end-state"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible({ timeout: 90000 });
     // Its way back is My workspace, as a project's Analyze, Business.
     await expect(page.locator('[data-stage-back="my-workspace"]')).toHaveCount(1);
     // IT and Management of the demo stay where they were.

@@ -173,10 +173,14 @@ test.describe('the two shell menus are menus in the WAI-ARIA sense (§1.6, block
 });
 
 test.describe('the workspace (roadmap 3.0.4)', () => {
-  test('the first look has exactly one live region, and it carries the newest stage only (§2.8)', () => {
-    const src = code('components/workspace/FirstLook.tsx');
-    expect(src.match(/aria-live=/g) ?? [], 'more than one live region in the first look').toHaveLength(1);
-    expect(src, 'the announcement joins every stage again').not.toMatch(/\.map\(\(s\) => `\$\{s\.label\}: \$\{s\.result\}`\)\s*\.join/);
+  test('the text around the map announces nothing of its own: the names arrive in the one status line of the map (§2.8)', () => {
+    // The first look's staged card, with its one live region for the newest stage, left with v3.2.0 (AB-6): its
+    // text is the text around the map, which arrives in place. The one announcement on the page is the map's
+    // naming status line (ADR-108); a second live region here would make a screen reader repeat it.
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLook.tsx'))).toBe(false);
+    for (const rel of ['components/analyze/AroundTheMap.tsx', 'components/analyze/AnalyzeBusiness.tsx']) {
+      expect(code(rel).match(/aria-live=/g) ?? [], `${rel} has a live region of its own`).toHaveLength(0);
+    }
   });
 
   test('disclosures are not dressed up as ARIA menus', () => {
@@ -190,7 +194,7 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
     }
   });
 
-  test('Business reads what the program does, the map, then the first insights and Next step — in that order in the DOM (§2.9)', () => {
+  test('Business reads what the program does, the map, then the text around it and Next step — in that order in the DOM (§2.9)', () => {
     // Since v3.1.0 the Business view is Analyze's page (AB-2, ADR-109), not an
     // order of blocks in the workspace shell: the map is the page. The reading
     // order is the DOM order at every width — no CSS `order` splits the two, so
@@ -201,7 +205,8 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
       expect(i, `${needle} is not on the page`).toBeGreaterThan(-1);
       return i;
     };
-    const order = [at('data-analyze-summary=""'), at('<WorkspaceProcess'), at('<FirstLook'), at('<BusinessNextStep')];
+    // Since v3.2.0 (AB-6) the text around the map stands where the first insights stood.
+    const order = [at('<WhatThisProgramDoes'), at('<WorkspaceProcess'), at('<AroundTheMap'), at('<BusinessNextStep')];
     for (let i = 1; i < order.length; i++) expect(order[i], `block ${i} stands before block ${i - 1}`).toBeGreaterThan(order[i - 1]);
     expect(page).not.toMatch(/\border-(first|last|\d+)\b/);
     // The workspace shell keeps no Business order to drift from it.

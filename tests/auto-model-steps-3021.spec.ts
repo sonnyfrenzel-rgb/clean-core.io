@@ -144,7 +144,8 @@ test.describe('every automatic call path is covered', () => {
     for (const rel of ['hooks/usePlainWording.ts', 'hooks/useAutoProcessNaming.ts']) {
       expect(read(rel), rel).toContain('askModeOf(');
     }
-    for (const rel of ['components/workspace/FirstLook.tsx', 'components/workspace/WorkspaceProcess.tsx', 'components/workspace/RuleDecisionFlow.tsx', 'components/design/RuleQuestions.tsx']) {
+    // The text around the map (AB-6, v3.2.0) asks for the plain wording where the first insights did.
+    for (const rel of ['hooks/useAroundTheMap.ts', 'components/workspace/WorkspaceProcess.tsx', 'components/workspace/RuleDecisionFlow.tsx', 'components/design/RuleQuestions.tsx']) {
       expect(read(rel), rel).toContain('autoAllowed: availability.autoSteps,');
     }
   });
