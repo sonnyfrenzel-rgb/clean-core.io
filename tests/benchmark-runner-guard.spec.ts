@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { existsSync, mkdtempSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
-import { join, resolve } from 'path';
+import { join, relative, resolve } from 'path';
 import { benchSourcePath, holdLedger, SpendGate, worstCaseCostUsd } from './prozess-benchmark/bench-guard';
 
 /**
@@ -66,6 +66,10 @@ test('one runner per ledger: a second hold on the same ledger is refused until t
     const release = holdLedger(ledger);
     expect(existsSync(`${ledger}.lock`)).toBe(true);
     expect(() => holdLedger(ledger)).toThrow(/another runner holds the ledger/);
+    // Another spelling of the same ledger is the same ledger: a dot segment, a relative path, and on Windows its case.
+    expect(() => holdLedger(join(dir, '.', 'spend.jsonl'))).toThrow(/another runner holds the ledger/);
+    expect(() => holdLedger(relative(process.cwd(), ledger))).toThrow(/another runner holds the ledger/);
+    if (process.platform === 'win32') expect(() => holdLedger(ledger.toUpperCase())).toThrow(/another runner holds the ledger/);
     // Another ledger is free.
     holdLedger(join(dir, 'other.jsonl'))();
     release();
