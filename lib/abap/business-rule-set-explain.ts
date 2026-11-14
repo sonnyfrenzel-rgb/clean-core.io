@@ -1236,15 +1236,51 @@ interface SourcedFields {
   routines: Array<{ key: string; start: number; end: number }>;
 }
 
-/** The routines (FORM, METHOD) of the source with the names each declares for itself: DATA, STATICS, FIELD-SYMBOLS, inline declarations, FORM parameters. */
+/**
+ * The formal parameters of each method a class or interface declares (`METHODS m IMPORTING a TYPE … CHANGING
+ * VALUE(b) TYPE … RETURNING VALUE(r) TYPE …`), by `class|method` in lower case.
+ */
+function methodParameters(statements: readonly AbapStatement[]): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  let owner: string | null = null;
+  for (const s of statements) {
+    const keyword = s.keyword.toUpperCase();
+    if (keyword === 'CLASS' || keyword === 'INTERFACE') {
+      const name = /^(?:CLASS|INTERFACE)\s+([\w/]+)/i.exec(s.text.trim())?.[1]?.toLowerCase() ?? null;
+      const declares = (keyword === 'INTERFACE' || /\bDEFINITION\b/i.test(s.text)) && !/\b(?:DEFERRED|LOAD)\b/i.test(s.text);
+      owner = declares ? name : null;
+    }
+    if (keyword === 'ENDCLASS' || keyword === 'ENDINTERFACE') owner = null;
+    if (!owner || (keyword !== 'METHODS' && keyword !== 'CLASS-METHODS')) continue;
+    const m = /^(?:CLASS-)?METHODS\s+([\w/]+)\b([\s\S]*)$/i.exec(s.text.trim());
+    if (!m) continue;
+    const names = new Set<string>();
+    for (const p of m[2].matchAll(/(?:VALUE|REFERENCE)\(\s*([\w/]+)\s*\)|([\w/]+)\s+(?:TYPE|LIKE)\b/gi)) names.add((p[1] ?? p[2]).toLowerCase());
+    out.set(`${owner}|${m[1].toLowerCase()}`, names);
+  }
+  return out;
+}
+
+/**
+ * The routines (FORM, METHOD) of the source with the names each declares for itself: DATA, STATICS, FIELD-SYMBOLS,
+ * inline declarations, FORM parameters, and a METHOD's formal parameters from its class's or interface's declaration.
+ */
 function routineLocals(statements: readonly AbapStatement[]): Array<{ key: string; start: number; end: number; names: Set<string> }> {
   const out: Array<{ key: string; start: number; end: number; names: Set<string> }> = [];
   let open: { key: string; start: number; end: number; names: Set<string> } | null = null;
+  const parameters = methodParameters(statements);
+  let implementing: string | null = null;
   for (const s of statements) {
     const keyword = s.keyword.toUpperCase();
+    if (keyword === 'CLASS') implementing = /^CLASS\s+([\w/]+)\s+IMPLEMENTATION\b/i.exec(s.text)?.[1]?.toLowerCase() ?? null;
+    if (keyword === 'ENDCLASS') implementing = null;
     if (keyword === 'FORM' || keyword === 'METHOD') {
-      open = { key: `${(/^(?:FORM|METHOD)\s+([\w/~]+)/i.exec(s.text)?.[1] ?? '').toLowerCase()}@${s.lineStart}`, start: s.lineStart, end: Infinity, names: new Set() };
+      const name = (/^(?:FORM|METHOD)\s+([\w/~]+)/i.exec(s.text)?.[1] ?? '').toLowerCase();
+      open = { key: `${name}@${s.lineStart}`, start: s.lineStart, end: Infinity, names: new Set() };
       out.push(open);
+      // `METHOD intf~m` is declared in the interface, `METHOD m` in the class being implemented.
+      const [declaredIn, method] = name.includes('~') ? name.split('~') : [implementing, name];
+      if (keyword === 'METHOD' && declaredIn) for (const p of parameters.get(`${declaredIn}|${method}`) ?? []) open.names.add(p);
     }
     if (!open) continue;
     if (keyword === 'ENDFORM' || keyword === 'ENDMETHOD') {

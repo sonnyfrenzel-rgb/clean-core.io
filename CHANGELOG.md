@@ -195,6 +195,7 @@ Signed runs and the audit pack do not change.
 - Rule baskets (engine 3.1.0): a database read into one routine's local field no longer counts for another routine's local field of the same name, so a status that routine sets and reads back itself is again recognised as its own marker.
 - Documentation: a literal that is only the word "authorization" is output, not a check of the program's own, and an authorization call inside a string template's expression is found again.
 - Statement rewording: a rewording that turns a comparison the other way ("at least 10" into "at most 10") keeps the draft, as a changed number or negation already did.
+- Rule baskets (engine 3.1.0): a method's own parameters count as its own fields too, so a database read into one method's parameter no longer counts for another method's parameter of the same name.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

@@ -234,6 +234,41 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
     expect(reasonOf(true)).not.toMatch(/marker of its own/);
   });
 
+  test('a read into one method\'s formal parameter does not make another method\'s parameter of the same name read from outside', () => {
+    const source = (sameParameter: boolean) => [
+      'REPORT zsd_status_methods.',
+      ...(sameParameter ? [] : ['DATA cv_status TYPE c LENGTH 1.']),
+      'CLASS lcl_flow DEFINITION.',
+      '  PUBLIC SECTION.',
+      `    METHODS load${sameParameter ? ' CHANGING cv_status TYPE c' : ''}.`,
+      `    METHODS decide${sameParameter ? ' CHANGING VALUE(cv_status) TYPE c' : ''}.`,
+      'ENDCLASS.',
+      'CLASS lcl_flow IMPLEMENTATION.',
+      '  METHOD load.',
+      '    SELECT SINGLE status FROM zstatus INTO cv_status WHERE id = 1.',
+      '  ENDMETHOD.',
+      '  METHOD decide.',
+      "    cv_status = 'A'.",
+      "    IF cv_status = 'A'.",
+      "      WRITE / 'released'.",
+      '    ENDIF.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+      'START-OF-SELECTION.',
+      '  DATA lv_status TYPE c LENGTH 1.',
+      `  NEW lcl_flow( )->load( ${sameParameter ? 'CHANGING cv_status = lv_status ' : ''}).`,
+      '',
+    ].join('\n');
+    const reasonOf = (sameParameter: boolean) => {
+      const { ex, reading } = explain(source(sameParameter));
+      return ex.rules.find((r) => r.id === ruleId(reading, /status = 'A'/))!.basket.reason.text;
+    };
+    // `decide` has a parameter of its own: it sets it and reads it back, whatever `load` reads into its own.
+    expect(reasonOf(true)).toMatch(/marker of its own/);
+    // Without parameters both methods use one global field, which the database read in `load` also fills: no marker.
+    expect(reasonOf(false)).not.toMatch(/marker of its own/);
+  });
+
   test('a value assigned only after the check is no marker the program set', () => {
     const source = [
       'REPORT zsd_status_check.',
