@@ -39,6 +39,7 @@ Signed runs and the audit pack do not change.
 - Engine 4.0 is built in parallel from now on, as its own module tree that nothing reads until the switch (ADR-125); benchmark convention K3 settled: commits stay in the technical layer.
 
 ### Fixed
+- Analyze: a project read that answers late no longer puts the pre-run state back over the result of a run that has just been signed.
 - Tests: the run hash and both run-signature forms are pinned to known values worked out independently, so a signer and verifier that change together can no longer pass while runs signed before stop verifying.
 - Privacy policy: an address with a version number (`clean-core.io/datenschutz/versions/1.2`) links to that version; it linked to `/versions/1`, a page that does not exist, and the browser's prefetch of it never settled.
 - Tests: the C14 notice case "the steps already off" turns off both automatic steps, since the business names start by themselves again in 3.1.0; the outline reset of the navigation acceptance triggers the twisty instead of clicking a position the shrinking list has already moved; the Analyze layout states are measured for an account that has answered the notice on automatic AI steps, which since 3.1.0 stands above the map until it is answered.

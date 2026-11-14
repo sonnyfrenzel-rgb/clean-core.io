@@ -263,9 +263,14 @@ function AnalyzeScorePage() {
   const [lastNarrativeAbsence, setLastNarrativeAbsence] = useState<ModelAbsence>(null);
 
   useEffect(() => {
+    // Only the newest read may land: the read started before a start run ends
+    // can answer after the one started when it ended, and would put the
+    // pre-run project back over the signed result.
+    let current = true;
     const fetchProject = async () => {
       try {
         const hydratedProject = await loadProjectAndHydrate(projectId as string);
+        if (!current) return;
         if (hydratedProject) {
           setProject(hydratedProject);
           // The workspace says "Your analysis is ready" until this browser has
@@ -312,12 +317,15 @@ function AnalyzeScorePage() {
           }
         }
       } catch (error) {
-        handleFirestoreError(error, OperationType.GET, `projects/${projectId}`);
+        if (current) handleFirestoreError(error, OperationType.GET, `projects/${projectId}`);
       } finally {
-        setLoading(false);
+        if (current) setLoading(false);
       }
     };
     fetchProject();
+    return () => {
+      current = false;
+    };
   }, [projectId, searchParams, startInFlight]);
 
   const [loadingMessage, setLoadingMessage] = useState('');
