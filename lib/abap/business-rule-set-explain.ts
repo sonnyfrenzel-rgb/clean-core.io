@@ -1241,9 +1241,21 @@ function sourcedKeys(statements: readonly AbapStatement[], types: ReadonlyMap<st
     const text = s.text.replace(/\.\s*$/, '');
     for (const m of text.matchAll(/\bINTO\s*\(([^)]*)\)/gi)) for (const name of m[1].split(',')) add(name);
     for (const m of text.matchAll(/\bINTO\s+(?!CORRESPONDING\b|TABLE\b)(@?(?:DATA\()?<?[\w/]+>?)/gi)) add(m[1]);
-    // `IMPORT a = b FROM …` / `IMPORT a b FROM …`: every name it lists.
+    // `IMPORT p1 = dobj1 p2 TO dobj2 dobj3 FROM …`: only the local targets — `p1`, `p2` are the names the values were
+    // stored under, not fields of this program; in the short form `dobj3` is both.
     const imported = /^IMPORT\s+([\s\S]*?)\s+FROM\b/i.exec(text)?.[1];
-    if (imported) for (const m of imported.matchAll(/[\w/]+/g)) add(m[0]);
+    if (imported) {
+      const tokens = imported.replace(/=/g, ' = ').split(/\s+/).filter(Boolean);
+      for (let i = 0; i < tokens.length; ) {
+        if (tokens[i + 1] === '=' || /^TO$/i.test(tokens[i + 1] ?? '')) {
+          if (tokens[i + 2]) add(tokens[i + 2]);
+          i += 3;
+        } else {
+          add(tokens[i]);
+          i += 1;
+        }
+      }
+    }
   }
   return out;
 }

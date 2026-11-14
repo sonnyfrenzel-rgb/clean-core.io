@@ -49,6 +49,12 @@ test('a comment beside a check or above a statement is quoted word for word, tag
   expect(xml).toContain(`${AUTHOR_COMMENT_LABEL} (line 5): “nur Aendern (VL02N)”`);
 });
 
+test('an escaped pipe inside a string template does not end it: a quote in the template is text, not a comment', () => {
+  const at = authorCommentsOf('  WRITE |The \\| marker "only text" here|.  " the real comment here\n');
+  expect(at.at(1)?.text).toBe('the real comment here');
+  expect(authorCommentsOf('  WRITE |a \\\\| "  so the template ends before this comment\n').at(1)?.text).toBe('so the template ends before this comment');
+});
+
 test('commented-out code, the editor\'s routine frame and a change marker are not quoted', () => {
   const at = authorCommentsOf(SRC);
   // Above the PERFORM (line 9) stands commented-out code; above FORM (13) only the editor's frame; line 14 a change marker.

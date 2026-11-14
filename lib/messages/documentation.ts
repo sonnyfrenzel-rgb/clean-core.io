@@ -360,10 +360,12 @@ export function docRulesOutsideNotInTable(reason: 'declaration-only' | 'unreache
  * The one cost line of the AI-generated proposals card (DESIGN.md §2.8): what each
  * proposal costs, said before any click. Every part is a fact of the page —
  * the model it names is the one the business layer is asked of, the key is
- * the one `/api/model-stages` reports.
+ * the one `/api/model-stages` reports. No model until that route has answered: the
+ * line then names none rather than a default the stage may not run on.
  */
-export function docProposalsCostLine(model: string, byok: boolean): string {
-  return `One model call per proposal (${model}${byok ? ', with your own Gemini key' : ''}). Opening Documentation calls no model: the SOP and RACI are written on “Generate draft”, the business sentences only when asked for. They are not counted against your analysis runs; each counts toward the hourly limit on model calls of this account.`;
+export function docProposalsCostLine(model: string | undefined, byok: boolean): string {
+  const said = [model, byok ? 'with your own Gemini key' : ''].filter(Boolean).join(', ');
+  return `One model call per proposal${said ? ` (${said})` : ''}. Opening Documentation calls no model: the SOP and RACI are written on “Generate draft”, the business sentences only when asked for. They are not counted against your analysis runs; each counts toward the hourly limit on model calls of this account.`;
 }
 
 /** Roadmap 3.0.13 — the end of the progress card when a stage stopped. */

@@ -28,7 +28,7 @@ test.describe('the model a stage runs on, named before the click', () => {
     expect(models.documentation).toBe('gemini-4-hydrogen');
     // What the browser keeps of the answer, and the line the page builds from it.
     const kept = stageModelsFromAnswer(JSON.parse(JSON.stringify(models)));
-    const line = docProposalsCostLine(kept.documentation ?? PRODUCT_GEMINI_MODEL, false);
+    const line = docProposalsCostLine(kept.documentation, false);
     expect(line).toContain('(gemini-4-hydrogen)');
     expect(line).not.toContain(PRODUCT_GEMINI_MODEL);
     // A stage not in the list stays on the product model.
@@ -59,6 +59,17 @@ test.describe('the model a stage runs on, named before the click', () => {
     expect([...EVALUATION_ONLY_MODELS]).toEqual(['gemini-4-hydrogen']);
   });
 
+  test('platform key before the route has answered: the line names no model, not the product default', () => {
+    // What the hook holds while it loads, and for a key the route reports no stage model for.
+    const pending = stageModelsFromAnswer(undefined);
+    const line = docProposalsCostLine(pending.documentation, false);
+    expect(line).toMatch(/^One model call per proposal\. /);
+    expect(line).not.toContain(PRODUCT_GEMINI_MODEL);
+    expect(line).not.toContain('undefined');
+    // An own key whose model is not reported yet still says whose key it is.
+    expect(docProposalsCostLine(undefined, true)).toMatch(/^One model call per proposal \(with your own Gemini key\)\. /);
+  });
+
   test('the browser keeps only known stages and plain model ids', () => {
     expect(stageModelsFromAnswer({ documentation: 'gemini-4-hydrogen', nope: 'x', testing: '<b>', design: 3 })).toEqual({ documentation: 'gemini-4-hydrogen' });
     expect(stageModelsFromAnswer(null)).toEqual({});
@@ -69,7 +80,8 @@ test.describe('the model a stage runs on, named before the click', () => {
     expect(route).toContain('stageModelsForKey({ keySource: answer.keyAvailable ? answer.keySource : null, provider: answer.provider, env: process.env })');
     expect(route).toContain('return NextResponse.json({ ...answer, stageModels });');
     const page = read('app/(app)/project/[projectId]/documentation/page.tsx');
-    expect(page).toContain('docProposalsCostLine(modelAvailability.stageModels.documentation ?? PRODUCT_GEMINI_MODEL,');
+    expect(page).toContain('docProposalsCostLine(modelAvailability.stageModels.documentation,');
+    expect(page).not.toMatch(/docProposalsCostLine\([^)]*PRODUCT_GEMINI_MODEL/);
     expect(read('hooks/useModelAvailability.ts')).toContain('setStageModels(stageModelsFromAnswer(data.stageModels));');
   });
 });

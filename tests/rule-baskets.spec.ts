@@ -178,6 +178,32 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
     expect(ex.rules.find((r) => r.id === ruleId(reading, /status = 'C'/))!.basket.reason.text).not.toMatch(/marker of its own/);
   });
 
+  test('IMPORT fills only its local target: the stored name beside `=` or `TO` is not a field of the program', () => {
+    const source = (importLine: string) => [
+      'REPORT zsd_status_import.',
+      'DATA: lv_status TYPE c LENGTH 1,',
+      '      lv_saved TYPE c LENGTH 1.',
+      'START-OF-SELECTION.',
+      importLine,
+      "  lv_status = 'A'.",
+      "  IF lv_status = 'A'.",
+      "    WRITE / 'released'.",
+      '  ENDIF.',
+      '',
+    ].join('\n');
+    const reasonOf = (importLine: string) => {
+      const { ex, reading } = explain(source(importLine));
+      return ex.rules.find((r) => r.id === ruleId(reading, /status = 'A'/))!.basket.reason.text;
+    };
+    // `lv_status` is only the name the value was stored under; the import lands in `lv_saved`.
+    expect(reasonOf("  IMPORT lv_status = lv_saved FROM MEMORY ID 'ZST'.")).toMatch(/marker of its own/);
+    expect(reasonOf("  IMPORT lv_status TO lv_saved FROM MEMORY ID 'ZST'.")).toMatch(/marker of its own/);
+    // Where the import lands in `lv_status`, the value can come from outside.
+    expect(reasonOf("  IMPORT stored = lv_status FROM MEMORY ID 'ZST'.")).not.toMatch(/marker of its own/);
+    expect(reasonOf("  IMPORT stored TO lv_status FROM MEMORY ID 'ZST'.")).not.toMatch(/marker of its own/);
+    expect(reasonOf("  IMPORT lv_status FROM MEMORY ID 'ZST'.")).not.toMatch(/marker of its own/);
+  });
+
   test('a value assigned only after the check is no marker the program set', () => {
     const source = [
       'REPORT zsd_status_check.',
