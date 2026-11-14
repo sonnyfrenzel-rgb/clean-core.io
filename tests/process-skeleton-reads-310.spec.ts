@@ -439,8 +439,7 @@ test('a source whose every entry is empty still shows them, and a reporting even
 });
 
 /**
- * QA review of 0c6b49ec357c (88a18f0877ee, 3b18d9039dd5 — refuted): a chained declaration is no blind spot. The
- * statement reader expands `DATA: a …, b ….` and `CONSTANTS: a …, b ….` into one statement per name, so the second
+ * A chained declaration is read like separate ones: the statement reader expands `DATA: a …, b ….` and `CONSTANTS: a …, b ….` into one statement per name, so the second
  * name is read exactly as a declaration of its own.
  */
 test('the second name of a chained DATA is local, the second of a chained CONSTANTS a constant', () => {

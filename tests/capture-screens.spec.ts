@@ -299,6 +299,8 @@ test.describe('capture', () => {
       await capture(SCREENS.filter((s) => DARK_SCREENS.includes(s.name)), 'dark');
     }
 
+    // A mockup or target state that did not capture: listed in index.txt, and the test fails once that is written.
+    const mockupFailed: string[] = [];
     if (MOCKUPS) {
       // The key views of the binding mockups 2.8 and the target states of v3.1.0 (owner decision
       // 12.11.2026: swap, not add), and their file names, come from the agent's config — one list, so
@@ -324,6 +326,7 @@ test.describe('capture', () => {
           notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  mockup ${label}`);
         } catch (err) {
           notes.push(`${screen}-desktop  FAILED  ${String(err instanceof Error ? err.message : err).slice(0, 120)}`);
+          mockupFailed.push(`${screen}-desktop`);
         }
       }
     }
@@ -334,6 +337,8 @@ test.describe('capture', () => {
     // The capture is only useful if the workflow screens actually rendered.
     const captured = fs.readdirSync(OUT).filter((f) => f.endsWith('.jpg'));
     expect(captured.length).toBeGreaterThan(SCREENS.length);
+    // Every mockup view and target state the agent's config names was written, not only enough screens overall.
+    expect(mockupFailed, 'mockup shots that failed to capture').toEqual([]);
   });
 });
 

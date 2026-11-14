@@ -89,6 +89,8 @@ Signed runs and the audit pack do not change.
 - Analyze: while the start run begun in the Business view is still being signed, IT and Management keep "Start
   Analysis" closed and say the analysis is running, and the Business view shows it running instead of a sign button
   that did nothing.
+- First insights: the short change list beside the story now reads the project's own engine version, as the full
+  list does, so a project read by an earlier engine no longer shows customer texts or list markings in it.
 
 #### Engine readings (gated from 3.1.0; runs signed before keep their reading)
 - Customer texts: storing them re-checks the project in the same transaction, so texts sent while the project is being deleted are not left behind.
@@ -166,6 +168,11 @@ Signed runs and the audit pack do not change.
 - Tests: the run hash and both run-signature forms are pinned to known values worked out independently, so a signer and verifier that change together can no longer pass while runs signed before stop verifying.
 - Tests: the C14 notice case "the steps already off" turns off both automatic steps, since the business names start by themselves again in 3.1.0; the outline reset of the navigation acceptance triggers the twisty instead of clicking a position the shrinking list has already moved; the Analyze layout states are measured for an account that has answered the notice on automatic AI steps, which since 3.1.0 stands above the map until it is answered.
 - Tests: the first-screen counter no longer counts a control faded out by its parent or lying beside the viewport.
+- Tests: a stored naming's digest is applied through the map's naming step, not only compared; a line anchor's
+  highlighted row is matched by its line number, not by digits in its code; the readers Analyze calls on its first
+  render must await the session right before every read of the user; the home viewports also fail on a focus outside
+  its frame; the example rerun warning is checked to send no run request; a mockup shot that fails to capture fails
+  the screen capture.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

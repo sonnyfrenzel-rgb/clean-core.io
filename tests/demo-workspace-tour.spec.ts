@@ -296,12 +296,15 @@ test('a line anchor of the demo\'s summary opens its lines in the code panel', a
   await openDemo(page, '?view=business');
   const anchor = page.locator('[data-analyze-summary-text] button[data-cc-anchor]').first();
   await expect(anchor, 'the summary\'s line anchor is no link').toBeVisible({ timeout: 90000 });
-  const line = Number((await anchor.textContent())?.replace(/^L/, ''));
+  const line = Number((await anchor.textContent())?.trim().replace(/^L/, ''));
+  expect(Number.isInteger(line) && line > 0, 'the anchor names no single line').toBe(true);
   await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
   await anchor.click();
   const panel = page.locator('[data-analyze-code-panel]');
   await expect(panel, 'the anchor opened no code').toBeVisible({ timeout: 30000 });
-  await expect(panel.locator('[data-cc-code-line="highlighted"]').first()).toContainText(String(line));
+  // The row's own line number (the first cell of the row in components/cc/CodeSurface.tsx), not any
+  // digits in the code text: the first highlighted row is the anchor's line.
+  await expect(panel.locator('[data-cc-code-line="highlighted"] > span:first-child').first()).toHaveText(String(line));
   await page.locator('[data-analyze-code-close]').click();
   await expect(panel).toHaveCount(0);
 });

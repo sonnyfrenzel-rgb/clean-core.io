@@ -520,7 +520,7 @@ export default function FirstLook({
         }),
         steps: stepStrip(process.skeleton, source),
         story,
-        changes: processChanges(process.skeleton, source, undefined, undefined, customerTexts),
+        changes: processChanges(process.skeleton, source, undefined, engineVersion, customerTexts),
         changesAll: processChanges(process.skeleton, source, 100, engineVersion, customerTexts).changes,
         inShort: summarised.inShort,
         decides: explanation ? openingDecisions(explanation, 4, engineVersion) : null,

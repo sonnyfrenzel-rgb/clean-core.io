@@ -124,3 +124,18 @@ test("the change list says the customer's words for a table it changes, and not 
   expect(withTexts.some((t) => /minimum quantities per customer group/i.test(t)), withTexts.join(' | ')).toBe(true);
   for (const t of [...changes(NEW, null), ...changes(HOTFIX)]) expect(t).not.toMatch(/minimum quantities per customer group/i);
 });
+
+/**
+ * The first insights hand the project's customer texts, and the project's engine, to every surface they build — the
+ * story, "In short", the rule explanation and both change lists — so a 3.0.22 hotfix project's top changes do not
+ * say a customer word the gate keeps from its full list.
+ */
+test("FirstLook passes the customer texts and the project's engine to each surface it builds", () => {
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'workspace', 'FirstLook.tsx'), 'utf8');
+  expect(src).toMatch(/processStory\([\s\S]{0,300}?engineVersion,\s*customerTexts,\s*\)/);
+  expect(src).toContain('inShortOf(source, process, rules, project?.analysis, engineVersion, customerTexts)');
+  expect(src).toContain('explanationOf(source, process, rules, engineVersion, customerTexts)');
+  const calls = src.match(/processChanges\([^)]*\)/g) ?? [];
+  expect(calls.length, 'FirstLook builds no change list').toBeGreaterThan(0);
+  for (const call of calls) expect(call, "a change list read without the project's engine or its texts").toMatch(/, engineVersion, customerTexts\)$/);
+});

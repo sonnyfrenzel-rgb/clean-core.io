@@ -528,6 +528,11 @@ test.describe('the screen says what the click costs, before the click', () => {
     await expect(panel.getByTestId('starter-example-ran-before')).toHaveCount(1);
     await expect(panel.locator(`[data-example-card="${EXAMPLE.name}"] [data-testid="starter-example-ran-before"]`)).toHaveText(/uses a run/i);
 
+    // No run is asked for while the warning stands: every run request from here on is counted.
+    const runRequests: string[] = [];
+    page.on('request', (r) => {
+      if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/runs/create') runRequests.push(r.url());
+    });
     await panel.locator(`[data-example-start="${EXAMPLE.name}"]`).click();
     const warning = panel.getByTestId('starter-example-rerun-warning');
     await expect(warning).toBeVisible({ timeout: 15000 });
@@ -535,6 +540,7 @@ test.describe('the screen says what the click costs, before the click', () => {
       'You ran this example before. Running it again uses 1 of your 5 free analysis runs once the analysis completes.',
     );
     await expect(page).toHaveURL(/\/dashboard/);
+    expect(runRequests, 'a run was requested while the rerun warning stood').toEqual([]);
 
     await panel.locator('[data-example-start="Z_INVOICE_EXTRACTOR"]').click();
     // Into the project's entry, Analyze in the Business view, as a first visit — and the start run signs there.
@@ -582,6 +588,10 @@ test.describe('the screen says what the click costs, before the click', () => {
     await expect(panel.getByTestId('starter-example-ran-before'), 'the ran-before badge says a further run costs one')
       .toHaveText(/uses a run/i);
 
+    const runRequests: string[] = [];
+    page.on('request', (r) => {
+      if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/runs/create') runRequests.push(r.url());
+    });
     await panel.locator('[data-example-start="Z_MATERIAL_STOCK_CALC"]').click();
 
     const warning = panel.getByTestId('starter-example-rerun-warning');
@@ -591,6 +601,7 @@ test.describe('the screen says what the click costs, before the click', () => {
     );
     // The warning is a stop, not a label: nothing was started by the click.
     await expect(page).toHaveURL(/\/dashboard/);
+    expect(runRequests, 'a run was requested while the rerun warning stood').toEqual([]);
 
     // A free one goes straight through, so the warning is not simply a broken card.
     await panel.locator('[data-example-start="Z_INVOICE_EXTRACTOR"]').click();

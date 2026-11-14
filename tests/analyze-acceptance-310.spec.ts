@@ -169,10 +169,12 @@ test.describe('server-free: the fixes as code', () => {
   test('6. the readers Analyze calls on its first render wait for the session before they read the token', () => {
     for (const file of ['lib/customer-texts-client.ts', 'lib/process-revisions-client.ts', 'lib/process-states-client.ts', 'hooks/useWorkspaceRevision.ts']) {
       const code = read(file);
-      const wait = code.indexOf('authStateReady');
-      const token = code.indexOf('currentUser');
-      expect(wait, `${file} reads the token without waiting for the session`).toBeGreaterThan(-1);
-      expect(wait, `${file} reads the user before the session is restored`).toBeLessThan(token);
+      // Every read of the user — not only the first in the file — is the statement right after an awaited
+      // `authStateReady()` on the same auth object, so no request path can reach the token before the session is back.
+      const reads = code.match(/\bcurrentUser\b/g)?.length ?? 0;
+      const awaited = code.match(/await (\w+)\.authStateReady\?\.\(\);\s*const \w+ = \1\.currentUser;/g)?.length ?? 0;
+      expect(reads, `${file} reads no user`).toBeGreaterThan(0);
+      expect(awaited, `${file} reads the user without awaiting the session right before`).toBe(reads);
     }
   });
 });
