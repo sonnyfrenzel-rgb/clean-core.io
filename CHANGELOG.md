@@ -184,6 +184,7 @@ Signed runs and the audit pack do not change.
 - Process benchmark tooling: the paid stage and statement runners accept only a case id or a starter file name from their id file, so no path outside those folders can reach a prompt, and their spend cap counts the calls in flight, each reserving its worst case before it is sent.
 - Dictionary review list: a domain value is counted for a field only in a case that compares or assigns that value to the field, not in every case that names the field and has the same literal somewhere else.
 - Process benchmark: the run selection the evaluator writes on every run is no longer committed (it slipped in a second time) and is ignored; the corpus stays pinned by its frozen digests.
+- Privacy archive script: an archived version whose file differs from the rendered source is never overwritten, also when the script runs without version ids; it names the files and stops before writing anything, and only `--force` overwrites.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
