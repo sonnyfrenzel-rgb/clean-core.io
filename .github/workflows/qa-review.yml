@@ -26,6 +26,11 @@ on:
         description: 'Head commit id (optional — default: tip of the dispatched ref)'
         required: false
         type: string
+      backlog:
+        description: 'Backlog slice: up to 45 batches under a $4 cap, for one range too large for ten (owner decision 14.11.2026)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -101,6 +106,8 @@ jobs:
           # Only a manual run passes a base. A push starts from the last reviewed checkpoint, or everything not yet on main.
           QA_BASE_OVERRIDE: ${{ inputs.base }}
           QA_HEAD: ${{ inputs.head || github.sha }}
+          # Only a manual slice can ask for the backlog budget (scripts/qa/lib/config.mjs, BACKLOG_BUDGET).
+          QA_BACKLOG_SLICE: ${{ github.event_name == 'workflow_dispatch' && inputs.backlog && '1' || '' }}
         run: node scripts/qa/review.mjs
 
       - name: Upload sealed report

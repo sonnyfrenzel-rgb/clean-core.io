@@ -44,7 +44,7 @@ export const PROD_URL = 'https://clean-core.io';
  */
 export const PRICE_PER_MTOK = MODELS.delta.price;
 
-export const BUDGET = {
+const DELTA_BUDGET = {
   /**
    * Estimated budget for one review — not a hard ceiling. Before every call:
    * what has actually been spent (OpenRouter's usage record) plus an estimate
@@ -133,6 +133,17 @@ export const BUDGET = {
   requestTimeoutMs: 15 * 60_000,
   retries: 2,
 };
+
+/**
+ * The backlog slice (owner decision 14.11.2026). A manual slice dispatched with `backlog: true` may read up to
+ * 45 batches under a $4 cap, so one merge too large for ten batches — the 3.1.0 integration merge, 101 commits
+ * and 252 reviewable files — can still be read completely and move the checkpoint. Only `workflow_dispatch`
+ * sets `QA_BACKLOG_SLICE` (.github/workflows/qa-review.yml); a push review always runs on the delta budget.
+ * Forty-five worst-case batches estimate at about $2.43, under 80 % of the cap.
+ */
+export const BACKLOG_BUDGET = { ...DELTA_BUDGET, maxBatches: 45, maxCostUsd: 4 };
+/** The budget of this run: the delta budget, or the backlog budget for a manual slice that asked for it. */
+export const BUDGET = process.env.QA_BACKLOG_SLICE === '1' ? BACKLOG_BUDGET : DELTA_BUDGET;
 
 /**
  * The full review of a release on `main`: the whole code base, area by area, by MODELS.full. It never gates

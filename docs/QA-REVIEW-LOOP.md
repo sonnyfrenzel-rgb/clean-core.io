@@ -338,6 +338,8 @@ node scripts/qa/await.mjs <head> --slice                    # fetch the result o
 node scripts/qa/refute.mjs <fingerprint> "<reason>"         # file a refuted finding
 gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha>   # re-run the review of a range (full ids;
                                                             # its artifact is qa-review-<head>-<attempt>)
+gh workflow run qa-review.yml --ref dev -f base=<sha> -f head=<sha> -f backlog=true  # one range too large for ten batches:
+                                                            # up to 45 batches under $4 (owner decision 14.11.2026)
 ```
 
 ---
