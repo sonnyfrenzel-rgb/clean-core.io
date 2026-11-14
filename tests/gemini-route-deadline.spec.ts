@@ -14,6 +14,7 @@ import { MODEL_TIMEOUT_CODE, modelTimeoutMessage } from '../lib/model-deadline';
 import { AUTO_STEPS_NOTICE_FIELD, AUTO_STEPS_NOTICE_PENDING_CODE, AUTO_STEPS_NOTICE_WORDING, AUTO_STEPS_NOTICE_WORDING_FIELD } from '../lib/auto-steps-notice';
 import { LEGAL_TEXTS_NAMES_AUTOMATIC } from '../lib/legal/names-wording';
 import { NAMING_FACTS_PROMPT_MARK, NAMING_STAGE } from '../lib/process-naming';
+import { verifyModelReceipt } from '../lib/model-receipt';
 
 /**
  * The model-call deadline at the route — QA leftovers of hotfix 2 (roadmap
@@ -277,6 +278,14 @@ test.describe('the Gemini route ends a call the provider never answers', () => {
       expect(g.__answers, 'both answers were asked for').toEqual([]);
       expect(body.text).toBe('The whole sentence.');
       expect(body.answeredBy?.modelId, 'the answer names the model that answered').toBe(FALLBACK);
+      // QA review of 49f4f7152c69: the receipt and the account's stage record name the fallback too.
+      const uid = (JSON.parse(Buffer.from(idToken.split('.')[1], 'base64url').toString('utf8')) as { user_id: string }).user_id;
+      const verdict = verifyModelReceipt(body.receipt, { uid, text: 'The whole sentence.', key: process.env.AUDIT_SIGNING_KEY ?? '', stage: 'statements' });
+      expect(verdict.ok, 'the receipt does not verify for the fallback\'s answer').toBe(true);
+      expect(verdict.ok && verdict.receipt.modelId, 'the receipt names the model that answered').toBe(FALLBACK);
+      const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
+      const profile = (await adminFirestore(app, FIRESTORE_DB_ID).collection('users').doc(uid).get()).data() as { modelAnswers?: Record<string, { modelId?: string }> } | undefined;
+      expect(profile?.modelAnswers?.statements?.modelId, 'the stage record names the model that answered').toBe(FALLBACK);
     } finally {
       delete g.__answers;
       delete g.__asked;
