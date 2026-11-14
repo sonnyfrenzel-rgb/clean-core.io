@@ -81,7 +81,6 @@ import OpenInvitations from './OpenInvitations';
 import WorkspaceRowActions from './WorkspaceRowActions';
 import YourTurnCard, { yourTurnItems } from './YourTurnCard';
 import HomeFirstView from './HomeFirstView';
-import type { HomeMapSlice } from '@/lib/home-map-slice';
 import { aiAuthorshipFactsOf, withProjectExportAiGeneration } from '@/lib/ai-authorship';
 import { isEngineDocumentation } from '@/lib/process-documentation';
 import { APP_VERSION } from '@/lib/version';
@@ -177,11 +176,8 @@ const DEMO_ID = 'demo';
 
 export default function WorkspaceListReport({
   demo,
-  homeSlice = null,
 }: {
   demo: WorkspaceDemoRow;
-  /** The live slice of the demo map for a new account's first view (AB-14a); null draws none. */
-  homeSlice?: HomeMapSlice | null;
 }) {
   const router = useRouter();
   const isS = useBreakpointS();
@@ -584,7 +580,7 @@ export default function WorkspaceListReport({
     );
   }
   if (user && ownAnswered && sharedAnswered && projects.length === 0 && shared.length === 0) {
-    return <HomeFirstView userId={user.uid} profile={profile ?? null} slice={homeSlice} />;
+    return <HomeFirstView userId={user.uid} profile={profile ?? null} />;
   }
 
   const runnable = (row: WorkspaceRow) => !row.isDemo && row.access === 'own' && row.hasSource;

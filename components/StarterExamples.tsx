@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId, useMemo, useState } from 'react';
+import React, { useId, useImperativeHandle, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { serverTimestamp, updateDoc } from 'firebase/firestore';
 import { createWithinCeiling } from '@/lib/write-ceiling';
@@ -35,6 +35,7 @@ import CcSelect from '@/components/cc/Select';
 import CcTag from '@/components/cc/Tag';
 import TargetEditionChoice, { type TargetEdition } from '@/components/TargetEditionChoice';
 import { leaveStartRelease } from '@/lib/start-release-handoff';
+import { leaveRedesignAfterAnalysis } from '@/lib/home-start-handoff';
 import { CcNoMatches } from '@/components/cc/EmptyState';
 import { homeExampleLines, homeMoreExamples, wt } from '@/lib/workspace-messages';
 
@@ -65,6 +66,18 @@ type Item =
 
 const lines = (n: number) => `${formatNumber(n) ?? n} lines`;
 
+/**
+ * What the home page's other buttons may ask of the recommended example
+ * (ADR-123): the banner after the demo ("Run Z_MM_PO_APPROVAL yourself") and
+ * the Re-design card ("Re-design an example end to end", W4) start the same
+ * example through this component's own rule — the same edition, cost check,
+ * personal-data panel and project — and never a second copy of it.
+ */
+export interface HomeExampleStarter {
+  /** Starts the recommended example; `design` opens Design once its run is signed. */
+  startRecommended: (after?: 'design') => void;
+}
+
 function objectName(snippet: ExampleSnippet): string {
   return snippet.name.replace(/\.(abap|txt)$/i, '');
 }
@@ -75,6 +88,8 @@ export default function StarterExamples({
   heading = true,
   variant = 'gallery',
   homeFooter,
+  homePrimary = true,
+  starterRef,
 }: {
   userId: string;
   account: Account;
@@ -90,6 +105,14 @@ export default function StarterExamples({
   variant?: 'gallery' | 'home';
   /** `home` only: what closes the column on a wide screen (the demo line). */
   homeFooter?: React.ReactNode;
+  /**
+   * `home` only: whether "Start this example" is the page's filled button. After
+   * the demo the banner above carries the one primary (W7), and this one is
+   * secondary — §1.5, one primary per region.
+   */
+  homePrimary?: boolean;
+  /** `home` only: lets the page's other starts start the recommended example (`HomeExampleStarter`). */
+  starterRef?: React.Ref<HomeExampleStarter>;
 }) {
   const router = useRouter();
   const tiers = useMemo(() => exampleTiers(), []);
@@ -120,6 +143,8 @@ export default function StarterExamples({
   /** `home` on a phone: the list of the other examples is folded until asked for. */
   const [homeListOpen, setHomeListOpen] = useState(false);
   const costId = useId();
+  /** Where the next project opens once its run is signed — Design for a re-design start (W4). */
+  const afterRun = useRef<'design' | null>(null);
   // Whether the start asks the model for the narrative (owner decision
   // 03.10.2026): the account's analysis stage and a key, said before the click —
   // and the main switch "All automatic AI steps", without which the first run
@@ -188,6 +213,8 @@ export default function StarterExamples({
       // The release is not a field the browser may write; the first run
       // carries it (`lib/start-release-handoff.ts`), as Change target does.
       leaveStartRelease(docRef.id, edition === 'private' ? release : '');
+      if (afterRun.current === 'design') leaveRedesignAfterAnalysis(docRef.id);
+      afterRun.current = null;
       // The project's entry since AB-2 (ADR-109): Analyze, Business view, which signs the engine's reading at once.
       router.push(`/project/${docRef.id}/analyze?first=1`);
     } catch (error) {
@@ -198,8 +225,9 @@ export default function StarterExamples({
   };
 
   /** A free first run goes straight through; anything that uses a run is told so first. */
-  const start = (item: Item) => {
+  const start = (item: Item, after: 'design' | null = null) => {
     if (busy) return;
+    afterRun.current = after;
     if (free(item)) {
       void create(item);
       return;
@@ -354,6 +382,7 @@ export default function StarterExamples({
   };
 
   const startHere: Item = { kind: 'example', key: tiers.startHere.file, example: tiers.startHere };
+  useImperativeHandle(starterRef, () => ({ startRecommended: (after) => start(startHere, after ?? null) }));
 
   /** What stands under an example once it was started: the repeat warning, the personal-data panel. */
   const startNotes = (item: Item) => {
@@ -403,15 +432,15 @@ export default function StarterExamples({
         data-testid="starter-examples"
         data-starter-examples-variant="home"
         aria-labelledby="home-examples-title"
-        className="flex min-w-0 flex-1 flex-col gap-3"
+        className="flex min-w-0 flex-1 flex-col gap-2.5"
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 id="home-examples-title" className="cc-text-h2 m-0 text-cc-ink">
+          <h3 id="home-examples-title" className="m-0 text-[14px] leading-snug font-bold text-cc-ink">
             {wt('home.exampleTitle')}
           </h3>
           <span
             data-home-cost="examples"
-            className="inline-flex items-center rounded-full border border-cc-success-border bg-cc-success-bg px-2 py-px text-[12px] leading-[18px] font-semibold whitespace-nowrap text-cc-success"
+            className="inline-flex items-center rounded-full border border-cc-success-border bg-cc-brand-surface px-2 text-[12px] leading-5 font-semibold whitespace-nowrap text-cc-brand-strong"
           >
             {wt('home.exampleCost')}
           </span>
@@ -445,86 +474,81 @@ export default function StarterExamples({
         <div
           data-example-card={rec.name}
           data-examples-tier="start-here"
-          className="flex flex-col items-start gap-2 rounded-cc-card border border-cc-line px-4 py-3"
+          className="flex flex-col items-stretch gap-1.5 rounded-cc-row border border-cc-line bg-cc-surface px-3.5 py-3"
         >
           <div className="flex flex-wrap items-center gap-2">
-            <span data-testid="starter-example-name" className="font-cc-mono text-[13px] font-bold text-cc-ink">
+            <span data-testid="starter-example-name" className="font-cc-mono text-[12px] font-medium text-cc-ink">
               {rec.name}
             </span>
             <CcTag>{wt('home.recommended')}</CcTag>
             <RanBefore account={account} name={rec.name} />
           </div>
-          <p className="m-0 text-[13px] leading-normal font-medium text-cc-ink-muted">
+          <p className="m-0 line-clamp-2 text-[13px] leading-normal font-medium text-cc-ink-muted min-[601px]:line-clamp-none">
             {rec.summary} <span data-example-lines={rec.lines}>{lines(rec.lines)}.</span>
           </p>
-          <span data-home-start-example-wrap="" className="flex w-full flex-col min-[601px]:w-auto">
-            <CcButton
-              variant="primary"
-              density="cozy"
-              busy={busy === startHere.key}
-              disabled={!!busy && busy !== startHere.key}
-              onClick={() => start(startHere)}
-              aria-expanded={confirming === startHere.key || undefined}
-              data-example-start={rec.name}
-              data-home-start-example=""
-            >
-              <span>{wt('home.startExample')}</span>
-              <ArrowRight size={16} aria-hidden={true} />
-            </CcButton>
-          </span>
-          {startNotes(startHere)}
-        </div>
-
-        <div className="flex flex-col">
-          <span className="min-[768px]:hidden" data-examples-more="">
+          <div className="mt-1 flex flex-wrap items-center gap-3">
+            <span data-home-start-example-wrap="" className="flex">
+              <CcButton
+                variant={homePrimary ? 'primary' : 'secondary'}
+                busy={busy === startHere.key}
+                disabled={!!busy && busy !== startHere.key}
+                onClick={() => start(startHere)}
+                aria-expanded={confirming === startHere.key || undefined}
+                data-example-start={rec.name}
+                data-home-start-example=""
+              >
+                <span>{wt('home.startExample')}</span>
+                <ArrowRight size={14} aria-hidden={true} />
+              </CcButton>
+            </span>
             <button
               type="button"
               aria-expanded={homeListOpen}
               aria-controls="home-examples-list"
               onClick={() => setHomeListOpen((v) => !v)}
               data-home-more-examples=""
-              className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold text-cc-ink underline decoration-cc-field-border underline-offset-[3px] hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus"
+              className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold whitespace-nowrap text-cc-ink underline decoration-cc-field-border underline-offset-[3px] hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus min-[601px]:min-h-0"
             >
               {homeMoreExamples(others.length)}
               <ArrowRight size={14} aria-hidden={true} />
             </button>
-          </span>
-          <ul
-            id="home-examples-list"
-            aria-label={wt('home.otherExamples')}
-            data-home-examples-list=""
-            className={'m-0 list-none flex-col border-t border-cc-line p-0 min-[768px]:flex ' + (homeListOpen ? 'flex' : 'hidden')}
-          >
-            {others.map((item) =>
-              item.kind === 'example' ? (
-                <li key={item.key} data-example-card={item.example.name} className="border-b border-cc-line">
-                  <button
-                    type="button"
-                    onClick={() => start(item)}
-                    disabled={!!busy && busy !== item.key}
-                    aria-busy={busy === item.key || undefined}
-                    aria-label={`Start ${item.example.name}`}
-                    data-example-start={item.example.name}
-                    className="group grid min-h-[34px] w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto_14px] items-center gap-x-2 gap-y-1 px-1 py-2 text-left text-[12px] font-medium text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus disabled:cursor-not-allowed pointer-coarse:min-h-11 min-[1101px]:grid-cols-[minmax(0,auto)_auto_minmax(0,1fr)_14px]"
-                  >
-                    <span data-testid="starter-example-name" className="truncate font-cc-mono font-semibold text-cc-ink underline-offset-[3px] group-hover:underline">
-                      {item.example.name}
-                    </span>
-                    <span data-example-lines={item.example.lines} className="inline-flex items-center gap-2 whitespace-nowrap tabular-nums">
-                      {homeExampleLines(formatNumber(item.example.lines) ?? String(item.example.lines))}
-                      <RanBefore account={account} name={item.example.name} />
-                    </span>
-                    <ArrowRight size={14} aria-hidden={true} className="justify-self-end min-[1101px]:order-last" />
-                    <span className="col-span-full min-w-0 truncate max-[600px]:hidden min-[1101px]:col-span-1">
-                      {item.example.summary}
-                    </span>
-                  </button>
-                  {startNotes(item)}
-                </li>
-              ) : null,
-            )}
-          </ul>
+          </div>
+          {startNotes(startHere)}
         </div>
+
+        <ul
+          id="home-examples-list"
+          aria-label={wt('home.otherExamples')}
+          data-home-examples-list=""
+          className={'m-0 list-none flex-col border-t border-cc-line p-0 ' + (homeListOpen ? 'flex' : 'hidden')}
+        >
+          {others.map((item) =>
+            item.kind === 'example' ? (
+              <li key={item.key} data-example-card={item.example.name} className="border-b border-cc-line">
+                <button
+                  type="button"
+                  onClick={() => start(item)}
+                  disabled={!!busy && busy !== item.key}
+                  aria-busy={busy === item.key || undefined}
+                  aria-label={`Start ${item.example.name}`}
+                  data-example-start={item.example.name}
+                  className="group grid min-h-[34px] w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto_14px] items-center gap-x-2 gap-y-1 px-1 py-2 text-left text-[12px] font-medium text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus disabled:cursor-not-allowed pointer-coarse:min-h-11"
+                >
+                  <span data-testid="starter-example-name" className="truncate font-cc-mono font-semibold text-cc-ink underline-offset-[3px] group-hover:underline">
+                    {item.example.name}
+                  </span>
+                  <span data-example-lines={item.example.lines} className="inline-flex items-center gap-2 whitespace-nowrap tabular-nums">
+                    {homeExampleLines(formatNumber(item.example.lines) ?? String(item.example.lines))}
+                    <RanBefore account={account} name={item.example.name} />
+                  </span>
+                  <ArrowRight size={14} aria-hidden={true} className="justify-self-end" />
+                  <span className="col-span-full min-w-0 truncate max-[600px]:hidden">{item.example.summary}</span>
+                </button>
+                {startNotes(item)}
+              </li>
+            ) : null,
+          )}
+        </ul>
 
         {/* Said before the click (§2.8): what the start does with the model. */}
         <p data-examples-cost="" className="m-0 cc-text-meta text-cc-ink-muted">

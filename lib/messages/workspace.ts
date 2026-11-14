@@ -204,39 +204,53 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'newProject.nothingCreated': 'Nothing was created.',
   'newProject.personalDataPending':
     'Read the lines above and tick the box to carry on. Nothing has been created yet.',
-  // My workspace — the first view of a new account (AB-14a, home mockup v2.1, state 1)
-  'home.title': 'See your Z program as a business process',
+  // My workspace — the first view of a new account: two equal products (ADR-123, mock-up direction A)
+  'home.title': 'What do you want to do with your Z program?',
   'home.lead':
-    'Clean-Core.io reads your custom ABAP and shows what it does as a business process, what it touches in SAP and how far it is from clean core. If you want, it then helps you re-design it.',
-  'home.pathTitle': 'What Clean-Core.io does, step by step',
-  'home.pathComplete': 'A complete result on its own',
-  'home.pathOptional': 'Optional, if you want to re-design it',
-  'home.path.analyze': 'Process map, SAP objects used, findings and clean core level. Business, IT and management view.',
+    'Two things, on the same evidence: your ABAP, read line by line. Every statement keeps the code line it comes from.',
+  'home.productsTitle': 'Two products on the same evidence',
+  'home.path.analyze':
+    'The process as a map, the hard-coded rules, the SAP objects it uses, its findings and clean core score — in a Business, IT and Management view.',
   'home.path.design': 'Keep, change or drop each rule',
   'home.path.transformation': 'New code in ABAP Cloud (RAP) or CAP',
   'home.path.documentation': 'Readable documents to export',
   'home.path.testing': 'Tests for the new version',
   'home.path.tco': 'Cost and effort, to decide',
   'home.path.delivery': 'A signed evidence package',
-  'home.startTitle': 'Start your first analysis',
+  'home.analyse.mark': 'Analyse',
+  'home.analyse.title': 'Analyse it — understand what it does',
+  'home.analyse.getsShort': 'Process map, rules, SAP objects and clean core score.',
+  'home.analyse.cost': '1 analysis run per program',
+  'home.redesign.mark': 'Re-design',
+  'home.redesign.title': 'Re-design it — build its clean core successor',
+  'home.redesign.gets':
+    'From the same evidence: a decision per rule, new code in ABAP Cloud (RAP) or CAP, documentation, tests, economics — and a signed delivery package.',
+  'home.redesign.getsShort': 'From the same evidence: new code, tests, economics and a signed delivery.',
+  'home.redesign.cost': 'Not counted against your runs',
+  'home.redesign.costMeta': 'It builds on the analysis run',
+  'home.redesign.toolsTitle': 'The six tools of Re-design',
+  'home.redesign.startsLead': 'Re-design starts from an analysis',
+  'home.redesign.startsRest': ', so the evidence is there first.',
+  'home.redesign.how1': 'Analyse the program — an example or your own code.',
+  'home.redesign.how2': 'Design opens on its result; the six tools follow in order.',
+  'home.redesign.example': 'Re-design an example end to end',
   'home.exampleTitle': 'Try an example',
   'home.exampleCost': 'Free the first time',
   'home.recommended': 'Recommended',
   'home.startExample': 'Start this example',
   'home.otherExamples': 'Other examples',
-  'home.ownTitle': 'Analyse your own program',
+  'home.ownTitle': 'Upload your own code',
   'home.dropWide': 'Drop a program file here',
   'home.dropTouch': 'Add one program',
-  'home.dropTypes': 'ABAP source as .abap or .txt',
+  'home.dropTypes': 'ABAP source as .abap or .txt, or an abapGit ZIP',
   'home.chooseFile': 'Choose a file',
   'home.paste': 'Paste the code',
-  'home.noFile': 'No file? Ask your SAP developer for the program source as a text file.',
-  'home.whatYouGet': 'What you get:',
+  'home.safe': 'Stored in the EU · only you and whom you invite · never sold.',
+  'home.safeLink': 'What happens to your code?',
   'home.ownNote': 'Nothing is analysed until you start.',
   'home.portfolioLead': 'Many programs at once?',
   'home.sliceUnavailable': 'The picture of the map could not be drawn here. The demo shows the whole map.',
   'home.demoAsk': 'Prefer to look first?',
-  'home.demoBody': 'The demo is a finished example. Nothing runs and nothing is saved.',
   'home.openDemo': 'Open the demo',
   // My workspace — the 3.0 list (mockup s7), its sharing section and row menu
   'myWorkspace.limitReached': 'Limit reached.',
@@ -359,6 +373,36 @@ export function withdrawSentence(email: string): string {
   return `The link sent to ${email} stops working at once. If they have not opened it yet, they never will; you can invite them again later.`;
 }
 
+/** The cost line of the Analyse card: what is left, and that the same code is free again (W8). */
+export function homeAnalyseCostLine(runsLeft: string): string {
+  return `${runsLeft} · the same code again is free`;
+}
+
+/** Beside "Re-design an example end to end": which example, and what its run costs (W4, W8). */
+export function homeRedesignExampleMeta(objectName: string, free: boolean): string {
+  return free ? `${objectName} · free the first time` : `${objectName} · uses one analysis run`;
+}
+
+/** The demo line under the pair. */
+export function homeDemoBody(objectName: string): string {
+  return `The demo is a finished example of ${objectName}. Nothing runs and nothing is saved.`;
+}
+
+/** After the demo (W7): the banner that continues it. */
+export function homeFromDemoTitle(objectName: string): string {
+  return `You have seen ${objectName} in the demo.`;
+}
+
+export function homeFromDemoBody(short: boolean): string {
+  return short
+    ? 'Run it yourself, free the first time — or upload your own.'
+    : 'Now run it yourself — free the first time — and keep the result, or upload your own Z program.';
+}
+
+export function homeFromDemoRun(objectName: string): string {
+  return `Run ${objectName} yourself`;
+}
+
 /** The first view of a new account (AB-14a): the greeting, with the first name when the profile has one. */
 export function homeWelcome(firstName: string | null | undefined): string {
   const name = (firstName ?? '').trim();
@@ -373,27 +417,6 @@ export function homeMoreExamples(n: number): string {
 /** A shipped example's size in the compact list. */
 export function homeExampleLines(n: string): string {
   return `${n} lines`;
-}
-
-/** The tag of the own-code way: the free runs as `QUOTA_NAME` says them, or the own key. */
-export function homeOwnCost(limit: number, selfFunded: boolean): string {
-  return selfFunded ? 'Your own model key' : `${limit} free analysis runs`;
-}
-
-/** The line under it — one run per program, and what is left (`runsLeftLabel`). */
-export function homeOwnLine(runsLeft: string): string {
-  return `One run per program. ${runsLeft}.`;
-}
-
-/** Beside the live slice of the demo map. */
-export function homeSliceLead(objectName: string): string {
-  return `the process as a map, every step with its code lines. Here the start of ${objectName}.`;
-}
-
-/** What a screen reader hears for the slice: the map, and each element with its line. */
-export function homeSliceLabel(objectName: string, elements: ReadonlyArray<{ label: string; anchor: string | null }>): string {
-  const parts = elements.map((e) => (e.anchor ? `${e.label} (${e.anchor})` : e.label));
-  return `Start of the process map of ${objectName}: ${parts.join(', ')}.`;
 }
 
 /** My workspace on a phone — the facts line of a project card. */

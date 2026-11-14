@@ -323,7 +323,8 @@ test.describe('rendered: leaving the first view of a new account', () => {
     await signInViaLanding(page, email, password);
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
     const view = page.locator('[data-home-first-view]');
-    await expect(view.locator('[data-home-map-slice="drawn"]')).toBeVisible({ timeout: 90_000 });
+    // 3.3.0 (ADR-123): no slice of the map on My workspace any more; leaving it still throws nothing.
+    await expect(view.locator('[data-home-paste]')).toBeVisible({ timeout: 90_000 });
     errors.length = 0;
     // Leave in the app (no reload), as a reader does: the paste way in.
     await view.locator('[data-home-paste]').click();
