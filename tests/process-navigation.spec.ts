@@ -671,7 +671,13 @@ async function resetView(page: Page) {
       id: el.getAttribute('data-tree-node') ?? '',
       level: Number(el.getAttribute('aria-level') ?? '1'),
     })).sort((a, b) => b.level - a.level));
-  for (const row of open) await page.locator(`[data-tree-twisty="${row.id}"]`).click();
+  // The twisty is triggered, not clicked at a position: collapsing a deeper row shrinks the scrolled outline, and
+  // a click aimed before that settles can land on the row beside the 16 px twisty — which selects the phase and
+  // opens it again. This is setup, never counted; the measurements below click as a reader does.
+  for (const row of open) {
+    await page.locator(`[data-tree-twisty="${row.id}"]`).dispatchEvent('click');
+    await expect(page.locator(`[data-tree-node="${row.id}"]`)).toHaveAttribute('aria-expanded', 'false');
+  }
   await expect(page.locator('[data-tree-node][aria-expanded="true"]'),
     'the view did not go back to the overview').toHaveCount(0);
 }

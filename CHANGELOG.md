@@ -39,6 +39,8 @@ Signed runs and the audit pack do not change.
 - Engine 4.0 is built in parallel from now on, as its own module tree that nothing reads until the switch (ADR-125); benchmark convention K3 settled: commits stay in the technical layer.
 
 ### Fixed
+- Privacy policy: an address with a version number (`clean-core.io/datenschutz/versions/1.2`) links to that version; it linked to `/versions/1`, a page that does not exist, and the browser's prefetch of it never settled.
+- Tests: the C14 notice case "the steps already off" turns off both automatic steps, since the business names start by themselves again in 3.1.0; the outline reset of the navigation acceptance triggers the twisty instead of clicking a position the shrinking list has already moved.
 - Process map: a routine whose only extra elements are log notes stays one step; a routine calling itself is not drawn as a phase of its own.
 - Business view: a program's own component named with an English word reads as that word, not as "Field KIND".
 - Business view: a check on "not DE, AT or CH" and a `WHILE … <> 0` loop read the way the code tests them; a run signed before 3.1.0 keeps its words.

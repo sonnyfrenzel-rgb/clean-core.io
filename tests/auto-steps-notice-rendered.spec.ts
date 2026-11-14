@@ -162,7 +162,9 @@ test.describe('C14 — the notice before the first automatic model call', () => 
   for (const [why, over] of [
     ['answered before', { autoStepsNoticeSeen: true }],
     ['own key with "Automatic steps" off', { keySource: 'byok', autoSteps: false }],
-    ['the step already off', { stages: { ...STAGES, statements: false } }],
+    // Since 3.1.0 the business names start by themselves again (`automaticStagesInThisBuild`): both automatic
+    // steps are off, or the one still on rightly brings the notice.
+    ['the steps already off', { stages: { ...STAGES, statements: false, naming: false } }],
     ['no key', { keyAvailable: false, keySource: null, provider: null }],
   ] as const) {
     test(`not shown: ${why}`, async ({ page }) => {
