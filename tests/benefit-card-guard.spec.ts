@@ -63,6 +63,8 @@ test.describe('the reference run is read, not typed', () => {
     // the section makes too, so they are checked as rendered, not as field names.
     const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
     expect(norm(card), 'the rendered total is not the run’s').toMatch(new RegExp(`(^|\\D)${r.totalFindings} ?findings`));
+    // Since the landing page 3.5 the roll-call and the quote sit in a "For IT" fold of #evidence: open it first.
+    await browser.locator('details:has([data-landing-rollcall]) > summary').click();
     const quote = browser.locator('[data-landing-rollcall-card] p.honest');
     const first = r.businessDecisions[0];
     if (!first) {

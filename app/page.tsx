@@ -352,10 +352,10 @@ export default function Home() {
               </p>
               <div className="cta-row">
                 <Link href={SHOWCASE} className={publicButton('primary')} data-cta-see="">
-                  {SHOWCASE_CTA} {ARROW}
+                  <span className="whitespace-normal">{SHOWCASE_CTA}</span> {ARROW}
                 </Link>
                 <AuthLink to="/dashboard" variant="secondary" testId="hero-start">
-                  {DO_CTA}
+                  <span className="whitespace-normal">{DO_CTA}</span>
                 </AuthLink>
               </div>
               <p className="cta-note">
@@ -1054,7 +1054,7 @@ export default function Home() {
                 </ul>
                 <div className="full">
                   <AuthLink to="/dashboard" variant="primary" testId="start-own-code">
-                    {DO_CTA}
+                    <span className="whitespace-normal">{DO_CTA}</span>
                   </AuthLink>
                   <Link href={SHOWCASE} className={publicButton('secondary')} data-cta-see="">
                     {SHOWCASE_CTA}

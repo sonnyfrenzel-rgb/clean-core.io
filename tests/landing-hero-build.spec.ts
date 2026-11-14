@@ -23,8 +23,9 @@ const elementNames = () => {
 };
 
 async function heroNames(page: Page) {
+  // An element a phone leaves out (`display: none`) runs no animation; only what is drawn counts.
   return page.locator('[data-hero-map] [data-hero-name]').evaluateAll((els) =>
-    els.map((el) => {
+    els.filter((el) => (el as HTMLElement).offsetParent !== null).map((el) => {
       const biz = el.querySelector('.biz') as HTMLElement;
       const eng = el.querySelector('.eng') as HTMLElement | null;
       return {
@@ -96,7 +97,12 @@ for (const width of [1440, 390]) {
         }
       }).observe({ type: 'layout-shift', buffered: true });
     });
+    // A first visit fetches the page's font and swaps it in (`display: swap`,
+    // app/layout.tsx) — a sub-pixel reflow of all text that belongs to the font,
+    // not to the hero. Warm the cache once, then measure the visit.
     await page.goto('/', { waitUntil: 'load', timeout: 150_000 });
+    await page.evaluate(() => document.fonts.ready);
+    await page.reload({ waitUntil: 'load', timeout: 150_000 });
     // The build-up and the swap end within a few seconds; then the header has settled too.
     await expect.poll(async () => (await heroNames(page)).every((n) => n.engVisibility === 'hidden'), { timeout: 15_000 }).toBe(true);
     await page.locator('header [data-header-sign-in]').waitFor({ state: 'visible', timeout: 30_000 });

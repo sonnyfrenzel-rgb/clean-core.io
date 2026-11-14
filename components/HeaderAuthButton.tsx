@@ -36,11 +36,19 @@ export default function HeaderAuthButton({ signInHref = '?auth=signin' }: { sign
   };
 
   if (loading) {
-    // Narrower below `sm`, because the placeholder has to fit the same space the
-    // button does. At 176px flat it was 21px wider than a 320px header could
-    // hold, and the whole page scrolled sideways until auth resolved. It stands
+    // The signed-out pair, invisible, holds the place until auth has answered:
+    // the same width as what replaces it for a signed-out reader, so nothing in
+    // the header moves (the landing measures layout shift, CLS 0). Invisible
+    // and inert, so neither a click nor a screen reader meets it, and it stands
     // still: a pulsing block is motion without a state change (§1.7, §5.4).
-    return <div aria-hidden={true} className="h-10 w-40 sm:w-44 rounded-cc-row bg-cc-surface-muted" />;
+    return (
+      <span aria-hidden={true} className="invisible flex items-center gap-3 sm:gap-4" inert>
+        <span className="whitespace-nowrap py-2 text-[15px] font-bold">Sign in</span>
+        <CcButton variant="secondary" density="compact">
+          Start free
+        </CcButton>
+      </span>
+    );
   }
 
   if (user) {
