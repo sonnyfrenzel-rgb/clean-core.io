@@ -317,11 +317,14 @@ test.describe('the Business view on screen', () => {
     await noRuleDecisionInBusiness(page);
     // One primary on the page outside the interim blocks: the invitation. (Today's "Next step" bar under the map keeps
     // its own primary until AB-4 replaces it with the two endings — analyze-business-first counts the same way.)
+    // Page-wide, every primary is accounted for: one outside the interim, and inside it at most the "Next step" bar's.
     expect(
-      await page.locator('[data-analyze-business] [data-cc-button="primary"]:visible').evaluateAll((els) =>
-        els.filter((el) => !el.closest('[data-analyze-interim]')).length,
-      ),
-    ).toBe(1);
+      await page.locator('[data-analyze-business] [data-cc-button="primary"]:visible').evaluateAll((els) => ({
+        outside: els.filter((el) => !el.closest('[data-analyze-interim]')).length,
+        interimElsewhere: els.filter((el) => el.closest('[data-analyze-interim]') && !el.closest('[data-next-step]')).length,
+        nextStepPrimaries: els.filter((el) => el.closest('[data-analyze-interim] [data-next-step]')).length <= 1,
+      })),
+    ).toEqual({ outside: 1, interimElsewhere: 0, nextStepPrimaries: true });
     // The figures one fold down agree with the answers on record.
     const fact = page.locator('[data-first-look-fact="rules-confirmed"]');
     await expect(fact).toHaveAttribute('data-confirmed', '1', { timeout: 60_000 });
@@ -362,11 +365,14 @@ test.describe('the Business view on screen', () => {
     await expect(page.locator('[data-next-step-rules]')).toHaveCount(0);
     // One primary on the page outside the interim blocks: the invitation. (Today's "Next step" bar under the map keeps
     // its own primary until AB-4 replaces it with the two endings — analyze-business-first counts the same way.)
+    // Page-wide, every primary is accounted for: one outside the interim, and inside it at most the "Next step" bar's.
     expect(
-      await page.locator('[data-analyze-business] [data-cc-button="primary"]:visible').evaluateAll((els) =>
-        els.filter((el) => !el.closest('[data-analyze-interim]')).length,
-      ),
-    ).toBe(1);
+      await page.locator('[data-analyze-business] [data-cc-button="primary"]:visible').evaluateAll((els) => ({
+        outside: els.filter((el) => !el.closest('[data-analyze-interim]')).length,
+        interimElsewhere: els.filter((el) => el.closest('[data-analyze-interim]') && !el.closest('[data-next-step]')).length,
+        nextStepPrimaries: els.filter((el) => el.closest('[data-analyze-interim] [data-next-step]')).length <= 1,
+      })),
+    ).toEqual({ outside: 1, interimElsewhere: 0, nextStepPrimaries: true });
 
     // The figures are one fold down, and agree with what is on record.
     const fact = page.locator('[data-first-look-fact="rules-confirmed"]');
