@@ -61,6 +61,22 @@ test.describe('runs', () => {
     expect(verifyRunIntegrity({ ...withoutScheme, runHash, signature: signRunHashV2(runHash, KEY) }, KEY).reason).toBe('hash-mismatch');
   });
 
+  // Known answers, worked out with node:crypto alone (sha256 of the canonical JSON; HMAC-SHA256 under the key;
+  // HMAC-SHA256 under HKDF-SHA256(key, no salt, "clean-core.io/run-signature/v2", 32)). A signer and a verifier
+  // that drift together pass every round trip above; they fail here, and so would every run sealed before.
+  test('the run hash and both signature forms keep their pinned values', () => {
+    const { unsigned, runHash } = run();
+    expect(runHash).toBe('948181d21d6815bfa85676bd2346d13235366cb0594e7c84c15511c14c485e39');
+    expect(run({ signatureScheme: RUN_SIGNATURE_SCHEME }).runHash).toBe('c9c087694c73ecf4070de8601d2d8cf9acc7ccaabc0c190e091a18faa2f4feb6');
+    const h = sha('known-answer run');
+    expect(h).toBe('697d06f6ebf0896d76d3c4025c8d6c5b9ffe60540e1e3a1522ee3efff6e6bd27');
+    expect(signRunHash(h, KEY)).toBe('6e9d0576558539dcad73f2fab97efc7678738599f9e98ab2e16cb88b7b51f7c1');
+    expect(signRunHashV2(h, KEY)).toBe('bfed5ca312041ddebb4f8c0118e7657b8a17ca261aae1c269dc8ff2f43bc2f28');
+    // A run sealed in the legacy form with the pinned signature still verifies.
+    const legacy = signRunHash(runHash, KEY);
+    expect(verifyRunIntegrity({ ...unsigned, runHash, signature: legacy }, KEY)).toEqual({ valid: true });
+  });
+
   test('an unknown scheme is refused, never guessed', () => {
     const { unsigned, runHash } = run({ signatureScheme: 'something-else' });
     expect(expectedRunSignature({ ...unsigned, runHash }, KEY)).toBeNull();
