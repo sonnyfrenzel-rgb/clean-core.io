@@ -868,7 +868,9 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     const parts = partsOf(file, max);
     const after = packBatches(parts, baseChars, { budget: { ...BUDGET, maxBatches: 45 } });
     expect(after.notReviewed).toEqual([]);
-    expect(parts.map((p: { diff: string }) => p.diff).join('').replace(/\s/g, '').length).toBeGreaterThanOrEqual(file.diff.replace(/\s/g, '').length * 0.99);
+    // Exactly: every line of the diff under a hunk header stands in exactly one part, in its order (the lines of
+    // bigDiff are unique, so a dropped, repeated or reordered line shows).
+    expect(parts.flatMap((p: { diff: string }) => bodyLines(p.diff))).toEqual(bodyLines(file.diff));
     // With room to spare the fixed limit still applies; with none, the floor keeps parts meaningful.
     expect(partBudgetFor(file, 1_000)).toBe(BUDGET.maxFileDiffChars);
     expect(partBudgetFor(file, BUDGET.maxBatchChars)).toBe(MIN_PART_CHARS);

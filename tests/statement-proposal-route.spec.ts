@@ -222,6 +222,74 @@ test('an answer for another reading of the source is refused with 409', async ({
   expect(await stored(request)).toEqual(before);
 });
 
+test('a rewording stands only with a receipt of its own: merged under the guard with the draft as origin.draft, otherwise the draft as it came', async ({ request }) => {
+  // QA review of 49f4f7152c69: executed through the route, not read off its source.
+  const draftReceipt = () => issueModelReceipt({ uid, text: ANSWER, provider: 'google-gemini', modelId: 'gemini-4-hydrogen', byok: false, stage: 'statements' }, signingKey());
+  // The first sentence reworded as the guard allows; the second moved to another line, which the guard refuses.
+  const REWORDED = JSON.stringify({
+    statements: [
+      { text: 'Es wird gelesen, ob der Lieferant gesperrt ist.', anchors: [`${STATEMENT_SOURCE_NAME}:3`], element: null, uncertainty: null },
+      { text: 'Ist der Lieferant gesperrt, wird die Meldung E002 angezeigt.', anchors: [`${STATEMENT_SOURCE_NAME}:7`], element: null, uncertainty: null },
+    ],
+  });
+  const DRAFT_TEXTS = [
+    ['Das Sperrkennzeichen des Lieferanten wird gelesen.', 3],
+    ['Ist der Lieferant schon gesperrt, wird die Fehlermeldung E002 angezeigt.', 5],
+  ];
+  const post = (draft: ReturnType<typeof draftReceipt>, rewording: unknown) =>
+    request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text: ANSWER, receipt: draft, rewording } });
+
+  // A verifying second receipt: the merge is stored, the second model is the writer and the first the draft's.
+  const draft = draftReceipt();
+  const second = issueModelReceipt({ uid, text: REWORDED, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey());
+  const merged = await post(draft, { text: REWORDED, receipt: second });
+  expect(merged.status(), await merged.text()).toBe(200);
+  const { record } = (await merged.json()) as { record: StatementProposalRecord };
+  expect(record.statements.map((s) => [s.text, s.anchors[0].lineStart])).toEqual([
+    ['Es wird gelesen, ob der Lieferant gesperrt ist.', 3],
+    DRAFT_TEXTS[1],
+  ]);
+  expect(record.rewording).toEqual({ reworded: 1, kept: 1, rejected: { 'anchors-changed': 1 } });
+  expect(record.origin).toEqual({
+    source: 'model', receipt: 'verified', provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false,
+    issuedAt: second.iat, textSha256: second.textSha256,
+    draft: { provider: 'google-gemini', modelId: 'gemini-4-hydrogen', byok: false, issuedAt: draft.iat, textSha256: draft.textSha256 },
+  });
+  expect(await stored(request), 'what GET returns is not what POST stored').toEqual(record);
+
+  // A second receipt that does not verify for the rewording — another text, another account, another stage, another
+  // key, none — or a rewording without a receipt: the draft is stored as it came, and nothing names a second model.
+  const cases: Array<[string, unknown]> = [
+    ['text-mismatch', issueModelReceipt({ uid, text: ANSWER, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey())],
+    ['wrong-account', issueModelReceipt({ uid: otherUid, text: REWORDED, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey())],
+    ['wrong-stage', issueModelReceipt({ uid, text: REWORDED, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'naming' }, signingKey())],
+    ['forged', issueModelReceipt({ uid, text: REWORDED, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, 'not-the-signing-key')],
+    ['absent', undefined],
+  ];
+  for (const [label, receipt] of cases) {
+    const d = draftReceipt();
+    const res = await post(d, { text: REWORDED, receipt });
+    expect(res.status(), `${label}: ${await res.text()}`).toBe(200);
+    const kept = ((await res.json()) as { record: StatementProposalRecord }).record;
+    expect(kept.statements.map((s) => [s.text, s.anchors[0].lineStart]), label).toEqual(DRAFT_TEXTS);
+    expect(kept.rewording, label).toBeUndefined();
+    expect(kept.origin, label).toEqual({
+      source: 'model', receipt: 'verified', provider: 'google-gemini', modelId: 'gemini-4-hydrogen', byok: false, issuedAt: d.iat, textSha256: d.textSha256,
+    });
+    expect(await stored(request), `${label}: what GET returns is not what POST stored`).toEqual(kept);
+  }
+
+  // A rewording that is not an answer is refused whole, and what is stored stays.
+  const before = await stored(request);
+  const bad = await post(draftReceipt(), { text: 7, receipt: second });
+  expect(bad.status(), await bad.text()).toBe(400);
+  expect(await stored(request)).toEqual(before);
+
+  // Back to the draft of the product model alone, for the tests below.
+  const good = issueModelReceipt({ uid, text: ANSWER, provider: 'google-gemini', modelId: 'gemini-3.8-flash', byok: false, stage: 'statements' }, signingKey());
+  expect((await request.post(path, { headers: headers(), data: { digest: CONTEXT.digest, text: ANSWER, receipt: good } })).status()).toBe(200);
+});
+
 test('the owner writes, the invited reader only reads, a stranger neither — and no browser reads Firestore directly', async ({ request }) => {
   const owners = await stored(request);
   expect(await stored(request, readerToken), 'the invited reader does not see what the owner asked for').toEqual(owners);
