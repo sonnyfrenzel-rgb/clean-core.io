@@ -308,6 +308,45 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
 }
 
 /**
+ * How long a stored snapshot is kept: 24 months, then a Firestore TTL policy on
+ * `expiresAt` deletes it (`docs/DATA-RETENTION.md`). Counted from the end of the
+ * week it covers, which is the day it was written.
+ */
+export const USAGE_REPORT_RETENTION_MONTHS = 24;
+
+/** The deletion date of the snapshot of the week ending `periodEnd`: 24 calendar months later. */
+export function usageReportExpiry(periodEnd: Date): Date {
+  const d = new Date(periodEnd.getTime());
+  d.setUTCMonth(d.getUTCMonth() + USAGE_REPORT_RETENTION_MONTHS);
+  return d;
+}
+
+/** A Firestore Timestamp, a Date or an ISO string, as a Date; anything else null. */
+function asDate(v: unknown): Date | null {
+  if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v;
+  if (typeof v === 'string') {
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const t = v as { toDate?: () => Date } | null;
+  return t && typeof t.toDate === 'function' ? asDate(t.toDate()) : null;
+}
+
+/**
+ * The deletion date a snapshot stored before 3.2.0 gets, or why it is left alone: it already has `expiresAt`
+ * (`'has-expiry'`) or carries no time to count from (`'no-time'`). Counted from `periodEnd`, else `generatedAt`,
+ * with the period the Friday job gives a new snapshot. Applied by `scripts/backfill-usage-report-expiry.ts`.
+ */
+export function usageReportBackfillExpiry(
+  data: Record<string, unknown>,
+): { expiresAt: Date } | { skip: 'has-expiry' | 'no-time' } {
+  if (data.expiresAt !== undefined && data.expiresAt !== null) return { skip: 'has-expiry' };
+  const from = asDate(data.periodEnd) ?? asDate(data.generatedAt);
+  if (!from) return { skip: 'no-time' };
+  return { expiresAt: usageReportExpiry(from) };
+}
+
+/**
  * What the Friday job stores in `usage_reports`, field by field.
  *
  * Named rather than spread: `{ ...report }` stored whatever the report happened
@@ -337,5 +376,7 @@ export function usageReportSnapshot(report: UsageReport, extra: { providerId: st
       failures: delivery.failures.map((f) => ({ kind: f.kind, status: f.status, count: f.count })),
     },
     providerId: extra.providerId,
+    // Its own deletion date: a Firestore TTL policy deletes the snapshot then (privacy policy, 24 months).
+    expiresAt: usageReportExpiry(report.periodEnd),
   };
 }

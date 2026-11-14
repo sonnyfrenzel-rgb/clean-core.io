@@ -12,6 +12,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   arrives at the webhook anyway is acknowledged and dropped, neither delivery record stores it, and the weekly usage
   report counts delivery only ("Zugestellt", no "geöffnet"). An older record whose status is an open or a click
   counts as delivered (`lib/mail-status.ts`, `tests/mail-engagement-not-recorded.spec.ts`).
+- The weekly usage report's snapshots (`usage_reports`) are kept 24 months after the week they cover, no longer
+  without end: each carries `expiresAt`, a Firestore TTL policy deletes on it and `npm run retention:verify` checks
+  that policy; `scripts/backfill-usage-report-expiry.ts` dates the snapshots stored before (one-off, dry run first).
+  The TTL policy and the backfill are run by the owner (`docs/DATA-RETENTION.md`,
+  `tests/usage-report-retention.spec.ts`).
 
 ## [v3.1.0] — 2026-11-14
 

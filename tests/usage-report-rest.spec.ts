@@ -103,7 +103,7 @@ test('the report runs with no node_modules at all, on Node type stripping', asyn
       'package.json',
       'scripts/send-usage-report.ts', 'scripts/lib/firestore-rest.ts', 'scripts/lib/ts-extension-hook.mjs',
       'scripts/lib/report-recipient.ts',
-      ...['usage-report', 'usage-report-email', 'email-layout', 'version', 'export-safety', 'test-accounts', 'constants']
+      ...['usage-report', 'usage-report-email', 'email-layout', 'version', 'export-safety', 'test-accounts', 'constants', 'mail-status']
         .map((f) => `lib/${f}.ts`),
     ];
     for (const f of files) {
