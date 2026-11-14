@@ -5,6 +5,12 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — engine 4.0 strand (inert)
+
+Built beside the shipping engine and wired into nothing: no run, signature, audit pack, page or route reads it (ADR-125).
+
+- Engine 4.0, first step: an own lexer (L0) and statement layer (L1) in `lib/engine4/`, with a table of 237 statement kinds, chain expansion, macros and native SQL as kinds, and `Unknown` isolated to one statement. A shadow comparison against the shipping statement reader over the starter examples and the benchmark learn halves aligns 99.85 % of statements; every difference is explained in `docs/design/engine4.md`.
+
 ## [v3.1.0] — 2026-11-14
 
 Analyze opens business first. Every new engine reading is gated from 3.1.0: a run signed by an earlier version reads as before.
