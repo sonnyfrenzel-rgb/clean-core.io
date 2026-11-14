@@ -138,6 +138,7 @@ Signed runs and the audit pack do not change.
 - Author's comments: a comment at the end of a statement that spans more than three lines is quoted as that statement's own.
 - Customer texts: a sentence that says more than four customer texts names every one of them in its "Customer text" marker.
 - Customer texts: a customer table named by its customer text counts as worded in the business language, as its business term already did.
+- Business view: a stop whose German `WITH` text the engine cannot put into English, with no condition before it, says "Stop with a message in German" and keeps the text in its detail, instead of putting the German into the label.
 
 #### Workspace, Documentation and Testing
 - Workspace: after an account switch, an earlier error reading the project list no longer shows the regular page before the new list has answered.

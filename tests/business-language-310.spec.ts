@@ -207,6 +207,16 @@ test('E2: a stop says the message\'s own WITH text; a German text that cannot be
   expect(ends.map((n) => old.nodes.get(n.id))).toContain('Stop: not authorized (E002)');
 });
 
+test('E2: a German WITH text with no condition before it is not the label either; an engine before 3.1.0 keeps it', () => {
+  const src = ['REPORT zt_stop.', 'START-OF-SELECTION.', "  MESSAGE e003(zmm) WITH 'Fehler beim Lesen der Bestellanforderung'."].join('\n');
+  const skeleton = buildProcessSkeleton(src);
+  const end = skeleton.nodes.find((n) => n.kind === 'end-error')!;
+  const labels = plainLabels(skeleton, src, { engineVersion: NEW });
+  expect(labels.nodes.get(end.id)).toBe('Stop with a message in German (E003)');
+  expect(labels.technical(end.id)).toContain('Fehler beim Lesen der Bestellanforderung');
+  expect(plainLabels(skeleton, src, { engineVersion: OLD }).nodes.get(end.id)).toContain('beim Lesen der Bestellanforderung');
+});
+
 test('technique one level down: a lock and its release fold into the step they serve, with every line kept', () => {
   const src = [
     'REPORT zt_lock.',
