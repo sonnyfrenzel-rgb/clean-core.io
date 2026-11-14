@@ -156,8 +156,16 @@ function namesInCode(lines: string[], pattern: RegExp): FactObject[] {
  */
 export function ownAuthorizationIn(source: string | string[]): FactObject[] {
   const raw = Array.isArray(source) ? source : source.replace(/\r\n?/g, '\n').split('\n');
-  // A literal or template with a space in it is prose ('Authorization is handled by the caller'), not a check or a
-  // refusal code: it is blanked before the scan. A one-word literal ('NOT_AUTHORIZED') stays.
-  const lines = raw.map((text) => text.replace(/'[^']*'|`[^`]*`|\|[^|]*\|/g, (lit) => (/\s/.test(lit) ? "''" : lit)));
+  // A literal with a space in it is prose ('Authorization is handled by the caller'), and a literal that is only the
+  // word itself ('AUTHORIZATION', 'Authorized') is output, not a check or a refusal code: both are blanked before the
+  // scan. A refusal code ('NOT_AUTHORIZED', 'UNAUTHORIZED') stays. Of a string template only the text is blanked:
+  // its embedded expressions (`|{ is_authorized( iv_user ) }|`) are code and stay.
+  const bareWord = /^['`|]AUTHORI[SZ](?:E|ED|ATION|ATIONS)?['`|]$/i;
+  const lines = raw.map((text) =>
+    text.replace(/'[^']*'|`[^`]*`|\|[^|]*\|/g, (lit) => {
+      if (!/\s/.test(lit) && !bareWord.test(lit)) return lit;
+      return lit.startsWith('|') ? `|${(lit.match(/\{[^}]*\}/g) ?? []).join(' ')}|` : "''";
+    }),
+  );
   return first(namesInCode(lines,/\b\w*AUTHORI[SZ]\w*\b|'\w*AUTHORI[SZ]\w*'|\b(?:\w+_)?(?:require|check|has|assert|verify)_roles?\b/gi));
 }
