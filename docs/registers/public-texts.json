@@ -1685,6 +1685,50 @@
       }
     },
     {
+      "path": "docs/design/model-combination.md",
+      "kind": "plan",
+      "purpose": "Study and design of the model combination and the model per stage: what was measured on the process benchmark, the rules in lib/model-combination.ts, the thinking level per model and stage, and the stages approved for gemini-4-hydrogen",
+      "audience": "Sonny, agents",
+      "saysToday": "Statements, Analyze, Design and Documentation on gemini-4-hydrogen in dev and production with 3.1.0 (owner decision 14.11.2026); Testing, Transformation and naming stay on their models.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "The design record behind GEMINI_STAGE_MODELS and the measurements every stage decision rests on.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/ROADMAP.md",
+        "CHANGELOG.md"
+      ],
+      "measured": {
+        "lines": 366
+      }
+    },
+    {
+      "path": "docs/prozess-benchmark/MODEL-COMBO-FREEZE-2026-11-13.md",
+      "kind": "plan",
+      "purpose": "The frozen configuration of the one holdout measurement of the model combination, written before the first holdout call",
+      "audience": "Sonny, agents",
+      "saysToday": "Frozen on 13.11.2026; the holdout was measured once against it.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Proof that the holdout configuration was fixed before the measurement; it does not change.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "CHANGELOG.md",
+        "docs/design/model-combination.md"
+      ],
+      "measured": {
+        "lines": 59
+      }
+    },
+    {
       "path": "docs/drafts/README-3.0.md",
       "kind": "draft",
       "purpose": "Draft of the README for 3.0 (preparation 3.0.8)",
