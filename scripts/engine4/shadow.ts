@@ -23,10 +23,11 @@
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
 import { readStatements, type AbapStatement } from '../../lib/abap/statement-reader';
-import { readBlocks } from '../../lib/abap/block-structure';
+import { readBlocks, type BlockStructure } from '../../lib/abap/block-structure';
 import { lex, uncoveredCharacters } from '../../lib/engine4/lexer';
 import { macroNames, statements, type Statement } from '../../lib/engine4/statements';
 import { KIND_TABLE, kindInfo, unitsOf } from '../../lib/engine4/statement-kinds';
+import { blocks as newBlocks, enclosingBlocks, type Block as NewBlock, type BlockTree } from '../../lib/engine4/blocks';
 
 const ROOT = join(__dirname, '..', '..');
 const STARTERS = join(ROOT, 'public', 'starter-examples');
@@ -79,8 +80,7 @@ interface Side {
   text: string;
 }
 
-function oldSides(list: AbapStatement[]): Side[] {
-  const blocks = readBlocks(list);
+function oldSides(list: AbapStatement[], blocks: BlockStructure): Side[] {
   const opened = new Map<number, string>();
   for (const b of blocks.blocks) opened.set(b.openIndex, `open:${b.kind}`);
   return list.map((s, i) => ({
@@ -159,6 +159,27 @@ export interface ShadowReport {
   samples: Record<string, Sample[]>;
   /** First two words of each Unknown statement → where. */
   unknownSamples: Record<string, string[]>;
+  /** L2 against `readBlocks`. */
+  l2: L2Report;
+}
+
+export interface L2Report {
+  /** Blocks of the old engine's kinds: old, new, and those opened by the same statement with the same kind. */
+  oldBlocks: number;
+  newBlocks: number;
+  matched: number;
+  /** Matched blocks that also end on the same line with the same termination. */
+  sameRange: number;
+  /** Unterminated blocks: old, new, and those flagged by both (same opener line). */
+  oldUnterminated: number;
+  newUnclosed: number;
+  unterminatedBoth: number;
+  /** Containers (routines, classes, function modules, event blocks): old, new, same kind, name, first and last line. */
+  oldContainers: number;
+  newContainers: number;
+  containersAgree: number;
+  /** Aligned statement pairs whose chain of enclosing blocks (old kinds) is the same. */
+  enclosingAgree: number;
 }
 
 /** Name the reason two readings differ. Order matters: the first rule that fits wins. */
@@ -185,7 +206,9 @@ function compareFile(r: ShadowReport, file: CorpusFile, macros: string[]): void 
   const lexed = lex(file.source);
   r.uncoveredCharacters += uncoveredCharacters(file.source, lexed.tokens).length;
   r.lexErrors += lexed.diagnostics.filter((d) => d.severity === 'error').length;
-  const olds = oldSides(readStatements(file.source));
+  const oldList = readStatements(file.source);
+  const oldStructure = readBlocks(oldList);
+  const olds = oldSides(oldList, oldStructure);
   const newList = statements(lexed.tokens, { macros });
   const news = newSides(newList);
   r.files += 1;
@@ -230,6 +253,110 @@ function compareFile(r: ShadowReport, file: CorpusFile, macros: string[]): void 
     if (openerSame) r.openerAgree += 1;
     else addSample(r, `opener:${categorize(o.text, n.text)}`, sample);
   }
+  compareBlocks(r, file, { list: oldList, structure: oldStructure }, newList, pairs);
+}
+
+const CONTAINER_KINDS = new Set(['form', 'method', 'module', 'class', 'function', 'event']);
+
+interface OldSide {
+  list: AbapStatement[];
+  structure: BlockStructure;
+}
+
+/** Why an L2 reading differs, from the old and new text of the statement the difference sits on. */
+export function categorizeBlock(oldText: string, newText: string): string {
+  return categorize(oldText, newText);
+}
+
+const describeNew = (b: NewBlock, list: Statement[]) =>
+  `${b.kind}${b.name ? ` ${b.name}` : ''} ${b.start.row}-${b.end.row} ${b.termination}${b.opener !== null ? ` [${list[b.opener].kind}]` : ''}`;
+
+/** L2 against the shipping `readBlocks`: blocks, unterminated, containers and enclosing chains. */
+function compareBlocks(r: ShadowReport, file: CorpusFile, old: OldSide, newList: Statement[], pairs: Array<[number, number]>): void {
+  const tree: BlockTree = newBlocks(newList);
+  const toNew = new Map(pairs);
+  const fromNew = new Map(pairs.map(([i, j]) => [j, i]));
+  const textOld = (i: number | undefined) => (i === undefined ? '(unaligned)' : old.list[i]?.text ?? '(none)');
+  const textNew = (j: number | undefined) => {
+    const s = j === undefined ? undefined : newList[j];
+    return s ? `[${s.kind}${s.context === 'abap' ? '' : `/${s.context}`}] ${s.tokens.map((x) => x.text).join(' ')}` : '(unaligned)';
+  };
+  const sample = (category: string, line: number, o: string, n: string) => addSample(r, category, { file: file.name, line, old: o, new: n });
+  const l2 = r.l2;
+
+  // Blocks of the old kinds, matched by their opening statement.
+  const newByOpener = new Map<number, NewBlock>();
+  for (const b of tree.blocks) {
+    if (b.opener === null || !OLD_BLOCK_KINDS.has(b.kind)) continue;
+    newByOpener.set(b.opener, b);
+    l2.newBlocks += 1;
+  }
+  const matchedNew = new Set<number>();
+  for (const ob of old.structure.blocks) {
+    l2.oldBlocks += 1;
+    const j = toNew.get(ob.openIndex);
+    const nb = j === undefined ? undefined : newByOpener.get(j);
+    const oldDesc = `${ob.kind} ${ob.lineStart}-${ob.lineEnd} ${ob.terminated ? 'closer' : 'unclosed'} :: ${textOld(ob.openIndex)}`;
+    if (!nb || nb.kind !== ob.kind) {
+      sample(`l2-block-old-only:${categorizeBlock(textOld(ob.openIndex), textNew(j))}`, ob.lineStart, oldDesc, nb ? describeNew(nb, newList) : textNew(j));
+      continue;
+    }
+    l2.matched += 1;
+    matchedNew.add(nb.id);
+    if (nb.end.row === ob.lineEnd && (nb.termination === 'closer') === ob.terminated) l2.sameRange += 1;
+    else sample(`l2-block-range:${categorizeBlock(textOld(ob.openIndex), textNew(j))}`, ob.lineStart, oldDesc, describeNew(nb, newList));
+  }
+  for (const nb of newByOpener.values()) {
+    if (matchedNew.has(nb.id)) continue;
+    const i = fromNew.get(nb.opener as number);
+    sample(`l2-block-new-only:${categorizeBlock(textOld(i), textNew(nb.opener as number))}`, nb.start.row, textOld(i), describeNew(nb, newList));
+  }
+
+  // Unterminated blocks, by the line of their opener.
+  const oldUnterminated = new Map(old.structure.unterminated.map((u) => [u.lineStart, u]));
+  const newUnclosed = new Map(tree.blocks.filter((b) => b.termination === 'unclosed').map((b) => [b.start.row, b]));
+  l2.oldUnterminated += oldUnterminated.size;
+  l2.newUnclosed += newUnclosed.size;
+  for (const [line, u] of oldUnterminated) {
+    if (newUnclosed.has(line)) { l2.unterminatedBoth += 1; continue; }
+    const i = old.list.findIndex((s) => s.lineStart === line);
+    sample(`l2-unterminated-old-only:${categorizeBlock(textOld(i), textNew(toNew.get(i)))}`, line, `${u.kind} :: ${textOld(i)}`, textNew(toNew.get(i)));
+  }
+  for (const [line, b] of newUnclosed) {
+    if (oldUnterminated.has(line)) continue;
+    const i = fromNew.get(b.opener as number);
+    sample(`l2-unterminated-new-only:${categorizeBlock(textOld(i), textNew(b.opener as number))}`, line, textOld(i), describeNew(b, newList));
+  }
+
+  // Containers: kind, name, first and last line.
+  const key = (kind: string, name: string, line: number) => `${kind}|${name}|${line}`;
+  const newContainers = new Map<string, NewBlock>();
+  for (const b of tree.blocks) if (CONTAINER_KINDS.has(b.kind)) newContainers.set(key(b.kind, b.name ?? '', b.start.row), b);
+  l2.newContainers += newContainers.size;
+  const seen = new Set<string>();
+  for (const c of old.structure.containers) {
+    l2.oldContainers += 1;
+    const k = key(c.kind, c.name, c.lineStart);
+    const nb = newContainers.get(k);
+    if (nb) seen.add(k);
+    if (nb && nb.end.row === c.lineEnd) { l2.containersAgree += 1; continue; }
+    const i = old.list.findIndex((s) => s.lineStart === c.lineStart);
+    const oldDesc = `${c.kind} ${c.name} ${c.lineStart}-${c.lineEnd} :: ${textOld(i)}`;
+    sample(`${nb ? 'l2-container-range' : 'l2-container-old-only'}:${categorizeBlock(textOld(i), textNew(toNew.get(i)))}`, c.lineStart, oldDesc, nb ? describeNew(nb, newList) : textNew(toNew.get(i)));
+  }
+  for (const [k, nb] of newContainers) {
+    if (seen.has(k)) continue;
+    const i = fromNew.get(nb.opener as number);
+    sample(`l2-container-new-only:${categorizeBlock(textOld(i), textNew(nb.opener as number))}`, nb.start.row, textOld(i), describeNew(nb, newList));
+  }
+
+  // Enclosing chains of the aligned statements, in the old kinds.
+  for (const [i, j] of pairs) {
+    const o = old.structure.enclosing[i].map((b) => b.kind).join('>');
+    const n = enclosingBlocks(tree, j).filter((b) => b.opener !== j && OLD_BLOCK_KINDS.has(b.kind)).map((b) => b.kind).join('>');
+    if (o === n) { l2.enclosingAgree += 1; continue; }
+    sample(`l2-enclosing:${categorizeBlock(textOld(i), textNew(j))}`, old.list[i].lineStart, `${o || '-'} :: ${textOld(i)}`, `${n || '-'} :: ${textNew(j)}`);
+  }
 }
 
 export function runShadow(corpus: CorpusFile[] = shadowCorpus()): ShadowReport {
@@ -237,6 +364,10 @@ export function runShadow(corpus: CorpusFile[] = shadowCorpus()): ShadowReport {
     files: 0, lines: 0, oldStatements: 0, newStatements: 0, aligned: 0, oldOnly: 0, newOnly: 0,
     endLineAgree: 0, classAgree: 0, openerAgree: 0, newUnknown: 0, uncoveredCharacters: 0, lexErrors: 0,
     categories: {}, samples: {}, unknownSamples: {},
+    l2: {
+      oldBlocks: 0, newBlocks: 0, matched: 0, sameRange: 0, oldUnterminated: 0, newUnclosed: 0, unterminatedBoth: 0,
+      oldContainers: 0, newContainers: 0, containersAgree: 0, enclosingAgree: 0,
+    },
   };
   const macrosByGroup = new Map<string, string[]>();
   for (const file of corpus) {
@@ -256,6 +387,10 @@ export function formatReport(r: ShadowReport, withSamples: boolean): string {
     `boundaries: aligned ${r.aligned} (${pct(r.aligned, r.oldStatements)} of old), old only ${r.oldOnly}, new only ${r.newOnly}`,
     `aligned pairs: end line agrees ${r.endLineAgree} (${pct(r.endLineAgree, r.aligned)}), keyword/expression agrees ${r.classAgree} (${pct(r.classAgree, r.aligned)}), block opener agrees ${r.openerAgree} (${pct(r.openerAgree, r.aligned)})`,
     `new Unknown statements ${r.newUnknown}; uncovered characters ${r.uncoveredCharacters}; lexer errors ${r.lexErrors}`,
+    `L2 blocks (old kinds): old ${r.l2.oldBlocks}, new ${r.l2.newBlocks}, same opener and kind ${r.l2.matched} (${pct(r.l2.matched, r.l2.oldBlocks)} of old), same end line and termination ${r.l2.sameRange} (${pct(r.l2.sameRange, r.l2.matched)})`,
+    `L2 unterminated: old ${r.l2.oldUnterminated}, new ${r.l2.newUnclosed}, both ${r.l2.unterminatedBoth}`,
+    `L2 containers: old ${r.l2.oldContainers}, new ${r.l2.newContainers}, same kind, name and lines ${r.l2.containersAgree} (${pct(r.l2.containersAgree, r.l2.oldContainers)} of old)`,
+    `L2 enclosing chains agree on aligned statements ${r.l2.enclosingAgree} (${pct(r.l2.enclosingAgree, r.aligned)})`,
     'disagreement categories:',
     ...Object.entries(r.categories).sort((a, b) => b[1] - a[1]).map(([k, v]) => `  ${k}: ${v}`),
   ];
