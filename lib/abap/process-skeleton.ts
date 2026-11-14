@@ -4962,8 +4962,11 @@ class SkeletonBuilder {
         // would turn a small routine into a phase because it has two exits.
         const inner = (inRegion.get(region.key) ?? [])
           // Engine 3.1.0: a row put into the result (`collectStep`) is the yes of a decision, not an element that
-          // makes a routine one step or a phase — the routine folds, or not, exactly as before it was drawn.
-          .filter((n) => n.id !== region.endNodeId && n.detail?.early !== true && n.detail?.collects !== true);
+          // makes a routine one step or a phase — the routine folds, or not, exactly as before it was drawn. The same
+          // holds for the call of a technical helper drawn as an arm's outcome (`helperStep`): a log note is not an
+          // element that turns a one-step routine into a level of its own.
+          .filter((n) => n.id !== region.endNodeId && n.detail?.early !== true && n.detail?.collects !== true
+            && n.detail?.helperCall !== true);
         const callers = callersOf.get(region.key) ?? [];
         if (!callers.length) continue;
         // Roadmap 2.17 (b): a routine that iterates a business table is a phase,
@@ -4985,8 +4988,9 @@ class SkeletonBuilder {
         }
         // Engine 3.1.0 (AB-15a): a routine that calls a phase of its own is not one step. `main` creating the object
         // and calling `run` has two elements, and folding it onto the constructor's read hid the whole process
-        // behind one box named after that read. A phase inside keeps the routine a phase.
-        if (this.reads310 && inner.some((n) => n.kind === 'sub-process' && n.expandsTo && !n.collapsed)) {
+        // behind one box named after that read. A phase inside keeps the routine a phase. A routine's call of itself
+        // (a retry by recursion) is not a phase of its own: it opens the very region being decided.
+        if (this.reads310 && inner.some((n) => n.kind === 'sub-process' && n.expandsTo && n.expandsTo !== region.key && !n.collapsed)) {
           for (const caller of callers) {
             if (caller.collapsed) {
               caller.collapsed = false;
