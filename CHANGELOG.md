@@ -39,6 +39,9 @@ Signed runs and the audit pack do not change.
 - Engine 4.0 is built in parallel from now on, as its own module tree that nothing reads until the switch (ADR-125); benchmark convention K3 settled: commits stay in the technical layer.
 
 ### Fixed
+- Process map: a routine whose only extra elements are log notes stays one step; a routine calling itself is not drawn as a phase of its own.
+- Business view: a program's own component named with an English word reads as that word, not as "Field KIND".
+- Business view: a check on "not DE, AT or CH" and a `WHILE … <> 0` loop read the way the code tests them; a run signed before 3.1.0 keeps its words.
 - A click on a step with an AI name opens its code. Before, the name's label took the click.
 - Analyze no longer gets refused requests (HTTP 401) while the sign-in is restored.
 - The project search (Ctrl+K) is back where a project opens.
