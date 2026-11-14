@@ -87,7 +87,7 @@ export function OwnCodeWay({
   };
 
   const buttons = (
-    <div className="flex flex-col items-stretch gap-1 min-[601px]:flex-row min-[601px]:flex-wrap min-[601px]:items-center min-[601px]:gap-3">
+    <div className="flex flex-col items-start gap-1 min-[601px]:flex-row min-[601px]:flex-wrap min-[601px]:items-center min-[601px]:gap-3">
       <CcButton
         variant="ghost"
         icon={<Upload size={14} aria-hidden={true} />}
@@ -96,7 +96,7 @@ export function OwnCodeWay({
       >
         {compact ? wt('home.ownTitle') : wt('home.chooseFile')}
       </CcButton>
-      <button type="button" onClick={paste} data-home-paste="" className={HOME_LINK}>
+      <button type="button" onClick={paste} data-home-paste="" className={`${HOME_LINK} self-start`}>
         <Clipboard size={14} aria-hidden={true} />
         {wt('home.paste')}
       </button>

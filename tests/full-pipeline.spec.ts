@@ -205,7 +205,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // is there and then starts from an empty project of this account.
     console.log('Creating a new E2E transformation project...');
     // A new account's first view has the start built in (AB-14a); the list has "New project".
-    await expect(page.locator('[data-workspace-new-project], [data-home-start]').first()).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-workspace-new-project], [data-home-start], [data-workspace-tiles]').first()).toBeVisible({ timeout: 60000 });
 
     const { adminMergeDoc } = await import('./helpers/admin-seed');
     const projectId = `e2e-pipeline-${branchSuffix}-${Date.now()}`;

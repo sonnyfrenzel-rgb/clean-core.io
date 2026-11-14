@@ -90,6 +90,7 @@ export default function StarterExamples({
   homeFooter,
   homePrimary = true,
   starterRef,
+  onMore,
 }: {
   userId: string;
   account: Account;
@@ -102,7 +103,7 @@ export default function StarterExamples({
    * the gallery. The start itself is this component's, unchanged: the same
    * edition question, the same cost rule, the same project.
    */
-  variant?: 'gallery' | 'home';
+  variant?: 'gallery' | 'home' | 'tile';
   /** `home` only: what closes the column on a wide screen (the demo line). */
   homeFooter?: React.ReactNode;
   /**
@@ -113,6 +114,12 @@ export default function StarterExamples({
   homePrimary?: boolean;
   /** `home` only: lets the page's other starts start the recommended example (`HomeExampleStarter`). */
   starterRef?: React.Ref<HomeExampleStarter>;
+  /**
+   * `tile`: the start tile of a returning account (ADR-123, direction A) — one example
+   * this account has not run yet, its start, and "More examples", which this callback
+   * opens (the page's start panel).
+   */
+  onMore?: () => void;
 }) {
   const router = useRouter();
   const tiers = useMemo(() => exampleTiers(), []);
@@ -420,6 +427,70 @@ export default function StarterExamples({
     );
   };
 
+  if (variant === 'tile') {
+    const all = [tiers.startHere, ...tiers.next.map(({ example }) => example), ...tiers.more];
+    const pick = all.find((e) => starterExampleIsFree(account, e.name)) ?? tiers.startHere;
+    const item: Item = { kind: 'example', key: pick.file, example: pick };
+    const cost = describeStarterExampleCost(account, pick.name);
+    return (
+      <div data-testid="starter-examples" data-starter-examples-variant="tile" className="flex flex-col gap-1.5 rounded-cc-row border border-cc-line bg-cc-surface px-3.5 py-3" data-example-card={pick.name}>
+        <div className="flex flex-wrap items-center gap-2">
+          <span data-testid="starter-example-name" className="font-cc-mono text-[12px] font-medium text-cc-ink">
+            {pick.name}
+          </span>
+          {cost.free ? (
+            <span className="inline-flex items-center rounded-full border border-cc-success-border bg-cc-brand-surface px-2 text-[12px] leading-5 font-semibold whitespace-nowrap text-cc-brand-strong">
+              {wt('home.exampleCost')}
+            </span>
+          ) : (
+            <CcTag>{cost.badge}</CcTag>
+          )}
+        </div>
+        <p className="m-0 line-clamp-2 text-[13px] leading-normal font-medium text-cc-ink-muted">
+          {pick.summary} <span data-example-lines={pick.lines}>{lines(pick.lines)}.</span>
+        </p>
+        <div className="mt-1 flex flex-wrap items-center gap-3">
+          <CcButton
+            variant="secondary"
+            busy={busy === item.key}
+            disabled={!!busy && busy !== item.key}
+            onClick={() => start(item)}
+            aria-expanded={confirming === item.key || undefined}
+            data-example-start={pick.name}
+          >
+            <span>{wt('home.startExample')}</span>
+            <ArrowRight size={14} aria-hidden={true} />
+          </CcButton>
+          {onMore ? (
+            <button
+              type="button"
+              onClick={onMore}
+              className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold whitespace-nowrap text-cc-ink underline decoration-cc-field-border underline-offset-[3px] hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus min-[601px]:min-h-0"
+            >
+              {wt('ws.moreExamples')}
+              <ArrowRight size={14} aria-hidden={true} />
+            </button>
+          ) : null}
+        </div>
+        {limitHit ? (
+          <CcMessageStrip state="warning" headline="Limit reached." announce actions={<CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">{OWN_KEY_ACTION}</CcLinkButton>}>
+            {quotaSpentSentence(limit)}
+          </CcMessageStrip>
+        ) : null}
+        {failed ? (
+          <CcMessageStrip state="error" announce>
+            {failed}
+          </CcMessageStrip>
+        ) : null}
+        {startNotes(item)}
+        {/* Said before the click (§2.8): what the start does with the model. */}
+        <p data-examples-cost="" className="m-0 min-h-[2lh] text-[12px] leading-normal font-medium text-cc-ink-muted">
+          <span data-examples-model={startCallsModel ? 'calls' : 'none'}>{startModelLine(startCallsModel)}</span>
+        </p>
+      </div>
+    );
+  }
+
   if (variant === 'home') {
     const rec = tiers.startHere;
     const others: Item[] = [...tiers.next.map(({ example }) => example), ...tiers.more].map((example) => ({
@@ -501,17 +572,19 @@ export default function StarterExamples({
                 <ArrowRight size={14} aria-hidden={true} />
               </CcButton>
             </span>
-            <button
-              type="button"
-              aria-expanded={homeListOpen}
-              aria-controls="home-examples-list"
-              onClick={() => setHomeListOpen((v) => !v)}
-              data-home-more-examples=""
-              className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold whitespace-nowrap text-cc-ink underline decoration-cc-field-border underline-offset-[3px] hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus min-[601px]:min-h-0"
-            >
-              {homeMoreExamples(others.length)}
-              <ArrowRight size={14} aria-hidden={true} />
-            </button>
+            <span data-examples-more="" className="inline-flex">
+              <button
+                type="button"
+                aria-expanded={homeListOpen}
+                aria-controls="home-examples-list"
+                onClick={() => setHomeListOpen((v) => !v)}
+                data-home-more-examples=""
+                className="inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold whitespace-nowrap text-cc-ink underline decoration-cc-field-border underline-offset-[3px] hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus min-[601px]:min-h-0"
+              >
+                {homeMoreExamples(others.length)}
+                <ArrowRight size={14} aria-hidden={true} />
+              </button>
+            </span>
           </div>
           {startNotes(startHere)}
         </div>
@@ -551,7 +624,7 @@ export default function StarterExamples({
         </ul>
 
         {/* Said before the click (§2.8): what the start does with the model. */}
-        <p data-examples-cost="" className="m-0 cc-text-meta text-cc-ink-muted">
+        <p data-examples-cost="" className="m-0 min-h-[2lh] cc-text-meta text-cc-ink-muted">
           <span data-examples-model={startCallsModel ? 'calls' : 'none'}>{startModelLine(startCallsModel)}</span>
         </p>
 

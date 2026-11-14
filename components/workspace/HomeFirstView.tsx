@@ -67,7 +67,7 @@ export default function HomeFirstView({
 
   return (
     <div className="cc min-h-screen bg-cc-page" data-cc-workspace="" data-home-first-view="">
-      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-4 pt-4 pb-10 min-[601px]:gap-6 min-[601px]:px-8 min-[601px]:pt-7 min-[601px]:pb-12">
+      <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-4 pb-6 min-[601px]:gap-6">
         {fromDemo ? (
           <div
             data-home-from-demo=""

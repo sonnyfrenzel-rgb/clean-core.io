@@ -1,4 +1,4 @@
-import { buildBpmnExportFromSource } from '@/lib/bpmn/export';
+import { buildBpmnExportFromSource, READING_WRAP } from '@/lib/bpmn/export';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { parseBpmn } from '@/lib/process-map';
 import { mapThumbOf, PROJECT_SUMMARY_VERSION, type ProjectSummary } from '@/lib/project-summary';
@@ -51,6 +51,8 @@ export function computeProjectSummary(input: SummaryInput, now: Date = new Date(
         processName: input.processName || input.sourceFileName,
         sourceFileName: input.sourceFileName,
         exporterVersion: input.engineVersion,
+        // The reading map's rows (Analyze draws it wrapped), so the thumbnail has the map's shape, not one long line.
+        wrap: READING_WRAP,
       });
       map = mapFiguresOf(xml);
     } catch {

@@ -26,6 +26,16 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
   is bound to the active run, and is on no client allowlist in `firestore.rules`. The rules only gain a type line,
   which still has to be deployed by hand. `scripts/backfill-project-summary.ts` gives existing projects one. It does
   a dry run by default and refuses to run in CI.
+- 3.3.0, step 3a (ADR-123 (4)): a returning account sees its programs as tiles in three sections. "Next step" holds
+  the page's one filled button and a line for another program that waits. "At a glance" shows five count tiles from
+  three programs on; they are the filter, and they count changes in the last 7 days. "Your programs" gives each
+  program a tile of one size: its map as a thumbnail, three facts (steps, clean core score, decision), and a line for
+  Analyse and for Re-design, each with one action. A decision other than Rebuild reads "Not needed — decided: …"
+  (W5). "Read as Business · IT · Management" only marks one fact and opens the analysis in that view (W9). The table
+  is the list mode, one click away. Its levels and rules are read per row in that mode only. The last tile and
+  "Analyse another Z program" start the next analysis. Lens and mode are remembered by this browser only
+  (`cc.workspace.lens`, `cc.workspace.mode`). The example gallery and the sharing card moved behind the start panel
+  and "Sharing".
 <!-- 3.3.0 build end -->
 - A project opens in Analyze, Business. The process map is the page, and the map starts within the first screen at
   1440 × 900. Its tools sit in the canvas's own row, and what describes the map sits under it. With one code panel

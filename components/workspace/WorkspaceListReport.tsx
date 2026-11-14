@@ -75,12 +75,21 @@ import CcTable, { type CcTableColumn, type CcTableRowSpec } from '@/components/c
 import CcTag from '@/components/cc/Tag';
 import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
 import InviteReaderDialog from '@/components/InviteReaderDialog';
-import StarterExamples from '@/components/StarterExamples';
 import LevelCounts from './LevelCounts';
 import OpenInvitations from './OpenInvitations';
 import WorkspaceRowActions from './WorkspaceRowActions';
-import YourTurnCard, { yourTurnItems } from './YourTurnCard';
 import HomeFirstView from './HomeFirstView';
+import WorkspaceTiles from './WorkspaceTiles';
+import WorkspaceSkeleton from './WorkspaceSkeleton';
+import { toProgramTile, type ProgramTile } from '@/lib/workspace-tiles';
+import {
+  readWorkspaceLens,
+  readWorkspaceMode,
+  rememberWorkspaceLens,
+  rememberWorkspaceMode,
+  type WorkspaceLens,
+  type WorkspaceMode,
+} from '@/lib/workspace-prefs';
 import { aiAuthorshipFactsOf, withProjectExportAiGeneration } from '@/lib/ai-authorship';
 import { isEngineDocumentation } from '@/lib/process-documentation';
 import { APP_VERSION } from '@/lib/version';
@@ -207,6 +216,17 @@ export default function WorkspaceListReport({
   const [actionError, setActionError] = useState<string | null>(null);
   /** The own list could not be read: the list stands as before, never the first view. */
   const [ownFailedFor, setOwnFailedFor] = useState<string | null>(null);
+  // ADR-123 (W9): the lens and tiles-or-list, remembered by this browser only (`lib/workspace-prefs.ts`).
+  const [lens, setLens] = useState<WorkspaceLens>(readWorkspaceLens);
+  const [mode, setMode] = useState<WorkspaceMode>(readWorkspaceMode);
+  const chooseLens = useCallback((next: WorkspaceLens) => {
+    setLens(next);
+    rememberWorkspaceLens(next);
+  }, []);
+  const chooseMode = useCallback((next: WorkspaceMode) => {
+    setMode(next);
+    rememberWorkspaceMode(next);
+  }, []);
 
   useEffect(() => onAuthStateChanged(getAuth(), (u) => setUser(u)), []);
 
@@ -397,14 +417,16 @@ export default function WorkspaceListReport({
   );
 
   useEffect(() => {
-    const ids = filter.level ? candidateRows : candidateRows.filter((r) => visibleRows.some((v) => v.id === r.id));
+    // ADR-123 (5): the tiles read the project list and its summary only; the
+    // levels and rules of the table are read per row in list mode, as before.
+    const ids = mode !== 'list' ? [] : filter.level ? candidateRows : candidateRows.filter((r) => visibleRows.some((v) => v.id === r.id));
     const map = new Map<string, string>();
     for (const row of ids) {
       const p = projectById.get(row.id);
       map.set(row.id, `${p?.activeRunId ?? ''}:${typeof p?.legacyCode === 'string' ? p.legacyCode.length : 0}`);
     }
     setWanted(map);
-  }, [candidateRows, visibleRows, filter.level, projectById, setWanted]);
+  }, [mode, candidateRows, visibleRows, filter.level, projectById, setWanted]);
 
   const active = filterIsActive(filter);
   const clear = useCallback(() => setFilter(EMPTY_FILTER), []);
@@ -548,18 +570,10 @@ export default function WorkspaceListReport({
     }
   }, [deleting]);
 
-  const yourTurn = useMemo(
-    () => yourTurnItems(ownRows, projects, profile ?? null),
-    [ownRows, projects, profile],
-  );
+  const tiles: ProgramTile[] = useMemo(() => projects.map((p) => toProgramTile(p, 'own')), [projects]);
 
-  if (profileLoading) {
-    return (
-      <div className="mx-auto my-12 max-w-md text-center text-[13px] font-medium text-cc-ink-muted">
-        {t('state.loading')}
-      </div>
-    );
-  }
+  // ADR-123: the frame with the final sizes, never a line of text that the page then replaces.
+  if (profileLoading || !user) return <WorkspaceSkeleton />;
 
   // AB-14a: an account with no project of its own and none shared with it
   // lands on the first view (home mockup v2.1, state 1) — the start built in,
@@ -571,13 +585,7 @@ export default function WorkspaceListReport({
   const sharedAnswered = !!user && sharedLoaded?.uid === user.uid;
   const ownFailed = !!user && ownFailedFor === user.uid;
   if (user && !ownFailed && (!ownAnswered || (projects.length === 0 && !sharedAnswered))) {
-    return (
-      <div className="cc min-h-screen bg-cc-page" data-workspace-waiting="">
-        <div className="mx-auto my-12 max-w-md text-center text-[13px] font-medium text-cc-ink-muted" role="status">
-          {t('state.loading')}
-        </div>
-      </div>
-    );
+    return <WorkspaceSkeleton />;
   }
   if (user && ownAnswered && sharedAnswered && projects.length === 0 && shared.length === 0) {
     return <HomeFirstView userId={user.uid} profile={profile ?? null} />;
@@ -811,41 +819,26 @@ export default function WorkspaceListReport({
     ...ROW_LEVELS.map((level) => ({ value: level, label: `${wt('myWorkspace.levelOption')} ${level}` })),
   ];
 
-  return (
-    <div className="cc min-h-screen bg-cc-page px-4 py-6 sm:px-6" data-cc-workspace="">
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-4">
-        <div>
-          <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">{t('workspace.title')}</h1>
-          <p className="mt-1 mb-0 text-[13px] font-medium text-cc-ink-muted">{t('workspace.lead')}</p>
-        </div>
+  const limitStrip = quotaExhausted(profile) ? (
+    // The free runs are spent: said where the account lands, with the way on to
+    // an own key (roadmap 3.0.21 (3)) — not only once a start has been refused.
+    <div data-workspace-limit="">
+      <CcMessageStrip
+        state="warning"
+        headline={wt('myWorkspace.limitReached')}
+        actions={
+          <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
+            {OWN_KEY_ACTION}
+          </CcLinkButton>
+        }
+      >
+        {quotaSpentSentence(profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK)}
+      </CcMessageStrip>
+    </div>
+  ) : null;
 
-        {/* The free runs are spent: said where the account lands, with the way
-            on to an own key (roadmap 3.0.21 (3)) — not only once a start has
-            been refused. The old dashboard page carried this strip; the list
-            report that replaced it for every active account (3.0.1) did not. */}
-        {quotaExhausted(profile) ? (
-          <div data-workspace-limit="">
-            <CcMessageStrip
-              state="warning"
-              headline={wt('myWorkspace.limitReached')}
-              actions={
-                <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
-                  {OWN_KEY_ACTION}
-                </CcLinkButton>
-              }
-            >
-              {quotaSpentSentence(profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK)}
-            </CcMessageStrip>
-          </div>
-        ) : null}
-
-        <YourTurnCard
-          hasOwnProjects={hasOwn}
-          items={yourTurn}
-          onNewProject={() => router.push('/admin/new-project')}
-        />
-
-        <div data-workspace-projects="">
+  const listCard = (
+        <div data-workspace-list="">
         <CcCard
           title={t('workspace.projects')}
           level={2}
@@ -972,15 +965,12 @@ export default function WorkspaceListReport({
           <p className="mt-3 mb-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{t('workspace.demoNote')}</p>
         </CcCard>
         </div>
+  );
 
-        {/* Examples — the same gallery the old page and "New project" show
-            (owner feedback 01.10.2026): one recommended start, three next, the
-            rest behind "More examples". */}
-        {user ? <StarterExamples userId={user.uid} account={profile} /> : null}
-
-        {/* Sharing — read access by invitation to one confirmed address, and
-            nothing else (roadmap phase 5). What others shared with you, and
-            what you sent that nobody has answered yet. */}
+  // Sharing — read access by invitation to one confirmed address, and nothing
+  // else (roadmap phase 5). What others shared with you, and what you sent
+  // that nobody has answered yet. Behind "Sharing" under the tiles (ADR-123).
+  const sharingCard = (
         <CcCard title={wt('myWorkspace.sharingTitle')} level={2} density="cozy">
           <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('myWorkspace.sharingLead')}</p>
           <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -1027,7 +1017,52 @@ export default function WorkspaceListReport({
             ) : null}
           </div>
         </CcCard>
-      </div>
+  );
+
+  const actionsFor = (tile: ProgramTile) =>
+    tile.access === 'own'
+      ? {
+          onInvite: () => setInviting({ id: tile.id, name: tile.title }),
+          onDuplicate: () => {
+            const row = ownRows.find((r) => r.id === tile.id);
+            if (row) void duplicate(row);
+          },
+          onExport: () => {
+            const row = ownRows.find((r) => r.id === tile.id);
+            if (row) void exportJson(row);
+          },
+          onDelete: () => setDeleting({ id: tile.id, name: tile.title }),
+        }
+      : undefined;
+
+  return (
+    <div className="cc min-h-screen bg-cc-page" data-cc-workspace="">
+      <WorkspaceTiles
+        userId={user.uid}
+        profile={profile ?? null}
+        tiles={tiles}
+        sharedCount={sharedRows.length}
+        openInvitations={null}
+        lens={lens}
+        onLens={chooseLens}
+        mode={mode}
+        onMode={chooseMode}
+        list={listCard}
+        sharing={sharingCard}
+        actionsFor={actionsFor}
+        notices={
+          limitStrip || (actionError && mode !== 'list') ? (
+            <>
+              {limitStrip}
+              {actionError && mode !== 'list' ? (
+                <CcMessageStrip state="error" announce>
+                  {actionError}
+                </CcMessageStrip>
+              ) : null}
+            </>
+          ) : null
+        }
+      />
 
       {inviting ? (
         <InviteReaderDialog
