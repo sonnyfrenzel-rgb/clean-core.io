@@ -152,6 +152,16 @@ test('a routine called in a condition is said with the 3.1.0 vocabulary', () => 
   expect(conditionToPhrase('genehmige( ) > 5', plainContext(src, { engineVersion: BEFORE }))).toMatch(/^Genehmige/);
 });
 
+test('a German compound program name reads as its words; a compound with a word not on the lists is not guessed (QA review of e1b11dcdc13b)', () => {
+  const src = (name: string) => `REPORT ${name}.\nDATA ls_rbkp TYPE rbkp.\nSELECT SINGLE * FROM rbkp INTO ls_rbkp.\n`;
+  const compound = readProgramDomain(src('zmm_rechnungspruefung'), { german: true });
+  expect(compound?.text).toBe(readProgramDomain(src('zmm_rechnung_pruefung'), { german: true })?.text);
+  expect(compound?.text).toMatch(/^Checks .*invoices/);
+  expect(readProgramDomain(src('zmm_rechnungsdruck'), { german: true })).toBeNull();
+  // An engine before 3.1.0 reads no German at all.
+  expect(readProgramDomain(src('zmm_rechnungspruefung'))).toBeNull();
+});
+
 test('a condition that only checks the tolerance entry against a fixed value does not apply it', () => {
   const declared = 'REPORT zmm_invoice_check.\nPARAMETERS p_tolerance TYPE p DECIMALS 2 DEFAULT 5.\nDATA gv_invoice TYPE belnr_d.\nSELECT SINGLE belnr FROM rbkp INTO gv_invoice.\n';
   const entryCheck = `${declared}IF p_tolerance > 0.\n  MESSAGE 'Tolerance given' TYPE 'S'.\nENDIF.\n`;

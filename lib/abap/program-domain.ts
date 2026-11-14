@@ -130,6 +130,26 @@ export interface ProgramDomain {
 
 const tokensOf = (identifier: string): string[] => identifier.toUpperCase().split(/[_\-/~>=]+/).filter(Boolean);
 
+/** 3.1.0: the German purpose and object words a compound name can be made of (four letters at least). */
+const GERMAN_PARTS = [...new Set([...GERMAN_VERBS.flatMap(([, words]) => words), ...Object.values(GERMAN_OBJECTS).flat()])]
+  .filter((w) => w.length >= 4)
+  .sort((a, b) => b.length - a.length);
+
+/**
+ * A German compound name token split into its known words (`RECHNUNGSPRUEFUNG` → `RECHNUNG`, `PRUEFUNG`), with the
+ * linking `S` between them; null unless the whole token is known words — a part not on the lists is never guessed.
+ */
+function germanParts(token: string): string[] | null {
+  for (const word of GERMAN_PARTS) {
+    if (!token.startsWith(word)) continue;
+    const rest = token.slice(word.length);
+    if (rest === '') return [word];
+    const after = germanParts(rest) ?? (rest.startsWith('S') && rest.length > 1 ? germanParts(rest.slice(1)) : null);
+    if (after) return [word, ...after];
+  }
+  return null;
+}
+
 /** The business object a single name stands for — a called function, a table — or null. */
 export function domainObjectOf(name: string): string | null {
   const tokens = tokensOf(name);
@@ -161,6 +181,8 @@ export function readProgramDomain(source: string, options: ProgramDomainOptions 
   const program = head ? /^\S+\s+([\w/]+)/.exec(head.text)?.[1] ?? null : null;
   if (!program || !head) return null;
   const nameTokens = tokensOf(program.replace(/^[ZY]_?/i, ''));
+  // 3.1.0: a German name writes its words as one (`ZMM_RECHNUNGSPRUEFUNG`); its parts count beside it.
+  if (options.german) for (const t of [...nameTokens]) if ((germanParts(t)?.length ?? 0) > 1) nameTokens.push(...germanParts(t)!);
   const verbs = [...VERBS, ...(options.wider ? WIDER_VERBS : []), ...(options.german ? GERMAN_VERBS : [])];
   const domainObjects = options.german
     ? DOMAIN_OBJECTS.map((o) => ({ word: o.word, tokens: [...o.tokens, ...(GERMAN_OBJECTS[o.word] ?? [])] }))
