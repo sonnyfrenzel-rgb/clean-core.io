@@ -263,8 +263,11 @@ test.describe('the business layer on screen', () => {
     expect(html).toContain('data-sop-legacy=""');
     // 47 since 3.0.21 (was 49): the BPMN reconstruction stays at the business
     // level (roadmap row "3.0.21 — The BPMN reconstruction stays at the business
-    // level"), so the PO map has two elements fewer to write a row for.
-    expect(html).toContain('Written per technical step by an earlier version — 47 rows.');
+    // level"), so the PO map has two elements fewer to write a row for. 54 since
+    // engine 3.1.0: the map draws what a process owner misses first — an arm's
+    // outcome ("Set skip limit", "Set emergency") and the decisions that no longer
+    // fold away as two ways to one step (`lib/abap/engine-reads-310-gate.ts`, group 2).
+    expect(html).toContain('Written per technical step by an earlier version — 54 rows.');
     expect(html).toContain('Regenerate SOP and RACI for one entry per step of “How it works”');
     // A stored layer of any shape the page accepts renders.
     for (const layer of [{}, { raci_matrix: [], sop_details: [] }, { sop_details: [{ stepId: 'x', stepTechnical: 'not a list' }], level: BUSINESS_STEP_LEVEL }]) {

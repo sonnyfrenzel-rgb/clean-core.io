@@ -161,8 +161,12 @@ test.describe('nothing the code does not give', () => {
     const source = read('Z_MM_PO_APPROVAL.abap');
     const ctx = namingContextOf(source);
     const target = ctx.skeleton.nodes.find((n) => n.kind === 'gateway' && n.label.includes('50000.00'))!;
+    // Since engine 3.1.0 names are asked with the engine's facts (ADR-108, `namingFactsApply`): an answer cites its
+    // node's facts (H7) and uses only words they, the node and its conditions cover (H6). "Emergency within the
+    // limit?" said "limit", which the code does not — it compares the amount with 50000.00.
+    const NAME = 'Emergency and amount at most 50000.00?';
     const validated = validateNamingAnswer(ctx, JSON.stringify({
-      names: [{ id: target.id, name: 'Emergency within the limit?' }],
+      names: [{ id: target.id, name: NAME, facts: (ctx.facts?.get(target.id) ?? []).map((f) => f.id) }],
       lanes: [{ name: 'Purchasing group check', authorityCheck: 'ac-1', nodes: [target.id] }],
     }));
     expect(validated.names).toHaveLength(1);
@@ -190,7 +194,7 @@ test.describe('nothing the code does not give', () => {
 
     const named = doc.steps.filter((s) => s.businessName);
     expect(named).toHaveLength(1);
-    expect(named[0].businessName).toBe('Emergency within the limit?');
+    expect(named[0].businessName).toBe(NAME);
     expect(named[0].technicalName).toContain('50000.00');
     expect(named[0].namingProvenance).toBe('proposed');
     expect(doc.proposedLanes).toEqual([
@@ -201,7 +205,7 @@ test.describe('nothing the code does not give', () => {
     // server recorded from the naming's receipt (`naming.origin`), no longer "not-recorded".
     expect(doc.naming.origin).toEqual({ provider: 'google-gemini', modelId: 'gemini-3-flash-preview' });
     expect(md).not.toContain('ai_provider="not-recorded"');
-    expect(md).toContain(`<!-- cc:origin value="ai" ai_provider="google-gemini" ai_model="gemini-3-flash-preview" -->Emergency within the limit?<!-- /cc:origin --> (${named[0].technicalName}) — ${PROVENANCE.proposed.label}`);
+    expect(md).toContain(`<!-- cc:origin value="ai" ai_provider="google-gemini" ai_model="gemini-3-flash-preview" -->${NAME}<!-- /cc:origin --> (${named[0].technicalName}) — ${PROVENANCE.proposed.label}`);
   });
 
   test('a naming made for another source is not applied', () => {

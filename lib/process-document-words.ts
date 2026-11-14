@@ -76,21 +76,24 @@ export function plainStepLine(
   calls: ReadonlyArray<{ name: string }>,
   early: number,
 ): string {
-  const line = (max: number) => {
+  const line = (max: number, nameCalls = true) => {
     const parts: string[] = [];
     if (reads.length) parts.push(`reads ${tablesPhrase(reads.map((r) => r.name), max)}`);
     if (writes.length) parts.push(`changes ${tablesPhrase(writes.map((w) => w.name), max)}`);
-    const known = [...new Set(calls.map((c) => callWord(c.name)).filter((w): w is string => !!w).map(thirdPerson))];
-    const unknown = calls.filter((c) => !callWord(c.name)).length;
+    const known = nameCalls ? [...new Set(calls.map((c) => callWord(c.name)).filter((w): w is string => !!w).map(thirdPerson))] : [];
+    const unknown = nameCalls ? calls.filter((c) => !callWord(c.name)).length : calls.length;
     parts.push(...known.slice(0, max));
     const more = known.length - Math.min(known.length, max) + unknown;
     if (more > 0) parts.push(`calls ${plural(more, known.length ? 'more SAP function' : 'SAP function', known.length ? 'more SAP functions' : 'SAP functions')}`);
     if (early > 0) parts.push('can end early');
     return parts.length ? `${capFirst(parts.join('; '))}.` : '';
   };
-  // One line, ≤ 20 words: a step that touches much names fewer things and counts the rest.
+  // One line, ≤ 20 words: a step that touches much names fewer things and counts the rest — last of all its calls.
+  const fits = (text: string) => text.split(/\s+/).length <= 20;
   const long = line(2);
-  return long.split(/\s+/).length <= 20 ? long : line(1);
+  if (fits(long)) return long;
+  const short = line(1);
+  return fits(short) ? short : line(1, false);
 }
 
 /**

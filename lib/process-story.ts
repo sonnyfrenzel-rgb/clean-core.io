@@ -39,7 +39,7 @@
  */
 
 import type { ProcessSkeleton, SkeletonNode } from './abap/process-skeleton';
-import { plainLabels } from './abap/plain-language';
+import { humaniseField, plainContext, plainLabels, type PlainContext } from './abap/plain-language';
 import { anchorLabel } from './first-look';
 import { readDemoSwitches } from './abap/demo-switches';
 import { engineReads3020Apply } from './abap/engine-reads-3020-gate';
@@ -159,7 +159,7 @@ export function processStory(
   const texts = engineReads310Apply(engineVersion) && customerTexts ? customerTexts : null;
   const labels = plainLabels(skeleton, source, { engineVersion, ...(texts ? { customerTexts: texts } : {}) });
   const reading: FirstLookReading | null = engineReads3020Apply(engineVersion)
-    ? firstLookReadingOf(source, readDemoSwitches(source, engineVersion))
+    ? firstLookReadingOf(source, readDemoSwitches(source, engineVersion), engineVersion)
     : null;
   const plain: BranchReading | null = engineReads3021Apply(engineVersion) ? branchReadingOf(source) : null;
   let testData: ProcessStory['testData'] = null;
@@ -175,6 +175,18 @@ export function processStory(
    * 3.0.21: a check as the business line says it — a part of it on a raw dictionary field by the program's own text on
    * that arm, or left out; null when nothing of it can be said (the step counts it as unsaid). Before, the plain label.
    */
+  /** 3.1.0: the context the labels were worded in, read once on first use. */
+  let wordCtx: PlainContext | null = null;
+  /** 3.1.0: the raw field a part of a label names by the field's dictionary words, not its name. */
+  const wordedRaw = <T extends { words: string[] }>(part: string, raws: T[]): T | null => {
+    if (!engineReads310Apply(engineVersion)) return null;
+    wordCtx ??= plainContext(source, { engineVersion });
+    const ctx = wordCtx;
+    return raws.find((x) => x.words.some((w) => {
+      const name = humaniseField(w, ctx);
+      return name.toLowerCase() !== w.toLowerCase() && wordIn(part, name);
+    })) ?? null;
+  };
   const sayCheck = (node: SkeletonNode): string | null => {
     const label = checkName(node);
     if (!plain || !node.anchor || businessNames?.get(node.id)?.trim()) return label;
@@ -196,7 +208,11 @@ export function processStory(
         continue;
       }
       const hit = raws.find((x) => x.words.some((w) => wordIn(part, w)));
-      if (!hit) said.push(plainValues(part));
+      // 3.1.0 words more dictionary fields ("Mmsta" is "Plant material status"), so the label no longer names the
+      // raw field — the program's own text on that arm still says best what the code values mean (3.0.21).
+      const worded = hit ? null : wordedRaw(part, raws);
+      if (worded) said.push(worded.arm.message ?? plainValues(part));
+      else if (!hit) said.push(plainValues(part));
       else if (hit.arm.message) said.push(hit.arm.message);
     }
     const words = unique(said);
@@ -513,7 +529,7 @@ export function processChanges(
 ): { changes: StoryChange[]; more: number } {
   const texts = engineReads310Apply(engineVersion) && customerTexts ? customerTexts : null;
   const labels = plainLabels(skeleton, source, { engineVersion, ...(texts ? { customerTexts: texts } : {}) });
-  const reading = engineReads3020Apply(engineVersion) ? firstLookReadingOf(source, null) : null;
+  const reading = engineReads3020Apply(engineVersion) ? firstLookReadingOf(source, null, engineVersion) : null;
   const seen = new Set<string>();
   const all: StoryChange[] = [];
   for (const node of [...skeleton.nodes].sort(order)) {

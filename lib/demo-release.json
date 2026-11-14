@@ -7,7 +7,7 @@
   },
   "ruleVersion": "levels 3c38976c5841 · latest@407843e4 · classifications-sap@70a9e6f4",
   "catalogVersion": "2024.FPS02 + CR:latest@407843e4 (25467 entries, fetched 2026-10-01)",
-  "engineOutput": "15717dd0b0d1f928e9dd4340bf1a02380a0499cd0fa594b08f83ab97cd51ed09",
+  "engineOutput": "c798f3dc25772f671950e7e957c7516a98cd494b91e0b28687e3ad0899ea016d",
   "figures": {
     "findings": 26,
     "distinctFindings": 23,

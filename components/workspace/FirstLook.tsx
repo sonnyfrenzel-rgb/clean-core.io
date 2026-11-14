@@ -515,7 +515,7 @@ export default function FirstLook({
           dependencies: access,
           traceability,
           open,
-          wording: plainWordingFor(source, process.skeleton),
+          wording: plainWordingFor(source, process.skeleton, engineVersion),
           inputs: programInputsOf(process.facts, (name) => humaniseField(name, plainContext(source))),
         }),
         steps: stepStrip(process.skeleton, source),

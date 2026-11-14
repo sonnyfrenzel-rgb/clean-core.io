@@ -44,11 +44,13 @@ const PO = readOf('Z_MM_PO_APPROVAL.abap');
 
 test.describe('the stations: business steps only, a handful per phase, phases as chapters', () => {
   test('the 1,000-line example: 52 walk steps become at most 12 stations; the PO demo 25 become 6 to 12', () => {
-    // Measured 21.10.2026: 52 → 12 (12 chapters) and 25 → 7 (5 chapters).
+    // Measured 21.10.2026: 52 → 12 (12 chapters) and 25 → 7 (5 chapters). Engine 3.1.0 draws two more decision
+    // points of the PO demo ("Test run selected?", "Role DEPT_HEAD?"): an arm now draws its outcome (`armOutcome`,
+    // `lib/abap/engine-reads-310-gate.ts`), so a decision no longer folds away as two ways to the same next step.
     expect(BIG.tour.walkSteps).toBe(52);
     expect(BIG.tour.stations.length).toBeLessThanOrEqual(MAX_STATIONS);
     expect(BIG.tour.stations.length).toBeGreaterThanOrEqual(6);
-    expect(PO.tour.walkSteps).toBe(25);
+    expect(PO.tour.walkSteps).toBe(27);
     expect(PO.tour.stations.length).toBeGreaterThanOrEqual(6);
     expect(PO.tour.stations.length).toBeLessThanOrEqual(MAX_STATIONS);
   });
@@ -163,14 +165,15 @@ const textOf = (html: string) =>
 test.describe('the tour on screen (server-free render)', () => {
   test('a station: its title, two or three plain sentences, the way on, the lines folded — and no question, no answer, no code', async () => {
     const Layer = await load('components/workspace/ProcessTour.tsx', 'ProcessTourLayer');
-    const at = PO.tour.stations.findIndex((s) => s.title === 'Currency not EUR?');
+    // Engine 3.1.0 asks the question the positive way round (owner decision E1, 06.11.2026), the answers swapped.
+    const at = PO.tour.stations.findIndex((s) => s.title === 'Currency EUR?');
     const html = renderToStaticMarkup(React.createElement(Layer, { tour: PO.tour, model: PO.model, onClose: () => {}, initialStation: at }));
     const text = textOf(html);
     expect(html).toContain('role="dialog"');
     expect(html).toContain('aria-modal="true"');
     expect(html).toContain(`data-tour-at="${at + 1}"`);
     expect(text).toContain(`Step ${at + 1} of ${PO.tour.stations.length}`);
-    expect(text).toContain('It checks: Currency not EUR? If yes, it goes on to “Convert to EUR”. If no, it carries on.');
+    expect(text).toContain('It checks: Currency EUR? If no, it goes on to “Convert to EUR”. If yes, it carries on.');
     expect(text).toContain('It is a business rule: it decides which way each case goes.');
     // The next part begins after it: said one level down, not on the card (owner decision 22.10.2026).
     expect(html).not.toContain('data-tour-next-sentence=""');
@@ -178,7 +181,7 @@ test.describe('the tour on screen (server-free render)', () => {
     expect(text.slice(0, text.indexOf('More about it'))).not.toContain('Then the part');
     // The map moves to the element: the canvas is told which, and names it for a screen reader.
     expect(html).toContain('data-process-tour-map=""');
-    expect(html).toContain('aria-label="Process map, highlighted: Currency not EUR?"');
+    expect(html).toContain('aria-label="Process map, highlighted: Currency EUR?"');
     // The chapters, with the one on screen.
     expect(html.match(/data-tour-chapter="\d+"/g)).toHaveLength(PO.tour.chapters.length);
     expect(html).toContain('aria-current="step"');

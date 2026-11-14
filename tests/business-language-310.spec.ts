@@ -249,7 +249,10 @@ test('In short: batch input is a change, said by its transaction; a started repo
     '  SUBMIT zt_other_report AND RETURN.',
   ].join('\n');
   expect(said(submit, NEW)).not.toMatch(/does not post or change data/);
-  expect(said(submit, NEW)).toMatch(/starts the report ZT_OTHER_REPORT; what that report changes in SAP is not visible in this code/);
+  // The report's name is a code: the Business view (codes off) says the sentence without it; it stands with codes on.
+  expect(said(submit, NEW)).toMatch(/It starts another report; what that report changes in SAP is not visible in this code/);
+  expect(businessInShort(programSummary(programSummaryFactsOf(submit, { engineVersion: NEW }))).map((l) => l.text).join(' '))
+    .toMatch(/It starts another report \(ZT_OTHER_REPORT\); what that report changes in SAP is not visible in this code/);
 });
 
 test('two bounds on one field read as a range only where the words keep each endpoint (QA review 268ed7624e53)', () => {

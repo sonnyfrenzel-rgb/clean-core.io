@@ -7,6 +7,7 @@ import {
   translateGermanWords,
   UNTRANSLATABLE,
 } from '../lib/abap/german-terms';
+import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
 
 /**
  * German ABAP names in English (owner report 06.10.2026).
@@ -98,8 +99,11 @@ test.describe('German names — the owner example', () => {
   });
 
   test('the decisions read English: output lines, the user command, function codes as identifiers', () => {
-    const skeleton = buildProcessSkeleton(REPORT);
-    const labels = plainLabels(skeleton, REPORT);
+    // The owner example as it read before 3.1.0, and as a run signed by such an engine still reads (3.0.23 is the
+    // last release before the gate, `lib/abap/engine-reads-310-gate.ts`).
+    const OLD = '3.0.23';
+    const skeleton = buildProcessSkeleton(REPORT, { engineVersion: OLD });
+    const labels = plainLabels(skeleton, REPORT, { engineVersion: OLD });
     const label = (kind: string, technical: RegExp) => {
       const node = skeleton.nodes.find((n) => n.kind === kind && technical.test(n.label));
       expect(node, `${kind} ${technical}`).toBeDefined();
@@ -120,6 +124,19 @@ test.describe('German names — the owner example', () => {
     const routine = skeleton.nodes.find((n) => n.label === 'LIEFERDATUM_AENDERN' && n.kind === 'user-task');
     expect(labels.technical(routine?.id ?? '')).toBe('LIEFERDATUM_AENDERN');
     expect(routine?.anchor?.lineStart).toBe(REPORT.split('\n').findIndex((l) => /PERFORM lieferdatum_aendern/.test(l)) + 1);
+
+    // Engine 3.1.0 names an internal table after where its rows come from (owner decisions E1–E4, 06.11.2026):
+    // gt_ausgabe is filled by a SELECT from VBAK, so it reads "sales orders" — still English, never "Ausgabe".
+    const skeleton310 = buildProcessSkeleton(REPORT, { engineVersion: ENGINE_READS_310_FROM });
+    const labels310 = plainLabels(skeleton310, REPORT, { engineVersion: ENGINE_READS_310_FROM });
+    const label310 = (kind: string, technical: RegExp) =>
+      labels310.nodes.get(skeleton310.nodes.find((n) => n.kind === kind && technical.test(n.label))?.id ?? '') ?? '';
+    expect(label310('gateway', /gt_ausgabe/)).toBe('Any sales orders?');
+    expect(label310('gateway', /^r_ucomm$/)).toBe('User command?');
+    expect(label310('user-task', /^ALV_AUSGABE$/)).toBe('Output result list (ALV-Ausgabe)');
+    expect(label310('user-task', /^LIEFERDATUM_AENDERN$/)).toBe('Change delivery date (Lieferdatum ändern)');
+    expect(label310('user-task', /^POPUP_GET_VALUES$/)).toBe('Ask for values');
+    expect(label310('end-error', /MESSAGE/)).toBe('Stop: no data found');
   });
 
   test('no label of the example mixes German and English', () => {

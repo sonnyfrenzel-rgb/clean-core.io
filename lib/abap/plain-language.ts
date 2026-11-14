@@ -2405,7 +2405,13 @@ function loopQuestion(node: SkeletonNode, ctx: PlainContext): string {
   const over = detailString(node, 'over');
   if (over) return fit(`More ${itemsOf(over, ctx)}?`);
   const text = statementAt(ctx, node.anchor?.lineStart)?.text ?? '';
-  if (/^WHILE\s/i.test(text)) return conditionToQuestion(text, ctx, node.anchor?.lineStart).question;
+  if (/^WHILE\s/i.test(text)) {
+    // A loop's ways out are "Next" and "Done", whatever the question says: 3.1.0 asks a negative question the positive
+    // way round (E1), which would turn "Count not zero?" into "Count zero?" beside a "Next" that runs while it is not.
+    // A loop keeps the condition the way the code states it.
+    const q = conditionToQuestion(text, ctx, node.anchor?.lineStart);
+    return ctx.reads310 && q.trueBranch !== 'Yes' ? fit(`${conditionToPhrase(text, ctx, node.anchor?.lineStart)}?`) : q.question;
+  }
   if (/^LOOP\s+AT\s+([\w<>-]+)/i.test(text)) {
     return fit(`More ${itemsOf(/^LOOP\s+AT\s+([\w<>-]+)/i.exec(text)?.[1] ?? '', ctx)}?`);
   }
