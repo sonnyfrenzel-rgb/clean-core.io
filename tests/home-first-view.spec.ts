@@ -491,6 +491,8 @@ test.describe('a fresh account lands on the first view', () => {
     await page.waitForURL(/\/admin\/new-project\/upload/, { timeout: 45_000 });
     const paste = page.locator('[data-own-code-paste]');
     await expect(paste).toBeVisible({ timeout: 30_000 });
+    // Nothing pasted, nothing to add.
+    await expect(paste.locator('[data-own-code-paste-add]')).toBeDisabled();
     await paste.locator('textarea').fill(read('public/starter-examples/Z_MATERIAL_STOCK_CALC.txt'));
     await paste.locator('[data-own-code-paste-add]').click();
     await expect(page.locator('[data-own-code-file="Z_MATERIAL_STOCK_CALC.abap"]')).toBeVisible({ timeout: 30_000 });

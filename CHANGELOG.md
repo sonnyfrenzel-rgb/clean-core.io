@@ -57,6 +57,8 @@ Signed runs and the audit pack do not change.
 - Invitation unsubscribe: two requests with the same link arriving together store the opt-out once and keep its first time; the list entry is created in one step instead of read, then written.
 
 #### Analyze, the process map and the tour
+- Analyze, Business: on a phone or tablet the outline beside the map can be opened and closed; it was folded with no way to open it below the desktop width.
+- Process map: a failed AI naming of one map is no longer reported for another project or source opened on the same page.
 - Process map: the guided tour shows the same step names as the main map while AI names are still arriving.
 - Analyze: a project read that answers late no longer puts the pre-run state back over the result of a run that has just been signed.
 - Process map: a routine whose only extra elements are log notes stays one step; a routine calling itself is not drawn as a phase of its own.
@@ -136,6 +138,8 @@ Signed runs and the audit pack do not change.
 - In short: an inbound IDoc function is said as one SAP calls where a process code is assigned to it; the code alone does not show that assignment.
 
 #### Workspace, Documentation and Testing
+- Home: when reading the own project list fails after it had answered empty, the regular page stays instead of the first view for a new account.
+- Demo: confirming the target route no longer loses rule confirmations a browser still held in the demo's older format.
 - Workspace: after an account switch, an earlier error reading the project list no longer shows the regular page before the new list has answered.
 - Home: the recommended example's start button tells a screen reader that the example ran before and that starting it again uses a run, as the list buttons already did.
 - Documentation: where the business sentences are reworded for a business reader, the proposals card says that asking for them takes two model calls.
@@ -148,6 +152,7 @@ Signed runs and the audit pack do not change.
   product default.
 
 #### Tests
+- Tests: the first look is checked to say the project's customer texts in its story and rule explanation, and pasted code to enter the same file assembly as an upload.
 - Tests: the Documentation page is required to pass the project's customer texts to the process document.
 - Tests: the first look's states are recorded from before the start is pressed, and the process story must be visible, not only present.
 - Tests: the Gemini route is run in process for the automatic-naming notice gate and for the fallback model of the statements stage.
