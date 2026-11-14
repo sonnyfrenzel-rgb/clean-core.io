@@ -1223,9 +1223,10 @@ function writtenValues(statements: readonly AbapStatement[], demoRoutines: Reado
 }
 
 /**
- * From 3.1.0: the fields a value can reach from outside the program's own assignments — what a `SELECT`, `FETCH`,
- * `READ TABLE`, `LOOP AT` or `IMPORT` fills (`INTO x`, `INTO TABLE x`, `INTO (a, b)`, `ASSIGNING <x>`), as
- * `markerKey` prefixes: `v:<name>` for a variable, `c:<type>:` for every component of a row.
+ * From 3.1.0: the fields a value can reach from outside the program — what a `SELECT` or `FETCH` fills whole
+ * (`INTO x`, `INTO (a, b)`) and what an `IMPORT` lists, as `markerKey` prefixes: `v:<name>` for a variable,
+ * `c:<type>:` for every component of a row. Not `INTO CORRESPONDING FIELDS` (a column the program adds to the row
+ * is not read), not `INTO TABLE`, and not a `LOOP`/`READ TABLE` over a table the program builds itself.
  */
 function sourcedKeys(statements: readonly AbapStatement[], types: ReadonlyMap<string, string>): Set<string> {
   const out = new Set<string>();
@@ -1236,11 +1237,10 @@ function sourcedKeys(statements: readonly AbapStatement[], types: ReadonlyMap<st
     out.add(`c:${types.get(name) ?? name}:`);
   };
   for (const s of statements) {
-    if (!/^(?:SELECT|FETCH|READ|LOOP|IMPORT)$/i.test(s.keyword)) continue;
+    if (!/^(?:SELECT|FETCH|IMPORT)$/i.test(s.keyword)) continue;
     const text = s.text.replace(/\.\s*$/, '');
     for (const m of text.matchAll(/\bINTO\s*\(([^)]*)\)/gi)) for (const name of m[1].split(',')) add(name);
-    for (const m of text.matchAll(/\bINTO\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?(?:TABLE\s+)?(@?(?:DATA\()?<?[\w/]+>?)/gi)) add(m[1]);
-    for (const m of text.matchAll(/\bASSIGNING\s+(?:FIELD-SYMBOL\()?(<[\w/]+>)/gi)) add(m[1]);
+    for (const m of text.matchAll(/\bINTO\s+(?!CORRESPONDING\b|TABLE\b)(@?(?:DATA\()?<?[\w/]+>?)/gi)) add(m[1]);
     // `IMPORT a = b FROM …` / `IMPORT a b FROM …`: every name it lists.
     const imported = /^IMPORT\s+([\s\S]*?)\s+FROM\b/i.exec(text)?.[1];
     if (imported) for (const m of imported.matchAll(/[\w/]+/g)) add(m[0]);
