@@ -67,7 +67,8 @@ test('a confirmed "Move to SAP standard" reads the seven phases as v3.0.19 did â
 });
 
 test('the model has no fit-proposal answer shape', () => {
-  expect(RESPONSE_SHAPES).toEqual(['transformation-fill', 'documentation-business', 'plain-wording']);
+  // 'statements-rewording' is the rewording of the business statements (owner decision 13.11.2026 (2)), not a fit proposal.
+  expect(RESPONSE_SHAPES).toEqual(['transformation-fill', 'documentation-business', 'plain-wording', 'statements-rewording']);
 });
 
 test('no route, component folder or Business-view card of the module is left', () => {

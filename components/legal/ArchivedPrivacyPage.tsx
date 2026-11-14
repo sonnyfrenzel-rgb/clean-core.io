@@ -80,7 +80,7 @@ export default function ArchivedPrivacyPage({ id, lang }: { id: PrivacyVersionId
         </span>
       </h1>
       <div
-        className={inForce ? 'p-4 bg-cc-brand-surface border border-cc-line rounded-2xl mb-10' : 'p-4 bg-cc-warning-bg border border-cc-warning-border rounded-2xl mb-10'}
+        className={inForce ? 'p-4 bg-cc-brand-surface border border-cc-line rounded-xl mb-10' : 'p-4 bg-cc-warning-bg border border-cc-warning-border rounded-xl mb-10'}
         data-archived-current={inForce ? 'true' : 'false'}
       >
         <p className={inForce ? 'text-sm text-cc-ink-muted' : 'text-sm text-cc-warning'}>

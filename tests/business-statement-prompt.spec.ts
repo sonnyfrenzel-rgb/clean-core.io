@@ -185,11 +185,14 @@ test('path B is wired, and only through the proposal stage of 17.10: two importe
   }
   // Sonny, 27.09.2026 (roadmap 17.10): B goes into the Business view — through
   // `lib/statement-proposal.ts` and the route that validates and stores the
-  // answer. No run, no signature, no audit pack reads the module.
+  // answer. No run, no signature, no audit pack reads the module. Owner decision
+  // 13.11.2026 (2): the rewording of that draft (`lib/statement-rewording.ts`, off
+  // unless GEMINI_STATEMENTS_REWORDING=on) reads it too, on the same unsigned path.
   const rel = importers.map((abs) => abs.slice(process.cwd().length + 1).split('\\').join('/')).sort();
   expect(rel, 'another path to the model sentences — does it belong in a signature?').toEqual([
     'app/api/projects/[projectId]/statement-proposal/route.ts',
     'lib/statement-proposal.ts',
+    'lib/statement-rewording.ts',
   ]);
 });
 
