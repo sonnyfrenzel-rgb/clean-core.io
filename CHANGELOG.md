@@ -13,6 +13,8 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
 ### Changed
 - Roadmap: My workspace becomes two equal products, Analyse and Re-design, with program tiles for returning
   accounts, as release 3.3.0 before 3.5.0 (owner decision 14.11.2026, ADR-123).
+- Roadmap: the engine and benchmark part of 3.5.0 (honest measurement, benchmark v2, parse once) and the way to
+  engine 4.0 after 3.5 (own lexer, symbols and dispatch, typed passes, side-by-side switch; owner decision 14.11.2026).
 - A project opens in Analyze, Business. The process map is the page, and the map starts within the first screen at
   1440 × 900. Its tools sit in the canvas's own row, and what describes the map sits under it. With one code panel
   open beside it, the canvas stays wide (plan AB-2, ADR-109).
