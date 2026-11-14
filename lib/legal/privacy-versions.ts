@@ -56,7 +56,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     namesAutomatic: false,
     files: { en: 'docs/privacy/1.1.md', de: 'docs/privacy/1.1.de.md' },
     // Rendered from the source with the names paused; byte for byte what main published from 9 November 2026
-    // (compared against the rendering of the release v3.0.23 when this archive was made).
+    // (compared against the rendering of the release of 13 November 2026 when this archive was made).
     sha256: {
       en: 'f34bb3323a517f142df1e2e96ebd0516f742ca8b2408e7cfa468f529003d1536',
       de: '0d2d7350d865d7a5394eda778497ee7c4b941ef603383bf61fff560631a0f8cf',

@@ -263,7 +263,7 @@ test.describe('B2: the business names wait for the notice in the wording that na
 test.describe('B3: the privacy policy has its own version, an archive and a change note', () => {
   test('version 1.2 of 14 November 2026 with the change note; version 1.1 as published', () => {
     expect(renderedPolicy('en', true)).toContain('Version 1.2, as of 14 November 2026.');
-    expect(renderedPolicy('de', true)).toContain('Fassung 1.2, Stand 20.11.2026.');
+    expect(renderedPolicy('de', true)).toContain('Fassung 1.2, Stand 14.11.2026.');
     for (const lang of ['de', 'en'] as const) {
       expect(renderedPolicy(lang, true)).toContain(CHANGE_NOTE[lang]);
       expect(renderedPolicy(lang, false)).not.toContain(CHANGE_NOTE[lang]);
@@ -274,7 +274,7 @@ test.describe('B3: the privacy policy has its own version, an archive and a chan
     expect(renderedPolicy('en', false)).toContain('Version of 9 November 2026.');
     expect(renderedPolicy('de', false)).toContain('Stand: 9. November 2026.');
     expect(PRIVACY_POLICY_CURRENT.id).toBe(LEGAL_TEXTS_NAMES_AUTOMATIC ? '1.2' : '1.1');
-    expect(privacyVersionFor(true).date).toEqual({ en: '20 November 2026', de: '20.11.2026' });
+    expect(privacyVersionFor(true).date).toEqual({ en: '14 November 2026', de: '14.11.2026' });
     expect(privacyVersionFor(false).dateIso).toBe('2026-11-09');
   });
 

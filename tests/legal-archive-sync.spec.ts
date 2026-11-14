@@ -155,7 +155,8 @@ test('every clean-core.io address a text names is a page', () => {
       fs.existsSync(path.resolve(ROOT, `app/(app)${route}/page.tsx`));
   };
   const all = SOURCES.map((s) => s.text).join('\n');
-  for (const m of all.matchAll(/(?<![\w./@-])clean-core\.io(\/[a-z0-9/-]*[a-z0-9])/g)) {
+  // A dot inside the path belongs to it: the change note names /datenschutz/versions/1.1, not /datenschutz/versions/1.
+  for (const m of all.matchAll(/(?<![\w./@-])clean-core\.io(\/[a-z0-9/.-]*[a-z0-9])/g)) {
     expect(pageFor(m[1]), `the texts name clean-core.io${m[1]}, which is no page`).toBe(true);
   }
 });
