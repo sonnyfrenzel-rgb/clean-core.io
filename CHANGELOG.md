@@ -119,6 +119,8 @@ Signed runs and the audit pack do not change.
 - Analyze: while the start run begun in the Business view is still being signed, IT and Management keep "Start
   Analysis" closed and say the analysis is running, and the Business view shows it running instead of a sign button
   that did nothing.
+- Business rules: an `IMPORT … FROM MEMORY` now counts only the local field it fills as read from outside, not the
+  name the value was stored under, so a status the program sets itself stays its own marker.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
