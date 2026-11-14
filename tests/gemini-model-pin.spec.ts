@@ -46,7 +46,7 @@ function sourceFiles(): string[] {
  * 78cf32f47a20).
  */
 const isRegisteredGa = (model: string): boolean => {
-  const route = read('app/api/gemini/route.ts');
+  const route = read('lib/gemini-register.ts');
   const escaped = model.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(`'${escaped}',\\s*// GA\\b`).test(route) && !/preview|exp|latest/i.test(model);
 };
@@ -54,7 +54,7 @@ const isRegisteredGa = (model: string): boolean => {
 test('the model the product calls is named in exactly one place', () => {
   // `lib/constants.ts` holds the choice; `app/api/gemini/route.ts` holds the
   // register of what may be called at all. Everywhere else reads the constant.
-  const allowed = new Set(['lib/constants.ts', 'app/api/gemini/route.ts']);
+  const allowed = new Set(['lib/constants.ts', 'lib/gemini-register.ts', 'app/api/gemini/route.ts']);
   const offenders = sourceFiles().filter((file) => !allowed.has(file) && /['"`]gemini-[0-9]/.test(read(file)));
   expect(offenders, `these files name a Gemini model instead of importing PRODUCT_GEMINI_MODEL:\n${offenders.join('\n')}`).toEqual([]);
 
@@ -73,7 +73,7 @@ test('the product model is a GA model, and the register agrees with it', () => {
   expect(isRegisteredGa('gemini-3-flash-preview')).toBe(false);
   expect(isRegisteredGa('gemini-exp-1206')).toBe(false);
 
-  const route = read('app/api/gemini/route.ts');
+  const route = read('lib/gemini-register.ts');
   const register = route.slice(route.indexOf('const ALLOWED_MODELS'), route.indexOf('])', route.indexOf('const ALLOWED_MODELS')));
   expect(register, 'the product default is not in the server-side register, so every call would be refused').toContain(PRODUCT_GEMINI_MODEL);
 });
@@ -81,12 +81,13 @@ test('the product model is a GA model, and the register agrees with it', () => {
 test('the naming stage has its own model, a GA one, in the register, and only it uses it (17.3)', () => {
   expect(NAMING_GEMINI_MODEL, 'the naming model is a preview model').not.toMatch(/preview/i);
   expect(isRegisteredGa(NAMING_GEMINI_MODEL), 'the naming model is not a model the register marks GA').toBe(true);
-  const route = read('app/api/gemini/route.ts');
+  const route = read('lib/gemini-register.ts');
   const register = route.slice(route.indexOf('const ALLOWED_MODELS'), route.indexOf('])', route.indexOf('const ALLOWED_MODELS')));
   expect(register, 'the naming model is not in the server-side register, so every naming call would be refused').toContain(NAMING_GEMINI_MODEL);
   // The exception is one stage wide: the naming client, and nothing else.
   const users = sourceFiles().filter((f) => f !== 'lib/constants.ts' && /NAMING_GEMINI_MODEL/.test(read(f)) && !f.startsWith('tests/'));
-  expect(users).toEqual(['lib/process-naming-client.ts']);
+  // lib/gemini-register.ts names it to report which model the naming stage runs on (stageModelsForKey); it calls nothing.
+  expect(users.sort()).toEqual(['lib/gemini-register.ts', 'lib/process-naming-client.ts']);
 });
 
 test('the deploy-time escape hatch cannot run an unreviewed model', async () => {
@@ -156,7 +157,8 @@ test('a model under evaluation is served only as the deployment\'s product model
   expect(modelServable('gemini-2.5-flash', 'gemini-3.8-flash', register, evaluation)).toBe(false);
   // The route decides with this function, over its own register and evaluation list.
   const route = read('app/api/gemini/route.ts');
-  expect(route).toContain("const EVALUATION_ONLY_MODELS = new Set(['gemini-4-hydrogen']);");
+  expect(read('lib/gemini-register.ts')).toContain("export const EVALUATION_ONLY_MODELS = new Set(['gemini-4-hydrogen']);");
+  expect(route).toContain("import { ALLOWED_MODELS, EVALUATION_ONLY_MODELS } from '@/lib/gemini-register';");
   expect(route).toContain('if (!modelServable(model, productModel(), ALLOWED_MODELS, EVALUATION_ONLY_MODELS)) {');
 });
 
@@ -177,7 +179,7 @@ test('the register probe counts an answer only from the model that was asked', a
 });
 
 test('every model in the register has been called, and answered', () => {
-  const route = read('app/api/gemini/route.ts');
+  const route = read('lib/gemini-register.ts');
   const start = route.indexOf('const ALLOWED_MODELS');
   const block = route.slice(start, route.indexOf('])', start));
   const register = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1]);

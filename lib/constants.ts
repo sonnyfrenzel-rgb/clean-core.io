@@ -166,3 +166,14 @@ export const PRODUCT_GEMINI_MODEL = 'gemini-3.8-flash';
  * (default 82 %). `docs/ROADMAP.md` §17 carries the full table.
  */
 export const NAMING_GEMINI_MODEL = 'gemini-3.5-flash-lite';
+
+/**
+ * The model under evaluation as the next product model (`EVALUATION_ONLY_MODELS`
+ * in `app/api/gemini/route.ts`: served only when the deployment names it, never
+ * on a client's request). Named here so that the one place that gives it a
+ * thinking level per stage (`lib/model-thinking.ts`, study of 13.11.2026) reads
+ * the name rather than spelling it a second time. Not called by the product
+ * unless `GEMINI_MODEL`, `GEMINI_LARGE_PROMPT_MODEL` or `GEMINI_FALLBACK_MODEL`
+ * names it (`lib/model-combination.ts`).
+ */
+export const EVALUATION_GEMINI_MODEL = 'gemini-4-hydrogen';

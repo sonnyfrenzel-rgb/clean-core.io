@@ -1683,6 +1683,50 @@
       }
     },
     {
+      "path": "docs/design/model-combination.md",
+      "kind": "plan",
+      "purpose": "Study and design of the model combination and the model per stage: what was measured on the process benchmark, the rules in lib/model-combination.ts, the thinking level per model and stage, and the stages approved for gemini-4-hydrogen",
+      "audience": "Sonny, agents",
+      "saysToday": "Statements, Analyze, Design and Documentation on gemini-4-hydrogen in dev and production with 3.1.0 (owner decision 14.11.2026); Testing, Transformation and naming stay on their models.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "The design record behind GEMINI_STAGE_MODELS and the measurements every stage decision rests on.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/ROADMAP.md",
+        "CHANGELOG.md"
+      ],
+      "measured": {
+        "lines": 366
+      }
+    },
+    {
+      "path": "docs/prozess-benchmark/MODEL-COMBO-FREEZE-2026-11-13.md",
+      "kind": "plan",
+      "purpose": "The frozen configuration of the one holdout measurement of the model combination, written before the first holdout call",
+      "audience": "Sonny, agents",
+      "saysToday": "Frozen on 13.11.2026; the holdout was measured once against it.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Proof that the holdout configuration was fixed before the measurement; it does not change.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "CHANGELOG.md",
+        "docs/design/model-combination.md"
+      ],
+      "measured": {
+        "lines": 59
+      }
+    },
+    {
       "path": "docs/drafts/README-3.0.md",
       "kind": "draft",
       "purpose": "Draft of the README for 3.0 (preparation 3.0.8)",
@@ -2983,6 +3027,94 @@
       }
     },
     {
+      "path": "docs/privacy/1.1.md",
+      "kind": "legal",
+      "purpose": "Privacy policy 1.1, English version, as of 9 November 2026 (names paused)",
+      "audience": "public, legal (lib/legal/privacy-versions.ts)",
+      "saysToday": "Privacy policy version 1.1, archived at a fixed address.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text, generated from lib/legal/texts by scripts/legal/archive-privacy.ts and never edited after publication; its SHA-256 stands in lib/legal/privacy-versions.ts.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/legal/privacy-versions.ts"
+      ],
+      "measured": {
+        "lines": 243
+      }
+    },
+    {
+      "path": "docs/privacy/1.1.de.md",
+      "kind": "legal",
+      "purpose": "Privacy policy 1.1, German version, as of 9 November 2026 (names paused) — a German legal text",
+      "audience": "public, legal (lib/legal/privacy-versions.ts)",
+      "saysToday": "Privacy policy version 1.1, archived at a fixed address.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text, generated from lib/legal/texts by scripts/legal/archive-privacy.ts and never edited after publication; its SHA-256 stands in lib/legal/privacy-versions.ts.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/legal/privacy-versions.ts"
+      ],
+      "measured": {
+        "lines": 243
+      }
+    },
+    {
+      "path": "docs/privacy/1.2.md",
+      "kind": "legal",
+      "purpose": "Privacy policy 1.2, English version, as of the release of 3.1.0 (names automatic again, statement 19c)",
+      "audience": "public, legal (lib/legal/privacy-versions.ts)",
+      "saysToday": "Privacy policy version 1.2, archived at a fixed address.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text, generated from lib/legal/texts by scripts/legal/archive-privacy.ts and never edited after publication; its SHA-256 stands in lib/legal/privacy-versions.ts.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/legal/privacy-versions.ts"
+      ],
+      "measured": {
+        "lines": 245
+      }
+    },
+    {
+      "path": "docs/privacy/1.2.de.md",
+      "kind": "legal",
+      "purpose": "Privacy policy 1.2, German version, as of the release of 3.1.0 (names automatic again, statement 19c) — a German legal text",
+      "audience": "public, legal (lib/legal/privacy-versions.ts)",
+      "saysToday": "Privacy policy version 1.2, archived at a fixed address.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Versioned legal text, generated from lib/legal/texts by scripts/legal/archive-privacy.ts and never edited after publication; its SHA-256 stands in lib/legal/privacy-versions.ts.",
+      "effort": "none",
+      "guard": {
+        "removed": "exempt",
+        "terms": "exempt",
+        "why": "ABAP source code or legal text, not a product description."
+      },
+      "referencedBy": [
+        "lib/legal/privacy-versions.ts"
+      ],
+      "measured": {
+        "lines": 245
+      }
+    },
+    {
       "path": "docs/byok-addendum/ZV-BYOK-1.0.md",
       "kind": "legal",
       "purpose": "Additional Agreement on Own Model Keys ZV-BYOK-1.0, English version (Fassung 1.1, 3.0.21)",
@@ -3722,7 +3854,9 @@
         "removed": "check",
         "terms": "check"
       },
-      "referencedBy": ["SECURITY.md"],
+      "referencedBy": [
+        "SECURITY.md"
+      ],
       "measured": {
         "lines": 5
       }

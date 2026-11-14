@@ -31,6 +31,8 @@ import {
   type AutoStepsNoticeWording,
 } from '@/lib/auto-steps-notice';
 import { AUTO_MODEL_STEPS_FIELD, autoModelStepsOn, automaticStepsAllowed } from '@/lib/auto-model-steps';
+import { statementsRewordingOn } from '@/lib/statement-rewording';
+import { stageModelsForKey } from '@/lib/gemini-register';
 
 /**
  * The per-stage model switch, and whether there is a key to switch on.
@@ -104,6 +106,13 @@ interface StageAnswer {
    * on unless switched off. `autoSteps` above is false whenever it is off.
    */
   autoModelSteps: boolean;
+  /**
+   * 13.11.2026 (owner decision) — the deployment rewords the draft of the business
+   * statements for a business reader (`GEMINI_STATEMENTS_REWORDING=on`,
+   * `lib/statement-rewording.ts`): the browser then makes the second call and the
+   * button says two calls. A deployment fact, the same for every account.
+   */
+  statementsRewording: boolean;
 }
 
 const UNREADABLE = Symbol('byok-key-unreadable');
@@ -130,7 +139,8 @@ async function answerFor(uid: string): Promise<StageAnswer> {
     if (err instanceof ByokKeyUnreadableError || err instanceof OwnModelKeyMissingError) return UNREADABLE;
     throw err;
   });
-  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null, autoStepsNoticeSeen, autoStepsNoticeWording, autoModelSteps };
+  const statementsRewording = statementsRewordingOn(process.env);
+  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null, autoStepsNoticeSeen, autoStepsNoticeWording, autoModelSteps, statementsRewording };
   const keySource: StageAnswer['keySource'] = ownKey
     ? 'byok'
     : process.env.GEMINI_API_KEY
@@ -144,7 +154,7 @@ async function answerFor(uid: string): Promise<StageAnswer> {
 
   const suspendedNotice = suspendedProvider ? providerSuspendedNotice(suspendedProvider, suspensionDetailsOf(process.env)) : null;
 
-  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoStepsNoticeWording, autoModelSteps };
+  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoStepsNoticeWording, autoModelSteps, statementsRewording };
 }
 
 export async function GET(req: NextRequest) {
@@ -164,7 +174,11 @@ export async function GET(req: NextRequest) {
     // Every answer decrypts the account's own key, so the read has a budget too —
     // wider than the write's, because pages ask on load.
     await assertRateLimit(`model_stages_read:${decodedToken.uid}`, 600, 60 * 60 * 1000);
-    return NextResponse.json(await answerFor(decodedToken.uid));
+    const answer = await answerFor(decodedToken.uid);
+    // 14.11.2026 (§3.3 of docs/design/model-combination.md) — per stage, the model a call runs on for this key,
+    // from the proxy's own register and the deployment's GEMINI_STAGE_MODELS, so a cost line names it before the click.
+    const stageModels = stageModelsForKey({ keySource: answer.keyAvailable ? answer.keySource : null, provider: answer.provider, env: process.env });
+    return NextResponse.json({ ...answer, stageModels });
   } catch (err: unknown) {
     if (err instanceof QuotaError) {
       return NextResponse.json({ error: err.message }, { status: err.status });

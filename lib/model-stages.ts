@@ -118,6 +118,20 @@ export function modelStageEnabled(subject: ModelStageSubject | null | undefined,
 }
 
 /**
+ * `stageModels` of `GET /api/model-stages` (14.11.2026): per stage, the model a
+ * call runs on for this account's key. Only known stages and plain model ids are
+ * kept; anything else is dropped, and the screen then names its default.
+ */
+export function stageModelsFromAnswer(raw: unknown): Partial<Record<ModelStage, string>> {
+  const out: Partial<Record<ModelStage, string>> = {};
+  if (!raw || typeof raw !== 'object') return out;
+  for (const [stage, model] of Object.entries(raw as Record<string, unknown>)) {
+    if (isModelStage(stage) && typeof model === 'string' && /^[a-z0-9][a-z0-9.-]{0,63}$/.test(model)) out[stage] = model;
+  }
+  return out;
+}
+
+/**
  * How long a new project's start waits for the model's narrative before it
  * signs the engine's reading without it, in ms (owner decision 03.10.2026,
  * ADR-072).

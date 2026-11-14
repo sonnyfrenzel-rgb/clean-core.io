@@ -69,7 +69,13 @@ export interface CcProvenanceChipProps {
    * id). The tooltip names them; without a receipt it names nobody rather than
    * a guess. Ignored on every other value: the engine's statements have no model.
    */
-  origin?: { provider: string | null; modelId: string | null; automatic?: boolean } | null;
+  origin?: {
+    provider: string | null;
+    modelId: string | null;
+    automatic?: boolean;
+    /** 13.11.2026 — when the text is a rewording of another model's draft: that model, from the draft's own receipt. */
+    draft?: { provider: string | null; modelId: string | null } | null;
+  } | null;
 }
 
 /** The chip's tooltip: what the value asserts, and for AI-generated text who wrote it. Pure: exported for the spec. */
@@ -77,7 +83,9 @@ export function provenanceTitle(value: ProvenanceValue, origin?: CcProvenanceChi
   const entry = provenance(value);
   if (value !== 'proposed' || !origin) return entry.meaning;
   const provider = providerLabelOfReceiptId(origin.provider);
-  const who = provider && origin.modelId ? ` Written by ${provider} · ${origin.modelId}.` : provider ? ` Written by ${provider}.` : '';
+  const draftProvider = origin.draft ? providerLabelOfReceiptId(origin.draft.provider) : null;
+  const draft = draftProvider && origin.draft?.modelId ? `, from a draft by ${draftProvider} · ${origin.draft.modelId}` : draftProvider ? `, from a draft by ${draftProvider}` : '';
+  const who = provider && origin.modelId ? ` Written by ${provider} · ${origin.modelId}${draft}.` : provider ? ` Written by ${provider}${draft}.` : '';
   return `${entry.meaning}${who}${origin.automatic ? ' Generated automatically on opening.' : ''}`;
 }
 

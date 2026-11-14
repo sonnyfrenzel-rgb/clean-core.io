@@ -80,6 +80,74 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
   them (AB-11, brought forward to 3.1.0).
 
+Study for the owner's question of 13.11.2026 (`docs/design/model-combination.md`): whether `gemini-4-hydrogen` and
+the product model together write the business statements better than either alone. The size and fallback rules
+below stay off unless the deployment sets them; the model per stage is switched on for dev and production with
+v3.1.0 (owner decision 14.11.2026, see Changed). The separate hotfix 3.0.24 is dropped.
+
+### Added — the model per stage and the model combination (study 13.11.2026)
+
+- **Two deterministic rules for the statements stage in `/api/gemini`, off by default** (`lib/model-combination.ts`):
+  a prompt longer than `GEMINI_LARGE_PROMPT_CHARS` (default 12,500 characters, about 200 ABAP lines; `0` = every
+  prompt of the stage, which is what the study recommends) is answered by `GEMINI_LARGE_PROMPT_MODEL`; an answer the
+  first model did not finish (output bound, empty, unfinished — not the provider's filter) is asked once more of
+  `GEMINI_FALLBACK_MODEL`, under the same bound and deadline. Both decide by the prompt's length and the answer's
+  finish reason and by nothing a client sent; both run only on the platform key; a named model must be in the
+  register. Measured on 150 learn cases, judged blind in one round: the statements on `gemini-4-hydrogen` at MEDIUM
+  85.2 % equal against 77.2 % on the product model, 5 against 10 sentences contradicting the code, no dropout
+  against 5, 30 s against 72 s median; a rewording of that draft by the product model at LOW (designed, not built)
+  87.8 % and a fifth as many technical sentences.
+- **A thinking level per model and stage** (`lib/model-thinking.ts`): `gemini-4-hydrogen` thinks MEDIUM for the
+  statements (measured blind on the seven largest learn cases: as many statements equal as the default, fewer
+  technical ones, 28 % cheaper and faster, never near the output bound). The product model keeps its default.
+- **The usage log line says how the provider ended the answer** (`finishReason`): a call cut off at the output
+  bound used to read `failed: false` with 32,768 tokens and nothing more.
+- **The business statements reworded for a business reader, off unless `GEMINI_STATEMENTS_REWORDING=on`**
+  (`lib/statement-rewording.ts`, owner decision 13.11.2026): after the draft, a second call of the statements stage
+  in the shape `statements-rewording` (product model, thinking LOW, no schema) rewords every checked sentence; a
+  guard keeps the draft's sentence wherever the rewording moved an anchor, changed the element, lost a number, a
+  quoted literal, a negation or a limit, added an identifier or changed the control flow (a sentence that "ends",
+  "stops", "is left", "is skipped" or "continues" where the draft did not, or no longer does). The store verifies
+  both receipts, merges deterministically on the server and records the draft's model as `origin.draft`; the chip
+  says "Written by … from a draft by …", the panel counts the sentences worded and kept, the button says "Two model
+  calls". Measured blind on 150 learn cases before the guard: 87.8 % equal against 85.2 % for the draft alone, a
+  fifth as many technical sentences. **Measured once on the frozen holdout** (150 cases, 1,759 statements, one blind
+  round, `docs/prozess-benchmark/MODEL-COMBO-FREEZE-2026-11-13.md`): the statements on `gemini-4-hydrogen` MEDIUM
+  84.6 % equal against 68.2 % on the product model (13 of 150 cases lost to its thinking loop), 8 against 15
+  sentences contradicting the code, 32 s against 64 s median; the guarded rewording on top 86.5 %, technical
+  sentences 50 % → 31 %, one contradicting sentence more than the draft.
+- **`tests/prozess-benchmark/weg-b-model.ts`**: the Weg B harness with a selectable model, thinking level and output
+  bound, a spend ledger with a cap, a rewording mode on the product's prompt and guard, and a re-read mode that
+  applies the current guard to stored rewordings without a call.
+
+- **The model per stage, written by the deploy pipeline per environment** (`GEMINI_STAGE_MODELS`,
+  `lib/model-combination.ts`; owner decision 13.11.2026): every call of a named stage runs on that model, answer
+  shapes included, except the rewording of the statements; register-checked, platform key only. `env-ctx` in
+  `.github/workflows/deploy.yml` names the stages per branch — the owner approves each stage after its
+  measurement. `gemini-4-hydrogen` stays under evaluation for clients and is served where the deployment
+  names it. BYOK accounts are unchanged. `tests/prozess-benchmark/stage-bench.ts` measures a stage with the
+  product's own prompt builders and validators before it joins the list.
+
+### Changed — the model per stage
+
+- **Statements, Analyze, Design and Documentation run on `gemini-4-hydrogen` on the platform key, in dev and
+  production, with v3.1.0** (owner decision 14.11.2026, instead of a hotfix 3.0.24): `GEMINI_STAGE_MODELS=
+  statements=…,analyze=…,design=…,documentation=…` in both lanes of `env-ctx`, thinking MEDIUM per
+  `lib/model-thinking.ts`, no rewording step. Measured on the holdout: statements 84.6 % against 68.2 % equal,
+  analyze 40:7 and documentation 41:6 blind wins with fewer sentences contradicting the code; design answered
+  47 of 47 with a usable design and is not yet judged. Testing, Transformation and naming stay on their models;
+  own keys are unchanged. `tests/model-combination.spec.ts` holds both lanes to this list and Testing out of it.
+- **The Documentation page's cost line names the model the stage runs on** (design §3.3): `GET /api/model-stages`
+  reports `stageModels` per stage for the account's key — the deployment's stage list on the platform key, the model
+  the client asks for on an own key — and the line prints the documentation stage's; it named `gemini-3.8-flash`
+  whatever answered. The model register (`ALLOWED_MODELS`, `EVALUATION_ONLY_MODELS`) moved unchanged from
+  `app/api/gemini/route.ts` to `lib/gemini-register.ts` so the route can read it; `tests/stage-model-cost-line.spec.ts`.
+- **The receipt, the stage record and `answeredBy` name the model that answered** (`answeredModel`): the planned
+  model, or the fallback when it answered after an incomplete first answer. The receipt's claim set is unchanged.
+- **The statements output bound is 65,536** (was 32,768): thinking counts against the bound, and on a 1,000-line
+  program a thinking model ended as incomplete inside the old one.
+
+
 ## [v3.0.23] — 2026-11-13
 
 A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findings scheduled for it

@@ -330,7 +330,7 @@ const GERMAN_FROZEN: Record<string, string> = {
 };
 
 /** The German contract versions in the legal archive — legal texts, German by design (see above). */
-const GERMAN_LEGAL = /^docs\/(?:terms|byok-addendum)\/[^/]+\.de\.md$/;
+const GERMAN_LEGAL = /^docs\/(?:terms|byok-addendum|privacy)\/[^/]+\.de\.md$/;
 
 const GERMAN_WORDS = /(?<![\p{L}])(und|nicht|wird|werden|wurde|oder|dass|keine?n?|sind|auch|noch|wenn|eine[nmrs]?|für|über|bleibt|steht|kein|nach|beim|zum|zur|vom|sich|schon|nur|weil|jede[rsn]?|diese[rsnm]?|dem|des|ohne|gegen|seit|ein|im|auf|aus|bei|mit|von|der|das|hat|haben|kann|muss|soll|statt|heute|damit|dann|aber|doch|sondern)(?![\p{L}])/giu;
 

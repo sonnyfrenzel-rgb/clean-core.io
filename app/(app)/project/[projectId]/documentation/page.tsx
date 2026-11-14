@@ -1396,17 +1396,22 @@ export default function DocumentationPage() {
   /**
    * What the AI-generated proposals cost before any click — DESIGN.md §2.8, one line
    * for the card (roadmap 3.0.7). Every part of it is a fact of this page: the
-   * model it names is the one `generateBusinessDocumentation` passes to
-   * `/api/gemini`, the key is the one `/api/model-stages` reports, and that
-   * route meters by the hour, not by the analysis run.
+   * model it names is the one the documentation stage runs on for this key, as
+   * `/api/model-stages` reports it (`stageModels`, 14.11.2026 — on the platform
+   * key the deployment may run the stage on another model than the one
+   * `generateBusinessDocumentation` asks for); until that answer is in, the
+   * model asked for. The key is the one the same route reports, and `/api/gemini`
+   * meters by the hour, not by the analysis run.
    */
-  const proposalsCostLine = docProposalsCostLine(PRODUCT_GEMINI_MODEL, modelAvailability.keySource === 'byok')
+  const proposalsCostLine = docProposalsCostLine(modelAvailability.stageModels.documentation ?? PRODUCT_GEMINI_MODEL, modelAvailability.keySource === 'byok')
     + (businessPlan && !businessPlan.whole ? ` ${docPartsCostLine(businessPlan.parts.length)}` : '');
 
   const statementPanelProps = {
     view: statementProposal.view,
     canRequest: isOwner,
     byok: modelAvailability.keySource === 'byok',
+    // 13.11.2026 — the deployment rewords the draft for a business reader: two calls, and the line says so.
+    rewording: modelAvailability.statementsRewording,
     requesting: statementProposal.requesting,
     message: statementProposal.message,
     onRequest: statementProposal.request,

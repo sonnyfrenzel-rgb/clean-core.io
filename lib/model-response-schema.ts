@@ -195,7 +195,7 @@ export const PLAIN_WORDING_SCHEMA = {
  * `transformation` stage — its switch and its receipt — but answer in a shape
  * of their own; the request names it beside the stage.
  */
-export const RESPONSE_SHAPES = ['transformation-fill', 'documentation-business', 'plain-wording'] as const;
+export const RESPONSE_SHAPES = ['transformation-fill', 'documentation-business', 'plain-wording', 'statements-rewording'] as const;
 export type ResponseShape = (typeof RESPONSE_SHAPES)[number];
 
 export function isResponseShape(value: unknown): value is ResponseShape {
@@ -212,6 +212,12 @@ export const RESPONSE_SHAPE_STAGE: Record<ResponseShape, ModelStage> = {
   // Roadmap 3.0.20 (owner decision 2): the engine's sentences reworded in plain business words —
   // a business sentence by another route, under its switch and its receipt.
   'plain-wording': 'statements',
+  // 13.11.2026 (owner decision): the draft of the business statements reworded for a
+  // business reader (`lib/statement-rewording.ts`) — the second call of the stage, at
+  // a low thinking level. Deliberately without a schema, like the draft itself: the
+  // measurement was made in JSON mode alone, and the guard that reads the answer
+  // against the draft is the defence, not the grammar.
+  'statements-rewording': 'statements',
 };
 
 /** The schema for a stage's JSON answer, or `undefined` where the stage has none. */
