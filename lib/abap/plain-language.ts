@@ -531,7 +531,8 @@ export function businessTableTerm(name: string, options: PlainOptions = {}): Pla
 /** 3.1.0: whether `businessTableTerm` names a customer table by the words of its own name (its code then stays beside it). */
 export function isCustomTableWorded(name: string, options: PlainOptions = {}): boolean {
   const reads310 = engineReads310Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion);
-  return reads310 && isCustomTableWord(name, { ...EMPTY_CONTEXT, reads310: true });
+  const customer = reads310 && isCustomerTexts(options.customerTexts) ? { customer: options.customerTexts } : {};
+  return reads310 && isCustomTableWord(name, { ...EMPTY_CONTEXT, reads310: true, ...customer });
 }
 
 /** 3.1.0: a function module's or transaction's business word, the glossary first, then the dictionary. */

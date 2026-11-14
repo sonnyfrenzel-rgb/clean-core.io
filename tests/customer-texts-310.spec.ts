@@ -5,7 +5,7 @@ import { expect, test } from './helpers/test';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { buildExportModel } from '../lib/bpmn/model';
 import { buildBpmnExport, businessLevelOf } from '../lib/bpmn/export';
-import { plainLabels } from '../lib/abap/plain-language';
+import { businessTableTerm, isCustomTableWorded, plainLabels } from '../lib/abap/plain-language';
 import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
 import {
   CUSTOMER_TEXT_LABEL,
@@ -96,6 +96,13 @@ test('a sentence that says five customer texts names all five in its marker', ()
   expect(customerTextProvenance('Alpha, Bravo, Charlie, Delta and Echo are checked.', texts)).toBe(
     `${CUSTOMER_TEXT_LABEL}: ZA “Alpha”; ZB “Bravo”; ZC “Charlie”; ZD “Delta”; ZE “Echo”.`,
   );
+});
+
+test('a customer table worded by its customer text counts as custom-worded, as businessTableTerm words it', () => {
+  const texts: CustomerTexts = { ...emptyCustomerTexts(), tables: { zsd_x1: 'Delivery blocks per region' } };
+  expect(businessTableTerm('ZSD_X1', { engineVersion: NEW, customerTexts: texts })).not.toBeNull();
+  expect(isCustomTableWorded('ZSD_X1', { engineVersion: NEW, customerTexts: texts })).toBe(true);
+  expect(isCustomTableWorded('ZSD_X1', { engineVersion: NEW })).toBe(false);
 });
 
 test('the ZIP import reads them beside the sources, and several files merge', async () => {
