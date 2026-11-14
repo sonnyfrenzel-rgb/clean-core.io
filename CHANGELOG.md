@@ -181,6 +181,7 @@ Signed runs and the audit pack do not change.
   its frame; the example rerun warning is checked to send no run request; a mockup shot that fails to capture fails
   the screen capture.
 - Process benchmark tooling: the naming measurement refuses a budget or case count that is not a finite number before it creates a model client, and a measurement whose range and split select no case stops instead of reading the manifest a previous run left behind; the case selection is tested.
+- Process benchmark tooling: the paid stage and statement runners accept only a case id or a starter file name from their id file, so no path outside those folders can reach a prompt, and their spend cap counts the calls in flight, each reserving its worst case before it is sent.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

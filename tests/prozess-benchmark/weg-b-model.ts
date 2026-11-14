@@ -26,6 +26,7 @@
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { SpendGate, worstCaseCostUsd } from './bench-guard';
 import { GoogleGenAI, ThinkingLevel, type ThinkingConfig } from '@google/genai';
 import { PRODUCT_GEMINI_MODEL } from '../../lib/constants';
 import { STAGE_MAX_OUTPUT_TOKENS } from '../../lib/model-call-stage';
@@ -156,6 +157,7 @@ const ids = readdirSync(ROOT)
 
 let done = 0;
 let stopped = false;
+const gate = new SpendGate(CAP_USD, spent);
 
 async function one(id: string): Promise<void> {
   if (CAP_USD > 0 && spent() >= CAP_USD) {
@@ -193,7 +195,15 @@ async function one(id: string): Promise<void> {
     latencyMs = stored.latencyMs ?? null;
     modelVersion = stored.modelVersion ?? null;
   }
+  // The cap counts the calls in flight: each attempt reserves its worst case before it is sent.
+  const reserve = worstCaseCostUsd(prompt.length, MAX_OUT, PRICES[MODEL] ?? [1.5, 7.5]);
   for (let attempt = 1; MODE !== 'remerge' && attempt <= 6; attempt++) {
+    if (!gate.tryReserve(reserve)) {
+      if (!stopped) console.error(`spend cap reached (${spent().toFixed(2)} USD spent + ${gate.inFlightUsd.toFixed(2)} USD in flight, cap ${CAP_USD}); no further calls`);
+      stopped = true;
+      return;
+    }
+    let held = true;
     attempts = attempt;
     const t0 = Date.now();
     try {
@@ -214,10 +224,13 @@ async function one(id: string): Promise<void> {
       record({ at: new Date().toISOString(), id, model: MODEL, modelVersion, thinking: THINKING_ARG, maxOut: MAX_OUT, mode: MODE, finishReason, latencyMs,
         promptTokenCount: usage.promptTokenCount ?? null, candidatesTokenCount: usage.candidatesTokenCount ?? null, thoughtsTokenCount: usage.thoughtsTokenCount ?? null,
         costUsd: costOf(MODEL, usage) });
+      gate.release(reserve);
+      held = false;
       error = null;
       if (text) break;
       error = 'empty answer';
     } catch (e) {
+      if (held) gate.release(reserve);
       error = String((e as Error).message ?? e).slice(0, 300);
       record({ at: new Date().toISOString(), id, model: MODEL, thinking: THINKING_ARG, mode: MODE, failed: true, error: error.slice(0, 120), costUsd: 0 });
       const transient = /429|503|500|RESOURCE_EXHAUSTED|UNAVAILABLE|overloaded|fetch failed|ECONNRESET/i.test(error);

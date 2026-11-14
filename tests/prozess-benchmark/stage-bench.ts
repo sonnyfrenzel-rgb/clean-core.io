@@ -28,6 +28,7 @@
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { benchSourcePath, SpendGate, worstCaseCostUsd } from './bench-guard';
 import { GoogleGenAI, ThinkingLevel, type ThinkingConfig } from '@google/genai';
 import { APP_VERSION } from '../../lib/version';
 import { PRODUCT_GEMINI_MODEL } from '../../lib/constants';
@@ -96,11 +97,12 @@ function apiKey(): string {
 
 /** A benchmark case joined as `evaluate.ts` joins it, or a starter example's file. */
 function sourceOf(id: string): { name: string; code: string } {
-  if (id.startsWith('starter:')) {
-    const file = id.slice('starter:'.length);
-    return { name: file, code: readFileSync(join(STARTERS, file), 'utf8').replace(/\r\n/g, '\n') };
+  // An id names a case folder or a starter file and nothing else: no path leaves either folder.
+  const at = benchSourcePath(id, { cases: CASES, starters: STARTERS });
+  if (at.kind === 'starter') {
+    return { name: id.slice('starter:'.length), code: readFileSync(at.path, 'utf8').replace(/\r\n/g, '\n') };
   }
-  const dir = join(CASES, id);
+  const dir = at.path;
   const files = readdirSync(dir).filter((f) => f.endsWith('.abap')).sort();
   const read = files.map((name) => ({ name, code: readFileSync(join(dir, name), 'utf8').replace(/\r\n/g, '\n') }));
   if (read.length === 1) return { name: 'source.abap', code: read[0].code };
@@ -367,8 +369,11 @@ ${DESIGN_ANSWER_REMINDER}`;
 const ai = new GoogleGenAI({ apiKey: apiKey() });
 mkdirSync(OUT, { recursive: true });
 const ids = readFileSync(IDS, 'utf8').split(/\s+/).filter(Boolean).filter((id) => !existsSync(join(OUT, `${id.replace(/[:/]/g, '_')}.json`)));
+// Every id is checked before the first call, so a bad line in the id file stops the run before anything is spent.
+for (const id of ids) benchSourcePath(id, { cases: CASES, starters: STARTERS });
 let done = 0;
 let stopped = false;
+const gate = new SpendGate(CAP_USD, spent);
 
 async function one(id: string): Promise<void> {
   if (CAP_USD > 0 && spent() >= CAP_USD) {
@@ -395,7 +400,15 @@ async function one(id: string): Promise<void> {
   let latencyMs: number | null = null;
   // A rate limit (429) is the key's per-minute quota, not the model: waited out in minutes, not seconds, and
   // never counted as an answer.
+  // The cap counts the calls in flight: each attempt reserves its worst case before it is sent.
+  const reserve = worstCaseCostUsd(call.prompt.length, maxOutputTokens, PRICES[MODEL] ?? [1.5, 7.5]);
   for (let attempt = 1; attempt <= 6; attempt++) {
+    if (!gate.tryReserve(reserve)) {
+      if (!stopped) console.error(`spend cap reached (${spent().toFixed(2)} USD spent + ${gate.inFlightUsd.toFixed(2)} USD in flight, cap ${CAP_USD}); no further calls`);
+      stopped = true;
+      return;
+    }
+    let held = true;
     const t0 = Date.now();
     try {
       const result = await ai.models.generateContent({
@@ -412,9 +425,12 @@ async function one(id: string): Promise<void> {
       modelVersion = (result as { modelVersion?: string }).modelVersion ?? null;
       record({ at: new Date().toISOString(), kind: STAGE, id, model: MODEL, modelVersion, thinking: thinking?.thinkingLevel ?? 'default', maxOut: maxOutputTokens, finishReason, latencyMs,
         promptTokenCount: usage.promptTokenCount ?? null, candidatesTokenCount: usage.candidatesTokenCount ?? null, thoughtsTokenCount: usage.thoughtsTokenCount ?? null, costUsd: costOf(usage) });
+      gate.release(reserve);
+      held = false;
       error = null;
       break;
     } catch (e) {
+      if (held) gate.release(reserve);
       error = String((e as Error).message ?? e).slice(0, 300);
       record({ at: new Date().toISOString(), kind: STAGE, id, model: MODEL, failed: true, error: error.slice(0, 120), costUsd: 0 });
       const rateLimited = /429|RESOURCE_EXHAUSTED/i.test(error);
