@@ -19,6 +19,13 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
   analysis runs, then Design opens on it. The intent stays in this session's memory and is never stored. Nothing
   says "optional" any more. After the demo, a banner continues it ("Run Z_MM_PO_APPROVAL yourself"). The slice of
   the demo map left the page, so no bpmn-js loads on My workspace.
+- 3.3.0, step 2 (ADR-123 (5), W11): every signed run now leaves a small project summary for My workspace's tiles.
+  It holds the map's top level as compact geometry (at most 4 kB, no names, no code, no markup), its number of
+  elements, the derived rules, and the run's score and recommendation. The server writes it with the Admin SDK only:
+  `runs/create`, and the revision route when a drawing is saved. It sits outside the signed run and the audit pack,
+  is bound to the active run, and is on no client allowlist in `firestore.rules`. The rules only gain a type line,
+  which still has to be deployed by hand. `scripts/backfill-project-summary.ts` gives existing projects one. It does
+  a dry run by default and refuses to run in CI.
 <!-- 3.3.0 build end -->
 - A project opens in Analyze, Business. The process map is the page, and the map starts within the first screen at
   1440 × 900. Its tools sit in the canvas's own row, and what describes the map sits under it. With one code panel

@@ -6,6 +6,7 @@ import { APP_VERSION } from '@/lib/version';
 import { recommendationOfRoute } from '@/lib/project-commands';
 import { getCatalogSnapshotRef, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
+import { computeProjectSummary, writeProjectSummary } from '@/lib/project-summary-server';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { AnalysisRun } from '@/lib/types';
@@ -1125,6 +1126,31 @@ export async function POST(req: NextRequest) {
       recommendationConfidence: FieldValue.delete(),
       recommendationJustification: FieldValue.delete(),
     }).catch(() => {}); // Non-blocking if fields already absent
+
+    // 3.3.0 (ADR-123 (5), W11): the project summary My workspace's tiles read —
+    // the map's thumbnail and size, the rules, the score and the recommendation
+    // of this run. Admin SDK only, outside the signed run and the audit pack;
+    // bound to `runId`, so a summary of an earlier run is never shown for this
+    // one. Its failure fails nothing: the tile then says "Map after the next run".
+    try {
+      const summary = computeProjectSummary({
+        runId,
+        sourceSha256: hashHex,
+        source: legacyCode,
+        processName: typeof projectData?.name === 'string' ? projectData.name : '',
+        sourceFileName: targetFileName,
+        engineVersion: APP_VERSION,
+        cleanCoreScore,
+        recommendation: analysisRun.originalRecommendation ?? null,
+      });
+      await writeProjectSummary(db, projectId, summary);
+    } catch (summaryErr) {
+      logger.warn('runs/create: the project summary was not written', {
+        route: 'api/runs/create',
+        projectId,
+        error: errMessage(summaryErr),
+      });
+    }
 
     return NextResponse.json({
       success: true,

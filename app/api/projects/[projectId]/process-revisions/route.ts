@@ -15,6 +15,7 @@ import { sha256Hex } from '@/lib/artefact-digest';
 import { verifyRunIntegrity } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { buildBpmnExportFromSource } from '@/lib/bpmn/export';
+import { refreshSummaryMap } from '@/lib/project-summary-server';
 import { revisionDocData, storedRevisionXml } from '@/lib/process-revision-store';
 import {
   PROCESS_REVISION_COLLECTION,
@@ -669,6 +670,19 @@ export async function POST(
         },
         { status: 409 },
       );
+    }
+
+    // 3.3.0 (ADR-123 (5)): the tile's thumbnail follows the saved drawing. Only
+    // the map's fields of the project summary, only for the run the summary is
+    // of; a failure here costs the tile its new picture, never the revision.
+    try {
+      const activeRunId = typeof gate.project.activeRunId === 'string' ? gate.project.activeRunId : null;
+      await refreshSummaryMap(db, gate.projectId, activeRunId, { xml: checked.xml, revision: record.revision });
+    } catch (summaryErr: unknown) {
+      logger.warn('process-revisions: the project summary map was not refreshed', {
+        route: 'api/projects/process-revisions',
+        error: errMessage(summaryErr),
+      });
     }
 
     return NextResponse.json({ record, created: true }, { status: 201 });

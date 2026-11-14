@@ -253,6 +253,13 @@ service cloud.firestore {
              // /projects/{projectId}; this line fixes the type of the stored
              // field.
              (!('atcReport' in data) || (data.atcReport is map)) &&
+             // 3.3.0 (ADR-123 (5)): the project summary My workspace's tiles
+             // read is written only by the Admin SDK (POST /api/runs/create,
+             // POST /api/projects/{projectId}/process-revisions and
+             // scripts/backfill-project-summary.ts). `summary` is on neither
+             // client allowlist of /projects/{projectId}, so no browser can
+             // create or change it; this line fixes the type of the stored field.
+             (!('summary' in data) || (data.summary is map)) &&
              (!('nonFunctionalRequirements' in data) || (data.nonFunctionalRequirements is map));
     }
 
@@ -432,6 +439,9 @@ service cloud.firestore {
                       // writes it, and no stage writes it from the browser.
                       // `extensibilityRoute` followed in 3.0.7: only POST /api/runs/create
                       // writes it since the Analyze route switch was removed.
+                      // `summary` (3.3.0, ADR-123) was never on this list and must
+                      // not be: it is the server's mirror of the active run for
+                      // My workspace's tiles, written by the Admin SDK only.
                       // `testCases` and `manualTestingRequirements` followed in 3.0.21
                       // (SEC-2026-889/-890): POST /api/projects/{projectId}/artefacts
                       // writes them since 3.0.14, and no stage writes them from the browser.
