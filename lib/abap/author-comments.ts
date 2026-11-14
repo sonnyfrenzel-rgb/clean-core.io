@@ -105,7 +105,9 @@ export function authorCommentsOf(source: string): {
     at(line, lineEnd) {
       if (!line) return null;
       const end = Math.max(line, lineEnd ?? line);
-      for (let l = line; l <= Math.min(end, line + 2); l++) {
+      // The first lines of the statement, and its last line: a comment at the end of a longer statement is its own.
+      const near = [...new Set([...Array.from({ length: Math.min(end, line + 2) - line + 1 }, (_, k) => line + k), end])];
+      for (const l of near) {
         const c = comments.get(l);
         const said = c && !c.full ? cleaned(c.text) : '';
         if (said && !unquotable(said)) return { text: said.replace(/\s+/g, ' '), line: l, lineEnd: l };

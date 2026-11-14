@@ -55,6 +55,12 @@ test('an escaped pipe inside a string template does not end it: a quote in the t
   expect(authorCommentsOf('  WRITE |a \\\\| "  so the template ends before this comment\n').at(1)?.text).toBe('so the template ends before this comment');
 });
 
+test("a comment at the end of a statement longer than three lines is the statement's own", () => {
+  const src = ['  SELECT vbeln', '    FROM vbak', '    INTO TABLE gt_orders', "    WHERE auart = 'TA'.  \" only standard orders count here", ''].join('\n');
+  expect(authorCommentsOf(src).at(1, 4)?.text).toBe('only standard orders count here');
+  expect(authorCommentsOf(src).at(1, 4)?.line).toBe(4);
+});
+
 test('an ampersand inside the comment is the author\'s word and stays; only the frame\'s edge signs go', () => {
   expect(authorCommentsOf('  x = 1.  " Sales & Distribution routing\n').at(1)?.text).toBe('Sales & Distribution routing');
   expect(authorCommentsOf('*& Pricing & Billing per item\n  x = 1.\n').at(2)?.text).toBe('Pricing & Billing per item');

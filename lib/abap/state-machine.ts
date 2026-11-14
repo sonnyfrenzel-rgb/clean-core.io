@@ -321,14 +321,37 @@ function calledRoutine(text: string): string | null {
   return (call[1].split('~').pop() ?? call[1]).toUpperCase();
 }
 
-/** Does the body between `from` and `to` (statement indices) stop: an error message, RETURN, RAISE, EXIT, LEAVE? */
+/**
+ * Does the body between `from` and `to` (statement indices) stop: an error message, RETURN, RAISE, EXIT, LEAVE?
+ * Only a stop on the body's own level counts: one nested in a decision or a loop of the body runs on some paths only
+ * (`IF status <> X. IF force = abap_true. RETURN. ENDIF. ENDIF.` lets every other path through), and an `EXIT` in a
+ * loop leaves only the loop.
+ */
 function stops(statements: readonly AbapStatement[], from: number, to: number): boolean {
+  let depth = 0;
+  /** Stops met on the body's own level, by statement index; a `SELECT … ENDSELECT` loop takes back those inside it. */
+  const found: number[] = [];
+  /** Open `SELECT` statements that may be loops (not `SINGLE`, not into a table, not a count). */
+  const selects: number[] = [];
   for (let i = from; i < to; i++) {
-    const t = statements[i].text;
-    if (/^(?:(?:RETURN|EXIT|LEAVE)\b|RAISE\b(?!\s+EVENT))/i.test(t)) return true;
-    if (/^MESSAGE\b/i.test(t) && /\bTYPE\s+'?[EAX]'?\b|^MESSAGE\s+[EAX]\d/i.test(t)) return true;
+    const t = statements[i].text.trim();
+    const kw = (/^[\w-]+/.exec(t)?.[0] ?? '').toUpperCase();
+    if (/^(?:IF|CASE|LOOP|DO|WHILE|TRY|PROVIDE)$/.test(kw) || (kw === 'AT' && /^AT\s+(?:NEW|END\s+OF|FIRST|LAST)\b/i.test(t))) { depth++; continue; }
+    if (/^END(?:IF|CASE|LOOP|DO|WHILE|TRY|PROVIDE|AT)$/.test(kw)) { depth = Math.max(0, depth - 1); continue; }
+    if (kw === 'SELECT') {
+      if (depth === 0 && !/\bSINGLE\b|\bTABLE\b|\bCOUNT\s*\(/i.test(t)) selects.push(i);
+      continue;
+    }
+    if (kw === 'ENDSELECT') {
+      const open = selects.pop();
+      if (open !== undefined) for (let k = found.length - 1; k >= 0 && found[k] > open; k--) found.pop();
+      continue;
+    }
+    if (depth > 0) continue;
+    if (/^(?:(?:RETURN|EXIT|LEAVE)\b|RAISE\b(?!\s+EVENT))/i.test(t)) found.push(i);
+    else if (/^MESSAGE\b/i.test(t) && /\bTYPE\s+'?[EAX]'?\b|^MESSAGE\s+[EAX]\d/i.test(t)) found.push(i);
   }
-  return false;
+  return found.length > 0;
 }
 
 interface Guard { line: number; condition: string; stopped: boolean; status: boolean; check?: boolean }

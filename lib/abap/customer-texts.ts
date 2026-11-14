@@ -201,7 +201,8 @@ export function customerTextProvenance(sentence: string, texts: CustomerTexts | 
     used.push({ at: from, said: `${code} “${original.get(key) ?? key}”` });
   }
   used.sort((a, b) => a.at - b.at);
-  return used.length ? `${CUSTOMER_TEXT_LABEL}: ${used.slice(0, 4).map((u) => u.said).join('; ')}.` : '';
+  // Every text the sentence says: a marker that names some of them would leave the others unmarked.
+  return used.length ? `${CUSTOMER_TEXT_LABEL}: ${used.map((u) => u.said).join('; ')}.` : '';
 }
 
 /** Whether a stored or posted value is customer texts this build reads — the shape, the bounds, strings only. */

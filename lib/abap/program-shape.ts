@@ -1,4 +1,4 @@
-import { readStatements } from './statement-reader';
+import { maskLiterals, readStatements } from './statement-reader';
 
 /**
  * What kind of program a source is, read off the constructs SAP gives that kind (concept "Business-Lesbarkeit" H8) —
@@ -30,7 +30,8 @@ export interface ProgramShape {
 export function readProgramShape(source: string): ProgramShape | null {
   let statements;
   try {
-    statements = readStatements(source);
+    // A name inside a text literal (`WRITE 'idoc_contrl idoc_data'`) is no construct: shapes are read off the code only.
+    statements = readStatements(source).map((s) => ({ ...s, text: maskLiterals(s.text) }));
   } catch {
     return null;
   }

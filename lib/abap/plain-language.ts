@@ -531,7 +531,8 @@ export function businessTableTerm(name: string, options: PlainOptions = {}): Pla
 /** 3.1.0: whether `businessTableTerm` names a customer table by the words of its own name (its code then stays beside it). */
 export function isCustomTableWorded(name: string, options: PlainOptions = {}): boolean {
   const reads310 = engineReads310Apply(options.engineVersion === undefined ? APP_VERSION : options.engineVersion);
-  return reads310 && isCustomTableWord(name, { ...EMPTY_CONTEXT, reads310: true });
+  const customer = reads310 && isCustomerTexts(options.customerTexts) ? { customer: options.customerTexts } : {};
+  return reads310 && isCustomTableWord(name, { ...EMPTY_CONTEXT, reads310: true, ...customer });
 }
 
 /** 3.1.0: a function module's or transaction's business word, the glossary first, then the dictionary. */
@@ -2531,7 +2532,11 @@ export function outcomeName(
         const without = `Stop: ${lcFirst(phrase)}`;
         if (without.length <= MAX_LABEL) return without;
       }
-      if (message.withText) return fit(`Stop: ${lcFirst(shortText(englishText(message.withText), 5))}${id ? ` (${id})` : ''}`);
+      if (message.withText) {
+        // 3.1.0: a German WITH text the engine cannot put into English stays out of the label here too.
+        if (c.reads310 && germanUntranslated(message.withText)) return id ? `Stop with a message in German (${id})` : 'Stop with a message in German';
+        return fit(`Stop: ${lcFirst(shortText(englishText(message.withText), 5))}${id ? ` (${id})` : ''}`);
+      }
       if (message.raised) return fit(`Stop: ${lcFirst(humaniseRoutine(message.raised.replace(/^[ZY]?CX_/i, '')))}`);
       if (germanText) return id ? `Stop with a message in German (${id})` : 'Stop with a message in German';
       if (id) return c.reads310 ? `Stop with an error message (${id})` : `Error ${id}`;
@@ -2959,7 +2964,8 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     if (!label && node.kind !== 'parallel-gateway') label = humaniseRoutine(node.label) || 'Step';
     nodes.set(node.id, node.kind === 'parallel-gateway' ? '' : fit(label));
     // 3.1.0: a stop whose German text stays out of the label keeps it, word for word, in its detail.
-    const germanText = ctx.reads310 && node.kind === 'end-error' ? messageAt(ctx, lineOf(node)).text : undefined;
+    const stopMessage = ctx.reads310 && node.kind === 'end-error' ? messageAt(ctx, lineOf(node)) : undefined;
+    const germanText = stopMessage?.text ?? (stopMessage && !stopMessage.raised ? stopMessage.withText : undefined);
     const german = germanText && germanUntranslated(germanText) ? statementAt(ctx, lineOf(node))?.text : undefined;
     technical.set(node.id, german ?? technicalOf(node));
     try {

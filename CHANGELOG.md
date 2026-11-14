@@ -138,6 +138,13 @@ Signed runs and the audit pack do not change.
 - Business rules: an `EXIT` on a test-data selector inside a loop ends that loop, a business use of the selector, so its `CASE` stays among the rules.
 - In short: a German program name written as one word (`ZMM_RECHNUNGSPRUEFUNG`) gives its purpose like the same words written apart; a compound with a word the engine does not know gives none.
 - In short: an inbound IDoc function is said as one SAP calls where a process code is assigned to it; the code alone does not show that assignment.
+- Status workflow: a status check whose stop sits inside a further decision or loop (`IF status <> 'DRAFT'. IF force. RETURN. ENDIF. ENDIF.`) no longer supplies a "from" state; only a stop every path reaches does.
+- Author's comments: a comment at the end of a statement that spans more than three lines is quoted as that statement's own.
+- Customer texts: a sentence that says more than four customer texts names every one of them in its "Customer text" marker.
+- Customer texts: a customer table named by its customer text counts as worded in the business language, as its business term already did.
+- Business view: a stop whose German `WITH` text the engine cannot put into English, with no condition before it, says "Stop with a message in German" and keeps the text in its detail, instead of putting the German into the label.
+- Process map: a field symbol a routine declares for itself (`FIELD-SYMBOLS <x>`, `FIELD-SYMBOL(<x>)`) is no longer taken for the same-named field symbol of another routine, so no flag step is drawn for an unrelated value.
+- In short: names written only inside a text literal (`WRITE 'idoc_contrl idoc_data'`) no longer make a program an inbound IDoc function or a BW extractor.
 
 #### Workspace, Documentation and Testing
 - Home: when reading the own project list fails after it had answered empty, the regular page stays instead of the first view for a new account.
@@ -173,6 +180,7 @@ Signed runs and the audit pack do not change.
   render must await the session right before every read of the user; the home viewports also fail on a focus outside
   its frame; the example rerun warning is checked to send no run request; a mockup shot that fails to capture fails
   the screen capture.
+- Process benchmark tooling: the naming measurement refuses a budget or case count that is not a finite number before it creates a model client, and a measurement whose range and split select no case stops instead of reading the manifest a previous run left behind; the case selection is tested.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

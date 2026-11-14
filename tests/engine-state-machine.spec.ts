@@ -526,3 +526,28 @@ test('a constant that says only "status" leaves the state as its code', () => {
   expect(stateWords('A', 'gc_status')).toBe("'A'");
   expect(stateWords('A', 'gc_status_approved')).toBe('Approved');
 });
+
+test('a status check whose stop is nested in a further decision gives no from-value', () => {
+  // `IF status <> X. IF amount > 1000. RETURN. ENDIF. ENDIF.` lets every other path through to the move.
+  const nested = WORKFLOW.replace(
+    "    IF get_status( ) <> gc_draft.\n      MESSAGE 'Only a draft can be submitted' TYPE 'E'.\n    ENDIF.",
+    "    IF get_status( ) <> gc_draft.\n      IF ms_req-amount > 1000.\n        RETURN.\n      ENDIF.\n    ENDIF.",
+  );
+  expect(nested).not.toBe(WORKFLOW);
+  const submit = readStateMachine(nested)!.transitions.find((t) => t.routine === 'LCL_FLOW=>SUBMIT');
+  expect(submit?.from).toEqual([]);
+  expect(submit?.statusChecks).toEqual([]);
+  // A stop on the check's own level still guards the move.
+  const flat = readStateMachine(WORKFLOW)!.transitions.find((t) => t.routine === 'LCL_FLOW=>SUBMIT');
+  expect(flat?.from).toEqual(['DRAFT']);
+});
+
+test('an EXIT inside a loop of a status check leaves only the loop, not the routine', () => {
+  const looped = WORKFLOW.replace(
+    "    IF get_status( ) <> gc_draft.\n      MESSAGE 'Only a draft can be submitted' TYPE 'E'.\n    ENDIF.",
+    "    IF get_status( ) <> gc_draft.\n      DO 3 TIMES.\n        EXIT.\n      ENDDO.\n    ENDIF.",
+  );
+  expect(looped).not.toBe(WORKFLOW);
+  const submit = readStateMachine(looped)!.transitions.find((t) => t.routine === 'LCL_FLOW=>SUBMIT');
+  expect(submit?.from).toEqual([]);
+});

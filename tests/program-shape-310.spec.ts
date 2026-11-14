@@ -35,6 +35,11 @@ test('an output program, an inbound IDoc function and a BW extractor are said by
   expect(readProgramShape(['REPORT zt_plain.', 'START-OF-SELECTION.', "  WRITE / 'x'."].join('\n'))).toBeNull();
 });
 
+test('names said only inside text literals are no shape', () => {
+  const idoc = ['FUNCTION z_log_text.', "  WRITE / 'idoc_contrl idoc_data'.", "  MESSAGE 'i_dsource e_t_data' TYPE 'I'.", 'ENDFUNCTION.'].join('\n');
+  expect(readProgramShape(idoc)).toBeNull();
+});
+
 test('"In short" opens with the shape from 3.1.0 and calls an enhancement no report; 3.0.21 reads as before', () => {
   const src = ['FORM userexit_save_document_prepare.', '  DATA ls_vbak TYPE vbak.', '  SELECT SINGLE * FROM vbak INTO ls_vbak WHERE vbeln = space.', 'ENDFORM.'].join('\n');
   const now = inShort(src, NEW);

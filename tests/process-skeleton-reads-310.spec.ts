@@ -118,6 +118,35 @@ test('a local of one routine is not the field a decision of another routine read
   expect(step?.detail?.readAtLines).toEqual(['12']);
 });
 
+test('a field symbol of one routine is not the same-named field symbol a decision of another routine reads', () => {
+  const source = [
+    'REPORT zflag_fs_scope.',
+    'START-OF-SELECTION.',
+    '  PERFORM check_a.',
+    '  PERFORM check_b.',
+    'FORM check_a.',
+    '  FIELD-SYMBOLS <lv_ok> TYPE abap_bool.',
+    '  ASSIGN gv_a TO <lv_ok>.',
+    '  IF p_a > 1.',
+    "    CALL FUNCTION 'Z_ASK'.",
+    '  ELSE.',
+    '    <lv_ok> = abap_true.',
+    '  ENDIF.',
+    "  CALL FUNCTION 'Z_NEXT_A'.",
+    'ENDFORM.',
+    'FORM check_b.',
+    '  ASSIGN gv_b TO FIELD-SYMBOL(<lv_ok>).',
+    '  IF <lv_ok> = abap_true.',
+    "    CALL FUNCTION 'Z_DONE'.",
+    '  ENDIF.',
+    'ENDFORM.',
+  ].join('\n');
+  expect(buildProcessSkeleton(source, NEW).nodes.filter((n) => n.detail?.flagStep === true)).toHaveLength(0);
+  // Declared in the first routine only, by FIELD-SYMBOLS: still two variables.
+  const declaredOnce = source.replace('  ASSIGN gv_b TO FIELD-SYMBOL(<lv_ok>).', '  ASSIGN gv_b TO <lv_ok>.');
+  expect(buildProcessSkeleton(declaredOnce, NEW).nodes.filter((n) => n.detail?.flagStep === true)).toHaveLength(0);
+});
+
 test('a parameter of one routine is not the field a decision of another routine reads', () => {
   const forms = [
     'REPORT zflag_params.', //                                                    1
