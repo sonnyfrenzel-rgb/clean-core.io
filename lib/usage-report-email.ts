@@ -169,8 +169,7 @@ function deliveryPanel(d: UsageReport['delivery']): string {
     <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
       <span style="font-weight: 800; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">Mailzustellung</span>
       ${chip('Versendet', d.sent, '#0f172a', '')}
-      ${chip('Zugestellt', d.delivered + d.opened, '#047857', '')}
-      ${chip('Davon geöffnet', d.opened, '#64748b', '')}
+      ${chip('Zugestellt', d.delivered, '#047857', '')}
       ${chip('Verzögert', d.delayed, '#b45309', '')}
       ${chip('Abgeprallt', d.bounced, '#b91c1c', '')}
       ${chip('Als Spam gemeldet', d.complained, '#b91c1c', '')}
@@ -349,7 +348,7 @@ function deliveryText(d: UsageReport['delivery']): string {
   const lines = [
     'MAILZUSTELLUNG',
     `Versendet: ${d.sent}`,
-    `Zugestellt: ${d.delivered + d.opened}${d.opened ? ` (davon geöffnet: ${d.opened})` : ''}`,
+    `Zugestellt: ${d.delivered}`,
   ];
   if (d.delayed) lines.push(`Verzögert: ${d.delayed}`);
   if (d.bounced) lines.push(`Abgeprallt: ${d.bounced}`);

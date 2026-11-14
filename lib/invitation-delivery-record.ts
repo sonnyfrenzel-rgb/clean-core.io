@@ -1,5 +1,5 @@
 import { accountHashOf, pseudonymPepperConfigured } from './pseudonym';
-import { mailStatusWins } from './mail-status';
+import { isEngagementEvent, mailStatusWins } from './mail-status';
 import { logger } from './logger';
 import { INVITATION_EMAIL_SUBJECT } from './invitation-email';
 import { PORTFOLIO_INVITATION_SUBJECT } from './portfolio/invitation-email';
@@ -143,6 +143,8 @@ export async function recordInvitationEvent(
   eventId: string,
   env: Record<string, string | undefined> = process.env,
 ): Promise<boolean> {
+  // An open or a click is never recorded (`ENGAGEMENT_EVENTS`): handled, by dropping it.
+  if (isEngagementEvent(input.type)) return true;
   const ref = db.collection(INVITATION_DELIVERY_RECORDS).doc(input.messageId);
   const kind = invitationKindOfSubject(input.subject);
   return db.runTransaction(async (tx) => {

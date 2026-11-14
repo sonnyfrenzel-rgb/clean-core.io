@@ -264,7 +264,7 @@ function sampleUsageReport(now: Date): UsageReport {
     newlyActivated: [3],
     reachedLimit: 1,
     delivery: {
-      sent: 6, delivered: 4, delayed: 0, bounced: 1, complained: 0, opened: 2, awaiting: 1,
+      sent: 6, delivered: 4, delayed: 0, bounced: 1, complained: 0, awaiting: 1,
       failures: [{ kind: 'welcome', status: 'email.bounced', count: 1 }],
     },
   };

@@ -5,6 +5,14 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — 3.2.0
+
+### Changed
+- Mail opens and clicks are not recorded. Tracking is off in the mail provider's account; an open or a click that
+  arrives at the webhook anyway is acknowledged and dropped, neither delivery record stores it, and the weekly usage
+  report counts delivery only ("Zugestellt", no "geöffnet"). An older record whose status is an open or a click
+  counts as delivered (`lib/mail-status.ts`, `tests/mail-engagement-not-recorded.spec.ts`).
+
 ## [v3.1.0] — 2026-11-14
 
 Analyze opens business first. Every new engine reading is gated from 3.1.0: a run signed by an earlier version reads as before.

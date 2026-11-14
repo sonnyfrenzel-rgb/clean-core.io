@@ -28,7 +28,7 @@ const request = async (uid: string) => (await db().collection('registration_requ
 
 test.describe.configure({ mode: 'serial' });
 
-test('a bounce keeps its reason when a scanner opens the mail afterwards', async () => {
+test('a bounce keeps its reason when a late delivery event arrives afterwards', async () => {
   const messageId = `msg-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
   const uid = `uid-${messageId}`;
   await recordEmailSent(messageId, 'someone@example.com', 'Welcome to Clean-Core.io', 'welcome', uid);
@@ -37,18 +37,25 @@ test('a bounce keeps its reason when a scanner opens the mail afterwards', async
     { messageId, type: 'email.bounced', to: ['someone@example.com'], detail: 'mailbox does not exist', occurredAt: '2026-09-16T08:00:00.000Z' },
     'evt-bounce',
   );
-  // A mail-security scanner follows the links in a mail nobody received.
+  // A delivery report that arrives late, out of order.
   await recordEmailEvent(
-    { messageId, type: 'email.opened', to: ['someone@example.com'], detail: null, occurredAt: '2026-09-16T08:05:00.000Z' },
+    { messageId, type: 'email.delivered', to: ['someone@example.com'], detail: null, occurredAt: '2026-09-16T08:05:00.000Z' },
+    'evt-late',
+  );
+  // Open and click tracking is off; an open that arrives anyway is not recorded at all (lib/mail-status.ts).
+  await recordEmailEvent(
+    { messageId, type: 'email.opened', to: ['someone@example.com'], detail: null, occurredAt: '2026-09-16T08:06:00.000Z' },
     'evt-open',
   );
 
   const after = await summary(messageId);
-  expect(after?.status, 'a bounce is not undone by a later open').toBe('email.bounced');
+  expect(after?.status, 'a bounce is not undone by a later event').toBe('email.bounced');
   expect(after?.lastDetail, 'the reason belongs to the status, not to the last event').toBe('mailbox does not exist');
   expect(after?.lastEventAt).toBe('2026-09-16T08:00:00.000Z');
   // The losing event is still in the record — it just does not relabel the verdict.
-  expect((after?.timeline as Array<{ type: string }>).map((e) => e.type)).toContain('email.opened');
+  const types = (after?.timeline as Array<{ type: string }>).map((e) => e.type);
+  expect(types).toContain('email.delivered');
+  expect(types, 'an open is never recorded').not.toContain('email.opened');
   // The record keeps the address and the subject as keyed hashes only (privacy policy sections 2 and 6).
   expect(JSON.stringify(after?.to)).not.toContain('someone@example.com');
   expect(after?.to?.[0]).toMatch(/^hmac1_[0-9a-f]{64}$/);

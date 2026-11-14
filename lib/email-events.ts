@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { mailDeliveryRecordExpiry } from '@/lib/proof-log';
-import { RANK, TERMINAL_NEGATIVE } from '@/lib/mail-status';
+import { TERMINAL_NEGATIVE, isEngagementEvent, rankOf } from '@/lib/mail-status';
 import { recordInvitationEvent } from '@/lib/invitation-delivery-record';
 import { deliveryRecordHashes, withoutAddresses } from '@/lib/email-event-hashing';
 import { isTestAccount } from '@/lib/test-accounts';
@@ -26,9 +26,10 @@ export type EmailEventType =
   | 'email.delivered'
   | 'email.delivery_delayed'
   | 'email.bounced'
-  | 'email.complained'
-  | 'email.opened'
-  | 'email.clicked';
+  | 'email.complained';
+// No `email.opened` or `email.clicked`: open and click tracking is off, and
+// either event is dropped unrecorded if the provider ever sends one
+// (`ENGAGEMENT_EVENTS`, `lib/mail-status.ts`).
 
 // The ranking of statuses (worst to best, terminal negatives always win) is
 // shared with the invitation delivery records: `lib/mail-status.ts`.
@@ -115,6 +116,9 @@ export function verifyResendSignature(opts: {
  * acknowledged and a duplicate must not become a second timeline entry.
  */
 export async function recordEmailEvent(event: EmailEventInput, eventId: string): Promise<void> {
+  // Open and click tracking is off; an open or a click that arrives anyway is
+  // not recorded anywhere — not here, not on an invitation's record.
+  if (isEngagementEvent(event.type)) return;
   const { db, FieldValue } = await getAdminDb();
   // The provider's text without the addresses it may quote; everything below
   // reads the event through this.
@@ -136,8 +140,8 @@ export async function recordEmailEvent(event: EmailEventInput, eventId: string):
     const seen: string[] = Array.isArray(data.seenEventIds) ? data.seenEventIds : [];
     if (seen.includes(eventId)) return; // already recorded
 
-    const currentRank = RANK[data.status] ?? 0;
-    const incomingRank = RANK[input.type] ?? 0;
+    const currentRank = rankOf(data.status);
+    const incomingRank = rankOf(input.type);
     const isNegative = TERMINAL_NEGATIVE.has(input.type);
     const currentIsNegative = TERMINAL_NEGATIVE.has(data.status);
 
@@ -148,11 +152,11 @@ export async function recordEmailEvent(event: EmailEventInput, eventId: string):
 
     // The detail and the time belong to the status, not to the last message that
     // arrived. A welcome mail that bounced with a reason and was then "opened" by
-    // a scanner kept the bounce as its status while the reason was overwritten
-    // with the scanner's empty detail and its timestamp — so the operator was
-    // left with a failed onboarding mail and no way to say why. A losing event
-    // is still recorded in
-    // `timeline` below; it just does not get to relabel the verdict.
+    // a scanner (when opens were still recorded) kept the bounce as its status
+    // while the reason was overwritten with the scanner's empty detail and its
+    // timestamp — so the operator was left with a failed onboarding mail and no
+    // way to say why. A losing event is still recorded in `timeline` below; it
+    // just does not get to relabel the verdict.
     const lastDetail = statusWins ? input.detail ?? null : data.lastDetail ?? null;
     const lastEventAt = statusWins
       ? input.occurredAt ?? new Date().toISOString()

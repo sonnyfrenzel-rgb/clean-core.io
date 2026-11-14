@@ -25,7 +25,7 @@ const report: UsageReport = {
   newlyActivated: [4, 1],
   reachedLimit: 3,
   delivery: {
-    sent: 7, delivered: 4, delayed: 1, bounced: 1, complained: 0, opened: 1, awaiting: 0,
+    sent: 7, delivered: 5, delayed: 1, bounced: 1, complained: 0, awaiting: 0,
     failures: [{ kind: 'tenant access request received', status: 'email.bounced', count: 1 }],
   },
 };
@@ -33,7 +33,7 @@ const report: UsageReport = {
 /** A week where mail went out and nothing came back — the webhook is not armed. */
 const silentReport: UsageReport = {
   ...report,
-  delivery: { sent: 5, delivered: 0, delayed: 0, bounced: 0, complained: 0, opened: 0, awaiting: 5, failures: [] },
+  delivery: { sent: 5, delivered: 0, delayed: 0, bounced: 0, complained: 0, awaiting: 5, failures: [] },
 };
 
 test('subject names the adoption figure', () => {
@@ -99,7 +99,7 @@ test.describe('mail delivery is in the report', () => {
     await page.setContent(
       renderUsageReportEmail({
         ...report,
-        delivery: { sent: 6, delivered: 6, delayed: 0, bounced: 0, complained: 0, opened: 2, awaiting: 0, failures: [] },
+        delivery: { sent: 6, delivered: 6, delayed: 0, bounced: 0, complained: 0, awaiting: 0, failures: [] },
       }),
       { waitUntil: 'load' },
     );
@@ -121,7 +121,7 @@ test.describe('mail delivery is in the report', () => {
     await page.setContent(
       renderUsageReportEmail({
         ...report,
-        delivery: { sent: 0, delivered: 0, delayed: 0, bounced: 0, complained: 0, opened: 0, awaiting: 0, failures: [] },
+        delivery: { sent: 0, delivered: 0, delayed: 0, bounced: 0, complained: 0, awaiting: 0, failures: [] },
       }),
       { waitUntil: 'load' },
     );

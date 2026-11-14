@@ -26,6 +26,7 @@ import RunnerSelftestPanel from '@/components/admin/RunnerSelftestPanel';
 import ByokEndingPanel from '@/components/admin/ByokEndingPanel';
 import ContentHoldPanel from '@/components/admin/ContentHoldPanel';
 import WithdrawalReceiptsPanel from '@/components/admin/WithdrawalReceiptsPanel';
+import { isDeliveredStatus } from '@/lib/mail-status';
 
 export default function AdminConsole() {
   const { profile, loading: profileLoading } = useUserProfile();
@@ -649,12 +650,9 @@ function welcomeMailBadge(
       return { label: 'Welcome mail delayed', state: 'warning', failed: true };
     case 'email.delivered':
       return { label: 'Welcome mail delivered', state: 'neutral', failed: false };
-    case 'email.opened':
-    case 'email.clicked':
-      // Opened or clicked, not read: a privacy proxy or a link scanner fires the
-      // same events, so it is no evidence a person read it, and not green (§1.1).
-      return { label: 'Welcome mail opened or clicked', state: 'information', failed: false };
     default:
-      return null;
+      // Opens and clicks are no longer recorded (lib/mail-status.ts); an older
+      // row whose status is one of them shows what it implies: delivered.
+      return isDeliveredStatus(status) ? { label: 'Welcome mail delivered', state: 'neutral', failed: false } : null;
   }
 }

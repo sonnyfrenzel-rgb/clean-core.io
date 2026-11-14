@@ -1,5 +1,6 @@
 import type { DocumentData } from 'firebase-admin/firestore';
 import { isTestAccount } from './test-accounts';
+import { isDeliveredStatus } from './mail-status';
 
 /**
  * Weekly adoption metrics for the admin report.
@@ -116,7 +117,6 @@ export interface DeliveryMetrics {
   delayed: number;
   bounced: number;
   complained: number;
-  opened: number;
   /** Sent, but no delivery event has arrived. */
   awaiting: number;
   /**
@@ -270,13 +270,12 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
   const countBy = (status: string) => mail.filter((m) => m.status === status).length;
   const delivery: DeliveryMetrics = {
     sent: mail.length,
-    delivered: countBy('email.delivered'),
+    // Delivered, nothing more: opens and clicks are not tracked (lib/mail-status.ts).
+    // A record from before, whose status is still an open or a click, was delivered.
+    delivered: mail.filter((m) => isDeliveredStatus(m.status)).length,
     delayed: countBy('email.delivery_delayed'),
     bounced: countBy('email.bounced'),
     complained: countBy('email.complained'),
-    // Opened implies delivered; counted separately rather than folded in, so the
-    // delivered figure stays a count of messages that arrived.
-    opened: mail.filter((m) => m.status === 'email.opened' || m.status === 'email.clicked').length,
     awaiting: countBy('email.sent'),
     failures: countFailures(mail.filter((m) => FAILED.has(m.status))),
   };
@@ -334,7 +333,6 @@ export function usageReportSnapshot(report: UsageReport, extra: { providerId: st
       delayed: delivery.delayed,
       bounced: delivery.bounced,
       complained: delivery.complained,
-      opened: delivery.opened,
       awaiting: delivery.awaiting,
       failures: delivery.failures.map((f) => ({ kind: f.kind, status: f.status, count: f.count })),
     },
