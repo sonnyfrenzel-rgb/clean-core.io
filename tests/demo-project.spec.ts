@@ -398,6 +398,9 @@ test.describe('the demo costs an account nothing', () => {
     await page.goto('/demo/workspace?view=it', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-workspace="it"]')).toBeAttached({ timeout: 90000 });
     expect(new URL(page.url()).pathname).toBe('/demo/workspace');
+    // IT's link to the map goes to the demo's Analyze with the map's place, as a project's does.
+    await page.goto('/demo/workspace?view=it#need', { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(/\/demo\/analyze#process-map$/, { timeout: 60000 });
 
     for (const stage of STAGES) {
       await page.goto(`/demo/${stage}`, { waitUntil: 'domcontentloaded' });
