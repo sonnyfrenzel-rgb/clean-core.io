@@ -99,9 +99,9 @@ test('without the package, and for a 3.0.22 hotfix, no surface says a customer w
 });
 
 /**
- * QA review of 0c6b49ec357c (5ed2831101ea, refuted): `RuleBasketLine` explains the rules without the customer texts
- * because it shows only counts, and the texts change words and marks, never which rules and questions there are.
- * Should a count ever come to depend on them, this fails and the line has to be handed the texts.
+ * `RuleBasketLine` explains the rules without the customer texts and shows only counts. This compares those counts
+ * with the texts and without them: should a count ever come to depend on the texts, this fails and the line has to
+ * be handed the texts.
  */
 test('the rule basket\'s counts are the same with the customer texts and without them', () => {
   const skeleton = buildProcessSkeleton(PROGRAM, { engineVersion: NEW });
