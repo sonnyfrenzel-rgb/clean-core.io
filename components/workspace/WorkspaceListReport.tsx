@@ -587,7 +587,8 @@ export default function WorkspaceListReport({
       </div>
     );
   }
-  if (user && ownAnswered && sharedAnswered && projects.length === 0 && shared.length === 0) {
+  // A listener that answered empty and then failed leaves its empty rows behind: that is no answer to decide on.
+  if (user && !ownFailed && ownAnswered && sharedAnswered && projects.length === 0 && shared.length === 0) {
     return <HomeFirstView userId={user.uid} profile={profile ?? null} slice={homeSlice} />;
   }
 
