@@ -39,6 +39,7 @@ Signed runs and the audit pack do not change.
 - Engine 4.0 is built in parallel from now on, as its own module tree that nothing reads until the switch (ADR-125); benchmark convention K3 settled: commits stay in the technical layer.
 
 ### Fixed
+- Tests: the modules that read the rewording of the statement draft are pinned, so it cannot reach a signed path unnoticed.
 - Tests: every route that reads a request body under a bound is checked to refuse an oversized one with 413 before using it.
 - Tests: the ATC privacy notice check requires the check title by name and whole words for object and check.
 - Tests: the BPMN download's AI mark is checked on the element the model named, not only counted.
