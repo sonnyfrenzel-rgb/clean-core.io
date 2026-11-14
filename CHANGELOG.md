@@ -5,11 +5,12 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — model combination of the business statements (prototype, 2026-11-13)
+## [Unreleased] — model combination of the business statements and the model per stage (ships with v3.1.0)
 
 Study for the owner's question of 13.11.2026 (`docs/design/model-combination.md`): whether `gemini-4-hydrogen` and
-the product model together write the business statements better than either alone. **Nothing the product calls
-changes**: production stays on `gemini-3.8-flash`, and every rule below is off unless the deployment sets it.
+the product model together write the business statements better than either alone. The size and fallback rules
+below stay off unless the deployment sets them; the model per stage is switched on for dev and production with
+v3.1.0 (owner decision 14.11.2026, see Changed). The separate hotfix 3.0.24 is dropped.
 
 ### Added
 
@@ -49,13 +50,20 @@ changes**: production stays on `gemini-3.8-flash`, and every rule below is off u
 - **The model per stage, written by the deploy pipeline per environment** (`GEMINI_STAGE_MODELS`,
   `lib/model-combination.ts`; owner decision 13.11.2026): every call of a named stage runs on that model, answer
   shapes included, except the rewording of the statements; register-checked, platform key only. `env-ctx` in
-  `.github/workflows/deploy.yml` names the stages per branch — dev the measured ones, main none until the owner
-  approves a stage. `gemini-4-hydrogen` stays under evaluation for clients and is served where the deployment
+  `.github/workflows/deploy.yml` names the stages per branch — the owner approves each stage after its
+  measurement. `gemini-4-hydrogen` stays under evaluation for clients and is served where the deployment
   names it. BYOK accounts are unchanged. `tests/prozess-benchmark/stage-bench.ts` measures a stage with the
   product's own prompt builders and validators before it joins the list.
 
 ### Changed
 
+- **Statements, Analyze, Design and Documentation run on `gemini-4-hydrogen` on the platform key, in dev and
+  production, with v3.1.0** (owner decision 14.11.2026, instead of a hotfix 3.0.24): `GEMINI_STAGE_MODELS=
+  statements=…,analyze=…,design=…,documentation=…` in both lanes of `env-ctx`, thinking MEDIUM per
+  `lib/model-thinking.ts`, no rewording step. Measured on the holdout: statements 84.6 % against 68.2 % equal,
+  analyze 40:7 and documentation 41:6 blind wins with fewer sentences contradicting the code; design answered
+  47 of 47 with a usable design and is not yet judged. Testing, Transformation and naming stay on their models;
+  own keys are unchanged. `tests/model-combination.spec.ts` holds both lanes to this list and Testing out of it.
 - **The receipt, the stage record and `answeredBy` name the model that answered** (`answeredModel`): the planned
   model, or the fallback when it answered after an incomplete first answer. The receipt's claim set is unchanged.
 - **The statements output bound is 65,536** (was 32,768): thinking counts against the bound, and on a 1,000-line

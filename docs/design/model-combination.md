@@ -179,7 +179,8 @@ counts against the bound; the level is what keeps a call well inside it (largest
   now carries `finishReason`, so a call that ended at the bound is visible as `MAX_TOKENS` (before, it read
   `failed: false` with 32,768 tokens and nothing more).
 - **Cost line before the click.** `docProposalsCostLine(PRODUCT_GEMINI_MODEL, …)` on the Documentation page
-  names the constant, not the deployment's model (`GEMINI_MODEL` and the rules above are server-side). Open:
+  names the constant, not the deployment's model (`GEMINI_MODEL` and the rules above are server-side). Open
+  (still, 14.11.; see §3.7):
   either `GET /api/model-stages` reports the deployment's product model and the page prints that, or the line
   says "the platform's model" and points at "Last answered by". Not in the prototype.
 - **Platform budget and rate limit.** Both count requests, not provider calls; a cascade is one request with two
@@ -269,10 +270,14 @@ Owner: Hydrogen MEDIUM alone — no rewording (`GEMINI_STATEMENTS_REWORDING` sta
   ignored; only on the platform key; the deployment's fallback still applies. The thinking level per model and
   stage comes from `lib/model-thinking.ts` (`MODEL_STAGE_LEVELS`), set per stage from its measurement.
 - **Per environment, as a reviewed commit.** `.github/workflows/deploy.yml`, step `env-ctx`, writes
-  `gemini_stage_models` per branch and the deploy step passes it as `GEMINI_STAGE_MODELS`: **dev** names the stages
-  whose measurement is in; **main** names nothing until the owner approves a stage. The guard in
-  `tests/model-combination.spec.ts` holds the env line and that production's value is empty. `GEMINI_MODEL`
-  (the whole product on one model) and the hand-set Cloud Run variables are unchanged; nothing here needs them.
+  `gemini_stage_models` per branch and the deploy step passes it as `GEMINI_STAGE_MODELS`. **Owner decision
+  14.11.2026: production with release 3.1.0**, not a separate hotfix 3.0.24 — dev and main name the same list,
+  `statements=gemini-4-hydrogen,analyze=gemini-4-hydrogen,design=gemini-4-hydrogen,documentation=gemini-4-hydrogen`
+  (§5). Testing is not in it (MEDIUM left stubs; the default is the slowest, dearest call), Transformation is not
+  measured, naming keeps its own model; all three run on the product model. The guard in
+  `tests/model-combination.spec.ts` holds the env line, that both lanes carry exactly this list, that Testing is
+  not in it and that every stage in it has a measured level. `GEMINI_MODEL` (the whole product on one model) and
+  the hand-set Cloud Run variables are unchanged; nothing here needs them.
 - **The register.** `gemini-4-hydrogen` stays `EVALUATION_ONLY`: a client naming it is refused as before; the
   deployment names it per stage. `scripts/check-gemini-register.mjs` reads the register unchanged;
   `tests/gemini-model-pin.spec.ts` holds the register, the evaluation set and the probe record as before.
@@ -282,7 +287,11 @@ Owner: Hydrogen MEDIUM alone — no rewording (`GEMINI_STATEMENTS_REWORDING` sta
 - **Who answered.** Receipt, stage record ("Last answered by") and `answeredBy` carry `answeredModel`, so the
   Settings line and the AI chips name the model per stage without further change. Open (§3.3): the
   Documentation page's cost line still names the constant; with stages on another model it should take the
-  stage's model from `GET /api/model-stages`.
+  stage's model from `GET /api/model-stages`. Not done with the switch (14.11.): the route would need the
+  model register, which lives in `app/api/gemini/route.ts` and is read from that file's source by
+  `scripts/check-gemini-register.mjs` and four specs — moving it is its own step. Until then, on the platform key,
+  the line names `gemini-3.8-flash` while `gemini-4-hydrogen` answers the business layer; the chip and
+  "Last answered by" name the right one.
 - **Measured before a stage joins the dev list** (`tests/prozess-benchmark/stage-bench.ts`, §5): the product's
   own prompt and validator per stage, Hydrogen MEDIUM against the product model's setting of today, on benchmark
   cases and the starter examples; schema validity, failure and MAX_TOKENS rate, latency p50/p90, cost per call today
@@ -300,6 +309,57 @@ Owner: Hydrogen MEDIUM alone — no rewording (`GEMINI_STATEMENTS_REWORDING` sta
   against 0.48 for lines) and no better.
 - **A thinking level for Flash as the dropout cure**: LOW cures the dropouts and costs 15 points where the default
   answers; MEDIUM cures 4 of 5 and costs 7; a fallback is strictly better.
-- **The rewording in the product**: designed above, measured on the learn set, not built — the store, the origin,
-  the chip and the cost line are four more files, and the owner decides first whether the stage leaves the product
-  model at all.
+- **The rewording in the product**: built (§3.6) and measured on the holdout, then switched off by the owner's
+  decision of the evening (Hydrogen MEDIUM alone); `GEMINI_STATEMENTS_REWORDING` stays unset.
+
+## 5. The other stages, measured before they move (13.11.2026, evening)
+
+**Method.** `tests/prozess-benchmark/stage-bench.ts`: the product's own prompt builders and validators per stage
+(§3.7), Hydrogen against the product model at today's setting, on 40 benchmark holdout cases (drawn by hash from
+`split.json`'s `holdout` + `w3_holdout`, 10 of them wave 3) plus the seven starter examples (87 to 1,000 lines) — 47
+cases per stage. Hydrogen's level per stage was chosen first on 10 learn cases (blind A/B, default against MEDIUM);
+the holdout then compares the product model with Hydrogen at that level, blind, one A/B verdict per case with
+criteria scores and the sentences contradicting the code counted ("hard errors"). Judges: Claude Opus, two per
+stage, the mapping opened after the last verdict. Rate-limit failures of the harness (HTTP 429 under too many
+parallel chains) were re-run; they are not model failures and do not count.
+
+**Level per stage** (10 learn cases, Hydrogen default against MEDIUM): analyze 6:4 for the default (p = 0.75),
+hard errors 1 against 0, 49 s against 25 s; design 6:4 (p = 0.75), 6 against 5, 46 s against 33 s; documentation
+5:2 with 3 ties (p = 0.45), 1 against 0, 30 s against 18 s — no difference at this size, MEDIUM a third cheaper and
+faster, so **MEDIUM**. Testing 8:1 for the default (p = 0.04): MEDIUM left stubs unimplemented and assertions
+empty, the default wrote usable classes — so Testing keeps the **provider's default** (`lib/model-thinking.ts`).
+Plain wording keeps LOW on both models by its shape rule.
+
+**Holdout, per stage** (47 cases; wins out of 47; cost per call; latency of the call):
+
+| Stage | Hydrogen level | Wins H : Flash | p | Hard errors H : Flash | Valid H : Flash | $/call today H : F | $/call 2027 H : F | p50 s H : F | p90 s H : F | Verdict |
+|---|---|---|---|---|---|---|---|---|---|---|
+| statements (§2, 150 cases) | MEDIUM | 408 : 91 statements | 6·10⁻⁴⁹ | 8 : 15 | 150 : 137 | 0.079 : 0.055 | 0.079 : 0.110 | 32.5 : 64.3 | 55 : 205 | **go** |
+| analyze | MEDIUM | **40 : 7** | 1·10⁻⁶ | 2 : 7 | 47 : 45 | 0.069 : 0.026 | 0.069 : 0.053 | 25.9 : 30.7 | 33 : 42 | **go** |
+| documentation (business layer) | MEDIUM | **41 : 6** | 2·10⁻⁷ | 9 : 22 | 47 : 47 | 0.060 : 0.037 | 0.060 : 0.073 | 23.0 : 48.2 | 38 : 92 | **go** |
+| design | MEDIUM | not judged | — | — | 47 : 25 of 25 answered | 0.066 : 0.018 | — | 35.9 : 30.7 | 42 : 39 | **go by owner decision 14.11.**, judgement open |
+| testing | default | not judged | — | — | 29 : 35 | 0.121 : 0.046 | — | 82.4 : 58.2 | 137 : 85 | **stays on the product model** (level measurement, above) |
+| plain wording (shape of statements) | LOW | not judged | — | — | 29 : 14 | 0.035 : 0.010 | — | 13.0 : 13.0 | 22 : 32 | follows the statements stage |
+| transformation (fills) | LOW by rule | not measured: the fill requests come out of the engine-led orchestration (`prepareEngineLed`), which this harness does not drive | | | | | | | | **no-go for now** |
+| naming | — | its own model by owner decision 24.09.2026 (`gemini-3.5-flash-lite`, speed); not part of this | | | | | | | | unchanged |
+
+What the judges saw on analyze: the winner names the program's actual rules and thresholds where the loser
+paraphrases the engine's findings; Flash invented API or view names more often (7 hard errors against 2), Hydrogen
+wrote the fuller as-is description (completeness 4.45 against 3.53). On documentation: Flash stated effects the code
+does not have twice as often (22 against 9) and described automatic steps as people's tasks; Hydrogen tied more
+statements to lines and said what the program does not do, at the cost of field names where business words belong
+(readability 3.89 against 3.53 still in its favour).
+
+**The rows without a verdict** (read from the harness's result files, no judge): every missing answer in them is
+an HTTP 429 of the evaluation key — the per-minute quota under parallel chains, twice the monthly spending cap on
+Testing — not a model failure, and none of the answers that came back was invalid or ended at the output bound.
+Design: Hydrogen answered all 47 with a usable design; the product model answered 25 before the key was limited,
+all usable; latency about equal. No blind A/B was run on design, so its "go" rests on the owner's decision of
+13.11. (Hydrogen MEDIUM on every model stage the measurement allows) and on the learn-set level choice, not on a
+holdout win. Plain wording is a shape of the statements stage (`plain-wording`, LOW by its shape rule) and
+moves with that stage. Testing stays on the product model whatever its holdout would say: Hydrogen's usable level
+for it (the default) is the slowest and most expensive call measured, and MEDIUM writes stubs.
+
+**Shipped (owner decision 14.11.2026, "nimm Hydrogen noch mit in 3.1.0").** With release 3.1.0, dev and
+production carry the same list (§3.7): `statements`, `analyze`, `design`, `documentation` on `gemini-4-hydrogen`.
+The separate hotfix 3.0.24 that was to carry the statements stage alone is dropped.
