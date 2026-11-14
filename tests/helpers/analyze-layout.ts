@@ -11,7 +11,8 @@
  */
 import fs from 'fs';
 import { expect, type Page } from './test';
-import { adminSetDoc } from './admin-seed';
+import { adminMergeDoc, adminSetDoc } from './admin-seed';
+import { AUTO_STEPS_NOTICE_FIELD, AUTO_STEPS_NOTICE_WORDING, AUTO_STEPS_NOTICE_WORDING_FIELD } from '../../lib/auto-steps-notice';
 import { seedStageProject, signInThroughForm, type SeededProject } from './seed-project';
 import { examplePath } from './starter-example-files';
 import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../../lib/coach-marks';
@@ -67,6 +68,13 @@ async function idToken(email: string, password: string): Promise<string> {
 export async function seedLayoutProject(prefix: string): Promise<SeededProject & { po: string }> {
   const account = await seedStageProject({ prefix, acceptTerms: true });
   const token = await idToken(account.email, account.password);
+  // The mockup states are those of an account that has answered the one-time notice on automatic AI steps (C14):
+  // since 3.1.0 an unanswered notice stands above the map on a server with a model key, as it should, and the
+  // states measured here are the ones after it. The notice itself is measured in tests/auto-steps-notice-rendered.spec.ts.
+  await adminMergeDoc('users', account.uid, {
+    [AUTO_STEPS_NOTICE_FIELD]: new Date().toISOString(),
+    [AUTO_STEPS_NOTICE_WORDING_FIELD]: AUTO_STEPS_NOTICE_WORDING,
+  });
   const po = `${account.projectId}-po`;
   const source = fs.readFileSync(examplePath('Z_MM_PO_APPROVAL.abap'), 'utf8').replace(/\r\n/g, '\n');
   await adminSetDoc('projects', po, { name: 'Z_MM_PO_APPROVAL', userId: account.uid, createdAt: new Date(), status: 'created', legacyCode: source });
