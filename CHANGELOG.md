@@ -130,6 +130,7 @@ Signed runs and the audit pack do not change.
 - Documentation: until the server has said which model the stage runs on, the cost line names no model instead of the
   product default.
 - Author's comments: an `&` inside a comment (`Sales & Distribution`) is quoted as written; only the editor's frame signs at its edges are left out.
+- Business rules: an `EXIT` on a test-data selector inside a loop ends that loop, a business use of the selector, so its `CASE` stays among the rules.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
