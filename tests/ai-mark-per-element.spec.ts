@@ -64,6 +64,21 @@ test('the download marks exactly the elements the map marks', () => {
   const marked = [...xml.matchAll(/<cc:origin value="ai"/g)];
   expect(marked).toHaveLength(1);
   expect(xml).toContain(`name="${OWN}"`);
+  // The one mark sits inside the element named OWN: its opening tag is the nearest one before the mark that is not
+  // `extensionElements` or a `cc:` child, and the mark comes before that element closes.
+  const at = marked[0].index!;
+  const opens = [...xml.slice(0, at).matchAll(/<(bpmn:[A-Za-z]+)\s[^>]*>/g)].filter((m) => !/extensionElements/.test(m[1]));
+  const owner = opens[opens.length - 1];
+  expect(owner[0]).toContain(`name="${OWN}"`);
+  expect(xml.indexOf(`</${owner[1]}>`, owner.index!)).toBeGreaterThan(at);
+  // The engine-named tasks carry none.
+  for (const t of [tasks[1], tasks[2]]) {
+    const open = xml.match(new RegExp(`<(bpmn:[A-Za-z]+)\\s[^>]*name="${t.plainName!.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/&/g, '&amp;')}"[^>]*>`));
+    expect(open, `task "${t.plainName}" is in the download`).not.toBeNull();
+    if (!open) continue;
+    const close = xml.indexOf(`</${open[1]}>`, open.index!);
+    expect(xml.slice(open.index!, close)).not.toContain('cc:origin');
+  }
 });
 
 test('while names arrive, the model carries a name only once its swap began — everywhere it is read', () => {
