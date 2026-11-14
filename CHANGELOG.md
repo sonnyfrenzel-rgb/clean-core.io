@@ -123,6 +123,8 @@ Signed runs and the audit pack do not change.
   name the value was stored under, so a status the program sets itself stays its own marker.
 - Author's comments: an escaped `\|` inside a string template no longer ends the template, so a `"` in its text is not
   quoted as the author's comment.
+- Documentation: until the server has said which model the stage runs on, the cost line names no model instead of the
+  product default.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

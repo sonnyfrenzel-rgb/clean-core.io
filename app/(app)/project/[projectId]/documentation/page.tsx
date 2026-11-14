@@ -1399,11 +1399,11 @@ export default function DocumentationPage() {
    * model it names is the one the documentation stage runs on for this key, as
    * `/api/model-stages` reports it (`stageModels`, 14.11.2026 — on the platform
    * key the deployment may run the stage on another model than the one
-   * `generateBusinessDocumentation` asks for); until that answer is in, the
-   * model asked for. The key is the one the same route reports, and `/api/gemini`
+   * `generateBusinessDocumentation` asks for); until that answer is in, no
+   * model — the product default may not be the one the stage runs on. The key is the one the same route reports, and `/api/gemini`
    * meters by the hour, not by the analysis run.
    */
-  const proposalsCostLine = docProposalsCostLine(modelAvailability.stageModels.documentation ?? PRODUCT_GEMINI_MODEL, modelAvailability.keySource === 'byok')
+  const proposalsCostLine = docProposalsCostLine(modelAvailability.stageModels.documentation, modelAvailability.keySource === 'byok')
     + (businessPlan && !businessPlan.whole ? ` ${docPartsCostLine(businessPlan.parts.length)}` : '');
 
   const statementPanelProps = {
