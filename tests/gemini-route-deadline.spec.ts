@@ -7,9 +7,13 @@ import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin
 import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
 import { getAuth as adminAuth } from 'firebase-admin/auth';
 import firebaseConfig from '../firebase-config.json';
-import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
+import { FIRESTORE_DB_ID, PRODUCT_GEMINI_MODEL, TERMS_VERSION } from '../lib/constants';
+import { FALLBACK_MODEL_ENV, LARGE_PROMPT_MODEL_ENV, STAGE_MODELS_ENV } from '../lib/model-combination';
 import { GEMINI_TEST_STUB_DEFAULT_ENV } from '../lib/gemini-test-stub';
 import { MODEL_TIMEOUT_CODE, modelTimeoutMessage } from '../lib/model-deadline';
+import { AUTO_STEPS_NOTICE_FIELD, AUTO_STEPS_NOTICE_PENDING_CODE, AUTO_STEPS_NOTICE_WORDING, AUTO_STEPS_NOTICE_WORDING_FIELD } from '../lib/auto-steps-notice';
+import { LEGAL_TEXTS_NAMES_AUTOMATIC } from '../lib/legal/names-wording';
+import { NAMING_FACTS_PROMPT_MARK, NAMING_STAGE } from '../lib/process-naming';
 
 /**
  * The model-call deadline at the route — QA leftovers of hotfix 2 (roadmap
@@ -38,6 +42,11 @@ class GoogleGenAI {
     this.models = {
       generateContent: (req) => new Promise((resolve, reject) => {
         g.__deadlineProbe.calls += 1;
+        // A test that queued answers gets them in order, and the model each call asked for is noted.
+        if (Array.isArray(g.__answers) && g.__answers.length) {
+          (g.__asked = g.__asked || []).push(req && req.model);
+          return resolve(g.__answers.shift());
+        }
         const signal = req && req.config && req.config.abortSignal;
         if (!signal) return; // never answers: the route's own bound must end it
         const stop = () => { g.__deadlineProbe.aborted += 1; reject(Object.assign(new Error('aborted'), { name: 'AbortError' })); };
@@ -150,14 +159,14 @@ test.describe('the Gemini route ends a call the provider never answers', () => {
   });
 
   /** A signed-in, approved account on the emulators, and its ID token. */
-  async function signedInAccount(prefix: string): Promise<string> {
+  async function signedInAccount(prefix: string, profile: Record<string, unknown> = {}): Promise<string> {
     const app = adminApps()[0] ?? initAdmin({ projectId: firebaseConfig.projectId });
     const uid = `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
     const email = `${uid}@example.test`;
     await adminAuth(app).createUser({ uid, email, password: 'emulator-only-password' });
     await adminFirestore(app, FIRESTORE_DB_ID).collection('users').doc(uid).set({
       firstName: 'Budget', lastName: 'Route', email, tier: 'pilot', status: 'approved', activatedAt: new Date(),
-      termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
+      termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(), ...profile,
     });
     const custom = await adminAuth(app).createCustomToken(uid);
     const signIn = await fetch(`http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=${firebaseConfig.apiKey}`, {
@@ -203,6 +212,79 @@ test.describe('the Gemini route ends a call the provider never answers', () => {
     expect(res.status).toBe(400);
     expect(((await res.json()) as { error?: string }).error).toContain('"gemini-4-hydrogen" is not permitted');
     expect(probeCalls(), 'the provider was asked for a model the deployment does not run').toBe(before);
+  });
+
+  test('an automatic naming call waits for the notice of this build: refused before the provider is asked', async () => {
+    test.setTimeout(60_000);
+    delete process.env[GEMINI_TEST_STUB_DEFAULT_ENV];
+    process.env.GEMINI_API_KEY = 'test-key-not-used-by-the-stand-in';
+    // The 3.1.0 build names by itself, so its notice says so (`lib/legal/names-wording.ts`).
+    expect(LEGAL_TEXTS_NAMES_AUTOMATIC).toBe(true);
+    const ask = (idToken: string, trigger?: string) =>
+      route.POST(new NextRequestCtor('http://localhost/api/gemini', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        // With the facts mark, so the only gate that can hold the call is the notice's.
+        body: JSON.stringify({ prompt: `Name the steps.\n${NAMING_FACTS_PROMPT_MARK}`, stage: NAMING_STAGE, ...(trigger ? { trigger } : {}) }),
+      }));
+    // Never answered, and an answer to the earlier wording (one step, plain sentences), which does not name them.
+    for (const [label, profile] of [
+      ['never answered', {}],
+      ['the earlier wording', { [AUTO_STEPS_NOTICE_FIELD]: new Date(), [AUTO_STEPS_NOTICE_WORDING_FIELD]: 'C14-1' }],
+    ] as const) {
+      const idToken = await signedInAccount('notice', profile);
+      const before = probeCalls();
+      const res = await ask(idToken, 'automatic');
+      expect(res.status, label).toBe(403);
+      expect(((await res.json()) as { code?: string }).code, label).toBe(AUTO_STEPS_NOTICE_PENDING_CODE);
+      expect(probeCalls(), `${label}: the provider was asked before the notice`).toBe(before);
+    }
+    // The wording of this build confirmed: the gate lets the call through to the provider (which never answers here).
+    const confirmed = await signedInAccount('notice-ok', { [AUTO_STEPS_NOTICE_FIELD]: new Date(), [AUTO_STEPS_NOTICE_WORDING_FIELD]: AUTO_STEPS_NOTICE_WORDING });
+    const before = probeCalls();
+    const res = await ask(confirmed, 'automatic');
+    const answer = (await res.json()) as { code?: string; error?: string };
+    expect(answer.code).not.toBe(AUTO_STEPS_NOTICE_PENDING_CODE);
+    expect(probeCalls(), 'the confirmed account\'s call did not reach the provider').toBeGreaterThan(before);
+  });
+
+  test('an unfinished answer of the statements stage is asked of the fallback once; its answer is returned and named', async () => {
+    test.setTimeout(60_000);
+    delete process.env[GEMINI_TEST_STUB_DEFAULT_ENV];
+    process.env.GEMINI_API_KEY = 'test-key-not-used-by-the-stand-in';
+    const saved = { fallback: process.env[FALLBACK_MODEL_ENV], stages: process.env[STAGE_MODELS_ENV], large: process.env[LARGE_PROMPT_MODEL_ENV], model: process.env.GEMINI_MODEL };
+    const FALLBACK = 'gemini-3.6-flash';
+    process.env[FALLBACK_MODEL_ENV] = FALLBACK;
+    delete process.env[STAGE_MODELS_ENV];
+    delete process.env[LARGE_PROMPT_MODEL_ENV];
+    delete process.env.GEMINI_MODEL;
+    const g = globalThis as { __answers?: unknown[]; __asked?: unknown[] };
+    try {
+      const idToken = await signedInAccount('fallback');
+      g.__asked = [];
+      g.__answers = [
+        { text: 'Half a sente', candidates: [{ finishReason: 'MAX_TOKENS' }], usageMetadata: {} },
+        { text: 'The whole sentence.', candidates: [{ finishReason: 'STOP' }], usageMetadata: {} },
+      ];
+      const res = await route.POST(new NextRequestCtor('http://localhost/api/gemini', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: 'Word the statements.', stage: 'statements' }),
+      }));
+      expect(res.status).toBe(200);
+      const body = (await res.json()) as { text?: string; answeredBy?: { modelId?: string }; receipt?: unknown };
+      expect(g.__asked, 'the product model first, then the fallback, once').toEqual([PRODUCT_GEMINI_MODEL, FALLBACK]);
+      expect(g.__answers, 'both answers were asked for').toEqual([]);
+      expect(body.text).toBe('The whole sentence.');
+      expect(body.answeredBy?.modelId, 'the answer names the model that answered').toBe(FALLBACK);
+    } finally {
+      delete g.__answers;
+      delete g.__asked;
+      for (const [env, value] of [[FALLBACK_MODEL_ENV, saved.fallback], [STAGE_MODELS_ENV, saved.stages], [LARGE_PROMPT_MODEL_ENV, saved.large], ['GEMINI_MODEL', saved.model]] as const) {
+        if (value === undefined) delete process.env[env];
+        else process.env[env] = value;
+      }
+    }
   });
 
   // Last in this file: the breaker it opens is remembered by the route module.
