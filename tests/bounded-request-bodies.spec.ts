@@ -67,9 +67,22 @@ test('the named routes no longer parse a request body without a bound', () => {
     'app/api/secrets/gemini/auto-steps/route.ts',
   ];
   for (const rel of routes) {
-    const src = read(rel);
+    const src = read(rel).replace(/\r\n/g, '\n');
     expect(src, `${rel} parses the whole body unbounded`).not.toMatch(/\breq(uest)?\.(json|text)\(\)/);
     expect(src, `${rel} reads no body through the bounded reader`).toMatch(/readBoundedRequestJson\(req|readBoundedBody\(req/);
+    // Reading under a bound is only half: the very next statement refuses an oversized body with 413, before the
+    // body is used at all.
+    const reads = [...src.matchAll(/const (\w+) = await readBoundedRequestJson\(req\b[^;]*;\s*\n([^\n]*)/g)];
+    const raw = [...src.matchAll(/const (\w+) = await readBoundedBody\(req\b[^;]*;\s*\n([^\n]*)/g)];
+    expect(reads.length + raw.length, `${rel} reads the body in a shape this guard does not know`).toBeGreaterThan(0);
+    for (const [, name, next] of reads) {
+      expect(next, `${rel} uses ${name} without refusing an oversized body first`).toMatch(
+        new RegExp(`^\\s*if \\(${name}\\.tooLarge\\) return NextResponse\\.json\\([^;]*\\{ status: 413 \\}\\);$`),
+      );
+    }
+    for (const [, name, next] of raw) {
+      expect(next, `${rel} uses ${name} without refusing an oversized body first`).toMatch(new RegExp(`^\\s*if \\(${name} === null\\b`));
+    }
   }
 });
 

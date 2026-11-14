@@ -56,7 +56,8 @@ async function firstScreen(page: Page) {
   // steps stand whole in the first screen of 1440 × 1000, beside the main line.
   //
   // AB-2 moves the map to the top: the story is one of the blocks under it now.
-  await expect(page.locator('[data-process-story]')).toBeAttached();
+  // Below the map, so not in the first screen — but shown, not merely in the page.
+  await expect(page.locator('[data-process-story]')).toBeVisible();
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map).toBeVisible();
   // The picture of the main line beside the first insights retired with the
@@ -95,12 +96,32 @@ test.describe('a new project: the first look ends on the full map', () => {
     page.on('framenavigated', (frame) => {
       if (frame === page.mainFrame()) visited.push(frame.url());
     });
+    // Every state the first look takes, from before the press: it reads ("waiting") and then stands in its end
+    // state; the paced build-up retired with 3.1.0 (AB-3) and must not come back on the way.
+    const install = () => {
+      const w = window as unknown as { __firstLookStates?: string[] };
+      if (w.__firstLookStates) return;
+      w.__firstLookStates = [];
+      const note = () => {
+        for (const el of document.querySelectorAll('[data-first-look]')) {
+          const v = el.getAttribute('data-first-look') ?? '';
+          if (!w.__firstLookStates!.includes(v)) w.__firstLookStates!.push(v);
+        }
+      };
+      note();
+      new MutationObserver(note).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-first-look'] });
+    };
+    await page.addInitScript(install);
+    await page.evaluate(install);
     await page.click('[data-own-code-start]');
 
     await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 90000 });
     // No build-up since AB-2/AB-3: the map stands at once, the first look's blocks below it in their end state.
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-first-look="end-state"]')).toBeVisible({ timeout: 60000 });
+    const states = await page.evaluate(() => (window as unknown as { __firstLookStates?: string[] }).__firstLookStates);
+    expect(states, 'the first look was not recorded from the start').toBeDefined();
+    expect(states!.filter((v) => v !== 'waiting' && v !== 'end-state'), 'the first look built up on its way to the end state').toEqual([]);
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
     await firstScreen(page);
 

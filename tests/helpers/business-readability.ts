@@ -229,28 +229,16 @@ export function readBusiness(source: string, file: string, engineVersion: string
   }
   const facts = buildProcessFacts(source);
   const ruleSet = deriveBusinessRulesFrom(source, facts, skeleton, engineVersion);
-  let story: string[] = [];
-  try {
-    story = processStory(skeleton, source, null, engineVersion).steps.map((s) => s.text);
-  } catch { /* measured as empty */ }
-  let inShort: string[] = [];
-  try {
-    const sf = programSummaryFactsOf(source, { skeleton, ruleSet, engineVersion });
-    inShort = businessInShort(programSummary(sf), { codes: false }).map((l) => l.text).filter(Boolean);
-  } catch { /* measured as empty */ }
-  let rules: string[] = [];
-  let questions: string[] = [];
-  try {
-    const ex = explainBusinessRules(source, ruleSet, facts, engineVersion);
-    const titled = new Map(editorRules(ruleSet, plainWordingFor(source, skeleton)).map((r) => [r.id, r.title]));
-    rules = ex.baskets.business.map((id) => ex.rules.find((r) => r.id === id)?.headline ?? titled.get(id) ?? id);
-    questions = ex.questions.map((q) => q.statement.text);
-  } catch { /* measured as empty */ }
-  let writes = 0;
-  try {
-    const f = facts;
-    writes = reachableWrites({ source, statements: f.statements, graph: f.calls }).length;
-  } catch { /* none */ }
+  // A surface that throws fails the measurement: an empty answer would leave the program's labels out of the
+  // denominator and let a ratchet pass on less than the whole corpus.
+  const story = processStory(skeleton, source, null, engineVersion).steps.map((s) => s.text);
+  const sf = programSummaryFactsOf(source, { skeleton, ruleSet, engineVersion });
+  const inShort = businessInShort(programSummary(sf), { codes: false }).map((l) => l.text).filter(Boolean);
+  const ex = explainBusinessRules(source, ruleSet, facts, engineVersion);
+  const titled = new Map(editorRules(ruleSet, plainWordingFor(source, skeleton)).map((r) => [r.id, r.title]));
+  const rules = ex.baskets.business.map((id) => ex.rules.find((r) => r.id === id)?.headline ?? titled.get(id) ?? id);
+  const questions = ex.questions.map((q) => q.statement.text);
+  const writes = reachableWrites({ source, statements: facts.statements, graph: facts.calls }).length;
   return { file, tasks, gateways, ends, levels, story, inShort, rules, questions, writes, segments: identifierSegments(source) };
 }
 

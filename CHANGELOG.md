@@ -45,6 +45,16 @@ Signed runs and the audit pack do not change.
 - Home: the recommended example's start button tells a screen reader that the example ran before and that starting it again uses a run, as the list buttons already did.
 - Documentation: where the business sentences are reworded for a business reader, the proposals card says that asking for them takes two model calls.
 - Analyze: a project read that answers late no longer puts the pre-run state back over the result of a run that has just been signed.
+- Tests: the Documentation page is required to pass the project's customer texts to the process document.
+- Tests: the first look's states are recorded from before the start is pressed, and the process story must be visible, not only present.
+- Tests: the Gemini route is run in process for the automatic-naming notice gate and for the fallback model of the statements stage.
+- Tests: every clean-core.io address in the legal texts is rendered through the page's own linker and must link to the whole address.
+- Tests: the readability measurement fails when a surface throws, instead of measuring it as empty.
+- Tests: the Business view's primary buttons are counted page-wide again, the "Next step" bar's one named as the only exception.
+- Tests: the modules that read the rewording of the statement draft are pinned, so it cannot reach a signed path unnoticed.
+- Tests: every route that reads a request body under a bound is checked to refuse an oversized one with 413 before using it.
+- Tests: the ATC privacy notice check requires the check title by name and whole words for object and check.
+- Tests: the BPMN download's AI mark is checked on the element the model named, not only counted.
 - Tests: the run hash and both run-signature forms are pinned to known values worked out independently, so a signer and verifier that change together can no longer pass while runs signed before stop verifying.
 - Privacy policy: an address with a version number (`clean-core.io/datenschutz/versions/1.2`) links to that version; it linked to `/versions/1`, a page that does not exist, and the browser's prefetch of it never settled.
 - Tests: the C14 notice case "the steps already off" turns off both automatic steps, since the business names start by themselves again in 3.1.0; the outline reset of the navigation acceptance triggers the twisty instead of clicking a position the shrinking list has already moved; the Analyze layout states are measured for an account that has answered the notice on automatic AI steps, which since 3.1.0 stands above the map until it is answered.
