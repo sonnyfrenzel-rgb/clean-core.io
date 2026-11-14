@@ -121,6 +121,8 @@ Signed runs and the audit pack do not change.
   that did nothing.
 - Business rules: an `IMPORT … FROM MEMORY` now counts only the local field it fills as read from outside, not the
   name the value was stored under, so a status the program sets itself stays its own marker.
+- Author's comments: an escaped `\|` inside a string template no longer ends the template, so a `"` in its text is not
+  quoted as the author's comment.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

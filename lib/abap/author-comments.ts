@@ -47,7 +47,9 @@ function lineComments(lines: readonly string[]): Map<number, LineComment> {
     for (let j = 0; j < raw.length; j++) {
       const ch = raw[j];
       if (quote) {
-        if (ch === quote) quote = null;
+        // In a string template `\|` (and `\\`, `\{`, `\}`) is an escaped character, not its end.
+        if (quote === '|' && ch === '\\') j++;
+        else if (ch === quote) quote = null;
         continue;
       }
       if (ch === "'" || ch === '`' || ch === '|') {
