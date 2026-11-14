@@ -46,12 +46,59 @@ export interface KindRow {
   readonly when?: (units: readonly string[]) => boolean;
 }
 
-/** Does a SELECT (or WITH) read row by row, so that an ENDSELECT may close it? */
+const AGGREGATES = new Set(['COUNT', 'SUM', 'MAX', 'MIN', 'AVG']);
+const AFTER_FIELDS = new Set(['WHERE', 'GROUP', 'HAVING', 'ORDER', 'INTO', 'APPENDING', 'UP', 'OFFSET', 'UNION', 'INTERSECT', 'EXCEPT']);
+
+/**
+ * Is the SELECT list `units[from..to)` nothing but aggregates (`COUNT(*)`,
+ * `SUM( netwr ) AS total`, …)? Then the result is one row and no loop opens.
+ */
+function aggregatesOnly(units: readonly string[], from: number, to: number): boolean {
+  let i = from;
+  let seen = false;
+  while (i < to) {
+    if (units[i] === 'DISTINCT' || units[i] === ',') { i += 1; continue; }
+    if (!AGGREGATES.has(units[i]) || units[i + 1] !== '(') return false;
+    let depth = 0;
+    let j = i + 1;
+    for (; j < to; j++) {
+      if (units[j] === '(') depth += 1;
+      else if (units[j] === ')' && --depth === 0) break;
+    }
+    if (j >= to) return false;
+    i = j + 1;
+    if (units[i] === 'AS') i += 2;
+    seen = true;
+  }
+  return seen;
+}
+
+/** The SELECT list of a SELECT statement as a unit range: before FROM, or after FIELDS. */
+function selectList(units: readonly string[]): [number, number] | null {
+  if (units[0] !== 'SELECT') return null;
+  const fields = units.indexOf('FIELDS');
+  if (units[1] === 'FROM' && fields > 0) {
+    let to = fields + 1;
+    while (to < units.length && !AFTER_FIELDS.has(units[to])) to += 1;
+    return [fields + 1, to];
+  }
+  const from = units.indexOf('FROM');
+  return from > 1 ? [1, from] : null;
+}
+
+/**
+ * Does a SELECT (or WITH) read row by row, so that an ENDSELECT may close it?
+ * Not `SELECT SINGLE`, not `INTO TABLE` without `PACKAGE SIZE`, and not a SELECT
+ * list of aggregates only without `GROUP BY` — its result is a single row.
+ */
 function selectMayLoop(units: readonly string[]): boolean {
   if (units[1] === 'SINGLE') return false;
   const joined = ` ${units.join(' ')} `;
   const intoTable = / (?:INTO|APPENDING) (?:CORRESPONDING FIELDS OF )?TABLE /.test(joined);
-  return !intoTable || / PACKAGE SIZE /.test(joined);
+  if (intoTable && !/ PACKAGE SIZE /.test(joined)) return false;
+  const range = selectList(units);
+  if (range && !/ GROUP BY /.test(joined) && aggregatesOnly(units, range[0], range[1])) return false;
+  return true;
 }
 
 const ROWS = [

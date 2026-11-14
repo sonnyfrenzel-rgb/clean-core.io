@@ -156,7 +156,8 @@ function emit(
   if (own.length === 0) return;
   const tokens = [...head, ...own];
   const kind = classify(tokens, b.macros);
-  const context: StatementContext = b.inMacro && kind !== 'EndOfDefinition' ? 'macro' : 'abap';
+  // A macro cannot define a macro: a DEFINE inside a body means the body before it lost its END-OF-DEFINITION.
+  const context: StatementContext = b.inMacro && kind !== 'EndOfDefinition' && kind !== 'Define' ? 'macro' : 'abap';
   const diags = [...diagnostics];
   if (kind === 'Unknown' && context === 'abap') {
     diags.push({
