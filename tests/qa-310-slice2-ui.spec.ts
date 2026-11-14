@@ -58,3 +58,19 @@ test('the process tour draws the names the main map shows, also while names arri
   expect(src).toMatch(/<ProcessTour tour=\{tour\} model=\{shownModel \?\? model\}/);
   expect(src).toMatch(/model=\{shownModel \?\? model\}\n\s*nameArrival=\{arrival\}/);
 });
+
+test('customer texts are written only while the project still stands, read again in the write\'s transaction', () => {
+  const route = read('app/api/projects/[projectId]/customer-texts/route.ts');
+  const post = route.slice(route.indexOf('export async function POST'));
+  const tx = post.slice(post.indexOf('db.runTransaction('));
+  expect(post.indexOf('db.runTransaction(')).toBeGreaterThan(0);
+  const get = tx.indexOf('await tx.get(projectRef)');
+  const guard = tx.indexOf('if (!fresh.exists || (fresh.data() || {}).userId !== gate.uid) return false;');
+  const set = tx.indexOf('tx.set(projectRef.collection(COLLECTION).doc(DOC)');
+  expect(get).toBeGreaterThan(0);
+  expect(guard).toBeGreaterThan(get);
+  expect(set).toBeGreaterThan(guard);
+  expect(post).toContain('if (!written) return notFound();');
+  // No write outside the transaction.
+  expect(post.match(/\.doc\(DOC\)\.set\(/g)).toBeNull();
+});

@@ -117,8 +117,9 @@ test('texts within every per-kind bound still fit one Firestore document once me
   // The first entries of a file are the ones kept.
   expect(merged.fields.zfield_0).toBe(text);
   const route = fs.readFileSync(path.join(__dirname, '..', 'app/api/projects/[projectId]/customer-texts/route.ts'), 'utf8');
-  expect(route.indexOf('customerTextsBytes(texts) > CUSTOMER_TEXTS_MAX_BYTES')).toBeLessThan(route.indexOf('.set({'));
+  expect(route.indexOf('customerTextsBytes(texts) > CUSTOMER_TEXTS_MAX_BYTES')).toBeLessThan(route.indexOf('tx.set('));
   expect(route.indexOf('customerTextsBytes(texts) > CUSTOMER_TEXTS_MAX_BYTES')).toBeGreaterThan(-1);
+  expect(route.indexOf('tx.set(')).toBeGreaterThan(-1);
 });
 
 test('from 3.1.0 the customer\'s words come first and are marked; a 3.0.22 hotfix and no package read as before', () => {

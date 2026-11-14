@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { logger, errMessage } from '@/lib/logger';
 import {
   mfaRefusal,
@@ -111,11 +112,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
       return NextResponse.json({ error: 'These texts are too large to store with the project.', code: 'too-large' }, { status: 413 });
     }
     const { db, FieldValue } = await getAdminDb();
-    await db.collection('projects').doc(gate.projectId).collection(COLLECTION).doc(DOC).set({
-      texts,
-      storedBy: gate.uid,
-      storedAt: FieldValue.serverTimestamp(),
+    // The project is read again in the write's own transaction: the body may take seconds to arrive, and a
+    // project deleted meanwhile must not get its texts back as a subcollection nothing points to any more.
+    const projectRef: DocumentReference = db.collection('projects').doc(gate.projectId);
+    const written = await db.runTransaction(async (tx: Transaction) => {
+      const fresh = await tx.get(projectRef);
+      if (!fresh.exists || (fresh.data() || {}).userId !== gate.uid) return false;
+      tx.set(projectRef.collection(COLLECTION).doc(DOC), {
+        texts,
+        storedBy: gate.uid,
+        storedAt: FieldValue.serverTimestamp(),
+      });
+      return true;
     });
+    if (!written) return notFound();
     return NextResponse.json({ stored: true });
   } catch (err: unknown) {
     logger.error('customer-texts write failed', { route: 'api/projects/customer-texts', error: errMessage(err) });
