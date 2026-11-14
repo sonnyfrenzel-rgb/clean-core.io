@@ -17,7 +17,7 @@ import { seal } from './lib/crypto.mjs';
 import { advanceCheckpoint, advanceNote } from './lib/checkpoint.mjs';
 import { addedLines, callersOf, changedFiles, chooseBase, commitIdOrNull, commitMessages, fileDiff, git, isAncestor, isClaimSource, isReviewable, mergeBaseWithMain, resolveRange, touchedSymbols } from './lib/git-delta.mjs';
 import { callReviewer, modelsOf } from './lib/openrouter.mjs';
-import { isCutOff, packBatches, partLabel, partsOf, splitBatch } from './lib/pack.mjs';
+import { isCutOff, packBatches, partBudgetFor, partLabel, partsOf, splitBatch } from './lib/pack.mjs';
 import { buildUserMessage, carriedChars, carriedFor, loadBrief, REVIEW_SCHEMA } from './lib/prompt.mjs';
 import { redactSecrets } from './lib/redact.mjs';
 import { actualCost, buildReport, isSuppressed, publicSummary, renderText } from './lib/report.mjs';
@@ -110,8 +110,9 @@ async function main() {
   // file: the part every batch repeats no longer grows with the number of open findings and refutations.
   for (const f of files) f.carriedChars = carriedChars(f, shared);
   const baseChars = system.length + buildUserMessage({ ...shared, batch: { files: [] }, batchIndex: 0, batchCount: 1 }).length;
-  // A diff above maxFileDiffChars is packed as consecutive parts; a file counts as read only when all of them were.
-  const entries = files.flatMap((f) => partsOf(f));
+  // A diff is packed as consecutive parts small enough to fit one call beside the shared part (partBudgetFor, at most
+  // maxFileDiffChars); a file counts as read only when all of them were.
+  const entries = files.flatMap((f) => partsOf(f, partBudgetFor(f, baseChars)));
   const { batches, notReviewed, estimatedCostUsd } = packBatches(entries, baseChars);
   const effort = triage.elevated ? EFFORT.elevated : EFFORT.normal;
 
