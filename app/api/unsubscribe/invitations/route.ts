@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import { getAdminDb } from '@/lib/firebase-admin';
 import { verifyUnsubscribeToken } from '@/lib/unsubscribe-token';
-import { INVITATION_SUPPRESSIONS, invitationSuppressionKey } from '@/lib/invitation-suppression';
+import { invitationSuppressionKey, recordInvitationOptOut } from '@/lib/invitation-suppression';
 import { readBoundedBody } from '@/lib/url-validation';
 
 /**
@@ -52,11 +52,8 @@ export async function POST(req: NextRequest) {
   }
   try {
     const { db, FieldValue } = await getAdminDb();
-    const ref = db.collection(INVITATION_SUPPRESSIONS).doc(key);
-    // Once on the list, a repeated request writes nothing: the first opt-out time stays.
-    if (!(await ref.get()).exists) {
-      await ref.set({ list: 'invitations', keyed: true, source: 'confirmation-page', unsubscribedAt: FieldValue.serverTimestamp() }, { merge: true });
-    }
+    // Created once: a repeated or concurrent request writes nothing, the first opt-out time stays.
+    await recordInvitationOptOut(db, key, FieldValue.serverTimestamp());
   } catch (error) {
     logger.error('invitation unsubscribe not stored', { route: 'api/unsubscribe/invitations', error: errMessage(error) });
     return NextResponse.json({ success: false, retryable: true }, { status: 503 });

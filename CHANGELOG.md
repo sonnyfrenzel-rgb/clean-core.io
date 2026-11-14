@@ -119,6 +119,8 @@ Signed runs and the audit pack do not change.
 - Analyze: while the start run begun in the Business view is still being signed, IT and Management keep "Start
   Analysis" closed and say the analysis is running, and the Business view shows it running instead of a sign button
   that did nothing.
+- Invitation unsubscribe: two requests with the same link arriving together store the opt-out once and keep its first time; the list entry is created in one step instead of read, then written.
+- QA agent: a push to dev no longer cancels a manually started backlog review; the push's own review would not have continued it.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

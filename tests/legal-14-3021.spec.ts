@@ -15,7 +15,7 @@ import { LEGAL_DOCUMENTS } from '../lib/legal/documents';
 import { TRUST_EN } from '../lib/legal/texts/trust.en';
 import { OPEN_VALUES, openValue } from '../lib/legal/open-values';
 import { removeProfilePictureAddress, tokenCarriesPicture } from '../lib/profile-picture';
-import { INVITATION_SUPPRESSIONS, invitationSuppressionKey, isInvitationSuppressed } from '../lib/invitation-suppression';
+import { INVITATION_SUPPRESSIONS, invitationSuppressionKey, isInvitationSuppressed, recordInvitationOptOut } from '../lib/invitation-suppression';
 import { createUnsubscribeToken, verifyUnsubscribeToken } from '../lib/unsubscribe-token';
 import { buildInvitationEmail } from '../lib/invitation-email';
 import { sanitizeAtcFindings } from '../lib/abap/atc-privacy';
@@ -287,14 +287,38 @@ test.describe('C10/C12 — the invitation suppression list', () => {
   test('the unsubscribe route stores only the keyed hash on the invitation list', () => {
     const src = read('app/api/unsubscribe/invitations/route.ts');
     expect(src).toContain("verifyUnsubscribeToken(await tokenFrom(req), 'inv-unsub')");
-    expect(src).toContain('.collection(INVITATION_SUPPRESSIONS)');
-    expect(src).toContain("{ list: 'invitations', keyed: true, source: 'confirmation-page', unsubscribedAt: FieldValue.serverTimestamp() }");
-    // A repeated request with the same token writes nothing and keeps the first time.
-    const check = src.indexOf('if (!(await ref.get()).exists) {');
-    expect(check).toBeGreaterThan(-1);
-    expect(check).toBeLessThan(src.indexOf('await ref.set('));
-    expect(src.match(/\.set\(/g) ?? []).toHaveLength(1);
+    expect(read('lib/invitation-suppression.ts')).toContain('.collection(INVITATION_SUPPRESSIONS).doc(key).create(');
+    expect(src).toContain('await recordInvitationOptOut(db, key, FieldValue.serverTimestamp());');
+    // No read-then-write: a create is the only write, so two requests cannot both store a time.
+    expect(src).not.toMatch(/\.set\(|\.update\(/);
     expect(read('app/unsubscribe/invitations/page.tsx')).toContain('<UnsubscribeClient list="invitations" />');
+  });
+
+  test('two unsubscribe requests with the same token arriving together keep the first opt-out time', async () => {
+    const stored = new Map<string, Record<string, unknown>>();
+    let writes = 0;
+    const db = {
+      collection: (name: string) => ({
+        doc: (id: string) => ({
+          async create(data: Record<string, unknown>) {
+            await Promise.resolve(); // both requests are in flight before either lands
+            const path = `${name}/${id}`;
+            if (stored.has(path)) throw Object.assign(new Error('6 ALREADY_EXISTS'), { code: 6 });
+            stored.set(path, data);
+            writes++;
+          },
+        }),
+      }),
+    };
+    const outcomes = await Promise.all([recordInvitationOptOut(db, 'k1', 'first'), recordInvitationOptOut(db, 'k1', 'second')]);
+    expect(outcomes.sort()).toEqual(['already', 'recorded']);
+    expect(writes).toBe(1);
+    expect(stored.get(`${INVITATION_SUPPRESSIONS}/k1`)).toEqual({ list: 'invitations', keyed: true, source: 'confirmation-page', unsubscribedAt: 'first' });
+    expect(await recordInvitationOptOut(db, 'k1', 'third')).toBe('already');
+    expect(stored.get(`${INVITATION_SUPPRESSIONS}/k1`)?.unsubscribedAt).toBe('first');
+    // Any other failure still reaches the route's 503.
+    const failing = { collection: () => ({ doc: () => ({ create: async () => { throw Object.assign(new Error('unavailable'), { code: 14 }); } }) }) };
+    await expect(recordInvitationOptOut(failing, 'k2', 'x')).rejects.toThrow('unavailable');
   });
 
   test('the project invitation mail carries one mail, no reminder, and the unsubscribe link', () => {

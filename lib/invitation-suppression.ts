@@ -64,3 +64,32 @@ export async function isInvitationSuppressed(
 export function invitationUnsubscribeUrl(email: string): string {
   return `${APP_BASE_URL}/unsubscribe/invitations#t=${encodeURIComponent(createUnsubscribeToken(email, undefined, 'inv-unsub'))}`;
 }
+
+interface SuppressionWriteDb {
+  collection(name: string): { doc(id: string): { create(data: Record<string, unknown>): Promise<unknown> } };
+}
+
+/** Firestore's answer to `create` on a document that exists (gRPC ALREADY_EXISTS). */
+function alreadyExists(err: unknown): boolean {
+  const code = typeof err === 'object' && err !== null ? Reflect.get(err, 'code') : undefined;
+  return code === 6 || code === 'already-exists' || code === 'ALREADY_EXISTS';
+}
+
+/**
+ * Put a keyed hash on the list, once. `create` is the existence check and the
+ * write in one step, so two requests arriving together cannot both write: the
+ * first opt-out time stays, and a repeated request writes nothing.
+ */
+export async function recordInvitationOptOut(
+  db: SuppressionWriteDb,
+  key: string,
+  unsubscribedAt: unknown,
+): Promise<'recorded' | 'already'> {
+  try {
+    await db.collection(INVITATION_SUPPRESSIONS).doc(key).create({ list: 'invitations', keyed: true, source: 'confirmation-page', unsubscribedAt });
+    return 'recorded';
+  } catch (err) {
+    if (alreadyExists(err)) return 'already';
+    throw err;
+  }
+}
