@@ -122,6 +122,19 @@ test.describe('the guard', () => {
     expect(rewordingProblem(draft[0], { text: 'Only the sales document headers of the selected sales organization are read.', anchors: ['source.abap:4'], element: null, uncertainty: null })).toBe('negation-changed');
   });
 
+  test('a comparison that points the other way keeps the draft, though the number stays', () => {
+    const anchors = ['source.abap:10', 'source.abap:11'];
+    const reworded = (text: string) => rewordingProblem(draft[2], { text, anchors, element: null, uncertainty: null });
+    expect(reworded('If the net value is less than 100, the document number and the net value are written; otherwise the line is skipped.')).toBe('comparison-changed');
+    expect(reworded('If the net value is at most 100, the document number and the net value are written; otherwise the line is skipped.')).toBe('comparison-changed');
+    // The same direction in other words stands.
+    expect(reworded('If the net value is more than 100, the document number and the net value are written; otherwise the line is skipped.')).toBeNull();
+    expect(reworded('If the net value exceeds 100, the document number and the net value are written; otherwise the line is skipped.')).toBeNull();
+    const atLeast: RewordableStatement = { text: 'The value must be at least 10.', anchors: [{ file: 'source.abap', lineStart: 3 }], element: null };
+    expect(rewordingProblem(atLeast, { text: 'The value must be at most 10.', anchors: ['source.abap:3'], element: null, uncertainty: null })).toBe('comparison-changed');
+    expect(rewordingProblem(atLeast, { text: 'The value has to be 10 or more.', anchors: ['source.abap:3'], element: null, uncertainty: null })).toBeNull();
+  });
+
   test('a lost number or literal, an identifier the draft never named, a moved anchor, another element, an uncertainty of its own', () => {
     expect(rewordingProblem(draft[2], { text: 'If the net value is greater than the limit, the document number and the net value are written; otherwise the line is skipped.', anchors: ['source.abap:10', 'source.abap:11'], element: null, uncertainty: null })).toBe('fact-lost');
     expect(factsOf("Status 'C' or \"D\", 1,000 and 2.5 are kept")).toEqual(["'C'", "'D'", '1,000', '2.5']);

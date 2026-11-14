@@ -188,6 +188,7 @@ Signed runs and the audit pack do not change.
 - Model proxy: the fallback model's call on the community key is counted against the day's platform budget before it is sent; when the budget refuses it or cannot be read, the fallback is not asked and the incomplete first answer is reported as before.
 - Rule baskets (engine 3.1.0): a database read into one routine's local field no longer counts for another routine's local field of the same name, so a status that routine sets and reads back itself is again recognised as its own marker.
 - Documentation: a literal that is only the word "authorization" is output, not a check of the program's own, and an authorization call inside a string template's expression is found again.
+- Statement rewording: a rewording that turns a comparison the other way ("at least 10" into "at most 10") keeps the draft, as a changed number or negation already did.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

@@ -131,6 +131,8 @@ export type RewordingRejection =
   | 'control-flow'
   /** Fewer or more negations or limits than the draft. */
   | 'negation-changed'
+  /** A comparison points the other way, or is gone or added: "at least 10" and "at most 10" hold the same number. */
+  | 'comparison-changed'
   /** Word for word the draft's sentence. Kept as the draft's, not counted as reworded. */
   | 'unchanged';
 
@@ -162,6 +164,17 @@ const CONTROL_FLOW_FAMILIES: ReadonlyArray<{ name: string; words: RegExp }> = [
 const LIMIT_FAMILIES: readonly RegExp[] = [
   /\b(?:not|no|never|none|nothing|nobody|without|unless|except|excepting|neither|nor|cannot|other than|rather than|instead|missing|absent|(?:exclud|fail|lack|block|reject|avoid|prevent|ceas|eliminat|remov|disappear)\w*|un(?:listed|used|met|handled|processed|answered|reached|reachable|necessary|changed|known|available|authori[sz]ed))\b|n['’]t\b/gi,
   /\b(?:only|solely|exclusively|just|merely|alone|hard-?coded|fixed)\b/gi,
+];
+
+/**
+ * The words that set the direction of a comparison, counted per family on both sides: a bound from below and a
+ * bound from above. A rewording that keeps the number but turns "at least" into "at most" states the opposite rule,
+ * and neither the facts nor the negations notice it. Equality is left out: "equals the selection" and "of the
+ * selected" say the same to a business reader.
+ */
+const COMPARISON_FAMILIES: readonly RegExp[] = [
+  /\b(?:at least|minimum|or more|or above|or higher|greater|more than|larger|higher than|above|exceed\w*|beyond)\b|>=?|≥/gi,
+  /\b(?:at most|maximum|or less|or fewer|or below|or lower|less than|fewer than|smaller|lower than|below|up to|no more than)\b|<=?|≤/gi,
 ];
 
 const countOf = (family: RegExp, text: string): number => (text.match(family) ?? []).length;
@@ -210,6 +223,7 @@ export function rewordingProblem(draft: RewordableStatement, entry: unknown): Re
   const flowReworded = familiesIn(text);
   if (flowDraft.size !== flowReworded.size || [...flowDraft].some((f) => !flowReworded.has(f))) return 'control-flow';
   if (LIMIT_FAMILIES.some((family) => countOf(family, text) !== countOf(family, original))) return 'negation-changed';
+  if (COMPARISON_FAMILIES.some((family) => countOf(family, text) !== countOf(family, original))) return 'comparison-changed';
   return null;
 }
 
