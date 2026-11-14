@@ -201,6 +201,7 @@ Signed runs and the audit pack do not change.
 - Statement rewording: a rewording that keeps both bounds of a range but swaps their values ("at least 10 and at most 20" into "at most 10 and at least 20") keeps the draft.
 - Privacy archive script: `--force` overwrites only the versions named with it and never a published one; without ids it overwrites nothing.
 - Process benchmark tooling: a paid runner takes its spend ledger for itself, so a second runner on the same ledger is refused before its first call instead of passing the cap beside the first.
+- German words (engine 3.1.0): a word between string-template pipes or backquotes (`|Rabatt|`) is recognised as German.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

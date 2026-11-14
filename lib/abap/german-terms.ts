@@ -714,7 +714,8 @@ function gerund(verbWord: string): string {
 /** 3.1.0: does a text hold a word this vocabulary reads as German (`ohne`, `Prüfung`, `nachverarbeitet` is not one)? */
 export function hasGermanWord(text: string, sources: WordSources = {}): boolean {
   try {
-    return String(text ?? '').split(/[\s,.;:!?()'"/-]+/).filter(Boolean).some((w) => classify(w, sources)?.kind === 'de');
+    // String-template pipes and backquotes delimit like quotes: `|Rabatt|` holds the word `Rabatt`.
+    return String(text ?? '').split(/[\s,.;:!?()'"`|/-]+/).filter(Boolean).some((w) => classify(w, sources)?.kind === 'de');
   } catch {
     return false;
   }

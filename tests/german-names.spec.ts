@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { humaniseField, humaniseRoutine, plainLabels, stepName, MAX_LABEL, ORIGINAL_NOTE_ROOM } from '../lib/abap/plain-language';
 import {
+  hasGermanWord,
   isUntranslatable,
   translateGermanText,
   translateGermanWords,
@@ -230,4 +231,11 @@ test.describe('German names — the translation itself', () => {
     expect(translateGermanWords(['constructor', 'tostring'])).toBeNull();
     expect(stepName({ id: 'n', kind: 'task', label: 'DATEN_LESEN' } as never)).toBe('Read data (Daten lesen)');
   });
+});
+
+test('a German word inside string-template pipes or backquotes is still found', () => {
+  expect(hasGermanWord('|Rabatt|', { reads310: true })).toBe(true);
+  expect(hasGermanWord('`ohne`')).toBe(true);
+  expect(hasGermanWord('|Prüfung { lv_x }|')).toBe(true);
+  expect(hasGermanWord('|Discount|', { reads310: true })).toBe(false);
 });
