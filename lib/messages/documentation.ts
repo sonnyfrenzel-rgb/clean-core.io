@@ -363,9 +363,15 @@ export function docRulesOutsideNotInTable(reason: 'declaration-only' | 'unreache
  * the one `/api/model-stages` reports. No model until that route has answered: the
  * line then names none rather than a default the stage may not run on.
  */
-export function docProposalsCostLine(model: string | undefined, byok: boolean): string {
+export function docProposalsCostLine(model: string | undefined, byok: boolean, rewording = false): string {
   const said = [model, byok ? 'with your own Gemini key' : ''].filter(Boolean).join(', ');
-  return `One model call per proposal${said ? ` (${said})` : ''}. Opening Documentation calls no model: the SOP and RACI are written on “Generate draft”, the business sentences only when asked for. They are not counted against your analysis runs; each counts toward the hourly limit on model calls of this account.`;
+  // 13.11.2026 — where the deployment rewords the sentences for a business
+  // reader, asking for them takes two calls, and the card says so: it is the
+  // only cost line beside that button (`statementCostLine` is switched off there).
+  const sentences = rewording
+    ? ' The business sentences take two calls: a draft, then their wording for a business reader.'
+    : '';
+  return `One model call per proposal${said ? ` (${said})` : ''}.${sentences} Opening Documentation calls no model: the SOP and RACI are written on “Generate draft”, the business sentences only when asked for. They are not counted against your analysis runs; each counts toward the hourly limit on model calls of this account.`;
 }
 
 /** Roadmap 3.0.13 — the end of the progress card when a stage stopped. */

@@ -1403,7 +1403,7 @@ export default function DocumentationPage() {
    * model — the product default may not be the one the stage runs on. The key is the one the same route reports, and `/api/gemini`
    * meters by the hour, not by the analysis run.
    */
-  const proposalsCostLine = docProposalsCostLine(modelAvailability.stageModels.documentation, modelAvailability.keySource === 'byok')
+  const proposalsCostLine = docProposalsCostLine(modelAvailability.stageModels.documentation, modelAvailability.keySource === 'byok', modelAvailability.statementsRewording)
     + (businessPlan && !businessPlan.whole ? ` ${docPartsCostLine(businessPlan.parts.length)}` : '');
 
   const statementPanelProps = {
