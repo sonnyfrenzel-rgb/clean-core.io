@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { parseAtc } from '../lib/abap/atc-parser';
-import { ATC_PRIVACY_NOTICE } from '../lib/abap/atc-privacy';
+import { ATC_PRIVACY_NOTICE, sanitizeAtcFindings } from '../lib/abap/atc-privacy';
 
 /**
  * QA full review of v2.20.0, slice A — the ATC import.
@@ -31,4 +31,15 @@ test('a line number is read as written, a range or compound location is left uns
 test('the privacy notice does not promise that no name is stored', () => {
   expect(ATC_PRIVACY_NOTICE).not.toMatch(/No user names are persisted/i);
   expect(ATC_PRIVACY_NOTICE).toMatch(/message/i);
+});
+
+test('the privacy notice names every field the import keeps (QA review of 981971e79cc9)', () => {
+  const kept = Object.keys(
+    sanitizeAtcFindings([{ objectName: 'Z', objectType: 'PROG', checkId: 'C', checkTitle: 'T', message: 'M', priority: 'error', line: 1, include: 'I', exempted: false }])[0],
+  );
+  const said: Record<string, RegExp> = {
+    objectName: /object/i, objectType: /object/i, checkId: /check/i, checkTitle: /check/i, message: /message/i,
+    priority: /priority/i, line: /\bline\b/i, include: /include/i, exempted: /exemption/i,
+  };
+  for (const key of kept) expect(ATC_PRIVACY_NOTICE, key).toMatch(said[key] ?? /^$/);
 });

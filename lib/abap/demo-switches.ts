@@ -5,6 +5,7 @@ import { readGoldenMaster } from '../transformation/golden-master';
 import { APP_VERSION } from '../version';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
 import { engineReads3021Apply } from './engine-reads-3021-gate';
+import { engineReads310Apply } from './engine-reads-310-gate';
 
 /**
  * The demo switches of a program (roadmap 3.0.13, SD review, 14.10.2026,
@@ -99,7 +100,7 @@ export function readDemoSwitches(source: string, engineVersion: string | null = 
     if (m) parameters.set(norm(m[1]), s.lineStart);
   }
   const flagName = [...parameters.keys()].find((name) => DEMO_NAME.test(name));
-  if (!flagName) return reads3020 ? testDataSwitchByShape(statements, parameters, engineReads3021Apply(engineVersion)) : null;
+  if (!flagName) return reads3020 ? testDataSwitchByShape(statements, parameters, engineReads3021Apply(engineVersion), engineReads310Apply(engineVersion)) : null;
   const flag = { name: flagName, line: parameters.get(flagName)! };
 
   // Constants holding 'X' (or abap_true) stand for 'X' in a flag test.
@@ -397,7 +398,12 @@ export function hasDemoCases(source: string, engineVersion: string | null = APP_
 }
 
 /** Shape 5: a test data switch without a demo flag (see `readDemoSwitches`). */
-function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<string, number>, reads3021 = false): DemoSwitches | null {
+function testDataSwitchByShape(
+  statements: AbapStatement[],
+  parameters: Map<string, number>,
+  reads3021 = false,
+  reads310 = false,
+): DemoSwitches | null {
   if (parameters.size === 0) return null;
   const structure = readBlocks(statements);
   const { branches } = readControlFlowFrom(statements, structure);
@@ -456,6 +462,10 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
     for (const [field, from] of fromParameter) if (from === parameter) selectors.add(field);
     const names = [...selectors].map((n) => n.replace(/[/]/g, '\\/'));
     const onSelector = new RegExp(`(?<![\\w/-])(?:${names.join('|')})(?![\\w/])`, 'i');
+    // From 3.1.0: the parameter is the switch only while nothing else decides on it. A condition outside the CASE
+    // that guards more than a message (`IF p_mode = 1. PERFORM post_orders.`) is a business use of it, and the
+    // CASE stays among the rules.
+    if (reads310 && decidesElsewhere(statements, branches, branch, onSelector, routine)) continue;
     // The FORM is the switch's own only when everything else in it is set-up or a check of the switch.
     const ownFilled = new Set<string>();
     const own = !!routine && routine.kind === 'form' && statements.every((s, i) => {
@@ -475,6 +485,41 @@ function testDataSwitchByShape(statements: AbapStatement[], parameters: Map<stri
     };
   }
   return null;
+}
+
+const VALIDATION_ONLY = /^(?:MESSAGE|RETURN|EXIT|LEAVE|STOP)$/i;
+
+/**
+ * Does a condition outside the switch `sw` decide on the selector? An `IF`/`CASE` reading it whose arms do anything
+ * but say a message and stop (in the switch's own routine also fill fixed values), or a `CHECK`/`WHILE` reading it
+ * outside that routine.
+ */
+function decidesElsewhere(
+  statements: AbapStatement[],
+  branches: Branch[],
+  sw: Branch,
+  onSelector: RegExp,
+  routine: { lineStart: number; lineEnd: number } | null,
+): boolean {
+  const inSwitch = (i: number) => i >= sw.openIndex && i <= sw.closeIndex;
+  const inRoutine = (s: AbapStatement) => !!routine && s.lineStart >= routine.lineStart && s.lineStart <= routine.lineEnd;
+  const setUp = (s: AbapStatement) => VALIDATION_ONLY.test(s.keyword) || (inRoutine(s) && testDataStatement(s).ok);
+  for (const b of branches) {
+    if (b === sw || inSwitch(b.openIndex)) continue;
+    const reads = b.kind === 'case' ? !!b.selector && onSelector.test(b.selector) : b.arms.some((a) => onSelector.test(a.condition));
+    if (!reads) continue;
+    const headers = new Set(b.arms.map((a) => a.headerIndex));
+    for (let i = b.openIndex + 1; i < b.closeIndex; i++) {
+      if (!headers.has(i) && !setUp(statements[i])) return true;
+    }
+  }
+  return statements.some((s, i) => {
+    if (inSwitch(i)) return false;
+    const keyword = s.keyword.toUpperCase();
+    if (keyword !== 'CHECK' && keyword !== 'WHILE') return false;
+    if (!onSelector.test(s.text.replace(/^\S+\s*/, ''))) return false;
+    return keyword === 'WHILE' || !inRoutine(s);
+  });
 }
 
 /** Is this field (as a condition writes it) the demo flag or a case selector? */

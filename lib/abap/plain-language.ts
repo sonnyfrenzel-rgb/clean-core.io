@@ -1389,7 +1389,7 @@ function humaniseOperand(operand: string, ctx: PlainContext, short = false): str
     // 3.1.0 (AB-15a): a getter is the value it gets — `get_status( )` is the status, not "Get status".
     const got = ctx.reads310 ? /^get_?(\w+)$/i.exec(name.split('~').pop() ?? name)?.[1] : undefined;
     if (got) return humaniseOperand(got, ctx, short);
-    return routineWords(name, false) || 'Result';
+    return routineWords(name, false, ctx) || 'Result';
   }
   const tokens = text.split(/\s+/);
   if (tokens.length === 1) return fieldWord(text, ctx, short);
@@ -1693,6 +1693,10 @@ function rangeOf(parts: ReadonlyArray<Extract<Cond, { k: 'cmp' }>>, joiner: 'and
   if (joiner === 'and' ? lowPart.op !== '<=' || highPart.op !== '>=' : lowPart.op !== '<' || highPart.op !== '>') return null;
   const lo = valueText(lowPart.right, env).text;
   const hi = valueText(highPart.right, env).text;
+  // Only bounds known to be in order: `x < 100 OR x > 10` is no range "outside 100 to 10", and a field's value is unknown.
+  const number = (v: string) => (/^-?\d+(?:\.\d+)?$/.test(v.trim()) ? Number(v) : null);
+  const [l, h] = [number(lo), number(hi)];
+  if (l === null || h === null || (joiner === 'or' ? l > h : h > l)) return null;
   if (joiner === 'or') return `outside ${lo} to ${hi}`;
   return `between ${hi} and ${lo}`;
 }
