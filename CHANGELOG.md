@@ -140,6 +140,7 @@ Signed runs and the audit pack do not change.
 - Customer texts: a customer table named by its customer text counts as worded in the business language, as its business term already did.
 - Business view: a stop whose German `WITH` text the engine cannot put into English, with no condition before it, says "Stop with a message in German" and keeps the text in its detail, instead of putting the German into the label.
 - Process map: a field symbol a routine declares for itself (`FIELD-SYMBOLS <x>`, `FIELD-SYMBOL(<x>)`) is no longer taken for the same-named field symbol of another routine, so no flag step is drawn for an unrelated value.
+- In short: names written only inside a text literal (`WRITE 'idoc_contrl idoc_data'`) no longer make a program an inbound IDoc function or a BW extractor.
 
 #### Workspace, Documentation and Testing
 - Workspace: after an account switch, an earlier error reading the project list no longer shows the regular page before the new list has answered.
