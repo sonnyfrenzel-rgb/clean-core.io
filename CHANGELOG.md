@@ -39,12 +39,115 @@ Signed runs and the audit pack do not change.
 - Engine 4.0 is built in parallel from now on, as its own module tree that nothing reads until the switch (ADR-125); benchmark convention K3 settled: commits stay in the technical layer.
 
 ### Fixed
-- Customer texts: storing them re-checks the project in the same transaction, so texts sent while the project is being deleted are not left behind.
+
+#### Operations and security
+- S/4 metadata: a service path that is not text is refused instead of reading the default service.
+- Portfolio selections, their invitations and the own-key automatic-steps switch read request bodies under a size
+  bound.
+- The automatic-steps switch is recorded in the audit log in the same write as the switch itself.
+- Re-testing a saved own key records its result only on that key, not on one saved while the test ran.
+- Deployment: the list of SAP hosts a connection may use (`S4_HOST_ALLOWLIST`) and the model per stage reach the service as one value each; the deploy step split them at their commas, so only the first host was allowed.
+- QA agent: a push to dev no longer cancels a manually started backlog review; the push's own review would not have continued it.
+
+#### Legal texts and consent
+- Privacy policy: an address with a version number (`clean-core.io/datenschutz/versions/1.2`) links to that version; it linked to `/versions/1`, a page that does not exist, and the browser's prefetch of it never settled.
+- A repeated invitation unsubscribe writes nothing and keeps the first opt-out time.
+- ATC import: the privacy notice names every field that is kept, including include, priority, line and exemption.
+- Verify an audit pack: the AI statement is said to be covered by the signature only for a pack that verified.
+- Invitation unsubscribe: two requests with the same link arriving together store the opt-out once and keep its first time; the list entry is created in one step instead of read, then written.
+
+#### Analyze, the process map and the tour
 - Process map: the guided tour shows the same step names as the main map while AI names are still arriving.
+- Analyze: a project read that answers late no longer puts the pre-run state back over the result of a run that has just been signed.
+- Process map: a routine whose only extra elements are log notes stays one step; a routine calling itself is not drawn as a phase of its own.
+- A click on a step with an AI name opens its code. Before, the name's label took the click.
+- Analyze no longer gets refused requests (HTTP 401) while the sign-in is restored.
+- The project search (Ctrl+K) is back where a project opens.
+- Leaving the first view of a new account no longer throws a page error.
+- On a phone, and at 1024 px beside the code panel, Analyze's map grows to show its whole level instead of cutting
+  off a step at its bottom edge. Full screen is unchanged.
+- An old IT address to the process (`?view=it#need`) opened inside the workspace now lands on Analyze's map
+  (`#process-map`), as the direct link does.
+- After a project's first run on Analyze, the page lands in the Business view (the map) that the address names.
+  Before, it stayed in IT, because the view reader read the address before the router had written it.
+- Demo: Analyze, Business draws the map in the page layout with the code panel beside it, as a project does, and
+  opening it clears "result ready" on the demo workspace's Analyze tool.
+- The process modeller no longer stays open, with its Save, when the same map is shown for a project the account may
+  only read.
+- A link to the process map on Analyze, Business now reaches the map even when the project takes longer than five
+  seconds to load.
+- The demo's Analyze summary: each line anchor now opens its lines in the code panel beside the map, as in a project.
+- Process map: an arm that only sets a flag becomes a step only when a later decision reads the same variable; a
+  same-named local in another routine no longer counts.
+- The first-run guide no longer promises a timed first look with Pause and Skip; it describes the first insights as
+  they now appear.
+- The naming status line announces only its settled result to a screen reader, not every count while names arrive.
+- AI names that arrive after the 45-second limit are held back with reduced motion too, as without it.
+- The process map shows "loading" rather than the previous map when the run's engine version changes.
+- Analyze: while the start run begun in the Business view is still being signed, IT and Management keep "Start
+  Analysis" closed and say the analysis is running, and the Business view shows it running instead of a sign button
+  that did nothing.
+
+#### Engine readings (gated from 3.1.0; runs signed before keep their reading)
+- Customer texts: storing them re-checks the project in the same transaction, so texts sent while the project is being deleted are not left behind.
+- Business view: a program's own component named with an English word reads as that word, not as "Field KIND".
+- Business view: a check on "not DE, AT or CH" and a `WHILE … <> 0` loop read the way the code tests them; a run signed before 3.1.0 keeps its words.
+- AI names in the delivery package's process documentation name the model that wrote them.
+- Status workflow: a CHECK inside a loop guards only the rest of that pass. It no longer applies to the status moves
+  after ENDLOOP.
+- Business wording: two bounds on one field read "between" or "outside" only where those words keep each endpoint;
+  otherwise the strict and inclusive bounds keep their operators.
+- Customer texts: a decision whose question uses a customer text carries the "Customer text" marker, and a value
+  map sent as an array is refused.
+- Dictionary: RFC_READ_TABLE reads "Read a table via RFC" and no longer claims another system.
+- A table declared with a local row type and filled by a SELECT is now named after the table it is read from ("For
+  each sales order" instead of "For each data").
+- Status workflow: an authority check inside a loop is no longer reported as guarding status moves after the loop,
+  and when two classes implement a method of the same name, a status precondition from a call to one is no longer
+  attributed to the other.
+- Status workflow: a stopping check inside a loop no longer supplies a "from" state to a move after the loop, and a
+  qualified constant (`zif_a=>c_status`) resolves in its own interface or class, never to another type's same-named
+  constant.
+- Customer-text markers match whole words only; a text such as "Plan" is no longer credited to a sentence that says
+  "planned".
+- Business view: methods named `refresh_<something>` are folded as technique only when they refresh the screen
+  (`refresh_alv`, `refresh_grid`, …); a method such as `refresh_credit_limit` stays a step of the process.
+- Customer texts of a large abapGit package are trimmed to what one project document holds instead of failing to store.
+- Rules: a selection parameter is set apart as a test data switch only while no other condition decides on it
+  (`IF p_mode = 1. PERFORM post_orders.` keeps its CASE among the rules).
+- Rules: a value of a thousand million or more is a "no limit" cap only where the rule compares against it; an
+  equality test (`vbeln = '1000000000'`) stays a business rule.
+- Rules: limits on one amount in different currencies are asked together, each with its currency.
+- Rules: a status the program sets itself is no longer called its own marker when a read also fills that field.
+- Business view: a routine called inside a condition is worded with the 3.1.0 vocabulary, and two bounds read as a
+  range ("between", "outside") only when they are numbers in order.
+- Dictionary review list: a domain value is counted only in the cases that write that value, not in every case that
+  names the field.
+- The Business view's change list uses the project's customer texts, as the process story beside it does.
+- Process documentation: an authorization named only in a text literal is no longer reported as the program's own
+  role check.
+- Business rules: an `IMPORT … FROM MEMORY` now counts only the local field it fills as read from outside, not the
+  name the value was stored under, so a status the program sets itself stays its own marker.
+- Author's comments: an escaped `\|` inside a string template no longer ends the template, so a `"` in its text is not
+  quoted as the author's comment.
+- Author's comments: an `&` inside a comment (`Sales & Distribution`) is quoted as written; only the editor's frame signs at its edges are left out.
+- Business rules: an `EXIT` on a test-data selector inside a loop ends that loop, a business use of the selector, so its `CASE` stays among the rules.
+- In short: a German program name written as one word (`ZMM_RECHNUNGSPRUEFUNG`) gives its purpose like the same words written apart; a compound with a word the engine does not know gives none.
+- In short: an inbound IDoc function is said as one SAP calls where a process code is assigned to it; the code alone does not show that assignment.
+
+#### Workspace, Documentation and Testing
 - Workspace: after an account switch, an earlier error reading the project list no longer shows the regular page before the new list has answered.
 - Home: the recommended example's start button tells a screen reader that the example ran before and that starting it again uses a run, as the list buttons already did.
 - Documentation: where the business sentences are reworded for a business reader, the proposals card says that asking for them takes two model calls.
-- Analyze: a project read that answers late no longer puts the pre-run state back over the result of a run that has just been signed.
+- Portfolio: a batch whose first programs could not be stored no longer stays behind and blocks the retry.
+- Portfolio selection invitations follow the same sender rules as project invitations.
+- Portfolio selection invitations share the daily send limit of project invitations.
+- Testing: the note that the owner edited the suite now also stands beside a recorded run with failures.
+- My workspace: an example run before says so in its button's accessible name, not only in the visible badge.
+- Documentation: until the server has said which model the stage runs on, the cost line names no model instead of the
+  product default.
+
+#### Tests
 - Tests: the Documentation page is required to pass the project's customer texts to the process document.
 - Tests: the first look's states are recorded from before the start is pressed, and the process story must be visible, not only present.
 - Tests: the Gemini route is run in process for the automatic-naming notice gate and for the fallback model of the statements stage.
@@ -56,99 +159,8 @@ Signed runs and the audit pack do not change.
 - Tests: the ATC privacy notice check requires the check title by name and whole words for object and check.
 - Tests: the BPMN download's AI mark is checked on the element the model named, not only counted.
 - Tests: the run hash and both run-signature forms are pinned to known values worked out independently, so a signer and verifier that change together can no longer pass while runs signed before stop verifying.
-- Privacy policy: an address with a version number (`clean-core.io/datenschutz/versions/1.2`) links to that version; it linked to `/versions/1`, a page that does not exist, and the browser's prefetch of it never settled.
 - Tests: the C14 notice case "the steps already off" turns off both automatic steps, since the business names start by themselves again in 3.1.0; the outline reset of the navigation acceptance triggers the twisty instead of clicking a position the shrinking list has already moved; the Analyze layout states are measured for an account that has answered the notice on automatic AI steps, which since 3.1.0 stands above the map until it is answered.
-- Process map: a routine whose only extra elements are log notes stays one step; a routine calling itself is not drawn as a phase of its own.
-- Business view: a program's own component named with an English word reads as that word, not as "Field KIND".
-- Business view: a check on "not DE, AT or CH" and a `WHILE … <> 0` loop read the way the code tests them; a run signed before 3.1.0 keeps its words.
-- A click on a step with an AI name opens its code. Before, the name's label took the click.
-- Analyze no longer gets refused requests (HTTP 401) while the sign-in is restored.
-- The project search (Ctrl+K) is back where a project opens.
-- AI names in the delivery package's process documentation name the model that wrote them.
-- Leaving the first view of a new account no longer throws a page error.
-- On a phone, and at 1024 px beside the code panel, Analyze's map grows to show its whole level instead of cutting
-  off a step at its bottom edge. Full screen is unchanged.
-- An old IT address to the process (`?view=it#need`) opened inside the workspace now lands on Analyze's map
-  (`#process-map`), as the direct link does.
-- After a project's first run on Analyze, the page lands in the Business view (the map) that the address names.
-  Before, it stayed in IT, because the view reader read the address before the router had written it.
-- Status workflow: a CHECK inside a loop guards only the rest of that pass. It no longer applies to the status moves
-  after ENDLOOP.
-- Business wording: two bounds on one field read "between" or "outside" only where those words keep each endpoint;
-  otherwise the strict and inclusive bounds keep their operators.
-- Customer texts: a decision whose question uses a customer text carries the "Customer text" marker, and a value
-  map sent as an array is refused.
-- Dictionary: RFC_READ_TABLE reads "Read a table via RFC" and no longer claims another system.
-- Demo: Analyze, Business draws the map in the page layout with the code panel beside it, as a project does, and
-  opening it clears "result ready" on the demo workspace's Analyze tool.
-- The process modeller no longer stays open, with its Save, when the same map is shown for a project the account may
-  only read.
-- A link to the process map on Analyze, Business now reaches the map even when the project takes longer than five
-  seconds to load.
-- A table declared with a local row type and filled by a SELECT is now named after the table it is read from ("For
-  each sales order" instead of "For each data").
-- Status workflow: an authority check inside a loop is no longer reported as guarding status moves after the loop,
-  and when two classes implement a method of the same name, a status precondition from a call to one is no longer
-  attributed to the other.
-- The demo's Analyze summary: each line anchor now opens its lines in the code panel beside the map, as in a project.
-- Process map: an arm that only sets a flag becomes a step only when a later decision reads the same variable; a
-  same-named local in another routine no longer counts.
-- Status workflow: a stopping check inside a loop no longer supplies a "from" state to a move after the loop, and a
-  qualified constant (`zif_a=>c_status`) resolves in its own interface or class, never to another type's same-named
-  constant.
-- Customer-text markers match whole words only; a text such as "Plan" is no longer credited to a sentence that says
-  "planned".
-- Business view: methods named `refresh_<something>` are folded as technique only when they refresh the screen
-  (`refresh_alv`, `refresh_grid`, …); a method such as `refresh_credit_limit` stays a step of the process.
-- S/4 metadata: a service path that is not text is refused instead of reading the default service.
-- Portfolio: a batch whose first programs could not be stored no longer stays behind and blocks the retry.
-- Portfolio selection invitations follow the same sender rules as project invitations.
-- Portfolio selection invitations share the daily send limit of project invitations.
-- Portfolio selections, their invitations and the own-key automatic-steps switch read request bodies under a size
-  bound.
-- The automatic-steps switch is recorded in the audit log in the same write as the switch itself.
-- Re-testing a saved own key records its result only on that key, not on one saved while the test ran.
-- Customer texts of a large abapGit package are trimmed to what one project document holds instead of failing to store.
-- A repeated invitation unsubscribe writes nothing and keeps the first opt-out time.
-- Rules: a selection parameter is set apart as a test data switch only while no other condition decides on it
-  (`IF p_mode = 1. PERFORM post_orders.` keeps its CASE among the rules).
-- Rules: a value of a thousand million or more is a "no limit" cap only where the rule compares against it; an
-  equality test (`vbeln = '1000000000'`) stays a business rule.
-- Rules: limits on one amount in different currencies are asked together, each with its currency.
-- Rules: a status the program sets itself is no longer called its own marker when a read also fills that field.
-- Business view: a routine called inside a condition is worded with the 3.1.0 vocabulary, and two bounds read as a
-  range ("between", "outside") only when they are numbers in order.
-- ATC import: the privacy notice names every field that is kept, including include, priority, line and exemption.
 - Tests: the first-screen counter no longer counts a control faded out by its parent or lying beside the viewport.
-- Dictionary review list: a domain value is counted only in the cases that write that value, not in every case that
-  names the field.
-- The first-run guide no longer promises a timed first look with Pause and Skip; it describes the first insights as
-  they now appear.
-- Verify an audit pack: the AI statement is said to be covered by the signature only for a pack that verified.
-- The naming status line announces only its settled result to a screen reader, not every count while names arrive.
-- AI names that arrive after the 45-second limit are held back with reduced motion too, as without it.
-- The process map shows "loading" rather than the previous map when the run's engine version changes.
-- The Business view's change list uses the project's customer texts, as the process story beside it does.
-- Process documentation: an authorization named only in a text literal is no longer reported as the program's own
-  role check.
-- Testing: the note that the owner edited the suite now also stands beside a recorded run with failures.
-- My workspace: an example run before says so in its button's accessible name, not only in the visible badge.
-- Analyze: while the start run begun in the Business view is still being signed, IT and Management keep "Start
-  Analysis" closed and say the analysis is running, and the Business view shows it running instead of a sign button
-  that did nothing.
-- Invitation unsubscribe: two requests with the same link arriving together store the opt-out once and keep its first time; the list entry is created in one step instead of read, then written.
-- Deployment: the list of SAP hosts a connection may use (`S4_HOST_ALLOWLIST`) and the model per stage reach the service as one value each; the deploy step split them at their commas, so only the first host was allowed.
-- QA agent: a push to dev no longer cancels a manually started backlog review; the push's own review would not have continued it.
-- Business rules: an `IMPORT … FROM MEMORY` now counts only the local field it fills as read from outside, not the
-  name the value was stored under, so a status the program sets itself stays its own marker.
-- Author's comments: an escaped `\|` inside a string template no longer ends the template, so a `"` in its text is not
-  quoted as the author's comment.
-- Documentation: until the server has said which model the stage runs on, the cost line names no model instead of the
-  product default.
-- Author's comments: an `&` inside a comment (`Sales & Distribution`) is quoted as written; only the editor's frame signs at its edges are left out.
-- Business rules: an `EXIT` on a test-data selector inside a loop ends that loop, a business use of the selector, so its `CASE` stays among the rules.
-- In short: a German program name written as one word (`ZMM_RECHNUNGSPRUEFUNG`) gives its purpose like the same words written apart; a compound with a word the engine does not know gives none.
-- In short: an inbound IDoc function is said as one SAP calls where a process code is assigned to it; the code alone does not show that assignment.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
