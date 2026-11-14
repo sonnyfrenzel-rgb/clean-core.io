@@ -4,6 +4,7 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { CONSENT_TEXTS, consentText } from '../lib/legal/consent-texts';
+import { AUTO_STEPS_NOTICE_WORDING } from '../lib/auto-steps-notice';
 import { adminSetCustomClaim, adminSetDoc } from './helpers/admin-seed';
 import { signInViaLanding } from './helpers/sign-in';
 
@@ -122,13 +123,14 @@ test.describe('C14 — the notice before the first automatic model call', () => 
     await sw.click();
     await expect(sw).toHaveAttribute('aria-checked', 'false');
     await expect(notice.locator('[data-auto-steps-notice-off]')).toBeVisible();
-    // One stored main switch since 06.11.2026 (item 2), not the per-stage switches.
-    expect(posts).toEqual([{ autoModelSteps: false, autoStepsNotice: 'seen' }]);
+    // One stored main switch since 06.11.2026 (item 2), not the per-stage switches; the notice is recorded with
+    // the wording it showed (tests/legal-names-wording.spec.ts).
+    expect(posts).toEqual([{ autoModelSteps: false, autoStepsNotice: 'seen', autoStepsNoticeWording: AUTO_STEPS_NOTICE_WORDING }]);
 
     // Stays until "Got it", then goes.
     await notice.locator('[data-auto-steps-notice-dismiss]').click();
     await expect(page.locator('[data-auto-steps-notice]')).toHaveCount(0);
-    expect(posts[1]).toEqual({ autoStepsNotice: 'seen' });
+    expect(posts[1]).toEqual({ autoStepsNotice: 'seen', autoStepsNoticeWording: AUTO_STEPS_NOTICE_WORDING });
   });
 
   test('"Got it" keeps the default and records the notice as answered', async ({ page }) => {
@@ -140,7 +142,7 @@ test.describe('C14 — the notice before the first automatic model call', () => 
     await expect(notice).toBeVisible({ timeout: 30000 });
     await notice.locator('[data-auto-steps-notice-dismiss]').click();
     await expect(page.locator('[data-auto-steps-notice]')).toHaveCount(0);
-    expect(posts).toEqual([{ autoStepsNotice: 'seen' }]);
+    expect(posts).toEqual([{ autoStepsNotice: 'seen', autoStepsNoticeWording: AUTO_STEPS_NOTICE_WORDING }]);
   });
 
   test('on a phone it fits the width and covers nothing', async ({ page }) => {
