@@ -64,6 +64,11 @@ v3.1.0 (owner decision 14.11.2026, see Changed). The separate hotfix 3.0.24 is d
   analyze 40:7 and documentation 41:6 blind wins with fewer sentences contradicting the code; design answered
   47 of 47 with a usable design and is not yet judged. Testing, Transformation and naming stay on their models;
   own keys are unchanged. `tests/model-combination.spec.ts` holds both lanes to this list and Testing out of it.
+- **The Documentation page's cost line names the model the stage runs on** (design §3.3): `GET /api/model-stages`
+  reports `stageModels` per stage for the account's key — the deployment's stage list on the platform key, the model
+  the client asks for on an own key — and the line prints the documentation stage's; it named `gemini-3.8-flash`
+  whatever answered. The model register (`ALLOWED_MODELS`, `EVALUATION_ONLY_MODELS`) moved unchanged from
+  `app/api/gemini/route.ts` to `lib/gemini-register.ts` so the route can read it; `tests/stage-model-cost-line.spec.ts`.
 - **The receipt, the stage record and `answeredBy` name the model that answered** (`answeredModel`): the planned
   model, or the fallback when it answered after an incomplete first answer. The receipt's claim set is unchanged.
 - **The statements output bound is 65,536** (was 32,768): thinking counts against the bound, and on a 1,000-line

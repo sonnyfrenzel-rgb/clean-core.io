@@ -178,11 +178,16 @@ counts against the bound; the level is what keeps a call well inside it (largest
 - **Usage log.** Every provider call is a `gemini usage` line, the fallback's included, with its model; the line
   now carries `finishReason`, so a call that ended at the bound is visible as `MAX_TOKENS` (before, it read
   `failed: false` with 32,768 tokens and nothing more).
-- **Cost line before the click.** `docProposalsCostLine(PRODUCT_GEMINI_MODEL, …)` on the Documentation page
-  names the constant, not the deployment's model (`GEMINI_MODEL` and the rules above are server-side). Open
-  (still, 14.11.; see §3.7):
-  either `GET /api/model-stages` reports the deployment's product model and the page prints that, or the line
-  says "the platform's model" and points at "Last answered by". Not in the prototype.
+- **Cost line before the click** (closed 14.11.2026). `GET /api/model-stages` reports `stageModels`: per stage,
+  the model a call runs on for the account's key (`stageModelsForKey` in `lib/gemini-register.ts`) — on the platform
+  key the deployment's product model (`GEMINI_MODEL`, register-checked) or the stage's model from
+  `GEMINI_STAGE_MODELS`, on an own Gemini key the model the client asks for, on an own Anthropic key the one Claude
+  model. The Documentation page prints `stageModels.documentation` in `docProposalsCostLine`, and the constant only
+  until the answer is in. To read the proxy's own register, the register (`ALLOWED_MODELS`,
+  `EVALUATION_ONLY_MODELS`) moved from `app/api/gemini/route.ts` to `lib/gemini-register.ts` — a route file may
+  export nothing but its handlers; `scripts/check-gemini-register.mjs` and `tests/gemini-model-pin.spec.ts` read
+  it there. Guard: `tests/stage-model-cost-line.spec.ts` (platform key, documentation on Hydrogen → the line names
+  `gemini-4-hydrogen`; the report agrees with `planModelCall` for every stage).
 - **Platform budget and rate limit.** Both count requests, not provider calls; a cascade is one request with two
   calls. At the measured dropout rate (5 of 150) that is 3 % more provider calls on the stage — acceptable, and
   the usage log shows it.
@@ -198,7 +203,8 @@ counts against the bound; the level is what keeps a call well inside it (largest
 | `finishReason` on the usage line | `lib/model-usage-log.ts` | `model-usage-log.spec.ts` |
 | Evaluation harness | `tests/prozess-benchmark/weg-b-model.ts` | — |
 
-What did **not** change: the register and `EVALUATION_ONLY_MODELS`, `productModel()` and `GEMINI_MODEL`,
+What did **not** change: the register's content and `EVALUATION_ONLY_MODELS` (moved to `lib/gemini-register.ts` on
+14.11., §3.3), `productModel()` and `GEMINI_MODEL`,
 `modelServable`, `PRODUCT_GEMINI_MODEL`, the receipt's claim set, the completeness rule, the lease, the deadline.
 
 ### 3.5 Switching it on
@@ -285,13 +291,8 @@ Owner: Hydrogen MEDIUM alone — no rewording (`GEMINI_STATEMENTS_REWORDING` sta
   chose a key, not a second model, and the platform's choice does not reach that key. An own Claude key is
   untouched (its one model is set in `lib/model-providers.ts`).
 - **Who answered.** Receipt, stage record ("Last answered by") and `answeredBy` carry `answeredModel`, so the
-  Settings line and the AI chips name the model per stage without further change. Open (§3.3): the
-  Documentation page's cost line still names the constant; with stages on another model it should take the
-  stage's model from `GET /api/model-stages`. Not done with the switch (14.11.): the route would need the
-  model register, which lives in `app/api/gemini/route.ts` and is read from that file's source by
-  `scripts/check-gemini-register.mjs` and four specs — moving it is its own step. Until then, on the platform key,
-  the line names `gemini-3.8-flash` while `gemini-4-hydrogen` answers the business layer; the chip and
-  "Last answered by" name the right one.
+  Settings line and the AI chips name the model per stage without further change. The Documentation
+  page's cost line names the stage's model from `GET /api/model-stages` (`stageModels`, closed 14.11.2026, §3.3).
 - **Measured before a stage joins the dev list** (`tests/prozess-benchmark/stage-bench.ts`, §5): the product's
   own prompt and validator per stage, Hydrogen MEDIUM against the product model's setting of today, on benchmark
   cases and the starter examples; schema validity, failure and MAX_TOKENS rate, latency p50/p90, cost per call today
