@@ -4,6 +4,7 @@ import { expect, test } from './helpers/test';
 import {
   NAMING_FORMAT_VERSION,
   NAMING_MADE_FROM_FACTS,
+  NAMING_WITHOUT_FACTS_PAUSED,
   applyNaming,
   namingContextOf,
   validateNamingAnswer,
@@ -68,12 +69,36 @@ test('the live map, the automatic naming and the naming route read the naming co
   expect(read('app/(app)/project/[projectId]/documentation/page.tsx')).toMatch(/modelAvailability,\s+\{ engineVersion: engineVersionOfProject\(project\) \},/);
 });
 
-test('an old project\'s stored naming keeps applying: the context of its engine has the digest the naming was made with', () => {
+test('an old project\'s stored naming keeps matching: the context of its engine has the digest the naming was made with, and applyNaming takes it there', () => {
   // What the 3.0.21 route stored is the digest of the 3.0.21 map; the live map of that project now reads that map.
   const stored = namingContextOf(SRC, { engineVersion: '3.0.21' }).digest;
   const live = namingContextOf(SRC, { engineVersion: '3.0.21' });
   expect(live.digest).toBe(stored);
-  expect(namingContextOf(SRC, { engineVersion: ENGINE_READS_310_FROM }).digest).not.toBe(stored);
+  const now = namingContextOf(SRC, { engineVersion: ENGINE_READS_310_FROM });
+  expect(now.digest).not.toBe(stored);
+
+  // A record carrying the 3.0.21 digest and one known name, through the same `applyNaming` the map and the export read.
+  const node = live.skeleton.nodes.find((n) => n.kind === 'task' || n.kind === 'gateway');
+  if (!node) throw new Error('the fixture has no task or decision point on the 3.0.21 map');
+  const record = (madeFrom?: typeof NAMING_MADE_FROM_FACTS): ProcessNamingRecord => ({
+    formatVersion: NAMING_FORMAT_VERSION,
+    digest: stored,
+    names: [{ id: node.id, technicalName: node.label, name: 'Old stored name' }],
+    lanes: [],
+    discarded: { total: 0, byRule: {} },
+    origin: { source: 'model', receipt: 'verified', provider: 'google-gemini', modelId: 'gemini-fixture', byok: false, issuedAt: Date.parse('2026-10-01T09:00:00.000Z'), textSha256: 'a'.repeat(64) },
+    namedAt: '2026-10-01T09:00:05.000Z',
+    ...(madeFrom ? { madeFrom } : {}),
+  });
+  // The digest is what decides: on the 3.0.21 map the name lands on its node, on the 3.1.0 map it is stale.
+  const onOld = applyNaming(live, record(NAMING_MADE_FROM_FACTS));
+  expect(onOld.state).toBe('named');
+  expect(onOld.nodes.find((n) => n.id === node.id)?.businessName).toBe('Old stored name');
+  const onNow = applyNaming(now, record(NAMING_MADE_FROM_FACTS));
+  expect(onNow.state).not.toBe('named');
+  expect(onNow.nodes.every((n) => n.businessName === null)).toBe(true);
+  // A record stored before the facts (no `madeFrom`) is held back while NAMING_WITHOUT_FACTS_PAUSED holds — on any map.
+  if (NAMING_WITHOUT_FACTS_PAUSED) expect(applyNaming(live, record()).state).not.toBe('named');
 });
 
 /**

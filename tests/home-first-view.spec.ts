@@ -22,7 +22,7 @@ import { WORKSPACE_PAGE_MESSAGES } from '../lib/messages/workspace';
 import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import { verifyRunIntegrity } from '../lib/run-signature';
 import { signInViaLanding } from './helpers/sign-in';
-import { layoutCheck, PRODUCT_LAYOUT } from './helpers/overlap';
+import { layoutCheck, layoutClean, PRODUCT_LAYOUT } from './helpers/overlap';
 
 /**
  * AB-14a — the first view of a new account (home mockup v2.1, state 1;
@@ -357,8 +357,8 @@ test.describe('a fresh account lands on the first view', () => {
         // The slice is one picture: its labels and anchors are bpmn-js's, placed by the layout.
         ignore: `${PRODUCT_LAYOUT.ignore}, [data-home-map-slice]`,
       });
-      if (report.overlaps.length || report.clipped.length || report.overflowX > 0) {
-        failures.push(`${name}: ${JSON.stringify({ overlaps: report.overlaps, clipped: report.clipped, overflowX: report.overflowX })}`);
+      if (!layoutClean(report)) {
+        failures.push(`${name}: ${JSON.stringify({ overlaps: report.overlaps, clipped: report.clipped, focusOut: report.focusOut, overflowX: report.overflowX })}`);
       }
       if (name === '1440x900') {
         // v2.1 closed the gap bottom-left: the demo line ends where the start card ends.
