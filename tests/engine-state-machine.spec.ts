@@ -551,3 +551,14 @@ test('an EXIT inside a loop of a status check leaves only the loop, not the rout
   const submit = readStateMachine(looped)!.transitions.find((t) => t.routine === 'LCL_FLOW=>SUBMIT');
   expect(submit?.from).toEqual([]);
 });
+
+test('a stop inside a SELECT … PACKAGE SIZE loop runs only when rows are found, so it gives no from-value', () => {
+  const packaged = WORKFLOW.replace(
+    "    IF get_status( ) <> gc_draft.\n      MESSAGE 'Only a draft can be submitted' TYPE 'E'.\n    ENDIF.",
+    "    IF get_status( ) <> gc_draft.\n      SELECT * FROM zt_request INTO TABLE @DATA(lt_rows) PACKAGE SIZE 100 WHERE id = @ms_req-id.\n        RETURN.\n      ENDSELECT.\n    ENDIF.",
+  );
+  expect(packaged).not.toBe(WORKFLOW);
+  const submit = readStateMachine(packaged)!.transitions.find((t) => t.routine === 'LCL_FLOW=>SUBMIT');
+  // No row: the loop body never runs, and the move is reached from any status.
+  expect(submit?.from).toEqual([]);
+});

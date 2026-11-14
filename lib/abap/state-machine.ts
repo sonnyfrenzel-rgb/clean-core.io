@@ -331,7 +331,7 @@ function stops(statements: readonly AbapStatement[], from: number, to: number): 
   let depth = 0;
   /** Stops met on the body's own level, by statement index; a `SELECT … ENDSELECT` loop takes back those inside it. */
   const found: number[] = [];
-  /** Open `SELECT` statements that may be loops (not `SINGLE`, not into a table, not a count). */
+  /** Open `SELECT` statements that may be loops (not `SINGLE`, not a count, not into a table unless in packages). */
   const selects: number[] = [];
   for (let i = from; i < to; i++) {
     const t = statements[i].text.trim();
@@ -339,7 +339,8 @@ function stops(statements: readonly AbapStatement[], from: number, to: number): 
     if (/^(?:IF|CASE|LOOP|DO|WHILE|TRY|PROVIDE)$/.test(kw) || (kw === 'AT' && /^AT\s+(?:NEW|END\s+OF|FIRST|LAST)\b/i.test(t))) { depth++; continue; }
     if (/^END(?:IF|CASE|LOOP|DO|WHILE|TRY|PROVIDE|AT)$/.test(kw)) { depth = Math.max(0, depth - 1); continue; }
     if (kw === 'SELECT') {
-      if (depth === 0 && !/\bSINGLE\b|\bTABLE\b|\bCOUNT\s*\(/i.test(t)) selects.push(i);
+      // `INTO TABLE … PACKAGE SIZE n` is a loop too: one pass per package, none when no row is found.
+      if (depth === 0 && !/\bSINGLE\b|\bCOUNT\s*\(/i.test(t) && (!/\bTABLE\b/i.test(t) || /\bPACKAGE\s+SIZE\b/i.test(t))) selects.push(i);
       continue;
     }
     if (kw === 'ENDSELECT') {
