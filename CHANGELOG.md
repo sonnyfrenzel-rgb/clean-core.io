@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] — 3.2.0
 
+### Added
+- A register of every browser storage key the app writes (`lib/storage-keys.ts`): area, what it holds, its purpose,
+  its lifetime and whether privacy policy section 7 names it. `tests/storage-keys-register.spec.ts` reads every
+  `setItem` / `removeItem` in `app/`, `components/`, `hooks/` and `lib/`, follows the key through constants, imports,
+  key functions, object properties and parameters, and fails on an unregistered key, a key it cannot follow, a
+  registered key nothing writes, and a register that disagrees with section 7. Four keys written today are not named
+  in section 7 yet (`cc.processMap.outline.page`, `cc.auth.signedIn`, `cc.auth.redirectPending`,
+  `cc:design-skip-questions:…`); the register says so.
+
 ### Changed
 - Mail opens and clicks are not recorded. Tracking is off in the mail provider's account; an open or a click that
   arrives at the webhook anyway is acknowledged and dropped, neither delivery record stores it, and the weekly usage
