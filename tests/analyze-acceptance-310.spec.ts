@@ -92,7 +92,7 @@ test.describe('server-free: the fixes as code', () => {
     expect(sliceViewbox({ ...inner, width: 0 }, 400)).toBeNull();
     const placed = sliceViewbox(inner, 400)!;
     expect(Number.isFinite(placed.viewbox.width) && placed.viewbox.width > 0).toBe(true);
-    expect(Number.isFinite(placed.frameHeight) && placed.frameHeight > 0).toBe(true);
+    expect(Number.isFinite(placed.height) && placed.height > 0).toBe(true);
   });
 
   /** A program that keeps its records in its own objects and moves them through a status workflow — no table. */
