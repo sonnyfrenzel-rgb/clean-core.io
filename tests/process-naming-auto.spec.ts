@@ -133,7 +133,7 @@ window.addEventListener('cc:process-naming-stored', () => { w.__events += 1; });
 function Probe(props: any) {
   const out = useAutoProcessNaming({ ...props, onStored: () => { w.__stored += 1; } });
   w.__askNow = out.askNow;
-  return React.createElement('span', { id: 'state', 'data-click': out.askNow ? 'offered' : 'none' }, out.state);
+  return React.createElement('span', { id: 'state', 'data-click': out.askNow ? 'offered' : 'none', 'data-outcome': out.outcome ?? 'none' }, out.state);
 }
 const root = createRoot(document.getElementById('root')!);
 w.__render = (props: any) => root.render(React.createElement(Probe, props));
@@ -246,5 +246,29 @@ test.describe('the hook in a page', () => {
     await expect(page.locator('#state')).toHaveAttribute('data-click', 'none');
     await render(off);
     expect(await asks()).toBe(1);
+  });
+
+  test('a failed ask is the outcome of its own map only: another project or source on the same page reads none', async ({ page }) => {
+    const script = await bundleHook();
+    await page.setContent('<!doctype html><div id="root"></div>');
+    await page.addScriptTag({ content: script });
+    const render = async (props: Record<string, unknown>) => {
+      await page.evaluate((p) => (window as unknown as { __render: (p: unknown) => void }).__render(p), props);
+      await page.waitForTimeout(80);
+    };
+    await page.evaluate(() => {
+      (window as unknown as { __answer: unknown }).__answer = { ok: false, absence: 'failed', message: 'Refused.' };
+    });
+    const failing = { projectId: 'p-fail', source: SOURCE_A, owner: true, availability: ON, state: 'not-named', autoAllowed: true, withFacts: true };
+    await render(failing);
+    await expect(page.locator('#state')).toHaveAttribute('data-outcome', 'failed');
+    // The same mounted page moves to another project, and to another source, neither asked yet (a reader asks nothing).
+    await render({ ...failing, projectId: 'p-other', owner: false });
+    await expect(page.locator('#state')).toHaveAttribute('data-outcome', 'none');
+    await render({ ...failing, source: SOURCE_B, owner: false });
+    await expect(page.locator('#state')).toHaveAttribute('data-outcome', 'none');
+    // Back on the map that failed: its outcome stands.
+    await render(failing);
+    await expect(page.locator('#state')).toHaveAttribute('data-outcome', 'failed');
   });
 });

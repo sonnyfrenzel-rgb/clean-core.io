@@ -72,7 +72,9 @@ export function useAutoProcessNaming(input: {
   const awaitNotice = input.awaitNotice === true;
   const engineVersion = input.engineVersion ?? null;
   const [asking, setAsking] = useState(false);
-  const [outcome, setOutcome] = useState<'stored' | 'failed' | null>(null);
+  // The outcome belongs to the map it was asked for (project and source digest): another map on the same page has
+  // had no answer yet, so it reads none rather than an earlier map's failure.
+  const [ended, setEnded] = useState<{ for: string; outcome: 'stored' | 'failed' } | null>(null);
   const [clickedFor, setClickedFor] = useState<string | null>(null);
   const modelEnabled = namingModelEnabled(availability);
   // Primitives for the dependency list: the availability object is new on every render.
@@ -89,6 +91,8 @@ export function useAutoProcessNaming(input: {
     (pid: string, src: string, automatic: boolean) => {
       // Not cancelled by a later render: the ask is taken once, so its answer
       // is always announced and the wait always ends.
+      const askedFor = `${pid}|${sha256Hex(src)}`;
+      const setOutcome = (outcome: 'stored' | 'failed') => setEnded({ for: askedFor, outcome });
       void (async () => {
         setAsking(true);
         try {
@@ -134,6 +138,8 @@ export function useAutoProcessNaming(input: {
     if (!takeFirstNamingAsk(ASKED, projectId, digest)) return;
     ask(projectId, source, false);
   }, [projectId, source, digest, ask]);
+
+  const outcome = ended && projectId && digest && ended.for === `${projectId}|${digest}` ? ended.outcome : null;
 
   return {
     outcome,
