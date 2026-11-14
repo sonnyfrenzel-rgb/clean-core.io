@@ -49,6 +49,13 @@ import { signInViaLanding } from './helpers/sign-in';
  * the validation and the receipt check themselves stay in the route for a
  * naming built from the facts, and their rules are held server-free in
  * `tests/process-naming.spec.ts` and `tests/model-receipt.spec.ts`.
+ *
+ * From 3.1.0 the build reads with the engine's facts, so the pause holds for a
+ * project whose run was signed before 3.1.0 and no longer for one read now. The
+ * project here is therefore one with a run signed by 3.0.21 (the engine version
+ * the run route mirrors onto the project document, `auditMetadata.modelCard`),
+ * and the route has to keep answering it as 3.0.21 did. A run read by 3.1.0 is
+ * named from the facts and stored: `tests/process-naming-route-310.spec.ts`.
  */
 
 const STAMP = Date.now();
@@ -75,7 +82,9 @@ const PROGRAM = [
   'ENDFORM.',
 ].join('\n');
 
-const CONTEXT = namingContextOf(PROGRAM);
+/** The engine of the project's signed run: the route reads the source with it (`engineVersionOfProject`). */
+const RUN_ENGINE = 'v3.0.21';
+const CONTEXT = namingContextOf(PROGRAM, { engineVersion: RUN_ENGINE });
 const node = (kind: string, label: string) => {
   const found = CONTEXT.skeleton.nodes.find((n) => n.kind === kind && n.label === label);
   if (!found) throw new Error(`fixture has no ${kind} ${label}`);
@@ -143,6 +152,9 @@ test.beforeAll(async () => {
   await adminSetDoc('projects', PROJECT_ID, {
     name: 'Requisition release', userId: uid, createdAt: new Date(),
     status: 'analyzed', legacyCode: PROGRAM, s4Deployment: 'private',
+    // A run signed by 3.0.21, as the run route leaves it on the project document.
+    activeRunId: `run-${STAMP}`,
+    auditMetadata: { modelCard: { engineVersion: RUN_ENGINE } },
   });
 });
 
@@ -195,7 +207,7 @@ test('3.0.21: every other answer is refused the same way, and the stored naming 
   const before = await stored(request);
   expect(before, 'the previous test stored nothing to compare against').toEqual(EARLIER);
   const other = JSON.stringify({ names: [{ id: DENIED, name: 'Blocked for this buyer?' }] });
-  const elsewhere = namingContextOf(`${PROGRAM}\nFORM spare.\n  PERFORM release.\nENDFORM.`.replace('START-OF-SELECTION.', 'START-OF-SELECTION.\n  CLEAR gv_banfn.'));
+  const elsewhere = namingContextOf(`${PROGRAM}\nFORM spare.\n  PERFORM release.\nENDFORM.`.replace('START-OF-SELECTION.', 'START-OF-SELECTION.\n  CLEAR gv_banfn.'), { engineVersion: RUN_ENGINE });
   expect(elsewhere.digest).not.toBe(CONTEXT.digest);
 
   const cases: Array<[string, unknown, string, string]> = [

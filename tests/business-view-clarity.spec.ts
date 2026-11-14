@@ -17,7 +17,7 @@ import { nextOpenPoint } from '../lib/next-step';
 import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
 import type { ProcessStateView, StateEntry } from '../lib/process-states';
 import type { Project } from '../lib/types';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminGetDoc, adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { examplePath } from './helpers/starter-example-files';
 
@@ -486,6 +486,18 @@ test.describe('the Business view on screen', () => {
 
   test('business names: no "Not generated" notice, no button, never asked (paused in 3.0.21), a stored name is not applied', async ({ page }) => {
     test.setTimeout(300_000);
+    // The pause holds for a run signed before 3.1.0: from 3.1.0 the build names from the engine's facts, and a run
+    // it signs is asked for names (`tests/analyze-naming-swap.spec.ts`, `tests/process-naming-route-310.spec.ts`).
+    // So this project's run is one signed by 3.0.21: signed here, then stamped with that engine where the page reads
+    // it (`engineVersionOfProject`: the run's `analyzerVersion`, the model card's copy on the project).
+    const RUN_ENGINE = 'v3.0.21';
+    const po = `${account.projectId}-po3021`;
+    await project(po, 'Z_MM_PO_APPROVAL.abap', PO);
+    const runId = (await adminGetDoc('projects', po))?.activeRunId;
+    expect(typeof runId === 'string' && runId.length > 0, 'the run of the 3.0.21 project was not signed').toBe(true);
+    await adminMergeDoc(`projects/${po}/runs`, runId as string, { analyzerVersion: RUN_ENGINE });
+    await adminMergeDoc('projects', po, { auditMetadata: { modelCard: { engineVersion: RUN_ENGINE } } });
+
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
     // Every naming ask of the page, answered as a refusal: the plain names must stand without an error.
@@ -503,7 +515,7 @@ test.describe('the Business view on screen', () => {
     await page.route('**/api/model-stages', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stages: { naming: true }, keyAvailable: false, keySource: null }) }),
     );
-    await open(page, ids.po);
+    await open(page, po);
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-process-map]')).not.toContainText('Not generated');
     await expect(page.locator('[data-workspace-suggest-names]')).toHaveCount(0);
@@ -518,7 +530,7 @@ test.describe('the Business view on screen', () => {
     await page.route('**/api/model-stages', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stages: { naming: true }, keyAvailable: true, keySource: 'community', autoSteps: true }) }),
     );
-    await open(page, ids.po);
+    await open(page, po);
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });
     // The ask used to go out within seconds of the map being ready; give it the same room.
     await page.waitForTimeout(5_000);
@@ -530,9 +542,9 @@ test.describe('the Business view on screen', () => {
     // A stored naming (the fixture of a model answer, as the route stored it before 3.0.21):
     // it stays stored but is not applied — the step keeps the engine's name and nothing is
     // marked AI-generated.
-    const context = namingContextOf(PO);
+    const context = namingContextOf(PO, { engineVersion: RUN_ENGINE });
     const node = context.skeleton.nodes.find((n) => n.label === 'CHECK_AUTHORITY' && n.kind === 'sub-process')!;
-    await adminSetDoc(`projects/${ids.po}/process_naming`, 'current', {
+    await adminSetDoc(`projects/${po}/process_naming`, 'current', {
       formatVersion: NAMING_FORMAT_VERSION,
       digest: context.digest,
       names: [{ id: node.id, technicalName: node.label, name: 'Check the buyer may approve' }],
@@ -541,7 +553,7 @@ test.describe('the Business view on screen', () => {
       origin: { source: 'model', receipt: 'verified', provider: 'fixture', modelId: 'fixture', byok: false, issuedAt: Date.now(), textSha256: '0'.repeat(64) },
       namedAt: new Date(),
     });
-    await open(page, ids.po);
+    await open(page, po);
     const step = page.locator('[data-process-story-step="1"]');
     await expect(step).toBeVisible({ timeout: 60_000 });
     await expect(page.locator('[data-workspace-process="ready"]')).toBeVisible({ timeout: 120_000 });

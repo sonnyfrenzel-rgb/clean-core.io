@@ -26,7 +26,11 @@ const FILE = 'Z_MM_PO_APPROVAL.abap';
 const source = fs.readFileSync(pinnedExamplePath(FILE), 'utf8').replace(/\r\n/g, '\n');
 const options: BpmnExportOptions = { processName: 'PO approval', sourceFileName: FILE, exporterVersion: 'v3.0.21' };
 const plainOptions: BpmnExportOptions = { ...options, names: 'plain' };
-const context = namingContextOf(source);
+// The naming context of the engine the file is exported for (`exporterVersion`), as `buildBpmnExportFromSource` reads
+// it: a record carries the digest of that engine's map. Read for this build instead, the context is engine 3.1.0's —
+// another map, another digest (`tests/process-naming-engine-310.spec.ts`) — and no 3.0.21 record would apply. The
+// marking of a 3.1.0 naming is held by `tests/naming-facts-starters-310.spec.ts`.
+const context = namingContextOf(source, { engineVersion: options.exporterVersion });
 
 const engineOnly = buildBpmnExportFromSource(source, plainOptions);
 const technicalOnly = buildBpmnExportFromSource(source, options);
