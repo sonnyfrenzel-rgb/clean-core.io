@@ -283,6 +283,34 @@ test('signed artefacts stay out of it: the skeleton, the runs and the audit pack
   }
 });
 
+test('signed artefacts stay out of it through every import: neither module is in the bundle of the run route, the audit pack or the skeleton', async () => {
+  // The source check above sees a direct mention; this sees the whole import graph, so a helper that hands the
+  // workflow reading on under another name still makes it red.
+  const { build } = await import('esbuild');
+  const root = path.join(__dirname, '..');
+  for (const entry of ['app/api/runs/create/route.ts', 'lib/audit-pack.ts', 'lib/abap/process-skeleton.ts', 'lib/abap/business-rule-set.ts']) {
+    const out = await build({
+      entryPoints: [path.join(root, entry)],
+      bundle: true,
+      write: false,
+      metafile: true,
+      platform: 'node',
+      format: 'cjs',
+      packages: 'external',
+      alias: { '@': root },
+      logLevel: 'silent',
+    });
+    const inputs = Object.keys(out.metafile!.inputs);
+    expect(inputs.length, `${entry} bundled nothing`).toBeGreaterThan(1);
+    expect(inputs.filter((i) => /lib\/abap\/(state-machine|technical-methods)\.ts$/.test(i)), entry).toEqual([]);
+  }
+  // The check can see both modules at all: the wording of the map reads the workflow and the technique.
+  const words = await build({ entryPoints: [path.join(root, 'lib/abap/plain-language.ts')], bundle: true, write: false, metafile: true, platform: 'node', format: 'cjs', packages: 'external', alias: { '@': root }, logLevel: 'silent' });
+  const seen = Object.keys(words.metafile!.inputs);
+  expect(seen.some((i) => /lib\/abap\/state-machine\.ts$/.test(i))).toBe(true);
+  expect(seen.some((i) => /lib\/abap\/technical-methods\.ts$/.test(i))).toBe(true);
+});
+
 test('a CHECK inside a loop guards only the rest of that pass, not the moves after ENDLOOP (QA review 268ed7624e53)', () => {
   const src = [
     'REPORT zt_loop_check.',

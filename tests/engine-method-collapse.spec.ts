@@ -208,6 +208,18 @@ test('a handler registered on an object created in place (`SET HANDLER NEW lcl_x
   const handled = (engine: string) => buildProcessSkeleton(src, { engineVersion: engine }).nodes
     .some((n) => n.expandsTo === 'method:LCL_MAILER=>ON_RELEASED');
   expect(handled(NEW)).toBe(true);
+  // Where it runs: at the `RAISE EVENT` line inside `release`, after the update and before the method ends —
+  // one handler step, not a detached step of its own.
+  const skeleton = buildProcessSkeleton(src, { engineVersion: NEW });
+  const handlers = skeleton.nodes.filter((n) => n.expandsTo === 'method:LCL_MAILER=>ON_RELEASED');
+  expect(handlers).toHaveLength(1);
+  const handler = handlers[0];
+  expect(handler.anchor?.lineStart, 'the handler is not placed at the RAISE EVENT line').toBe(14);
+  expect(handler.region).toBe('method:LCL_ORDER=>RELEASE');
+  const update = skeleton.nodes.find((n) => n.kind === 'write' && n.label === 'ZT_ORDER')!;
+  const end = skeleton.nodes.find((n) => n.kind === 'end' && n.region === 'method:LCL_ORDER=>RELEASE')!;
+  expect(skeleton.edges.some((e) => e.from === update.id && e.to === handler.id), 'the update does not lead to the handler').toBe(true);
+  expect(skeleton.edges.some((e) => e.from === handler.id && e.to === end.id), 'the handler does not lead on to the end of release').toBe(true);
   // 3.0.23 did not read the registration and kept the raise opaque.
   expect(handled(OLD)).toBe(false);
   expect(now.all.length).toBeGreaterThan(0);

@@ -159,6 +159,10 @@ test.describe('the Business view of a real project (Analyze, Business; mockup st
     });
     await expect(page.locator('[data-analyze-code-panel]')).toBeVisible();
     await expect(page.locator('[data-analyze-code-panel] [data-cc-code-line="highlighted"]').first()).toBeVisible();
+    // Line 3 and nothing else is marked — not the lines of the step chosen before.
+    await expect
+      .poll(() => page.locator('[data-analyze-code-panel] [data-cc-code-line="highlighted"] > span:first-child').allInnerTexts().then((t) => t.map((s) => s.trim())))
+      .toEqual(['3']);
 
     // Opening the page measured and stored nothing.
     expect(writes, 'Analyze, Business wrote a process-map record on open').toEqual([]);

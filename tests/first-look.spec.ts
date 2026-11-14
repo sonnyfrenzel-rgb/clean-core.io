@@ -574,6 +574,11 @@ test.describe('the first look on screen', () => {
     await page.goto(`/project/${EMPTY_ID}?first=1`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/project\/[^/?]+\/analyze/, { timeout: 60000 });
     await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60000 });
+    // The upload path itself: its heading, the way to choose a file, and its start, closed until there is code.
+    await expect(page.getByRole('heading', { name: 'Upload Legacy Asset' })).toBeVisible({ timeout: 60000 });
+    await expect(page.getByRole('button', { name: 'Choose a file' })).toBeEnabled();
+    await expect(page.locator('input[type="file"][accept=".abap,.txt"]')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: /Start Analysis/ })).toBeDisabled();
     await expect(page.locator('[data-analyze-business="ready"]')).toHaveCount(0);
     await expect(page.locator('[data-first-look]')).toHaveCount(0);
     await expect(page.locator('[data-first-look-figure]')).toHaveCount(0);

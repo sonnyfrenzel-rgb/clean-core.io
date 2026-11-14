@@ -73,13 +73,28 @@ async function goto(page: Page, url: string) {
 async function expectWorkspaceWithFirstLook(page: Page): Promise<string> {
   await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
   expect(page.url(), 'an example landed on the score page').not.toContain('view=it');
+  // Every state the first look takes from here on: the paced build-up retired with 3.1.0 (AB-3), so the card
+  // reads ("waiting") and then stands in its end state — it never builds up.
+  await page.evaluate(() => {
+    const w = window as unknown as { __firstLookStates?: string[] };
+    w.__firstLookStates = [];
+    const note = () => {
+      for (const el of document.querySelectorAll('[data-first-look]')) {
+        const v = el.getAttribute('data-first-look') ?? '';
+        if (!w.__firstLookStates!.includes(v)) w.__firstLookStates!.push(v);
+      }
+    };
+    note();
+    new MutationObserver(note).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-first-look'] });
+  });
   const projectId = new URL(page.url()).pathname.split('/')[2];
   await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
   await expect(page.locator('[data-analyze-score]'), 'Business shows no score').toHaveCount(0);
   const look = page.locator('[data-first-look]');
   await expect(look).toBeVisible({ timeout: 60000 });
-  await expect(look).toHaveAttribute('data-first-look', /^(building|complete|end-state)$/, { timeout: 60000 });
-  await expect(look).toHaveAttribute('data-first-look', /^(complete|end-state)$/, { timeout: 90000 });
+  await expect(look).toHaveAttribute('data-first-look', 'end-state', { timeout: 90000 });
+  const states = await page.evaluate(() => (window as unknown as { __firstLookStates?: string[] }).__firstLookStates ?? []);
+  expect(states.filter((v) => v !== 'waiting' && v !== 'end-state'), 'the first look took a state other than reading and its end state').toEqual([]);
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map, 'the start drew no full map').toBeVisible({ timeout: 60000 });
   // And it stays.

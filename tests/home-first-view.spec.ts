@@ -20,6 +20,7 @@ import { MAX_HEIGHT, MIN_SCALE, sliceScale, sliceViewbox } from '../components/p
 import { leaveHomeStart, pastedFileName, takeHomeStart } from '../lib/home-start-handoff';
 import { WORKSPACE_PAGE_MESSAGES } from '../lib/messages/workspace';
 import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
+import { verifyRunIntegrity } from '../lib/run-signature';
 import { signInViaLanding } from './helpers/sign-in';
 import { layoutCheck, PRODUCT_LAYOUT } from './helpers/overlap';
 
@@ -500,12 +501,19 @@ test.describe('a fresh account lands on the first view', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
     const view = await openHome(page);
     await view.locator('[data-home-start-example]').click();
-    await page.waitForURL(/\/project\/[^/?#]+/, { timeout: 60_000 });
+    // Straight to the project's entry, Analyze in the Business view, as a first visit (AB-2).
+    await page.waitForURL(/\/project\/[^/?#]+\/analyze\?first=1/, { timeout: 60_000 });
     const projectId = new URL(page.url()).pathname.split('/')[2];
     // The start signs at once (ADR-072): the project carries its active run.
     await expect
       .poll(async () => (await adminGetDoc('projects', projectId))?.activeRunId ?? null, { timeout: 120_000 })
       .toBeTruthy();
+    // The run it names exists, belongs to this project and its signature verifies.
+    const activeRunId = (await adminGetDoc('projects', projectId))!.activeRunId as string;
+    const run = await adminGetDoc(`projects/${projectId}/runs`, activeRunId);
+    expect(run, 'the active run names no run document').toBeTruthy();
+    expect(run!.projectId).toBe(projectId);
+    expect(verifyRunIntegrity(run!, process.env.AUDIT_SIGNING_KEY!)).toEqual({ valid: true });
     // Back home, the account has a project: the list, not the first view.
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-projects]')).toBeVisible({ timeout: 90_000 });
