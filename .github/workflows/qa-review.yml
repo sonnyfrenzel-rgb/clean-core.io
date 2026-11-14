@@ -57,7 +57,8 @@ jobs:
     # `inputs.head` only names the range to review; it is never checked out.
     if: vars.QA_REVIEW_ENABLED != 'false' && (github.ref_name == 'dev' || (github.event_name == 'workflow_dispatch' && github.ref_name == 'main'))
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # A backlog slice reads up to 45 batches; the first one (35 batches) was cancelled at 30 minutes.
+    timeout-minutes: ${{ github.event_name == 'workflow_dispatch' && inputs.backlog && 120 || 30 }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
