@@ -166,6 +166,7 @@ Signed runs and the audit pack do not change.
 - Tests: the first look's states are recorded from before the start is pressed, and the process story must be visible, not only present.
 - Tests: the Gemini route is run in process for the automatic-naming notice gate and for the fallback model of the statements stage.
 - Tests: the fallback model of the statements stage is checked in its receipt and in the account's stage record as well as in the answer.
+- Tests: the dictionary review count of a domain value says what it counts and holds an assigned value beside a read one.
 - Tests: a review diff cut into parts must keep every line exactly once and in order, no longer 99 % of its characters.
 - Tests: the customer-texts route refuses a well-formed token naming the owner that no known key signed.
 - Tests: the statement store is run with a reworded answer — merged with a verifying second receipt, the draft kept with any other — instead of reading the route's source.
