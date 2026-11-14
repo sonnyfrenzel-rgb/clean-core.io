@@ -35,6 +35,9 @@ Signed runs and the audit pack do not change.
   one-time notice before the first automatic model call name them as a second automatic step. Before that
   release they keep saying the names are paused. The wording waits for the lawyer's release (document 19).
 
+### Decided
+- Engine 4.0 is built in parallel from now on, as its own module tree that nothing reads until the switch (ADR-125); benchmark convention K3 settled: commits stay in the technical layer.
+
 ### Fixed
 - A click on a step with an AI name opens its code. Before, the name's label took the click.
 - Analyze no longer gets refused requests (HTTP 401) while the sign-in is restored.
