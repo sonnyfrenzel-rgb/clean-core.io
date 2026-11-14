@@ -121,7 +121,8 @@ test.describe('the model per stage, as the deployment sets it (13.11.2026)', () 
 
   test('the pipeline writes it per environment, and production names only what the owner approved', () => {
     const deploy = read('.github/workflows/deploy.yml');
-    expect(deploy).toContain('GEMINI_STAGE_MODELS=${{ steps.env-ctx.outputs.gemini_stage_models }}');
+    // Through the escape step: the deploy action splits env_vars at commas (tests/deploy-env-vars-lists.spec.ts).
+    expect(deploy).toContain('GEMINI_STAGE_MODELS=${{ steps.kv-escape.outputs.gemini_stage_models }}');
     // The environment step (`env-ctx`): one case per branch.
     const ctx = deploy.slice(deploy.indexOf('id: env-ctx'), deploy.indexOf('esac', deploy.indexOf('id: env-ctx')));
     const main = ctx.slice(ctx.indexOf('main)'), ctx.indexOf('release)'));

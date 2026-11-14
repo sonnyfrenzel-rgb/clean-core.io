@@ -772,6 +772,29 @@ jobs:
             echo "current=false" >> "$GITHUB_OUTPUT"
           fi
 
+      # The deploy action reads `env_vars` as KEY=VALUE pairs split at newlines
+      # AND at commas (google-github-actions/actions-utils, parseKVString); a
+      # comma inside a value must arrive as "\,". Unescaped, S4_HOST_ALLOWLIST
+      # kept only its first host and each further host became a variable of its
+      # own with no value (read on clean-core and clean-core-dev, 14.11.2026),
+      # and the stage list would have kept only its first stage. Both lists are
+      # escaped here, once; the values themselves stay as written above
+      # (tests/model-combination.spec.ts pins them).
+      - name: Escape list values for the deploy action
+        id: kv-escape
+        if: steps.fresh.outputs.current == 'true'
+        env:
+          S4_HOST_ALLOWLIST: ${{ secrets.S4_HOST_ALLOWLIST }}
+          STAGE_MODELS: ${{ steps.env-ctx.outputs.gemini_stage_models }}
+        run: |
+          s4="$(printf '%s' "$S4_HOST_ALLOWLIST" | sed 's/,/\\,/g')"
+          echo "::add-mask::$s4"
+          stages="$(printf '%s' "$STAGE_MODELS" | sed 's/,/\\,/g')"
+          {
+            printf 's4_host_allowlist=%s\n' "$s4"
+            printf 'gemini_stage_models=%s\n' "$stages"
+          } >> "$GITHUB_OUTPUT"
+
       # Deploy source code directly to Cloud Run.
       #
       # AUDIT_SIGNING_PRIVATE_KEY is passed but is NOT asserted above, unlike the
@@ -825,7 +848,7 @@ jobs:
             RESEND_WEBHOOK_SECRET=${{ secrets.RESEND_WEBHOOK_SECRET }}
             S4_ENCRYPTION_KEY=${{ secrets.S4_ENCRYPTION_KEY }}
             BYOK_ENCRYPTION_KEY=${{ secrets.BYOK_ENCRYPTION_KEY }}
-            S4_HOST_ALLOWLIST=${{ secrets.S4_HOST_ALLOWLIST }}
+            S4_HOST_ALLOWLIST=${{ steps.kv-escape.outputs.s4_host_allowlist }}
             AUDIT_SIGNING_KEY=${{ secrets.AUDIT_SIGNING_KEY }}
             AUDIT_SIGNING_PRIVATE_KEY=${{ secrets.AUDIT_SIGNING_PRIVATE_KEY }}
             AUDIT_SIGNING_PUBLIC_KEYS_RETIRED=${{ secrets.AUDIT_SIGNING_PUBLIC_KEYS_RETIRED }}
@@ -839,7 +862,7 @@ jobs:
             RUNNER_SERVICE_ACCOUNT=${{ steps.env-ctx.outputs.runner_sa }}
             S4_PROXY_BASE_URL=${{ steps.env-ctx.outputs.proxy_base }}
             CC_DEV_LIMITS_OFF=${{ steps.env-ctx.outputs.dev_limits_off }}
-            GEMINI_STAGE_MODELS=${{ steps.env-ctx.outputs.gemini_stage_models }}
+            GEMINI_STAGE_MODELS=${{ steps.kv-escape.outputs.gemini_stage_models }}
 
   # Job 3: Smoke check of the production revision (codex architecture-04, code-ci-03).
   #
