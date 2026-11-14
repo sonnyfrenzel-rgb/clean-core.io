@@ -66,7 +66,10 @@ test.describe('the rules explained (3.0.20)', () => {
     const dec = ruleOf(ex, /c_dec\b/i, reading);
     expect(dec.topic).toBe('technical');
     // "Kind REV" and "Currency EUR" read "REV REV" and "EUR EUR" as titles; the headline names them.
+    // `kind` is a component the program declares itself (`kind TYPE c LENGTH 3` in `ty_invoice`), not a dictionary
+    // field code: engine 3.1.0 says it as before, never "Field KIND REV".
     expect(ruleOf(ex, /c_kind_rev/i, reading).headline).toBe('Kind REV');
+    expect(ruleOf(explain(FI, '3.0.23').ex, /c_kind_rev/i, explain(FI, '3.0.23').reading).headline).toBe('Kind REV');
     expect(ruleOf(ex, /c_currency/i, reading).headline).toBe('Currency other than EUR');
     // "Supplier number is empty, or 5 more conditions": what it protects names every part.
     const vendor = ruleOf(ex, /lifnr IS INITIAL/i, reading);

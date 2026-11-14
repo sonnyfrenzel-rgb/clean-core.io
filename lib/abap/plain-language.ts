@@ -441,13 +441,25 @@ function englishGlossaryWords(): Set<string> {
 }
 
 /**
+ * 3.1.0: English words of four to six letters a program author names a component with, which the glossaries do not
+ * hold because they name no business object of their own. Read only by `isFieldCode`.
+ */
+const PLAIN_FIELD_WORDS: ReadonlySet<string> = new Set([
+  'kind', 'mode', 'flag', 'note', 'notes', 'level', 'stage', 'phase', 'step', 'state', 'rank', 'size', 'score',
+  'action', 'reason', 'result', 'source', 'target', 'origin', 'remark',
+]);
+
+/**
  * 3.1.0: is a structure component (`is_delivery-gewei`) a dictionary field code rather than a word? Four to six
  * letters or digits, the shape of SAP's field names; no glossary entry, no English word the glossary uses, no German
- * word the engine can translate. `menge`, `price`, `status` are words; `gewei`, `profl`, `mmsta` are codes.
+ * word the engine can translate. `menge`, `price`, `status` are words; `gewei`, `profl`, `mmsta` are codes. Nor a
+ * plain English word a program author names a component with (`kind TYPE c LENGTH 3`): "Field KIND" says less than
+ * "Kind" (`PLAIN_FIELD_WORDS`).
  */
 function isFieldCode(field: string): boolean {
   const f = field.toLowerCase();
   if (!/^[a-z][a-z0-9]{3,5}$/.test(f)) return false;
+  if (PLAIN_FIELD_WORDS.has(f)) return false;
   if (own(FIELD_TERMS_EN, f) || own(STEM_ABBREVIATIONS, f) || englishGlossaryWords().has(f) || englishGlossaryWords().has(f.replace(/s$/, ''))) return false;
   const german = translateGermanWords([f], 'field', FIELD_SOURCES);
   return !german || isUntranslatable(german);

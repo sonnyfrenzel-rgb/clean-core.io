@@ -208,10 +208,35 @@ const SHIPPED_3021: Record<string, [number, number, number, number, number, numb
   [PO]: [81, 78, 9, 10, 11, 0, 0],
 };
 
+/**
+ * Engine 3.1.0 (`ENGINE_READS_310_FROM`), the reading of this release; every engine from 3.0.21 to 3.0.23 reads as
+ * `SHIPPED_3021`. Each added element is one flow node and one flow:
+ * - a `LOOP AT` level begins at a start event on its `LOOP` line (022c9a3a): LEGACY 6 on the exported planes,
+ *   BP_SYNC, EXPENSE, INVOICE and SALES 1 each, STOCK 2;
+ * - the call of a technical helper is the outcome of an arm that draws no step of its own (3bbe6f27): LEGACY's
+ *   `ADD_LOG` at L201, L415 and L553;
+ * - an arm that only sets a flag a later decision reads is a step of that decision (87415241): PO's `gv_emergency`
+ *   (L73), `gv_skip_limit` (L88) and `gv_approved` (L430) — and with its own flag step (L549) `REQUEST_APPROVAL` is
+ *   a phase: a sub-process on a plane of its own (start, the `p_test` decision and its early end, the workflow event,
+ *   the `iv_role` decision, the flag step, the end), its second call site a call activity. PO 81→91 / 78→88, one
+ *   sub-process and one plane more.
+ * ORDER_INTEGRITY does not move; no data store, pool or message flow moves anywhere.
+ */
+const SHIPPED_310: Record<string, [number, number, number, number, number, number, number]> = {
+  [LEGACY]: [96, 92, 15, 16, 8, 1, 1],
+  'Z_BUSINESS_PARTNER_SYNC.txt': [21, 17, 3, 4, 2, 0, 0],
+  'Z_EMPLOYEE_EXPENSE_VAL.txt': [15, 14, 2, 3, 0, 0, 0],
+  'Z_INVOICE_EXTRACTOR.txt': [15, 12, 2, 3, 2, 0, 0],
+  'Z_MATERIAL_STOCK_CALC.txt': [20, 18, 4, 5, 3, 0, 0],
+  [PO]: [91, 88, 10, 11, 11, 0, 0],
+  'Z_SALES_ORDER_CREATOR.txt': [15, 13, 2, 3, 0, 0, 0],
+};
+
 test.describe('the eight programs this product ships', () => {
   for (const [file, ...at3020] of SHIPPED) {
     const at3021 = SHIPPED_3021[file] ?? at3020;
-    for (const [engine, [flowNodes, sequenceFlows, subProcesses, planes, dataStores, pools, messageFlows]] of [[ENGINE_3020, at3020], ['3.0.21', at3021]] as const) {
+    const at310 = SHIPPED_310[file] ?? at3021;
+    for (const [engine, [flowNodes, sequenceFlows, subProcesses, planes, dataStores, pools, messageFlows]] of [[ENGINE_3020, at3020], ['3.0.21', at3021], ['3.1.0', at310]] as const) {
     test(`${file} — engine ${engine}: ${flowNodes} flow nodes, ${sequenceFlows} flows, ${subProcesses} sub-processes, read without a warning`, async () => {
       const exported = buildBpmnExportFromSource(read(file), { ...OPTIONS(file), exporterVersion: engine });
       const parser = await moddle();
@@ -432,7 +457,11 @@ test.describe('a syntactically valid model is never presented as an evidenced as
     // of the file, and still every one of them anchored.
     // 87 since ADR-054: nine planes start at a start event anchored at their
     // `FORM` line, and the `EXIT` in SELECT_ITEMS ends on its own line.
-    expect(String(note?.text)).toContain('87 of 87 elements carry a line anchor.');
+    // 96 with engine 3.1.0: six loop levels begin at a start event on their `LOOP` line, and three `ADD_LOG` calls
+    // are the outcome of an arm (`SHIPPED_310`) — every one anchored. A run signed before 3.1.0 says 87 of 87.
+    expect(String(note?.text)).toContain('96 of 96 elements carry a line anchor.');
+    expect(buildBpmnExportFromSource(read(LEGACY), { ...OPTIONS(LEGACY), exporterVersion: '3.0.23' }).xml)
+      .toContain('87 of 87 elements carry a line anchor.');
     expect(diIndex(parsed.rootElement).get('note-reconstruction')).toBe(1);
 
     // No promise about a target tool (roadmap 4.3 has not happened).
@@ -465,8 +494,11 @@ test.describe('the palette, as BPMN', () => {
       .map((c) => [c.$type, c.isSequential]))
       .toEqual([['bpmn:MultiInstanceLoopCharacteristics', true]]);
     const perOrder = list<ModdleElement>(iteration.flowElements).filter((e) => e.$instanceOf('bpmn:FlowNode'));
+    // Engine 3.1.0 (022c9a3a): the level of the iteration begins at a start event of its own on its `LOOP` line,
+    // named after the table, before the steps per order.
+    expect(perOrder[0].$type).toBe('bpmn:StartEvent');
     expect(perOrder.map((e) => e.name)).toEqual([
-      '<fs_order>-action', 'IF p_upd = abap_true AND p_bdc = abap_true',
+      'gt_orders', '<fs_order>-action', 'IF p_upd = abap_true AND p_bdc = abap_true',
       'CHANGE_SALES_ORDER_BDC', 'CREATE_LEGACY_REVIEW_TASK', 'UPDATE_LEGACY_LOG_TASK', 'gt_orders',
     ]);
     const plane = list<ModdleElement>(parsed.rootElement.diagrams)
@@ -943,7 +975,9 @@ test.describe('bpmn-js imports every export without a warning', () => {
     await page.addScriptTag({ path: join(process.cwd(), 'node_modules/bpmn-js/dist/bpmn-viewer.production.min.js') });
   });
 
-  for (const [file, , , , planes] of SHIPPED) {
+  for (const [file, , , , planesBefore] of SHIPPED) {
+    // The export of this release: engine 3.1.0 gives PO one plane more, `REQUEST_APPROVAL` (`SHIPPED_310`).
+    const planes = (SHIPPED_310[file] ?? SHIPPED_3021[file])?.[3] ?? planesBefore;
     test(`${file} — ${planes} planes`, async ({ page }) => {
       const exported = buildBpmnExportFromSource(read(file), OPTIONS(file));
       const result = await importInBpmnJs(page, exported.xml);
@@ -1007,7 +1041,8 @@ test.describe('roadmap 2.15 — a return code is not an exclusive gateway', () =
     let gateways = 0;
     let technical = 0;
     for (const [file] of SHIPPED) {
-      const skeleton = buildProcessSkeleton(read(file));
+      // The map that engine draws, not this release's: the exporter version alone left the skeleton on 3.1.0.
+      const skeleton = buildProcessSkeleton(read(file), { engineVersion: exporterVersion });
       const exported = buildBpmnExport(skeleton, { ...OPTIONS(file), exporterVersion });
       const conditions = new Map<string, string[]>();
       for (const edge of skeleton.edges) {
@@ -1032,6 +1067,12 @@ test.describe('roadmap 2.15 — a return code is not an exclusive gateway', () =
     // `CHECK_REQUISITION` in PO (L78, L82) become one "2 checks" step and one "2 checks passed" gateway, so the
     // denominator loses one business gateway (32→31). Neither guard reads a return code: the six technical ones stay.
     expect(technicalShare('3.0.21')).toEqual({ gateways: 31, technical: 6 });
+  });
+
+  test('from engine 3.1.0 6 of 33 — the phase REQUEST_APPROVAL brings two business decisions, no technical one', () => {
+    // `REQUEST_APPROVAL` of PO is a phase from 3.1.0 (`SHIPPED_310`): its `IF p_test = abap_true` (L523) and
+    // `IF iv_role = 'DEPT_HEAD'` (L548) are drawn on its plane. Neither reads a return code: the six stay six.
+    expect(technicalShare('3.1.0')).toEqual({ gateways: 33, technical: 6 });
   });
 
   test('6 of 32 exclusive gateways in the eight files are purely technical, from 17 of 52', () => {

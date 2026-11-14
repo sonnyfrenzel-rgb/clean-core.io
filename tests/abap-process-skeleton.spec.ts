@@ -29,7 +29,14 @@ import { pinnedExamplePath } from './helpers/starter-example-files';
  * in turn and watching this spec go red.
  */
 const read = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
-const skeletonOf = (name: string) => buildProcessSkeleton(read(name));
+const skeletonOf = (name: string, engineVersion?: string) =>
+  buildProcessSkeleton(read(name), engineVersion === undefined ? {} : { engineVersion });
+
+/**
+ * The last engine before the 3.1.0 readings (`ENGINE_READS_310_FROM`). A run signed by it keeps exactly the map it
+ * had, so the numbers measured before 3.1.0 stay pinned against it; this release's numbers are pinned beside them.
+ */
+const BEFORE_310 = '3.0.23';
 
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 const PO = 'Z_MM_PO_APPROVAL.abap';
@@ -119,10 +126,36 @@ const SHIPPED: Array<[string, number, number, number, number, number, number, nu
   ['Z_SALES_ORDER_CREATOR.txt', 14, 12, 3, 1, 0, 0, 1, 0],
 ];
 
+/**
+ * The rows of `SHIPPED` are the reading of every engine before 3.1.0 and stay pinned against `BEFORE_310`. The
+ * 3.1.0 readings (`ENGINE_READS_310_FROM`) move nodes and edges only — regions, entries, unreached routines,
+ * helpers and clone groups are unchanged in all eight — and only by adding, one node and one edge each:
+ * - a `LOOP AT` level begins at a start event on its `LOOP` line (022c9a3a): LEGACY 9, BP_SYNC 1, EXPENSE 1,
+ *   INVOICE 1, STOCK 2, SALES 1;
+ * - the call of a technical helper is the outcome of an arm that draws no step of its own (3bbe6f27): LEGACY's
+ *   `ADD_LOG` at L201, L241, L415, L478, L502, L504 and L553;
+ * - an arm that only sets a flag a later decision reads is a step of that decision (87415241): LEGACY's three
+ *   `<fs_order>-action` arms (L425, L428, L430), PO's `gv_emergency` (L73), `gv_skip_limit` (L88) and `gv_approved`
+ *   (L430, L549);
+ * - with its flag step `REQUEST_APPROVAL` of PO is a phase of its own (two call sites, one plane start, L517).
+ * ORDER_INTEGRITY moves by nothing.
+ */
+const SHIPPED_310: Record<string, [number, number]> = {
+  [LEGACY]: [143, 147],
+  'Z_BUSINESS_PARTNER_SYNC.txt': [21, 19],
+  'Z_EMPLOYEE_EXPENSE_VAL.txt': [15, 14],
+  'Z_INVOICE_EXTRACTOR.txt': [19, 15],
+  'Z_MATERIAL_STOCK_CALC.txt': [22, 19],
+  [PO]: [129, 130],
+  'Z_SALES_ORDER_CREATOR.txt': [15, 13],
+};
+
 test.describe('the eight programs this product ships', () => {
-  for (const [file, nodes, edges, regions, entries, unreached, unreachedLines, helpers, clones] of SHIPPED) {
-    test(`${file} — ${nodes} nodes, ${edges} edges, ${regions} regions, ${entries} entry points`, () => {
-      const skeleton = skeletonOf(file);
+  for (const [file, nodesBefore, edgesBefore, regions, entries, unreached, unreachedLines, helpers, clones] of SHIPPED) {
+    const [nodes310, edges310] = SHIPPED_310[file] ?? [nodesBefore, edgesBefore];
+    for (const [engine, nodes, edges] of [[BEFORE_310, nodesBefore, edgesBefore], [undefined, nodes310, edges310]] as const) {
+    test(`${file} — ${engine ? `engine ${engine}: ` : ''}${nodes} nodes, ${edges} edges, ${regions} regions, ${entries} entry points`, () => {
+      const skeleton = skeletonOf(file, engine);
       expect(skeleton.nodes).toHaveLength(nodes);
       expect(skeleton.edges).toHaveLength(edges);
       expect(skeleton.regions).toHaveLength(regions);
@@ -148,12 +181,13 @@ test.describe('the eight programs this product ships', () => {
         expect(regionEntries.has(node.id), `${node.kind} ${node.label} has no incoming flow`).toBe(true);
       }
     });
+    }
   }
 
   test(`${LEGACY} — the palette, element for element`, () => {
     // `DESIGN.md` §5.8 measures its palette against this program. These are the
     // elements it produces without a model being asked anything.
-    expect(countKinds(skeletonOf(LEGACY))).toEqual({
+    const before = {
       // ADR-054: 4 → 13. The four event blocks, and one start inside each of
       // the nine routines drawn as a plane of their own — the `sub-process`
       // count below. The entries are still four (rule 4, further down).
@@ -191,11 +225,18 @@ test.describe('the eight programs this product ships', () => {
       read: 7,
       write: 3,
       output: 1,
-    });
+    };
+    expect(countKinds(skeletonOf(LEGACY, BEFORE_310))).toEqual(before);
+    // Engine 3.1.0 adds and changes nothing else: `start` 13 → 22, the nine `LOOP AT` levels each beginning at a
+    // start event on their `LOOP` line (022c9a3a), and `task` 0 → 10 — seven `ADD_LOG` calls that are the outcome
+    // of an arm drawing no step of its own (3bbe6f27) and the three `<fs_order>-action` arms a later CASE reads
+    // (87415241). `CREATE_LEGACY_REVIEW_TASK` stays the one write it is: its two `ADD_LOG` arms do not make it a
+    // phase (`collapseSmallRegions`), so `sub-process` and `write` keep their counts.
+    expect(countKinds(skeletonOf(LEGACY))).toEqual({ ...before, start: 22, task: 10 });
   });
 
   test(`${PO} — the palette, element for element`, () => {
-    expect(countKinds(skeletonOf(PO))).toEqual({
+    const before = {
       // ADR-054: 1 → 10 and 23 → 28 — a start inside each of the nine planes,
       // and five early `RETURN`s that each end on their own statement now
       // instead of at the routine's `ENDFORM`. The five leaving `CHECK`s still
@@ -217,7 +258,14 @@ test.describe('the eight programs this product ships', () => {
       read: 15,
       write: 15,
       output: 3,
-    });
+    };
+    expect(countKinds(skeletonOf(PO, BEFORE_310))).toEqual(before);
+    // Engine 3.1.0 (87415241): four arms that only set a flag a later decision reads are steps — `gv_emergency`
+    // (L73), `gv_skip_limit` (L88), `gv_approved` (L430 and, inside `REQUEST_APPROVAL`, L549): `task` 0 → 4. With
+    // its flag step `REQUEST_APPROVAL` holds more than one element and is a phase, no longer the one send task it
+    // collapsed to: its two call sites (L424, L428) `send-task` 3 → 1 and `sub-process` 9 → 11, its plane one start
+    // event more (`start` 10 → 11).
+    expect(countKinds(skeletonOf(PO))).toEqual({ ...before, start: 11, 'sub-process': 11, 'send-task': 1, task: 4 });
   });
 
   test('what §5.8 says instead of drawing it', () => {
@@ -249,7 +297,18 @@ test.describe('the eight programs this product ships', () => {
     // `add_log` is performed twelve times and draws nothing. Twelve boxes called
     // "add_log" is what a process map looks like when nobody folds them in.
     expect(skeleton.notDrawn.technicalHelpers.find((h) => h.name === 'ADD_LOG')?.callSites).toBe(12);
-    expect(skeleton.nodes.some((n) => n.label === 'ADD_LOG')).toBe(false);
+    expect(skeletonOf(LEGACY, BEFORE_310).nodes.some((n) => n.label === 'ADD_LOG')).toBe(false);
+    // Engine 3.1.0 (3bbe6f27): still folded, and still no box for the five calls that stand in a run of steps. Seven
+    // calls are the only outcome of an arm that draws no step of its own ("record an issue" after a failed check),
+    // and that arm would otherwise show two ways out running to the same next step: each is one task, marked as a
+    // helper call, carrying the routine's lines as its second anchor.
+    const logged = skeleton.nodes.filter((n) => n.label === 'ADD_LOG');
+    expect(logged.map((n) => n.anchor?.lineStart)).toEqual([201, 241, 415, 478, 502, 504, 553]);
+    for (const node of logged) {
+      expect(node.kind).toBe('task');
+      expect(node.detail?.helperCall).toBe(true);
+      expect(node.anchor?.secondary).toEqual({ lineStart: 628, lineEnd: 643, reason: 'routine-definition' });
+    }
   });
 
   test('a routine small enough to be one step is one step, and §5.8 says which', () => {
@@ -1442,12 +1501,18 @@ test.describe('roadmap 2.16 — lanes', () => {
     ).not.toContain(111);
     // And no node was added anywhere: the counts are the ones 2.15 left behind.
     // 110 → 124 with ADR-054 — nine plane starts and five early ends, none of
-    // them a lane's doing.
-    expect(skeleton.nodes).toHaveLength(124);
+    // them a lane's doing. 124 → 129 with engine 3.1.0: four flag steps and the
+    // plane start of `REQUEST_APPROVAL` (see `SHIPPED_310`), none of them a lane's
+    // doing either; a run signed before 3.1.0 keeps 124.
+    expect(skeletonOf(PO, BEFORE_310).nodes).toHaveLength(124);
+    expect(skeleton.nodes).toHaveLength(129);
     // 105 → 114 with 2.17 (b) — nine loop-body regions, each with an end event.
     // `Z_MM_PO_APPROVAL` has no `LOOP AT` at all and is untouched, which is what
     // makes it the right program for this assertion. 114 → 124 with ADR-054.
-    expect(skeletonOf(LEGACY).nodes).toHaveLength(124);
+    // 124 → 143 with engine 3.1.0: nine loop-level starts, seven helper calls and
+    // three flag steps (`SHIPPED_310`).
+    expect(skeletonOf(LEGACY, BEFORE_310).nodes).toHaveLength(124);
+    expect(skeletonOf(LEGACY).nodes).toHaveLength(143);
   });
 });
 
@@ -1631,7 +1696,17 @@ test.describe('roadmap 2.17 — DESIGN.md §5.8 and the code in agreement', () =
     const region = skeleton.regions.find((r) => r.key === loop.expandsTo)!;
     expect(region.multiInstance).toBe(true);
     expect(region.kind).toBe('sub-process');
+    // Engine 3.1.0 (022c9a3a): the level also begins at a start event of its own, on its `LOOP` line.
     expect(skeleton.nodes.filter((n) => n.region === region.key).map((n) => n.kind).sort())
+      .toEqual(['end', 'start', 'write']);
+    expect(skeleton.nodes.find((n) => n.region === region.key && n.kind === 'start')?.anchor?.lineStart).toBe(3);
+    // A run signed before 3.1.0 keeps the level it had: the body and its end.
+    const signedBefore = buildProcessSkeleton(
+      ['REPORT z_loop.', 'START-OF-SELECTION.', '  LOOP AT gt_orders INTO ls_order.', '    UPDATE vbak SET loekz = 1.', '  ENDLOOP.'].join('\n'),
+      { engineVersion: BEFORE_310 },
+    );
+    const regionBefore = signedBefore.regions.find((r) => r.multiInstance)!;
+    expect(signedBefore.nodes.filter((n) => n.region === regionBefore.key).map((n) => n.kind).sort())
       .toEqual(['end', 'write']);
     // And no cycle: nothing flows back into the loop element.
     expect(skeleton.edges.filter((e) => e.to === loop.id && e.kind === 'loop-back')).toHaveLength(0);
@@ -2560,7 +2635,10 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
       '  ENDMETHOD.',
       'ENDCLASS.',
     ].join('\n'));
+    // Engine 3.1.0 (AB-15a, 702380a8) lets a routine that calls a phase of its own stay a phase. `post( )` calling
+    // itself is not that: before the fix it made POST a phase of its own and gave it a second start (L9).
     expect(startsOf(global).map((n) => n.label)).toEqual(['run']);
+    expect(global.nodes.find((n) => n.anchor?.lineStart === 7)?.collapsed).toBe(true);
     expect(global.nodes.find((n) => n.anchor?.lineStart === 7)?.expandsTo).toBe('method:ZCL_CC_POST=>POST');
     expect(global.nodes.find((n) => n.anchor?.lineStart === 12)?.expandsTo).toBe('method:ZCL_CC_POST=>POST');
   });

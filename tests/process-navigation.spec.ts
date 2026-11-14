@@ -47,8 +47,8 @@ import { TERMS_VERSION } from '../lib/constants';
  * > **At the 1.000-line example, every step is reachable in at most three
  * > actions, by keyboard as by mouse.**
  *
- * So this file counts them. Not three of them: **all 87 flow nodes of that
- * example — its 50 steps and the 37 start and end events around them — one at
+ * So this file counts them. Not three of them: **all 96 flow nodes of that
+ * example — its 53 steps and the 43 start and end events around them — one at
  * a time, in the browser, on both paths.** (ADR-054: an event is not a step and
  * is counted apart; it is measured all the same, because a reader who wants to
  * see where a routine ends has to get there too.) The count is
@@ -124,7 +124,7 @@ function rulesByNode(source: string, model: ProcessMapModel): Map<string, string
  * ------------------------------------------------------------------ */
 
 test.describe('the outline of the 1.000-line example', () => {
-  test('the plain reading folds events, never steps: the same 50 steps as the technical file', () => {
+  test('the plain reading folds events, never steps: the same 53 steps as the technical file', () => {
     // ADR-054. The plain reading joins the report events into one flow; where
     // two blocks cannot be joined directly, the second block's start becomes a
     // milestone (`intermediateThrowEvent`). That milestone is the same event
@@ -137,7 +137,9 @@ test.describe('the outline of the 1.000-line example', () => {
       model.elements.filter((element) => !element.event).map((element) => element.id).sort();
     const reading = readingModel(source);
     expect(steps(reading)).toEqual(steps(exampleModel(source)));
-    expect(steps(reading)).toHaveLength(50);
+    // 53 with engine 3.1.0: three `ADD_LOG` calls are the outcome of an arm that draws no step of its own (3bbe6f27,
+    // L201, L415, L553). The loop levels' new start events are events, not steps.
+    expect(steps(reading)).toHaveLength(53);
     const milestones = reading.elements.filter((element) => element.tag === 'intermediateThrowEvent');
     expect(milestones.length, 'the example has no milestone, so this check would be vacuous').toBeGreaterThan(0);
     for (const milestone of milestones) expect(milestone.event, `${milestone.id} counted as a step`).toBe(true);
@@ -167,9 +169,14 @@ test.describe('the outline of the 1.000-line example', () => {
     // ends at an early end on its own line. Ten events, not ten steps — the
     // step counts further down leave them out — but every one of them is an
     // element with a line and an address, like the events that were there.
-    expect(model.elements).toHaveLength(87);
+    //
+    // 96 with engine 3.1.0, on the same 16 levels and no deeper: six loop levels
+    // begin at a start event on their `LOOP` line (022c9a3a) and three `ADD_LOG`
+    // calls are the outcome of an arm (3bbe6f27). `CREATE_LEGACY_REVIEW_TASK`
+    // stays one step — its two log calls do not make it a level of its own.
+    expect(model.elements).toHaveLength(96);
     expect(model.planes).toHaveLength(16);
-    expect(model.traceability.anchored).toBe(87);
+    expect(model.traceability.anchored).toBe(96);
     expect(model.traceability.unanchored).toBe(0);
 
     expect(nav.order, 'an element of the model is not in the outline').toHaveLength(model.elements.length);
@@ -301,14 +308,19 @@ test.describe('the parts of the navigation say what the file says', () => {
     // ADR-054: the level begins at its own start event now, `7.1`, and every
     // address after it moved one on. 7.6 is the message inside
     // `IF p_upd = abap_true` inside `IF sy-subrc <> 0`.
-    const target = byOutline.get('7.6') as string;
+    // Engine 3.1.0: the first decision's error arm records the issue first
+    // (`ADD_LOG`, L201, 3bbe6f27), `7.3`, so every address after it moved one on
+    // again — the message is `7.7`.
+    const target = byOutline.get('7.7') as string;
+    expect(model.elements.find((element) => element.id === byOutline.get('7.3'))?.anchor?.lineStart).toBe(201);
     const on = pathsToHere(model, nav, 'nd-151-0', target);
     const lit = [...on].map((id) => nav.entries.get(id)?.outline).sort();
     // The start event is on every way there — it is where the level begins.
-    expect(lit).toEqual(['7.1', '7.2', '7.4', '7.5', '7.6']);
-    // 7.3 is the other arm of the first decision and 7.7 is past the target.
+    expect(lit).toEqual(['7.1', '7.2', '7.5', '7.6', '7.7']);
+    // 7.3 and 7.4 are the other arm of the first decision and 7.8 is past the target.
     expect(lit).not.toContain('7.3');
-    expect(lit).not.toContain('7.7');
+    expect(lit).not.toContain('7.4');
+    expect(lit).not.toContain('7.8');
   });
 
   test('rules that are still read, or could not be read, are not "no hard-coded value" (QA review of a88149856dcc)', () => {
@@ -410,7 +422,10 @@ test.describe('the parts of the navigation say what the file says', () => {
     // and what it opens, and still nothing after it.
     // 7 since ADR-054: the routine's plane begins at a start event, `14.1`,
     // which does not run either when the routine does not.
-    expect(dimmed.filter((outline) => outline?.startsWith('14.'))).toHaveLength(7);
+    // 9 with engine 3.1.0: the loop's level begins at a start event of its own,
+    // `14.2.1` (022c9a3a), and its failed credit read records the issue
+    // (`ADD_LOG`, L415, 3bbe6f27) — both inside the routine the guard closes.
+    expect(dimmed.filter((outline) => outline?.startsWith('14.'))).toHaveLength(9);
     expect(dimmed, 'the step after the guard was declared unreachable').not.toContain('15');
     expect(dimmed).not.toContain('16');
     expect(rfc.sentence).toContain('p_rfc off');
@@ -428,13 +443,16 @@ test.describe('the parts of the navigation say what the file says', () => {
     // of `PROCESS_ACTIONS`, and that loop is a level of its own now, so its
     // address grew a segment. Which step it is did not change. 16.2.3 since
     // ADR-054: `PROCESS_ACTIONS` begins at its own start event, `16.1`.
-    expect([...bdc.excluded].map((id) => nav.entries.get(id)?.outline)).toContain('16.2.3');
+    // 16.2.4 with engine 3.1.0: the loop's level begins at its own start event,
+    // `16.2.1` (022c9a3a).
+    expect([...bdc.excluded].map((id) => nav.entries.get(id)?.outline)).toContain('16.2.4');
 
     // And the positions the code declares are themselves a run: `p_upd` is
-    // `DEFAULT ' '`, so two steps inside the authority check do not run.
+    // `DEFAULT ' '`, so two steps inside the authority check do not run —
+    // `7.6` and `7.7` with engine 3.1.0, one on for the `ADD_LOG` at `7.3`.
     const asDeclared = runVariant(model, nav, switches, declared);
     expect([...asDeclared.excluded].map((id) => nav.entries.get(id)?.outline).sort())
-      .toEqual(['16.2.3', '19', '7.5', '7.6']);
+      .toEqual(['16.2.4', '19', '7.6', '7.7']);
     expect(asDeclared.sentence).toContain('the run the code declares');
   });
 
@@ -580,7 +598,7 @@ test.describe('the parts of the navigation say what the file says', () => {
 });
 
 /* ------------------------------------------------------------------ *
- * The acceptance, in the browser, on all 87 elements — 50 steps and 37 events.
+ * The acceptance, in the browser, on all 96 elements — 53 steps and 43 events.
  * ------------------------------------------------------------------ */
 
 const STAMP = Date.now();
@@ -742,7 +760,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     }
   });
 
-  test('the measured acceptance: 50 steps and every event, mouse and keyboard, both at most three', async ({ page }) => {
+  test('the measured acceptance: 53 steps and every event, mouse and keyboard, both at most three', async ({ page }) => {
     test.setTimeout(900 * 1000);
     await page.setViewportSize({ width: 1600, height: 1100 });
     await signIn(page);
@@ -818,10 +836,12 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     const isEvent = (id: string) => model.elements.find((element) => element.id === id)?.event === true;
     // Every element the page draws (82: the plain reading draws the four report
     // events as one flow, so five event elements are only in Technical names),
-    // and still all 50 steps.
+    // and still all 50 steps. 91 and 53 with engine 3.1.0: six loop levels begin
+    // at a start event (022c9a3a) and three `ADD_LOG` calls are an arm's outcome
+    // (3bbe6f27); the deepest element is still two levels down.
     expect(counts.length, 'not every element of the example was measured').toBe(model.elements.length);
-    expect(model.elements.length).toBe(82);
-    expect(counts.filter((count) => !isEvent(count.id)), 'the steps of the example').toHaveLength(50);
+    expect(model.elements.length).toBe(91);
+    expect(counts.filter((count) => !isEvent(count.id)), 'the steps of the example').toHaveLength(53);
     const worstMouse = Math.max(...counts.map((count) => count.mouse));
     const worstKeyboard = Math.max(...counts.map((count) => count.keyboard));
     const over = counts.filter((count) => count.mouse > 3 || count.keyboard > 3);
