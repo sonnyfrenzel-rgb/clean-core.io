@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { test, expect } from '@playwright/test';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
@@ -35,6 +36,23 @@ async function adminSetDoc(collection: string, id: string, data: Record<string, 
   } catch (err) {
     if (!(await adminGetDoc(collection, id))) throw err;
   }
+}
+
+/**
+ * A token with the claims of `real` (the owner's uid, this project's audience and issuer, a fresh expiry) under an
+ * RS256 header and a signature of random bytes: everything a forger can write, nothing a forger can sign. (Against
+ * the emulators the Admin SDK accepts only unsigned `alg: none` tokens and skips the key check, so what is held here
+ * is that the route verifies the token at all; the signature check itself is the Admin SDK's against Google's keys.)
+ */
+function forgedTokenFor(real: string): string {
+  const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const claims = JSON.parse(Buffer.from(real.split('.')[1], 'base64url').toString('utf8')) as Record<string, unknown>;
+  const now = Math.floor(Date.now() / 1000);
+  return [
+    b64({ alg: 'RS256', kid: 'forged-key', typ: 'JWT' }),
+    b64({ ...claims, iat: now, exp: now + 3600 }),
+    randomBytes(256).toString('base64url'),
+  ].join('.');
 }
 
 async function stored(): Promise<unknown> {
@@ -89,5 +107,9 @@ test('a body that is not texts, a stranger and no token are refused, and the sto
   expect((await request.get(path_, { headers: headers(otherToken) })).status()).toBe(404);
   expect((await request.post(path_, { headers: { 'Content-Type': 'application/json' }, data: { texts: FIRST } })).status()).toBe(401);
   expect((await request.post(path_, { headers: headers('not-a-token'), data: { texts: FIRST } })).status()).toBe(401);
+  // QA review of 49f4f7152c69: a well-formed token naming the owner, for this project, unexpired — signed by nobody
+  // Firebase knows. A route that read the token's claims without verifying it would take this one.
+  expect((await request.post(path_, { headers: headers(forgedTokenFor(token)), data: { texts: FIRST } })).status()).toBe(401);
+  expect((await request.get(path_, { headers: headers(forgedTokenFor(token)) })).status()).toBe(401);
   expect(await stored(), 'a refused write changed the stored texts').toEqual(SECOND);
 });
