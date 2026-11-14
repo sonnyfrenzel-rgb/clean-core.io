@@ -91,6 +91,13 @@ test('a customer text is said only as whole words, never inside a longer word', 
   expect(customerTextProvenance('The plan is checked.', texts)).toBe(`${CUSTOMER_TEXT_LABEL}: ZPLAN “Plan”.`);
 });
 
+test('a sentence that says five customer texts names all five in its marker', () => {
+  const texts: CustomerTexts = { ...emptyCustomerTexts(), fields: { za: 'Alpha', zb: 'Bravo', zc: 'Charlie', zd: 'Delta', ze: 'Echo' } };
+  expect(customerTextProvenance('Alpha, Bravo, Charlie, Delta and Echo are checked.', texts)).toBe(
+    `${CUSTOMER_TEXT_LABEL}: ZA “Alpha”; ZB “Bravo”; ZC “Charlie”; ZD “Delta”; ZE “Echo”.`,
+  );
+});
+
 test('the ZIP import reads them beside the sources, and several files merge', async () => {
   const zip = new JSZip();
   zip.file('src/zsd_check_minimum.prog.abap', PROGRAM);
