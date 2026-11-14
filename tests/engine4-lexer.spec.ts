@@ -176,3 +176,9 @@ test.describe('every character accounted for', () => {
     }
   });
 });
+
+test('an unquoted decimal stays one number and gets a warning (owner default, 14.11.2026)', () => {
+  const { tokens, diagnostics } = lex("lv = 12.50.\nlv = '12.50'.\nlv = 3.");
+  expect(tokens.filter((t) => t.kind === 'number').map((t) => t.text)).toEqual(['12.50', '3']);
+  expect(diagnostics.map((d) => [d.code, d.row, d.col, d.severity])).toEqual([['unquoted-decimal', 1, 6, 'warning']]);
+});

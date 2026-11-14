@@ -266,6 +266,8 @@ function lexWordLike(s: State): boolean {
     const dw = matchAt(DIGIT_WORD, s);
     if (dw) { push(s, 'word', s.pos, s.pos + dw.length); return true; }
     const num = matchAt(NUMBER, s);
+    // ABAP has no unquoted decimal literal ('12.50' is). Read as one number, as the shipping engine does, and say so.
+    if (num && num.includes('.')) diagnose(s, 'unquoted-decimal', `${num} is not an ABAP literal; a decimal is written in quotes.`, s.pos, 'warning');
     push(s, 'number', s.pos, s.pos + (num ?? ch).length);
     return true;
   }

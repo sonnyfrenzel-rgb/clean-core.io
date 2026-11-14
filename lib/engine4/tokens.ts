@@ -83,12 +83,17 @@ export type DiagnosticCode =
   | 'unterminated-template-expression'
   | 'unexpected-brace'
   | 'unknown-character'
+  | 'unquoted-decimal'
   | 'indented-asterisk-comment'
   | 'unterminated-native-sql'
   | 'missing-period'
   | 'extra-chain-colon'
   | 'empty-chain-head'
-  | 'unknown-statement';
+  | 'unknown-statement'
+  | 'unclosed-block'
+  | 'unexpected-closer'
+  | 'unexpected-middle'
+  | 'block-outside-container';
 
 export interface Diagnostic {
   code: DiagnosticCode;
