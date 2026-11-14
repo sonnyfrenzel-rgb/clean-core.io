@@ -36,7 +36,14 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
   "Analyse another Z program" start the next analysis. Lens and mode are remembered by this browser only
   (`cc.workspace.lens`, `cc.workspace.mode`). The example gallery and the sharing card moved behind the start panel
   and "Sharing".
-<!-- 3.3.0 build end -->
+- 3.3.0, step 4 (ADR-123 (5)): My workspace no longer renders the old dashboard while the profile loads. It shows
+  its own frame at final sizes, and the account shell holds a screen-high place while it waits for the sign-in
+  answer, so the footer no longer jumps. The old dashboard moved to `app/(app)/dashboard/LegacyDashboard.tsx` and
+  loads only for the accounts that get it (suspended, being activated, no profile yet). The invite dialog loads on
+  first use. Measured on production builds against the emulators, before (integrate/3.2.0) → after, 1440 / 390:
+  CLS 0.52–0.99 → ≤ 0.007; JavaScript decoded 4.8–5.0 MB → 2.9–3.7 MB (transferred 1.25–1.57 MB → 0.93–1.19 MB);
+  bpmn-js on a new account's page yes → no; first tile or start card 120–300 ms in both (local emulator).
+  `tests/workspace-performance.spec.ts` measures it and runs unchanged against a checkout of the release before.
 - A project opens in Analyze, Business. The process map is the page, and the map starts within the first screen at
   1440 × 900. Its tools sit in the canvas's own row, and what describes the map sits under it. With one code panel
   open beside it, the canvas stays wide (plan AB-2, ADR-109).

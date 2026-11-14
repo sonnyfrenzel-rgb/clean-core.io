@@ -21,7 +21,7 @@ test('the engine runs once: the second call hands back the same row', () => {
 
 test('the layout claims no ISR it cannot have under a force-dynamic page', () => {
   const root = path.resolve(__dirname, '..');
-  const page = fs.readFileSync(path.join(root, 'app', '(app)', 'dashboard', 'page.tsx'), 'utf8');
+  const page = fs.readFileSync(path.join(root, 'app', '(app)', 'dashboard', 'LegacyDashboard.tsx'), 'utf8');
   const layout = fs.readFileSync(path.join(root, 'app', '(app)', 'dashboard', 'layout.tsx'), 'utf8');
   if (page.includes("export const dynamic = 'force-dynamic'")) {
     expect(layout).not.toMatch(/export const revalidate\b/);

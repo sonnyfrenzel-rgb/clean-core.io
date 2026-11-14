@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import {
@@ -74,7 +75,6 @@ import CcSelect from '@/components/cc/Select';
 import CcTable, { type CcTableColumn, type CcTableRowSpec } from '@/components/cc/Table';
 import CcTag from '@/components/cc/Tag';
 import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
-import InviteReaderDialog from '@/components/InviteReaderDialog';
 import LevelCounts from './LevelCounts';
 import OpenInvitations from './OpenInvitations';
 import WorkspaceRowActions from './WorkspaceRowActions';
@@ -182,6 +182,9 @@ function RulesCell({ facts }: { facts: RowFacts['rules'] | undefined }) {
 }
 
 const DEMO_ID = 'demo';
+
+/** Loaded when someone invites, not with the page (3.3.0, ADR-123 (5)). */
+const InviteReaderDialog = dynamic(() => import('@/components/InviteReaderDialog'), { ssr: false });
 
 export default function WorkspaceListReport({
   demo,

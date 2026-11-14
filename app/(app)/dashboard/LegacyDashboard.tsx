@@ -1,6 +1,12 @@
 'use client';
 
-export const dynamic = 'force-dynamic';
+/*
+ * The old dashboard, for the accounts My workspace does not serve: suspended,
+ * still being activated, or signed in without a profile yet
+ * (`components/MyWorkspaceSwitch.tsx`). Moved out of `page.tsx` in 3.3.0
+ * (ADR-123 (5)) so the route loads it only for them; `page.tsx` imports it on
+ * demand.
+ */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import Link from 'next/link';

@@ -115,7 +115,7 @@ test.describe('(1) a project link signed out goes to sign-in and back; without a
   test('the shell\'s Sign in link and the dashboard\'s signed-out redirect carry the way back', () => {
     const layout = read('app/(app)/layout.tsx');
     expect(layout).toMatch(/href=\{signInLinkFor\(pathname \?\? '\/'\)\}\s*\n\s*data-shell-sign-in=""/);
-    const dashboard = read('app/(app)/dashboard/page.tsx');
+    const dashboard = read('app/(app)/dashboard/LegacyDashboard.tsx');
     expect(dashboard).toContain("router.push(signInLinkFor('/dashboard'));");
     expect(dashboard).not.toContain("router.push('/');");
   });
@@ -390,7 +390,7 @@ test.describe('(2) the quota has one name — analysis runs, counted as left', (
     for (const rel of [
       'app/(app)/layout.tsx',
       'app/(app)/settings/page.tsx',
-      'app/(app)/dashboard/page.tsx',
+      'app/(app)/dashboard/LegacyDashboard.tsx',
       'app/(app)/first-run/page.tsx',
       'components/StarterExamples.tsx',
       'components/GlossaryChatbot.tsx',
@@ -420,7 +420,7 @@ test.describe('(3) the way to an own key links every hop', () => {
     const strip = starter.slice(starter.indexOf('headline="Limit reached."'), starter.indexOf('</CcMessageStrip>', starter.indexOf('headline="Limit reached."')));
     expect(strip).toContain('href={OWN_KEY_HREF}');
     expect(strip).toContain('{OWN_KEY_ACTION}');
-    const dashboard = read('app/(app)/dashboard/page.tsx');
+    const dashboard = read('app/(app)/dashboard/LegacyDashboard.tsx');
     const limitStrips = dashboard.split('headline="Limit reached."').slice(1);
     expect(limitStrips.length).toBe(3);
     for (const after of limitStrips) {

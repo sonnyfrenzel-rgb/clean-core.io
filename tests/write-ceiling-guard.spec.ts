@@ -46,7 +46,7 @@ test('no browser code creates a project or a support ticket past the write ceili
 
 test('the create screens use the ceiling path', () => {
   for (const [rel, collectionName] of [
-    ['app/(app)/dashboard/page.tsx', 'projects'],
+    ['app/(app)/dashboard/LegacyDashboard.tsx', 'projects'],
     ['components/StarterExamples.tsx', 'projects'],
     ['components/workspace/OwnCodeImport.tsx', 'projects'],
     ['components/workspace/WorkspaceListReport.tsx', 'projects'],

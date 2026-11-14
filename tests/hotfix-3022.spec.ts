@@ -502,7 +502,7 @@ test.describe('raw JSON project exports carry the AI-marking field like every ot
     expect(draft.aiGeneration.statement).toBe('Generated with AI assistance (provider and model not recorded) by Clean-Core.io v3.0.22, date not recorded');
     expect(draft.files).toEqual([{ path: 'a', content: 'b' }]);
     const read = (...p: string[]) => fs.readFileSync(path.join(__dirname, '..', ...p), 'utf8');
-    expect(read('app', '(app)', 'dashboard', 'page.tsx')).toMatch(/withProjectExportAiGeneration\(exportData,[\s\S]*JSON\.stringify\(marked, null, 2\)/);
+    expect(read('app', '(app)', 'dashboard', 'LegacyDashboard.tsx')).toMatch(/withProjectExportAiGeneration\(exportData,[\s\S]*JSON\.stringify\(marked, null, 2\)/);
     expect(read('components', 'workspace', 'WorkspaceListReport.tsx')).toMatch(/withProjectExportAiGeneration\(data,[\s\S]*JSON\.stringify\(marked, null, 2\)/);
     expect(read('app', '(app)', 'project', '[projectId]', 'transformation', 'page.tsx')).toContain('new Blob([markedTransformationDraft(unsavedDraft, null, APP_VERSION)]');
   });

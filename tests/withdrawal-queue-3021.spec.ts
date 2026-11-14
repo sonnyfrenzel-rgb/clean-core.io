@@ -153,7 +153,7 @@ test.describe('what the person reads', () => {
     const settings = read('app/(app)/settings/page.tsx');
     expect(settings).toContain('if (answer.receiptPending === true) {');
     expect(settings).toContain('data-settings-withdrawal-pending=""');
-    expect(read('app/(app)/dashboard/page.tsx')).toContain("withdrawal?.state === 'receipt-pending'");
+    expect(read('app/(app)/dashboard/LegacyDashboard.tsx')).toContain("withdrawal?.state === 'receipt-pending'");
   });
 });
 

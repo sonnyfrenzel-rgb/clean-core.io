@@ -15,7 +15,7 @@ const APP = [
   'app/layout.tsx',
   'app/page.tsx',
   'app/(app)/layout.tsx',
-  'app/(app)/dashboard/page.tsx',
+  'app/(app)/dashboard/LegacyDashboard.tsx',
   'app/(app)/demo/workspace/page.tsx',
   'app/(app)/demo/[stage]/page.tsx',
   'app/(app)/project/[projectId]/layout.tsx',

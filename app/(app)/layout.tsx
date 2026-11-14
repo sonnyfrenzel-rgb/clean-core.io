@@ -501,6 +501,10 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
         {/* A tab left open across a deploy says so when it comes back into view, and waits for the reader's click (roadmap 3.0.21 (8)). */}
         <NewVersionWatcher />
         {holdAccountPage ? null : children}
+        {/* While an account page is held for the sign-in answer, its place keeps
+            the height of a screen, so the footer does not stand at the top and
+            jump down when the page arrives (3.3.0, ADR-123 (5): CLS 0). */}
+        {holdAccountPage ? <div aria-hidden={true} data-account-page-held="" className="min-h-screen" /> : null}
       </main>
       {/* The legal links of every page in this shell live here, in one of
           the two branches below — never behind the login. This shell also wraps

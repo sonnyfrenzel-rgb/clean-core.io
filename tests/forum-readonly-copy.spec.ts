@@ -9,7 +9,7 @@ import path from 'path';
 // lands on.
 test('the announcements board is gone, and nothing in its place invites posts', () => {
   const root = path.join(__dirname, '..');
-  for (const rel of ['app/(app)/dashboard/page.tsx', 'components/workspace/WorkspaceListReport.tsx']) {
+  for (const rel of ['app/(app)/dashboard/LegacyDashboard.tsx', 'components/workspace/WorkspaceListReport.tsx']) {
     const src = fs.readFileSync(path.join(root, rel), 'utf8');
     expect(src, `${rel} still carries the board's posts`).not.toContain('forumPosts');
     expect(src, `${rel} still carries the read-only board`).not.toContain('data-forum-readonly');

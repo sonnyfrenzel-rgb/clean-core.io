@@ -26,7 +26,7 @@ import { createWithinCeiling } from '../lib/write-ceiling';
  *
  * Every refusal is paired with the write the app itself performs succeeding, in
  * the shape the app sends it (hooks/useUserProfile.ts, components/LandingModals.tsx,
- * app/(app)/settings/page.tsx, app/(app)/dashboard/page.tsx, the project stages;
+ * app/(app)/settings/page.tsx, app/(app)/dashboard/LegacyDashboard.tsx, the project stages;
  * for `files`, the shape the never-mounted `components/FileUpload.tsx` wrote
  * until D.22c removed it — the rule stays and so does its test), so no
  * assertion can pass because the call fails anyway.

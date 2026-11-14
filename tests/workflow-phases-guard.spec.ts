@@ -202,7 +202,7 @@ test.describe('every view reads the contract', () => {
   });
 
   test('the dashboard derives progress from artefacts, not from `status`', () => {
-    const src = read('app/(app)/dashboard/page.tsx');
+    const src = read('app/(app)/dashboard/LegacyDashboard.tsx');
     expect(src).not.toContain('getStatusInfo');
     expect(src).not.toMatch(/project\.status\s*===/);
     expect(src).not.toContain('Testing & QA (85%)');
@@ -210,7 +210,7 @@ test.describe('every view reads the contract', () => {
   });
 
   test('the dashboard no longer writes a test report for a run that never happened', () => {
-    const src = read('app/(app)/dashboard/page.tsx');
+    const src = read('app/(app)/dashboard/LegacyDashboard.tsx');
     // The template that printed the claim; the comment quoting it is allowed.
     expect(src).not.toContain('successfully in the ${');
     expect(src).not.toContain('Verified via ${');
