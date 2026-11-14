@@ -299,6 +299,27 @@ test.describe('rendered: Analyze, Business on the seeded PO example at 1440 × 9
   });
 });
 
+// QA review of 966eea0fa5c9: the page folds the outline on every width, so a phone needs the toggle as well.
+test.describe('rendered: Analyze, Business on a phone', () => {
+  test('the outline opens and closes below the desktop breakpoint', async ({ page }) => {
+    test.setTimeout(360_000);
+    const seeded = await seedLayoutProject('acc310-phone-outline');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signInThroughForm(page, seeded);
+    await page.goto(`/project/${seeded.po}/analyze`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-business="ready"] [data-workspace-process="ready"] [data-process-map-canvas]')).toBeVisible({ timeout: 120_000 });
+    const column = page.locator('[data-process-map-outline-column]');
+    const toggle = page.locator('[data-process-outline-toggle]');
+    await expect(column).toBeHidden();
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    await expect(column).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    await toggle.click();
+    await expect(column).toBeHidden();
+  });
+});
+
 test.describe('rendered: leaving the first view of a new account', () => {
   test('8. no page error when the live slice of the map goes away', async ({ page }) => {
     test.setTimeout(300_000);
