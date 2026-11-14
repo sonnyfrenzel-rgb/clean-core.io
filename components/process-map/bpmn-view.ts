@@ -149,10 +149,13 @@ export interface AnchorShape {
 }
 
 /**
- * The line anchor under an element's name (`L182`), with a phase's counted
- * fact above it — inside an activity at its foot, under the external label of
- * an event or a gateway. The layout left the room. One function, so the
- * reading map and the home page's slice of the demo map draw it alike.
+ * The line anchor under an element's name (`L182`) — inside an activity at its
+ * foot, under the external label of an event or a gateway. A phase's counted
+ * fact stands above the anchor inside its activity only: a fact belongs to a
+ * collapsed phase (`model.ts`, `n.inner`), always an activity, and the layout
+ * reserves its line there alone (`layout.ts`, `inside.fact`), so an externally
+ * labelled shape is never handed one. One function, so the reading map and the
+ * home page's slice of the demo map draw it alike.
  */
 export function placeAnchor(overlays: AnchorOverlays, shape: AnchorShape, anchor: string, fact?: string | null): void {
   const tag = document.createElement('span');

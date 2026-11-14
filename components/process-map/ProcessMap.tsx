@@ -1028,7 +1028,9 @@ export default function ProcessMap({
                   {/* The outline stands outside the full-screen frame, so in
                       full screen the toggle would act on nothing in sight. */}
                   {filled ? null : (
-                    <span className="hidden lg:inline-flex">
+                    // Analyze, Business folds the outline on every width, so its toggle is there on every width too;
+                    // elsewhere a phone shows the outline in the mobile pass's order and needs no toggle.
+                    <span className={page ? 'inline-flex' : 'hidden lg:inline-flex'}>
                       <CcIconButton
                         data-process-outline-toggle=""
                         label={wt(outlineOpen ? 'map.outlineHide' : 'map.outlineShow')}

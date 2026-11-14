@@ -67,9 +67,13 @@ export function readWorkspaceDemoState(): WorkspaceDemoState {
 /** Writes the given fields; every other field of the demo's state is kept as it is. */
 export function writeWorkspaceDemoState(patch: Partial<WorkspaceDemoState>): void {
   try {
-    const { confirmedRules: _old, ...rest } = readDemoState();
+    const raw = readDemoState();
+    const { confirmedRules: _old, ...rest } = raw;
     void _old;
-    window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify({ ...rest, ...patch }));
+    // The legacy confirmations are carried over into the answers before their field goes, so a write of another
+    // field never loses them.
+    const carried = Array.isArray(raw.confirmedRules) ? { ruleAnswers: ruleAnswersOf(raw) } : {};
+    window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify({ ...rest, ...carried, ...patch }));
   } catch {
     /* A browser that refuses storage still runs the demo; it just forgets. */
   }
