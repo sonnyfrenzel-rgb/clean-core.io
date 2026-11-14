@@ -1,5 +1,5 @@
 import { readStatements, type AbapStatement, type SourceRange } from './statement-reader';
-import { containerAt, readBlocks } from './block-structure';
+import { containerAt, readBlocks, type Block, type BlockKind } from './block-structure';
 import { readControlFlowFrom, type Branch } from './control-flow';
 import { readGoldenMaster } from '../transformation/golden-master';
 import { APP_VERSION } from '../version';
@@ -465,7 +465,7 @@ function testDataSwitchByShape(
     // From 3.1.0: the parameter is the switch only while nothing else decides on it. A condition outside the CASE
     // that guards more than a message (`IF p_mode = 1. PERFORM post_orders.`) is a business use of it, and the
     // CASE stays among the rules.
-    if (reads310 && decidesElsewhere(statements, branches, branch, onSelector, routine)) continue;
+    if (reads310 && decidesElsewhere(statements, branches, branch, onSelector, routine, structure.enclosing)) continue;
     // The FORM is the switch's own only when everything else in it is set-up or a check of the switch.
     const ownFilled = new Set<string>();
     const own = !!routine && routine.kind === 'form' && statements.every((s, i) => {
@@ -488,11 +488,14 @@ function testDataSwitchByShape(
 }
 
 const VALIDATION_ONLY = /^(?:MESSAGE|RETURN|EXIT|LEAVE|STOP)$/i;
+/** The blocks an `EXIT` leaves instead of the routine: there it ends a loop and the program goes on. */
+const LOOPING = new Set<BlockKind>(['loop', 'do', 'while', 'select', 'provide']);
 
 /**
  * Does a condition outside the switch `sw` decide on the selector? An `IF`/`CASE` reading it whose arms do anything
  * but say a message and stop (in the switch's own routine also fill fixed values), or a `CHECK`/`WHILE` reading it
- * outside that routine.
+ * outside that routine. An `EXIT` inside a loop does not stop: it ends the loop, and the program goes on without the
+ * rows still to come — a decision of the program's, not a check of the switch.
  */
 function decidesElsewhere(
   statements: AbapStatement[],
@@ -500,10 +503,13 @@ function decidesElsewhere(
   sw: Branch,
   onSelector: RegExp,
   routine: { lineStart: number; lineEnd: number } | null,
+  enclosing: Block[][],
 ): boolean {
   const inSwitch = (i: number) => i >= sw.openIndex && i <= sw.closeIndex;
   const inRoutine = (s: AbapStatement) => !!routine && s.lineStart >= routine.lineStart && s.lineStart <= routine.lineEnd;
-  const setUp = (s: AbapStatement) => VALIDATION_ONLY.test(s.keyword) || (inRoutine(s) && testDataStatement(s).ok);
+  const endsLoop = (s: AbapStatement) => /^EXIT$/i.test(s.keyword) && (enclosing[s.index] ?? []).some((b) => LOOPING.has(b.kind));
+  const setUp = (s: AbapStatement) =>
+    (VALIDATION_ONLY.test(s.keyword) && !endsLoop(s)) || (inRoutine(s) && testDataStatement(s).ok);
   for (const b of branches) {
     if (b === sw || inSwitch(b.openIndex)) continue;
     const reads = b.kind === 'case' ? !!b.selector && onSelector.test(b.selector) : b.arms.some((a) => onSelector.test(a.condition));

@@ -34,6 +34,14 @@ test.describe('a test data switch by shape is set apart only while nothing else 
     const validation = program("  IF p_mode < 1 OR p_mode > 5.\n    MESSAGE 'Unknown case' TYPE 'E'.\n  ENDIF.\n");
     expect(readDemoSwitches(validation, AFTER)?.flag.name).toBe('P_MODE');
     expect(readDemoSwitches(program(''), AFTER)?.flag.name).toBe('P_MODE');
+    // Stopping on the switch outside a loop is still a check of it.
+    expect(readDemoSwitches(program('  IF p_mode = 0.\n    EXIT.\n  ENDIF.\n'), AFTER)?.flag.name).toBe('P_MODE');
+  });
+
+  test('an EXIT on the parameter inside a loop ends the loop and is a business use (QA review of e1b11dcdc13b)', () => {
+    const inLoop = program("  LOOP AT lt_rows INTO DATA(ls_row).\n    IF p_mode = 3.\n      EXIT.\n    ENDIF.\n    WRITE / ls_row-id.\n  ENDLOOP.\n");
+    expect(readDemoSwitches(inLoop, AFTER)).toBeNull();
+    expect(readDemoSwitches(inLoop, BEFORE)?.flag.name).toBe('P_MODE');
   });
 });
 
@@ -142,6 +150,16 @@ test('a routine called in a condition is said with the 3.1.0 vocabulary', () => 
   const src = ['REPORT z.', 'IF genehmige( ) > 5.', 'ENDIF.', ''].join('\n');
   expect(conditionToPhrase('genehmige( ) > 5', plainContext(src, { engineVersion: AFTER }))).toMatch(/^Approve/);
   expect(conditionToPhrase('genehmige( ) > 5', plainContext(src, { engineVersion: BEFORE }))).toMatch(/^Genehmige/);
+});
+
+test('a German compound program name reads as its words; a compound with a word not on the lists is not guessed (QA review of e1b11dcdc13b)', () => {
+  const src = (name: string) => `REPORT ${name}.\nDATA ls_rbkp TYPE rbkp.\nSELECT SINGLE * FROM rbkp INTO ls_rbkp.\n`;
+  const compound = readProgramDomain(src('zmm_rechnungspruefung'), { german: true });
+  expect(compound?.text).toBe(readProgramDomain(src('zmm_rechnung_pruefung'), { german: true })?.text);
+  expect(compound?.text).toMatch(/^Checks .*invoices/);
+  expect(readProgramDomain(src('zmm_rechnungsdruck'), { german: true })).toBeNull();
+  // An engine before 3.1.0 reads no German at all.
+  expect(readProgramDomain(src('zmm_rechnungspruefung'))).toBeNull();
 });
 
 test('a condition that only checks the tolerance entry against a fixed value does not apply it', () => {

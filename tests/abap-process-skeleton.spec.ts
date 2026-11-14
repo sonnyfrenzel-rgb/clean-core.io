@@ -2618,7 +2618,7 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
     // A public method of a global class that another method of this source
     // calls is drawn there, as a sub-process — not a second time as a start.
     // Recursion stops at the region already being built.
-    const global = buildProcessSkeleton([
+    const globalSource = [
       'CLASS zcl_cc_post DEFINITION PUBLIC.',
       '  PUBLIC SECTION.',
       '    METHODS: run, post.',
@@ -2634,13 +2634,21 @@ test.describe('§5.8 and the engine — the four defects of 27.09.2026', () => {
       '    ENDIF.',
       '  ENDMETHOD.',
       'ENDCLASS.',
-    ].join('\n'));
+    ].join('\n');
+    const global = buildProcessSkeleton(globalSource);
     // Engine 3.1.0 (AB-15a, 702380a8) lets a routine that calls a phase of its own stay a phase. `post( )` calling
     // itself is not that: before the fix it made POST a phase of its own and gave it a second start (L9).
     expect(startsOf(global).map((n) => n.label)).toEqual(['run']);
     expect(global.nodes.find((n) => n.anchor?.lineStart === 7)?.collapsed).toBe(true);
     expect(global.nodes.find((n) => n.anchor?.lineStart === 7)?.expandsTo).toBe('method:ZCL_CC_POST=>POST');
     expect(global.nodes.find((n) => n.anchor?.lineStart === 12)?.expandsTo).toBe('method:ZCL_CC_POST=>POST');
+    // A map rebuilt for a run signed before 3.1.0 reads the same source as it did then (QA review of e1b11dcdc13b).
+    const before = buildProcessSkeleton(globalSource, { engineVersion: BEFORE_310 });
+    expect(startsOf(before).map((n) => n.label)).toEqual(['run']);
+    expect(before.nodes.find((n) => n.anchor?.lineStart === 7)?.collapsed).toBe(true);
+    expect(before.nodes.find((n) => n.anchor?.lineStart === 7)?.expandsTo).toBe('method:ZCL_CC_POST=>POST');
+    expect(before.nodes.find((n) => n.anchor?.lineStart === 12)?.expandsTo).toBe('method:ZCL_CC_POST=>POST');
+    expect(before.nodes.map((n) => [n.kind, n.label])).toEqual(global.nodes.map((n) => [n.kind, n.label]));
   });
 
   test('D2 — a call that names its class is answered by that class and its superclasses, never by a namesake', () => {

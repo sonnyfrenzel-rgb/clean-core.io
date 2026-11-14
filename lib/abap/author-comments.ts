@@ -69,11 +69,11 @@ const ABAP_KEYWORD = /^(?:SELECT|IF|ENDIF|ELSE|ELSEIF|LOOP|ENDLOOP|READ|MODIFY|U
 
 /**
  * The words of a comment without the frame SAP's editor draws around a routine (`*&----`, `*& Form READ_DATA`): the
- * `&` signs go, and a line that only repeats the routine's name says nothing. `Form POST - one document per currency`
- * keeps what follows the name.
+ * `&` signs at its edges go, an `&` inside the words stays (`Sales & Distribution`), and a line that only repeats the
+ * routine's name says nothing. `Form POST - one document per currency` keeps what follows the name.
  */
 function cleaned(text: string): string {
-  let t = text.replace(/^[&\s]+|[&\s]+$/g, '').replace(/\s*&\s*/g, ' ').trim();
+  let t = text.replace(/^[&\s]+|[&\s]+$/g, '').trim();
   t = t.replace(/^(?:Form|Module|Method|Include|Function|Class)\s+[\w/~=>-]+(?:\s+(?:INPUT|OUTPUT))?\s*(?:[-–:]\s*)?/i, '');
   return t.trim();
 }

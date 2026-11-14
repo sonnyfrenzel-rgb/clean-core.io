@@ -55,6 +55,11 @@ test('an escaped pipe inside a string template does not end it: a quote in the t
   expect(authorCommentsOf('  WRITE |a \\\\| "  so the template ends before this comment\n').at(1)?.text).toBe('so the template ends before this comment');
 });
 
+test('an ampersand inside the comment is the author\'s word and stays; only the frame\'s edge signs go', () => {
+  expect(authorCommentsOf('  x = 1.  " Sales & Distribution routing\n').at(1)?.text).toBe('Sales & Distribution routing');
+  expect(authorCommentsOf('*& Pricing & Billing per item\n  x = 1.\n').at(2)?.text).toBe('Pricing & Billing per item');
+});
+
 test('commented-out code, the editor\'s routine frame and a change marker are not quoted', () => {
   const at = authorCommentsOf(SRC);
   // Above the PERFORM (line 9) stands commented-out code; above FORM (13) only the editor's frame; line 14 a change marker.

@@ -10,7 +10,12 @@ import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
  * Minimal programs written for this spec.
  */
 
-const NEW = ENGINE_READS_310_FROM;
+// The literal release, not the gate: moving the gate must fail here (QA review of e1b11dcdc13b).
+const NEW = '3.1.0';
+
+test('the readings start with release 3.1.0 exactly', () => {
+  expect(ENGINE_READS_310_FROM).toBe('3.1.0');
+});
 
 function names(source: string, engine: string): string[] {
   const skeleton = buildProcessSkeleton(source, { engineVersion: engine });
@@ -41,8 +46,8 @@ test('a flag step says the program\'s own sentence of its arm, or what it sets â
   expect(bare).toContain('Mark as approved');
 });
 
-test('a 3.0.22 hotfix and 3.0.21 draw no flag step at all', () => {
-  for (const engine of ['3.0.21', '3.0.22']) {
+test('the 3.0.x hotfixes up to 3.0.23 and 3.0.21 draw no flag step at all', () => {
+  for (const engine of ['3.0.21', '3.0.22', '3.0.23']) {
     const before = names(FLAG, engine);
     expect(before).not.toContain('Approved without limit check');
     expect(before).not.toContain('Mark as approved');

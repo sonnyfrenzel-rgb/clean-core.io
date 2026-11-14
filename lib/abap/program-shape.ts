@@ -12,7 +12,8 @@ import { readStatements } from './statement-reader';
  *     `FORM userexit_…`) are enhancements SAP calls inside its own processing;
  *   - an output program (`FORM entry USING return_code us_screen`, the `NAST` record) is what SAP runs to print or
  *     send an output message;
- *   - an inbound IDoc function (`TABLES idoc_contrl … idoc_data`) processes incoming IDocs;
+ *   - an inbound IDoc function (`TABLES idoc_contrl … idoc_data`) has the interface SAP calls for incoming IDocs — only
+ *     where a process code is assigned to it, which is set in SAP and not in the code, so it is said as a condition;
  *   - a BW extractor (`i_dsource`, `e_t_data`) hands data to SAP BW when a load asks for it.
  *
  * Null for anything else: a plain report is said by what it reads and changes. Pure.
@@ -63,7 +64,7 @@ export function readProgramShape(source: string): ProgramShape | null {
     && statements.find((s) => /\bidoc_data\b/i.test(s.text));
   if (idoc) {
     const first = statements.find((s) => /\bidoc_contrl\b/i.test(s.text))!;
-    return { kind: 'idoc-inbound', text: 'Processes incoming IDocs: SAP calls it for each IDoc that arrives for its process.', lines: [first.lineStart] };
+    return { kind: 'idoc-inbound', text: 'An inbound IDoc function: SAP calls it for incoming IDocs where a process code is assigned to it.', lines: [first.lineStart] };
   }
   const bw = find(/\bi_dsource\b/i);
   if (bw && statements.some((s) => /\be_t_data\b/i.test(s.text))) {

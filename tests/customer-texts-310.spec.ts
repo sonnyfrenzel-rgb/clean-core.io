@@ -122,6 +122,27 @@ test('texts within every per-kind bound still fit one Firestore document once me
   expect(route.indexOf('tx.set(')).toBeGreaterThan(-1);
 });
 
+test('many data elements on one large domain: the reader copies its values to each, the merge before storing keeps the whole in budget', () => {
+  const values = Array.from({ length: 200 }, (_, i) => `<DD07V><DOMVALUE_L>V${i}</DOMVALUE_L><DDTEXT>${'x'.repeat(MAX_TEXT)}</DDTEXT></DD07V>`).join('');
+  const files = [
+    { name: 'src/zdom_big.doma.xml', text: `<DD01V><DOMNAME>ZDOM_BIG</DOMNAME></DD01V>${values}` },
+    ...Array.from({ length: 300 }, (_, i) => ({
+      name: `src/zel_${i}.dtel.xml`,
+      text: `<DD04V><ROLLNAME>ZEL_${i}</ROLLNAME><DOMNAME>ZDOM_BIG</DOMNAME><DDTEXT>Element ${i}</DDTEXT></DD04V>`,
+    })),
+  ];
+  const read = readCustomerTexts(files)!;
+  expect(Object.keys(read.values)).toHaveLength(300);
+  expect(customerTextsBytes(read)).toBeGreaterThan(CUSTOMER_TEXTS_MAX_BYTES);
+  // What the import stores is the merge (components/workspace/OwnCodeImport.tsx), never the reader's raw result.
+  const merged = mergeCustomerTexts([read])!;
+  expect(customerTextsBytes(merged)).toBeLessThanOrEqual(CUSTOMER_TEXTS_MAX_BYTES);
+  expect(isCustomerTexts(merged)).toBe(true);
+  expect(Object.keys(merged.fields)).toHaveLength(300);
+  const importer = fs.readFileSync(path.join(__dirname, '..', 'components/workspace/OwnCodeImport.tsx'), 'utf8');
+  expect(importer).toMatch(/const customerTexts = mergeCustomerTexts\([\s\S]{0,120}storeCustomerTexts\(docRef\.id, customerTexts\)/);
+});
+
 test('from 3.1.0 the customer\'s words come first and are marked; a 3.0.22 hotfix and no package read as before', () => {
   const texts = readCustomerTexts(FILES);
   const now = labels(NEW, texts);
