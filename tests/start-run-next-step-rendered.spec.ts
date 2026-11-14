@@ -131,3 +131,90 @@ test.describe('a new project while its start run is with the server', () => {
     expect(requests, 'the start sent more than one run').toHaveLength(1);
   });
 });
+
+/**
+ * The reader does not stay on Analyze, Business while the start run is held:
+ * the stage's view switch takes them to IT and Management (the same tool, the
+ * same address with `?first=1`) and back. None of those arrivals may start the
+ * run again — Analyze, Business remounts on the way back, and the first visit
+ * is already marked seen — and the one held run is the one that is signed.
+ */
+test.describe('a new project whose start run is held while the reader switches views', () => {
+  const OWNER = `${unique('start-views')}@cleancore-test.io`;
+  const PROJECT_ID = unique('start-views');
+
+  test.beforeAll(async () => {
+    test.setTimeout(180 * 1000);
+    const cred = await createUserWithEmailAndPassword(clientAuth, OWNER, PASSWORD);
+    await adminSetCustomClaim(cred.user.uid, { admin: true });
+    await adminSetDoc('users', cred.user.uid, {
+      firstName: 'Start', lastName: 'Views', email: OWNER,
+      tier: 'pilot', status: 'approved', isAdmin: true, activatedAt: new Date(),
+      termsVersionAccepted: TERMS_VERSION, mfaEnabled: false,
+      transformationsUsed: 0, transformationsLimit: 5, createdAt: new Date(),
+      modelStages: { analyze: false, naming: false, statements: false },
+    });
+    await adminSetDoc('projects', PROJECT_ID, {
+      name: 'Z_MM_PO_APPROVAL', userId: cred.user.uid,
+      createdAt: new Date(), status: 'uploaded', s4Deployment: 'private',
+      legacyCode: SOURCE,
+    });
+  });
+
+  test('IT, Management and the way back to Business start no second run; the held one is signed', async ({ page }) => {
+    test.setTimeout(360 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1200 });
+
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const requests: string[] = [];
+    await page.route('**/api/runs/create', async (route) => {
+      requests.push(route.request().method());
+      await held;
+      await route.continue();
+    });
+
+    const switchTo = async (label: 'Business' | 'IT' | 'Management', view: string) => {
+      await page.locator('[data-stage-view-switch] [role="radio"]', { hasText: label }).click({ timeout: 60000 });
+      await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', view, { timeout: 60000 });
+      await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60000 });
+    };
+
+    try {
+      await signInViaLanding(page, OWNER, PASSWORD);
+      await page.goto(`/project/${PROJECT_ID}?first=1`, { waitUntil: 'domcontentloaded' });
+      await page.waitForURL(/\/analyze\?first=1/, { timeout: 90000 });
+      await expect.poll(() => requests.length, { timeout: 90000 }).toBeGreaterThan(0);
+      await expectRunning(page);
+
+      await switchTo('IT', 'it');
+      // The tool has read the project (source, no run) — any start it made on
+      // arrival would be on its way; give it the time to reach the route.
+      await expect(page.getByRole('heading', { name: 'Source Code Ready' })).toBeVisible({ timeout: 60000 });
+      await page.waitForTimeout(3000);
+      expect(requests, 'IT started a second run while the first was held').toHaveLength(1);
+
+      await switchTo('Management', 'management');
+      await expect(page.getByRole('heading', { name: 'Source Code Ready' })).toBeVisible({ timeout: 60000 });
+      await page.waitForTimeout(3000);
+      expect(requests, 'Management started a second run while the first was held').toHaveLength(1);
+
+      await switchTo('Business', 'business');
+      await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
+      await page.waitForTimeout(3000);
+      expect(requests, 'Analyze, Business started the run again on the way back').toHaveLength(1);
+    } finally {
+      release();
+    }
+
+    await expect
+      .poll(async () => {
+        const p = await adminGetDoc('projects', PROJECT_ID);
+        return typeof p?.activeRunId === 'string' && p.activeRunId.length > 0;
+      }, { timeout: 120000 })
+      .toBe(true);
+    expect(requests, 'the start sent more than one run').toHaveLength(1);
+  });
+});

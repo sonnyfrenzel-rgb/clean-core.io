@@ -6,7 +6,7 @@ import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin
 import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { starterExampleIndex, fingerprintExampleSource } from '../lib/starter-example-fingerprints';
 import { starterExampleIsFree } from '../lib/run-quota-rule';
@@ -537,7 +537,13 @@ test.describe('the screen says what the click costs, before the click', () => {
     await expect(page).toHaveURL(/\/dashboard/);
 
     await panel.locator('[data-example-start="Z_INVOICE_EXTRACTOR"]').click();
-    await page.waitForURL(/\/project\/[^/?]+/, { timeout: 45000 });
+    // Into the project's entry, Analyze in the Business view, as a first visit — and the start run signs there.
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 45000 });
+    const projectId = new URL(page.url()).pathname.split('/')[2];
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+    await expect
+      .poll(async () => (await adminGetDoc('projects', projectId))?.activeRunId ?? null, { timeout: 120000 })
+      .toBeTruthy();
   });
 
   test('the dashboard warns before restarting an example, and does not start it', async ({ page }) => {

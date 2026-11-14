@@ -123,6 +123,9 @@ test.describe("Analyze's copy follows the mockup's rule", () => {
     let values = 0;
     for (const part of SCOPE) {
       expect(WORKSPACE_MESSAGE_PARTS, `catalogue part ${part}`).toHaveProperty(part);
+      // The search reads flat strings: a nested value would be copy it never sees.
+      const nested = Object.entries(WORKSPACE_MESSAGE_PARTS[part] as Record<string, unknown>).filter(([, v]) => typeof v !== 'string');
+      expect(nested.map(([k]) => `${part}.${k}`), 'a catalogue value the copy search does not read').toEqual([]);
       values += entries(part).length;
     }
     expect(values, 'the scope reads hundreds of sentences today').toBeGreaterThan(400);

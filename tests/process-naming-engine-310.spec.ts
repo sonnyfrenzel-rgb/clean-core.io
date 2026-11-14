@@ -1,7 +1,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { expect, test } from './helpers/test';
-import { namingContextOf } from '../lib/process-naming';
+import {
+  NAMING_FORMAT_VERSION,
+  NAMING_MADE_FROM_FACTS,
+  applyNaming,
+  namingContextOf,
+  validateNamingAnswer,
+  type ProcessNamingRecord,
+} from '../lib/process-naming';
+import { aiNamesOfNaming, buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
 
@@ -66,4 +74,56 @@ test('an old project\'s stored naming keeps applying: the context of its engine 
   const live = namingContextOf(SRC, { engineVersion: '3.0.21' });
   expect(live.digest).toBe(stored);
   expect(namingContextOf(SRC, { engineVersion: ENGINE_READS_310_FROM }).digest).not.toBe(stored);
+});
+
+/**
+ * A naming as the route stores it for the 3.1.0 reading: one name in the model's own words ("Mark approved", where
+ * the engine says "Mark as approved"), citing the step's facts, validated against that reading; its digest; its origin.
+ */
+function storedNaming(): ProcessNamingRecord {
+  const context = namingContextOf(SRC, { engineVersion: ENGINE_READS_310_FROM });
+  const step = context.skeleton.nodes.find((n) => (context.facts?.get(n.id) ?? []).some((f) => f.kind === 'engine' && f.text === 'Mark as approved'));
+  if (!step) throw new Error('the fixture has no "Mark as approved" step');
+  const facts = (context.facts?.get(step.id) ?? []).map((f) => f.id);
+  const validated = validateNamingAnswer(context, JSON.stringify({ names: [{ id: step.id, name: 'Mark approved', facts }], lanes: [] }));
+  return {
+    formatVersion: NAMING_FORMAT_VERSION,
+    digest: context.digest,
+    names: validated.names,
+    lanes: validated.lanes,
+    discarded: validated.discarded,
+    origin: { source: 'model', receipt: 'verified', provider: 'google-gemini', modelId: 'gemini-fixture', byok: false, issuedAt: Date.parse('2026-11-10T09:00:00.000Z'), textSha256: 'a'.repeat(64) },
+    namedAt: '2026-11-10T09:00:05.000Z',
+    madeFrom: NAMING_MADE_FROM_FACTS,
+  };
+}
+
+test('a stored naming is applied by the map and the export of the engine it was made for, and by no other', () => {
+  const record = storedNaming();
+  expect(record.names.map((n) => n.name), 'the fixture names nothing').toEqual(['Mark approved']);
+  const now = namingContextOf(SRC, { engineVersion: ENGINE_READS_310_FROM });
+  const old = namingContextOf(SRC, { engineVersion: '3.0.21' });
+
+  // The map (`hooks/useProcessMap.ts` and the export both read `applyNaming`).
+  const live = applyNaming(now, record);
+  expect(live.state).toBe('named');
+  expect(live.counts.named).toBe(record.names.length);
+  const other = applyNaming(old, record);
+  expect(other.state, 'a naming made for the 3.1.0 map was applied to the 3.0.21 map').not.toBe('named');
+  expect(other.nodes.every((n) => n.businessName === null)).toBe(true);
+
+  // The export's names: on the matching map only.
+  const names = aiNamesOfNaming(now, record);
+  expect(Object.values(names?.names ?? {})).toEqual(['Mark approved']);
+  expect(names?.authorship.modelId).toBe('gemini-fixture');
+  expect(aiNamesOfNaming(old, record)).toBeUndefined();
+
+  // And through the file a reader downloads: the model-written names are marked in the 3.1.0 file, and the
+  // 3.0.21 file carries none.
+  const opts = { processName: 'Flag', sourceFileName: 'ZT_FLAG.abap', naming: record };
+  const mark = /<cc:origin value="ai" ai_provider="[^"]*" ai_model="gemini-fixture"/g;
+  const file = buildReadingExports(SRC, { ...opts, exporterVersion: ENGINE_READS_310_FROM }).bpmn.xml;
+  expect(file.match(mark)?.length ?? 0).toBeGreaterThan(0);
+  expect(file).toContain('Mark approved');
+  expect(buildReadingExports(SRC, { ...opts, exporterVersion: '3.0.21' }).bpmn.xml).not.toContain('gemini-fixture');
 });

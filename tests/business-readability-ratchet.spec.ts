@@ -4,6 +4,7 @@ import { expect, test } from './helpers/test';
 import { measure, readBusiness, total, type Readability } from './helpers/business-readability';
 import { EXAMPLES_DIR } from './helpers/starter-example-files';
 import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
+import { STARTER_EXAMPLES } from '../lib/starter-examples';
 
 /**
  * The readability ratchet of the Business view over the seven examples the site offers (concept
@@ -58,6 +59,12 @@ function examples(): Readability {
 }
 
 test.describe('Business readability of the seven examples — never worse (engine 3.1.0)', () => {
+  test('the measure reads exactly the seven examples the site offers', () => {
+    const offered = STARTER_EXAMPLES.map((e) => e.file).sort();
+    expect(offered).toHaveLength(7);
+    expect(fs.readdirSync(EXAMPLES_DIR).sort(), 'the examples directory and the offered list differ').toEqual(offered);
+  });
+
   test('BPMN steps: raw names, empty formulas, technique, duplicates', () => {
     const t = examples().tasks;
     expect(t.n).toBeGreaterThan(100);

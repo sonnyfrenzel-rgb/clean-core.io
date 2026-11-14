@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { test, expect } from './helpers/test';
+import { test, expect, type Page } from './helpers/test';
 import { adminMergeDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { seedLayoutProject } from './helpers/analyze-layout';
@@ -131,6 +131,37 @@ test.describe('the source: Business on Analyze is the map, not the score', () =>
   });
 });
 
+/**
+ * The reading order as drawn: the summary, the map, the first insights, then "Next step", each
+ * starting below the one before, and the keyboard reaching them in the same order. The source
+ * guard (`tests/a11y-source-guard.spec.ts`) holds the DOM order; this holds what the reader sees.
+ */
+async function expectReadingOrder(page: Page): Promise<void> {
+  const blocks = ['[data-analyze-summary]', '[data-analyze-map]', '[data-analyze-interim] [data-first-look]', '[data-analyze-interim] [data-next-step]'];
+  for (const sel of blocks) await expect(page.locator(sel).first(), `${sel} is not shown`).toBeVisible({ timeout: 60000 });
+  const tops = await Promise.all(blocks.map(async (sel) => (await page.locator(sel).first().boundingBox())?.y ?? NaN));
+  for (let i = 1; i < tops.length; i++) {
+    expect(tops[i], `${blocks[i]} is drawn above ${blocks[i - 1]}`).toBeGreaterThan(tops[i - 1]);
+  }
+  // Focus order: every focusable control of a later block comes after every one of an earlier block.
+  const misordered = await page.evaluate((sels) => {
+    const focusable = [...document.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])')].filter(
+      (el) => el.tabIndex >= 0 && el.offsetParent !== null,
+    );
+    const blockOf = (el: HTMLElement) => sels.findIndex((sel) => !!el.closest(sel));
+    let last = -1;
+    const out: string[] = [];
+    for (const el of focusable) {
+      const b = blockOf(el);
+      if (b < 0) continue;
+      if (b < last) out.push(`${sels[b]} after ${sels[last]}: ${el.outerHTML.slice(0, 80)}`);
+      last = Math.max(last, b);
+    }
+    return out;
+  }, blocks);
+  expect(misordered, 'the keyboard reaches a block out of reading order').toEqual([]);
+}
+
 test.describe('rendered: the seeded PO approval project in Analyze, Business', () => {
   test.describe.configure({ mode: 'serial' });
 
@@ -165,6 +196,7 @@ test.describe('rendered: the seeded PO approval project in Analyze, Business', (
       return seen;
     });
     expect(between, 'something stands between the summary and the map').toEqual([]);
+    await expectReadingOrder(page);
 
     // No score, no findings, no code before a click.
     await expect(page.locator('[data-analyze-score]')).toHaveCount(0);
@@ -242,5 +274,6 @@ test.describe('rendered: the seeded PO approval project in Analyze, Business', (
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow, 'the page scrolls sideways on a phone').toBeLessThanOrEqual(1);
     await expect(page.locator('[data-analyze-walk=""]')).toBeVisible();
+    await expectReadingOrder(page);
   });
 });

@@ -94,6 +94,9 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
 - Business view: a routine called inside a condition is worded with the 3.1.0 vocabulary, and two bounds read as a
   range ("between", "outside") only when they are numbers in order.
 - ATC import: the privacy notice names every field that is kept, including include, priority, line and exemption.
+- Tests: the first-screen counter no longer counts a control faded out by its parent or lying beside the viewport.
+- Dictionary review list: a domain value is counted only in the cases that write that value, not in every case that
+  names the field.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
