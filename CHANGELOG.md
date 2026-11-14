@@ -87,6 +87,8 @@ Signed runs and the audit pack do not change.
 - Analyze: while the start run begun in the Business view is still being signed, IT and Management keep "Start
   Analysis" closed and say the analysis is running, and the Business view shows it running instead of a sign button
   that did nothing.
+- First insights: the short change list beside the story now reads the project's own engine version, as the full
+  list does, so a project read by an earlier engine no longer shows customer texts or list markings in it.
 
 #### Engine readings (gated from 3.1.0; runs signed before keep their reading)
 - Customer texts: storing them re-checks the project in the same transaction, so texts sent while the project is being deleted are not left behind.
