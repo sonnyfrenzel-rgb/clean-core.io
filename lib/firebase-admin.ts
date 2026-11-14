@@ -1778,6 +1778,33 @@ export async function adminRevokeS4(adminUid: string, targetUid: string) {
   await batch.commit();
 }
 
+/**
+ * An account's objection to the weekly usage report (Art. 21 GDPR; privacy
+ * policy section 9). The account objects by e-mail; the operator records it
+ * here, and from the next report on `buildUsageReport` (lib/usage-report.ts)
+ * leaves the account out of every figure — its account, runs, projects and
+ * mails. Clearing it counts the account again.
+ *
+ * Server-written only: `usageReportObjectionAt` is in neither client
+ * allowlist of firestore.rules (`userClientCreateKeys`, `userClientUpdateKeys`),
+ * so no browser can set or remove it. It goes with the profile when the
+ * account is erased. False when there is no such account: the marker never
+ * creates a profile.
+ */
+export async function adminSetUsageReportObjection(adminUid: string, targetUid: string, on: boolean): Promise<boolean> {
+  await ensureInitialized();
+  const { db, FieldValue } = await getAdminDb();
+  const userRef = db.collection('users').doc(targetUid);
+  if (!(await userRef.get()).exists) return false;
+  const batch = db.batch();
+  batch.update(userRef, {
+    usageReportObjectionAt: on ? FieldValue.serverTimestamp() : FieldValue.delete(),
+  });
+  batch.set(db.collection('audit_events').doc(), await auditEventRecord(db, adminUid, on ? 'USAGE_REPORT_OBJECTION_ON' : 'USAGE_REPORT_OBJECTION_OFF', targetUid));
+  await batch.commit();
+  return true;
+}
+
 export async function adminDeleteUser(adminUid: string, targetUid: string) {
   await ensureInitialized();
   const { db } = await getAdminDb();

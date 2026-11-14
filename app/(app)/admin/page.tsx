@@ -5,7 +5,7 @@ import { nav } from '@/lib/messages/navigation';
 import { collection, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { getDb, getAuth } from '@/lib/firebase';
 import { useUserProfile } from '@/hooks/useUserProfile';
-import { ArrowLeft, Trash2, Search, UserX, UserCheck, Globe } from 'lucide-react';
+import { ArrowLeft, Trash2, Search, UserX, UserCheck, Globe, EyeOff } from 'lucide-react';
 import { APP_VERSION } from '@/lib/version';
 import { formatDateTime } from '@/lib/format';
 import CcButton from '@/components/cc/Button';
@@ -66,7 +66,7 @@ export default function AdminConsole() {
   }, []);
   
   const [actionUid, setActionUid] = useState<string | null>(null);
-  const [actionType, setActionType] = useState<'approving' | 'revoking' | 'deleting' | 'tenant' | null>(null);
+  const [actionType, setActionType] = useState<'approving' | 'revoking' | 'deleting' | 'tenant' | 'objection' | null>(null);
 
   const db = getDb();
 
@@ -91,12 +91,14 @@ export default function AdminConsole() {
           
           let s4TenantAccessAllowed = false;
           let s4TenantAccessRequested = false;
+          let usageReportObjection = false;
           try {
             const userSnap = await getDoc(doc(db, 'users', uid));
             if (userSnap.exists()) {
               const userData = userSnap.data();
               s4TenantAccessAllowed = userData.s4TenantAccessAllowed || false;
               s4TenantAccessRequested = userData.s4TenantAccessRequested || false;
+              usageReportObjection = !!userData.usageReportObjectionAt;
             }
           } catch (userErr) {
             console.error(`Error reading user profile for S/4 flags:`, userErr);
@@ -111,6 +113,7 @@ export default function AdminConsole() {
             ...data,
             s4TenantAccessAllowed,
             s4TenantAccessRequested,
+            usageReportObjection,
             createdAt: dateObj
           };
         }));
@@ -211,6 +214,36 @@ export default function AdminConsole() {
     } catch (err: any) {
       console.error('Error revoking user:', err);
       setActionError(err.message || 'Failed to revoke access.');
+    } finally {
+      setActionUid(null);
+      setActionType(null);
+    }
+  };
+
+  // Privacy policy section 9: an account that objected by e-mail is left out
+  // of the weekly usage report from the next report on. The server writes the
+  // marker and its audit row; the browser only asks.
+  const handleToggleUsageReportObjection = async (uid: string, currentlyObjected: boolean) => {
+    setActionUid(uid);
+    setActionType('objection');
+    try {
+      const token = await getAuth().currentUser?.getIdToken();
+      const res = await fetch('/api/admin/console-action', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ uid, action: currentlyObjected ? 'usage-report-objection-off' : 'usage-report-objection-on' }),
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to record the objection.');
+      }
+      setRequests(prev => prev.map(r => r.uid === uid ? { ...r, usageReportObjection: !currentlyObjected } : r));
+    } catch (err) {
+      console.error('Error recording the usage report objection:', err);
+      setActionError(err instanceof Error && err.message ? err.message : 'Failed to record the objection.');
     } finally {
       setActionUid(null);
       setActionType(null);
@@ -422,6 +455,7 @@ export default function AdminConsole() {
                         suspended. */}
                     <AccountStateText entry={accountState(req.status)} />
                     {req.s4TenantAccessAllowed && <CcTag>S/4 tenant access granted</CcTag>}
+                    {req.usageReportObjection && <CcTag>Objected: not in the usage report</CcTag>}
                     {!req.s4TenantAccessAllowed && req.s4TenantAccessRequested && (
                       <AccountStateText entry={{ label: 'S/4 tenant access requested', state: 'information' }} />
                     )}
@@ -471,6 +505,17 @@ export default function AdminConsole() {
                         {req.s4TenantAccessAllowed ? 'Revoke BYOT' : 'Grant BYOT'}
                       </CcButton>
                     )}
+
+                    <CcButton
+                      variant="ghost"
+                      icon={<EyeOff size={16} aria-hidden={true} />}
+                      busy={busyRow && actionType === 'objection'}
+                      disabled={busyRow && actionType !== 'objection'}
+                      onClick={() => handleToggleUsageReportObjection(req.uid, !!req.usageReportObjection)}
+                      title="The account objected by e-mail (privacy policy section 9): leave it out of the weekly usage report"
+                    >
+                      {req.usageReportObjection ? 'Clear report objection' : 'Record report objection'}
+                    </CcButton>
 
                     <CcButton
                       variant="ghost"

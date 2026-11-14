@@ -9,6 +9,7 @@ import {
   adminDeleteUser,
   adminBlockOwnModelKey,
   adminEndByokAgreement,
+  adminSetUsageReportObjection,
   getAdminAuth,
 } from '@/lib/firebase-admin';
 import { sendAgreementEndedMail } from '@/lib/byok-agreement-mail';
@@ -85,6 +86,14 @@ export async function POST(req: NextRequest) {
           const email = await getAdminAuth().then((auth) => auth.getUser(uid)).then((u) => u.email ?? null, () => null);
           await sendAgreementEndedMail(email, uid, 'text-form');
         }
+        break;
+      }
+      // Privacy policy section 9: an account that objected by e-mail is left
+      // out of the weekly usage report from the next report on (Art. 21 GDPR).
+      case 'usage-report-objection-on':
+      case 'usage-report-objection-off': {
+        const found = await adminSetUsageReportObjection(decodedAdmin.uid, uid, action === 'usage-report-objection-on');
+        if (!found) return NextResponse.json({ error: 'No such account.' }, { status: 404 });
         break;
       }
       default:

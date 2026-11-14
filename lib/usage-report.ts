@@ -164,6 +164,17 @@ export interface UsageReportSource {
 }
 
 /**
+ * Whether an account objected to the usage figures (privacy policy section 9,
+ * Art. 21 GDPR). The operator sets `usageReportObjectionAt` on the profile
+ * through the Admin Console (`adminSetUsageReportObjection`,
+ * lib/firebase-admin.ts); no browser can write it.
+ */
+export function objectedToUsageReport(user: DocumentData): boolean {
+  const v = user.usageReportObjectionAt;
+  return v !== undefined && v !== null && v !== false;
+}
+
+/**
  * @param periodEnd end of the reporting week (exclusive); defaults to now
  */
 export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = new Date()): Promise<UsageReport> {
@@ -181,9 +192,21 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
     db.collection('email_events').get(),
   ]);
 
+  // An account that objected (privacy policy section 9) is left out of every
+  // figure below: it is not in the cohort, so its runs and projects are not
+  // counted, and its mail is left out too — recognised by the uid the send
+  // records (`recordEmailSent`), or by the address in clear on a record written
+  // before 3.0.21. Nothing of it is counted, nothing of it listed.
+  const objected = usersSnap.docs.filter((d) => objectedToUsageReport(d.data()));
+  const objectedUids = new Set(objected.map((d) => d.id));
+  const objectedAddresses = new Set(
+    objected.map((d) => String(d.data().email || '').trim().toLowerCase()).filter((a) => a !== ''),
+  );
+
   // CI accounts are excluded everywhere: they outnumber real users several times
   // over and would make every trend meaningless.
   const cohort: Cohort[] = usersSnap.docs
+    .filter((d) => !objectedUids.has(d.id))
     .map((d) => {
       const u = d.data();
       const tier = u.tier || 'pilot';
@@ -256,6 +279,7 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
       const to: string[] = Array.isArray(m.to) ? m.to : m.to ? [m.to] : [];
       return {
         to: to[0] || '',
+        uid: typeof m.uid === 'string' ? m.uid : null,
         // Since 3.0.21 the record keeps the address as its keyed hash only, so
         // the send marks a test recipient itself; the address rule still
         // catches a record written before.
@@ -265,7 +289,8 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
         sentAt: toDate(m.sentAt),
       };
     })
-    .filter((m) => inWindow(m.sentAt, periodStart, periodEnd) && !m.test && !isTestAccount(m.to));
+    .filter((m) => inWindow(m.sentAt, periodStart, periodEnd) && !m.test && !isTestAccount(m.to))
+    .filter((m) => !(m.uid && objectedUids.has(m.uid)) && !objectedAddresses.has(m.to.trim().toLowerCase()));
 
   const countBy = (status: string) => mail.filter((m) => m.status === status).length;
   const delivery: DeliveryMetrics = {
