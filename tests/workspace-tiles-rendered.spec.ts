@@ -206,6 +206,20 @@ test.describe('a new account: two equal products', () => {
   }
 });
 
+test.describe('Re-design an example end to end (W4)', () => {
+  test('the example’s analysis is signed, then Design opens on it', async ({ page }) => {
+    test.setTimeout(360_000);
+    const email = `ws330-rd-${stamp}@cleancore-test.io`;
+    await makeAccount(email);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signInViaLanding(page, email, PASSWORD);
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-home-redesign-example]').click({ timeout: 120_000 });
+    await page.waitForURL(/\/project\/[^/?#]+\/analyze\?first=1/, { timeout: 120_000 });
+    await page.waitForURL(/\/project\/[^/?#]+\/design/, { timeout: 180_000 });
+  });
+});
+
 test.describe('a returning account: next step, counts, tiles', () => {
   let programs: Awaited<ReturnType<typeof seedPrograms>>;
   test.beforeAll(async () => {
