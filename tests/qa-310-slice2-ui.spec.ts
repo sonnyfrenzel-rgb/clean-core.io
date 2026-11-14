@@ -43,3 +43,12 @@ test('the recommended home example says in its accessible name that it ran befor
   const button = src.slice(src.indexOf('onClick={() => start(startHere)}'), src.indexOf('data-home-start-example=""'));
   expect(button).toContain("aria-label={starterStartLabel(account, rec.name, wt('home.startExample'))}");
 });
+
+test('a failure of an earlier own-list subscription does not pass the workspace loading gate', () => {
+  const src = read('components/workspace/WorkspaceListReport.tsx');
+  const effect = src.slice(src.indexOf("where('userId', '==', user.uid)"), src.indexOf('}, [user]);'));
+  const reset = effect.indexOf('setOwnFailedFor(null);');
+  expect(reset).toBeGreaterThan(0);
+  expect(reset).toBeLessThan(effect.indexOf('onSnapshot('));
+  expect(effect.indexOf('setOwnFailedFor(uid);')).toBeGreaterThan(effect.indexOf('onSnapshot('));
+});

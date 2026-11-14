@@ -225,6 +225,10 @@ export default function WorkspaceListReport({
       limit(25),
     );
     const uid = user.uid;
+    // A failure belongs to the subscription that had it: a new one (the same
+    // account again, after another) waits for its own answer behind the
+    // loading gate instead of passing it on an old error.
+    setOwnFailedFor(null);
     // Roadmap 3.0.14, item 9: a row's phases are read from its artefacts, and
     // a project keeps its large ones beside its document — filled in from the
     // server first. Only the newest list is shown.
