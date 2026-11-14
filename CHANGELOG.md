@@ -185,6 +185,7 @@ Signed runs and the audit pack do not change.
 - Dictionary review list: a domain value is counted for a field only in a case that compares or assigns that value to the field, not in every case that names the field and has the same literal somewhere else.
 - Process benchmark: the run selection the evaluator writes on every run is no longer committed (it slipped in a second time) and is ignored; the corpus stays pinned by its frozen digests.
 - Privacy archive script: an archived version whose file differs from the rendered source is never overwritten, also when the script runs without version ids; it names the files and stops before writing anything, and only `--force` overwrites.
+- Model proxy: the fallback model's call on the community key is counted against the day's platform budget before it is sent; when the budget refuses it or cannot be read, the fallback is not asked and the incomplete first answer is reported as before.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

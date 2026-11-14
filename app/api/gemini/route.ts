@@ -812,7 +812,21 @@ export async function POST(request: NextRequest) {
     // level, under the same bound and the same deadline. Logged as a call of
     // its own; the stub answers no fallback, because the stub's answer is the
     // test's choice.
-    if (!completion.ok && completion.reason !== 'filtered' && plan.fallback && ai && !stubbed) {
+    // The fallback is a second provider call on the platform key (an own key has
+    // none), so the day's budget counts it like the first; when the budget
+    // refuses it, or cannot be read, it is not asked and the first answer's
+    // outcome stands.
+    const fallbackCounted = async (): Promise<boolean> => {
+      if (!platformDay) return true;
+      try {
+        const { db, FieldValue } = await getAdminDb();
+        return (await reservePlatformModelCall(db, (n) => FieldValue.increment(n))).ok;
+      } catch (budgetErr: unknown) {
+        logger.error('platform model budget check failed', { route: 'api/gemini', error: budgetErr instanceof Error ? budgetErr.name : 'unknown' });
+        return false;
+      }
+    };
+    if (!completion.ok && completion.reason !== 'filtered' && plan.fallback && ai && !stubbed && (await fallbackCounted())) {
       const fallbackModel = plan.fallback;
       logger.warn('gemini answer incomplete, asking the fallback model', { route: 'api/gemini', reason: completion.reason, finishReason: completion.finishReason });
       const fallbackThinking = thinkingConfigFor(shape, process.env, { model: fallbackModel, stage });

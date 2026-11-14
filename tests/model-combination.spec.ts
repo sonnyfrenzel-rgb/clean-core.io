@@ -188,7 +188,7 @@ test.describe('the route', () => {
   });
 
   test('asks the fallback once, only for an unfinished answer the filter did not stop, under the same bound and deadline, and names who answered', () => {
-    const at = route.indexOf("if (!completion.ok && completion.reason !== 'filtered' && plan.fallback && ai && !stubbed) {");
+    const at = route.indexOf("if (!completion.ok && completion.reason !== 'filtered' && plan.fallback && ai && !stubbed && (await fallbackCounted())) {");
     expect(at).toBeGreaterThan(route.indexOf('const completion = modelCompletion(answer);'));
     const cascade = route.slice(at, route.indexOf('if (!outcome.ok) {', at));
     expect(cascade.match(/ai\.models\.generateContent\(\{/g)).toHaveLength(1);
@@ -207,5 +207,16 @@ test.describe('the route', () => {
     expect(route).toContain('const record: StageAnswerRecord = { provider: receiptProvider, modelId: answeredModel, keyOwner,');
     expect(route).toContain('const answeredBy = { provider: receiptProvider, modelId: answeredModel, keyOwner,');
     expect(route).not.toMatch(/modelId: servedModel/);
+  });
+
+  test('the fallback is a second platform-key call: the day budget counts it before it is asked, and a refusal skips it', () => {
+    const counted = route.slice(route.indexOf('const fallbackCounted = async (): Promise<boolean> => {'), route.indexOf("if (!completion.ok && completion.reason !== 'filtered'"));
+    expect(counted).toContain('if (!platformDay) return true;');
+    expect(counted).toContain('return (await reservePlatformModelCall(db, (n) => FieldValue.increment(n))).ok;');
+    // A budget that cannot be read refuses the fallback rather than letting it through uncounted.
+    expect(counted).toMatch(/catch \(budgetErr: unknown\) \{[\s\S]*return false;/);
+    // Checked last in the condition, so it counts only a fallback that would otherwise be asked.
+    expect(route).toMatch(/plan\.fallback && ai && !stubbed && \(await fallbackCounted\(\)\)\) \{/);
+    expect(route.indexOf('let platformDay: string | null = null;')).toBeLessThan(route.indexOf('const fallbackCounted = async'));
   });
 });
