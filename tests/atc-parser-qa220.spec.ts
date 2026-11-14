@@ -38,7 +38,8 @@ test('the privacy notice names every field the import keeps (QA review of 981971
     sanitizeAtcFindings([{ objectName: 'Z', objectType: 'PROG', checkId: 'C', checkTitle: 'T', message: 'M', priority: 'error', line: 1, include: 'I', exempted: false }])[0],
   );
   const said: Record<string, RegExp> = {
-    objectName: /object/i, objectType: /object/i, checkId: /check/i, checkTitle: /check/i, message: /message/i,
+    // The notice names the object (name and type) and the check (ID) as one word each; the title by its own words.
+    objectName: /\bobject\b/i, objectType: /\bobject\b/i, checkId: /\bcheck\b/i, checkTitle: /\bcheck title\b/i, message: /message/i,
     priority: /priority/i, line: /\bline\b/i, include: /include/i, exempted: /exemption/i,
   };
   for (const key of kept) expect(ATC_PRIVACY_NOTICE, key).toMatch(said[key] ?? /^$/);
