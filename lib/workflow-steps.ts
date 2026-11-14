@@ -1126,7 +1126,8 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
         (failure.state === 'current' ? ` ${failureSentence(failure.failure)}` : '') +
         (tests.attestedFailures > 0 || failure.state === 'current'
           ? ' Fix it and run again, or close testing with a reason — it then reads "not verified".'
-          : ''),
+          : '') +
+        (tests.suiteEditedByOwner ? ` ${OWNER_EDITED_SUITE_NOTE}` : ''),
     });
   }
 

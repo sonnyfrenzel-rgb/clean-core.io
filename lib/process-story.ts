@@ -508,8 +508,11 @@ export function processChanges(
   max = 5,
   /** From engine 3.0.20 a change to the result list says what each line is marked with (`listChangeAt`). */
   engineVersion: string | null = APP_VERSION,
+  /** 3.1.0 (H5b): the project's customer texts, read under the same engine gate as the story's. */
+  customerTexts?: CustomerTexts | null,
 ): { changes: StoryChange[]; more: number } {
-  const labels = plainLabels(skeleton, source, { engineVersion });
+  const texts = engineReads310Apply(engineVersion) && customerTexts ? customerTexts : null;
+  const labels = plainLabels(skeleton, source, { engineVersion, ...(texts ? { customerTexts: texts } : {}) });
   const reading = engineReads3020Apply(engineVersion) ? firstLookReadingOf(source, null) : null;
   const seen = new Set<string>();
   const all: StoryChange[] = [];

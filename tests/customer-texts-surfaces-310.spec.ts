@@ -3,7 +3,7 @@ import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { buildProcessFacts } from '../lib/abap/process-facts';
 import { deriveBusinessRulesFrom } from '../lib/abap/business-rule-set';
 import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
-import { processStory } from '../lib/process-story';
+import { processChanges, processStory } from '../lib/process-story';
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
 import { businessInShort, programSummary } from '../lib/program-summary-text';
 import { buildReadingExports } from '../lib/bpmn/export';
@@ -114,4 +114,13 @@ test('the rule basket\'s counts are the same with the customer texts and without
   expect(questionRuleCountsOf(withTexts, 0)).toEqual(questionRuleCountsOf(without, 0));
   const src = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'workspace', 'RuleBasketLine.tsx'), 'utf8');
   expect(src).toMatch(/const c = questionRuleCountsOf\(ex, 0\);/);
+});
+
+/** The change list beside the story reads the same customer texts, under the same engine gate. */
+test("the change list says the customer's words for a table it changes, and not for a 3.0.22 hotfix", () => {
+  const changes = (engine: string, texts = TEXTS) =>
+    processChanges(buildProcessSkeleton(PROGRAM, { engineVersion: engine }), PROGRAM, 100, engine, texts).changes.map((c) => c.text);
+  const withTexts = changes(NEW);
+  expect(withTexts.some((t) => /minimum quantities per customer group/i.test(t)), withTexts.join(' | ')).toBe(true);
+  for (const t of [...changes(NEW, null), ...changes(HOTFIX)]) expect(t).not.toMatch(/minimum quantities per customer group/i);
 });

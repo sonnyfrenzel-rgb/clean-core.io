@@ -97,6 +97,20 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
 - Tests: the first-screen counter no longer counts a control faded out by its parent or lying beside the viewport.
 - Dictionary review list: a domain value is counted only in the cases that write that value, not in every case that
   names the field.
+- The first-run guide no longer promises a timed first look with Pause and Skip; it describes the first insights as
+  they now appear.
+- Verify an audit pack: the AI statement is said to be covered by the signature only for a pack that verified.
+- The naming status line announces only its settled result to a screen reader, not every count while names arrive.
+- AI names that arrive after the 45-second limit are held back with reduced motion too, as without it.
+- The process map shows "loading" rather than the previous map when the run's engine version changes.
+- The Business view's change list uses the project's customer texts, as the process story beside it does.
+- Process documentation: an authorization named only in a text literal is no longer reported as the program's own
+  role check.
+- Testing: the note that the owner edited the suite now also stands beside a recorded run with failures.
+- My workspace: an example run before says so in its button's accessible name, not only in the visible badge.
+- Analyze: while the start run begun in the Business view is still being signed, IT and Management keep "Start
+  Analysis" closed and say the analysis is running, and the Business view shows it running instead of a sign button
+  that did nothing.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

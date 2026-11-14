@@ -127,6 +127,14 @@ test.describe('the names arrive: engine names at once, a counted status line, a 
     const after = arrivalAt(input({ arrivedAt: T0 + NAMING_CEILING_MS + 1 }), T0 + NAMING_CEILING_MS + 10_000);
     expect(after.phase).toBe('timeout');
     expect(after.shown.size).toBe(0);
+    // Reduced motion changes how names arrive, not the ceiling: a late naming is a timeout there too.
+    const lateInstant = arrivalAt(input({ arrivedAt: T0 + NAMING_CEILING_MS + 1, instant: true }), T0 + NAMING_CEILING_MS + 10_000);
+    expect(lateInstant.phase).toBe('timeout');
+    expect(lateInstant.shown.size).toBe(0);
+    // In time, reduced motion shows the names at once.
+    const onTimeInstant = arrivalAt(input({ arrivedAt: T0 + 3_000, instant: true }), T0 + 3_000);
+    expect(onTimeInstant.phase).toBe('ready');
+    expect(onTimeInstant.shown.size).toBe(22);
   });
 
   test('a failed model leaves every engine name and says so in one sentence', () => {

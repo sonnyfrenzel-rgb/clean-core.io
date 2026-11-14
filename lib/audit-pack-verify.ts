@@ -559,6 +559,17 @@ export function ed25519Label(state: Ed25519State): string {
 }
 
 /**
+ * The line under a pack's AI statement. The statement sits in the manifest, so
+ * the signature covers it only when the manifest and its signature verified
+ * (`status === 'authentic'`); for any other result it is the pack's own claim.
+ */
+export function aiStatementCoverageLine(result: Pick<VerifyResult, 'status'>): string {
+  return result.status === 'authentic'
+    ? 'The analysis narrative is model text and not part of this pack; the statement is covered by the signature.'
+    : 'The analysis narrative is model text and not part of this pack; the signature over this statement was not confirmed, so it is the pack’s own claim.';
+}
+
+/**
  * Authentic, but not all of it: the signature verified, and the pack carries a
  * user-attested file whose contents its manifest version does not bind, or
  * shows export details (issue date, project, run, engine, catalog) its manifest

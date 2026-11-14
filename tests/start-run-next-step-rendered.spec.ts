@@ -59,6 +59,14 @@ async function expectRunning(page: Page): Promise<void> {
   await expect(page.locator('[data-workspace-sign], [data-workspace-sign-retry]')).toHaveCount(0);
 }
 
+/** Analyze in IT or Management while the start run is held: Start is closed and says the analysis is running. */
+async function expectStartClosed(page: Page): Promise<void> {
+  const start = page.getByRole('button', { name: /Start Analysis/ });
+  await expect(start).toBeVisible({ timeout: 60000 });
+  await expect(start, 'Start Analysis is open while the start run is with the server').toBeDisabled();
+  await expect(page.locator('[data-start-blocked-reason]')).toContainText('The analysis is running', { timeout: 60000 });
+}
+
 test.describe('a new project while its start run is with the server', () => {
   const OWNER = `${unique('start-next')}@cleancore-test.io`;
   const PROJECT_ID = unique('start-next');
@@ -193,16 +201,20 @@ test.describe('a new project whose start run is held while the reader switches v
       // The tool has read the project (source, no run) — any start it made on
       // arrival would be on its way; give it the time to reach the route.
       await expect(page.getByRole('heading', { name: 'Source Code Ready' })).toBeVisible({ timeout: 60000 });
+      await expectStartClosed(page);
       await page.waitForTimeout(3000);
       expect(requests, 'IT started a second run while the first was held').toHaveLength(1);
 
       await switchTo('Management', 'management');
       await expect(page.getByRole('heading', { name: 'Source Code Ready' })).toBeVisible({ timeout: 60000 });
+      await expectStartClosed(page);
       await page.waitForTimeout(3000);
       expect(requests, 'Management started a second run while the first was held').toHaveLength(1);
 
       await switchTo('Business', 'business');
       await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
+      // Back in Business the held run still reads as running: no sign button the guard would ignore.
+      await expectRunning(page);
       await page.waitForTimeout(3000);
       expect(requests, 'Analyze, Business started the run again on the way back').toHaveLength(1);
     } finally {
@@ -215,6 +227,8 @@ test.describe('a new project whose start run is held while the reader switches v
         return typeof p?.activeRunId === 'string' && p.activeRunId.length > 0;
       }, { timeout: 120000 })
       .toBe(true);
+    // Signed: the remounted Business view reads the project again and draws the map from the run.
+    await expect(page.locator('[data-analyze-map] [data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 120000 });
     expect(requests, 'the start sent more than one run').toHaveLength(1);
   });
 });
