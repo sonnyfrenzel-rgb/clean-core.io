@@ -3,7 +3,7 @@
     "path": "docs/korpus/referenzkorpus-v2.1.md",
     "sha256": "910c62dce72232a0f866b71ad22c4f2dc1e8c72e790b6ad06945f45ebda9fd6c"
   },
-  "written": "2026-10-19",
+  "written": "2026-11-14",
   "entries": [
     {
       "case": "CC-001",
@@ -111,7 +111,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "8 von 8 Sollknoten verglichen (8 getroffen, 0 ohne Knoten, 0 mit anderer Art); 8 von 8 Sollkanten verglichen (6 getroffen, 2 fehlend, 0 mit anderer Art, 0 ohne aufgelöste Enden). Die Engine baut an diesem Fall 9 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —."
+      "reason": "8 von 8 Sollknoten verglichen (8 getroffen, 0 ohne Knoten, 0 mit anderer Art); 8 von 8 Sollkanten verglichen (6 getroffen, 2 fehlend, 0 mit anderer Art, 0 ohne aufgelöste Enden). Die Engine baut an diesem Fall 10 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —."
     },
     {
       "case": "CC-001",
@@ -260,7 +260,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "6 von 7 Sollknoten verglichen (6 getroffen, 0 ohne Knoten, 0 mit anderer Art); 5 von 7 Sollkanten verglichen (3 getroffen, 2 fehlend, 0 mit anderer Art, 2 ohne aufgelöste Enden). Die Engine baut an diesem Fall 10 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: g→x („lt_keys IS INITIAL\", bedingt), q→o („for each result row\", in den Schleifenkörper). Andere Kantenart: —. Nicht vergleichbar: a/action@source.abap:7 — keine Brücke für „action\" an „APPEND VALUE #( kunnr = p_kunnr ) TO lt_\"."
+      "reason": "6 von 7 Sollknoten verglichen (6 getroffen, 0 ohne Knoten, 0 mit anderer Art); 5 von 7 Sollkanten verglichen (3 getroffen, 2 fehlend, 0 mit anderer Art, 2 ohne aufgelöste Enden). Die Engine baut an diesem Fall 12 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: g→x („lt_keys IS INITIAL\", bedingt), q→o („for each result row\", in den Schleifenkörper). Andere Kantenart: —. Nicht vergleichbar: a/action@source.abap:7 — keine Brücke für „action\" an „APPEND VALUE #( kunnr = p_kunnr ) TO lt_\"."
     },
     {
       "case": "CC-002",
@@ -1005,7 +1005,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "5 von 5 Sollknoten verglichen (5 getroffen, 0 ohne Knoten, 0 mit anderer Art); 5 von 5 Sollkanten verglichen (3 getroffen, 2 fehlend, 0 mit anderer Art, 0 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —."
+      "reason": "5 von 5 Sollknoten verglichen (5 getroffen, 0 ohne Knoten, 0 mit anderer Art); 5 von 5 Sollkanten verglichen (3 getroffen, 2 fehlend, 0 mit anderer Art, 0 ohne aufgelöste Enden). Die Engine baut an diesem Fall 7 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —."
     },
     {
       "case": "CC-007",
@@ -1154,7 +1154,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "3 von 3 Sollknoten verglichen (3 getroffen, 0 ohne Knoten, 0 mit anderer Art); 2 von 2 Sollkanten verglichen (1 getroffen, 1 fehlend, 0 mit anderer Art, 0 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: j→o („for each surviving row\", in den Schleifenkörper). Andere Kantenart: —."
+      "reason": "3 von 3 Sollknoten verglichen (3 getroffen, 0 ohne Knoten, 0 mit anderer Art); 2 von 2 Sollkanten verglichen (1 getroffen, 1 fehlend, 0 mit anderer Art, 0 ohne aufgelöste Enden). Die Engine baut an diesem Fall 7 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: j→o („for each surviving row\", in den Schleifenkörper). Andere Kantenart: —."
     },
     {
       "case": "CC-008",
@@ -2793,7 +2793,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "4 von 6 Sollknoten verglichen (4 getroffen, 0 ohne Knoten, 0 mit anderer Art); 3 von 6 Sollkanten verglichen (1 getroffen, 2 fehlend, 0 mit anderer Art, 3 ohne aufgelöste Enden). Die Engine baut an diesem Fall 5 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next component\", bedingt), o→l („next iteration\", Rücksprung). Andere Kantenart: —. Nicht vergleichbar: d/call@source.abap:9 — keine Brücke für „call\" an „lo_description ?= cl_abap_typedescr=>des\", c/call@source.abap:10 — keine Brücke für „call\" an „DATA(lt_components) = lo_description->ge\"."
+      "reason": "4 von 6 Sollknoten verglichen (4 getroffen, 0 ohne Knoten, 0 mit anderer Art); 3 von 6 Sollkanten verglichen (1 getroffen, 2 fehlend, 0 mit anderer Art, 3 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next component\", bedingt), o→l („next iteration\", Rücksprung). Andere Kantenart: —. Nicht vergleichbar: d/call@source.abap:9 — keine Brücke für „call\" an „lo_description ?= cl_abap_typedescr=>des\", c/call@source.abap:10 — keine Brücke für „call\" an „DATA(lt_components) = lo_description->ge\"."
     },
     {
       "case": "CC-019",
@@ -5326,7 +5326,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "8 von 8 Sollknoten verglichen (7 getroffen, 1 ohne Knoten, 0 mit anderer Art); 6 von 8 Sollkanten verglichen (4 getroffen, 2 fehlend, 0 mit anderer Art, 2 ohne aufgelöste Enden). Die Engine baut an diesem Fall 8 Knoten. Ohne Knoten: q/read@source.abap:10 erwartet read in source.abap:10–14. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —."
+      "reason": "8 von 8 Sollknoten verglichen (7 getroffen, 1 ohne Knoten, 0 mit anderer Art); 6 von 8 Sollkanten verglichen (4 getroffen, 2 fehlend, 0 mit anderer Art, 2 ohne aufgelöste Enden). Die Engine baut an diesem Fall 9 Knoten. Ohne Knoten: q/read@source.abap:10 erwartet read in source.abap:10–14. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —."
     },
     {
       "case": "CC-036",
@@ -7263,7 +7263,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "8 von 10 Sollknoten verglichen (8 getroffen, 0 ohne Knoten, 0 mit anderer Art); 6 von 10 Sollkanten verglichen (4 getroffen, 2 fehlend, 0 mit anderer Art, 4 ohne aufgelöste Enden). Die Engine baut an diesem Fall 9 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —. Nicht vergleichbar: a1/authorization@source.abap:4 — keine Brücke für „authorization\" an „AUTHORITY-CHECK OBJECT 'F_KNA1_BUK' ID '\", a2/authorization@source.abap:16 — keine Brücke für „authorization\" an „AUTHORITY-CHECK OBJECT 'F_KNA1_GEN' ID '\"."
+      "reason": "8 von 10 Sollknoten verglichen (8 getroffen, 0 ohne Knoten, 0 mit anderer Art); 6 von 10 Sollkanten verglichen (4 getroffen, 2 fehlend, 0 mit anderer Art, 4 ohne aufgelöste Enden). Die Engine baut an diesem Fall 10 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —. Nicht vergleichbar: a1/authorization@source.abap:4 — keine Brücke für „authorization\" an „AUTHORITY-CHECK OBJECT 'F_KNA1_BUK' ID '\", a2/authorization@source.abap:16 — keine Brücke für „authorization\" an „AUTHORITY-CHECK OBJECT 'F_KNA1_GEN' ID '\"."
     },
     {
       "case": "CC-049",
@@ -7412,7 +7412,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "8 von 8 Sollknoten verglichen (8 getroffen, 0 ohne Knoten, 0 mit anderer Art); 8 von 8 Sollkanten verglichen (6 getroffen, 2 fehlend, 0 mit anderer Art, 0 ohne aufgelöste Enden). Die Engine baut an diesem Fall 9 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —."
+      "reason": "8 von 8 Sollknoten verglichen (8 getroffen, 0 ohne Knoten, 0 mit anderer Art); 8 von 8 Sollkanten verglichen (6 getroffen, 2 fehlend, 0 mit anderer Art, 0 ohne aufgelöste Enden). Die Engine baut an diesem Fall 10 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —."
     },
     {
       "case": "CC-050",
@@ -7859,7 +7859,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "4 von 7 Sollknoten verglichen (4 getroffen, 0 ohne Knoten, 0 mit anderer Art); 2 von 8 Sollkanten verglichen (2 getroffen, 0 fehlend, 0 mit anderer Art, 6 ohne aufgelöste Enden). Die Engine baut an diesem Fall 4 Knoten. Nicht vergleichbar: i/action@source.abap:3 — keine Brücke für „action\" an „CLEAR lv_block\", a/action@source.abap:5 — keine Brücke für „action\" an „lv_block = '01'\", w/action@source.abap:8 — keine Brücke für „action\" an „vbak-lifsk = lv_block\"."
+      "reason": "4 von 7 Sollknoten verglichen (4 getroffen, 0 ohne Knoten, 0 mit anderer Art); 2 von 8 Sollkanten verglichen (2 getroffen, 0 fehlend, 0 mit anderer Art, 6 ohne aufgelöste Enden). Die Engine baut an diesem Fall 5 Knoten. Nicht vergleichbar: i/action@source.abap:3 — keine Brücke für „action\" an „CLEAR lv_block\", a/action@source.abap:5 — keine Brücke für „action\" an „lv_block = '01'\", w/action@source.abap:8 — keine Brücke für „action\" an „vbak-lifsk = lv_block\"."
     },
     {
       "case": "CC-053",
@@ -8604,7 +8604,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "8 von 8 Sollknoten verglichen (8 getroffen, 0 ohne Knoten, 0 mit anderer Art); 8 von 8 Sollkanten verglichen (6 getroffen, 2 fehlend, 0 mit anderer Art, 0 ohne aufgelöste Enden). Die Engine baut an diesem Fall 9 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —."
+      "reason": "8 von 8 Sollknoten verglichen (8 getroffen, 0 ohne Knoten, 0 mit anderer Art); 8 von 8 Sollkanten verglichen (6 getroffen, 2 fehlend, 0 mit anderer Art, 0 ohne aufgelöste Enden). Die Engine baut an diesem Fall 10 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: l→o („next row\", in den Schleifenkörper), o→l („next iteration\", Rücksprung). Andere Kantenart: —."
     },
     {
       "case": "CC-058",

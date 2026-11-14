@@ -155,14 +155,27 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
       '  ENDIF.',
       '',
     ].join('\n');
+    // Engine 3.1.0 (85e6d0e1, ea4dbc46): a field a `SELECT` fills whole is read from outside, so a status the program
+    // also sets is no longer its own marker there. The name-alike rule is read where it still decides: on the source
+    // as written by a run signed before 3.1.0, and with 3.1.0 on the same source whose document the program only
+    // clears, never reads.
+    const readers: Array<[string | undefined, string]> = [
+      ['3.0.23', source],
+      [undefined, source.replace('  SELECT SINGLE * FROM vbak INTO ls_document.', '  CLEAR ls_document.')],
+    ];
+    for (const [engine, text] of readers) {
+      const { ex, reading } = explain(text, engine);
+      const kindOf = (label: RegExp) => ex.rules.find((r) => r.id === ruleId(reading, label))!.basket;
+      // A variable of the same final name is not the document's field: no marker.
+      expect(kindOf(/status = 'A'/).reason.text, engine).not.toMatch(/marker of its own/);
+      // Nor is the same component of a structure of another type.
+      expect(kindOf(/status = 'B'/).reason.text, engine).not.toMatch(/marker of its own/);
+      // The field the program sets itself and reads back is.
+      expect(kindOf(/status = 'C'/).reason.text, engine).toMatch(/marker of its own/);
+    }
+    // And with 3.1.0 on the source as written: the read fills the document, so `C` is the business's to answer.
     const { ex, reading } = explain(source);
-    const kindOf = (label: RegExp) => ex.rules.find((r) => r.id === ruleId(reading, label))!.basket;
-    // A variable of the same final name is not the document's field: no marker.
-    expect(kindOf(/status = 'A'/).reason.text).not.toMatch(/marker of its own/);
-    // Nor is the same component of a structure of another type.
-    expect(kindOf(/status = 'B'/).reason.text).not.toMatch(/marker of its own/);
-    // The field the program sets itself and reads back is.
-    expect(kindOf(/status = 'C'/).reason.text).toMatch(/marker of its own/);
+    expect(ex.rules.find((r) => r.id === ruleId(reading, /status = 'C'/))!.basket.reason.text).not.toMatch(/marker of its own/);
   });
 
   test('a value assigned only after the check is no marker the program set', () => {
