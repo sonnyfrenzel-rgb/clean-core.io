@@ -39,6 +39,7 @@ Signed runs and the audit pack do not change.
 - Engine 4.0 is built in parallel from now on, as its own module tree that nothing reads until the switch (ADR-125); benchmark convention K3 settled: commits stay in the technical layer.
 
 ### Fixed
+- Tests: every clean-core.io address in the legal texts is rendered through the page's own linker and must link to the whole address.
 - Tests: the readability measurement fails when a surface throws, instead of measuring it as empty.
 - Tests: the Business view's primary buttons are counted page-wide again, the "Next step" bar's one named as the only exception.
 - Tests: the modules that read the rewording of the statement draft are pinned, so it cannot reach a signed path unnoticed.
