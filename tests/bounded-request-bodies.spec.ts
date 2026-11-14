@@ -73,7 +73,8 @@ test('the named routes no longer parse a request body without a bound', () => {
     // Reading under a bound is only half: the very next statement refuses an oversized body with 413, before the
     // body is used at all.
     const reads = [...src.matchAll(/const (\w+) = await readBoundedRequestJson\(req\b[^;]*;\s*\n([^\n]*)/g)];
-    const raw = [...src.matchAll(/const (\w+) = await readBoundedBody\(req\b[^;]*;\s*\n([^\n]*)/g)];
+    // The raw reader's refusal may wrap: `if (raw === null || …) {` with its `return` on the next line.
+    const raw = [...src.matchAll(/const (\w+) = await readBoundedBody\(req\b[^;]*;\s*\n([^\n]*\{[ \t]*\n[^\n]*|[^\n]*)/g)];
     expect(reads.length + raw.length, `${rel} reads the body in a shape this guard does not know`).toBeGreaterThan(0);
     for (const [, name, next] of reads) {
       expect(next, `${rel} uses ${name} without refusing an oversized body first`).toMatch(
@@ -81,7 +82,9 @@ test('the named routes no longer parse a request body without a bound', () => {
       );
     }
     for (const [, name, next] of raw) {
-      expect(next, `${rel} uses ${name} without refusing an oversized body first`).toMatch(new RegExp(`^\\s*if \\(${name} === null\\b`));
+      expect(next, `${rel} uses ${name} without refusing an oversized body with 413 first`).toMatch(
+        new RegExp(`^\\s*if \\(${name} === null\\b[^\\n{]*\\)\\s*(?:\\{\\s*\\n\\s*)?return (?:NextResponse\\.json\\([^;]*\\{ status: 413 \\}\\)|bad\\([^;]*, 413\\));$`),
+      );
     }
   }
 });
