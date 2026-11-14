@@ -26,7 +26,7 @@
  */
 import { appendFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { SpendGate, worstCaseCostUsd } from './bench-guard';
+import { holdLedger, SpendGate, worstCaseCostUsd } from './bench-guard';
 import { GoogleGenAI, ThinkingLevel, type ThinkingConfig } from '@google/genai';
 import { PRODUCT_GEMINI_MODEL } from '../../lib/constants';
 import { STAGE_MAX_OUTPUT_TOKENS } from '../../lib/model-call-stage';
@@ -158,6 +158,8 @@ const ids = readdirSync(ROOT)
 let done = 0;
 let stopped = false;
 const gate = new SpendGate(CAP_USD, spent);
+// One runner per ledger: the reservations above live in this process only.
+if (LEDGER) holdLedger(LEDGER);
 
 async function one(id: string): Promise<void> {
   if (CAP_USD > 0 && spent() >= CAP_USD) {

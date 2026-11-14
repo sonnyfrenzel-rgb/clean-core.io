@@ -6,7 +6,10 @@
  * - `SpendGate`: the spend cap counts the calls in flight too. Each call reserves its worst-case cost before it is
  *   sent and gives the reservation back once its real cost is in the ledger, so parallel workers cannot all pass
  *   the cap on the same ledger total.
+ * - `holdLedger`: one runner process per ledger. The reservations live in one process, so a second runner on the
+ *   same ledger would read the same total and pass the cap beside the first; it is refused before its first call.
  */
+import { closeSync, openSync, unlinkSync, writeSync } from 'fs';
 import { isAbsolute, join, relative, resolve } from 'path';
 
 const CASE_ID = /^BM-\d{3}$/;
@@ -29,6 +32,35 @@ export function benchSourcePath(id: string, roots: { cases: string; starters: st
 /** The most a call can cost: every prompt character a token (an over-count) and the full output allowance. */
 export function worstCaseCostUsd(promptChars: number, maxOutputTokens: number, [inPerM, outPerM]: readonly [number, number]): number {
   return (promptChars * inPerM + maxOutputTokens * outPerM) / 1e6;
+}
+
+/**
+ * Takes the ledger for this process: creates `<ledger>.lock` exclusively and removes it when the process exits.
+ * Throws when another runner holds it. Returns the release (for tests; a runner keeps it until it exits).
+ */
+export function holdLedger(ledger: string): () => void {
+  const lock = `${ledger}.lock`;
+  let fd: number;
+  try {
+    fd = openSync(lock, 'wx');
+  } catch {
+    throw new Error(`another runner holds the ledger ${ledger} (${lock}); delete the lock only if no run is going`);
+  }
+  writeSync(fd, String(process.pid));
+  closeSync(fd);
+  let held = true;
+  const release = () => {
+    if (!held) return;
+    held = false;
+    process.off('exit', release);
+    try {
+      unlinkSync(lock);
+    } catch {
+      // Already gone.
+    }
+  };
+  process.on('exit', release);
+  return release;
 }
 
 export class SpendGate {

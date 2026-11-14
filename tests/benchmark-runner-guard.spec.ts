@@ -1,11 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { existsSync, mkdtempSync, rmSync } from 'fs';
+import { tmpdir } from 'os';
 import { join, resolve } from 'path';
-import { benchSourcePath, SpendGate, worstCaseCostUsd } from './prozess-benchmark/bench-guard';
+import { benchSourcePath, holdLedger, SpendGate, worstCaseCostUsd } from './prozess-benchmark/bench-guard';
 
 /**
  * The guards of the paid benchmark runners (`tests/prozess-benchmark/stage-bench.ts`, `weg-b-model.ts`):
  * an id from the id file names a case folder or a starter file and nothing else, and the spend cap counts the
- * calls in flight. Server-free; reads no file, calls no model.
+ * calls in flight; one runner holds a ledger at a time. Server-free; calls no model.
  */
 const roots = { cases: join('root', 'cases'), starters: join('root', 'starters') };
 
@@ -55,4 +57,21 @@ test('without a cap every call goes through, and the worst case bounds the real 
   // Every prompt character counted as a token, and the whole output allowance.
   expect(worstCaseCostUsd(1_000_000, 0, [1.5, 7.5])).toBeCloseTo(1.5);
   expect(worstCaseCostUsd(0, 1_000_000, [1.5, 7.5])).toBeCloseTo(7.5);
+});
+
+test('one runner per ledger: a second hold on the same ledger is refused until the first lets go', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'bench-ledger-'));
+  try {
+    const ledger = join(dir, 'spend.jsonl');
+    const release = holdLedger(ledger);
+    expect(existsSync(`${ledger}.lock`)).toBe(true);
+    expect(() => holdLedger(ledger)).toThrow(/another runner holds the ledger/);
+    // Another ledger is free.
+    holdLedger(join(dir, 'other.jsonl'))();
+    release();
+    expect(existsSync(`${ledger}.lock`)).toBe(false);
+    holdLedger(ledger)();
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
