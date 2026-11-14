@@ -22,8 +22,7 @@ import MyWorkspaceSwitch from '@/components/MyWorkspaceSwitch';
 
 /*
  * Since 3.3.0 (ADR-123 (5)) the first view of a new account draws no map: no
- * bpmn-js on My workspace, so the slice of the demo map (AB-14a,
- * `lib/home-map-slice.ts`) is no longer computed here.
+ * bpmn-js on My workspace, and the slice of the demo map (AB-14a) is gone.
  */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (

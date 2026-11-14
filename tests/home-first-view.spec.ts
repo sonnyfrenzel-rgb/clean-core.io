@@ -9,13 +9,6 @@ import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { exampleTiers } from '../lib/example-catalog';
 import { countSourceLines } from '../lib/source-lines';
 import { PHASES } from '../lib/workflow-steps';
-import { buildDemoProject } from '../lib/demo-project';
-import { elementsOfPlane } from '../lib/process-map';
-import { anchorText } from '../lib/bpmn/layout';
-import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
-import { buildExportModel } from '../lib/bpmn/model';
-import { sliceModel } from '../lib/bpmn/slice';
-import { computeHomeMapSlice, HOME_SLICE_ELEMENTS } from '../lib/home-map-slice';
 import { leaveHomeStart, leaveRedesignAfterAnalysis, pastedFileName, takeHomeStart, takeRedesignAfterAnalysis } from '../lib/home-start-handoff';
 import { WORKSPACE_PAGE_MESSAGES } from '../lib/messages/workspace';
 import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
@@ -26,8 +19,8 @@ import { layoutCheck, PRODUCT_LAYOUT } from './helpers/overlap';
  * AB-14a — the first view of a new account (home mockup v2.1, state 1;
  * `docs/design/analyze-business-first-plan.md`, AB-14a).
  *
- * Server-free half: the slice of the demo map is the demo map's own first
- * elements (H-O1, no hand-written name), the path's names are the tool bar's,
+ * Server-free half: no map on the view and no slice of the demo map left in
+ * the code (3.3.0, ADR-123 (5); removed 14.11.2026), the path's names are the tool bar's,
  * every shipped example is offered with the line count of its file, the page
  * claims no duration (H-O2), and the start's one filled button is "Start this
  * example" (H-O15).
@@ -49,60 +42,25 @@ const HOME_FILES = [
 
 /* --------------------------------------------------------------- server-free */
 
-test.describe('the slice of the demo map (H-O1)', () => {
-  test('its elements are the demo map\'s first ones, with the map\'s labels and anchors', () => {
-    const slice = computeHomeMapSlice(HOME_SLICE_ELEMENTS);
-    expect(slice, 'the slice was refused: an element differs from the demo map').not.toBeNull();
-    const map = buildDemoProject().documentation.process!.model;
-    const first = elementsOfPlane(map, null).slice(0, HOME_SLICE_ELEMENTS);
-    expect(slice!.elements).toEqual(
-      first.map((e) => ({ id: e.id, label: e.label, anchor: anchorText(e.anchor), fact: e.fact })),
-    );
-    expect(slice!.elements).toHaveLength(4);
-    expect(slice!.objectName).toBe('Z_MM_PO_APPROVAL');
-    expect(slice!.topLevelElements).toBe(elementsOfPlane(map, null).length);
-    // Every element an anchor: what the view promises ("every step with its code lines").
-    for (const e of slice!.elements) expect(e.anchor, e.label).toMatch(/^L\d+/);
-  });
-
-  test('the file draws those elements and nothing else, top to bottom', () => {
-    const slice = computeHomeMapSlice(HOME_SLICE_ELEMENTS)!;
-    const shapes = [...slice.xml.matchAll(/<bpmndi:BPMNShape id="[^"]+" bpmnElement="([^"]+)"/g)].map((m) => m[1]);
-    expect(shapes.sort()).toEqual(slice.elements.map((e) => e.id).sort());
-    // Each shape below the one before it.
-    const ys = slice.elements.map((e) => {
-      const m = new RegExp(`bpmnElement="${e.id}"[^>]*>\\s*<dc:Bounds x="[\\d.-]+" y="([\\d.-]+)"`).exec(slice.xml);
-      return Number(m?.[1]);
-    });
-    for (let i = 1; i < ys.length; i++) expect(ys[i], `element ${i} is not below element ${i - 1}`).toBeGreaterThan(ys[i - 1]);
-    // A slice, not the map: a few kilobytes.
-    expect(slice.xml.length).toBeLessThan(16_000);
-  });
-
-  test('no name of the slice is written into the home page\'s code', () => {
-    const slice = computeHomeMapSlice(HOME_SLICE_ELEMENTS)!;
-    const own = [...HOME_FILES, 'components/process-map/MapSlice.tsx', 'lib/home-map-slice.ts'].map(code).join('\n');
-    for (const e of slice.elements) expect(own, `"${e.label}" is hand-written`).not.toContain(e.label);
-    const messages = JSON.stringify(WORKSPACE_PAGE_MESSAGES);
-    for (const e of slice.elements) expect(messages, `"${e.label}" is in the catalogue`).not.toContain(e.label);
-  });
-
-  test('the cut changes nothing it keeps and leaves the model it was given alone', () => {
-    const source = read('public/starter-examples/Z_MM_PO_APPROVAL.abap').replace(/\r\n/g, '\n');
-    const model = buildExportModel(buildProcessSkeleton(source));
-    const before = JSON.stringify(model.root.nodes.map((n) => [n.id, n.name, n.outgoing]));
-    const keep = model.root.nodes.slice(0, 3).map((n) => n.id);
-    const sliced = sliceModel(model, keep);
-    expect(JSON.stringify(model.root.nodes.map((n) => [n.id, n.name, n.outgoing]))).toBe(before);
-    expect(sliced.containers).toHaveLength(1);
-    expect(sliced.root.nodes.map((n) => n.id)).toEqual(keep);
-    expect(sliced.root.nodes.map((n) => n.name)).toEqual(model.root.nodes.slice(0, 3).map((n) => n.name));
-    for (const f of sliced.root.flows) {
-      expect(keep).toContain(f.sourceId);
-      expect(keep).toContain(f.targetId);
+test.describe('no map on My workspace (ADR-123 (5))', () => {
+  test('3.3.0: the slice of the demo map is gone — its files, its cut and every import of them (owner decision 14.11.2026)', () => {
+    // AB-14a drew four elements of the demo map on a new account's first view. 3.3.0 draws no map there, and the
+    // owner removed the unused slice: its loader, its canvas and the model cut that only it used.
+    for (const gone of ['lib/home-map-slice.ts', 'components/process-map/MapSlice.tsx', 'lib/bpmn/slice.ts']) {
+      expect(fs.existsSync(path.join(ROOT, gone)), gone).toBe(false);
     }
-    expect(sliced.lanes).toEqual([]);
-    expect(sliced.root.annotations).toEqual([]);
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+        const rel = `${dir}/${e.name}`;
+        if (e.isDirectory()) walk(rel);
+        else if (/\.(?:ts|tsx|mjs)$/.test(e.name) && /(?:from|import\()\s*['"][^'"]*(?:home-map-slice|process-map\/MapSlice|bpmn\/slice)['"]/.test(code(rel))) offenders.push(rel);
+      }
+    };
+    for (const d of ['app', 'components', 'hooks', 'lib', 'scripts', 'tests']) walk(d);
+    expect(offenders).toEqual([]);
+    // The export has no view hook left for a cut: what it lays out is the whole model.
+    expect(code('lib/bpmn/export.ts')).not.toMatch(/options\.view\b/);
   });
 
   test('3.3.0: My workspace draws no map — no bpmn-js, no slice, on the page (ADR-123 (5))', () => {
