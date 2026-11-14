@@ -22,6 +22,17 @@ export const CUSTOMER_TEXTS_VERSION = 1;
 export const MAX_TEXT = 80;
 /** Per kind (fields, tables, …): a package with more is read up to here. */
 export const MAX_ENTRIES = 5000;
+/**
+ * All texts of a project together, as UTF-8 JSON: below Firestore's 1 MiB per
+ * document, which the per-kind bounds alone do not keep (five kinds at their
+ * bound are several megabytes).
+ */
+export const CUSTOMER_TEXTS_MAX_BYTES = 900 * 1024;
+
+/** The size of `value` as UTF-8 JSON — what `CUSTOMER_TEXTS_MAX_BYTES` bounds. */
+export function customerTextsBytes(value: unknown): number {
+  return new TextEncoder().encode(JSON.stringify(value)).length;
+}
 
 export interface CustomerTexts {
   version: typeof CUSTOMER_TEXTS_VERSION;

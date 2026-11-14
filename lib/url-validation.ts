@@ -405,3 +405,13 @@ export function isSafeODataServicePath(servicePath: string): boolean {
   if (/%2e|%2f|%5c/i.test(servicePath)) return false;
   return /^\/sap\/opu\/odata\/[A-Za-z0-9_/-]+$/.test(servicePath);
 }
+
+/**
+ * The service path a request asked for: the default when the field is absent,
+ * `null` or empty; the string itself when it is one; `null` for any other value,
+ * which the caller refuses instead of reading the default service.
+ */
+export function requestedODataServicePath(raw: unknown, fallback: string): string | null {
+  if (raw === undefined || raw === null || raw === '') return fallback;
+  return typeof raw === 'string' ? raw : null;
+}

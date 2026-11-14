@@ -4,6 +4,7 @@ import {
   safeFetch,
   SsrfError,
   isSafeODataServicePath,
+  requestedODataServicePath,
   readBoundedBody,
   readBoundedJson,
   readBoundedRequestJson,
@@ -329,11 +330,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Build the $metadata URL
-    const servicePath = (typeof body.servicePath === 'string' && body.servicePath) || '/sap/opu/odata/sap/API_BUSINESS_PARTNER';
+    // The default only when no path was sent; a value that is not a string is refused.
+    const servicePath = requestedODataServicePath(body.servicePath, '/sap/opu/odata/sap/API_BUSINESS_PARTNER');
     // The SSRF allowlist decides which HOST may be reached; this decides which
     // path. Without it, a request could read any path those credentials can —
     // and with useStoredCredentials they are the vault's.
-    if (!isSafeODataServicePath(servicePath)) {
+    if (servicePath === null || !isSafeODataServicePath(servicePath)) {
       return NextResponse.json(
         { status: 'failed', message: 'Invalid OData service path.' },
         { status: 400 },

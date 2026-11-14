@@ -33,7 +33,7 @@ import { OWN_KEY_TEST_STUB_REFUSED, testOwnModelKey } from '../lib/own-key-test'
 import { ownKeyCounts, quotaExhausted, runsAreSelfFunded } from '../lib/run-quota-rule';
 import { askModeOf } from '../lib/auto-steps';
 import { aiAssistantNotice, aiAssistantNoticeDe } from '../lib/ai-assistant-notice';
-import { OwnModelKeyBlockedError, OwnModelKeyMissingError, OWN_KEY_BLOCKED_CODE } from '../lib/byok-key';
+import { OwnModelKeyBlockedError, OwnModelKeyMissingError, OWN_KEY_BLOCKED_CODE, recordHoldsKey, sealByokSecret } from '../lib/byok-key';
 import { saveOwnModelKey } from '../lib/firebase-admin';
 
 /**
@@ -201,8 +201,23 @@ test.describe('an own key counts as configured only after a successful key test'
     expect(route).toContain('tested: true,');
     // A re-test of the stored key decides whether it still counts.
     const test_ = read('app/api/secrets/gemini/test/route.ts');
-    expect(test_).toContain('if (testingSaved) await recordOwnKeyTest(decodedToken.uid, provider, false);');
-    expect(test_).toContain('if (testingSaved) await recordOwnKeyTest(decodedToken.uid, provider, true);');
+    expect(test_).toContain('if (testingSaved) await recordOwnKeyTest(decodedToken.uid, provider, false, apiKey!);');
+    expect(test_).toContain('if (testingSaved) await recordOwnKeyTest(decodedToken.uid, provider, true, apiKey!);');
+  });
+
+  test('a re-test is recorded only on the key it tested, not on one saved while it ran', () => {
+    const env = { BYOK_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64') };
+    const where = { uid: 'u1', provider: 'gemini' };
+    const k1 = sealByokSecret('AIza-first', where, env);
+    const k2 = sealByokSecret('AIza-second', where, env);
+    expect(recordHoldsKey(k1, 'AIza-first', where, env)).toBe(true);
+    expect(recordHoldsKey(k2, 'AIza-first', where, env), 'a replacement key takes the old test result').toBe(false);
+    expect(recordHoldsKey(k1, 'AIza-first', { uid: 'u2', provider: 'gemini' }, env)).toBe(false);
+    expect(recordHoldsKey(undefined, 'AIza-first', where, env)).toBe(false);
+    expect(recordHoldsKey({ encryptedApiKey: 'garbage', keyVersion: 1 }, 'AIza-first', where, env)).toBe(false);
+    const admin = read('lib/firebase-admin.ts');
+    const fn = admin.slice(admin.indexOf('export async function recordOwnKeyTest('));
+    expect(fn.slice(0, fn.search(/\r?\n\}\r?\n/))).toContain('if (!recordHoldsKey(record.data(), testedKey, { uid, provider })) return;');
   });
 
   test('the key test spends no tokens and, on the test server, refuses the marked key', async () => {

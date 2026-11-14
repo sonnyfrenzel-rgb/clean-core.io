@@ -227,3 +227,22 @@ export function openByokSecret(
     throw new ByokKeyUnreadableError(version, 'decrypt-failed');
   }
 }
+
+/**
+ * Whether a stored record still holds `key` — so a test result is recorded only
+ * on the key that was tested, not on one saved while the test was running. A
+ * record that cannot be opened holds no key that was tested.
+ */
+export function recordHoldsKey(
+  record: { encryptedApiKey?: unknown; keyVersion?: unknown } | undefined,
+  key: string,
+  where: { uid: string; provider: string },
+  env: Env = process.env,
+): boolean {
+  if (!record || typeof record.encryptedApiKey !== 'string') return false;
+  try {
+    return openByokSecret(record as { encryptedApiKey: string; keyVersion?: unknown }, where, env) === key;
+  } catch {
+    return false;
+  }
+}

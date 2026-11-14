@@ -7,7 +7,18 @@ import { buildExportModel } from '../lib/bpmn/model';
 import { buildBpmnExport, businessLevelOf } from '../lib/bpmn/export';
 import { plainLabels } from '../lib/abap/plain-language';
 import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
-import { CUSTOMER_TEXT_LABEL, customerTextProvenance, emptyCustomerTexts, isCustomerTexts, readCustomerTexts, type CustomerTexts } from '../lib/abap/customer-texts';
+import {
+  CUSTOMER_TEXT_LABEL,
+  CUSTOMER_TEXTS_MAX_BYTES,
+  customerTextProvenance,
+  customerTextsBytes,
+  emptyCustomerTexts,
+  isCustomerTexts,
+  MAX_ENTRIES,
+  MAX_TEXT,
+  readCustomerTexts,
+  type CustomerTexts,
+} from '../lib/abap/customer-texts';
 import { readZipSources } from '../lib/own-code-zip';
 import { mergeCustomerTexts } from '../lib/customer-texts-client';
 import { identifierSegments, rawWords } from './helpers/business-readability';
@@ -88,6 +99,26 @@ test('the ZIP import reads them beside the sources, and several files merge', as
   expect(read.sources).toHaveLength(1);
   expect(read.customerTexts?.tables.zsd_minmenge).toBe('Minimum quantities per customer group');
   expect(mergeCustomerTexts([read.customerTexts, null])?.selections.p_kdgrp).toBe('Customer group');
+});
+
+test('texts within every per-kind bound still fit one Firestore document once merged, and the route refuses more', () => {
+  const big = emptyCustomerTexts();
+  const text = 'ü'.repeat(MAX_TEXT);
+  for (let i = 0; i < MAX_ENTRIES; i++) {
+    big.fields[`zfield_${i}`] = text;
+    big.tables[`ztable_${i}`] = text;
+    big.selections[`p_${i}`] = text;
+  }
+  expect(isCustomerTexts(big), 'each kind is within its own bound').toBe(true);
+  expect(customerTextsBytes(big)).toBeGreaterThan(CUSTOMER_TEXTS_MAX_BYTES);
+  const merged = mergeCustomerTexts([big])!;
+  expect(customerTextsBytes(merged)).toBeLessThanOrEqual(CUSTOMER_TEXTS_MAX_BYTES);
+  expect(CUSTOMER_TEXTS_MAX_BYTES).toBeLessThan(1024 * 1024);
+  // The first entries of a file are the ones kept.
+  expect(merged.fields.zfield_0).toBe(text);
+  const route = fs.readFileSync(path.join(__dirname, '..', 'app/api/projects/[projectId]/customer-texts/route.ts'), 'utf8');
+  expect(route.indexOf('customerTextsBytes(texts) > CUSTOMER_TEXTS_MAX_BYTES')).toBeLessThan(route.indexOf('.set({'));
+  expect(route.indexOf('customerTextsBytes(texts) > CUSTOMER_TEXTS_MAX_BYTES')).toBeGreaterThan(-1);
 });
 
 test('from 3.1.0 the customer\'s words come first and are marked; a 3.0.22 hotfix and no package read as before', () => {

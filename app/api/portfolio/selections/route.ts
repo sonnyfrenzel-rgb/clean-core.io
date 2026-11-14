@@ -3,6 +3,8 @@ import { logger, errMessage } from '@/lib/logger';
 import { openPortfolioRoute } from '@/lib/portfolio/access-server';
 import { BatchRefusal } from '@/lib/portfolio/batch-store';
 import { checkSelectionBody, createSelection, selectionsOf } from '@/lib/portfolio/selection-store';
+import { PORTFOLIO_SELECTION_BODY_LIMITS } from '@/lib/portfolio/limits';
+import { readBoundedRequestJson } from '@/lib/url-validation';
 
 /**
  * Named selections — roadmap 3.0.21 (2): "a named selection (a list of
@@ -39,7 +41,9 @@ export async function POST(req: NextRequest) {
   try {
     const gate = await openPortfolioRoute(req, { bucket: 'portfolio-upload', perHour: 120 });
     if (!gate.ok) return gate.response;
-    const body = await req.json().catch(() => null);
+    const read = await readBoundedRequestJson(req, PORTFOLIO_SELECTION_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body;
     const selection = await createSelection(gate.db, gate.uid, checkSelectionBody(body));
     return NextResponse.json({ selection: { ...selection, readers: 0 } }, { status: 201 });
   } catch (err: unknown) {

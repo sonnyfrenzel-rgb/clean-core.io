@@ -1,5 +1,12 @@
 import { getAuth } from '@/lib/firebase';
-import { emptyCustomerTexts, isCustomerTexts, MAX_ENTRIES, type CustomerTexts } from '@/lib/abap/customer-texts';
+import {
+  CUSTOMER_TEXTS_MAX_BYTES,
+  customerTextsBytes,
+  emptyCustomerTexts,
+  isCustomerTexts,
+  MAX_ENTRIES,
+  type CustomerTexts,
+} from '@/lib/abap/customer-texts';
 
 /**
  * The browser's side of a project's customer texts (`app/api/projects/[projectId]/customer-texts/route.ts`): the import
@@ -23,21 +30,32 @@ async function authHeader(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${await user.getIdToken()}` };
 }
 
-/** Several files' texts as one; the first file that names an entry wins, each kind stays within its bound. */
+/**
+ * Several files' texts as one; the first file that names an entry wins, each kind stays within its bound, and the
+ * whole within `CUSTOMER_TEXTS_MAX_BYTES` — an entry that would not fit is left out, so the route can store the result.
+ */
 export function mergeCustomerTexts(all: ReadonlyArray<CustomerTexts | null | undefined>): CustomerTexts | null {
   const out = emptyCustomerTexts();
   let any = false;
+  let used = customerTextsBytes(out);
+  // An entry adds `"key":value` and a comma to its object's JSON.
+  const fits = (k: string, v: unknown) => {
+    const cost = customerTextsBytes(k) + customerTextsBytes(v) + 2;
+    if (used + cost > CUSTOMER_TEXTS_MAX_BYTES) return false;
+    used += cost;
+    return true;
+  };
   for (const t of all) {
     if (!t) continue;
     for (const kind of ['fields', 'tables', 'selections', 'textSymbols'] as const) {
       for (const [k, v] of Object.entries(t[kind])) {
-        if (Object.keys(out[kind]).length >= MAX_ENTRIES || k in out[kind]) continue;
+        if (Object.keys(out[kind]).length >= MAX_ENTRIES || k in out[kind] || !fits(k, v)) continue;
         out[kind][k] = v;
         any = true;
       }
     }
     for (const [k, v] of Object.entries(t.values)) {
-      if (Object.keys(out.values).length >= MAX_ENTRIES || k in out.values) continue;
+      if (Object.keys(out.values).length >= MAX_ENTRIES || k in out.values || !fits(k, v)) continue;
       out.values[k] = v;
       any = true;
     }

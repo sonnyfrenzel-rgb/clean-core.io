@@ -289,6 +289,11 @@ test.describe('C10/C12 — the invitation suppression list', () => {
     expect(src).toContain("verifyUnsubscribeToken(await tokenFrom(req), 'inv-unsub')");
     expect(src).toContain('.collection(INVITATION_SUPPRESSIONS)');
     expect(src).toContain("{ list: 'invitations', keyed: true, source: 'confirmation-page', unsubscribedAt: FieldValue.serverTimestamp() }");
+    // A repeated request with the same token writes nothing and keeps the first time.
+    const check = src.indexOf('if (!(await ref.get()).exists) {');
+    expect(check).toBeGreaterThan(-1);
+    expect(check).toBeLessThan(src.indexOf('await ref.set('));
+    expect(src.match(/\.set\(/g) ?? []).toHaveLength(1);
     expect(read('app/unsubscribe/invitations/page.tsx')).toContain('<UnsubscribeClient list="invitations" />');
   });
 

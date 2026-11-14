@@ -7,7 +7,8 @@ import { readUploadedFile } from '../lib/own-code-zip';
 import { portfolioAccessOf, millisOfStored } from '../lib/portfolio/access';
 import { abapGitNameOf, splitIntoPrograms } from '../lib/portfolio/batch-split';
 import { isClaimable, nextClaims, outcomeOfRun, programsInWindow, progressOf } from '../lib/portfolio/batch-model';
-import { checkBatchHeader, checkUploadedProgram, stepBatch, appendPrograms, BatchRefusal } from '../lib/portfolio/batch-store';
+import { checkBatchHeader, checkUploadedProgram, stepBatch, appendPrograms, BatchRefusal, createBatchWithPrograms } from '../lib/portfolio/batch-store';
+import { inviterAddressConfirmed } from '../lib/portfolio/access-server';
 import { portfolioStepFor, runInPortfolioStep } from '../lib/portfolio/run-context';
 import { aggregatePortfolio, type ProgramFacts } from '../lib/portfolio/aggregate';
 import { portfolioCsv, portfolioWorkbook, PROGRAM_COLUMNS } from '../lib/portfolio/export';
@@ -318,7 +319,67 @@ class FakeDoc {
   async create(d: Record<string, unknown>) {
     this.applyCreate(d);
   }
+  async delete() {
+    this.db.docs.delete(this.path);
+  }
 }
+
+test.describe('a batch whose first programs are not stored does not stay behind', () => {
+  const header = { name: 'B', edition: 'private' as const, release: '2025', total: 2 };
+  const program = { name: 'ZREP_A', fileName: 'zrep_a.abap', source: "REPORT zrep_a.\nWRITE / 'a'.\n", missing: [] };
+  const batches = (db: FakeDb) => [...db.docs.keys()].filter((k) => /^portfolio_batches\/[^/]+$/.test(k));
+
+  test('more programs than announced are refused before a batch exists', async () => {
+    const db = new FakeDb();
+    await expect(createBatchWithPrograms(db as never, 'u1', header, [program, program, program])).rejects.toMatchObject({ code: 'batch-overrun' });
+    expect(batches(db)).toEqual([]);
+  });
+
+  test('a failed append takes the new batch with it, and the retry is not refused as one at a time', async () => {
+    const db = new FakeDb();
+    const real = db.runTransaction.bind(db);
+    db.runTransaction = async () => {
+      throw new Error('write failed');
+    };
+    await expect(createBatchWithPrograms(db as never, 'u1', header, [program])).rejects.toThrow('write failed');
+    expect(batches(db)).toEqual([]);
+    db.runTransaction = real;
+    const retried = await createBatchWithPrograms(db as never, 'u1', header, [program]);
+    expect(retried.appended).toBe(1);
+    expect(batches(db)).toEqual([`portfolio_batches/${retried.batchId}`]);
+  });
+
+  test('the upload route creates through it', () => {
+    const route = read('app/api/portfolio/batches/route.ts');
+    expect(route).toContain('await createBatchWithPrograms(gate.db, gate.uid, header, programs)');
+    expect(route).not.toMatch(/await createBatch\(|await appendPrograms\(/);
+  });
+});
+
+test.describe('a selection invitation needs a confirmed inviter address', () => {
+  const profileDb = (data: Record<string, unknown> | undefined) =>
+    ({ collection: () => ({ doc: () => ({ get: async () => ({ data: () => data }) }) }) }) as never;
+
+  test('confirmed on the token, or on the server-written profile field; nothing else', async () => {
+    expect(await inviterAddressConfirmed({ uid: 'u1', emailVerified: true, db: profileDb(undefined) })).toBe(true);
+    expect(await inviterAddressConfirmed({ uid: 'u1', emailVerified: false, db: profileDb({ emailVerified: true }) })).toBe(true);
+    expect(await inviterAddressConfirmed({ uid: 'u1', emailVerified: false, db: profileDb({ emailVerified: 'yes' }) })).toBe(false);
+    expect(await inviterAddressConfirmed({ uid: 'u1', emailVerified: false, db: profileDb(undefined) })).toBe(false);
+    const broken = { collection: () => ({ doc: () => ({ get: async () => { throw new Error('unavailable'); } }) }) } as never;
+    expect(await inviterAddressConfirmed({ uid: 'u1', emailVerified: false, db: broken })).toBe(false);
+  });
+
+  test('the route asks before it creates or mails anything', () => {
+    const src = read('app/api/portfolio/selections/[selectionId]/invitations/route.ts');
+    const post = src.slice(src.indexOf('export async function POST('));
+    const check = post.indexOf('await inviterAddressConfirmed(gate)');
+    expect(check).toBeGreaterThan(-1);
+    expect(check).toBeLessThan(post.indexOf('createSelectionInvitation('));
+    expect(check).toBeLessThan(post.indexOf('sendTransactionalMail('));
+    expect(post).toContain("code: 'email-unconfirmed'");
+    expect(read('lib/portfolio/access-server.ts')).toContain('emailVerified: decodedToken.email_verified === true');
+  });
+});
 
 test.describe('a step makes each project and signs it through the run route, engine only', () => {
   async function seeded() {

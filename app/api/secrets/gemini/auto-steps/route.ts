@@ -4,13 +4,12 @@ import {
   assertMfaSatisfied,
   assertAccountActive,
   setOwnKeyAutoSteps,
-  getAdminDb,
-  logAuditEvent,
   QuotaError,
 } from '@/lib/firebase-admin';
 import { byokRequiresEnrolment } from '@/lib/mfa-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { logger, providerErrorShape } from '@/lib/logger';
+import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 
 /**
  * POST /api/secrets/gemini/auto-steps
@@ -37,13 +36,14 @@ export async function POST(req: NextRequest) {
     await assertAccountActive(decodedToken.uid, { requireCurrentTerms: true, isAdminClaim: decodedToken.admin === true });
     await assertRateLimit(`byok_auto_steps:${decodedToken.uid}`, 30, 60 * 60 * 1000);
 
-    const body = (await req.json().catch(() => null)) as { on?: unknown } | null;
+    const read = await readBoundedRequestJson(req, SMALL_REQUEST_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body as { on?: unknown } | null;
     if (typeof body?.on !== 'boolean') {
       return NextResponse.json({ error: 'The switch must be true or false.' }, { status: 400 });
     }
+    // Writes the switch and its audit row in one transaction.
     const result = await setOwnKeyAutoSteps(decodedToken.uid, body.on);
-    const { db } = await getAdminDb();
-    await logAuditEvent(db, decodedToken.uid, body.on ? 'BYOK_AUTO_STEPS_ON' : 'BYOK_AUTO_STEPS_OFF', decodedToken.uid);
     return NextResponse.json({ ok: true, ...result });
   } catch (err: unknown) {
     if (err instanceof QuotaError) {

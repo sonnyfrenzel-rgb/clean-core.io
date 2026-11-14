@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '../lib/url-validation';
 import { QuotaError, mfaRefusal } from '../lib/firebase-admin';
+import { PORTFOLIO_SELECTION_BODY_LIMITS, PORTFOLIO_SELECTION_MAX_PROJECTS } from '../lib/portfolio/limits';
 
 /**
  * Request bodies are read under a byte bound before they are parsed, and an MFA
@@ -36,6 +37,12 @@ test.describe('readBoundedRequestJson', () => {
     expect(await readBoundedRequestJson(request('not json'), LIMITS)).toEqual({ tooLarge: false, body: null });
   });
 
+  test('the selection bound fits the largest selection and refuses a megabyte', async () => {
+    const ids = Array.from({ length: PORTFOLIO_SELECTION_MAX_PROJECTS }, (_, i) => `${'p'.repeat(124)}${String(i).padStart(4, '0')}`);
+    expect((await readBoundedRequestJson(request(JSON.stringify({ name: 'n'.repeat(120), projectIds: ids })), PORTFOLIO_SELECTION_BODY_LIMITS)).tooLarge).toBe(false);
+    expect((await readBoundedRequestJson(request('"' + 'a'.repeat(1024 * 1024) + '"'), PORTFOLIO_SELECTION_BODY_LIMITS)).tooLarge).toBe(true);
+  });
+
   test('the small bound fits an invitation and refuses a megabyte', async () => {
     expect((await readBoundedRequestJson(request(JSON.stringify({ email: 'a@b.example', expiresInDays: 7 })), SMALL_REQUEST_BODY_LIMITS)).tooLarge).toBe(false);
     expect((await readBoundedRequestJson(request('"' + 'a'.repeat(1024 * 1024) + '"'), SMALL_REQUEST_BODY_LIMITS)).tooLarge).toBe(true);
@@ -54,6 +61,10 @@ test('the named routes no longer parse a request body without a bound', () => {
     'app/api/model-stages/route.ts',
     'app/api/fetch-odata-metadata/route.ts',
     'app/api/fetch-s4-metadata/route.ts',
+    'app/api/portfolio/selections/route.ts',
+    'app/api/portfolio/selections/[selectionId]/route.ts',
+    'app/api/portfolio/selections/[selectionId]/invitations/route.ts',
+    'app/api/secrets/gemini/auto-steps/route.ts',
   ];
   for (const rel of routes) {
     const src = read(rel);

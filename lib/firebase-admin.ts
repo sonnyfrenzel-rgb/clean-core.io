@@ -2,7 +2,7 @@ import { createHash, randomBytes } from 'crypto';
 import { FIRESTORE_DB_ID, COMMUNITY_QUOTA, termsVersionInForce } from '@/lib/constants';
 import { verifyApprovalToken } from '@/lib/approval-token';
 import { byokAllowed, BYOK_NOT_AVAILABLE_MESSAGE } from './byok-eligibility';
-import { sealByokSecret, openByokSecret, ByokKeyUnreadableError, OwnModelKeyMissingError, OwnModelKeyBlockedError } from './byok-key';
+import { sealByokSecret, openByokSecret, recordHoldsKey, ByokKeyUnreadableError, OwnModelKeyMissingError, OwnModelKeyBlockedError } from './byok-key';
 import { ownKeyCounts } from './run-quota-rule';
 import { byokAddendumSha256, type ByokAddendumAcceptance, type ByokAgreementEnding, type ByokAgreementEvent } from './byok-addendum';
 import { MODEL_KEY_PROVIDERS, ownKeyProviderOf, storedKeyProviderOf, type ModelKeyProvider } from './model-providers';
@@ -2093,6 +2093,8 @@ export async function setOwnKeyAutoSteps(uid: string, on: boolean): Promise<{ pr
   const { db, FieldValue } = await getAdminDb();
   const profileRef: DocumentReference = db.collection('users').doc(uid);
   const secrets = db.collection('user_secrets').doc(uid).collection('providers');
+  // The audit row commits with the switch, so a changed switch never stands without it.
+  const audit = await auditEventRecord(db, uid, on ? 'BYOK_AUTO_STEPS_ON' : 'BYOK_AUTO_STEPS_OFF', uid);
   return db.runTransaction(async (tx: Transaction) => {
     const profile = await tx.get(profileRef);
     if (!profile.exists) throw new QuotaError(PROFILE_GONE, 404);
@@ -2107,6 +2109,7 @@ export async function setOwnKeyAutoSteps(uid: string, on: boolean): Promise<{ pr
     }
     tx.update(record.ref, { autoSteps: on, autoStepsAt: FieldValue.serverTimestamp() });
     tx.update(profileRef, { byokAutoSteps: on, updatedAt: FieldValue.serverTimestamp() });
+    tx.set(db.collection('audit_events').doc(), audit);
     return { provider: named, autoSteps: on };
   });
 }
@@ -2118,9 +2121,10 @@ const NO_OWN_KEY_STORED = 'No own model key is stored for this account.';
  * `byokTestedAt` (a key saved before the rule counts from its first passed
  * test); a refusal takes it away and switches the automatic steps off, so a
  * key that no longer works lifts nothing. Best effort for an erased profile:
- * nothing is recreated.
+ * nothing is recreated. `testedKey` is the key the test sent: a key saved in
+ * the meantime is not touched by the result of testing the one before it.
  */
-export async function recordOwnKeyTest(uid: string, provider: ModelKeyProvider, passed: boolean): Promise<void> {
+export async function recordOwnKeyTest(uid: string, provider: ModelKeyProvider, passed: boolean, testedKey: string): Promise<void> {
   await ensureInitialized();
   const { db, FieldValue } = await getAdminDb();
   const profileRef: DocumentReference = db.collection('users').doc(uid);
@@ -2129,6 +2133,7 @@ export async function recordOwnKeyTest(uid: string, provider: ModelKeyProvider, 
     const profile = await tx.get(profileRef);
     const record = await tx.get(recordRef);
     if (!profile.exists || !record.exists) return;
+    if (!recordHoldsKey(record.data(), testedKey, { uid, provider })) return;
     if (passed) {
       tx.update(recordRef, { testedAt: FieldValue.serverTimestamp() });
       tx.update(profileRef, { byokTestedAt: FieldValue.serverTimestamp(), updatedAt: FieldValue.serverTimestamp() });

@@ -14,7 +14,7 @@ import {
   isInvitationSuppressed,
 } from '@/lib/invitation-suppression';
 import { INVITATION_SEND_RATE_LIMIT } from '@/lib/invitation-owner-gate';
-import { openPortfolioRoute } from '@/lib/portfolio/access-server';
+import { INVITER_UNCONFIRMED_MESSAGE, inviterAddressConfirmed, openPortfolioRoute } from '@/lib/portfolio/access-server';
 import { BatchRefusal } from '@/lib/portfolio/batch-store';
 import {
   buildPortfolioInvitationEmail,
@@ -24,6 +24,7 @@ import {
 import { createSelectionInvitation, SELECTION_INVITATIONS, selectionSharing } from '@/lib/portfolio/selection-invitations';
 import { SELECTION_COLLECTION } from '@/lib/portfolio/selection-store';
 import { recordInvitationSent, type InvitationRecordDb } from '@/lib/invitation-delivery-record';
+import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 
 /**
  * Inviting one address to read a named selection — roadmap 3.0.21 (4).
@@ -75,7 +76,13 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
     if (!gate.ok) return gate.response;
     const { selectionId } = await params;
     if (!isFirestoreId(selectionId)) return NextResponse.json({ error: 'No such selection.' }, { status: 404 });
-    const body = (await req.json().catch(() => null)) as { email?: unknown; expiresInDays?: unknown } | null;
+    // As for project invitations: mail goes out in this account's name only from a confirmed address.
+    if (!(await inviterAddressConfirmed(gate))) {
+      return NextResponse.json({ error: INVITER_UNCONFIRMED_MESSAGE, code: 'email-unconfirmed' }, { status: 403 });
+    }
+    const read = await readBoundedRequestJson(req, SMALL_REQUEST_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body as { email?: unknown; expiresInDays?: unknown } | null;
     // C12 (privacy policy section 8): the suppression list is the one project
     // invitations use — an address that unsubscribed from either gets neither.
     const requested = normaliseInvitedEmail(body?.email);

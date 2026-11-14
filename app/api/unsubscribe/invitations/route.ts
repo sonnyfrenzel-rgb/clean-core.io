@@ -52,10 +52,11 @@ export async function POST(req: NextRequest) {
   }
   try {
     const { db, FieldValue } = await getAdminDb();
-    await db
-      .collection(INVITATION_SUPPRESSIONS)
-      .doc(key)
-      .set({ list: 'invitations', keyed: true, source: 'confirmation-page', unsubscribedAt: FieldValue.serverTimestamp() }, { merge: true });
+    const ref = db.collection(INVITATION_SUPPRESSIONS).doc(key);
+    // Once on the list, a repeated request writes nothing: the first opt-out time stays.
+    if (!(await ref.get()).exists) {
+      await ref.set({ list: 'invitations', keyed: true, source: 'confirmation-page', unsubscribedAt: FieldValue.serverTimestamp() }, { merge: true });
+    }
   } catch (error) {
     logger.error('invitation unsubscribe not stored', { route: 'api/unsubscribe/invitations', error: errMessage(error) });
     return NextResponse.json({ success: false, retryable: true }, { status: 503 });

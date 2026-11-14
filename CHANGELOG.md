@@ -75,6 +75,15 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
   "planned".
 - Business view: methods named `refresh_<something>` are folded as technique only when they refresh the screen
   (`refresh_alv`, `refresh_grid`, …); a method such as `refresh_credit_limit` stays a step of the process.
+- S/4 metadata: a service path that is not text is refused instead of reading the default service.
+- Portfolio: a batch whose first programs could not be stored no longer stays behind and blocks the retry.
+- Portfolio selection invitations follow the same sender rules as project invitations.
+- Portfolio selections, their invitations and the own-key automatic-steps switch read request bodies under a size
+  bound.
+- The automatic-steps switch is recorded in the audit log in the same write as the switch itself.
+- Re-testing a saved own key records its result only on that key, not on one saved while the test ran.
+- Customer texts of a large abapGit package are trimmed to what one project document holds instead of failing to store.
+- A repeated invitation unsubscribe writes nothing and keeps the first opt-out time.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

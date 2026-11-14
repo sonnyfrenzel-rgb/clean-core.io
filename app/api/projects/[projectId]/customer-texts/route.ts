@@ -13,7 +13,7 @@ import { refuseInactiveAccount } from '@/lib/account-read-gate';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { readBoundedRequestJson } from '@/lib/url-validation';
-import { isCustomerTexts } from '@/lib/abap/customer-texts';
+import { CUSTOMER_TEXTS_MAX_BYTES, customerTextsBytes, isCustomerTexts } from '@/lib/abap/customer-texts';
 
 /**
  * The customer's own dictionary texts of a project — concept "Business-Lesbarkeit" H5(b), owner decision 06.11.2026.
@@ -105,6 +105,10 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     const texts = (read.body as { texts?: unknown } | null)?.texts;
     if (!isCustomerTexts(texts)) {
       return NextResponse.json({ error: 'Expected { texts } as the import reads them.', code: 'bad-request' }, { status: 400 });
+    }
+    // Refused here rather than by Firestore's document limit, which answered 500.
+    if (customerTextsBytes(texts) > CUSTOMER_TEXTS_MAX_BYTES) {
+      return NextResponse.json({ error: 'These texts are too large to store with the project.', code: 'too-large' }, { status: 413 });
     }
     const { db, FieldValue } = await getAdminDb();
     await db.collection('projects').doc(gate.projectId).collection(COLLECTION).doc(DOC).set({
