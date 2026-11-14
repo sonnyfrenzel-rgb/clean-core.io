@@ -75,6 +75,17 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
   "planned".
 - Business view: methods named `refresh_<something>` are folded as technique only when they refresh the screen
   (`refresh_alv`, `refresh_grid`, …); a method such as `refresh_credit_limit` stays a step of the process.
+- The first-run guide no longer promises a timed first look with Pause and Skip; it describes the first insights as
+  they now appear.
+- Verify an audit pack: the AI statement is said to be covered by the signature only for a pack that verified.
+- The naming status line announces only its settled result to a screen reader, not every count while names arrive.
+- AI names that arrive after the 45-second limit are held back with reduced motion too, as without it.
+- The process map shows "loading" rather than the previous map when the run's engine version changes.
+- The Business view's change list uses the project's customer texts, as the process story beside it does.
+- Process documentation: an authorization named only in a text literal is no longer reported as the program's own
+  role check.
+- Testing: the note that the owner edited the suite now also stands beside a recorded run with failures.
+- My workspace: an example run before says so in its button's accessible name, not only in the visible badge.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

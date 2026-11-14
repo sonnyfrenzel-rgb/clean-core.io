@@ -11,8 +11,9 @@ import { aiNamesLegend } from '@/lib/workspace-messages';
  * 3 and 18: "Naming steps in plain language … 13 of 25", then "Names are ready." with how many steps keep the name
  * the engine read. A failed or slow model is one sentence here and nothing anywhere else.
  *
- * A polite live region: the count is read out when it settles, not on every swap (the region holds one line, and a
- * screen reader reads the last one). The pen mark's legend stands beside it once a name is on the map.
+ * The visible line is not a live region: its count changes on every swap. A separate polite live region holds only the
+ * settled sentence (ready, failed, timed out) and stays empty while the names arrive, so a screen reader hears the
+ * result once. The pen mark's legend stands beside it once a name is on the map.
  */
 export default function NamingStatusLine({ arrival }: { arrival: MapNameArrival }) {
   const { status } = arrival;
@@ -20,9 +21,10 @@ export default function NamingStatusLine({ arrival }: { arrival: MapNameArrival 
   const busy = status.tone === 'busy';
   return (
     <div className="flex flex-col gap-2">
+      <p role="status" aria-live="polite" data-naming-announce="" className="sr-only">
+        {busy ? '' : status.text}
+      </p>
       <div
-        role="status"
-        aria-live="polite"
         data-naming-status={arrival.phase}
         data-naming-named={arrival.named}
         data-naming-total={arrival.total}

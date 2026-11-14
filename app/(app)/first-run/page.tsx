@@ -80,7 +80,7 @@ const STEPS: Step[] = [
     action: 'Press "Start this example" on Z_MM_PO_APPROVAL, the case the demo project is built on',
     detail:
       'One click creates the project and opens its workspace, and the start is the analysis: the deterministic engine reads the source and the result is sealed as a signed run. With the model on, the narrative is written into the same run while you watch; without it, the engine’s reading is signed alone. At 552 lines it is a real approval process — vendor block list, price tolerance, approval by department head or manager — and it shows the honest gaps too: two includes the code names but does not contain are marked Not determined, never guessed.',
-    see: 'The first look, about 20 seconds in six steps — the code read, the process recognised, plain names, the rules hard-coded in the program, what could not be determined, and your process as numbered steps beside the map. Pause or skip it at any time.',
+    see: 'The process map of the program, and below it the first insights at once — the code read, the process recognised, plain names, and your process as numbered steps.',
     note: 'This is the one step that uses one of your analysis runs — except the starter examples, which are free the first time you run each of them. Everything after it is included, and re-running the analysis on the same source is free; starting the same example a second time is an ordinary analysis, counted once it completes.',
   },
   {

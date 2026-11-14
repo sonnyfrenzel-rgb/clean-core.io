@@ -503,7 +503,7 @@ export default function StarterExamples({
                     onClick={() => start(item)}
                     disabled={!!busy && busy !== item.key}
                     aria-busy={busy === item.key || undefined}
-                    aria-label={`Start ${item.example.name}`}
+                    aria-label={startLabel(account, item.example.name)}
                     data-example-start={item.example.name}
                     className="group grid min-h-[34px] w-full cursor-pointer grid-cols-[minmax(0,1fr)_auto_14px] items-center gap-x-2 gap-y-1 px-1 py-2 text-left text-[12px] font-medium text-cc-ink-muted hover:text-cc-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus disabled:cursor-not-allowed pointer-coarse:min-h-11 min-[1101px]:grid-cols-[minmax(0,auto)_auto_minmax(0,1fr)_14px]"
                   >
@@ -775,6 +775,12 @@ export default function StarterExamples({
  * product's one wording (`STARTER_BADGE_RAN_BEFORE`), and the start asks
  * before it runs, as the gallery does.
  */
+/** The home list button's accessible name: the label replaces the button's text, so the ran-before mark goes into it. */
+function startLabel(account: Account, name: string): string {
+  const cost = describeStarterExampleCost(account, name);
+  return cost.free ? `Start ${name}` : `Start ${name} (${cost.badge})`;
+}
+
 function RanBefore({ account, name }: { account: Account; name: string }) {
   const cost = describeStarterExampleCost(account, name);
   if (cost.free) return null;

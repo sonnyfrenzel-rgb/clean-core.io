@@ -119,7 +119,8 @@ export function arrivalAt(input: ArrivalInput, now: number): ArrivalView {
   const ceiling = input.waitingSince !== null ? input.waitingSince + NAMING_CEILING_MS : null;
 
   // Names that come after the ceiling do not arrive on this visit: the map has already said the steps keep the engine's.
-  const afterCeiling = ceiling !== null && input.arrivedAt !== null && !input.instant && input.arrivedAt > ceiling;
+  // `instant` (reduced motion) only skips the swap; the ceiling holds for it too.
+  const afterCeiling = ceiling !== null && input.arrivedAt !== null && input.arrivedAt > ceiling;
   if (input.arrivedAt !== null && !afterCeiling) {
     const { ids, stagger } = swapSchedule(eligible);
     const shown = new Map<string, string>();

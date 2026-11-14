@@ -155,6 +155,9 @@ function namesInCode(lines: string[], pattern: RegExp): FactObject[] {
  * read as an SAP authorization object (`calls.authorityChecks`). First line per name.
  */
 export function ownAuthorizationIn(source: string | string[]): FactObject[] {
-  const lines = Array.isArray(source) ? source : source.replace(/\r\n?/g, '\n').split('\n');
-  return first(namesInCode(lines, /\b\w*AUTHORI[SZ]\w*\b|'\w*AUTHORI[SZ]\w*'|\b(?:\w+_)?(?:require|check|has|assert|verify)_roles?\b/gi));
+  const raw = Array.isArray(source) ? source : source.replace(/\r\n?/g, '\n').split('\n');
+  // A literal or template with a space in it is prose ('Authorization is handled by the caller'), not a check or a
+  // refusal code: it is blanked before the scan. A one-word literal ('NOT_AUTHORIZED') stays.
+  const lines = raw.map((text) => text.replace(/'[^']*'|`[^`]*`|\|[^|]*\|/g, (lit) => (/\s/.test(lit) ? "''" : lit)));
+  return first(namesInCode(lines,/\b\w*AUTHORI[SZ]\w*\b|'\w*AUTHORI[SZ]\w*'|\b(?:\w+_)?(?:require|check|has|assert|verify)_roles?\b/gi));
 }

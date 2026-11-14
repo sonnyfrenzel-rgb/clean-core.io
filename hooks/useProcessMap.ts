@@ -154,7 +154,9 @@ export function useProcessMap(
    */
   const availabilitySettled = availability?.loading !== true;
 
-  const key = projectId && source && fileName ? `${projectId}|${sha256Hex(source)}|${fileName}` : '';
+  // The engine is part of the key: a map read by another engine version is not the map of this run, so a version
+  // change shows `loading` until the new one is built rather than the old one as ready.
+  const key = projectId && source && fileName ? `${projectId}|${sha256Hex(source)}|${fileName}|${engineVersion ?? ''}` : '';
 
   useEffect(() => {
     if (!projectId || !source || !fileName || !key || !availabilitySettled) return;
