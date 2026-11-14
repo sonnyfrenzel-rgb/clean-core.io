@@ -34,6 +34,7 @@ import { loadProjectAndHydrate } from '@/lib/project-loader';
 import type { Project, AnalysisData, CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import { readModelGaps } from '@/lib/model-gaps';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { useStartRunInFlight } from '@/hooks/useStartRun';
 import { absenceFromError, modelAbsenceReason, type ModelAbsence } from '@/lib/model-stages';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
@@ -251,6 +252,13 @@ function AnalyzeScorePage() {
    * narrative section is not there.
    */
   const modelAvailability = useModelAvailability();
+  /**
+   * The start run of Analyze, Business (`useStartRun`) may still be with the
+   * server when the reader switches to IT or Management: Start stays closed
+   * while it is, and the project is read again once it ends, so a second run
+   * is never offered for the same source.
+   */
+  const startInFlight = useStartRunInFlight(typeof projectId === 'string' ? projectId : '');
   /** Set by the run just completed. `null` on a fresh page — see `narrativeAbsence`. */
   const [lastNarrativeAbsence, setLastNarrativeAbsence] = useState<ModelAbsence>(null);
 
@@ -310,7 +318,7 @@ function AnalyzeScorePage() {
       }
     };
     fetchProject();
-  }, [projectId, searchParams]);
+  }, [projectId, searchParams, startInFlight]);
 
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState('');
@@ -972,7 +980,9 @@ function AnalyzeScorePage() {
    * Why "Start Analysis" is closed, or null when it is open. Shown under the
    * button and tied to it with `aria-describedby` (UX-013, UX-134, UX-165).
    */
-  const startBlockedReason: string | null = stagedScanBlock
+  const startBlockedReason: string | null = startInFlight
+    ? 'The analysis is running. It was started in the Business view; this page shows its result once it is signed.'
+    : stagedScanBlock
     ? `Security Block: ${stagedScanBlock} Remove the flagged content before analysing.`
     : !targetDeployment
       ? 'Select a target operating model (SAP S/4HANA Cloud Public Edition or SAP Cloud ERP Private) above to start.'

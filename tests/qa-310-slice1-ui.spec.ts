@@ -99,3 +99,15 @@ test.describe('the naming status line', () => {
     expect(live(ready)?.[1]).toBe('Names are ready.');
   });
 });
+
+test('a start run in flight closes Start in IT and Management and reads as running in a remounted Business view', () => {
+  const hook = read('hooks/useStartRun.ts');
+  // One module set, and every change of it is told to the views that listen.
+  expect(hook).toContain('export function useStartRunInFlight(projectId: string): boolean');
+  expect(hook).not.toMatch(/started\.(add|delete)\(projectId\);\s*\n\s*setPhase/);
+  expect(hook.match(/setStarted\(projectId, (true|false)\)/g)).toHaveLength(3);
+  expect(hook).toContain("autoPending || heldElsewhere\n        ? 'running'".replace(/\n/g, hook.includes('\r\n') ? '\r\n' : '\n'));
+  const analyze = read('app/(app)/project/[projectId]/analyze/page.tsx');
+  expect(analyze).toMatch(/const startBlockedReason: string \| null = startInFlight\s+\? 'The analysis is running\./);
+  expect(analyze).toContain('}, [projectId, searchParams, startInFlight]);');
+});
