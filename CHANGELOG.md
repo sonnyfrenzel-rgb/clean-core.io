@@ -121,6 +121,7 @@ Signed runs and the audit pack do not change.
   Analysis" closed and say the analysis is running, and the Business view shows it running instead of a sign button
   that did nothing.
 - Invitation unsubscribe: two requests with the same link arriving together store the opt-out once and keep its first time; the list entry is created in one step instead of read, then written.
+- Deployment: the list of SAP hosts a connection may use (`S4_HOST_ALLOWLIST`) and the model per stage reach the service as one value each; the deploy step split them at their commas, so only the first host was allowed.
 - QA agent: a push to dev no longer cancels a manually started backlog review; the push's own review would not have continued it.
 - Business rules: an `IMPORT … FROM MEMORY` now counts only the local field it fills as read from outside, not the
   name the value was stored under, so a status the program sets itself stays its own marker.
