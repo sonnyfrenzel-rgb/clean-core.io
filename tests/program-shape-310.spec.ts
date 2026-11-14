@@ -28,6 +28,8 @@ test('an output program, an inbound IDoc function and a BW extractor are said by
   expect(readProgramShape(output)?.kind).toBe('output-program');
   const idoc = ['FUNCTION z_idoc_input_orders.', '  LOOP AT idoc_contrl.', '    LOOP AT idoc_data WHERE docnum = idoc_contrl-docnum.', '    ENDLOOP.', '  ENDLOOP.', 'ENDFUNCTION.'].join('\n');
   expect(readProgramShape(idoc)?.kind).toBe('idoc-inbound');
+  // The interface is in the code, the process code assignment is not: SAP calls it only where one is assigned.
+  expect(readProgramShape(idoc)?.text).toBe('An inbound IDoc function: SAP calls it for incoming IDocs where a process code is assigned to it.');
   const bw = ['FUNCTION z_bw_extract.', '  IF i_dsource IS INITIAL.', '    RETURN.', '  ENDIF.', '  APPEND INITIAL LINE TO e_t_data.', 'ENDFUNCTION.'].join('\n');
   expect(readProgramShape(bw)?.kind).toBe('bw-extractor');
   expect(readProgramShape(['REPORT zt_plain.', 'START-OF-SELECTION.', "  WRITE / 'x'."].join('\n'))).toBeNull();

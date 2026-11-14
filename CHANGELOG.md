@@ -132,6 +132,7 @@ Signed runs and the audit pack do not change.
 - Author's comments: an `&` inside a comment (`Sales & Distribution`) is quoted as written; only the editor's frame signs at its edges are left out.
 - Business rules: an `EXIT` on a test-data selector inside a loop ends that loop, a business use of the selector, so its `CASE` stays among the rules.
 - In short: a German program name written as one word (`ZMM_RECHNUNGSPRUEFUNG`) gives its purpose like the same words written apart; a compound with a word the engine does not know gives none.
+- In short: an inbound IDoc function is said as one SAP calls where a process code is assigned to it; the code alone does not show that assignment.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
