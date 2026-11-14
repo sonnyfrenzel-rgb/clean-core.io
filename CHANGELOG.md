@@ -17,7 +17,7 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
   engine 4.0 after 3.5 (own lexer, symbols and dispatch, typed passes, side-by-side switch; owner decision 14.11.2026).
 - Benchmark v2 decided: the expected answers follow DESIGN.md §5.8, honest denominators and a reader score; wave 4 of
   legacy Z transactions within 50 EUR; abaplint only as an offline oracle (ADR-124).
-- QA: a manual slice can ask for a backlog budget (up to 45 batches under $4) for one range too large for ten.
+- QA: a manual slice can ask for a backlog budget (up to 45 batches under $4) for one range too large for ten; its job may run 120 minutes instead of 30.
 - A project opens in Analyze, Business. The process map is the page, and the map starts within the first screen at
   1440 × 900. Its tools sit in the canvas's own row, and what describes the map sits under it. With one code panel
   open beside it, the canvas stays wide (plan AB-2, ADR-109).
