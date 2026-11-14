@@ -46,8 +46,12 @@ permissions:
 # its group for. Releases that overlap are therefore reviewed side by side; the
 # cost is that the later one may carry over the findings of the review before the
 # one still running. A main run never shares a group with a dev run.
+#
+# A manual backlog slice has a group of its own too: a dev push would otherwise cancel
+# it, and the push's own review does not continue the slice (it runs without the
+# backlog budget), so the slice would have to be dispatched again.
 concurrency:
-  group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}
+  group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || (github.event_name == 'workflow_dispatch' && inputs.backlog) && format('qa-review-backlog-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}
   cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 jobs:

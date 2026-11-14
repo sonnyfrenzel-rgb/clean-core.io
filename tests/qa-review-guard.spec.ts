@@ -1553,7 +1553,8 @@ test.describe('the full review of a release on main', () => {
     // A release is never cancelled by the next one, and a main run never shares a group with a dev run.
     // `cancel-in-progress: false` is not enough for the first half: GitHub keeps one pending run per group
     // and cancels it when another queues, so each main run needs a group no other run has (codex code-ci-04).
-    expect(wf()).toContain("group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}");
+    // A manual backlog slice is not cancelled by a dev push either: the push's review would not continue it.
+    expect(wf()).toContain("group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || (github.event_name == 'workflow_dispatch' && inputs.backlog) && format('qa-review-backlog-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}");
     expect(wf()).toContain("cancel-in-progress: ${{ github.ref_name != 'main' }}");
     expect(wf().match(/^\s+group:/gm), 'one concurrency group for the whole workflow').toHaveLength(1);
   });
