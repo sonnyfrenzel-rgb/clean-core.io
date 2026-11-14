@@ -73,20 +73,9 @@ async function goto(page: Page, url: string) {
 async function expectWorkspaceWithFirstLook(page: Page): Promise<string> {
   await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
   expect(page.url(), 'an example landed on the score page').not.toContain('view=it');
-  // Every state the first look takes from here on: the paced build-up retired with 3.1.0 (AB-3), so the card
-  // reads ("waiting") and then stands in its end state — it never builds up.
-  await page.evaluate(() => {
-    const w = window as unknown as { __firstLookStates?: string[] };
-    w.__firstLookStates = [];
-    const note = () => {
-      for (const el of document.querySelectorAll('[data-first-look]')) {
-        const v = el.getAttribute('data-first-look') ?? '';
-        if (!w.__firstLookStates!.includes(v)) w.__firstLookStates!.push(v);
-      }
-    };
-    note();
-    new MutationObserver(note).observe(document.documentElement, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-first-look'] });
-  });
+  // The recorder was installed before the start was pressed (`recordFirstLook`), so no state the first look took
+  // between the press and this line can be missed.
+  expect(await page.evaluate(() => Array.isArray((window as unknown as { __firstLookStates?: unknown }).__firstLookStates)), 'the first look was not recorded from the start').toBe(true);
   const projectId = new URL(page.url()).pathname.split('/')[2];
   await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
   await expect(page.locator('[data-analyze-score]'), 'Business shows no score').toHaveCount(0);
@@ -104,6 +93,29 @@ async function expectWorkspaceWithFirstLook(page: Page): Promise<string> {
   return projectId;
 }
 
+/**
+ * Every state the first look takes, recorded from before the start is pressed: the paced build-up retired with 3.1.0
+ * (AB-3), so the card reads ("waiting") and then stands in its end state — it never builds up. Installed in the
+ * page as it stands (a client-side navigation keeps it) and for every document loaded after it (a full load).
+ */
+async function recordFirstLook(page: Page) {
+  const install = () => {
+    const w = window as unknown as { __firstLookStates?: string[] };
+    if (w.__firstLookStates) return;
+    w.__firstLookStates = [];
+    const note = () => {
+      for (const el of document.querySelectorAll('[data-first-look]')) {
+        const v = el.getAttribute('data-first-look') ?? '';
+        if (!w.__firstLookStates!.includes(v)) w.__firstLookStates!.push(v);
+      }
+    };
+    note();
+    new MutationObserver(note).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-first-look'] });
+  };
+  await page.addInitScript(install);
+  await page.evaluate(install);
+}
+
 async function startFromGallery(page: Page, scope: string, name: string) {
   await expect(page.locator(scope).first()).toBeVisible({ timeout: 90000 });
   const start = page.locator(`${scope} [data-example-start="${name}"]`).first();
@@ -111,6 +123,7 @@ async function startFromGallery(page: Page, scope: string, name: string) {
   if (!(await start.isVisible().catch(() => false))) {
     await page.locator(`${scope} [data-examples-more] button`).first().click({ timeout: 60000 });
   }
+  await recordFirstLook(page);
   await start.click({ timeout: 60000 });
 }
 
@@ -169,6 +182,7 @@ test.describe('an example opens Analyze, Business, with the map and the first lo
     const ack = page.locator('[data-personal-data-hints] input[type="checkbox"]');
     if (await ack.count()) await ack.check();
     await expect(page.locator('[data-own-code-start]')).toBeEnabled({ timeout: 30000 });
+    await recordFirstLook(page);
     await page.click('[data-own-code-start]');
     const projectId = await expectWorkspaceWithFirstLook(page);
 

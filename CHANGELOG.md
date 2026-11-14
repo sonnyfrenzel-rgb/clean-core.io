@@ -39,6 +39,7 @@ Signed runs and the audit pack do not change.
 - Engine 4.0 is built in parallel from now on, as its own module tree that nothing reads until the switch (ADR-125); benchmark convention K3 settled: commits stay in the technical layer.
 
 ### Fixed
+- Tests: the first look's states are recorded from before the start is pressed, and the process story must be visible, not only present.
 - Tests: the Gemini route is run in process for the automatic-naming notice gate and for the fallback model of the statements stage.
 - Tests: every clean-core.io address in the legal texts is rendered through the page's own linker and must link to the whole address.
 - Tests: the readability measurement fails when a surface throws, instead of measuring it as empty.
