@@ -75,6 +75,15 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
   "planned".
 - Business view: methods named `refresh_<something>` are folded as technique only when they refresh the screen
   (`refresh_alv`, `refresh_grid`, …); a method such as `refresh_credit_limit` stays a step of the process.
+- Rules: a selection parameter is set apart as a test data switch only while no other condition decides on it
+  (`IF p_mode = 1. PERFORM post_orders.` keeps its CASE among the rules).
+- Rules: a value of a thousand million or more is a "no limit" cap only where the rule compares against it; an
+  equality test (`vbeln = '1000000000'`) stays a business rule.
+- Rules: limits on one amount in different currencies are asked together, each with its currency.
+- Rules: a status the program sets itself is no longer called its own marker when a read also fills that field.
+- Business view: a routine called inside a condition is worded with the 3.1.0 vocabulary, and two bounds read as a
+  range ("between", "outside") only when they are numbers in order.
+- ATC import: the privacy notice names every field that is kept, including include, priority, line and exemption.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

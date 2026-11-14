@@ -637,6 +637,8 @@ interface RuleContext {
   anchor: SourceRange;
   /** From engine 3.0.20: a cap of a thousand million or more is technical on any subject. */
   reads3020: boolean;
+  /** From engine 3.1.0: such a cap counts only where every test of the rule compares against one (`capOnly`). */
+  reads310: boolean;
   /**
    * From engine 3.0.21: where a constant no condition tests filters what the program reads or sets what it writes
    * (`constantUsesOf`). Non-empty only for such a constant, which is then not `declarationOnly`.
@@ -669,6 +671,7 @@ function contextOf(rule: BusinessRule, facts: ExplainFacts, ctx: PlainContext, r
     statementIndex,
     anchor: uses.length > 0 ? range(uses[0].lineStart, uses[0].lineEnd) : anchor,
     reads3020,
+    reads310: ctx.reads310 === true,
     uses,
   };
 }
@@ -703,6 +706,15 @@ function constantDoes(rc: RuleContext): ExplainedSentence {
   return { text: parts.join(' '), anchors: usesAnchors(rc.uses) };
 }
 
+/** A cap of a thousand million or more (3.0.20). */
+const CAP = /^(?:10{9,}|9{9,})$/;
+/**
+ * From 3.1.0: a parameter that is a cap — the constant's declaration, or a comparison that bounds a value by caps only
+ * (`isCap`). An equality test is not: `= '1000000000'` can be a document number.
+ */
+const capOnly = (isCap: (v: string) => boolean) => (p: RuleParameter): boolean =>
+  operatorOf(p) === 'VALUE' || (/^(?:<|<=|>|>=|BETWEEN)$/.test(operatorOf(p)) && valuesOf(p).length > 0 && valuesOf(p).every(isCap));
+
 function technicalOf(rc: RuleContext, demo: boolean): ExplainedSentence | null {
   const { rule } = rc;
   const values = rule.parameters.flatMap(valuesOf);
@@ -718,8 +730,8 @@ function technicalOf(rc: RuleContext, demo: boolean): ExplainedSentence | null {
   const technicalSubject = rc.stems.length > 0 && rc.stems.every((s) => TECHNICAL_STEM.test(s));
   // From engine 3.0.20 (owner report 21.10.2026, "Only maximum scaled 1000000000000 is processed" first
   // in "What it decides"): a cap of a thousand million or more is "no limit" on any subject.
-  if (rc.reads3020 && values.some((v) => /^(?:10{9,}|9{9,})$/.test(v))) {
-    const v = values.find((x) => /^(?:10{9,}|9{9,})$/.test(x)) ?? '';
+  if (rc.reads3020 && values.some((v) => CAP.test(v)) && (!rc.reads310 || rule.parameters.every(capOnly((v) => CAP.test(v))))) {
+    const v = values.find((x) => CAP.test(x)) ?? '';
     return { text: `${numberWords(v)} is “no limit” written as a number — a technical cap, not a business limit.`, anchors: [where] };
   }
   if (technicalSubject && values.some(isSentinel)) {
@@ -1210,10 +1222,44 @@ function writtenValues(statements: readonly AbapStatement[], demoRoutines: Reado
   return out;
 }
 
+/**
+ * From 3.1.0: the fields a value can reach from outside the program's own assignments — what a `SELECT`, `FETCH`,
+ * `READ TABLE`, `LOOP AT` or `IMPORT` fills (`INTO x`, `INTO TABLE x`, `INTO (a, b)`, `ASSIGNING <x>`), as
+ * `markerKey` prefixes: `v:<name>` for a variable, `c:<type>:` for every component of a row.
+ */
+function sourcedKeys(statements: readonly AbapStatement[], types: ReadonlyMap<string, string>): Set<string> {
+  const out = new Set<string>();
+  const add = (raw: string) => {
+    const name = raw.toLowerCase().replace(/^@/, '').replace(/^data\(|\)$/g, '').trim();
+    if (!/^<?[\w/]+>?$/.test(name)) return;
+    out.add(`v:${name}`);
+    out.add(`c:${types.get(name) ?? name}:`);
+  };
+  for (const s of statements) {
+    if (!/^(?:SELECT|FETCH|READ|LOOP|IMPORT)$/i.test(s.keyword)) continue;
+    const text = s.text.replace(/\.\s*$/, '');
+    for (const m of text.matchAll(/\bINTO\s*\(([^)]*)\)/gi)) for (const name of m[1].split(',')) add(name);
+    for (const m of text.matchAll(/\bINTO\s+(?:CORRESPONDING\s+FIELDS\s+OF\s+)?(?:TABLE\s+)?(@?(?:DATA\()?<?[\w/]+>?)/gi)) add(m[1]);
+    for (const m of text.matchAll(/\bASSIGNING\s+(?:FIELD-SYMBOL\()?(<[\w/]+>)/gi)) add(m[1]);
+    // `IMPORT a = b FROM …` / `IMPORT a b FROM …`: every name it lists.
+    const imported = /^IMPORT\s+([\s\S]*?)\s+FROM\b/i.exec(text)?.[1];
+    if (imported) for (const m of imported.matchAll(/[\w/]+/g)) add(m[0]);
+  }
+  return out;
+}
+
+/** Is this `markerKey` a field a value can reach from outside the program's own assignments (`sourcedKeys`)? */
+function isSourced(key: string, sourced: ReadonlySet<string>): boolean {
+  if (sourced.has(key)) return true;
+  return key.startsWith('c:') && sourced.has(key.slice(0, key.lastIndexOf(':') + 1));
+}
+
 interface BasketFacts {
   /** The program has demo cases of its own — a demo flag or a test data switch (`readDemoSwitches`). */
   hasDemo: boolean;
   written: Map<string, Map<string, number>>;
+  /** From 3.1.0: the fields a read fills (`sourcedKeys`); null for an earlier engine. */
+  sourced: ReadonlySet<string> | null;
   /** `declaredTypes` of the source: what makes two components one field. */
   types: ReadonlyMap<string, string>;
   ctx: PlainContext;
@@ -1261,7 +1307,7 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   }
   // "No limit" written as a number on anything but money: a technical cap, whatever the field is called.
   // From engine 3.0.20, like the cap in `technicalOf`: a run of an older engine keeps its reading.
-  if (rc.reads3020 && values.some(isSentinel) && !rc.stems.some((s) => MONEY.test(s))) {
+  if (rc.reads3020 && values.some(isSentinel) && !rc.stems.some((s) => MONEY.test(s)) && (!rc.reads310 || rc.rule.parameters.every(capOnly(isSentinel)))) {
     const v = values.find(isSentinel) ?? '';
     return say('technical', `${numberWords(v)} is “no limit” written as a number — a technical cap, not a business limit.`);
   }
@@ -1278,6 +1324,9 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   // has not made the plant its own marker.
   const markerTopic = topic === 'status' || topic === 'credit' || topic === 'other';
   const marker = markerTopic && tests.length > 0 && tests.every((p) => {
+    // From 3.1.0: a field a read also fills may hold the value from there — the program's assignment does not make it
+    // a marker of its own.
+    if (bf.sourced && isSourced(markerKey(p.subject, bf.types), bf.sourced)) return false;
     const held = bf.written.get(markerKey(p.subject, bf.types));
     const vs = valuesOf(p).map((v) => v.toUpperCase());
     // Set by the program before it is tested: a value assigned only after the check was read, not set.
@@ -1378,6 +1427,22 @@ function questionOf(group: QuestionInput[], ctx: PlainContext): RuleQuestion {
   const base = { id: `Q-${ids[0]}`, ruleIds: ids, topic: first.explanation.topic, weight };
   const subject = first.t?.subject ?? first.rc.subject;
   const tests = group.map((g) => g.t);
+  // From 3.1.0: limits on one amount grouped across currencies keep each limit's currency.
+  const monies = group.map((g) => amountInCurrency(g.rc, ctx));
+  const money0 = monies.find((m) => m !== null);
+  if (ctx.reads310 && group.length > 1 && money0 && group.every((g, k) => monies[k] !== null || isLimit(g.t))) {
+    const limits = [...new Set(group.map((g, k) => {
+      const m = monies[k];
+      return m ? `${OPERATOR_WORDS[operatorOf(m.limit)]} ${numberWords(valuesOf(m.limit)[0])} ${m.currency}` : `${OPERATOR_WORDS[g.t!.op]} ${numberWords(g.t!.values[0])}`;
+    }))];
+    return {
+      ...base,
+      topic: 'amounts',
+      shape: 'limits',
+      statement: { text: `The program works with ${limits.length === 1 ? 'one limit' : `${limits.length} limits`} on ${theSubject(money0.subject)}: ${joinWords(limits)}.`, anchors },
+      ask: 'Are these limits still right?',
+    };
+  }
   if (group.length > 1 && tests.every(isLimit)) {
     const limits = [...new Set(tests.map((t) => `${OPERATOR_WORDS[t!.op]} ${numberWords(t!.values[0])}`))];
     return {
@@ -1482,7 +1547,14 @@ export function explainBusinessRules(
   const demoRoutines = new Set((set.demoCases ? readDemoSwitches(source, engineVersion)?.routines ?? [] : []).map((r) => r.toUpperCase()));
   const types = declaredTypes(facts.statements);
   const hasDemo = hasDemoCases(source, engineVersion);
-  const basketFacts: BasketFacts = { written: writtenValues(facts.statements, demoRoutines, types), types, ctx, hasInclude, hasDemo };
+  const basketFacts: BasketFacts = {
+    written: writtenValues(facts.statements, demoRoutines, types),
+    sourced: engineReads310Apply(engineVersion) ? sourcedKeys(facts.statements, types) : null,
+    types,
+    ctx,
+    hasInclude,
+    hasDemo,
+  };
   const asked: QuestionInput[] = [];
   const rules: RuleExplanation[] = set.rules.map((rule) => {
     const rc = contextOf(rule, facts, ctx, reads3020, reads3021);
