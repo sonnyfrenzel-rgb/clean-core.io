@@ -111,6 +111,16 @@ test('technical methods are not steps: no "Constructor", "Get limit" or "Set lim
   // The constructor's read is folded into the read of the orders beside it — its line stays on that element.
   const read = all.find((n) => n.reads.includes('VBAK'))!;
   expect(read.anchorLabel, read.name).toContain(`L${lineOf(CLUSTER, 'NEW lcl_app( )->run( ).')}`);
+  // The constructor's business read survives the folding (QA review of e1b11dcdc13b): the element still reads the
+  // limits table, names the constructor among its folded steps at the call line, and that call's anchor still points
+  // at the constructor's source, the SELECT on ZT_LIMITS inside it.
+  expect(read.reads).toContain('ZT_LIMITS');
+  expect(read.folded?.find((f) => f.technicalName === 'CONSTRUCTOR')?.anchor).toBe(`L${lineOf(CLUSTER, 'NEW lcl_app( )->run( ).')}`);
+  const select = lineOf(CLUSTER, 'FROM zt_limits');
+  const call = buildProcessSkeleton(CLUSTER, { engineVersion: NEW }).nodes.find((n) => n.expandsTo === 'method:LCL_APP=>CONSTRUCTOR')!;
+  expect(call.detail?.collapsedFrom).toBe('ZT_LIMITS');
+  expect(call.anchor?.secondary?.lineStart).toBeLessThanOrEqual(select);
+  expect(call.anchor?.secondary?.lineEnd).toBeGreaterThanOrEqual(select);
 });
 
 test('a routine that calls a phase of its own is not one step: main is not folded onto the read of its constructor', () => {
