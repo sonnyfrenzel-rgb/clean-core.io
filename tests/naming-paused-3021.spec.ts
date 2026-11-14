@@ -250,10 +250,13 @@ test.describe('3.0.21: business names paused until they are built from the code\
   });
 
   test('names come back only together with privacy wording that no longer calls them paused', () => {
-    // From 3.1.0 the product asks for business names by itself again. Privacy section 3 (and the Trust page and
-    // the C14 notice) say they are paused; a build that asks must not ship beside that sentence.
+    // From 3.1.0 the product asks for business names by itself again. Privacy section 3, the Trust page and the
+    // C14 notice switch their wording with the build (`lib/legal/names-wording.ts`, legal review document 19);
+    // both directions are held in tests/legal-names-wording.spec.ts. A build that asks must not ship beside the
+    // sentence that calls them paused, and a build that does not ask keeps it.
     const sayPaused = PRIVACY_EN.includes('Business names, which we also started ourselves, are paused');
     expect(NAMING_ASKED_IN_THIS_BUILD && sayPaused, 'names are asked while the privacy policy says they are paused: the legal texts need their new wording first').toBe(false);
+    expect(!NAMING_ASKED_IN_THIS_BUILD && !sayPaused, 'names are not asked, yet the privacy policy no longer says they are paused').toBe(false);
   });
 
   test('the settings and the own-code import say the names are paused instead of promising them', () => {

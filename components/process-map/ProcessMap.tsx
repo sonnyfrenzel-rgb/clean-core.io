@@ -3,7 +3,7 @@
 import { createDraftHolder, draftFor, type DraftHolder } from '@/lib/process-map-draft';
 import React, { useCallback, useId, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Code2, Keyboard, List, Map as MapIcon, PanelLeftClose, PanelLeftOpen, Pencil } from 'lucide-react';
+import { Code2, Keyboard, List, Map as MapIcon, PanelLeftClose, PanelLeftOpen, PenLine, Pencil } from 'lucide-react';
 import CcIconButton from '@/components/cc/IconButton';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -46,7 +46,7 @@ import ProcessMiniMap from './ProcessMiniMap';
 import ProcessOutline from './ProcessOutline';
 import ProcessSearch from './ProcessSearch';
 import ProcessStepList from './ProcessStepList';
-import { mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
+import { aiLaneMark, aiMarkTooltip, aiNameMark, mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
 
 /** Where a viewer's choice to fold the outline is kept — this browser only. */
 const OUTLINE_KEY = 'cc.processMap.outline';
@@ -577,7 +577,8 @@ export default function ProcessMap({
       motion: nameArrival.motion,
       accessibleNames: new Map(model.elements.map((e) => [e.id, e.accessibleName])),
       hold: selected ? new Set([selected]) : new Set(),
-      penLabel: wt('mapNaming.pen'),
+      penLabel: aiNameMark(),
+      penTitle: aiMarkTooltip(aiNameMark(), model.naming.origin),
       waitingLabel: wt('mapNaming.waiting'),
     };
   }, [arriving, nameArrival, model, selected]);
@@ -857,8 +858,18 @@ export default function ProcessMap({
       ) : null}
 
       {model.lanes.length > 0 ? (
-        <p data-process-map-lanes className="text-[12px] font-medium text-cc-ink-muted">
-          {mapLanesProposed(model.lanes.map((lane) => lane.name))} {model.lanes[0].statement}
+        <p data-process-map-lanes className="flex flex-wrap items-center gap-x-2 text-[12px] font-medium text-cc-ink-muted">
+          <span
+            data-ai-lane-mark=""
+            title={aiMarkTooltip(aiLaneMark(), model.naming.origin)}
+            className="inline-flex cursor-help items-center gap-1 text-cc-ink"
+          >
+            <PenLine size={12} aria-hidden={true} className="shrink-0 text-cc-warning" />
+            {aiLaneMark()}
+          </span>
+          <span>
+            {mapLanesProposed(model.lanes.map((lane) => lane.name))} {model.lanes[0].statement}
+          </span>
         </p>
       ) : null}
       {page ? levelLine : null}

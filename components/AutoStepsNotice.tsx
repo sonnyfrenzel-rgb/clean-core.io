@@ -4,7 +4,7 @@ import React, { useCallback, useState } from 'react';
 import { getAuth } from '@/lib/firebase';
 import type { ModelAvailability } from '@/hooks/useModelAvailability';
 import {
-  AUTO_STEPS_NOTICE_SEEN,
+  autoStepsNoticeSeenBody,
   autoStepsNoticeValues,
   autoStepsNoticeWanted,
   autoStepsSwitchBody,
@@ -20,11 +20,15 @@ import CcButton from '@/components/cc/Button';
  * A10). The rule for when it shows and what it writes is
  * `lib/auto-steps-notice.ts`; the words are `CONSENT_TEXTS.autoStepsNotice`.
  *
- * Lives on the own-code upload only (`components/workspace/OwnCodeImport.tsx`),
- * above the source and so before the first own project exists: never on a
- * shared project, so an invited reader never meets it. A message strip in the
- * page, not a dialog — nothing is covered, and the upload stays usable while
- * it is there.
+ * Lives on the own-code upload (`components/workspace/OwnCodeImport.tsx`),
+ * above the source and so before the first own project exists. Once the
+ * business names start by themselves it also stands above the process map of
+ * the owner's project (`components/workspace/WorkspaceProcess.tsx`) while the
+ * names wait for it: an account that confirmed the earlier wording with the
+ * main switch on sees it once more there, before the first automatic naming
+ * call, which the server holds until then. Never to an invited reader. A
+ * message strip in the page, not a dialog — nothing is covered, and the page
+ * stays usable while it is there.
  *
  * The switch writes the account's main switch "Automatic AI steps" at once (a switch acts
  * when flipped, `components/cc/Switch.tsx`) and records the notice as
@@ -70,12 +74,14 @@ export default function AutoStepsNotice({ model, reader = false }: { model: Mode
   const dismiss = useCallback(async () => {
     setClosed(true);
     try {
-      await post({ autoStepsNotice: AUTO_STEPS_NOTICE_SEEN });
+      await post(autoStepsNoticeSeenBody());
+      // Read again, so a step that waited for this answer (the business names) starts now.
+      await model.refresh();
     } catch (err) {
       // Closed for this page either way; unrecorded, it shows once more next time.
       console.error('[AutoStepsNotice] not recorded', err);
     }
-  }, [post]);
+  }, [model, post]);
 
   const wanted = autoStepsNoticeWanted({
     known: model.known,
@@ -83,6 +89,8 @@ export default function AutoStepsNotice({ model, reader = false }: { model: Mode
     autoSteps: model.autoSteps,
     stages: model.stages,
     seen: model.autoStepsNoticeSeen,
+    wording: model.autoStepsNoticeWording,
+    mainSwitch: model.autoModelSteps,
     reader,
   });
   if (closed || reader || !(pinned || wanted)) return null;

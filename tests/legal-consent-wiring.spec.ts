@@ -4,6 +4,7 @@ import path from 'path';
 import { CONSENT_TEXTS, consentText } from '../lib/legal/consent-texts';
 import { signupNoticeBelow } from '../components/legal/SignupConsent';
 import { renderOpenValue } from '../lib/legal/open-values';
+import { PRIVACY_POLICY_CURRENT } from '../lib/legal/privacy-versions';
 import { createHash } from 'crypto';
 import { wordingFile } from '../lib/legal/wording-file';
 import { runFreeNotice, runModelCallNotice } from '../lib/legal/run-notice';
@@ -52,10 +53,17 @@ test.describe('C1 — the sign-up consent', () => {
   test('the privacy box says "taken note of", the Terms box says "accept", both name the version', () => {
     const privacy = consentText(CONSENT_TEXTS.signup.privacyCheckbox, 'en');
     const terms = consentText(CONSENT_TEXTS.signup.termsCheckbox, 'en');
-    expect(privacy).toMatch(/^I have taken note of the Privacy Policy \(version of /);
-    expect(privacy).toContain(renderOpenValue('releaseDate', 'en'));
+    // Until version 1.1 the policy carried the release date; from 1.2 its own version, date and fixed address.
+    if (PRIVACY_POLICY_CURRENT.id === '1.1') {
+      expect(privacy).toMatch(/^I have taken note of the Privacy Policy \(version of /);
+      expect(privacy).toContain(renderOpenValue('releaseDate', 'en'));
+    } else {
+      expect(privacy).toContain(`(version ${PRIVACY_POLICY_CURRENT.id}, as of ${PRIVACY_POLICY_CURRENT.date.en}, wording: clean-core.io/datenschutz/versions/${PRIVACY_POLICY_CURRENT.id})`);
+    }
     expect(terms).toMatch(/^I accept the Clean-Core\.io Terms of Service and Community Guidelines \(version v2\.3\.0, English version/);
-    expect(consentText(CONSENT_TEXTS.signup.privacyCheckbox, 'de')).toMatch(/^Ich habe die Datenschutzerklärung \(Stand /);
+    expect(consentText(CONSENT_TEXTS.signup.privacyCheckbox, 'de')).toMatch(
+      PRIVACY_POLICY_CURRENT.id === '1.1' ? /^Ich habe die Datenschutzerklärung \(Stand / : /^Ich habe die Datenschutzerklärung \(Fassung \d+\.\d+, Stand /,
+    );
   });
 
   test('the notice below names the address the confirmation goes to', () => {

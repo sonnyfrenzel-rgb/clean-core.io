@@ -6,11 +6,12 @@ import {
   automaticStagesInThisBuild,
   autoStepsNoticeValues,
   autoStepsNoticeWanted,
+  AUTO_STEPS_NOTICE_WORDING,
   autoStepsSwitchBody,
   autoStepsSwitchOn,
 } from '../lib/auto-steps-notice';
 import { modelStagesOf } from '../lib/model-stages';
-import { NAMING_WITHOUT_FACTS_PAUSED } from '../lib/process-naming';
+import { NAMING_ASKED_IN_THIS_BUILD, NAMING_WITHOUT_FACTS_PAUSED } from '../lib/process-naming';
 import { CONSENT_TEXTS, consentText } from '../lib/legal/consent-texts';
 import { PRIVACY_DE } from '../lib/legal/texts/privacy.de';
 import { PRIVACY_EN } from '../lib/legal/texts/privacy.en';
@@ -33,6 +34,10 @@ import { publishedWordingPath } from '../lib/contract-confirmation-email';
  *   A9   Terms 1.3: the confirmation mail carries a link to the wording of the
  *        accepted version, at an address bound to version and language.
  *
+ * From the release that asks for business names again (`NAMING_ASKED_IN_THIS_BUILD`,
+ * engine 3.1.0) the A10 texts name two automatic steps (legal review document 19,
+ * `lib/legal/names-wording.ts`); every check of A10 below reads the build's side.
+ *
  * The rendered half (the notice on /admin/new-project/upload, the archive
  * pages) needs the dev server and is listed in the change's report.
  */
@@ -47,7 +52,8 @@ const off = (...stages: Array<keyof typeof ALL_ON>) => ({ ...ALL_ON, ...Object.f
 test.describe('A10 — one automatic step on opening a project while names are paused', () => {
   test('the plain wording is the only step the product starts by itself', () => {
     expect(NAMING_WITHOUT_FACTS_PAUSED).toBe(true);
-    expect(automaticStagesInThisBuild()).toEqual(['statements']);
+    // The names join once this build hands the model the engine's facts (document 19).
+    expect(automaticStagesInThisBuild()).toEqual(NAMING_ASKED_IN_THIS_BUILD ? ['naming', 'statements'] : ['statements']);
     // Only the plain wording sends `automatic: true`; the naming hook passes its flag, but asks nothing while paused.
     const senders: string[] = [];
     for (const dir of ['hooks', 'components', 'app']) {
@@ -72,13 +78,14 @@ test.describe('A10 — one automatic step on opening a project while names are p
   test('shown once, only when something would run by itself', () => {
     const base = { known: true, keyAvailable: true, autoSteps: true, stages: ALL_ON, seen: false };
     expect(autoStepsNoticeWanted(base)).toBe(true);
-    expect(autoStepsNoticeWanted({ ...base, seen: true }), 'answered or closed before').toBe(false);
+    expect(autoStepsNoticeWanted({ ...base, seen: true, wording: AUTO_STEPS_NOTICE_WORDING }), 'answered or closed before, in the wording of this build').toBe(false);
     expect(autoStepsNoticeWanted({ ...base, known: false }), 'never on a guess').toBe(false);
     expect(autoStepsNoticeWanted({ ...base, reader: true }), 'never to an invited reader').toBe(false);
     expect(autoStepsNoticeWanted({ ...base, autoSteps: false }), 'own key with "Automatic steps" off: nothing runs by itself').toBe(false);
     expect(autoStepsNoticeWanted({ ...base, keyAvailable: false }), 'no key, or a suspended provider').toBe(false);
-    expect(autoStepsNoticeWanted({ ...base, stages: off('statements') }), 'the step is already off').toBe(false);
-    // The paused names alone do not make anything run.
+    // With the plain wording off, the names alone still run by themselves once this build asks for them.
+    expect(autoStepsNoticeWanted({ ...base, stages: off('statements') }), 'the plain wording is already off').toBe(NAMING_ASKED_IN_THIS_BUILD);
+    // Both automatic steps off: nothing runs by itself.
     expect(autoStepsNoticeWanted({ ...base, stages: off('statements', 'naming') })).toBe(false);
     expect(autoStepsNoticeWanted({ ...base, stages: off('naming') })).toBe(true);
   });
@@ -92,8 +99,9 @@ test.describe('A10 — one automatic step on opening a project while names are p
 
   test('the switch writes the main switch Settings shows, and records the notice as answered', () => {
     // Since 06.11.2026 (item 2): one stored setting, `users/{uid}.autoModelSteps` (tests/auto-model-steps-3021.spec.ts).
-    expect(autoStepsSwitchBody(false)).toEqual({ autoModelSteps: false, autoStepsNotice: 'seen' });
-    expect(autoStepsSwitchBody(true)).toEqual({ autoModelSteps: true, autoStepsNotice: 'seen' });
+    // The notice is recorded with the wording it showed (`autoStepsNoticeWording`, tests/legal-names-wording.spec.ts).
+    expect(autoStepsSwitchBody(false)).toEqual({ autoModelSteps: false, autoStepsNotice: 'seen', autoStepsNoticeWording: AUTO_STEPS_NOTICE_WORDING });
+    expect(autoStepsSwitchBody(true)).toEqual({ autoModelSteps: true, autoStepsNotice: 'seen', autoStepsNoticeWording: AUTO_STEPS_NOTICE_WORDING });
     expect(autoStepsSwitchOn({ autoModelSteps: true })).toBe(true);
     expect(autoStepsSwitchOn({ autoModelSteps: false })).toBe(false);
   });
@@ -125,14 +133,18 @@ test.describe('A10 — one automatic step on opening a project while names are p
     expect(notice).toContain('<CcSwitch');
   });
 
-  test('C14, the words: one step, the provider of the key, and the exact Settings label', () => {
+  test('C14, the words: the automatic steps of this build, the provider of the key, and the exact Settings label', () => {
     const t = CONSENT_TEXTS.autoStepsNotice;
     const { model, company } = autoStepsNoticeValues('gemini');
     expect(consentText(t.lead, 'en').replace('{Modell}', model).replace('{Anbieter}', company)).toBe(
-      'When you open a project, one step — plain business sentences — is written automatically by an AI model (Google Gemini). The code it needs goes to Google for that. If your code must not leave the platform, switch this off now:',
+      NAMING_ASKED_IN_THIS_BUILD
+        ? 'When you open a project, two steps — plain business sentences and business names — are written automatically by an AI model (Google Gemini). The code they need goes to Google for that. If your code must not leave the platform, switch this off now:'
+        : 'When you open a project, one step — plain business sentences — is written automatically by an AI model (Google Gemini). The code it needs goes to Google for that. If your code must not leave the platform, switch this off now:',
     );
     expect(consentText(t.lead, 'de').replace('{Modell}', model).replace('{Anbieter}', company)).toBe(
-      'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell (Google Gemini). Dafür geht der benötigte Code an Google. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
+      NAMING_ASKED_IN_THIS_BUILD
+        ? 'Beim Öffnen eines Projekts schreiben zwei Schritte – Fachsätze und fachliche Namen – automatisch mit einem KI-Modell (Google Gemini). Dafür geht der benötigte Code an Google. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:'
+        : 'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell (Google Gemini). Dafür geht der benötigte Code an Google. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
     );
     expect(autoStepsNoticeValues('anthropic')).toEqual({ model: 'Anthropic Claude', company: 'Anthropic' });
     // One switch for every automatic call (legal review N1/B2, 06.11.2026).
@@ -157,20 +169,32 @@ test.describe('A10 — one automatic step on opening a project while names are p
     expect(read('app/(app)/project/[projectId]/documentation/page.tsx')).not.toContain('writeBusinessLayer(true)');
   });
 
-  test('privacy 3, Terms 5.4 and the Trust page say one automatic step, and that names are paused', () => {
-    expect(PRIVACY_DE).toContain('Einen starten wir beim Öffnen eines Projekts selbst: verständliche Formulierungen (Fachsätze)');
-    expect(PRIVACY_EN).toContain('One we start ourselves when a project is opened: plain-language wording (business sentences)');
-    expect(PRIVACY_DE).toContain('Fachliche Namen, die wir ebenso von selbst starteten, sind ausgesetzt');
-    expect(PRIVACY_EN).toContain('Business names, which we also started ourselves, are paused');
+  test('privacy 3, Terms 5.4 and the Trust page say the automatic steps of this build', () => {
+    if (NAMING_ASKED_IN_THIS_BUILD) {
+      // Document 19: two steps again, the names built from the code's facts first.
+      expect(PRIVACY_DE).toContain('Zwei starten wir beim Öffnen eines Projekts selbst: verständliche Formulierungen (Fachsätze) und fachliche Namen im Business-Bereich');
+      expect(PRIVACY_EN).toContain('Two we start ourselves when a project is opened: plain-language wording (business sentences) and business names in the business area');
+      expect(TRUST_EN).toContain('Two stages — plain-language wording and business names — start by themselves');
+      for (const text of [PRIVACY_DE, PRIVACY_EN, TRUST_EN]) {
+        expect(text).not.toMatch(/Einen starten wir|One we start|sind ausgesetzt, bis sie|are paused until they can be built|One stage — plain/);
+      }
+    } else {
+      expect(PRIVACY_DE).toContain('Einen starten wir beim Öffnen eines Projekts selbst: verständliche Formulierungen (Fachsätze)');
+      expect(PRIVACY_EN).toContain('One we start ourselves when a project is opened: plain-language wording (business sentences)');
+      expect(PRIVACY_DE).toContain('Fachliche Namen, die wir ebenso von selbst starteten, sind ausgesetzt');
+      expect(PRIVACY_EN).toContain('Business names, which we also started ourselves, are paused');
+      expect(TRUST_EN).toContain('One stage — plain-language wording — starts by itself');
+      for (const text of [PRIVACY_DE, PRIVACY_EN, TERMS_DE, TERMS_EN, TRUST_EN]) {
+        expect(text).not.toMatch(/Zwei starten wir|Two we start|zwei Schritte von selbst|two steps by itself|Two stages — plain/);
+      }
+    }
+    // Terms 5.4 names no count either way and points to privacy section 3; its "zwei Schritte von selbst" never comes back.
+    for (const text of [TERMS_DE, TERMS_EN]) expect(text).not.toMatch(/zwei Schritte von selbst|two steps by itself/);
     expect(PRIVACY_DE).toContain('weisen wir Sie einmal darauf hin, mit einem Schalter');
     expect(PRIVACY_EN).toContain('we point this out once, with a switch');
     // Terms 5.4 names no count and no tool since the legal review of 06.11.2026 (N1/B2).
     expect(TERMS_DE).toContain('Einige modellgestützte Schritte startet die Plattform ohne Ihren Klick; welche das sind, beschreibt die Datenschutzerklärung (Abschnitt 3)');
     expect(TERMS_EN).toContain('Some model-supported steps are started by the Platform without your click; the Privacy Policy (section 3) describes which');
-    expect(TRUST_EN).toContain('One stage — plain-language wording — starts by itself');
-    for (const text of [PRIVACY_DE, PRIVACY_EN, TERMS_DE, TERMS_EN, TRUST_EN]) {
-      expect(text).not.toMatch(/Zwei starten wir|Two we start|zwei Schritte von selbst|two steps by itself|Two stages — plain/);
-    }
   });
 });
 

@@ -19,6 +19,7 @@ export default function LegalPage({
   switchDataAttr,
   dataAttrs,
   beforeText,
+  afterText,
   renderAfterSection,
 }: {
   lang: LegalLang;
@@ -31,6 +32,8 @@ export default function LegalPage({
   switchDataAttr: string;
   dataAttrs?: Record<string, string>;
   beforeText?: ReactNode;
+  /** Navigation after the text that is not part of it, such as the list of published versions. */
+  afterText?: ReactNode;
   renderAfterSection?: Record<string, ReactNode>;
 }) {
   const other = lang === 'de' ? 'en' : 'de';
@@ -59,6 +62,7 @@ export default function LegalPage({
         </h1>
         {beforeText}
         <LegalDocument blocks={blocks} renderAfterSection={renderAfterSection} />
+        {afterText}
         <div className="mt-10 pt-8 border-t border-cc-line text-center cc-text-label font-cc-mono text-cc-ink-muted">
           Clean-Core.io {APP_VERSION} ({lang === 'de' ? APP_RELEASE_DATE_DE : APP_RELEASE_DATE})
         </div>

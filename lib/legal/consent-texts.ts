@@ -1,4 +1,5 @@
 import { resolveLegalSource } from './markup';
+import { namesWording } from './names-wording';
 import type { LegalLang } from './open-values';
 
 /**
@@ -41,9 +42,19 @@ export const CONSENT_TEXTS = {
       de: 'Bitte lesen Sie beide Texte. Mit dem Klick unten schließen Sie einen Vertrag über die unentgeltliche Nutzung von Clean-Core.io; eine Bestätigung mit einem Link auf den Wortlaut der angenommenen Fassung erhalten Sie anschließend per E-Mail.',
       en: 'Please read both texts. By clicking below you conclude a contract on the free use of Clean-Core.io; you will receive a confirmation by e-mail afterwards with a link to the wording of the version you accepted.',
     },
+    /**
+     * Names the version of the privacy policy, not the date of the Terms: its own version and date and its fixed
+     * address from version 1.2 (`lib/legal/privacy-versions.ts`), switched with the build like the policy itself.
+     */
     privacyCheckbox: {
-      de: 'Ich habe die Datenschutzerklärung (Stand {{releaseDate}}, Wortlaut: clean-core.io/datenschutz/de) zur Kenntnis genommen.',
-      en: 'I have taken note of the Privacy Policy (version of {{releaseDate}}, wording: clean-core.io/datenschutz).',
+      de: namesWording(
+        'Ich habe die Datenschutzerklärung (Fassung 1.2, Stand 20.11.2026, Wortlaut: clean-core.io/datenschutz/versions/1.2/de) zur Kenntnis genommen.',
+        'Ich habe die Datenschutzerklärung (Stand {{releaseDate}}, Wortlaut: clean-core.io/datenschutz/de) zur Kenntnis genommen.',
+      ),
+      en: namesWording(
+        'I have taken note of the Privacy Policy (version 1.2, as of 20 November 2026, wording: clean-core.io/datenschutz/versions/1.2).',
+        'I have taken note of the Privacy Policy (version of {{releaseDate}}, wording: clean-core.io/datenschutz).',
+      ),
     },
     termsCheckbox: {
       de: 'Ich nehme die Nutzungsbedingungen und Community-Richtlinien von Clean-Core.io (Fassung v2.3.0, deutsche Fassung, Wortlaut: clean-core.io/terms/de) an.',
@@ -449,8 +460,9 @@ export const CONSENT_TEXTS = {
    * C14 — one-time notice before the first automatic model call (3.0.21, A10):
    * shown once, at the first upload of own code, before the first project is
    * opened, with the switch inside it (`components/AutoStepsNotice.tsx`, rule
-   * `lib/auto-steps-notice.ts`). Written for the one automatic step there is
-   * while business names are paused (`NAMING_WITHOUT_FACTS_PAUSED`).
+   * `lib/auto-steps-notice.ts`). The lead names the business names beside the
+   * plain wording once this build asks for them, and only then
+   * (`lib/legal/names-wording.ts`, legal review document 19).
    * `{Modell}` is the model's provider label, `{Anbieter}` the company the
    * code goes to — both from the key the step would run on.
    */
@@ -460,8 +472,14 @@ export const CONSENT_TEXTS = {
       en: 'Before your first project: automatic AI steps',
     },
     lead: {
-      de: 'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell ({Modell}). Dafür geht der benötigte Code an {Anbieter}. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
-      en: 'When you open a project, one step — plain business sentences — is written automatically by an AI model ({Modell}). The code it needs goes to {Anbieter} for that. If your code must not leave the platform, switch this off now:',
+      de: namesWording(
+        'Beim Öffnen eines Projekts schreiben zwei Schritte – Fachsätze und fachliche Namen – automatisch mit einem KI-Modell ({Modell}). Dafür geht der benötigte Code an {Anbieter}. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
+        'Beim Öffnen eines Projekts schreibt ein Schritt – Fachsätze – automatisch mit einem KI-Modell ({Modell}). Dafür geht der benötigte Code an {Anbieter}. Darf Ihr Code die Plattform nicht verlassen, schalten Sie das jetzt ab:',
+      ),
+      en: namesWording(
+        'When you open a project, two steps — plain business sentences and business names — are written automatically by an AI model ({Modell}). The code they need goes to {Anbieter} for that. If your code must not leave the platform, switch this off now:',
+        'When you open a project, one step — plain business sentences — is written automatically by an AI model ({Modell}). The code it needs goes to {Anbieter} for that. If your code must not leave the platform, switch this off now:',
+      ),
     },
     switchLabel: { de: 'Alle automatischen KI-Schritte', en: 'All automatic AI steps' },
     /** Owner decision 06.11.2026 (legal review N1/B2): one switch covers every call the Platform starts without a click. */

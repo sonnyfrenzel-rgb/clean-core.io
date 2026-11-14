@@ -31,6 +31,9 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
 - "What this program does" opens on the program's status workflow when it keeps its data in its own objects.
 - Shell bar below 1024 px: inside a project the path starts at the project, without the "My workspace" step, so
   the project's name is no longer cut off. Help shows as its "?" icon and keeps its name and tooltip (ADR-115).
+- Legal texts: once the release asks for business names again, privacy section 3, the Trust page and the
+  one-time notice before the first automatic model call name them as a second automatic step. Before that
+  release they keep saying the names are paused. The wording waits for the lawyer's release (document 19).
 
 ### Fixed
 - A click on a step with an AI name opens its code. Before, the name's label took the click.

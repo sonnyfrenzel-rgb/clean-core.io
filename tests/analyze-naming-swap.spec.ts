@@ -74,12 +74,34 @@ test.describe('the AI names swap in on the map', () => {
    * The model and the store, in the browser. `model` decides how the naming call ends; the store keeps what was
    * posted and hands it back, so the map reads the naming the way it reads a stored one.
    */
-  async function stub(page: Page, model: 'answer' | 'fail' | 'hang') {
+  async function stub(page: Page, model: 'answer' | 'fail' | 'hang', notice: { wording: 'C14-1' | 'C14-2' } = { wording: 'C14-2' }) {
     let stored: ProcessNamingRecord | null = null;
     const asks: string[] = [];
-    await page.route('**/api/model-stages', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stages: { naming: true, statements: false }, keyAvailable: true, keySource: 'community', autoSteps: true }) }),
-    );
+    // The notice before the first automatic call: confirmed in the wording that names business names, unless the test
+    // says otherwise; "Got it" posts the wording the page showed, and the answer then carries it.
+    let confirmed: string = notice.wording;
+    const posts: unknown[] = [];
+    await page.route('**/api/model-stages', async (route) => {
+      if (route.request().method() === 'POST') {
+        const body = JSON.parse(route.request().postData() || '{}') as { autoStepsNoticeWording?: string };
+        posts.push(body);
+        if (body.autoStepsNoticeWording) confirmed = body.autoStepsNoticeWording;
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ok: true,
+          stages: { naming: true, statements: false },
+          keyAvailable: true,
+          keySource: 'community',
+          autoSteps: true,
+          autoModelSteps: true,
+          autoStepsNoticeSeen: true,
+          autoStepsNoticeWording: confirmed,
+        }),
+      });
+    });
     await page.route('**/api/gemini', async (route: Route) => {
       const body = route.request().postData() || '';
       if (!body.includes('"stage":"naming"')) return route.continue();
@@ -95,7 +117,7 @@ test.describe('the AI names swap in on the map', () => {
       }
       return route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ record: stored }) });
     });
-    return { asks };
+    return { asks, posts };
   }
 
   async function open(page: Page) {
@@ -133,12 +155,36 @@ test.describe('the AI names swap in on the map', () => {
     }
     // No waiting mark is left, and the pen's legend stands under the map.
     await expect(page.locator('.cc-map-name-wait')).toHaveCount(0);
-    await expect(page.locator('[data-naming-legend]')).toHaveText("Names: AI-generated from the code's facts, checked against them");
+    await expect(page.locator('[data-naming-legend]')).toHaveText("Names: AI-generated from the code's facts; terms matched against those facts, not reviewed.");
+    // The pen's tooltip names provider and model from the naming's receipt, not a model the code names.
+    await expect(page.locator('.cc-map-name-pen').first()).toHaveAttribute('title', 'AI-generated name · Google Gemini gemini-receipt-model');
 
     // The map stayed usable: a step opens its code beside the map (Analyze, Business — mockup state 7) with the name it
     // now has. A plain click, as a reader's: the name laid over the step must not take it (3.1.0 acceptance run).
     await marked.first().click();
     await expect(page.locator('[data-analyze-code-panel] #analyze-code-panel-title')).toHaveText(/Probe (step|question) \d+/);
+  });
+
+  test('an account that confirmed the notice in its old wording sees it once more, and the names wait for it', async ({ page }) => {
+    test.setTimeout(240_000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signInThroughForm(page, account);
+    const { asks, posts } = await stub(page, 'answer', { wording: 'C14-1' });
+    await open(page);
+    const notice = page.locator('[data-names-wait-notice]');
+    await expect(notice).toBeVisible({ timeout: 60_000 });
+    await expect(notice.locator('[data-auto-steps-notice-lead]')).toContainText('two steps — plain business sentences and business names —');
+    await expect(notice).toContainText('The steps keep the names the engine read from the code.');
+    // Nothing asked by itself, nothing offered on a click, no AI mark while the notice stands.
+    await expect(page.locator('[data-ask-on-click]')).toHaveCount(0);
+    await expect(page.locator('[data-map-named="ai"]')).toHaveCount(0);
+    expect(asks.length, 'no naming call before the notice is confirmed').toBe(0);
+    await notice.locator('[data-auto-steps-notice-dismiss]').click();
+    await expect.poll(() => posts.length).toBeGreaterThan(0);
+    expect(posts[0]).toEqual({ autoStepsNotice: 'seen', autoStepsNoticeWording: 'C14-2' });
+    await expect(notice).toHaveCount(0);
+    await expect(page.locator('[data-naming-status]')).toHaveAttribute('data-naming-status', 'ready', { timeout: 60_000 });
+    expect(asks.length, 'the names start once the notice is confirmed').toBe(1);
   });
 
   test('a failed model leaves every engine name, and the status line says so in one sentence', async ({ page }) => {

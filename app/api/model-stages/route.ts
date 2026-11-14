@@ -22,7 +22,14 @@ import {
 import { assertRateLimit } from '@/lib/rate-limit';
 import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/lib/model-stages';
 import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
-import { AUTO_STEPS_NOTICE_FIELD, AUTO_STEPS_NOTICE_SEEN } from '@/lib/auto-steps-notice';
+import {
+  AUTO_STEPS_NOTICE_FIELD,
+  AUTO_STEPS_NOTICE_SEEN,
+  AUTO_STEPS_NOTICE_WORDING,
+  AUTO_STEPS_NOTICE_WORDING_FIELD,
+  confirmedNoticeWordingOf,
+  type AutoStepsNoticeWording,
+} from '@/lib/auto-steps-notice';
 import { AUTO_MODEL_STEPS_FIELD, autoModelStepsOn, automaticStepsAllowed } from '@/lib/auto-model-steps';
 
 /**
@@ -86,6 +93,12 @@ interface StageAnswer {
    */
   autoStepsNoticeSeen: boolean;
   /**
+   * Which wording of that notice the account confirmed (`users/{uid}.autoStepsNoticeWording`, `C14-1` for a
+   * confirmation recorded before the id was), or null when it never answered. Business names start by themselves
+   * only once it is the wording of this build (`automaticNamingAwaitsNotice`).
+   */
+  autoStepsNoticeWording: AutoStepsNoticeWording | null;
+  /**
    * Legal review 06.11.2026 (3.0.21, item 2) — the account's main switch
    * "Automatic AI steps" (`users/{uid}.autoModelSteps`, `lib/auto-model-steps.ts`):
    * on unless switched off. `autoSteps` above is false whenever it is off.
@@ -98,9 +111,10 @@ const UNREADABLE = Symbol('byok-key-unreadable');
 async function answerFor(uid: string): Promise<StageAnswer> {
   const { db } = await getAdminDb();
   const snap = await db.collection('users').doc(uid).get();
-  const profile = snap.exists ? (snap.data() as { modelStages?: Record<string, boolean>; modelAnswers?: Record<string, unknown>; byokConfigured?: unknown; byokProvider?: unknown; autoStepsNoticeAt?: unknown; autoModelSteps?: unknown }) : null;
+  const profile = snap.exists ? (snap.data() as { modelStages?: Record<string, boolean>; modelAnswers?: Record<string, unknown>; byokConfigured?: unknown; byokProvider?: unknown; autoStepsNoticeAt?: unknown; autoStepsNoticeWording?: unknown; autoModelSteps?: unknown }) : null;
   const stages = modelStagesOf(profile);
   const autoStepsNoticeSeen = profile?.[AUTO_STEPS_NOTICE_FIELD] != null;
+  const autoStepsNoticeWording = confirmedNoticeWordingOf(profile);
   const autoModelSteps = autoModelStepsOn(profile);
   const answers: StageAnswer['answers'] = {};
   for (const stage of MODEL_STAGES) {
@@ -116,7 +130,7 @@ async function answerFor(uid: string): Promise<StageAnswer> {
     if (err instanceof ByokKeyUnreadableError || err instanceof OwnModelKeyMissingError) return UNREADABLE;
     throw err;
   });
-  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null, autoStepsNoticeSeen, autoModelSteps };
+  if (typeof ownKey === 'symbol') return { stages, keyAvailable: false, keySource: null, provider: null, answers, autoSteps: false, suspendedProvider: null, suspendedNotice: null, autoStepsNoticeSeen, autoStepsNoticeWording, autoModelSteps };
   const keySource: StageAnswer['keySource'] = ownKey
     ? 'byok'
     : process.env.GEMINI_API_KEY
@@ -130,7 +144,7 @@ async function answerFor(uid: string): Promise<StageAnswer> {
 
   const suspendedNotice = suspendedProvider ? providerSuspendedNotice(suspendedProvider, suspensionDetailsOf(process.env)) : null;
 
-  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoModelSteps };
+  return { stages, keyAvailable: keySource !== null && suspendedProvider === null, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoStepsNoticeWording, autoModelSteps };
 }
 
 export async function GET(req: NextRequest) {
@@ -171,6 +185,12 @@ export async function GET(req: NextRequest) {
  * 3.0.21 (A10): `autoStepsNotice: 'seen'`, alone or beside `stages`, records
  * that the one-time notice before the first automatic model call was answered
  * or closed (`users/{uid}.autoStepsNoticeAt`), so it does not come back.
+ *
+ * `autoStepsNoticeWording` beside it names the wording the screen showed. It
+ * is recorded only when it is the wording of this build; another is a 409 and
+ * nothing is written, so a page left open from before a release cannot confirm
+ * words it did not show. Without it (a page from before the field) only the
+ * time is recorded, which reads as the first wording.
  */
 export async function POST(req: NextRequest) {
   let uid = '';
@@ -201,6 +221,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `autoStepsNotice must be '${AUTO_STEPS_NOTICE_SEEN}'.` }, { status: 400 });
     }
     const noticeSeen = notice === AUTO_STEPS_NOTICE_SEEN;
+    const shownWording = (body as { autoStepsNoticeWording?: unknown } | null)?.autoStepsNoticeWording;
+    if (shownWording !== undefined && (!noticeSeen || shownWording !== AUTO_STEPS_NOTICE_WORDING)) {
+      return NextResponse.json(
+        { error: `The notice was answered in a wording this build does not show; expected '${AUTO_STEPS_NOTICE_WORDING}'. Reload the page.`, code: 'notice-wording-outdated' },
+        { status: 409 },
+      );
+    }
+    const wordingConfirmed = noticeSeen && shownWording === AUTO_STEPS_NOTICE_WORDING;
     // The main switch "Automatic AI steps" (3.0.21, legal review 06.11.2026): true or false, alone or beside the others.
     const mainSwitch = (body as { autoModelSteps?: unknown } | null)?.autoModelSteps;
     if (mainSwitch !== undefined && typeof mainSwitch !== 'boolean') {
@@ -210,6 +238,7 @@ export async function POST(req: NextRequest) {
       const { db, FieldValue } = await getAdminDb();
       const only: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
       if (noticeSeen) only[AUTO_STEPS_NOTICE_FIELD] = FieldValue.serverTimestamp();
+      if (wordingConfirmed) only[AUTO_STEPS_NOTICE_WORDING_FIELD] = AUTO_STEPS_NOTICE_WORDING;
       if (typeof mainSwitch === 'boolean') only[AUTO_MODEL_STEPS_FIELD] = mainSwitch;
       await updateExistingProfile(uid, only, { db });
       return NextResponse.json({ ok: true, ...(await answerFor(uid)) });
@@ -241,6 +270,7 @@ export async function POST(req: NextRequest) {
     const fields: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
     for (const [stage, on] of Object.entries(update)) fields[`modelStages.${stage}`] = on;
     if (noticeSeen) fields[AUTO_STEPS_NOTICE_FIELD] = FieldValue.serverTimestamp();
+    if (wordingConfirmed) fields[AUTO_STEPS_NOTICE_WORDING_FIELD] = AUTO_STEPS_NOTICE_WORDING;
     if (typeof mainSwitch === 'boolean') fields[AUTO_MODEL_STEPS_FIELD] = mainSwitch;
     await updateExistingProfile(uid, fields, { db });
 
