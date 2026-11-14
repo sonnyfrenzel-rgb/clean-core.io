@@ -16,6 +16,7 @@ import {
 } from '../lib/model-combination';
 import { thinkingConfigFor } from '../lib/model-thinking';
 import { STAGE_MAX_OUTPUT_TOKENS } from '../lib/model-call-stage';
+import { MODEL_STAGES } from '../lib/model-stages';
 
 /**
  * The model combination of the statements stage (study of 13.11.2026,
@@ -127,8 +128,21 @@ test.describe('the model per stage, as the deployment sets it (13.11.2026)', () 
     const dev = ctx.slice(ctx.indexOf('dev)'), ctx.indexOf('*)', ctx.indexOf('dev)')));
     expect(main).toMatch(/echo "gemini_stage_models=.*" >> "\$GITHUB_OUTPUT"/);
     expect(dev).toMatch(/echo "gemini_stage_models=.*" >> "\$GITHUB_OUTPUT"/);
-    // Production: nothing moves until the owner decides on the measured stages.
-    expect(main).toContain('echo "gemini_stage_models=" >> "$GITHUB_OUTPUT"');
+    // Production names exactly the stages the owner approved (14.11.2026, with 3.1.0), and dev the same list.
+    const valueOf = (lane: string) => /echo "gemini_stage_models=(.*)" >> "\$GITHUB_OUTPUT"/.exec(lane)?.[1] ?? null;
+    const APPROVED = 'statements=gemini-4-hydrogen,analyze=gemini-4-hydrogen,design=gemini-4-hydrogen,documentation=gemini-4-hydrogen';
+    expect(valueOf(main)).toBe(APPROVED);
+    expect(valueOf(dev)).toBe(APPROVED);
+    // Every entry is a model stage and a registered model; Testing stays on the product model (MEDIUM left
+    // stubs and empty assertions), and so do the stages nobody measured.
+    const register = new Set(['gemini-4-hydrogen']);
+    const parsed = stageModelsOf({ [STAGE_MODELS_ENV]: APPROVED }, register, new Set(MODEL_STAGES));
+    expect([...parsed.keys()]).toEqual(['statements', 'analyze', 'design', 'documentation']);
+    for (const stage of ['testing', 'transformation', 'naming']) expect(parsed.has(stage), stage).toBe(false);
+    // Each stage on Hydrogen has a measured level; none falls back to the provider's default unnoticed.
+    for (const stage of parsed.keys()) {
+      expect(thinkingConfigFor(undefined, {}, { model: 'gemini-4-hydrogen', stage }), stage).toEqual({ thinkingLevel: ThinkingLevel.MEDIUM });
+    }
   });
 });
 
