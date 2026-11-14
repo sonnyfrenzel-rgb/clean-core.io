@@ -3554,8 +3554,8 @@ class SkeletonBuilder {
     for (let i = routine.openIndex + 1; i < routine.closeIndex; i++) {
       const statement = this.statements[i];
       if (!statement) continue;
-      if ((statement.keyword === 'DATA' || statement.keyword === 'STATICS') && word.test(statement.text.split(/\s+TYPE\s|\s+LIKE\s/i)[0])) return true;
-      if (new RegExp(`\\bDATA\\(\\s*${key.replace(/[/]/g, '\\/')}\\s*\\)`, 'i').test(statement.text)) return true;
+      if ((statement.keyword === 'DATA' || statement.keyword === 'STATICS' || statement.keyword === 'FIELD-SYMBOLS') && word.test(statement.text.split(/\s+TYPE\s|\s+LIKE\s/i)[0])) return true;
+      if (new RegExp(`\\b(?:DATA|FIELD-SYMBOL)\\(\\s*${key.replace(/[/]/g, '\\/')}\\s*\\)`, 'i').test(statement.text)) return true;
     }
     return false;
   }
