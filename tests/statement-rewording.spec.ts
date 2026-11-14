@@ -133,6 +133,10 @@ test.describe('the guard', () => {
     const atLeast: RewordableStatement = { text: 'The value must be at least 10.', anchors: [{ file: 'source.abap', lineStart: 3 }], element: null };
     expect(rewordingProblem(atLeast, { text: 'The value must be at most 10.', anchors: ['source.abap:3'], element: null, uncertainty: null })).toBe('comparison-changed');
     expect(rewordingProblem(atLeast, { text: 'The value has to be 10 or more.', anchors: ['source.abap:3'], element: null, uncertainty: null })).toBeNull();
+    // A range whose two bounds swap their values states another range, though each bound still occurs once.
+    const range: RewordableStatement = { text: 'The value is at least 10 and at most 20.', anchors: [{ file: 'source.abap', lineStart: 3 }], element: null };
+    expect(rewordingProblem(range, { text: 'The value is at most 10 and at least 20.', anchors: ['source.abap:3'], element: null, uncertainty: null })).toBe('comparison-changed');
+    expect(rewordingProblem(range, { text: 'The value lies between 10 or more and 20 or less.', anchors: ['source.abap:3'], element: null, uncertainty: null })).toBeNull();
   });
 
   test('a lost number or literal, an identifier the draft never named, a moved anchor, another element, an uncertainty of its own', () => {

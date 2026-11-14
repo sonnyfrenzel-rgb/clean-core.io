@@ -178,6 +178,33 @@ const COMPARISON_FAMILIES: readonly RegExp[] = [
 ];
 
 const countOf = (family: RegExp, text: string): number => (text.match(family) ?? []).length;
+
+/** A bound word that follows its value ("10 or more"); every other bound word precedes it ("at least 10"). */
+const TRAILING_BOUND = /^or (?:more|above|higher|less|fewer|below|lower)$/i;
+
+/**
+ * Each comparison of a sentence with the value it bounds — the nearest number or literal after the bound word, or
+ * before it for a trailing one — as `<family>:<value>`, sorted. Counting the families alone would let "at least 10
+ * and at most 20" become "at most 10 and at least 20": both bounds stay, on the other value each.
+ */
+function comparisonsOf(text: string): string[] {
+  const facts = [...text.matchAll(/'[^']*'|"[^"]*"|\b\d+(?:[.,]\d+)?\b/g)].map((m) => ({
+    start: m.index ?? 0,
+    end: (m.index ?? 0) + m[0].length,
+    value: m[0].startsWith('"') ? `'${m[0].slice(1, -1)}'` : m[0],
+  }));
+  const out: string[] = [];
+  COMPARISON_FAMILIES.forEach((family, f) => {
+    for (const m of text.matchAll(family)) {
+      const at = m.index ?? 0;
+      const fact = TRAILING_BOUND.test(m[0].replace(/\s+/g, ' '))
+        ? [...facts].reverse().find((x) => x.end <= at)
+        : facts.find((x) => x.start >= at + m[0].length);
+      out.push(`${f}:${fact?.value ?? ''}`);
+    }
+  });
+  return out.sort();
+}
 const familiesIn = (text: string): Set<string> => new Set(CONTROL_FLOW_FAMILIES.filter((f) => countOf(f.words, text) > 0).map((f) => f.name));
 
 /** The numbers and quoted literals of a sentence, as they must reappear. */
@@ -223,7 +250,9 @@ export function rewordingProblem(draft: RewordableStatement, entry: unknown): Re
   const flowReworded = familiesIn(text);
   if (flowDraft.size !== flowReworded.size || [...flowDraft].some((f) => !flowReworded.has(f))) return 'control-flow';
   if (LIMIT_FAMILIES.some((family) => countOf(family, text) !== countOf(family, original))) return 'negation-changed';
-  if (COMPARISON_FAMILIES.some((family) => countOf(family, text) !== countOf(family, original))) return 'comparison-changed';
+  const boundsDraft = comparisonsOf(original);
+  const boundsReworded = comparisonsOf(text);
+  if (boundsDraft.length !== boundsReworded.length || boundsDraft.some((b, i) => b !== boundsReworded[i])) return 'comparison-changed';
   return null;
 }
 
