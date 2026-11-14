@@ -22,9 +22,19 @@ const arg = (name: string, fallback: string) => {
   const i = process.argv.indexOf(name);
   return i > 0 ? process.argv[i + 1] : fallback;
 };
-const COUNT = Number(arg('--cases', '30'));
+/** A number argument that must be finite and not negative: `NaN` would switch the budget guard off. */
+const amount = (name: string, fallback: string, integer: boolean) => {
+  const raw = arg(name, fallback);
+  const value = Number(raw);
+  if (raw === undefined || raw.trim() === '' || !Number.isFinite(value) || value < 0 || (integer && !Number.isInteger(value))) {
+    console.error(`${name} ${raw ?? ''}: expected a finite number of at least 0${integer ? ', whole' : ''}`);
+    process.exit(2);
+  }
+  return value;
+};
+const COUNT = amount('--cases', '30', true);
 const OUT = arg('--out', join(process.cwd(), 'scratch', 'naming-messung'));
-const BUDGET = Number(arg('--budget', '2'));
+const BUDGET = amount('--budget', '2', false);
 const PRICE_IN = 0.5 / 1e6;
 const PRICE_OUT = 3.0 / 1e6;
 
