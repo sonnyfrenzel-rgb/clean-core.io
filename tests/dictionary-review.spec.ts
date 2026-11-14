@@ -17,3 +17,15 @@ test('two values of one field are counted apart: only the value the source write
   expect(usedIn(cases, 'gbstk', 'C')).toBe(1);
   expect(usedIn(cases, 'gbstk', 'B')).toBe(0);
 });
+
+test('a literal elsewhere in the case does not count as a value of the field', () => {
+  const cases = [
+    caseUse("REPORT z5.\nIF ls_vbuk-gbstk = 'A'.\n  lv_mode = 'B'.\nENDIF.\n"),
+    caseUse("REPORT z6.\nlv_gbstk = 'C'.\nIF 'B' EQ ls_vbuk-gbstk.\nENDIF.\n"),
+  ];
+  expect(usedIn(cases, 'gbstk')).toBe(2);
+  expect(usedIn(cases, 'gbstk', 'A')).toBe(1);
+  // z5 writes 'B' to another field; z6 compares 'B' with the field, value first.
+  expect(usedIn(cases, 'gbstk', 'B')).toBe(1);
+  expect(usedIn(cases, 'gbstk', 'C')).toBe(1);
+});

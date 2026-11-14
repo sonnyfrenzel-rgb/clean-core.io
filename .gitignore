@@ -45,3 +45,6 @@ survey-backup-*.json
 
 # Acceptance suite (scripts/acceptance/suite.mjs): plaintext scenarios, extracted sources and run reports. Never commit.
 .acceptance/
+
+# The process benchmark writes its run selection here on every run (evaluate.ts); the corpus is pinned by frozen-*.json.
+tests/prozess-benchmark/manifest.json

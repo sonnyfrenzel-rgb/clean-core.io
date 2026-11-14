@@ -22,11 +22,21 @@ import {
 
 const ROOT = join(__dirname, '..', '..');
 
-/** What one case offers for counting: its identifier tokens and the values of its literals, both upper case. */
+/**
+ * What one case offers for counting: its identifier tokens, the values of its literals, and the field/value pairs
+ * where a literal stands directly beside a field (`gbstk = 'A'`, `ls_x-gbstk EQ 'A'`, `lv_gbstk = 'A'`), all upper case.
+ */
 export interface CaseUse {
   tokens: Set<string>;
   literals: Set<string>;
+  pairs: Set<string>;
 }
+
+const OP = String.raw`\s*(?:=|<>|<=|>=|<|>|\bEQ\b|\bNE\b|\bLT\b|\bGT\b|\bLE\b|\bGE\b)\s*`;
+const NAME = String.raw`([A-Z0-9_/]+(?:-[A-Z0-9_/]+)*)`;
+const LIT = String.raw`(?:'([^'\n]*)'|` + '`([^`\\n]*)`)';
+const NAME_THEN_VALUE = new RegExp(NAME + OP + LIT, 'g');
+const VALUE_THEN_NAME = new RegExp(LIT + OP + NAME, 'g');
 
 /** The identifier tokens of a case, comments and literals left in (a code in a literal counts), and its literal values. */
 export function caseUse(text: string): CaseUse {
@@ -40,14 +50,25 @@ export function caseUse(text: string): CaseUse {
   for (const m of upper.matchAll(/-([A-Z0-9_]+)/g)) tokens.add(m[1]);
   const literals = new Set<string>();
   for (const m of upper.matchAll(/'([^'\n]*)'|`([^`\n]*)`/g)) literals.add((m[1] ?? m[2]).trim());
-  return { tokens, literals };
+  // A value belongs to a field only where it is compared with or assigned to that field, in either order.
+  const pairs = new Set<string>();
+  const pair = (name: string, value: string) => {
+    const last = name.split('-').pop() as string;
+    for (const n of new Set([last, ...last.split(/[_/]+/)])) if (n) pairs.add(`${n}=${value.trim()}`);
+  };
+  for (const m of upper.matchAll(NAME_THEN_VALUE)) pair(m[1], m[2] ?? m[3]);
+  for (const m of upper.matchAll(VALUE_THEN_NAME)) pair(m[3], m[1] ?? m[2]);
+  return { tokens, literals, pairs };
 }
 
-/** In how many cases a code occurs; with a value, only the cases where the field occurs and that value is written. */
+/**
+ * In how many cases a code occurs; with a value, only the cases where that value stands beside the field — the same
+ * literal elsewhere in the case does not count for it.
+ */
 export function usedIn(cases: readonly CaseUse[], code: string, value?: string): number {
   const c = code.toUpperCase();
   const v = value === undefined ? undefined : value.toUpperCase().trim();
-  return cases.filter((u) => u.tokens.has(c) && (v === undefined || u.literals.has(v))).length;
+  return cases.filter((u) => u.tokens.has(c) && (v === undefined || u.pairs.has(`${c}=${v}`))).length;
 }
 
 function main(): void {
