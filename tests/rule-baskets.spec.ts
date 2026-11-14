@@ -204,6 +204,36 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
     expect(reasonOf("  IMPORT lv_status FROM MEMORY ID 'ZST'.")).not.toMatch(/marker of its own/);
   });
 
+  test('a read into one routine\'s local field does not make another routine\'s local of the same name read from outside', () => {
+    const source = (globalField: boolean) => [
+      'REPORT zsd_status_scope.',
+      ...(globalField ? ['DATA lv_status TYPE c LENGTH 1.'] : []),
+      'START-OF-SELECTION.',
+      '  PERFORM load.',
+      '  PERFORM decide.',
+      'FORM load.',
+      ...(globalField ? [] : ['  DATA lv_status TYPE c LENGTH 1.']),
+      '  SELECT SINGLE status FROM zstatus INTO lv_status WHERE id = 1.',
+      'ENDFORM.',
+      'FORM decide.',
+      ...(globalField ? [] : ['  DATA lv_status TYPE c LENGTH 1.']),
+      "  lv_status = 'A'.",
+      "  IF lv_status = 'A'.",
+      "    WRITE / 'released'.",
+      '  ENDIF.',
+      'ENDFORM.',
+      '',
+    ].join('\n');
+    const reasonOf = (globalField: boolean) => {
+      const { ex, reading } = explain(source(globalField));
+      return ex.rules.find((r) => r.id === ruleId(reading, /status = 'A'/))!.basket.reason.text;
+    };
+    // Two locals of one name in two routines are two fields: `decide` sets its own and reads it back.
+    expect(reasonOf(false)).toMatch(/marker of its own/);
+    // One global field that `load` also reads from the database can hold that value: no marker.
+    expect(reasonOf(true)).not.toMatch(/marker of its own/);
+  });
+
   test('a value assigned only after the check is no marker the program set', () => {
     const source = [
       'REPORT zsd_status_check.',

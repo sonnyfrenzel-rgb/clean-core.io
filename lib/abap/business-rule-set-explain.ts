@@ -1228,15 +1228,53 @@ function writtenValues(statements: readonly AbapStatement[], demoRoutines: Reado
  * `c:<type>:` for every component of a row. Not `INTO CORRESPONDING FIELDS` (a column the program adds to the row
  * is not read), not `INTO TABLE`, and not a `LOOP`/`READ TABLE` over a table the program builds itself.
  */
-function sourcedKeys(statements: readonly AbapStatement[], types: ReadonlyMap<string, string>): Set<string> {
-  const out = new Set<string>();
+interface SourcedFields {
+  /** Keys of the program's global fields, and of every row type. */
+  global: Set<string>;
+  /** Keys of a routine's own local fields, by routine: another routine's local of the same name is another field. */
+  local: Map<string, Set<string>>;
+  routines: Array<{ key: string; start: number; end: number }>;
+}
+
+/** The routines (FORM, METHOD) of the source with the names each declares for itself: DATA, STATICS, FIELD-SYMBOLS, inline declarations, FORM parameters. */
+function routineLocals(statements: readonly AbapStatement[]): Array<{ key: string; start: number; end: number; names: Set<string> }> {
+  const out: Array<{ key: string; start: number; end: number; names: Set<string> }> = [];
+  let open: { key: string; start: number; end: number; names: Set<string> } | null = null;
+  for (const s of statements) {
+    const keyword = s.keyword.toUpperCase();
+    if (keyword === 'FORM' || keyword === 'METHOD') {
+      open = { key: `${(/^(?:FORM|METHOD)\s+([\w/~]+)/i.exec(s.text)?.[1] ?? '').toLowerCase()}@${s.lineStart}`, start: s.lineStart, end: Infinity, names: new Set() };
+      out.push(open);
+    }
+    if (!open) continue;
+    if (keyword === 'ENDFORM' || keyword === 'ENDMETHOD') {
+      open.end = s.lineEnd;
+      open = null;
+      continue;
+    }
+    if (/^(?:DATA|STATICS|FIELD-SYMBOLS|FORM)$/.test(keyword)) {
+      for (const m of s.text.matchAll(/(<?[\w/]+>?)\s+(?:TYPE|LIKE)\b/gi)) open.names.add(m[1].toLowerCase());
+    }
+    for (const m of s.text.matchAll(/\b(?:DATA|FIELD-SYMBOL)\(\s*(<?[\w/]+>?)\s*\)/gi)) open.names.add(m[1].toLowerCase());
+  }
+  return out;
+}
+
+function sourcedKeys(statements: readonly AbapStatement[], types: ReadonlyMap<string, string>): SourcedFields {
+  const routines = routineLocals(statements);
+  const fields: SourcedFields = { global: new Set(), local: new Map(), routines: routines.map(({ key, start, end }) => ({ key, start, end })) };
+  let routine: (typeof routines)[number] | null = null;
   const add = (raw: string) => {
     const name = raw.toLowerCase().replace(/^@/, '').replace(/^data\(|\)$/g, '').trim();
     if (!/^<?[\w/]+>?$/.test(name)) return;
-    out.add(`v:${name}`);
-    out.add(`c:${types.get(name) ?? name}:`);
+    // A routine's own field is sourced in that routine only; a row type stays one field wherever it is declared.
+    const own = routine && routine.names.has(name) ? routine.key : null;
+    const into = own ? (fields.local.get(own) ?? fields.local.set(own, new Set()).get(own)!) : fields.global;
+    into.add(`v:${name}`);
+    (own && !types.has(name) ? into : fields.global).add(`c:${types.get(name) ?? name}:`);
   };
   for (const s of statements) {
+    routine = routines.find((r) => s.lineStart >= r.start && s.lineStart <= r.end) ?? null;
     if (!/^(?:SELECT|FETCH|IMPORT)$/i.test(s.keyword)) continue;
     const text = s.text.replace(/\.\s*$/, '');
     for (const m of text.matchAll(/\bINTO\s*\(([^)]*)\)/gi)) for (const name of m[1].split(',')) add(name);
@@ -1257,13 +1295,17 @@ function sourcedKeys(statements: readonly AbapStatement[], types: ReadonlyMap<st
       }
     }
   }
-  return out;
+  return fields;
 }
 
-/** Is this `markerKey` a field a value can reach from outside the program's own assignments (`sourcedKeys`)? */
-function isSourced(key: string, sourced: ReadonlySet<string>): boolean {
-  if (sourced.has(key)) return true;
-  return key.startsWith('c:') && sourced.has(key.slice(0, key.lastIndexOf(':') + 1));
+/**
+ * Is this `markerKey`, tested on `line`, a field a value can reach from outside the program's own assignments
+ * (`sourcedKeys`)? A routine's local field counts only where the read that fills it is in the same routine.
+ */
+function isSourced(key: string, line: number, sourced: SourcedFields): boolean {
+  const routine = sourced.routines.find((r) => line >= r.start && line <= r.end);
+  const sets = [sourced.global, ...(routine && sourced.local.has(routine.key) ? [sourced.local.get(routine.key)!] : [])];
+  return sets.some((set) => set.has(key) || (key.startsWith('c:') && set.has(key.slice(0, key.lastIndexOf(':') + 1))));
 }
 
 interface BasketFacts {
@@ -1271,7 +1313,7 @@ interface BasketFacts {
   hasDemo: boolean;
   written: Map<string, Map<string, number>>;
   /** From 3.1.0: the fields a read fills (`sourcedKeys`); null for an earlier engine. */
-  sourced: ReadonlySet<string> | null;
+  sourced: SourcedFields | null;
   /** `declaredTypes` of the source: what makes two components one field. */
   types: ReadonlyMap<string, string>;
   ctx: PlainContext;
@@ -1338,7 +1380,7 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   const marker = markerTopic && tests.length > 0 && tests.every((p) => {
     // From 3.1.0: a field a read also fills may hold the value from there — the program's assignment does not make it
     // a marker of its own.
-    if (bf.sourced && isSourced(markerKey(p.subject, bf.types), bf.sourced)) return false;
+    if (bf.sourced && isSourced(markerKey(p.subject, bf.types), p.lineStart, bf.sourced)) return false;
     const held = bf.written.get(markerKey(p.subject, bf.types));
     const vs = valuesOf(p).map((v) => v.toUpperCase());
     // Set by the program before it is tested: a value assigned only after the check was read, not set.

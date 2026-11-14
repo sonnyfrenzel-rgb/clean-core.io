@@ -186,6 +186,7 @@ Signed runs and the audit pack do not change.
 - Process benchmark: the run selection the evaluator writes on every run is no longer committed (it slipped in a second time) and is ignored; the corpus stays pinned by its frozen digests.
 - Privacy archive script: an archived version whose file differs from the rendered source is never overwritten, also when the script runs without version ids; it names the files and stops before writing anything, and only `--force` overwrites.
 - Model proxy: the fallback model's call on the community key is counted against the day's platform budget before it is sent; when the budget refuses it or cannot be read, the fallback is not asked and the incomplete first answer is reported as before.
+- Rule baskets (engine 3.1.0): a database read into one routine's local field no longer counts for another routine's local field of the same name, so a status that routine sets and reads back itself is again recognised as its own marker.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
