@@ -199,6 +199,7 @@ Signed runs and the audit pack do not change.
 - Status workflow: a stop inside a `SELECT … INTO TABLE … PACKAGE SIZE … ENDSELECT` loop runs only when rows are found and no longer supplies a "from" state.
 - Documentation: a literal that is the word "authorization" with punctuation around it ('Authorization:') is output too, not a check of the program's own.
 - Statement rewording: a rewording that keeps both bounds of a range but swaps their values ("at least 10 and at most 20" into "at most 10 and at least 20") keeps the draft.
+- Privacy archive script: `--force` overwrites only the versions named with it and never a published one; without ids it overwrites nothing.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

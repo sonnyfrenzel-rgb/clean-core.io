@@ -42,10 +42,24 @@ test('an archived file that differs from the source is refused, and nothing else
   }
 });
 
-test('only --force overwrites an existing file', () => {
+test('only --force with the id of a version not yet published overwrites an existing file', () => {
   put(first.files.en, 'the text as published\n');
-  const result = archivePrivacy({ root, wanted: [first.id], force: true });
-  expect(result.refused).toEqual([]);
-  expect(result.written).toContain(first.files.en);
+  // Not yet published: --force with its id overwrites.
+  const draft = archivePrivacy({ root, wanted: [first.id], force: true, published: [] });
+  expect(draft.refused).toEqual([]);
+  expect(draft.written).toContain(first.files.en);
   expect(readFileSync(join(root, first.files.en), 'utf8')).not.toBe('the text as published\n');
+});
+
+test('--force never rewrites a published version, and without ids it overwrites nothing', () => {
+  put(first.files.en, 'the text as published\n');
+  const named = archivePrivacy({ root, wanted: [first.id], force: true, published: [first.id] });
+  expect(named.refused).toEqual([first.files.en]);
+  expect(named.written).toEqual([]);
+  const unnamed = archivePrivacy({ root, force: true, published: [] });
+  expect(unnamed.refused).toEqual([first.files.en]);
+  expect(unnamed.written).toEqual([]);
+  expect(readFileSync(join(root, first.files.en), 'utf8')).toBe('the text as published\n');
+  // This build's default: the first version is published.
+  expect(archivePrivacy({ root, wanted: [first.id], force: true }).refused).toEqual([first.files.en]);
 });
