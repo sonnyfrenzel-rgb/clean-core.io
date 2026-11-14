@@ -63,16 +63,16 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     },
   },
   {
-    // The release day of 3.1.0, owner decision 13.11.2026.
+    // The release day of 3.1.0 (owner decision 13.11.2026; brought forward from 20.11. after the lawyer's go, 14.11.2026).
     id: '1.2',
-    dateIso: '2026-11-20',
-    date: { en: '20 November 2026', de: '20.11.2026' },
+    dateIso: '2026-11-14',
+    date: { en: '14 November 2026', de: '14.11.2026' },
     recordId: '1.2',
     namesAutomatic: true,
     files: { en: 'docs/privacy/1.2.md', de: 'docs/privacy/1.2.de.md' },
     sha256: {
-      en: '801724c4c3c7cfe85532a416300ee8f80056d22e72bb07bb7159e7106adfebaf',
-      de: '45869c9130a4e2d4072a4f4cf15f64b5cecda65abadc7aaee442a86be3945858',
+      en: '41920f340c19ce11e7bd0d49adb49a57c77635c3430005cd3090e2326cc2a6b7',
+      de: '05a15661635bed6426d1ccb747d2bbf20e6e8e97e61b3ef121d4c800b3fcd06d',
     },
   },
 ];

@@ -137,8 +137,8 @@ const B1 = {
 } as const;
 
 const CHANGE_NOTE = {
-  de: 'Geändert am 20.11.2026: Fachliche Namen der Prozessschritte schlägt wieder automatisch ein Modell vor (Abschnitt 3). Die vorige Fassung vom 09.11.2026 finden Sie unter clean-core.io/datenschutz/versions/1.1/de.',
-  en: 'Changed on 20 November 2026: business names of the process steps are again proposed automatically by a model (section 3). The previous version of 9 November 2026 is at clean-core.io/datenschutz/versions/1.1.',
+  de: 'Geändert am 14.11.2026: Fachliche Namen der Prozessschritte schlägt wieder automatisch ein Modell vor (Abschnitt 3). Die vorige Fassung vom 09.11.2026 finden Sie unter clean-core.io/datenschutz/versions/1.1/de.',
+  en: 'Changed on 14 November 2026: business names of the process steps are again proposed automatically by a model (section 3). The previous version of 9 November 2026 is at clean-core.io/datenschutz/versions/1.1.',
 } as const;
 
 const privacyFor = (lang: 'de' | 'en', namesAutomatic: boolean) => (lang === 'de' ? privacyDeFor(namesAutomatic) : privacyEnFor(namesAutomatic));
@@ -261,8 +261,8 @@ test.describe('B2: the business names wait for the notice in the wording that na
 });
 
 test.describe('B3: the privacy policy has its own version, an archive and a change note', () => {
-  test('version 1.2 of 20 November 2026 with the change note; version 1.1 as published', () => {
-    expect(renderedPolicy('en', true)).toContain('Version 1.2, as of 20 November 2026.');
+  test('version 1.2 of 14 November 2026 with the change note; version 1.1 as published', () => {
+    expect(renderedPolicy('en', true)).toContain('Version 1.2, as of 14 November 2026.');
     expect(renderedPolicy('de', true)).toContain('Fassung 1.2, Stand 20.11.2026.');
     for (const lang of ['de', 'en'] as const) {
       expect(renderedPolicy(lang, true)).toContain(CHANGE_NOTE[lang]);

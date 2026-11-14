@@ -48,11 +48,11 @@ export const CONSENT_TEXTS = {
      */
     privacyCheckbox: {
       de: namesWording(
-        'Ich habe die Datenschutzerklärung (Fassung 1.2, Stand 20.11.2026, Wortlaut: clean-core.io/datenschutz/versions/1.2/de) zur Kenntnis genommen.',
+        'Ich habe die Datenschutzerklärung (Fassung 1.2, Stand 14.11.2026, Wortlaut: clean-core.io/datenschutz/versions/1.2/de) zur Kenntnis genommen.',
         'Ich habe die Datenschutzerklärung (Stand {{releaseDate}}, Wortlaut: clean-core.io/datenschutz/de) zur Kenntnis genommen.',
       ),
       en: namesWording(
-        'I have taken note of the Privacy Policy (version 1.2, as of 20 November 2026, wording: clean-core.io/datenschutz/versions/1.2).',
+        'I have taken note of the Privacy Policy (version 1.2, as of 14 November 2026, wording: clean-core.io/datenschutz/versions/1.2).',
         'I have taken note of the Privacy Policy (version of {{releaseDate}}, wording: clean-core.io/datenschutz).',
       ),
     },

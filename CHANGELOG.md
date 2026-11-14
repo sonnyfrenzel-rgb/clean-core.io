@@ -5,10 +5,10 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — v3.1.0, Analyze opens business first
+## [v3.1.0] — 2026-11-14
 
-Built on `dev`; the version stays v3.0.23 until the release. Every new engine reading is gated from 3.1.0, so
-it shows only once the version says so. Signed runs and the audit pack do not change.
+Analyze opens business first. Every new engine reading is gated from 3.1.0: a run signed by an earlier version reads as before.
+Signed runs and the audit pack do not change.
 
 ### Changed
 - Roadmap: My workspace becomes two equal products, Analyse and Re-design, with program tiles for returning
