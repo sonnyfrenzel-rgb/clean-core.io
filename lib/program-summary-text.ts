@@ -500,12 +500,13 @@ function shownAs(f: ProgramSummaryFacts): string {
 }
 
 function changesLine(f: ProgramSummaryFacts): SummaryLine {
-  // 3.1.0: a report it starts — what that report changes is not in this code, and the line says so.
+  // 3.1.0: a report it starts — what that report changes is not in this code, and the line says so. The report's
+  // name is a code: it stands in parentheses, so the Business view (`withoutCodes`) says the sentence without it.
   if (f.changes.state === 'not-determined' && f.changes.submits?.length) {
     const names = f.changes.submits.map((x) => x.name);
     return {
       key: 'changes',
-      text: `It starts ${names.length === 1 ? `the report ${names[0]}` : `the reports ${joinAnd(names)}`}; what ${names.length === 1 ? 'that report changes' : 'those reports change'} in SAP is not visible in this code.`,
+      text: `It starts ${names.length === 1 ? 'another report' : `${names.length} other reports`} (${names.join(', ')}); what ${names.length === 1 ? 'that report changes' : 'those reports change'} in SAP is not visible in this code.`,
       anchors: f.changes.submits.flatMap((x) => anchorOf(x.line)),
       basis: 'not-determined',
     };
@@ -909,7 +910,9 @@ export function abapWords(text: string): string[] {
 export function businessJargon(text: string): string[] {
   const bare = text.replace(/\([^)]*\)/g, ' ').replace(/“[^”]*”/g, ' ').replace(/"[^"]*"/g, ' ');
   const hits: string[] = [...jargonWords(bare)];
-  const ALLOWED = new Set(['SAP', 'CSV', 'PC', 'IT', 'EUR', 'USD', 'G/L', 'S/4HANA', 'ERP', 'CO', 'FI', 'MM', 'SD', 'PDF', 'XML', 'BPMN', 'ID']);
+  // Business acronyms a business reader uses himself. WBS: SAP's own name for a project's "WBS element", which the
+  // 3.1.0 dictionary (`lib/abap/sap-dictionary.ts`) says for PRPS, as SAP's screens do.
+  const ALLOWED = new Set(['SAP', 'CSV', 'PC', 'IT', 'EUR', 'USD', 'G/L', 'S/4HANA', 'ERP', 'CO', 'FI', 'MM', 'SD', 'PDF', 'XML', 'BPMN', 'ID', 'WBS']);
   for (const m of bare.matchAll(/\b[A-Z][A-Z0-9_/]{2,}\b/g)) {
     if (!ALLOWED.has(m[0])) hits.push(m[0]);
   }

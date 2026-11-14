@@ -97,9 +97,13 @@ const lcFirst = (text: string): string =>
   // Keep an acronym or a code value as it is: "EUR", "NB".
   /^[A-Z][a-z]/.test(text) ? text.charAt(0).toLowerCase() + text.slice(1) : text;
 
-export function plainWordingFor(source: string, skeleton: ProcessSkeleton): PlainWording {
-  const ctx = plainContext(source);
-  const labels = plainLabels(skeleton, source);
+/**
+ * `engineVersion`: the engine the words are read for (`engineVersionOfProject`); this release when absent. A run of an
+ * engine before 3.1.0 keeps that engine's wording (`ENGINE_READS_310_FROM`).
+ */
+export function plainWordingFor(source: string, skeleton: ProcessSkeleton, engineVersion?: string | null): PlainWording {
+  const ctx = plainContext(source, { engineVersion });
+  const labels = plainLabels(skeleton, source, { engineVersion });
   const outs = new Map<string, ProcessSkeleton['edges']>();
   for (const edge of skeleton.edges) outs.set(edge.from, [...(outs.get(edge.from) ?? []), edge]);
 
