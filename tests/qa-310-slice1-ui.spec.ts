@@ -42,6 +42,8 @@ test('an authorization named in prose is no check of the program\'s own; a refus
 
 test('the bare word in a literal is output, not a check; an expression inside a string template is still code', () => {
   expect(ownAuthorizationIn(["  WRITE 'AUTHORIZATION'.", "  WRITE 'Authorized'.", '  WRITE |Authorisation|.'])).toEqual([]);
+  // Punctuation around the word is still a label: 'AUTHORIZATION.', 'Authorization:', |(Authorized)|.
+  expect(ownAuthorizationIn(["  WRITE 'AUTHORIZATION.'.", "  WRITE 'Authorization:'.", '  WRITE |(Authorized)|.'])).toEqual([]);
   expect(ownAuthorizationIn(["  MESSAGE 'UNAUTHORIZED' TYPE 'E'."]).map((o) => o.name)).toEqual(['UNAUTHORIZED']);
   expect(ownAuthorizationIn(['  WRITE |{ is_authorized( iv_user ) }|.']).map((o) => o.name)).toEqual(['IS_AUTHORIZED']);
   expect(ownAuthorizationIn(['  WRITE |Access: { check_role( iv_user ) } for the user|.']).map((o) => o.name)).toEqual(['CHECK_ROLE']);

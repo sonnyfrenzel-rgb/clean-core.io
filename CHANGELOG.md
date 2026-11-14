@@ -197,6 +197,7 @@ Signed runs and the audit pack do not change.
 - Statement rewording: a rewording that turns a comparison the other way ("at least 10" into "at most 10") keeps the draft, as a changed number or negation already did.
 - Rule baskets (engine 3.1.0): a method's own parameters count as its own fields too, so a database read into one method's parameter no longer counts for another method's parameter of the same name.
 - Status workflow: a stop inside a `SELECT … INTO TABLE … PACKAGE SIZE … ENDSELECT` loop runs only when rows are found and no longer supplies a "from" state.
+- Documentation: a literal that is the word "authorization" with punctuation around it ('Authorization:') is output too, not a check of the program's own.
 
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested

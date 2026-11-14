@@ -157,10 +157,10 @@ function namesInCode(lines: string[], pattern: RegExp): FactObject[] {
 export function ownAuthorizationIn(source: string | string[]): FactObject[] {
   const raw = Array.isArray(source) ? source : source.replace(/\r\n?/g, '\n').split('\n');
   // A literal with a space in it is prose ('Authorization is handled by the caller'), and a literal that is only the
-  // word itself ('AUTHORIZATION', 'Authorized') is output, not a check or a refusal code: both are blanked before the
+  // word itself, punctuation aside ('AUTHORIZATION', 'Authorized:'), is output, not a check or a refusal code: both are blanked before the
   // scan. A refusal code ('NOT_AUTHORIZED', 'UNAUTHORIZED') stays. Of a string template only the text is blanked:
   // its embedded expressions (`|{ is_authorized( iv_user ) }|`) are code and stay.
-  const bareWord = /^['`|]AUTHORI[SZ](?:E|ED|ATION|ATIONS)?['`|]$/i;
+  const bareWord = /^['`|][^\w{}]*AUTHORI[SZ](?:E|ED|ATION|ATIONS)?[^\w{}]*['`|]$/i;
   const lines = raw.map((text) =>
     text.replace(/'[^']*'|`[^`]*`|\|[^|]*\|/g, (lit) => {
       if (!/\s/.test(lit) && !bareWord.test(lit)) return lit;
