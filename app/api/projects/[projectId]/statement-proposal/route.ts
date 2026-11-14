@@ -198,6 +198,8 @@ export async function GET(
       discarded: data.discarded,
       origin: data.origin,
       proposedAt: isoOf(data.proposedAt),
+      // What the rewording did, when a rewording with its own receipt stood (POST stores it with the record).
+      ...(data.rewording && typeof data.rewording === 'object' ? { rewording: data.rewording } : {}),
     };
     // A document of another format version is not a proposal this build can show.
     return NextResponse.json({ record: isStatementProposalRecord(record) ? record : null });

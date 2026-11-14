@@ -147,6 +147,7 @@ Signed runs and the audit pack do not change.
 - In short: names written only inside a text literal (`WRITE 'idoc_contrl idoc_data'`) no longer make a program an inbound IDoc function or a BW extractor.
 
 #### Workspace, Documentation and Testing
+- Documentation: after a reload the business sentences still say what the rewording did to the draft; reading them back left that out.
 - Home: when reading the own project list fails after it had answered empty, the regular page stays instead of the first view for a new account.
 - Demo: confirming the target route no longer loses rule confirmations a browser still held in the demo's older format.
 - Workspace: after an account switch, an earlier error reading the project list no longer shows the regular page before the new list has answered.
