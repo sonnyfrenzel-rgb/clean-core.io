@@ -39,6 +39,7 @@ Signed runs and the audit pack do not change.
 - Engine 4.0 is built in parallel from now on, as its own module tree that nothing reads until the switch (ADR-125); benchmark convention K3 settled: commits stay in the technical layer.
 
 ### Fixed
+- Process map: the guided tour shows the same step names as the main map while AI names are still arriving.
 - Workspace: after an account switch, an earlier error reading the project list no longer shows the regular page before the new list has answered.
 - Home: the recommended example's start button tells a screen reader that the example ran before and that starting it again uses a run, as the list buttons already did.
 - Documentation: where the business sentences are reworded for a business reader, the proposals card says that asking for them takes two model calls.

@@ -837,9 +837,10 @@ export default function WorkspaceProcess({
         </div>
       ) : null}
       {/* The guided tour, over the page while it is open (owner decision
-          21.10.2026): the map and the narration on one screen. */}
+          21.10.2026): the map and the narration on one screen, with the
+          names the main map shows at this moment, also while names arrive. */}
       {tourOpen && model ? (
-        <ProcessTour tour={tour} model={model} onClose={closeTour} say={wording.say} designHref={designHref} askWording={wording.askNow} />
+        <ProcessTour tour={tour} model={shownModel ?? model} onClose={closeTour} say={wording.say} designHref={designHref} askWording={wording.askNow} />
       ) : null}
       {coach}
       <div

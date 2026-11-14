@@ -52,3 +52,9 @@ test('a failure of an earlier own-list subscription does not pass the workspace 
   expect(reset).toBeLessThan(effect.indexOf('onSnapshot('));
   expect(effect.indexOf('setOwnFailedFor(uid);')).toBeGreaterThan(effect.indexOf('onSnapshot('));
 });
+
+test('the process tour draws the names the main map shows, also while names arrive', () => {
+  const src = read('components/workspace/WorkspaceProcess.tsx');
+  expect(src).toMatch(/<ProcessTour tour=\{tour\} model=\{shownModel \?\? model\}/);
+  expect(src).toMatch(/model=\{shownModel \?\? model\}\n\s*nameArrival=\{arrival\}/);
+});
