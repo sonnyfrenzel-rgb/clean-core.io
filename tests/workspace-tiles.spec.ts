@@ -4,6 +4,7 @@ import path from 'path';
 import { sha256Hex } from '../lib/artefact-digest';
 import { nextStepOf, tileCounts, tileMatches, toProgramTile, COUNTS_FROM, type ListedProject } from '../lib/workspace-tiles';
 import { WORKSPACE_PAGE_MESSAGES } from '../lib/messages/workspace';
+import { PRIVACY_PENDING_STORAGE_KEYS, WORKSPACE_LENS_KEY, WORKSPACE_MODE_KEY } from '../lib/workspace-prefs';
 
 /**
  * 3.3.0, step 3a (ADR-123 (4)): a returning account's programs as tiles —
@@ -69,6 +70,38 @@ test.describe('one tile per program, both products', () => {
     expect(t.score).toBeNull();
   });
 
+  test('the title is the business process name where the summary carries one, the project\'s name small below (owner decision 14.11.2026)', () => {
+    const named = (title: unknown, id = 'n') => {
+      const p = signed(id);
+      const s = (p as unknown as { summary: Record<string, unknown> }).summary;
+      (p as unknown as { summary: Record<string, unknown> }).summary = { ...s, processTitle: title };
+      return toProgramTile(p);
+    };
+    const t = named('Emergency purchase approval');
+    expect(t.title).toBe('Emergency purchase approval');
+    expect(t.titleIsProcess).toBe(true);
+    expect(t.projectName).toBe('Program n');
+    expect(t.objectName).toBe('Z_N');
+    // No business name, or one equal to the project's name: the project's name is the title, said once.
+    for (const none of [null, undefined, 'Program n']) {
+      const u = named(none);
+      expect(u.title).toBe('Program n');
+      expect(u.titleIsProcess).toBe(false);
+    }
+    // A summary of an earlier run names nothing.
+    const stale = signed('m');
+    (stale as unknown as { summary: Record<string, unknown> }).summary.processTitle = 'Old name';
+    (stale as unknown as { activeRunId: string }).activeRunId = 'run-newer';
+    expect(toProgramTile(stale).title).toBe('Program m');
+    // Delete and Invite name the project, not the process.
+    const page = code('components/workspace/WorkspaceTiles.tsx');
+    expect(page).toContain('name={tile.projectName}');
+    expect(page).toContain('data-tile-project-name');
+    const list = code('components/workspace/WorkspaceListReport.tsx');
+    expect(list).toContain('setDeleting({ id: tile.id, name: tile.projectName })');
+    expect(list).toContain('setInviting({ id: tile.id, name: tile.projectName })');
+  });
+
   test('W5: a decision that builds nothing says "Not needed", with its decision', () => {
     const t = toProgramTile(signed('d', { targetArchitecture: 'retire', approvedByArchitect: true }));
     expect(t.decision).toEqual({ option: 'retire', confirmed: true });
@@ -131,6 +164,36 @@ test.describe('the page', () => {
     const prefs = code('lib/workspace-prefs.ts');
     expect(prefs).toContain("'cc.workspace.lens'");
     expect(prefs).not.toMatch(/firestore|updateDoc|setDoc/i);
+  });
+
+  test('browser storage: the two keys are registered for the Privacy Policy\'s list until its text names them (ADR-123 (7)(i))', () => {
+    // Owner decision 14.11.2026: keep both; the lawyer's text is prepared separately. The register is the list that
+    // text has to add — a key leaves it once the published privacy texts name it, and never stands in both.
+    expect([WORKSPACE_LENS_KEY, WORKSPACE_MODE_KEY]).toEqual(['cc.workspace.lens', 'cc.workspace.mode']);
+    const privacy = ['lib/legal/texts/privacy.en.ts', 'lib/legal/texts/privacy.de.ts'].map((f) => fs.readFileSync(path.join(ROOT, f), 'utf8'));
+    for (const key of [WORKSPACE_LENS_KEY, WORKSPACE_MODE_KEY]) {
+      const named = privacy.every((text) => text.includes(key));
+      expect(named || PRIVACY_PENDING_STORAGE_KEYS.includes(key), `${key} is neither in the privacy texts nor in the register`).toBe(true);
+      expect(named && PRIVACY_PENDING_STORAGE_KEYS.includes(key), `${key} is named in the privacy texts: take it off the register`).toBe(false);
+    }
+    // What they hold: an enum each, written by this module only.
+    const prefs = code('lib/workspace-prefs.ts');
+    expect(prefs.match(/localStorage\.setItem\(/g) ?? []).toHaveLength(2);
+    expect(prefs).toContain('localStorage.setItem(WORKSPACE_LENS_KEY, lens)');
+    expect(prefs).toContain('localStorage.setItem(WORKSPACE_MODE_KEY, mode)');
+  });
+
+  test('the stored lens, mode and demo mark are read hydration-safe — never in a useState initialiser (14.11.2026)', () => {
+    // A storage read in an initialiser gives a server render and its hydration two different trees. The shell renders
+    // these views in the browser only, but they no longer depend on it.
+    for (const f of ['components/workspace/WorkspaceListReport.tsx', 'components/workspace/HomeFirstView.tsx', 'components/workspace/WorkspaceTiles.tsx']) {
+      expect(code(f), f).not.toMatch(/useState(?:<[^>]*>)?\(\s*(?:read\w*|seenTheDemo)\s*\)/);
+    }
+    expect(code('components/workspace/WorkspaceListReport.tsx')).toContain('useStoredWorkspaceLens()');
+    expect(code('components/workspace/HomeFirstView.tsx')).toContain('useSyncExternalStore(noSubscription, seenTheDemo, notSeenOnTheServer)');
+    const prefs = code('lib/workspace-prefs.ts');
+    expect(prefs).toContain("useSyncExternalStore(noSubscription, readWorkspaceLens, () => 'business' as const)");
+    expect(prefs).toContain("useSyncExternalStore(noSubscription, readWorkspaceMode, () => 'tiles' as const)");
   });
 
   test('one filled action: the next step', () => {

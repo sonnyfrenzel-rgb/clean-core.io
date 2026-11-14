@@ -9,12 +9,15 @@
  * next run". This script writes it once, from the same inputs the run route
  * uses: the project's source when its SHA-256 is the one the active run signed,
  * that run's score, recommendation and engine version, and — when the process
- * has saved drawings of that source — the newest drawing's map.
+ * has saved drawings of that source — the newest drawing's map. The business
+ * name the tile shows as its title (`processTitle`, the source header's title
+ * line, owner decision 14.11.2026) is read from the same source.
  *
  * The rule is `planProjectSummary` below (pure). A project is left alone when it
  * has no active run, its run cannot be read, its source is not the signed one,
- * or it already holds a summary of its active run — so a second run finds
- * nothing to do. Like every summary, it is written with the Admin SDK, outside
+ * or it already holds a complete summary of its active run — so a second run
+ * finds nothing to do. A summary written before `processTitle` existed is
+ * written again, whole, from the same run. Like every summary, it is written with the Admin SDK, outside
  * the signed run, and never touches a run or an audit pack.
  *
  * Usage:
@@ -61,7 +64,10 @@ export function planProjectSummary(input: SummaryPlanInput, now: Date = new Date
   const { project, run, latestRevision } = input;
   const runId = str(project.activeRunId);
   if (!runId) return { skip: 'no-run' };
-  if (summaryOf(project as { activeRunId?: unknown; summary?: unknown })) return { skip: 'has-summary' };
+  // A summary of the active run is complete once it carries the business name (`processTitle`, a string or null —
+  // 3.3.0, owner decision 14.11.2026); one written before that key existed is written again, whole, from the same run.
+  const stored = project.summary as Record<string, unknown> | undefined;
+  if (summaryOf(project as { activeRunId?: unknown; summary?: unknown }) && stored && 'processTitle' in stored) return { skip: 'has-summary' };
   if (!run) return { skip: 'run-unreadable' };
   const source = str(project.legacyCode);
   const fingerprint = (project.auditMetadata as { inputFingerprint?: { sha256?: unknown; fileName?: unknown } } | undefined)?.inputFingerprint;

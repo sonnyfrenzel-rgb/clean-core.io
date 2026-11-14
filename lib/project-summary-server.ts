@@ -1,7 +1,9 @@
 import { buildBpmnExportFromSource, READING_WRAP } from '@/lib/bpmn/export';
 import { deriveBusinessRules } from '@/lib/abap/business-rule-set';
 import { parseBpmn } from '@/lib/process-map';
-import { mapThumbOf, PROJECT_SUMMARY_VERSION, type ProjectSummary } from '@/lib/project-summary';
+import { mapThumbOf, processTitleOf, PROJECT_SUMMARY_VERSION, type ProjectSummary } from '@/lib/project-summary';
+import { headerTitleOf } from '@/lib/program-summary-facts';
+import { engineReads3021Apply } from '@/lib/abap/engine-reads-3021-gate';
 
 /**
  * The server half of the project summary (`lib/project-summary.ts`, ADR-123 (5), W11): computing it and writing it
@@ -74,8 +76,23 @@ export function computeProjectSummary(input: SummaryInput, now: Date = new Date(
     rulesDerived,
     cleanCoreScore: typeof input.cleanCoreScore === 'number' && Number.isFinite(input.cleanCoreScore) ? input.cleanCoreScore : null,
     recommendation: input.recommendation,
+    processTitle: processTitleFor(input.source, input.engineVersion),
     writtenAt: now.toISOString(),
   };
+}
+
+/**
+ * The business name of the process (owner decision 14.11.2026): the title line of the source's header as the engine
+ * reads it for this run — only for an engine that reads it (`ENGINE_READS_3021_FROM`, where Analyze shows it as the
+ * author's claim). No model is asked for it; without a title line the tile keeps the project's name.
+ */
+export function processTitleFor(source: string, engineVersion: string): string | null {
+  if (!engineReads3021Apply(engineVersion)) return null;
+  try {
+    return processTitleOf(headerTitleOf(source)?.text);
+  } catch {
+    return null;
+  }
 }
 
 type AdminDb = FirebaseFirestore.Firestore;

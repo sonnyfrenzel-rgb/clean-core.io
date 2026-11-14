@@ -1,7 +1,7 @@
 import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
-import { mapThumbOf, parseMapThumb, summaryOf, MAP_THUMB_MAX, PROJECT_SUMMARY_VERSION } from '../lib/project-summary';
+import { mapThumbOf, parseMapThumb, processTitleOf, summaryOf, MAP_THUMB_MAX, PROCESS_TITLE_MAX, PROJECT_SUMMARY_VERSION } from '../lib/project-summary';
 import { computeProjectSummary, mapFiguresOf } from '../lib/project-summary-server';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 import { sha256Hex } from '../lib/artefact-digest';
@@ -85,6 +85,37 @@ test.describe('the figures', () => {
     expect(s.mapRevision).toBe(1);
     expect(s.cleanCoreScore).toBe(40);
     expect(s.writtenAt).toBe('2026-11-14T00:00:00.000Z');
+  });
+
+  test('the business name is the header\'s title line, read for the run\'s engine — never a model\'s (owner decision 14.11.2026)', () => {
+    const at = (engineVersion: string, source = demoSource) => computeProjectSummary({
+      runId: 'r1', sourceSha256: 'x', source, processName: 'My project', sourceFileName: 'Z_MM_PO_APPROVAL.abap',
+      engineVersion, cleanCoreScore: null, recommendation: null,
+    }).processTitle;
+    // The mock-up's title, as the demo program's author wrote it under the report line.
+    expect(at(APP_VERSION)).toBe('Emergency purchase approval');
+    // An engine before 3.0.21 does not read the title line: the tile keeps the project's name.
+    expect(at('3.0.20')).toBeNull();
+    // A header without a title line gives none; it is never made up from the program's name.
+    expect(at(APP_VERSION, 'REPORT z_plain.\nWRITE 1.\n')).toBeNull();
+    // Every shipped example with a title line gets it, within the cap.
+    for (const e of STARTER_EXAMPLES) {
+      const t = at(APP_VERSION, read(`public/starter-examples/${e.file}`).replace(/\r\n/g, '\n'));
+      if (t !== null) expect(t.length, e.name).toBeLessThanOrEqual(PROCESS_TITLE_MAX);
+    }
+    // No model is asked for it: the server half reads the engine only.
+    expect(code('lib/project-summary-server.ts')).not.toMatch(/gemini|anthropic|callModel|process-naming/i);
+  });
+
+  test('a stored business name is read back as one plain line, or not at all', () => {
+    expect(processTitleOf('  Emergency   purchase approval ')).toBe('Emergency purchase approval');
+    for (const bad of ['', '   ', 'x'.repeat(PROCESS_TITLE_MAX + 1), 'Approval <script>', `Approval${String.fromCharCode(0)}`, 42, null]) {
+      expect(processTitleOf(bad), String(bad).slice(0, 20)).toBeNull();
+    }
+    const base = { version: 1, runId: 'run-a', sourceSha256: 's', mapThumb: null, mapSteps: null, mapRevision: 1, rulesDerived: null, cleanCoreScore: null, recommendation: null, writtenAt: '' };
+    expect(summaryOf({ activeRunId: 'run-a', summary: { ...base, processTitle: 'Delivery priority' } })?.processTitle).toBe('Delivery priority');
+    // A summary written before the business name existed reads as "none" — the tile shows the project's name.
+    expect(summaryOf({ activeRunId: 'run-a', summary: base })?.processTitle).toBeNull();
   });
 
   test('a saved drawing gives the map, the rules stay the source\'s', () => {
@@ -172,6 +203,18 @@ test.describe('the backfill', () => {
     expect(planProjectSummary({ project: { ...project, legacyCode: demoSource + '\n* changed' }, run, latestRevision: null })).toEqual({ skip: 'source-not-signed' });
     const done = 'summary' in plan ? plan.summary : null;
     expect(planProjectSummary({ project: { ...project, summary: done }, run, latestRevision: null })).toEqual({ skip: 'has-summary' });
+  });
+
+  test('gives a summary written before the business name its name — once, from the same run', () => {
+    const plan = planProjectSummary({ project, run, latestRevision: null });
+    const full = 'summary' in plan ? plan.summary : null;
+    expect(full?.processTitle).toBe('Emergency purchase approval');
+    const { processTitle: _dropped, ...older } = full!;
+    void _dropped;
+    const again = planProjectSummary({ project: { ...project, summary: older }, run, latestRevision: null });
+    expect('summary' in again && again.summary.processTitle).toBe('Emergency purchase approval');
+    // A summary that says "no title line" (null) is complete: nothing to do.
+    expect(planProjectSummary({ project: { ...project, summary: { ...full!, processTitle: null } }, run, latestRevision: null })).toEqual({ skip: 'has-summary' });
   });
 
   test('takes the newest drawing of the signed source, never one of another source', () => {

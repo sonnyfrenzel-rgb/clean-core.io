@@ -48,8 +48,26 @@ export interface ProjectSummary {
   cleanCoreScore: number | null;
   /** The route the run recommended (`originalRecommendation`), the proposed decision's source. */
   recommendation: string | null;
+  /**
+   * The business name of the process (3.3.0, owner decision 14.11.2026): the source header's title line as the engine
+   * reads it (`headerTitleOf`), from engine 3.0.21 on — "Emergency purchase approval" — or `null` where the source has
+   * none. Never a model's answer. The tile shows it as its title, with the project's name small below; without it the
+   * project's name is the title. Absent in summaries written before it was read (the backfill adds it).
+   */
+  processTitle: string | null;
   /** ISO time of the write. */
   writtenAt: string;
+}
+
+/** The longest business name a summary carries; a longer title line is not a name. */
+export const PROCESS_TITLE_MAX = 100;
+
+/** A business name as a tile may show it: one line of text, trimmed, within {@link PROCESS_TITLE_MAX}; else null. */
+export function processTitleOf(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const text = value.replace(/\s+/g, ' ').trim();
+  if (!text || text.length > PROCESS_TITLE_MAX || /[\u0000-\u001f\u007f-\u009f\u2028\u2029<>]/.test(text)) return null;
+  return text;
 }
 
 /* ------------------------------------------------------------------ thumbnail */
@@ -214,6 +232,7 @@ export function summaryOf(project: { activeRunId?: unknown; summary?: unknown } 
     rulesDerived: isNum(s.rulesDerived) ? s.rulesDerived : null,
     cleanCoreScore: isNum(s.cleanCoreScore) ? s.cleanCoreScore : null,
     recommendation: typeof s.recommendation === 'string' ? s.recommendation : null,
+    processTitle: processTitleOf(s.processTitle),
     writtenAt: typeof s.writtenAt === 'string' ? s.writtenAt : '',
   };
 }

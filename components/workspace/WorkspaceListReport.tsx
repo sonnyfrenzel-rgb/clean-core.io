@@ -83,8 +83,8 @@ import WorkspaceTiles from './WorkspaceTiles';
 import WorkspaceSkeleton from './WorkspaceSkeleton';
 import { toProgramTile, type ProgramTile } from '@/lib/workspace-tiles';
 import {
-  readWorkspaceLens,
-  readWorkspaceMode,
+  useStoredWorkspaceLens,
+  useStoredWorkspaceMode,
   rememberWorkspaceLens,
   rememberWorkspaceMode,
   type WorkspaceLens,
@@ -220,8 +220,13 @@ export default function WorkspaceListReport({
   /** The own list could not be read: the list stands as before, never the first view. */
   const [ownFailedFor, setOwnFailedFor] = useState<string | null>(null);
   // ADR-123 (W9): the lens and tiles-or-list, remembered by this browser only (`lib/workspace-prefs.ts`).
-  const [lens, setLens] = useState<WorkspaceLens>(readWorkspaceLens);
-  const [mode, setMode] = useState<WorkspaceMode>(readWorkspaceMode);
+  // Read hydration-safe (`useStoredWorkspaceLens`); a choice made here wins over what was stored.
+  const storedLens = useStoredWorkspaceLens();
+  const storedMode = useStoredWorkspaceMode();
+  const [chosenLens, setLens] = useState<WorkspaceLens | null>(null);
+  const [chosenMode, setMode] = useState<WorkspaceMode | null>(null);
+  const lens = chosenLens ?? storedLens;
+  const mode = chosenMode ?? storedMode;
   const chooseLens = useCallback((next: WorkspaceLens) => {
     setLens(next);
     rememberWorkspaceLens(next);
@@ -1025,7 +1030,7 @@ export default function WorkspaceListReport({
   const actionsFor = (tile: ProgramTile) =>
     tile.access === 'own'
       ? {
-          onInvite: () => setInviting({ id: tile.id, name: tile.title }),
+          onInvite: () => setInviting({ id: tile.id, name: tile.projectName }),
           onDuplicate: () => {
             const row = ownRows.find((r) => r.id === tile.id);
             if (row) void duplicate(row);
@@ -1034,7 +1039,7 @@ export default function WorkspaceListReport({
             const row = ownRows.find((r) => r.id === tile.id);
             if (row) void exportJson(row);
           },
-          onDelete: () => setDeleting({ id: tile.id, name: tile.title }),
+          onDelete: () => setDeleting({ id: tile.id, name: tile.projectName }),
         }
       : undefined;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { UserProfile } from '@/hooks/useUserProfile';
@@ -61,8 +61,10 @@ export default function HomeFirstView({
 }) {
   const starter = useRef<HomeExampleStarter>(null);
   const recommended = useMemo(() => exampleTiers().startHere.name, []);
-  // Rendered only once the lists answered, in the browser — never on the server — so the storage is read at once.
-  const [fromDemo] = useState(seenTheDemo);
+  // The demo's keys, read hydration-safe: a server render (and its hydration) reads "not seen", every render in the
+  // browser after it reads the storage at once — no flash in the usual path, where the shell renders this view in the
+  // browser only, and no hydration mismatch if a server ever renders it (14.11.2026).
+  const fromDemo = useSyncExternalStore(noSubscription, seenTheDemo, notSeenOnTheServer);
   const free = starterExampleIsFree(profile, recommended);
 
   return (
@@ -215,6 +217,9 @@ export default function HomeFirstView({
     </div>
   );
 }
+
+const noSubscription = () => () => {};
+const notSeenOnTheServer = () => false;
 
 /** Whether this browser has opened the demo — its own two keys, read only. */
 function seenTheDemo(): boolean {

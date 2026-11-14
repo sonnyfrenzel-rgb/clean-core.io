@@ -44,6 +44,16 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
   CLS 0.52–0.99 → ≤ 0.007; JavaScript decoded 4.8–5.0 MB → 2.9–3.7 MB (transferred 1.25–1.57 MB → 0.93–1.19 MB);
   bpmn-js on a new account's page yes → no; first tile or start card 120–300 ms in both (local emulator).
   `tests/workspace-performance.spec.ts` measures it and runs unchanged against a checkout of the release before.
+- 3.3.0, owner answers of 14.11.2026 (ADR-123 (7)): a program tile is titled with the business name of its process —
+  the title line of the source's header as the engine reads it from engine 3.0.21 ("Emergency purchase approval"),
+  never a model's answer — with the project's name small below it; without a title line, or where both are the same,
+  the project's name is the title, said once. The name travels in the server-written project summary
+  (`processTitle`); `scripts/backfill-project-summary.ts` also gives an earlier summary its name. Delete and Invite
+  still name the project. The unused slice of the demo map is gone (`lib/home-map-slice.ts`,
+  `components/process-map/MapSlice.tsx` and the cut `lib/bpmn/slice.ts` only it used, with the export's `view`
+  hook). The stored lens, mode and demo mark are read hydration-safe instead of in a `useState` initialiser. The two
+  storage keys stay; `PRIVACY_PENDING_STORAGE_KEYS` in `lib/workspace-prefs.ts` registers them for the Privacy
+  Policy's list until the lawyer's text names them (privacy texts not changed here).
 - A project opens in Analyze, Business. The process map is the page, and the map starts within the first screen at
   1440 × 900. Its tools sit in the canvas's own row, and what describes the map sits under it. With one code panel
   open beside it, the canvas stays wide (plan AB-2, ADR-109).

@@ -287,12 +287,17 @@ function ProgramTileCard({ tile, lens, actions }: { tile: ProgramTile; lens: Wor
       <div className="flex min-w-0 flex-col gap-0.5 px-[18px] pt-4 pb-2.5">
         <div className="flex items-start justify-between gap-2">
           <h3 id={titleId} className="m-0 min-w-0 text-[15px] leading-[1.35] font-bold text-cc-ink">
-            <Link href={tile.href} className="no-underline hover:underline" data-workspace-open={tile.id}>
+            <Link href={tile.href} className="no-underline hover:underline" data-workspace-open={tile.id} data-tile-title={tile.titleIsProcess ? 'process' : 'project'}>
               {tile.title}
             </Link>
           </h3>
-          {actions ? <WorkspaceRowActions id={tile.id} name={tile.title} href={tile.href} owner handlers={actions} compact /> : null}
+          {actions ? <WorkspaceRowActions id={tile.id} name={tile.projectName} href={tile.href} owner handlers={actions} compact /> : null}
         </div>
+        {tile.titleIsProcess ? (
+          <span className="truncate text-[12px] font-medium text-cc-ink-muted" data-tile-project-name="">
+            {tile.projectName}
+          </span>
+        ) : null}
         <div className="flex min-w-0 flex-wrap items-center gap-1.5">
           {tile.objectName ? <span className="font-cc-mono text-[12px] font-medium text-cc-ink">{tile.objectName}</span> : null}
           {tile.lines !== null ? (

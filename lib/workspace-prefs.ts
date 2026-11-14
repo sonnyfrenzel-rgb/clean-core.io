@@ -6,9 +6,19 @@
  * storage simply starts from Business and tiles each time.
  *
  * Both keys must be named in the Privacy Policy's list of local-storage keys
- * before this ships (`lib/legal/texts/privacy.en.ts`) — an open owner/lawyer
- * item of 3.3.0, not done on this branch.
+ * before this ships (`lib/legal/texts/privacy.en.ts` / `.de.ts`, the list that
+ * names `cc.workspace.coachMarks.dismissed` and the demo's `cc.demo.tour.v1`).
+ * The owner decided on 14.11.2026 to keep both; the lawyer's text is prepared
+ * separately, so the privacy texts are not edited here.
+ * {@link PRIVACY_PENDING_STORAGE_KEYS} is the register of what that text has to
+ * add, and `tests/workspace-tiles.spec.ts` holds it: a key leaves the register
+ * once the published text names it.
+ *
+ * What each key holds — nothing personal, nothing about a project:
+ *   - `cc.workspace.lens`: `business`, `it` or `management` — the lens of the tiles.
+ *   - `cc.workspace.mode`: `tiles` or `list` — how the programs are shown.
  */
+import { useSyncExternalStore } from 'react';
 import { isWorkspaceView, type WorkspaceView } from '@/lib/workspace-model';
 
 export type WorkspaceLens = WorkspaceView;
@@ -16,6 +26,13 @@ export type WorkspaceMode = 'tiles' | 'list';
 
 export const WORKSPACE_LENS_KEY = 'cc.workspace.lens';
 export const WORKSPACE_MODE_KEY = 'cc.workspace.mode';
+
+/**
+ * Local-storage keys this release adds that the Privacy Policy's list does not
+ * name yet (ADR-123 (7)(i); owner decision 14.11.2026: keep them, lawyer text
+ * pending). Release 3.3.0 waits for this list to be empty.
+ */
+export const PRIVACY_PENDING_STORAGE_KEYS: readonly string[] = [WORKSPACE_LENS_KEY, WORKSPACE_MODE_KEY];
 
 export function readWorkspaceLens(): WorkspaceLens {
   try {
@@ -32,6 +49,24 @@ export function readWorkspaceMode(): WorkspaceMode {
   } catch {
     return 'tiles';
   }
+}
+
+const noSubscription = () => () => {};
+
+/**
+ * The stored lens and mode, read where React renders — hydration-safe. A server render, and the hydration of one,
+ * read the defaults (`business`, `tiles`); every render after that reads this browser's storage. Reading the storage
+ * in a `useState` initialiser instead was safe only while no server ever rendered the component: the shell holds an
+ * account page until the browser has answered, but the component did not depend on that (14.11.2026, the
+ * dev-server hydration warning on the new-account view). The chosen value stays in component state; these hooks
+ * give only where it starts.
+ */
+export function useStoredWorkspaceLens(): WorkspaceLens {
+  return useSyncExternalStore(noSubscription, readWorkspaceLens, () => 'business' as const);
+}
+
+export function useStoredWorkspaceMode(): WorkspaceMode {
+  return useSyncExternalStore(noSubscription, readWorkspaceMode, () => 'tiles' as const);
 }
 
 export function rememberWorkspaceLens(lens: WorkspaceLens): void {

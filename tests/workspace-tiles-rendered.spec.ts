@@ -247,6 +247,14 @@ test.describe('a returning account: next step, counts, tiles', () => {
       await expect(page.locator('[data-program-tile] [data-map-thumb="none"]')).toHaveCount(1);
       // W5: the retired one builds nothing.
       await expect(page.locator(`[data-program-tile="${programs[2].id}"]`)).toContainText('Not needed — decided: Retire');
+      // Owner decision 14.11.2026: the business process name is the title, the project's name small below it —
+      // and said once where the two are the same.
+      const freight = page.locator(`[data-program-tile="${programs[1].id}"]`);
+      await expect(freight.locator('[data-tile-title="process"]')).toHaveText('Freight charge check before goods issue');
+      await expect(freight.locator('[data-tile-project-name]')).toHaveText('Freight charge check');
+      const po = page.locator(`[data-program-tile="${programs[0].id}"]`);
+      await expect(po.locator('[data-tile-title="project"]')).toHaveText('Emergency purchase approval');
+      await expect(po.locator('[data-tile-project-name]')).toHaveCount(0);
       // One filled action on the page.
       await expect(page.locator('[data-cc-button="primary"]:visible, a[data-cc-button="primary"]:visible')).toHaveCount(1);
       const text = await page.locator('[data-workspace-tiles]').innerText();

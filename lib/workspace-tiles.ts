@@ -47,8 +47,13 @@ export type TrackMark = 'done' | 'now' | 'todo' | 'signed';
 export interface ProgramTile {
   id: string;
   access: 'own' | 'shared';
+  /** What the tile is called: the process's business name where the summary carries one, else the project's name. */
   title: string;
-  /** The program's own name (from the analysed file), when it says more than the title. */
+  /** The project's name — what Delete and Invite name; shown small under a business name (owner decision 14.11.2026). */
+  projectName: string;
+  /** True when `title` is the business name of the process, not the project's name. */
+  titleIsProcess: boolean;
+  /** The program's own name (from the analysed file), when it says more than the project's name. */
   objectName: string | null;
   lines: number | null;
   example: boolean;
@@ -131,10 +136,14 @@ export function toProgramTile(project: ListedProject, access: 'own' | 'shared' =
   });
 
   const lastChange = isoDate(project.updatedAt) ?? isoDate(project.createdAt);
+  const processTitle = summary?.processTitle ?? null;
+  const titleIsProcess = !!processTitle && processTitle !== project.name;
   return {
     id: project.id,
     access,
-    title: project.name,
+    title: titleIsProcess ? processTitle! : project.name,
+    projectName: project.name,
+    titleIsProcess,
     objectName: objectName && objectName !== project.name ? objectName : null,
     lines,
     example: project.fromExample === true,

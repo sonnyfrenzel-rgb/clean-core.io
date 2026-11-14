@@ -224,13 +224,26 @@ const OTHER_HEADING = /^[A-Z][A-Z0-9 ()/&-]{3,}:?$/;
 export function headerClaimOf(source: string, options: { titleLine?: boolean } = {}): ProgramSummaryFacts['headerClaim'] {
   const lines = String(source ?? '').replace(/\r\n?/g, '\n').split('\n');
   const limit = Math.min(lines.length, 150);
-  const contentOf = (raw: string): string | null => {
-    const m = /^\s*(?:\*&?|")(.*)$/.exec(raw);
-    return m ? m[1].replace(/\*+\s*$/, '').trim() : null;
-  };
-  const headed = headedClaim(lines, limit, contentOf);
+  const headed = headedClaim(lines, limit, commentContentOf);
   if (headed || !options.titleLine) return headed;
-  return titleClaim(lines, limit, contentOf);
+  return titleClaim(lines, limit, commentContentOf);
+}
+
+/**
+ * 3.3.0 (owner decision 14.11.2026): the header block's title line alone — "Emergency purchase approval" — whether
+ * or not the header also has a headed purpose section. The business name a tile of My workspace shows
+ * (`lib/project-summary-server.ts`); null when the header has no title line. The same reading as `titleClaim`, so the
+ * name is the one the engine already reads as the author's claim, never a model's.
+ */
+export function headerTitleOf(source: string): ProgramSummaryFacts['headerClaim'] {
+  const lines = String(source ?? '').replace(/\r\n?/g, '\n').split('\n');
+  return titleClaim(lines, Math.min(lines.length, 150), commentContentOf);
+}
+
+/** A comment line's text without its marker (`*`, `*&`, `"`) and trailing stars; null for a line of code. */
+function commentContentOf(raw: string): string | null {
+  const m = /^\s*(?:\*&?|")(.*)$/.exec(raw);
+  return m ? m[1].replace(/\*+\s*$/, '').trim() : null;
 }
 
 /** The name of a template line: "Report  Z_X", "Program: …", "Author …", "Created on …" — not a statement of purpose. */
