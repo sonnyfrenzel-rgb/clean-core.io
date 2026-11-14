@@ -135,6 +135,7 @@ Signed runs and the audit pack do not change.
 - In short: a German program name written as one word (`ZMM_RECHNUNGSPRUEFUNG`) gives its purpose like the same words written apart; a compound with a word the engine does not know gives none.
 - In short: an inbound IDoc function is said as one SAP calls where a process code is assigned to it; the code alone does not show that assignment.
 - Status workflow: a status check whose stop sits inside a further decision or loop (`IF status <> 'DRAFT'. IF force. RETURN. ENDIF. ENDIF.`) no longer supplies a "from" state; only a stop every path reaches does.
+- Author's comments: a comment at the end of a statement that spans more than three lines is quoted as that statement's own.
 
 #### Workspace, Documentation and Testing
 - Workspace: after an account switch, an earlier error reading the project list no longer shows the regular page before the new list has answered.
