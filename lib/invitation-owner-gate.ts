@@ -55,6 +55,29 @@ export const INVITATION_SEND_RATE_LIMIT = 20;
  */
 export const INVITATION_SEND_DAILY_LIMIT = 50;
 
+/**
+ * The day's invitation budget of one account, the one project invitations use
+ * (`invitations-day:{uid}`): null while it holds, otherwise the 429 to answer.
+ * Selection invitations draw on the same budget, so the two kinds together stay
+ * within `INVITATION_SEND_DAILY_LIMIT`. `limit` is the rate limiter, replaceable
+ * in a test.
+ */
+export async function invitationDailyRefusal(
+  uid: string,
+  limit: (key: string, max: number, windowMs: number) => Promise<void> = assertRateLimit,
+): Promise<NextResponse | null> {
+  try {
+    await limit(`invitations-day:${uid}`, INVITATION_SEND_DAILY_LIMIT, 24 * 60 * 60 * 1000);
+    return null;
+  } catch (rateErr: unknown) {
+    const q = rateErr as { message?: string; status?: number };
+    return NextResponse.json(
+      { error: q?.message || 'Too many invitations today.', code: 'invitations-daily-limit' },
+      { status: q?.status || 429 },
+    );
+  }
+}
+
 export const INVITATION_RATE_LIMITS = {
   'invitations-list': 60,
   'invitations-withdraw': INVITATION_SEND_RATE_LIMIT,

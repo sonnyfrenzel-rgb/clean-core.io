@@ -13,7 +13,7 @@ import {
   invitationUnsubscribeUrl,
   isInvitationSuppressed,
 } from '@/lib/invitation-suppression';
-import { INVITATION_SEND_RATE_LIMIT } from '@/lib/invitation-owner-gate';
+import { INVITATION_SEND_RATE_LIMIT, invitationDailyRefusal } from '@/lib/invitation-owner-gate';
 import { INVITER_UNCONFIRMED_MESSAGE, inviterAddressConfirmed, openPortfolioRoute } from '@/lib/portfolio/access-server';
 import { BatchRefusal } from '@/lib/portfolio/batch-store';
 import {
@@ -80,6 +80,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
     if (!(await inviterAddressConfirmed(gate))) {
       return NextResponse.json({ error: INVITER_UNCONFIRMED_MESSAGE, code: 'email-unconfirmed' }, { status: 403 });
     }
+    // The day's budget project invitations use, shared with them.
+    const overDaily = await invitationDailyRefusal(gate.uid);
+    if (overDaily) return overDaily;
     const read = await readBoundedRequestJson(req, SMALL_REQUEST_BODY_LIMITS);
     if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
     const body = read.body as { email?: unknown; expiresInDays?: unknown } | null;

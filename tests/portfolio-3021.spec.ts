@@ -9,6 +9,7 @@ import { abapGitNameOf, splitIntoPrograms } from '../lib/portfolio/batch-split';
 import { isClaimable, nextClaims, outcomeOfRun, programsInWindow, progressOf } from '../lib/portfolio/batch-model';
 import { checkBatchHeader, checkUploadedProgram, stepBatch, appendPrograms, BatchRefusal, createBatchWithPrograms } from '../lib/portfolio/batch-store';
 import { inviterAddressConfirmed } from '../lib/portfolio/access-server';
+import { INVITATION_SEND_DAILY_LIMIT, invitationDailyRefusal } from '../lib/invitation-owner-gate';
 import { portfolioStepFor, runInPortfolioStep } from '../lib/portfolio/run-context';
 import { aggregatePortfolio, type ProgramFacts } from '../lib/portfolio/aggregate';
 import { portfolioCsv, portfolioWorkbook, PROGRAM_COLUMNS } from '../lib/portfolio/export';
@@ -353,6 +354,36 @@ test.describe('a batch whose first programs are not stored does not stay behind'
     const route = read('app/api/portfolio/batches/route.ts');
     expect(route).toContain('await createBatchWithPrograms(gate.db, gate.uid, header, programs)');
     expect(route).not.toMatch(/await createBatch\(|await appendPrograms\(/);
+  });
+});
+
+test.describe('selection invitations share the daily send budget of project invitations', () => {
+  test('the send after the limit on one day is refused with 429', async () => {
+    const windows = new Map<string, number>();
+    const keys: string[] = [];
+    const limiter = async (key: string, max: number, windowMs: number) => {
+      keys.push(key);
+      expect(windowMs).toBe(24 * 60 * 60 * 1000);
+      const n = (windows.get(key) ?? 0) + 1;
+      windows.set(key, n);
+      if (n > max) throw Object.assign(new Error('Too many requests.'), { status: 429 });
+    };
+    for (let i = 0; i < INVITATION_SEND_DAILY_LIMIT; i++) expect(await invitationDailyRefusal('u1', limiter)).toBeNull();
+    const refused = await invitationDailyRefusal('u1', limiter);
+    expect(refused?.status).toBe(429);
+    expect(await refused?.json()).toMatchObject({ code: 'invitations-daily-limit' });
+    // The key the project invitation route counts under.
+    expect(new Set(keys)).toEqual(new Set(['invitations-day:u1']));
+    expect(read('app/api/projects/[projectId]/invitations/route.ts')).toContain('assertRateLimit(`invitations-day:${gate.uid}`, INVITATION_SEND_DAILY_LIMIT, 24 * 60 * 60 * 1000)');
+  });
+
+  test('the route asks before it creates or mails anything', () => {
+    const src = read('app/api/portfolio/selections/[selectionId]/invitations/route.ts');
+    const post = src.slice(src.indexOf('export async function POST('));
+    const check = post.indexOf('await invitationDailyRefusal(gate.uid)');
+    expect(check).toBeGreaterThan(-1);
+    expect(check).toBeLessThan(post.indexOf('createSelectionInvitation('));
+    expect(check).toBeLessThan(post.indexOf('sendTransactionalMail('));
   });
 });
 

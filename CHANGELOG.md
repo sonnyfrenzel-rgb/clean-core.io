@@ -78,6 +78,7 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
 - S/4 metadata: a service path that is not text is refused instead of reading the default service.
 - Portfolio: a batch whose first programs could not be stored no longer stays behind and blocks the retry.
 - Portfolio selection invitations follow the same sender rules as project invitations.
+- Portfolio selection invitations share the daily send limit of project invitations.
 - Portfolio selections, their invitations and the own-key automatic-steps switch read request bodies under a size
   bound.
 - The automatic-steps switch is recorded in the audit log in the same write as the switch itself.
