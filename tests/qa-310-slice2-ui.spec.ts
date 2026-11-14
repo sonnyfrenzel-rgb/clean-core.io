@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { docProposalsCostLine } from '../lib/messages/documentation';
+import { STARTER_BADGE_RAN_BEFORE, starterStartLabel } from '../lib/run-cost';
 
 /**
  * Release 3.1.0, QA review of the release candidate (second slice): the UI-side defects confirmed there, each held
@@ -32,4 +33,13 @@ test('the Documentation card names the two calls of the business sentences when 
   const page = read('app/(app)/project/[projectId]/documentation/page.tsx');
   expect(page).toContain("docProposalsCostLine(modelAvailability.stageModels.documentation, modelAvailability.keySource === 'byok', modelAvailability.statementsRewording)");
   expect(page).toContain('<StatementProposalPanel {...statementPanelProps} costLine={false} />');
+});
+
+test('the recommended home example says in its accessible name that it ran before, keeping its visible text', () => {
+  const visible = 'Start this example';
+  expect(starterStartLabel({ starterExamplesUsed: {} }, 'ZDEMO', visible)).toBe(visible);
+  expect(starterStartLabel({ starterExamplesUsed: { ZDEMO: true } }, 'ZDEMO', visible)).toBe(`${visible} (${STARTER_BADGE_RAN_BEFORE})`);
+  const src = read('components/StarterExamples.tsx');
+  const button = src.slice(src.indexOf('onClick={() => start(startHere)}'), src.indexOf('data-home-start-example=""'));
+  expect(button).toContain("aria-label={starterStartLabel(account, rec.name, wt('home.startExample'))}");
 });

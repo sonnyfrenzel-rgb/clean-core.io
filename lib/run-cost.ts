@@ -174,6 +174,21 @@ export function describeStarterExampleCost(
 }
 
 /**
+ * The accessible name of a start button whose visible text does not name the
+ * example's cost (the home page's recommended card): the visible text first,
+ * so the name contains the label, and the ran-before mark the card shows
+ * beside its title, so a screen reader hears that a second run is counted.
+ */
+export function starterStartLabel(
+  profile: QuotaSubject | null | undefined,
+  exampleName: string,
+  visibleText: string,
+): string {
+  const cost = describeStarterExampleCost(profile, exampleName);
+  return cost.free ? visibleText : `${visibleText} (${cost.badge})`;
+}
+
+/**
  * The line under both start cards of §6.1.1 — what is counted, in full.
  *
  * Both halves of the rule in one sentence, because the screen where the choice

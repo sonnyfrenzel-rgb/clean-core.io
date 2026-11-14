@@ -19,7 +19,7 @@ import {
   starterExampleIsFree,
   type QuotaSubject,
 } from '@/lib/run-quota-rule';
-import { describeStarterExampleCost, startModelLine, starterExampleFootnote } from '@/lib/run-cost';
+import { describeStarterExampleCost, startModelLine, starterExampleFootnote, starterStartLabel } from '@/lib/run-cost';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { describeSnippet, exampleTiers, START_HERE_WHY, type ExampleSnippet } from '@/lib/example-catalog';
 import { EXAMPLE_SNIPPETS } from '@/lib/example-snippets';
@@ -465,6 +465,7 @@ export default function StarterExamples({
               disabled={!!busy && busy !== startHere.key}
               onClick={() => start(startHere)}
               aria-expanded={confirming === startHere.key || undefined}
+              aria-label={starterStartLabel(account, rec.name, wt('home.startExample'))}
               data-example-start={rec.name}
               data-home-start-example=""
             >
