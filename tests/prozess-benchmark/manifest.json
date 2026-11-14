@@ -1,0 +1,2307 @@
+{
+  "book": {
+    "path": "tests/prozess-benchmark",
+    "sha256": "n/a",
+    "caseCount": 150
+  },
+  "cases": [
+    {
+      "id": "BM-001",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-003",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-005",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-009",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-010",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-011",
+      "files": [
+        {
+          "name": "zsd_backorder.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_backorder_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_backorder_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-012",
+      "files": [
+        {
+          "name": "lzsd_edi_ordf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzsd_edi_ordtop.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_idoc_input_zorders.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-013",
+      "files": [
+        {
+          "name": "mv45afzz_credit.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_credit_check.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-016",
+      "files": [
+        {
+          "name": "zsd_mass_va02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_mass_va02_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_mass_va02_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_mass_va02_f03.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_mass_va02_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-020",
+      "files": [
+        {
+          "name": "zcl_sd_bonus_calc.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_bonus_run.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_bonus_run_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_bonus_run_top.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_sd_bonus_post_upd.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-021",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-023",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-024",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-028",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-030",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-032",
+      "files": [
+        {
+          "name": "zmm_lief_bewertung.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_lief_bewertung_f01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-034",
+      "files": [
+        {
+          "name": "zmm_konsi_abrechnung.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_konsi_abrechnung_f01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-035",
+      "files": [
+        {
+          "name": "zcl_mm_cycle_count.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_zyklusinventur.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-038",
+      "files": [
+        {
+          "name": "zcl_wm_pick_log.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zwm_pick_wave.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zwm_pick_wave_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zwm_pick_wave_top.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_wm_print_to.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-039",
+      "files": [
+        {
+          "name": "mzmm_pr_release_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzmm_pr_release_i01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzmm_pr_release_o01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzmm_pr_release_top.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "sapmzmm_pr_release.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-043",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-044",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-045",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-046",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-048",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-051",
+      "files": [
+        {
+          "name": "zfi_payfile.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_payfile_f01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-054",
+      "files": [
+        {
+          "name": "zfi_fxval.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_fxval_f01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-055",
+      "files": [
+        {
+          "name": "zcl_co_act_alloc.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zco_act_alloc.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-057",
+      "files": [
+        {
+          "name": "zfi_close_run.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_close_run_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_close_run_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_close_run_top.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_fi_close_step_bukrs.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-058",
+      "files": [
+        {
+          "name": "zcl_fi_ustva_xml.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_ustva.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_ustva_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_ustva_sel.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_ustva_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-061",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-062",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-065",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-067",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-070",
+      "files": [
+        {
+          "name": "zcl_pp_bom_check.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-071",
+      "files": [
+        {
+          "name": "lzmes_rmf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzmes_rmtop.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_mes_rueckmeldung.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-074",
+      "files": [
+        {
+          "name": "idoc_input_zqmres.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzqm_limsf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzqm_limstop.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-075",
+      "files": [
+        {
+          "name": "zcl_im_pp_conf_check.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_pp_ausschuss_melden.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-076",
+      "files": [
+        {
+          "name": "zpp_mass_release.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpp_mass_release_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpp_mass_release_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpp_mass_release_f03.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpp_mass_release_top.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_pp_release_package.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-077",
+      "files": [
+        {
+          "name": "mzpp_werkerf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzpp_werkeri01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzpp_werkero01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzpp_werkertop.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "sapmzpp_werker.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-082",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-083",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-084",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-087",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-090",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-091",
+      "files": [
+        {
+          "name": "zcvi_precheck.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcvi_precheck_f01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-093",
+      "files": [
+        {
+          "name": "zcl_hr_overtime.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zhr_ot_eval.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-095",
+      "files": [
+        {
+          "name": "zmm_wms_recon.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_wms_recon_f01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-099",
+      "files": [
+        {
+          "name": "mzvcertf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzvcerti01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzvcerto01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "sapmzvcert.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-100",
+      "files": [
+        {
+          "name": "zsd_cust_repl.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_cust_repl_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_cust_repl_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_cust_repl_f03.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_cust_repl_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-101",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-103",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-104",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-107",
+      "files": [
+        {
+          "name": "zcl_im_pm_wcm_release.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-109",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-112",
+      "files": [
+        {
+          "name": "lzpm_swapf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_idoc_input_zequiswap.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-114",
+      "files": [
+        {
+          "name": "zcl_ehs_unfall.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_ehs_unfall_handler.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_ehs_unfall_anlegen.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-115",
+      "files": [
+        {
+          "name": "exit_sapmiwo0_020.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zxqqmu20.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_pm_warranty_check.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-117",
+      "files": [
+        {
+          "name": "zcl_cs_rr_notif.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcs_rueckruf.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcs_rueckruf_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcs_rueckruf_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-118",
+      "files": [
+        {
+          "name": "zcl_cs_meter_period.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcs_zaehler_faktura.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcs_zaehler_faktura_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcs_zaehler_faktura_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-121",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-122",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-123",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-128",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-130",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-132",
+      "files": [
+        {
+          "name": "zre_nk_abr.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zre_nk_abr_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zre_nk_abr_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-134",
+      "files": [
+        {
+          "name": "lzdsp_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzdsp_top.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_idoc_input_zdispute.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-135",
+      "files": [
+        {
+          "name": "ztrm_festgeld_rollover.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "ztrm_festgeld_rollover_f01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-137",
+      "files": [
+        {
+          "name": "zre_indexmiete.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zre_indexmiete_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zre_indexmiete_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zre_indexmiete_f03.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zre_indexmiete_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-139",
+      "files": [
+        {
+          "name": "mv45afzz_zcredit.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_credit_rules.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_credit_monitor.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_sd_credit_log_write.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_sd_fscm_credit_check.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-141",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-142",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-144",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-146",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-150",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-151",
+      "files": [
+        {
+          "name": "zpy_retro_diff.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpy_retro_diff_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpy_retro_diff_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-154",
+      "files": [
+        {
+          "name": "ztv_approval_monitor.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "ztv_approval_monitor_f01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-155",
+      "files": [
+        {
+          "name": "zcl_pe_booking.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpe_book_participants.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-157",
+      "files": [
+        {
+          "name": "zpt_ot_approval.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpt_ot_approval_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpt_ot_approval_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpt_ot_approval_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-160",
+      "files": [
+        {
+          "name": "zcl_ess_addr_service.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_ess_address_decide.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_ess_address_request.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_ess_addr_status_update.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-162",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-164",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-165",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-168",
+      "files": [
+        {
+          "name": "zcl_vc_fertvar.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-169",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-172",
+      "files": [
+        {
+          "name": "lzposf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzpostop.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_idoc_input_zposums.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-173",
+      "files": [
+        {
+          "name": "mzkanbanf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzkanbani01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzkanbantop.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-175",
+      "files": [
+        {
+          "name": "zsd_bonus_endabr.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_bonus_endabr_f01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-176",
+      "files": [
+        {
+          "name": "zisu_abrvorb.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zisu_abrvorb_cls.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zisu_abrvorb_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zisu_abrvorb_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-180",
+      "files": [
+        {
+          "name": "zft_praeferenz.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zft_praeferenz_c01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zft_praeferenz_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zft_praeferenz_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zft_praeferenz_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-181",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-182",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-183",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-189",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-190",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-192",
+      "files": [
+        {
+          "name": "zcl_isu_mr_validator.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_zisu_meter_dpc_ext.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-194",
+      "files": [
+        {
+          "name": "zapo_cif_imod.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zxcifuu01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-195",
+      "files": [
+        {
+          "name": "zcl_ft_embargo_default.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_ft_embargo_ru.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zei_ft_export_check.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-196",
+      "files": [
+        {
+          "name": "zle_frachtbrief.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zle_frachtbrief_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zle_frachtbrief_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zle_frachtbrief_top.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_le_gefahrgut_daten.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-200",
+      "files": [
+        {
+          "name": "zcl_re_vpi_client.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zre_index_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zre_index_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zre_index_main.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zre_index_top.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_re_index_task.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-202",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-203",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-204",
+      "files": [
+        {
+          "name": "mv50afz1_save_prepare.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_deliv_gi_check.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-207",
+      "files": [
+        {
+          "name": "rv64a901.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_price_base.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_price_factory.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_price_retail.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_price_wholesale.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-208",
+      "files": [
+        {
+          "name": "zmm_po_approval.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_po_approval_c01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_po_approval_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_po_approval_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-210",
+      "files": [
+        {
+          "name": "lzsd_rmac01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzsd_rmaf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzsd_rmatop.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzsd_rmau01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-213",
+      "files": [
+        {
+          "name": "zcl_sd_billing_run.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_billing_run_ic.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_billing_run.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-214",
+      "files": [
+        {
+          "name": "lzsd_ord_inc01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzsd_ord_inf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzsd_ord_intop.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzsd_ord_inu01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_cust_mat_map.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-215",
+      "files": [
+        {
+          "name": "zcl_im_mm_pr_approval.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_mm_pr_approval.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_mm_pr_approval_ccdef.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_mm_pr_approval_ccimp.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_mm_pr_notifier.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_pr_decide.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-218",
+      "files": [
+        {
+          "name": "zmm_auto_po.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_auto_po_c01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_auto_po_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_auto_po_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-221",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-223",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-226",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-228",
+      "files": [
+        {
+          "name": "lzco_leistungf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzco_leistungtop.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzco_leistungu01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-229",
+      "files": [
+        {
+          "name": "zhr_jubilaeum.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zhr_jubilaeum_cls.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zhr_jubilaeum_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zhr_jubilaeum_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-230",
+      "files": [
+        {
+          "name": "zfi_abgrenzung.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_abgrenzung_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_abgrenzung_sel.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_abgrenzung_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-234",
+      "files": [
+        {
+          "name": "zfi_periodenabschluss.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_periodenabschluss_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_periodenabschluss_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_periodenabschluss_f03.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_periodenabschluss_sel.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_periodenabschluss_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-238",
+      "files": [
+        {
+          "name": "zcl_hr_org_umhaengung.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_hr_pruef_abrechnung.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_hr_pruef_offene_abw.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_hr_pruef_planstelle.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zhr_org_umhaengen.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zif_hr_umhaeng_pruefung.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-239",
+      "files": [
+        {
+          "name": "lzfi_ic_rfcu01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_ic_abstimmung.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_ic_abstimmung_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_ic_abstimmung_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_ic_abstimmung_f03.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_ic_abstimmung_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-240",
+      "files": [
+        {
+          "name": "zcl_co_kalk_regel.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_co_kalk_regel_abw.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zco_kalk_uebernahme.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zco_kalk_uebernahme_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zco_kalk_uebernahme_top.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcx_co_kalk.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-241",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-243",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-246",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-247",
+      "files": [
+        {
+          "name": "zbp_i_reklamation.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zbp_i_reklamation_lhc.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zbp_i_reklamation_lsc.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-248",
+      "files": [
+        {
+          "name": "zcl_mm_bestand_helper.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_zmm_bestand_dpc_ext.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-251",
+      "files": [
+        {
+          "name": "zcl_fi_mahnvorschlag.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcx_fi_mahn.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_mahn_report.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-252",
+      "files": [
+        {
+          "name": "zcl_mm_we_assist.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zwd_mm_we_compctrl.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zwd_mm_we_view.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-254",
+      "files": [
+        {
+          "name": "zcl_sd_auftrag_mapper.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_auftrag_pruefung.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_zsd_auftrag_dpc_ext.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_zsd_auftrag_mpc_ext.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcx_sd_auftrag.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-258",
+      "files": [
+        {
+          "name": "zcl_mm_abc_amdp.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_mm_abc_runner.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_abc_report.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zmm_abc_top.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_mm_abc_werk.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-259",
+      "files": [
+        {
+          "name": "zcl_hr_zeit_service.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_zhr_zeit_dpc_ext.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcx_hr_zeit.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_hr_cats_status_upd.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-261",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-264",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-265",
+      "files": [
+        {
+          "name": "z_ewm_tu_notify_carrier.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-270",
+      "files": [
+        {
+          "name": "zcl_fi_job_chain.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_bank_chain.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-271",
+      "files": [
+        {
+          "name": "zcl_hr_emp_sender.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcx_hr_send_error.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcx_hr_send_temporary.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zhr_emp_send.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-273",
+      "files": [
+        {
+          "name": "zsd_inv_export.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_inv_export_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_inv_export_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-274",
+      "files": [
+        {
+          "name": "zcl_sd_idoc_log.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_seg_handler.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_seg_hdr.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_sd_seg_itm.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcx_sd_shpconf.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "z_idoc_input_zshpconf.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-276",
+      "files": [
+        {
+          "name": "zfi_bankstmt_in.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_bankstmt_in_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_bankstmt_in_f02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_bankstmt_in_sel.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zfi_bankstmt_in_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-279",
+      "files": [
+        {
+          "name": "zcl_ewm_ii_wt_confirm.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_ewm_wt_processor.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_ewm_wt_queue.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcx_ewm_wt.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcx_ewm_wt_temp.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zewm_wt_retry.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-280",
+      "files": [
+        {
+          "name": "zca_if_monitor.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zca_if_monitor_cls.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_ca_reproc_factory.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_ca_reproc_fi_post.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zcl_ca_reproc_sd_idoc.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zif_ca_reprocessor.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-281",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-283",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-284",
+      "files": [
+        {
+          "name": "source.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-287",
+      "files": [
+        {
+          "name": "mzpm_stoer_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzpm_stoer_i01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzpm_stoer_o01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "mzpm_stoer_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-288",
+      "files": [
+        {
+          "name": "zsd_kasse_barverkauf.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_kasse_barverkauf_c01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_kasse_barverkauf_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-289",
+      "files": [
+        {
+          "name": "lzwm_quitf01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzwm_quiti01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzwm_quittop.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "lzwm_quitu01.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-293",
+      "files": [
+        {
+          "name": "zpp_terminal.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpp_terminal_c01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpp_terminal_c02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpp_terminal_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-294",
+      "files": [
+        {
+          "name": "sapmzpm_rueck_c01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "sapmzpm_rueck_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "sapmzpm_rueck_i01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "sapmzpm_rueck_o01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "sapmzpm_rueck_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-295",
+      "files": [
+        {
+          "name": "zpos_tagesabschluss.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpos_tagesabschluss_c01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpos_tagesabschluss_c02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpos_tagesabschluss_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zpos_tagesabschluss_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    },
+    {
+      "id": "BM-298",
+      "files": [
+        {
+          "name": "zsd_schalter_kredit.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_schalter_kredit_c01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_schalter_kredit_c02.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_schalter_kredit_f01.abap",
+          "sha256": "n/a"
+        },
+        {
+          "name": "zsd_schalter_kredit_top.abap",
+          "sha256": "n/a"
+        }
+      ]
+    }
+  ]
+}

@@ -79,8 +79,10 @@ test.describe('every step of the walk is said in plain words, anchored to its li
   }
 
   test('a decision says its question and what each answer does', () => {
-    const currency = step(PO_GUIDE, 'Currency not EUR?');
-    expect(currency.happens.text).toBe('It checks: Currency not EUR? If yes, it goes on to “Convert to EUR”. If no, it carries on.');
+    // Engine 3.1.0 asks the question the positive way round (owner decision E1, 06.11.2026): "Currency not EUR?"
+    // became "Currency EUR?", and the answers swapped with it — each still says where the code goes.
+    const currency = step(PO_GUIDE, 'Currency EUR?');
+    expect(currency.happens.text).toBe('It checks: Currency EUR? If no, it goes on to “Convert to EUR”. If yes, it carries on.');
     expect(currency.happens.anchor).toEqual({ lineStart: 69, lineEnd: 69 });
     const sales = step(BIG_GUIDE, 'Sales organization given?');
     expect(sales.happens.text).toContain('If no, the run stops with an error message.');
@@ -93,7 +95,8 @@ test.describe('every step of the walk is said in plain words, anchored to its li
     expect(order.decides.map((d) => d.text)).toContain('Only when account assignment category is F.');
     const outer = order.decides.find((d) => d.text.startsWith('Only when'))!;
     expect(outer.anchor).toEqual({ lineStart: 205, lineEnd: 205 });
-    const auth = BIG_GUIDE.byId[Object.keys(BIG_GUIDE.byId).find((id) => BIG_GUIDE.byId[id].title === 'Not authorized?' && BIG_GUIDE.byId[id].anchor?.lineStart === 211)!];
+    // 3.1.0 (E1): "Not authorized?" is asked as "Authorized?".
+    const auth = BIG_GUIDE.byId[Object.keys(BIG_GUIDE.byId).find((id) => BIG_GUIDE.byId[id].title === 'Authorized?' && BIG_GUIDE.byId[id].anchor?.lineStart === 211)!];
     expect(auth.decides.map((d) => d.text)).toContain('Only when update selected.');
   });
 
@@ -124,7 +127,8 @@ test.describe('phases and technical steps', () => {
     expect(groups.logging).toEqual(expect.arrayContaining(['Persist run log', 'Write run statistics']));
     expect(groups.files).toEqual(expect.arrayContaining(['File given?', 'Save a file to the user\'s PC']));
     expect(groups.switches).toEqual(expect.arrayContaining(['Update selected?', 'Trace selected and background run not set?']));
-    expect(groups.setup).toEqual(expect.arrayContaining(['Initialize run', 'For each order']));
+    // 3.1.0: an internal table is named after where its rows come from — gt_orders is selected from VBAK.
+    expect(groups.setup).toEqual(expect.arrayContaining(['Initialize run', 'For each sales order']));
     const business = BIG_GUIDE.business.map((id) => BIG_GUIDE.byId[id].title);
     expect(business).toEqual(expect.arrayContaining(['Sales organization given?', 'Action?', 'Display result list', 'Credit exposure read']));
     // "Not found, or stock below the ordered quantity" is a rule, though its first arm is a technical check.
@@ -132,7 +136,7 @@ test.describe('phases and technical steps', () => {
     expect(stock.technical).toBeNull();
     expect(stock.happens.text).toContain('unrestricted stock below order quantity');
     // A permission check is the business's, not a technical guard.
-    expect(Object.values(PO_GUIDE.byId).find((s) => s.title === 'Not authorized?')!.technical).toBeNull();
+    expect(Object.values(PO_GUIDE.byId).find((s) => s.title === 'Authorized?')!.technical).toBeNull();
   });
 
   test('deterministic: the same source says the same thing', () => {
@@ -154,7 +158,8 @@ test.describe('what it writes', () => {
     expect(roles('Sales organization given?')).toBe('control');
     expect(roles('Send summary mail')).toBe('mail');
     expect(roles('Display result list')).toBe('output');
-    expect(step(PO_GUIDE, 'Not authorized?').role).toBe('permission');
+    // 3.1.0 (E1): "Not authorized?" is asked as "Authorized?".
+    expect(step(PO_GUIDE, 'Authorized?').role).toBe('permission');
     expect(step(PO_GUIDE, 'Read purchase requisition').role).toBe('read');
   });
 });
