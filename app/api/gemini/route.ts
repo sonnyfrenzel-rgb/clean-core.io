@@ -71,6 +71,7 @@ import { LEASED_PROMPT_MAX_CHARS, isGateRepairPrompt } from '@/lib/transformatio
 import { modelUsageLog } from '@/lib/model-usage-log';
 import { thinkingConfigFor } from '@/lib/model-thinking';
 import { planModelCall, type ModelCallPlan } from '@/lib/model-combination';
+import { ALLOWED_MODELS, EVALUATION_ONLY_MODELS } from '@/lib/gemini-register';
 import { MODEL_CALL_DEADLINE_MS, MODEL_NETWORK_CODE, MODEL_TIMEOUT_CODE, errorCodes, modelDeadline, modelTimeoutMessage, providerConnectionFailure, type ModelDeadline } from '@/lib/model-deadline';
 import { isModelCallStage, STAGE_MAX_OUTPUT_TOKENS } from '@/lib/model-call-stage';
 import { NAMING_PAUSED_CODE, NAMING_PAUSED_REASON, NAMING_STAGE, namingPromptAllowed } from '@/lib/process-naming';
@@ -145,57 +146,8 @@ function getDefaultAI(): GoogleGenAI | null {
   return defaultAI;
 }
 
-/**
- * F-09: server-side model register. Only a model named here may be called, whoever asks.
- *
- * GA = generally available; PREVIEW = opt-in canary that may change or be withdrawn.
- * Dead Gemini 2.0 IDs were removed (lifecycle ended per Google's deprecation page).
- *
- * `gemini-3-flash-preview` was the product default until 23.09.2026 and is the
- * reason this list is now written down properly: it is a *preview* model, the
- * 3-flash line never reached GA, and Google shipped 3.5, 3.6, 3.7 and 3.8 flash
- * as GA while it stayed a canary. A product whose promise is a signed run cannot
- * rest on a model that may be withdrawn. It stays listed — receipts were issued
- * under it and a client may still ask for it — but it is no longer what the
- * product calls.
- *
- * `gemini-2.5-pro` was listed here as "GA — stable fallback" and was neither.
- * A `generateContent` call with the production key answers HTTP 404, "This model
- * models/gemini-2.5-pro is no longer available to new users" (checked 23.09.2026,
- * three times, roadmap 17.1). It is still in the key's `ListModels` answer, which
- * is why nobody noticed: listing a model is not the same statement as serving it,
- * and only the call tells the two apart.
- *
- * It was struck rather than replaced. Google's own 404 points at
- * `gemini-3.1-pro-preview`, and that is a preview — putting it here as a "stable
- * fallback" would repeat exactly the mistake the paragraph above records. No
- * pro-line model is GA for this key today, so the fallbacks are the three flash
- * models that answered. A client that still pins `gemini-2.5-pro` now gets a 400
- * naming the permitted models instead of a 500 from a provider 404, and
- * `GEMINI_MODEL` can no longer be pointed at an emergency exit that is walled up.
- *
- * The same happened twice more, found 12.11.2026: `gemini-3.5-flash` answered
- * but was served by `gemini-3.6-flash` (Google reroutes it), so a receipt would
- * have named a model that did not answer; `gemini-2.5-flash` refuses a thinking
- * level, which the fill and wording calls send, and shuts down on 1.12.2026.
- * Both were struck; `gemini-3.6-flash` is the exit. The probe now sends a
- * thinking level and counts a rerouted answer as not answered.
- *
- * `scripts/check-gemini-register.mjs` makes the call for every entry here and
- * writes what came back to `tests/gemini-register-liveness.json`;
- * `tests/gemini-model-pin.spec.ts` holds the register and that record together
- * without touching the network. Adding a model here means running the script.
- */
-const ALLOWED_MODELS = new Set([
-  'gemini-3.8-flash',       // GA — the product default (lib/constants.ts)
-  'gemini-3.6-flash',       // GA — the emergency exit: serves itself and takes a thinking level
-  'gemini-4-hydrogen',      // NEW — under evaluation; served on the platform key only where the deployment names it (GEMINI_MODEL, GEMINI_STAGE_MODELS)
-  'gemini-3-flash-preview', // PREVIEW — the former default, kept for callers that pin it
-  'gemini-3.5-flash-lite',  // GA — the naming stage only (lib/constants.ts, roadmap 17.3)
-]);
-
-/** Registered, but served only when `GEMINI_MODEL` makes it the product model; a request naming it is refused. */
-const EVALUATION_ONLY_MODELS = new Set(['gemini-4-hydrogen']);
+// F-09: the server-side model register and the evaluation list live in lib/gemini-register.ts (moved 14.11.2026,
+// so GET /api/model-stages names a stage's model from the same register). Only a model named there may be called.
 
 /**
  * The model this deployment actually calls, and why it can be moved without a deploy.
@@ -209,7 +161,7 @@ const EVALUATION_ONLY_MODELS = new Set(['gemini-4-hydrogen']);
  *
  * `GEMINI_MODEL` exists for the one case the constant serves badly: Google
  * withdraws a model and every analysis in the product stops until a deploy lands.
- * It is server-side only, and it cannot leave the register above — an unknown or
+ * It is server-side only, and it cannot leave the register — an unknown or
  * misspelt value is ignored rather than trusted, so the escape hatch cannot become
  * a way to run an unreviewed model. Whatever actually ran is what the receipt says.
  */

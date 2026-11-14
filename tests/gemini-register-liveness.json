@@ -1,5 +1,5 @@
 {
-  "note": "Written by scripts/check-gemini-register.mjs. One real generateContent call per entry of ALLOWED_MODELS in app/api/gemini/route.ts. tests/gemini-model-pin.spec.ts reads this file instead of the network. Re-run the script with --write after changing the register.",
+  "note": "Written by scripts/check-gemini-register.mjs. One real generateContent call per entry of ALLOWED_MODELS in lib/gemini-register.ts. tests/gemini-model-pin.spec.ts reads this file instead of the network. Re-run the script with --write after changing the register.",
   "endpoint": "POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
   "models": {
     "gemini-3.8-flash": {
