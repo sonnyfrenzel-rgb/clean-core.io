@@ -3,6 +3,8 @@
  *
  *   npx tsx scripts/engine4/shadow.ts            # summary and categories
  *   npx tsx scripts/engine4/shadow.ts --samples  # plus up to five samples per category
+ *   npx tsx scripts/engine4/shadow.ts --corpus <MANIFEST.json> [--group <g>]
+ *                                                # an external sample instead (see `manifestCorpus`)
  *
  * Reads the shipped starter examples (`public/starter-examples/`) and the
  * benchmark's learn halves only (`split.json` `learn` + `w3_learn`, the same
@@ -21,7 +23,7 @@
  * collects the rest. Nothing here is wired into the product.
  */
 import { readFileSync, readdirSync, existsSync } from 'fs';
-import { join } from 'path';
+import { basename, dirname, join } from 'path';
 import { readStatements, type AbapStatement } from '../../lib/abap/statement-reader';
 import { readBlocks, type BlockStructure } from '../../lib/abap/block-structure';
 import { lex, uncoveredCharacters } from '../../lib/engine4/lexer';
@@ -55,6 +57,42 @@ export function shadowCorpus(): CorpusFile[] {
     }
   }
   return out;
+}
+
+interface ManifestEntry {
+  group: string;
+  repo: string;
+  /** Path relative to the manifest's folder, for files copied into the sample. */
+  file?: string;
+  /** Absolute path, for files read in place (never copied). */
+  source?: string;
+}
+
+/**
+ * An external real-code sample, kept outside the repository (ADR-125 (5)): a
+ * `MANIFEST.json` whose `files` list each file's group and repository and either
+ * its path beside the manifest (`file`) or an absolute path it is read from in
+ * place (`source`). Files of one repository share their macro names, as the
+ * includes of one upload do; a file read in place is its own upload.
+ */
+export function manifestCorpus(manifestPath: string, group?: string): CorpusFile[] {
+  const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { files: ManifestEntry[] };
+  const base = dirname(manifestPath);
+  return manifest.files
+    .filter((f) => !group || f.group === group)
+    .map((f) => {
+      const path = f.source ?? join(base, f.file as string);
+      const name = f.source ? `${f.group}/${basename(f.source)}` : (f.file as string);
+      return { name, group: f.source ? name : `${f.group}/${f.repo}`, source: readFileSync(path, 'utf8').replace(/^﻿/, '') };
+    });
+}
+
+/** The corpus named on the command line: `--corpus <MANIFEST.json> [--group <g>]`, else the default one. */
+export function corpusFromArgs(argv: string[] = process.argv): CorpusFile[] {
+  const at = argv.indexOf('--corpus');
+  if (at < 0) return shadowCorpus();
+  const g = argv.indexOf('--group');
+  return manifestCorpus(argv[at + 1], g < 0 ? undefined : argv[g + 1]);
 }
 
 /** Old block kinds — the only ones the opener comparison can speak about. */
@@ -406,5 +444,5 @@ export function formatReport(r: ShadowReport, withSamples: boolean): string {
 }
 
 if (require.main === module) {
-  console.log(formatReport(runShadow(), process.argv.includes('--samples')));
+  console.log(formatReport(runShadow(corpusFromArgs()), process.argv.includes('--samples')));
 }
