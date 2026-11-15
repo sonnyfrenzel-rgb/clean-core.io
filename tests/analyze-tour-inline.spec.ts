@@ -248,15 +248,18 @@ async function harness(): Promise<string> {
     "import React from 'react';",
     "import { createRoot } from 'react-dom/client';",
     "import ProcessTour from './components/workspace/ProcessTour';",
-    'const data = (window as unknown as { __TOUR__: { tour: never; model: never; at: number } }).__TOUR__;',
+    'const data = (window as unknown as { __TOUR__: { tour: never; model: never; at: number; late?: boolean } }).__TOUR__;',
     'function App() {',
+    '  // `late`: the tour is read after the card opened, as the page reads it once the map is drawn.',
+    '  const [tour, setTour] = React.useState(data.late ? null : data.tour);',
+    '  React.useEffect(() => { if (!data.late) return undefined; const t = setTimeout(() => setTour(data.tour), 300); return () => clearTimeout(t); }, []);',
     '  const [open, setOpen] = React.useState(true);',
     '  const [paused, setPaused] = React.useState<number | null>(data.at);',
     '  const was = React.useRef(true);',
     '  React.useEffect(() => { if (was.current && !open) requestAnimationFrame(() => (document.querySelector("[data-analyze-walk]") as HTMLElement | null)?.focus()); was.current = open; }, [open]);',
     '  return (<div>',
     '    {open ? null : <button data-analyze-walk="" onClick={() => setOpen(true)}>Walk me through it</button>}',
-    '    {open ? <ProcessTour inline tour={data.tour} model={data.model} initialStation={paused ?? -1} onClose={() => { setPaused(null); setOpen(false); }} onPause={(at: number) => { setPaused(at); setOpen(false); }} endings={<p data-x-endings="">endings</p>} /> : null}',
+    '    {open ? <ProcessTour inline tour={tour} model={data.model} initialStation={paused ?? -1} onClose={() => { setPaused(null); setOpen(false); }} onPause={(at: number) => { setPaused(at); setOpen(false); }} endings={<p data-x-endings="">endings</p>} /> : null}',
     '    <div style={{ height: 1600 }} />',
     '  </div>);',
     '}',
@@ -284,8 +287,8 @@ async function harness(): Promise<string> {
   return pageHtml;
 }
 
-async function open(page: Page, which: typeof PO, at: number): Promise<void> {
-  const data = JSON.stringify({ tour: which.tour, model: which.model, at }).replace(/</g, '\\u003c');
+async function open(page: Page, which: typeof PO, at: number, late = false): Promise<void> {
+  const data = JSON.stringify({ tour: which.tour, model: which.model, at, late }).replace(/</g, '\\u003c');
   await page.setContent((await harness()).replace('__DATA__', () => data), { waitUntil: 'load' });
   await expect(page.locator('[data-process-tour][data-tour-mode="inline"]')).toBeVisible();
   await expect(page.locator('[data-process-tour-map] .djs-container')).toBeVisible({ timeout: 30_000 });
@@ -357,6 +360,16 @@ for (const viewport of VIEWPORTS) {
 
 test.describe('the inline tour by keyboard', () => {
   test.use({ viewport: { width: 1280, height: 800 }, contextOptions: { reducedMotion: 'reduce' } });
+
+  test('resumed at a later station while the tour is still being read, it opens at that station once the tour is there', async ({ page }) => {
+    test.setTimeout(120_000);
+    const tourAt = page.locator('[data-process-tour]');
+    // Station index 2 is shown as "3" — where a tour read before the card opens stands too.
+    await open(page, PO, 2);
+    await expect(tourAt).toHaveAttribute('data-tour-at', '3');
+    await open(page, PO, 2, true);
+    await expect(tourAt).toHaveAttribute('data-tour-at', '3', { timeout: 10_000 });
+  });
 
   test('Back, Pause and Next by keyboard; Pause and Escape hand the focus back to "Walk me through it"; Pause resumes there', async ({ page }) => {
     test.setTimeout(120_000);

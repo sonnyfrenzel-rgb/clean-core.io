@@ -755,7 +755,9 @@ export function ProcessTourInline({
 }: ProcessTourProps) {
   const stations = tour?.stations ?? [];
   const end = stations.length;
-  const [at, setAt] = useState(() => Math.max(OVERVIEW, Math.min(initialStation, end)));
+  // Without a tour yet, the station asked for is kept as it is and held to the tour's end once the tour is read: a
+  // walk resumed at its third station opens there, not at the first.
+  const [at, setAt] = useState(() => Math.max(OVERVIEW, tour ? Math.min(initialStation, end) : initialStation));
   // A tour read after the card opened (`tour` was null): an index past the end of nothing is held to the end.
   const shownAt = Math.max(OVERVIEW, Math.min(at, end));
   const station: TourStation | null = tour && shownAt >= 0 && shownAt < end ? stations[shownAt] : null;
