@@ -133,7 +133,8 @@ function globalClassName(text: string): string | null {
   for (const m of code.matchAll(CLASS_DEFINITION)) {
     // `CREATE PUBLIC` says who may instantiate it, a local class as much as a global one.
     const additions = m[2].replace(/\bCREATE\s+(?:PUBLIC|PROTECTED|PRIVATE)\b/gi, ' ');
-    if (!/\bPUBLIC\b/i.test(additions)) continue;
+    // `PUBLIC` as a word of its own: inside a namespaced name (`INHERITING FROM /public/cl_base`) it is no addition.
+    if (!/(?<![\w/])PUBLIC(?![\w/])/i.test(additions)) continue;
     if (/\b(?:DEFERRED|LOAD)\b|\bLOCAL\s+FRIENDS\b/i.test(additions)) continue;
     return m[1];
   }

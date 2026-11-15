@@ -68,6 +68,16 @@ test.describe('a local class does not make an include a class', () => {
       .toEqual({ object: 'Z_X_C03', role: 'include' });
   });
 
+  test('a /PUBLIC/ namespace in a local class header is no PUBLIC addition', () => {
+    expect(classifySource('CLASS lcl_x DEFINITION INHERITING FROM /public/cl_base.\nENDCLASS.\n', 'Z_X_C04.abap'))
+      .toEqual({ object: 'Z_X_C04', role: 'include' });
+    expect(classifySource('CLASS lcl_y DEFINITION FINAL FRIENDS /PUBLIC/CL_FRIEND.\nENDCLASS.\n', 'Z_X_C05.abap'))
+      .toEqual({ object: 'Z_X_C05', role: 'include' });
+    // A global class whose base sits in that namespace is still global.
+    expect(classifySource('CLASS zcl_z DEFINITION PUBLIC INHERITING FROM /public/cl_base.\nENDCLASS.\n', 'zcl_z.abap'))
+      .toEqual({ object: 'ZCL_Z', role: 'class' });
+  });
+
   test('LOCAL FRIENDS never counts, PUBLIC or not', () => {
     expect(classifySource('CLASS zcl_x DEFINITION LOCAL FRIENDS ltcl_x.\n', 'Z_X_FRIENDS.abap'))
       .toEqual({ object: 'Z_X_FRIENDS', role: 'include' });
