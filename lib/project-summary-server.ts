@@ -33,7 +33,7 @@ export interface SummaryInput {
   processName: string;
   sourceFileName: string;
   /** The engine the run was made by — the rules and the map are read for it. */
-  engineVersion: string;
+  engineVersion: string | null;
   cleanCoreScore: number | null;
   recommendation: string | null;
   /** The latest saved drawing, when the process has revisions beyond the reconstructed one. */
@@ -52,7 +52,8 @@ export function computeProjectSummary(input: SummaryInput, now: Date = new Date(
       const { xml } = buildBpmnExportFromSource(input.source, {
         processName: input.processName || input.sourceFileName,
         sourceFileName: input.sourceFileName,
-        exporterVersion: input.engineVersion,
+        // As the map in Analyze draws it (`hooks/useProcessMap.ts`): a run without a stamp draws with this release.
+        ...(input.engineVersion ? { exporterVersion: input.engineVersion } : {}),
         // The reading map's rows (Analyze draws it wrapped), so the thumbnail has the map's shape, not one long line.
         wrap: READING_WRAP,
       });
@@ -86,7 +87,7 @@ export function computeProjectSummary(input: SummaryInput, now: Date = new Date(
  * reads it for this run — only for an engine that reads it (`ENGINE_READS_3021_FROM`, where Analyze shows it as the
  * author's claim). No model is asked for it; without a title line the tile keeps the project's name.
  */
-export function processTitleFor(source: string, engineVersion: string): string | null {
+export function processTitleFor(source: string, engineVersion: string | null): string | null {
   if (!engineReads3021Apply(engineVersion)) return null;
   try {
     return processTitleOf(headerTitleOf(source)?.text);

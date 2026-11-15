@@ -42,7 +42,7 @@ import { PROCESS_REVISION_COLLECTION } from '../lib/process-revisions';
 import { revisionDocData } from '../lib/process-revision-store';
 import { summaryOf, type ProjectSummary } from '../lib/project-summary';
 import { computeProjectSummary } from '../lib/project-summary-server';
-import { APP_VERSION } from '../lib/version';
+import { engineVersionOfProject } from '../lib/run-engine-version';
 
 const PROJECT_ID = 'cleancore-491216';
 const PAGE_SIZE = 100;
@@ -87,7 +87,9 @@ export function planProjectSummary(input: SummaryPlanInput, now: Date = new Date
         source,
         processName: str(project.name),
         sourceFileName: str(run.fileName) || str(fingerprint?.fileName) || 'source.abap',
-        engineVersion: str(run.analyzerVersion) || APP_VERSION,
+        // The engine the active run was signed by (its stamp, else the model card's copy on the project); a run
+        // without either reads as the oldest engine, as everywhere a signed run is rebuilt — never this release's.
+        engineVersion: engineVersionOfProject({ ...project, analyzerVersion: run.analyzerVersion }),
         cleanCoreScore: typeof score === 'number' && Number.isFinite(score) ? score : null,
         recommendation: str(run.originalRecommendation) || null,
         revision: drawing,
