@@ -91,11 +91,60 @@ export function objectNameOfFile(file: string): string {
   return (dot < 0 ? base : base.slice(0, dot)).toUpperCase();
 }
 
-const HEADER: { role: IncludeSourceRole; rx: RegExp }[] = [
-  { role: 'function-group', rx: /^\s*FUNCTION-POOL\s+([\w/]+)/im },
-  { role: 'program', rx: /^\s*(?:REPORT|PROGRAM)\s+([\w/]+)/im },
-  { role: 'class', rx: /^\s*CLASS\s+([\w/]+)\s+DEFINITION\b/im },
-  { role: 'interface', rx: /^\s*INTERFACE\s+([\w/]+)\s+PUBLIC\b/im },
+/** A `CLASS … DEFINITION` statement up to its period, over as many lines as it spans. */
+const CLASS_DEFINITION = /^\s*CLASS\s+([\w/]+)\s+DEFINITION\b([^.]*)\./gim;
+
+/**
+ * The text without its comments: a `*` line is emptied, a `"` comment is cut
+ * off where it starts outside a literal. Lines keep their place.
+ */
+function withoutComments(text: string): string {
+  return text
+    .split(/\r?\n/)
+    .map((line) => {
+      if (line.startsWith('*')) return '';
+      let quote: string | null = null;
+      for (let i = 0; i < line.length; i += 1) {
+        const c = line[i];
+        if (quote) {
+          if (c === quote) quote = null;
+        } else if (c === "'" || c === '`' || c === '|') {
+          quote = c;
+        } else if (c === '"') {
+          return line.slice(0, i);
+        }
+      }
+      return line;
+    })
+    .join('\n');
+}
+
+/**
+ * The global class a source defines: `CLASS zcl_x DEFINITION PUBLIC …`, with
+ * the additions in any order and over several lines — the same rule as an
+ * interface, which counts only with `PUBLIC`. A local class
+ * (`CLASS lcl_x DEFINITION.`, `… FINAL CREATE PRIVATE.`) is no object of its
+ * own — `CREATE PUBLIC` included — and `DEFERRED`, `LOAD` and `LOCAL FRIENDS` only refer to a class
+ * defined elsewhere: a source holding any of them is still an include.
+ */
+function globalClassName(text: string): string | null {
+  if (!/\bCLASS\b/i.test(text)) return null;
+  const code = withoutComments(text);
+  for (const m of code.matchAll(CLASS_DEFINITION)) {
+    // `CREATE PUBLIC` says who may instantiate it, a local class as much as a global one.
+    const additions = m[2].replace(/\bCREATE\s+(?:PUBLIC|PROTECTED|PRIVATE)\b/gi, ' ');
+    if (!/\bPUBLIC\b/i.test(additions)) continue;
+    if (/\b(?:DEFERRED|LOAD)\b|\bLOCAL\s+FRIENDS\b/i.test(additions)) continue;
+    return m[1];
+  }
+  return null;
+}
+
+const HEADER: { role: IncludeSourceRole; name: (text: string) => string | null | undefined }[] = [
+  { role: 'function-group', name: (t) => /^\s*FUNCTION-POOL\s+([\w/]+)/im.exec(t)?.[1] },
+  { role: 'program', name: (t) => /^\s*(?:REPORT|PROGRAM)\s+([\w/]+)/im.exec(t)?.[1] },
+  { role: 'class', name: globalClassName },
+  { role: 'interface', name: (t) => /^\s*INTERFACE\s+([\w/]+)\s+PUBLIC\b/im.exec(t)?.[1] },
 ];
 
 /**
@@ -111,8 +160,8 @@ export function classifySource(text: string, file: string): { object: string; ro
   if (abapGit && abapGit.part && (abapGit.type === 'clas' || abapGit.type === 'intf')) {
     return { object: objectNameOfFile(file), role: 'include' };
   }
-  for (const { role, rx } of HEADER) {
-    const name = rx.exec(text)?.[1];
+  for (const { role, name: nameOf } of HEADER) {
+    const name = nameOf(text);
     if (name) return { object: abapGit ? objectNameOfFile(file) : name.toUpperCase(), role };
   }
   return { object: objectNameOfFile(file), role: 'include' };
