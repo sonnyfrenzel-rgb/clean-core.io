@@ -7,7 +7,7 @@ import { initializeFirestore, doc, setDoc, serverTimestamp } from 'firebase/fire
 import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin/app';
 import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
 import type { Firestore } from 'firebase-admin/firestore';
-import type { Auth } from 'firebase-admin/auth';
+import { getAuth as adminAuth, type Auth } from 'firebase-admin/auth';
 import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID } from '../lib/constants';
 import { ERASED_MARKER_MS, deleteUserDataAndAccount } from '../lib/firebase-admin';
@@ -103,5 +103,7 @@ test('an erased account cannot create its profile again with the token it still 
   } finally {
     await db.collection('users').doc(uid).delete().catch(() => {});
     await db.collection('erased_accounts').doc(uid).delete().catch(() => {});
+    // The sign-in was kept on purpose (the stub above); the emulator gets it back here.
+    await adminAuth(adminApps()[0]).deleteUser(uid).catch(() => {});
   }
 });
