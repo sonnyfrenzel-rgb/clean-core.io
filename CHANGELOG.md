@@ -148,6 +148,10 @@ Fixed). How runs are signed and what the audit pack holds do not change.
   parts alike) is redacted whole; before, only the first literal went and the rest of the secret stayed in the
   snippet. Same engine reading from 3.2.0 as the redaction above; a run of 3.1.0 keeps what it signed
   (`tests/qa-full-c23d6ca.spec.ts`).
+- A credential name written inside a literal is no assignment: in
+  `CONCATENATE 'https://api.example.com/x?token=' lv_token INTO lv_url.` the 3.2.0 redaction above took the quote
+  closing the literal for the opening of a value and redacted the rest of the line. Found by the version bump to
+  3.2.0, before any run was signed with it; 3.1.0 never read the line that way (`tests/credential-redaction.spec.ts`).
 
 ### Security
 - Two hardening items from the audit of v3.1.0, SEC-2026-979 and SEC-2026-980, in `firestore.rules` and the account

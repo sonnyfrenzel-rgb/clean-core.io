@@ -493,8 +493,13 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
 function redactAssignedLiterals(text: string, head: RegExp): string {
   let out = '';
   let from = 0;
+  const insideLiteral = literalScanner(text);
   head.lastIndex = 0;
   for (let m = head.exec(text); m; m = head.exec(text)) {
+    // A name written inside a literal is text, not a field (`CONCATENATE '…?token=' lv_token INTO lv_url.`): the
+    // quote after its `=` closes that literal, and read as an opening one it took the rest of the line for a secret.
+    // A value inside a literal is the URL-parameter rule's.
+    if (insideLiteral(m.index)) continue;
     const start = m.index + m[0].length;
     const end = literalChainEnd(text, start);
     if (end <= start) continue;
@@ -510,6 +515,50 @@ function redactAssignedLiterals(text: string, head: RegExp): string {
     head.lastIndex = end;
   }
   return out + text.slice(from);
+}
+
+/**
+ * Asks whether an index of `text` stands inside a quoted, backtick or template literal. Read from the start of the
+ * text: a quoted or backtick literal ends at its closing delimiter or the end of its line, a template where
+ * `templateEnd` says, and a comment (`"` anywhere, `*` opening a line) runs to the end of its line. The indexes
+ * asked must not decrease: the text is read once, however many are asked.
+ */
+function literalScanner(text: string): (index: number) => boolean {
+  let j = 0;
+  // The literal last read, [opening delimiter, index after its end); null after anything else.
+  let span: [number, number] | null = null;
+  return (index) => {
+    while (j <= index) {
+      const c = text[j];
+      const start = j;
+      if (c === "'" || c === '`') {
+        let k = j + 1;
+        while (k < text.length && text[k] !== '\n') {
+          if (text[k] === c) {
+            if (text[k + 1] === c) {
+              k += 2;
+              continue;
+            }
+            break;
+          }
+          k += 1;
+        }
+        j = k + 1;
+        span = [start, j];
+      } else if (c === '|') {
+        j = templateEnd(text, j + 1);
+        span = [start, j];
+      } else if (c === '"' || (c === '*' && (j === 0 || text[j - 1] === '\n'))) {
+        const nl = text.indexOf('\n', j);
+        j = nl < 0 ? text.length : nl + 1;
+        span = null;
+      } else {
+        j += 1;
+        span = null;
+      }
+    }
+    return span !== null && index > span[0] && index < span[1];
+  };
 }
 
 /** Where the literals joined by `&&` or `&` from `start` end; `start` itself when no literal stands there. */
