@@ -112,6 +112,9 @@ shows only once the version says so. Signed runs and the audit pack do not chang
   implementation, `LOCAL FRIENDS`) stays an include. Before, it was taken for a class of that name: a TOP include
   blocked the upload as a second program, and its includes counted as not uploaded. Only `CLASS … DEFINITION PUBLIC`
   names a global class now, as `INTERFACE … PUBLIC` already did. Upload only; signed runs do not change.
+- A credential assigned from a backtick literal or a string template (`DATA(lv_password) = |…|`) is redacted from finding snippets, titles and details, like a single-quoted one; a template goes whole, embedded expressions included. Engine reading from 3.2.0 (`ENGINE_READS_320_FROM`): it changes signed findings, so a run of 3.1.0 keeps what it signed (QA full review of v3.1.0, 25ecb183cbf5).
+- A function-module name copied into a variable no longer counts as called when the variable is overwritten on the straight line before any call (`lv_fm = c_gui. lv_fm = c_other. CALL FUNCTION lv_fm.`); a branch or loop in between keeps the reading before. Engine reading from 3.2.0 (QA full review of v3.1.0, bb4c536fe4fd, 5298757260c1).
+
 
 ## [v3.1.0] — 2026-11-15
 

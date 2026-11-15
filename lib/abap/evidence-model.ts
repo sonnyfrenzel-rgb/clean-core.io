@@ -16,6 +16,7 @@ import { engineReadsApply } from './engine-reads-gate';
 import { engineReads3019Apply } from './engine-reads-3019-gate';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
 import { engineReads3021Apply } from './engine-reads-3021-gate';
+import { engineReads320Apply } from './engine-reads-320-gate';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { keyUserApplies } from './key-user-gate';
 import { readKeyUserCandidates, type KeyUserReading } from './key-user-candidates';
@@ -275,8 +276,14 @@ const NAME = String.raw`[A-Za-z_][\w/]*(?:-[\w/]+)*`;
  * (`lv_fm = c_fm.` or `MOVE c_fm TO lv_fm.` before `CALL FUNCTION lv_fm`).
  * The copy counts only where it stands before a call of its target: a copy
  * after the last call reaches no call.
+ *
+ * From 3.2.0 (`ENGINE_READS_320_FROM`, `stopAtOverwrite`) a copy also stops where its target is written again
+ * before any call of it: `lv_fm = c_gui. lv_fm = c_other. CALL FUNCTION lv_fm.` calls `c_other`, not `c_gui`.
+ * Only on the straight line — assignments, declarations, `CLEAR` and `MOVE` between the copy and the overwrite.
+ * A branch, a loop or any other statement in between may lead around the overwrite, and there the reading of the
+ * engines before stays: the copy counts when a call of its target follows.
  */
-function dynamicCallNames(statements: ReadonlyArray<{ text: string }>): Set<string> {
+function dynamicCallNames(statements: ReadonlyArray<{ text: string }>, stopAtOverwrite = false): Set<string> {
   // Each name with the position of its latest use — a call, or a copy into a name used later.
   const lastUse = new Map<string, number>();
   const add = (name: string, at: number) => {
@@ -298,9 +305,36 @@ function dynamicCallNames(statements: ReadonlyArray<{ text: string }>): Set<stri
     const a = assign.exec(text);
     const m = a ? null : move.exec(text);
     const [target, source] = a ? [a[1], a[2]] : m ? [m[2], m[1]] : [null, null];
-    if (target && source && (lastUse.get(target.toUpperCase()) ?? -1) > i) add(source, i);
+    if (!target || !source || (lastUse.get(target.toUpperCase()) ?? -1) <= i) return;
+    if (stopAtOverwrite && overwrittenBeforeCall(masked, i, target)) return;
+    add(source, i);
   });
   return new Set(lastUse.keys());
+}
+
+/** A statement that cannot lead around the next one: an assignment, a declaration, `CLEAR` or `MOVE`. */
+const STRAIGHT_LINE = new RegExp(
+  `^(?:(?:DATA|CONSTANTS|TYPES|STATICS|FIELD-SYMBOLS)\\b|CLEAR\\s|MOVE\\s|(?:DATA\\(\\s*)?${NAME}\\s*\\)?\\s*=(?![=>]))`,
+  'i',
+);
+
+/**
+ * From 3.2.0: is `target`, copied at statement `from`, written again on the straight line before a call of it?
+ * Walks forward from the copy over straight-line statements: a write of the target — the copy reaches nothing.
+ * Anything else — a call of the target, a branch, a loop, any other statement — ends the walk undecided (false),
+ * and the reading of the engines before decides.
+ */
+function overwrittenBeforeCall(masked: readonly string[], from: number, target: string): boolean {
+  const escaped = target.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&');
+  const writes = new RegExp(
+    `^(?:(?:DATA\\(\\s*)?${escaped}\\s*\\)?\\s*=(?![=>])|CLEAR\\s+${escaped}\\s*$|MOVE\\s+.+\\s+TO\\s+${escaped}\\s*$)`,
+    'i',
+  );
+  for (let k = from + 1; k < masked.length; k++) {
+    if (!STRAIGHT_LINE.test(masked[k])) return false;
+    if (writes.test(masked[k])) return true;
+  }
+  return false;
 }
 
 /** The module a static `CALL FUNCTION 'X'` names, or null — a name held in a variable is not read. */
@@ -387,7 +421,12 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
   if (!snippet) return snippet ?? '';
   // From 3.0.19 (`ENGINE_READS_3019_FROM`) and from 3.0.20 (`ENGINE_READS_3020_FROM`); a run of an
   // earlier engine keeps what it signed.
-  const assigned = engineReads3020Apply(engineVersion)
+  // From 3.2.0 (`ENGINE_READS_320_FROM`, QA full review of v3.1.0) the value may also be a backtick literal or a
+  // string template; a template is taken whole up to its closing bar, embedded `{ … }` included, and an
+  // unterminated literal to the end of the snippet — a secret the snippet cut off is still a secret.
+  const assigned = engineReads320Apply(engineVersion)
+    ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)('(?:''|[^'])+(?:'|$)|`(?:``|[^`])+(?:`|$)|\|(?:\\.|\{[^}]*(?:\}|$)|[^|\\{])*(?:\||$))/gi
+    : engineReads3020Apply(engineVersion)
     ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)'([^']+)'/gi
     : engineReads3019Apply(engineVersion)
       ? /\b([\w/]*?(?:PASSWORD|PASSWD|PWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi
@@ -438,8 +477,17 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
     // From 3.0.20 every name that carries the word is a credential (`c_token_jwt`, `lv_token2`,
     // `password_type`), unless it only counts or measures one AND holds a plain number: `lv_token_count = '12'`
     // stays readable, a word in such a field does not.
-    .replace(assigned, (m, word, mid, value) =>
-      engineReads3020Apply(engineVersion) && COUNTS_A_CREDENTIAL.test(word) && /^\d+$/.test(value) ? m : `${word}${mid}'…<redacted>'`);
+    .replace(assigned, (m, word, mid, value: string) => {
+      if (!engineReads320Apply(engineVersion)) {
+        return engineReads3020Apply(engineVersion) && COUNTS_A_CREDENTIAL.test(word) && /^\d+$/.test(value) ? m : `${word}${mid}'…<redacted>'`;
+      }
+      // From 3.2.0 `value` is the literal with its delimiters, and the redaction keeps them.
+      const open = value[0];
+      const closed = value.length > 1 && value.endsWith(open);
+      const inner = value.slice(1, closed ? -1 : undefined);
+      if (COUNTS_A_CREDENTIAL.test(word) && /^\d+$/.test(inner)) return m;
+      return `${word}${mid}${open}…<redacted>${closed ? open : ''}`;
+    });
 }
 
 /** The endings of a name that counts or measures a credential rather than holding one. */
@@ -540,7 +588,8 @@ export function buildAbapEvidence(
   const notes: EvidenceNote[] = [];
   const statements = tokenize(code);
   // From 3.0.18 (`ENGINE_READS_FROM`): a constant names a module only where a call uses it.
-  const dynamicNames = reads ? dynamicCallNames(statements) : null;
+  // From 3.2.0 (`ENGINE_READS_320_FROM`): a copy overwritten before any call of its target names no module.
+  const dynamicNames = reads ? dynamicCallNames(statements, engineReads320Apply(engine)) : null;
   let idCounter = 1;
   const isPublicCloud = deployment === 'public';
 
