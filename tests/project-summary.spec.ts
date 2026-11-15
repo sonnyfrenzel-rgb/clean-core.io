@@ -2,7 +2,7 @@ import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { mapThumbOf, parseMapThumb, processTitleOf, summaryOf, MAP_THUMB_MAX, PROCESS_TITLE_MAX, PROJECT_SUMMARY_VERSION } from '../lib/project-summary';
-import { computeProjectSummary, mapFiguresOf } from '../lib/project-summary-server';
+import { computeProjectSummary, mapFiguresOf, refreshSummaryMap } from '../lib/project-summary-server';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 import { sha256Hex } from '../lib/artefact-digest';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
@@ -137,6 +137,32 @@ test.describe('bound to the active run', () => {
     expect(summaryOf({ summary })).toBeNull();
     expect(summaryOf({ activeRunId: 'run-a' })).toBeNull();
     expect(summaryOf({ activeRunId: 'run-a', summary: { ...summary, version: 99 } })).toBeNull();
+  });
+
+  test('a saved drawing refreshes the map of its own run, and a late refresh of an older revision changes nothing', async () => {
+    // A one-document store with Firestore's transaction surface, enough for `refreshSummaryMap`.
+    let doc: Record<string, unknown> = { summary: { ...summary, mapRevision: 3 } };
+    const ref = { id: 'p1' };
+    const db = {
+      collection: () => ({ doc: () => ref }),
+      runTransaction: async <T,>(fn: (tx: unknown) => Promise<T>) => fn({
+        get: async () => ({ get: (field: string) => doc[field] }),
+        update: (_ref: unknown, patch: Record<string, unknown>) => {
+          const next = { ...(doc.summary as Record<string, unknown>) };
+          for (const [key, value] of Object.entries(patch)) next[key.replace(/^summary\./, '')] = value;
+          doc = { ...doc, summary: next };
+        },
+      }),
+    } as unknown as Parameters<typeof refreshSummaryMap>[0];
+    const xml = buildBpmnExportFromSource(read('public/starter-examples/Z_MM_PO_APPROVAL.abap'), { processName: 'p', sourceFileName: 'z.abap' }).xml;
+    // Revision 2's refresh arrives after revision 3's: refused, revision 3 stays.
+    expect(await refreshSummaryMap(db, 'p1', 'run-a', { xml, revision: 2 })).toBe(false);
+    expect((doc.summary as { mapRevision: number }).mapRevision).toBe(3);
+    // The same or a newer revision is written; another run's summary is left alone.
+    expect(await refreshSummaryMap(db, 'p1', 'run-a', { xml, revision: 4 })).toBe(true);
+    expect((doc.summary as { mapRevision: number }).mapRevision).toBe(4);
+    expect(await refreshSummaryMap(db, 'p1', 'run-b', { xml, revision: 5 })).toBe(false);
+    expect((doc.summary as { mapRevision: number }).mapRevision).toBe(4);
   });
 });
 

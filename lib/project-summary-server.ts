@@ -105,7 +105,8 @@ export async function writeProjectSummary(db: AdminDb, projectId: string, summar
 
 /**
  * A saved drawing changes the map, not the run: only the map's three fields are replaced, and only while the summary
- * belongs to the run the drawing was made on (a summary of another run is left for the next run to replace).
+ * belongs to the run the drawing was made on (a summary of another run is left for the next run to replace), and only
+ * with a drawing at least as new as the one it shows.
  */
 export async function refreshSummaryMap(
   db: AdminDb,
@@ -118,6 +119,8 @@ export async function refreshSummaryMap(
     const snap = await tx.get(ref);
     const summary = snap.get('summary') as Partial<ProjectSummary> | undefined;
     if (!summary || typeof summary !== 'object' || !runId || summary.runId !== runId) return false;
+    // A refresh that arrives late never puts an older drawing over a newer one.
+    if (typeof summary.mapRevision === 'number' && drawing.revision < summary.mapRevision) return false;
     const map = mapFiguresOf(drawing.xml);
     tx.update(ref, {
       'summary.mapThumb': map.mapThumb,
