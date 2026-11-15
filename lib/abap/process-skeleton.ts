@@ -11,6 +11,7 @@ import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-sta
 import { localDataObjectsOf } from './table-dependencies';
 import { readBatchInputFrom, type BatchInputCall } from './batch-input';
 import { engineReads310Apply } from './engine-reads-310-gate';
+import { engineReads320Apply } from './engine-reads-320-gate';
 import { APP_VERSION } from '../version';
 import {
   hasOnlyTechnicalConditions,
@@ -459,6 +460,16 @@ export interface SkeletonLuw {
  * about what the program means.
  * ------------------------------------------------------------------ */
 
+/**
+ * Engine 3.2.0: the trigger of an entry that one of the source's own calls can reach without saying so for certain
+ * (`candidateTrigger`): `candidate of MO_STATE->HANDLE@104 (1 of 3)` — the call as the source writes it, its line,
+ * and how many implementations it can reach.
+ */
+const CANDIDATE_TRIGGER = 'candidate of ';
+
+/** Engine 3.2.0: the two statements that call an enhancement outside this source (`walkEnhancementCall`). */
+const ENHANCEMENT_CALL = /^CALL\s+(?:BADI|CUSTOMER-FUNCTION)\b/i;
+
 /** The classic event blocks, in the order ABAP runs them (rule 4). */
 const RUNTIME_ORDER: Array<{ test: RegExp; rank: number }> = [
   { test: /^LOAD-OF-PROGRAM$/i, rank: 0 },
@@ -662,9 +673,16 @@ function isMessageInto(text: string): boolean {
   return /^MESSAGE\b/i.test(text) && /\bINTO\b/i.test(maskLiterals(text));
 }
 
-/** `MESSAGE e001 …`, `MESSAGE '…' TYPE 'E'` — the types that end the process. */
-function isErrorMessage(text: string): boolean {
+/**
+ * `MESSAGE e001 …`, `MESSAGE '…' TYPE 'E'` — the types that end the process.
+ *
+ * `anyCase` (engine 3.2.0): the keywords `MESSAGE` and `TYPE` are read in any case, as ABAP reads them. Before,
+ * only the type letter was; `message e001(zz).` in a program the pretty printer wrote in lower case lost its error
+ * end, and with it the effect that made its routine a step. An older engine keeps that reading.
+ */
+function isErrorMessage(text: string, anyCase = false): boolean {
   if (isMessageInto(text)) return false;
+  if (anyCase) return /^MESSAGE\s+[eax]\d/i.test(text) || /^MESSAGE\b[\s\S]*\bTYPE\s+'[eax]'/i.test(text);
   if (/^MESSAGE\s+[eaxEAX]\d/.test(text)) return true;
   return /^MESSAGE\b[\s\S]*\bTYPE\s+'[EAXeax]'/.test(text);
 }
@@ -682,8 +700,9 @@ function isErrorMessage(text: string): boolean {
  * not decide which of two opposite elements a statement is from context it is
  * not sure of. `DISPLAY LIKE` changes the icon, not the type.
  */
-function isInfoMessage(text: string): boolean {
+function isInfoMessage(text: string, anyCase = false): boolean {
   if (isMessageInto(text)) return false;
+  if (anyCase) return /^MESSAGE\s+i\d/i.test(text) || /^MESSAGE\b[\s\S]*\bTYPE\s+'i'/i.test(text);
   if (/^MESSAGE\s+[iI]\d/.test(text)) return true;
   return /^MESSAGE\b[\s\S]*\bTYPE\s+'[Ii]'/.test(text);
 }
@@ -989,25 +1008,40 @@ export function buildProcessSkeleton(source: string, options: SkeletonBuildOptio
  * different line numbers (`process-facts.ts`).
  */
 export function buildProcessSkeletonFrom(facts: ProcessFacts, options: SkeletonBuildOptions = {}): ProcessSkeleton {
-  const reads310 = readsOf(options.engineVersion);
+  const reads = readsOf(options.engineVersion);
   const skeleton = new SkeletonBuilder(
     facts.statements,
     facts.structure,
     facts.control,
     facts.calls,
-    reads310,
+    reads.reads310,
+    reads.reads320,
   ).build();
-  readFor.set(skeleton, reads310);
+  readFor.set(skeleton, reads);
   return skeleton;
 }
 
+/**
+ * The gated readings a build carries, one flag per gate. Each later gate implies the earlier ones
+ * (`engineVersionAtLeast`), so two builds draw the same map exactly when every flag agrees (`sameReadings`).
+ */
+interface SkeletonReadings {
+  reads310: boolean;
+  reads320: boolean;
+}
+
 /** Which gated readings a build for `engineVersion` carries; absent, this release's. */
-function readsOf(engineVersion: string | null | undefined): boolean {
-  return engineReads310Apply(engineVersion === undefined ? APP_VERSION : engineVersion);
+function readsOf(engineVersion: string | null | undefined): SkeletonReadings {
+  const version = engineVersion === undefined ? APP_VERSION : engineVersion;
+  return { reads310: engineReads310Apply(version), reads320: engineReads320Apply(version) };
+}
+
+function sameReadings(a: SkeletonReadings, b: SkeletonReadings): boolean {
+  return a.reads310 === b.reads310 && a.reads320 === b.reads320;
 }
 
 /** The readings each skeleton built here was drawn with — kept beside it, so the skeleton's own shape is unchanged. */
-const readFor = new WeakMap<ProcessSkeleton, boolean>();
+const readFor = new WeakMap<ProcessSkeleton, SkeletonReadings>();
 
 /**
  * `skeleton` when it is the map the engine `engineVersion` draws for these facts, otherwise that map, built.
@@ -1022,7 +1056,7 @@ export function skeletonReadFor(
   engineVersion: string | null | undefined,
 ): ProcessSkeleton {
   const drawn = readFor.get(skeleton);
-  if (drawn === undefined || drawn === readsOf(engineVersion)) return skeleton;
+  if (drawn === undefined || sameReadings(drawn, readsOf(engineVersion))) return skeleton;
   return buildProcessSkeletonFrom(typeof facts === 'function' ? facts() : facts, { engineVersion });
 }
 
@@ -1057,6 +1091,8 @@ interface MethodCall {
   key: string | null;
   /** More than one implementation fits and the call does not say which. */
   ambiguous: boolean;
+  /** The implementations an ambiguous call can reach, `CLASS=>METHOD` — empty otherwise (`method-resolution.ts`). */
+  candidates: string[];
   /** The method name is computed at run time: `CALL METHOD (lv_name)`. */
   dynamic: boolean;
   /** The call is the whole statement, not an operand inside one. */
@@ -1106,6 +1142,8 @@ interface EntryPoint {
   origin: EntryOrigin;
   /** What the source says calls this, when it says anything at all. */
   trigger: string | null;
+  /** Engine 3.2.0: the statement that registered a callback — where its handlers were registered too (`registeredAtEntry`). */
+  site?: number;
 }
 
 /**
@@ -1273,6 +1311,20 @@ class SkeletonBuilder {
   private refTypes = new Map<string, Set<string>>();
   /** The statements, over the whole source, whose calls resolve to each method — for entries and helpers. */
   private methodCallSites = new Map<string, number[]>();
+  /**
+   * Engine 3.2.0: the ambiguous calls each implementation is a candidate of — the statement, the call as the source
+   * writes it, its line and how many implementations the call can reach. Empty for an older engine
+   * (`readMethodCallSites`), so nothing below changes its map.
+   */
+  private candidateSites = new Map<string, Array<{ index: number; label: string; line: number; of: number }>>();
+  /**
+   * Engine 3.2.0: the handlers registered when the walk passed each ambiguous call, by statement index. A candidate
+   * implementation runs inside that call, so what `SET HANDLER` registered before it is registered in the candidate
+   * too (`buildEntryRegion`) — the handlers a `RAISE EVENT` in the candidate runs are the ones the caller bound.
+   */
+  private registrationsAtCall = new Map<number, Set<string>>();
+  /** Engine 3.2.0: the `CALL SCREEN` statements the walk passed — the screen modules run inside them. */
+  private screenCallSites: number[] = [];
   /** `METHODS m FOR EVENT ev OF cls` — the event each implemented handler method declares, upper-cased. */
   private handlerEvent = new Map<string, { event: string; of: string }>();
   /** Handler methods a `SET HANDLER` of this source registers, in the order it first names them. */
@@ -1317,6 +1369,13 @@ class SkeletonBuilder {
      * event of its own (`addSubProcessStarts`). False for a run of an older engine, whose map stays as it was.
      */
     private reads310 = false,
+    /**
+     * Engine 3.2.0 (`ENGINE_READS_320_FROM`): a call the source cannot resolve statically names its candidate
+     * implementations, and each candidate no other call reaches is an entry of its own (`methodEntries`,
+     * `candidateSites`); `me->m( )` and a bare `m( )` dispatch at run time when a subclass redefines `m`
+     * (`resolveMethod`, `dynamicDispatch`). False for a run of an older engine, whose map stays as it was.
+     */
+    private reads320 = false,
   ) {}
 
   build(): ProcessSkeleton {
@@ -1656,14 +1715,16 @@ class SkeletonBuilder {
         else out.add('call');
       }
       if (/^CALL\s+TRANSACTION\b/i.test(text) || statement.keyword === 'SUBMIT') out.add('call');
+      // Engine 3.2.0: a BAdI call or a customer-function call reaches an enhancement outside this source.
+      if (this.reads320 && ENHANCEMENT_CALL.test(text)) out.add('call');
       if (receivesResults(text)) out.add('call');
       if (/^CALL\s+SCREEN\b/i.test(text)) out.add('human');
       if (isListOutput(statement) || isFileOutput(statement)) out.add('file');
-      if (isErrorMessage(text) || raisesException(statement)) out.add('error');
+      if (isErrorMessage(text, this.reads320) || raisesException(statement)) out.add('error');
       // The handlers of an event are called, whoever they turn out to be. Where
       // the source binds them, their own effect travels instead (`readEffects`).
       if (isRaiseEvent(text) && !this.handlersRaisedBy(statement).length) out.add('call');
-      if (isInfoMessage(text)) out.add('human');
+      if (isInfoMessage(text, this.reads320)) out.add('human');
       if (/^LEAVE\s+PROGRAM\b/i.test(text)) out.add('error');
       if (statement.keyword === 'AUTHORITY-CHECK') out.add('authority');
       const perform = /^PERFORM\s+([\w/]+)/i.exec(text);
@@ -1787,6 +1848,13 @@ class SkeletonBuilder {
     for (const statement of this.statements) {
       for (const call of this.methodCallsIn(statement)) {
         if (call.key) this.methodCallSites.set(call.key, [...(this.methodCallSites.get(call.key) ?? []), statement.index]);
+        if (!this.reads320 || !call.ambiguous) continue;
+        for (const candidate of call.candidates) {
+          this.candidateSites.set(candidate, [
+            ...(this.candidateSites.get(candidate) ?? []),
+            { index: statement.index, label: call.label, line: statement.lineStart, of: call.candidates.length },
+          ]);
+        }
       }
     }
   }
@@ -1811,16 +1879,17 @@ class SkeletonBuilder {
     op: '->' | '=>' | null,
     name: string,
     index: number,
-  ): { key: string | null; ambiguous: boolean } {
-    const { key, ambiguous } = resolveMethodTarget(
+  ): { key: string | null; ambiguous: boolean; candidates: string[] } {
+    const { key, ambiguous, candidates } = resolveMethodTarget(
       { impls: this.methodImpls, superOf: this.superOf, refTypes: this.refTypes },
       qualifier,
       op,
       name,
       this.classOf(index),
-      { byNameAlone: true },
+      // Engine 3.2.0: `me->m( )` dispatches at run time when a subclass redefines `m`.
+      { byNameAlone: true, dynamicDispatch: this.reads320 },
     );
-    return { key, ambiguous };
+    return { key, ambiguous, candidates };
   }
 
   /**
@@ -1968,7 +2037,7 @@ class SkeletonBuilder {
       const op = segments.length >= 3 ? segments[segments.length - 2] as '->' | '=>' : null;
       const qualifier = segments.length >= 3 ? segments[segments.length - 3] || ')' : null;
       const resolved = dynamic || !/^[\w/~]+$/.test(name)
-        ? { key: null, ambiguous: false }
+        ? { key: null, ambiguous: false, candidates: [] }
         : this.resolveMethod(qualifier, op, name, index);
       out.push({
         name, ...resolved, dynamic, standalone: true, constructor: false,
@@ -2031,7 +2100,7 @@ class SkeletonBuilder {
     const key = `${cls}=>CONSTRUCTOR`;
     if (!this.routineBlocks.has(key)) return;
     out.push({
-      name: 'CONSTRUCTOR', key, ambiguous: false, dynamic: false, standalone: false,
+      name: 'CONSTRUCTOR', key, ambiguous: false, candidates: [], dynamic: false, standalone: false,
       constructor: true, label: `${cls}=>CONSTRUCTOR`, at,
     });
   }
@@ -2156,6 +2225,17 @@ class SkeletonBuilder {
    * wait for: a dialog transaction starts its screens from outside.
    */
   private readEntryPoints(): EntryPoint[] {
+    const primary = this.primaryEntryPoints();
+    // Engine 3.2.0: the candidate implementations of the source's own ambiguous calls — beside whatever the
+    // source names as its beginnings, never in their place. An ambiguous call reaches its candidates from inside
+    // the source, so a candidate is no evidence of a caller outside it and pre-empts no last resort (a bare FORM).
+    const candidates = this.noteTriggers(this.candidateEntries());
+    if (!primary.length && !candidates.length) this.noteNoEntryPoint();
+    return [...primary, ...candidates];
+  }
+
+  /** The beginnings the source names, by the precedence above — empty when it names none. */
+  private primaryEntryPoints(): EntryPoint[] {
     const events = this.eventEntries();
     this.writesEventBlock = events.length > 0;
     if (events.length) {
@@ -2225,8 +2305,6 @@ class SkeletonBuilder {
     const forms = [...this.formEntries(), ...this.methodEntries(true)]
       .sort((a, b) => a.statement.index - b.statement.index);
     if (forms.length) return this.noteTriggers(forms);
-
-    this.noteNoEntryPoint();
     return [];
   }
 
@@ -2327,6 +2405,8 @@ class SkeletonBuilder {
   private pushCallback(key: string, label: string, site: AbapStatement, trigger = 'ON END OF TASK'): void {
     if (this.callbacks.some((c) => c.key === key)) return;
     this.callbacks.push({ key, label, site, trigger });
+    // Engine 3.2.0: the callback runs in the session that registered it, with what is registered here.
+    if (this.reads320) this.registrationsAtCall.set(site.index, new Set(this.registeredInWalk));
   }
 
   /**
@@ -2349,6 +2429,7 @@ class SkeletonBuilder {
       // Determined, unlike the other entries that are not event blocks: the
       // statement that names it says what calls it.
       trigger: callback.trigger,
+      site: callback.site.index,
     };
   }
 
@@ -2554,6 +2635,54 @@ class SkeletonBuilder {
     const found = this.redefinedFromOutside.get(key);
     if (!found || (!found.global && this.writesEventBlock)) return null;
     return `REDEFINITION OF ${found.superclass}`;
+  }
+
+  /**
+   * Engine 3.2.0 — a method that a call of this source can reach but cannot be shown to reach: one of the
+   * implementations behind `lo_if->m( )` on an interface reference, behind `lo->m( )` on a superclass reference
+   * whose subclasses redefine `m`, or behind `me->m( )` in a class whose subclasses redefine it. The call is drawn
+   * opaque where it stands (D2 — the reader does not say which one runs); the implementation is drawn here, as a
+   * beginning of its own, with the call as its trigger. Before 3.2.0 such an implementation was neither drawn nor
+   * listed as not reached — a strategy, a state or a template-method pattern lost every one of its concrete steps.
+   *
+   * The trigger names the first call site outside the method's own body; a call from inside it (recursion) is
+   * not what reaches it.
+   */
+  private candidateTrigger(key: string, block: Block): string | null {
+    const site = (this.candidateSites.get(key) ?? []).find((s) => s.index < block.openIndex || s.index > block.closeIndex);
+    return site ? `${CANDIDATE_TRIGGER}${site.label}@${site.line} (1 of ${site.of})` : null;
+  }
+
+  /**
+   * Engine 3.2.0 — the candidate implementations (`candidateTrigger`) that nothing else made a beginning or a
+   * step: not an entry already, and not named by a call that reaches it for certain (D2 draws that call as the
+   * sub-process, and a call from inside the method's own body is recursion, not a caller). In source order.
+   */
+  private candidateEntries(): EntryPoint[] {
+    const out: EntryPoint[] = [];
+    for (const block of this.structure.blocks) {
+      if (block.kind !== 'method' || this.entryOfBlock.has(block.openIndex)) continue;
+      const opener = this.statements[block.openIndex];
+      const name = /^METHOD\s+([\w/~]+)/i.exec(opener.text);
+      if (!name) continue;
+      const key = `${this.classOf(block.openIndex) ?? ''}=>${name[1].toUpperCase()}`;
+      const trigger = this.candidateTrigger(key, block);
+      if (!trigger) continue;
+      const sites = this.methodCallSites.get(key) ?? [];
+      if (sites.some((site) => site < block.openIndex || site > block.closeIndex)) continue;
+      this.entryOfBlock.add(block.openIndex);
+      out.push({
+        statement: opener,
+        lastIndex: block.closeIndex - 1,
+        endStatement: this.statements[Math.min(block.closeIndex, this.statements.length - 1)],
+        label: name[1],
+        rank: RUNTIME_ORDER.length,
+        implicit: false,
+        origin: 'method',
+        trigger,
+      });
+    }
+    return out;
   }
 
   /** Is this implemented method one the source declares callable from outside? */
@@ -2802,6 +2931,9 @@ class SkeletonBuilder {
                   + 'with (table TNAPR)'
               : entry.trigger?.startsWith('REDEFINITION OF ')
                 ? `it redefines a method of ${entry.trigger.slice(16)}, which is not in this source and is what calls it`
+              : entry.trigger?.startsWith(CANDIDATE_TRIGGER)
+                ? `the call ${entry.trigger.slice(CANDIDATE_TRIGGER.length).replace(/ \(1 of (\d+)\)$/, ' can reach it as one of $1 implementations')}, `
+                  + 'and which of them runs is decided at run time by the object the call is made on, which this reader does not guess'
               : entry.trigger ? `it is declared as a ${entry.trigger} handler`
                 : entry.origin === 'function' ? 'it is a function module, callable by name'
                   : entry.origin === 'method'
@@ -2969,7 +3101,7 @@ class SkeletonBuilder {
     // unconditionally (`registeredBefore`).
     this.registeredInWalk = entry.origin === 'event' || entry.origin === 'implicit'
       ? this.registeredBefore(entry)
-      : new Set();
+      : this.registeredAtEntry(entry);
     const exits = this.walkRange(from, entry.lastIndex, {
       region, container, loops: [], loopBreaks: [],
     }, [{ from: start.id, condition: '', kind: 'sequence' }]);
@@ -3007,12 +3139,38 @@ class SkeletonBuilder {
     return out;
   }
 
+  /**
+   * Engine 3.2.0 — what an entry that runs **inside** this program's run starts with: the handlers registered when
+   * the walk passed the statement that hands over to it (`registrationsAtCall`), of every such statement walked
+   * before this entry is built. Three such entries: a candidate implementation runs inside the ambiguous call that
+   * reaches it (`candidateEntries`); a screen module runs inside the `CALL SCREEN` of the report that showed the
+   * screen (`deferredModuleEntries`); a callback runs in the session that registered it (`callbackEntry`). An ABAP
+   * event handler registered with `SET HANDLER` stays registered for the whole internal session, so a `RAISE EVENT`
+   * in any of them runs it. Every other entry called on its own starts with nothing registered — and so does every
+   * entry of an older engine, whose map stays as it was.
+   */
+  private registeredAtEntry(entry: EntryPoint): Set<string> {
+    const out = new Set<string>();
+    if (!this.reads320) return out;
+    const sites: number[] = [];
+    if (entry.trigger?.startsWith(CANDIDATE_TRIGGER)) {
+      const key = `${this.classOf(entry.statement.index) ?? ''}=>${entry.label.toUpperCase()}`;
+      sites.push(...(this.candidateSites.get(key) ?? []).map((site) => site.index));
+    } else if (entry.origin === 'module') {
+      sites.push(...this.screenCallSites);
+    } else if (entry.origin === 'callback' && entry.site !== undefined) {
+      sites.push(entry.site);
+    }
+    for (const site of sites) for (const handler of this.registrationsAtCall.get(site) ?? []) out.add(handler);
+    return out;
+  }
+
   /** Does any statement between `from` and `to` leave the routine early? Conservative: anywhere counts. */
   private canLeaveEarly(from: number, to: number): boolean {
     for (let i = from; i <= to; i++) {
       const statement = this.statements[i];
       if (['CHECK', 'RETURN', 'EXIT', 'STOP', 'LEAVE'].includes(statement.keyword)) return true;
-      if (isErrorMessage(statement.text) || raisesException(statement)) return true;
+      if (isErrorMessage(statement.text, this.reads320) || raisesException(statement)) return true;
     }
     return false;
   }
@@ -3732,7 +3890,7 @@ class SkeletonBuilder {
       if (DECLARATIVE.has(statement.keyword) || statement.nativeSql) continue;
       const text = statement.text;
       if (statement.keyword === 'RETURN' || statement.keyword === 'STOP'
-        || raisesException(statement) || isErrorMessage(text)
+        || raisesException(statement) || isErrorMessage(text, this.reads320)
         || /^LEAVE\s+PROGRAM\b/i.test(text) || /^LEAVE\s+TO\s+TRANSACTION\b/i.test(text)
         || leavesDialogStep(text)) {
         return false;
@@ -4037,7 +4195,7 @@ class SkeletonBuilder {
       this.edges.push({ from: node.id, to: ctx.region.endNodeId, kind: 'sequence', condition: '', reason: 'no-return' });
       return { exits: [], outputRun: null };
     }
-    if (/^LEAVE\s+PROGRAM\b/i.test(text) || isErrorMessage(text) || raisesException(statement)) {
+    if (/^LEAVE\s+PROGRAM\b/i.test(text) || isErrorMessage(text, this.reads320) || raisesException(statement)) {
       const node = this.addNode('end-error', this.errorLabel(statement), anchorOf(statement),
         ctx.region, ctx.container);
       this.connect(incoming, node.id);
@@ -4068,14 +4226,14 @@ class SkeletonBuilder {
       }));
     }
 
-    if (isInfoMessage(text)) {
+    if (isInfoMessage(text, this.reads320)) {
       // D4: the popup is a person acting in the program — a user task, and
       // lane evidence of the same kind as `CALL SCREEN` (2.16 lists the popup
       // among the human evidence). Both tokens stand in the statement.
       const label = this.errorLabel(statement);
       // `MESSAGE i012(zsd)` names itself; `MESSAGE lv_text TYPE 'I'` names
       // only its type, and that is what the token then says.
-      const id = /^MESSAGE\s+[iI]\d/.test(text) ? label : "TYPE 'I'";
+      const id = (this.reads320 ? /^MESSAGE\s+i\d/i : /^MESSAGE\s+[iI]\d/).test(text) ? label : "TYPE 'I'";
       this.recordEvidence('human', `MESSAGE ${id}`, anchorOf(statement), statement);
       return keep(this.addNode('user-task', label, anchorOf(statement), ctx.region, ctx.container, {
         detail: { message: 'I' },
@@ -4085,6 +4243,8 @@ class SkeletonBuilder {
     if (statement.keyword === 'PERFORM') return { ...this.walkPerform(statement, ctx, incoming), outputRun: null };
 
     if (/^CALL\s+FUNCTION\b/i.test(text)) return { ...this.walkFunction(statement, ctx, incoming), outputRun: null };
+
+    if (this.reads320 && ENHANCEMENT_CALL.test(text)) return { ...this.walkEnhancementCall(statement, ctx, incoming), outputRun: null };
 
     if (/^CALL\s+TRANSACTION\b/i.test(text)) {
       // The line alone does not name the statement: `CALL TRANSACTION 'VA01'.
@@ -4111,6 +4271,11 @@ class SkeletonBuilder {
     }
     if (/^CALL\s+SCREEN\b/i.test(text)) {
       this.screenCalled = true;
+      // Engine 3.2.0: the screen's modules run in this session, with what is registered here.
+      if (this.reads320) {
+        this.screenCallSites.push(statement.index);
+        this.registrationsAtCall.set(statement.index, new Set(this.registeredInWalk));
+      }
       const screen = /^CALL\s+SCREEN\s+([\w/]+)/i.exec(text)?.[1] ?? 'CALL SCREEN';
       // 2.16: a dynpro is a person. The token is written the way the source
       // writes it, `SCREEN 9000`, and both words are in the statement.
@@ -4762,11 +4927,15 @@ class SkeletonBuilder {
         this.note('dynamic-call', statement,
           'The name of the method is computed at run time. The call is drawn, its target is not claimed.');
       }
+      // Engine 3.2.0: the candidates of this call run inside it, with what is registered here.
+      if (this.reads320 && call.ambiguous) this.registrationsAtCall.set(statement.index, new Set(this.registeredInWalk));
       const node = this.addNode('call-opaque', call.label, at, ctx.region, ctx.container, {
         detail: {
           method: true,
           dynamic: call.dynamic,
           ...(call.ambiguous ? { ambiguous: true } : {}),
+          // Engine 3.2.0: which implementations the call can reach — each is drawn as a beginning of its own.
+          ...(this.reads320 && call.candidates.length ? { candidates: call.candidates } : {}),
           // The source of the method is not here, or not one of several. The
           // flow still returns.
           returns: true,
@@ -4821,6 +4990,36 @@ class SkeletonBuilder {
     this.recordCallback(statement);
     const exits: Exit[] = [{ from: node.id, condition: '', kind: 'sequence' }];
 
+    if (/\bEXCEPTIONS\b/i.test(statement.text) && this.handlesSubrcAfter(statement.index)) {
+      const boundary = this.addNode('error-boundary', label,
+        anchorOf(statement, tokenIndexOf(statement, /^EXCEPTIONS$/i)), ctx.region, ctx.container, {
+          detail: { attachedTo: node.id, exceptions: this.exceptionNames(statement.text) },
+        });
+      this.edges.push({ from: node.id, to: boundary.id, kind: 'boundary', condition: '' });
+      exits.push({ from: boundary.id, condition: '', kind: 'sequence' });
+    }
+    return { exits };
+  }
+
+  /**
+   * Engine 3.2.0 — `CALL BADI lo_badi->method …` and `CALL CUSTOMER-FUNCTION '001' …`: a call into an enhancement
+   * outside this source. `CALL BADI` runs every active implementation of the BAdI method — which ones is configured
+   * in the system, not written here; `CALL CUSTOMER-FUNCTION 'nnn'` runs the customer exit `EXIT_<program>_nnn` when
+   * an enhancement project activates it. Both return. Drawn as a service task, exactly as a `CALL FUNCTION` whose
+   * module is not in this source is (the statement reveals the kind — a service another unit performs — and the
+   * implementation is elsewhere; `detail.enhancement` says which kind of enhancement). Before 3.2.0 neither drew
+   * anything, and a check or a posting the program delegates to its enhancement was missing from the map.
+   * `EXCEPTIONS` with a `sy-subrc` check right after it hangs the error boundary on the call, as on a function call.
+   */
+  private walkEnhancementCall(statement: AbapStatement, ctx: WalkContext, incoming: Exit[]): { exits: Exit[] } {
+    const badi = /^CALL\s+BADI\s+([\w/]+|<[\w/]+>)->([\w/~]+)/i.exec(maskLiterals(statement.text));
+    const exit = /^CALL\s+CUSTOMER-FUNCTION\s+'(\d+)'/i.exec(statement.text);
+    const label = badi ? `${badi[1]}->${badi[2]}`.toUpperCase() : exit ? `CUSTOMER-FUNCTION ${exit[1]}` : statement.keyword;
+    const node = this.addNode('service-task', label, anchorOf(statement, 2), ctx.region, ctx.container, {
+      detail: { enhancement: badi ? 'badi' : 'customer-function', ...(badi ? { method: true } : {}), returns: true },
+    });
+    this.connect(incoming, node.id);
+    const exits: Exit[] = [{ from: node.id, condition: '', kind: 'sequence' }];
     if (/\bEXCEPTIONS\b/i.test(statement.text) && this.handlesSubrcAfter(statement.index)) {
       const boundary = this.addNode('error-boundary', label,
         anchorOf(statement, tokenIndexOf(statement, /^EXCEPTIONS$/i)), ctx.region, ctx.container, {
@@ -4905,8 +5104,8 @@ class SkeletonBuilder {
       const name = fm[1].toUpperCase();
       return at(functionTaskKind(name), name);
     }
-    if (isErrorMessage(body.text)) return at('end-error', this.errorLabel(body));
-    if (isInfoMessage(body.text)) return at('user-task', this.errorLabel(body), { message: 'I' });
+    if (isErrorMessage(body.text, this.reads320)) return at('end-error', this.errorLabel(body));
+    if (isInfoMessage(body.text, this.reads320)) return at('user-task', this.errorLabel(body), { message: 'I' });
     if (isListOutput(body) || isFileOutput(body)) {
       return at('output', body.keyword, { statements: 1, target: isFileOutput(body) ? 'file' : 'list' });
     }

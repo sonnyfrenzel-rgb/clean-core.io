@@ -47,6 +47,25 @@ export interface MethodResolution {
   ambiguous: boolean;
   /** Whether the class was fixed by the call — not merely guessed from the name. */
   byClass: boolean;
+  /**
+   * The implementations an `ambiguous` call can reach, `CLASS=>METHOD` in source order — the interface's
+   * implementing classes, the declared class and the subclasses that redefine the method, or every class that
+   * carries the name when the name alone decided. Empty for a resolved call and for a call that reaches nothing.
+   * Engine 3.2.0 draws each of them (`process-skeleton.ts`, `methodEntries`); the reading before it ignores the list.
+   */
+  candidates: string[];
+}
+
+export interface ResolveOptions {
+  /** May the name alone decide when the call names no class? The skeleton allows it, the business statement does not. */
+  byNameAlone: boolean;
+  /**
+   * Engine 3.2.0: `me->m( )` and a bare `m( )` dispatch at run time like a call on a reference variable does — `me`
+   * is an instance of the own class **or of a subclass**, and a subclass that redefines `m` runs its own `m`. With
+   * this option such a call is ambiguous whenever a subclass the source writes redefines the method. Without it (the
+   * reading before 3.2.0) the own class's implementation is taken.
+   */
+  dynamicDispatch?: boolean;
 }
 
 /**
@@ -90,14 +109,33 @@ export function resolveMethodTarget(
   op: '->' | '=>' | null,
   name: string,
   ownClass: string | null,
-  options: { byNameAlone: boolean },
+  options: ResolveOptions,
 ): MethodResolution {
   const wanted = name.toUpperCase();
   const byName = (impl: MethodTarget) => impl.name === wanted || impl.short === wanted;
   const unique = (found: MethodTarget[], byClass: boolean): MethodResolution =>
     found.length === 1
-      ? { key: found[0].key, ambiguous: false, byClass }
-      : { key: null, ambiguous: found.length > 1, byClass };
+      ? { key: found[0].key, ambiguous: false, byClass, candidates: [] }
+      : { key: null, ambiguous: found.length > 1, byClass, candidates: found.length > 1 ? found.map((impl) => impl.key) : [] };
+
+  // Up the chain the source writes: an inherited method is still the class's
+  // method. The qualifier is never dropped — a known class that implements
+  // nothing under this name means "not here", not "the same-named method of
+  // another class".
+  const alongChain = (from: string): MethodResolution => {
+    const seen = new Set<string>();
+    for (let at: string | undefined = from; at && !seen.has(at); at = model.superOf.get(at)) {
+      seen.add(at);
+      const own = model.impls.filter((impl) => impl.cls === at && impl.name === wanted);
+      if (own.length) return unique(own, true);
+      const alias = model.impls.filter((impl) => impl.cls === at && byName(impl));
+      if (alias.length) return unique(alias, true);
+    }
+    // An interface reference: the implementations write `lif_x~m`.
+    const viaInterface = model.impls.filter((impl) => impl.name === `${from}~${wanted}`);
+    if (viaInterface.length) return unique(viaInterface, true);
+    return { key: null, ambiguous: false, byClass: true, candidates: [] };
+  };
 
   let cls: string | null = null;
   // Whether the class is the declared type of a reference variable.
@@ -118,8 +156,13 @@ export function resolveMethodTarget(
   // The declared type is not the runtime type: `lo TYPE REF TO lcl_base`
   // can hold an instance of `lcl_sub`, and `lo->run( )` then reaches its
   // redefinition. If a subclass the source writes redefines the method, the
-  // target is not unique.
-  if (cls && fromReference) {
+  // target is not unique. Engine 3.2.0 reads `me->m( )` and a bare `m( )` the
+  // same way (`dynamicDispatch`): `me` is an instance of the own class or of a
+  // subclass, so a redefinition below the own class is a candidate as well.
+  // A static call (`=>`) and `super->` name their implementation and never
+  // dispatch.
+  const dispatches = fromReference || (options.dynamicDispatch === true && (op === null || q === 'ME'));
+  if (cls && dispatches) {
     const base = cls;
     const below = (at: string): boolean => {
       const seen = new Set<string>([at]);
@@ -129,29 +172,18 @@ export function resolveMethodTarget(
       }
       return false;
     };
-    if (model.impls.some((impl) => impl.cls !== base && byName(impl) && below(impl.cls))) {
-      return { key: null, ambiguous: true, byClass: true };
+    const redefinitions = model.impls.filter((impl) => impl.cls !== base && byName(impl) && below(impl.cls));
+    if (redefinitions.length) {
+      // The implementation the declared class itself would run — inherited or
+      // its own — is a candidate beside the redefinitions; an abstract method
+      // without one contributes nothing.
+      const declared = alongChain(base);
+      const candidates = [...(declared.key ? [declared.key] : declared.candidates), ...redefinitions.map((impl) => impl.key)];
+      return { key: null, ambiguous: true, byClass: true, candidates: [...new Set(candidates)] };
     }
   }
 
-  if (cls) {
-    // Up the chain the source writes: an inherited method is still the
-    // class's method. The qualifier is never dropped — a known class that
-    // implements nothing under this name means "not here", not "the
-    // same-named method of another class".
-    const seen = new Set<string>();
-    for (let at: string | undefined = cls; at && !seen.has(at); at = model.superOf.get(at)) {
-      seen.add(at);
-      const own = model.impls.filter((impl) => impl.cls === at && impl.name === wanted);
-      if (own.length) return unique(own, true);
-      const alias = model.impls.filter((impl) => impl.cls === at && byName(impl));
-      if (alias.length) return unique(alias, true);
-    }
-    // An interface reference: the implementations write `lif_x~m`.
-    const viaInterface = model.impls.filter((impl) => impl.name === `${cls}~${wanted}`);
-    if (viaInterface.length) return unique(viaInterface, true);
-    return { key: null, ambiguous: false, byClass: true };
-  }
-  if (!options.byNameAlone) return { key: null, ambiguous: false, byClass: false };
+  if (cls) return alongChain(cls);
+  if (!options.byNameAlone) return { key: null, ambiguous: false, byClass: false, candidates: [] };
   return unique(model.impls.filter(byName), false);
 }

@@ -27,6 +27,14 @@ shows only once the version says so. Signed runs and the audit pack do not chang
   before" without a date. An entry with a day from an earlier build still counts as walked (privacy policy 1.3,
   owner decision 15.11.2026).
 
+### Engine 3.2.0 (gated from 3.2.0; a run signed earlier keeps its map)
+- A call the source cannot resolve statically (an interface reference with several implementations, a redefined
+  method) names its candidates, and each implementation no other call reaches is drawn as an entry of its own
+  instead of vanishing from the map (ADR-120).
+- An entry that runs inside the program's run starts with the event handlers registered there, so a RAISE EVENT
+  runs its handler's steps; MESSAGE and TYPE are read in any case.
+- CALL BADI and CALL CUSTOMER-FUNCTION are calls into an enhancement outside this source.
+
 ## [v3.1.0] — 2026-11-15
 
 Analyze opens business first. Every new engine reading is gated from 3.1.0: a run signed by an earlier version reads as before.
