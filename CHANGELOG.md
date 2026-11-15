@@ -63,6 +63,22 @@ shows only once the version says so. Signed runs and the audit pack do not chang
   that policy; `scripts/backfill-usage-report-expiry.ts` dates the snapshots stored before (one-off, dry run first).
   The TTL policy and the backfill are run by the owner (`docs/DATA-RETENTION.md`,
   `tests/usage-report-retention.spec.ts`).
+- Home page v2 part 2 (AB-14b): My workspace lists **every** project, not the newest 25 (QA
+  `c559b61a9b31`). The own rows come lean from `GET /api/workspace-rows` (Admin SDK, behind the second factor),
+  without source code; search, filters and sort run over all of them. Four columns: Project, Status, Next step, Last
+  change. The status words are *No code yet*, *Not analysed yet*, *Analysed*, *Re-design under way* (with "N of 6
+  steps done" and a small six-step bar), *Re-design done*, *Handed over* (H-O3). An analysed project has nothing
+  open; re-design is never offered as a next step. Dates read "6 Nov 2026" (H-O10). Tabs: My projects, Shared with
+  me, Invitations sent; the Sharing card lives in them. "Needs your attention" appears only with a reason (the code
+  changed, the design no longer matches the analysis, a test run failed), with at most three projects. Filters
+  appear from ten projects on. A "Figures" switch shows lines, findings, levels, score and rules, remembered in this
+  browser (`cc.workspace.figures`, pending in the Privacy Policy). The demo and the examples are two doors below the
+  list. A run from a row only starts through a confirmation dialog with its cost and model. The free runs show as
+  small marks in the shell, and `/dashboard` ends in the one-line footer. The row menu has no "Open project".
+- The data of the Continue card (AB-14c, stored, not shown): every signed run now writes "In short" (the
+  engine's "What this program does", each sentence with its line, no model) and the project summary with the map
+  miniature (taken unchanged from the 3.3.0 branch, ADR-123) onto the project, through the Admin SDK, outside the
+  signed run and the audit pack. `firestore.rules` gains only the summary's type line (pending, deployed by hand).
 
 ### Removed
 - The session mark `cc.auth.redirectPending` and the landing's redirect sign-in check behind it. Nothing ever set the
@@ -70,6 +86,8 @@ shows only once the version says so. Signed runs and the audit pack do not chang
   `LandingModals` never ran. Gone from `lib/auth-hint.ts`, `components/landing/LandingModalsLazy.tsx`,
   `components/LandingModals.tsx` and the storage register; `tests/public-no-google-before-signin-guard.spec.ts` now
   holds that no sign-in goes by redirect and nothing asks for a redirect result.
+- The "Your turn" card of My workspace (`YourTurnCard.tsx`), the demo as the first row of the list, and the example
+  gallery under the list (AB-14b). "Needs your attention" and the two doors take their place.
 
 ### Engine 3.2.0 (gated from 3.2.0; a run signed earlier keeps its map)
 - A call the source cannot resolve statically (an interface reference with several implementations, a redefined

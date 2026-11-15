@@ -124,10 +124,14 @@ test.describe('state and ordering', () => {
     expect(signUp.slice(at)).toMatch(/\} catch \(requestErr\) \{/);
   });
 
-  test('fb1e68560471 · the one-shot read never replaces a snapshot', () => {
+  test('fb1e68560471 · an older answer never replaces a newer one', () => {
+    // AB-14b (H-O9): the own rows come from GET /api/workspace-rows, read on
+    // arrival and whenever the page comes back into view. The rule of the
+    // finding holds for those answers: only the newest request may write.
     const src = code('components/workspace/WorkspaceListReport.tsx');
-    expect(src).toMatch(/\.then\(\(snap\) => \{\s*if \(!live\) take\(snap\.docs\);/);
-    expect(src).toMatch(/\(snap\) => \{\s*live = true;\s*take\(snap\.docs\);/);
+    expect(src).toContain('const mine = ++seq.current;');
+    expect(src).toMatch(/if \(mine !== seq\.current\) return;\s*if \(!rows\)/);
+    expect(src).toContain('if (mine === seq.current) setOwnFailedFor(uid);');
   });
 
   test('1db57c2cad09 · rows are shown only to the account that loaded them', () => {

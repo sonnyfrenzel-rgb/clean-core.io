@@ -29,6 +29,7 @@ import UserOnboarding from '@/components/UserOnboarding';
 import TermsReacceptGate from '@/components/TermsReacceptGate';
 import NewVersionWatcher from '@/components/NewVersionWatcher';
 import { runsLeftLabel } from '@/lib/run-quota-rule';
+import RunQuotaMarks from '@/components/RunQuotaMarks';
 import { signInLinkFor } from '@/lib/return-path';
 import { Lightbulb } from 'lucide-react';
 import { showTipsAgain } from '@/lib/show-tips-again';
@@ -51,6 +52,8 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   const isAppPage =
     isProjectStep ||
     pathname.startsWith('/admin/workspace') ||
+    // AB-14b: My workspace ends in the same one-line footer as the stages.
+    pathname.startsWith('/dashboard') ||
     pathname.startsWith('/admin/new-project') ||
     pathname.startsWith('/invitation');
   // The object page uses the full frame (mockup s1: map and source column side
@@ -346,8 +349,12 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                 {/* On a phone the label may take two lines: "N of 5 runs left"
                     (3.0.21) beside the project search, the help and the account
                     menu is two pixels wider than a 360 px screen. */}
-                <div data-shell-quota="" className="text-right text-[12px] font-semibold text-cc-ink-muted sm:whitespace-nowrap">
-                  {runsLeftLabel(profile)}
+                <div className="flex items-center justify-end gap-1.5">
+                  {/* AB-14b: the free runs as small marks; decorative, the words say it. */}
+                  <RunQuotaMarks profile={profile} />
+                  <div data-shell-quota="" className="text-right text-[12px] font-semibold text-cc-ink-muted sm:whitespace-nowrap">
+                    {runsLeftLabel(profile)}
+                  </div>
                 </div>
               </div>
             )}

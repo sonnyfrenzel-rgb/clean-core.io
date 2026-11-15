@@ -186,6 +186,8 @@ export const GATED_ROUTES: GatedRoute[] = [
   { file: 'app/api/invitations/route.ts', method: 'GET', path: () => '/api/invitations' },
   // My workspace — which projects were shared with this account (ids only).
   { file: 'app/api/shared-projects/route.ts', method: 'GET', path: () => '/api/shared-projects' },
+  // My workspace — the lean rows of every own project (AB-14b, H-O9): no source, but a list of what exists.
+  { file: 'app/api/workspace-rows/route.ts', method: 'GET', path: () => '/api/workspace-rows' },
   { file: 'app/api/projects/[projectId]/readers/route.ts', method: 'DELETE', path: (p) => `/api/projects/${p}/readers`, body: { uid: 'not-a-reader' } },
   // Roadmap 3.0.21 — the automatic-steps switch of the account's own key (owner
   // decision 22.10.2026, B6): it decides what the own key is spent on without a

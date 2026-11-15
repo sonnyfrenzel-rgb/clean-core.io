@@ -4,23 +4,12 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { onAuthStateChanged, type User } from 'firebase/auth';
-import {
-  collection,
-  doc,
-  getDocs,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
+import { doc, getDoc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { targetEditionOf } from '@/lib/target-edition';
 import { createWithinCeiling } from '@/lib/write-ceiling';
-import { ArrowDownUp, Layers, Plus } from 'lucide-react';
+import { Layers, Plus } from 'lucide-react';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
-import { withStoredArtefactRows } from '@/lib/project-artefacts-client';
+import { withStoredArtefactRows, withStoredArtefacts } from '@/lib/project-artefacts-client';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { useWorkspaceRowFacts } from '@/hooks/useWorkspaceRowFacts';
@@ -28,7 +17,12 @@ import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { t, showAllLabel, showFirstLabel } from '@/lib/cc-messages';
 import {
   deleteProjectSentence,
-  rulesConfirmedLabel,
+  homeLevelOption,
+  homeNoMatchBody,
+  homeRunWhat,
+  homeScoreLabel,
+  homeTruncated,
+  homeWelcomeBack,
   rowFindingsLabel,
   rowLinesLabel,
   rowRulesLabel,
@@ -38,23 +32,26 @@ import {
 import { describeRunCost, type RunCost } from '@/lib/run-cost';
 import { COMMUNITY_QUOTA_FALLBACK, OWN_KEY_ACTION, OWN_KEY_HREF, quotaExhausted, quotaSpentSentence } from '@/lib/run-quota-rule';
 import { saveAs } from '@/lib/fileSaver';
-import { DEMO_LIST_TAGLINE, DEMO_PROJECT_TITLE, DEMO_TAG, DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import {
-  applyWorkspaceFilter,
-  filterIsActive,
-  sortWorkspaceRows,
-  stagesPresent,
-  toWorkspaceRow,
-  EMPTY_FILTER,
-  type WorkspaceFilter,
-  type WorkspaceRow,
-  type WorkspaceSort,
-} from '@/lib/workspace-rows';
+  attentionRows,
+  filterHomeRows,
+  homeFilterActive,
+  homeRowsOf,
+  homeStatusOptions,
+  sortHomeRows,
+  toHomeRow,
+  ATTENTION_FILTER,
+  EMPTY_HOME_FILTER,
+  FILTERS_FROM,
+  FIRST_ROWS,
+  type HomeFilter,
+  type HomeRow,
+  type HomeSort,
+} from '@/lib/home-rows';
+import { rememberHomeFigures, useStoredHomeFigures } from '@/lib/home-list-prefs';
 import { ROW_LEVELS, rowHasLevel, type RowFacts, type RowLevels } from '@/lib/workspace-row-facts';
-import { projectProgress, PROJECT_STAGE_LABEL } from '@/lib/project-progress';
-import ProjectProgressCell from '@/components/ProjectProgress';
 // The run itself (and the evidence engine and SAP catalog it imports) is
-// fetched when Run is pressed, not with the list.
+// fetched when Run is confirmed, not with the list.
 import { AnalysisRunCancelled, runScope } from '@/lib/analysis-run-basics';
 import type { AnalysisRunStage } from '@/lib/analysis-run';
 import { sourceFileName } from '@/lib/source-file-name';
@@ -62,62 +59,50 @@ import { declaredTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import CcButton from '@/components/cc/Button';
-import CcCard from '@/components/cc/Card';
 import CcFilterBar from '@/components/cc/FilterBar';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageBox from '@/components/cc/MessageBox';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcObjectIdentifier from '@/components/cc/ObjectIdentifier';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcRunIndicator, { CcRunCost } from '@/components/cc/RunIndicator';
 import CcSelect from '@/components/cc/Select';
 import CcTable, { type CcTableColumn, type CcTableRowSpec } from '@/components/cc/Table';
 import CcTag from '@/components/cc/Tag';
-import { CcEmptyState, CcNoMatches } from '@/components/cc/EmptyState';
+import { CcNoMatches } from '@/components/cc/EmptyState';
 import InviteReaderDialog from '@/components/InviteReaderDialog';
-import StarterExamples from '@/components/StarterExamples';
 import LevelCounts from './LevelCounts';
 import OpenInvitations from './OpenInvitations';
 import WorkspaceRowActions from './WorkspaceRowActions';
-import YourTurnCard, { yourTurnItems } from './YourTurnCard';
 import HomeFirstView from './HomeFirstView';
+import HomeAttentionCard from './HomeAttentionCard';
+import HomeDoors from './HomeDoors';
+import { HomeNextCell, HomeStatusBlock } from './HomeStatusCell';
 import type { HomeMapSlice } from '@/lib/home-map-slice';
 import { aiAuthorshipFactsOf, withProjectExportAiGeneration } from '@/lib/ai-authorship';
 import { isEngineDocumentation } from '@/lib/process-documentation';
 import { APP_VERSION } from '@/lib/version';
 
 /**
- * "My workspace" — the one list of projects, `DESIGN.md` §2.2, mockup s7.
+ * "My workspace" — the home page (`/dashboard`) of every account in good standing.
  *
- * Since 01.10.2026 this is the only "My workspace": `/dashboard` renders it for
- * every account with the 3.0 interface switched on (`app/(app)/dashboard/
- * layout.tsx`), and `/admin/workspace`, where it grew, redirects there. The old
- * dashboard stays for the other accounts until 3.0, and everything it did per
- * project is here too (ADR-052): open, run, invite, duplicate, export, the
- * deliverables and delete.
+ * A new account sees the first view with the start built in (AB-14a, `HomeFirstView`). A returning account sees the
+ * list of the home page v2 (AB-14b, mockup `docs/roadmap/home-mockup-v2.html`, states 2–9, 11, 12):
  *
- * The rule this screen is built to: **every column can say that nothing has
- * happened, and says it in words.** A project nobody has analysed has no
- * finding count and no levels — not a zero — and its status is *not started*,
- * one of the ten values of `lib/object-status.ts`.
+ *   - **every project**, not the newest 25 (H-O9, QA finding `c559b61a9b31`): the own rows come lean from
+ *     `GET /api/workspace-rows` (`lib/home-rows.ts`) — no source code in them — and search, filters and sort run over
+ *     all of them;
+ *   - **four columns**: Project, Status, Next step, Last change, with the new status words (H-O3, `lib/home-status.ts`)
+ *     and dates as "6 Nov 2026" (H-O10); the figures one switch away ("Figures", remembered in this browser);
+ *   - **tabs**: My projects, Shared with me, Invitations sent — the old Sharing card lives in them;
+ *   - **"Needs your attention"** only with a reason (code changed, design no longer fits, a failed test run);
+ *   - the demo and the examples as **two doors** below the list;
+ *   - a run from a row **only through the confirmation dialog** with its cost and model (today's sentence, H-O12).
  *
- *   - **Levels and Rules confirmed** come from the same two routes the
- *     workspace reads (`lib/workspace-row-facts.ts`), only for the rows on
- *     screen. Neither is stored: the level is never part of a run or the audit
- *     pack.
- *   - **Shared with me** are the projects another account invited this one to
- *     read (roadmap 5.4) — read access only, so they offer open and nothing
- *     else. Sharing is by invitation to one confirmed address; there are no
- *     public links, and this page offers none.
- *   - **The demo is the first row and is not an achievement.** It produces no
- *     signed run and runs no test: its status is *partial*, its rules are 0
- *     confirmed, whatever the mockup drew.
- *   - **A run started from a row is a real run**, through `lib/analysis-run.ts`,
- *     with its price on screen before the click (§2.8), its stages while it
- *     goes, and a Cancel that says what it does not reach.
+ * Everything the old page did per project is still here (ADR-052): open, run, invite, duplicate, export, the
+ * deliverables and delete. The data of the Continue card (AB-14c) is stored from this release on and not shown yet.
  */
 
-/** What the demo contributes to the table. Computed on the server, passed in. */
+/** What the demo contributes to the page. Computed on the server, passed in. */
 export interface WorkspaceDemoRow {
   lines: number;
   findings: number;
@@ -128,57 +113,46 @@ export interface WorkspaceDemoRow {
 }
 
 type RunCell =
-  | { phase: 'running'; stages: AnalysisRunStage[] }
+  | { phase: 'running'; stages: AnalysisRunStage[]; scope: string | null }
   | { phase: 'failed'; message: string }
   | undefined;
 
 type ListedProject = Project & { id: string };
-
-/** §2.11: the first five rows, and "Show all". */
-const FIRST_ROWS = 5;
+type Tab = 'mine' | 'shared' | 'invites';
 
 const COLUMNS: readonly CcTableColumn[] = [
-  { key: 'project', label: t('workspace.colProject') },
-  { key: 'lines', label: t('workspace.colLines'), numeric: true, width: '76px' },
-  { key: 'findings', label: t('workspace.colFindings'), numeric: true, width: '88px' },
-  { key: 'levels', label: wt('myWorkspace.colLevels'), width: '172px' },
-  { key: 'rules', label: wt('myWorkspace.colRules'), numeric: true, width: '120px' },
-  { key: 'status', label: t('workspace.colStatus'), width: '240px' },
-  { key: 'lastChange', label: t('workspace.colLastChange'), numeric: true, width: '112px' },
-  { key: 'actions', label: t('workspace.colActions'), action: true, width: '232px' },
+  { key: 'project', label: wt('homeList.colProject'), width: '33%' },
+  { key: 'status', label: wt('homeList.colStatus'), width: '29%' },
+  { key: 'next', label: wt('homeList.colNext'), width: '22%' },
+  { key: 'lastChange', label: wt('homeList.colLastChange'), width: '12%' },
+  { key: 'actions', label: wt('homeList.colActions'), action: true, width: '96px' },
+];
+
+const SHARED_COLUMNS: readonly CcTableColumn[] = [
+  { key: 'project', label: wt('homeList.colProject'), width: '33%' },
+  { key: 'status', label: wt('homeList.colStatus'), width: '29%' },
+  { key: 'access', label: wt('homeList.colAccess'), width: '22%' },
+  { key: 'lastChange', label: wt('homeList.colLastChange'), width: '16%' },
 ];
 
 const number = (value: number) => new Intl.NumberFormat('en').format(value);
 
-/** A figure with no measurement behind it prints a word, never a dash or a zero. */
-function Absent({ children }: { children: React.ReactNode }) {
-  return <span className="text-[12px] font-medium text-cc-ink-muted">{children}</span>;
+/** The bearer header of the signed-in account, or none. */
+async function bearer(u: User): Promise<Record<string, string>> {
+  const token = await u.getIdToken();
+  return { Authorization: `Bearer ${token}` };
 }
 
-function LevelsCell({ facts }: { facts: RowFacts['levels'] | undefined }) {
-  if (!facts) return <Absent>{t('workspace.notAnalysed')}</Absent>;
-  if (facts.state === 'loading') return <Absent>{wt('myWorkspace.reading')}</Absent>;
-  if (facts.state === 'absent') return <Absent>{facts.reason}</Absent>;
-  return <LevelCounts levels={facts.value} />;
+/** One own project, read whole through the rules — only when an action needs its source (run, duplicate, export). */
+async function readOwnProject(id: string): Promise<ListedProject | null> {
+  const snap = await getDoc(doc(getDb(), 'projects', id));
+  return snap.exists() ? { ...(snap.data() as Project), id } : null;
 }
-
-function RulesCell({ facts }: { facts: RowFacts['rules'] | undefined }) {
-  if (!facts) return <Absent>{t('workspace.notAnalysed')}</Absent>;
-  if (facts.state === 'loading') return <Absent>{wt('myWorkspace.reading')}</Absent>;
-  if (facts.state === 'absent') return <Absent>{facts.reason}</Absent>;
-  return (
-    <span data-workspace-rules={`${facts.value.confirmed}/${facts.value.total}`}>
-      {rulesConfirmedLabel(facts.value.confirmed, facts.value.total)}
-    </span>
-  );
-}
-
-const DEMO_ID = 'demo';
 
 export default function WorkspaceListReport({
-  demo,
   homeSlice = null,
 }: {
+  /** Kept for the server layout that passes it; the demo is a door below the list since AB-14b, not a row. */
   demo: WorkspaceDemoRow;
   /** The live slice of the demo map for a new account's first view (AB-14a); null draws none. */
   homeSlice?: HomeMapSlice | null;
@@ -190,8 +164,8 @@ export default function WorkspaceListReport({
   const [user, setUser] = useState<User | null>(null);
   // Rows carry the account that loaded them: after a sign-out, or a switch to
   // another account, the previous account's projects are not shown while the
-  // new query runs.
-  const [loaded, setLoaded] = useState<{ uid: string; rows: ListedProject[] } | null>(null);
+  // new answer is on its way.
+  const [loaded, setLoaded] = useState<{ uid: string; rows: HomeRow[]; truncated: boolean } | null>(null);
   const [sharedLoaded, setSharedLoaded] = useState<{ uid: string; rows: ListedProject[] } | null>(null);
   const projects = useMemo(
     () => (loaded && user && loaded.uid === user.uid ? loaded.rows : []),
@@ -201,70 +175,64 @@ export default function WorkspaceListReport({
     () => (sharedLoaded && user && sharedLoaded.uid === user.uid ? sharedLoaded.rows : []),
     [sharedLoaded, user],
   );
-  const [filter, setFilter] = useState<WorkspaceFilter>(EMPTY_FILTER);
-  const [sort, setSort] = useState<WorkspaceSort>('last-change');
+  const [tab, setTab] = useState<Tab>('mine');
+  const [filter, setFilter] = useState<HomeFilter>(EMPTY_HOME_FILTER);
+  const [sort, setSort] = useState<HomeSort>('last-change');
   const [showAll, setShowAll] = useState(false);
+  const storedFigures = useStoredHomeFigures();
+  const [chosenFigures, setChosenFigures] = useState<boolean | null>(null);
+  const figures = chosenFigures ?? storedFigures;
+  const [inviteCount, setInviteCount] = useState(0);
   const [runs, setRuns] = useState<Record<string, RunCell>>({});
   const controllers = useRef<Record<string, AbortController>>({});
+  const [confirming, setConfirming] = useState<{ row: HomeRow; callModel: boolean } | null>(null);
   const [inviting, setInviting] = useState<{ id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState<{ id: string; name: string } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  /** The own list could not be read: the list stands as before, never the first view. */
+  /** The own list could not be read: the list page stands with a notice, never the first view. */
   const [ownFailedFor, setOwnFailedFor] = useState<string | null>(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => onAuthStateChanged(getAuth(), (u) => setUser(u)), []);
 
-  // A workspace is this account's projects, newest first; the demo is not one
-  // of them.
+  // The own projects, every one of them, as lean rows from the server (H-O9).
+  // Only the newest answer is shown: an older one arriving after a newer one
+  // would put back rows the newer one had already corrected.
+  const seq = useRef(0);
+  const refresh = useCallback(async (u: User) => {
+    const mine = ++seq.current;
+    const uid = u.uid;
+    try {
+      const res = await fetch('/api/workspace-rows', { headers: await bearer(u), cache: 'no-store' });
+      const body = (await res.json().catch(() => null)) as { truncated?: unknown } | null;
+      const rows = res.ok ? homeRowsOf(body) : null;
+      if (mine !== seq.current) return;
+      if (!rows) {
+        setOwnFailedFor(uid);
+        return;
+      }
+      setOwnFailedFor(null);
+      setLoaded({ uid, rows, truncated: body?.truncated === true });
+    } catch {
+      if (mine === seq.current) setOwnFailedFor(uid);
+    }
+  }, []);
+
+  // Read on arrival, and again whenever the page comes back into view: a run,
+  // a design or a delete made in another tab shows here without a reload.
   useEffect(() => {
     if (!user) return undefined;
-    const q = query(
-      collection(getDb(), 'projects'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc'),
-      limit(25),
-    );
-    const uid = user.uid;
-    // A failure belongs to the subscription that had it: a new one (the same
-    // account again, after another) waits for its own answer behind the
-    // loading gate instead of passing it on an old error.
+    // A failure belongs to the read that had it: a new one (the same account
+    // again, after another) waits for its own answer behind the loading gate
+    // instead of passing it on an old error.
     setOwnFailedFor(null);
-    // Roadmap 3.0.14, item 9: a row's phases are read from its artefacts, and
-    // a project keeps its large ones beside its document — filled in from the
-    // server first. Only the newest list is shown.
-    let seq = 0;
-    let alive = true;
-    const take = (docs: { id: string; data: () => unknown }[]) => {
-      const mine = ++seq;
-      void withStoredArtefactRows(docs.map((d): ListedProject => ({ ...(d.data() as Project), id: d.id }))).then((rows) => {
-        if (alive && mine === seq) setLoaded({ uid, rows });
-      });
+    void refresh(user);
+    const again = () => {
+      if (document.visibilityState === 'visible') void refresh(user);
     };
-    // The one-shot read only fills the list until the listener has spoken: an
-    // older answer arriving after a snapshot would replace newer rows, and
-    // nothing would correct it until the next change.
-    let live = false;
-    getDocs(q)
-      .then((snap) => {
-        if (!live) take(snap.docs);
-      })
-      .catch(() => undefined);
-    const stop = onSnapshot(
-      q,
-      (snap) => {
-        live = true;
-        take(snap.docs);
-      },
-      (error) => {
-        setOwnFailedFor(uid);
-        handleFirestoreError(error, OperationType.LIST, 'projects');
-      },
-    );
-    return () => {
-      alive = false;
-      stop();
-    };
-  }, [user]);
+    document.addEventListener('visibilitychange', again);
+    return () => document.removeEventListener('visibilitychange', again);
+  }, [user, refresh]);
 
   // Shared with me — the projects whose `readers` carry this account (roadmap
   // 5.4). The server names them (`/api/shared-projects`: a list query on
@@ -277,18 +245,17 @@ export default function WorkspaceListReport({
     let alive = true;
     const stops: Array<() => void> = [];
     const rows = new Map<string, ListedProject>();
-    let seq = 0;
+    let sharedSeq = 0;
     const publish = () => {
-      const mine = ++seq;
-      // The same filling-in as the own list above (roadmap 3.0.14, item 9).
+      const mine = ++sharedSeq;
+      // A row's phases are read from its artefacts (roadmap 3.0.14, item 9).
       void withStoredArtefactRows([...rows.values()]).then((full) => {
-        if (alive && mine === seq) setSharedLoaded({ uid, rows: full });
+        if (alive && mine === sharedSeq) setSharedLoaded({ uid, rows: full });
       });
     };
     (async () => {
       try {
-        const token = await user.getIdToken();
-        const res = await fetch('/api/shared-projects', { headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch('/api/shared-projects', { headers: await bearer(user) });
         const body = (await res.json().catch(() => null)) as { ids?: unknown } | null;
         const ids = res.ok && Array.isArray(body?.ids) ? (body.ids as unknown[]).filter((i): i is string => typeof i === 'string') : [];
         if (!alive) return;
@@ -329,94 +296,43 @@ export default function WorkspaceListReport({
     };
   }, []);
 
-  const ownRows = useMemo(() => projects.map((p) => toWorkspaceRow(p, 'own')), [projects]);
   const sharedRows = useMemo(
     // A project the account owns and also reads is listed once, as its own.
-    () => shared.filter((p) => !projects.some((own) => own.id === p.id)).map((p) => toWorkspaceRow(p, 'shared')),
+    () => shared.filter((p) => !projects.some((own) => own.id === p.id)).map((p) => toHomeRow(p, 'shared')),
     [shared, projects],
   );
 
-  const demoRow: WorkspaceRow = useMemo(
-    () => ({
-      id: DEMO_ID,
-      name: DEMO_PROJECT_TITLE,
-      identifier: DEMO_LIST_TAGLINE,
-      isDemo: true,
-      lines: demo.lines,
-      linesFromRun: false,
-      findings: demo.findings,
-      // Roadmap 0.10 marks every phase of the demo `proven: false`. Partial is
-      // what that is: work on record that nothing verified.
-      status: 'partial',
-      statusDetail: t('workspace.demoStatus'),
-      stale: null,
-      lastChange: null,
-      hasSource: false,
-      href: DEMO_WORKSPACE_ROUTE,
-      access: 'own',
-      hasRun: false,
-      fromExample: false,
-      stage: null,
-    }),
-    [demo.lines, demo.findings],
-  );
-
-  const allRows = useMemo(() => [demoRow, ...ownRows, ...sharedRows], [demoRow, ownRows, sharedRows]);
-  const projectById = useMemo(() => {
-    const map = new Map<string, ListedProject>();
-    for (const p of [...projects, ...shared]) map.set(p.id, p);
-    return map;
-  }, [projects, shared]);
-
-  // Which rows have levels and rules to read: analysed ones, on screen. A level
-  // filter needs them all, or it would hide a project for being slow.
-  const candidateRows = useMemo(
-    () => allRows.filter((row) => !row.isDemo && row.hasSource && row.hasRun),
-    [allRows],
-  );
-  const sortedAll = useMemo(() => sortWorkspaceRows(allRows, sort), [allRows, sort]);
   const [facts, setWanted] = useFactsFor();
+  const factsOf = useCallback((row: HomeRow): RowFacts | undefined => facts[row.id], [facts]);
 
-  const demoFacts: RowFacts = useMemo(
-    () => ({
-      levels: demo.levels ? { state: 'ready', value: demo.levels } : { state: 'absent', reason: wt('myWorkspace.levelsNone') },
-      rules:
-        demo.rules > 0
-          ? { state: 'ready', value: { confirmed: 0, total: demo.rules } }
-          : { state: 'absent', reason: wt('myWorkspace.rulesNotCounted') },
-    }),
-    [demo.levels, demo.rules],
-  );
-  const factsOf = useCallback(
-    (row: WorkspaceRow): RowFacts | undefined => (row.isDemo ? demoFacts : facts[row.id]),
-    [demoFacts, facts],
-  );
-
+  const sorted = useMemo(() => sortHomeRows(projects, sort), [projects, sort]);
   const shownRows = useMemo(
-    () =>
-      applyWorkspaceFilter(sortedAll, filter, (row, level) =>
-        rowHasLevel(factsOf(row), level as CloudReadinessGrade),
-      ),
-    [sortedAll, filter, factsOf],
+    () => filterHomeRows(sorted, filter, (row, level) => rowHasLevel(factsOf(row), level as CloudReadinessGrade)),
+    [sorted, filter, factsOf],
   );
-  const visibleRows = useMemo(
-    () => (showAll ? shownRows : shownRows.slice(0, FIRST_ROWS)),
-    [showAll, shownRows],
-  );
+  const visibleRows = useMemo(() => (showAll ? shownRows : shownRows.slice(0, FIRST_ROWS)), [showAll, shownRows]);
 
+  // Levels and rules are read per row only where they are asked for: the
+  // figures of the rows on screen, or every analysed row while a level filter
+  // needs them (a filter must never hide a project for being slow).
   useEffect(() => {
-    const ids = filter.level ? candidateRows : candidateRows.filter((r) => visibleRows.some((v) => v.id === r.id));
+    const candidates = projects.filter((r) => r.hasSource && r.hasRun);
+    const ids = filter.level
+      ? candidates
+      : figures && tab === 'mine'
+        ? candidates.filter((r) => visibleRows.some((v) => v.id === r.id))
+        : [];
     const map = new Map<string, string>();
-    for (const row of ids) {
-      const p = projectById.get(row.id);
-      map.set(row.id, `${p?.activeRunId ?? ''}:${typeof p?.legacyCode === 'string' ? p.legacyCode.length : 0}`);
-    }
+    for (const row of ids) map.set(row.id, row.factsKey);
     setWanted(map);
-  }, [candidateRows, visibleRows, filter.level, projectById, setWanted]);
+  }, [projects, visibleRows, filter.level, figures, tab, setWanted]);
 
-  const active = filterIsActive(filter);
-  const clear = useCallback(() => setFilter(EMPTY_FILTER), []);
-  const setSearch = useCallback((search: string) => setFilter((f) => ({ ...f, search })), []);
+  const active = homeFilterActive(filter);
+  const clear = useCallback(() => setFilter(EMPTY_HOME_FILTER), []);
+  const setSearch = useCallback((search: string) => {
+    setShowAll(false);
+    setFilter((f) => ({ ...f, search }));
+  }, []);
 
   const costFor = useCallback(
     (callsModel: boolean): RunCost =>
@@ -424,20 +340,33 @@ export default function WorkspaceListReport({
     [profile, modelAvailability.known, modelAvailability.provider],
   );
 
+  const runnable = useCallback((row: HomeRow) => row.access === 'own' && row.hasSource, []);
+
   const start = useCallback(
-    async (row: WorkspaceRow, callModel: boolean) => {
-      const project = projects.find((p) => p.id === row.id);
-      if (!project || typeof project.legacyCode !== 'string') return;
-      // Synchronous, before anything awaits: a second activation of Run that
-      // lands before the first `running` state has rendered must not start a
-      // second pipeline for the same project.
+    async (row: HomeRow, callModel: boolean) => {
+      if (!runnable(row)) return;
+      // Synchronous, before anything awaits: a second confirmation that lands
+      // before the first `running` state has rendered must not start a second
+      // pipeline for the same project.
       if (controllers.current[row.id]) return;
       const controller = new AbortController();
       controllers.current[row.id] = controller;
       /** Only the run that owns the row's controller may write the row. */
       const owns = () => controllers.current[row.id] === controller;
-      setRuns((prev) => ({ ...prev, [row.id]: { phase: 'running', stages: [] } }));
+      setRuns((prev) => ({ ...prev, [row.id]: { phase: 'running', stages: [], scope: null } }));
       try {
+        // The row carries no source (H-O9): the project is read whole now, through the rules.
+        const project = await readOwnProject(row.id);
+        if (!project || typeof project.legacyCode !== 'string' || !project.legacyCode.trim()) {
+          throw new Error(wt('homeList.runNoSource'));
+        }
+        const scope = runScope(project.legacyCode);
+        if (owns()) {
+          setRuns((prev) => {
+            const cell = prev[row.id];
+            return cell && cell.phase === 'running' ? { ...prev, [row.id]: { ...cell, scope } } : prev;
+          });
+        }
         const { runAnalysis } = await import('@/lib/analysis-run');
         await runAnalysis({
           projectId: row.id,
@@ -458,6 +387,7 @@ export default function WorkspaceListReport({
           },
         });
         if (owns()) setRuns((prev) => ({ ...prev, [row.id]: undefined }));
+        if (user) void refresh(user);
       } catch (err) {
         if (!owns()) return;
         if (err instanceof AnalysisRunCancelled) {
@@ -472,7 +402,7 @@ export default function WorkspaceListReport({
         if (owns()) delete controllers.current[row.id];
       }
     },
-    [projects],
+    [runnable, user, refresh],
   );
 
   const cancel = useCallback((id: string) => {
@@ -481,13 +411,23 @@ export default function WorkspaceListReport({
     setRuns((prev) => ({ ...prev, [id]: undefined }));
   }, []);
 
+  /** The run dialog for a row whose next step is a run, when this account may start it here. */
+  const runFor = useCallback(
+    (row: HomeRow) =>
+      row.status.next?.run && runnable(row) && !runs[row.id]
+        ? () => setConfirming({ row, callModel: modelAvailability.enabled('analyze') })
+        : undefined,
+    [runnable, runs, modelAvailability],
+  );
+
   // The owner's actions the old dashboard had per project (ADR-052).
   const duplicate = useCallback(
-    async (row: WorkspaceRow) => {
-      const project = projects.find((p) => p.id === row.id);
-      if (!project || !user) return;
+    async (row: HomeRow) => {
+      if (!user) return;
       setActionError(null);
       try {
+        const project = await readOwnProject(row.id);
+        if (!project) throw new Error(wt('myWorkspace.duplicateFailed'));
         const copy = await createWithinCeiling(getDb(), 'projects', user.uid, {
           name: `${project.name} - Copy`,
           status: 'uploaded',
@@ -507,18 +447,21 @@ export default function WorkspaceListReport({
             console.error('[WorkspaceListReport] target of the copy not saved', error);
           }
         }
+        void refresh(user);
       } catch (error) {
         setActionError(wt('myWorkspace.duplicateFailed'));
         handleFirestoreError(error, OperationType.WRITE, 'projects');
       }
     },
-    [projects, user],
+    [user, refresh],
   );
 
-  const exportJson = useCallback(
-    async (row: WorkspaceRow) => {
-      const project = projects.find((p) => p.id === row.id);
-      if (!project) return;
+  const exportJson = useCallback(async (row: HomeRow) => {
+    setActionError(null);
+    try {
+      const stored = await readOwnProject(row.id);
+      if (!stored) return;
+      const project = await withStoredArtefacts(row.id, stored);
       const { id: _id, userId: _userId, ...data } = project as ListedProject & { userId?: string };
       void _id;
       void _userId;
@@ -526,9 +469,10 @@ export default function WorkspaceListReport({
       const marked = withProjectExportAiGeneration(data, aiAuthorshipFactsOf(project, { documentationFromEngine: isEngineDocumentation((project as { documentation?: unknown }).documentation) }), APP_VERSION);
       const blob = new Blob([JSON.stringify(marked, null, 2)], { type: 'application/json' });
       await saveAs(blob, `${project.name.replace(/\s+/g, '_')}_export.json`);
-    },
-    [projects],
-  );
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : String(err));
+    }
+  }, []);
 
   const confirmDelete = useCallback(async () => {
     if (!deleting) return;
@@ -545,21 +489,19 @@ export default function WorkspaceListReport({
         headers: { Authorization: `Bearer ${token}` },
       });
       // 404 is what a repeated delete hears once the first one went through and
-      // its answer was lost: the project is gone, as asked. The list is a live
-      // query, so a project still there stays on it.
+      // its answer was lost: the project is gone, as asked.
       if (!res.ok && res.status !== 404) {
         const body = (await res.json().catch(() => null)) as { error?: string } | null;
         throw new Error(body?.error || wt('myWorkspace.deleteFailed'));
       }
     } catch (err) {
       setActionError(err instanceof Error ? err.message : wt('myWorkspace.deleteFailed'));
+    } finally {
+      if (user) void refresh(user);
     }
-  }, [deleting]);
+  }, [deleting, user, refresh]);
 
-  const yourTurn = useMemo(
-    () => yourTurnItems(ownRows, projects, profile ?? null),
-    [ownRows, projects, profile],
-  );
+  const attention = useMemo(() => attentionRows(projects), [projects]);
 
   if (profileLoading) {
     return (
@@ -574,7 +516,7 @@ export default function WorkspaceListReport({
   // not a list with only the demo in it. Decided only once the lists that
   // decide it have answered for this account (the shared one only when the own
   // one is empty); until then the page waits rather than show one and switch
-  // to the other. A list that could not be read keeps today's page.
+  // to the other. A list that could not be read keeps the list page.
   const ownAnswered = !!user && loaded?.uid === user.uid;
   const sharedAnswered = !!user && sharedLoaded?.uid === user.uid;
   const ownFailed = !!user && ownFailedFor === user.uid;
@@ -592,246 +534,299 @@ export default function WorkspaceListReport({
     return <HomeFirstView userId={user.uid} profile={profile ?? null} slice={homeSlice} />;
   }
 
-  const runnable = (row: WorkspaceRow) => !row.isDemo && row.access === 'own' && row.hasSource;
+  const actionsOf = (row: HomeRow) => (
+    <WorkspaceRowActions
+      id={row.id}
+      name={row.name}
+      href={`/project/${row.id}`}
+      owner={row.access === 'own'}
+      showOpen={false}
+      handlers={{
+        onInvite: () => setInviting({ id: row.id, name: row.name }),
+        onDuplicate: () => void duplicate(row),
+        onExport: () => void exportJson(row),
+        onDelete: () => setDeleting({ id: row.id, name: row.name }),
+      }}
+    />
+  );
+
+  // The design system's Object Identifier (§2.4): the name, the program's own
+  // name in mono (the only identifier, AB-14b), and what the project is.
+  const nameCell = (row: HomeRow) => (
+    <Link href={`/project/${row.id}`} data-workspace-open={row.id} data-workspace-access={row.access} className="min-w-0">
+      <CcObjectIdentifier
+        title={row.name}
+        identifier={row.program ?? undefined}
+        meta={
+          row.fromExample || row.access === 'shared' ? (
+            <span className="inline-flex flex-wrap items-center gap-1">
+              {row.fromExample ? <CcTag>{wt('homeList.exampleTag')}</CcTag> : null}
+              {row.access === 'shared' ? <CcTag>{wt('homeList.readOnly')}</CcTag> : null}
+            </span>
+          ) : null
+        }
+      />
+    </Link>
+  );
+
+  const dateCell = (row: HomeRow) =>
+    row.lastChangeText ? (
+      <span className="text-[12px] font-medium whitespace-nowrap text-cc-ink" data-home-date={row.lastChange ?? ''}>
+        {row.lastChangeText}
+      </span>
+    ) : (
+      <span className="text-[12px] font-medium text-cc-ink-muted">{wt('homeList.noDate')}</span>
+    );
+
+  const factsLine = (row: HomeRow) => {
+    const rowFacts = factsOf(row);
+    const bits: React.ReactNode[] = [];
+    if (row.lines !== null) bits.push(<span key="l">{rowLinesLabel(number(row.lines))}</span>);
+    if (row.findings !== null) bits.push(<span key="f">{rowFindingsLabel(number(row.findings))}</span>);
+    if (row.hasRun && rowFacts?.levels.state === 'ready') bits.push(<LevelCounts key="v" levels={rowFacts.levels.value} />);
+    if (row.score !== null) bits.push(<span key="s">{homeScoreLabel(row.score)}</span>);
+    if (row.hasRun && rowFacts?.rules.state === 'ready') {
+      bits.push(<span key="r">{rowRulesLabel(rowFacts.rules.value.confirmed, rowFacts.rules.value.total)}</span>);
+    }
+    return (
+      <p data-workspace-card-facts="" className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-medium text-cc-ink-muted">
+        {bits.length === 0
+          ? wt('homeList.nothingMeasured')
+          : bits.map((b, i) => (
+              <React.Fragment key={i}>
+                {i > 0 ? <span aria-hidden={true}>·</span> : null}
+                {b}
+              </React.Fragment>
+            ))}
+      </p>
+    );
+  };
+
+  const runningBlock = (row: HomeRow, cell: Extract<RunCell, { phase: 'running' }>) => (
+    <div className="flex flex-col gap-2">
+      <CcRunIndicator scope={cell.scope ?? t('state.loading')} stages={cell.stages} onCancel={() => cancel(row.id)} survivesLeaving={false} />
+      {/* §2.8: a cancel that does not say what it cannot reach is a claim. */}
+      <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">{t('run.cancelReach')}</span>
+    </div>
+  );
+
+  const failedNote = (row: HomeRow, cell: Extract<RunCell, { phase: 'failed' }>) => (
+    <CcMessageStrip
+      state="error"
+      headline={t('run.failed')}
+      announce
+      actions={
+        <>
+          <CcButton
+            variant="ghost"
+            onClick={() => setConfirming({ row, callModel: modelAvailability.enabled('analyze') })}
+            data-workspace-retry={row.id}
+          >
+            {t('action.retry')}
+          </CcButton>
+          <CcButton variant="secondary" onClick={() => setConfirming({ row, callModel: false })} data-workspace-without-model={row.id}>
+            {t('action.runWithoutModel')}
+          </CcButton>
+        </>
+      }
+    >
+      {cell.message}
+    </CcMessageStrip>
+  );
 
   const phoneCards: React.ReactNode[] = [];
   const tableRows: CcTableRowSpec[] = visibleRows.map((row) => {
     const cell = runs[row.id];
-    const rowFacts = factsOf(row);
-    const analysed = row.isDemo || row.hasRun;
-    const progress = row.isDemo ? null : projectProgress(projectById.get(row.id) ?? null);
-    // The row runs the analysis itself when that is the next step — then the
-    // button is the one next action, and the cell offers no second link to it.
-    const runAction =
-      progress?.next?.path === 'analyze' && runnable(row) && !cell ? (
-        <span className="mt-1 flex flex-col items-start gap-1">
-          <CcButton
-            variant="secondary"
-            onClick={() => start(row, modelAvailability.enabled('analyze'))}
-            data-workspace-run={row.id}
-          >
-            {modelAvailability.enabled('analyze') ? t('action.runAnalysis') : t('action.runWithoutModel')}
-          </CcButton>
-          <CcRunCost cost={costFor(modelAvailability.enabled('analyze'))} />
-        </span>
-      ) : undefined;
-    const ownerLine =
-      row.access === 'shared' ? (
-        <span className="inline-flex flex-wrap items-center gap-1">
-          <CcTag>{wt('myWorkspace.sharedTag')}</CcTag>
-          <span className="text-[12px] font-medium text-cc-ink-muted">{wt('myWorkspace.sharedLine')}</span>
-        </span>
-      ) : row.isDemo ? (
-        <CcTag>{DEMO_TAG}</CcTag>
-      ) : null;
-
-    const identifier = (
-      <Link href={row.href} data-workspace-open={row.id} data-workspace-access={row.isDemo ? 'demo' : row.access} className="min-w-0">
-        <CcObjectIdentifier title={row.name} identifier={row.identifier} meta={ownerLine} />
-      </Link>
-    );
-
     const base: CcTableRowSpec = {
       key: row.id,
       cells: {
-        project: identifier,
-        lines:
-          row.lines === null ? (
-            <Absent>{t('workspace.notStaged')}</Absent>
-          ) : (
-            <span data-workspace-lines={row.linesFromRun ? 'run' : 'staged'}>{number(row.lines)}</span>
-          ),
-        findings:
-          row.findings === null ? (
-            <Absent>{t('workspace.notAnalysed')}</Absent>
-          ) : (
-            <span data-workspace-findings="">{number(row.findings)}</span>
-          ),
-        levels: analysed ? <LevelsCell facts={rowFacts?.levels} /> : <Absent>{t('workspace.notAnalysed')}</Absent>,
-        rules: analysed ? <RulesCell facts={rowFacts?.rules} /> : <Absent>{t('workspace.notAnalysed')}</Absent>,
-        status: (
-          <span className="flex w-full flex-col items-start gap-1">
-            {progress ? (
-              <ProjectProgressCell
-                progress={progress}
-                projectHref={`/project/${row.id}`}
-                id={row.id}
-                nextAction={runAction}
-              />
-            ) : (
-              // The demo is nobody's project and has no steps of its own: one
-              // plain sentence, never a status it did not earn.
-              <span className="text-[13px] leading-snug font-semibold text-cc-ink" data-project-sentence="">
-                {wt('myWorkspace.demoSentence')}
-              </span>
-            )}
-            {row.stale ? <CcProvenanceChip value="stale" note={row.stale.note} /> : null}
-          </span>
-        ),
-        lastChange: row.lastChange ? (
-          <span className="font-cc-mono text-[12px]">{row.lastChange}</span>
-        ) : (
-          <Absent>{row.isDemo ? t('workspace.demoLastChange') : t('workspace.noDate')}</Absent>
-        ),
-        actions: (
-          <WorkspaceRowActions
-            id={row.id}
-            name={row.name}
-            href={row.href}
-            owner={!row.isDemo && row.access === 'own'}
-            handlers={{
-              onInvite: () => setInviting({ id: row.id, name: row.name }),
-              onDuplicate: () => void duplicate(row),
-              onExport: () => void exportJson(row),
-              onDelete: () => setDeleting({ id: row.id, name: row.name }),
-            }}
-          />
-        ),
+        project: nameCell(row),
+        status: <HomeStatusBlock status={row.status} />,
+        next: <HomeNextCell projectId={row.id} next={row.status.next} onRun={runFor(row)} />,
+        lastChange: dateCell(row),
+        actions: actionsOf(row),
       },
-      // Mockup s7: a project started from a shipped example says what it is,
-      // under its row — the code is fictitious, the engine output is real.
-      note: row.fromExample ? (
-        <CcMessageStrip state="information" headline={wt('myWorkspace.exampleHeadline')}>
-          {wt('myWorkspace.exampleBody')}
-        </CcMessageStrip>
-      ) : undefined,
+      note: figures ? factsLine(row) : undefined,
     };
-
     if (cell?.phase === 'running') {
-      base.span = (
-        <div className="flex flex-col gap-2">
-          <CcRunIndicator
-            scope={runScope(projects.find((p) => p.id === row.id)?.legacyCode || '')}
-            stages={cell.stages}
-            onCancel={() => cancel(row.id)}
-            survivesLeaving={false}
-          />
-          {/* §2.8: a cancel that does not say what it cannot reach is a claim. */}
-          <span className="text-[12px] leading-snug font-medium text-cc-ink-muted">{t('run.cancelReach')}</span>
-        </div>
-      );
+      base.span = runningBlock(row, cell);
       base.cells.actions = null;
     }
+    if (cell?.phase === 'failed') base.note = failedNote(row, cell);
 
-    if (cell?.phase === 'failed') {
-      base.note = (
-        <CcMessageStrip
-          state="error"
-          headline={t('run.failed')}
-          announce
-          actions={
-            <>
-              <CcButton
-                variant="ghost"
-                onClick={() => start(row, modelAvailability.enabled('analyze'))}
-                data-workspace-retry={row.id}
-              >
-                {t('action.retry')}
-              </CcButton>
-              <CcButton variant="secondary" onClick={() => start(row, false)} data-workspace-without-model={row.id}>
-                {t('action.runWithoutModel')}
-              </CcButton>
-            </>
-          }
-        >
-          {cell.message}
-        </CcMessageStrip>
-      );
-    }
-
-    // Breakpoint S (§2.9, mockup s10): the same row as one compact card — name,
-    // the status sentence with its step and one "Next:" link, the row menu,
-    // and the facts as one muted line. No per-column labels.
-    const facts: React.ReactNode[] = [];
-    if (row.lines !== null) facts.push(<span key="l">{rowLinesLabel(number(row.lines))}</span>);
-    if (row.findings !== null) facts.push(<span key="f">{rowFindingsLabel(number(row.findings))}</span>);
-    if (analysed && rowFacts?.levels.state === 'ready') facts.push(<LevelCounts key="v" levels={rowFacts.levels.value} />);
-    if (analysed && rowFacts?.rules.state === 'ready') {
-      facts.push(<span key="r">{rowRulesLabel(rowFacts.rules.value.confirmed, rowFacts.rules.value.total)}</span>);
-    }
+    // Breakpoint S (§2.9): the same row as one compact card — name, program,
+    // the row menu, the status, the figures when on, and the next step with the date.
     phoneCards.push(
-      <li
-        key={row.id}
-        data-workspace-card={row.id}
-        className="flex flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface p-3"
-      >
+      <li key={row.id} data-workspace-card={row.id} className="flex flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface p-3">
         <div className="flex items-start gap-2">
-          <div className="min-w-0 flex-1">
-            <Link
-              href={row.href}
-              data-workspace-open={row.id}
-              data-workspace-access={row.isDemo ? 'demo' : row.access}
-              className="block text-[15px] leading-snug font-bold text-cc-ink"
-            >
-              {row.name}
-            </Link>
-            {ownerLine ? <div className="mt-1">{ownerLine}</div> : null}
-          </div>
-          {cell?.phase === 'running' ? null : (
-            <WorkspaceRowActions
-              id={row.id}
-              name={row.name}
-              href={row.href}
-              owner={!row.isDemo && row.access === 'own'}
-              handlers={{
-                onInvite: () => setInviting({ id: row.id, name: row.name }),
-                onDuplicate: () => void duplicate(row),
-                onExport: () => void exportJson(row),
-                onDelete: () => setDeleting({ id: row.id, name: row.name }),
-              }}
-            />
-          )}
+          <div className="min-w-0 flex-1">{nameCell(row)}</div>
+          {cell?.phase === 'running' ? null : actionsOf(row)}
         </div>
         {cell?.phase === 'running' ? (
-          base.span
-        ) : row.isDemo ? (
-          <span className="text-[13px] leading-snug font-semibold text-cc-ink" data-project-sentence="">
-            {wt('myWorkspace.demoSentence')}
-          </span>
-        ) : progress ? (
-          <ProjectProgressCell progress={progress} projectHref={`/project/${row.id}`} id={row.id} />
-        ) : null}
-        {row.stale ? <CcProvenanceChip value="stale" note={row.stale.note} /> : null}
-        {/* Nothing measured yet: the sentence above already says so. */}
-        {facts.length > 0 ? (
-          <p
-            data-workspace-card-facts=""
-            className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-medium text-cc-ink-muted"
-          >
-            {facts.map((f, i) => (
-              <React.Fragment key={i}>
-                {i > 0 ? <span aria-hidden={true}>·</span> : null}
-                {f}
-              </React.Fragment>
-            ))}
-          </p>
-        ) : null}
-        {base.note ? <div>{base.note}</div> : null}
+          runningBlock(row, cell)
+        ) : (
+          <>
+            <HomeStatusBlock status={row.status} />
+            {figures ? factsLine(row) : null}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <HomeNextCell projectId={row.id} next={row.status.next} onRun={runFor(row)} compact />
+              {dateCell(row)}
+            </div>
+          </>
+        )}
+        {cell?.phase === 'failed' ? <div>{failedNote(row, cell)}</div> : null}
       </li>,
     );
-
     return base;
   });
 
-  const hasOwn = ownRows.length > 0;
-  const hasAnyListed = ownRows.length + sharedRows.length > 0;
-  const levelOptions = [
-    { value: 'any', label: wt('myWorkspace.anyLevel') },
-    ...ROW_LEVELS.map((level) => ({ value: level, label: `${wt('myWorkspace.levelOption')} ${level}` })),
+  const hasOwn = projects.length > 0;
+  const tabs: Array<{ key: Tab; long: string; short: string; count: number }> = [
+    { key: 'mine', long: wt('homeList.tabMine'), short: wt('homeList.tabMineShort'), count: projects.length },
   ];
+  if (sharedRows.length > 0) tabs.push({ key: 'shared', long: wt('homeList.tabShared'), short: wt('homeList.tabSharedShort'), count: sharedRows.length });
+  if (hasOwn && inviteCount > 0) tabs.push({ key: 'invites', long: wt('homeList.tabInvites'), short: wt('homeList.tabInvitesShort'), count: inviteCount });
+  // A tab whose list emptied (the last invitation withdrawn) falls back to My projects.
+  const current: Tab = tabs.some((x) => x.key === tab) ? tab : 'mine';
+
+  const onTabKey = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+    event.preventDefault();
+    const at = tabs.findIndex((x) => x.key === current);
+    const next = tabs[(at + (event.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+    setTab(next.key);
+    document.getElementById(`home-tab-${next.key}`)?.focus();
+  };
+
+  const levelOptions = [
+    { value: 'any', label: wt('homeList.anyLevel') },
+    ...ROW_LEVELS.map((level) => ({ value: level, label: homeLevelOption(level) })),
+  ];
+
+  const minePanel = (
+    <>
+      {projects.length >= FILTERS_FROM ? (
+        <div className="mb-3" data-home-filters="">
+          <CcFilterBar
+            noun={wt('homeList.noun')}
+            shown={shownRows.length}
+            total={projects.length}
+            search={filter.search}
+            onSearch={setSearch}
+            active={active}
+            onClear={clear}
+          >
+            <CcSelect<string>
+              label={wt('homeList.filterStatus')}
+              value={filter.status || 'any'}
+              onChange={(v) => {
+                setShowAll(false);
+                setFilter((f) => ({ ...f, status: v === 'any' ? '' : v }));
+              }}
+              options={[{ value: 'any', label: wt('homeList.anyStatus') }, ...homeStatusOptions(projects)]}
+            />
+            <CcSelect<string>
+              label={wt('homeList.filterLevel')}
+              value={filter.level || 'any'}
+              onChange={(v) => setFilter((f) => ({ ...f, level: v === 'any' ? '' : v }))}
+              options={levelOptions}
+            />
+          </CcFilterBar>
+        </div>
+      ) : null}
+
+      {!hasOwn ? (
+        <p className="m-0 text-[13px] font-medium text-cc-ink-muted">{t('workspace.emptyBody')}</p>
+      ) : shownRows.length === 0 ? (
+        <CcNoMatches title={wt('homeList.noMatchTitle')} reason={homeNoMatchBody(projects.length)} onClear={clear} />
+      ) : isS ? (
+        <ul aria-label={wt('homeList.tabMine')} className="m-0 flex list-none flex-col gap-2 p-0" data-workspace-cards="">
+          {phoneCards}
+        </ul>
+      ) : (
+        <CcTable caption={wt('homeList.tabMine')} columns={COLUMNS} rows={tableRows} />
+      )}
+
+      {shownRows.length > FIRST_ROWS ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2" data-workspace-showing="">
+          <span className="text-[12px] font-medium text-cc-ink-muted">{showingRowsLabel(visibleRows.length, shownRows.length)}</span>
+          <CcButton onClick={() => setShowAll((v) => !v)} aria-expanded={showAll} data-workspace-show-all="">
+            {showAll ? showFirstLabel(FIRST_ROWS) : showAllLabel(shownRows.length)}
+          </CcButton>
+        </div>
+      ) : null}
+      {loaded?.truncated ? (
+        <p className="mt-3 mb-0 text-[12px] font-medium text-cc-ink-muted" data-home-truncated="">{homeTruncated(projects.length)}</p>
+      ) : null}
+    </>
+  );
+
+  const sharedPanel = (
+    <section data-workspace-shared-with-you="">
+      <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('homeList.sharedNote')}</p>
+      <div className="mt-3">
+        {isS ? (
+          <ul aria-label={wt('homeList.tabShared')} className="m-0 flex list-none flex-col gap-2 p-0">
+            {sharedRows.map((row) => (
+              <li key={row.id} data-workspace-shared-row={row.id} className="flex flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface p-3">
+                {nameCell(row)}
+                <HomeStatusBlock status={row.status} />
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <span className="text-[12px] font-medium text-cc-ink-muted">{wt('homeList.sharedAccess')}</span>
+                  {dateCell(row)}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <CcTable
+            caption={wt('homeList.tabShared')}
+            columns={SHARED_COLUMNS}
+            rows={sharedRows.map((row) => ({
+              key: row.id,
+              cells: {
+                project: <span data-workspace-shared-row={row.id}>{nameCell(row)}</span>,
+                status: <HomeStatusBlock status={row.status} />,
+                access: <span className="text-[12px] font-medium text-cc-ink-muted">{wt('homeList.sharedAccess')}</span>,
+                lastChange: dateCell(row),
+              },
+            }))}
+          />
+        )}
+      </div>
+    </section>
+  );
 
   return (
     <div className="cc min-h-screen bg-cc-page px-4 py-6 sm:px-6" data-cc-workspace="">
       <div className="mx-auto flex max-w-[1280px] flex-col gap-4">
-        <div>
-          <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">{t('workspace.title')}</h1>
-          <p className="mt-1 mb-0 text-[13px] font-medium text-cc-ink-muted">{t('workspace.lead')}</p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">{t('workspace.title')}</h1>
+            <p className="mt-1 mb-0 text-[13px] font-medium text-cc-ink-muted">{homeWelcomeBack(profile?.firstName)}</p>
+          </div>
+          <span className="flex flex-wrap items-center gap-2">
+            {/* Roadmap 3.0.21: the portfolio — many programs in one batch, one
+                aggregated view. Every account sees the way in, outside any
+                condition; the page says why it is closed without an own model key. */}
+            <CcLinkButton href="/portfolio" variant="ghost" density="cozy" icon={<Layers size={16} aria-hidden={true} />} data-workspace-portfolio="">
+              {wt('portfolio.entry')}
+            </CcLinkButton>
+            {/* H-O13: the only filled button of the page. */}
+            <CcButton
+              variant="primary"
+              icon={<Plus size={16} aria-hidden={true} />}
+              onClick={() => router.push('/admin/new-project')}
+              data-workspace-new-project=""
+            >
+              {wt('homeList.newAnalysis')}
+            </CcButton>
+          </span>
         </div>
 
         {/* The free runs are spent: said where the account lands, with the way
             on to an own key (roadmap 3.0.21 (3)) — not only once a start has
-            been refused. The old dashboard page carried this strip; the list
-            report that replaced it for every active account (3.0.1) did not. */}
+            been refused. */}
         {quotaExhausted(profile) ? (
           <div data-workspace-limit="">
             <CcMessageStrip
@@ -848,202 +843,132 @@ export default function WorkspaceListReport({
           </div>
         ) : null}
 
-        <YourTurnCard
-          hasOwnProjects={hasOwn}
-          items={yourTurn}
-          onNewProject={() => router.push('/admin/new-project')}
+        {ownFailed ? (
+          <CcMessageStrip state="error" announce>
+            {wt('homeList.listFailed')}
+          </CcMessageStrip>
+        ) : null}
+
+        <HomeAttentionCard
+          shown={attention.shown}
+          total={attention.total}
+          onRun={runFor}
+          onShowAll={() => {
+            setTab('mine');
+            setShowAll(false);
+            setFilter({ ...EMPTY_HOME_FILTER, status: ATTENTION_FILTER });
+            listRef.current?.scrollIntoView({ block: 'start' });
+          }}
         />
 
-        <div data-workspace-projects="">
-        <CcCard
-          title={t('workspace.projects')}
-          level={2}
-          count={shownRows.length}
-          density="cozy"
-          actions={
-            <span className="flex flex-wrap items-center gap-2">
-              {/* Roadmap 3.0.21: the portfolio — many programs in one batch,
-                  one aggregated view. Every account sees the way in; the page
-                  says why it is closed without an own model key. */}
-              <CcLinkButton href="/portfolio" density="cozy" icon={<Layers size={16} aria-hidden={true} />} data-workspace-portfolio="">
-                {wt('portfolio.entry')}
-              </CcLinkButton>
-            {hasOwn ? (
-              <span className="flex flex-wrap items-center gap-2">
-                <CcButton
-                  icon={<ArrowDownUp size={16} aria-hidden={true} />}
-                  onClick={() => setSort((s) => (s === 'last-change' ? 'name' : 'last-change'))}
-                  data-workspace-sort={sort}
-                  aria-label={`${wt('myWorkspace.sortLabel')} ${sort === 'last-change' ? wt('myWorkspace.sortLastChange') : wt('myWorkspace.sortName')}`}
-                >
-                  {sort === 'last-change' ? wt('myWorkspace.sortLastChange') : wt('myWorkspace.sortName')}
-                </CcButton>
-                <CcButton
-                  variant="primary"
-                  icon={<Plus size={16} aria-hidden={true} />}
-                  onClick={() => router.push('/admin/new-project')}
-                  data-workspace-new-project=""
-                >
-                  {t('workspace.newProject')}
-                </CcButton>
-              </span>
+        <div data-workspace-projects="" ref={listRef}>
+          <section aria-label={wt('homeList.projectsLabel')} className="rounded-cc-card border border-cc-line bg-cc-surface p-4">
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-3 border-b border-cc-line">
+              <div role="tablist" aria-label={wt('homeList.projectsLabel')} className="flex flex-wrap gap-1">
+                {tabs.map((x) => (
+                  <button
+                    key={x.key}
+                    id={`home-tab-${x.key}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={current === x.key}
+                    aria-controls={`home-panel-${x.key}`}
+                    tabIndex={current === x.key ? 0 : -1}
+                    onClick={() => setTab(x.key)}
+                    onKeyDown={onTabKey}
+                    data-home-tab={x.key}
+                    className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-2 py-2 text-[13px] font-semibold ${current === x.key ? 'border-cc-ink text-cc-ink' : 'border-transparent text-cc-ink-muted'}`}
+                  >
+                    <span className="hidden sm:inline">{x.long}</span>
+                    <span className="sm:hidden">{x.short}</span>
+                    <span className="rounded-full bg-cc-surface-muted px-1.5 text-[11px] font-semibold text-cc-ink-muted tabular-nums">{x.count}</span>
+                  </button>
+                ))}
+              </div>
+              {current === 'mine' && hasOwn ? (
+                <span className="mb-2 flex flex-wrap items-end gap-3">
+                  <CcSelect<HomeSort>
+                    label={wt('homeList.sort')}
+                    value={sort}
+                    onChange={(v) => setSort(v === 'name' ? 'name' : 'last-change')}
+                    options={[
+                      { value: 'last-change', label: wt('homeList.sortLastChange') },
+                      { value: 'name', label: wt('homeList.sortName') },
+                    ]}
+                  />
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={figures}
+                    data-home-figures={figures ? 'on' : 'off'}
+                    onClick={() => {
+                      setChosenFigures(!figures);
+                      rememberHomeFigures(!figures);
+                    }}
+                    className="inline-flex h-8 items-center gap-2 rounded-cc-row px-1 text-[13px] font-semibold text-cc-ink pointer-coarse:h-11"
+                  >
+                    <span aria-hidden={true} className={`relative inline-block h-4 w-7 rounded-full transition-colors ${figures ? 'bg-cc-ink' : 'bg-cc-line'}`}>
+                      <span className={`absolute top-0.5 h-3 w-3 rounded-full bg-cc-surface transition-all ${figures ? 'left-3.5' : 'left-0.5'}`} />
+                    </span>
+                    {wt('homeList.figures')}
+                  </button>
+                </span>
+              ) : null}
+            </div>
+
+            {actionError ? (
+              <div className="mb-3">
+                <CcMessageStrip state="error" announce>
+                  {actionError}
+                </CcMessageStrip>
+              </div>
             ) : null}
-            </span>
-          }
-        >
-          {/* Nothing to filter while the demo is the only row, which is also what
-              mockup s7 draws for a new account. */}
-          {hasAnyListed ? (
-            <div className="mb-3">
-              <CcFilterBar
-                noun={t('workspace.noun')}
-                shown={shownRows.length}
-                total={allRows.length}
-                search={filter.search}
-                onSearch={setSearch}
-                active={active}
-                onClear={clear}
-              >
-                <CcSelect<string>
-                  label={t('workspace.filterStatus')}
-                  value={filter.status || 'any'}
-                  onChange={(v) => setFilter((f) => ({ ...f, status: v === 'any' ? '' : v }))}
-                  options={[
-                    { value: 'any', label: t('workspace.anyStatus') },
-                    ...stagesPresent(allRows).map((value) => ({ value, label: PROJECT_STAGE_LABEL[value] })),
-                  ]}
-                />
-                <CcSelect<string>
-                  label={wt('myWorkspace.filterLevel')}
-                  value={filter.level || 'any'}
-                  onChange={(v) => setFilter((f) => ({ ...f, level: v === 'any' ? '' : v }))}
-                  options={levelOptions}
-                />
-                <CcSelect<string>
-                  label={wt('myWorkspace.filterAccess')}
-                  value={filter.access || 'all'}
-                  onChange={(v) =>
-                    setFilter((f) => ({ ...f, access: v === 'own' || v === 'shared' ? v : '' }))
-                  }
-                  options={[
-                    { value: 'all', label: wt('myWorkspace.accessAll') },
-                    { value: 'own', label: wt('myWorkspace.accessOwn') },
-                    { value: 'shared', label: wt('myWorkspace.accessShared') },
-                  ]}
-                />
-              </CcFilterBar>
+
+            <div role="tabpanel" id="home-panel-mine" aria-labelledby="home-tab-mine" hidden={current !== 'mine'}>
+              {minePanel}
             </div>
-          ) : null}
-
-          {actionError ? (
-            <div className="mb-3">
-              <CcMessageStrip state="error" announce>
-                {actionError}
-              </CcMessageStrip>
-            </div>
-          ) : null}
-
-          {shownRows.length === 0 ? (
-            <CcNoMatches title={t('workspace.noMatch')} reason={t('workspace.noMatchReason')} onClear={clear} />
-          ) : (
-            <>
-              {isS ? (
-                <ul aria-label={t('workspace.projects')} className="m-0 flex list-none flex-col gap-2 p-0" data-workspace-cards="">
-                  {phoneCards}
-                </ul>
-              ) : (
-                <CcTable caption={t('workspace.projects')} columns={COLUMNS} rows={tableRows} />
-              )}
-            </>
-          )}
-
-          {shownRows.length > FIRST_ROWS ? (
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-2" data-workspace-showing="">
-              <span className="text-[12px] font-medium text-cc-ink-muted">
-                {showingRowsLabel(visibleRows.length, shownRows.length)}
-              </span>
-              <CcButton onClick={() => setShowAll((v) => !v)} aria-expanded={showAll} data-workspace-show-all="">
-                {showAll ? showFirstLabel(FIRST_ROWS) : showAllLabel(shownRows.length)}
-              </CcButton>
-            </div>
-          ) : null}
-
-          {shownRows.length > 0 && !hasOwn ? (
-            <div className="mt-3">
-              {/* The reader's own list is empty. The row above is the demo and
-                  says so; this says what the reader does not have yet. The one
-                  action for it is the primary in the card above — §1.5 allows
-                  one per region. */}
-              <CcEmptyState title={t('workspace.emptyTitle')}>{t('workspace.emptyBody')}</CcEmptyState>
-            </div>
-          ) : null}
-
-          <p className="mt-3 mb-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{t('workspace.demoNote')}</p>
-        </CcCard>
+            {sharedRows.length > 0 ? (
+              <div role="tabpanel" id="home-panel-shared" aria-labelledby="home-tab-shared" hidden={current !== 'shared'}>
+                {sharedPanel}
+              </div>
+            ) : null}
+            {/* Mounted for every owner, so the tab knows its count; shown only as its tab. */}
+            {hasOwn ? (
+              <div role="tabpanel" id="home-panel-invites" aria-labelledby="home-tab-invites" hidden={current !== 'invites'}>
+                <p className="mt-0 mb-3 text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('homeList.invitesNote')}</p>
+                <OpenInvitations emptyText={wt('homeList.noInvitations')} onCount={setInviteCount} />
+              </div>
+            ) : null}
+          </section>
         </div>
 
-        {/* Examples — the same gallery the old page and "New project" show
-            (owner feedback 01.10.2026): one recommended start, three next, the
-            rest behind "More examples". */}
-        {user ? <StarterExamples userId={user.uid} account={profile} /> : null}
-
-        {/* Sharing — read access by invitation to one confirmed address, and
-            nothing else (roadmap phase 5). What others shared with you, and
-            what you sent that nobody has answered yet. */}
-        <CcCard title={wt('myWorkspace.sharingTitle')} level={2} density="cozy">
-          <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('myWorkspace.sharingLead')}</p>
-          <div className="mt-4 grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <section aria-labelledby="shared-with-you-title" data-workspace-shared-with-you="">
-              <h3
-                id="shared-with-you-title"
-                className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
-              >
-                {wt('myWorkspace.sharedWithYouTitle')} ({sharedRows.length})
-              </h3>
-              {sharedRows.length === 0 ? (
-                <p className="mt-2 mb-0 text-[13px] font-medium text-cc-ink-muted">
-                  {wt('myWorkspace.sharedWithYouEmpty')}
-                </p>
-              ) : (
-                <>
-                  <ul className="mt-2 mb-0 flex list-none flex-col gap-2 p-0">
-                    {sharedRows.map((row) => (
-                      <li
-                        key={row.id}
-                        data-workspace-shared-row={row.id}
-                        className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-cc-row border border-cc-line bg-cc-surface px-3 py-2"
-                      >
-                        <Link
-                          href={row.href}
-                          className="min-w-0 flex-1 truncate text-[13px] font-semibold text-cc-ink underline underline-offset-2"
-                        >
-                          {row.name}
-                        </Link>
-                        <span className="text-[12px] font-medium text-cc-ink-muted">
-                          {row.stage ? PROJECT_STAGE_LABEL[row.stage] : null}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="mt-2 mb-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
-                    {wt('myWorkspace.sharedWithYouNote')}
-                  </p>
-                </>
-              )}
-            </section>
-            {hasOwn ? (
-              <OpenInvitations emptyText={wt('myWorkspace.noOpenInvitations')} />
-            ) : null}
-          </div>
-        </CcCard>
+        <HomeDoors />
       </div>
 
+      {confirming ? (
+        <CcMessageBox
+          open
+          title={confirming.row.status.attention === 'code-changed' ? wt('homeList.runAgainTitle') : wt('homeList.runTitle')}
+          confirmLabel={wt('homeList.runConfirm')}
+          onCancel={() => setConfirming(null)}
+          onConfirm={() => {
+            const { row, callModel } = confirming;
+            setConfirming(null);
+            void start(row, callModel);
+          }}
+        >
+          <p className="m-0" data-home-run-dialog={confirming.row.id}>
+            {homeRunWhat(confirming.row.name, confirming.row.lines === null ? null : number(confirming.row.lines))}
+          </p>
+          {/* Today's sentence on cost and model (H-O12: the new wording waits for legal review). */}
+          <p className="mt-2 mb-0">
+            <CcRunCost cost={costFor(confirming.callModel)} />
+          </p>
+        </CcMessageBox>
+      ) : null}
+
       {inviting ? (
-        <InviteReaderDialog
-          projectId={inviting.id}
-          projectName={inviting.name}
-          onClose={() => setInviting(null)}
-        />
+        <InviteReaderDialog projectId={inviting.id} projectName={inviting.name} onClose={() => setInviting(null)} />
       ) : null}
 
       <CcMessageBox

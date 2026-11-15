@@ -6,12 +6,15 @@ import { APP_VERSION } from '@/lib/version';
 import { recommendationOfRoute } from '@/lib/project-commands';
 import { getCatalogSnapshotRef, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
+import { computeProjectSummary, writeProjectSummary } from '@/lib/project-summary-server';
 import { routeExtensibility } from '@/lib/abap/extensibility-router';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
 import { AnalysisRun } from '@/lib/types';
 import { canonicalizeJson, RUN_SIGNATURE_SCHEME, signRunHashV2 } from '@/lib/run-signature';
 import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing-key';
 import { buildSourceChangeRecord } from '@/lib/artefact-digest';
+import { computeProjectInShort } from '@/lib/project-in-short';
+import { writeProjectInShort } from '@/lib/project-in-short-server';
 import { withStoredArtefacts } from '@/lib/project-artefact-store';
 import { analysisRunInputs, buildInputManifest } from '@/lib/input-manifest';
 import type { ModelParticipation } from '@/lib/model-stages';
@@ -1112,6 +1115,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // AB-14c data, stored from v3.2.0 (H-O6): "In short" for the home page's
+    // Continue card — the engine's "What this program does" for this run, each
+    // sentence with its line. Admin SDK only, outside the signed run and the
+    // audit pack, bound to `runId`; no model. Its failure fails nothing: the
+    // card then shows no "In short".
+    try {
+      await writeProjectInShort(
+        db,
+        projectId,
+        computeProjectInShort({ runId, sourceSha256: hashHex, source: legacyCode, engineVersion: APP_VERSION }),
+      );
+    } catch (inShortErr) {
+      logger.warn('runs/create: "In short" was not written', {
+        route: 'api/runs/create',
+        projectId,
+        error: errMessage(inShortErr),
+      });
+    }
+
     // Clean up old denormalized results fields from parent project (Finding 6)
     await db.collection('projects').doc(projectId).update({
       analysis: FieldValue.delete(),
@@ -1125,6 +1147,31 @@ export async function POST(req: NextRequest) {
       recommendationConfidence: FieldValue.delete(),
       recommendationJustification: FieldValue.delete(),
     }).catch(() => {}); // Non-blocking if fields already absent
+
+    // 3.3.0 (ADR-123 (5), W11): the project summary My workspace's tiles read —
+    // the map's thumbnail and size, the rules, the score and the recommendation
+    // of this run. Admin SDK only, outside the signed run and the audit pack;
+    // bound to `runId`, so a summary of an earlier run is never shown for this
+    // one. Its failure fails nothing: the tile then says "Map after the next run".
+    try {
+      const summary = computeProjectSummary({
+        runId,
+        sourceSha256: hashHex,
+        source: legacyCode,
+        processName: typeof projectData?.name === 'string' ? projectData.name : '',
+        sourceFileName: targetFileName,
+        engineVersion: APP_VERSION,
+        cleanCoreScore,
+        recommendation: analysisRun.originalRecommendation ?? null,
+      });
+      await writeProjectSummary(db, projectId, summary);
+    } catch (summaryErr) {
+      logger.warn('runs/create: the project summary was not written', {
+        route: 'api/runs/create',
+        projectId,
+        error: errMessage(summaryErr),
+      });
+    }
 
     return NextResponse.json({
       success: true,
