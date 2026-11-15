@@ -5,6 +5,28 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] — v3.2.0, the Business page is complete
+
+Built on `dev`; the version stays v3.1.0 until the release. Every new engine reading is gated from 3.2.0, so it
+shows only once the version says so. Signed runs and the audit pack do not change.
+
+### Changed
+- The walk-through runs on the Analyze page itself: a card beside the map on desktop, above it up to 1100 px. It
+  ends in two equal endings, "Re-design this program" and "Analyse another Z program", with "What you can do next"
+  below them, hidden per project in the browser only. A later tool clicked before the walk-through shows a soft
+  hint; nothing is locked (AB-4, ADR-118).
+- Full screen on the Business map: one bar to find a step, zoom, fit and the overview map; editing behind an "Edit"
+  toggle, saved as a revision; the walk-through and the code in a side column. Not editable on a phone (AB-5, ADR-119).
+- The text around the map replaces the first insights in Business: what the program does, how it runs, why it
+  exists, who is involved and questions for the business, every sentence with its line; the AI mark only where a
+  model wrote (AB-6, ADR-116).
+- Two charts below the map, "How a case can end" and "What it changes, what it only reads", counted from the
+  engine's facts (AB-7, ADR-117).
+- The browser keeps only *that* the walk-through of Analyze was finished or its hint dismissed
+  (`cc.analyze.walked.<id>` holds `1`), no longer the day. A return visit reads "Welcome back · you walked through it
+  before" without a date. An entry with a day from an earlier build still counts as walked (privacy policy 1.3,
+  owner decision 15.11.2026).
+
 ## [v3.1.0] — 2026-11-15
 
 Analyze opens business first. Every new engine reading is gated from 3.1.0: a run signed by an earlier version reads as before.

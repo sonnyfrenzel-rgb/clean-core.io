@@ -129,7 +129,8 @@ test.describe('the hint is an addition, never a phase state (source)', () => {
   });
 
   test('the phase contract does not read it', () => {
-    for (const rel of ['lib/workflow-steps.ts', 'lib/next-step.ts', 'lib/business-next-step.ts', 'lib/workspace-model.ts']) {
+    // `lib/business-next-step.ts` left with AB-4 (3.2.0): the two endings replaced the Business "Next step".
+    for (const rel of ['lib/workflow-steps.ts', 'lib/next-step.ts', 'lib/workspace-model.ts']) {
       expect(read(rel), rel).not.toMatch(/analysis-read|analysisRead/);
     }
   });
@@ -145,7 +146,11 @@ test.describe('the hint is an addition, never a phase state (source)', () => {
   test('the tool bar tags Analyze from the phase contract and leaves "Next" where it was', () => {
     const bar = read('components/workspace/ToolBar.tsx');
     expect(bar).toContain('resultReadyTag(tool, analysisRead)');
-    expect(bar).toContain('const next = nextPhaseKey(tools);');
+    // The phase contract still names the next tool; since 3.2.0 (plan AB-4, O8) its tag is held back for an
+    // analysis-only reader until a later tool was opened — a rule of its own, not this hint's.
+    expect(bar).toContain('const phaseNext = nextPhaseKey(tools);');
+    expect(bar).toContain('const next = nextTagShown(tools, phaseNext, progress.laterToolOpened) ? phaseNext : null;');
+    expect(bar).not.toMatch(/nextTagShown\([^)]*analysisRead/);
     expect(bar).toContain('readKey={projectId}');
     expect(bar).toContain('readKey={analysisKeyOfBase(base)}');
   });

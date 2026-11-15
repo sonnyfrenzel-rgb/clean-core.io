@@ -1,6 +1,6 @@
 /**
  * Interface text of the guided tour on the process map —
- * `components/workspace/ProcessTour.tsx` and its entry `ProcessTourEntry.tsx`
+ * `components/workspace/ProcessTour.tsx` (the layer, and since 3.2.0 the tour on the page, plan AB-4)
  * (owner decision 21.10.2026: a tour for understanding, on the map, in plain
  * business words; it replaced the walk-through of "3.0.20 — with it", part 1).
  *
@@ -13,8 +13,6 @@
 export const WORKSPACE_WALK_MESSAGES = {
   'walk.eyebrow': 'Guided tour',
   'walk.title': 'Walk through the process',
-  'walk.entryLead': 'A short tour on the process map: first what the process is about, then each part in plain business words, one step at a time.',
-  'walk.entryOpen': 'Walk through the process',
   'walk.preparing': 'Reading the steps out of the code…',
   'walk.unavailable': 'The tour could not be read in this browser. Close it and open it again.',
   'walk.mapUnavailable': 'The map could not be drawn in this browser. The card still says each step.',
@@ -42,6 +40,13 @@ export const WORKSPACE_WALK_MESSAGES = {
   'walk.keys': 'Arrow keys move between the steps, and on a touch screen a swipe across the card does; Escape closes the tour.',
   'walk.empty': 'The code shows no business step to walk through. The map below shows the whole process.',
   'walk.demoNote': 'Demo: the same tour your own project gets.',
+  // The tour on the page (plan AB-4, mockup states 4, 5 and 6).
+  'walk.regionLabel': 'Walk-through',
+  'walk.pause': 'Pause',
+  'walk.closeInline': 'Close the walk-through',
+  'walk.stopHere': 'You can stop here. Everything stays in your workspace.',
+  'walk.stopHereDemo': 'You can stop here.',
+  'walk.keysInline': 'Arrow keys move between the steps; Escape closes the walk-through.',
   // Plain wording of the engine's sentences (3.0.20, owner decision 2)
   'walk.worded': 'worded',
   'walk.asRead': 'As read from the code',

@@ -109,13 +109,6 @@ export function markFirstLookSeen(projectId: string): void {
   }
 }
 
-/**
- * How long the first insights wait for the stored naming before they stand
- * with the names they have (`components/workspace/FirstLook.tsx`). A naming
- * read that never settled used to keep the card on "reading" for good; a
- * naming that arrives later still changes the names once.
- */
-export const NAMING_WAIT_MS = 2500;
 
 /* ------------------------------------------------------------------ anchors */
 

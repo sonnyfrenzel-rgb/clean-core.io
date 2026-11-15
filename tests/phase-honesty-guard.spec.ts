@@ -1,4 +1,6 @@
 import { test, expect } from './helpers/test';
+import fs from 'fs';
+import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
@@ -188,6 +190,20 @@ test.describe('what green is allowed to mean', () => {
         // Green is proven by a real record; a sandbox run against mocks is not green (codex code-trust-04).
         expect(phaseTone(step) === 'proven', `${step.key} tone and proven disagree`).toBe(step.proven && !step.mock);
       }
+    }
+  });
+
+  test('the walk-through earns no mark: the Analyze check is the phase, never the reader (plan AB-4, ADR-060)', () => {
+    // The mockup's state 9 drew a check on Analyze once the reader had walked through; a check means done (owner,
+    // 03.10.2026), and walking through is not a phase. The bar reads only "a later tool was opened" (O8), for the
+    // "Next" tag, never for a mark.
+    const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
+    const bar = read('components/workspace/ToolBar.tsx');
+    expect(bar).not.toMatch(/progress\.walked|markWalked|softGateShown/);
+    expect(bar).toMatch(/const mark = toolMark\(tool\);/);
+    // The endings and the card after the walk-through claim nothing: no green, no tone, no mark.
+    for (const rel of ['components/analyze/AnalyzeEndings.tsx', 'components/analyze/WhatNextCard.tsx']) {
+      expect(read(rel), rel).not.toMatch(/cc-success|PHASE_TONE_CLASS|phaseTone|toolMark|Proven|proven/);
     }
   });
 

@@ -66,10 +66,10 @@ export const TOUR_STATIONS: readonly TourStation[] = Object.freeze([
   {
     place: 'reveal',
     view: 'business',
-    // The first look's own name (roadmap 3.0.7, owner 10.10.2026) — the same
-    // words as its card, so the tour does not present it as Analyze.
-    title: 'First insights into your process',
-    body: 'The first reading of this program, taken straight from its code: what it does and the rules it checks, each with the lines it stands on. It is not the analysis; that is the Analyze tool.',
+    // Since 3.2.0 the place holds the text around the map (plan AB-6, AB-4): the
+    // station names what it shows there, not the first look that retired.
+    title: 'The text around the map',
+    body: 'How the process runs, why it exists, who is involved and the questions to settle with the business, read from the code. Every sentence carries the line it stands on.',
   },
   {
     place: 'process-map',

@@ -592,18 +592,25 @@ test.describe('the register in IT, rendered', () => {
 
 test.describe('the places (source guards)', () => {
   const shell = read('components/workspace/WorkspaceShell.tsx');
-  test('no rule card in the Business view; the first insights say the one sentence and offer no rule decision; the next step leads with no rule', () => {
+  test('no rule card in the Business view; the text around the map says the one sentence and offers no rule decision; the endings lead with no rule', () => {
     // Business is Analyze's page since v3.1.0 (AB-2, ADR-109).
     const business = read('components/analyze/AnalyzeBusiness.tsx');
     expect(business).not.toContain('<BusinessRulesEditor');
     expect(shell).not.toContain('<BusinessRulesEditor');
-    const firstLook = read('components/workspace/FirstLook.tsx');
     // 3.0.21 (owner decisions 22.10.2026): the Business opening offers no rule action at all, the demo's
-    // included; the one quiet basket line stands everywhere, and in the demo it names no Design.
-    expect(firstLook).not.toContain('onDecideRules=');
-    expect(firstLook).toMatch(/<RuleBasketLine [^>]*designHref=\{onReviewRules \? null : undefined\}/);
-    expect(firstLook).not.toMatch(/const decideRules\b/);
-    expect(business).toContain('businessNextStep({ point: running, rules: null, owner })');
+    // included; the one quiet basket line stands everywhere, and in the demo it names no Design. Since 3.2.0
+    // (AB-6) the line stands under "Questions to settle with the business" in the text around the map.
+    const around = read('components/analyze/AroundTheMap.tsx');
+    const demo = read('components/demo/DemoAnalyzeBusiness.tsx');
+    expect(around).toContain('<RuleBasketLineView {...text.basket} designHref={designHref} />');
+    expect(around).not.toMatch(/onDecideRules|const decideRules\b|data-rule-decide/);
+    expect(business).toContain('designHref={designHref}');
+    expect(demo).toContain('<AroundTheMap text={around.text} state={around.state} designHref={null} here={here} />');
+    // The counts come from the one count source Design reads.
+    expect(read('lib/around-the-map.ts')).toContain('questionRuleCountsOf(explanation, 0)');
+    // Since 3.2.0 (AB-4) no "Next step" at all in Analyze, Business: the two endings carry no rule action either.
+    expect(business).not.toMatch(/businessNextStep|<BusinessNextStep/);
+    expect(read('components/analyze/AnalyzeEndings.tsx')).not.toMatch(/requestRuleEditing|rulesStatus|data-next-step-rules/);
   });
 
   test('the full register is in IT; the questions stand in Design beside its canvas; open questions lead there', () => {

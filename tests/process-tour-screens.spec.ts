@@ -19,6 +19,11 @@ import { readExample } from './helpers/starter-example-files';
  * scrolling the page and without a sideways scroll; on a wide screen the card
  * stands beside the element, on a phone under the map.
  *
+ * Since 3.2.0 (plan AB-4) Analyze, Business runs the same tour on the page
+ * (`inline`); its stations are measured at 1280, 1024, 768 and 390 px in
+ * `tests/analyze-tour-inline.spec.ts`, and at 1440 × 900 at the end of this
+ * spec, beside the layer it grew out of.
+ *
  * Server-free: a static page mounts `ProcessTour` with the tour read here
  * (esbuild for the browser, the product's own Tailwind build of
  * `app/globals.css`), as other server-free render specs do. Screenshots go to
@@ -63,10 +68,10 @@ test.beforeAll(async () => {
     "import React from 'react';",
     "import { createRoot } from 'react-dom/client';",
     "import ProcessTour from './components/workspace/ProcessTour';",
-    'const data = (window as unknown as { __TOUR__: { tour: never; model: never; at: number } }).__TOUR__;',
+    'const data = (window as unknown as { __TOUR__: { tour: never; model: never; at: number; inline?: boolean } }).__TOUR__;',
     'function App() {',
     '  const [open, setOpen] = React.useState(true);',
-    "  return open ? <ProcessTour tour={data.tour} model={data.model} onClose={() => setOpen(false)} designHref=\"/project/p1/design\" initialStation={data.at} /> : <p data-tour-closed=\"\">closed</p>;",
+    "  return open ? <ProcessTour inline={!!data.inline} tour={data.tour} model={data.model} onClose={() => setOpen(false)} designHref=\"/project/p1/design\" initialStation={data.at} /> : <p data-tour-closed=\"\">closed</p>;",
     '}',
     "(document.getElementById('opener') as HTMLButtonElement).focus();",
     "createRoot(document.getElementById('tour')!).render(<App />);",
@@ -95,8 +100,8 @@ test.beforeAll(async () => {
   page_html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>${css}</style><style>${fontCss}</style><style>${bundleCss}</style></head><body style="margin:0;background:var(--cc-page)"><main style="padding:24px"><h1>Business view</h1><button id="opener">Walk through the process</button><div style="height:2000px"></div></main><div id="tour"></div><script>window.__TOUR__=__DATA__;</script><script>${js.replace(/<\/script/g, '<\\/script')}</script></body></html>`;
 });
 
-async function open(page: Page, at: number, which = BIG): Promise<void> {
-  const data = JSON.stringify({ tour: which.tour, model: which.model, at }).replace(/</g, '\\u003c');
+async function open(page: Page, at: number, which = BIG, inline = false): Promise<void> {
+  const data = JSON.stringify({ tour: which.tour, model: which.model, at, inline }).replace(/</g, '\\u003c');
   await page.setContent(page_html.replace('__DATA__', () => data), { waitUntil: 'load' });
   expect(await page.evaluate(() => document.fonts.ready.then(() => Array.from(document.fonts).some((f) => f.family.replace(/['"]/g, '') === 'Inter' && f.status === 'loaded'))), 'the product face did not load').toBe(true);
   await expect(page.locator('[data-process-tour]')).toBeVisible();
@@ -371,5 +376,32 @@ test.describe('on a phone', () => {
     await swipe('[data-process-tour-map]', -120);
     await page.waitForTimeout(200);
     await expect(tourAt).toHaveAttribute('data-tour-at', '2');
+  });
+});
+
+/* The same tour on the page (3.2.0, plan AB-4): at 1440 x 900 every station stands inside the map beside the card. */
+test.describe('the tour on the page at 1440 x 900', () => {
+  test.use({ viewport: { width: 1440, height: 900 }, contextOptions: { reducedMotion: 'reduce' } });
+
+  test('at every station the element stands inside the map, the card beside it, nothing over anything', async ({ page }) => {
+    test.setTimeout(240_000);
+    await open(page, -1, BIG, true);
+    await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-mode', 'inline');
+    for (let at = 0; at < tour.stations.length; at += 1) {
+      await page.keyboard.press('ArrowRight');
+      await expect(page.locator('[data-process-tour]')).toHaveAttribute('data-tour-at', String(at + 1));
+      await expect(page.locator('[data-process-tour-map] .cc-tour-here')).toHaveAttribute('data-element-id', tour.stations[at].id);
+      await page.waitForTimeout(80);
+      const m = await page.evaluate(() => {
+        const r = (sel: string) => document.querySelector(sel)?.getBoundingClientRect() ?? null;
+        return { element: r('[data-process-tour-map] .cc-tour-here .djs-visual'), map: r('[data-tour-inline-map]'), card: r('[data-tour-sheet]'), sw: document.documentElement.scrollWidth, w: window.innerWidth };
+      });
+      const title = tour.stations[at].title;
+      expect(m.element, title).not.toBeNull();
+      const inside = m.element!.left >= m.map!.left - 1 && m.element!.right <= m.map!.right + 1 && m.element!.top >= m.map!.top - 1 && m.element!.bottom <= m.map!.bottom + 1;
+      expect(inside, `${title}: the element left the map`).toBe(true);
+      expect(m.card!.left, `${title}: the card is not beside the map`).toBeGreaterThanOrEqual(m.map!.right - 1);
+      expect(m.sw).toBeLessThanOrEqual(m.w);
+    }
   });
 });

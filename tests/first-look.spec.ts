@@ -414,7 +414,7 @@ test.describe('the first look on screen', () => {
     });
   });
 
-  test('stands in its end state below the map in Analyze, Business: the four stages of §5.2, every figure says where it is from', async ({
+  test('the text around the map stands in its end state below the map in Analyze, Business, every sentence with its line and no figure without a run', async ({
     page,
   }) => {
     test.setTimeout(240 * 1000);
@@ -428,54 +428,26 @@ test.describe('the first look on screen', () => {
       route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'held by the spec' }) }),
     );
 
-    // The project opens in Analyze, Business (AB-2, ADR-109); the first
-    // insights stand below the map until v3.2.0, in their end state from the
-    // first frame — the paced build-up and its Skip retired with v3.1.0 (AB-3).
+    // The project opens in Analyze, Business (AB-2, ADR-109). Since 3.2.0 (AB-6) the text around the map stands
+    // where the first insights stood; their four-stage receipt and its strip of figures left with them (plan §1.1).
     await page.goto(`/project/${PROJECT_ID}?first=1`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 60000 });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
 
-    const first = page.locator('[data-analyze-interim] [data-first-look]');
-    await expect(first).toHaveAttribute('data-first-look', 'end-state', { timeout: 60000 });
-    await expect(page.locator('[data-first-look-buildup], [data-first-look-skip]')).toHaveCount(0);
-    // Its own name and a sentence on what it is for — nothing on it borrows
-    // the stage header of Analyze (roadmap 3.0.7, owner 10.10.2026). Since
-    // 3.0.21 the Business lead says it is for understanding, with nothing to
-    // decide (owner decisions 22.10.2026).
-    await expect(first.getByRole('heading', { level: 2, name: 'First insights into your process' })).toBeVisible();
-    await expect(first.locator('[data-first-look-lead]')).toContainText('nothing to decide here');
-    await expect(first.locator('[data-stage-title]')).toHaveCount(0);
-    await expect(page.locator('[data-first-look-stage]')).toHaveCount(4, { timeout: 60000 });
-    expect(
-      await page.locator('[data-first-look-stage]').evaluateAll((els) =>
-        els.map((el) => el.getAttribute('data-first-look-stage')),
-      ),
-    ).toEqual(['code-read', 'process-recognised', 'business-language', 'your-process']);
-
-    // Not one figure without an origin, and not one absent figure printed as 0.
-    const figures = await page.locator('[data-first-look-figure]').evaluateAll((els) =>
-      els.map((el) => ({
-        key: el.getAttribute('data-first-look-figure') || '',
-        origin: el.getAttribute('data-origin') || '',
-        text: (el.textContent || '').trim(),
-      })),
-    );
-    expect(figures.length, 'no figures rendered — the check would be vacuous').toBeGreaterThan(3);
-    for (const f of figures) {
-      expect(['run', 'engine', 'absent'], `${f.key} has no origin`).toContain(f.origin);
+    const around = page.locator('[data-around-the-map]');
+    await expect(around).toHaveAttribute('data-around-the-map', 'ready', { timeout: 60000 });
+    await expect(page.locator('[data-first-look], [data-first-look-buildup], [data-first-look-skip], [data-first-look-stage], [data-first-look-figure]')).toHaveCount(0);
+    // Nothing on it borrows the stage header of Analyze (roadmap 3.0.7, owner 10.10.2026).
+    await expect(around.locator('[data-stage-title]')).toHaveCount(0);
+    // Every sentence carries its line — the summary above the map too.
+    const sentences = page.locator('[data-around-sentence]');
+    expect(await sentences.count(), 'no sentence rendered — the check would be vacuous').toBeGreaterThan(3);
+    for (let k = 0; k < (await sentences.count()); k += 1) {
+      await expect(sentences.nth(k).locator('[data-cc-anchor]').first()).toBeAttached();
     }
-    const findings = figures.find((f) => f.key === 'findings');
-    expect(findings?.origin, 'a project with no run reported a finding count').toBe('absent');
-    expect(findings?.text).toContain('not analysed');
-
-    // Traceability, the reveal line and the decision points are all on the
-    // page — in Business one fold down, under "How this was read", since the
-    // opening leads with the process in plain words (owner, 03.10.2026).
-    const fold = page.getByRole('button', { name: /How this was read/ });
-    if (await fold.count()) await fold.first().click();
-    await expect(page.locator('[data-first-look-traceability]')).toBeVisible();
-    await expect(page.locator('[data-first-look-reveal]')).toBeVisible();
-    await expect(page.locator('[data-first-look-decisions]')).toHaveAttribute('data-count', /[1-9]/);
+    // A project with no run reports no finding count and paints no zero.
+    const visible = await page.locator('[data-analyze-business]').evaluate((el) => (el as HTMLElement).innerText);
+    expect(visible).not.toMatch(/\b0 findings?\b/i);
   });
 
   // Skip, the "second visit has no build-up" rule and reduced motion were the
@@ -488,7 +460,7 @@ test.describe('the first look on screen', () => {
     // No `?first=1`: what every ordinary visit looks like.
     await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-analyze-interim] [data-first-look]')).toHaveAttribute('data-first-look', 'end-state', {
+    await expect(page.locator('[data-around-the-map]')).toHaveAttribute('data-around-the-map', 'ready', {
       timeout: 60000,
     });
     await expect(page.locator('[data-first-look-skip]')).toHaveCount(0);
@@ -580,7 +552,7 @@ test.describe('the first look on screen', () => {
     await expect(page.locator('input[type="file"][accept=".abap,.txt"]')).toHaveCount(1);
     await expect(page.getByRole('button', { name: /Start Analysis/ })).toBeDisabled();
     await expect(page.locator('[data-analyze-business="ready"]')).toHaveCount(0);
-    await expect(page.locator('[data-first-look]')).toHaveCount(0);
+    await expect(page.locator('[data-first-look], [data-around-the-map]')).toHaveCount(0);
     await expect(page.locator('[data-first-look-figure]')).toHaveCount(0);
   });
 });

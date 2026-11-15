@@ -97,6 +97,36 @@ async function expectFits(frame: Locator, label: string): Promise<Fit> {
   return fit;
 }
 
+/**
+ * Full screen on a phone (ADR-119, 3.2.0): the bar is one row and the canvas keeps at least 40 % of the screen's
+ * height — with a step chosen, whose code stands in the side column under the canvas at most 40 % high.
+ */
+async function expectCanvasShare(frame: Locator, label: string) {
+  const sizes = await frame.evaluate((root) => {
+    const bar = root.querySelector('[data-map-fullscreen-bar]')?.getBoundingClientRect();
+    const canvas = root.querySelector('[data-process-map-canvas]')?.getBoundingClientRect();
+    const rail = root.querySelector('[data-map-fullscreen-rail]')?.getBoundingClientRect();
+    return { bar: bar?.height ?? 0, canvas: canvas?.height ?? 0, rail: rail?.height ?? 0, viewport: window.innerHeight };
+  });
+  console.log(`${label}: bar ${Math.round(sizes.bar)} px, canvas ${Math.round(sizes.canvas)} px, column ${Math.round(sizes.rail)} px of ${sizes.viewport} px`);
+  expect(sizes.bar, `${label}: the bar is one row`).toBeLessThanOrEqual(72);
+  expect(sizes.canvas, `${label}: the canvas's share of the screen`).toBeGreaterThanOrEqual(0.4 * sizes.viewport);
+  expect(sizes.rail, `${label}: the side column keeps its cap`).toBeLessThanOrEqual(0.4 * sizes.viewport + 1);
+}
+
+/**
+ * Full screen on a phone keeps the zoom in its sheet (ADR-119 (f)): opened for the reading of the zoom, which lies
+ * over the canvas and moves nothing, and closed again with Escape.
+ */
+async function expectFitsInFullScreen(frame: Locator, label: string): Promise<Fit> {
+  await frame.locator('[data-map-fullscreen-tools]').click();
+  await expect(frame.locator('[data-map-fullscreen-sheet] [data-map-zoom]')).toBeVisible();
+  const fit = await expectFits(frame, label);
+  await frame.page().keyboard.press('Escape');
+  await expect(frame.locator('[data-map-fullscreen-sheet]')).toHaveCount(0);
+  return fit;
+}
+
 async function shot(page: Page, name: string, frame: Locator) {
   if (!SHOTS) return;
   await expect.poll(async () => frame.locator('[data-map-node]').count(), { timeout: 90_000 }).toBeGreaterThan(2);
@@ -154,8 +184,40 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     // Full screen on a phone: the same narrow layout, the whole width in view.
     await frame.locator('[data-map-fullscreen-toggle]').click();
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
+    // Since 3.2.0 (AB-5) full screen on Analyze, Business is a named dialog with one bar; on a phone "Edit" is
+    // disabled with the sentence why (P3), and the overview map is off so the canvas keeps the height.
+    await expect(frame).toHaveAttribute('role', 'dialog');
+    await expect(frame).toHaveAttribute('aria-label', 'Process map, full screen');
+    await expect(frame.locator('[data-map-fullscreen-overview-panel]')).toHaveCount(0);
     await page.waitForTimeout(500);
-    await expectFits(frame, 'workspace full screen, Z_MM_PO_APPROVAL');
+    await expectFitsInFullScreen(frame, 'workspace full screen, Z_MM_PO_APPROVAL');
+    await expectCanvasShare(frame, 'workspace full screen');
+    // Find, zoom and the overview map are behind one button; its sheet takes the focus and Escape gives it back.
+    const tools = frame.locator('[data-map-fullscreen-tools]');
+    await expect(tools).toHaveAttribute('aria-label', 'Find, zoom and overview');
+    await tools.click();
+    const sheet = frame.locator('[data-map-fullscreen-sheet]');
+    await expect(sheet).toBeVisible();
+    await expect(tools).toHaveAttribute('aria-expanded', 'true');
+    await expect(sheet.locator(':focus')).toHaveCount(1);
+    for (const hook of ['[data-map-fullscreen-walk]', '[data-map-zoom-in]', '[data-map-fit]', '[data-map-fullscreen-overview]', '[data-process-search="bar"] input']) {
+      await expect(sheet.locator(hook).first(), hook).toBeVisible();
+    }
+    // P3: in the sheet, "Edit" is disabled with the sentence why.
+    await expect(sheet.getByRole('switch', { name: 'Edit' })).toBeDisabled();
+    await expect(sheet.locator('[data-map-fullscreen-edit="blocked"]')).toContainText('Editing needs a larger screen.');
+    await page.keyboard.press('Escape');
+    await expect(sheet).toHaveCount(0);
+    await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
+    await expect(tools).toBeFocused();
+    // Every control of the row is a 44 px target with a name; "Walk me through it" stands first in the sheet.
+    await expect(frame.locator('[data-map-fullscreen-toggle]')).toHaveText(/Leave full screen/);
+    for (const hook of ['[data-map-fullscreen-tools]', '[data-map-fullscreen-toggle]']) {
+      const box = await frame.locator(hook).boundingBox();
+      expect(box?.height ?? 0, `${hook} height`).toBeGreaterThanOrEqual(44);
+      expect(box?.width ?? 0, `${hook} width`).toBeGreaterThanOrEqual(44);
+      await expect(frame.locator(hook), `${hook} name`).toHaveAccessibleName(/\S/);
+    }
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/workspace-big-fullscreen-390.png` });
     // A sub-process opens its level, which fits as well, and the way up works.
     const sub = await frame.evaluate((root) => {
@@ -170,7 +232,10 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     await frame.locator(`[data-map-node="${sub}"]`).click();
     await expect.poll(() => frame.getAttribute('data-map-plane')).toBe(sub);
     await page.waitForTimeout(400);
-    await expectFits(frame, `workspace full screen, level ${sub}`);
+    await expectFitsInFullScreen(frame, `workspace full screen, level ${sub}`);
+    // The sub-process is the chosen step: its code stands in the side column, and the canvas keeps its share.
+    await expect(frame.locator(`[data-map-fullscreen-column] [data-process-code-card="${sub}"]`)).toBeVisible();
+    await expectCanvasShare(frame, `workspace full screen, level ${sub} with a step chosen`);
     if (SHOTS) await page.screenshot({ path: `${SHOTS}/workspace-big-sublevel-390.png` });
     await frame.locator('[data-process-up]').click();
     await expect.poll(() => frame.getAttribute('data-map-plane')).toBe('top');

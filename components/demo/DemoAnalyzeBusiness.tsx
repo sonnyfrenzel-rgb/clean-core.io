@@ -7,7 +7,6 @@ import { useRouter } from 'next/navigation';
 import { Play, RotateCcw, X } from 'lucide-react';
 import StageFrame from '@/components/StageFrame';
 import StageHeader from '@/components/StageHeader';
-import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
@@ -15,13 +14,16 @@ import CcDisclosure from '@/components/cc/Disclosure';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
-import FirstLook from '@/components/workspace/FirstLook';
-import BusinessNextStep from '@/components/workspace/BusinessNextStep';
+import AroundTheMap, { WhatThisProgramDoes } from '@/components/analyze/AroundTheMap';
+import AnalyzeEndings from '@/components/analyze/AnalyzeEndings';
+import WhatNextCard from '@/components/analyze/WhatNextCard';
+import type { TourMove } from '@/components/workspace/ProcessTour';
 import OpenQuestions from '@/components/workspace/OpenQuestions';
 import DemoRulesCard from '@/components/demo/DemoRulesCard';
 import DemoTourStop from '@/components/demo/DemoTourStop';
 import DemoWalkThrough from '@/components/demo/DemoWalkThrough';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
+import { useAroundTheMap } from '@/hooks/useAroundTheMap';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useDemoTour } from '@/hooks/useDemoTour';
 import { BUSINESS_MAP_ID } from '@/lib/business-layers';
@@ -30,13 +32,12 @@ import { codeCardLabel, codeCardLines, tokenizeAbapLine } from '@/lib/process-ma
 import { plainWordingFor } from '@/lib/business-card';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
-import { revealedRules, type SourceReading } from '@/lib/first-look';
-import { nextOpenPointOf } from '@/lib/next-step';
-import { programSummaryFactsOf } from '@/lib/program-summary-facts';
-import { businessInShort, programSummary } from '@/lib/program-summary-text';
-import { editorRules, isConfirmedState, type RulesStatus } from '@/lib/rules-editor';
+import { revealedRules } from '@/lib/first-look';
+import { editorRules } from '@/lib/rules-editor';
 import { signInLinkFor } from '@/lib/return-path';
-import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
+import { myWorkspaceHref, stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
+import { useAnalyzeProgress } from '@/hooks/useAnalyzeProgress';
+import { softGateShown, whatNextShown } from '@/lib/analyze-progress';
 import { notDetermined, VIEW_LABELS } from '@/lib/workspace-model';
 import {
   DEMO_INVITATION,
@@ -62,7 +63,7 @@ import {
   type WorkspaceDemoState,
 } from '@/lib/demo-workspace-state';
 import type { DemoWorkspaceData } from '@/lib/demo-workspace';
-import { bizLinesLabel, tourContinuesIn, tourPausedAt, wt } from '@/lib/workspace-messages';
+import { bizLinesLabel, tourContinuesIn, tourPausedAt, WALKED_BEFORE, walkedAll, wt } from '@/lib/workspace-messages';
 
 /** The map pulls bpmn-js: client only and on demand, as in a project's Analyze. */
 const ProcessMap = dynamic(() => import('@/components/process-map/ProcessMap'), { ssr: false });
@@ -89,13 +90,13 @@ function Place({ place, children, className }: { place: TourPlace; children: Rea
  * (the way back to My workspace, the view switch, the seven tools), "What this
  * program does" in the engine's own sentence with the invitation — "Walk me
  * through it" and "I'll look around myself" — then the reconstructed map, and
- * below it, until 3.2.0, the First insights blocks and "Next step". IT and
+ * below it the text around the map (AB-6) and, until AB-4, "Next step". IT and
  * Management of the demo keep their pages (`/demo/workspace?view=it|management`
  * and today's `/demo/analyze?view=it`), as a project's do until AB-9/AB-10.
  *
  * **Demo data, no model, no writes.** Every figure arrives in `data`, built on
- * the server by the engine of this release (`lib/demo-workspace.ts`); the first
- * insights are told there is no naming to read (`namingFrom="none"`), and the
+ * the server by the engine of this release (`lib/demo-workspace.ts`); the text
+ * around the map is the engine's alone (`useAroundTheMap`, `model: false`), and the
  * map is the demo's own drawing, not a stored project's. What the reader does
  * — the answers to the rules — stays in this browser (`lib/demo-workspace-state.ts`).
  * A demo must not reach a run, a pack, an export or a write
@@ -141,57 +142,21 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
     setRulesEditing(false);
   }, []);
 
-  /* ------------------------------------------- what this program does (engine) */
+  /* ------------------------------------------- the text around the map (engine only) */
   const engineVersion = engineVersionOfProject(project);
-  const inShort = useMemo(() => {
-    try {
-      return businessInShort(programSummary(programSummaryFactsOf(source, { engineVersion })), { codes: false });
-    } catch {
-      return null;
-    }
-  }, [source, engineVersion]);
+  // The demo asks no model: no plain wording, no narrative (`model: false`), as in a reader's visit.
+  const around = useAroundTheMap({ project, projectId: 'demo', owner: false, model: false, source });
 
   /* ---------------------------------------------------- the reading, the map */
-  const [reading, setReading] = useState<SourceReading | null>(null);
-  const onReading = useCallback((next: SourceReading) => setReading(next), []);
+  const reading = around.reading;
   const rules = useMemo(() => (reading ? revealedRules(reading.ruleSet) : []), [reading]);
   const ruleRows = useMemo(
     () => (reading ? editorRules(reading.ruleSet, plainWordingFor(source, reading.skeleton)) : []),
     [reading, source],
   );
-  const openDemoRules = useCallback(() => {
-    setRulesEditing(true);
-    document.getElementById('demo-rules')?.scrollIntoView({ block: 'start' });
-  }, []);
-  /** The demo's answers, kept in this browser, in the shape every rule action reads. A Clarify is an open question. */
-  const demoRulesStatus = useMemo<RulesStatus | null>(() => {
-    if (!reading) return null;
-    const answered = (id: string) => {
-      const s = state.ruleAnswers[id]?.state;
-      return !!s && isConfirmedState(s);
-    };
-    return {
-      total: rules.length,
-      confirmed: rules.filter((r) => answered(r.id)).length,
-      open: rules.filter((r) => !answered(r.id)).map((r) => r.id),
-      by: [],
-      lastAt: null,
-    };
-  }, [reading, rules, state.ruleAnswers]);
   const open = useMemo(() => notDetermined(project), [project]);
   // The demo's open questions (ADR-081): read-only, nothing to write to.
   const questions = useOpenQuestions(project, '', { open, rulesEnabled: false });
-  /**
-   * The next phase of the demo's own rail, by the product's rule. A demo can
-   * never sign a run, so Analyze can never be "done" here; the engine's reading
-   * stands in for it, and the step is the first phase after it — said so in the
-   * step's own selection line rather than claimed as on record.
-   */
-  const demoNextPoint = useMemo(() => {
-    const rail = demo.rail.map((s) => (s.key === 'analyze' ? { ...s, state: 'done' as const, done: true } : s));
-    const point = nextOpenPointOf(rail, true);
-    return point ? { ...point, selection: wt('demo.nextAfterReading') } : null;
-  }, [demo.rail]);
   const [plane, setPlane] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -237,6 +202,42 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
   const [walkOpen, setWalkOpen] = useState(false);
   const [lookingAround, setLookingAround] = useState(false);
   const walk = useCallback(() => setWalkOpen(true), []);
+  /**
+   * As in a project's Analyze (plan AB-4, O10): the tour on the page, "you are here" in "How it runs", the walk-through
+   * counted in this browser at its last card, then the two endings and "What you can do next". The demo's own key.
+   */
+  const { progress, markWalked, setNextHidden } = useAnalyzeProgress(DEMO_ANALYSIS_KEY);
+  const [move, setMove] = useState<TourMove | null>(null);
+  const [walkedSteps, setWalkedSteps] = useState<number | null>(null);
+  const onMove = useCallback(
+    (next: TourMove | null) => {
+      setMove(next);
+      if (!next?.end) return;
+      markWalked();
+      setWalkedSteps(next.total);
+    },
+    [markWalked],
+  );
+  const walked = progress.walked;
+  const here = useMemo(() => (move?.station ? { nodeId: move.station.id, line: move.station.anchor?.lineStart ?? null } : null), [move]);
+  const wasWalking = useRef(false);
+  useEffect(() => {
+    if (wasWalking.current && !walkOpen) {
+      window.requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-analyze-walk]')?.focus());
+    }
+    wasWalking.current = walkOpen;
+  }, [walkOpen]);
+  const endings = (variant: 'compact' | 'full', children?: React.ReactNode) => (
+    <AnalyzeEndings
+      variant={variant}
+      owner={true}
+      rules={reading ? rules.length : null}
+      designHref={stageHref({ base: '/demo', path: 'design', view: 'business', from: WORKSPACE_RETURN.tools })}
+      anotherHref={myWorkspaceHref()}
+    >
+      {children}
+    </AnalyzeEndings>
+  );
 
   /* ------------------------------------------------------------------ tour */
   // The demo's tour (`lib/demo-tour.ts`) has its Business stations here; a
@@ -315,7 +316,8 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
         title={`${demo.title} — ${demo.rail.find((r) => r.key === 'analyze')?.label ?? 'Analyze'}`}
         eyebrow={<CcTag>{DEMO_TAG}</CcTag>}
         backToMyWorkspace
-        toolsNote={wt('abiz.softGate')}
+        toolsNote={softGateShown(progress) ? wt('abiz.softGate') : null}
+        toolsCompact
       >
         {wt('abiz.lead')}
       </StageHeader>
@@ -349,60 +351,54 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
 
       <div className="flex flex-col gap-4">
         {/* What this program does, and the one invitation (mockup state 3). */}
-        <section
-          data-analyze-summary=""
-          data-layout-item=""
-          aria-labelledby="analyze-summary-title"
-          className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 rounded-cc-card border border-cc-line bg-cc-surface px-4 py-4 shadow-cc"
-        >
-          <div className="min-w-0 flex-1 basis-80">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 id="analyze-summary-title" className="m-0 text-[15px] leading-snug font-bold text-cc-ink">
-                {wt('abiz.summaryTitle')}
-              </h2>
-              {inShort && inShort.length > 0 ? <CcProvenanceChip value="reconstructed" /> : null}
-            </div>
-            <p data-analyze-summary-text="" className="m-0 mt-1 max-w-3xl text-[14px] leading-relaxed font-medium text-cc-ink">
-              {inShort && inShort.length > 0
-                ? inShort.map((line, i) => (
-                    <React.Fragment key={`${line.key}-${i}`}>
-                      <span className="break-words">{line.text}</span>
-                      {line.anchors[0] ? (
-                        <>
-                          {' '}
-                          <CcAnchor
-                            label={`${wt('firstLook.sourceLine')} L${line.anchors[0].lineStart}`}
-                            onOpen={() => openAnchor(line.anchors[0].lineStart, line.anchors[0].lineEnd)}
-                          >{`L${line.anchors[0].lineStart}`}</CcAnchor>
-                        </>
-                      ) : null}
-                      {i < inShort.length - 1 ? ' ' : null}
-                    </React.Fragment>
-                  ))
-                : wt('abiz.summaryNone')}
-            </p>
-          </div>
-          {invitation ? (
-            <div data-analyze-invitation="" className="cc-no-print flex flex-wrap items-center gap-3 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch">
-              <CcButton variant="primary" icon={<Play size={16} aria-hidden={true} />} onClick={walk} data-analyze-walk="">
-                {wt('abiz.walk')}
-              </CcButton>
-              <CcButton variant="secondary" onClick={() => setLookingAround(true)} data-analyze-look-around="">
-                {wt('abiz.lookAround')}
-              </CcButton>
-            </div>
-          ) : null}
-        </section>
+        <WhatThisProgramDoes
+          text={around.text}
+          state={around.state}
+          hidden={walkOpen}
+          onAnchor={openAnchor}
+          actions={
+            walked ? (
+              <div data-analyze-walked="" className="cc-no-print flex min-w-0 flex-col gap-3 max-[600px]:w-full">
+                <p className="m-0 flex flex-wrap items-center gap-x-2 text-[12px] leading-snug font-semibold text-cc-ink-muted">
+                  <span>{walkedSteps !== null ? walkedAll(walkedSteps) : WALKED_BEFORE}</span>
+                  <span aria-hidden={true}>·</span>
+                  <CcButton variant="ghost" icon={<Play size={14} aria-hidden={true} />} onClick={walk} data-analyze-walk="again">
+                    {wt('abiz.walkAgain')}
+                  </CcButton>
+                </p>
+                {endings('compact')}
+              </div>
+            ) : invitation ? (
+              <div data-analyze-invitation="" className="cc-no-print flex flex-wrap items-center gap-3 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch">
+                <CcButton variant="primary" icon={<Play size={16} aria-hidden={true} />} onClick={walk} data-analyze-walk="">
+                  {wt('abiz.walk')}
+                </CcButton>
+                <CcButton variant="secondary" onClick={() => setLookingAround(true)} data-analyze-look-around="">
+                  {wt('abiz.lookAround')}
+                </CcButton>
+              </div>
+            ) : null
+          }
+        />
 
         {/* The guided tour on the map, as in an own project (owner decision
             21.10.2026); it asks nothing, so the demo shows it as it is. Its way
-            in is the invitation above, as in a project's Analyze. */}
+            in is the invitation above, as in a project's Analyze; since 3.2.0
+            it runs on the page where the map stands (plan AB-4). */}
         <div data-demo-walk="">
-          <DemoWalkThrough model={processMap} source={source} designHref={designHref} open={walkOpen} onOpenChange={setWalkOpen} entry={false} />
+          <DemoWalkThrough
+            model={processMap}
+            source={source}
+            designHref={designHref}
+            open={walkOpen}
+            onOpenChange={setWalkOpen}
+            endings={endings('compact')}
+            onMove={onMove}
+          />
         </div>
 
-        {/* The map: the first block under the summary (mockup states 3, 7, 17). */}
-        <div id={BUSINESS_MAP_ID} data-analyze-map="" data-demo-business-map="" className="scroll-mt-20">
+        {/* The map: the first block under the summary (mockup states 3, 7, 17); the tour stands in its place while it runs. */}
+        <div id={BUSINESS_MAP_ID} data-analyze-map="" data-demo-business-map="" className="scroll-mt-20" hidden={walkOpen}>
           <Place place="process-map" className="">
             <div className="max-w-3xl">{stop('process-map')}</div>
             <div
@@ -466,7 +462,7 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
               ) : null}
             </div>
           </Place>
-          {lookingAround ? (
+          {lookingAround && !walked ? (
             <p data-analyze-look-around-line="" className="cc-no-print m-0 mt-2 flex flex-wrap items-center gap-2 text-[13px] leading-snug font-medium text-cc-ink-muted">
               {wt('abiz.lookAroundLine')}
               <CcButton variant="ghost" icon={<Play size={14} aria-hidden={true} />} onClick={walk} data-analyze-walk="later">
@@ -490,45 +486,34 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
           </Place>
         </div>
 
-        {/* Interim until 3.2.0, as in a project: the First insights blocks and "Next step" below the map. */}
-        <section data-analyze-interim="" aria-label={wt('abiz.belowTitle')} className="flex flex-col gap-4">
-          <Place place="reveal" className="">
-            <div className="max-w-3xl">{stop('reveal')}</div>
-            {/* The rules card stands below, with the answers this browser
-                holds — the opening reads the same answers instead of a route
-                the demo has no record in (owner, 03.10.2026). */}
-            <FirstLook
-              project={project}
-              projectId="demo"
-              onReading={onReading}
-              namingFrom="none"
-              fullMapBelow
-              rulesBelow
-              rulesOverride={demoRulesStatus}
-              questions={questions}
-              onReviewRules={openDemoRules}
-              elsewhere={{
-                documentation: stageHref({ base: '/demo', path: 'documentation', view: 'business', from: WORKSPACE_RETURN.tools }),
-                it: `${DEMO_WORKSPACE_ROUTE}?view=it`,
-              }}
-            />
-          </Place>
-          {/* The product's one next step: while a rule has no answer it is to
-              decide on the rules, and it leads to the demo's own rules card. */}
-          {demoRulesStatus ? (
-            <BusinessNextStep
-              step={
-                demoRulesStatus.open.length > 0
-                  ? { kind: 'rules', open: demoRulesStatus.open, total: demoRulesStatus.total, then: demoNextPoint }
-                  : demoNextPoint
-                    ? { kind: 'phase', point: demoNextPoint }
-                    : { kind: 'none' }
-              }
-              projectId="demo"
-              base="/demo"
-              onDecideRules={openDemoRules}
-            />
-          ) : null}
+        {/* The text around the map, as in a project (AB-6): the engine's, with every line. */}
+        <Place place="reveal" className="">
+          <div className="max-w-3xl">{stop('reveal')}</div>
+          {/* The demo answers its rules in its own card on this page, so the basket line names no Design (3.0.21). */}
+          <AroundTheMap text={around.text} state={around.state} designHref={null} here={here} onAnchor={openAnchor} />
+        </Place>
+
+        {/* After the walk-through, as in a project (plan AB-4): the two endings and "What you can do next". */}
+        {walked && !walkOpen ? (
+          <>
+            {endings(
+              'full',
+              progress.nextHidden ? (
+                <button
+                  type="button"
+                  onClick={() => setNextHidden(false)}
+                  data-analyze-what-next-show=""
+                  className="mt-1 self-start rounded-cc-row text-left text-[13px] font-semibold text-cc-ink-muted underline underline-offset-2"
+                >
+                  {wt('abiz.nextShow')}
+                </button>
+              ) : null,
+            )}
+            {whatNextShown(progress) ? <WhatNextCard onHide={() => setNextHidden(true)} /> : null}
+          </>
+        ) : null}
+
+        <section data-demo-below="" aria-label={wt('abiz.belowTitle')} className="flex flex-col gap-4">
 
           {/* Folded, with its count — simple on top, complete one click deeper. */}
           <Place place="not-determined" className="">

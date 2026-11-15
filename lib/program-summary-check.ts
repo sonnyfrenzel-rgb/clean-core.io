@@ -173,6 +173,35 @@ export function purposeProposalOf(narrative: string | null | undefined, facts: P
   return checkPurposeProposal(proposal, facts).ok ? sapCheckedNarrative(proposal) : null;
 }
 
+/**
+ * The code-like names in a text that the engine did not read, write or call —
+ * any of them, not only the table codes the glossary knows (plan
+ * `docs/design/analyze-business-first-plan.md` §3, AB-6: a model's wording of
+ * what the program does "names only objects the engine read"). Empty when the
+ * text names none. `checkPurposeProposal` stays as it is: the header comment
+ * is held to it, and an author may name what the code does not touch.
+ */
+export function unreadCodesOf(text: string, facts: ProgramSummaryFacts): string[] {
+  const known = new Set([
+    ...facts.reads.map((o) => o.name.toUpperCase()),
+    ...facts.writes.map((o) => o.name.toUpperCase()),
+    ...facts.changes.actions.map((a) => a.name.toUpperCase()),
+    ...facts.changes.displayTransactions.map((d) => d.name.toUpperCase()),
+    ...facts.inputs.map((i) => i.name.toUpperCase()),
+    ...(facts.program ? [facts.program.toUpperCase()] : []),
+    ...facts.fixedLists.flatMap((l) => l.rows.flat().map((v) => v.toUpperCase())),
+  ]);
+  const unread = new Set<string>();
+  for (const m of String(text ?? '').matchAll(CODE)) {
+    const code = m[0];
+    // A word in capitals is not a name: a code holds a digit or an underscore, or is one the glossary knows.
+    if (!/[0-9_]/.test(code) && !TABLE_TERMS_EN[code.toLowerCase()]) continue;
+    if (ALLOWED_CODES.has(code) || known.has(code)) continue;
+    unread.add(code);
+  }
+  return [...unread];
+}
+
 /** The tag beside a quoted header comment — a tag, not one of the nine provenance values (DESIGN.md §4). */
 export const AUTHOR_CLAIM_LABEL = "Author's claim";
 

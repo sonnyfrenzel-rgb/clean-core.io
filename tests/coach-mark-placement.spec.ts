@@ -173,7 +173,7 @@ async function startExample(page: Page, viewport: { width: number; height: numbe
   }
   await start.click({ timeout: 60000 });
   await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
-  await expect(page.locator('[data-first-look="complete"], [data-first-look="end-state"]').first()).toBeVisible({ timeout: 90000 });
+  await expect(page.locator('[data-around-the-map="ready"]').first()).toBeVisible({ timeout: 90000 });
   await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
 }
 

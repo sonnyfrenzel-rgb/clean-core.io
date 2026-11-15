@@ -79,11 +79,13 @@ async function expectWorkspaceWithFirstLook(page: Page): Promise<string> {
   const projectId = new URL(page.url()).pathname.split('/')[2];
   await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
   await expect(page.locator('[data-analyze-score]'), 'Business shows no score').toHaveCount(0);
-  const look = page.locator('[data-first-look]');
+  // The text around the map (3.2.0, AB-6) where the first look stood: there at once, then read.
+  const look = page.locator('[data-around-the-map]');
   await expect(look).toBeVisible({ timeout: 60000 });
-  await expect(look).toHaveAttribute('data-first-look', 'end-state', { timeout: 90000 });
+  await expect(look).toHaveAttribute('data-around-the-map', /^(reading|ready)$/, { timeout: 60000 });
+  await expect(look).toHaveAttribute('data-around-the-map', 'ready', { timeout: 90000 });
   const states = await page.evaluate(() => (window as unknown as { __firstLookStates?: string[] }).__firstLookStates ?? []);
-  expect(states.filter((v) => v !== 'waiting' && v !== 'end-state'), 'the first look took a state other than reading and its end state').toEqual([]);
+  expect(states.filter((v) => v !== 'reading' && v !== 'ready'), 'the text around the map took a state other than reading and ready').toEqual([]);
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map, 'the start drew no full map').toBeVisible({ timeout: 60000 });
   // And it stays.
@@ -104,13 +106,13 @@ async function recordFirstLook(page: Page) {
     if (w.__firstLookStates) return;
     w.__firstLookStates = [];
     const note = () => {
-      for (const el of document.querySelectorAll('[data-first-look]')) {
-        const v = el.getAttribute('data-first-look') ?? '';
+      for (const el of document.querySelectorAll('[data-around-the-map]')) {
+        const v = el.getAttribute('data-around-the-map') ?? '';
         if (!w.__firstLookStates!.includes(v)) w.__firstLookStates!.push(v);
       }
     };
     note();
-    new MutationObserver(note).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-first-look'] });
+    new MutationObserver(note).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-around-the-map'] });
   };
   await page.addInitScript(install);
   await page.evaluate(install);
@@ -186,8 +188,10 @@ test.describe('an example opens Analyze, Business, with the map and the first lo
     await page.click('[data-own-code-start]');
     const projectId = await expectWorkspaceWithFirstLook(page);
 
-    // The run is on record, so Next step has moved past Analyze.
-    await expect(page.locator('[data-next-step]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator(`[data-next-step] a[href*="/project/${projectId}/analyze"]`)).toHaveCount(0);
+    // The run is on record, so the tool bar has moved past Analyze. Analyze, Business has no "Next step" card any
+    // more (ADR-118); the tool bar says it: Analyze done, and never the tool tagged next.
+    const analyzeTool = page.locator(`[data-stage-tools] a[data-workspace-tool="analyze"][href*="/project/${projectId}/analyze"]`).first();
+    await expect(analyzeTool).toHaveAttribute('data-phase-state', 'done', { timeout: 60000 });
+    await expect(page.locator('[data-stage-tools] a[data-workspace-tool="analyze"][data-workspace-tool-next]')).toHaveCount(0);
   });
 });

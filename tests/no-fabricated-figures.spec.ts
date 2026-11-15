@@ -28,6 +28,9 @@ const MEASURED_VALUE_SURFACES = [
   'app/(app)/project/[projectId]/design/page.tsx',
   // The two stage exports, moved out of those pages in block D, D.28.
   'lib/analysis-export.ts',
+  // The text around the map (3.2.0, AB-6): its counts — questions beyond the six, the basket line — are the engine's.
+  'components/analyze/AroundTheMap.tsx',
+  'lib/around-the-map.ts',
   'lib/design-export.ts',
   'components/ArchitectSignOff.tsx',
 ];
@@ -123,6 +126,28 @@ test.describe('no fabricated figures on measured values', () => {
     // Optional, so a missing score cannot be silently defaulted by a caller.
     expect(source).toContain('confidenceScore?: number;');
     expect(source).toContain('No confidence score was computed');
+  });
+
+  test('the text around the map counts only what the engine read (3.2.0, AB-6)', async () => {
+    // Imported here, not at the top: the rest of this spec reads source only.
+    const { readProcess, readRules } = await import('../lib/first-look');
+    const { aroundTheMap, QUESTIONS_SHOWN } = await import('../lib/around-the-map');
+    const { explainBusinessRules } = await import('../lib/abap/business-rule-set-explain');
+    const source = fs.readFileSync(path.join(ROOT, 'public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8');
+    const engine = '3.1.0';
+    const proc = readProcess(source);
+    const ruleSet = readRules(source, proc, engine);
+    const text = aroundTheMap({ source, skeleton: proc.skeleton, ruleSet, processFacts: proc.facts, engineVersion: engine });
+    const ex = explainBusinessRules(source, ruleSet, proc.facts, engine);
+    // "And N more questions": the engine's questions (and the business findings) beyond the six listed — no other figure.
+    expect(text.questions.length).toBe(Math.min(QUESTIONS_SHOWN, text.questions.length + text.questionsMore));
+    expect(text.questions.filter((q) => q.from === 'rule').length + text.questionsMore).toBeGreaterThanOrEqual(ex.questions.length);
+    // The basket line adds up to the business rules the explanation holds.
+    expect(text.basket?.total).toBe(ex.rules.length);
+    expect(text.basket?.questions).toBe(ex.questions.length);
+    // The component computes no figure of its own: it prints what the text model hands it.
+    const component = fs.readFileSync(path.join(ROOT, 'components/analyze/AroundTheMap.tsx'), 'utf8');
+    expect(component).not.toMatch(/Math\.(?:round|max|min|floor|ceil)\(|\.reduce\(|\?\?\s*[1-9]|\|\|\s*[1-9]/);
   });
 });
 
@@ -381,7 +406,8 @@ test.describe('the gate that runs untrusted code holds no production secret', ()
 });
 
 test.describe('hooks run before any early return', () => {
-  const files = ['components/UserOnboarding.tsx', 'components/design/RoutingRationale.tsx'];
+  // The text around the map returns early while the walk-through runs (`hidden`, 3.2.0) — after its hooks, of which it has none.
+  const files = ['components/UserOnboarding.tsx', 'components/design/RoutingRationale.tsx', 'components/analyze/AroundTheMap.tsx'];
   for (const rel of files) {
     test(`${rel} has no hook after a conditional return`, () => {
       const source = fs.readFileSync(path.join(ROOT, rel), 'utf8');

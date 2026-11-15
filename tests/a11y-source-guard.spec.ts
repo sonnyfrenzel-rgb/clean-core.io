@@ -173,10 +173,14 @@ test.describe('the two shell menus are menus in the WAI-ARIA sense (§1.6, block
 });
 
 test.describe('the workspace (roadmap 3.0.4)', () => {
-  test('the first look has exactly one live region, and it carries the newest stage only (§2.8)', () => {
-    const src = code('components/workspace/FirstLook.tsx');
-    expect(src.match(/aria-live=/g) ?? [], 'more than one live region in the first look').toHaveLength(1);
-    expect(src, 'the announcement joins every stage again').not.toMatch(/\.map\(\(s\) => `\$\{s\.label\}: \$\{s\.result\}`\)\s*\.join/);
+  test('the text around the map announces nothing of its own: the names arrive in the one status line of the map (§2.8)', () => {
+    // The first look's staged card, with its one live region for the newest stage, left with v3.2.0 (AB-6): its
+    // text is the text around the map, which arrives in place. The one announcement on the page is the map's
+    // naming status line (ADR-108); a second live region here would make a screen reader repeat it.
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLook.tsx'))).toBe(false);
+    for (const rel of ['components/analyze/AroundTheMap.tsx', 'components/analyze/AnalyzeBusiness.tsx']) {
+      expect(code(rel).match(/aria-live=/g) ?? [], `${rel} has a live region of its own`).toHaveLength(0);
+    }
   });
 
   test('disclosures are not dressed up as ARIA menus', () => {
@@ -190,7 +194,7 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
     }
   });
 
-  test('Business reads what the program does, the map, then the first insights and Next step — in that order in the DOM (§2.9)', () => {
+  test('Business reads what the program does, the map, the text around it, then the endings and "What you can do next" — in that order in the DOM (§2.9)', () => {
     // Since v3.1.0 the Business view is Analyze's page (AB-2, ADR-109), not an
     // order of blocks in the workspace shell: the map is the page. The reading
     // order is the DOM order at every width — no CSS `order` splits the two, so
@@ -201,9 +205,17 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
       expect(i, `${needle} is not on the page`).toBeGreaterThan(-1);
       return i;
     };
-    const order = [at('data-analyze-summary=""'), at('<WorkspaceProcess'), at('<FirstLook'), at('<BusinessNextStep')];
+    // Since 3.2.0 (AB-6) the text around the map stands where the first insights stood, and (AB-4) the two endings in
+    // full and "What you can do next" follow it where "Next step" stood.
+    const order = [at('<WhatThisProgramDoes'), at('<WorkspaceProcess'), at('<AroundTheMap'), at('data-analyze-what-next-show'), at('<WhatNextCard')];
     for (let i = 1; i < order.length; i++) expect(order[i], `block ${i} stands before block ${i - 1}`).toBeGreaterThan(order[i - 1]);
     expect(page).not.toMatch(/\border-(first|last|\d+)\b/);
+    // The tour on the page puts its card above the map on a narrow screen by grid placement, not by `order` (AB-4):
+    // the card is first in the DOM, so the focus meets it first at every width.
+    const tour = read('components/workspace/ProcessTour.tsx');
+    const inline = tour.slice(tour.indexOf('export function ProcessTourInline'));
+    expect(inline.indexOf('data-tour-sheet=""')).toBeLessThan(inline.indexOf('data-tour-inline-map=""'));
+    expect(inline).not.toMatch(/\border-(first|last|\d+)\b/);
     // The workspace shell keeps no Business order to drift from it.
     expect(read('components/workspace/WorkspaceShell.tsx')).not.toContain('BUSINESS_ORDER');
   });
@@ -281,5 +293,50 @@ test.describe('the stylesheet (§1.1, §7.1)', () => {
     expect(thead, 'no rule for the header row').not.toBeNull();
     expect(thead![1]).not.toMatch(/display:\s*none/);
     expect(read('app/(app)/clean-core-explained/page.tsx')).toContain('role="columnheader"');
+  });
+});
+
+test.describe('the map in full screen on Analyze, Business (AB-5, 3.2.0)', () => {
+  const canvas = code('components/process-map/BpmnCanvas.tsx');
+  const bar = code('components/process-map/ProcessFullScreen.tsx');
+  const hook = code('components/process-map/useCanvasFullscreen.ts');
+
+  test('it is a dialog with a name', () => {
+    expect(canvas).toContain("role={own ? 'dialog' : undefined}");
+    expect(canvas).toContain('aria-label={own ? fullscreenParts.label : undefined}');
+    expect(read('lib/messages/analyze-fullscreen.ts')).toContain("'fullScreen.dialogLabel': 'Process map, full screen'");
+  });
+
+  test('the focus moves in on open (to the way out), Tab stays inside, and the focus comes back on leaving', () => {
+    // In: the hook focuses `toggleRef`; in full screen that is the bar's "Leave full screen".
+    expect(hook).toContain('toggleRef.current?.focus();');
+    expect(canvas).toContain('const leaveRef = toggleRef;');
+    expect(bar).toContain('buttonRef={tools.leaveRef}');
+    // Inside: Tab and Shift+Tab wrap at the dialog's edges.
+    expect(canvas).toContain('onKeyDown={own ? keepTabInside : undefined}');
+    expect(canvas).toMatch(/const keepTabInside = useCallback\(\(event[\s\S]*?event\.key !== 'Tab'[\s\S]*?last\.focus\(\)[\s\S]*?first\.focus\(\)/);
+    // Out: back to the toggle, or to the control that asked for full screen ("Edit model").
+    expect(hook).toMatch(/if \(lost\) toggleRef\.current\?\.focus\(\);/);
+    expect(canvas).toContain('if (opener.isConnected && opener.getClientRects().length > 0) opener.focus();');
+  });
+
+  test('Escape leaves it — except inside the editor, where Escape ends a tool', () => {
+    expect(hook.match(/event\.key !== 'Escape'/g) ?? []).toHaveLength(2);
+    expect(canvas).toContain('escapeInside: bodyRef,');
+    // Not marked aria-modal: that would make the hook's own Escape stand down (`ccModalOpen`).
+    expect(canvas).not.toMatch(/aria-modal=\{own/);
+  });
+
+  test('its controls are 44 px on touch: the library\'s buttons, switch and segments, and the search field and hits', () => {
+    for (const lib of ['CcButton', 'CcIconButton', 'CcSwitch']) expect(bar, `${lib} is not the bar's`).toContain(`<${lib}`);
+    expect(read('components/cc/Switch.tsx')).toContain('pointer-coarse:min-h-11');
+    expect(bar).toContain('pointer-coarse:min-h-11');
+    expect(code('components/process-map/ProcessSearch.tsx')).toContain("compact ? 'h-8 py-1 text-[13px] pointer-coarse:h-11'");
+  });
+
+  test('"Edit" disabled says why (P3 on a phone, P8 for a reader), as a description of the switch', () => {
+    expect(bar).toContain('disabled={editBlocked !== null}');
+    expect(bar).toContain('help={editBlocked ?? undefined}');
+    expect(read('components/cc/Switch.tsx')).toContain("aria-describedby={describedByOf({ helpId: !!help && helpId");
   });
 });

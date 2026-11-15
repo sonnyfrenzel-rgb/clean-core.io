@@ -88,19 +88,20 @@ test.describe('a finished project reopens on its process', () => {
     expect(page).not.toMatch(/workflowSteps|workflowSummary|auditPackExportedAt|\.status\b/);
   });
 
-  test('Business renders the first insights and the process map whatever the phase', () => {
+  test('Business renders the text around the map and the process map whatever the phase', () => {
     // Business is Analyze's page since v3.1.0 (AB-2, ADR-109).
     const page = read('components/analyze/AnalyzeBusiness.tsx');
     // The map with no phase condition: only "nothing to draw" (no source, no run) falls back.
     expect(page).toContain("if (!legacyCode.trim() && !signed) return <>{fallback}</>;");
     expect(page).toMatch(/<div id=\{BUSINESS_MAP_ID\} data-analyze-map=""/);
-    // The first insights, likewise, whatever the phase or the next step.
-    expect(page).toContain('<FirstLook');
-    expect(page).not.toMatch(/nextOpenPoint\([^)]*\)[^\n]*FirstLook|workflowSteps\(project\)[^\n]*FirstLook/);
-    // Every visit gets the end state, not nothing (the paced build-up retired with v3.1.0, AB-3).
-    const firstLook = read('components/workspace/FirstLook.tsx');
-    expect(firstLook).toContain('<section data-first-look="end-state">');
-    expect(firstLook).not.toContain('endStateOnly');
+    // The text around the map (AB-6, 3.2.0, where the first insights stood), likewise, whatever the phase or the next step.
+    expect(page).toContain('<WhatThisProgramDoes');
+    expect(page).toContain('<AroundTheMap');
+    expect(page).not.toMatch(/nextOpenPoint\([^)]*\)[^\n]*(?:AroundTheMap|WhatThisProgramDoes)|workflowSteps\(project\)[^\n]*(?:AroundTheMap|WhatThisProgramDoes)/);
+    // Every visit gets the text, not nothing: its state is the reading's alone — reading, ready or failed.
+    const hook = read('hooks/useAroundTheMap.ts');
+    expect(hook).toContain("state: !source.trim() ? 'failed' : current ? (current.failed ? 'failed' : 'ready') : 'reading',");
+    expect(hook).not.toMatch(/workflowSteps|nextOpenPoint|\.status\b/);
   });
 
   test('Analyze has the way to the process where a run is signed', () => {

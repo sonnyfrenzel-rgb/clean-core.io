@@ -103,7 +103,7 @@ export default function WorkspacePrintSheet({
 }: {
   project: Project | null;
   projectId: string;
-  /** The reading `FirstLook` computed for this screen, or null before it lands. */
+  /** The reading the screen already made (Analyze: `useAroundTheMap`), or null before it lands. */
   reading: SourceReading | null;
   open: NotDetermined;
   /**

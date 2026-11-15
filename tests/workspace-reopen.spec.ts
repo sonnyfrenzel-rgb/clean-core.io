@@ -28,7 +28,9 @@ import { workflowSteps } from '../lib/workflow-steps';
  * Since v3.1.0 a project reopens in Analyze, Business (plan AB-2, ADR-109):
  * the map is the page, the first insights and "Next step" stand below it until
  * v3.2.0, and the seven tools are the stage header's. The same promises are
- * held there.
+ * held there. Since 3.2.0 (plan AB-4) the way on in Analyze, Business is the
+ * summary's invitation, not "Next step": the watch below holds it to the same
+ * two promises — never an empty frame, settled before the map.
  *
  * `REOPEN_SOURCE` points at another program to seed (a large one shows the
  * order most clearly); `REOPEN_SHOTS_DIR` writes screenshots for a reader.
@@ -57,11 +59,11 @@ async function withoutTips(page: Page) {
 }
 
 interface ReopenWatch {
-  /** Frames in which "Next step" showed only its title. */
+  /** Frames in which the way on (since 3.2.0 the invitation, before it "Next step") stood without its action. */
   emptyNextStep: number;
   /** Milliseconds the page spent showing that empty card, frozen frames included. */
   emptyMs: number;
-  /** When the next step first settled on an action ('open') or on nothing left ('none'). */
+  /** When the way on first stood with its action. */
   nextAt: number | null;
   /** When the first look reached its end state ('end-state' / 'complete') or said it failed ('failed'). */
   firstLookAt: number | null;
@@ -91,23 +93,23 @@ async function watchReopen(page: Page) {
         w.__reopen.longestFrame = Math.max(w.__reopen.longestFrame, gap);
         if (wasEmpty) w.__reopen.emptyMs += gap;
       }
-      const card = document.querySelector('[data-analyze-business="ready"] [data-analyze-interim] [data-next-step]');
+      // Since 3.2.0 (plan AB-4) Analyze, Business has no "Next step": the way on is the summary's invitation (or,
+      // after the walk-through, its two endings). Watched the same way: never an empty frame, settled before the map.
+      const card = document.querySelector(
+        '[data-analyze-business="ready"] [data-analyze-invitation], [data-analyze-business="ready"] [data-analyze-walked]',
+      );
       wasEmpty = false;
       if (card) {
-        const heading = card.querySelector('h2, h3')?.textContent?.trim() ?? '';
         const all = (card.textContent ?? '').replace(/\s+/g, ' ').trim();
-        if (all === heading) {
+        if (!all || !card.querySelector('button, a[href]')) {
           w.__reopen.emptyNextStep += 1;
           wasEmpty = true;
-        }
-        // Settled only: an action to take ('open') or nothing left ('none').
-        // The pending card carries no state, and 'running' is still under way.
-        const settled = card.querySelector('[data-next-step-state="open"], [data-next-step-state="none"]');
-        if (settled && (settled.textContent ?? '').trim() && w.__reopen.nextAt === null) w.__reopen.nextAt = now;
+        } else if (w.__reopen.nextAt === null) w.__reopen.nextAt = now;
       }
-      // Its end state or its failure — never 'waiting' (no build-up since v3.1.0).
-      const state = document.querySelector('[data-first-look]')?.getAttribute('data-first-look');
-      if ((state === 'end-state' || state === 'failed') && w.__reopen.firstLookAt === null) {
+      // The text around the map (3.2.0, AB-6, where the first look stood): its end state or its failure — never
+      // 'reading' for good.
+      const state = document.querySelector('[data-around-the-map]')?.getAttribute('data-around-the-map');
+      if ((state === 'ready' || state === 'failed') && w.__reopen.firstLookAt === null) {
         w.__reopen.firstLookAt = now;
       }
       if (document.querySelector('[data-workspace-process="ready"] [data-process-map]') && w.__reopen.mapAt === null) {
@@ -172,17 +174,14 @@ test.describe('a project reopened far along its way', () => {
         await page.screenshot({ path: path.join(SHOTS, `${vp.name}-early.png`) });
       }
 
-      // The first look leaves "Reading …" and stands in its end state.
-      await expect(page.locator('[data-first-look="end-state"], [data-first-look="failed"]')).toBeVisible({ timeout: 120_000 });
-      // The next step settles on an action: a label, the reason for it, and
-      // the control that starts it — not the pending sentence.
-      const nextStep = page.locator('[data-analyze-interim] [data-next-step]');
-      const settled = nextStep.locator('[data-next-step-state="open"]');
-      await expect(settled).toBeVisible({ timeout: 60_000 });
-      await expect(page.locator('[data-next-step-pending]')).toHaveCount(0);
-      await expect(settled.locator('p').first()).toHaveText(/\S/);
-      await expect(settled.locator('[data-next-step-reason]')).toHaveText(/\S/);
-      await expect(nextStep.locator('a[href], button').first()).toBeVisible();
+      // The text around the map leaves its placeholders and stands in its end state.
+      await expect(page.locator('[data-around-the-map="ready"], [data-around-the-map="failed"]')).toBeVisible({ timeout: 120_000 });
+      // The way on settles on an action: since 3.2.0 (AB-4) the invitation "Walk me through it" — "Next step" left
+      // Analyze, Business — with its button, never an empty frame.
+      const invitation = page.locator('[data-analyze-invitation]');
+      await expect(invitation).toBeVisible({ timeout: 60_000 });
+      await expect(invitation.locator('[data-analyze-walk=""]')).toHaveText(/\S/);
+      await expect(page.locator('[data-next-step]')).toHaveCount(0);
       // The map is drawn.
       await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 180_000 });
 
@@ -198,8 +197,9 @@ test.describe('a project reopened far along its way', () => {
       expect.soft(seen.firstLookAt ?? Infinity, 'first insights landed before the map').toBeLessThanOrEqual(seen.mapAt ?? 0);
       expect.soft(seen.nextAt ?? Infinity, 'the next step settled before the map').toBeLessThanOrEqual(seen.mapAt ?? 0);
 
-      // The first insights hold a reading, not the waiting line.
-      await expect(page.locator('[data-first-look]').first()).not.toContainText(`Reading ${FILE_NAME}.`);
+      // The text around the map holds a reading, not its placeholders.
+      await expect(page.locator('[data-around-the-map] [data-around-waiting]')).toHaveCount(0);
+      await expect(page.locator('[data-analyze-summary] [data-around-waiting]')).toHaveCount(0);
 
       if (SHOTS) {
         // Where the seven tools stand on the settled page — said for a reader.
@@ -256,6 +256,13 @@ test.describe('a project reopened far along its way', () => {
     const first = bar.locator('a[data-workspace-tool="design"]');
     await first.focus();
     await expect(first).toBeFocused();
+    await page.keyboard.press('Enter');
+    // Before the walk-through in this browser the soft gate holds the first plain activation for one note (ADR-118
+    // (4)); nothing is locked: its "Continue to …" link opens the stage, by keyboard as well.
+    const note = page.locator('[data-analyze-soft-gate]');
+    await expect(note).toBeFocused();
+    const go = note.locator('a[data-analyze-soft-gate-continue]');
+    await go.focus();
     await page.keyboard.press('Enter');
     await page.waitForURL(new RegExp(`/project/${projectId}/design(\\?|$)`), { timeout: 90_000 });
   });

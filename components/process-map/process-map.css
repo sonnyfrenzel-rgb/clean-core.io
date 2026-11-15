@@ -333,6 +333,14 @@
   background: var(--cc-page);
 }
 
+/* On a phone the frame gives its edge to the map: half the padding, the safe areas kept (3.2.0, ADR-119). */
+@media (max-width: 600px) {
+  .cc-editor-fullscreen {
+    padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
+      max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
+  }
+}
+
 /*
  * The guided tour (`TourCanvas`): the station's element is marked in ink and a
  * thicker line, with a light fill, and everything else steps back to the
@@ -351,13 +359,33 @@
   fill: var(--cc-ink-muted) !important;
 }
 
-.cc-tour-canvas .cc-tour-here .djs-visual > :first-child {
+/* The same mark on the full-screen map while the walk-through runs there (ADR-119 (d), `BpmnCanvas` `follow`). */
+.cc-tour-canvas .cc-tour-here .djs-visual > :first-child,
+.cc-map-canvas .cc-tour-here .djs-visual > :first-child {
   stroke: var(--cc-ink) !important;
   stroke-width: 3px !important;
   fill: var(--cc-information-bg);
 }
 
-.cc-tour-canvas .cc-tour-here .djs-visual text {
+/*
+ * On the full-screen map the renderer writes fill and stroke into each shape's inline style as well: while the
+ * walk-through runs there, the station's fill and the stepping back of the rest are held with `!important`, as on
+ * the tour's own map. Scoped to a following canvas, so the reading map's other highlights are unchanged.
+ */
+.cc-map-canvas[data-map-following] .cc-tour-here .djs-visual > :first-child {
+  fill: var(--cc-information-bg) !important;
+}
+
+.cc-map-canvas[data-map-following] .cc-dim .djs-visual > :not(text) {
+  stroke: var(--cc-line) !important;
+}
+
+.cc-map-canvas[data-map-following] .cc-dim .djs-visual text {
+  fill: var(--cc-ink-muted) !important;
+}
+
+.cc-tour-canvas .cc-tour-here .djs-visual text,
+.cc-map-canvas .cc-tour-here .djs-visual text {
   fill: var(--cc-ink) !important;
   font-weight: 600;
 }
