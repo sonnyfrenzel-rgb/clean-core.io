@@ -107,6 +107,12 @@ shows only once the version says so. Signed runs and the audit pack do not chang
   method name never gets alternatives. Process benchmark, learning halves only: wave 3 84.4 % → 85.1 % of
   comparable nodes (OO 84.1 % → 85.0 %); waves 1+2 unchanged at 87.2 % (BERICHT §8.1).
 
+### Fixed
+- Own-code upload: an include that holds a local class (`CLASS lcl DEFINITION DEFERRED.`, a local definition and
+  implementation, `LOCAL FRIENDS`) stays an include. Before, it was taken for a class of that name: a TOP include
+  blocked the upload as a second program, and its includes counted as not uploaded. Only `CLASS … DEFINITION PUBLIC`
+  names a global class now, as `INTERFACE … PUBLIC` already did. Upload only; signed runs do not change.
+
 ## [v3.1.0] — 2026-11-15
 
 Analyze opens business first. Every new engine reading is gated from 3.1.0: a run signed by an earlier version reads as before.
