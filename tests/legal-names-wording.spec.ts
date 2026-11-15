@@ -17,8 +17,10 @@ import {
   PRIVACY_ARCHIVE_DIR,
   PRIVACY_POLICY_CURRENT,
   PRIVACY_POLICY_VERSIONS,
+  privacyVersion,
   privacyVersionAddress,
   privacyVersionFor,
+  type PrivacyVersionId,
   privacyVersionPath,
   publishedPrivacyVersions,
 } from '../lib/legal/privacy-versions';
@@ -141,20 +143,53 @@ const CHANGE_NOTE = {
   en: 'Changed on 15 November 2026: business names of the process steps are again proposed automatically by a model (section 3). The previous version of 9 November 2026 is at clean-core.io/datenschutz/versions/1.1.',
 } as const;
 
-const privacyFor = (lang: 'de' | 'en', namesAutomatic: boolean) => (lang === 'de' ? privacyDeFor(namesAutomatic) : privacyEnFor(namesAutomatic));
-const renderedPolicy = (lang: 'de' | 'en', namesAutomatic: boolean) =>
-  legalBlocks(privacyFor(lang, namesAutomatic), lang).map(blockText).join('\n');
+/** Version 1.3 (16 November 2026): the approved passages of document 21 (legal review, approved unchanged 15.11.2026). */
+const CHANGE_NOTE_13 = {
+  de: 'Geändert am 16.11.2026: Abschnitt 9 beschreibt den wöchentlichen Bericht mit Zahlen zur Nutzung; die Abschnitte 2, 5, 6 und 7 verweisen darauf, und Abschnitt 7 nennt weitere Einträge der lokalen und der Sitzungsspeicherung. Die vorige Fassung vom 15.11.2026 finden Sie unter clean-core.io/datenschutz/versions/1.2/de.',
+  en: 'Changed on 16 November 2026: section 9 describes the weekly report with usage figures; sections 2, 5, 6 and 7 refer to it, and section 7 names further entries in local and session storage. The previous version of 15 November 2026 is at clean-core.io/datenschutz/versions/1.2.',
+} as const;
+
+/** Passages 2.2–2.9 of document 21 as the rendered text reads them (bold markers gone). */
+const DOC21 = {
+  de: [
+    'die standardmäßig nicht erteilt ist. Außerdem bilden wir aus Kontodaten Summen zur Nutzung, die ohne Kennung gespeichert werden (Abschnitt 9).',
+    'die Sperrlisten, das Sicherheits-Protokoll, das Zählen für die Zahlen zur Nutzung (Abschnitt 9), die von Ihnen versandten Einladungen,',
+    'der Löschvermerk, die Sperrlisten, die Zahlen zur Nutzung (Abschnitt 9) und personenbezogene Daten anderer Personen in hochgeladenem Code (Abschnitt 3) als berechtigtes Interesse (Art. 6 Abs. 1 lit. f)',
+    'Zahlen zur Nutzung (Abschnitt 9): nur Summen ohne Kennung; 24 Monate, danach gelöscht.',
+    'je Projekt, ob Sie die Führung durch die Analyse zu Ende gesehen oder ihren Hinweis weggeklickt haben, damit er nicht erneut erscheint (cc.analyze.walked.…), ob Sie die Karte „What you can do next“ ausgeblendet haben, damit sie ausgeblendet bleibt (cc.analyze.nextHidden.…), und ob Sie nach der Analyse schon ein Werkzeug geöffnet haben, damit die Hinweise zum nächsten Schritt dazu passen (cc.analyze.toolOpened.…);',
+    '(cc:rules-draft:…), dass Sie im Design eines Projekts die Fragen übersprungen haben (cc:design-skip-questions:…),',
+    'ob die Gliederung der Prozesskarte offen ist (cc.processMap.outline; auf der Analyse in der Business-Sicht getrennt davon: cc.processMap.outline.page),',
+    'dass in diesem Browser ein Konto angemeldet ist, damit öffentliche Seiten die Anmeldung von Google nur dann laden (cc.auth.signedIn; der Eintrag enthält nichts über Ihr Konto und wird bei der Abmeldung gelöscht),',
+    '9. Serverprotokolle und Zahlen zur Nutzung',
+    'Zahlen zur Nutzung: Um zu sehen, ob die Plattform die Menschen erreicht, für die sie gebaut ist, und wo sie vor der ersten eigenen Analyse aufhören, bildet unser Server einmal in der Woche Summen aus Daten, die er für den Betrieb ohnehin hat: wie viele Konten angelegt wurden und aktiv waren, wie viele Konten ihren ersten signierten Lauf erhalten haben, wie viele Projekte und Läufe es gab, wie viele Kontingenteinheiten verbraucht wurden, wie viele Konten ihr Limit erreicht haben und wie viele unserer E-Mails zugestellt wurden und wie viele je Art nicht ankamen. Testkonten nehmen wir aus; dazu liest der Server die E-Mail-Adressen nur während des Zählens. Gespeichert und dem Betreiber per E-Mail geschickt werden nur die Summen, ohne Kontokennung, Projektkennung, E-Mail-Adresse, IP-Adresse oder Hashwert. Für das Zählen setzen wir kein Cookie, speichern nichts in Ihrem Browser, lesen nichts daraus und zählen keine Klicks. Wir führen die Summen mit keinen anderen Daten zusammen und löschen sie nach 24 Monaten. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO. Sie können widersprechen (Abschnitt 5); dann zählen wir Ihr Konto von da an nicht mehr mit.',
+  ],
+  en: [
+    'which is not given by default. We also form usage totals from account data, which are stored without any identifier (section 9).',
+    'the suppression lists, the security audit record, the counting for the usage figures (section 9), the invitations you send,',
+    'the deletion note, the suppression lists, the usage figures (section 9) and personal data of other people that is in uploaded code (section 3), under our legitimate interest (Art. 6(1)(f))',
+    'Usage figures (section 9): totals only, without any identifier; 24 months, then deleted.',
+    'per project, whether you finished the walk-through of the analysis or dismissed its hint, so that it does not appear again (cc.analyze.walked.…), whether you hid the “What you can do next” card, so that it stays hidden (cc.analyze.nextHidden.…), and whether you have already opened a tool after the analysis, so that the hints on the next step fit (cc.analyze.toolOpened.…);',
+    "(cc:rules-draft:…), that you skipped the questions in a project's Design (cc:design-skip-questions:…),",
+    'whether the outline of the process map is open (cc.processMap.outline; on the analysis in the Business view kept separately: cc.processMap.outline.page),',
+    "that an account is signed in in this browser, so that public pages load Google's sign-in only then (cc.auth.signedIn; the entry holds nothing about your account and is removed when you sign out),",
+    '9. Server Logs & Usage Figures',
+    'Usage figures: to see whether the platform reaches the people it is built for, and where they stop before their first own analysis, our server forms totals once a week from records it already keeps to run the service: how many accounts were created and were active, how many accounts received their first signed run, how many projects and runs there were, how many quota units were used, how many accounts reached their limit, and how many of our emails were delivered and how many of each kind did not arrive. We leave out test accounts; for this the server reads email addresses only while counting. Only the totals are stored and emailed to the operator, without account ID, project ID, email address, IP address or hash. For this counting we set no cookie, store nothing in your browser, read nothing from it and count no clicks. We combine the totals with no other data and delete them after 24 months. The legal basis is Art. 6(1)(f) GDPR. You can object (section 5); we then no longer count your account from that point on.',
+  ],
+} as const;
+
+const privacyFor = (lang: 'de' | 'en', id: PrivacyVersionId) => (lang === 'de' ? privacyDeFor(id) : privacyEnFor(id));
+const renderedPolicy = (lang: 'de' | 'en', id: PrivacyVersionId) => legalBlocks(privacyFor(lang, id), lang).map(blockText).join('\n');
 
 test.describe('B1: privacy section 3 names what the naming model receives', () => {
   for (const lang of ['de', 'en'] as const) {
     test(`${lang}: the lawyer's middle sentence where names start by themselves, the pause before`, () => {
-      expect(renderedPolicy(lang, true)).toContain(B1[lang]);
-      expect(renderedPolicy(lang, false)).not.toContain(B1[lang]);
-      expect(renderedPolicy(lang, false)).toContain(lang === 'de' ? SAYS.privacyDe.paused : SAYS.privacyEn.paused);
+      for (const id of ['1.2', '1.3'] as const) expect(renderedPolicy(lang, id)).toContain(B1[lang]);
+      expect(renderedPolicy(lang, '1.1')).not.toContain(B1[lang]);
+      expect(renderedPolicy(lang, '1.1')).toContain(lang === 'de' ? SAYS.privacyDe.paused : SAYS.privacyEn.paused);
       // No judgement the platform cannot prove: the model proposes names, not better ones.
-      expect(privacyFor(lang, true)).not.toMatch(lang === 'de' ? /bessere Namen/ : /better names/);
+      expect(privacyFor(lang, '1.3')).not.toMatch(lang === 'de' ? /bessere Namen/ : /better names/);
       // The build renders its own side.
-      expect(lang === 'de' ? PRIVACY_DE : PRIVACY_EN).toBe(privacyFor(lang, LEGAL_TEXTS_NAMES_AUTOMATIC));
+      expect(lang === 'de' ? PRIVACY_DE : PRIVACY_EN).toBe(privacyFor(lang, privacyVersionFor(LEGAL_TEXTS_NAMES_AUTOMATIC).id));
     });
   }
 });
@@ -262,20 +297,42 @@ test.describe('B2: the business names wait for the notice in the wording that na
 
 test.describe('B3: the privacy policy has its own version, an archive and a change note', () => {
   test('version 1.2 of 15 November 2026 with the change note; version 1.1 as published', () => {
-    expect(renderedPolicy('en', true)).toContain('Version 1.2, as of 15 November 2026.');
-    expect(renderedPolicy('de', true)).toContain('Fassung 1.2, Stand 15.11.2026.');
+    expect(renderedPolicy('en', '1.2')).toContain('Version 1.2, as of 15 November 2026.');
+    expect(renderedPolicy('de', '1.2')).toContain('Fassung 1.2, Stand 15.11.2026.');
     for (const lang of ['de', 'en'] as const) {
-      expect(renderedPolicy(lang, true)).toContain(CHANGE_NOTE[lang]);
-      expect(renderedPolicy(lang, false)).not.toContain(CHANGE_NOTE[lang]);
+      expect(renderedPolicy(lang, '1.2')).toContain(CHANGE_NOTE[lang]);
+      expect(renderedPolicy(lang, '1.1')).not.toContain(CHANGE_NOTE[lang]);
       // The note stands at the top: right after the version line.
-      const blocks = legalBlocks(privacyFor(lang, true), lang).map(blockText);
+      const blocks = legalBlocks(privacyFor(lang, '1.2'), lang).map(blockText);
       expect(blocks[2]).toBe(CHANGE_NOTE[lang]);
     }
-    expect(renderedPolicy('en', false)).toContain('Version of 9 November 2026.');
-    expect(renderedPolicy('de', false)).toContain('Stand: 9. November 2026.');
-    expect(PRIVACY_POLICY_CURRENT.id).toBe(LEGAL_TEXTS_NAMES_AUTOMATIC ? '1.2' : '1.1');
-    expect(privacyVersionFor(true).date).toEqual({ en: '15 November 2026', de: '15.11.2026' });
+    expect(renderedPolicy('en', '1.1')).toContain('Version of 9 November 2026.');
+    expect(renderedPolicy('de', '1.1')).toContain('Stand: 9. November 2026.');
+    expect(privacyVersion('1.2').date).toEqual({ en: '15 November 2026', de: '15.11.2026' });
     expect(privacyVersionFor(false).dateIso).toBe('2026-11-09');
+  });
+
+  test('version 1.3 of 16 November 2026: the approved passages of document 21, and none of them before it', () => {
+    expect(PRIVACY_POLICY_CURRENT.id).toBe(LEGAL_TEXTS_NAMES_AUTOMATIC ? '1.3' : '1.1');
+    expect(privacyVersionFor(true).id).toBe('1.3');
+    expect(privacyVersionFor(true).date).toEqual({ en: '16 November 2026', de: '16.11.2026' });
+    expect(privacyVersionFor(true).dateIso).toBe('2026-11-16');
+    expect(renderedPolicy('en', '1.3')).toContain('Version 1.3, as of 16 November 2026.');
+    expect(renderedPolicy('de', '1.3')).toContain('Fassung 1.3, Stand 16.11.2026.');
+    for (const lang of ['de', 'en'] as const) {
+      const blocks = legalBlocks(privacyFor(lang, '1.3'), lang).map(blockText);
+      expect(blocks[2], 'the change note stands right after the version line').toBe(CHANGE_NOTE_13[lang]);
+      expect(renderedPolicy(lang, '1.3')).not.toContain(CHANGE_NOTE[lang]);
+      for (const passage of DOC21[lang]) {
+        expect(renderedPolicy(lang, '1.3'), passage.slice(0, 60)).toContain(passage);
+        for (const id of ['1.1', '1.2'] as const) expect(renderedPolicy(lang, id), `${id}: ${passage.slice(0, 60)}`).not.toContain(passage);
+      }
+      // Section 9 keeps its anchor.
+      expect(privacyFor(lang, '1.3')).toMatch(/^## 9\. .+ \{#server-logs\}$/m);
+    }
+    // The change note names the real address of the previous version.
+    expect(CHANGE_NOTE_13.en).toContain(`${privacyVersionAddress('1.2', 'en')}.`);
+    expect(CHANGE_NOTE_13.de).toContain(`${privacyVersionAddress('1.2', 'de')}.`);
   });
 
   test('every version is archived: the file is the source rendered for it, and its digest is the one on record', () => {
@@ -283,7 +340,7 @@ test.describe('B3: the privacy policy has its own version, an archive and a chan
       for (const lang of ['de', 'en'] as const) {
         const file = read(v.files[lang]);
         expect(file, `${v.files[lang]} is not the source rendered for ${v.id}: scripts/legal/archive-privacy.ts (before publication only)`).toBe(
-          toArchiveMarkdown(legalBlocks(privacyFor(lang, v.namesAutomatic), lang)),
+          toArchiveMarkdown(legalBlocks(privacyFor(lang, v.id), lang)),
         );
         expect(createHash('sha256').update(file, 'utf8').digest('hex'), `${v.files[lang]} digest`).toBe(v.sha256[lang]);
       }
@@ -303,7 +360,8 @@ test.describe('B3: the privacy policy has its own version, an archive and a chan
       }
     }
     expect(publishedPrivacyVersions(privacyVersionFor(false)).map((v) => v.id)).toEqual(['1.1']);
-    expect(publishedPrivacyVersions(privacyVersionFor(true)).map((v) => v.id)).toEqual(['1.1', '1.2']);
+    expect(publishedPrivacyVersions(privacyVersion('1.2')).map((v) => v.id)).toEqual(['1.1', '1.2']);
+    expect(publishedPrivacyVersions(privacyVersionFor(true)).map((v) => v.id)).toEqual(['1.1', '1.2', '1.3']);
     const archive = read('components/legal/ArchivedPrivacyPage.tsx');
     expect(archive).toContain('if (!publishedPrivacyVersions().some((v) => v.id === id)) notFound();');
     expect(archive).toContain('robots: { index: false, follow: true }');
@@ -319,10 +377,10 @@ test.describe('B3: the privacy policy has its own version, an archive and a chan
     const en = `I have taken note of the Privacy Policy (version ${v.id}, as of ${v.date.en}, wording: ${privacyVersionAddress(v.id, 'en')}).`;
     expect(src).toContain(de);
     expect(src).toContain(en);
-    expect(consentText(CONSENT_TEXTS.signup.privacyCheckbox, 'de') === de, 'the German box names version 1.2 exactly in the build that has it').toBe(
+    expect(consentText(CONSENT_TEXTS.signup.privacyCheckbox, 'de') === de, 'the German box names version 1.3 exactly in the build that has it').toBe(
       LEGAL_TEXTS_NAMES_AUTOMATIC,
     );
-    expect(consentText(CONSENT_TEXTS.signup.privacyCheckbox, 'en') === en, 'the English box names version 1.2 exactly in the build that has it').toBe(
+    expect(consentText(CONSENT_TEXTS.signup.privacyCheckbox, 'en') === en, 'the English box names version 1.3 exactly in the build that has it').toBe(
       LEGAL_TEXTS_NAMES_AUTOMATIC,
     );
   });
@@ -349,7 +407,8 @@ test.describe('B3: the privacy policy has its own version, an archive and a chan
     await recordConsent({ uid: 'u-privacy', email: null, source: 'spec', now: new Date('2026-11-21T10:00:00Z') }, deps);
     const event = writes.find((w) => w.path.startsWith('consent_events/'));
     expect(event?.data.privacyVersion).toBe(PRIVACY_POLICY_CURRENT.recordId);
-    expect(privacyVersionFor(true).recordId).toBe('1.2');
+    expect(privacyVersionFor(true).recordId).toBe('1.3');
+    expect(privacyVersion('1.2').recordId).toBe('1.2');
     expect(privacyVersionFor(false).recordId, 'version 1.1 keeps the id it was recorded with').toBe('2026-11-09');
   });
 });

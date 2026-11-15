@@ -17,9 +17,16 @@ audit pack holds do not change.
   its lifetime and whether privacy policy section 7 names it. `tests/storage-keys-register.spec.ts` reads every
   `setItem` / `removeItem` in `app/`, `components/`, `hooks/` and `lib/`, follows the key through constants, imports,
   key functions, object properties and parameters, and fails on an unregistered key, a key it cannot follow, a
-  registered key nothing writes, and a register that disagrees with section 7. Three keys written today are not named
-  in section 7 yet (`cc.processMap.outline.page`, `cc.auth.signedIn`, `cc:design-skip-questions:…`); the register says
-  so.
+  registered key nothing writes, and a register that disagrees with section 7. Privacy policy 1.3 names every key
+  written today.
+- Privacy policy 1.3 of 16 November 2026, in force from this release: the passages of the lawyer's document 21,
+  approved unchanged, word for word in German and in the same meaning in English — section 9 "Server logs & usage
+  figures" describes the weekly usage report; sections 2, 5 and 6 refer to it (data you provide, the right to object,
+  legal basis and a 24-month retention); section 7 adds `cc.processMap.outline.page`, `cc.analyze.walked.…`,
+  `cc.analyze.nextHidden.…`, `cc.analyze.toolOpened.…`, `cc.auth.signedIn` and `cc:design-skip-questions:…`. The
+  change note at the top points to 1.2, which stays published at `/datenschutz/versions/1.2`; 1.3 is archived at
+  `docs/privacy/1.3.md` / `1.3.de.md` with its digests, the sign-up box names it, and the consent record stores `1.3`
+  (`lib/legal/privacy-versions.ts`, `tests/legal-names-wording.spec.ts`).
 - An objection to the usage figures (privacy policy section 9) can be recorded: an account that objects by e-mail is
   marked by the operator in the Admin Console (`usage-report-objection-on` / `-off`, an audit row in the same batch),
   and from the next weekly report on its account, runs, projects and mails are left out of every figure. The marker
@@ -74,8 +81,8 @@ audit pack holds do not change.
   open; re-design is never offered as a next step. Dates read "6 Nov 2026" (H-O10). Tabs: My projects, Shared with
   me, Invitations sent; the Sharing card lives in them. "Needs your attention" appears only with a reason (the code
   changed, the design no longer matches the analysis, a test run failed), with at most three projects. Filters
-  appear from ten projects on. A "Figures" switch shows lines, findings, levels, score and rules, remembered in this
-  browser (`cc.workspace.figures`, pending in the Privacy Policy). The demo and the examples are two doors below the
+  appear from ten projects on. A "Figures" switch shows lines, findings, levels, score and rules, for the page view
+  only: nothing is stored in the browser (owner decision 15.11.2026). The demo and the examples are two doors below the
   list. A run from a row only starts through a confirmation dialog with its cost and model. The free runs show as
   small marks in the shell, and `/dashboard` ends in the one-line footer. The row menu has no "Open project".
 - The data of the Continue card (AB-14c, stored, not shown): every signed run now writes "In short" (the

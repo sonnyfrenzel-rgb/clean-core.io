@@ -51,7 +51,7 @@ export function archivePrivacy(options: {
   for (const v of versions) {
     if (wanted.length > 0 && !wanted.includes(v.id)) continue;
     for (const lang of ['en', 'de'] as const) {
-      const source = lang === 'de' ? privacyDeFor(v.namesAutomatic) : privacyEnFor(v.namesAutomatic);
+      const source = lang === 'de' ? privacyDeFor(v.id) : privacyEnFor(v.id);
       const text = toArchiveMarkdown(legalBlocks(source, lang));
       const abs = path.join(root, v.files[lang]);
       const exists = fs.existsSync(abs);
