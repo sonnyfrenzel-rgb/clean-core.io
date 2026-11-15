@@ -300,9 +300,27 @@ test('signed artefacts stay out of it through every import: neither module is in
       alias: { '@': root },
       logLevel: 'silent',
     });
-    const inputs = Object.keys(out.metafile!.inputs);
+    const meta = out.metafile!.inputs;
+    const inputs = Object.keys(meta);
     expect(inputs.length, `${entry} bundled nothing`).toBeGreaterThan(1);
-    expect(inputs.filter((i) => /lib\/abap\/(state-machine|technical-methods)\.ts$/.test(i)), entry).toEqual([]);
+    // The project summary and "In short" (AB-14c) are written by the run route after the signed transaction,
+    // outside the run, and draw the map as Analyze does — so the workflow reading may reach the route's bundle
+    // through them and through nothing else. Walk the import graph from the entry without passing through them.
+    const DISPLAY_ONLY = /lib\/(project-summary-server|project-in-short|project-in-short-server)\.ts$/;
+    const entryKey = inputs.find((i) => i.endsWith(entry))!;
+    const reached = new Set<string>([entryKey]);
+    const queue = [entryKey];
+    while (queue.length) {
+      const at = queue.shift()!;
+      for (const { path: next } of meta[at]?.imports ?? []) {
+        if (!meta[next] || reached.has(next) || DISPLAY_ONLY.test(next)) continue;
+        reached.add(next);
+        queue.push(next);
+      }
+    }
+    expect(entryKey, `${entry} not in its own bundle`).toBeTruthy();
+    expect(reached.size, `${entry}: the walk reached nothing`).toBeGreaterThan(1);
+    expect([...reached].filter((i) => /lib\/abap\/(state-machine|technical-methods)\.ts$/.test(i)), entry).toEqual([]);
   }
   // The check can see both modules at all: the wording of the map reads the workflow and the technique.
   const words = await build({ entryPoints: [path.join(root, 'lib/abap/plain-language.ts')], bundle: true, write: false, metafile: true, platform: 'node', format: 'cjs', packages: 'external', alias: { '@': root }, logLevel: 'silent' });
