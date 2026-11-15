@@ -10,6 +10,8 @@ import { buildAnalysisPrompt } from '../lib/analysis-prompt';
 import fs from 'fs';
 import path from 'path';
 import { APP_VERSION } from '../lib/version';
+import { aroundTheMap } from '../lib/around-the-map';
+import { readProcess, readRules } from '../lib/first-look';
 
 /**
  * A narrative sentence either points at code or admits it does not.
@@ -251,8 +253,6 @@ test.describe('with ids the engine really assigns (roadmap step 1.3)', () => {
 
 test.describe('the model\'s wording around the map stands on the engine\'s lines, never on its own citations (3.2.0, AB-6)', () => {
   test('a citation in the narrative is not taken as the line: each sentence carries the line of the engine sentence it was checked against', async () => {
-    const { aroundTheMap } = await import('../lib/around-the-map');
-    const { readProcess, readRules } = await import('../lib/first-look');
     const source = fs.readFileSync(path.resolve(__dirname, '../public/starter-examples/Z_INVOICE_EXTRACTOR.txt'), 'utf8').replace(/\r\n?/g, '\n');
     const engine = '3.1.0';
     const proc = readProcess(source);

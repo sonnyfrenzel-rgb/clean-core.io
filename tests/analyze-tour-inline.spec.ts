@@ -10,6 +10,9 @@ import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { walkOrder } from '../lib/process-walk';
 import { buildWalkGuide } from '../lib/process-walk-guide';
 import { buildProcessTour, tourReadingOf } from '../lib/process-tour';
+import { readProcess, readRules } from '../lib/first-look';
+import { aroundTheMap, runAt } from '../lib/around-the-map';
+import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
 import { readExample } from './helpers/starter-example-files';
 import { seedLayoutProject } from './helpers/analyze-layout';
 import { signInThroughForm } from './helpers/seed-project';
@@ -115,9 +118,6 @@ test.describe('the inline camera (pure)', () => {
 
 test.describe('"you are here" from the tour\'s stations (pure)', () => {
   test('each station of the PO example names a paragraph of "How it runs" by its node or its first line', async () => {
-    const { readProcess, readRules } = await import('../lib/first-look');
-    const { aroundTheMap, runAt } = await import('../lib/around-the-map');
-    const { ENGINE_READS_310_FROM } = await import('../lib/abap/engine-reads-310-gate');
     const source = readExample('Z_MM_PO_APPROVAL.abap').replace(/\r\n/g, '\n');
     const proc = readProcess(source);
     const text = aroundTheMap({
