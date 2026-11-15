@@ -23,6 +23,7 @@ import { HOME_FIGURES_KEY, HOME_PRIVACY_PENDING_STORAGE_KEYS } from '../lib/home
 import { sha256Hex, artefactDigest } from '../lib/artefact-digest';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { APP_VERSION } from '../lib/version';
+import { runAnalysis, AnalysisRunCancelled } from '../lib/analysis-run';
 import type { Project } from '../lib/types';
 
 /**
@@ -245,6 +246,30 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
     expect(list).toContain('truncated: body?.truncated === true');
     expect(list).toMatch(/\{loaded\?\.truncated \? \(\s*<p[^>]*data-home-truncated=""[^>]*>\{homeTruncated\(projects\.length\)\}<\/p>/);
     expect(read('CHANGELOG.md')).toContain('My workspace lists every project up to 2,000');
+  });
+
+  test('a run cancelled while the row reads its project starts nothing: no request, no stage shown', async () => {
+    // The row hands `runAnalysis` its controller's signal after the read; Cancel has aborted it by then.
+    const list = code('components/workspace/WorkspaceListReport.tsx');
+    expect(list).toContain('signal: controller.signal,');
+    expect(list).toMatch(/onStages: \(stages\) => \{\s*if \(!owns\(\)\) return;/);
+    const requests: string[] = [];
+    const before = globalThis.fetch;
+    globalThis.fetch = (async (url: unknown) => {
+      requests.push(String(url));
+      throw new Error('no request may leave');
+    }) as typeof fetch;
+    try {
+      const controller = new AbortController();
+      controller.abort();
+      await expect(runAnalysis({
+        projectId: 'p1', legacyCode: 'REPORT z.', fileName: 'z.abap', deployment: 'private' as never, targetProfile: null as never,
+        callModel: true, signal: controller.signal,
+      })).rejects.toBeInstanceOf(AnalysisRunCancelled);
+    } finally {
+      globalThis.fetch = before;
+    }
+    expect(requests).toEqual([]);
   });
 
   test('a run from a row goes only through the confirmation dialog with cost and model (H-O12: today\'s sentence)', () => {
