@@ -17,6 +17,9 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
+import { readProcess, readRules } from '../lib/first-look';
+import { aroundTheMap, QUESTIONS_SHOWN } from '../lib/around-the-map';
+import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
 
 const ROOT = path.resolve(__dirname, '..');
 
@@ -129,10 +132,6 @@ test.describe('no fabricated figures on measured values', () => {
   });
 
   test('the text around the map counts only what the engine read (3.2.0, AB-6)', async () => {
-    // Imported here, not at the top: the rest of this spec reads source only.
-    const { readProcess, readRules } = await import('../lib/first-look');
-    const { aroundTheMap, QUESTIONS_SHOWN } = await import('../lib/around-the-map');
-    const { explainBusinessRules } = await import('../lib/abap/business-rule-set-explain');
     const source = fs.readFileSync(path.join(ROOT, 'public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8');
     const engine = '3.1.0';
     const proc = readProcess(source);

@@ -5,10 +5,11 @@ import { FINDING_ORDER, allCodeFindings, type CodeFinding } from '../lib/first-l
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { EXAMPLE_SNIPPETS } from '../lib/example-snippets';
 import { DEMO_SOURCE_FILE } from '../lib/demo-marks';
-import { readProcess } from '../lib/first-look';
+import { readProcess, readRules } from '../lib/first-look';
 import { processStory } from '../lib/process-story';
 import { APP_VERSION } from '../lib/version';
 import type { AuthorClaim } from '../lib/program-summary-check';
+import { aroundTheMap, QUESTIONS_SHOWN } from '../lib/around-the-map';
 
 /**
  * "What the code gives away" — the First-insights block of roadmap 3.0.21
@@ -294,8 +295,6 @@ test.describe('what the code gives away', () => {
 
 test.describe('where the findings stand since 3.2.0: the questions around the map (AB-6)', () => {
   test('every finding for the business or the users is a question to settle, with its line; IT keeps its own', async () => {
-    const { aroundTheMap, QUESTIONS_SHOWN } = await import('../lib/around-the-map');
-    const { readRules } = await import('../lib/first-look');
     let business = 0;
     for (const [name, source] of SOURCES) {
       const proc = readProcess(source);

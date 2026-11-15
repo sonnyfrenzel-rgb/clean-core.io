@@ -41,6 +41,8 @@ import {
   type PlainWordingRecord,
 } from '../lib/plain-wording';
 import { readExample } from './helpers/starter-example-files';
+import { aroundPlainSentences, aroundTheMap } from '../lib/around-the-map';
+import { readProcess, readRules } from '../lib/first-look';
 
 /**
  * Roadmap 3.0.20, owner decision 21.10.2026 (2): the walk-through sentences and
@@ -326,8 +328,6 @@ test.describe('on screen (server-free render)', () => {
 
 test.describe('scope "firstlook" since 3.2.0: the text around the map (AB-6)', () => {
   test('the sentences offered are the engine\'s summary and steps on the page — each passes the server\'s check of keys and lines', async () => {
-    const { aroundPlainSentences, aroundTheMap } = await import('../lib/around-the-map');
-    const { readProcess, readRules } = await import('../lib/first-look');
     const engine = '3.1.0';
     const proc = readProcess(SOURCE);
     const text = aroundTheMap({ source: SOURCE, skeleton: proc.skeleton, ruleSet: readRules(SOURCE, proc, engine), processFacts: proc.facts, engineVersion: engine });
