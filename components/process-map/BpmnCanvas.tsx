@@ -835,7 +835,9 @@ export default function BpmnCanvas({
     if (event.key !== 'Tab') return;
     const frame = frameRef.current;
     if (!frame) return;
-    const stops = [...frame.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.getClientRects().length > 0);
+    // Only real Tab stops: the map's nodes and the hits are buttons with a roving `tabIndex` of -1, which Tab skips —
+    // counted, the last of them would be the edge and the real last stop would hand the focus out of the frame.
+    const stops = [...frame.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0);
     if (stops.length === 0) return;
     const first = stops[0];
     const last = stops[stops.length - 1];
@@ -932,6 +934,7 @@ export default function BpmnCanvas({
       data-map-follow={follow ?? undefined}
       role={own ? 'dialog' : undefined}
       aria-label={own ? fullscreenParts.label : undefined}
+      aria-modal={own ? true : undefined}
       onKeyDown={own ? keepTabInside : undefined}
       className={filled ? 'cc-editor-fullscreen flex min-w-0 flex-col gap-2 overflow-hidden' : 'flex min-w-0 flex-col gap-2'}
     >

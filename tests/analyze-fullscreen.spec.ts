@@ -113,6 +113,8 @@ test.describe('the source: full screen is the page layout\'s, everything else ke
     expect(canvas).toContain("role={own ? 'dialog' : undefined}");
     expect(canvas).toContain('aria-label={own ? fullscreenParts.label : undefined}');
     expect(canvas).toContain('onKeyDown={own ? keepTabInside : undefined}');
+    // Only real Tab stops are the edges; that Tab stays inside is walked in the rendered state 14 below, both ways.
+    expect(canvas).toContain('.filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0)');
     // Escape inside the editor ends a tool, not full screen.
     expect(canvas).toContain('escapeInside: bodyRef,');
     // A chosen step stays in full screen; its code is the side column's.
@@ -351,8 +353,21 @@ test.describe('@rendered full screen on Analyze, Business', () => {
     const dialog = page.getByRole('dialog', { name: 'Process map, full screen' });
     await expect(dialog).toBeVisible();
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
+    // A modal dialog: a screen reader stays inside.
+    await expect(dialog).toHaveAttribute('aria-modal', 'true');
     // The focus went in: to the way out.
     await expect(dialog.locator('[data-map-fullscreen-toggle]')).toBeFocused();
+    // Tab and Shift+Tab never leave it: walk further than it has stops, both ways, and the focus is inside every time.
+    const stops = await dialog.evaluate((el) =>
+      [...el.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]')]
+        .filter((n) => n.tabIndex >= 0 && !(n as HTMLButtonElement).disabled && n.getClientRects().length > 0).length);
+    expect(stops, 'the dialog has no Tab stop').toBeGreaterThan(1);
+    for (const key of ['Tab', 'Shift+Tab']) {
+      for (let i = 0; i < stops + 3; i += 1) {
+        await page.keyboard.press(key);
+        expect(await dialog.evaluate((el) => el.contains(document.activeElement)), `${key} #${i + 1} left the dialog`).toBe(true);
+      }
+    }
     // "Edit" is off on open.
     await expect(dialog.getByRole('switch', { name: 'Edit' })).toHaveAttribute('aria-checked', 'false');
     await expect(dialog.locator('[data-map-fullscreen-nothing]')).toBeVisible();

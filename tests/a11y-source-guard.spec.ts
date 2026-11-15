@@ -330,8 +330,11 @@ test.describe('the map in full screen on Analyze, Business (AB-5, 3.2.0)', () =>
   test('Escape leaves it — except inside the editor, where Escape ends a tool', () => {
     expect(hook.match(/event\.key !== 'Escape'/g) ?? []).toHaveLength(2);
     expect(canvas).toContain('escapeInside: bodyRef,');
-    // Not marked aria-modal: that would make the hook's own Escape stand down (`ccModalOpen`).
-    expect(canvas).not.toMatch(/aria-modal=\{own/);
+    // Marked aria-modal, so a screen reader stays inside; `ccModalOpen` leaves the frame out, so the hook's own Escape
+    // still leaves full screen while a dialog over it keeps Escape first.
+    expect(canvas).toContain('aria-modal={own ? true : undefined}');
+    expect(code('components/cc/modal.ts')).toContain(`document.querySelector('[aria-modal="true"]:not([data-map-canvas-frame])')`);
+    expect(canvas).toContain('data-map-canvas-frame=""');
   });
 
   test('its controls are 44 px on touch: the library\'s buttons, switch and segments, and the search field and hits', () => {
