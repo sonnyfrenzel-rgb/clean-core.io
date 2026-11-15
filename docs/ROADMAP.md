@@ -980,6 +980,7 @@ this roadmap does not touch the account.
 - **Engine 4.0 detail questions** (ADR-134; questions 5–17 of `docs/design/engine4.md` on the engine 4.0 strand): an unclosed macro body ends at a routine, class, interface or event boundary or at a line that starts at or left of its `DEFINE` column (Q5); indentation breaks ties only inside a routine where the nearest-block reading finds damage (Q6); only `GET <node>` is a logical-database event (Q9); Q7 and Q8 stay as built; the L3 defaults of questions 10–17 are accepted.
 - **AB-15b in 3.2.0** (ADR-135, amending ADR-120): a typed call is drawn as alternatives for two to four implementations, no more; the holdout is measured once, on the final 3.2.0 candidate.
 - **The row-order behaviour test** (QA test gap `22bebcbecde1`) is built in 3.5.0, not in 3.2.0.
+- **Ten more QA test gaps of the 3.2.0 reviews** are built in 3.5.0 (rendered or behavioural tests where a source check holds today): `477bceee0676`, `51aefff9ec2b`, `2e419e6ecb2c`, `b719ddf860e5`, `4f6e8ab5bd4a`, `99c8e1d82624`, `eef17812d68e`, `32a2ea8122b9`, `a4390fb823a1`, `6ef1368e30be` (the last two need a seeded project whose page requests names).
 
 ### Closed on 06.11.2026 (Sonny)
 
