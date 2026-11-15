@@ -28,10 +28,10 @@
 import { readStatements } from '../../lib/abap/statement-reader';
 import { readBlocks } from '../../lib/abap/block-structure';
 import { lex } from '../../lib/engine4/lexer';
-import { macroNames, statements } from '../../lib/engine4/statements';
+import { statements } from '../../lib/engine4/statements';
 import { kindInfo } from '../../lib/engine4/statement-kinds';
 import { blocks as newBlocks } from '../../lib/engine4/blocks';
-import { shadowCorpus, type CorpusFile } from './shadow';
+import { macrosByFile, shadowCorpus, type CorpusFile } from './shadow';
 
 const REGION_KINDS = new Set([
   'if', 'case', 'loop', 'do', 'while', 'try', 'select', 'at', 'provide', 'form', 'method', 'module', 'class', 'interface', 'define', 'function', 'event',
@@ -164,13 +164,9 @@ export function runDamageShadow(corpus: CorpusFile[] = shadowCorpus()): DamageRe
     categories: {},
     samples: {},
   };
-  const macrosByGroup = new Map<string, string[]>();
+  const macrosByName = macrosByFile(corpus);
   for (const file of corpus) {
-    const names = macroNames(statements(lex(file.source).tokens));
-    macrosByGroup.set(file.group, [...(macrosByGroup.get(file.group) ?? []), ...names]);
-  }
-  for (const file of corpus) {
-    const macros = macrosByGroup.get(file.group) ?? [];
+    const macros = macrosByName.get(file.name) ?? [];
     const cleanOld = readOld(file.source);
     const cleanNew = readNew(file.source, macros);
     for (const d of damages(file, macros)) {

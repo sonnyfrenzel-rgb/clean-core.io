@@ -25,7 +25,8 @@ import { join } from 'path';
 import { readStatements, type AbapStatement } from '../../lib/abap/statement-reader';
 import { readBlocks, type BlockStructure } from '../../lib/abap/block-structure';
 import { lex, uncoveredCharacters } from '../../lib/engine4/lexer';
-import { macroNames, statements, type Statement } from '../../lib/engine4/statements';
+import { statements, type Statement } from '../../lib/engine4/statements';
+import { layout, macrosFor } from '../../lib/engine4/layout';
 import { KIND_TABLE, kindInfo, unitsOf } from '../../lib/engine4/statement-kinds';
 import { blocks as newBlocks, enclosingBlocks, type Block as NewBlock, type BlockTree } from '../../lib/engine4/blocks';
 
@@ -52,6 +53,26 @@ export function shadowCorpus(): CorpusFile[] {
     if (!existsSync(dir)) continue;
     for (const name of readdirSync(dir).sort()) {
       if (name.endsWith('.abap')) out.push({ name: `${id}/${name}`, group: id, source: readFileSync(join(dir, name), 'utf8') });
+    }
+  }
+  return out;
+}
+
+/**
+ * The macro names each file sees, as L3 supplies them: every file of a group
+ * (one upload) goes through `layout`, and each file gets the macros of the
+ * objects that read it — its object's own `DEFINE`s and the system macros.
+ */
+export function macrosByFile(corpus: readonly CorpusFile[]): Map<string, string[]> {
+  const groups = new Map<string, CorpusFile[]>();
+  for (const file of corpus) groups.set(file.group, [...(groups.get(file.group) ?? []), file]);
+  const out = new Map<string, string[]>();
+  for (const files of groups.values()) {
+    const base = (f: CorpusFile) => f.name.split('/').pop()!;
+    const l = layout(files.map((f) => ({ name: base(f), source: f.source })));
+    for (const f of files) {
+      const part = l.parts.find((p) => p.file === base(f));
+      out.set(f.name, part ? macrosFor(l, part.name) : []);
     }
   }
   return out;
@@ -369,12 +390,8 @@ export function runShadow(corpus: CorpusFile[] = shadowCorpus()): ShadowReport {
       oldContainers: 0, newContainers: 0, containersAgree: 0, enclosingAgree: 0,
     },
   };
-  const macrosByGroup = new Map<string, string[]>();
-  for (const file of corpus) {
-    const names = macroNames(statements(lex(file.source).tokens));
-    macrosByGroup.set(file.group, [...(macrosByGroup.get(file.group) ?? []), ...names]);
-  }
-  for (const file of corpus) compareFile(r, file, macrosByGroup.get(file.group) ?? []);
+  const macros = macrosByFile(corpus);
+  for (const file of corpus) compareFile(r, file, macros.get(file.name) ?? []);
   return r;
 }
 

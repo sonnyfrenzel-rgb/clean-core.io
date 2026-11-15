@@ -21,7 +21,7 @@ test('the new statement layer agrees with the shipping one, and every difference
   expect(r.endLineAgree).toBe(r.aligned);
   expect(r.classAgree / r.aligned).toBeGreaterThanOrEqual(0.996);
   expect(r.openerAgree).toBe(r.aligned);
-  expect(r.newUnknown).toBeLessThanOrEqual(1);
+  expect(r.newUnknown).toBe(0);
   const unexplained = Object.keys(r.categories).filter((k) => k.endsWith(':unexplained'));
   expect(unexplained, JSON.stringify(unexplained.map((k) => r.samples[k]), null, 1)).toEqual([]);
   // L2 against readBlocks on the clean corpus: the same blocks, ranges, containers and enclosing chains, and no block flagged.
