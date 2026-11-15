@@ -81,9 +81,11 @@ const STRATEGY = [
 test.describe('1. the candidate implementations of a call the source cannot resolve are drawn', () => {
   test('3.2.0: each implementation behind an interface reference is a beginning of its own, with the call as its trigger', () => {
     const skeleton = buildProcessSkeleton(STRATEGY, NEW);
-    // The call stays what D2 made it — opaque, ambiguous — and now says which implementations it can reach.
-    const call = nodesAt(skeleton, 42).find((n) => n.kind === 'call-opaque')!;
-    expect(call.detail).toMatchObject({ ambiguous: true, candidates: ['LCL_FLAT=>LIF_FEE~CHARGE', 'LCL_PERCENT=>LIF_FEE~CHARGE', 'LCL_FREE=>LIF_FEE~CHARGE'] });
+    // AB-15b: the call is drawn as its alternatives — a gateway named as the call, one call activity per
+    // implementation (`engine-interface-resolution.spec.ts`); it still says which implementations it can reach.
+    const call = nodesAt(skeleton, 42).find((n) => n.kind === 'gateway')!;
+    expect(call.detail).toMatchObject({ ambiguous: true, alternatives: 3, candidates: ['LCL_FLAT=>LIF_FEE~CHARGE', 'LCL_PERCENT=>LIF_FEE~CHARGE', 'LCL_FREE=>LIF_FEE~CHARGE'] });
+    expect(nodesAt(skeleton, 42).some((n) => n.kind === 'call-opaque')).toBe(false);
     // Three beginnings beside the report's own, in source order; nothing else is one.
     expect(entriesOf(skeleton)).toEqual([35, 9, 20, 30]);
     for (const line of [9, 20, 30]) {
@@ -197,8 +199,9 @@ const TEMPLATE = [
 test.describe('2. `me->m( )` dispatches at run time when a subclass redefines `m`', () => {
   test('3.2.0: the call in the base class is ambiguous between the base implementation and the redefinition, and both are drawn', () => {
     const skeleton = buildProcessSkeleton(TEMPLATE, NEW);
-    const call = nodesAt(skeleton, 12).find((n) => n.kind === 'call-opaque')!;
-    expect(call.detail).toMatchObject({ ambiguous: true, candidates: ['LCL_BASE=>DISCOUNT', 'LCL_RETAIL=>DISCOUNT'] });
+    // AB-15b: drawn as its two alternatives.
+    const call = nodesAt(skeleton, 12).find((n) => n.kind === 'gateway' && n.detail?.alternatives)!;
+    expect(call.detail).toMatchObject({ ambiguous: true, alternatives: 2, candidates: ['LCL_BASE=>DISCOUNT', 'LCL_RETAIL=>DISCOUNT'] });
     // The redefinition is a beginning of its own; the base implementation is reached for certain by its
     // `super->discount( )` and is drawn there (a step inside the redefinition), so it is no beginning.
     expect(entriesOf(skeleton)).toEqual([33, 24]);

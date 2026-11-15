@@ -96,6 +96,16 @@ shows only once the version says so. Signed runs and the audit pack do not chang
 - An entry that runs inside the program's run starts with the event handlers registered there, so a RAISE EVENT
   runs its handler's steps; MESSAGE and TYPE are read in any case.
 - CALL BADI and CALL CUSTOMER-FUNCTION are calls into an enhancement outside this source.
+- Interface calls are resolved to the implementations the program itself defines (AB-15b, ADR-120 item 5,
+  `lib/abap/class-hierarchy.ts`). The engine now reads the reference's type where the program writes it: the
+  declaration in the routine or event block of the call, a factory method's return type, a loop over a table of
+  references, interfaces that include other interfaces, inherited implementations. An abstract class is never the
+  object's class. One implementation is the call's target; a type the program does not define changes nothing.
+- A call that can reach two to four of these implementations is drawn as its alternatives: a gateway named as the
+  call, with one call activity per implementation, conditioned on its class. Each implementation stays drawn as a
+  beginning of its own. A call with more stays the opaque call that lists its candidates. A call typed only by the
+  method name never gets alternatives. Process benchmark, learning halves only: wave 3 84.4 % → 85.1 % of
+  comparable nodes (OO 84.1 % → 85.0 %); waves 1+2 unchanged at 87.2 % (BERICHT §8.1).
 
 ## [v3.1.0] — 2026-11-15
 
