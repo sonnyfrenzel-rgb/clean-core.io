@@ -265,6 +265,41 @@ tonight): the conventions above; then exception control flow (a re-raise in a `C
 `RETRY`), `PERFORM … ON COMMIT`, `CLASS_CONSTRUCTOR`, `WAIT UP TO`, EML `READ ENTITIES` — all general, none
 measured by the benchmark today (see `docs/design/engine-review-2026-11.md`).
 
+### 8.1 Update 15.11.2026 — interface calls resolved to the program's own implementations (AB-15b, learning halves only)
+
+AB-15b, behind the same gate (`ENGINE_READS_320_FROM`, no new gate file — engine review §4.2). **Measured on the
+learning halves only** (`BM_SPLIT=learn BM_CONCAT=1 KORPUS_ENGINE_VERSION=3.2.0`, 150 cases). The test halves were
+not opened. Their only measurement is still the one in §8, so the 3.2.0 holdout figures there do not yet include
+AB-15b.
+
+**The gap, measured first.** Starting point: the class-hierarchy experiment (worktree `agent-a72177d7ea222fe15`,
+switch `CC_POLYMORPHIC_CANDIDATES`, off by default). Its candidate sets were compared with the 3.2.0 resolution
+(`method-resolution.ts`, `dynamicDispatch`) at every method call of the 150 learn cases. 171 calls resolve to the
+same body in both, and 16 typed ambiguous calls name the same candidates. 3 calls that the name alone left
+ambiguous get the same set, now typed. One call is narrower: BM-274's bare `validate( )` in an abstract base drops
+the base implementation, because an abstract class is never the object. Nothing was resolved differently. So 3.2.0
+had already closed the resolution gap. What was left was how a call with several implementations is **shown**: an
+opaque node, with its implementations somewhere among the beginnings.
+
+| Form tried (learn, nodes) | Wave 1+2 | Wave 3 | OO | Edges hit |
+|---|---|---|---|---|
+| 3.2.0 before AB-15b (opaque call + candidate beginnings) | 87.2 % | 84.4 % | 84.1 % | 2,922 of 4,424 |
+| + typed resolution (`class-hierarchy.ts`) only | 87.2 % | 84.4 % | 84.1 % | 2,922 |
+| the experiment's `branches` / `one-step`: the implementations walked inside the call | 87.2 % | 83.8 % (−14) | 83.2 % | 2,905 / 2,910 |
+| **shipped: gateway + one call activity per implementation, implementations stay beginnings** | **87.2 %** | **85.1 % (+15)** | **85.0 %** | 2,924 of 4,469 |
+
+Walking the implementations inside the call loses 22 starts, 12 ends and 2 gateways. A small implementation drawn
+as a called routine collapses into one step, and a helper folds away, as `DESIGN.md` §5.8 says. The expected
+answers draw both with start and end. That is the convention §8 leaves unfitted on purpose, so the form was
+dropped for that reason, not tuned around it. The shipped form keeps the beginnings and adds the alternatives at
+the call: +13 call nodes at call sites (an expected `call` that `call-opaque` could not match), +2 starts, nothing
+lost in any case. Engine nodes on statements that no expected node claims: 234, unchanged. 11 calls in 9 cases
+draw alternatives (2 or 3 implementations each). No learn call reaches more than 3, so the bound of 4
+(`MAX_ALTERNATIVES`) was set as a design limit, not fitted to the data. A cap of 2 costs 6 nodes; caps of 3, 4, 6
+and unbounded measure the same. The 3.1.0 reading is unchanged on every learn case (same node outcomes).
+
+**Open:** the holdout measurement of 3.2.0 with AB-15b (owner decision, as in §8). Owner example A end to end.
+
 ## Tools
 
 `evaluate.ts` (measurement; `BM_CONCAT=1` as in the product, `BM_RANGE=a-b`, `BM_SPLIT=learn`), `report.py` (breakdown),

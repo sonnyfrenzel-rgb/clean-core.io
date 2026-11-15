@@ -960,6 +960,16 @@ owner's end-to-end run on the integration state.*
 
 ##### AB-15b — v3.2.0 · Interface calls resolved to the program's own implementations · M
 
+*Status 15.11.2026: engine part built on `build/320-ab15b` (from `night/engine-320`; ADR-120 item 5). Gap measured
+first: the 3.2.0 readings (ADR-120 item 1) already resolved every call the experiment resolved on the learning halves.
+The exception is one abstract-base call, now narrower. `lib/abap/class-hierarchy.ts` ships, without the experiment's RTA
+narrowing, and types the reference where the program writes it. A typed call with 2–4 implementations is drawn as
+its alternatives: a gateway plus one call activity per class. The implementations stay beginnings of their own.
+More than four, or candidates by name alone, stay the opaque call. Gated by `ENGINE_READS_320_FROM`, no new gate file.
+Spec `engine-interface-resolution`. Learning halves: W3 84.4 % → 85.1 %, W1+W2 unchanged (BERICHT §8.1). The
+experiment's walked-in forms cost 14 W3 nodes and were dropped. Open: the holdout measurement, owner example A end
+to end (owner), and how the Business view names the gateway and its arms (`lib/bpmn/model.ts`, not engine).*
+
 - **Scope:** an interface method call (a reference `TYPE REF TO` a local interface) is resolved to the
   implementation the program itself defines (local classes that implement the interface, `INHERITING FROM`,
   redefinitions); a call with more than one candidate shows each as an alternative, never a guess. Starts from the

@@ -60,6 +60,18 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
   them (AB-11, brought forward to 3.1.0).
 
+### Engine 3.2.0 (gated from 3.2.0; a run of an older engine keeps its map)
+- Interface calls are resolved to the implementations the program itself defines (AB-15b, ADR-120 item 5,
+  `lib/abap/class-hierarchy.ts`). The engine now reads the reference's type where the program writes it: the
+  declaration in the routine or event block of the call, a factory method's return type, a loop over a table of
+  references, interfaces that include other interfaces, inherited implementations. An abstract class is never the
+  object's class. One implementation is the call's target; a type the program does not define changes nothing.
+- A call that can reach two to four of these implementations is drawn as its alternatives: a gateway named as the
+  call, with one call activity per implementation, conditioned on its class. Each implementation stays drawn as a
+  beginning of its own. A call with more stays the opaque call that lists its candidates. A call typed only by the
+  method name never gets alternatives. Process benchmark, learning halves only: wave 3 84.4 % → 85.1 % of
+  comparable nodes (OO 84.1 % → 85.0 %); waves 1+2 unchanged at 87.2 % (BERICHT §8.1).
+
 ## [v3.0.23] — 2026-11-13
 
 A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findings scheduled for it
