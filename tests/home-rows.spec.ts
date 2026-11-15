@@ -261,6 +261,8 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
     // The row hands `runAnalysis` its controller's signal after the read; Cancel has aborted it by then.
     const list = code('components/workspace/WorkspaceListReport.tsx');
     expect(list).toContain('signal: controller.signal,');
+    // Cancelled or unmounted during the read: the row stops right after it, before anything else is set up.
+    expect(list).toMatch(/const project = await readOwnProject\(row\.id\);\s*if \(!owns\(\) \|\| controller\.signal\.aborted\) return;/);
     expect(list).toMatch(/onStages: \(stages\) => \{\s*if \(!owns\(\)\) return;/);
     const requests: string[] = [];
     const before = globalThis.fetch;

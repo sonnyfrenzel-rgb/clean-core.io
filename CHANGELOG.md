@@ -129,6 +129,9 @@ audit pack holds do not change.
   symbol typed `any`) no longer makes the implementations here that share the name beginnings "candidate of" it; its
   object may be of a class outside this source. The call stays opaque and still lists them, as in 3.1.0
   (`tests/engine-reads-320.spec.ts`). The benchmark figures above were measured before this change.
+- A row run in My workspace stops right after its project read when it was cancelled or the list was left meanwhile,
+  instead of setting the run up and letting the analysis stop on the cancelled signal
+  (`components/workspace/WorkspaceListReport.tsx`, `tests/home-rows.spec.ts`).
 - Every full screen of the map is a named modal dialog that keeps Tab inside — in Documentation, the workspace and the
   demo too, not only on Analyze (`components/process-map/BpmnCanvas.tsx`; rendered
   `tests/documentation-map-controls.spec.ts`).

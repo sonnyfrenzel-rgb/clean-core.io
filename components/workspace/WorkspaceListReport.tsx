@@ -357,6 +357,8 @@ export default function WorkspaceListReport({
       try {
         // The row carries no source (H-O9): the project is read whole now, through the rules.
         const project = await readOwnProject(row.id);
+        // Cancelled, or the list left, while the project was read: nothing more is set up.
+        if (!owns() || controller.signal.aborted) return;
         if (!project || typeof project.legacyCode !== 'string' || !project.legacyCode.trim()) {
           throw new Error(wt('homeList.runNoSource'));
         }
