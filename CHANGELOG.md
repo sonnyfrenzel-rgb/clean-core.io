@@ -5,12 +5,11 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — v3.2.0, the Business page is complete
+## [v3.2.0] — 2026-11-16
 
-Built on `dev`; the version stays v3.1.0 until the release. Every new engine reading is gated from 3.2.0, so it
-shows only once the version says so. A run signed before 3.2.0 keeps what it signed; a run signed by engine 3.2.0
-carries its readings, so some of its findings differ (see Engine 3.2.0 and Fixed). How runs are signed and what the
-audit pack holds do not change.
+The Business page is complete. Every new engine reading is gated from 3.2.0: a run signed before 3.2.0 keeps what
+it signed; a run signed by engine 3.2.0 carries its readings, so some of its findings differ (see Engine 3.2.0 and
+Fixed). How runs are signed and what the audit pack holds do not change.
 
 ### Added
 - A register of every browser storage key the app writes (`lib/storage-keys.ts`): area, what it holds, its purpose,
