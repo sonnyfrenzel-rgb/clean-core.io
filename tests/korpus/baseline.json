@@ -3,7 +3,7 @@
     "path": "docs/korpus/referenzkorpus-v2.1.md",
     "sha256": "910c62dce72232a0f866b71ad22c4f2dc1e8c72e790b6ad06945f45ebda9fd6c"
   },
-  "written": "2026-11-14",
+  "written": "2026-11-15",
   "entries": [
     {
       "case": "CC-001",
@@ -1276,8 +1276,8 @@
         },
         {
           "name": "kanten",
-          "status": "not_checked",
-          "compared": 0,
+          "status": "compared",
+          "compared": 1,
           "total": 7,
           "note": "Kantenart (sequence/conditional/default/loop-back/boundary) zwischen zwei aufgelösten Knoten."
         },
@@ -1303,7 +1303,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "4 von 7 Sollknoten verglichen (3 getroffen, 1 ohne Knoten, 0 mit anderer Art); 0 von 7 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 7 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: c/call@source.abap:7 erwartet call-activity|service-task|sub-process|transaction|user-task|task in source.abap:7–9. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: b/call@source.abap:6 — keine Brücke für „call\" an „GET BADI lo_badi\", m/action@implementation.abap:8 — keine Brücke für „action\" an „cv_route = 'MANAGER_ROUTE'\", a/action@implementation.abap:10 — keine Brücke für „action\" an „cv_route = 'AUTO_ROUTE'\"."
+      "reason": "4 von 7 Sollknoten verglichen (4 getroffen, 0 ohne Knoten, 0 mit anderer Art); 1 von 7 Sollkanten verglichen (0 getroffen, 1 fehlend, 0 mit anderer Art, 6 ohne aufgelöste Enden). Die Engine baut an diesem Fall 7 Knoten. Ohne Knoten: —. Andere Knotenart: —. Fehlende Kante: c→g („fixture selects supplied imp\", bedingt). Andere Kantenart: —. Nicht vergleichbar: b/call@source.abap:6 — keine Brücke für „call\" an „GET BADI lo_badi\", m/action@implementation.abap:8 — keine Brücke für „action\" an „cv_route = 'MANAGER_ROUTE'\", a/action@implementation.abap:10 — keine Brücke für „action\" an „cv_route = 'AUTO_ROUTE'\"."
     },
     {
       "case": "CC-009",
@@ -2495,7 +2495,7 @@
           "note": "Der Fall nennt keinen parallelen Knoten (Sollfeld leer) — nicht geprüft, Roadmap 2.17."
         }
       ],
-      "reason": "5 von 9 Sollknoten verglichen (2 getroffen, 3 ohne Knoten, 0 mit anderer Art); 0 von 10 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 10 ohne aufgelöste Enden). Die Engine baut an diesem Fall 3 Knoten. Ohne Knoten: g/gateway@source.abap:23 erwartet gateway in source.abap:23–23, x/return@source.abap:25 erwartet end|end-error in source.abap:25–25, h/gateway@source.abap:10 erwartet gateway in source.abap:10–10. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/call@source.abap:33 — keine Brücke für „call\" an „DATA(lv_route) = lo_rule->route( p_amt )\", b/call@source.abap:27 — keine Brücke für „call\" an „rv_route = super->route( iv_amount )\", m/action@source.abap:11 — keine Brücke für „action\" an „rv_route = 'MANAGER_ROUTE'\", a/action@source.abap:13 — keine Brücke für „action\" an „rv_route = 'AUTO_ROUTE'\"."
+      "reason": "5 von 9 Sollknoten verglichen (3 getroffen, 2 ohne Knoten, 0 mit anderer Art); 0 von 10 Sollkanten verglichen (0 getroffen, 0 fehlend, 0 mit anderer Art, 10 ohne aufgelöste Enden). Die Engine baut an diesem Fall 6 Knoten. Ohne Knoten: x/return@source.abap:25 erwartet end|end-error in source.abap:25–25, h/gateway@source.abap:10 erwartet gateway in source.abap:10–10. Andere Knotenart: —. Fehlende Kante: —. Andere Kantenart: —. Nicht vergleichbar: c/call@source.abap:33 — keine Brücke für „call\" an „DATA(lv_route) = lo_rule->route( p_amt )\", b/call@source.abap:27 — keine Brücke für „call\" an „rv_route = super->route( iv_amount )\", m/action@source.abap:11 — keine Brücke für „action\" an „rv_route = 'MANAGER_ROUTE'\", a/action@source.abap:13 — keine Brücke für „action\" an „rv_route = 'AUTO_ROUTE'\"."
     },
     {
       "case": "CC-017",
