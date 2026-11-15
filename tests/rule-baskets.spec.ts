@@ -605,7 +605,7 @@ test.describe('the places (source guards)', () => {
     expect(around).toContain('<RuleBasketLineView {...text.basket} designHref={designHref} />');
     expect(around).not.toMatch(/onDecideRules|const decideRules\b|data-rule-decide/);
     expect(business).toContain('designHref={designHref}');
-    expect(demo).toContain('<AroundTheMap text={around.text} state={around.state} designHref={null} here={here} />');
+    expect(demo).toContain('<AroundTheMap text={around.text} state={around.state} designHref={null} here={here} onAnchor={openAnchor} />');
     // The counts come from the one count source Design reads.
     expect(read('lib/around-the-map.ts')).toContain('questionRuleCountsOf(explanation, 0)');
     // Since 3.2.0 (AB-4) no "Next step" at all in Analyze, Business: the two endings carry no rule action either.

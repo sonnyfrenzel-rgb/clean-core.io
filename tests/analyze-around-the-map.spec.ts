@@ -373,7 +373,7 @@ test.describe('the page (source guards)', () => {
     expect(demo).toContain('<WhatThisProgramDoes');
     expect(demo).toContain("useAroundTheMap({ project, projectId: 'demo', owner: false, model: false, source })");
     // AB-4 drives "you are here" with `here`, as in a project.
-    expect(demo).toContain('<AroundTheMap text={around.text} state={around.state} designHref={null} here={here} />');
+    expect(demo).toContain('<AroundTheMap text={around.text} state={around.state} designHref={null} here={here} onAnchor={openAnchor} />');
     expect(demo).not.toMatch(/<FirstLook\b/);
   });
 

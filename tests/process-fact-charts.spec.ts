@@ -52,12 +52,15 @@ function endsInFile(xml: string): { top: string[]; stops: string[] } {
   return { top, stops };
 }
 
-/** Regression figures for the shipped examples (13.11.2026): the map's ends, split into normal and stopped. */
+/**
+ * Regression figures for the shipped examples (13.11.2026; two re-read on 15.11.2026 once `APP_VERSION` reached 3.1.0
+ * and the 3.1.0 readings drew the maps): the map's ends, split into normal and stopped.
+ */
 const EXPECTED_ENDS: Record<string, [total: number, normal: number]> = {
-  'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': [9, 3],
+  'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': [8, 2],
   'Z_INVOICE_EXTRACTOR.txt': [2, 1],
   'Z_MATERIAL_STOCK_CALC.txt': [1, 1],
-  'Z_MM_PO_APPROVAL.abap': [9, 1],
+  'Z_MM_PO_APPROVAL.abap': [10, 1],
   'Z_SALES_ORDER_CREATOR.txt': [1, 1],
   'Z_SD_DELIVERY_PRIORITY.abap': [1, 1],
   'Z_SD_FREIGHT_RATE_CHECK.abap': [5, 1],

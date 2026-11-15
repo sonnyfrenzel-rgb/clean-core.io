@@ -254,7 +254,7 @@ test.describe('the tour on screen (server-free render)', () => {
 
   test('on the page (3.2.0, AB-4): the same card beside the map, with Back, Pause and Next — no dialog, no entry card', async () => {
     const Inline = await load('components/workspace/ProcessTour.tsx', 'ProcessTourInline');
-    const at = PO.tour.stations.findIndex((s) => s.title === 'Currency not EUR?');
+    const at = PO.tour.stations.findIndex((s) => s.title === 'Currency EUR?');
     const html = renderToStaticMarkup(React.createElement(Inline, { tour: PO.tour, model: PO.model, onClose: () => {}, initialStation: at }));
     const text = textOf(html);
     expect(html).toContain('data-tour-mode="inline"');
@@ -262,9 +262,9 @@ test.describe('the tour on screen (server-free render)', () => {
     expect(html).not.toContain('role="dialog"');
     expect(html).not.toContain('aria-modal');
     expect(text).toContain(`Step ${at + 1} of ${PO.tour.stations.length}`);
-    expect(text).toContain('It checks: Currency not EUR?');
+    expect(text).toContain('It checks: Currency EUR?');
     for (const hook of ['data-tour-back=""', 'data-tour-pause=""', 'data-tour-next=""']) expect(html).toContain(hook);
-    expect(html).toContain('aria-label="Process map, highlighted: Currency not EUR?"');
+    expect(html).toContain('aria-label="Process map, highlighted: Currency EUR?"');
     // The entry card retired with AB-4: the summary's "Walk me through it" is the way in.
     expect(fs.existsSync(path.join(ROOT, 'components/workspace/ProcessTourEntry.tsx'))).toBe(false);
   });
