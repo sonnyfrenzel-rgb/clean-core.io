@@ -236,6 +236,17 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
     expect(list).toMatch(/if \(mine !== seq\.current\) return;/);
   });
 
+  test('the cap of the list is said, never silent: the route answers `truncated` past MAX_ROWS and the list prints it', () => {
+    const route = code('app/api/workspace-rows/route.ts');
+    expect(route).toMatch(/const MAX_ROWS = 2000;/);
+    expect(route).toContain('.limit(MAX_ROWS + 1)');
+    expect(route).toContain('truncated: snap.docs.length > MAX_ROWS');
+    const list = code('components/workspace/WorkspaceListReport.tsx');
+    expect(list).toContain('truncated: body?.truncated === true');
+    expect(list).toMatch(/\{loaded\?\.truncated \? \(\s*<p[^>]*data-home-truncated=""[^>]*>\{homeTruncated\(projects\.length\)\}<\/p>/);
+    expect(read('CHANGELOG.md')).toContain('My workspace lists every project up to 2,000');
+  });
+
   test('a run from a row goes only through the confirmation dialog with cost and model (H-O12: today\'s sentence)', () => {
     const list = code('components/workspace/WorkspaceListReport.tsx');
     // The only callers of `start` are the dialog's confirm.

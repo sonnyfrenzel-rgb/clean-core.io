@@ -8,7 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] — v3.2.0, the Business page is complete
 
 Built on `dev`; the version stays v3.1.0 until the release. Every new engine reading is gated from 3.2.0, so it
-shows only once the version says so. Signed runs and the audit pack do not change.
+shows only once the version says so. A run signed before 3.2.0 keeps what it signed; a run signed by engine 3.2.0
+carries its readings, so some of its findings differ (see Engine 3.2.0 and Fixed). How runs are signed and what the
+audit pack holds do not change.
 
 ### Added
 - A register of every browser storage key the app writes (`lib/storage-keys.ts`): area, what it holds, its purpose,
@@ -63,7 +65,8 @@ shows only once the version says so. Signed runs and the audit pack do not chang
   that policy; `scripts/backfill-usage-report-expiry.ts` dates the snapshots stored before (one-off, dry run first).
   The TTL policy and the backfill are run by the owner (`docs/DATA-RETENTION.md`,
   `tests/usage-report-retention.spec.ts`).
-- Home page v2 part 2 (AB-14b): My workspace lists **every** project, not the newest 25 (QA
+- Home page v2 part 2 (AB-14b): My workspace lists every project up to 2,000, not the newest 25; past 2,000 the list says
+  that only the first 2,000 are shown (QA
   `c559b61a9b31`). The own rows come lean from `GET /api/workspace-rows` (Admin SDK, behind the second factor),
   without source code; search, filters and sort run over all of them. Four columns: Project, Status, Next step, Last
   change. The status words are *No code yet*, *Not analysed yet*, *Analysed*, *Re-design under way* (with "N of 6
