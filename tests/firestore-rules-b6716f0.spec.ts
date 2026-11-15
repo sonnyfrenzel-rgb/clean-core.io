@@ -114,7 +114,10 @@ test('-20/-23/-38 · the own profile takes the values the create rule takes, and
   expect(await denied(() => updateDoc(own, { updatedAt: Timestamp.fromDate(new Date('2000-01-01')) })), 'back-dated updatedAt').toBe(true);
 });
 
-test('-24 · an upload is created at the request time, and its owner can still rename it later', async () => {
+// Since 3.2.0 the app has no writer for `files` or `abap_examples`, and the rules
+// close every client create and update there; a back-dated document is refused
+// as before, and so is a current one (tests/firestore-rules-field-validation.spec.ts).
+test('-24 · an upload is no longer created or renamed by a browser, back-dated or not', async () => {
   await signInWithEmailAndPassword(auth, USER, PASSWORD);
   const oldOne = doc(db, 'files', `rules-b6716f0-old-${stamp}`);
   expect(
@@ -126,10 +129,9 @@ test('-24 · an upload is created at the request time, and its owner can still r
     'back-dated example',
   ).toBe(true);
   const fresh = doc(db, 'files', `rules-b6716f0-new-${stamp}`);
-  expect(await denied(() => setDoc(fresh, { name: 'z.abap', content: 'REPORT z.', userId: uids.user, createdAt: serverTimestamp() })), 'a normal upload').toBe(false);
-  // The update rule validates the whole document; the stored createdAt is in
-  // the past by then and must not be held to the creation window.
+  expect(await denied(() => setDoc(fresh, { name: 'z.abap', content: 'REPORT z.', userId: uids.user, createdAt: serverTimestamp() })), 'a current upload').toBe(true);
+  // One stored earlier stays its owner's, but is not renamed by a browser either.
   const { db: adminDb } = await getAdminDb();
-  await adminDb.collection('files').doc(fresh.id).set({ createdAt: new Date(Date.now() - 3_600_000) }, { merge: true });
-  expect(await denied(() => updateDoc(fresh, { name: 'renamed.abap' })), 'rename an hour later').toBe(false);
+  await adminDb.collection('files').doc(fresh.id).set({ name: 'z.abap', content: 'REPORT z.', userId: uids.user, createdAt: new Date(Date.now() - 3_600_000) });
+  expect(await denied(() => updateDoc(fresh, { name: 'renamed.abap' })), 'rename an hour later').toBe(true);
 });

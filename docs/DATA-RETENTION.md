@@ -38,6 +38,7 @@ Two sub-processors receive data in transit for the features that require them �
 | `consent_events/{id}` | **Proof log** (privacy policy sections 2, 5, 6; Terms 1.3): append-only Terms/Privacy acceptance — uid, email, terms version, **language version accepted** and the SHA-256 of that language version's archived wording, locale, place, server time (`lib/consent.ts`); for a declaration with "Withdraw from / end the contract" (C13, Terms 13) a `withdrawal-declared` record (declaration word for word, contract, contract language, time of receipt) and a `withdrawal-receipt` record (sent or not, the time it was sent, the delivery record's message id), no name (`lib/withdrawal-declaration.ts`); after the contract ends also one `contract-ended` record (time and kind of the end, `withdrawal-function` for that path) | `userId`; after the end `accountHash` | While the contract runs `expiresAt` is null and `retention` names the rule; when it ends, `expiresAt` is set to 31 December of the third calendar year after the end (§§ 195, 199 BGB) and `expiresAt` drives the proof-log TTL policy | ❌ kept, **pseudonymised**: uid, email and locale are removed and the keyed hash of the address (`accountHash`, HMAC-SHA256 under `PSEUDONYM_PEPPER`, `lib/pseudonym.ts`) takes their place, with the end of the contract and its deletion date (`lib/proof-log-erasure.ts`) |
 | `byok_agreement_events/{id}` | **Proof log** of the Additional Agreement on Own Model Keys (its clause 12): acceptance (version, language version, SHA-256 of that wording), blocking and ending (how it ended), server time — Admin SDK only, no client rule names it | `userId`; after the end `accountHash` | As `consent_events`: null while the contract runs, then 31 December of the third year after the end; `expiresAt` drives the proof-log TTL policy | ❌ kept, pseudonymised as `consent_events` |
 | `erasure_notes/{accountHash}__{day}` | **Deletion note** "account (hash) deleted on [date]" (privacy policy sections 5 and 6): the keyed hash, the time and the kind of the end — nothing else | `accountHash` | Three years from the deletion; `expiresAt` drives the proof-log TTL policy | — (written by the erasure) |
+| `erased_accounts/{uid}` | Erasure marker (since 3.2.0): written by the erasure in the same batch that deletes the profile, so an ID token that outlives the deleted sign-in cannot create the profile again (`deleteUserDataAndAccount`, `firestore.rules` `erasedRecently()`). It holds only its expiry; no client reads or writes it | uid (document id) | Two hours (`ERASED_MARKER_MS`, twice the life of an ID token); `expiresAt` drives the retention TTL policy | — (written by the erasure) |
 | `registration_requests/{uid}` | Pilot access requests | uid | Life of account | ✅ direct |
 | `tenant_access_requests/{uid}` | BYOT access requests | uid | Life of account | ✅ direct |
 | `tenant_access_nonces/{uid}` | One-time nonce of a pending tenant-approval link | uid | Until used or replaced | ✅ direct |
@@ -92,11 +93,20 @@ gcloud firestore fields ttls update expiresAt --collection-group=usage_reports -
   --database=clean-core-eu --project=cleancore-491216
 ```
 
-**Not yet in place** on 2026-11-14. Snapshots stored before 3.2.0 carry no date until
+**In place since 2026-11-15** (ACTIVE; owner go). Snapshots stored before 3.2.0 carry no date until
 **`scripts/backfill-usage-report-expiry.ts`** gives them theirs, counted from their own
 `periodEnd` (dry run by default, `--apply` to write, counts only, refuses to run in CI;
 running it against production is the owner's decision). The snapshot's mail delivery
 figures count delivery only: opens and clicks are not recorded (`lib/mail-status.ts`).
+
+**`erased_accounts` (3.2.0):** the erasure marker carries its own `expiresAt`, two hours
+after the erasure; the rules ignore an expired marker, and the TTL policy removes it.
+Created by hand with the 3.2.0 rules deploy:
+
+```bash
+gcloud firestore fields ttls update expiresAt --collection-group=erased_accounts --enable-ttl \
+  --database=clean-core-eu --project=cleancore-491216
+```
 
 **`email_suppressions` note:** until 3.0.21 the opt-out was removed on erasure
 (owner decision 30.09.2026). The legal texts of Fassung 1.1 say otherwise — the
