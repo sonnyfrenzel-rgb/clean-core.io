@@ -423,9 +423,10 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
   // earlier engine keeps what it signed.
   // From 3.2.0 (`ENGINE_READS_320_FROM`) the value may also be a backtick literal or a
   // string template; a template is taken whole up to its closing bar, embedded `{ … }` included, and an
-  // unterminated literal to the end of the snippet — a secret the snippet cut off is still a secret.
+  // unterminated literal to the end of the snippet — a secret the snippet cut off is still a secret. Literals joined
+  // by `&&` or `&` are one value: the whole chain goes, so no part of a split secret stays readable.
   const assigned = engineReads320Apply(engineVersion)
-    ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)('(?:''|[^'])+(?:'|$)|`(?:``|[^`])+(?:`|$)|\|(?:\\.|\{[^}]*(?:\}|$)|[^|\\{])*(?:\||$))/gi
+    ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)((?:'(?:''|[^'])+(?:'|$)|`(?:``|[^`])+(?:`|$)|\|(?:\\.|\{[^}]*(?:\}|$)|[^|\\{])*(?:\||$))(?:\s*&&?\s*(?:'(?:''|[^'])+(?:'|$)|`(?:``|[^`])+(?:`|$)|\|(?:\\.|\{[^}]*(?:\}|$)|[^|\\{])*(?:\||$)))*)/gi
     : engineReads3020Apply(engineVersion)
     ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)'([^']+)'/gi
     : engineReads3019Apply(engineVersion)
@@ -483,7 +484,7 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
       }
       // From 3.2.0 `value` is the literal with its delimiters, and the redaction keeps them.
       const open = value[0];
-      const closed = value.length > 1 && value.endsWith(open);
+      const closed = value.length > 1 && /['`|]$/.test(value);
       const inner = value.slice(1, closed ? -1 : undefined);
       if (COUNTS_A_CREDENTIAL.test(word) && /^\d+$/.test(inner)) return m;
       return `${word}${mid}${open}…<redacted>${closed ? open : ''}`;

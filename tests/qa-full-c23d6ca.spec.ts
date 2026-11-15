@@ -12,8 +12,9 @@ const OLD = '3.1.0';
 
 test.describe('a credential in a backtick literal or string template is redacted (25ecb183cbf5)', () => {
   test('backtick and template values are redacted from 3.2.0, delimiters kept', () => {
+    // Literals joined by `&&` are one value: the whole chain goes.
     expect(redactCredentials('DATA(lv_password) = |s3cr3t-Value| && \'C:\\temp\'.', NEW)).toBe(
-      "DATA(lv_password) = |…<redacted>| && 'C:\\temp'.",
+      'DATA(lv_password) = |…<redacted>|.',
     );
     expect(redactCredentials('lv_token = `abc-123-def`.', NEW)).toBe('lv_token = `…<redacted>`.');
     // An embedded expression is part of the template and goes with it, bar included.
@@ -22,6 +23,19 @@ test.describe('a credential in a backtick literal or string template is redacted
     // A snippet cut off inside the template still loses the secret.
     expect(redactCredentials('lv_api_key = |AbCdEf0123', NEW)).toBe('lv_api_key = |…<redacted>');
     expect(redactCredentials("CONSTANTS c_pwd TYPE string VALUE `hunter2`.", NEW)).toBe('CONSTANTS c_pwd TYPE string VALUE `…<redacted>`.');
+  });
+
+  test('a secret split over literals joined by && or & is redacted whole, not only its first part', () => {
+    expect(redactCredentials('lv_password = |abc| && |def|.', NEW)).toBe('lv_password = |…<redacted>|.');
+    expect(redactCredentials('lv_password = `abc` && `def`.', NEW)).toBe('lv_password = `…<redacted>`.');
+    expect(redactCredentials("lv_password = 'abc' & 'def'.", NEW)).toBe("lv_password = '…<redacted>'.");
+    expect(redactCredentials("lv_password = |abc| &&\n  `def` && 'ghi'.", NEW)).toBe('lv_password = |…<redacted>|.');
+    // A part cut off by the snippet still goes.
+    expect(redactCredentials('lv_token = |abc| && |de', NEW)).toBe('lv_token = |…<redacted>');
+    // A variable in the chain ends what is read as the literal value.
+    expect(redactCredentials('lv_password = |abc| && lv_suffix.', NEW)).toBe('lv_password = |…<redacted>| && lv_suffix.');
+    // A run of 3.1.0 keeps what it signed.
+    expect(redactCredentials('lv_password = |abc| && |def|.', OLD)).toBe('lv_password = |abc| && |def|.');
   });
 
   test('single-quoted values read as before, counters stay readable in every form', () => {

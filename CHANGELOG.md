@@ -114,6 +114,10 @@ shows only once the version says so. Signed runs and the audit pack do not chang
   names a global class now, as `INTERFACE … PUBLIC` already did. Upload only; signed runs do not change.
 - A credential assigned from a backtick literal or a string template (`DATA(lv_password) = |…|`) is redacted from finding snippets, titles and details, like a single-quoted one; a template goes whole, embedded expressions included. Engine reading from 3.2.0 (`ENGINE_READS_320_FROM`): it changes signed findings, so a run of 3.1.0 keeps what it signed (QA full review of v3.1.0, 25ecb183cbf5).
 - A function-module name copied into a variable no longer counts as called when the variable is overwritten on the straight line before any call (`lv_fm = c_gui. lv_fm = c_other. CALL FUNCTION lv_fm.`); a branch or loop in between keeps the reading before. Engine reading from 3.2.0 (QA full review of v3.1.0, bb4c536fe4fd, 5298757260c1).
+- A credential assigned from literals joined by `&&` or `&` (`lv_password = |abc| && |def|.`, backtick or quoted
+  parts alike) is redacted whole; before, only the first literal went and the rest of the secret stayed in the
+  snippet. Same engine reading from 3.2.0 as the redaction above; a run of 3.1.0 keeps what it signed
+  (`tests/qa-full-c23d6ca.spec.ts`).
 
 ### Security
 - Two hardening items from the audit of v3.1.0, SEC-2026-979 and SEC-2026-980, in `firestore.rules` and the account
