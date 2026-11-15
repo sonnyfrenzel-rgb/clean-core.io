@@ -129,6 +129,9 @@ audit pack holds do not change.
   symbol typed `any`) no longer makes the implementations here that share the name beginnings "candidate of" it; its
   object may be of a class outside this source. The call stays opaque and still lists them, as in 3.1.0
   (`tests/engine-reads-320.spec.ts`). The benchmark figures above were measured before this change.
+- A chart row under the map lights only the steps of its own routine: where two classes implement a method of the
+  same name, a write in one no longer lights the callers of the other; an instance call that could reach either
+  lights neither (`lib/process-fact-charts.ts`, `tests/process-fact-charts.spec.ts`).
 - My workspace reads a row's levels and rules again after any edit of its source, also one that keeps the source's
   length: the row's key now carries a short fingerprint of the source, never the source (`lib/home-rows.ts`,
   `tests/home-rows.spec.ts`).

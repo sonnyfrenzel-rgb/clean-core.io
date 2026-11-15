@@ -203,3 +203,44 @@ test('the page announces a new map model straight over the old one, and null onl
   expect(process).toMatch(/useEffect\(\(\) => \{\s*if \(projectId\) announceProcessMapModel\(projectId, model \?\? null\);\s*\}, \[projectId, model\]\);/);
   expect(process).toMatch(/return \(\) => announceProcessMapModel\(projectId, null\);\s*\}, \[projectId\]\);/);
 });
+
+test('a method name two classes implement: a write in one finds only the callers that name that class', () => {
+  const source = [
+    'REPORT zt_two_runs.', //                                  1
+    'CLASS lcl_a DEFINITION.', //                              2
+    '  PUBLIC SECTION.', //                                    3
+    '    CLASS-METHODS run.', //                               4
+    'ENDCLASS.', //                                            5
+    'CLASS lcl_a IMPLEMENTATION.', //                          6
+    '  METHOD run.', //                                        7
+    '    UPDATE zta SET x = 1.', //                            8
+    '  ENDMETHOD.', //                                         9
+    'ENDCLASS.', //                                           10
+    'CLASS lcl_b DEFINITION.', //                             11
+    '  PUBLIC SECTION.', //                                   12
+    '    CLASS-METHODS run.', //                              13
+    'ENDCLASS.', //                                           14
+    'CLASS lcl_b IMPLEMENTATION.', //                         15
+    '  METHOD run.', //                                       16
+    '    UPDATE ztb SET x = 1.', //                           17
+    '  ENDMETHOD.', //                                        18
+    'ENDCLASS.', //                                           19
+    'START-OF-SELECTION.', //                                 20
+    '  lcl_a=>run( ).', //                                    21
+    '  lcl_b=>run( ).', //                                    22
+    '  DATA(lo) = NEW lcl_b( ).', //                          23
+    '  lo->run( ).', //                                       24
+    'FORM only_one.', //                                      25
+    '  UPDATE ztc SET x = 1.', //                             26
+    'ENDFORM.', //                                            27
+    'FORM caller.', //                                        28
+    '  PERFORM only_one.', //                                 29
+    'ENDFORM.', //                                            30
+  ].join('\n');
+  const calls = routineCallsOf(readStatements(source));
+  // The write in LCL_A's RUN: the call that names LCL_A, not LCL_B's, and not the instance call that could be either.
+  expect(calls.callersOf(8)).toEqual([21]);
+  expect(calls.callersOf(17)).toEqual([22]);
+  // A name only one routine carries is found at every call, as before.
+  expect(calls.callersOf(26)).toEqual([29]);
+});

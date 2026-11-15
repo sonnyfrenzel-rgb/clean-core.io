@@ -189,12 +189,16 @@ export interface RoutineCalls {
 }
 
 export function routineCallsOf(statements: readonly AbapStatement[]): RoutineCalls {
-  const routines: Array<{ name: string; lineStart: number; lineEnd: number }> = [];
-  let open: { name: string; lineStart: number } | null = null;
+  const routines: Array<{ name: string; cls: string | null; lineStart: number; lineEnd: number }> = [];
+  let open: { name: string; cls: string | null; lineStart: number } | null = null;
+  let cls: string | null = null;
   for (const s of statements) {
+    const implementation = /^CLASS\s+([\w/]+)\s+IMPLEMENTATION\b/i.exec(s.text);
+    if (implementation) cls = implementation[1].toLowerCase();
+    else if (/^ENDCLASS\b/i.test(s.text)) cls = null;
     const head = /^(FORM|METHOD)\s+([\w/~]+)/i.exec(s.text);
     if (head && !open) {
-      open = { name: head[2].toLowerCase().split('~').pop() ?? '', lineStart: s.lineStart };
+      open = { name: head[2].toLowerCase().split('~').pop() ?? '', cls: head[1].toUpperCase() === 'METHOD' ? cls : null, lineStart: s.lineStart };
       continue;
     }
     if (open && /^END(?:FORM|METHOD)\b/i.test(s.text)) {
@@ -203,18 +207,29 @@ export function routineCallsOf(statements: readonly AbapStatement[]): RoutineCal
     }
   }
   const escape = (name: string) => name.replace(/[/]/g, '\\/');
-  const calls = new Map<string, number[]>();
-  for (const r of routines) {
-    if (!r.name || calls.has(r.name)) continue;
+  const named = new Map<string, number>();
+  for (const r of routines) if (r.name) named.set(r.name, (named.get(r.name) ?? 0) + 1);
+  /**
+   * The lines that call a routine. A name only one routine here carries is that routine's at every call. A method
+   * name several classes here implement is one class's only where the call names that class (`lcl_a=>run(`): an
+   * instance call (`lo->run(`) could reach either, and a caller of the other one is no caller of this one.
+   */
+  const callersOfRoutine = (r: { name: string; cls: string | null }): number[] => {
     const n = escape(r.name);
-    const pattern = new RegExp(`(?:^PERFORM\\s+${n}\\b|[>~]${n}\\s*\\(|^CALL\\s+METHOD\\s+(?:[\\w/]+(?:->|=>|~))*${n}\\b)`, 'i');
-    calls.set(r.name, statements.filter((s) => pattern.test(s.text)).map((s) => s.lineStart));
-  }
+    if ((named.get(r.name) ?? 0) <= 1) {
+      const pattern = new RegExp(`(?:^PERFORM\\s+${n}\\b|[>~]${n}\\s*\\(|^CALL\\s+METHOD\\s+(?:[\\w/]+(?:->|=>|~))*${n}\\b)`, 'i');
+      return statements.filter((s) => pattern.test(s.text)).map((s) => s.lineStart);
+    }
+    if (!r.cls) return [];
+    const c = escape(r.cls);
+    const pattern = new RegExp(`(?:(?:^|[^\\w/])${c}=>${n}\\s*\\(|^CALL\\s+METHOD\\s+${c}=>${n}\\b)`, 'i');
+    return statements.filter((s) => pattern.test(s.text)).map((s) => s.lineStart);
+  };
   return {
     callersOf(line: number): number[] {
       const inside = routines.filter((r) => r.lineStart <= line && r.lineEnd >= line).sort((a, b) => (a.lineEnd - a.lineStart) - (b.lineEnd - b.lineStart))[0];
-      if (!inside) return [];
-      return (calls.get(inside.name) ?? []).filter((at) => at < inside.lineStart || at > inside.lineEnd);
+      if (!inside || !inside.name) return [];
+      return callersOfRoutine(inside).filter((at) => at < inside.lineStart || at > inside.lineEnd);
     },
   };
 }
