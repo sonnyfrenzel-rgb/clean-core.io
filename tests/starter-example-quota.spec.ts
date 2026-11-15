@@ -552,11 +552,15 @@ test.describe('the screen says what the click costs, before the click', () => {
       .toBeTruthy();
   });
 
-  test('the dashboard warns before restarting an example, and does not start it', async ({ page }) => {
+  test('the examples door of the dashboard leads to a gallery that warns before restarting an example, and does not start it', async ({ page }) => {
     test.setTimeout(150 * 1000);
     await resetAccount({ starterExamplesUsed: { [EXAMPLE.name]: true } });
-    // The gallery under the list: an account with a project (AB-14a — without
-    // one, the first view above stands in its place).
+    // An account with a project (AB-14a — without one, the first view above
+    // stands in its place). Since AB-14b the gallery no longer stands under the
+    // list: "The demo and the examples are two doors below the list" (CHANGELOG
+    // [Unreleased], Home page v2 part 2), and the examples door opens the start
+    // of a new analysis on its examples — the same StarterExamples component,
+    // so the warning is asked of it there.
     await newProject();
 
     await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3000, alsoGermanLabel: true });
@@ -571,8 +575,15 @@ test.describe('the screen says what the click costs, before the click', () => {
       await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 });
     }
 
-    const panel = page.getByTestId('starter-examples');
-    await expect(panel.getByRole('heading', { name: /Try it with an example/i })).toBeVisible({ timeout: 45000 });
+    // The list holds no gallery any more, only the door to it.
+    const door = page.locator('[data-home-door="examples"] a');
+    await expect(door).toBeVisible({ timeout: 45000 });
+    await expect(page.getByTestId('starter-examples')).toHaveCount(0);
+    await door.click();
+    await page.waitForURL(/\/admin\/new-project/, { timeout: 45000 });
+
+    const panel = page.locator('[data-new-project-examples] [data-testid="starter-examples"]');
+    await expect(panel).toBeVisible({ timeout: 45000 });
 
     // Every example on screen: the first four up front, the rest under "More examples".
     await panel.locator('[data-examples-more] button').first().click();
@@ -600,7 +611,7 @@ test.describe('the screen says what the click costs, before the click', () => {
       'You ran this example before. Running it again uses 1 of your 5 free analysis runs once the analysis completes.',
     );
     // The warning is a stop, not a label: nothing was started by the click.
-    await expect(page).toHaveURL(/\/dashboard/);
+    await expect(page).toHaveURL(/\/admin\/new-project/);
     expect(runRequests, 'a run was requested while the rerun warning stood').toEqual([]);
 
     // A free one goes straight through, so the warning is not simply a broken card.

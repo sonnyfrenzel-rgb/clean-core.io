@@ -130,9 +130,15 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
       });
 
       await page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 90000 });
-      const run = page.locator(`[data-workspace-run="${stagedId}"]`);
+      // Since AB-14b a run from a row starts only through a confirmation dialog
+      // with its cost and model (CHANGELOG [Unreleased], Home page v2 part 2);
+      // the row's Run is `data-home-run`, and "Run analysis" in the dialog starts it.
+      const run = page.locator(`[data-home-run="${stagedId}"]`);
       await expect(run).toBeVisible({ timeout: 90000 });
       await run.click();
+      const dialog = page.locator('[data-cc-message-box]');
+      await expect(dialog.locator(`[data-home-run-dialog="${stagedId}"]`)).toBeVisible();
+      await dialog.getByRole('button', { name: 'Run analysis' }).click();
 
       // The run got as far as the server: the loaded module signed the request
       // with the account's token, which is the call that threw.
