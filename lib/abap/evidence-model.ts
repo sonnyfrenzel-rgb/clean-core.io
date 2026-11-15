@@ -421,7 +421,7 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
   if (!snippet) return snippet ?? '';
   // From 3.0.19 (`ENGINE_READS_3019_FROM`) and from 3.0.20 (`ENGINE_READS_3020_FROM`); a run of an
   // earlier engine keeps what it signed.
-  // From 3.2.0 (`ENGINE_READS_320_FROM`, QA full review of v3.1.0) the value may also be a backtick literal or a
+  // From 3.2.0 (`ENGINE_READS_320_FROM`) the value may also be a backtick literal or a
   // string template; a template is taken whole up to its closing bar, embedded `{ … }` included, and an
   // unterminated literal to the end of the snippet — a secret the snippet cut off is still a secret.
   const assigned = engineReads320Apply(engineVersion)

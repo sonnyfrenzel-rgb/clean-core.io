@@ -25,7 +25,7 @@ import { engineVersionAtLeast } from '../score-rule';
  * `skeletonReadFor`. The readings go live when `APP_VERSION` (`lib/version.ts`) reaches this version. Same pattern
  * as `ENGINE_READS_310_FROM`: hotfixes 3.0.2x and the 3.1.x releases keep reading as before.
  *
- * **Evidence engine** (QA full review of v3.1.0, `lib/abap/evidence-model.ts`) — these change signed findings:
+ * **Evidence engine** (`lib/abap/evidence-model.ts`) — these change signed findings:
  *
  *   - **a credential assigned from a backtick literal or a string template is redacted** (`redactCredentials`):
  *     `DATA(lv_password) = |…|` and `` lv_token = `…` `` print the secret no more than `'…'` did. A template is
