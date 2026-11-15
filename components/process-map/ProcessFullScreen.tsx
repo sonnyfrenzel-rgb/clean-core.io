@@ -331,7 +331,7 @@ export function FullScreenRail({ tour, code, results, listId, byId, onJump, over
                     type="button"
                     tabIndex={-1}
                     onClick={() => onJump(hit)}
-                    className="min-h-8 min-w-0 flex-1 cursor-pointer rounded-cc-row px-1 text-left text-[13px] font-medium text-cc-ink hover:bg-cc-surface-muted focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus pointer-coarse:min-h-11"
+                    className="min-h-8 min-w-0 flex-1 cursor-pointer rounded-cc-row px-1 text-left text-[13px] font-medium text-cc-ink hover:underline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus pointer-coarse:min-h-11"
                   >
                     {/* The name the map shows — what the reader searched by. */}
                     {hit.label}

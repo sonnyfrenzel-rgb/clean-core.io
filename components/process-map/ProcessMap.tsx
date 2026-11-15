@@ -1254,7 +1254,7 @@ export default function ProcessMap({
                     // AB-7 (mockup state 8): what a chart row lit, and the way back. Words, not only the light.
                     <span
                       data-process-map-showing=""
-                      className="inline-flex max-w-full items-center gap-1.5 rounded-cc-row border border-cc-information-border bg-cc-information-bg px-2 py-0.5 text-[12px] leading-snug font-semibold text-cc-ink"
+                      className="inline-flex max-w-full items-center gap-1 rounded-cc-row border border-cc-information-border bg-cc-information-bg px-2 py-0.5 text-[12px] leading-snug font-semibold text-cc-ink"
                     >
                       <span className="min-w-0 break-words">{`${wt('factCharts.showing')} ${spotlight.label}`}</span>
                       <button

@@ -116,7 +116,7 @@ export default function ProcessFactCharts({
           lines={ends.lines}
           onOpenLines={onOpenLines}
         >
-          <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
+          <ul className="m-0 flex list-none flex-col gap-1 p-0">
             {ends.rows.map((row) => (
               <li key={row.key}>
                 <RowButton row={row} pressed={pressed === row.key} onToggle={toggle}>
@@ -148,7 +148,7 @@ export default function ProcessFactCharts({
           onOpenLines={onOpenLines}
         >
           {/* One bar, two parts: changed (solid) and only read (dashed), each with its word and count beside it. */}
-          <div className="flex h-3.5 gap-0.5" aria-hidden={true}>
+          <div className="flex h-3.5 gap-px" aria-hidden={true}>
             {data.changes.length > 0 ? (
               <span className={cn('block h-full rounded-l-[4px]', barColor.bg, data.reads.length === 0 && 'rounded-r-[4px]')} style={{ flex: data.changes.length }} />
             ) : null}
@@ -160,11 +160,11 @@ export default function ProcessFactCharts({
             ) : null}
           </div>
           <p className="m-0 flex flex-wrap gap-3 text-[12px] font-medium text-cc-ink-muted">
-            <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-2">
               <span className={cn('inline-block h-2.5 w-2.5 rounded-[2px]', barColor.bg)} aria-hidden={true} />
               {`${wt('factCharts.changes')} ${data.changes.length}`}
             </span>
-            <span className="inline-flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-2">
               <span className="inline-block h-2.5 w-2.5 rounded-[2px] border-[1.5px] border-dashed border-cc-chart-2 bg-cc-surface" aria-hidden={true} />
               {`${wt('factCharts.onlyReads')} ${data.reads.length}`}
             </span>
@@ -207,7 +207,7 @@ function ChartCard({
     <section
       data-fact-chart={kind}
       aria-labelledby={id}
-      className="flex min-w-0 flex-col gap-2 rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3.5 shadow-cc"
+      className="flex min-w-0 flex-col gap-2 rounded-cc-card border border-cc-line bg-cc-surface px-4 py-4 shadow-cc"
     >
       <h3 id={id} className="m-0 text-[14px] leading-snug font-bold text-cc-ink">
         {title}
@@ -216,7 +216,7 @@ function ChartCard({
         {sentence}
       </p>
       {children}
-      <div data-fact-chart-foot="" className="mt-auto flex flex-wrap items-center gap-1.5 pt-1 text-[12px] font-medium text-cc-ink-muted">
+      <div data-fact-chart-foot="" className="mt-auto flex flex-wrap items-center gap-2 pt-1 text-[12px] font-medium text-cc-ink-muted">
         <span>{foot}</span>
         <CcProvenanceChip value="reconstructed" />
         {lines.length > 0 ? (
@@ -249,9 +249,9 @@ function RowGroup({
   onToggle: (row: FactChartRow) => void;
 }) {
   return (
-    <div className="flex flex-col gap-0.5">
+    <div className="flex flex-col gap-1">
       <h4 className="m-0 text-[12px] font-bold text-cc-ink-muted">{title}</h4>
-      <ul className="m-0 flex list-none flex-col gap-0.5 p-0">
+      <ul className="m-0 flex list-none flex-col gap-1 p-0">
         {rows.map((row) => (
           <li key={row.key}>
             <RowButton row={row} pressed={pressed === row.key} onToggle={onToggle} />
@@ -289,14 +289,19 @@ function RowButton({
       onClick={() => onToggle(row)}
       title={drawn ? `${row.label}: ${wt('factCharts.showOnMap')}` : undefined}
       className={cn(
-        'grid w-full items-center gap-2 rounded-cc-row border border-transparent px-1.5 py-1 text-left text-[13px] font-medium text-cc-ink',
-        bars ? 'grid-cols-[minmax(0,1.25fr)_minmax(60px,1fr)_28px]' : 'grid-cols-[minmax(0,1fr)]',
-        drawn
-          ? 'cursor-pointer hover:bg-cc-information-bg focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus'
-          : 'cursor-default',
-        pressed && 'border-cc-information-border bg-cc-information-bg',
+        'group block w-full rounded-cc-row text-left',
+        drawn ? 'cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus' : 'cursor-default',
       )}
     >
+      {/* The row's surface sits on its inner span, not on the button (DESIGN.md §1.5, as the usage matrix's cells). */}
+      <span
+        className={cn(
+          'grid w-full items-center gap-2 rounded-cc-row border border-transparent px-2 py-1 text-[13px] font-medium text-cc-ink',
+          bars ? 'grid-cols-[minmax(0,1.25fr)_minmax(60px,1fr)_28px]' : 'grid-cols-[minmax(0,1fr)]',
+          drawn && 'group-hover:bg-cc-information-bg',
+          pressed && 'border-cc-information-border bg-cc-information-bg',
+        )}
+      >
       <span className="min-w-0 leading-snug break-words">
         {row.label}
         {row.detail || !drawn ? (
@@ -306,6 +311,7 @@ function RowButton({
         ) : null}
       </span>
       {children}
+      </span>
     </button>
   );
 }

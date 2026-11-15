@@ -514,7 +514,7 @@ export function ProcessTourLayer({ tour, unavailable = false, model, onClose, sa
 
 /** The card's title: the layer's size, or the inline card's (mockup state 5: 17 px in a 320–360 px column). */
 const TITLE = 'm-0 text-[22px] leading-tight font-bold break-words text-cc-ink';
-const TITLE_INLINE = 'm-0 text-[17px] leading-snug font-bold break-words text-cc-ink';
+const TITLE_INLINE = 'm-0 text-[15px] leading-snug font-bold break-words text-cc-ink';
 
 function OverviewCard({
   overview,
