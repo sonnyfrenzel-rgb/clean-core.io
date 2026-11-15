@@ -14,6 +14,11 @@ import { engineVersionAtLeast } from '../score-rule';
  *     an entry of its own, with the call site as its trigger (`methodEntries`, trigger `candidate`). Before, the
  *     implementations of a strategy, state or template-method pattern were neither drawn nor listed as not
  *     reached: they vanished from the map.
+ *   - **AB-15b: interface calls are resolved to the program's own implementations** (`class-hierarchy.ts`). The reading
+ *     uses the reference's static type where the program writes it: a factory's return type, a loop over a table of
+ *     references, the routine's own declaration, interface composition. An abstract class is never the object. A
+ *     typed call with two to four implementations is drawn as its alternatives: a gateway plus one call activity per
+ *     class (`walkAlternatives`).
  *
  * Rule ids and rule count do not change. A run of an older engine keeps its map: whatever rebuilds one passes its
  * engine version (`engineVersionOfProject`) to `buildProcessSkeleton`, or holds a skeleton of this release and asks

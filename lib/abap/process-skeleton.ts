@@ -6,6 +6,7 @@ import { databaseWriteIn, writesDatabaseOnly, type SqlWrite } from './open-sql-d
 import { namesThisProgram } from './callback-registrations';
 import { readDecisionTable } from './decision-table';
 import { readReferenceTypes, resolveMethodTarget } from './method-resolution';
+import { candidatesForCall, readClassHierarchy, type ClassHierarchy } from './class-hierarchy';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-states';
 import { localDataObjectsOf } from './table-dependencies';
@@ -466,6 +467,13 @@ export interface SkeletonLuw {
  * and how many implementations it can reach.
  */
 const CANDIDATE_TRIGGER = 'candidate of ';
+
+/**
+ * Engine 3.2.0 (AB-15b): the most implementations a call draws as alternatives where it stands
+ * (`drawsAlternatives`). A call that can reach more is the opaque call naming its candidates. A design bound, not a
+ * measured one: no call of the benchmark's learning halves reaches more than three.
+ */
+const MAX_ALTERNATIVES = 4;
 
 /** Engine 3.2.0: the two statements that call an enhancement outside this source (`walkEnhancementCall`). */
 const ENHANCEMENT_CALL = /^CALL\s+(?:BADI|CUSTOMER-FUNCTION)\b/i;
@@ -1093,6 +1101,12 @@ interface MethodCall {
   ambiguous: boolean;
   /** The implementations an ambiguous call can reach, `CLASS=>METHOD` — empty otherwise (`method-resolution.ts`). */
   candidates: string[];
+  /**
+   * The class came from the call or from the static type the source writes — not from the method name alone. Only a
+   * typed call draws its candidates as alternatives (`drawsAlternatives`): an untyped `lo->run( )` may reach a class
+   * outside this source, and the method that runs is then none of the ones that share its name here.
+   */
+  typed: boolean;
   /** The method name is computed at run time: `CALL METHOD (lv_name)`. */
   dynamic: boolean;
   /** The call is the whole statement, not an operand inside one. */
@@ -1309,6 +1323,8 @@ class SkeletonBuilder {
   private superOf = new Map<string, string>();
   /** `lo_x TYPE REF TO lcl_y` and its relatives: the class a reference variable holds. */
   private refTypes = new Map<string, Set<string>>();
+  /** Engine 3.2.0 (AB-15b): the program's own classes, interfaces and their relations (`class-hierarchy.ts`), read once. */
+  private hierarchy: ClassHierarchy | null = null;
   /** The statements, over the whole source, whose calls resolve to each method — for entries and helpers. */
   private methodCallSites = new Map<string, number[]>();
   /**
@@ -1879,17 +1895,32 @@ class SkeletonBuilder {
     op: '->' | '=>' | null,
     name: string,
     index: number,
-  ): { key: string | null; ambiguous: boolean; candidates: string[] } {
-    const { key, ambiguous, candidates } = resolveMethodTarget(
-      { impls: this.methodImpls, superOf: this.superOf, refTypes: this.refTypes },
+  ): { key: string | null; ambiguous: boolean; candidates: string[]; typed: boolean } {
+    const model = { impls: this.methodImpls, superOf: this.superOf, refTypes: this.refTypes };
+    const ownClass = this.classOf(index);
+    const { key, ambiguous, candidates, byClass } = resolveMethodTarget(
+      model,
       qualifier,
       op,
       name,
-      this.classOf(index),
+      ownClass,
       // Engine 3.2.0: `me->m( )` dispatches at run time when a subclass redefines `m`.
       { byNameAlone: true, dynamicDispatch: this.reads320 },
     );
-    return { key, ambiguous, candidates };
+    if (key || !this.reads320) return { key, ambiguous, candidates, typed: byClass };
+    // Engine 3.2.0 (AB-15b): a call the declarations at hand leave open is resolved to the implementations the
+    // program itself defines behind the reference's static type (`class-hierarchy.ts`) — one is the target, several
+    // stay candidates. Where the source does not write the type, the answer above stands.
+    this.hierarchy ??= readClassHierarchy(this.statements);
+    const typed = candidatesForCall(this.hierarchy, model,
+      { statementIndex: index, qualifier, op, name: name.toUpperCase(), ownClass }, this.statements, this.structure);
+    if (typed.candidates.length === 1) return { key: typed.candidates[0], ambiguous: false, candidates: [], typed: true };
+    if (typed.candidates.length > 1) {
+      // In source order, as `method-resolution.ts` lists them — the order the beginnings are drawn in.
+      const order = (k: string) => this.methodImpls.findIndex((impl) => impl.key === k);
+      return { key: null, ambiguous: true, candidates: [...typed.candidates].sort((a, b) => order(a) - order(b)), typed: true };
+    }
+    return { key, ambiguous, candidates, typed: byClass };
   }
 
   /**
@@ -2037,7 +2068,7 @@ class SkeletonBuilder {
       const op = segments.length >= 3 ? segments[segments.length - 2] as '->' | '=>' : null;
       const qualifier = segments.length >= 3 ? segments[segments.length - 3] || ')' : null;
       const resolved = dynamic || !/^[\w/~]+$/.test(name)
-        ? { key: null, ambiguous: false, candidates: [] }
+        ? { key: null, ambiguous: false, candidates: [], typed: false }
         : this.resolveMethod(qualifier, op, name, index);
       out.push({
         name, ...resolved, dynamic, standalone: true, constructor: false,
@@ -2100,7 +2131,7 @@ class SkeletonBuilder {
     const key = `${cls}=>CONSTRUCTOR`;
     if (!this.routineBlocks.has(key)) return;
     out.push({
-      name: 'CONSTRUCTOR', key, ambiguous: false, candidates: [], dynamic: false, standalone: false,
+      name: 'CONSTRUCTOR', key, ambiguous: false, candidates: [], typed: true, dynamic: false, standalone: false,
       constructor: true, label: `${cls}=>CONSTRUCTOR`, at,
     });
   }
@@ -4880,6 +4911,10 @@ class SkeletonBuilder {
         continue;
       }
       if (!call.standalone) continue;
+      if (this.drawsAlternatives(call)) {
+        live = this.walkAlternatives(call, at, ctx, live);
+        continue;
+      }
       if (call.dynamic) {
         this.note('dynamic-call', statement,
           'The name of the method is computed at run time. The call is drawn, its target is not claimed.');
@@ -4902,6 +4937,50 @@ class SkeletonBuilder {
       live = [{ from: node.id, condition: '', kind: 'sequence' }];
     }
     return live;
+  }
+
+  /**
+   * Engine 3.2.0 (AB-15b): does the walk draw this call's implementations as alternatives where the call stands? A
+   * call that can reach two to `MAX_ALTERNATIVES` implementations the program defines does. One that can reach more
+   * stays the opaque call that names its candidates — a candidate set that wide would flood the map at the call;
+   * each candidate is a beginning of its own either way (`candidateEntries`).
+   */
+  private drawsAlternatives(call: MethodCall): boolean {
+    return this.reads320 && call.ambiguous && call.typed && !call.dynamic && call.candidates.length >= 2
+      && call.candidates.length <= MAX_ALTERNATIVES && call.candidates.every((key) => this.routineBlocks.has(key));
+  }
+
+  /**
+   * Engine 3.2.0 (AB-15b): a call with several implementations the program defines, drawn as its alternatives.
+   * Which one runs is decided at run time by the class of the object, and the source does not say (D2: never a
+   * guess) — so the call is an exclusive gateway named as the call, with one arm per implementation, conditioned on
+   * its class. Each arm is a call activity into that implementation, which stays drawn where it was before: as a
+   * beginning of its own (`candidateEntries`, trigger `candidate of …`) or as the sub-process of a call that reaches
+   * it for certain. The arms meet after the call. Before AB-15b the call was one opaque node and the reader had to
+   * find its implementations among the beginnings.
+   */
+  private walkAlternatives(call: MethodCall, at: NodeAnchor, ctx: WalkContext, incoming: Exit[]): Exit[] {
+    // The candidates run inside this call, with what is registered here (as for the opaque call).
+    this.registrationsAtCall.set(at.statementIndex, new Set(this.registeredInWalk));
+    const gateway = this.addNode('gateway', call.label, at, ctx.region, ctx.container, {
+      detail: { method: true, alternatives: call.candidates.length, ambiguous: true, candidates: call.candidates },
+    });
+    this.connect(incoming, gateway.id);
+    const exits: Exit[] = [];
+    for (const key of call.candidates) {
+      const impl = this.methodImpls.find((m) => m.key === key);
+      const block = this.routineBlocks.get(key);
+      const anchor: NodeAnchor = {
+        ...at,
+        ...(block ? { secondary: { lineStart: block.lineStart, lineEnd: block.lineEnd, reason: 'routine-definition' as const } } : {}),
+      };
+      const node = this.addNode('call-activity', key, anchor, ctx.region, ctx.container, {
+        detail: { method: true, alternativeOf: call.label, implementation: key, ...(impl ? { class: impl.cls } : {}) },
+      });
+      this.connect([{ from: gateway.id, condition: impl?.cls ?? key, kind: 'conditional' }], node.id);
+      exits.push({ from: node.id, condition: '', kind: 'sequence' });
+    }
+    return exits;
   }
 
   /** The token a method call's node points at — the one that names the method. */
