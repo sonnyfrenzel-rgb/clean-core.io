@@ -1,6 +1,6 @@
 # Engine 4.0: the new engine's module tree
 
-Status: first step, 14 November 2026. Owner decisions: ADR-124 and ADR-125 in
+Status: L0–L2 and the L3 upload layout, 15 November 2026. Owner decisions: ADR-124 and ADR-125 in
 `docs/design/decisions.md`. Background: engine review `docs/design/engine-review-2026-11.md`, §2.4, §3, §4.3,
 §8 and §11.
 
@@ -16,7 +16,8 @@ code. Prior art supplied concepts only, and no third-party source is copied.
 | L0 Lexer | `lexer.ts`, `tokens.ts` | `lex(source) → { tokens, diagnostics }` | built |
 | L1 Statements | `statements.ts`, `statement-kinds.ts` | `statements(tokens, { macros? }) → Statement[]` | built |
 | L2 Blocks | `blocks.ts` | `blocks(statements) → BlockTree` with recovery | built |
-| L3–L6 | — | object model, symbols, calls, process model (review §8.1) | later |
+| L3 Upload layout | `layout.ts`, `conventions.ts` | `layout(files) → UploadLayout`; `readUpload(files)` runs L0–L2 per part with L3's macros | built (layout and includes) |
+| L3 declarations, L4–L6 | — | class/interface declarations, screens, symbols, calls, process model (review §8.1) | later |
 
 `index.ts` is the public surface. `readSource(source)` runs L0 and L1 in one call and returns the statements
 together with the diagnostics of both layers.
@@ -158,7 +159,7 @@ aligned by start line and by their text with whitespace removed and case folded.
 | End line agrees on aligned pairs | 100.00 % |
 | Keyword statement or expression agrees | 18,172, 99.68 % |
 | Block-opener role agrees (on the old engine's block kinds) | 100.00 % |
-| `Unknown` statements (new) | 1 |
+| `Unknown` statements (new) | 1 (0 since the L3 step, which settles BM-141) |
 | Uncovered characters / lexer errors | 0 / 0 |
 
 Each disagreement category, with a verdict:
@@ -259,6 +260,297 @@ L2 alone is slower than `readBlocks` because it builds the full tree with branch
 module returns ranges and copies of the enclosing chains. Read together, the new L0–L2 take 81 ms at 25k
 lines, and the old statement and block readers take 500 ms.
 
+## L3 step: upload layout and includes (15.11.2026)
+
+Owner go 15.11.2026. This is the first half of L3 in the engine review §8.1, the upload layout and the include
+graph. The second half (class and interface declarations, screens) is still to come.
+
+### Contract
+
+`layout(files) → UploadLayout` takes `files: { name, source }[]` exactly as the product receives them:
+
+- one pasted source;
+- several files;
+- an abapGit folder, where `.xml` and other non-source files are left out with a `not-source` note;
+- the joined source a project stores.
+
+`readUpload(files)` runs the layout. It then reads every part through L1 and L2 with the macro names the layout
+supplies, and returns the parts in reading order.
+
+- **`parts`**: one per file, or one per region of a joined source. Each part carries:
+  - `name`: what an `INCLUDE` calls it;
+  - `file`;
+  - `lineMap`: back to the file's rows, for a part cut out of a joined source;
+  - `object`, `role` (see below) and `how` (the reason it was attached to its object);
+  - `header`;
+  - `includes`: every `INCLUDE` statement with its row, its `IF FOUND` flag, its target and its state (`resolved`,
+    `missing`, `optional-missing`, `generated`, `cycle` or `repeated`);
+  - `defines`: classes, interfaces, function modules, FORMs, modules and macros, each with its row and whether
+    it is global;
+  - its L0 tokens and L1 statements, so nothing is lexed twice.
+- **`objects`**, in reading order. Each has:
+  - `type`: `program`, `functionGroup`, `functionModule`, `class`, `interface`, `typePool` or `include`. An
+    `include` object is a loose include with no host;
+  - `main`: null when the upload lacks the main part;
+  - `order`: its parts in the order SAP reads them;
+  - `missing`: each with the part and row that names it, whether it is optional, and whether it is a customer
+    name;
+  - `macros`: the macros visible in the object, and `systemMacros`, the system macros among them.
+- **`primary`**: the first object. **`order`**: every part once, the objects in order, each object's parts in
+  its own order.
+- **`diagnostics`**: file-level, with these codes:
+  - errors: `include-cycle`, `include-repeated`;
+  - warnings: `missing-include` (a customer include, not `IF FOUND`), `duplicate-part`, `second-header`;
+  - info: `missing-sap-include`, `include-shared`, `missing-main`, `not-referenced`, `joined-source`,
+    `not-source`.
+- **`activatable`**: false when an include loops or is included twice. Each part is still read once.
+
+Pure. `layout.ts` (about 550 lines) and `conventions.ts` (about 200 lines) import only within `lib/engine4/`. The
+naming conventions are data in `conventions.ts`.
+
+### How an upload is read
+
+1. **Parts.** Every file becomes one part, named by abapGit's part name or else by its file name without the
+   extension. A single pasted file, and the main text of a joined source, are named by their header instead,
+   because their file name tells nothing. A joined source is cut back into its files at the product's
+   markers, and the `INCLUDE` lines the join commented out are restored. This gives the same parts and the
+   same order as the original files (spec). The marker texts are declared again in `conventions.ts`, and a
+   spec fails if they ever differ from `include-resolution.ts`. The `INCLUDE` statements come from L1, so:
+   - `INCLUDE: a, b.` names two includes;
+   - a commented-out `INCLUDE`, and `INCLUDE STRUCTURE`/`TYPE`, name none;
+   - a class include written with `=` padding (`zcl_x=====ccdef`) is one name.
+2. **Anchors.** A part founds or joins an object by what it says about itself:
+   - an abapGit name (`.clas`, `.intf`, `.fugr.<part>`);
+   - a header (`REPORT`/`PROGRAM`, `FUNCTION-POOL`, `CLASS-POOL`, `INTERFACE-POOL`, `TYPE-POOL`);
+   - a `SAPL…` name;
+   - a global `CLASS … DEFINITION PUBLIC` or `INTERFACE … PUBLIC`;
+   - a `FUNCTION` statement in a file without an include suffix, which makes a function module of its own.
+
+   A TOP include that carries the program's header is the TOP, not the main. That holds for `FUNCTION-POOL` in
+   `LZFOOTOP` and for `PROGRAM sapmzfoo.` in `MZFOOTOP`.
+3. **Includes.** Whatever an anchored part includes belongs to that part's object, transitively.
+4. **Conventions**, for parts that nothing includes:
+   - a class include suffix (`CCDEF`/`CCMAC`/`CCIMP`/`CCAU` after `=` or `_`; `CU`/`CO`/`CI`/`CP`/`CMnnn`
+     only after `=` padding) joins that class;
+   - a workbench include suffix (`TOP`, `SEL`/`SCR`, `CLS`/`Cnn`/`Dnn`, `UXX`/`Unn`, `Fnn`, `Onn`, `Inn`, `Enn`,
+     `Pnn`, `Tnn`, optionally after `_`) joins its host. `L<fg>…` belongs to function group `<fg>`, `M…` to
+     module pool `SAPM…`, `ZX<grp>…` to SAP's exit group `X<grp>`, and any other stem to the report of that
+     name. If the upload lacks the host, the host is created with `main: null`;
+   - an object's name followed by `_` joins that object (`ZBP_I_X_LHC` joins `ZBP_I_X`);
+   - anything else is a loose `include` object.
+
+   A function module in a file of its own joins the function group when the upload holds exactly one.
+5. **Order.** From the main part, includes are expanded in place, depth first, exactly where their `INCLUDE`
+   statement stands. In an abapGit function group, `INCLUDE l<fg>uxx` is `generated`: the module files stand
+   where UXX would. Parts the main does not reach follow in the workbench's role order. So does the whole
+   object when it has no main, or when it is a class whose main file holds no `INCLUDE`. The role order is:
+   1. class local definitions, then class macros;
+   2. TOP;
+   3. main;
+   4. the class sections;
+   5. selection;
+   6. local classes;
+   7. UXX, then function modules;
+   8. class local implementations, then methods;
+   9. FORMs;
+   10. PBO, then PAI;
+   11. events;
+   12. local implementations;
+   13. other includes;
+   14. tests.
+
+   Objects are ordered by type (program, function group, function module, class, interface, type pool, loose
+   include), with a main part before none, then by name. The order of the files never matters (spec), except
+   for which of two copies of a part is kept.
+6. **Macros.** An object's macros are the `DEFINE`s of all its parts, wherever they stand, plus the system
+   macros that apply. A part sees the macros of every object that reads it. Another object's macros are not
+   visible (spec: a class does not see a report's TOP macros).
+
+### `RP_PROVIDE_FROM_LAST`, settled
+
+The macro comes from the macro include `DBPNPMAC` of the HR logical databases PNP, PNPCE and PAP. Such a program
+gets the include from its logical database; it does not upload it. The logical database is a program attribute,
+not source, so L3 recognises the attachment by its traces in the source: `NODES peras`, `TABLES pernr`,
+`GET pernr`/`GET peras`, or an `INCLUDE dbpnpmac` the code names itself. When one of these is present, the object
+sees `RP_PROVIDE_FROM_LAST` and `RP_PROVIDE_FROM_FRST` as **system macros** (`systemMacros`, `from:
+'hrLogicalDatabase'`). The hyphenated spellings (`RP-PROVIDE-FROM-LAST`, `RP-PROVIDE-FROM-FRST`) come from the
+obsolete macro table `TRMAC` and are always visible. `INFOTYPES` alone is not a trace, because it is also used
+without a logical database. A `DEFINE` of the same name in the upload wins. Only names are kept; macro bodies
+are not, because expanding them is later work.
+
+Source of the convention: the HR documentation "Programming Utilities for the Logical Databases PNP and PAP"
+(PAXX, `PYINT_RMAC`), and community answers that cite it ("the program using the macro must contain the include
+DBPNPMAC"). No SAP site was accessed by script. BM-141 now reads as a `MacroCall`, so the L0/L1 shadow has
+**0 `Unknown` statements** (it had 1), and its spec floor is now 0.
+
+### The shadow replaces the per-case macro union
+
+`scripts/engine4/shadow.ts` and `shadow-damage.ts` now take each file's macros from `layout` (`macrosByFile`).
+Before, they used the union of all `DEFINE`s across the case's files. L3 recognises **94 macro calls**; the
+per-case union recognised 93, and no macros at all recognised 21. The difference is BM-141's system macro. No call
+the union recognised is lost. BM-172's IDoc function module uses `STATUS_SETZEN` from `LZPOSTOP`, and it reaches
+that macro by joining the only function group of the upload. The L0–L2 shadow numbers are otherwise unchanged.
+The damage shadow is unchanged: 961/962 blocks flagged, 2 false.
+
+### Shadow against the shipping upload path (15.11.2026)
+
+`scripts/engine4/shadow-layout.ts` (`npx tsx scripts/engine4/shadow-layout.ts [--cases]`) runs on 157 uploads:
+the 7 starter examples and the 150 learn cases. 86 of the uploads have several files, and the corpus has 394
+files. The holdout is never opened. Three readings are compared:
+
+- **join:** `resolveIncludes`, the join behind the own-code upload and a batch run;
+- **concat:** `BM_CONCAT=1`, the file with the header first, then the rest by file name;
+- **L3.**
+
+| Measure | Value |
+|---|---|
+| Files read: join / L3 | 308 / **394** (the join leaves out 86) |
+| Objects found by L3 | 101 programs, 31 function modules, 12 function groups, 77 classes, 2 interfaces, 19 loose includes |
+| Same main file as the join | 128 of 157 (81.5 %) |
+| The join's files in the same relative order in L3 | 133 of 157 (84.7 %) |
+| Same missing includes as the join | 147 of 157 (93.6 %) |
+| BM_CONCAT order equal to L3 order | 103 of 157 (65.6 %) |
+| Macro calls recognised: L3 / per-case union / none | 94 / 93 / 21; `Unknown` 0 / 1 |
+
+Every difference falls into a named category; `unexplained` is empty, and the spec fails if a new one appears:
+
+- **`dropped-by-join:further-object`, 62 files. Verdict: L3 is right, as designed.** The join reads one program
+  per upload and drops other programs, classes and function modules ("one project, one program"). L3 keeps every
+  object. Whether a project reads all of them is a product decision (question 10).
+- **`…join-reads-local-class-as-global-class`: 24 files in 15 multi-file cases; main 3, order 2, missing 10.
+  Verdict: L3 is right, and this is a defect in the shipping upload.** `classifySource` matches the first
+  `CLASS x DEFINITION` anywhere in a file, whether it is `DEFERRED` or local, and renames the include to that
+  class. Two things follow:
+  - `INCLUDE zrep_top.` finds nothing. The include is reported as not uploaded (BM-180, -208, -218, -288,
+    -293, -295, -298: the TOP and the `C01`), and the join leaves it out as a "second program";
+  - in the own-code upload the same file becomes a `second-program` **error**, which blocks the start. A
+    second include with the same local class becomes `duplicate-different`.
+
+  Reproduced in process on a three-file report: TOP with `CLASS lcl DEFINITION DEFERRED`, plus `C01`.
+  `assembleOwnCode` refuses it. This matters beyond the benchmark: 15 of the 86 multi-file learn uploads hit it.
+  It is a 3.x fix outside this strand (question 11).
+- **`main:program-before-other-objects`, 20, and `order:other-main-object`, 15. Verdict: L3 is right (review §5
+  #8).** In a report plus global class upload, the join takes whichever headed file comes first, often the
+  class, and drops the report. L3 puts programs first.
+- **`main:function-before-class`, 6. Verdict: a default (question 12).** With no program in the upload, L3
+  reads a function module or group before classes. The join takes the first file.
+- **`order:no-main-program-workbench-order`, 7. Verdict: L3 is better.** A function group or module pool
+  without `SAPL…`/`SAPM…` is read TOP, function modules, FORMs, PBO, PAI. The join reads TOP and then file-name
+  order, so `F01` comes before `U01`.
+- **BM_CONCAT:**
+  - `concat-ignores-include-order`, 34. The concatenation puts `_F01` before `_TOP` by name, so declarations come
+    after their use. L3 follows the `INCLUDE` statements;
+  - `concat-ignores-workbench-order`, 11;
+  - `concat-interleaves-objects`, 9.
+
+  This is a measurement artefact of the benchmark, not of the product. The product joins the same way as the
+  join above.
+- **`macro:system-macro`, 1 (BM-141).** See above.
+
+### Specs
+
+`tests/engine4-layout.spec.ts`, 28 tests, server-free:
+
+- the conventions (suffixes, hosts, class includes, customer names, marker parity);
+- one pasted source: a report, a fragment, a class, a function module, a joined source cut back with its line
+  map, and unpaired markers;
+- a report with chained, commented and `STRUCTURE` includes;
+- independence from upload order;
+- missing customer/SAP/`IF FOUND` includes;
+- cycle and repeat;
+- unreferenced includes;
+- the `DEFERRED` TOP case, against the shipping join;
+- duplicates and non-source files;
+- report plus class (§5 #8);
+- a lone function module joining the only group;
+- function groups with and without `SAPL…` in plain and abapGit naming (UXX `generated`);
+- customer exits;
+- module pools with and without `SAPM…`;
+- abapGit classes, SAP class-pool includes, plain-named class parts;
+- the macros (cross-include, not cross-object, the HR system macro, TRMAC, an own `DEFINE` winning);
+- the shadow, with floors.
+
+The layer guard covers the two new files.
+
+## Knowledge sources (owner requirement 15.11.2026)
+
+Engine 4 has to use everything the shipping engine already knows, wherever it helps. This section lists every
+curated list and reference source the shipping engine and its neighbours use, where each lives, how it is kept
+current, and at which layer it should enter engine 4. Paths are relative to the repository root. Counts were
+taken on 15.11.2026.
+
+### Synced sources (weekly workflows; each opens a `chore/*` branch for review)
+
+| Source | Data | Read today by | Sync | Licence | Engine 4 layer |
+|---|---|---|---|---|---|
+| SAP Cloudification Repository, release states (25,467 objects) | `lib/abap/generated/cloudification-repo.latest.json` | `catalog-service.ts`, `catalog-index.ts`, `sap-code-copy.ts`, then the A–D grade | `scripts/sync-cloudification-repo.ts`, `npm run sync:catalog`, `sync-catalog.yml`, Mon 06:00 UTC | Apache-2.0 (`THIRD-PARTY-NOTICES.md` §1) | L4 (a known SAP type, table or class is *void* but named, not unknown); L5 (target `external` with a release state); the readings |
+| Cloudification object classifications (8,600) | `…/cloudification-repo.classifications-sap.json` | same | same | Apache-2.0 | L5/readings (the A–D grade stays outside signed packs) |
+| Private Edition snapshots (4 releases) | `…/cloudification-repo.pce-*.json` | `catalog-snapshots.ts` | same, every release | Apache-2.0 | readings (grade per target release) |
+| Released classes (1,417) and interfaces (3,356) | `…/released-classes.latest.json`, `…/released-interfaces.latest.json` | `key-user-candidates.ts`, `lib/transformation/*` | derived by the same sync | Apache-2.0 | L4: `TYPE REF TO` a released class or interface resolves to a known external type; L5: calls to them are `external` |
+| SAP identifiers: CDS views 13,947, function modules 3,091, communication scenarios 54 | `lib/abap/generated/sap-identifiers.json` | `lib/sap-identifier-lists.ts` and the UI (the engine only cites it) | `scripts/sync-sap-identifiers.ts`, `npm run sync:identifiers`, Mon 06:45 UTC | Apache-2.0 plus CC BY 4.0 per fact | **L3** (a `CALL FUNCTION` target that is SAP's is no missing upload); L5 (`external` function module) |
+| DSAG ABAP guide, structure and hashes only | `lib/generated/dsag-abap-guide.json` | `lib/dsag-guide.ts`, `lib/dsag-citations.ts` | `scripts/sync-dsag-guide.ts`, Mon 07:00 UTC | CC BY 4.0 | rule citations in the readings and findings (L6 and beyond), not parsing |
+| SAP reference repos: cheat sheets, flight, Clean ABAP, abap-file-formats (metadata and hashes) | `lib/generated/sap-references/*.json` | `lib/sap-references.ts` | `scripts/sync-sap-references.ts`, `npm run sync:sap-references`, Mon 07:15 UTC | Apache-2.0, CC BY 3.0, MIT | L1 (statement kinds to cover, checked against the cheat-sheet topics); **L3** (abap-file-formats: the object types and their file parts); test inputs only as hashes, never as copied source |
+| ABAP file format JSON schemas | `lib/generated/aff-schemas/*.json` | `lib/transformation/aff-schemas.ts` | same | MIT | L3, later: BDEF/CDS/SRVD files as data objects of an upload |
+| SAP Architecture Center metadata | `lib/generated/sap-architecture-center.json` | `lib/sap-reference-architectures.ts` | `npm run sync:architecture-center` | Apache-2.0 | none (design and decision layer) |
+
+### Hand-curated lists (TypeScript constants, no sync)
+
+| List | Where | Engine 4 layer |
+|---|---|---|
+| SAP API catalog: tables mapped to released successors (about 80) | `lib/abap/sap-api-catalog.ts` | readings and the transformation; L5 for "is this target SAP's" |
+| CDS catalog (6 table sets) | `lib/abap/cds-catalog.ts` | readings |
+| SAP dictionary: tables, fields, values, function modules and BAPIs, transactions, authorisation objects | `lib/abap/sap-dictionary.ts` (pure data) | L4 (known SAP tables and fields as typed *void*); L6 (business names) |
+| Plain glossary, business glossary, German terms, program domain | `lib/abap/plain-glossary.ts`, `business-glossary.ts`, `german-terms.ts`, `program-domain.ts` | L6 and the business language, not parsing |
+| A–D levels, legacy technology, copied SAP code, header rules, key-user tools | `lib/abap/abcd-classification.ts`, `legacy-technology.ts`, `sap-code-copy.ts` (the `SAPM`/`SAPL` rule), `header-rules.ts`, `key-user-candidates.ts` | readings on top of L3–L5. **L3** gives `sap-code-copy` its objects: a `SAPL…`/`SAPM…` main is now an object with a type |
+| Keyword and stop lists (`EVENT_KEYWORDS`, `CONDITION_KEYWORDS`, `SQL_KEYWORDS`, `KNOWN_TYPE_GROUPS` with 16 type groups, `SYSTEM_STRUCTURES`, `HYPHENATED_KEYWORDS`, …) | spread through `block-structure.ts`, `engine-rules.ts`, `security-review.ts`, `table-dependencies.ts`, … | **L1**: the kind table replaces the keyword lists, and the shadow proves it; `KNOWN_TYPE_GROUPS` belongs in **L3** (a `TYPE-POOLS` name that is SAP's is no missing upload) and L4 |
+| Scope items and scenarios, SAP naming aliases | `lib/sap-scope-items.ts`, `lib/sap-curated-lists.ts`, `lib/sap-naming.ts` | readings (not the engine's parse) |
+| Starter examples (7 files) | `public/starter-examples/` | every shadow and spec; already used by L0–L3 |
+
+### What L3 uses today, and what it adds
+
+- The **conventions** are new data in `lib/engine4/conventions.ts`. The shipping engine had none of them. It
+  only knew abapGit's file names (`include-resolution.ts`) and `SAPL…` in `lib/portfolio/batch-split.ts`. The new
+  data covers:
+  - workbench include suffixes;
+  - `L<fg>`, `M…`, `SAPL…`/`SAPM…` hosts;
+  - `ZX…` exit includes;
+  - class-pool includes `CCDEF`/`CCMAC`/`CCIMP`/`CCAU`/`CU`/`CO`/`CI`/`CP`/`CMnnn`;
+  - abapGit parts;
+  - the customer namespace;
+  - the HR system macros.
+
+  They are written from the workbench's naming and abapGit's file layout (concept only, review §12, prior art
+  SAP/abap-file-formats).
+- Not used yet, and next for L3:
+  - `sap-identifiers.json` function modules, so a `CALL FUNCTION 'BAPI_…'` is never mistaken for a missing
+    upload;
+  - `KNOWN_TYPE_GROUPS`, so `TYPE-POOLS slis` is no question to the reader.
+
+  Neither changes the layout's contract; both feed `missing` and L5.
+
+### How `lib/engine4` consumes them without importing `lib/abap` (ADR-125 (1))
+
+**Proposal (default built for L3, not yet for the synced data): a pure data tree `lib/knowledge/`.**
+
+- **Synced JSON stays where the syncs write it.** Engine 4 reads it through `lib/knowledge/`: one small module per
+  source, with no imports apart from a JSON import and its types. Each module exports frozen lookups such as
+  `isSapFunctionModule(name)` and `releaseStateOf(object)`. The parsing and normalising code that is pure today
+  moves there: `cloudification-repo.ts` already has no imports.
+- **Hand-curated constants move out of logic files into `lib/knowledge/`** as pure data, for example the SAP
+  dictionary and the type groups. `lib/abap/` re-exports them, so the shipping engine's behaviour and the frozen
+  digests do not change. The move is a neutral refactor that the digests prove.
+- **The layer guard allows exactly two import roots** for `lib/engine4/`: `./` and `../knowledge/`. A second
+  guard keeps `lib/knowledge/` pure: no imports from `lib/abap/`, `lib/engine4/`, React, Firebase or I/O. The data
+  then has one home and two readers, and neither engine depends on the other.
+- **Versioning.** Every knowledge module exports its source's `meta`: URL, commit or `sourceSha256`, and fetch
+  date. A future signed engine 4 run can record which knowledge it read, as `engineDigest` does for code (review
+  §8.3).
+- **Licences.** Only data that is already synced and licensed (`THIRD-PARTY-NOTICES.md`, `NOTICE`) enters, as it
+  is today. No third-party source text is copied. The DSAG and reference syncs hold structure and hashes only, and
+  they stay that way.
+- Until that tree exists, an engine 4 layer that needs a list either keeps its own small table of names, as
+  `conventions.ts` does, or waits. It never imports `lib/abap/`.
+
 ## Next steps
 
 1. **The 300-file real-code sample** outside the repository (ADR-125 (5)): run L2 over it and count the
@@ -269,8 +561,9 @@ lines, and the old statement and block readers take 500 ms.
    over one at a time and the frozen digests prove each move neutral.
 3. Remove the two other statement splitters (`declaration-parser.tokenize`, `plain-language.splitStatements`)
    once their readers consume `ParsedSource`.
-4. **L3:** upload layout and includes, which supply the macro names across files (the shadow already passes
-   them per case) and settle `RP_PROVIDE_FROM_LAST`.
+4. **L3, second half:** class and interface declarations (visibility, `FINAL`/`ABSTRACT`, events, aliases,
+   redefinitions, `RAISING`) and screens by number from `MODULE` names and `CALL SCREEN` (review §8.1), on
+   top of the layout. The layout part is done (above).
 
 ## Open design questions for the owner
 
@@ -292,3 +585,34 @@ Still open, each with the default this step built:
    block. On the corpus this changes nothing. **Default: the language reading.**
 9. **Logical-database `GET node` events** are not event blocks yet (`Get` has no `event` column), because the
    corpus has none and `GET` has many other forms. **Default: leave it out until a case needs it.**
+10. **Several objects in one upload.** L3 keeps every object: a report, its classes, its function modules. The
+    shipping join reads only one program and drops the rest, 62 files on the learn corpus. Whether a project or a
+    run should read all objects is a product decision for the switch, not one for L3. **Default: L3 returns all
+    of them, the primary first. The consumer decides.**
+11. **The shipping upload refuses programs whose includes hold local classes.** On 15 of the 86 multi-file
+    learn uploads, a TOP with `CLASS lcl DEFINITION DEFERRED`, or a `C01`/`_CLS` include, is renamed to the
+    class. The own-code upload then reports a `second-program` error and the include as not uploaded
+    (`classifySource`, `lib/abap/include-resolution.ts`). This is a 3.x defect outside the inert strand, and
+    fixing it changes stored sources and digests of new projects. **Default: nothing changed in `lib/abap/`. A
+    roadmap row for the owner, with a fix that takes only `CLASS … DEFINITION PUBLIC` as a class header and
+    leaves the rest as it is.**
+12. **Object order with no program in the upload.** L3 reads function groups and function modules before
+    classes and interfaces, and loose includes (user-exit includes such as `MV45AFZZ`) last. A user-exit
+    include is often the business entry (review §5 #5). The process layer may want it first. **Default: type
+    order as built. L6 chooses entries itself and does not depend on `primary`.**
+13. **A function module in a file of its own joins the only function group of the upload.** Without this,
+    BM-172 loses five macro calls. The file does not name its group, so this is an inference, and it is marked
+    `how: 'onlyGroup'`. **Default: on when there is exactly one group; off with two or more.**
+14. **Macro visibility is object-wide, not positional.** SAP sees a macro only after its `DEFINE` in the
+    expanded source. L3 gives every part all of its object's macros, so a call before the definition is
+    tolerated, not flagged. **Default: object-wide, for tolerance. A positional check can come with macro
+    expansion (question 5).**
+15. **System macros.** The list holds `RP_PROVIDE_FROM_LAST`/`_FRST` (HR logical database) and the hyphenated
+    TRMAC spellings, and nothing else. **Default: these four names, recognised as calls and never expanded.
+    More names enter only with a corpus case and a cited source.**
+16. **Missing SAP includes.** An `INCLUDE` outside the customer namespace (`DBPNPMAC`, `<ICON>`-style
+    standard includes) is `missing-sap-include` (info), not a question to the reader. **Default: as built.
+    Customer names are `Z…`/`Y…`, `/ns/`, and the `L`/`M`/`SAPL`/`SAPM` frames around them.**
+17. **The workbench role order** when no main program states the order: TOP, local classes, function modules,
+    FORMs, PBO, PAI, events, tests. Local classes come before function modules because a class must be defined
+    before the code that uses it (SAP's generated frame only fixes TOP and UXX). **Default: as built.**
