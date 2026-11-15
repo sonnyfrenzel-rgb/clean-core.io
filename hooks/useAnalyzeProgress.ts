@@ -47,7 +47,7 @@ export function useAnalyzeProgress(projectId: string | null): {
   const snapshot = useSyncExternalStore(subscribe, read, () => SERVER);
   const progress = useMemo(() => progressOfSnapshot(snapshot), [snapshot]);
   const walked = useCallback(() => {
-    if (projectId && markWalked(browserStore(), projectId, new Date())) announceProgress();
+    if (projectId && markWalked(browserStore(), projectId)) announceProgress();
   }, [projectId]);
   const hide = useCallback(
     (hidden: boolean) => {

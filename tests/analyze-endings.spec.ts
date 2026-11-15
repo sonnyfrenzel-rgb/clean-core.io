@@ -15,11 +15,11 @@ import {
   readProgress,
   setNextHidden,
   softGateShown,
-  walkedDayLabel,
   whatNextOpenAt,
   whatNextShown,
   type ProgressStore,
 } from '../lib/analyze-progress';
+import { WALKED_BEFORE } from '../lib/messages/analyze-business';
 import { PHASE_PURPOSE } from '../lib/workflow-steps';
 import { seedLayoutProject } from './helpers/analyze-layout';
 import { signInThroughForm } from './helpers/seed-project';
@@ -74,21 +74,37 @@ function memoryStore(): ProgressStore & { data: Map<string, string> } {
 /* ------------------------------------------------------------ the progress model */
 
 test.describe('the progress model, in the browser only (pure)', () => {
-  test('walked: the last station shown once counts, with its day; walking through again keeps the first day (O1)', () => {
+  test('walked: the last station shown once counts; the browser keeps that it happened, never the day (O1, privacy policy 1.3)', () => {
     const store = memoryStore();
     expect(readProgress(store, 'p1')).toEqual(NO_PROGRESS);
-    expect(markWalked(store, 'p1', new Date(2026, 10, 13, 9, 30))).toBe(true);
-    expect(store.data.get('cc.analyze.walked.p1')).toBe('2026-11-13');
-    expect(markWalked(store, 'p1', new Date(2026, 10, 20))).toBe(false);
-    expect(readProgress(store, 'p1').walkedOn).toBe('2026-11-13');
-    expect(walkedDayLabel('2026-11-13')).toBe('13 Nov');
-    expect(walkedDayLabel('')).toBeNull();
+    expect(markWalked(store, 'p1')).toBe(true);
+    expect(markWalked(store, 'p1')).toBe(false);
+    expect(readProgress(store, 'p1').walked).toBe(true);
+    // Owner decision 15.11.2026 (variant A): the stored value is a constant, and nothing in it is a date or a time.
+    const stored = store.data.get('cc.analyze.walked.p1');
+    expect(stored).toBe('1');
+    expect(stored).not.toMatch(/\d{4}|-|:|T|Z/);
+    // A day an earlier build wrote still counts as walked; an empty value does not.
+    const older = memoryStore();
+    older.setItem('cc.analyze.walked.p1', '2026-11-13');
+    expect(readProgress(older, 'p1').walked).toBe(true);
+    expect(markWalked(older, 'p1')).toBe(false);
+    older.setItem('cc.analyze.walked.p2', '');
+    expect(readProgress(older, 'p2').walked).toBe(false);
+    // The return visit names no day, and the module has no way to write or show one.
+    expect(WALKED_BEFORE).toBe('Welcome back · you walked through it before');
+    expect(WALKED_BEFORE).not.toMatch(/\d/);
+    const source = read('lib/analyze-progress.ts');
+    expect(source).not.toMatch(/new Date|getFullYear|getMonth|getDate|toISOString|Date\.now|walkedDayLabel|dayOf/);
+    for (const rel of ['hooks/useAnalyzeProgress.ts', 'components/analyze/AnalyzeBusiness.tsx', 'components/demo/DemoAnalyzeBusiness.tsx', 'lib/messages/analyze-business.ts']) {
+      expect(read(rel), rel).not.toMatch(/walkedDayLabel|walkedOnDay|walkedOn|walked through on/);
+    }
   });
 
   test('"Hide" survives a reload, and a second project is unaffected (N9)', () => {
     const store = memoryStore();
-    markWalked(store, 'p1', new Date(2026, 10, 13));
-    markWalked(store, 'p2', new Date(2026, 10, 13));
+    markWalked(store, 'p1');
+    markWalked(store, 'p2');
     expect(setNextHidden(store, 'p1', true)).toBe(true);
     // A reload: a new page reads the same storage.
     const reloaded = memoryStore();
@@ -118,14 +134,14 @@ test.describe('the progress model, in the browser only (pure)', () => {
       },
     };
     expect(readProgress(broken, 'p1')).toEqual(NO_PROGRESS);
-    expect(markWalked(broken, 'p1', new Date())).toBe(false);
+    expect(markWalked(broken, 'p1')).toBe(false);
     expect(setNextHidden(broken, 'p1', true)).toBe(false);
     expect(markLaterToolOpened(broken, 'p1')).toBe(false);
     expect(readProgress(null, 'p1')).toEqual(NO_PROGRESS);
   });
 
   test('the page states: ready, tour, done this visit, a later return; the soft gate until walked; the card after', () => {
-    const walked = { ...NO_PROGRESS, walkedOn: '2026-11-05' };
+    const walked = { ...NO_PROGRESS, walked: true };
     expect(analyzeStage({ progress: NO_PROGRESS, touring: false, finishedThisVisit: false })).toBe('ready');
     expect(analyzeStage({ progress: NO_PROGRESS, touring: true, finishedThisVisit: false })).toBe('tour');
     expect(analyzeStage({ progress: walked, touring: false, finishedThisVisit: true })).toBe('done');
@@ -141,7 +157,7 @@ test.describe('the progress model, in the browser only (pure)', () => {
     expect(whatNextOpenAt(768)).toBe(false);
     expect(whatNextOpenAt(390)).toBe(false);
     // The snapshot round-trips.
-    for (const p of [NO_PROGRESS, walked, { walkedOn: '2026-11-05', nextHidden: true, laterToolOpened: true }]) {
+    for (const p of [NO_PROGRESS, walked, { walked: true, nextHidden: true, laterToolOpened: true }]) {
       expect(progressOfSnapshot(progressSnapshot(p))).toEqual(p);
     }
   });
@@ -441,7 +457,11 @@ test.describe('rendered: the endings and the soft gate in Analyze, Business (nee
     await expect(card).toHaveCount(0);
 
     // State 17 on a second visit: "Welcome back", no banner; a second project is unaffected.
-    await expect(page.locator('[data-analyze-walked="return"]')).toContainText('Welcome back');
+    await expect(page.locator('[data-analyze-walked="return"]')).toContainText('Welcome back · you walked through it before');
+    expect(
+      await page.evaluate((id) => window.localStorage.getItem(`cc.analyze.walked.${id}`), seeded.po),
+      'the browser keeps that the walk-through was done, not the day (privacy policy 1.3)',
+    ).toBe('1');
     const other = await seedLayoutProject('ab4-endings-other');
     // The other account signs in through the form, which a signed-in browser does not show: the same browser's
     // storage (where the walk-through is kept) in a new context, without the first account's session.
@@ -466,7 +486,7 @@ test.describe('rendered: the endings and the soft gate in Analyze, Business (nee
     const { adminMergeDoc } = await import('./helpers/admin-seed');
     await adminMergeDoc('projects', seeded.po, { readers: [reader.uid] });
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
-    await page.addInitScript((id) => window.localStorage.setItem(`cc.analyze.walked.${id}`, '2026-11-13'), seeded.po);
+    await page.addInitScript((id) => window.localStorage.setItem(`cc.analyze.walked.${id}`, '1'), seeded.po);
     await signInThroughForm(page, reader);
     await page.goto(`/project/${seeded.po}/analyze`, { waitUntil: 'domcontentloaded' });
     const full = page.locator('[data-analyze-endings="full"]');

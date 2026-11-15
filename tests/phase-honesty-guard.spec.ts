@@ -199,7 +199,7 @@ test.describe('what green is allowed to mean', () => {
     // "Next" tag, never for a mark.
     const read = (rel: string) => fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
     const bar = read('components/workspace/ToolBar.tsx');
-    expect(bar).not.toMatch(/walkedOn|markWalked|softGateShown/);
+    expect(bar).not.toMatch(/progress\.walked|markWalked|softGateShown/);
     expect(bar).toMatch(/const mark = toolMark\(tool\);/);
     // The endings and the card after the walk-through claim nothing: no green, no tone, no mark.
     for (const rel of ['components/analyze/AnalyzeEndings.tsx', 'components/analyze/WhatNextCard.tsx']) {

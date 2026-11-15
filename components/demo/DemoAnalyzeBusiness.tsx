@@ -37,7 +37,7 @@ import { editorRules } from '@/lib/rules-editor';
 import { signInLinkFor } from '@/lib/return-path';
 import { myWorkspaceHref, stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { useAnalyzeProgress } from '@/hooks/useAnalyzeProgress';
-import { softGateShown, walkedDayLabel, whatNextShown } from '@/lib/analyze-progress';
+import { softGateShown, whatNextShown } from '@/lib/analyze-progress';
 import { notDetermined, VIEW_LABELS } from '@/lib/workspace-model';
 import {
   DEMO_INVITATION,
@@ -63,7 +63,7 @@ import {
   type WorkspaceDemoState,
 } from '@/lib/demo-workspace-state';
 import type { DemoWorkspaceData } from '@/lib/demo-workspace';
-import { bizLinesLabel, tourContinuesIn, tourPausedAt, walkedAll, walkedOnDay, wt } from '@/lib/workspace-messages';
+import { bizLinesLabel, tourContinuesIn, tourPausedAt, WALKED_BEFORE, walkedAll, wt } from '@/lib/workspace-messages';
 
 /** The map pulls bpmn-js: client only and on demand, as in a project's Analyze. */
 const ProcessMap = dynamic(() => import('@/components/process-map/ProcessMap'), { ssr: false });
@@ -206,7 +206,7 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
     },
     [markWalked],
   );
-  const walked = progress.walkedOn !== null;
+  const walked = progress.walked;
   const here = useMemo(() => (move?.station ? { nodeId: move.station.id, line: move.station.anchor?.lineStart ?? null } : null), [move]);
   const wasWalking = useRef(false);
   useEffect(() => {
@@ -347,7 +347,7 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
             walked ? (
               <div data-analyze-walked="" className="cc-no-print flex min-w-0 flex-col gap-3 max-[600px]:w-full">
                 <p className="m-0 flex flex-wrap items-center gap-x-2 text-[12px] leading-snug font-semibold text-cc-ink-muted">
-                  <span>{walkedSteps !== null ? walkedAll(walkedSteps) : walkedOnDay(walkedDayLabel(progress.walkedOn))}</span>
+                  <span>{walkedSteps !== null ? walkedAll(walkedSteps) : WALKED_BEFORE}</span>
                   <span aria-hidden={true}>·</span>
                   <CcButton variant="ghost" icon={<Play size={14} aria-hidden={true} />} onClick={walk} data-analyze-walk="again">
                     {wt('abiz.walkAgain')}

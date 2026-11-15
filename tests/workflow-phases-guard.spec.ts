@@ -154,7 +154,7 @@ test.describe('every view reads the contract', () => {
     // Walked, "What you can do next" hidden and a later tool opened live in `localStorage` only
     // (`lib/analyze-progress.ts`). The one phase contract reads none of it, and the module reads no phase.
     const steps = read('lib/workflow-steps.ts');
-    expect(steps).not.toMatch(/analyze-progress|cc\.analyze\.|walkedOn|nextHidden|laterToolOpened|localStorage/);
+    expect(steps).not.toMatch(/analyze-progress|cc\.analyze\.|progress\.walked|nextHidden|laterToolOpened|localStorage/);
     const progress = read('lib/analyze-progress.ts');
     expect(progress).not.toMatch(/from '\.\/workflow-steps'|firebase|setDoc|updateDoc|addDoc|fetch\(/);
     // The endings, the card and the hook link, say and remember — none of them writes a phase or a status.

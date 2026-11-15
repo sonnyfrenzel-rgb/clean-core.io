@@ -91,10 +91,11 @@ export function walkedAll(steps: number): string {
   return steps === 1 ? 'You walked through the one step' : `You walked through all ${steps} steps`;
 }
 
-/** "Welcome back · walked through on 13 Nov" — a later visit (mockup state 17). */
-export function walkedOnDay(day: string | null): string {
-  return day ? `Welcome back · walked through on ${day}` : 'Welcome back · you walked through it before';
-}
+/**
+ * "Welcome back · you walked through it before" — a later visit (mockup state 17). No day: the browser keeps only
+ * that the walk-through was done, not when (privacy policy 1.3; the mockup's dated line is retired).
+ */
+export const WALKED_BEFORE = 'Welcome back · you walked through it before';
 
 /** "It makes Design easier to follow." — the soft-gate note (mockup state 10), without a duration (O7). */
 export function gateBody(tool: string): string {

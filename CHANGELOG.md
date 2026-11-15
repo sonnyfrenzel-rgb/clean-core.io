@@ -24,6 +24,10 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
 - "What this program does" opens on the program's status workflow when it keeps its data in its own objects.
 - Shell bar below 1024 px: inside a project the path starts at the project, without the "My workspace" step, so
   the project's name is no longer cut off. Help shows as its "?" icon and keeps its name and tooltip (ADR-115).
+- The browser keeps only *that* the walk-through of Analyze was finished or its hint dismissed
+  (`cc.analyze.walked.<id>` holds `1`), no longer the day. A return visit reads "Welcome back · you walked through it
+  before" without a date. An entry with a day from an earlier build still counts as walked (privacy policy 1.3,
+  owner decision 15.11.2026).
 
 ### Fixed
 - A click on a step with an AI name opens its code. Before, the name's label took the click.

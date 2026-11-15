@@ -5,9 +5,11 @@
  * Three facts, each per project:
  *
  *   - **walked** (`cc.analyze.walked.<projectId>`): the last station of the walk-through was shown once, or the
- *     soft-gate note was dismissed (O1). Holds the day it happened (`2026-11-13`), so a return visit can say "walked
- *     through on 13 Nov" (mockup state 17). It takes the soft-gate hint away and brings the two endings and "What you
- *     can do next".
+ *     soft-gate note was dismissed (O1). Holds only *that* it happened (`'1'`), never when: privacy policy 1.3
+ *     names this key as "whether you finished the walk-through of the analysis or dismissed its hint" (owner
+ *     decision 15.11.2026, variant A), so a return visit says "Welcome back" without a day. Any non-empty value
+ *     counts — a day an earlier build wrote is read as walked and not shown. It takes the soft-gate hint away and
+ *     brings the two endings and "What you can do next".
  *   - **next hidden** (`cc.analyze.nextHidden.<projectId>`): "Hide" was pressed on "What you can do next" (N9,
  *     mockup state 9b). A quiet link below the endings brings it back.
  *   - **later tool opened** (`cc.analyze.toolOpened.<projectId>`): a tool after Analyze was opened once in this
@@ -37,13 +39,13 @@ export interface ProgressStore {
 }
 
 export interface AnalyzeProgress {
-  /** The day the walk-through was finished (`YYYY-MM-DD`), or null. */
-  walkedOn: string | null;
+  /** The walk-through was finished or its hint dismissed, in this browser. */
+  walked: boolean;
   nextHidden: boolean;
   laterToolOpened: boolean;
 }
 
-export const NO_PROGRESS: AnalyzeProgress = Object.freeze({ walkedOn: null, nextHidden: false, laterToolOpened: false });
+export const NO_PROGRESS: AnalyzeProgress = Object.freeze({ walked: false, nextHidden: false, laterToolOpened: false });
 
 export function progressKeys(projectId: string): { walked: string; nextHidden: string; toolOpened: string } {
   return {
@@ -52,8 +54,6 @@ export function progressKeys(projectId: string): { walked: string; nextHidden: s
     toolOpened: `${TOOL_OPENED_PREFIX}${projectId}`,
   };
 }
-
-const DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 function get(store: ProgressStore | null, key: string): string | null {
   if (!store) return null;
@@ -80,25 +80,23 @@ export function readProgress(store: ProgressStore | null, projectId: string): An
   const keys = progressKeys(projectId);
   const walked = get(store, keys.walked);
   return {
-    // A value this module did not write (an older build, a hand edit) still counts as walked, without a day.
-    walkedOn: walked === null ? null : DAY.test(walked) ? walked : '',
+    // Any value counts: '1' from this build, a day from an earlier one (never read back as a day), a hand edit.
+    walked: walked !== null && walked !== '',
     nextHidden: get(store, keys.nextHidden) === '1',
     laterToolOpened: get(store, keys.toolOpened) === '1',
   };
 }
 
-/** `2026-11-13` — the day, in the reader's own calendar. */
-export function dayOf(at: Date): string {
-  const two = (n: number) => String(n).padStart(2, '0');
-  return `${at.getFullYear()}-${two(at.getMonth() + 1)}-${two(at.getDate())}`;
-}
+/** What `cc.analyze.walked.<id>` holds: that the walk-through was done, and no date (privacy policy 1.3). */
+export const WALKED_VALUE = '1';
 
-/** The walk-through counts as done (O1). The first day stays: walking through again does not move it. */
-export function markWalked(store: ProgressStore | null, projectId: string, at: Date): boolean {
+/** The walk-through counts as done (O1). An entry already there stays as it is: walking through again writes nothing. */
+export function markWalked(store: ProgressStore | null, projectId: string): boolean {
   if (!projectId) return false;
   const key = progressKeys(projectId).walked;
-  if (get(store, key) !== null) return false;
-  return set(store, key, dayOf(at));
+  const before = get(store, key);
+  if (before !== null && before !== '') return false;
+  return set(store, key, WALKED_VALUE);
 }
 
 /** "Hide" on "What you can do next", or the quiet link that brings it back (N9). */
@@ -117,12 +115,12 @@ export function markLaterToolOpened(store: ProgressStore | null, projectId: stri
 
 /** One string per state, so `useSyncExternalStore` can compare snapshots by value. */
 export function progressSnapshot(progress: AnalyzeProgress): string {
-  return `${progress.walkedOn ?? '-'}|${progress.nextHidden ? 1 : 0}|${progress.laterToolOpened ? 1 : 0}`;
+  return `${progress.walked ? 1 : 0}|${progress.nextHidden ? 1 : 0}|${progress.laterToolOpened ? 1 : 0}`;
 }
 
 export function progressOfSnapshot(snapshot: string): AnalyzeProgress {
   const [walked, hidden, opened] = snapshot.split('|');
-  return { walkedOn: walked === '-' || walked === undefined ? null : walked, nextHidden: hidden === '1', laterToolOpened: opened === '1' };
+  return { walked: walked === '1', nextHidden: hidden === '1', laterToolOpened: opened === '1' };
 }
 
 /* ------------------------------------------------------------- what the page shows */
@@ -135,18 +133,18 @@ export type AnalyzeStage = 'ready' | 'tour' | 'done' | 'return';
 
 export function analyzeStage(input: { progress: AnalyzeProgress; touring: boolean; finishedThisVisit: boolean }): AnalyzeStage {
   if (input.touring) return 'tour';
-  if (input.progress.walkedOn === null) return 'ready';
+  if (!input.progress.walked) return 'ready';
   return input.finishedThisVisit ? 'done' : 'return';
 }
 
 /** The soft-gate hint beside the tools stands until the walk-through is done (ADR-118). */
 export function softGateShown(progress: AnalyzeProgress): boolean {
-  return progress.walkedOn === null;
+  return !progress.walked;
 }
 
 /** "What you can do next" stands after the walk-through, unless it was hidden for this project (N9). */
 export function whatNextShown(progress: AnalyzeProgress): boolean {
-  return progress.walkedOn !== null && !progress.nextHidden;
+  return progress.walked && !progress.nextHidden;
 }
 
 /** The card opens itself from 1024 px; at 768 px and on a phone it is one collapsed line (the 4.1 adjustment (1)). */
@@ -154,14 +152,6 @@ export const WHAT_NEXT_OPEN_FROM = 1024;
 
 export function whatNextOpenAt(width: number): boolean {
   return width >= WHAT_NEXT_OPEN_FROM;
-}
-
-/** "13 Nov" — the day of a walk-through, as the return visit says it. Null for a day this module did not write. */
-export function walkedDayLabel(walkedOn: string | null): string | null {
-  if (!walkedOn || !DAY.test(walkedOn)) return null;
-  const [, m, d] = walkedOn.split('-').map(Number);
-  const month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][m - 1];
-  return month ? `${String(d).padStart(2, '0')} ${month}` : null;
 }
 
 /**

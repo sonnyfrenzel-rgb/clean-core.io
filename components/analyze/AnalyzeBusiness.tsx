@@ -25,7 +25,7 @@ import { useStartRun } from '@/hooks/useStartRun';
 import { useAroundTheMap } from '@/hooks/useAroundTheMap';
 import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
 import { useAnalyzeProgress } from '@/hooks/useAnalyzeProgress';
-import { analyzeStage, softGateShown, walkedDayLabel, whatNextShown } from '@/lib/analyze-progress';
+import { analyzeStage, softGateShown, whatNextShown } from '@/lib/analyze-progress';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { mapFollowGoesOn } from '@/lib/map-follow';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
@@ -38,7 +38,7 @@ import { myWorkspaceHref } from '@/lib/workspace-back-href';
 import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
 import { analyzeLinesFromHash } from '@/lib/analyze-entry';
-import { gateBody, gateContinue, gateLabel, walkedAll, walkedOnDay, wt } from '@/lib/workspace-messages';
+import { gateBody, gateContinue, gateLabel, WALKED_BEFORE, walkedAll, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 
 /** The map and its code panel pull bpmn-js: client only and on demand, as in the workspace. */
@@ -270,7 +270,7 @@ export default function AnalyzeBusiness({
     [markWalked],
   );
   const stage = analyzeStage({ progress, touring, finishedThisVisit });
-  const walked = progress.walkedOn !== null;
+  const walked = progress.walked;
   /** "you are here" in "How it runs": the node the station shows, else its first line. */
   const here = useMemo(() => {
     const station = walkState.move?.station ?? null;
@@ -413,7 +413,7 @@ export default function AnalyzeBusiness({
               // Done, or a later visit (mockup states 9 and 17): the two endings, and the way through it again.
               <div data-analyze-walked={stage} className="cc-no-print flex min-w-0 flex-col gap-3 max-[600px]:w-full">
                 <p className="m-0 flex flex-wrap items-center gap-x-2 text-[12px] leading-snug font-semibold text-cc-ink-muted">
-                  <span>{stage === 'done' && walkedSteps !== null ? walkedAll(walkedSteps) : walkedOnDay(walkedDayLabel(progress.walkedOn))}</span>
+                  <span>{stage === 'done' && walkedSteps !== null ? walkedAll(walkedSteps) : WALKED_BEFORE}</span>
                   <span aria-hidden={true}>·</span>
                   <CcButton variant="ghost" icon={<Play size={14} aria-hidden={true} />} onClick={walk} data-analyze-walk="again">
                     {wt('abiz.walkAgain')}
