@@ -447,7 +447,8 @@ test.describe('the first look on screen', () => {
     }
     // A project with no run reports no finding count and paints no zero.
     const visible = await page.locator('[data-analyze-business]').evaluate((el) => (el as HTMLElement).innerText);
-    expect(visible).not.toMatch(/\b0 findings?\b/i);
+    expect(visible).not.toMatch(/\b\d[\d,]* findings?\b/i);
+    expect(visible).not.toMatch(/Clean Core Score \d/i);
   });
 
   // Skip, the "second visit has no build-up" rule and reduced motion were the

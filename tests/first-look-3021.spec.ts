@@ -224,6 +224,13 @@ test.describe('rendered (AroundTheMap, static markup) — the 3.0.21 rules carri
     const { story } = opening(PO);
     // One sentence per step of the story, each with its line (the checks and stops on the same line, muted).
     for (const step of story.steps.filter((s) => s.anchor)) expect(html).toContain(`data-anchor="${step.anchor}"`);
+    // Row for row: the step sentences under "How it runs", in their order, are the text's steps with their lines.
+    const runsHtml = html.slice(html.indexOf('data-around-run="1"'));
+    const rendered = [...runsHtml.matchAll(/<span data-around-sentence="" data-anchor="([^"]+)">/g)].map((m) => m[1]);
+    const expected = text.runs.flatMap((run) => run.steps.map((s) => s.step.anchor));
+    expect(expected.length).toBeGreaterThan(0);
+    expect(rendered.slice(0, expected.length)).toEqual(expected);
+    expect(expected).toEqual(story.steps.filter((s) => s.anchor).map((s) => s.anchor));
     // The level is said by the chips, not by a level sentence; no rule is decided here.
     expect(html).not.toContain('Reconstructed from the code — not confirmed by the business.');
     expect(html).not.toContain('data-story-decide-rules');
