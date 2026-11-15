@@ -35,5 +35,14 @@
       "updatedAt"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "1112f8dc384c7c1a936c18d2209e6558102eee3ab72d70aa8f498ba4ae5b01d9",
+    "recordedAt": "2026-11-15",
+    "recordedFor": "3.2.0 (AB-14b, AB-14c data): a type line for the server-written project summary (the map miniature, brought from 3.3.0 ADR-123 unchanged) and comments; no client field gained or lost. Deploy by hand after the 3.2.0 release.",
+    "addsToClient": [],
+    "removesFromClient": [],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
+    "note": "Until the deploy, the old rules are live. `npm run deploy:rules` rolls out and deletes this block."
   }
 }

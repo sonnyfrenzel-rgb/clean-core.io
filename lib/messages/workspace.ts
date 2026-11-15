@@ -238,6 +238,8 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'home.demoAsk': 'Prefer to look first?',
   'home.demoBody': 'The demo is a finished example. Nothing runs and nothing is saved.',
   'home.openDemo': 'Open the demo',
+  // My workspace — a returning account's programs as tiles (ADR-123, mock-up direction A)
+  'ws.tile.mapAfterRun': 'Map after the next run',
   // My workspace — the 3.0 list (mockup s7), its sharing section and row menu
   'myWorkspace.limitReached': 'Limit reached.',
   'myWorkspace.colLevels': 'Levels',
@@ -357,6 +359,11 @@ export function coachPositionLabel(position: number, total: number): string {
 /** OpenInvitations — what a withdrawal does, said before it is done. */
 export function withdrawSentence(email: string): string {
   return `The link sent to ${email} stops working at once. If they have not opened it yet, they never will; you can invite them again later.`;
+}
+
+/** What a screen reader hears for a program's map thumbnail. */
+export function mapThumbLabel(objectName: string, steps: number | null): string {
+  return steps === null ? `Process map of ${objectName}` : `Process map of ${objectName}, ${steps} steps`;
 }
 
 /** The first view of a new account (AB-14a): the greeting, with the first name when the profile has one. */
