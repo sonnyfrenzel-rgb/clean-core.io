@@ -9,7 +9,7 @@ import { HOME_STATUS_LABEL, HOME_STATUS_ORDER, homeStatus, type HomeStatus, type
  * One row of the home page's project list (AB-14b, mockup `docs/roadmap/home-mockup-v2.html`, states 2–9, 11, 12):
  * four columns — Project, Status, Next step, Last change — and, behind the "Figures" switch, one line of figures.
  *
- * **The row source is lean (H-O9, QA finding `c559b61a9b31`).** The list used to read the newest 25 project
+ * **The row source is lean (H-O9).** The list used to read the newest 25 project
  * documents in the browser, source code and all, so a 26th project was nowhere on the page and its search could not
  * find it. Rows of the account's own projects are now computed on the server (`GET /api/workspace-rows`) from every
  * project it owns and sent without the source: a `HomeRow` carries no line of code, no artefact and no model text —

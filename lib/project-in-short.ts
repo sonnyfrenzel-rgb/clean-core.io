@@ -3,7 +3,7 @@ import { businessInShort, programSummary } from '@/lib/program-summary-text';
 import { doesOf, DOES_SENTENCES, type AroundSentence } from '@/lib/around-the-map';
 
 /**
- * "In short" for the home page's Continue card (AB-14c data, stored from v3.2.0 with AB-14b; owner question H-O6,
+ * "In short" for the home page's Continue card (AB-14c data, stored from 3.2.0 with AB-14b; owner question H-O6,
  * recommendation taken: written server-side when the run is created, no client field, no model).
  *
  * The sentences are the engine's own "What this program does" of the Business page (`doesOf` in

@@ -1115,7 +1115,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // AB-14c data, stored from v3.2.0 (H-O6): "In short" for the home page's
+    // AB-14c data, stored from 3.2.0 (H-O6): "In short" for the home page's
     // Continue card — the engine's "What this program does" for this run, each
     // sentence with its line. Admin SDK only, outside the signed run and the
     // audit pack, bound to `runId`; no model. Its failure fails nothing: the

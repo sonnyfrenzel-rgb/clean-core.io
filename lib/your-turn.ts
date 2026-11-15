@@ -5,7 +5,7 @@ import type { Project } from '@/lib/types';
 
 /**
  * What "Your turn" in My workspace listed once the account had projects of its
- * own. Since v3.2.0 (AB-14b) no screen reads it: the home page shows "Needs
+ * own. Since 3.2.0 (AB-14b) no screen reads it: the home page shows "Needs
  * your attention" instead, only with a reason (`lib/home-rows.ts`,
  * `attentionRows`), and its card `YourTurnCard.tsx` is gone. Kept with its
  * spec until the release after, then removed. Pure.

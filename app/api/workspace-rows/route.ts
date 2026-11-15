@@ -7,7 +7,7 @@ import { toHomeRow, HOME_ROW_KEYS, type HomeRow } from '@/lib/home-rows';
 import type { Project } from '@/lib/types';
 
 /**
- * GET → the rows of "My workspace" for every project this account owns (AB-14b, H-O9, QA finding `c559b61a9b31`).
+ * GET → the rows of "My workspace" for every project this account owns (AB-14b, H-O9).
  *
  * The list used to read the newest 25 project documents in the browser — `limit(25)` — so the 26th was on no page and
  * no search found it, and every row it did show brought its whole source code along. Here the server reads every

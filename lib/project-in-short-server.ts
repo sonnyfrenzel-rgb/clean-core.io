@@ -1,7 +1,7 @@
 import type { ProjectInShort } from '@/lib/project-in-short';
 
 /**
- * The server half of "In short" (`lib/project-in-short.ts`, AB-14c data in v3.2.0): writing it with the Admin SDK.
+ * The server half of "In short" (`lib/project-in-short.ts`, AB-14c data in 3.2.0): writing it with the Admin SDK.
  *
  * The one key `inShort` of the project document — never a run, never an audit pack. `inShort` is on neither client
  * allowlist of `/projects/{projectId}` in `firestore.rules` (the update rule's `affectedKeys().hasOnly([...])`), so no
