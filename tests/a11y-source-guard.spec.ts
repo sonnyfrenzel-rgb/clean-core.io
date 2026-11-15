@@ -181,6 +181,13 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
     for (const rel of ['components/analyze/AroundTheMap.tsx', 'components/analyze/AnalyzeBusiness.tsx']) {
       expect(code(rel).match(/aria-live=/g) ?? [], `${rel} has a live region of its own`).toHaveLength(0);
     }
+    // The one that does announce: the naming status line holds exactly one polite live region, the map mounts it
+    // with the arrival, and the page hands the map that arrival.
+    const line = code('components/process-map/NamingStatusLine.tsx');
+    expect(line.match(/aria-live=/g) ?? [], 'the naming status line lost its live region').toHaveLength(1);
+    expect(line).toContain('<p role="status" aria-live="polite" data-naming-announce=""');
+    expect(code('components/process-map/ProcessMap.tsx')).toMatch(/\{nameArrival && !editing \? \([\s\S]{0,200}<NamingStatusLine arrival=\{nameArrival\} \/>/);
+    expect(code('components/workspace/WorkspaceProcess.tsx')).toContain('nameArrival={arrival}');
   });
 
   test('disclosures are not dressed up as ARIA menus', () => {
