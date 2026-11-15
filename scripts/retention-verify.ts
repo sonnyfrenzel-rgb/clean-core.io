@@ -53,6 +53,9 @@ import path from 'path';
 
 export const POLICY_FILE = 'docs/DATA-RETENTION.md';
 
+/** The collections whose retention TTL policy the policy file must name, one row each (3.2.0). */
+export const RETENTION_TTL_EXPECTED = ['erased_accounts', 'usage_reports'] as const;
+
 /** Seconds in a day, for turning the API's `"604800s"` into "7 days". */
 const SECONDS_PER_DAY = 86400;
 
@@ -173,6 +176,17 @@ export function parseRetentionClaims(markdown: string): RetentionClaims {
       collectionGroup: claim(row, /^\|\s*`([A-Za-z0-9_]+)\/\{/, 'the collection a retention TTL policy covers')[1],
       field: claim(row, /`([A-Za-z0-9_]+)` drives the retention TTL policy/, 'the field a retention TTL policy uses')[1],
     }));
+  // The retention periods the privacy policy states each need their row, once: a row that went missing would leave its
+  // TTL policy unchecked while the verification still passed.
+  for (const collectionGroup of RETENTION_TTL_EXPECTED) {
+    const rows = retentionTtlRows.filter((row) => row.collectionGroup === collectionGroup);
+    if (rows.length !== 1 || rows[0].field !== 'expiresAt') {
+      throw new Error(
+        `${POLICY_FILE} must have exactly one \`${collectionGroup}/{…}\` row in which \`expiresAt\` drives the retention TTL ` +
+          `policy; found ${rows.length}. If the retention was removed on purpose, remove it from RETENTION_TTL_EXPECTED too.`,
+      );
+    }
+  }
 
   // "...the Cloud Logging bucket `_Default` ... kept **30 days**" and the
   // `_Required` line beside it, which exists so the two are never read as one.

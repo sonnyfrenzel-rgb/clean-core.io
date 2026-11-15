@@ -129,6 +129,9 @@ audit pack holds do not change.
   symbol typed `any`) no longer makes the implementations here that share the name beginnings "candidate of" it; its
   object may be of a class outside this source. The call stays opaque and still lists them, as in 3.1.0
   (`tests/engine-reads-320.spec.ts`). The benchmark figures above were measured before this change.
+- `npm run retention:verify` fails when the policy file loses the row of a retention TTL policy (`usage_reports`,
+  `erased_accounts`) or names another field in it, instead of passing without checking that policy
+  (`scripts/retention-verify.ts`, `tests/retention-verify.spec.ts`).
 - A saved drawing's refresh of the project summary that arrives late no longer puts an older revision's thumbnail
   over a newer one (`lib/project-summary-server.ts`, `tests/project-summary.spec.ts`).
 - A chart row under the map lights only the steps of its own routine: where two classes implement a method of the

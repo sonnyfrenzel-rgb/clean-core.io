@@ -156,6 +156,13 @@ test.describe('the expected values come out of the document', () => {
 
     const withoutPitr = policy.replace('its window is 7 days', 'its window is short');
     expect(() => parseRetentionClaims(withoutPitr)).toThrow(/point-in-time recovery window/);
+
+    // A retention row that goes missing, or names another field, leaves its TTL policy unchecked: an error too.
+    const withoutUsageRow = policy.split('\n').filter((l) => !l.startsWith('| `usage_reports/{id}` |')).join('\n');
+    expect(() => parseRetentionClaims(withoutUsageRow)).toThrow(/usage_reports/);
+    const otherField = policy.replace('and `expiresAt` drives the retention TTL policy', 'and `deleteAt` drives the retention TTL policy');
+    expect(otherField).not.toBe(policy);
+    expect(() => parseRetentionClaims(otherField)).toThrow(/usage_reports/);
   });
 
   test('the error names the file and says what to do about it', () => {
