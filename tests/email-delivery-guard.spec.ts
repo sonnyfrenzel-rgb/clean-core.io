@@ -461,7 +461,8 @@ test('the weekly admin report escapes every string it was handed, and is handed 
   for (const raw of ['${title}', '${emptyText}', '${detail}', '${noun.one}', '${noun.many}']) {
     expect(fn, `countPanel interpolates ${raw} unescaped`).not.toContain(raw);
   }
-  for (const escaped of ['escapeHtml(title)', 'escapeHtml(emptyText)', 'escapeHtml(detail)']) {
+  // The `detail` line (analyses per newly activated account) is gone since 15.11.2026, with the per-account figures.
+  for (const escaped of ['escapeHtml(title)', 'escapeHtml(emptyText)']) {
     expect(fn, `countPanel does not escape with ${escaped}`).toContain(escaped);
   }
   const failures = s.slice(s.indexOf('const failures = d.failures.length'), s.indexOf('return `', s.indexOf('const failures = d.failures.length')));

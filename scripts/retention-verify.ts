@@ -77,6 +77,9 @@ export interface RetentionClaims {
   ttl: { collectionGroup: string; field: string };
   /** The proof-log TTL policies (3.0.21): one per collection whose records outlive an account. */
   ttlRows: Array<{ collectionGroup: string; field: string }>;
+  /** Retention TTL policies (3.2.0): collections whose documents carry their own deletion date for a period the
+   *  privacy policy names, outside the proof log — `usage_reports`, 24 months. */
+  retentionTtlRows: Array<{ collectionGroup: string; field: string }>;
   logBuckets: { defaultDays: number; requiredDays: number };
 }
 
@@ -161,6 +164,16 @@ export function parseRetentionClaims(markdown: string): RetentionClaims {
       field: claim(row, /`([A-Za-z0-9_]+)` drives the proof-log TTL policy/, 'the field a proof-log TTL policy uses')[1],
     }));
 
+  // Retention periods outside the proof log (3.2.0): the same shape, its own phrase, so neither list absorbs the
+  // other.
+  const retentionTtlRows = markdown
+    .split('\n')
+    .filter((line) => line.trimStart().startsWith('|') && line.includes('drives the retention TTL policy'))
+    .map((row) => ({
+      collectionGroup: claim(row, /^\|\s*`([A-Za-z0-9_]+)\/\{/, 'the collection a retention TTL policy covers')[1],
+      field: claim(row, /`([A-Za-z0-9_]+)` drives the retention TTL policy/, 'the field a retention TTL policy uses')[1],
+    }));
+
   // "...the Cloud Logging bucket `_Default` ... kept **30 days**" and the
   // `_Required` line beside it, which exists so the two are never read as one.
   const defaultBucket = claim(
@@ -186,6 +199,7 @@ export function parseRetentionClaims(markdown: string): RetentionClaims {
     pitrWindowDays: Number(pitr[1]),
     ttl: { collectionGroup, field },
     ttlRows,
+    retentionTtlRows,
     logBuckets: { defaultDays: Number(defaultBucket[1]), requiredDays: Number(requiredBucket[1]) },
   };
 }
@@ -398,6 +412,20 @@ export function compareRetention(claims: RetentionClaims, facts: RetentionFacts)
       ok: policy?.state === 'ACTIVE',
       detail: !policy
         ? 'no TTL policy on that field — the records outlive their deletion date, and the privacy policy says they do not'
+        : policy.state === 'ACTIVE'
+          ? 'ACTIVE'
+          : `state is ${policy.state}, not ACTIVE — nothing is being deleted yet`,
+    });
+  }
+
+  /* 2c. The retention TTL policies: a period the privacy policy names holds only if the policy deletes on it. */
+  for (const row of claims.retentionTtlRows) {
+    const policy = facts.ttls.find((t) => t.collectionGroup === row.collectionGroup && t.field === row.field);
+    verdicts.push({
+      check: `retention TTL policy: ${row.collectionGroup}.${row.field}`,
+      ok: policy?.state === 'ACTIVE',
+      detail: !policy
+        ? 'no TTL policy on that field — the documents outlive the period the privacy policy names'
         : policy.state === 'ACTIVE'
           ? 'ACTIVE'
           : `state is ${policy.state}, not ACTIVE — nothing is being deleted yet`,

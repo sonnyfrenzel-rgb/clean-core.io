@@ -271,7 +271,8 @@ test.describe('(8) a tab left open across a deploy says so when it comes back, a
     const prevStorage = g.sessionStorage;
     let reloads = 0;
     const store = new Map<string, string>();
-    g.window = { location: { reload: () => { reloads += 1; } } };
+    // Signed in: the hint is set, so the guard is the time in sessionStorage (lib/stale-build.ts).
+    g.window = { location: { reload: () => { reloads += 1; } }, localStorage: { getItem: (k: string) => (k === 'cc.auth.signedIn' ? '1' : null) } };
     g.sessionStorage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) };
     try {
       const t = 1_000_000_000_000;

@@ -255,16 +255,12 @@ function sampleUsageReport(now: Date): UsageReport {
     periodEnd: now,
     current: { registrations: 3, activations: 2, activeAccounts: 5, runs: 14, projects: 4, units: 11 },
     previous: { registrations: 2, activations: 1, activeAccounts: 4, runs: 9, projects: 3, units: 8 },
-    totals: {
-      accounts: 40, activated: 12, neverStarted: 28, atLimit: 1, byok: 1,
-      unitsUsed: 61, unitsGranted: 200, objectsAnalysed: 57, runsAllTime: 131,
-    },
-    // Figures only, like the real report since 30.09.2026.
+    totals: { accounts: 40, activated: 12, neverStarted: 28, atLimit: 1 },
+    // Figures only, like the real report since 30.09.2026; no per-account figure since 15.11.2026.
     newAccounts: 2,
-    newlyActivated: [3],
     reachedLimit: 1,
     delivery: {
-      sent: 6, delivered: 4, delayed: 0, bounced: 1, complained: 0, opened: 2, awaiting: 1,
+      sent: 6, delivered: 4, delayed: 0, bounced: 1, complained: 0, awaiting: 1,
       failures: [{ kind: 'welcome', status: 'email.bounced', count: 1 }],
     },
   };

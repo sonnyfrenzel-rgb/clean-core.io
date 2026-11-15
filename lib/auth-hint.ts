@@ -1,5 +1,5 @@
 /**
- * Two first-party marks that decide whether a public page loads the Firebase
+ * A first-party mark that decides whether a public page loads the Firebase
  * Auth SDK at all — privacy policy section 7: public pages contact nobody but
  * clean-core.io before sign-in (`noRequestWithoutSignIn` in
  * lib/legal/open-values.ts).
@@ -18,11 +18,14 @@
  *   expired session and on a sign-out in another tab), so a stale mark costs
  *   one SDK load that then removes it. Without it, a public header shows the
  *   signed-out state without asking Firebase (lib/auth-subscribe.ts).
- * - **Redirect pending** (`sessionStorage`): set right before a Google
- *   redirect sign-in leaves the page, removed once `getRedirectResult` has
- *   answered. The landing finishes a redirect only when it is set, instead of
- *   initialising Auth on every visit to ask whether there is one
- *   (components/LandingModals.tsx).
+ *
+ * A second mark, `cc.auth.redirectPending` in `sessionStorage`, was here to
+ * finish a Google redirect sign-in. Nothing ever started one — the Google
+ * button opens a popup — so it was a write path nothing called, and it is gone
+ * since 3.2.0 together with the landing's redirect check. A redirect sign-in,
+ * should one ever be wanted, needs its own design against privacy policy
+ * section 7 (`tests/public-no-google-before-signin-guard.spec.ts` holds that
+ * none exists).
  *
  * No imports, so the public pages can read it without pulling in Firebase.
  * Every access is wrapped: storage can be blocked, full or absent (a private
@@ -30,7 +33,6 @@
  */
 
 export const SIGNED_IN_HINT_KEY = 'cc.auth.signedIn';
-export const REDIRECT_PENDING_KEY = 'cc.auth.redirectPending';
 
 /** Dispatched on `window` when this page sets the signed-in hint, so a header on the same page can follow. */
 export const SIGNED_IN_HINT_EVENT = 'cc-auth-hint';
@@ -38,14 +40,6 @@ export const SIGNED_IN_HINT_EVENT = 'cc-auth-hint';
 function local(): Storage | null {
   try {
     return typeof window === 'undefined' ? null : window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
-function session(): Storage | null {
-  try {
-    return typeof window === 'undefined' ? null : window.sessionStorage;
   } catch {
     return null;
   }
@@ -92,31 +86,4 @@ export function markAuthStarted(): void {
 /** Whether the Auth SDK has been started in this page's JavaScript. */
 export function isAuthStarted(): boolean {
   return authStarted;
-}
-
-/** Call immediately before `signInWithRedirect`. */
-export function markRedirectPending(): void {
-  try {
-    session()?.setItem(REDIRECT_PENDING_KEY, '1');
-  } catch {
-    // Without the mark the landing does not finish the redirect on its own; the app shell still sees the session.
-  }
-}
-
-/** Whether a Google redirect sign-in left this tab and has not been finished yet. */
-export function isRedirectPending(): boolean {
-  try {
-    return session()?.getItem(REDIRECT_PENDING_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-/** Call once `getRedirectResult` has answered, with a result or an error. */
-export function clearRedirectPending(): void {
-  try {
-    session()?.removeItem(REDIRECT_PENDING_KEY);
-  } catch {
-    // Nothing to do: a mark that cannot be removed only means one more SDK load on the next visit in this tab.
-  }
 }

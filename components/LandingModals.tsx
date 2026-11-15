@@ -4,7 +4,6 @@ import { useState, useEffect, useRef, FormEvent, KeyboardEvent, ClipboardEvent }
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   signInWithPopup,
-  getRedirectResult,
   browserPopupRedirectResolver,
   GoogleAuthProvider, 
   signInWithEmailAndPassword,
@@ -19,12 +18,11 @@ import {
 // download the Firestore SDK for every visitor (docs/perf/REPORT.md).
 //
 // `getAuth()` is called where Auth is used — a submit, the session check of an
-// open sign-in step, a pending redirect — and never on render: initialising
+// open sign-in step — and never on render: initialising
 // Auth contacts Google on mobile browsers and Safari, and this component also
 // serves the legal dialogs (`?legal=`), which must not do that (privacy policy
 // section 7; lib/auth-hint.ts).
 import { getAuth } from '@/lib/firebase-app';
-import { clearRedirectPending, isRedirectPending } from '@/lib/auth-hint';
 import {
   ArrowRight,
   ShieldCheck,
@@ -332,40 +330,6 @@ export default function LandingModals() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [signInStepOpen]);
-
-  // Finish a Google redirect sign-in — only when one left this tab
-  // (`markRedirectPending()` runs right before `signInWithRedirect`,
-  // lib/auth-hint.ts). Asking on every visit initialised Auth for every
-  // visitor of the start page, which contacts Google on mobile browsers and
-  // Safari (privacy policy section 7). The mark is removed once Firebase has
-  // answered, with a result or an error.
-  const redirectChecked = useRef(false);
-  useEffect(() => {
-    if (redirectChecked.current || !isRedirectPending()) return;
-    redirectChecked.current = true;
-    const auth = getAuth();
-    if (!auth) return;
-    // A redirect sign-in used to go straight to the dashboard without ever
-    // consulting the profile, so an account with MFA enabled skipped the second
-    // factor entirely on this path while the popup path enforced it. Check the
-    // profile first and route into the MFA step when it is required; on a read
-    // failure, sign out rather than proceeding — the same fail-closed rule the
-    // popup and password paths follow.
-    getRedirectResult(auth)
-      .then((result) => {
-        if (!result?.user) return;
-        setIsNavigating(true);
-        router.push(afterSignIn);
-      })
-      .catch((err) => {
-        if (interceptSecondFactor(err)) return;
-        console.error('[getRedirectResult] Error:', err?.code);
-        // A redirect that came back with an error used to end in the console
-        // only, with the reader looking at an unchanged sign-in screen.
-        setAuthError(googleSignInMessage(err?.code || '', err?.message));
-      })
-      .finally(clearRedirectPending);
-  }, [router, afterSignIn]);
 
   const closeAuthModal = async () => {
     setMfaResolver(null);

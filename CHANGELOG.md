@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Built on `dev`; the version stays v3.1.0 until the release. Every new engine reading is gated from 3.2.0, so it
 shows only once the version says so. Signed runs and the audit pack do not change.
 
+### Added
+- A register of every browser storage key the app writes (`lib/storage-keys.ts`): area, what it holds, its purpose,
+  its lifetime and whether privacy policy section 7 names it. `tests/storage-keys-register.spec.ts` reads every
+  `setItem` / `removeItem` in `app/`, `components/`, `hooks/` and `lib/`, follows the key through constants, imports,
+  key functions, object properties and parameters, and fails on an unregistered key, a key it cannot follow, a
+  registered key nothing writes, and a register that disagrees with section 7. Three keys written today are not named
+  in section 7 yet (`cc.processMap.outline.page`, `cc.auth.signedIn`, `cc:design-skip-questions:…`); the register says
+  so.
+- An objection to the usage figures (privacy policy section 9) can be recorded: an account that objects by e-mail is
+  marked by the operator in the Admin Console (`usage-report-objection-on` / `-off`, an audit row in the same batch),
+  and from the next weekly report on its account, runs, projects and mails are left out of every figure. The marker
+  `users/{uid}.usageReportObjectionAt` is written by the Admin SDK only — firestore.rules already deny it to browsers,
+  so no rules deploy is needed — and goes with the profile when the account is erased
+  (`tests/usage-report-objection.spec.ts`).
+
 ### Changed
 - The walk-through runs on the Analyze page itself: a card beside the map on desktop, above it up to 1100 px. It
   ends in two equal endings, "Re-design this program" and "Analyse another Z program", with "What you can do next"
@@ -26,6 +41,35 @@ shows only once the version says so. Signed runs and the audit pack do not chang
   (`cc.analyze.walked.<id>` holds `1`), no longer the day. A return visit reads "Welcome back · you walked through it
   before" without a date. An entry with a day from an earlier build still counts as walked (privacy policy 1.3,
   owner decision 15.11.2026).
+- Without sign-in, a page that failed to load a chunk after a release writes nothing to the browser (privacy policy
+  section 7: no session storage before sign-in). The reload-loop guard `cc_chunk_reload_at` is written to session
+  storage only when the signed-in hint is set; for everybody else the browser's own Navigation Timing record is the
+  guard — a document that came from a reload does not reload again, so a build that keeps failing stops after one
+  reload and shows the new-version card (`lib/stale-build.ts`, `tests/stale-build-signed-out-storage.spec.ts`; the
+  storage register now says "signed-in").
+- The weekly usage report holds only what privacy policy 1.3 names (owner decision 15.11.2026: trim the report to
+  the text). Gone from the report, the stored snapshot and the mail: the count of accounts with their own model key,
+  distinct analysed programmes, the all-time totals of runs, used and granted units, and the list of analyses per
+  newly activated account — no per-account figure at all. Kept: new, active and newly activated accounts, runs,
+  projects and used units for the week and the week before; accounts in total, never started and at their limit; the
+  delivery counts. Snapshots stored before keep their old fields; nothing reads them and nothing is migrated
+  (`tests/usage-report-trimmed.spec.ts`, `docs/DATA-RETENTION.md`).
+- Mail opens and clicks are not recorded. Tracking is off in the mail provider's account; an open or a click that
+  arrives at the webhook anyway is acknowledged and dropped, neither delivery record stores it, and the weekly usage
+  report counts delivery only ("Zugestellt", no "geöffnet"). An older record whose status is an open or a click
+  counts as delivered (`lib/mail-status.ts`, `tests/mail-engagement-not-recorded.spec.ts`).
+- The weekly usage report's snapshots (`usage_reports`) are kept 24 months after the week they cover, no longer
+  without end: each carries `expiresAt`, a Firestore TTL policy deletes on it and `npm run retention:verify` checks
+  that policy; `scripts/backfill-usage-report-expiry.ts` dates the snapshots stored before (one-off, dry run first).
+  The TTL policy and the backfill are run by the owner (`docs/DATA-RETENTION.md`,
+  `tests/usage-report-retention.spec.ts`).
+
+### Removed
+- The session mark `cc.auth.redirectPending` and the landing's redirect sign-in check behind it. Nothing ever set the
+  mark — the Google button opens a popup — so `markRedirectPending` was a write path nobody called, and the check in
+  `LandingModals` never ran. Gone from `lib/auth-hint.ts`, `components/landing/LandingModalsLazy.tsx`,
+  `components/LandingModals.tsx` and the storage register; `tests/public-no-google-before-signin-guard.spec.ts` now
+  holds that no sign-in goes by redirect and nothing asks for a redirect result.
 
 ### Engine 3.2.0 (gated from 3.2.0; a run signed earlier keeps its map)
 - A call the source cannot resolve statically (an interface reference with several implementations, a redefined

@@ -72,6 +72,12 @@ const RAW_TTLS = [
     name: `projects/example-project/databases/example-db/collectionGroups/${c}/fields/expiresAt`,
     ttlConfig: { state: 'ACTIVE' },
   })),
+  // The retention policies (3.2.0): the usage figures' 24 months.
+  {
+    indexConfig: { usesAncestorConfig: true },
+    name: 'projects/example-project/databases/example-db/collectionGroups/usage_reports/fields/expiresAt',
+    ttlConfig: { state: 'ACTIVE' },
+  },
 ];
 
 const RAW_DATABASE = {
@@ -119,6 +125,7 @@ test.describe('the expected values come out of the document', () => {
     expect(c.pitrWindowDays).toBe(7);
     expect(c.ttl).toEqual({ collectionGroup: 'rate_limits', field: 'expiresAt' });
     expect(c.ttlRows.map((r) => r.collectionGroup).sort()).toEqual(['byok_agreement_events', 'consent_events', 'email_events', 'erasure_notes', 'invitation_delivery_records']);
+    expect(c.retentionTtlRows).toEqual([{ collectionGroup: 'usage_reports', field: 'expiresAt' }]);
     expect(c.logBuckets).toEqual({ defaultDays: 30, requiredDays: 400 });
   });
 
@@ -271,6 +278,14 @@ test.describe('production and the document, side by side', () => {
     const v = verdict(facts, 'proof-log TTL policy: consent_events');
     expect(v.ok).toBe(false);
     expect(v.detail).toContain('deletion date');
+  });
+
+  test('a missing retention TTL policy fails and names the collection', () => {
+    const facts = agreeingFacts();
+    facts.ttls = facts.ttls.filter((t) => t.collectionGroup !== 'usage_reports');
+    const v = verdict(facts, 'retention TTL policy: usage_reports');
+    expect(v.ok).toBe(false);
+    expect(v.detail).toContain('privacy policy');
   });
 
   test('the two log buckets are never read as one', () => {
