@@ -45,8 +45,12 @@ export function announceProcessMapModel(projectId: string, next: ProcessMapModel
     if (model && model.projectId === projectId && model.model === next) return;
     model = { projectId, model: next };
   }
-  // A new model has other ids: a spotlight from the old one would light nothing it means.
-  if (spotlight?.projectId === projectId) spotlight = null;
+  // A model without the lit elements would light nothing the spotlight means: it goes. A new model that still holds
+  // every one of them — the same map re-read once its AI names are stored — keeps it, and the reader keeps the light.
+  if (spotlight?.projectId === projectId) {
+    const ids = next ? new Set(next.elements.map((e) => e.id)) : null;
+    if (!ids || !spotlight.spotlight.ids.every((id) => ids.has(id))) spotlight = null;
+  }
   announce(MAP_MODEL_EVENT);
   announce(MAP_SPOTLIGHT_EVENT);
 }

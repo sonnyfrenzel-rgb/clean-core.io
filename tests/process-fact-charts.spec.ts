@@ -10,7 +10,7 @@ import { readCallGraphFrom } from '../lib/abap/call-graph';
 import { reachableWrites } from '../lib/abap/reachable-writes';
 import { extractDataCoupling } from '../lib/abap/code-assessment';
 import { caseEndsOf, dataUseOf, elementsAtLines, routineCallsOf } from '../lib/process-fact-charts';
-import { spotlightPlane, spotlightSet } from '../lib/process-map-spotlight';
+import { announceProcessMapModel, currentMapSpotlight, requestMapSpotlight, spotlightPlane, spotlightSet } from '../lib/process-map-spotlight';
 
 /**
  * AB-7 of `docs/design/analyze-business-first-plan.md` §4.2 — the two charts under the map, server-free, on every
@@ -176,4 +176,30 @@ test('the charts are presentation: no signed run, audit pack or export reads the
   }
   const lib = fs.readFileSync(path.join(ROOT, 'lib/process-fact-charts.ts'), 'utf8');
   expect(lib).not.toMatch(/from 'react'|firebase|fetch\(/);
+});
+
+test('a lit row stays lit when the map is re-read with its AI names, and goes when its elements are gone', () => {
+  const { model } = mapOf('Z_MM_PO_APPROVAL.abap');
+  const project = 'spotlight-reread';
+  const ids = model.elements.slice(0, 3).map((e) => e.id);
+  announceProcessMapModel(project, model);
+  requestMapSpotlight(project, { label: 'Stopped in “Check requisition”', ids, key: 'stop:x' });
+  // The same map re-read: a new object, new elements, the same ids.
+  const renamed = { ...model, elements: model.elements.map((e) => ({ ...e })) };
+  announceProcessMapModel(project, renamed);
+  expect(currentMapSpotlight(project)?.key).toBe('stop:x');
+  // A map without one of the lit elements drops the light.
+  announceProcessMapModel(project, { ...model, elements: model.elements.filter((e) => e.id !== ids[0]) });
+  expect(currentMapSpotlight(project)).toBeNull();
+  // The map leaving the page drops it as well.
+  announceProcessMapModel(project, model);
+  requestMapSpotlight(project, { label: 'x', ids, key: 'stop:x' });
+  announceProcessMapModel(project, null);
+  expect(currentMapSpotlight(project)).toBeNull();
+});
+
+test('the page announces a new map model straight over the old one, and null only when it leaves', () => {
+  const process = fs.readFileSync(path.join(ROOT, 'components/workspace/WorkspaceProcess.tsx'), 'utf8');
+  expect(process).toMatch(/useEffect\(\(\) => \{\s*if \(projectId\) announceProcessMapModel\(projectId, model \?\? null\);\s*\}, \[projectId, model\]\);/);
+  expect(process).toMatch(/return \(\) => announceProcessMapModel\(projectId, null\);\s*\}, \[projectId\]\);/);
 });

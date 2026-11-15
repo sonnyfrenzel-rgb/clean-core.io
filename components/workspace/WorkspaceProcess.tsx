@@ -365,11 +365,15 @@ export default function WorkspaceProcess({
    * The charts under the map (plan AB-7): the map announces the model it draws, so the charts count by its ids, and
    * lights what a chart row asks for — on the one level its elements share, when they share one.
    */
+  // The new model replaces the old one directly, without a null in between, so a spotlight whose elements the new
+  // model still holds survives the re-read (`announceProcessMapModel`); the map is dropped when the page leaves.
   useEffect(() => {
-    if (!projectId || !model) return;
-    announceProcessMapModel(projectId, model);
-    return () => announceProcessMapModel(projectId, null);
+    if (projectId) announceProcessMapModel(projectId, model ?? null);
   }, [projectId, model]);
+  useEffect(() => {
+    if (!projectId) return undefined;
+    return () => announceProcessMapModel(projectId, null);
+  }, [projectId]);
   const [spotlight, setSpotlight] = useState<MapSpotlight | null>(null);
   useEffect(() => {
     const hear = () => {

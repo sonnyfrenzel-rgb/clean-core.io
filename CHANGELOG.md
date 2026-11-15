@@ -125,6 +125,11 @@ audit pack holds do not change.
   Tab no longer leaves it either: the edges of the Tab loop counted the map's nodes, which Tab skips, so a Tab from
   the map's one focusable node went out to the page behind (Tab and Shift+Tab walked in the rendered
   `tests/analyze-fullscreen.spec.ts`).
+- A chart row pressed under the map stays lit when the map is re-read with its AI names: the map was announced as
+  gone and then as new on every re-read, which dropped the light and the "Showing: … · Clear" line within seconds for
+  an account with a model key. A new map now replaces the old one directly and keeps a spotlight whose elements it
+  still holds (`lib/process-map-spotlight.ts`, `tests/process-fact-charts.spec.ts`, rendered
+  `tests/analyze-fact-charts.spec.ts` with a key).
 - A credential assigned from literals joined by `&&` or `&` (`lv_password = |abc| && |def|.`, backtick or quoted
   parts alike) is redacted whole; before, only the first literal went and the rest of the secret stayed in the
   snippet. Same engine reading from 3.2.0 as the redaction above; a run of 3.1.0 keeps what it signed
