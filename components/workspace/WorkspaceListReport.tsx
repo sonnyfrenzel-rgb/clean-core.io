@@ -137,6 +137,9 @@ const SHARED_COLUMNS: readonly CcTableColumn[] = [
 
 const number = (value: number) => new Intl.NumberFormat('en').format(value);
 
+/** The shortest time between two reads of the own rows that coming back into view starts (`/api/workspace-rows`). */
+const REVISIT_MS = 30_000;
+
 /** The bearer header of the signed-in account, or none. */
 async function bearer(u: User): Promise<Record<string, string>> {
   const token = await u.getIdToken();
@@ -199,8 +202,10 @@ export default function WorkspaceListReport({
   // Only the newest answer is shown: an older one arriving after a newer one
   // would put back rows the newer one had already corrected.
   const seq = useRef(0);
+  const lastRead = useRef(0);
   const refresh = useCallback(async (u: User) => {
     const mine = ++seq.current;
+    lastRead.current = Date.now();
     const uid = u.uid;
     try {
       const res = await fetch('/api/workspace-rows', { headers: await bearer(u), cache: 'no-store' });
@@ -227,8 +232,10 @@ export default function WorkspaceListReport({
     // instead of passing it on an old error.
     setOwnFailedFor(null);
     void refresh(user);
+    // At most once per `REVISIT_MS` by coming back into view: each read lists every project, and the route's hourly
+    // budget is sized for that pace.
     const again = () => {
-      if (document.visibilityState === 'visible') void refresh(user);
+      if (document.visibilityState === 'visible' && Date.now() - lastRead.current >= REVISIT_MS) void refresh(user);
     };
     document.addEventListener('visibilitychange', again);
     return () => document.removeEventListener('visibilitychange', again);

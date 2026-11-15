@@ -41,7 +41,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: q?.message || 'Multi-factor authentication required.' }, { status: q?.status || 403 });
     }
     try {
-      await assertRateLimit(`workspace-rows:${decodedToken.uid}`, 600, 60 * 60 * 1000);
+      // Each answer reads every project of the account: 120 an hour, the most the list asks for when it is read again
+      // on coming back into view at most every 30 s (`REVISIT_MS`), plus the reads after the list's own actions.
+      await assertRateLimit(`workspace-rows:${decodedToken.uid}`, 120, 60 * 60 * 1000);
     } catch (rateErr: unknown) {
       const q = rateErr as { message?: string; status?: number };
       return NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 });

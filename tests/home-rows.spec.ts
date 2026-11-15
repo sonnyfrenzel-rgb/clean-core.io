@@ -246,6 +246,15 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
     expect(list).toMatch(/if \(mine !== seq\.current\) return;/);
   });
 
+  test('a full-list read is budgeted: 120 an hour per account, and coming back into view reads again at most every 30 s', () => {
+    const route = code('app/api/workspace-rows/route.ts');
+    expect(route).toContain('await assertRateLimit(`workspace-rows:${decodedToken.uid}`, 120, 60 * 60 * 1000);');
+    const list = code('components/workspace/WorkspaceListReport.tsx');
+    expect(list).toContain('const REVISIT_MS = 30_000;');
+    expect(list).toContain("if (document.visibilityState === 'visible' && Date.now() - lastRead.current >= REVISIT_MS) void refresh(user);");
+    expect(list).toMatch(/const mine = \+\+seq\.current;\s*lastRead\.current = Date\.now\(\);/);
+  });
+
   test('the cap of the list is said, never silent: the route answers `truncated` past MAX_ROWS and the list prints it', () => {
     const route = code('app/api/workspace-rows/route.ts');
     expect(route).toMatch(/const MAX_ROWS = 2000;/);
