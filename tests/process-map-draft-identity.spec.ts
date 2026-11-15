@@ -125,5 +125,15 @@ test('the modeller opens only while the project allows editing', () => {
   expect(src).not.toMatch(/const \[editing, setEditing\]/);
   // Every way into the modeller reads the derived mode, never the asked one.
   expect(src).toMatch(/\{editing && view === 'map' && !isPhone \? \(/);
-  expect(src.match(/editingAsked/g)?.length, 'the asked mode is read outside its declaration and its derivation').toBe(2);
+  expect(src.match(/\beditingAsked\b/g)?.length, 'the asked mode is read outside its declaration and its derivation').toBe(2);
+});
+
+test('an edit asked for on one project or source is not asked for on the next one the instance shows', () => {
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'process-map', 'ProcessMap.tsx'), 'utf8');
+  // The request is stored with the identity it was made on, and counts only while that identity is on show.
+  expect(src).toContain("const editingIdentity = `${projectId ?? ''}\\n${source ?? ''}`;");
+  expect(src).toContain('const editingAsked = editingAskedFor === editingIdentity;');
+  expect(src).toContain('(on: boolean) => setEditingAskedFor(on ? editingIdentity : null),');
+  expect(src).not.toMatch(/useState\(false\);\s*\/\*\*\s*\* Editing is what the reader asked for/);
+  expect(src).not.toMatch(/const \[editingAsked, setEditingAsked\] = useState/);
 });

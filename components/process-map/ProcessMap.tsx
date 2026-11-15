@@ -462,7 +462,15 @@ export default function ProcessMap({
    * modeller talked into forgetting. Neither of the two ever touches `model` —
    * the as-is revision after editing is the as-is revision before it.
    */
-  const [editingAsked, setEditingAsked] = useState(false);
+  // The request is held for the project and source it was made on: an instance kept across a change of project
+  // does not carry it over, so another project's editor opens only when its reader asks for it there.
+  const editingIdentity = `${projectId ?? ''}\n${source ?? ''}`;
+  const [editingAskedFor, setEditingAskedFor] = useState<string | null>(null);
+  const editingAsked = editingAskedFor === editingIdentity;
+  const setEditingAsked = useCallback(
+    (on: boolean) => setEditingAskedFor(on ? editingIdentity : null),
+    [editingIdentity],
+  );
   /**
    * Editing is what the reader asked for *and* what this project allows. The instance can outlive a
    * change of project or of ownership (see the draft below), and a mode asked for on one project must
