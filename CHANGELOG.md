@@ -17,9 +17,16 @@ audit pack holds do not change.
   its lifetime and whether privacy policy section 7 names it. `tests/storage-keys-register.spec.ts` reads every
   `setItem` / `removeItem` in `app/`, `components/`, `hooks/` and `lib/`, follows the key through constants, imports,
   key functions, object properties and parameters, and fails on an unregistered key, a key it cannot follow, a
-  registered key nothing writes, and a register that disagrees with section 7. Three keys written today are not named
-  in section 7 yet (`cc.processMap.outline.page`, `cc.auth.signedIn`, `cc:design-skip-questions:…`); the register says
-  so.
+  registered key nothing writes, and a register that disagrees with section 7. Privacy policy 1.3 names every key
+  written today but `cc.workspace.figures` (owner decision 15.11.2026: not to be stored); the register says so.
+- Privacy policy 1.3 of 16 November 2026, in force from this release: the passages of the lawyer's document 21,
+  approved unchanged, word for word in German and in the same meaning in English — section 9 "Server logs & usage
+  figures" describes the weekly usage report; sections 2, 5 and 6 refer to it (data you provide, the right to object,
+  legal basis and a 24-month retention); section 7 adds `cc.processMap.outline.page`, `cc.analyze.walked.…`,
+  `cc.analyze.nextHidden.…`, `cc.analyze.toolOpened.…`, `cc.auth.signedIn` and `cc:design-skip-questions:…`. The
+  change note at the top points to 1.2, which stays published at `/datenschutz/versions/1.2`; 1.3 is archived at
+  `docs/privacy/1.3.md` / `1.3.de.md` with its digests, the sign-up box names it, and the consent record stores `1.3`
+  (`lib/legal/privacy-versions.ts`, `tests/legal-names-wording.spec.ts`).
 - An objection to the usage figures (privacy policy section 9) can be recorded: an account that objects by e-mail is
   marked by the operator in the Admin Console (`usage-report-objection-on` / `-off`, an audit row in the same batch),
   and from the next weekly report on its account, runs, projects and mails are left out of every figure. The marker
