@@ -304,6 +304,11 @@ test.describe('with projects', () => {
     const panel = page.locator('#home-panel-shared');
     const row = panel.locator(`[data-workspace-shared-row="${SHARED_ID}"]`);
     await expect(row).toBeVisible({ timeout: 60000 });
+    // The tab holds the shared project and nothing else: no own row, no demo.
+    const sharedIds = await panel.locator('[data-workspace-shared-row]').evaluateAll((els) => els.map((el) => el.getAttribute('data-workspace-shared-row')));
+    expect([...new Set(sharedIds)]).toEqual([SHARED_ID]);
+    const tableIds = await panel.locator('[data-cc-table-row]').evaluateAll((els) => els.map((el) => el.getAttribute('data-cc-table-row')));
+    expect(tableIds.filter((id) => id !== SHARED_ID), 'an own row or the demo is in the shared tab').toEqual([]);
     await expect(row.locator('[data-workspace-access="shared"]')).toBeVisible();
     await expect(row).toContainText(WORKSPACE_MESSAGES['homeList.readOnly']);
     await expect(panel).toContainText(WORKSPACE_MESSAGES['homeList.sharedNote']);
