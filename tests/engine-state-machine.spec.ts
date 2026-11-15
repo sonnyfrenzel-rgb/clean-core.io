@@ -306,27 +306,62 @@ test('signed artefacts stay out of it through every import: neither module is in
     // The project summary and "In short" (AB-14c) are written by the run route after the signed transaction,
     // outside the run, and draw the map as Analyze does — so the workflow reading may reach the route's bundle
     // through them and through nothing else. Walk the import graph from the entry without passing through them.
+    // The exception is the route's own import edge only: from any other module the walk goes on into them.
     const DISPLAY_ONLY = /lib\/(project-summary-server|project-in-short|project-in-short-server)\.ts$/;
     const entryKey = inputs.find((i) => i.endsWith(entry))!;
+    const skipsDisplayOnly = entry === 'app/api/runs/create/route.ts';
     const reached = new Set<string>([entryKey]);
     const queue = [entryKey];
     while (queue.length) {
       const at = queue.shift()!;
       for (const { path: next } of meta[at]?.imports ?? []) {
-        if (!meta[next] || reached.has(next) || DISPLAY_ONLY.test(next)) continue;
+        if (!meta[next] || reached.has(next)) continue;
+        if (skipsDisplayOnly && at === entryKey && DISPLAY_ONLY.test(next)) continue;
         reached.add(next);
         queue.push(next);
       }
     }
+    // Nothing else the entry reaches imports the display-only modules: the signing helpers, the audit pack and the
+    // skeleton never lead into them.
+    const importsDisplayOnly = [...reached].filter((i) => i !== entryKey && (meta[i]?.imports ?? []).some(({ path: p }) => DISPLAY_ONLY.test(p)));
+    expect(importsDisplayOnly, `${entry}: a module besides the route imports the summary or "In short"`).toEqual([]);
     expect(entryKey, `${entry} not in its own bundle`).toBeTruthy();
     expect(reached.size, `${entry}: the walk reached nothing`).toBeGreaterThan(1);
     expect([...reached].filter((i) => /lib\/abap\/(state-machine|technical-methods)\.ts$/.test(i)), entry).toEqual([]);
+  }
+  // The signing code itself never bundles the display-only modules.
+  for (const signing of ['lib/run-signature.ts', 'lib/audit-signing-key.ts', 'lib/audit-pack.ts']) {
+    const out = await build({ entryPoints: [path.join(root, signing)], bundle: true, write: false, metafile: true, platform: 'node', format: 'cjs', packages: 'external', alias: { '@': root }, logLevel: 'silent' });
+    expect(Object.keys(out.metafile!.inputs).filter((i) => /lib\/(project-summary-server|project-in-short|project-in-short-server)\.ts$/.test(i)), signing).toEqual([]);
   }
   // The check can see both modules at all: the wording of the map reads the workflow and the technique.
   const words = await build({ entryPoints: [path.join(root, 'lib/abap/plain-language.ts')], bundle: true, write: false, metafile: true, platform: 'node', format: 'cjs', packages: 'external', alias: { '@': root }, logLevel: 'silent' });
   const seen = Object.keys(words.metafile!.inputs);
   expect(seen.some((i) => /lib\/abap\/state-machine\.ts$/.test(i))).toBe(true);
   expect(seen.some((i) => /lib\/abap\/technical-methods\.ts$/.test(i))).toBe(true);
+});
+
+test('the run route writes the summary and "In short" only after the signed transaction has committed', () => {
+  const route = fs.readFileSync(path.join(__dirname, '..', 'app/api/runs/create/route.ts'), 'utf8');
+  const sign = route.indexOf('signRunHashV2(runHash, signingKey)');
+  const tx = route.indexOf('await db.runTransaction(');
+  const txEnd = route.indexOf('} catch (txErr) {', tx);
+  // Every refusal that follows the transaction (too large, project gone, source or profile moved) returns before them.
+  const lastRefusal = route.indexOf('if (sourceMoved || profileMoved) {', txEnd);
+  expect(sign).toBeGreaterThan(0);
+  expect(tx).toBeGreaterThan(sign);
+  expect(txEnd).toBeGreaterThan(tx);
+  expect(lastRefusal).toBeGreaterThan(txEnd);
+  const afterRefusals = route.indexOf("code: 'source-moved',", lastRefusal);
+  expect(afterRefusals).toBeGreaterThan(lastRefusal);
+  // Each writer is called exactly once, and every call (not the import) stands after the last refusal.
+  for (const name of ['computeProjectInShort', 'writeProjectInShort', 'computeProjectSummary', 'writeProjectSummary']) {
+    const calls = [...route.matchAll(new RegExp(`\\b${name}\\(`, 'g'))].map((m) => m.index!);
+    expect(calls, name).toHaveLength(1);
+    expect(calls[0], `${name} is called before the signed run is committed`).toBeGreaterThan(afterRefusals);
+  }
+  // The transaction body names none of them.
+  expect(route.slice(tx, txEnd)).not.toMatch(/ProjectInShort|ProjectSummary/);
 });
 
 test('a CHECK inside a loop guards only the rest of that pass, not the moves after ENDLOOP (QA review 268ed7624e53)', () => {
