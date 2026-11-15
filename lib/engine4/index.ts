@@ -57,3 +57,5 @@ export function readSource(source: string, options: StatementsOptions = {}): { s
   const tree = blocks(list);
   return { statements: list, tree, diagnostics: [...lexed.diagnostics, ...list.flatMap((s) => s.diagnostics), ...tree.diagnostics] };
 }
+
+export { parseSource, type CompatContainer, type CompatStatement, type ParsedSource } from './parsed-source';
