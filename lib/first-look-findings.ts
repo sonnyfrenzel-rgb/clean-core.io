@@ -386,17 +386,6 @@ function authorityFinding(statements: AbapStatement[], missing: boolean): CodeFi
 
 /* ------------------------------------------------------------- the block */
 
-/** What the code gives away: at most three findings in the fixed order, the rest counted. */
-export function codeGivesAway(input: CodeGivesAwayInput): CodeGivesAway {
-  const { findings, testSwitch } = allCodeFindings({ ...input, engineVersion: input.engineVersion });
-  return {
-    findings: findings.slice(0, GIVES_AWAY_SHOWN),
-    more: Math.max(0, findings.length - GIVES_AWAY_SHOWN),
-    checked: GIVES_AWAY_SIGNS,
-    testSwitch,
-  };
-}
-
 /** Every finding, one per sign, in the fixed order — what "+ N more" stands for. */
 export function allCodeFindings(input: CodeGivesAwayInput): Pick<CodeGivesAway, 'findings' | 'testSwitch'> {
   const none = { findings: [], testSwitch: null };

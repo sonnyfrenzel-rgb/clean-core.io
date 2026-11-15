@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { FINDING_ORDER, allCodeFindings, codeGivesAway, type CodeFinding } from '../lib/first-look-findings';
+import { FINDING_ORDER, allCodeFindings, type CodeFinding } from '../lib/first-look-findings';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { EXAMPLE_SNIPPETS } from '../lib/example-snippets';
 import { DEMO_SOURCE_FILE } from '../lib/demo-marks';
@@ -78,12 +78,10 @@ test.describe('what the code gives away', () => {
         const input = page
           ? { source, engineVersion: APP_VERSION, skeleton: page.skeleton, testData: processStory(page.skeleton, source, null, APP_VERSION).testData }
           : { source, engineVersion: APP_VERSION };
-        const block = codeGivesAway(input);
-        const all = allCodeFindings(input).findings;
-        expect(block.checked).toBe(7);
-        expect(block.findings.length).toBeLessThanOrEqual(3);
-        expect(block.findings).toEqual(all.slice(0, 3));
-        expect(block.more).toBe(Math.max(0, all.length - 3));
+        // The block of three with "+ N more" retired with the first insights (3.2.0, AB-6); the text around the map
+        // asks the findings' questions (`questionsOf`), so every finding is checked here.
+        const block = allCodeFindings(input);
+        const all = block.findings;
         expectWellFormed(name, all);
         // One finding per sign.
         expect(new Set(all.map((f) => f.reader)).size).toBe(all.length);
@@ -92,13 +90,13 @@ test.describe('what the code gives away', () => {
     }
   });
 
-  test('a trivial program gives nothing away — empty, seven signs checked, no test switch', () => {
+  test('a trivial program gives nothing away — empty, no test switch', () => {
     const source = `REPORT z_hello.\nSTART-OF-SELECTION.\n  WRITE / 'Hello'.\n`;
-    expect(codeGivesAway({ source, engineVersion: APP_VERSION })).toEqual({ findings: [], more: 0, checked: 7, testSwitch: null });
-    expect(codeGivesAway({ source: '', engineVersion: APP_VERSION })).toEqual({ findings: [], more: 0, checked: 7, testSwitch: null });
+    expect(allCodeFindings({ source, engineVersion: APP_VERSION })).toEqual({ findings: [], testSwitch: null });
+    expect(allCodeFindings({ source: '', engineVersion: APP_VERSION })).toEqual({ findings: [], testSwitch: null });
   });
 
-  // Five signs in one program: three shown, two counted.
+  // Five signs in one program, in the fixed order.
   const MANY = [
     'REPORT z_many.',
     'DATA lt_orders TYPE STANDARD TABLE OF vbak.',
@@ -117,10 +115,7 @@ test.describe('what the code gives away', () => {
     '',
   ].join('\n');
 
-  test('at most three findings, in the fixed order, and the rest counted', () => {
-    const block = codeGivesAway({ source: MANY, engineVersion: APP_VERSION });
-    expect(block.findings.map((f) => f.reader)).toEqual(['unreachable-code', 'ignored-input', 'fixed-scope']);
-    expect(block.more).toBe(2);
+  test('every finding, in the fixed order', () => {
     expect(allCodeFindings({ source: MANY, engineVersion: APP_VERSION }).findings.map((f) => f.reader)).toEqual([
       'unreachable-code',
       'ignored-input',
@@ -128,7 +123,7 @@ test.describe('what the code gives away', () => {
       'sap-table-write',
       'authority',
     ]);
-    const [dead, input, scope] = block.findings;
+    const [dead, input, scope] = allCodeFindings({ source: MANY, engineVersion: APP_VERSION }).findings;
     expect(dead).toMatchObject({ anchor: 'L8', ask: 'it' });
     expect(dead.text).toContain('2 lines of code never run');
     expect(input).toMatchObject({ anchor: 'L4', ask: 'users' });
@@ -184,7 +179,7 @@ test.describe('what the code gives away', () => {
 
   test('the test switch becomes one line, from the story when the page has it', () => {
     const source = read('tests/fixtures/sd-locked-probe-demo.abap');
-    const own = codeGivesAway({ source, engineVersion: APP_VERSION });
+    const own = allCodeFindings({ source, engineVersion: APP_VERSION });
     expect(own.testSwitch).not.toBeNull();
     expect(own.testSwitch!.anchor).toMatch(ANCHOR);
     expect(own.testSwitch!.sentence).toMatch(/test cases?, switched on from its start screen\. Should that stay in production code\?$/);
@@ -194,7 +189,7 @@ test.describe('what the code gives away', () => {
       anchor: own.testSwitch!.anchor,
       ask: 'it',
     });
-    const fromStory = codeGivesAway({ source, engineVersion: APP_VERSION, testData: { anchor: 'L69–78', flag: 'P_DEMO', cases: 31 } });
+    const fromStory = allCodeFindings({ source, engineVersion: APP_VERSION, testData: { anchor: 'L69–78', flag: 'P_DEMO', cases: 31 } });
     expect(fromStory.testSwitch).toEqual({
       anchor: 'L69-78',
       sentence: 'The program carries its own 31 test cases, switched on from its start screen. Should that stay in production code?',

@@ -349,8 +349,8 @@ export interface AroundTheMapInput {
 }
 
 /** The five blocks, read once from the reading the map is drawn from. */
-export function aroundTheMap(input: AroundTheMapInput): AroundTheMapText {
-  const { source, skeleton, ruleSet, engineVersion } = input;
+export function aroundTheMap({ engineVersion, ...input }: AroundTheMapInput): AroundTheMapText {
+  const { source, skeleton, ruleSet } = input;
   const customerTexts = input.customerTexts ?? null;
   let facts: ProgramSummaryFacts | null = null;
   let lines: SummaryLine[] = [];
