@@ -48,7 +48,6 @@ import {
   type HomeRow,
   type HomeSort,
 } from '@/lib/home-rows';
-import { rememberHomeFigures, useStoredHomeFigures } from '@/lib/home-list-prefs';
 import { ROW_LEVELS, rowHasLevel, type RowFacts, type RowLevels } from '@/lib/workspace-row-facts';
 // The run itself (and the evidence engine and SAP catalog it imports) is
 // fetched when Run is confirmed, not with the list.
@@ -92,7 +91,8 @@ import { APP_VERSION } from '@/lib/version';
  *     `GET /api/workspace-rows` (`lib/home-rows.ts`) — no source code in them — and search, filters and sort run over
  *     all of them;
  *   - **four columns**: Project, Status, Next step, Last change, with the new status words (H-O3, `lib/home-status.ts`)
- *     and dates as "6 Nov 2026" (H-O10); the figures one switch away ("Figures", remembered in this browser);
+ *     and dates as "6 Nov 2026" (H-O10); the figures one switch away ("Figures", kept for this page view only: nothing
+ *     is stored, owner decision 15.11.2026);
  *   - **tabs**: My projects, Shared with me, Invitations sent — the old Sharing card lives in them;
  *   - **"Needs your attention"** only with a reason (code changed, design no longer fits, a failed test run);
  *   - the demo and the examples as **two doors** below the list;
@@ -179,9 +179,8 @@ export default function WorkspaceListReport({
   const [filter, setFilter] = useState<HomeFilter>(EMPTY_HOME_FILTER);
   const [sort, setSort] = useState<HomeSort>('last-change');
   const [showAll, setShowAll] = useState(false);
-  const storedFigures = useStoredHomeFigures();
-  const [chosenFigures, setChosenFigures] = useState<boolean | null>(null);
-  const figures = chosenFigures ?? storedFigures;
+  // Off on every visit: the switch is not remembered in the browser (owner decision 15.11.2026, privacy policy 1.3).
+  const [figures, setFigures] = useState(false);
   const [inviteCount, setInviteCount] = useState(0);
   const [runs, setRuns] = useState<Record<string, RunCell>>({});
   const controllers = useRef<Record<string, AbortController>>({});
@@ -902,8 +901,7 @@ export default function WorkspaceListReport({
                     aria-checked={figures}
                     data-home-figures={figures ? 'on' : 'off'}
                     onClick={() => {
-                      setChosenFigures(!figures);
-                      rememberHomeFigures(!figures);
+                      setFigures(!figures);
                     }}
                     className="inline-flex h-8 items-center gap-2 rounded-cc-row px-1 text-[13px] font-semibold text-cc-ink pointer-coarse:h-11"
                   >

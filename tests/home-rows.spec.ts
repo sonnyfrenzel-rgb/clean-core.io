@@ -19,7 +19,7 @@ import {
 } from '../lib/home-rows';
 import { homeStatus, ATTENTION_LABEL, HOME_STATUS_LABEL, REDESIGN_TOTAL } from '../lib/home-status';
 import { computeProjectInShort, inShortOf, inShortSentencesOf, PROJECT_IN_SHORT_VERSION } from '../lib/project-in-short';
-import { HOME_FIGURES_KEY, HOME_PRIVACY_PENDING_STORAGE_KEYS } from '../lib/home-list-prefs';
+import { STORAGE_KEYS } from '../lib/storage-keys';
 import { sha256Hex, artefactDigest } from '../lib/artefact-digest';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { APP_VERSION } from '../lib/version';
@@ -289,14 +289,13 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
     expect(code('components/workspace/HomeDoors.tsx')).not.toContain('variant="primary"');
   });
 
-  test('the "Figures" key is held for the Privacy Policy until its list names it', () => {
-    const privacy = read('lib/legal/texts/privacy.en.ts');
-    expect(HOME_FIGURES_KEY).toBe('cc.workspace.figures');
-    for (const key of [HOME_FIGURES_KEY]) {
-      expect(privacy.includes(key) || HOME_PRIVACY_PENDING_STORAGE_KEYS.includes(key), key).toBe(true);
-    }
-    // A key the text already names leaves the register.
-    for (const key of HOME_PRIVACY_PENDING_STORAGE_KEYS) expect(privacy, key).not.toContain(key);
+  test('the "Figures" switch stores nothing: component state only (owner decision 15.11.2026)', () => {
+    const list = code('components/workspace/WorkspaceListReport.tsx');
+    expect(list).toContain('const [figures, setFigures] = useState(false);');
+    expect(list).not.toMatch(/localStorage|sessionStorage|home-list-prefs/);
+    expect(fs.existsSync(path.join(ROOT, 'lib/home-list-prefs.ts')), 'the storage helper is gone').toBe(false);
+    expect(STORAGE_KEYS.map((e) => e.key)).not.toContain('cc.workspace.figures');
+    for (const file of ['lib/legal/texts/privacy.en.ts', 'lib/legal/texts/privacy.de.ts']) expect(read(file)).not.toContain('cc.workspace.figures');
   });
 });
 

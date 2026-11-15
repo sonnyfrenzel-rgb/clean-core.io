@@ -7,7 +7,9 @@ import { adminSetDoc } from './helpers/admin-seed';
 import { signInViaLanding } from './helpers/sign-in';
 import { sha256Hex } from '../lib/artefact-digest';
 import { WORKSPACE_MESSAGES } from '../lib/workspace-messages';
-import { HOME_FIGURES_KEY } from '../lib/home-list-prefs';
+
+/** The key an earlier build of AB-14b wrote for the "Figures" switch; nothing writes it since 15.11.2026. */
+const OLD_FIGURES_KEY = 'cc.workspace.figures';
 
 /**
  * Home page v2, part 2 (AB-14b) — rendered, on a seeded account with 30 projects. Needs the emulators and a server;
@@ -20,7 +22,7 @@ import { HOME_FIGURES_KEY } from '../lib/home-list-prefs';
  *   4. Filters from ten projects on, over all of them.
  *   5. "Needs your attention" only with a reason — at most three, and not at all for an account without one.
  *   6. A run from a row only through the confirmation dialog with its cost and model; Cancel starts nothing.
- *   7. The "Figures" switch, remembered in this browser.
+ *   7. The "Figures" switch, for this page view only: nothing stored, off again after a reload (owner, 15.11.2026).
  *   8. Tabs: Shared with me appears with a shared project.
  */
 
@@ -181,17 +183,17 @@ test('a run from a row asks first, with cost and model; Cancel starts nothing', 
   expect(runs).toBe(0);
 });
 
-test('the "Figures" switch shows the figures and is remembered in this browser', async ({ page }) => {
+test('the "Figures" switch shows the figures for this page view and stores nothing', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await open(page, OWNER_EMAIL);
   await expect(page.locator('[data-workspace-card-facts]')).toHaveCount(0);
   await page.locator('[data-home-figures]').click();
   await expect(page.locator('[data-workspace-card-facts]').first()).toBeVisible();
-  expect(await page.evaluate((k) => window.localStorage.getItem(k), HOME_FIGURES_KEY)).toBe('on');
+  // Owner decision 15.11.2026: not remembered in the browser (privacy policy 1.3 does not name it).
+  expect(await page.evaluate((k) => window.localStorage.getItem(k), OLD_FIGURES_KEY)).toBeNull();
   await page.reload({ waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-home-tab="mine"]', { timeout: 60000 });
-  await expect(page.locator('[data-home-figures]')).toHaveAttribute('aria-checked', 'true');
-  await page.locator('[data-home-figures]').click();
+  await expect(page.locator('[data-home-figures]')).toHaveAttribute('aria-checked', 'false');
 });
 
 test('Shared with me is a tab of its own, read only', async ({ page }) => {

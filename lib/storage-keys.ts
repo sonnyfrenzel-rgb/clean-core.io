@@ -120,19 +120,8 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     writtenFor: 'signed-in',
     namedInPolicy: true,
   },
-  // My workspace (3.2.0, AB-14b; `lib/home-list-prefs.ts`): not named in privacy policy 1.3 — also listed in
-  // `HOME_PRIVACY_PENDING_STORAGE_KEYS`. Owner decision 15.11.2026: the switch is not to be stored (document 21 does
-  // not name it); while the code still writes it, this entry says so.
-  {
-    key: 'cc.workspace.figures',
-    match: 'exact',
-    area: 'local',
-    holds: '"on" or absent',
-    purpose: 'the "Figures" switch of the project list stays on',
-    lifetime: 'until the switch is turned off or site data is cleared',
-    writtenFor: 'signed-in',
-    namedInPolicy: false,
-  },
+  // The "Figures" switch of My workspace (3.2.0, AB-14b) stores nothing: owner decision 15.11.2026, so
+  // `cc.workspace.figures` is gone and privacy policy 1.3 need not name it.
   // Analyze, Business (3.2.0, AB-4, ADR-118; `lib/analyze-progress.ts`): section 7 names these since privacy policy 1.3.
   {
     key: 'cc.analyze.walked.',
