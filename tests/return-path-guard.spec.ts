@@ -105,9 +105,10 @@ test.describe('the sign-in modal actually uses it', () => {
   test('every landing after a sign-in goes through the checked target', () => {
     expect(src).toContain("import { safeReturnPath } from '@/lib/return-path';");
     expect(src).toContain("const afterSignIn = safeReturnPath(searchParams.get('next')) ?? '/dashboard';");
-    // Google popup, Google redirect, password sign-in, registration and the
-    // second factor — all five, or one path silently keeps the old behaviour.
-    expect((src.match(/router\.push\(afterSignIn\)/g) || []).length).toBe(5);
+    // Google popup, password sign-in, registration and the second factor — all
+    // four, or one path silently keeps the old behaviour. (The Google redirect
+    // path is gone since 3.2.0: no sign-in goes by redirect.)
+    expect((src.match(/router\.push\(afterSignIn\)/g) || []).length).toBe(4);
     expect(src, 'a sign-in still lands on a hard-coded dashboard').not.toContain("router.push('/dashboard')");
   });
 

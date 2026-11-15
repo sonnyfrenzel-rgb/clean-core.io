@@ -3,10 +3,7 @@ import { subscribeToAuth, type AuthSdk } from '../lib/auth-subscribe';
 import {
   SIGNED_IN_HINT_EVENT,
   SIGNED_IN_HINT_KEY,
-  clearRedirectPending,
   hasSignedInHint,
-  isRedirectPending,
-  markRedirectPending,
   setSignedInHint,
 } from '../lib/auth-hint';
 
@@ -169,21 +166,8 @@ test.describe('the first-party marks', () => {
     }),
   );
 
-  test(
-    'the redirect mark is set, read and cleared in this tab only',
-    withWindow((win) => {
-      expect(isRedirectPending()).toBe(false);
-      markRedirectPending();
-      expect(isRedirectPending()).toBe(true);
-      expect(win.localStorage.getItem('cc.auth.redirectPending')).toBeNull();
-      clearRedirectPending();
-      expect(isRedirectPending()).toBe(false);
-    }),
-  );
-
   test('blocked storage and the server read as signed out and throw nothing', async () => {
     expect(hasSignedInHint()).toBe(false); // no window at all
-    expect(isRedirectPending()).toBe(false);
     const g = globalThis as { window?: unknown };
     const before = g.window;
     g.window = Object.defineProperties(new EventTarget(), {
@@ -193,9 +177,6 @@ test.describe('the first-party marks', () => {
     try {
       expect(hasSignedInHint()).toBe(false);
       expect(() => setSignedInHint(true)).not.toThrow();
-      expect(() => markRedirectPending()).not.toThrow();
-      expect(isRedirectPending()).toBe(false);
-      expect(() => clearRedirectPending()).not.toThrow();
     } finally {
       g.window = before;
     }

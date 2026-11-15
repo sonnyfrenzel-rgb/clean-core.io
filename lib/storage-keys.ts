@@ -201,14 +201,4 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     writtenFor: 'signed-in',
     namedInPolicy: true,
   },
-  {
-    key: 'cc.auth.redirectPending',
-    match: 'exact',
-    area: 'session',
-    holds: '"1"',
-    purpose: 'the landing finishes a redirect sign-in only when one was started; no sign-in starts a redirect today',
-    lifetime: 'removed once the redirect is answered; otherwise until the tab is closed',
-    writtenFor: 'anyone',
-    namedInPolicy: false,
-  },
 ]);

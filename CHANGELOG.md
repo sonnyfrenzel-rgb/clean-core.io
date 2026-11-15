@@ -12,15 +12,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its lifetime and whether privacy policy section 7 names it. `tests/storage-keys-register.spec.ts` reads every
   `setItem` / `removeItem` in `app/`, `components/`, `hooks/` and `lib/`, follows the key through constants, imports,
   key functions, object properties and parameters, and fails on an unregistered key, a key it cannot follow, a
-  registered key nothing writes, and a register that disagrees with section 7. Four keys written today are not named
-  in section 7 yet (`cc.processMap.outline.page`, `cc.auth.signedIn`, `cc.auth.redirectPending`,
-  `cc:design-skip-questions:…`); the register says so.
+  registered key nothing writes, and a register that disagrees with section 7. Three keys written today are not named
+  in section 7 yet (`cc.processMap.outline.page`, `cc.auth.signedIn`, `cc:design-skip-questions:…`); the register says
+  so.
 - An objection to the usage figures (privacy policy section 9) can be recorded: an account that objects by e-mail is
   marked by the operator in the Admin Console (`usage-report-objection-on` / `-off`, an audit row in the same batch),
   and from the next weekly report on its account, runs, projects and mails are left out of every figure. The marker
   `users/{uid}.usageReportObjectionAt` is written by the Admin SDK only — firestore.rules already deny it to browsers,
   so no rules deploy is needed — and goes with the profile when the account is erased
   (`tests/usage-report-objection.spec.ts`).
+
+### Removed
+- The session mark `cc.auth.redirectPending` and the landing's redirect sign-in check behind it. Nothing ever set the
+  mark — the Google button opens a popup — so `markRedirectPending` was a write path nobody called, and the check in
+  `LandingModals` never ran. Gone from `lib/auth-hint.ts`, `components/landing/LandingModalsLazy.tsx`,
+  `components/LandingModals.tsx` and the storage register; `tests/public-no-google-before-signin-guard.spec.ts` now
+  holds that no sign-in goes by redirect and nothing asks for a redirect result.
 
 ### Changed
 - The weekly usage report holds only what privacy policy 1.3 names (owner decision 15.11.2026: trim the report to
