@@ -863,6 +863,16 @@ dates do not hold. Until it ships, Business shows two charts.*
 
 ##### AB-14b — v3.2.0 · The list for returning accounts · M–L
 
+- **Status (15.11.2026):** built on branch `build/320-ab14b` (from `integrate/3.2.0`), not yet on `dev`. Row source:
+  `GET /api/workspace-rows` (Admin SDK, MFA, every own project, lean `HomeRow` without source, `lib/home-rows.ts`);
+  status words `lib/home-status.ts`; list, tabs, attention card, doors, run dialog in
+  `components/workspace/WorkspaceListReport.tsx`, `HomeStatusCell.tsx`, `HomeAttentionCard.tsx`, `HomeDoors.tsx`;
+  quota marks `components/RunQuotaMarks.tsx`; one-line footer on `/dashboard`. `YourTurnCard.tsx` removed. Specs:
+  `home-rows.spec.ts` (server-free, green), `home-list.spec.ts` (rendered, to run on a production build). Open: H-O4
+  (the six-step bar is built, two looks, for the owner to look at), H-O8 rename not built, the ADR number, the
+  Privacy Policy line for `cc.workspace.figures`, "Shared by" (the owner's address) not shown — the reader's copy of a
+  shared project does not carry it. [look] at the six viewports still open.
+
 - **Prerequisite first (H-O9):** a lean row source so every project is listed, not the newest 25
   (`WorkspaceListReport.tsx:211`, `limit(25)`); search, filters and sort over all; no source code in the rows.
 - **Scope:** mockup states 2–9 and 11–12: "Needs your attention" only when there is a reason (code changed, design no
@@ -898,6 +908,11 @@ moves forward into v3.2.0; v3.5.0 only wires the card.*
 - **Scope:** the Continue card of state 2: the last project (H-O5), its status and next step, "In short" from a
   server-written sentence (H-O6), the map miniature computed from the stored skeleton (H-O7), "Open the process map"
   (secondary, H-O13).
+- **Status (15.11.2026, v3.2.0 data):** built with AB-14b. "In short" is `lib/project-in-short.ts` (the engine's
+  `doesOf`, no model), written by `POST /api/runs/create` as `inShort` (Admin SDK, bound to `runId`, outside the
+  signed run). The miniature is the 3.3.0 project summary (`lib/project-summary.ts`, `summary.mapThumb`, ADR-123)
+  taken over byte-identical instead of a new `lib/process-miniature.ts`, so both branches store one shape. Projects
+  from before 3.2.0 have no "In short" yet (no backfill written; H-O6 open on that point).
 - **In v3.2.0 (with AB-14b, no visible change):** the "In short" sentence written via Admin SDK when a run is created
   (never part of the signed payload); `lib/process-miniature.ts` (pure); the "last opened" key in the browser. Projects
   created before 3.2.0 have no stored sentence: the card computes it once server-side on the owner's first visit, or

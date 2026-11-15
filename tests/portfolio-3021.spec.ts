@@ -605,9 +605,11 @@ test('My workspace carries the way into the portfolio, for every account', () =>
   const at = src.indexOf('data-workspace-portfolio=""');
   expect(at).toBeGreaterThan(-1);
   expect(src.slice(Math.max(0, at - 200), at)).toContain('<CcLinkButton href="/portfolio"');
-  // Outside the `hasOwn` branch: a new account with an own key starts here too.
-  const actions = src.slice(src.indexOf('actions={', src.indexOf("title={t('workspace.projects')}")));
-  expect(actions.indexOf('data-workspace-portfolio')).toBeLessThan(actions.indexOf('{hasOwn ?'));
+  // AB-14b: in the page's head, beside "New analysis", outside every condition
+  // (the head renders for every returning account, with or without own projects).
+  const head = src.slice(src.indexOf("<h1 className="), src.indexOf('data-workspace-new-project=""'));
+  expect(head).toContain('data-workspace-portfolio=""');
+  expect(head).not.toMatch(/\{\w+ \? \(/);
   // AB-14a: an account with no project yet sees the first view instead of the
   // list — the way in is there too, outside any condition.
   const first = read('components/workspace/HomeFirstView.tsx');

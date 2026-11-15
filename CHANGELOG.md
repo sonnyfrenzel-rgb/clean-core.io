@@ -28,6 +28,22 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
   (`cc.analyze.walked.<id>` holds `1`), no longer the day. A return visit reads "Welcome back · you walked through it
   before" without a date. An entry with a day from an earlier build still counts as walked (privacy policy 1.3,
   owner decision 15.11.2026).
+- v3.2.0, home page v2 part 2 (AB-14b): My workspace lists **every** project, not the newest 25 (QA
+  `c559b61a9b31`). The own rows come lean from `GET /api/workspace-rows` (Admin SDK, behind the second factor),
+  without source code; search, filters and sort run over all of them. Four columns: Project, Status, Next step, Last
+  change. The status words are *No code yet*, *Not analysed yet*, *Analysed*, *Re-design under way* (with "N of 6
+  steps done" and a small six-step bar), *Re-design done*, *Handed over* (H-O3). An analysed project has nothing
+  open; re-design is never offered as a next step. Dates read "6 Nov 2026" (H-O10). Tabs: My projects, Shared with
+  me, Invitations sent; the Sharing card lives in them. "Needs your attention" appears only with a reason (the code
+  changed, the design no longer matches the analysis, a test run failed), with at most three projects. Filters
+  appear from ten projects on. A "Figures" switch shows lines, findings, levels, score and rules, remembered in this
+  browser (`cc.workspace.figures`, pending in the Privacy Policy). The demo and the examples are two doors below the
+  list. A run from a row only starts through a confirmation dialog with its cost and model. The free runs show as
+  small marks in the shell, and `/dashboard` ends in the one-line footer. The row menu has no "Open project".
+- v3.2.0, the data of the Continue card (AB-14c, stored, not shown): every signed run now writes "In short" (the
+  engine's "What this program does", each sentence with its line, no model) and the project summary with the map
+  miniature (taken unchanged from the 3.3.0 branch, ADR-123) onto the project, through the Admin SDK, outside the
+  signed run and the audit pack. `firestore.rules` gains only the summary's type line (pending, deployed by hand).
 
 ### Fixed
 - A click on a step with an AI name opens its code. Before, the name's label took the click.
@@ -63,6 +79,8 @@ it shows only once the version says so. Signed runs and the audit pack do not ch
 ### Removed
 - The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
   them (AB-11, brought forward to 3.1.0).
+- v3.2.0 (AB-14b): the "Your turn" card of My workspace (`YourTurnCard.tsx`), the demo as the first row of the list,
+  and the example gallery under the list. "Needs your attention" and the two doors take their place.
 
 ## [v3.0.23] — 2026-11-13
 

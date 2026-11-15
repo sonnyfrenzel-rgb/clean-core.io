@@ -45,6 +45,7 @@ import { PORTFOLIO_MESSAGES } from './messages/portfolio';
 import { ANALYZE_BUSINESS_MESSAGES } from './messages/analyze-business';
 import { FACT_CHARTS_MESSAGES } from './messages/fact-charts';
 import { ANALYZE_FULLSCREEN_MESSAGES } from './messages/analyze-fullscreen';
+import { HOME_LIST_MESSAGES } from './messages/home-list';
 
 /** The parts, by surface — read by the guard to prove that no two share a key. */
 export const WORKSPACE_MESSAGE_PARTS = {
@@ -70,6 +71,7 @@ export const WORKSPACE_MESSAGE_PARTS = {
   analyzeBusiness: ANALYZE_BUSINESS_MESSAGES,
   factCharts: FACT_CHARTS_MESSAGES,
   analyzeFullScreen: ANALYZE_FULLSCREEN_MESSAGES,
+  homeList: HOME_LIST_MESSAGES,
 } as const;
 
 export const WORKSPACE_MESSAGES = {
@@ -95,6 +97,7 @@ export const WORKSPACE_MESSAGES = {
   ...ANALYZE_BUSINESS_MESSAGES,
   ...FACT_CHARTS_MESSAGES,
   ...ANALYZE_FULLSCREEN_MESSAGES,
+  ...HOME_LIST_MESSAGES,
 } as const;
 
 export type WorkspaceMessageKey = keyof typeof WORKSPACE_MESSAGES;
@@ -129,3 +132,4 @@ export * from './messages/portfolio';
 export * from './messages/analyze-business';
 export * from './messages/fact-charts';
 export * from './messages/analyze-fullscreen';
+export * from './messages/home-list';

@@ -540,7 +540,8 @@ For first-time users less is more — the depth stays, it just does not come fir
   *Simulation*, the assumptions revision and "Open in Economics"; never an amount without these three. An amount that **is in the
   code** (the threshold of a rule) is a code fact with a line anchor and not a cost figure.
 - **Date:** in text "15 Sep 2026"; in meta lines, tables and exports ISO 8601 `2026-09-15` in mono; times with
-  time zone.
+  time zone. One exception (owner decision H-O10, 06.11.2026; AB-14b): the project list of My workspace prints
+  "6 Nov 2026" in its Last change column, in the text face; ISO stays in exports and audit views.
 - **Line anchors** in mono: `L243`, `L380-412`, finding IDs `CC-017`, rules `BR-004`.
 
 ### 3.1 No AI traces
