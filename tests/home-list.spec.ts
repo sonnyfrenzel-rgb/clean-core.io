@@ -116,7 +116,9 @@ test('every one of the 30 projects is reachable, and search finds the oldest', a
   await open(page, OWNER_EMAIL);
   await expect(page.locator('[data-home-tab="mine"]')).toContainText(String(COUNT));
   await page.locator('[data-workspace-show-all]').click();
-  await expect(page.locator('[data-cc-table] [data-workspace-open]')).toHaveCount(COUNT);
+  // Counted in the My projects panel: the Shared with me panel is mounted too (hidden), and its row is not one of the 30.
+  const mine = page.locator('#home-panel-mine [data-cc-table] [data-workspace-open]');
+  await expect(mine).toHaveCount(COUNT);
   // The rows carry no source code.
   expect(answers.length).toBeGreaterThan(0);
   for (const body of answers) {
@@ -125,14 +127,16 @@ test('every one of the 30 projects is reachable, and search finds the oldest', a
   }
   // The oldest project — beyond the newest 25 — found by search.
   await page.locator('[data-home-filters] input[type="search"]').fill('Home program 01');
-  await expect(page.locator('[data-cc-table] [data-workspace-open]')).toHaveCount(1);
-  await expect(page.locator('[data-cc-table] [data-cc-object-identifier-title]').first()).toHaveText('Home program 01');
+  await expect(mine).toHaveCount(1);
+  await expect(page.locator('#home-panel-mine [data-cc-table] [data-cc-object-identifier-title]').first()).toHaveText('Home program 01');
 });
 
 test('four columns, the new status words, and dates as "6 Nov 2026"', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await open(page, OWNER_EMAIL);
-  const heads = await page.locator('[data-cc-table] thead th').allInnerTexts();
+  // The My projects table (the hidden Shared with me panel holds a table of its own), read as written: the heads are
+  // drawn uppercase by CSS (components/cc/Table.tsx), and the row menu's column has a label for screen readers only.
+  const heads = await page.locator('#home-panel-mine [data-cc-table] thead th:not(:has(> .sr-only))').allTextContents();
   expect(heads.map((h) => h.trim()).filter(Boolean)).toEqual(['Project', 'Status', 'Next step', 'Last change']);
   const titles = await page.locator('[data-home-status-title]').allInnerTexts();
   expect(titles.length).toBeGreaterThan(0);
@@ -155,7 +159,7 @@ test('the filters run over every project; "Needs your attention" lists at most t
   }
   // Five have a reason: the analysed projects 18, 21, 24, 27 and 30, whose code changed since.
   await card.locator('[data-home-attention-all]').click();
-  const attention = page.locator('[data-cc-table] [data-workspace-open]');
+  const attention = page.locator('#home-panel-mine [data-cc-table] [data-workspace-open]');
   await expect(attention).toHaveCount(5);
 });
 
@@ -203,7 +207,7 @@ test('Shared with me is a tab of its own, read only', async ({ page }) => {
 test('an account without a reason for attention sees no attention card, and the demo and examples as doors', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await open(page, CALM_EMAIL);
-  await expect(page.locator('[data-cc-table] [data-workspace-open]')).toHaveCount(2);
+  await expect(page.locator('#home-panel-mine [data-cc-table] [data-workspace-open]')).toHaveCount(2);
   await expect(page.locator('[data-home-attention]')).toHaveCount(0);
   // Below ten projects there are no filters.
   await expect(page.locator('[data-home-filters]')).toHaveCount(0);

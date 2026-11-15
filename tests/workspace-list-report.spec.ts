@@ -6,7 +6,7 @@ import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { CC_MESSAGES } from '../lib/cc-messages';
 import { WORKSPACE_MESSAGES } from '../lib/workspace-messages';
-import { DEMO_PROJECT_TITLE, DEMO_TAG } from '../lib/demo-marks';
+import { DEMO_PROJECT_TITLE, DEMO_TAG, DEMO_WORKSPACE_ROUTE } from '../lib/demo-marks';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -30,8 +30,8 @@ import { signInViaLanding } from './helpers/sign-in';
  *      projects match these filters" are different components with different
  *      sentences, and only one of them offers *Clear filters*. An empty state
  *      after a filter tells someone their work is gone.
- *   4. **The demo is the first row and is not an achievement.** Roadmap 0.10
- *      builds it unproven on purpose.
+ *   4. **The demo is a door below the list, not a row, and not an achievement.**
+ *      Roadmap 0.10 builds it unproven on purpose (a door since AB-14b).
  *   5. **A run says its price before the click, its stages while it runs, what
  *      a cancel does not reach, and — when it fails — what to do next.**
  *
@@ -111,9 +111,12 @@ async function openFirstView(page: Page, email: string) {
   await page.waitForSelector('[data-home-first-view]', { timeout: 60000 });
 }
 
-/** The titles actually in the table — so no later assertion can pass on an empty render. */
+/**
+ * The titles actually in the My projects table — so no later assertion can pass on an empty render. Since AB-14b the
+ * Shared with me tab keeps its own table, mounted and hidden beside this one; it is not counted here.
+ */
 async function rowTitles(page: Page): Promise<string[]> {
-  return page.locator('[data-cc-table] [data-cc-object-identifier-title]').allInnerTexts();
+  return page.locator('#home-panel-mine [data-cc-table] [data-cc-object-identifier-title]').allInnerTexts();
 }
 
 test.beforeAll(async () => {
@@ -184,7 +187,7 @@ test.describe('before the first project', () => {
 });
 
 test.describe('with projects', () => {
-  test('the demo is a row, is not an achievement, and an own project means no empty state', async ({ page }) => {
+  test('the demo is a door below the list, not a row and not an achievement, and an own project means no empty state', async ({ page }) => {
     test.setTimeout(180 * 1000);
     // The projects of this block's beforeAll are there (AB-14a: before the
     // first one, the first view stands instead of the list).
@@ -192,20 +195,23 @@ test.describe('with projects', () => {
 
     const titles = await rowTitles(page);
     expect(titles.length, 'the table rendered no rows at all').toBeGreaterThan(0);
-    expect(titles.some((t) => t.includes(DEMO_PROJECT_TITLE)), 'the demo is not a row').toBe(true);
-    await expect(page.locator(`[data-cc-table] [data-cc-tag]:has-text("${DEMO_TAG}")`)).toBeVisible();
-
-    // Roadmap 0.10 marks every phase of the demo unproven: it produces no signed
-    // run and executes no test. A first row that reads as a finished project is
-    // the flattery this screen exists to refuse — so the demo row says in one
-    // plain sentence what it is, and carries no status word and no step bar.
-    const demoRow = page.locator('[data-cc-table-row="demo"]');
-    await expect(demoRow.locator('[data-project-sentence]')).toHaveText(WORKSPACE_MESSAGES['myWorkspace.demoSentence']);
-    await expect(demoRow).not.toContainText('handed over');
-    expect(await demoRow.locator('[data-progress-bar]').count()).toBe(0);
+    // AB-14b (CHANGELOG [Unreleased], "Home page v2 part 2": "The demo and the
+    // examples are two doors below the list"): the demo was the first row, a
+    // project of nobody's with a status it had not earned. Roadmap 0.10 still
+    // holds — it produces no signed run and executes no test — so it must not
+    // come back as a row, and the door carries no status word, no step bar and
+    // no proof chip.
+    expect(titles.some((t) => t.includes(DEMO_PROJECT_TITLE)), 'the demo is a row again').toBe(false);
+    expect(await page.locator(`[data-cc-table] [data-cc-tag]:has-text("${DEMO_TAG}")`).count(), 'a row carries the demo tag').toBe(0);
+    expect(await page.locator('[data-cc-table-row="demo"]').count(), 'the demo is a row again').toBe(0);
+    const door = page.locator('[data-home-door="demo"]');
+    await expect(door).toBeVisible();
+    await expect(door.locator('a')).toHaveAttribute('href', DEMO_WORKSPACE_ROUTE);
+    await expect(door).not.toContainText('handed over');
+    expect(await door.locator('[data-progress-bar], [data-home-status], [data-provenance]').count(), 'the demo door claims a state').toBe(0);
     expect(
       await page.locator('[data-cc-table] [data-provenance="proven"]').count(),
-      'the demo row carries a proof chip',
+      'a row carries a proof chip',
     ).toBe(0);
 
     // A project of the reader's own: no empty state of either kind.
@@ -240,6 +246,19 @@ test.describe('with projects', () => {
       testCases: [{ id: 't1', title: 'Credit check', status: 'Not run' }],
     });
 
+    // Seven more own projects, staged: with the three of this block that makes ten, the number the filters appear
+    // from (AB-14b, FILTERS_FROM in lib/home-rows.ts), so the filter and no-match tests have a filter bar to use.
+    for (let n = 1; n <= 7; n++) {
+      await adminSetDoc('projects', `ws-filler-${STAMP}-${n}`, {
+        name: `Filler program ${n}`,
+        userId: adminUid,
+        createdAt: new Date(Date.UTC(2026, 8, n)),
+        status: 'uploaded',
+        legacyCode: PROGRAM,
+        s4Deployment: 'private',
+      });
+    }
+
     // A signed run whose recorded source is not the source on the project: the
     // one thing `staleness()` calls stale without having to be told.
     await adminSetDoc('projects', STALE_ID, {
@@ -268,7 +287,7 @@ test.describe('with projects', () => {
     });
   });
 
-  test('a project shared with the account is listed as read only, offers no owner action, and the access filter finds it', async ({ page }) => {
+  test('a project shared with the account is listed read only in its own tab, offers no owner action, and is not one of the own rows', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await adminSetDoc('projects', SHARED_ID, {
       name: 'Shared credit limit check', userId: communityUid, createdAt: new Date(), status: 'uploaded',
@@ -276,22 +295,22 @@ test.describe('with projects', () => {
     });
     await openWorkspace(page);
 
-    const row = page.locator(`[data-cc-table-row="${SHARED_ID}"]`);
+    // AB-14b (CHANGELOG [Unreleased], Home page v2 part 2): "Tabs: My projects, Shared with me, Invitations sent; the
+    // Sharing card lives in them" — the tab replaced the Access filter and the Sharing card. The own list keeps it out.
+    await expect(page.locator(`#home-panel-mine [data-cc-table-row="${SHARED_ID}"]`)).toHaveCount(0);
+    const tab = page.locator('[data-home-tab="shared"]');
+    await expect(tab).toBeVisible({ timeout: 60000 });
+    await tab.click();
+    const panel = page.locator('#home-panel-shared');
+    const row = panel.locator(`[data-workspace-shared-row="${SHARED_ID}"]`);
     await expect(row).toBeVisible({ timeout: 60000 });
     await expect(row.locator('[data-workspace-access="shared"]')).toBeVisible();
-    await expect(row).toContainText('Read only');
+    await expect(row).toContainText(WORKSPACE_MESSAGES['homeList.readOnly']);
+    await expect(panel).toContainText(WORKSPACE_MESSAGES['homeList.sharedNote']);
     // Read access only: no run, no menu of owner actions — just open.
-    expect(await row.locator(`[data-workspace-run="${SHARED_ID}"]`).count()).toBe(0);
-    expect(await row.locator(`[data-workspace-more="${SHARED_ID}"]`).count()).toBe(0);
-    await expect(row.locator(`[data-workspace-open-button="${SHARED_ID}"]`)).toBeVisible();
-
-    // The sharing section names it too.
-    await expect(page.locator(`[data-workspace-shared-row="${SHARED_ID}"]`)).toBeVisible();
-
-    // Access: "Shared with me" keeps it and drops the own rows and the demo.
-    await page.getByLabel('Access').selectOption('shared');
-    const titles = await rowTitles(page);
-    expect(titles).toEqual(['Shared credit limit check']);
+    expect(await panel.locator(`[data-home-run="${SHARED_ID}"]`).count()).toBe(0);
+    expect(await panel.locator(`[data-workspace-more="${SHARED_ID}"]`).count()).toBe(0);
+    await expect(row.locator(`a[data-workspace-open="${SHARED_ID}"]`)).toHaveAttribute('href', `/project/${SHARED_ID}`);
   });
 
   test('the row menu keeps every owner action and opens the invite dialog with what is still waiting', async ({ page }) => {
@@ -334,11 +353,15 @@ test.describe('with projects', () => {
     const card = page.locator(`[data-workspace-card="${STAGED_ID}"]`);
     await expect(card).toBeVisible({ timeout: 60000 });
     // The table and its column labels are not rendered at all on S.
-    expect(await page.locator('[data-cc-workspace] [data-cc-table]').count()).toBe(0);
-    await expect(card.locator('[data-project-sentence]')).toContainText('Not analysed yet');
-    await expect(card.locator('[data-project-step]')).toHaveText('Step 1 of 7');
-    expect(await card.locator('[data-progress-bar]').count(), 'the step bar is back').toBe(0);
-    await expect(card.locator('[data-project-next]')).toHaveCount(1);
+    expect(await page.locator('#home-panel-mine [data-cc-table]').count()).toBe(0);
+    // The status words of AB-14b (H-O3): not analysed, no step count and no step bar.
+    await expect(card.locator('[data-home-status]')).toHaveAttribute('data-home-status', 'notrun');
+    await expect(card.locator('[data-home-status-title]')).toHaveText('Not analysed yet');
+    await expect(card).not.toContainText(/\d of 6 steps done/);
+    expect(await card.locator('[data-home-redesign-bar]').count(), 'a step bar on a project nothing analysed').toBe(0);
+    // One next step: the run, through its dialog.
+    await expect(card.locator('[data-home-next]')).toHaveCount(1);
+    await expect(card.locator(`[data-home-run="${STAGED_ID}"]`)).toBeVisible();
     await expect(card.locator(`[data-workspace-more="${STAGED_ID}"]`)).toBeVisible();
     // No sideways scroll.
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
@@ -352,86 +375,84 @@ test.describe('with projects', () => {
     const titles = await rowTitles(page);
     expect(titles.length, 'the table rendered no rows at all').toBeGreaterThanOrEqual(3);
 
-    const row = page.locator(`[data-cc-table-row="${STAGED_ID}"]`);
+    const row = page.locator(`#home-panel-mine [data-cc-table-row="${STAGED_ID}"]`);
     await expect(row).toBeVisible();
 
-    // Lines: a count of staged text, said to be staged rather than analysed.
-    await expect(row.locator('[data-workspace-lines="staged"]')).toHaveText(
-      String(PROGRAM.split('\n').length),
-    );
-
-    // Findings: a word, never a zero. A zero would mean the engine looked.
-    expect(
-      await row.locator('[data-workspace-findings]').count(),
-      'a project nothing analysed printed a finding count',
-    ).toBe(0);
-    await expect(row).toContainText(CC_MESSAGES['workspace.notAnalysed']);
-
-    // Status: one plain sentence, not a bare "draft" (owner feedback 01.10.2026),
-    // the step it is at, and one next action — here the row's own run button,
-    // so no second link to the same thing (owner feedback 02.10.2026).
-    await expect(row.locator('[data-project-progress]')).toHaveAttribute('data-project-stage', 'not-analysed');
-    await expect(row.locator('[data-project-sentence]')).toHaveText('Not analysed yet — the code is uploaded.');
+    // Status (AB-14b, H-O3): a status word and the line under it, never a bare "draft" — and nothing counted as done.
+    await expect(row.locator('[data-home-status]')).toHaveAttribute('data-home-status', 'notrun');
+    await expect(row.locator('[data-home-status-title]')).toHaveText('Not analysed yet');
+    await expect(row.locator('[data-home-status-detail]')).toHaveText('Code uploaded');
     expect(await row.locator('[data-cc-object-status]').count(), 'a bare status word is back').toBe(0);
-    await expect(row.locator('[data-project-step]')).toHaveText('Step 1 of 7');
-    await expect(row.locator(`[data-workspace-run="${STAGED_ID}"]`)).toBeVisible();
-    expect(await row.locator('[data-project-next]').count(), 'the run is offered twice').toBe(0);
-    expect(await row.locator('[data-progress-bar]').count(), 'the step bar is back').toBe(0);
+    expect(await row.locator('[data-home-redesign-bar]').count(), 'the step bar is back').toBe(0);
+    // Next step: one action, the row's own run — offered once.
+    await expect(row.locator('[data-home-next]')).toHaveAttribute('data-home-next', 'analyze');
+    await expect(row.locator(`[data-home-run="${STAGED_ID}"]`)).toHaveText('Run the analysis');
+    await expect(row.locator('[data-home-run]')).toHaveCount(1);
 
-    // Last change: the ISO date of §3, in mono.
-    await expect(row.locator('[data-cc-table-cell="lastChange"]')).toContainText(
-      new Date().toISOString().slice(0, 10),
-    );
+    // Figures (the switch): the staged lines are counted, and findings are left out, never a zero — a zero would mean
+    // the engine looked.
+    await page.locator('[data-home-figures]').click();
+    // The figures stand in the row's note, a table row of its own under it.
+    const facts = page.locator(`#home-panel-mine [data-cc-table-note="${STAGED_ID}"] [data-workspace-card-facts]`);
+    await expect(facts).toContainText(`${PROGRAM.split('\n').length} lines`);
+    await expect(facts).not.toContainText('findings');
+    await page.locator('[data-home-figures]').click();
+
+    // Last change: today, as "6 Nov 2026" (H-O10).
+    const today = new Date();
+    const date = row.locator('[data-home-date]');
+    await expect(date).toHaveText(/^\d{1,2} [A-Z][a-z]{2,3} \d{4}$/);
+    await expect(date).toContainText(`${today.getDate()} `);
+    await expect(date).toContainText(String(today.getFullYear()));
   });
 
-  test('a stale run is provenance beside the status, not a status of its own', async ({ page }) => {
+  test('a stale run is a warning on the status line, not a status of its own', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await openWorkspace(page);
 
-    const row = page.locator(`[data-cc-table-row="${STALE_ID}"]`);
+    const row = page.locator(`#home-panel-mine [data-cc-table-row="${STALE_ID}"]`);
     await expect(row).toBeVisible();
-    await expect(row.locator('[data-provenance="stale"]')).toBeVisible();
 
-    // DESIGN.md §4.1: *stale* is provenance, not a status of its own — the row
-    // says it in its sentence, its dot takes the warning look, never red, and
-    // the next step is the analysis again.
-    await expect(row.locator('[data-project-sentence]')).toContainText('no longer match the code');
-    await expect(row.locator('[data-project-progress]')).toHaveAttribute('data-project-tone', 'outdated');
-    await expect(row.locator('[data-project-step]')).toHaveText('Step 1 of 7');
+    // DESIGN.md §4.1: *stale* is provenance, not a status of its own — the row stays "Analysed", the line under it
+    // says the code changed as a warning (never the error look), and the next step is the analysis again (AB-14b).
+    await expect(row.locator('[data-home-status]')).toHaveAttribute('data-home-status', 'analysed');
+    await expect(row.locator('[data-home-status-title]')).toHaveText('Analysed');
+    await expect(row.locator('[data-home-status-detail]')).toHaveAttribute('data-home-status-detail', 'warn');
+    await expect(row.locator('[data-home-status-detail]')).toHaveText('The code changed since');
+    await expect(row.locator(`[data-home-run="${STALE_ID}"]`)).toHaveText('Run the analysis again');
+    // "Needs your attention" names it, with its reason.
+    const attention = page.locator('[data-home-attention]');
+    await expect(attention).toContainText('Source changed after the run');
+    await expect(attention).toContainText('The code changed since the analysis');
 
     // It counted the findings that are on record, and did not invent a level.
-    await expect(row.locator('[data-workspace-findings]')).toHaveText('2');
+    await page.locator('[data-home-figures]').click();
+    await expect(page.locator(`#home-panel-mine [data-cc-table-note="${STALE_ID}"] [data-workspace-card-facts]`)).toContainText('2 findings');
+    await page.locator('[data-home-figures]').click();
   });
 
-  test('a project with no signed run reads "not analysed" throughout — no step count, no step bar, no legend', async ({
-    page,
-  }) => {
+  test('a project with no signed run reads "not analysed" throughout — no step count, no step bar', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await openWorkspace(page);
 
-    const row = page.locator(`[data-cc-table-row="${LEGACY_ID}"]`);
+    const row = page.locator(`#home-panel-mine [data-cc-table-row="${LEGACY_ID}"]`);
     await expect(row).toBeVisible({ timeout: 60000 });
-    // One sentence, and it does not contradict itself: what is on record without
-    // an analysis is out of date, in words, and nothing counts as done.
-    await expect(row.locator('[data-project-progress]')).toHaveAttribute('data-project-stage', 'not-analysed');
-    await expect(row.locator('[data-project-sentence]')).toHaveText(
-      'Not analysed yet — earlier results on it are out of date.',
-    );
-    await expect(row.locator('[data-project-progress]')).toHaveAttribute('data-project-tone', 'outdated');
-    await expect(row.locator('[data-project-step]')).toHaveText('Step 1 of 7');
-    await expect(row.locator(`[data-workspace-run="${LEGACY_ID}"]`)).toBeVisible();
-    await expect(row).not.toContainText(/\d of 7 steps done/);
-    await expect(row.locator('[data-cc-table-cell="status"]')).not.toContainText('In progress');
+    // Design, code, documentation and a test draft on record, and no signed run: the status is read from the phase
+    // contract, never from `project.status` ('completed' here), and nothing counts as done (AB-14b, H-O3).
+    await expect(row.locator('[data-home-status]')).toHaveAttribute('data-home-status', 'notrun');
+    await expect(row.locator('[data-home-status-title]')).toHaveText('Not analysed yet');
+    await expect(row.locator(`[data-home-run="${LEGACY_ID}"]`)).toBeVisible();
+    await expect(row).not.toContainText(/\d of \d steps done/);
+    await expect(row).not.toContainText('Re-design');
+    await expect(row).not.toContainText('Handed over');
+    expect(await row.locator('[data-home-redesign-bar]').count(), 'a step bar is back').toBe(0);
 
-    // The list carries no five-state legend and no seven-segment bar anywhere.
-    const list = page.locator('[data-workspace-projects]');
-    expect(await list.locator('[data-progress-legend]').count(), 'the legend is back').toBe(0);
-    expect(await list.locator('[data-progress-bar]').count(), 'a step bar is back').toBe(0);
-    await expect(list).not.toContainText('Done and verified');
-
-    // The Status filter agrees with the sentence.
-    await page.getByLabel('Status').selectOption('not-analysed');
+    // The Status filter agrees with the status word.
+    await page.locator('[data-home-filters]').getByLabel('Status').selectOption('notrun');
     expect(await rowTitles(page)).toContain('Made before the trust chain');
+    for (const title of await page.locator('#home-panel-mine [data-home-status-title]').allInnerTexts()) {
+      expect(title.trim()).toBe('Not analysed yet');
+    }
   });
 
   test('no projects yet and no matches are two different states', async ({ page }) => {
@@ -441,11 +462,11 @@ test.describe('with projects', () => {
     const before = await rowTitles(page);
     expect(before.length, 'the table rendered no rows at all').toBeGreaterThanOrEqual(3);
 
-    // With projects of the reader's own there is something to filter.
-    const filter = page.locator('[data-workspace-projects] [data-cc-filter-bar]');
+    // With ten projects of the reader's own there is something to filter (AB-14b: filters from ten on).
+    const filter = page.locator('[data-home-filters] [data-cc-filter-bar]');
     await expect(filter).toBeVisible();
 
-    await page.fill('[data-workspace-projects] input[type="search"]', 'zzz-nothing-matches-this-zzz');
+    await page.fill('[data-home-filters] input[type="search"]', 'zzz-nothing-matches-this-zzz');
     await expect(page.locator('[data-cc-empty-state="no-matches"]')).toBeVisible();
 
     // The distinction this test exists for: the no-match state never wears the
@@ -455,19 +476,14 @@ test.describe('with projects', () => {
       'the empty state was shown for a filter that matched nothing',
     ).toBe(0);
     const noMatchTitle = await page.locator('[data-cc-no-match-title]').innerText();
-    expect(noMatchTitle).toBe(CC_MESSAGES['workspace.noMatch']);
+    expect(noMatchTitle).toBe(WORKSPACE_MESSAGES['homeList.noMatchTitle']);
     expect(noMatchTitle).not.toBe(CC_MESSAGES['workspace.emptyTitle']);
-    await expect(page.locator('[data-workspace-projects] [data-cc-clear-filters]')).toBeVisible();
+    await expect(page.locator('[data-home-filters] [data-cc-clear-filters]')).toBeVisible();
 
-    // And the count says how many of how many, in a live region. The total is
-    // read off the count, not off `before`: the own projects and the one shared
-    // with this account arrive by separate reads, and `before` can be taken
-    // between them (CI c25437ab: "0 of 4" against three rows counted early).
-    // Clearing the filter then has to show exactly that many rows — the same
-    // claim, without the race.
-    const count = page.locator('[data-workspace-projects] [data-cc-filter-count]');
+    // And the count says how many of how many, in a live region; clearing the filter shows exactly that many rows.
+    const count = page.locator('[data-home-filters] [data-cc-filter-count]');
     const counted = new RegExp(
-      `^\\s*0 ${CC_MESSAGES['filter.of']} (\\d+) ${CC_MESSAGES['workspace.noun']}\\s*$`,
+      `^\\s*0 ${CC_MESSAGES['filter.of']} (\\d+) ${WORKSPACE_MESSAGES['homeList.noun']}\\s*$`,
     );
     await expect(count).toHaveText(counted);
     const total = Number(counted.exec(await count.innerText())?.[1]);
@@ -475,21 +491,31 @@ test.describe('with projects', () => {
       before.length,
     );
 
-    await page.click('[data-workspace-projects] [data-cc-clear-filters]');
+    await page.click('[data-home-filters] [data-cc-clear-filters]');
     await expect(page.locator('[data-cc-empty-state="no-matches"]')).toHaveCount(0);
-    await expect(page.locator('[data-cc-table] [data-cc-object-identifier-title]')).toHaveCount(total);
+    const showAll = page.locator('[data-workspace-show-all]');
+    if (await showAll.count()) await showAll.click();
+    await expect(page.locator('#home-panel-mine [data-cc-table] [data-cc-object-identifier-title]')).toHaveCount(total);
   });
 
   test('a run says its price before the click', async ({ page }) => {
     test.setTimeout(180 * 1000);
+    let runs = 0;
+    await page.route('**/api/runs/create', (route) => {
+      runs++;
+      return route.abort();
+    });
     await openWorkspace(page);
 
-    const row = page.locator(`[data-cc-table-row="${STAGED_ID}"]`);
-    await expect(row.locator(`[data-workspace-run="${STAGED_ID}"]`)).toBeVisible();
+    // AB-14b: a run from a row starts only through a confirmation dialog with its cost and model.
+    const row = page.locator(`#home-panel-mine [data-cc-table-row="${STAGED_ID}"]`);
+    await row.locator(`[data-home-run="${STAGED_ID}"]`).click();
+    const dialog = page.locator('[data-cc-message-box]');
+    await expect(dialog.locator(`[data-home-run-dialog="${STAGED_ID}"]`)).toBeVisible();
 
     // DESIGN.md §2.8: the quota and whether a model is called are two separate
     // claims, and both stand before the click. No percentage anywhere.
-    const cost = row.locator('[data-cc-run-cost]');
+    const cost = dialog.locator('[data-cc-run-cost]');
     await expect(cost).toBeVisible();
     await expect(cost.locator('[data-cc-run-cost-quota]')).not.toBeEmpty();
     await expect(cost.locator('[data-cc-run-cost-model]')).not.toBeEmpty();
@@ -500,6 +526,12 @@ test.describe('with projects', () => {
       /^(Calls no AI model\. Your code does not leave the platform\.|Calls the AI model \((Google|Anthropic)\)\. Your code is sent to \2 for this\.)$/,
     );
     expect(await cost.innerText()).not.toMatch(/cost/i);
+    expect(await cost.innerText()).not.toMatch(/\d\s*%/);
+
+    // Cancel starts nothing.
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(runs).toBe(0);
   });
 
   test('a run in flight shows stages and a cancel that says what it cannot cancel', async ({
@@ -520,9 +552,11 @@ test.describe('with projects', () => {
       await route.abort();
     });
 
-    await page.click(`[data-workspace-run="${STAGED_ID}"]`);
+    // AB-14b: the row's run opens the confirmation dialog; "Run analysis" starts it.
+    await page.click(`[data-home-run="${STAGED_ID}"]`);
+    await page.locator('[data-cc-message-box]').getByRole('button', { name: WORKSPACE_MESSAGES['homeList.runConfirm'] }).click();
 
-    const row = page.locator(`[data-cc-table-row="${STAGED_ID}"]`);
+    const row = page.locator(`#home-panel-mine [data-cc-table-row="${STAGED_ID}"]`);
     await expect(row.locator('[data-cc-run-indicator]')).toBeVisible();
     await expect(row.locator('[data-cc-run-stage="done"]').first()).toBeVisible();
     // Stages, never a percentage (§2.8).
@@ -533,7 +567,7 @@ test.describe('with projects', () => {
 
     await row.locator('[data-cc-run-cancel]').click();
     await expect(row.locator('[data-cc-run-indicator]')).toHaveCount(0);
-    await expect(row.locator(`[data-workspace-run="${STAGED_ID}"]`)).toBeVisible();
+    await expect(row.locator(`[data-home-run="${STAGED_ID}"]`)).toBeVisible();
 
     hold.release();
   });
@@ -551,7 +585,9 @@ test.describe('with projects', () => {
       }),
     );
 
-    await page.click(`[data-workspace-run="${STAGED_ID}"]`);
+    // AB-14b: through the confirmation dialog.
+    await page.click(`[data-home-run="${STAGED_ID}"]`);
+    await page.locator('[data-cc-message-box]').getByRole('button', { name: WORKSPACE_MESSAGES['homeList.runConfirm'] }).click();
 
     // §2.8: a failure ends in an action — never a raw error, never a silent
     // empty result.
@@ -565,7 +601,7 @@ test.describe('with projects', () => {
     );
 
     // The row is still a row: a failed run does not take the project away.
-    await expect(page.locator(`[data-cc-table-row="${STAGED_ID}"]`)).toBeVisible();
+    await expect(page.locator(`#home-panel-mine [data-cc-table-row="${STAGED_ID}"]`)).toBeVisible();
   });
 
   test('a delete whose project is already gone is not reported as a failure', async ({ page }) => {
