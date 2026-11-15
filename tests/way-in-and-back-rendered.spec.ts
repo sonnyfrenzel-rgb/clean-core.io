@@ -179,7 +179,15 @@ test('(12) the start names the target as one line, and the own-code footer follo
   test.setTimeout(180 * 1000);
   await signInViaLanding(page, OWNER, PASSWORD);
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-  const line = page.locator('[data-cc-workspace] [data-target-edition-line]');
+  // This account has a project, so its home is the list. Since AB-14b the example
+  // start no longer stands under the list but behind the examples door ("The demo
+  // and the examples are two doors below the list", CHANGELOG [Unreleased], Home
+  // page v2 part 2), which opens the start of a new analysis on its examples.
+  const door = page.locator('[data-cc-workspace] [data-home-door="examples"] a');
+  await expect(door).toBeVisible({ timeout: 90000 });
+  await door.click();
+  await page.waitForURL(/\/admin\/new-project/, { timeout: 60000 });
+  const line = page.locator('[data-new-project-examples] [data-target-edition-line]');
   await expect(line).toHaveText(/Assessed against SAP Cloud ERP Private · Change/, { timeout: 90000 });
 
   await page.goto('/admin/new-project/upload', { waitUntil: 'domcontentloaded' });

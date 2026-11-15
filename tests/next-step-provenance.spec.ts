@@ -296,8 +296,10 @@ test.describe('the card, as the reader sees it', () => {
   test('an open point arrives with its reason, its "why this one", and a Reconstructed chip', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${OPEN_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 }); // Analyze, Business since v3.1.0 (ADR-109): the card under the map
+    // The card stands in the workspace's IT view: Analyze, Business has no Next step card since AB-4 (ADR-118,
+    // BusinessNextStep removed in d845b283; the tool bar says what is next there).
+    await page.goto(`/project/${OPEN_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
 
     const card = page.locator('[data-next-step]');
     await expect(card.locator('[data-next-step-state="open"]')).toHaveAttribute('data-next-step-key', 'design');
@@ -319,8 +321,10 @@ test.describe('the card, as the reader sees it', () => {
   test('a finished project: the card says nothing is open, and still says where that comes from', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${DONE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 }); // Analyze, Business since v3.1.0 (ADR-109): the card under the map
+    // The card stands in the workspace's IT view: Analyze, Business has no Next step card since AB-4 (ADR-118,
+    // BusinessNextStep removed in d845b283; the tool bar says what is next there).
+    await page.goto(`/project/${DONE_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
 
     const card = page.locator('[data-next-step]');
     const none = card.locator('[data-next-step-state="none"]');

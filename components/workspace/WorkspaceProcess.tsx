@@ -21,8 +21,18 @@ import { confirmOutcomeSentence, confirmProcessStates } from '@/lib/process-stat
 import { elementEntries, walkOrder } from '@/lib/process-walk';
 import type { WalkGuide } from '@/lib/process-walk-guide';
 import type { ProcessTour as Tour } from '@/lib/process-tour';
-import { OPEN_WALK_EVENT, takeProcessWalkRequest } from '@/lib/process-walk-request';
-import ProcessTour from './ProcessTour';
+import { OPEN_WALK_EVENT, requestProcessWalk, takeProcessWalkRequest } from '@/lib/process-walk-request';
+import ProcessTour, { type TourMove } from './ProcessTour';
+import { sameMapElements } from '@/lib/process-map-identity';
+import { ccModalOpen } from '@/components/cc/modal';
+import {
+  MAP_SPOTLIGHT_EVENT,
+  announceProcessMapModel,
+  currentMapSpotlight,
+  requestMapSpotlight,
+  spotlightPlane,
+  type MapSpotlight,
+} from '@/lib/process-map-spotlight';
 import { usePlainWording } from '@/hooks/usePlainWording';
 import { plainModelEnabled, walkPlainSentences } from '@/lib/plain-wording';
 import { isConfirmedState } from '@/lib/rules-editor';
@@ -67,6 +77,15 @@ const SOURCE_CONTEXT = 6;
 
 type Range = { lineStart: number; lineEnd: number };
 
+/** The walk-through as the page around the map sees it (plan AB-4). */
+export interface WalkState {
+  open: boolean;
+  /** Paused at this station (-1 the overview); null when not paused. */
+  pausedAt: number | null;
+  /** Where the open tour stands; null while it is read or closed. */
+  move: TourMove | null;
+}
+
 /**
  * The process map and its source column in the Business view of a real
  * project — mockup s1, `DESIGN.md` §5.5 and §5.7.
@@ -100,6 +119,8 @@ export default function WorkspaceProcess({
   coach,
   codeOnClick = false,
   openLines = null,
+  tourEndings = null,
+  onTourChange,
 }: {
   project: Project | null;
   projectId: string;
@@ -146,6 +167,13 @@ export default function WorkspaceProcess({
    * same lines can be opened again after the panel was closed.
    */
   openLines?: { lineStart: number; lineEnd: number; key: number } | null;
+  /**
+   * The two endings, said on the tour's last card (plan AB-4, mockup state 6). With `codeOnClick` the tour runs on
+   * the page where the map stands (`ProcessTour` `inline`), not as a layer over it.
+   */
+  tourEndings?: React.ReactNode;
+  /** Where the walk-through stands, for the page around the map: open or not, paused where, at which station. */
+  onTourChange?: (state: WalkState) => void;
 }) {
   const signed = useMemo(() => signedSourceOf(project), [project]);
   const absence = useMemo(() => signedSourceAbsence(project), [project]);
@@ -215,7 +243,9 @@ export default function WorkspaceProcess({
       window.clearTimeout(timer);
     };
   }, [map.model, signed, tourEngine]);
-  const tour = read && read.model === map.model ? read.tour : null;
+  // The tour read off the map on show — or off the map before a re-read that changed only its names, until the new
+  // one is read: a tour that went null for that moment dropped the reader's station focus and the keys pressed then.
+  const tour = read && sameMapElements(read.model, map.model) ? read.tour : null;
   const [tourOpen, setTourOpen] = useState(false);
   /**
    * The tour's sentences in plain business words (3.0.20, owner decision 2):
@@ -269,10 +299,9 @@ export default function WorkspaceProcess({
     [projectId, stateView, reloadStates],
   );
   /**
-   * "Walk through the process" from the top of the Business view or the First
-   * insights (`ProcessTourEntry`): the tour opens at its first step, over the
-   * page — while it is still being read it says so. Only on that click; it
-   * never opens by itself.
+   * "Walk me through it" from the summary above the map in Analyze, Business:
+   * the tour opens on the page where the map stands (plan AB-4) — while it is
+   * still being read it says so. Only on that click; it never opens by itself.
    */
   useEffect(() => {
     const hear = () => {
@@ -282,7 +311,86 @@ export default function WorkspaceProcess({
     window.addEventListener(OPEN_WALK_EVENT, hear);
     return () => window.removeEventListener(OPEN_WALK_EVENT, hear);
   }, [projectId]);
-  const closeTour = useCallback(() => setTourOpen(false), []);
+  /**
+   * Pause (inline, plan AB-4): the tour steps aside and the next "Walk me through it" opens it where it was. Close and
+   * Escape end it; the next one starts at the overview.
+   */
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
+  const [move, setMove] = useState<TourMove | null>(null);
+  const closeTour = useCallback(() => {
+    setTourOpen(false);
+    setPausedAt(null);
+    setMove(null);
+  }, []);
+  const pauseTour = useCallback((at: number) => {
+    setTourOpen(false);
+    setPausedAt(at);
+    setMove(null);
+  }, []);
+  /**
+   * The walk-through beside the map's full screen (3.2.0, ADR-119 (d), owner decision O5): asked for from full screen,
+   * it runs in the side column and the full-screen canvas follows its stations; full screen stays. Leaving full screen
+   * while it runs continues it on the page at the same station — the tour is one, only its place changes.
+   */
+  const [mapFull, setMapFull] = useState(false);
+  const tourInFullScreen = tourOpen && mapFull && codeOnClick;
+  /** Where a tour opened in another place starts: the station it stood at, else where it was paused. */
+  const tourFrom = move ? move.at : (pausedAt ?? -1);
+  // While it runs in full screen, Escape ends the walk-through first — full screen stays; the next Escape leaves it
+  // (ADR-072's order: the innermost first). A dialog over full screen, the phone's tool sheet and the editor's own
+  // Escape go before it.
+  useEffect(() => {
+    if (!tourInFullScreen) return undefined;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || ccModalOpen()) return;
+      if (document.querySelector('[data-map-fullscreen-sheet]')) return;
+      if ((event.target as Element | null)?.closest?.('[data-map-fullscreen-body]')) return;
+      event.preventDefault();
+      event.stopPropagation();
+      closeTour();
+    };
+    window.addEventListener('keydown', onKey, true);
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [tourInFullScreen, closeTour]);
+  /** In full screen the map follows the station to its level; the camera and the light are the map's (`tourStation`). */
+  const followInFullScreen = useCallback((next: TourMove) => {
+    setMove(next);
+    if (next.station) setPlane(next.station.plane);
+  }, []);
+  const told = useRef(onTourChange);
+  useEffect(() => {
+    told.current = onTourChange;
+  });
+  useEffect(() => {
+    told.current?.({ open: tourOpen, pausedAt, move: tourOpen ? move : null });
+  }, [tourOpen, pausedAt, move]);
+  /**
+   * The charts under the map (plan AB-7): the map announces the model it draws, so the charts count by its ids, and
+   * lights what a chart row asks for — on the one level its elements share, when they share one.
+   */
+  // The new model replaces the old one directly, without a null in between, so a spotlight whose elements the new
+  // model still holds survives the re-read (`announceProcessMapModel`); the map is dropped when the page leaves.
+  useEffect(() => {
+    if (projectId) announceProcessMapModel(projectId, model ?? null);
+  }, [projectId, model]);
+  useEffect(() => {
+    if (!projectId) return undefined;
+    return () => announceProcessMapModel(projectId, null);
+  }, [projectId]);
+  const [spotlight, setSpotlight] = useState<MapSpotlight | null>(null);
+  useEffect(() => {
+    const hear = () => {
+      const next = currentMapSpotlight(projectId);
+      setSpotlight(next);
+      if (!next || !model) return;
+      const level = spotlightPlane(model, next.ids);
+      if (level !== undefined) setPlane(level);
+    };
+    hear();
+    window.addEventListener(MAP_SPOTLIGHT_EVENT, hear);
+    return () => window.removeEventListener(MAP_SPOTLIGHT_EVENT, hear);
+  }, [projectId, model]);
+  const clearSpotlight = useCallback(() => requestMapSpotlight(projectId, null), [projectId]);
   const designHref = stageHref({ base: `/project/${projectId}`, path: 'design', view, from: WORKSPACE_RETURN.tools });
   /**
    * Business names, asked for automatically (owner decision 21.10.2026 — there
@@ -839,10 +947,27 @@ export default function WorkspaceProcess({
       {/* The guided tour, over the page while it is open (owner decision
           21.10.2026): the map and the narration on one screen, with the
           names the main map shows at this moment, also while names arrive. */}
-      {tourOpen && model ? (
+      {tourOpen && model && !codeOnClick ? (
         <ProcessTour tour={tour} model={shownModel ?? model} onClose={closeTour} say={wording.say} designHref={designHref} askWording={wording.askNow} />
       ) : null}
       {coach}
+      {/* Analyze, Business (plan AB-4, mockup states 4–6): the tour runs on the page, where the map stands — unless it
+          was asked for in the map's full screen, where it runs in the side column (ADR-119 (d)). */}
+      {tourOpen && model && codeOnClick && !mapFull ? (
+        <ProcessTour
+          inline
+          tour={tour}
+          model={shownModel ?? model}
+          onClose={closeTour}
+          onPause={pauseTour}
+          onMove={setMove}
+          initialStation={tourFrom}
+          say={wording.say}
+          designHref={designHref}
+          askWording={wording.askNow}
+          endings={tourEndings}
+        />
+      ) : (
       <div
         className={
           codeOnClick && codePanel
@@ -878,6 +1003,29 @@ export default function WorkspaceProcess({
               projectId={projectId || null}
               draftHolder={draftHolder}
               canEdit={owner}
+              spotlight={spotlight}
+              onClearSpotlight={clearSpotlight}
+              // AB-5: *Walk me through it* in the map's full screen starts the same tour as the page's button.
+              onWalk={codeOnClick ? () => requestProcessWalk(projectId) : null}
+              onFullScreenChange={codeOnClick ? setMapFull : undefined}
+              tourPanel={tourInFullScreen ? (
+                <ProcessTour
+                  inline
+                  panel
+                  tour={tour}
+                  model={shownModel ?? model}
+                  onClose={closeTour}
+                  onPause={pauseTour}
+                  onMove={followInFullScreen}
+                  initialStation={tourFrom}
+                  say={wording.say}
+                  designHref={designHref}
+                  askWording={wording.askNow}
+                  endings={tourEndings}
+                />
+              ) : null}
+              tourStation={tourInFullScreen && move?.station ? { id: move.station.id, plane: move.station.plane } : null}
+              onTourClose={closeTour}
             />
           ) : map.status === 'failed' ? (
             <p data-workspace-process-failed="" className="m-0 text-[13px] font-medium text-cc-ink-muted">
@@ -898,6 +1046,7 @@ export default function WorkspaceProcess({
       </div>
       {codePanel}
       </div>
+      )}
       {model && !codeOnClick ? column : null}
     </div>
   );

@@ -17,14 +17,15 @@ import { signInViaLanding } from './helpers/sign-in';
  * Since v3.1.0 the start run is signed in Analyze, Business (plan AB-2,
  * ADR-109), the page a new project opens on; the workspace — IT and Management
  * only — starts none of its own, so the three-view walk of the workspace this
- * spec once made has no start run to watch. Held here: the Business "Next
- * step" below the map and the map's own place while the run is held, one
- * request, and the step moving on once it is signed.
+ * spec once made has no start run to watch. Held here: the map's own place
+ * while the run is held, one request, and the map with its invitation once it
+ * is signed. Since 3.2.0 (plan AB-4) Analyze, Business has no "Next step":
+ * nothing on the page may offer a button while the run is held.
  *
  * The start run is *held*, not raced: `/api/runs/create` is answered only when
  * the spec says so, so the running state lasts as long as the assertions need,
  * on a slow dev server and on CI's fast production build alike. Then it is let
- * through to the real route, the run is signed, and "Next step" moves on.
+ * through to the real route, the run is signed, and the map stands.
  *
  * Needs the emulators and a dev server (`npx playwright test` as in CI).
  */
@@ -42,21 +43,21 @@ const PASSWORD = 'StartRunNext123!';
 const unique = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const SOURCE = fs.readFileSync(path.join(ROOT, 'public/starter-examples/Z_MM_PO_APPROVAL.abap'), 'utf8');
 
-/** "Next step" in Analyze, Business is running, and nothing on the page offers to start the run. */
+/**
+ * Analyze, Business while the run is held: the map's place says it is being signed, and nothing on the page offers to
+ * start the run. Since 3.2.0 (plan AB-4) there is no "Next step" here to say "running": the two endings replaced it,
+ * and they — like the invitation — wait for the signed map.
+ */
 async function expectRunning(page: Page): Promise<void> {
   await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
-  const next = page.locator('[data-analyze-interim] [data-next-step]');
-  const running = next.locator('[data-next-step-state="running"]');
-  await expect(running, '"Next step" does not say the analysis is running').toBeVisible({ timeout: 60000 });
-  await expect(running).toHaveAttribute('data-next-step-key', 'analyze');
-  await expect(running).toContainText('The analysis is running');
-  await expect(next.locator('[data-next-step-state="open"]'), 'an open step beside the running one').toHaveCount(0);
-  // No primary button in "Next step" — the one that would start a second run.
-  await expect(next.locator('[data-cc-button="primary"]'), '"Next step" still offers a button').toHaveCount(0);
-  // The map's place says the reading is being signed, and offers no start either.
   const place = page.locator('[data-analyze-map] [data-workspace-process="signing"]');
-  await expect(place).toBeVisible({ timeout: 60000 });
+  await expect(place, 'the map place does not say the reading is being signed').toBeVisible({ timeout: 60000 });
   await expect(page.locator('[data-workspace-sign], [data-workspace-sign-retry]')).toHaveCount(0);
+  // No "Next step", no ending, no invitation: nothing that could start or skip the run.
+  await expect(page.locator('[data-next-step]')).toHaveCount(0);
+  await expect(page.locator('[data-analyze-endings]')).toHaveCount(0);
+  await expect(page.locator('[data-analyze-walk]')).toHaveCount(0);
+  await expect(page.locator('main [data-cc-button="primary"]:visible'), 'a primary button while the run is held').toHaveCount(0);
 }
 
 /** Analyze in IT or Management while the start run is held: Start is closed and says the analysis is running. */
@@ -93,7 +94,7 @@ test.describe('a new project while its start run is with the server', () => {
     });
   });
 
-  test('Analyze, Business says the analysis is running and offers no button; once signed, it moves on', async ({ page }) => {
+  test('Analyze, Business says the reading is being signed and offers no button; once signed, the map and its invitation stand', async ({ page }) => {
     test.setTimeout(360 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
 
@@ -125,17 +126,17 @@ test.describe('a new project while its start run is with the server', () => {
       release();
     }
 
-    // Signed: the project carries its run, and "Next step" is no longer Analyze.
+    // Signed: the project carries its run.
     await expect
       .poll(async () => {
         const p = await adminGetDoc('projects', PROJECT_ID);
         return typeof p?.activeRunId === 'string' && p.activeRunId.length > 0;
       }, { timeout: 120000 })
       .toBe(true);
-    await expect(page.locator('[data-next-step-state="running"]')).toHaveCount(0, { timeout: 120000 });
-    await expect(page.locator('[data-next-step] [data-next-step-key="analyze"]')).toHaveCount(0);
-    // The map stands, drawn from the signed run.
+    // The map stands, drawn from the signed run, and the invitation with it — the one primary.
     await expect(page.locator('[data-analyze-map] [data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 120000 });
+    await expect(page.locator('[data-analyze-walk=""]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-next-step]')).toHaveCount(0);
     expect(requests, 'the start sent more than one run').toHaveLength(1);
   });
 });

@@ -1,46 +1,44 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Play } from 'lucide-react';
+import { Info, Play } from 'lucide-react';
 import StageFrame from '@/components/StageFrame';
 import StageHeader from '@/components/StageHeader';
 import CcButton from '@/components/cc/Button';
-import CcAnchor from '@/components/cc/Anchor';
+import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import ProjectNoAccess from '@/components/ProjectNoAccess';
-import FirstLook from '@/components/workspace/FirstLook';
+import AroundTheMap, { WhatThisProgramDoes } from '@/components/analyze/AroundTheMap';
+import AnalyzeEndings from '@/components/analyze/AnalyzeEndings';
+import WhatNextCard from '@/components/analyze/WhatNextCard';
 import CommandSearch from '@/components/workspace/CommandSearch';
-import type { SourceReading } from '@/lib/first-look';
-import BusinessNextStep from '@/components/workspace/BusinessNextStep';
+import type { WalkState } from '@/components/workspace/WorkspaceProcess';
+import type { ToolClick } from '@/components/workspace/ToolBar';
 import TargetReferenceLine from '@/components/workspace/TargetReferenceLine';
 import StartNarrativeMissing from '@/components/workspace/StartNarrativeMissing';
 import UsageRecords from '@/components/workspace/UsageRecords';
+import ProcessFactCharts from '@/components/analyze/ProcessFactCharts';
 import { useIsOwner } from '@/components/workspace/BusinessRulesEditor';
-import { useUserProfile } from '@/hooks/useUserProfile';
 import { useStartRun } from '@/hooks/useStartRun';
-import { useOpenQuestions } from '@/hooks/useOpenQuestions';
-import { useCustomerTexts } from '@/hooks/useCustomerTexts';
+import { useAroundTheMap } from '@/hooks/useAroundTheMap';
 import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
+import { useAnalyzeProgress } from '@/hooks/useAnalyzeProgress';
+import { analyzeStage, softGateShown, whatNextShown } from '@/lib/analyze-progress';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { mapFollowGoesOn } from '@/lib/map-follow';
 import { firstLookSeen, markFirstLookSeen } from '@/lib/first-look';
 import { requestProcessWalk } from '@/lib/process-walk-request';
 import type { DraftHolder } from '@/lib/process-map-draft';
 import { signedSourceOf } from '@/lib/signed-source';
-import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { notDetermined } from '@/lib/workspace-model';
 import { workflowSteps } from '@/lib/workflow-steps';
-import { nextOpenPoint, nothingOpenText } from '@/lib/next-step';
-import { businessNextStep } from '@/lib/business-next-step';
+import { myWorkspaceHref } from '@/lib/workspace-back-href';
 import { BUSINESS_MAP_ID } from '@/lib/business-layers';
-import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
-import { programSummaryFactsOf } from '@/lib/program-summary-facts';
-import { businessInShort, programSummary } from '@/lib/program-summary-text';
+import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
 import { analyzeLinesFromHash } from '@/lib/analyze-entry';
-import { wt } from '@/lib/workspace-messages';
+import { gateBody, gateContinue, gateLabel, WALKED_BEFORE, walkedAll, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 
 /** The map and its code panel pull bpmn-js: client only and on demand, as in the workspace. */
@@ -64,10 +62,22 @@ const WorkspaceProcess = dynamic(() => import('@/components/workspace/WorkspaceP
  * **No score, no findings, no code before a click** — those are IT's
  * (`?view=it`, today's Analyze page until AB-9).
  *
- * **Interim until release 3.2.0** (release cut of 06.11.2026, so nothing a user had
- * goes missing): today's First insights blocks (`BusinessOpening`, rendered by
- * `FirstLook`, whose paced build-up retired with 3.1.0, AB-3) and `BusinessNextStep` stand unchanged below
- * the map; AB-6 and AB-4 replace them in place.
+ * **The text around the map** (AB-6, release 3.2.0; ADR-116): *What this program
+ * does* above the map, and under it *How it runs*, *Why it exists*, *Who is
+ * involved* and *Questions to settle with the business* (`AroundTheMap`, read by
+ * `useAroundTheMap`), every sentence with its line. It replaced the interim First
+ * insights blocks (`FirstLook`, `BusinessOpening`) of 3.1.0.
+ *
+ * **The walk-through and what follows it** (AB-4, release 3.2.0; ADR-118; mockup
+ * states 4, 5, 6, 9, 9b, 10 and 17): "Walk me through it" runs the tour on the
+ * page where the map stands (`ProcessTour` `inline`); the summary steps aside and
+ * "How it runs" says "you are here". Its last card shows the two equal endings
+ * (`AnalyzeEndings`). Once it was finished in this browser the soft-gate hint
+ * goes, the summary carries the endings, and under the text stand the endings in
+ * full and "What you can do next" (`WhatNextCard`), which "Hide" takes away for
+ * this project. A later tool clicked before the walk-through holds for one calm
+ * note — never a lock. All of it lives in the browser (`lib/analyze-progress.ts`):
+ * no write, no phase change.
  *
  * **The start run of ADR-072 lives here** (moved from the workspace page): a
  * project with source and no run, opened with `?first=1` on its first visit,
@@ -94,7 +104,6 @@ export default function AnalyzeBusiness({
   /** What stands when the project has no source: today's upload and start path (P4). */
   fallback: React.ReactNode;
 }) {
-  const { profile } = useUserProfile();
   const [project, setProject] = useState<Project | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'failed'>('loading');
 
@@ -144,23 +153,15 @@ export default function AnalyzeBusiness({
   const owner = useIsOwner(project);
   const stand = useWorkspaceRevision(projectId);
   const open = useMemo(() => notDetermined(project), [project]);
-  const questions = useOpenQuestions(project, projectId, { open });
   const steps = useMemo(() => workflowSteps(project), [project]);
-
-  /** What the program does, in the engine's own sentence (`businessInShort`) — no model, no wait. */
   const legacyCode = typeof project?.legacyCode === 'string' ? project.legacyCode : '';
-  const summarySource = signed?.source ?? legacyCode;
-  const summaryEngine = engineVersionOfProject(project);
-  const customerTexts = useCustomerTexts(projectId || null);
-  const inShort = useMemo(() => {
-    if (!summarySource.trim()) return null;
-    try {
-      const facts = programSummaryFactsOf(summarySource, { engineVersion: summaryEngine, customerTexts });
-      return businessInShort(programSummary(facts), { codes: false });
-    } catch {
-      return null;
-    }
-  }, [summarySource, summaryEngine, customerTexts]);
+
+  /**
+   * The text around the map (AB-6): what the program does above it, how it runs, why it exists, who is involved
+   * and the questions for the business below it — read once, after the first paint, from the same source. Only the
+   * owner's visit may ask for a plain wording (P8).
+   */
+  const around = useAroundTheMap({ project, projectId, owner, source: signed?.source ?? legacyCode });
 
   /** `#L42` or `#L40-48` in the address, and every line anchor clicked here: the code panel beside the map. */
   const [openLines, setOpenLines] = useState<{ lineStart: number; lineEnd: number; key: number } | null>(null);
@@ -241,31 +242,86 @@ export default function AnalyzeBusiness({
   }, []);
 
   /**
-   * The reading of the source the first insights below the map compute, handed up for the project search (⌘K,
-   * roadmap 6.6) — the search the workspace's Business view carried until 3.1.0 stands here, where a project opens
-   * (mockup state 3: "Search this project" in the shell bar).
+   * The reading the text around the map was read from, for the project search (⌘K, roadmap 6.6) — the search the
+   * workspace's Business view carried until 3.1.0 stands here, where a project opens (mockup state 3: "Search this
+   * project" in the shell bar).
    */
-  const [reading, setReading] = useState<SourceReading | null>(null);
+  const reading = around.reading;
 
   /** "I'll look around myself": the invitation steps aside; one quiet line under the map keeps the way in. */
   const [lookingAround, setLookingAround] = useState(false);
   const walk = useCallback(() => requestProcessWalk(projectId), [projectId]);
 
-  // The interim "Next step" bar under the map (until AB-4's two endings).
-  const nothingOpen = useMemo(() => nothingOpenText(steps), [steps]);
-  const businessStep = useMemo(() => {
-    if (!project) return null;
-    const point = nextOpenPoint(project, profile);
-    const running = point && point.key === 'analyze' && startRun.phase === 'running' ? { ...point, running: true as const } : point;
-    return businessNextStep({ point: running, rules: null, owner });
-  }, [project, profile, startRun.phase, owner]);
-  const givesAwayElsewhere = useMemo(
-    () => ({
-      documentation: stageHref({ base: `/project/${projectId}`, path: 'documentation', view: 'business', from: WORKSPACE_RETURN.tools }),
-      it: `/project/${encodeURIComponent(projectId)}/analyze?view=it`,
-    }),
-    [projectId],
+  /* ---- the walk-through and what follows it (AB-4) ---- */
+  const { progress, markWalked, setNextHidden } = useAnalyzeProgress(projectId || null);
+  const [walkState, setWalkState] = useState<WalkState>({ open: false, pausedAt: null, move: null });
+  const [finishedThisVisit, setFinishedThisVisit] = useState(false);
+  const [walkedSteps, setWalkedSteps] = useState<number | null>(null);
+  const touring = walkState.open;
+  const onTourChange = useCallback(
+    (next: WalkState) => {
+      setWalkState(next);
+      if (!next.move?.end) return;
+      // O1: the last station was shown once — the walk-through is done, in this browser only.
+      markWalked();
+      setFinishedThisVisit(true);
+      setWalkedSteps(next.move.total);
+    },
+    [markWalked],
   );
+  const stage = analyzeStage({ progress, touring, finishedThisVisit });
+  const walked = progress.walked;
+  /** "you are here" in "How it runs": the node the station shows, else its first line. */
+  const here = useMemo(() => {
+    const station = walkState.move?.station ?? null;
+    return station ? { nodeId: station.id, line: station.anchor?.lineStart ?? null } : null;
+  }, [walkState.move]);
+  /**
+   * When the tour closes or pauses the focus returns to "Walk me through it" (or "Walk through again") — in the map's
+   * full screen to its own (ADR-119 (d)), never to the page behind it. A focus the reader has put elsewhere (the
+   * canvas, the *Edit* switch) stays where it is.
+   */
+  const wasTouring = useRef(false);
+  useEffect(() => {
+    if (wasTouring.current && !touring) {
+      window.requestAnimationFrame(() => {
+        const now = document.activeElement;
+        if (now && now !== document.body && now.isConnected) return;
+        const full = document.querySelector<HTMLElement>('[data-map-fullscreen="true"]');
+        const target = full
+          ? full.querySelector<HTMLElement>('[data-map-fullscreen-walk]')
+          : document.querySelector<HTMLElement>('[data-analyze-walk]');
+        target?.focus();
+      });
+    }
+    wasTouring.current = touring;
+  }, [touring]);
+
+  /** The soft gate (mockup state 10): a later tool clicked before the walk-through holds for one calm note. */
+  const [gate, setGate] = useState<{ label: string; href: string } | null>(null);
+  const onTool = useCallback<ToolClick>(
+    (tool, href, event) => {
+      if (walked || tool.key === 'analyze' || !href) return;
+      event.preventDefault();
+      setGate({ label: tool.label, href });
+    },
+    [walked],
+  );
+  const gateRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (gate) gateRef.current?.focus();
+  }, [gate]);
+
+  /** The two endings: Design for the owner (P8: a sentence for a reader), and the reader's own list. */
+  const ruleCount = around.reading ? around.reading.ruleSet.rules.length : null;
+  const redesignHref = `/project/${encodeURIComponent(projectId)}/design`;
+  const endings = (variant: 'compact' | 'full', children?: React.ReactNode) => (
+    <AnalyzeEndings variant={variant} owner={!!owner} rules={ruleCount} designHref={redesignHref} anotherHref={myWorkspaceHref()}>
+      {children}
+    </AnalyzeEndings>
+  );
+  /** Where the basket line under the questions leads: Design's questions, as the First insights' line did (3.0.21). */
+  const designHref = `/project/${encodeURIComponent(projectId)}/design#${RULE_QUESTIONS_ID}`;
 
   if (state === 'missing') return <ProjectNoAccess />;
   if (state === 'failed') {
@@ -292,6 +348,40 @@ export default function AnalyzeBusiness({
   if (!legacyCode.trim() && !signed) return <>{fallback}</>;
 
   const invitation = signed !== null && !lookingAround;
+  const walkLabel = walkState.pausedAt !== null ? wt('abiz.walkContinue') : wt('abiz.walk');
+  const gateNote = gate ? (
+    <div
+      ref={gateRef}
+      tabIndex={-1}
+      role="note"
+      aria-label={gateLabel(gate.label)}
+      data-analyze-soft-gate=""
+      className="mt-1 flex flex-wrap items-start gap-x-3 gap-y-2 rounded-cc-row border border-cc-information-border bg-cc-information-bg px-3 py-2 text-[13px] leading-snug font-medium text-cc-ink"
+    >
+      <Info size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-information" />
+      <p className="m-0 min-w-0 flex-1 basis-60">
+        <span className="font-semibold">{wt('abiz.gateTitle')}</span> {gateBody(gate.label)}
+      </p>
+      <span className="flex flex-wrap items-center gap-2">
+        <CcButton
+          variant="secondary"
+          onClick={() => {
+            setGate(null);
+            walk();
+          }}
+          data-analyze-soft-gate-walk=""
+        >
+          {wt('abiz.gateWalk')}
+        </CcButton>
+        {/* Going on counts as the walk-through done (O1): the note is said once, never again. */}
+        <span onClickCapture={markWalked}>
+          <CcLinkButton href={gate.href} variant="ghost" data-analyze-soft-gate-continue="">
+            {gateContinue(gate.label)}
+          </CcLinkButton>
+        </span>
+      </span>
+    </div>
+  ) : null;
 
   return (
     <StageFrame stage="analyze" data-analyze-business="ready">
@@ -302,57 +392,47 @@ export default function AnalyzeBusiness({
         projectName={project?.name}
         stage="analyze"
         backToMyWorkspace
-        toolsNote={wt('abiz.softGate')}
+        toolsNote={softGateShown(progress) ? wt('abiz.softGate') : null}
+        toolsCompact
+        onTool={onTool}
+        toolsAfter={gateNote}
       >
         {wt('abiz.lead')}
       </StageHeader>
 
       <div className="flex flex-col gap-4">
-        {/* What this program does, and the one invitation (mockup state 3). */}
-        <section
-          data-analyze-summary=""
-          data-layout-item=""
-          aria-labelledby="analyze-summary-title"
-          className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3 rounded-cc-card border border-cc-line bg-cc-surface px-4 py-4 shadow-cc"
-        >
-          <div className="min-w-0 flex-1 basis-80">
-            <div className="flex flex-wrap items-center gap-2">
-              <h2 id="analyze-summary-title" className="m-0 text-[15px] leading-snug font-bold text-cc-ink">
-                {wt('abiz.summaryTitle')}
-              </h2>
-              {inShort && inShort.length > 0 ? <CcProvenanceChip value="reconstructed" /> : null}
-            </div>
-            <p data-analyze-summary-text="" className="m-0 mt-1 max-w-[60rem] text-[14px] leading-relaxed font-medium text-cc-ink">
-              {inShort && inShort.length > 0
-                ? inShort.map((line, i) => (
-                    <React.Fragment key={`${line.key}-${i}`}>
-                      <span className="break-words">{line.text}</span>
-                      {line.anchors[0] ? (
-                        <>
-                          {' '}
-                          <CcAnchor
-                            onOpen={() => openAnchor(line.anchors[0].lineStart, line.anchors[0].lineEnd)}
-                            label={`${wt('firstLook.sourceLine')} L${line.anchors[0].lineStart}`}
-                          >{`L${line.anchors[0].lineStart}`}</CcAnchor>
-                        </>
-                      ) : null}
-                      {i < inShort.length - 1 ? ' ' : null}
-                    </React.Fragment>
-                  ))
-                : wt('abiz.summaryNone')}
-            </p>
-          </div>
-          {invitation ? (
-            <div data-analyze-invitation="" className="cc-no-print flex flex-wrap items-center gap-3 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch">
-              <CcButton variant="primary" icon={<Play size={16} aria-hidden={true} />} onClick={walk} data-analyze-walk="">
-                {wt('abiz.walk')}
-              </CcButton>
-              <CcButton variant="secondary" onClick={() => setLookingAround(true)} data-analyze-look-around="">
-                {wt('abiz.lookAround')}
-              </CcButton>
-            </div>
-          ) : null}
-        </section>
+        {/* What this program does, and the one invitation (mockup state 3); it steps aside while the tour runs (AB-4). */}
+        <WhatThisProgramDoes
+          text={around.text}
+          state={around.state}
+          say={around.say}
+          onAnchor={openAnchor}
+          hidden={touring}
+          actions={
+            signed !== null && walked ? (
+              // Done, or a later visit (mockup states 9 and 17): the two endings, and the way through it again.
+              <div data-analyze-walked={stage} className="cc-no-print flex min-w-0 flex-col gap-3 max-[600px]:w-full">
+                <p className="m-0 flex flex-wrap items-center gap-x-2 text-[12px] leading-snug font-semibold text-cc-ink-muted">
+                  <span>{stage === 'done' && walkedSteps !== null ? walkedAll(walkedSteps) : WALKED_BEFORE}</span>
+                  <span aria-hidden={true}>·</span>
+                  <CcButton variant="ghost" icon={<Play size={14} aria-hidden={true} />} onClick={walk} data-analyze-walk="again">
+                    {wt('abiz.walkAgain')}
+                  </CcButton>
+                </p>
+                {endings('compact')}
+              </div>
+            ) : invitation ? (
+              <div data-analyze-invitation="" className="cc-no-print flex flex-wrap items-center gap-3 max-[600px]:w-full max-[600px]:flex-col max-[600px]:items-stretch">
+                <CcButton variant="primary" icon={<Play size={16} aria-hidden={true} />} onClick={walk} data-analyze-walk="">
+                  {walkLabel}
+                </CcButton>
+                <CcButton variant="secondary" onClick={() => setLookingAround(true)} data-analyze-look-around="">
+                  {wt('abiz.lookAround')}
+                </CcButton>
+              </div>
+            ) : null
+          }
+        />
 
         {startRun.narrativeMissing ? (
           // Its way to run the narrative again is today's page, in IT.
@@ -372,34 +452,59 @@ export default function AnalyzeBusiness({
             startRun={startRun}
             codeOnClick
             openLines={openLines}
+            tourEndings={endings('compact')}
+            onTourChange={onTourChange}
           />
-          {lookingAround && signed ? (
+          {lookingAround && signed && !walked && !touring ? (
             <p data-analyze-look-around-line="" className="cc-no-print m-0 mt-2 flex flex-wrap items-center gap-2 text-[13px] leading-snug font-medium text-cc-ink-muted">
               {wt('abiz.lookAroundLine')}
               <CcButton variant="ghost" icon={<Play size={14} aria-hidden={true} />} onClick={walk} data-analyze-walk="later">
-                {wt('abiz.walk')}
+                {walkLabel}
               </CcButton>
             </p>
           ) : null}
           <UsageRecords project={project} className="mt-4" />
         </div>
 
-        {/* Interim until release 3.2.0: today's First insights blocks and "Next step", unchanged, below the map. */}
-        <section data-analyze-interim="" aria-label={wt('abiz.belowTitle')} className="flex flex-col gap-4">
-          <FirstLook
-            project={project}
-            projectId={projectId}
-            fullMapBelow={signed !== null}
-            rulesBelow
-            onReading={setReading}
-            questions={questions}
-            elsewhere={givesAwayElsewhere}
-          />
-          {businessStep ? <BusinessNextStep step={businessStep} projectId={projectId} noneText={nothingOpen} /> : null}
-          {/* The target and its SAP reference pattern, one line under "Next step" (roadmap 3.0.9, ADR-089),
-              as it stood in the workspace's Business view until 3.1.0. */}
-          <TargetReferenceLine project={project} />
-        </section>
+        {/* AB-7: the two charts under the map — how a case can end, what it changes and only reads (mockup states 8, 9). */}
+        <ProcessFactCharts project={project} projectId={projectId} onOpenLines={openAnchor} />
+
+        {/* The text around the map (AB-6, mockup states 3 and 9): how it runs, why it exists, who is involved, and the
+            questions to settle with the business — every sentence with its line. */}
+        <AroundTheMap
+          text={around.text}
+          state={around.state}
+          say={around.say}
+          askNow={around.askNow}
+          designHref={designHref}
+          onAnchor={openAnchor}
+          here={here}
+        />
+
+        {/* After the walk-through (AB-4, mockup states 9 and 9b): the two endings in full, and "What you can do next"
+            below them — or, once hidden for this project, the quiet link that brings it back. */}
+        {signed !== null && walked && !touring ? (
+          <>
+            {endings(
+              'full',
+              progress.nextHidden ? (
+                <button
+                  type="button"
+                  onClick={() => setNextHidden(false)}
+                  data-analyze-what-next-show=""
+                  className="mt-1 self-start rounded-cc-row text-left text-[13px] font-semibold text-cc-ink-muted underline underline-offset-2"
+                >
+                  {wt('abiz.nextShow')}
+                </button>
+              ) : null,
+            )}
+            {whatNextShown(progress) ? <WhatNextCard onHide={() => setNextHidden(true)} /> : null}
+          </>
+        ) : null}
+
+        {/* The target and its SAP reference pattern, one quiet line (roadmap 3.0.9, ADR-089), as it stood in the
+            workspace's Business view until 3.1.0. */}
+        <TargetReferenceLine project={project} />
       </div>
     </StageFrame>
   );

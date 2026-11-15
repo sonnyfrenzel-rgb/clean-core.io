@@ -44,8 +44,12 @@ export interface TourCanvasProps {
   plane: string | null;
   /** The element of the station; null shows the whole top level (the tour's end). */
   focus: string | null;
-  /** Where the element goes: `side` leaves the right of the map to the card, `center` puts it in the middle. */
-  align: 'side' | 'center';
+  /**
+   * Where the element goes: `side` leaves the right of the map to the card, `center` puts it in the middle, `inline`
+   * puts it in the middle of a map that stands beside or under its card on the page (plan AB-4) — shrunk to fit when it
+   * is large, never below {@link STATION_FLOOR}, and scrolled to its start beyond that.
+   */
+  align: TourAlign;
   /** What a screen reader hears for the picture: the map and the element highlighted. */
   label: string;
   /** Where the element stands, in pixels inside the canvas, after the camera moved; null when nothing is focused. */
@@ -53,15 +57,16 @@ export interface TourCanvasProps {
   className?: string;
 }
 
-interface Shape {
+export interface StationShape {
   id: string;
   x: number;
   y: number;
   width: number;
   height: number;
-  label?: Shape;
+  label?: StationShape;
   waypoints?: unknown;
 }
+type Shape = StationShape;
 
 interface Canvas extends ViewboxCanvas {
   resized(): void;
@@ -81,6 +86,16 @@ interface Viewer {
 
 type Box = { x: number; y: number; width: number; height: number };
 
+export type TourAlign = 'side' | 'center' | 'inline';
+
+/**
+ * ADR-025's floor for the tour (plan AB-4, P-decision with N2): a station is never shown below 83 %. One that does not
+ * fit there is not shrunk further — the camera shows its start and the reader pans for the rest.
+ */
+export const STATION_FLOOR = 0.83;
+/** The room kept around a station in the inline map, in screen pixels. */
+const INLINE_PAD = 24;
+
 /** The share of the canvas's width left of the element's centre beside a card. */
 const SIDE_AT = 0.3;
 /** The scale a station is shown at: the map's reading size, a little smaller on a phone. */
@@ -96,8 +111,11 @@ const reducedMotion = (): boolean => {
   }
 };
 
-/** The element with its outside label, in diagram units. */
-function boundsOf(shape: Shape): Box {
+/**
+ * The element with its outside label, in diagram units. Exported for the full-screen canvas, whose camera follows the
+ * tour's stations the same way (`BpmnCanvas` `follow`, ADR-119 (d)).
+ */
+export function stationBounds(shape: Shape): Box {
   const parts = [shape, ...(shape.label && shape.label.width ? [shape.label] : [])];
   const x = Math.min(...parts.map((p) => p.x));
   const y = Math.min(...parts.map((p) => p.y));
@@ -110,14 +128,32 @@ function boundsOf(shape: Shape): Box {
 }
 
 /** The viewbox that puts `bounds` where the card leaves room. Pure: exported for the spec. */
-export function cameraFor(bounds: Box, outer: { width: number; height: number }, align: 'side' | 'center'): Box {
+export function cameraFor(bounds: Box, outer: { width: number; height: number }, align: TourAlign): Box {
   const scale = outer.width < 480 ? PHONE_SCALE : SCALE;
+  if (align === 'inline') return inlineCamera(bounds, outer, scale);
   const width = outer.width / scale;
   const height = outer.height / scale;
   const cx = bounds.x + bounds.width / 2;
   const cy = bounds.y + bounds.height / 2;
   const at = align === 'side' ? SIDE_AT : 0.5;
   return { x: cx - at * width, y: cy - 0.5 * height, width, height };
+}
+
+/**
+ * The inline camera: the station in the middle at the reading scale; a station too large for the map at that scale is
+ * shrunk to fit, down to {@link STATION_FLOOR} and no further — past that, its start (left, top) is shown with the
+ * padding and the rest is a pan away. Pure: exported for the spec through {@link cameraFor}.
+ */
+function inlineCamera(bounds: Box, outer: { width: number; height: number }, reading: number): Box {
+  const room = { width: Math.max(1, outer.width - 2 * INLINE_PAD), height: Math.max(1, outer.height - 2 * INLINE_PAD) };
+  const fit = Math.min(room.width / Math.max(1, bounds.width), room.height / Math.max(1, bounds.height));
+  const scale = Math.max(STATION_FLOOR, Math.min(reading, fit));
+  const width = outer.width / scale;
+  const height = outer.height / scale;
+  const pad = INLINE_PAD / scale;
+  const x = bounds.width * scale <= room.width ? bounds.x + bounds.width / 2 - width / 2 : bounds.x - pad;
+  const y = bounds.height * scale <= room.height ? bounds.y + bounds.height / 2 - height / 2 : bounds.y - pad;
+  return { x, y, width, height };
 }
 
 /** Where `bounds` lands on screen under `view`, in pixels of a canvas `outer` wide. */
@@ -217,7 +253,7 @@ export default function TourCanvas({ xml, plane, focus, align, label, onPlaced, 
     }
     canvas.addMarker(shape.id, 'cc-tour-here');
 
-    const bounds = boundsOf(shape);
+    const bounds = stationBounds(shape);
     const outer = canvas.viewbox().outer;
     const target = cameraFor(bounds, outer, align);
     const report = () => placed.current?.(placedBox(bounds, target, outer));

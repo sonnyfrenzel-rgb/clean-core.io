@@ -125,6 +125,15 @@ service cloud.firestore {
         get(callerProfilePath()).data.get('disabled', false) != true;
     }
 
+    function erasedMarkerPath() {
+      return /databases/$(database)/documents/erased_accounts/$(request.auth.uid);
+    }
+
+    function erasedRecently() {
+      return exists(erasedMarkerPath()) &&
+        get(erasedMarkerPath()).data.get('expiresAt', request.time) >= request.time;
+    }
+
     function userClientCreateKeys() {
       return [
         'firstName', 'lastName', 'email',
@@ -197,7 +206,12 @@ service cloud.firestore {
       // with MFA and write the audit event (assertAdminStepUp in
       // lib/firebase-admin.ts). The admin claim opens reads here, never writes;
       // the admin console only reads. The same holds for every collection below.
+      // An erased account's ID token outlives its sign-in by up to an hour. The
+      // erasure leaves a marker `erased_accounts/{uid}` with an expiry, written
+      // only by the Admin SDK, and while it holds the profile cannot be created
+      // again — without a profile, `accountActive()` keeps every other write shut.
       allow create: if isAuthenticated() && userId == request.auth.uid &&
+                    !erasedRecently() &&
                     (
                         request.resource.data.keys().hasOnly(userClientCreateKeys()) &&
                         isValidUserCreate(request.resource.data) &&
@@ -253,6 +267,13 @@ service cloud.firestore {
              // /projects/{projectId}; this line fixes the type of the stored
              // field.
              (!('atcReport' in data) || (data.atcReport is map)) &&
+             // 3.3.0 (ADR-123 (5)): the project summary My workspace's tiles
+             // read is written only by the Admin SDK (POST /api/runs/create,
+             // POST /api/projects/{projectId}/process-revisions and
+             // scripts/backfill-project-summary.ts). `summary` is on neither
+             // client allowlist of /projects/{projectId}, so no browser can
+             // create or change it; this line fixes the type of the stored field.
+             (!('summary' in data) || (data.summary is map)) &&
              (!('nonFunctionalRequirements' in data) || (data.nonFunctionalRequirements is map));
     }
 
@@ -432,6 +453,9 @@ service cloud.firestore {
                       // writes it, and no stage writes it from the browser.
                       // `extensibilityRoute` followed in 3.0.7: only POST /api/runs/create
                       // writes it since the Analyze route switch was removed.
+                      // `summary` (3.3.0, ADR-123) was never on this list and must
+                      // not be: it is the server's mirror of the active run for
+                      // My workspace's tiles, written by the Admin SDK only.
                       // `testCases` and `manualTestingRequirements` followed in 3.0.21
                       // (SEC-2026-889/-890): POST /api/projects/{projectId}/artefacts
                       // writes them since 3.0.14, and no stage writes them from the browser.
@@ -510,17 +534,12 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // One upload document, as a whole — create and update alike. The update
-    // rule validates the document the write would leave behind, so a changed
-    // field is held to the same size as a new one.
-    function isValidFileEntry(data) {
-      return data.keys().hasOnly(['name', 'content', 'userId', 'createdAt']) &&
-             isBoundedString(data.name, 1, 254) &&
-             isBoundedString(data.content, 0, 999999) &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.createdAt is timestamp;
-    }
-
+    // Uploads and the personal example library. Nothing in the app writes either
+    // collection any more: the library went with the workspace redesign (see
+    // app/(app)/dashboard/page.tsx) and own code lives in a project. So a browser
+    // can no longer create or change a document here; what an account stored
+    // earlier stays readable and deletable by its owner, and erasure removes it
+    // server-side (deleteUserDataAndAccount).
     function isOwnUpload() {
       return 'userId' in resource.data && resource.data.userId == request.auth.uid && accountActive();
     }
@@ -528,41 +547,14 @@ service cloud.firestore {
     match /files/{fileId} {
       allow read: if isAuthenticated() &&
                   resource != null && resource.data.userId == request.auth.uid && accountActive();
-      allow create: if isAuthenticated() &&
-                    accountActive() &&
-                    request.resource.data.keys().hasAll(['name', 'content', 'userId', 'createdAt']) &&
-                    isCreationTime(request.resource.data.createdAt) &&
-                    isValidFileEntry(request.resource.data);
-      allow update: if isAuthenticated() && isOwnUpload() &&
-                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'content']) &&
-                    isValidFileEntry(request.resource.data);
+      allow create, update: if false;
       allow delete: if isAuthenticated() && isOwnUpload();
-    }
-
-    function isValidABAPExample(data) {
-      return data.keys().hasOnly(['name', 'code', 'userId', 'createdAt']) &&
-             isBoundedString(data.name, 1, 254) &&
-             isBoundedString(data.code, 0, 999999) &&
-             data.userId is string && data.userId == request.auth.uid &&
-             data.createdAt is timestamp;
     }
 
     match /abap_examples/{exampleId} {
       allow read: if isAuthenticated() &&
                   resource != null && resource.data.userId == request.auth.uid && accountActive();
-      allow create: if isAuthenticated() &&
-                    accountActive() &&
-                    request.resource.data.keys().hasAll(['name', 'code', 'userId', 'createdAt']) &&
-                    isCreationTime(request.resource.data.createdAt) &&
-                    isValidABAPExample(request.resource.data);
-      allow update: if isAuthenticated() && isOwnUpload() &&
-                    request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'code']) &&
-                    isValidABAPExample(request.resource.data);
-      // The dashboard offers the owner a delete of their own example and calls
-      // deleteDoc for it, and there was no delete rule — so the call hit
-      // default-deny and the row stayed, with the owner unable to remove what
-      // they uploaded (security audit of b88c77b, SEC-b88c77b-61, verified at
-      // the line on 21.09.2026). Owner only, the same condition /files carries.
+      allow create, update: if false;
       allow delete: if isAuthenticated() && isOwnUpload();
     }
 

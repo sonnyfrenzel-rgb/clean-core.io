@@ -115,7 +115,7 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     // page, and the paced build-up of the workspace is gone — the first look's
     // blocks stand below the map in their end state (interim until v3.2.0).
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-first-look="end-state"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible({ timeout: 60000 });
 
     // (1) The full map, drawn from a run the start signed.
     const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
@@ -201,7 +201,7 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     await recordTipsDuringBuildUp(page);
     await startExample(page, { width: 1440, height: 900 });
 
-    await expect(page.locator('[data-first-look="end-state"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible({ timeout: 90000 });
     const flags = await page.evaluate(() => ({
       __sawBuilding: (window as unknown as { __sawBuilding: boolean }).__sawBuilding,
     }));

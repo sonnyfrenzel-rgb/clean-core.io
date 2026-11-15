@@ -956,7 +956,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     await expect(page.locator('[data-public-cloud-fit-panel]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-workspace-access]')).toBeVisible({ timeout: 60000 });
     // No layer bar, no first look and no Process or Costs fold in Management (ADR-087).
-    await expect(page.locator('[data-workspace-layers], [data-first-look]')).toHaveCount(0);
+    await expect(page.locator('[data-workspace-layers], [data-first-look], [data-around-the-map]')).toHaveCount(0);
     await expect(page.locator('[data-management-fold]')).toHaveCount(1);
 
     const SELECTORS = [

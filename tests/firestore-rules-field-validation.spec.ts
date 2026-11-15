@@ -9,6 +9,7 @@ import {
   getDoc,
   setDoc,
   updateDoc,
+  deleteDoc,
   deleteField,
   serverTimestamp,
   Timestamp,
@@ -26,10 +27,10 @@ import { createWithinCeiling } from '../lib/write-ceiling';
  *
  * Every refusal is paired with the write the app itself performs succeeding, in
  * the shape the app sends it (hooks/useUserProfile.ts, components/LandingModals.tsx,
- * app/(app)/settings/page.tsx, app/(app)/dashboard/page.tsx, the project stages;
- * for `files`, the shape the never-mounted `components/FileUpload.tsx` wrote
- * until D.22c removed it — the rule stays and so does its test), so no
- * assertion can pass because the call fails anyway.
+ * app/(app)/settings/page.tsx, the project stages), so no assertion can pass
+ * because the call fails anyway. `files` and `abap_examples` have no writer in
+ * the app any more and are closed to every client create and update; their test
+ * says so with a well-formed document.
  */
 
 const [EMU_HOST, EMU_PORT] = (process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080').split(':');
@@ -208,26 +209,25 @@ test('a support ticket is created open, with bounded text and no further fields'
   expect(await denied(() => create(ticket)), 'the ticket the settings page writes').toBe(false);
 });
 
-test('uploads carry only their own fields, on create and on update', async () => {
+test('uploads and examples are no longer written by a browser, not even a well-formed one; the owner may still delete', async () => {
+  // Nothing in the app writes either collection since the example library left
+  // the workspace, so the rules close create and update outright.
   const file = { name: 'z_upload.abap', content: 'REPORT z_upload.', userId: uids.owner, createdAt: serverTimestamp() };
   const example = { name: 'z_example.abap', code: 'REPORT z_example.', userId: uids.owner, createdAt: serverTimestamp() };
 
-  expect(await denied(() => addDoc(collection(owner.db, 'files'), { ...file, shared: true })), 'file extra field').toBe(true);
-  expect(await denied(() => addDoc(collection(owner.db, 'abap_examples'), { ...example, shared: true })), 'example extra field').toBe(true);
-  // Created the way the app creates them, so the stored document carries a
-  // real timestamp (the seed route passes JSON, where a Date becomes text).
-  const fileRef = await addDoc(collection(owner.db, 'files'), file);
-  const exampleRef = await addDoc(collection(owner.db, 'abap_examples'), example);
+  expect(await denied(() => addDoc(collection(owner.db, 'files'), file)), 'a well-formed file').toBe(true);
+  expect(await denied(() => addDoc(collection(owner.db, 'abap_examples'), example)), 'a well-formed example').toBe(true);
+  expect(await denied(() => setDoc(doc(owner.db, 'files', `own-${uids.owner}`), file)), 'a file under a chosen id').toBe(true);
+  expect(await denied(() => setDoc(doc(owner.db, 'abap_examples', `own-${uids.owner}`), example)), 'an example under a chosen id').toBe(true);
 
-  const oversized = 'x'.repeat(1_000_001);
-  expect(await denied(() => updateDoc(fileRef, { content: oversized })), 'file content size on update').toBe(true);
-  expect(await denied(() => updateDoc(exampleRef, { code: oversized })), 'example code size on update').toBe(true);
-  expect(await denied(() => updateDoc(fileRef, { name: '' })), 'file name on update').toBe(true);
-  expect(await denied(() => updateDoc(fileRef, { shared: true })), 'file extra field on update').toBe(true);
-  expect(await denied(() => updateDoc(exampleRef, { shared: true })), 'example extra field on update').toBe(true);
+  expect(await denied(() => updateDoc(doc(owner.db, 'files', SEEDED_FILE), { name: 'z_renamed.abap' })), 'a rename of an own file').toBe(true);
+  expect(await denied(() => updateDoc(doc(owner.db, 'abap_examples', SEEDED_EXAMPLE), { code: 'REPORT z_example2.' })), 'a code change of an own example').toBe(true);
 
-  expect(await denied(() => updateDoc(fileRef, { name: 'z_renamed.abap' })), 'a rename').toBe(false);
-  expect(await denied(() => updateDoc(exampleRef, { code: 'REPORT z_example2.' })), 'a code change').toBe(false);
+  // What an account stored earlier stays its own to remove.
+  const ownFile = `deletable-${uids.owner}`;
+  await adminSetDoc('files', ownFile, { name: 'z_old.abap', content: 'REPORT z_old.', userId: uids.owner, createdAt: new Date() });
+  expect(await denied(() => deleteDoc(doc(operator.db, 'files', ownFile))), 'another account deletes it').toBe(true);
+  expect(await denied(() => deleteDoc(doc(owner.db, 'files', ownFile))), 'the owner deletes it').toBe(false);
 });
 
 test('uploads and support tickets are read by their owner only', async () => {

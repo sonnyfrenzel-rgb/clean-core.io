@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import { verifyResendSignature, recordEmailEvent, type EmailEventType } from '@/lib/email-events';
 import { readBoundedBody, ResponseLimitError } from '@/lib/url-validation';
+import { isEngagementEvent } from '@/lib/mail-status';
 
 /**
  * POST /api/webhooks/resend
@@ -80,6 +81,13 @@ export async function POST(req: NextRequest) {
 
     if (!messageId || !type.startsWith('email.')) {
       // Acknowledged, not acted on. See the note above about retries.
+      return NextResponse.json({ ok: true, ignored: true });
+    }
+
+    // Open and click tracking is off in the provider's account, and an open or
+    // a click is not recorded even if it is switched on there: acknowledged and
+    // dropped, nothing about it stored (`ENGAGEMENT_EVENTS`, lib/mail-status.ts).
+    if (isEngagementEvent(type)) {
       return NextResponse.json({ ok: true, ignored: true });
     }
 

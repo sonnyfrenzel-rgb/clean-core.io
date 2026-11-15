@@ -65,8 +65,8 @@ export interface RouteDef {
 /** The catalogue object the walk opens: a table every S/4 system has. */
 export const CATALOG_OBJECT = 'vbak';
 
-/** The first insights stand in their end state (`components/workspace/FirstLook.tsx`; no build-up since v3.1.0, AB-3). */
-const FIRST_LOOK_DONE = '[data-first-look="end-state"]';
+/** The text around the map stands in its end state (`components/analyze/AroundTheMap.tsx`, 3.2.0, AB-6 — where the first insights stood). */
+const FIRST_LOOK_DONE = '[data-around-the-map="ready"]';
 
 /**
  * What says each view has drawn its content. Only Business — Analyze's page
@@ -78,7 +78,7 @@ const FIRST_LOOK_DONE = '[data-first-look="end-state"]';
  * Management's trend reads the runs until `data-management-history="read"`.
  */
 const VIEW_READY = {
-  business: `[data-analyze-business="ready"] [data-analyze-map], [data-analyze-interim] ${FIRST_LOOK_DONE}`,
+  business: `[data-analyze-business="ready"] [data-analyze-map], ${FIRST_LOOK_DONE}`,
   it: '[data-it-view=""] [data-it-headline]',
   management: '[data-management-history="read"] [data-management-executive]',
 } as const;
@@ -101,7 +101,7 @@ export const ROUTES: RouteDef[] = [
     route: '/demo/analyze (Business)',
     session: 'signed-in',
     url: '/demo/analyze',
-    ready: ['[data-analyze-business="ready"][data-demo-ready="true"] h1', `[data-analyze-interim] ${FIRST_LOOK_DONE}`],
+    ready: ['[data-analyze-business="ready"][data-demo-ready="true"] h1', `${FIRST_LOOK_DONE}`],
   },
   // ADR-078: the Design tool's requirements workspace, in the demo and on the seeded project.
   { key: 'demo-requirements', route: '/demo/[stage]/requirements', session: 'public', url: '/demo/design/requirements', ready: ['[data-spec-workspace][data-spec-state="ready"]'] },

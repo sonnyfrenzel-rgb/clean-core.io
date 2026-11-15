@@ -30,6 +30,7 @@ import { accountHashOf } from './pseudonym';
 export const PRIVILEGED_AUDIT_ACTIONS: ReadonlySet<string> = new Set([
   'GRANT_ADMIN', 'REVOKE_ADMIN', 'APPROVE_USER', 'REVOKE_USER', 'GRANT_S4', 'REVOKE_S4',
   'GRANT_S4_LINK', 'REJECT_S4_LINK', 'DELETE_USER_CASCADE', 'BYOK_BLOCK', 'BYOK_DELETE_TEXT_FORM',
+  'USAGE_REPORT_OBJECTION_ON', 'USAGE_REPORT_OBJECTION_OFF',
   // Written by `scripts/mfa-reset.ts` with the operator's address as `actorEmail`.
   'mfa.reset',
 ]);

@@ -1,5 +1,6 @@
 import type { DocumentData } from 'firebase-admin/firestore';
 import { isTestAccount } from './test-accounts';
+import { isDeliveredStatus } from './mail-status';
 
 /**
  * Weekly adoption metrics for the admin report.
@@ -32,8 +33,6 @@ export interface Cohort {
   createdAt: Date | null;
   used: number;
   limit: number;
-  distinctObjects: number;
-  byok: boolean;
   unmetered: boolean;
   status: string;
   atLimit: boolean;
@@ -66,19 +65,22 @@ export interface UsageReport {
   periodEnd: Date;
   current: PeriodMetrics;
   previous: PeriodMetrics;
+  /*
+   * The standing totals, trimmed on 15.11.2026 (Sonny) to what privacy policy
+   * 1.3 says the report holds: accounts, how many have a first signed run, how
+   * many never started, how many are at their limit. The all-time runs and
+   * units, granted units, distinct programmes and the count of accounts with
+   * their own model key are gone from the report, the snapshot and the mail.
+   * Snapshots stored before may still carry them; nothing reads them.
+   */
   totals: {
     accounts: number;
     activated: number;
     neverStarted: number;
     atLimit: number;
-    byok: number;
-    unitsUsed: number;
-    unitsGranted: number;
-    objectsAnalysed: number;
-    runsAllTime: number;
   };
   /*
-   * Figures only, since 30.09.2026 (Sonny). The three fields below used to be
+   * Figures only, since 30.09.2026 (Sonny). These fields used to be three
    * lists of people — name and address of every new account, every account
    * that ran its first analysis and every account at its limit — and the mail
    * carried them out of our infrastructure through a mail provider into an
@@ -89,12 +91,11 @@ export interface UsageReport {
    */
   /** Accounts registered during the reporting week. */
   newAccounts: number;
-  /**
-   * Accounts that completed their first ever analysis during the week — the
-   * adoption signal. One entry per such account: how many analyses it ran this
-   * week, largest first. The length is the count; no entry says whose it is.
+  /*
+   * `newlyActivated` — one figure per account that ran its first analysis this
+   * week — is gone since 15.11.2026: the report carries no per-account value at
+   * all. How many accounts that is, is `current.activations`.
    */
-  newlyActivated: number[];
   /** Accounts that have used up their free units — a conversation, not a problem. */
   reachedLimit: number;
   /** What became of the mail the platform sent this week. */
@@ -116,7 +117,6 @@ export interface DeliveryMetrics {
   delayed: number;
   bounced: number;
   complained: number;
-  opened: number;
   /** Sent, but no delivery event has arrived. */
   awaiting: number;
   /**
@@ -164,6 +164,17 @@ export interface UsageReportSource {
 }
 
 /**
+ * Whether an account objected to the usage figures (privacy policy section 9,
+ * Art. 21 GDPR). The operator sets `usageReportObjectionAt` on the profile
+ * through the Admin Console (`adminSetUsageReportObjection`,
+ * lib/firebase-admin.ts); no browser can write it.
+ */
+export function objectedToUsageReport(user: DocumentData): boolean {
+  const v = user.usageReportObjectionAt;
+  return v !== undefined && v !== null && v !== false;
+}
+
+/**
  * @param periodEnd end of the reporting week (exclusive); defaults to now
  */
 export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = new Date()): Promise<UsageReport> {
@@ -181,14 +192,26 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
     db.collection('email_events').get(),
   ]);
 
+  // An account that objected (privacy policy section 9) is left out of every
+  // figure below: it is not in the cohort, so its runs and projects are not
+  // counted, and its mail is left out too — recognised by the uid the send
+  // records (`recordEmailSent`), or by the address in clear on a record written
+  // before 3.0.21. Nothing of it is counted, nothing of it listed.
+  const objected = usersSnap.docs.filter((d) => objectedToUsageReport(d.data()));
+  const objectedUids = new Set(objected.map((d) => d.id));
+  const objectedAddresses = new Set(
+    objected.map((d) => String(d.data().email || '').trim().toLowerCase()).filter((a) => a !== ''),
+  );
+
   // CI accounts are excluded everywhere: they outnumber real users several times
   // over and would make every trend meaningless.
   const cohort: Cohort[] = usersSnap.docs
+    .filter((d) => !objectedUids.has(d.id))
     .map((d) => {
       const u = d.data();
       const tier = u.tier || 'pilot';
-      const byok = u.byokConfigured === true;
-      const unmetered = tier === 'enterprise' || byok;
+      // Read only to tell an unmetered account, which cannot be at a limit; not counted.
+      const unmetered = tier === 'enterprise' || u.byokConfigured === true;
       const used = typeof u.transformationsUsed === 'number' ? u.transformationsUsed : 0;
       const limit = typeof u.transformationsLimit === 'number' ? u.transformationsLimit : 5;
       return {
@@ -197,8 +220,6 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
         createdAt: toDate(u.createdAt),
         used,
         limit,
-        distinctObjects: u.chargedInputs ? Object.keys(u.chargedInputs).length : 0,
-        byok,
         unmetered,
         status: u.status || 'pending',
         atLimit: !unmetered && limit > 0 && used >= limit,
@@ -219,12 +240,8 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
     .sort((a, b) => a.at!.getTime() - b.at!.getTime());
 
   const firstRunByUser = new Map<string, Date>();
-  const runCountInPeriod = new Map<string, number>();
   for (const r of runs) {
     if (!firstRunByUser.has(r.userId)) firstRunByUser.set(r.userId, r.at!);
-    if (inWindow(r.at, periodStart, periodEnd)) {
-      runCountInPeriod.set(r.userId, (runCountInPeriod.get(r.userId) || 0) + 1);
-    }
   }
 
   const projects = projectsSnap.docs
@@ -256,6 +273,7 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
       const to: string[] = Array.isArray(m.to) ? m.to : m.to ? [m.to] : [];
       return {
         to: to[0] || '',
+        uid: typeof m.uid === 'string' ? m.uid : null,
         // Since 3.0.21 the record keeps the address as its keyed hash only, so
         // the send marks a test recipient itself; the address rule still
         // catches a record written before.
@@ -265,18 +283,18 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
         sentAt: toDate(m.sentAt),
       };
     })
-    .filter((m) => inWindow(m.sentAt, periodStart, periodEnd) && !m.test && !isTestAccount(m.to));
+    .filter((m) => inWindow(m.sentAt, periodStart, periodEnd) && !m.test && !isTestAccount(m.to))
+    .filter((m) => !(m.uid && objectedUids.has(m.uid)) && !objectedAddresses.has(m.to.trim().toLowerCase()));
 
   const countBy = (status: string) => mail.filter((m) => m.status === status).length;
   const delivery: DeliveryMetrics = {
     sent: mail.length,
-    delivered: countBy('email.delivered'),
+    // Delivered, nothing more: opens and clicks are not tracked (lib/mail-status.ts).
+    // A record from before, whose status is still an open or a click, was delivered.
+    delivered: mail.filter((m) => isDeliveredStatus(m.status)).length,
     delayed: countBy('email.delivery_delayed'),
     bounced: countBy('email.bounced'),
     complained: countBy('email.complained'),
-    // Opened implies delivered; counted separately rather than folded in, so the
-    // delivered figure stays a count of messages that arrived.
-    opened: mail.filter((m) => m.status === 'email.opened' || m.status === 'email.clicked').length,
     awaiting: countBy('email.sent'),
     failures: countFailures(mail.filter((m) => FAILED.has(m.status))),
   };
@@ -292,20 +310,50 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
       activated: activatedUids.size,
       neverStarted: cohort.filter((u) => !activatedUids.has(u.uid)).length,
       atLimit: cohort.filter((u) => u.atLimit).length,
-      byok: cohort.filter((u) => u.byok).length,
-      unitsUsed: cohort.filter((u) => !u.unmetered).reduce((s, u) => s + u.used, 0),
-      unitsGranted: cohort.filter((u) => !u.unmetered).reduce((s, u) => s + u.limit, 0),
-      objectsAnalysed: cohort.reduce((s, u) => s + u.distinctObjects, 0),
-      runsAllTime: runs.length,
     },
     newAccounts: cohort.filter((u) => inWindow(u.createdAt, periodStart, periodEnd)).length,
-    newlyActivated: [...firstRunByUser.entries()]
-      .filter(([, at]) => inWindow(at, periodStart, periodEnd))
-      .map(([uid]) => runCountInPeriod.get(uid) || 0)
-      .sort((a, b) => b - a),
     reachedLimit: cohort.filter((u) => u.atLimit).length,
     delivery,
   };
+}
+
+/**
+ * How long a stored snapshot is kept: 24 months, then a Firestore TTL policy on
+ * `expiresAt` deletes it (`docs/DATA-RETENTION.md`). Counted from the end of the
+ * week it covers, which is the day it was written.
+ */
+export const USAGE_REPORT_RETENTION_MONTHS = 24;
+
+/** The deletion date of the snapshot of the week ending `periodEnd`: 24 calendar months later. */
+export function usageReportExpiry(periodEnd: Date): Date {
+  const d = new Date(periodEnd.getTime());
+  d.setUTCMonth(d.getUTCMonth() + USAGE_REPORT_RETENTION_MONTHS);
+  return d;
+}
+
+/** A Firestore Timestamp, a Date or an ISO string, as a Date; anything else null. */
+function asDate(v: unknown): Date | null {
+  if (v instanceof Date) return Number.isNaN(v.getTime()) ? null : v;
+  if (typeof v === 'string') {
+    const d = new Date(v);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  const t = v as { toDate?: () => Date } | null;
+  return t && typeof t.toDate === 'function' ? asDate(t.toDate()) : null;
+}
+
+/**
+ * The deletion date a snapshot stored before 3.2.0 gets, or why it is left alone: it already has `expiresAt`
+ * (`'has-expiry'`) or carries no time to count from (`'no-time'`). Counted from `periodEnd`, else `generatedAt`,
+ * with the period the Friday job gives a new snapshot. Applied by `scripts/backfill-usage-report-expiry.ts`.
+ */
+export function usageReportBackfillExpiry(
+  data: Record<string, unknown>,
+): { expiresAt: Date } | { skip: 'has-expiry' | 'no-time' } {
+  if (data.expiresAt !== undefined && data.expiresAt !== null) return { skip: 'has-expiry' };
+  const from = asDate(data.periodEnd) ?? asDate(data.generatedAt);
+  if (!from) return { skip: 'no-time' };
+  return { expiresAt: usageReportExpiry(from) };
 }
 
 /**
@@ -319,14 +367,29 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
  */
 export function usageReportSnapshot(report: UsageReport, extra: { providerId: string }) {
   const { current, previous, totals, delivery } = report;
+  // Field by field here too: a spread would carry whatever a caller's object
+  // holds, and the trimmed totals (15.11.2026) must stay trimmed in storage.
+  const period = (m: PeriodMetrics) => ({
+    registrations: m.registrations,
+    activations: m.activations,
+    activeAccounts: m.activeAccounts,
+    runs: m.runs,
+    projects: m.projects,
+    units: m.units,
+    ...(m.unitsUndetermined !== undefined ? { unitsUndetermined: m.unitsUndetermined } : {}),
+  });
   return {
     periodStart: report.periodStart,
     periodEnd: report.periodEnd,
-    current: { ...current },
-    previous: { ...previous },
-    totals: { ...totals },
+    current: period(current),
+    previous: period(previous),
+    totals: {
+      accounts: totals.accounts,
+      activated: totals.activated,
+      neverStarted: totals.neverStarted,
+      atLimit: totals.atLimit,
+    },
     newAccounts: report.newAccounts,
-    newlyActivated: [...report.newlyActivated],
     reachedLimit: report.reachedLimit,
     delivery: {
       sent: delivery.sent,
@@ -334,10 +397,11 @@ export function usageReportSnapshot(report: UsageReport, extra: { providerId: st
       delayed: delivery.delayed,
       bounced: delivery.bounced,
       complained: delivery.complained,
-      opened: delivery.opened,
       awaiting: delivery.awaiting,
       failures: delivery.failures.map((f) => ({ kind: f.kind, status: f.status, count: f.count })),
     },
     providerId: extra.providerId,
+    // Its own deletion date: a Firestore TTL policy deletes the snapshot then (privacy policy, 24 months).
+    expiresAt: usageReportExpiry(report.periodEnd),
   };
 }

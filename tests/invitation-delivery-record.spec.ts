@@ -120,7 +120,7 @@ test.describe('the record', () => {
 });
 
 test.describe('the delivery status', () => {
-  test('sent, then delivered, then a scanner\'s open; a bounce always wins; a retried event counts once', async () => {
+  test('sent, then delivered; an open or a click is never recorded; a bounce always wins; a retried event counts once', async () => {
     const { db, col } = memoryDb();
     const sentAt = new Date('2026-11-05T10:00:00Z');
     await recordInvitationSent(db, { messageId: 'm1', recipient: ADDRESS, inviterUid: 'inv', kind: 'project', sentAt }, ENV);
@@ -128,17 +128,19 @@ test.describe('the delivery status', () => {
     const event = (type: string, id: string) =>
       recordInvitationEvent(db, { messageId: 'm1', type, to: [ADDRESS], subject: INVITATION_EMAIL_SUBJECT, occurredAt: `2026-11-05T10:0${id}:00Z` }, `evt-${id}`, ENV);
     expect(await event('email.delivered', '1')).toBe(true);
+    // Open and click tracking is off; an open that arrives anyway is dropped, not recorded (lib/mail-status.ts).
     expect(await event('email.opened', '2')).toBe(true);
     expect(await event('email.delivered', '3')).toBe(true);
     const r = col(INVITATION_DELIVERY_RECORDS).get('m1')!;
-    expect(r.status).toBe('email.opened');
-    expect(r.statusAt).toBe('2026-11-05T10:02:00Z');
+    expect(r.status).toBe('email.delivered');
+    expect(r.statusAt).toBe('2026-11-05T10:01:00Z');
+    expect(r.seenEventIds).toEqual(['evt-1', 'evt-3']);
     await event('email.bounced', '4');
     await event('email.bounced', '4');
     await event('email.clicked', '5');
     const after = col(INVITATION_DELIVERY_RECORDS).get('m1')!;
     expect(after.status).toBe('email.bounced');
-    expect(after.seenEventIds).toEqual(['evt-1', 'evt-2', 'evt-3', 'evt-4', 'evt-5']);
+    expect(after.seenEventIds).toEqual(['evt-1', 'evt-3', 'evt-4']);
     // Nothing the provider sent beyond the status is kept.
     expect(JSON.stringify(after).toLowerCase()).not.toContain('invited.person');
     expect(after.subject).toBeUndefined();

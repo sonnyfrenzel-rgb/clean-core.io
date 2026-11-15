@@ -100,18 +100,20 @@ test.describe('the first look reads the project\'s customer texts', () => {
     { name: 'src/zsd_check_minimum.prog.xml', text: xml('<TPOOL><item><ID>R</ID><ENTRY>Check minimum quantities</ENTRY></item><item><ID>S</ID><KEY>P_KDGRP</KEY><ENTRY>        Customer group</ENTRY></item></TPOOL>') },
   ]);
 
-  test('FirstLook hands the texts to the story, the summary and the rule explanation', () => {
-    const src = read('components/workspace/FirstLook.tsx');
-    expect(src).toContain('const customerTexts = useCustomerTexts(projectId);');
-    expect(src).toMatch(/processStory\(\s*process\.skeleton,\s*source,[\s\S]{0,200}?engineVersion,\s*customerTexts,\s*\)/);
-    expect(src).toContain('inShortOf(source, process, rules, project?.analysis, engineVersion, customerTexts)');
-    expect(src).toContain('explanationOf(source, process, rules, engineVersion, customerTexts)');
-    expect(src).toContain('programSummaryFactsOf(source, { skeleton: process.skeleton, ruleSet: rules, engineVersion, customerTexts })');
-    expect(src).toContain('explainBusinessRules(source, rules, process.facts, engineVersion, customerTexts)');
-    expect(src).toMatch(/\[hasSource, source, process, named, rules, access, project, engineVersion, customerTexts\]/);
+  // Since 3.2.0 (AB-6) the first insights are the text around the map: the hook reads the texts, the reading hands
+  // them, with the project's engine, to the story, the summary and the rule explanation.
+  test('the text around the map hands the texts to the story, the summary and the rule explanation', () => {
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLook.tsx'))).toBe(false);
+    const hook = read('hooks/useAroundTheMap.ts');
+    expect(hook).toContain('const customerTexts = useCustomerTexts(model ? projectId : null);');
+    expect(hook).toMatch(/aroundTheMap\(\{[\s\S]{0,200}?engineVersion,\s*customerTexts,/);
+    const src = read('lib/around-the-map.ts');
+    expect(src).toContain('processStory(skeleton, source, null, engineVersion, customerTexts)');
+    expect(src).toContain('programSummaryFactsOf(source, { skeleton, ruleSet, engineVersion, customerTexts })');
+    expect(src).toContain('explainBusinessRules(source, ruleSet, input.processFacts, engineVersion, customerTexts)');
   });
 
-  test('what FirstLook computes says the customer\'s words with the texts, and reads as before without them', () => {
+  test('what the text around the map reads says the customer\'s words with the texts, and reads as before without them', () => {
     const process = readProcess(PROGRAM);
     const rules = readRules(PROGRAM, process, NEW);
     const story = (texts: typeof TEXTS | null) => JSON.stringify(processStory(process.skeleton, PROGRAM, new Map(), NEW, texts));

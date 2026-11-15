@@ -72,7 +72,7 @@ async function openWorkspace(page: Page, view: 'business' | 'it' | 'management')
   if (view === 'business') {
     await page.goto(`/project/${PROJECT_ID}/analyze?view=business`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-analyze-interim] [data-first-look="end-state"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible({ timeout: 60000 });
     return;
   }
   await page.goto(`/project/${PROJECT_ID}?view=${view}`, { waitUntil: 'domcontentloaded' });
@@ -144,7 +144,7 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     }
   });
 
-  test('every live region says one thing per event — the first insights announce the newest stage only (§2.8, §8)', async ({
+  test('every live region says one thing per event — the text around the map adds no region of its own (§2.8, §8)', async ({
     page,
   }) => {
     test.setTimeout(240 * 1000);
@@ -165,34 +165,18 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
       };
       new MutationObserver(watch).observe(document, { subtree: true, childList: true, characterData: true });
     });
-    // A first visit, in Analyze, Business since v3.1.0 (AB-2); no build-up since AB-3, so the region
-    // announces the readings as they land.
+    // A first visit, in Analyze, Business. The first insights' staged live region left with v3.2.0 (AB-6): the text
+    // around the map arrives in place, and the one announcement on the page is the map's naming status line (ADR-108).
     await page.goto(`/project/${PROJECT_ID}/analyze?view=business&first=1`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-analyze-interim] [data-first-look="end-state"]')).toBeVisible({
-      timeout: 60000,
-    });
+    await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-first-look-live]')).toHaveCount(0);
+    await expect(page.locator('[data-around-the-map] [aria-live], [data-analyze-summary] [aria-live]')).toHaveCount(0);
 
-    const live = page.locator('[data-first-look-live]');
-    await expect(live, 'the first look has one live region, not one per branch').toHaveCount(1);
-    await expect(live).toHaveAttribute('aria-live', 'polite');
-
-    // One stage per announcement: the text never names two stage labels at once.
-    const labels = ['Code read', 'Process recognised', 'In business language', 'This is your process'];
-    const final = (await live.textContent()) || '';
-    const named = labels.filter((label) => final.includes(`${label}:`));
-    expect(named.length, `the region repeats earlier stages: "${final}"`).toBeLessThanOrEqual(1);
-
+    // Whatever region there is says one thing at a time: no announcement holds the text of the one before it.
     const history = await page.evaluate(() => (window as unknown as { __live: string[][] }).__live);
-    // The bounds above pass on a region that never said anything; it has to
-    // have announced a stage at all (carried QA finding 390bcbcb11fd).
-    expect(
-      history.flat().some((text) => labels.some((label) => text.includes(`${label}:`))),
-      'no stage was ever announced',
-    ).toBe(true);
     for (const texts of history) {
-      for (const text of texts) {
-        const inOne = labels.filter((label) => text.includes(`${label}:`));
-        expect(inOne.length, `one announcement carried ${inOne.length} stages: "${text}"`).toBeLessThanOrEqual(1);
+      for (let k = 1; k < texts.length; k += 1) {
+        expect(texts[k].includes(texts[k - 1]) && texts[k] !== texts[k - 1], `a region repeated "${texts[k - 1]}" inside "${texts[k]}"`).toBe(false);
       }
     }
   });
@@ -384,16 +368,15 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await openWorkspace(page, 'business');
 
     // Business is Analyze's page since v3.1.0 (AB-2, ADR-109): what the program
-    // does → the map → the first insights → "Next step" (the interim until
-    // v3.2.0), in the DOM and on the screen — so the focus order is the reading
-    // order (§1.6), on a phone too.
+    // does → the map → the text around it (AB-6, 3.2.0), in the DOM and on the
+    // screen — so the focus order is the reading order (§1.6), on a phone too.
+    // AB-4 took "Next step" out: the endings follow the walk-through.
     const order = await page.evaluate(() => {
       const pick = (selector: string) => document.querySelector(selector);
       const blocks = [
         pick('[data-analyze-summary]'),
         pick('[data-analyze-map]'),
-        pick('[data-analyze-interim] [data-first-look]'),
-        pick('[data-analyze-interim] [data-next-step]'),
+        pick('[data-around-the-map]'),
       ];
       const tops = blocks.map((el) => (el ? el.getBoundingClientRect().top + window.scrollY : -1));
       const dom = blocks.every((el, i) =>

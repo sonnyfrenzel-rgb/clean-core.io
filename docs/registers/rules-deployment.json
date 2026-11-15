@@ -35,5 +35,14 @@
       "updatedAt"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "7c05e09a924ba81536e921e3647ed877f212e2e44fdc0272615c123d83ca7b0d",
+    "recordedAt": "2026-11-15",
+    "recordedFor": "3.2.0 (AB-14b, AB-14c data; SEC-2026-979, SEC-2026-980): a type line for the server-written project summary (the map miniature, brought from 3.3.0 ADR-123 unchanged); files and abap_examples closed to client create and update (no writer in the app); the profile create refused while an erasure marker holds (erased_accounts, Admin SDK only). Deploy by hand after the 3.2.0 release, with the erased_accounts TTL policy.",
+    "addsToClient": [],
+    "removesFromClient": [],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
+    "note": "Until the deploy, the old rules are live. `npm run deploy:rules` rolls out and deletes this block."
   }
 }

@@ -4,8 +4,11 @@ import type { WorkspaceRow } from '@/lib/workspace-rows';
 import type { Project } from '@/lib/types';
 
 /**
- * What "Your turn" in My workspace lists once the account has projects of its
- * own — `components/workspace/YourTurnCard.tsx`. Pure, for the spec.
+ * What "Your turn" in My workspace listed once the account had projects of its
+ * own. Since 3.2.0 (AB-14b) no screen reads it: the home page shows "Needs
+ * your attention" instead, only with a reason (`lib/home-rows.ts`,
+ * `attentionRows`), and its card `YourTurnCard.tsx` is gone. Kept with its
+ * spec until the release after, then removed. Pure.
  *
  * The next open step of each own project, from the same rule-based
  * `nextOpenPoint` the workspace's "Next step" card reads (no model call). A

@@ -45,12 +45,15 @@ test('the recommended home example says in its accessible name that it ran befor
 });
 
 test('a failure of an earlier own-list subscription does not pass the workspace loading gate', () => {
+  // Since 3.2.0 (AB-14b) the own rows are read from `/api/workspace-rows`, not a listener: the read that starts for an
+  // account clears an earlier failure first, and only a failed read of its own sets it again.
   const src = read('components/workspace/WorkspaceListReport.tsx');
-  const effect = src.slice(src.indexOf("where('userId', '==', user.uid)"), src.indexOf('}, [user]);'));
+  const effect = src.slice(src.indexOf('// Read on arrival, and again whenever the page comes back into view'), src.indexOf('}, [user, refresh]);'));
   const reset = effect.indexOf('setOwnFailedFor(null);');
   expect(reset).toBeGreaterThan(0);
-  expect(reset).toBeLessThan(effect.indexOf('onSnapshot('));
-  expect(effect.indexOf('setOwnFailedFor(uid);')).toBeGreaterThan(effect.indexOf('onSnapshot('));
+  expect(reset).toBeLessThan(effect.indexOf('void refresh(user);'));
+  const refresh = src.slice(src.indexOf('const refresh = useCallback(async (u: User) => {'), src.indexOf('// Read on arrival'));
+  expect(refresh.indexOf('setOwnFailedFor(uid);')).toBeGreaterThan(refresh.indexOf("fetch('/api/workspace-rows'"));
 });
 
 test('the process tour draws the names the main map shows, also while names arrive', () => {

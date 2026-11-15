@@ -931,6 +931,9 @@ async function commitInChunks(db: Firestore, writes: Array<(batch: WriteBatch) =
  *
  * `deps` exists so a test can make one step fail; callers pass the uid alone.
  */
+/** How long the erasure marker holds: twice the life of a Firebase ID token. */
+export const ERASED_MARKER_MS = 2 * 60 * 60 * 1000;
+
 export async function deleteUserDataAndAccount(
   uid: string,
   deps: { db?: Firestore; auth?: Auth; ending?: ContractEnding } = {},
@@ -1288,8 +1291,14 @@ export async function deleteUserDataAndAccount(
   //    deleted here, and one that did not can no longer commit.
   //    The BYOK secret goes in it too, for the same reason: `saveOwnModelKey`
   //    writes it in a transaction that reads this profile.
+  //    With the profile goes a short-lived marker `erased_accounts/{uid}`: an ID
+  //    token of this account stays valid for up to an hour after the sign-in is
+  //    deleted, and the profile's create rule refuses while the marker holds, so
+  //    that token cannot bring the profile back. It carries nothing but its
+  //    expiry, and a TTL policy on `expiresAt` removes it.
   await tryDelete('users', () => {
     const batch = db.batch();
+    batch.set(db.collection('erased_accounts').doc(uid), { expiresAt: new Date(Date.now() + ERASED_MARKER_MS) });
     batch.delete(db.collection('registration_requests').doc(uid));
     for (const provider of MODEL_KEY_PROVIDERS) batch.delete(db.collection('user_secrets').doc(uid).collection('providers').doc(provider));
     batch.delete(db.collection('users').doc(uid));
@@ -1776,6 +1785,33 @@ export async function adminRevokeS4(adminUid: string, targetUid: string) {
   }
   batch.set(db.collection('audit_events').doc(), await auditEventRecord(db, adminUid, 'REVOKE_S4', targetUid));
   await batch.commit();
+}
+
+/**
+ * An account's objection to the weekly usage report (Art. 21 GDPR; privacy
+ * policy section 9). The account objects by e-mail; the operator records it
+ * here, and from the next report on `buildUsageReport` (lib/usage-report.ts)
+ * leaves the account out of every figure — its account, runs, projects and
+ * mails. Clearing it counts the account again.
+ *
+ * Server-written only: `usageReportObjectionAt` is in neither client
+ * allowlist of firestore.rules (`userClientCreateKeys`, `userClientUpdateKeys`),
+ * so no browser can set or remove it. It goes with the profile when the
+ * account is erased. False when there is no such account: the marker never
+ * creates a profile.
+ */
+export async function adminSetUsageReportObjection(adminUid: string, targetUid: string, on: boolean): Promise<boolean> {
+  await ensureInitialized();
+  const { db, FieldValue } = await getAdminDb();
+  const userRef = db.collection('users').doc(targetUid);
+  if (!(await userRef.get()).exists) return false;
+  const batch = db.batch();
+  batch.update(userRef, {
+    usageReportObjectionAt: on ? FieldValue.serverTimestamp() : FieldValue.delete(),
+  });
+  batch.set(db.collection('audit_events').doc(), await auditEventRecord(db, adminUid, on ? 'USAGE_REPORT_OBJECTION_ON' : 'USAGE_REPORT_OBJECTION_OFF', targetUid));
+  await batch.commit();
+  return true;
 }
 
 export async function adminDeleteUser(adminUid: string, targetUid: string) {

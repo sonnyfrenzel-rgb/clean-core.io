@@ -94,6 +94,27 @@ test('Analyze holds the draft above the view switch and hands it down to the map
 });
 
 /**
+ * Plan AB-5 (3.2.0): on Analyze, Business the editor lives in the map's full screen, behind "Edit". It is the same
+ * mounting as inline — the same key, the same draft holder — so a drawing left unsaved when the reader leaves full
+ * screen (the editor unmounts) opens again on the way back in, and only in its own project.
+ */
+test('the full-screen editor on Analyze holds its draft through the same holder and key', () => {
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'process-map', 'ProcessMap.tsx'), 'utf8').replace(/\r\n/g, '\n');
+  expect(src.match(/<BpmnEditor\b/g) ?? [], 'a second editor mounting with a draft of its own').toHaveLength(1);
+  expect(src).toContain('body: fsEditBody ? editorElement(true) : null,');
+  const mount = src.slice(src.indexOf('<BpmnEditor'), src.indexOf('/>', src.indexOf('<BpmnEditor')));
+  expect(mount).toContain('openWith={openWith}');
+  expect(mount).toContain('onDraftChange={keepDraft}');
+  expect(mount).toMatch(/key=\{`\$\{session\}\|\$\{projectId \?\? ''\}\|\$\{source\}`\}/);
+
+  // Leaving full screen unmounts the editor; the holder keeps what it drew, for this project only.
+  const holder = createDraftHolder();
+  holder.set(held);
+  expect(draftFor(holder.get(), 'project-a', SOURCE)).toBe(held.xml);
+  expect(draftFor(holder.get(), 'project-b', SOURCE)).toBeNull();
+});
+
+/**
  * QA review of 0c6b49ec357c (74b480f956ec): the edit mode is state of the instance, and the instance can be
  * handed a project this account may only read. The modeller — and its save — opens only while the project
  * allows editing, whatever was asked for before.
@@ -104,5 +125,15 @@ test('the modeller opens only while the project allows editing', () => {
   expect(src).not.toMatch(/const \[editing, setEditing\]/);
   // Every way into the modeller reads the derived mode, never the asked one.
   expect(src).toMatch(/\{editing && view === 'map' && !isPhone \? \(/);
-  expect(src.match(/editingAsked/g)?.length, 'the asked mode is read outside its declaration and its derivation').toBe(2);
+  expect(src.match(/\beditingAsked\b/g)?.length, 'the asked mode is read outside its declaration and its derivation').toBe(2);
+});
+
+test('an edit asked for on one project or source is not asked for on the next one the instance shows', () => {
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'process-map', 'ProcessMap.tsx'), 'utf8');
+  // The request is stored with the identity it was made on, and counts only while that identity is on show.
+  expect(src).toContain("const editingIdentity = `${projectId ?? ''}\\n${source ?? ''}`;");
+  expect(src).toContain('const editingAsked = editingAskedFor === editingIdentity;');
+  expect(src).toContain('(on: boolean) => setEditingAskedFor(on ? editingIdentity : null),');
+  expect(src).not.toMatch(/useState\(false\);\s*\/\*\*\s*\* Editing is what the reader asked for/);
+  expect(src).not.toMatch(/const \[editingAsked, setEditingAsked\] = useState/);
 });

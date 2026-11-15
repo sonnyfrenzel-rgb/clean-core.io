@@ -99,9 +99,9 @@ test('without the package, and for a 3.0.22 hotfix, no surface says a customer w
 });
 
 /**
- * `RuleBasketLine` explains the rules without the customer texts and shows only counts. This compares those counts
- * with the texts and without them: should a count ever come to depend on the texts, this fails and the line has to
- * be handed the texts.
+ * The rule basket line shows only counts (counted in `lib/around-the-map.ts` since 3.2.0, which hands the texts to the
+ * explanation). This compares those counts with the texts and without them: should a count ever come to depend on the
+ * texts, this fails, and the counts must keep being read from the explanation that has them.
  */
 test('the rule basket\'s counts are the same with the customer texts and without them', () => {
   const skeleton = buildProcessSkeleton(PROGRAM, { engineVersion: NEW });
@@ -112,8 +112,8 @@ test('the rule basket\'s counts are the same with the customer texts and without
   // The texts are read: a question or a rule says one (otherwise this test would compare two equal runs).
   expect([...withTexts.rules, ...withTexts.questions].some((x) => x.customerText)).toBe(true);
   expect(questionRuleCountsOf(withTexts, 0)).toEqual(questionRuleCountsOf(without, 0));
-  const src = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'workspace', 'RuleBasketLine.tsx'), 'utf8');
-  expect(src).toMatch(/const c = questionRuleCountsOf\(ex, 0\);/);
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'lib', 'around-the-map.ts'), 'utf8');
+  expect(src).toMatch(/const c = questionRuleCountsOf\(explanation, 0\);/);
 });
 
 /** The change list beside the story reads the same customer texts, under the same engine gate. */
@@ -126,16 +126,17 @@ test("the change list says the customer's words for a table it changes, and not 
 });
 
 /**
- * The first insights hand the project's customer texts, and the project's engine, to every surface they build — the
- * story, "In short", the rule explanation and both change lists — so a 3.0.22 hotfix project's top changes do not
- * say a customer word the gate keeps from its full list.
+ * The text around the map (3.2.0, AB-6, where the first insights stood) hands the project's customer texts, and the
+ * project's engine, to every surface it builds — the story, "In short", the rule explanation and the lane labels — so
+ * a 3.0.22 hotfix project does not say a customer word the gate keeps from it. Business shows no change list since
+ * AB-6; `processChanges` keeps its gate (the test above).
  */
-test("FirstLook passes the customer texts and the project's engine to each surface it builds", () => {
-  const src = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'workspace', 'FirstLook.tsx'), 'utf8');
-  expect(src).toMatch(/processStory\([\s\S]{0,300}?engineVersion,\s*customerTexts,\s*\)/);
-  expect(src).toContain('inShortOf(source, process, rules, project?.analysis, engineVersion, customerTexts)');
-  expect(src).toContain('explanationOf(source, process, rules, engineVersion, customerTexts)');
-  const calls = src.match(/processChanges\([^)]*\)/g) ?? [];
-  expect(calls.length, 'FirstLook builds no change list').toBeGreaterThan(0);
-  for (const call of calls) expect(call, "a change list read without the project's engine or its texts").toMatch(/, engineVersion, customerTexts\)$/);
+test("the text around the map passes the customer texts and the project's engine to each surface it builds", () => {
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'lib', 'around-the-map.ts'), 'utf8');
+  expect(src).toContain('processStory(skeleton, source, null, engineVersion, customerTexts)');
+  expect(src).toContain('programSummaryFactsOf(source, { skeleton, ruleSet, engineVersion, customerTexts })');
+  expect(src).toContain('explainBusinessRules(source, ruleSet, input.processFacts, engineVersion, customerTexts)');
+  expect(src).toMatch(/plainLabels\(skeleton, source, \{ engineVersion, \.\.\.\(customerTexts \? \{ customerTexts \} : \{\}\) \}\)/);
+  const hook = fs.readFileSync(path.resolve(__dirname, '..', 'hooks', 'useAroundTheMap.ts'), 'utf8');
+  expect(hook).toMatch(/customerTexts,\s*narrative,/);
 });

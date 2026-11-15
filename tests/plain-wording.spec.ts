@@ -41,6 +41,8 @@ import {
   type PlainWordingRecord,
 } from '../lib/plain-wording';
 import { readExample } from './helpers/starter-example-files';
+import { aroundPlainSentences, aroundTheMap } from '../lib/around-the-map';
+import { readProcess, readRules } from '../lib/first-look';
 
 /**
  * Roadmap 3.0.20, owner decision 21.10.2026 (2): the walk-through sentences and
@@ -321,5 +323,22 @@ test.describe('on screen (server-free render)', () => {
     const engine = renderToStaticMarkup(React.createElement(Flow, { ...base, plainWording: null }));
     expect(engine).not.toContain('data-rule-worded="yes"');
     expect(engine).toContain('data-rule-worded="no"');
+  });
+});
+
+test.describe('scope "firstlook" since 3.2.0: the text around the map (AB-6)', () => {
+  test('the sentences offered are the engine\'s summary and steps on the page — each passes the server\'s check of keys and lines', async () => {
+    const engine = '3.1.0';
+    const proc = readProcess(SOURCE);
+    const text = aroundTheMap({ source: SOURCE, skeleton: proc.skeleton, ruleSet: readRules(SOURCE, proc, engine), processFacts: proc.facts, engineVersion: engine });
+    const items = plainItemsOf(aroundPlainSentences(text));
+    expect(items.length).toBe(text.does.sentences.length + text.runs.reduce((n, r) => n + r.steps.length, 0));
+    // The route reads the sentences against its own source before a model sees them (`checkPlainItems`).
+    expect(checkPlainItems(items, SOURCE).ok).toBe(true);
+    // Checks, stops, roles and questions stay the engine's: none of them is offered for a rewording.
+    const offered = new Set(items.map((i) => i.text));
+    for (const q of text.questions) expect(offered.has(q.text)).toBe(false);
+    for (const w of text.who) expect(offered.has(w.text)).toBe(false);
+    for (const r of text.runs) for (const s of r.steps) for (const m of s.more) expect(offered.has(m.text)).toBe(false);
   });
 });

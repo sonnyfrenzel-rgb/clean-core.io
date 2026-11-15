@@ -205,7 +205,7 @@ produces yet.
 | "How it runs" | 4 paragraphs with anchors | `lib/process-story.ts` (5–8 engine steps), `lib/plain-wording.ts` (checked rewording) | grouping into the map's parts; "you are here" during the tour | AB-6 |
 | "Why it exists" | purpose, marked as not said in the code | `purposeProposalOf` | the sentence "The code does not say this in words. Confirm it with the process owner." as fixed text | AB-6 |
 | "Who is involved" | roles with lines | lanes of the skeleton (`ProcessSkeleton.lanes`, `laneEvidence`, `lib/abap/process-skeleton.ts:408`) | role sentences (engine only, *Reconstructed*) | AB-6 |
-| "Questions to settle with the business" | questions with anchors | `lib/rule-questions.ts`, `lib/first-look-findings.ts` ("What the code gives away", ADR-103) | assumption: which of the mockup's six questions the engine produces today is not measured; AB-6 measures it on the examples | AB-6 |
+| "Questions to settle with the business" | questions with anchors | `lib/rule-questions.ts`, `lib/first-look-findings.ts` ("What the code gives away", ADR-103) | measured 13.11.2026 (AB-6 status): limits and fixed values yes; the approval-before-order consequence, the test run and the missing parts no | AB-6 |
 | Chart "How a case can end" | ends with their reason | early ends (`process-skeleton.ts`, `earlyEnds`; ADR-054), stop texts (`lib/abap/branch-messages.ts`, `messageOf`, `decisionArmsAt`) | counting ends (P9), grouping by reason | AB-7 |
 | Chart "What it changes, what it only reads" | writes, reads, a business word per table | writes: `lib/abap/reachable-writes.ts` (`ProgramWriteKind`); reads: `extractDataCoupling` (`accessType`, `lib/types.ts:338`); words: `lib/abap/business-glossary.ts` (`tableTerm`) | reads are not in `CallGraphReport` (`lib/abap/call-graph.ts:147`); use the data coupling; "reachable" for reads is not proven | AB-7 |
 | Chart "The rules it applies" | rules by kind with their values | `explainBusinessRules` (`business-rule-set-explain.ts`) | the kind classification (N6) | AB-8 |
@@ -570,8 +570,30 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   to "Walk me through it".
 - **Risk:** medium. The tour card beside the map narrows the map; the mockup needed the zoom-to-station fix at 1280 and
   1024 px. ADR-025 floor (P-decision with N2): if the station does not fit at 83 %, scroll, do not shrink further.
+- **Status (13.11.2026, branch `night/320-ab4`, not on `dev`):** built (ADR-118; the plan's ADR-111). The tour runs
+  `inline` in `ProcessTour.tsx` where the map stands (card first in the DOM, beside the map from 1101 px, above it
+  below), the camera `TourCanvas` `align="inline"` with the 83 % floor (`STATION_FLOOR`); `AnalyzeEndings.tsx`,
+  `WhatNextCard.tsx`, `lib/analyze-progress.ts` (+ `hooks/useAnalyzeProgress.ts`); the soft-gate note and the "Next"
+  tag rule through `StageHeader` (`toolsCompact`, `onTool`, `toolsAfter`) and `ToolBar.tsx`; the demo the same way.
+  `ProcessTourEntry.tsx`, `BusinessNextStep.tsx`, `lib/business-next-step.ts` and `walk-layout-3020` deleted.
+  `lib/workflow-steps.ts` unchanged (asserted in `workflow-phases-guard`). **Deviations:** a third browser key
+  `cc.analyze.toolOpened.<id>` carries O8; the tour draws its own map, so the map's tool row is not shown while it runs
+  (full screen with the tour is AB-5's); no check on Analyze after walking (ADR-060); P6 says the rule count, never a
+  duration; the end section's "Invite a colleague" and "Download" links are not built (P5, O11). Measured server-free:
+  every station of the 1,000-line example inside the map at 1440, 1280, 1024, 768 and 390 px (focus-out 0), the card
+  beside it from 1101 px and above it below. **Open:** [look] for the states and the rendered specs (coordinator).
 
 #### AB-5 — Full screen: navigate, Edit, tour · M
+
+- **Status (13.11.2026, branch `night/320-ab5`, not on `dev`):** built (ADR-119). The map's own full screen on the page layout
+  carries one bar and a side column (`components/process-map/ProcessFullScreen.tsx`, `BpmnCanvas` `fullscreenParts`);
+  *Edit* (off on open) puts today's `BpmnEditor` (`embedded`: *Save as revision*, the N8 sentence) in the canvas's place
+  on the same draft and save; *Edit model* under the map opens it; a phone gets *Edit* disabled with a sentence (P3).
+  **Deviations:** the mechanism is the existing full screen re-dressed, not a new dialog; zoom, fit and the overview
+  are the editor's own row while editing; the tour in the side column is a slot (`tourPanel`) for AB-4's card — until
+  it is filled, *Walk me through it* starts today's tour over full screen; the demo keeps the old full screen (O10).
+  Server-free specs green; `analyze-fullscreen` (rendered half), `process-map-phone-fit`, `workspace-revision-stand`,
+  `process-map-fullscreen-levels` to run on the production build. **Open:** [look] for 14, 15, 16.
 
 - **Scope:** states 14, 15, 16: one bar (find a step with hits by displayed name, zoom, fit, overview map, "Edit"
   toggle off on open, "Walk me through it", "Leave full screen"), editing as today's `BpmnEditor` behind the toggle with
@@ -603,8 +625,34 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   produces (the assumption in §3 resolved); no sentence without its line.
 - **Risk:** medium. Model text that passes the narrow check can still be dull or vague; the copy guard catches words,
   not quality — Sonny reads the examples before release.
+- **Status (13.11.2026, branch `night/320-ab6`, not on `dev`):** built (ADR-116). `components/analyze/AroundTheMap.tsx`
+  (`WhatThisProgramDoes` above the map with a `hidden` prop for the tour; the four blocks below it with a `here` prop —
+  the "you are here" hook AB-4 drives, `runAt` in `lib/around-the-map.ts`), read once per source by
+  `hooks/useAroundTheMap.ts`; `FirstLook.tsx` and `BusinessOpening.tsx` deleted from Analyze and the demo;
+  `unreadCodesOf` added to `lib/program-summary-check.ts` (the check that a model's wording names only objects the
+  engine read). No new engine reading, so no gate. **Deviations:** *Why it exists* is the engine's (purpose from the
+  names, the quoted header comment, the fixed caution) — the narrative has no field for why a program exists, so no
+  model text there; `ProgramInShort.tsx` stays for the IT and Management page until AB-9/AB-10. **Measured (§3
+  assumption) on the seven starter examples, engine 3.1.0:** of the mockup's six question kinds the engine asks
+  *limits* (5 %, 50,000.00 on the PO example; risk score, amount and days on the 1,000-line example; 2,500 kg and
+  5/15 % on freight) and *fixed values / exceptions* (plant 1000 on PO; sales organisation 1000, order types, country
+  lists on 1,000-line; countries, units on freight; material types on stock); the department head's approval set at
+  once (PO, line 432) only as the fact ("marks the case as approved"), not as the mockup's consequence ("the order is
+  created before anyone approves"); the *test run that still creates a real order* and the *two missing parts* on no
+  example (missing includes and dynamic calls are IT's findings). Business findings: one (fixed scope, 1,000-line
+  example). No business question at all on the invoice extractor, the sales order creator and delivery priority.
+  Server-free specs green; the rendered list of §4.2 to run on the production build.
 
 #### AB-7 — Two charts under the map, and the flag-only branch · M
+
+- **Status (13.11.2026, branch `night/320-ab7`, not on `dev`):** the **chart part is built**, the **engine part (N7)
+  is out** of this release by the owner decision of 06.11.2026 and not built. `lib/process-fact-charts.ts` (pure:
+  `caseEndsOf`, `dataUseOf`), `components/analyze/ProcessFactCharts.tsx` below the map, the map's spotlight
+  ("Showing: … · Clear", `lib/process-map-spotlight.ts`, the map's own `lit` highlight); written as **ADR-117** (the
+  plan's ADR-114 was taken), which records one deviation: the stops are grouped by the step a case stops in, with
+  the program's stop texts under each row. `process-fact-charts` added (server-free): the chart sums equal the map's
+  end events on all seven starter examples (Z_MM_PO_APPROVAL 9, Z_SD_FREIGHT_RATE_CHECK 5, the 1000-line example 9,
+  Z_INVOICE_EXTRACTOR 2, the other three 1). **Open:** [look] for states 8 and 9 and the rendered specs (coordinator).
 
 - **Scope:** "How a case can end" (ends grouped by reason, P9) and "What it changes, what it only reads", each with
   its sentence, its lines, *Reconstructed*, every row a button that highlights the elements ("Showing: … · Clear");
@@ -818,6 +866,16 @@ dates do not hold. Until it ships, Business shows two charts.*
 
 ##### AB-14b — v3.2.0 · The list for returning accounts · M–L
 
+- **Status (15.11.2026):** built on branch `build/320-ab14b` (from `integrate/3.2.0`), not yet on `dev`. Row source:
+  `GET /api/workspace-rows` (Admin SDK, MFA, every own project, lean `HomeRow` without source, `lib/home-rows.ts`);
+  status words `lib/home-status.ts`; list, tabs, attention card, doors, run dialog in
+  `components/workspace/WorkspaceListReport.tsx`, `HomeStatusCell.tsx`, `HomeAttentionCard.tsx`, `HomeDoors.tsx`;
+  quota marks `components/RunQuotaMarks.tsx`; one-line footer on `/dashboard`. `YourTurnCard.tsx` removed. Specs:
+  `home-rows.spec.ts` (server-free, green), `home-list.spec.ts` (rendered, to run on a production build). Open: H-O4
+  (the six-step bar is built, two looks, for the owner to look at), H-O8 rename not built, the ADR number, the
+  Privacy Policy line for `cc.workspace.figures`, "Shared by" (the owner's address) not shown — the reader's copy of a
+  shared project does not carry it. [look] at the six viewports still open.
+
 - **Prerequisite first (H-O9):** a lean row source so every project is listed, not the newest 25
   (`WorkspaceListReport.tsx:211`, `limit(25)`); search, filters and sort over all; no source code in the rows.
 - **Scope:** mockup states 2–9 and 11–12: "Needs your attention" only when there is a reason (code changed, design no
@@ -853,6 +911,11 @@ moves forward into v3.2.0; v3.5.0 only wires the card.*
 - **Scope:** the Continue card of state 2: the last project (H-O5), its status and next step, "In short" from a
   server-written sentence (H-O6), the map miniature computed from the stored skeleton (H-O7), "Open the process map"
   (secondary, H-O13).
+- **Status (15.11.2026, v3.2.0 data):** built with AB-14b. "In short" is `lib/project-in-short.ts` (the engine's
+  `doesOf`, no model), written by `POST /api/runs/create` as `inShort` (Admin SDK, bound to `runId`, outside the
+  signed run). The miniature is the 3.3.0 project summary (`lib/project-summary.ts`, `summary.mapThumb`, ADR-123)
+  taken over byte-identical instead of a new `lib/process-miniature.ts`, so both branches store one shape. Projects
+  from before 3.2.0 have no "In short" yet (no backfill written; H-O6 open on that point).
 - **In v3.2.0 (with AB-14b, no visible change):** the "In short" sentence written via Admin SDK when a run is created
   (never part of the signed payload); `lib/process-miniature.ts` (pure); the "last opened" key in the browser. Projects
   created before 3.2.0 have no stored sentence: the card computes it once server-side on the owner's first visit, or
@@ -915,6 +978,16 @@ owner's end-to-end run on the integration state.*
 
 ##### AB-15b — v3.2.0 · Interface calls resolved to the program's own implementations · M
 
+*Status 15.11.2026: engine part built on `build/320-ab15b` (from `night/engine-320`; ADR-120 item 5). Gap measured
+first: the 3.2.0 readings (ADR-120 item 1) already resolved every call the experiment resolved on the learning halves.
+The exception is one abstract-base call, now narrower. `lib/abap/class-hierarchy.ts` ships, without the experiment's RTA
+narrowing, and types the reference where the program writes it. A typed call with 2–4 implementations is drawn as
+its alternatives: a gateway plus one call activity per class. The implementations stay beginnings of their own.
+More than four, or candidates by name alone, stay the opaque call. Gated by `ENGINE_READS_320_FROM`, no new gate file.
+Spec `engine-interface-resolution`. Learning halves: W3 84.4 % → 85.1 %, W1+W2 unchanged (BERICHT §8.1). The
+experiment's walked-in forms cost 14 W3 nodes and were dropped. Open: the holdout measurement, owner example A end
+to end (owner), and how the Business view names the gateway and its arms (`lib/bpmn/model.ts`, not engine).*
+
 - **Scope:** an interface method call (a reference `TYPE REF TO` a local interface) is resolved to the
   implementation the program itself defines (local classes that implement the interface, `INHERITING FROM`,
   redefinitions); a call with more than one candidate shows each as an alternative, never a guess. Starts from the
@@ -936,7 +1009,7 @@ owner's end-to-end run on the integration state.*
 | Who / what | What happens | How it is held |
 |---|---|---|
 | **Existing projects** | Open in Analyze, Business, from AB-2. Their map is drawn from their signed run by the engine version that signed it (gates `ENGINE_READS_3021_FROM`, and the new readings' gate `'3.1.0'`): an older project keeps its labels. A naming stored before 3.1.0 is not applied; one facts naming is asked on the first owner visit (P2). A project without a run shows the start (ADR-072) in the map's place, as `WorkspaceProcess` does today. | `analyze-business-first`, `legacy-projects`, `legacy-projects-page` |
-| **Return visits** | No arrival animation: names are stored, the page opens in the done state (state 17) — endings, the card or its link, the map. `cc.workspace.firstLook.seen` keeps meaning "no arrival"; new keys `cc.analyze.walked.<id>`, `cc.analyze.nextHidden.<id>`. Clearing the browser shows the invitation again — nothing else changes. | `workspace-reopen` (rewritten), `analyze-endings` |
+| **Return visits** | No arrival animation: names are stored, the page opens in the done state (state 17) — endings, the card or its link, the map. `cc.workspace.firstLook.seen` keeps meaning "no arrival"; new keys `cc.analyze.walked.<id>` (only that the walk-through was done, no day — owner decision 15.11.2026 for privacy policy 1.3), `cc.analyze.nextHidden.<id>`. Clearing the browser shows the invitation again — nothing else changes. | `workspace-reopen` (rewritten), `analyze-endings` |
 | **Invited readers** | Read only: the map, the tour, the text, IT and Management; no "Edit", no model call, the endings per P8. Access stays as the Firestore rules decide (`loadProjectAndHydrate`). No rules change expected (assumption: AB-1 to AB-11 write no new client field). | `analyze-reader.spec.ts` (new, AB-2); `project-readers`, `project-access-matrix`, `firestore-rules-readers`, `invitation-rendered` unchanged and green |
 | **The demo** | Moves in every package on the same components (O10); `/demo/workspace` redirects to the demo's Analyze in AB-11 at the latest. | `demo-shared-boundary`, `demo-project`, `demo-tour` |
 | **Capture screens, UX agent** | Until AB-12 the landing pictures stay as they are (they come from `/demo/workspace`). The UX agent reads the new mockup from AB-0. Each package's screenshots go to Sonny before `main`. | `capture-screens`, `ux-review-guard` |

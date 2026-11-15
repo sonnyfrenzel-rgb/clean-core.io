@@ -16,6 +16,7 @@ import { engineReadsApply } from './engine-reads-gate';
 import { engineReads3019Apply } from './engine-reads-3019-gate';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
 import { engineReads3021Apply } from './engine-reads-3021-gate';
+import { engineReads320Apply } from './engine-reads-320-gate';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { keyUserApplies } from './key-user-gate';
 import { readKeyUserCandidates, type KeyUserReading } from './key-user-candidates';
@@ -275,8 +276,14 @@ const NAME = String.raw`[A-Za-z_][\w/]*(?:-[\w/]+)*`;
  * (`lv_fm = c_fm.` or `MOVE c_fm TO lv_fm.` before `CALL FUNCTION lv_fm`).
  * The copy counts only where it stands before a call of its target: a copy
  * after the last call reaches no call.
+ *
+ * From 3.2.0 (`ENGINE_READS_320_FROM`, `stopAtOverwrite`) a copy also stops where its target is written again
+ * before any call of it: `lv_fm = c_gui. lv_fm = c_other. CALL FUNCTION lv_fm.` calls `c_other`, not `c_gui`.
+ * Only on the straight line — assignments, declarations, `CLEAR` and `MOVE` between the copy and the overwrite.
+ * A branch, a loop or any other statement in between may lead around the overwrite, and there the reading of the
+ * engines before stays: the copy counts when a call of its target follows.
  */
-function dynamicCallNames(statements: ReadonlyArray<{ text: string }>): Set<string> {
+function dynamicCallNames(statements: ReadonlyArray<{ text: string }>, stopAtOverwrite = false): Set<string> {
   // Each name with the position of its latest use — a call, or a copy into a name used later.
   const lastUse = new Map<string, number>();
   const add = (name: string, at: number) => {
@@ -298,9 +305,36 @@ function dynamicCallNames(statements: ReadonlyArray<{ text: string }>): Set<stri
     const a = assign.exec(text);
     const m = a ? null : move.exec(text);
     const [target, source] = a ? [a[1], a[2]] : m ? [m[2], m[1]] : [null, null];
-    if (target && source && (lastUse.get(target.toUpperCase()) ?? -1) > i) add(source, i);
+    if (!target || !source || (lastUse.get(target.toUpperCase()) ?? -1) <= i) return;
+    if (stopAtOverwrite && overwrittenBeforeCall(masked, i, target)) return;
+    add(source, i);
   });
   return new Set(lastUse.keys());
+}
+
+/** A statement that cannot lead around the next one: an assignment, a declaration, `CLEAR` or `MOVE`. */
+const STRAIGHT_LINE = new RegExp(
+  `^(?:(?:DATA|CONSTANTS|TYPES|STATICS|FIELD-SYMBOLS)\\b|CLEAR\\s|MOVE\\s|(?:DATA\\(\\s*)?${NAME}\\s*\\)?\\s*=(?![=>]))`,
+  'i',
+);
+
+/**
+ * From 3.2.0: is `target`, copied at statement `from`, written again on the straight line before a call of it?
+ * Walks forward from the copy over straight-line statements: a write of the target — the copy reaches nothing.
+ * Anything else — a call of the target, a branch, a loop, any other statement — ends the walk undecided (false),
+ * and the reading of the engines before decides.
+ */
+function overwrittenBeforeCall(masked: readonly string[], from: number, target: string): boolean {
+  const escaped = target.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&');
+  const writes = new RegExp(
+    `^(?:(?:DATA\\(\\s*)?${escaped}\\s*\\)?\\s*=(?![=>])|CLEAR\\s+${escaped}\\s*$|MOVE\\s+.+\\s+TO\\s+${escaped}\\s*$)`,
+    'i',
+  );
+  for (let k = from + 1; k < masked.length; k++) {
+    if (!STRAIGHT_LINE.test(masked[k])) return false;
+    if (writes.test(masked[k])) return true;
+  }
+  return false;
 }
 
 /** The module a static `CALL FUNCTION 'X'` names, or null — a name held in a variable is not read. */
@@ -387,7 +421,14 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
   if (!snippet) return snippet ?? '';
   // From 3.0.19 (`ENGINE_READS_3019_FROM`) and from 3.0.20 (`ENGINE_READS_3020_FROM`); a run of an
   // earlier engine keeps what it signed.
-  const assigned = engineReads3020Apply(engineVersion)
+  // From 3.2.0 (`ENGINE_READS_320_FROM`) the value may also be a backtick literal or a
+  // string template; a template is taken whole up to its closing bar, embedded `{ … }` included however they nest
+  // (`literalEnd`), and an unterminated literal to the end of the snippet — a secret the snippet cut off is still a
+  // secret. Literals joined by `&&` or `&` are one value: the whole chain goes, so no part of a split secret stays
+  // readable. The 3.2.0 pattern finds only the name and the `=`; `redactAssignedLiterals` reads the value.
+  const assigned = engineReads320Apply(engineVersion)
+    ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)(?=['`|])/gi
+    : engineReads3020Apply(engineVersion)
     ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)'([^']+)'/gi
     : engineReads3019Apply(engineVersion)
       ? /\b([\w/]*?(?:PASSWORD|PASSWD|PWD|SECRET|TOKEN|APIKEY|API_KEY))\b(\s*(?:=|TYPE\s+\w+\s+VALUE)\s*)'([^']+)'/gi
@@ -438,8 +479,159 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
     // From 3.0.20 every name that carries the word is a credential (`c_token_jwt`, `lv_token2`,
     // `password_type`), unless it only counts or measures one AND holds a plain number: `lv_token_count = '12'`
     // stays readable, a word in such a field does not.
-    .replace(assigned, (m, word, mid, value) =>
-      engineReads3020Apply(engineVersion) && COUNTS_A_CREDENTIAL.test(word) && /^\d+$/.test(value) ? m : `${word}${mid}'…<redacted>'`);
+    .replace(/^[\s\S]*$/, (text) => (engineReads320Apply(engineVersion)
+      ? redactAssignedLiterals(text, assigned)
+      : text.replace(assigned, (m, word: string, mid: string, value: string) =>
+        engineReads3020Apply(engineVersion) && COUNTS_A_CREDENTIAL.test(word) && /^\d+$/.test(value) ? m : `${word}${mid}'…<redacted>'`)));
+}
+
+/**
+ * Engine 3.2.0: every value assigned to a credential-named field (`head` finds the name and the `=`), redacted with
+ * its delimiters kept. The value is the literal chain `literalChainEnd` reads from where the match ends; a counter
+ * holding a plain number stays readable.
+ */
+function redactAssignedLiterals(text: string, head: RegExp): string {
+  let out = '';
+  let from = 0;
+  const insideLiteral = literalScanner(text);
+  head.lastIndex = 0;
+  for (let m = head.exec(text); m; m = head.exec(text)) {
+    // A name written inside a literal is text, not a field (`CONCATENATE '…?token=' lv_token INTO lv_url.`): the
+    // quote after its `=` closes that literal, and read as an opening one it took the rest of the line for a secret.
+    // A value inside a literal is the URL-parameter rule's.
+    if (insideLiteral(m.index)) continue;
+    const start = m.index + m[0].length;
+    const end = literalChainEnd(text, start);
+    if (end <= start) continue;
+    const value = text.slice(start, end);
+    const open = value[0];
+    const closed = value.length > 1 && /['`|]$/.test(value);
+    const inner = value.slice(1, closed ? -1 : undefined);
+    out += text.slice(from, m.index);
+    out += COUNTS_A_CREDENTIAL.test(m[1]) && /^\d+$/.test(inner)
+      ? text.slice(m.index, end)
+      : `${m[1]}${m[2]}${open}…<redacted>${closed ? open : ''}`;
+    from = end;
+    head.lastIndex = end;
+  }
+  return out + text.slice(from);
+}
+
+/**
+ * Asks whether an index of `text` stands inside a quoted, backtick or template literal. Read from the start of the
+ * text: a quoted or backtick literal ends at its closing delimiter or the end of its line, a template where
+ * `templateEnd` says, and a comment (`"` anywhere, `*` opening a line) runs to the end of its line. The indexes
+ * asked must not decrease: the text is read once, however many are asked.
+ */
+function literalScanner(text: string): (index: number) => boolean {
+  let j = 0;
+  // The literal last read, [opening delimiter, index after its end); null after anything else.
+  let span: [number, number] | null = null;
+  return (index) => {
+    while (j <= index) {
+      const c = text[j];
+      const start = j;
+      if (c === "'" || c === '`') {
+        let k = j + 1;
+        while (k < text.length && text[k] !== '\n') {
+          if (text[k] === c) {
+            if (text[k + 1] === c) {
+              k += 2;
+              continue;
+            }
+            break;
+          }
+          k += 1;
+        }
+        j = k + 1;
+        span = [start, j];
+      } else if (c === '|') {
+        j = templateEnd(text, j + 1);
+        span = [start, j];
+      } else if (c === '"' || (c === '*' && (j === 0 || text[j - 1] === '\n'))) {
+        const nl = text.indexOf('\n', j);
+        j = nl < 0 ? text.length : nl + 1;
+        span = null;
+      } else {
+        j += 1;
+        span = null;
+      }
+    }
+    return span !== null && index > span[0] && index < span[1];
+  };
+}
+
+/** Where the literals joined by `&&` or `&` from `start` end; `start` itself when no literal stands there. */
+function literalChainEnd(text: string, start: number): number {
+  let end = literalEnd(text, start);
+  if (end < 0) return start;
+  for (;;) {
+    const join = /^\s*&&?\s*/.exec(text.slice(end));
+    if (!join) return end;
+    const next = literalEnd(text, end + join[0].length);
+    if (next < 0) return end;
+    end = next;
+  }
+}
+
+/**
+ * The end of the literal at `at` — quoted, backtick or string template, empty ones included — or -1 when none stands
+ * there. A template is followed into its embedded expressions whatever they hold: quoted literals, a `}` or a
+ * bar inside one, templates nested in them. An unterminated literal runs to the end of the text.
+ */
+function literalEnd(text: string, at: number): number {
+  const c = text[at];
+  if (c === "'" || c === '`') {
+    if (at + 1 >= text.length) return -1;
+    // An empty literal is a literal: the chain it opens goes on (`'' && |secret|`).
+    if (text[at + 1] === c && text[at + 2] !== c) return at + 2;
+    let j = at + 1;
+    while (j < text.length) {
+      if (text[j] === c) {
+        if (text[j + 1] === c) {
+          j += 2;
+          continue;
+        }
+        return j + 1;
+      }
+      j += 1;
+    }
+    return text.length;
+  }
+  if (c === '|') return templateEnd(text, at + 1);
+  return -1;
+}
+
+/** From inside a template: the index after its closing bar, embedded expressions skipped whole. */
+function templateEnd(text: string, from: number): number {
+  let j = from;
+  while (j < text.length) {
+    const c = text[j];
+    if (c === '\\') j += 2;
+    else if (c === '|') return j + 1;
+    else if (c === '{') j = expressionEnd(text, j + 1);
+    else j += 1;
+  }
+  return text.length;
+}
+
+/** From inside an embedded expression `{ … }`: the index after its closing brace, literals and templates skipped whole. */
+function expressionEnd(text: string, from: number): number {
+  let j = from;
+  while (j < text.length) {
+    const c = text[j];
+    if (c === "'" || c === '`') {
+      const end = literalEnd(text, j);
+      j = end < 0 ? j + 2 : end;
+    } else if (c === '|') {
+      j = templateEnd(text, j + 1);
+    } else if (c === '}') {
+      return j + 1;
+    } else {
+      j += 1;
+    }
+  }
+  return text.length;
 }
 
 /** The endings of a name that counts or measures a credential rather than holding one. */
@@ -540,7 +732,8 @@ export function buildAbapEvidence(
   const notes: EvidenceNote[] = [];
   const statements = tokenize(code);
   // From 3.0.18 (`ENGINE_READS_FROM`): a constant names a module only where a call uses it.
-  const dynamicNames = reads ? dynamicCallNames(statements) : null;
+  // From 3.2.0 (`ENGINE_READS_320_FROM`): a copy overwritten before any call of its target names no module.
+  const dynamicNames = reads ? dynamicCallNames(statements, engineReads320Apply(engine)) : null;
   let idCounter = 1;
   const isPublicCloud = deployment === 'public';
 

@@ -3,6 +3,43 @@
 Open items, latest state first. Kept short: what, why, and how urgent.
 Older sections stay as long as something in them is open.
 
+## Session 15.–16.11.2026 — 3.2.0 released
+
+*The releases 3.0.14 to 3.1.0 have no section here; what they shipped is in `CHANGELOG.md` and their rows in
+`docs/ROADMAP.md`.*
+
+**Built (release candidate `integrate/320-release`, dated 16.11.2026, main on Sonny's go of 15.11.2026):** the
+Business page of Analyze complete — the walk-through on the page with two endings and "What you can do next" (AB-4,
+ADR-118), full screen as a modal dialog with one bar and editing behind "Edit" (AB-5, ADR-119), the text around the
+map with a line on every sentence (AB-6, ADR-116), two charts from the engine's facts (AB-7, ADR-117); the map's
+re-read with AI names keeps the tour and a lit chart row (`lib/process-map-identity.ts`,
+`lib/process-map-spotlight.ts`). Home page v2 part 2 (AB-14b): every project up to 2,000 from
+`GET /api/workspace-rows`, lean rows without source, four columns, the H-O3 status words, tabs, "Needs your
+attention" only with a reason, runs from a row only through a dialog. The data of the Continue card (AB-14c):
+`inShort` and the project summary written after the signed transaction, display-only, never signed. Engine 3.2.0
+(`ENGINE_READS_320_FROM`): candidates of an unresolved call, interface calls resolved to the program's own
+implementations (`lib/abap/class-hierarchy.ts`, AB-15b, ADR-120, ADR-135) with two to four drawn as alternatives,
+credentials in backtick literals, templates and joined literals redacted whole, a copied function-module name
+stops at an overwrite. Privacy: the browser storage register (`lib/storage-keys.ts`), nothing written before
+sign-in, the walk-through mark without a day, the usage report trimmed to privacy policy 1.3 and kept 24 months
+(TTL), mail opens and clicks not recorded, the usage-figure objection. Upload: an include with a local class stays
+an include. Security: SEC-2026-979 and -980 with the erasure marker `erased_accounts`.
+CHANGELOG has the details.
+
+**Release steps (after main):** the manual rules deploy (SEC-2026-979/-980 and the summary's type line) with
+`npm run rules:verify`; the TTL policy on `erased_accounts.expiresAt` (`docs/DATA-RETENTION.md`); the security,
+QA-full and UX intakes of the release; the privacy 1.3 notice mail.
+
+**Measured:** process benchmark, learning halves only — wave 3 84.4 % → 85.1 % of comparable nodes (OO 84.1 % →
+85.0 %), waves 1+2 unchanged at 87.2 % (BERICHT §8.1), measured before the fix for calls matched by the method
+name alone.
+
+**Open (owner decisions 15.11.2026):** the holdout of 3.2.0 with AB-15b, measured once on the final candidate
+(ADR-135); the row-order behaviour test `22bebcbecde1` (3.5.0); the Continue card that shows "In short" and the
+summary (3.5.0, AB-14c); the third chart and the label for a flag-only default branch; `ParsedSource` and
+`lib/knowledge/` usable by today's engine from the 3.5.0 line (ADR-133); the engine 4.0 detail questions settled
+(ADR-134).
+
 ## Session 13.–15.10.2026 — 3.0.13 released
 
 **Built (branch rel-3.0.13, dated 15.10.2026, dev and main on Sonny's go):** a real Transformation tool. RAP route:

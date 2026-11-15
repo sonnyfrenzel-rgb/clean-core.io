@@ -10,7 +10,7 @@ import StageBackText from '@/components/StageBackText';
 import ChoiceBackLink from '@/components/ChoiceBackLink';
 import { DEMO_ROUTE } from '@/lib/demo-marks';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
-import { StageToolBar } from '@/components/workspace/ToolBar';
+import { StageToolBar, type ToolClick } from '@/components/workspace/ToolBar';
 import StageViewSwitch from '@/components/StageViewSwitch';
 import { useLocationSearch } from '@/lib/location-search';
 import { ArrowLeft } from 'lucide-react';
@@ -82,6 +82,9 @@ export default function StageHeader({
   align = 'left',
   tools,
   toolsNote,
+  toolsCompact,
+  onTool,
+  toolsAfter,
   backToMyWorkspace = false,
   children,
 }: {
@@ -117,6 +120,15 @@ export default function StageHeader({
    * A hint, never a lock: every tool stays a link.
    */
   toolsNote?: React.ReactNode;
+  /**
+   * The bar in one row (ADR-099) without a note: Analyze, Business after the walk-through, where the soft-gate hint has
+   * gone (plan AB-4, mockup state 9) and the bar keeps its shape. Defaults to "a note stands".
+   */
+  toolsCompact?: boolean;
+  /** A plain click on a tool: Analyze, Business before the walk-through says why to walk first (plan AB-4, state 10). */
+  onTool?: ToolClick;
+  /** What stands right under the bar, in the flow: the soft-gate note of Analyze, Business (mockup state 10). */
+  toolsAfter?: React.ReactNode;
   /**
    * The way back leads to "My workspace", the list of all projects, instead of
    * the project's workspace — for Analyze in the Business view, which is where
@@ -202,14 +214,15 @@ export default function StageHeader({
         // end: the map is the page there, and three lines of tool hints above it pushed it below the fold.
         <div
           data-stage-toolbar=""
-          className={toolsNote ? 'cc-no-print mb-4 flex flex-wrap items-center gap-x-4 gap-y-2' : 'cc-no-print mb-4'}
+          className={(toolsCompact ?? !!toolsNote) ? 'cc-no-print mb-4 flex flex-wrap items-center gap-x-4 gap-y-2' : 'cc-no-print mb-4'}
         >
-          <StageToolBar steps={tools.steps} current={toolCurrent} base={toolBase} compact={!!toolsNote} />
+          <StageToolBar steps={tools.steps} current={toolCurrent} base={toolBase} compact={toolsCompact ?? !!toolsNote} onTool={onTool} />
           {toolsNote ? (
             <p data-stage-tools-note="" className="m-0 text-[12px] leading-snug font-medium text-cc-ink-muted">
               {toolsNote}
             </p>
           ) : null}
+          {toolsAfter ? <div className="basis-full">{toolsAfter}</div> : null}
         </div>
       )}
 

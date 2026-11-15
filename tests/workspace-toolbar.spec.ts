@@ -6,6 +6,7 @@ import { seedStageProject, signInThroughForm, type SeededProject } from './helpe
 import { toolMark, workspaceTools } from '../lib/workspace-model';
 import { nextPhaseKey, PHASE_PURPOSE, workflowSteps } from '../lib/workflow-steps';
 import { outsideSubjectOf } from '../lib/sap-test-results';
+import { nextTagShown } from '../lib/analyze-progress';
 import { hydrateProject } from '../lib/project-loader';
 import { analysisRunInputs, buildInputManifest } from '../lib/input-manifest';
 import { sha256Hex } from '../lib/artefact-digest';
@@ -152,6 +153,25 @@ test.describe('the mark is the stepper\'s reading of the phase', () => {
     const testing = workflowSteps(passing).find((s) => s.key === 'testing')!;
     expect(testing).toMatchObject({ state: 'done', proven: false, verifiedOutside: 'imported' });
     expect(toolMark(testing)).toMatchObject({ kind: 'check', meaning: 'done' });
+  });
+
+  test('O8: no "Next" tag for an analysis-only reader until a later tool was opened once in this browser (plan AB-4)', () => {
+    const run = hydrateProject('o', { ...analyzedDoc('u'), activeRunId: 'r' } as Project, { kind: 'found', data: analyzedRun('o', 'u', 'r') });
+    const analysed = workflowSteps(run);
+    expect(nextPhaseKey(analysed)).toBe('design');
+    // Analysis-only: Analyze done, nothing after it on record but the free Economics baseline.
+    expect(nextTagShown(analysed, 'design', false)).toBe(false);
+    expect(nextTagShown(analysed, 'design', true)).toBe(true);
+    // A reader with a later tool's work on record is not analysis-only.
+    const designed = workflowSteps({ ...run, solutionDesign: '# Target\n' } as Project);
+    expect(nextTagShown(designed, nextPhaseKey(designed), false)).toBe(true);
+    // Analyze itself next is not a later tool: its tag stays.
+    const fresh = workflowSteps({ name: 'fresh', legacyCode: SOURCE } as Project);
+    expect(nextTagShown(fresh, nextPhaseKey(fresh), false)).toBe(true);
+    // The bar reads the rule, and a stage after Analyze counts itself as opened.
+    const bar = read('components/workspace/ToolBar.tsx');
+    expect(bar).toContain('nextTagShown(tools, phaseNext, progress.laterToolOpened) ? phaseNext : null');
+    expect(bar).toMatch(/if \(current && current !== 'analyze'\) markLaterToolOpened\(\);/);
   });
 
   test('the tool marked Next never carries a check', () => {
@@ -317,8 +337,9 @@ test.describe('the toolbar, rendered', () => {
           PHASE_PURPOSE[s.key],
         );
       }
-      await expect(bar.locator('a[data-workspace-tool-next]'), `${view}: not exactly one tool is next`).toHaveCount(1);
-      await expect(bar.locator('a[data-workspace-tool-next]')).toHaveAttribute('data-workspace-tool', 'design');
+      // O8 (plan AB-4, ADR-060 amended): this project is analysis-only and no later tool was opened in this browser
+      // yet, so no tool wears the "Next" tag; the line under the bar still says what Design does.
+      await expect(bar.locator('a[data-workspace-tool-next]'), `${view}: a Next tag for an analysis-only reader`).toHaveCount(0);
       await expect(bar.locator('[data-tools-hint="bar"]')).toContainText(PHASE_PURPOSE.design);
 
       // The legend says what the marks mean, in text, beside "Tools".
@@ -370,6 +391,15 @@ test.describe('the toolbar, rendered', () => {
     });
     expect(ring.style).toBe('solid');
     expect(ring.width).toBeGreaterThanOrEqual(2);
+
+    // O8: once a tool after Analyze was opened in this browser, exactly one tool is next again — Design.
+    await page.goto(`/project/${ANALYZED}/design`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]')).toBeVisible({ timeout: 60000 });
+    await open(page, ANALYZED, 'it');
+    const bar = page.locator('[data-workspace-tools="open"]');
+    await expect(bar.locator('a[data-workspace-tool-next]'), 'not exactly one tool is next').toHaveCount(1);
+    await expect(bar.locator('a[data-workspace-tool-next]')).toHaveAttribute('data-workspace-tool', 'design');
+    await expect(bar.locator('a[data-workspace-tool="design"] [data-workspace-tool-next-tag]')).toBeVisible();
   });
 
   test('a stale Analyze: no check, the amber dot, "out of date" in words; a started Design wears the half circle, not a check', async ({ page }) => {
@@ -469,7 +499,9 @@ test.describe('the toolbar, rendered', () => {
     // In the menu every tool says what it is for, as text — no hover needed.
     await expect(panel.locator('[data-workspace-tool-purpose]')).toHaveCount(7);
     await expect(panel.locator('[data-workspace-tool-item="design"] [data-workspace-tool-purpose]')).toContainText(PHASE_PURPOSE.design);
-    await expect(panel.locator('a[data-workspace-tool-next]')).toHaveCount(1);
+    // O8 (plan AB-4): an analysis-only reader in a fresh browser sees no "Next" tag until a later tool was opened.
+    await expect(panel.locator('a[data-workspace-tool-next]')).toHaveCount(0);
+    await expect(panel.locator('[data-workspace-tool-next-tag]')).toHaveCount(0);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow, 'the open menu pushes the page sideways').toBeLessThanOrEqual(0);
     await context.close();
@@ -496,7 +528,9 @@ test.describe('the toolbar, rendered', () => {
     await expect(panel).toBeVisible();
     await expect(panel.locator('[data-tools-guide-entry]')).toHaveCount(7);
     await expect(panel.locator('[data-tools-guide-entry="testing"]')).toContainText(PHASE_PURPOSE.testing);
-    await expect(panel.locator('[data-tools-guide-entry="design"]')).toContainText(WORKSPACE_MESSAGES['toolGuide.recommended']);
+    // O8 (ADR-118): an analysis-only reader in a fresh browser is recommended no later tool until one was opened.
+    await expect(panel.locator('[data-tools-guide-entry="design"]')).toContainText(PHASE_PURPOSE.design);
+    await expect(panel.locator('[data-tools-guide-entry="design"]')).not.toContainText(WORKSPACE_MESSAGES['toolGuide.recommended']);
     await guide.tap();
     await expect(panel).toHaveCount(0);
     await context.close();

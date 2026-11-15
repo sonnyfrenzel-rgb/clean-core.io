@@ -82,7 +82,8 @@ test.describe('a tab from the previous build says so', () => {
     const g = globalThis as unknown as Record<string, unknown>;
     const hadWindow = 'window' in g;
     const prevStorage = g.sessionStorage;
-    g.window = { location: { reload: () => { reloads += 1; } } };
+    // Signed in: the hint is set, so the guard is the time in sessionStorage (lib/stale-build.ts).
+    g.window = { location: { reload: () => { reloads += 1; } }, localStorage: { getItem: (k: string) => (k === 'cc.auth.signedIn' ? '1' : null) } };
     g.sessionStorage = {
       getItem: (k: string) => store.get(k) ?? null,
       setItem: (k: string, v: string) => void store.set(k, v),

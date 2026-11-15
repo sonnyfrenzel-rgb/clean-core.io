@@ -46,9 +46,12 @@ export function useCcPortalTarget(): HTMLElement | null {
   );
 }
 
-/** True while a modal layer (`CcDialog`, `CcMessageBox`) is open — Escape is the layer's then. */
+/**
+ * True while a modal layer (`CcDialog`, `CcMessageBox`) is open — Escape is the layer's then. The map's full-screen
+ * frame is modal too, but it is the layer Escape leaves, so it does not count here.
+ */
 export function ccModalOpen(): boolean {
-  return typeof document !== 'undefined' && document.querySelector('[aria-modal="true"]') !== null;
+  return typeof document !== 'undefined' && document.querySelector('[aria-modal="true"]:not([data-map-canvas-frame])') !== null;
 }
 
 interface KeyboardLock {

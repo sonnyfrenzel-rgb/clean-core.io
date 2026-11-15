@@ -13,7 +13,7 @@
     "verifiedAgainstCommit": "9edb37f366525a104598be8c0d7168ffe119df44",
     "verifiedAgainstBranch": "origin/dev",
     "verifiedOn": "2026-09-16",
-    "appVersion": "v3.1.0",
+    "appVersion": "v3.2.0",
     "phaseContract": "lib/workflow-steps.ts",
     "hydration": "lib/project-loader.ts",
     "runGuard": "lib/run-guard.ts",
@@ -38,7 +38,7 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "00191548a696ba71e5392977aa8cefa3c269c9e8f02b25d7eed3fbd7657db471",
+      "sha256OfLfNormalisedText": "7c05e09a924ba81536e921e3647ed877f212e2e44fdc0272615c123d83ca7b0d",
       "deploymentRecord": "docs/registers/rules-deployment.json",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {

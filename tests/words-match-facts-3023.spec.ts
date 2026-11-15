@@ -91,7 +91,7 @@ test.describe('3.0.23 (d) words that match the facts', () => {
       expect(covered + technical + undetermined + other, plain).toBe(c.total);
     }
     // The line takes its counts from the one count source Design reads.
-    expect(read('components/workspace/RuleBasketLine.tsx')).toContain('questionRuleCountsOf(ex, 0)');
+    expect(read('lib/around-the-map.ts')).toContain('questionRuleCountsOf(explanation, 0)');
   });
 
   test('2. "Code generated" carries no done tick while the tool bar says the package is not activatable', async () => {

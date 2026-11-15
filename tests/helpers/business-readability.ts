@@ -14,6 +14,7 @@ import { processStory } from '../../lib/process-story';
 import { reachableWrites } from '../../lib/abap/reachable-writes';
 import { editorRules } from '../../lib/rules-editor';
 import { plainWordingFor } from '../../lib/business-card';
+import { aroundTheMap, everySentence } from '../../lib/around-the-map';
 
 /**
  * The deterministic readability measure of the Business view (concept "Business-Lesbarkeit" §4.1, 05.11.2026).
@@ -182,6 +183,11 @@ export interface BusinessReadingOut {
   inShort: string[];
   rules: string[];
   questions: string[];
+  /**
+   * The text around the map (3.2.0, AB-6, `lib/around-the-map.ts`): what it does, the step sentences with their
+   * checks and stops, why it exists, who is involved — the questions are measured as `questions` already.
+   */
+  around: string[];
   writes: number;
   segments: Set<string>;
 }
@@ -239,7 +245,10 @@ export function readBusiness(source: string, file: string, engineVersion: string
   const rules = ex.baskets.business.map((id) => ex.rules.find((r) => r.id === id)?.headline ?? titled.get(id) ?? id);
   const questions = ex.questions.map((q) => q.statement.text);
   const writes = reachableWrites({ source, statements: facts.statements, graph: facts.calls }).length;
-  return { file, tasks, gateways, ends, levels, story, inShort, rules, questions, writes, segments: identifierSegments(source) };
+  const text = aroundTheMap({ source, skeleton, ruleSet, processFacts: facts, engineVersion });
+  const questionTexts = new Set(text.questions.map((q) => q.text));
+  const around = everySentence(text).map((s) => s.text).filter((t) => !questionTexts.has(t));
+  return { file, tasks, gateways, ends, levels, story, inShort, rules, questions, around, writes, segments: identifierSegments(source) };
 }
 
 /* ------------------------------------------------------------- measures */
@@ -271,6 +280,7 @@ export interface Readability {
   inShort: SurfaceScore & { untrue: number };
   rules: SurfaceScore;
   questions: SurfaceScore;
+  around: SurfaceScore;
   levels: { top: number; largest: number; over12: number };
 }
 
@@ -304,6 +314,7 @@ export function measure(r: BusinessReadingOut): Readability {
     inShort: { ...inShort, untrue },
     rules: score(r.rules, seg),
     questions: score(r.questions, seg),
+    around: score(r.around, seg),
     levels: { top: tops, largest: Math.max(0, ...r.levels.map((l) => l.steps)), over12: r.levels.filter((l) => l.steps > 12).length },
   };
 }
@@ -323,6 +334,7 @@ export function total(all: readonly Readability[]): Readability {
     inShort: add(acc.inShort, r.inShort),
     rules: add(acc.rules, r.rules),
     questions: add(acc.questions, r.questions),
+    around: add(acc.around, r.around),
     levels: { top: Math.max(acc.levels.top, r.levels.top), largest: Math.max(acc.levels.largest, r.levels.largest), over12: acc.levels.over12 + r.levels.over12 },
   }));
 }
@@ -342,6 +354,7 @@ export function report(r: Readability): string {
     line('in short', r.inShort, `  untrue ${r.inShort.untrue}`),
     line('rules', r.rules),
     line('questions', r.questions),
+    line('around', r.around),
     `levels     top(max) ${r.levels.top}  largest ${r.levels.largest}  levels>12 ${r.levels.over12}`,
   ].join('\n');
 }

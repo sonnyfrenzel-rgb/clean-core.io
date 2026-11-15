@@ -317,9 +317,13 @@ test.describe('the "Next step" card, rendered', () => {
   test('a phase blocked by the account\'s own switch: the reason names the switch', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    // Analyze, Business since v3.1.0 (ADR-109): the card stands under the map until AB-4.
+    // Analyze, Business has no "Next step" since 3.2.0 (plan AB-4): the two endings replaced it there. The card
+    // stands in the workspace's IT and Management views.
     await page.goto(`/project/${BLOCKED_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 });
+    await expect(page.locator('[data-next-step]')).toHaveCount(0);
+    await page.goto(`/project/${BLOCKED_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
 
     const card = page.locator('[data-next-step]');
     const open = card.locator('[data-next-step-state="open"]');
@@ -331,14 +335,15 @@ test.describe('the "Next step" card, rendered', () => {
 
     // The button still opens the stage — a navigation cannot fail the way a
     // generation call would, so it is offered regardless of the switch.
-    await expect(card.locator('a[data-cc-button]')).toHaveAttribute('href', `/project/${BLOCKED_ID}/design?view=business&from=next-step`);
+    await expect(card.locator('a[data-cc-button]')).toHaveAttribute('href', `/project/${BLOCKED_ID}/design?view=it&from=next-step`);
   });
 
   test('a finished project: the card says plainly that nothing is open', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${DONE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 });
+    // In the workspace's IT view (AB-4: Analyze, Business has no "Next step").
+    await page.goto(`/project/${DONE_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
 
     const card = page.locator('[data-next-step]');
     // A card in IT and Management, a bar in Business (mockup s1): a heading either way.

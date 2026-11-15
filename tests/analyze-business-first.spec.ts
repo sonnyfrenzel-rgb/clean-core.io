@@ -99,19 +99,27 @@ test.describe('the source: Business on Analyze is the map, not the score', () =>
     expect(BUSINESS).toContain('setAutoStart(first && !firstLookSeen(projectId));');
   });
 
-  test('the interim until v3.2.0: today\'s First insights blocks and Next step stand below the map, unchanged', () => {
+  test('since 3.2.0 the text around the map stands where the First insights blocks stood; the two endings under it (AB-4)', () => {
+    // The interim of v3.1.0 (`FirstLook` with `BusinessOpening` below the map) gave way to AB-6's text around the
+    // map: "What this program does" above it, the four blocks below it (tests/analyze-around-the-map.spec.ts).
+    const summary = BUSINESS.indexOf('<WhatThisProgramDoes');
     const map = BUSINESS.indexOf('<WorkspaceProcess');
-    const look = BUSINESS.indexOf('<FirstLook');
-    const next = BUSINESS.indexOf('<BusinessNextStep');
-    expect(map).toBeGreaterThan(BUSINESS.indexOf('data-analyze-summary'));
-    expect(look).toBeGreaterThan(map);
-    expect(next).toBeGreaterThan(look);
+    const around = BUSINESS.indexOf('<AroundTheMap');
+    // AB-4: the endings in full replaced "Next step" under the text; the bar and its module are gone.
+    const next = BUSINESS.indexOf('data-analyze-what-next-show');
+    expect(BUSINESS).not.toContain('<BusinessNextStep');
+    expect(summary).toBeGreaterThan(-1);
+    expect(map).toBeGreaterThan(summary);
+    expect(around).toBeGreaterThan(map);
+    expect(next).toBeGreaterThan(around);
+    expect(BUSINESS).not.toContain('<FirstLook');
     // In their end state: the paced build-up retired with v3.1.0 (AB-3), so there is nothing to switch off.
     expect(BUSINESS).not.toContain('buildUp');
     expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLookBuildUp.tsx'))).toBe(false);
     expect(fs.existsSync(path.join(ROOT, 'lib/first-look-buildup.ts'))).toBe(false);
     expect(fs.existsSync(path.join(ROOT, 'lib/first-look-excerpt.ts'))).toBe(false);
-    expect(read('components/workspace/FirstLook.tsx')).not.toMatch(/buildUp|FirstLookBuildUp|firstLookExcerpt/);
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLook.tsx'))).toBe(false);
+    expect(read('components/analyze/AroundTheMap.tsx')).not.toMatch(/buildUp|FirstLookBuildUp|firstLookExcerpt/);
   });
 
   test('the first visit is marked seen once the project is ready here, not when it was asked for', () => {
@@ -132,12 +140,17 @@ test.describe('the source: Business on Analyze is the map, not the score', () =>
 });
 
 /**
- * The reading order as drawn: the summary, the map, the first insights, then "Next step", each
- * starting below the one before, and the keyboard reaching them in the same order. The source
- * guard (`tests/a11y-source-guard.spec.ts`) holds the DOM order; this holds what the reader sees.
+ * The reading order as drawn: the summary, the map, the two charts under it, then the text around the map, each
+ * starting below the one before, and the keyboard reaching them in the same order. The source guard
+ * (`tests/a11y-source-guard.spec.ts`) holds the DOM order; this holds what the reader sees.
+ *
+ * Since 3.2.0 the First insights and the "Next step" bar of the v3.1.0 interim are gone (CHANGELOG [Unreleased]:
+ * "The text around the map replaces the first insights in Business" (AB-6), "Two charts below the map" (AB-7), and
+ * the walk-through's endings replaced "Next step" (AB-4) — shown only after the walk-through, so not here on a first
+ * visit). The source test above holds the same order in `AnalyzeBusiness.tsx`.
  */
 async function expectReadingOrder(page: Page): Promise<void> {
-  const blocks = ['[data-analyze-summary]', '[data-analyze-map]', '[data-analyze-interim] [data-first-look]', '[data-analyze-interim] [data-next-step]'];
+  const blocks = ['[data-analyze-summary]', '[data-analyze-map]', '[data-fact-charts]', '[data-around-the-map]'];
   for (const sel of blocks) await expect(page.locator(sel).first(), `${sel} is not shown`).toBeVisible({ timeout: 60000 });
   const tops = await Promise.all(blocks.map(async (sel) => (await page.locator(sel).first().boundingBox())?.y ?? NaN));
   for (let i = 1; i < tops.length; i++) {
@@ -203,8 +216,8 @@ test.describe('rendered: the seeded PO approval project in Analyze, Business', (
     await expect(page.locator('[data-analysis-answer]')).toHaveCount(0);
     await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
 
-    // One primary button in the first screen: the invitation. (Today's "Next step" bar, with its own
-    // primary, stands far below the map until AB-4 replaces it with the two endings.)
+    // One primary button in the first screen: the invitation — and, since 3.2.0 (AB-4), on the whole page: the
+    // "Next step" bar with its own primary is gone, and the endings that replaced it are secondary.
     const primaries = await page.evaluate(() =>
       [...document.querySelectorAll('main [data-cc-button="primary"]')]
         .filter((el) => {
@@ -214,6 +227,8 @@ test.describe('rendered: the seeded PO approval project in Analyze, Business', (
         .map((el) => el.hasAttribute('data-analyze-walk')),
     );
     expect(primaries).toEqual([true]);
+    await expect(page.locator('main [data-cc-button="primary"]:visible')).toHaveCount(1);
+    await expect(page.locator('main [data-next-step]')).toHaveCount(0);
 
     // `#L42` opens the code beside the map, never over it; its button closes it.
     await page.goto(`/project/${seeded.po}/analyze#L42`, { waitUntil: 'domcontentloaded' });

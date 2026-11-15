@@ -61,7 +61,8 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   // The Business order — components/workspace/WorkspaceShell.tsx.
   'biz.moreAboutProcess': 'More about this process',
 
-  // The business-first opening — components/workspace/BusinessOpening.tsx (owner, 03.10.2026).
+  // The business-first opening of 3.0.x (owner, 03.10.2026); its component left with 3.2.0 (AB-6), the text around the
+  // map took its place (lib/messages/analyze-business.ts, 'around.*'). Keys still read elsewhere stay here.
   // What the program is for, before the steps — components/workspace/ProgramInShort.tsx (owner, 12.10.2026).
   'biz.inShortTitle': 'In short',
   'biz.inShortProposalNote': 'purpose',
@@ -84,10 +85,6 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.changesTitle': 'What it changes',
   'biz.changesNoData': 'The code shows no change to stored data.',
   'biz.howRead': 'How this was read',
-
-  // "Your next step" — components/workspace/BusinessNextStep.tsx (owner, 03.10.2026).
-  'biz.nextRulesLabel': 'Decide on the business rules',
-  'biz.nextRulesNote': 'No model call · not counted · your answers are a self-declaration',
 
   // Answering the steps — components/workspace/WorkspaceProcess.tsx (owner, 03.10.2026).
   'biz.stepNeedTitle': 'Does the business still need this step?',
@@ -130,23 +127,6 @@ export function bizReadAccess(readers: number): string {
 /** "+2" after the initials shown. */
 export function bizMoreReaders(more: number): string {
   return `+${more}`;
-}
-
-/** Why the rules come first: how many of the hard-coded rules have no answer yet. */
-export function bizNextRulesReason(open: number, total: number): string {
-  if (total === 1) return 'The one rule the code hard-codes has no answer yet. Say whether the business still needs it — keep, change, drop or clarify.';
-  if (open === total) return `None of the ${total} rules the code hard-codes has an answer yet. Say for each whether the business still needs it — keep, change, drop or clarify.`;
-  return `${open} of the ${total} rules the code hard-codes ${open === 1 ? 'has' : 'have'} no answer yet. Say for each whether the business still needs it.`;
-}
-
-/** The one primary action while rules are open: "Decide on 3 rules". */
-export function bizNextRulesAction(open: number): string {
-  return `Decide on ${open} ${open === 1 ? 'rule' : 'rules'}`;
-}
-
-/** What follows the rules — the next phase from the one phase contract. */
-export function bizNextThen(label: string, action: string): string {
-  return `After that: ${label} — ${action}.`;
 }
 
 /** "For each trip:" — the loop a step of the story runs in. */

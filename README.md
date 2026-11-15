@@ -45,17 +45,21 @@ AI-generated.
   (`L243`), or the reason it has none, including the business rules that are hard-coded in
   the program. What the engine could not determine is listed as *not determined*, with
   the reason.
-- **One workspace, three views.** Each project opens in a workspace with three views of
-  the same content. The Business view asks *"Do I still need this, and what changes for
+- **Three views of one result.** Each project opens in Analyze, in the Business view;
+  the IT and Management views show the same content. The Business view asks *"Do I still need this, and what changes for
   me?"*, the IT view *"What exactly, where to, and is it right?"*, the Management view
   *"What do I risk, what do I decide?"*. A view orders and explains; it never changes the
   result and is never stored with it.
-- **Business first.** The Business view opens with one next step, then the process as
-  numbered steps in plain words with their lines, what it decides and what it changes, and
-  the business rules, unanswered first — keep, change, drop or clarify. Its sections are
-  Need & process · Standard fit · Evidence & controls; costs live in Economics and the
-  architecture in IT. The Management view opens with the decision — keep, rebuild, move to
-  SAP standard or retire — and what it rests on.
+- **Business first.** The Business view is the process map itself, with a walk-through
+  of it step by step, the code beside the map on click, and around it what the program
+  does, how it runs, why it exists, who is involved and the questions for the business —
+  every sentence with its line, and the AI mark only where a model wrote. Two charts below
+  the map count how a case can end and what the program changes or only reads; a row lights
+  its elements on the map. The Management view opens with the decision — keep, rebuild,
+  move to SAP standard or retire — and what it rests on.
+- **Every project in one list.** My workspace lists an account's projects (up to 2,000) with
+  their status and next step, searchable and sortable, and says when one needs attention
+  and why.
 - **The seven stages as tools.** Analyze · Design · Transformation · Documentation ·
   Testing · Economics · Delivery open from the workspace toolbar. Since 3.0 they follow
   SAP Fiori patterns — object pages with key figures on top and details in tabs, Design

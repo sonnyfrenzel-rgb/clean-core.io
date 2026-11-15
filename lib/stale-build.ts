@@ -1,3 +1,5 @@
+import { hasSignedInHint } from './auth-hint';
+
 /**
  * A tab from the previous build (roadmap 3.0.6, decision Sonny 07.10.2026).
  *
@@ -26,6 +28,7 @@ export function isStaleBuildError(error: { name?: string; message?: string } | n
   );
 }
 
+/** Written for a signed-in reader only (see `reloadOnceForStaleBuild`). */
 const KEY = 'cc_chunk_reload_at';
 
 /** How long after a key pressed in a field the reader still counts as typing. */
@@ -44,10 +47,37 @@ export function readerIsTyping(now: number = Date.now()): boolean {
 }
 
 /**
- * Reloads the tab once to pull the current build. The flag in sessionStorage
- * keeps it to one reload per ten seconds, so a build that keeps failing does not
- * loop. Returns true when it reloaded, false when the reload is spent (or storage
- * is unavailable) and the boundary has to say so instead.
+ * How this document was loaded, as the browser recorded it: `'reload'` when it
+ * came from a reload — the one this module triggers, or the reader's own.
+ * Null where the Navigation Timing API is absent (the server, an old browser).
+ */
+function navigationType(): string | null {
+  try {
+    const entry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    return entry?.type ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Reloads the tab once to pull the current build. Returns true when it
+ * reloaded, false when the reload is spent (or cannot be guarded) and the
+ * boundary has to say so instead.
+ *
+ * The loop guard depends on whether anyone is signed in (privacy policy
+ * section 7, release 3.2.0: without sign-in the browser is left as it was — no
+ * session storage):
+ *
+ * - **Signed in** (the hint `cc.auth.signedIn`, lib/auth-hint.ts): a time in
+ *   sessionStorage (`cc_chunk_reload_at`) keeps it to one reload per ten
+ *   seconds, across the client-side navigations of the app. Section 7 names
+ *   the key among what signing in adds.
+ * - **Not signed in**: nothing is written. The browser's own record of how
+ *   this document was loaded is the guard: a document that came from a reload
+ *   does not reload again, so a build that keeps failing stops after one
+ *   reload and shows the card. The cost is that a page the reader reloaded by
+ *   hand shows the card at once instead of reloading for them.
  *
  * Never while the reader is typing (roadmap 3.0.21 (8)): a reload drops what is
  * in a field, so inside a few seconds of a key pressed in one the boundary shows
@@ -56,6 +86,12 @@ export function readerIsTyping(now: number = Date.now()): boolean {
 export function reloadOnceForStaleBuild(now: number = Date.now()): boolean {
   if (typeof window === 'undefined') return false;
   if (readerIsTyping(now)) return false;
+  if (!hasSignedInHint()) {
+    const loadedBy = navigationType();
+    if (loadedBy === null || loadedBy === 'reload') return false;
+    window.location.reload();
+    return true;
+  }
   try {
     const last = Number(sessionStorage.getItem(KEY) || 0);
     if (Date.now() - last > 10000) {

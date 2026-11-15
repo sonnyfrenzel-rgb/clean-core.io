@@ -5,6 +5,193 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.2.0] — 2026-11-16
+
+The Business page is complete. Every new engine reading is gated from 3.2.0: a run signed before 3.2.0 keeps what
+it signed; a run signed by engine 3.2.0 carries its readings, so some of its findings differ (see Engine 3.2.0 and
+Fixed). How runs are signed and what the audit pack holds do not change.
+
+### Added
+- A register of every browser storage key the app writes (`lib/storage-keys.ts`): area, what it holds, its purpose,
+  its lifetime and whether privacy policy section 7 names it. `tests/storage-keys-register.spec.ts` reads every
+  `setItem` / `removeItem` in `app/`, `components/`, `hooks/` and `lib/`, follows the key through constants, imports,
+  key functions, object properties and parameters, and fails on an unregistered key, a key it cannot follow, a
+  registered key nothing writes, and a register that disagrees with section 7. Privacy policy 1.3 names every key
+  written today.
+- Privacy policy 1.3 of 16 November 2026, in force from this release: the passages of the lawyer's document 21,
+  approved unchanged, word for word in German and in the same meaning in English — section 9 "Server logs & usage
+  figures" describes the weekly usage report; sections 2, 5 and 6 refer to it (data you provide, the right to object,
+  legal basis and a 24-month retention); section 7 adds `cc.processMap.outline.page`, `cc.analyze.walked.…`,
+  `cc.analyze.nextHidden.…`, `cc.analyze.toolOpened.…`, `cc.auth.signedIn` and `cc:design-skip-questions:…`. The
+  change note at the top points to 1.2, which stays published at `/datenschutz/versions/1.2`; 1.3 is archived at
+  `docs/privacy/1.3.md` / `1.3.de.md` with its digests, the sign-up box names it, and the consent record stores `1.3`
+  (`lib/legal/privacy-versions.ts`, `tests/legal-names-wording.spec.ts`).
+- An objection to the usage figures (privacy policy section 9) can be recorded: an account that objects by e-mail is
+  marked by the operator in the Admin Console (`usage-report-objection-on` / `-off`, an audit row in the same batch),
+  and from the next weekly report on its account, runs, projects and mails are left out of every figure. The marker
+  `users/{uid}.usageReportObjectionAt` is written by the Admin SDK only — firestore.rules already deny it to browsers,
+  so no rules deploy is needed — and goes with the profile when the account is erased
+  (`tests/usage-report-objection.spec.ts`).
+
+### Changed
+- The walk-through runs on the Analyze page itself: a card beside the map on desktop, above it up to 1100 px. It
+  ends in two equal endings, "Re-design this program" and "Analyse another Z program", with "What you can do next"
+  below them, hidden per project in the browser only. A later tool clicked before the walk-through shows a soft
+  hint; nothing is locked (AB-4, ADR-118).
+- Full screen on the Business map: one bar to find a step, zoom, fit and the overview map; editing behind an "Edit"
+  toggle, saved as a revision; the walk-through and the code in a side column. Not editable on a phone (AB-5, ADR-119).
+- The text around the map replaces the first insights in Business: what the program does, how it runs, why it
+  exists, who is involved and questions for the business, every sentence with its line; the AI mark only where a
+  model wrote (AB-6, ADR-116).
+- Two charts below the map, "How a case can end" and "What it changes, what it only reads", counted from the
+  engine's facts (AB-7, ADR-117).
+- The browser keeps only *that* the walk-through of Analyze was finished or its hint dismissed
+  (`cc.analyze.walked.<id>` holds `1`), no longer the day. A return visit reads "Welcome back · you walked through it
+  before" without a date. An entry with a day from an earlier build still counts as walked (privacy policy 1.3,
+  owner decision 15.11.2026).
+- Without sign-in, a page that failed to load a chunk after a release writes nothing to the browser (privacy policy
+  section 7: no session storage before sign-in). The reload-loop guard `cc_chunk_reload_at` is written to session
+  storage only when the signed-in hint is set; for everybody else the browser's own Navigation Timing record is the
+  guard — a document that came from a reload does not reload again, so a build that keeps failing stops after one
+  reload and shows the new-version card (`lib/stale-build.ts`, `tests/stale-build-signed-out-storage.spec.ts`; the
+  storage register now says "signed-in").
+- The weekly usage report holds only what privacy policy 1.3 names (owner decision 15.11.2026: trim the report to
+  the text). Gone from the report, the stored snapshot and the mail: the count of accounts with their own model key,
+  distinct analysed programmes, the all-time totals of runs, used and granted units, and the list of analyses per
+  newly activated account — no per-account figure at all. Kept: new, active and newly activated accounts, runs,
+  projects and used units for the week and the week before; accounts in total, never started and at their limit; the
+  delivery counts. Snapshots stored before keep their old fields; nothing reads them and nothing is migrated
+  (`tests/usage-report-trimmed.spec.ts`, `docs/DATA-RETENTION.md`).
+- Mail opens and clicks are not recorded. Tracking is off in the mail provider's account; an open or a click that
+  arrives at the webhook anyway is acknowledged and dropped, neither delivery record stores it, and the weekly usage
+  report counts delivery only ("Zugestellt", no "geöffnet"). An older record whose status is an open or a click
+  counts as delivered (`lib/mail-status.ts`, `tests/mail-engagement-not-recorded.spec.ts`).
+- The weekly usage report's snapshots (`usage_reports`) are kept 24 months after the week they cover, no longer
+  without end: each carries `expiresAt`, a Firestore TTL policy deletes on it and `npm run retention:verify` checks
+  that policy; `scripts/backfill-usage-report-expiry.ts` dates the snapshots stored before (one-off, dry run first).
+  The TTL policy and the backfill are run by the owner (`docs/DATA-RETENTION.md`,
+  `tests/usage-report-retention.spec.ts`).
+- Home page v2 part 2 (AB-14b): My workspace lists every project up to 2,000, not the newest 25; past 2,000 the list says
+  that only the first 2,000 are shown (QA
+  `c559b61a9b31`). The own rows come lean from `GET /api/workspace-rows` (Admin SDK, behind the second factor),
+  without source code; search, filters and sort run over all of them. Four columns: Project, Status, Next step, Last
+  change. The status words are *No code yet*, *Not analysed yet*, *Analysed*, *Re-design under way* (with "N of 6
+  steps done" and a small six-step bar), *Re-design done*, *Handed over* (H-O3). An analysed project has nothing
+  open; re-design is never offered as a next step. Dates read "6 Nov 2026" (H-O10). Tabs: My projects, Shared with
+  me, Invitations sent; the Sharing card lives in them. "Needs your attention" appears only with a reason (the code
+  changed, the design no longer matches the analysis, a test run failed), with at most three projects. Filters
+  appear from ten projects on. A "Figures" switch shows lines, findings, levels, score and rules, for the page view
+  only: nothing is stored in the browser (owner decision 15.11.2026). The demo and the examples are two doors below the
+  list. A run from a row only starts through a confirmation dialog with its cost and model. The free runs show as
+  small marks in the shell, and `/dashboard` ends in the one-line footer. The row menu has no "Open project".
+- The data of the Continue card (AB-14c, stored, not shown): every signed run now writes "In short" (the
+  engine's "What this program does", each sentence with its line, no model) and the project summary with the map
+  miniature (taken unchanged from the 3.3.0 branch, ADR-123) onto the project, through the Admin SDK, outside the
+  signed run and the audit pack. `firestore.rules` gains only the summary's type line (pending, deployed by hand).
+
+### Removed
+- The session mark `cc.auth.redirectPending` and the landing's redirect sign-in check behind it. Nothing ever set the
+  mark — the Google button opens a popup — so `markRedirectPending` was a write path nobody called, and the check in
+  `LandingModals` never ran. Gone from `lib/auth-hint.ts`, `components/landing/LandingModalsLazy.tsx`,
+  `components/LandingModals.tsx` and the storage register; `tests/public-no-google-before-signin-guard.spec.ts` now
+  holds that no sign-in goes by redirect and nothing asks for a redirect result.
+- The "Your turn" card of My workspace (`YourTurnCard.tsx`), the demo as the first row of the list, and the example
+  gallery under the list (AB-14b). "Needs your attention" and the two doors take their place.
+
+### Engine 3.2.0 (gated from 3.2.0; a run signed earlier keeps its map)
+- A call the source cannot resolve statically (an interface reference with several implementations, a redefined
+  method) names its candidates, and each implementation no other call reaches is drawn as an entry of its own
+  instead of vanishing from the map (ADR-120).
+- An entry that runs inside the program's run starts with the event handlers registered there, so a RAISE EVENT
+  runs its handler's steps; MESSAGE and TYPE are read in any case.
+- CALL BADI and CALL CUSTOMER-FUNCTION are calls into an enhancement outside this source.
+- Interface calls are resolved to the implementations the program itself defines (AB-15b, ADR-120 item 5,
+  `lib/abap/class-hierarchy.ts`). The engine now reads the reference's type where the program writes it: the
+  declaration in the routine or event block of the call, a factory method's return type, a loop over a table of
+  references, interfaces that include other interfaces, inherited implementations. An abstract class is never the
+  object's class. One implementation is the call's target; a type the program does not define changes nothing.
+- A call that can reach two to four of these implementations is drawn as its alternatives: a gateway named as the
+  call, with one call activity per implementation, conditioned on its class. Each implementation stays drawn as a
+  beginning of its own. A call with more stays the opaque call that lists its candidates. A call typed only by the
+  method name never gets alternatives. Process benchmark, learning halves only: wave 3 84.4 % → 85.1 % of
+  comparable nodes (OO 84.1 % → 85.0 %); waves 1+2 unchanged at 87.2 % (BERICHT §8.1).
+
+### Fixed
+- Own-code upload: an include that holds a local class (`CLASS lcl DEFINITION DEFERRED.`, a local definition and
+  implementation, `LOCAL FRIENDS`) stays an include. Before, it was taken for a class of that name: a TOP include
+  blocked the upload as a second program, and its includes counted as not uploaded. Only `CLASS … DEFINITION PUBLIC`
+  names a global class now, as `INTERFACE … PUBLIC` already did. Upload only; signed runs do not change.
+- Own-code upload: a local class whose header names something in a `/PUBLIC/` namespace
+  (`INHERITING FROM /public/cl_base`) is no longer taken for a global class; only `PUBLIC` as a word of its own counts.
+  Upload only (`tests/include-local-class.spec.ts`).
+- A credential assigned from a backtick literal or a string template (`DATA(lv_password) = |…|`) is redacted from finding snippets, titles and details, like a single-quoted one; a template goes whole, embedded expressions included. Engine reading from 3.2.0 (`ENGINE_READS_320_FROM`): it changes signed findings, so a run of 3.1.0 keeps what it signed (QA full review of v3.1.0, 25ecb183cbf5).
+- A function-module name copied into a variable no longer counts as called when the variable is overwritten on the straight line before any call (`lv_fm = c_gui. lv_fm = c_other. CALL FUNCTION lv_fm.`); a branch or loop in between keeps the reading before. Engine reading from 3.2.0 (QA full review of v3.1.0, bb4c536fe4fd, 5298757260c1).
+- The map's full screen on Analyze, Business is announced as a modal dialog (`aria-modal`), so a screen reader stays
+  inside it; Escape still leaves it, and a dialog opened over it still takes Escape first (`components/cc/modal.ts`).
+  Tab no longer leaves it either: the edges of the Tab loop counted the map's nodes, which Tab skips, so a Tab from
+  the map's one focusable node went out to the page behind (Tab and Shift+Tab walked in the rendered
+  `tests/analyze-fullscreen.spec.ts`).
+- Engine 3.2.0: a call matched by the method name alone (`DATA(go) = zcl_factory=>get( ). go->run( ).`, a field
+  symbol typed `any`) no longer makes the implementations here that share the name beginnings "candidate of" it; its
+  object may be of a class outside this source. The call stays opaque and still lists them, as in 3.1.0
+  (`tests/engine-reads-320.spec.ts`). The benchmark figures above were measured before this change.
+- The read of every own project behind My workspace is budgeted: 120 reads an hour per account (was 600), and the list
+  reads again on coming back into view at most every 30 seconds (`app/api/workspace-rows/route.ts`,
+  `components/workspace/WorkspaceListReport.tsx`, `tests/home-rows.spec.ts`).
+- A row run in My workspace stops right after its project read when it was cancelled or the list was left meanwhile,
+  instead of setting the run up and letting the analysis stop on the cancelled signal
+  (`components/workspace/WorkspaceListReport.tsx`, `tests/home-rows.spec.ts`).
+- Every full screen of the map is a named modal dialog that keeps Tab inside — in Documentation, the workspace and the
+  demo too, not only on Analyze (`components/process-map/BpmnCanvas.tsx`; rendered
+  `tests/documentation-map-controls.spec.ts`).
+- The walk-through resumed at a later station opens there also when its tour is read after the card opened; before, it
+  fell back to the first station (`components/workspace/ProcessTour.tsx`, `tests/analyze-tour-inline.spec.ts`).
+- `npm run retention:verify` fails when the policy file loses the row of a retention TTL policy (`usage_reports`,
+  `erased_accounts`) or names another field in it, instead of passing without checking that policy
+  (`scripts/retention-verify.ts`, `tests/retention-verify.spec.ts`).
+- A saved drawing's refresh of the project summary that arrives late no longer puts an older revision's thumbnail
+  over a newer one (`lib/project-summary-server.ts`, `tests/project-summary.spec.ts`).
+- A chart row under the map lights only the steps of its own routine: where two classes implement a method of the
+  same name, a write in one no longer lights the callers of the other; an instance call that could reach either
+  lights neither (`lib/process-fact-charts.ts`, `tests/process-fact-charts.spec.ts`).
+- My workspace reads a row's levels and rules again after any edit of its source, also one that keeps the source's
+  length: the row's key now carries a short fingerprint of the source, never the source (`lib/home-rows.ts`,
+  `tests/home-rows.spec.ts`).
+- An edit of the map asked for on one project no longer opens the editor on the next project the same page shows: the
+  request is held for the project and source it was made on (`components/process-map/ProcessMap.tsx`,
+  `tests/process-map-draft-identity.spec.ts`).
+- The walk-through on the page keeps its place and the keyboard when the map is re-read with its AI names: the tour
+  was dropped until it was read off the new map, so the card lost the focus and the arrow keys pressed in that moment
+  went nowhere. A re-read that changes only names keeps the tour (`lib/process-map-identity.ts`,
+  `tests/process-tour.spec.ts`; rendered `tests/analyze-tour-inline.spec.ts` with a key).
+- A chart row pressed under the map stays lit when the map is re-read with its AI names: the map was announced as
+  gone and then as new on every re-read, which dropped the light and the "Showing: … · Clear" line within seconds for
+  an account with a model key. A new map now replaces the old one directly and keeps a spotlight whose elements it
+  still holds (`lib/process-map-spotlight.ts`, `tests/process-fact-charts.spec.ts`, rendered
+  `tests/analyze-fact-charts.spec.ts` with a key).
+- The map's compact level path (the phone's full-screen bar) no longer gives the visually hidden levels above a Tab
+  stop: the focus could land on a link nobody could see. A screen reader still reads them; the keyboard goes up by
+  the way up (`components/process-map/ProcessBreadcrumb.tsx`, `tests/analyze-fullscreen.spec.ts`).
+- A credential assigned from a string template is redacted whole however its embedded expressions nest: a template
+  inside `{ … }`, or a `}` or bar inside a literal of the expression, no longer ends the redaction early and leaves the
+  rest of the secret in the snippet. The value is now read by a small scanner instead of one pattern; an empty first
+  literal (`'' && |secret|`) opens the chain like any other and does not end it unredacted. Same engine
+  reading from 3.2.0; a run of 3.1.0 keeps what it signed (`tests/qa-full-c23d6ca.spec.ts`).
+- A credential assigned from literals joined by `&&` or `&` (`lv_password = |abc| && |def|.`, backtick or quoted
+  parts alike) is redacted whole; before, only the first literal went and the rest of the secret stayed in the
+  snippet. Same engine reading from 3.2.0 as the redaction above; a run of 3.1.0 keeps what it signed
+  (`tests/qa-full-c23d6ca.spec.ts`).
+- A credential name written inside a literal is no assignment: in
+  `CONCATENATE 'https://api.example.com/x?token=' lv_token INTO lv_url.` the 3.2.0 redaction above took the quote
+  closing the literal for the opening of a value and redacted the rest of the line. Found by the version bump to
+  3.2.0, before any run was signed with it; 3.1.0 never read the line that way (`tests/credential-redaction.spec.ts`).
+
+### Security
+- Two hardening items from the audit of v3.1.0, SEC-2026-979 and SEC-2026-980, in `firestore.rules` and the account
+  erasure, with a short-lived erasure marker (`erased_accounts`, two hours, TTL on `expiresAt`). Needs the manual
+  rules deploy and the TTL policy on `erased_accounts` (`docs/DATA-RETENTION.md`) on release.
+
+
 ## [v3.1.0] — 2026-11-15
 
 Analyze opens business first. Every new engine reading is gated from 3.1.0: a run signed by an earlier version reads as before.

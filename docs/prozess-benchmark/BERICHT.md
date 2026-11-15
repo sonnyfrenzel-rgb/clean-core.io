@@ -200,8 +200,108 @@ draws nothing anywhere else — also not for a file that was read (QA finding 34
 modelled the `CLOSE` as a node of its own; edges 2,780/4,204 → 2,774/4,195 (66.1 %). Reference corpus
 unchanged. `Z_INVOICE_EXTRACTOR` loses "Close file" again.
 
+## 8. Update 13.11.2026 — object-oriented programs: the implementations behind a polymorphic call (engine 3.2.0)
+
+The engine night of 13.11.2026 (owner task: improve the deterministic engine measurably, without overfitting,
+with object-oriented ABAP as a first-class focus). Four readings, each behind the new gate
+`ENGINE_READS_320_FROM = '3.2.0'` (`lib/abap/engine-reads-320-gate.ts`), so a run of engine 3.1.0 or of any 3.0.x
+hotfix draws exactly the map it drew before (`tests/engine-reads-320.spec.ts` holds both maps for every reading on
+ABAP written for the spec). Developed on the learning halves only; the test halves were measured **once**, after
+the frozen commit `810ffe6b` (`ENGINE-320-FREEZE-2026-11-13.md`), with the same code asked for engine 3.1.0 (before)
+and 3.2.0 (after). Measured with `BM_CONCAT=1` (joined sources, as the product reads a program with its includes).
+The baseline is the **3.1.0 reading**, not `APP_VERSION` (still v3.0.23 tonight): the newest gate is what 3.2.0
+builds on. Statistical power from `AUDIT-2026-11-13.md`: a learn/holdout difference below about 5.5 pp overall,
+10 pp for wave 3 and 14 pp for OO is noise.
+
+| # | Finding on the learning halves | Change (general ABAP semantics) | Learn Δ (nodes, waves 1+2 / 3) |
+|---|---|---|---|
+| 1 | The implementations behind an interface reference with several implementing classes, behind a superclass reference whose subclasses redefine the method, and behind `me->m( )` / bare `m( )` in a class whose subclasses redefine `m` (template method) were neither drawn nor listed as not reached: a strategy, state or template-method pattern lost every concrete step (BM-208: 18 of 49 nodes hit) | The call stays an opaque call (D2 — the reader does not guess which one runs) and names its candidates (`detail.candidates`); every candidate implementation no other call reaches is a beginning of its own with the call as its trigger, **beside** the beginnings the source names, never in their place. `me->m( )` dispatches at run time when a subclass redefines `m` (`method-resolution.ts`, `dynamicDispatch`) — before, the base class's implementation was taken, which the parser cross-check (review §3) showed to be wrong in 6 learn calls. A candidate runs inside the call that reaches it, so the handlers registered there are registered in it | 0 / **+155** |
+| 2 | A screen module (`CALL SCREEN` of the report) and a callback started with nothing registered: a `RAISE EVENT` reached from a PAI module stayed an opaque call although the report had bound the handler before the screen | An entry that runs inside the program's run starts with the handlers registered where the program handed over to it (`registeredAtEntry`): an ABAP event handler stays registered for the internal session | 0 / +2 |
+| 3 | `message e001(zz).` in lower case lost its error end and with it the effect that made its routine a step — the keyword regexes were case-sensitive while the type letter was not (found by the metamorphic probe of the review, §4) | `MESSAGE` and `TYPE` are read in any case | 0 / 0 (every case writes `MESSAGE` in upper case; the guard is metamorphic: lower case gets the same map) |
+| 4 | `CALL BADI` and `CALL CUSTOMER-FUNCTION` drew nothing: a check or a posting the program delegates to its enhancement was missing | Both are service tasks into an enhancement outside this source (`detail.enhancement`), as a `CALL FUNCTION` of a module not in the slice is; `EXCEPTIONS` + `sy-subrc` hang the error boundary on the call; a routine whose only effect is such a call is a step | +1 / 0 |
+
+**Node hits over the comparable expected nodes, engine 3.1.0 → 3.2.0** (95 % Wilson interval on the after value):
+
+| Group | Learn before | **Learn after** | Holdout before | **Holdout after (measured once)** |
+|---|---|---|---|---|
+| Wave 1 | 87.3 % | 87.3 % | 85.6 % | 85.6 % |
+| Wave 2 | 87.0 % | 87.1 % | 85.4 % | 85.5 % |
+| Wave 1+2 | 87.2 % | **87.2 %** ±1.1 | 85.5 % | **85.6 %** ±1.1 |
+| Wave 3 | 77.3 % | **84.4 %** ±1.5 (+7.1 pp, +157 nodes) | 72.3 % | **80.6 %** ±1.6 (+8.3 pp, +185 nodes) |
+| all 150 | 83.3 % | **86.1 %** ±0.9 (+2.8 pp) | 80.7 % | **83.8 %** ±0.9 (+3.1 pp) |
+| procedural (`meta.oo` false) | 86.9 % | 86.9 % | 85.3 % | 85.3 % |
+| **OO** (`meta.oo` true) | 74.4 % | **84.1 %** ±1.8 (+9.6 pp) | 69.9 % | **80.1 %** ±1.8 (+10.2 pp) |
+| all 300 | | | 81.9 % → **84.9 %** | |
+
+The holdout gains at least as much as the learning half in every group (wave 3 +8.3 vs +7.1, OO +10.2 vs +9.6):
+no sign of fitting. Waves 1+2 are unchanged on both halves, as the readings only touch OO dispatch, event
+registration in nested entries, lower-case `MESSAGE` and enhancement calls. Every one of the 11 learn and 15
+holdout cases that moved gained; none lost.
+
+**Honest denominators** (the audit's point 1): over **all** expected nodes, learn 73.5 % → 76.0 %, holdout
+70.7 % → 73.4 %; over all expected business steps (action, call, read, write, output, transaction, …), learn
+64.6 % → 66.0 %, holdout 61.2 % → 63.1 %. **Edges:** learn 2,835 → 2,922 hit (comparable 4,286 → 4,424, as more
+nodes resolve; rate 66.1 % → 66.0 %), holdout 3,080 → 3,180 of 4,708 (65.4 % → 67.5 %). **Precision:** engine
+nodes on statements no expected node claims, learn 232 → 234, holdout 277 → 281 — the new beginnings draw what
+the expected answers expect. **Per node kind, learn:** end +59, start +36, gateway +23, read +20, call +7,
+opaque call +5, write +4; holdout: end +64, start +40, gateway +24, call +18, opaque call +14, read +10, write +7.
+
+**What the metric cannot see** (and the readings still change): the candidate list on the opaque call
+(`detail.candidates`, for the IT reader and the Business view), the note that says why a beginning is drawn and
+what is not decided, the lower-case reading (no benchmark case exercises it), `detail.enhancement` on a BAdI
+call. **Not fitted, on purpose** (audit point 2 — conventions of the expected answers that contradict
+`DESIGN.md` §5.8): the `IF sy-subrc` boundary (158 "wrong kind" on learn), `MESSAGE` S/W without an element
+(115), `AUTHORITY-CHECK` as a lane (28), small routines and constructors drawn as one step (100 FORM and 81
+METHOD starts), `SELECT … ENDSELECT` as an iterating read (6). These are most of what remains on wave 3.
+
+**Reference corpus and demo:** unchanged — `korpus-engine.spec.ts`, `golden-master.spec.ts`,
+`demo-release-guard.spec.ts` and the 3.1.0 readings spec stay green, because every reading is gated and
+`APP_VERSION` has not reached 3.2.0. The demo (`lib/demo-release.json`) therefore needs no regeneration tonight;
+it will when `APP_VERSION` reaches 3.2.0, by `npm run demo:regenerate`.
+
+**Tried and dropped:** candidate entries as "called from outside" (pre-empting a bare FORM as the last-resort
+entry) cost BM-207 six nodes — the entries now stand beside the primary ones. **Next-biggest gaps** (learn, after
+tonight): the conventions above; then exception control flow (a re-raise in a `CATCH`, `RAISE RESUMABLE`,
+`RETRY`), `PERFORM … ON COMMIT`, `CLASS_CONSTRUCTOR`, `WAIT UP TO`, EML `READ ENTITIES` — all general, none
+measured by the benchmark today (see `docs/design/engine-review-2026-11.md`).
+
+### 8.1 Update 15.11.2026 — interface calls resolved to the program's own implementations (AB-15b, learning halves only)
+
+AB-15b, behind the same gate (`ENGINE_READS_320_FROM`, no new gate file — engine review §4.2). **Measured on the
+learning halves only** (`BM_SPLIT=learn BM_CONCAT=1 KORPUS_ENGINE_VERSION=3.2.0`, 150 cases). The test halves were
+not opened. Their only measurement is still the one in §8, so the 3.2.0 holdout figures there do not yet include
+AB-15b.
+
+**The gap, measured first.** Starting point: the class-hierarchy experiment (worktree `agent-a72177d7ea222fe15`,
+switch `CC_POLYMORPHIC_CANDIDATES`, off by default). Its candidate sets were compared with the 3.2.0 resolution
+(`method-resolution.ts`, `dynamicDispatch`) at every method call of the 150 learn cases. 171 calls resolve to the
+same body in both, and 16 typed ambiguous calls name the same candidates. 3 calls that the name alone left
+ambiguous get the same set, now typed. One call is narrower: BM-274's bare `validate( )` in an abstract base drops
+the base implementation, because an abstract class is never the object. Nothing was resolved differently. So 3.2.0
+had already closed the resolution gap. What was left was how a call with several implementations is **shown**: an
+opaque node, with its implementations somewhere among the beginnings.
+
+| Form tried (learn, nodes) | Wave 1+2 | Wave 3 | OO | Edges hit |
+|---|---|---|---|---|
+| 3.2.0 before AB-15b (opaque call + candidate beginnings) | 87.2 % | 84.4 % | 84.1 % | 2,922 of 4,424 |
+| + typed resolution (`class-hierarchy.ts`) only | 87.2 % | 84.4 % | 84.1 % | 2,922 |
+| the experiment's `branches` / `one-step`: the implementations walked inside the call | 87.2 % | 83.8 % (−14) | 83.2 % | 2,905 / 2,910 |
+| **shipped: gateway + one call activity per implementation, implementations stay beginnings** | **87.2 %** | **85.1 % (+15)** | **85.0 %** | 2,924 of 4,469 |
+
+Walking the implementations inside the call loses 22 starts, 12 ends and 2 gateways. A small implementation drawn
+as a called routine collapses into one step, and a helper folds away, as `DESIGN.md` §5.8 says. The expected
+answers draw both with start and end. That is the convention §8 leaves unfitted on purpose, so the form was
+dropped for that reason, not tuned around it. The shipped form keeps the beginnings and adds the alternatives at
+the call: +13 call nodes at call sites (an expected `call` that `call-opaque` could not match), +2 starts, nothing
+lost in any case. Engine nodes on statements that no expected node claims: 234, unchanged. 11 calls in 9 cases
+draw alternatives (2 or 3 implementations each). No learn call reaches more than 3, so the bound of 4
+(`MAX_ALTERNATIVES`) was set as a design limit, not fitted to the data. A cap of 2 costs 6 nodes; caps of 3, 4, 6
+and unbounded measure the same. The 3.1.0 reading is unchanged on every learn case (same node outcomes).
+
+**Open:** the holdout measurement of 3.2.0 with AB-15b (owner decision, as in §8). Owner example A end to end.
+
 ## Tools
 
-`evaluate.ts` (measurement; `BM_CONCAT=1` as in the product, `BM_RANGE=a-b`), `report.py` (breakdown),
+`evaluate.ts` (measurement; `BM_CONCAT=1` as in the product, `BM_RANGE=a-b`, `BM_SPLIT=learn`), `report.py` (breakdown),
 `validate.py` (structure, anchors, frozen hashes), `weg-b.ts` (model sentences with the building blocks of the
 product), `judge/` (judge briefs, inputs, verdicts), `split.json`, `frozen-*.json`.

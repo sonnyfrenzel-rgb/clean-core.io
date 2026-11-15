@@ -46,6 +46,7 @@ export default function WorkspaceRowActions({
   href,
   owner,
   handlers,
+  showOpen = true,
 }: {
   id: string;
   name: string;
@@ -53,6 +54,11 @@ export default function WorkspaceRowActions({
   /** The account owns the project. False for a shared one and for the demo. */
   owner: boolean;
   handlers?: RowActionHandlers;
+  /**
+   * The "Open project" button beside the menu. The home page v2 (AB-14b) leaves it out: the project's name is the
+   * way in, and the row menu carries neither "Open project" nor a First-insights link.
+   */
+  showOpen?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   // The table scrolls sideways (`overflow-x-auto`), which clips anything that
@@ -163,6 +169,7 @@ export default function WorkspaceRowActions({
           ) : null}
         </>
       ) : null}
+      {showOpen ? (
       <Link
         href={href}
         aria-label={`${wt('myWorkspace.openProject')} ${name}`}
@@ -172,6 +179,7 @@ export default function WorkspaceRowActions({
         <span className="hidden md:inline">{wt('myWorkspace.openLabel')}</span>
         <ChevronRight size={16} aria-hidden={true} />
       </Link>
+      ) : null}
     </span>
   );
 }

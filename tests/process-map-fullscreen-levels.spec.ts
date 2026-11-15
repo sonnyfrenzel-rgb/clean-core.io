@@ -418,7 +418,7 @@ test.describe('levels in full screen and inline — desktop', () => {
     await expect(card).toHaveAttribute('data-canvas-fullscreen', 'false');
   });
 
-  test('a step chosen in full screen shows its details (full screen closes, as decided on 02.10.2026)', async ({ page }) => {
+  test('a step chosen in full screen shows its code in the side column, and full screen stays (ADR-119)', async ({ page }) => {
     test.setTimeout(300_000);
     await signIn(page, acct);
     const frame = await openWorkspaceMap(page, acct);
@@ -432,8 +432,13 @@ test.describe('levels in full screen and inline — desktop', () => {
     });
     expect(step).not.toBe('');
     await frame.locator(`[data-map-node="${step}"]`).click();
+    // Since 3.2.0 (AB-5, ADR-119 (2)) full screen on Analyze, Business has a side column: the step's code opens there
+    // and full screen stays (this replaces the owner decision of 02.10.2026 for this page).
+    await expect(frame.locator(`[data-process-code-card="${step}"]`)).toBeVisible();
+    await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
+    // Leaving full screen, the page's code panel beside the map shows the same step (ADR-109, mockup state 7).
+    await frame.locator('[data-map-fullscreen-toggle]').click();
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'false');
-    // Analyze, Business since v3.1.0 (ADR-109): the step's code is the page's panel beside the map (mockup state 7).
     await expect(page.locator('[data-analyze-code-panel]')).toBeVisible();
   });
 });

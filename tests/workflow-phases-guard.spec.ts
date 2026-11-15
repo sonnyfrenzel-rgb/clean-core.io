@@ -150,6 +150,23 @@ test.describe('every view reads the contract', () => {
     }
   });
 
+  test('the walk-through changes no phase: what this browser remembers is read by no phase (plan AB-4, O1)', () => {
+    // Walked, "What you can do next" hidden and a later tool opened live in `localStorage` only
+    // (`lib/analyze-progress.ts`). The one phase contract reads none of it, and the module reads no phase.
+    const steps = read('lib/workflow-steps.ts');
+    expect(steps).not.toMatch(/analyze-progress|cc\.analyze\.|progress\.walked|nextHidden|laterToolOpened|localStorage/);
+    const progress = read('lib/analyze-progress.ts');
+    expect(progress).not.toMatch(/from '\.\/workflow-steps'|firebase|setDoc|updateDoc|addDoc|fetch\(/);
+    // The endings, the card and the hook link, say and remember — none of them writes a phase or a status.
+    for (const rel of ['components/analyze/AnalyzeEndings.tsx', 'components/analyze/WhatNextCard.tsx', 'hooks/useAnalyzeProgress.ts']) {
+      expect(read(rel), rel).not.toMatch(/status\s*:|setDoc|updateDoc|addDoc|firebase|fetch\(/);
+    }
+    // Analyze, Business tells the walk-through to the browser and to nothing else.
+    const business = read('components/analyze/AnalyzeBusiness.tsx');
+    expect(business).not.toMatch(/updateDoc|setDoc|addDoc/);
+    expect(business).toContain('markWalked();');
+  });
+
   test('every stage header carries the tools bar — in the loaded page, not only the loading state', () => {
     // Four pages once rendered the rail in their early `loading` return and
     // nowhere else, so it disappeared as soon as there was something to
@@ -278,14 +295,20 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
       await page.waitForTimeout(1000);
       await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 });
     }
-    const row = page.locator('[data-project-progress]').first();
+    // Since AB-14b the home list reads its Status and Next step from the phase
+    // contract in the words of H-O3 (CHANGELOG [Unreleased], Home page v2 part 2:
+    // "Re-design under way (with "N of 6 steps done" and a small six-step bar)").
+    // A test draft is started, never done: the row says re-design is under way
+    // with testing not among the steps done, and its next step is "Run the tests".
+    const row = page.locator(`[data-cc-table-row="${PROJECT_ID}"]`);
     await row.waitFor({ timeout: 60000 });
-    // The row no longer draws the seven steps (owner feedback 02.10.2026): it
-    // names the step it is at and the next action, from the same contract. A
-    // test draft is step 5 with "Run the tests" still to do — never done.
-    await expect(row.locator('[data-project-sentence]')).toHaveText('Analysed — in progress.');
-    await expect(row.locator('[data-project-step]')).toHaveText('Step 5 of 7');
-    await expect(row.locator('[data-project-next]')).toHaveText('Next: Run the tests');
+    await expect(row.locator('[data-home-status]')).toHaveAttribute('data-home-status', 'redesign');
+    await expect(row.locator('[data-home-status-title]')).toHaveText('Re-design under way');
+    await expect(row.locator('[data-home-status-detail]')).toHaveText('3 of 6 steps done');
+    await expect(row.locator('[data-home-redesign-bar]')).toHaveAttribute('data-home-redesign-bar', '3');
+    await expect(row.locator('[data-home-next]')).toHaveAttribute('data-home-next', 'testing');
+    await expect(row.locator('[data-home-next]')).toContainText('Run the tests');
+    await expect(row).not.toContainText('Re-design done');
     await expect(row).not.toContainText('Completed');
     await expect(row).not.toContainText('100%');
 

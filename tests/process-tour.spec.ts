@@ -11,6 +11,7 @@ import { walkOrder } from '../lib/process-walk';
 import { ABAP_TOKEN, buildWalkGuide, type WalkGuide } from '../lib/process-walk-guide';
 import { asideSentence, buildProcessTour, MAX_STATIONS, tourReadingOf, type ProcessTour } from '../lib/process-tour';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
+import { sameMapElements } from '../lib/process-map-identity';
 import { readExample } from './helpers/starter-example-files';
 
 /**
@@ -239,12 +240,34 @@ test.describe('the tour on screen (server-free render)', () => {
     expect(textOf(html)).toContain(PO.tour.stations[0].happens.text);
   });
 
-  test('the entry opens the tour, and says nothing about answers', async () => {
-    const Entry = await load('components/workspace/ProcessTourEntry.tsx');
-    const html = renderToStaticMarkup(React.createElement(Entry, { projectId: 'p1' }));
-    expect(html).toContain('data-tour-entry-open=""');
-    expect(textOf(html)).toContain('Walk through the process');
-    expect(textOf(html)).not.toMatch(/answered/);
+  test('a chapter chip of the layer wraps its name instead of widening the page (moved from walk-layout-3020)', async () => {
+    // CI of 18a3d8e3: a long chapter name pushed a 390 px phone sideways. The spec that pinned the fix retired with
+    // AB-4 (its other half, the walk entry's place, went with the entry card); the chip half is kept here.
+    const Layer = await load('components/workspace/ProcessTour.tsx', 'ProcessTourLayer');
+    const html = renderToStaticMarkup(React.createElement(Layer, { tour: PO.tour, model: PO.model, onClose: () => {} }));
+    const chips = [...html.matchAll(/<li class="([^"]*)"><button[^>]*data-tour-chapter="\d+"[^>]*>([\s\S]*?)<\/button>/g)];
+    expect(chips.length).toBe(PO.tour.chapters.length);
+    for (const [, li, inner] of chips) {
+      expect(li.split(' ')).toEqual(expect.arrayContaining(['min-w-0', 'max-w-full']));
+      expect(inner).toMatch(/<span class="[^"]*\bwhitespace-normal\b[^"]*">/);
+    }
+  });
+
+  test('on the page (3.2.0, AB-4): the same card beside the map, with Back, Pause and Next — no dialog, no entry card', async () => {
+    const Inline = await load('components/workspace/ProcessTour.tsx', 'ProcessTourInline');
+    const at = PO.tour.stations.findIndex((s) => s.title === 'Currency EUR?');
+    const html = renderToStaticMarkup(React.createElement(Inline, { tour: PO.tour, model: PO.model, onClose: () => {}, initialStation: at }));
+    const text = textOf(html);
+    expect(html).toContain('data-tour-mode="inline"');
+    expect(html).toContain(`data-tour-at="${at + 1}"`);
+    expect(html).not.toContain('role="dialog"');
+    expect(html).not.toContain('aria-modal');
+    expect(text).toContain(`Step ${at + 1} of ${PO.tour.stations.length}`);
+    expect(text).toContain('It checks: Currency EUR?');
+    for (const hook of ['data-tour-back=""', 'data-tour-pause=""', 'data-tour-next=""']) expect(html).toContain(hook);
+    expect(html).toContain('aria-label="Process map, highlighted: Currency EUR?"');
+    // The entry card retired with AB-4: the summary's "Walk me through it" is the way in.
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/ProcessTourEntry.tsx'))).toBe(false);
   });
 });
 
@@ -299,14 +322,16 @@ test.describe('where it stands and what it writes', () => {
     expect(read('components/analyze/AnalyzeBusiness.tsx')).toMatch(/onClick=\{walk\} data-analyze-walk=""/);
     // The First insights' own walk button stood beside the main-line picture, which retired with the
     // build-up in v3.1.0 (AB-3); in Analyze, Business the invitation above the map opens it.
-    expect(read('components/workspace/FirstLook.tsx')).not.toContain('data-first-look-walk');
+    // Since 3.2.0 (AB-6) the First insights are gone; the text around the map opens no tour of its own.
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLook.tsx'))).toBe(false);
+    expect(read('components/analyze/AroundTheMap.tsx')).not.toMatch(/data-first-look-walk|requestProcessWalk|setTourOpen/);
     expect(read('components/analyze/AnalyzeBusiness.tsx')).toContain('const walk = useCallback(() => requestProcessWalk(projectId), [projectId]);');
     const tour = read('components/workspace/ProcessTour.tsx');
     expect(tour).not.toMatch(/setInterval|autoplay|auto-play/i);
   });
 
   test('the tour writes nothing and reads no answer; reduced motion jumps instead of gliding', () => {
-    for (const rel of ['components/workspace/ProcessTour.tsx', 'components/workspace/ProcessTourEntry.tsx', 'components/process-map/TourCanvas.tsx', 'lib/process-tour.ts', 'components/demo/DemoWalkThrough.tsx']) {
+    for (const rel of ['components/workspace/ProcessTour.tsx', 'components/process-map/TourCanvas.tsx', 'lib/process-tour.ts', 'components/demo/DemoWalkThrough.tsx']) {
       const src = read(rel);
       expect(src, rel).not.toMatch(/firebase|setDoc|updateDoc|addDoc|fetch\(|confirmProcessStates|StateChoice|process-states/);
     }
@@ -320,8 +345,28 @@ test.describe('where it stands and what it writes', () => {
     expect(business.indexOf('<DemoWalkThrough')).toBeGreaterThan(-1);
     expect(business.indexOf('<DemoWalkThrough')).toBeLessThan(business.indexOf('<ProcessMap'));
     const demo = read('components/demo/DemoWalkThrough.tsx');
-    expect(demo).toContain('<ProcessTour ');
+    expect(demo).toMatch(/<ProcessTour\s/);
     expect(demo).toContain('demo={true}');
     expect(demo).not.toMatch(/usePlainWording|gemini|-client'/);
+  });
+});
+
+test.describe('a map re-read with its names keeps the tour that was read off it', () => {
+  test('the same elements are the same map; other code is not', () => {
+    // A re-read builds a new object from the same source; stored names change labels, never ids.
+    const again = readOf('Z_MM_PO_APPROVAL.abap').model;
+    expect(again).not.toBe(PO.model);
+    expect(sameMapElements(PO.model, again)).toBe(true);
+    const named = { ...again, elements: again.elements.map((e) => ({ ...e, label: `${e.label} (named)` })) };
+    expect(sameMapElements(PO.model, named)).toBe(true);
+    expect(sameMapElements(PO.model, BIG.model)).toBe(false);
+    expect(sameMapElements(PO.model, { ...PO.model, elements: PO.model.elements.slice(1) })).toBe(false);
+    expect(sameMapElements(null, PO.model)).toBe(false);
+  });
+
+  test('the page keeps its tour across such a re-read instead of dropping it until the new one is read', () => {
+    const process = read('components/workspace/WorkspaceProcess.tsx');
+    expect(process).toContain('const tour = read && sameMapElements(read.model, map.model) ? read.tour : null;');
+    expect(process).not.toContain('read.model === map.model ? read.tour');
   });
 });

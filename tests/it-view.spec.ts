@@ -442,7 +442,7 @@ test.describe('the IT view on a real project', () => {
     // stands in IT since 22.10.2026 (owner decision: it left the Business view),
     // under IT's own answer, never above it.
     await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
-    await expect(page.locator('[data-first-look]')).toHaveCount(0);
+    await expect(page.locator('[data-first-look], [data-around-the-map]')).toHaveCount(0);
     const ask = page.locator('[data-ask-this-case]');
     if ((await ask.count()) > 0) {
       const askTop = await ask.first().boundingBox();

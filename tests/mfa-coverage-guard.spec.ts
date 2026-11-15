@@ -141,10 +141,11 @@ test.describe('the client never holds a session that is waiting for its second f
 
   test('every sign-in path hands a multi-factor challenge to the resolver', () => {
     const s = source();
-    // Popup, redirect result and e-mail sign-in: each catch routes the
-    // challenge into the second-factor screen before anything else.
+    // Popup and e-mail sign-in: each catch routes the challenge into the
+    // second-factor screen before anything else. (The redirect-result path is
+    // gone since 3.2.0: no sign-in goes by redirect.)
     expect(s).toContain('const interceptSecondFactor = (error: unknown): boolean =>');
-    expect(s.split('interceptSecondFactor(').length - 1).toBeGreaterThanOrEqual(3); // popup, redirect result, e-mail
+    expect(s.split('interceptSecondFactor(').length - 1).toBeGreaterThanOrEqual(2); // popup, e-mail
     expect(s).toContain("code !== 'auth/multi-factor-auth-required'");
     expect(s).toContain('getMultiFactorResolver(auth');
     expect(s).toContain('TotpMultiFactorGenerator.assertionForSignIn(');

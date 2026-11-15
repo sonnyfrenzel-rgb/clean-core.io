@@ -78,6 +78,27 @@ test('ABAP syntax that looks like name=value is left alone', () => {
   for (const line of untouched) expect(redactCredentials(line), line).toBe(line);
 });
 
+test('engine 3.2.0: a credential name written inside a literal is no assignment (release bump to v3.2.0)', () => {
+  // The 3.2.0 reading (CHANGELOG v3.2.0, Fixed: "A credential assigned from a backtick literal or a string template …")
+  // found `token=` inside the literal and took the quote that closes it for the opening of a value: the rest of the
+  // line went as an unterminated secret. Every engine leaves the line as written.
+  const lines = [
+    "CONCATENATE 'https://api.example.com/x?token=' lv_token INTO lv_url.",
+    "CONCATENATE `https://api.example.com/x?api_token=` lv_tok INTO lv_url.",
+    "lv_url = |https://api.example.com/x?token=| && lv_token.",
+    "lv_msg = 'set password =' && ` ` && lv_user.",
+  ];
+  for (const v of ['v3.1.0', 'v3.2.0']) {
+    for (const line of lines) expect(redactCredentials(line, v), `${v}: ${line}`).toBe(line);
+  }
+  // Outside a literal the 3.2.0 reading stands: the assigned value goes, the line before and after it stays.
+  expect(redactCredentials("CONCATENATE 'x?token=' lv_t INTO lv_u. lv_token = `s3cr3t`.", 'v3.2.0')).toBe(
+    "CONCATENATE 'x?token=' lv_t INTO lv_u. lv_token = `…<redacted>`.",
+  );
+  expect(redactCredentials("\" it's here\nlv_password = |abc|.", 'v3.2.0')).toBe("\" it's here\nlv_password = |…<redacted>|.");
+  expect(redactCredentials("\" lv_password = 'abc'.", 'v3.2.0')).toBe("\" lv_password = '…<redacted>'.");
+});
+
 test('the evidence report quotes the line without the query-string token', () => {
   const code = [
     'REPORT zsec754.',

@@ -12,9 +12,8 @@ import { OWN_SIGNED_OUT_VIEW_ROUTES, PUBLIC_SHELL_ROUTES, SIGNED_IN_SHELL_ROUTES
  * (@firebase/auth `_shouldInitProactively`, `reloadAndSetCurrentUserOrClear`).
  *
  * Source half (no server): no public page reaches a Firebase module through a
- * static import; the landing's dialogs mount only when asked or when a redirect
- * is pending; a redirect result is asked for only behind that mark, and the mark
- * is set before any redirect leaves.
+ * static import; the landing's dialogs mount only when asked; and no sign-in
+ * goes by redirect, so nothing asks Firebase for a redirect result on a visit.
  *
  * The public pages inside the signed-in shell (`app/(app)/`: About, Knowledge,
  * the demo …) do import Firebase — the shell serves the product too — so for
@@ -155,14 +154,12 @@ test.describe('no public page loads Firebase on its own', () => {
 });
 
 test.describe('the landing asks Firebase only when the reader does', () => {
-  test('the dialogs mount when asked or when a redirect is pending, not when the browser is idle', () => {
+  test('the dialogs mount when asked, not when the browser is idle', () => {
     const lazy = read('components/landing/LandingModalsLazy.tsx');
     expect(lazy).not.toContain('requestIdleCallback');
     expect(lazy).not.toMatch(/setTimeout\(/);
     expect(lazy).toMatch(/searchParams\.has\('auth'\) \|\| searchParams\.has\('legal'\)/);
-    expect(lazy).toMatch(/useSyncExternalStore\(noChanges, isRedirectPending, \(\) => false\)/);
-    expect(lazy).toMatch(/const wanted = asked \|\| redirectPending;/);
-    expect(lazy).toMatch(/if \(!wanted && !mounted\) return null;/);
+    expect(lazy).toMatch(/if \(!asked && !mounted\) return null;/);
     // The dialog component itself stays a dynamic import.
     expect(lazy).toMatch(/dynamic\(\(\) => import\('@\/components\/LandingModals'\)/);
     expect(staticImports(lazy)).not.toContain('@/components/LandingModals');
@@ -180,18 +177,6 @@ test.describe('the landing asks Firebase only when the reader does', () => {
     }
     // Initialised once the access dialog is open, so a Safari popup is not blocked.
     expect(body).toMatch(/useEffect\(\(\) => \{\s*if \(authDialogOpen\) getAuth\(\);\s*\}, \[authDialogOpen\]\);/);
-  });
-
-  test('a redirect result is asked for only behind the pending mark, and the mark is cleared after', () => {
-    const src = read('components/LandingModals.tsx');
-    const calls = src.split('getRedirectResult(').length - 1;
-    expect(calls).toBe(1);
-    const at = src.indexOf('getRedirectResult(auth)');
-    expect(at).toBeGreaterThan(-1);
-    const effect = src.slice(src.lastIndexOf('useEffect(() => {', at), at);
-    expect(effect).toMatch(/if \(redirectChecked\.current \|\| !isRedirectPending\(\)\) return;/);
-    const after = src.slice(at, src.indexOf('}, [router, afterSignIn]);', at));
-    expect(after).toContain('.finally(clearRedirectPending)');
   });
 });
 
@@ -220,34 +205,19 @@ test('the one Auth instance keeps the signed-in hint in step with Firebase', () 
 });
 
 /**
- * Whether every `signInWithRedirect(` in `source` has `markRedirectPending()`
- * before it in the same function. Nothing calls a redirect today (the Google
- * button opens a popup), so the guard holds the order for the day one does.
+ * No sign-in goes by redirect (the Google button opens a popup), so nothing on
+ * a public page asks Firebase whether a redirect came back. The mark that once
+ * guarded that check (`cc.auth.redirectPending`) was never set and is gone
+ * since 3.2.0; a redirect sign-in would need its own design against privacy
+ * policy section 7 before it lands.
  */
-function redirectsWithoutMark(source: string): number {
-  let missing = 0;
-  let from = 0;
-  for (;;) {
-    const at = source.indexOf('signInWithRedirect(', from);
-    if (at < 0) break;
-    from = at + 1;
-    // The enclosing function: back to the nearest arrow or function head.
-    const head = Math.max(source.lastIndexOf('=> {', at), source.lastIndexOf('function ', at));
-    const mark = source.lastIndexOf('markRedirectPending()', at);
-    if (mark < 0 || mark < head) missing++;
-  }
-  return missing;
-}
-
-test('every redirect sign-in sets the pending mark before it leaves', () => {
-  expect(redirectsWithoutMark('const go = async () => {\n  await signInWithRedirect(auth, provider);\n};')).toBe(1);
-  expect(redirectsWithoutMark('const go = async () => {\n  markRedirectPending();\n  await signInWithRedirect(auth, provider);\n};')).toBe(0);
+test('no sign-in goes by redirect, and nothing asks for a redirect result', () => {
   const offenders: string[] = [];
   const walk = (dir: string) => {
     for (const entry of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
       const rel = `${dir}/${entry.name}`;
       if (entry.isDirectory()) walk(rel);
-      else if (/\.tsx?$/.test(entry.name) && redirectsWithoutMark(read(rel)) > 0) offenders.push(rel);
+      else if (/\.tsx?$/.test(entry.name) && /\b(?:signInWithRedirect|getRedirectResult)\(|['"]cc\.auth\.redirectPending['"]/.test(read(rel))) offenders.push(rel);
     }
   };
   for (const dir of ['app', 'components', 'hooks', 'lib']) walk(dir);
@@ -353,7 +323,6 @@ const REVIEWED_SHELL_CALLS: Record<string, string> = {
   'components/workspace/TargetChange.tsx': DEMO_AFTER_GATE,
   'hooks/useProjectEvidence.ts': DEMO_AFTER_GATE,
   'lib/engine-run.ts': DEMO_AFTER_GATE,
-  'lib/process-naming-client.ts': DEMO_AFTER_GATE,
   'lib/process-revisions-client.ts': DEMO_AFTER_GATE,
   'lib/project-command-client.ts': DEMO_AFTER_GATE,
 };
