@@ -120,6 +120,38 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     writtenFor: 'signed-in',
     namedInPolicy: false,
   },
+  // Analyze, Business (3.2.0, AB-4, ADR-118; `lib/analyze-progress.ts`): privacy policy 1.3 names these; until it is
+  // published, section 7 does not.
+  {
+    key: 'cc.analyze.walked.',
+    match: 'prefix',
+    area: 'local',
+    holds: '"1": that the walk-through of the analysis was finished or its hint dismissed, never when',
+    purpose: 'the soft-gate hint goes, the two endings and "What you can do next" show',
+    lifetime: 'until cleared site data',
+    writtenFor: 'signed-in',
+    namedInPolicy: false,
+  },
+  {
+    key: 'cc.analyze.nextHidden.',
+    match: 'prefix',
+    area: 'local',
+    holds: 'that "Hide" was pressed on "What you can do next" for this project',
+    purpose: 'the card stays hidden for this project until it is brought back',
+    lifetime: 'until cleared site data',
+    writtenFor: 'signed-in',
+    namedInPolicy: false,
+  },
+  {
+    key: 'cc.analyze.toolOpened.',
+    match: 'prefix',
+    area: 'local',
+    holds: 'that a tool after Analyze was opened once for this project',
+    purpose: 'the tool bar shows its "Next" tag only once a later tool was used',
+    lifetime: 'until cleared site data',
+    writtenFor: 'signed-in',
+    namedInPolicy: false,
+  },
   {
     key: 'cc-fr-derived-',
     match: 'prefix',
