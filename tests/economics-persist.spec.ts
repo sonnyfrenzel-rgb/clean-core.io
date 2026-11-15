@@ -114,6 +114,12 @@ test('the four steps survive another tool and a reload, and Economics earns its 
   await page.waitForURL(new RegExp(`/project/${PROJECT}/analyze`), { timeout: 60000 });
   await tool(page, 'tco').waitFor({ timeout: 60000 });
   await tool(page, 'tco').click();
+  // Analyze, Business before the walk-through in this browser: the soft gate holds the first plain click on a later
+  // tool for one note, and nothing is locked — its "Continue to …" link opens the tool (AB-4, ADR-118; CHANGELOG
+  // [Unreleased]: "A later tool clicked before the walk-through shows a soft hint; nothing is locked").
+  const gate = page.locator('[data-analyze-soft-gate]');
+  await expect(gate).toBeVisible({ timeout: 30000 });
+  await gate.locator('a[data-analyze-soft-gate-continue]').click();
   await page.waitForURL(new RegExp(`/project/${PROJECT}/tco`), { timeout: 60000 });
   await page.waitForSelector('[data-economics-steps]', { timeout: 60000 });
   await expectFigures(page);
