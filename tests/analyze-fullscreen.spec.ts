@@ -169,6 +169,39 @@ test.describe('the source: full screen is the page layout\'s, everything else ke
   });
 });
 
+test.describe('the compact way up (the phone\'s full-screen bar, static markup)', () => {
+  test('the levels above are hidden and no Tab stop; the way up and the level on show are what the keyboard meets', async () => {
+    const out = path.join(ROOT, 'tmp', 'analyze-fullscreen', String(process.pid), 'ProcessBreadcrumb.cjs');
+    await build({
+      entryPoints: [path.join(ROOT, 'components', 'process-map', 'ProcessBreadcrumb.tsx')],
+      outfile: out,
+      bundle: true,
+      format: 'cjs',
+      platform: 'node',
+      jsx: 'automatic',
+      external: ['react', 'react-dom', 'react/jsx-runtime', 'firebase/*', 'lucide-react', 'next/*'],
+      alias: { '@': ROOT },
+      logLevel: 'silent',
+    });
+    const Crumbs = (require(out) as { default: (props: Record<string, unknown>) => React.ReactElement }).default;
+    const crumbs = [
+      { plane: null, label: 'Process', outline: '' },
+      { plane: 'sp1', label: 'Check requisition', outline: '4' },
+      { plane: 'sp2', label: 'Check account assignment', outline: '4.7' },
+    ];
+    const compact = renderToStaticMarkup(React.createElement(Crumbs, { crumbs, onOpen: () => undefined, compact: true }));
+    const ancestors = [...compact.matchAll(/<button[^>]*data-process-crumb="(top|sp1)"[^>]*>/g)].map((m) => m[0]);
+    expect(ancestors).toHaveLength(2);
+    for (const tag of ancestors) expect(tag, 'a hidden level above is a Tab stop').toContain('tabindex="-1"');
+    expect(compact).toContain('data-process-up=""');
+    // Inline, the levels above are visible links and stay in the Tab order.
+    const inline = renderToStaticMarkup(React.createElement(Crumbs, { crumbs, onOpen: () => undefined }));
+    for (const tag of [...inline.matchAll(/<button[^>]*data-process-crumb="(top|sp1)"[^>]*>/g)].map((m) => m[0])) {
+      expect(tag).not.toContain('tabindex="-1"');
+    }
+  });
+});
+
 test.describe('an unsaved draft survives leaving full screen', () => {
   test('the editor goes, the draft stays with the holder, and opens again in its own project', () => {
     const holder = createDraftHolder();

@@ -113,6 +113,9 @@ export default function ProcessBreadcrumb({ crumbs, onOpen, compact = false }: P
               <button
                 type="button"
                 data-process-crumb={crumb.plane ?? 'top'}
+                // Compact, the levels above are visually hidden: no Tab stop the eye cannot follow. A screen reader
+                // still reads and activates them; the keyboard goes up by the way up.
+                tabIndex={compact ? -1 : undefined}
                 onClick={() => onOpen(crumb.plane)}
                 className={cn(
                   // A crumb is a link in a sentence; on a touch screen it is

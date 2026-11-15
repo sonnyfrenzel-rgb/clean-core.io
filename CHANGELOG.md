@@ -134,6 +134,9 @@ audit pack holds do not change.
   an account with a model key. A new map now replaces the old one directly and keeps a spotlight whose elements it
   still holds (`lib/process-map-spotlight.ts`, `tests/process-fact-charts.spec.ts`, rendered
   `tests/analyze-fact-charts.spec.ts` with a key).
+- The map's compact level path (the phone's full-screen bar) no longer gives the visually hidden levels above a Tab
+  stop: the focus could land on a link nobody could see. A screen reader still reads them; the keyboard goes up by
+  the way up (`components/process-map/ProcessBreadcrumb.tsx`, `tests/analyze-fullscreen.spec.ts`).
 - A credential assigned from a string template is redacted whole however its embedded expressions nest: a template
   inside `{ … }`, or a `}` or bar inside a literal of the expression, no longer ends the redaction early and leaves the
   rest of the secret in the snippet. The value is now read by a small scanner instead of one pattern. Same engine
