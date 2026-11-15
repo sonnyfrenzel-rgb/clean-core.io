@@ -94,25 +94,17 @@ function countPanel(
   count: number,
   noun: { one: string; many: string },
   emptyText: string,
-  detail?: string,
 ): string {
   const body = count
     ? `<div style="font-size: 17px; font-weight: 800; color: #0f172a; line-height: 1.3; padding: 9px 0;">${count} ${escapeHtml(
         count === 1 ? noun.one : noun.many,
-      )}</div>${
-        detail ? `<div style="font-size: 13px; color: #64748b; line-height: 1.5;">${escapeHtml(detail)}</div>` : ''
-      }`
+      )}</div>`
     : `<p style="font-size: 14px; color: #94a3b8; margin: 6px 0 0 0; font-style: italic; line-height: 1.5;">${escapeHtml(emptyText)}</p>`;
   return `
     <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
       <span style="font-weight: 800; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 4px;">${escapeHtml(title)}</span>
       ${body}
     </div>`;
-}
-
-/** How the week's first analyses were spread: one figure per account, no account named. */
-function runsPerAccount(runs: number[]): string | undefined {
-  return runs.length ? `Analysen je Account diese Woche: ${runs.join(', ')}` : undefined;
 }
 
 function failureLabel(status: string): string {
@@ -278,12 +270,8 @@ export function renderUsageReportEmail(report: UsageReport): string {
     <div class="panel" style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; margin-bottom: 18px;">
       <span style="font-weight: 800; color: #475569; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; display: block; margin-bottom: 12px;">Gesamtbestand</span>
       ${totalRow('Accounts (ohne Testkonten)', String(totals.accounts))}
-      ${totalRow('Analysen insgesamt', String(totals.runsAllTime))}
-      ${totalRow('Eindeutige ABAP-Objekte', String(totals.objectsAnalysed))}
-      ${totalRow('Einheiten verbraucht', `${totals.unitsUsed} von ${totals.unitsGranted} vergebenen`)}
       ${totalRow('Accounts am Limit', String(totals.atLimit), totals.atLimit > 0)}
       ${totalRow('Noch nie gestartet', String(totals.neverStarted))}
-      ${totalRow('Mit eigenem Gemini-Key (BYOK)', String(totals.byok))}
     </div>
 
     ${countPanel(
@@ -295,10 +283,9 @@ export function renderUsageReportEmail(report: UsageReport): string {
 
     ${countPanel(
       'Erstmals aktiviert diese Woche',
-      report.newlyActivated.length,
+      current.activations,
       { one: 'Account mit erster Analyse', many: 'Accounts mit erster Analyse' },
       'Niemand hat diese Woche seine erste Analyse gestartet.',
-      runsPerAccount(report.newlyActivated),
     )}
 
     ${
@@ -390,18 +377,14 @@ ${line('Verbrauchte Einheiten', current.units, previous.units)}${current.unitsUn
 
 GESAMTBESTAND
   Accounts (ohne Testkonten)  ${totals.accounts}
-  Analysen insgesamt          ${totals.runsAllTime}
-  Eindeutige ABAP-Objekte     ${totals.objectsAnalysed}
-  Einheiten verbraucht        ${totals.unitsUsed} von ${totals.unitsGranted} vergebenen
   Noch nie gestartet          ${totals.neverStarted}
   Am Limit                    ${totals.atLimit}
-  BYOK                        ${totals.byok}
 
 NEU REGISTRIERT
 ${report.newAccounts ? `  ${report.newAccounts} ${report.newAccounts === 1 ? 'neue Registrierung' : 'neue Registrierungen'}` : '  (keine)'}
 
 ERSTMALS AKTIVIERT
-${report.newlyActivated.length ? `  ${report.newlyActivated.length} ${report.newlyActivated.length === 1 ? 'Account' : 'Accounts'}, Analysen je Account: ${report.newlyActivated.join(', ')}` : '  (niemand)'}
+${current.activations ? `  ${current.activations} ${current.activations === 1 ? 'Account' : 'Accounts'}` : '  (niemand)'}
 
 ${report.reachedLimit ? `KONTINGENT AUFGEBRAUCHT\n  ${report.reachedLimit} ${report.reachedLimit === 1 ? 'Account am Limit' : 'Accounts am Limit'}\n` : ''}
 ${deliveryText(report.delivery)}

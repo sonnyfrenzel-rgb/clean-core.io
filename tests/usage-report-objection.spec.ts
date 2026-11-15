@@ -106,9 +106,8 @@ test('the same accounts unmarked do change the figures, so the comparison above 
   expect(unmarked.current.projects).toBe(without.current.projects + 1);
   expect(unmarked.previous.projects).toBe(without.previous.projects + 1);
   expect(unmarked.totals.atLimit).toBe(without.totals.atLimit + 1);
-  expect(unmarked.totals.byok).toBe(without.totals.byok + 1);
-  expect(unmarked.totals.objectsAnalysed).toBe(without.totals.objectsAnalysed + 3);
-  expect(unmarked.newlyActivated.length).toBe(without.newlyActivated.length + 1);
+  expect(unmarked.totals.activated).toBe(without.totals.activated + 2);
+  expect(unmarked.previous.activations).toBe(without.previous.activations + 1);
   expect(unmarked.delivery.sent).toBe(without.delivery.sent + 3);
   expect(unmarked.delivery.bounced).toBe(without.delivery.bounced + 1);
   expect(unmarked.delivery.complained).toBe(without.delivery.complained + 1);

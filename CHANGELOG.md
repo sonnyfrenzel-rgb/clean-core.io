@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`tests/usage-report-objection.spec.ts`).
 
 ### Changed
+- The weekly usage report holds only what privacy policy 1.3 names (owner decision 15.11.2026: trim the report to
+  the text). Gone from the report, the stored snapshot and the mail: the count of accounts with their own model key,
+  distinct analysed programmes, the all-time totals of runs, used and granted units, and the list of analyses per
+  newly activated account — no per-account figure at all. Kept: new, active and newly activated accounts, runs,
+  projects and used units for the week and the week before; accounts in total, never started and at their limit; the
+  delivery counts. Snapshots stored before keep their old fields; nothing reads them and nothing is migrated
+  (`tests/usage-report-trimmed.spec.ts`, `docs/DATA-RETENTION.md`).
 - Mail opens and clicks are not recorded. Tracking is off in the mail provider's account; an open or a click that
   arrives at the webhook anyway is acknowledged and dropped, neither delivery record stores it, and the weekly usage
   report counts delivery only ("Zugestellt", no "geöffnet"). An older record whose status is an open or a click

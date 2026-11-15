@@ -33,8 +33,6 @@ export interface Cohort {
   createdAt: Date | null;
   used: number;
   limit: number;
-  distinctObjects: number;
-  byok: boolean;
   unmetered: boolean;
   status: string;
   atLimit: boolean;
@@ -67,19 +65,22 @@ export interface UsageReport {
   periodEnd: Date;
   current: PeriodMetrics;
   previous: PeriodMetrics;
+  /*
+   * The standing totals, trimmed on 15.11.2026 (Sonny) to what privacy policy
+   * 1.3 says the report holds: accounts, how many have a first signed run, how
+   * many never started, how many are at their limit. The all-time runs and
+   * units, granted units, distinct programmes and the count of accounts with
+   * their own model key are gone from the report, the snapshot and the mail.
+   * Snapshots stored before may still carry them; nothing reads them.
+   */
   totals: {
     accounts: number;
     activated: number;
     neverStarted: number;
     atLimit: number;
-    byok: number;
-    unitsUsed: number;
-    unitsGranted: number;
-    objectsAnalysed: number;
-    runsAllTime: number;
   };
   /*
-   * Figures only, since 30.09.2026 (Sonny). The three fields below used to be
+   * Figures only, since 30.09.2026 (Sonny). These fields used to be three
    * lists of people — name and address of every new account, every account
    * that ran its first analysis and every account at its limit — and the mail
    * carried them out of our infrastructure through a mail provider into an
@@ -90,12 +91,11 @@ export interface UsageReport {
    */
   /** Accounts registered during the reporting week. */
   newAccounts: number;
-  /**
-   * Accounts that completed their first ever analysis during the week — the
-   * adoption signal. One entry per such account: how many analyses it ran this
-   * week, largest first. The length is the count; no entry says whose it is.
+  /*
+   * `newlyActivated` — one figure per account that ran its first analysis this
+   * week — is gone since 15.11.2026: the report carries no per-account value at
+   * all. How many accounts that is, is `current.activations`.
    */
-  newlyActivated: number[];
   /** Accounts that have used up their free units — a conversation, not a problem. */
   reachedLimit: number;
   /** What became of the mail the platform sent this week. */
@@ -210,8 +210,8 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
     .map((d) => {
       const u = d.data();
       const tier = u.tier || 'pilot';
-      const byok = u.byokConfigured === true;
-      const unmetered = tier === 'enterprise' || byok;
+      // Read only to tell an unmetered account, which cannot be at a limit; not counted.
+      const unmetered = tier === 'enterprise' || u.byokConfigured === true;
       const used = typeof u.transformationsUsed === 'number' ? u.transformationsUsed : 0;
       const limit = typeof u.transformationsLimit === 'number' ? u.transformationsLimit : 5;
       return {
@@ -220,8 +220,6 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
         createdAt: toDate(u.createdAt),
         used,
         limit,
-        distinctObjects: u.chargedInputs ? Object.keys(u.chargedInputs).length : 0,
-        byok,
         unmetered,
         status: u.status || 'pending',
         atLimit: !unmetered && limit > 0 && used >= limit,
@@ -242,12 +240,8 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
     .sort((a, b) => a.at!.getTime() - b.at!.getTime());
 
   const firstRunByUser = new Map<string, Date>();
-  const runCountInPeriod = new Map<string, number>();
   for (const r of runs) {
     if (!firstRunByUser.has(r.userId)) firstRunByUser.set(r.userId, r.at!);
-    if (inWindow(r.at, periodStart, periodEnd)) {
-      runCountInPeriod.set(r.userId, (runCountInPeriod.get(r.userId) || 0) + 1);
-    }
   }
 
   const projects = projectsSnap.docs
@@ -316,17 +310,8 @@ export async function buildUsageReport(db: UsageReportSource, periodEnd: Date = 
       activated: activatedUids.size,
       neverStarted: cohort.filter((u) => !activatedUids.has(u.uid)).length,
       atLimit: cohort.filter((u) => u.atLimit).length,
-      byok: cohort.filter((u) => u.byok).length,
-      unitsUsed: cohort.filter((u) => !u.unmetered).reduce((s, u) => s + u.used, 0),
-      unitsGranted: cohort.filter((u) => !u.unmetered).reduce((s, u) => s + u.limit, 0),
-      objectsAnalysed: cohort.reduce((s, u) => s + u.distinctObjects, 0),
-      runsAllTime: runs.length,
     },
     newAccounts: cohort.filter((u) => inWindow(u.createdAt, periodStart, periodEnd)).length,
-    newlyActivated: [...firstRunByUser.entries()]
-      .filter(([, at]) => inWindow(at, periodStart, periodEnd))
-      .map(([uid]) => runCountInPeriod.get(uid) || 0)
-      .sort((a, b) => b - a),
     reachedLimit: cohort.filter((u) => u.atLimit).length,
     delivery,
   };
@@ -382,14 +367,29 @@ export function usageReportBackfillExpiry(
  */
 export function usageReportSnapshot(report: UsageReport, extra: { providerId: string }) {
   const { current, previous, totals, delivery } = report;
+  // Field by field here too: a spread would carry whatever a caller's object
+  // holds, and the trimmed totals (15.11.2026) must stay trimmed in storage.
+  const period = (m: PeriodMetrics) => ({
+    registrations: m.registrations,
+    activations: m.activations,
+    activeAccounts: m.activeAccounts,
+    runs: m.runs,
+    projects: m.projects,
+    units: m.units,
+    ...(m.unitsUndetermined !== undefined ? { unitsUndetermined: m.unitsUndetermined } : {}),
+  });
   return {
     periodStart: report.periodStart,
     periodEnd: report.periodEnd,
-    current: { ...current },
-    previous: { ...previous },
-    totals: { ...totals },
+    current: period(current),
+    previous: period(previous),
+    totals: {
+      accounts: totals.accounts,
+      activated: totals.activated,
+      neverStarted: totals.neverStarted,
+      atLimit: totals.atLimit,
+    },
     newAccounts: report.newAccounts,
-    newlyActivated: [...report.newlyActivated],
     reachedLimit: report.reachedLimit,
     delivery: {
       sent: delivery.sent,

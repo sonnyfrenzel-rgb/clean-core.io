@@ -30,9 +30,8 @@ const report: UsageReport = {
   periodEnd: new Date('2026-11-13T11:00:00Z'),
   current: { registrations: 1, activations: 0, activeAccounts: 1, runs: 2, projects: 1, units: 2 },
   previous: { registrations: 0, activations: 0, activeAccounts: 0, runs: 0, projects: 0, units: 0 },
-  totals: { accounts: 3, activated: 1, neverStarted: 2, atLimit: 0, byok: 0, unitsUsed: 2, unitsGranted: 15, objectsAnalysed: 1, runsAllTime: 2 },
+  totals: { accounts: 3, activated: 1, neverStarted: 2, atLimit: 0 },
   newAccounts: 1,
-  newlyActivated: [],
   reachedLimit: 0,
   delivery: { sent: 1, delivered: 1, delayed: 0, bounced: 0, complained: 0, awaiting: 0, failures: [] },
 };

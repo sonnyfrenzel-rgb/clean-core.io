@@ -17,12 +17,8 @@ const report: UsageReport = {
   periodEnd: new Date('2026-08-21T10:00:00Z'),
   current: { registrations: 3, activations: 2, activeAccounts: 5, runs: 9, projects: 5, units: 9 },
   previous: { registrations: 1, activations: 0, activeAccounts: 2, runs: 2, projects: 3, units: 2 },
-  totals: {
-    accounts: 34, activated: 8, neverStarted: 26, atLimit: 3, byok: 1,
-    unitsUsed: 21, unitsGranted: 165, objectsAnalysed: 17, runsAllTime: 37,
-  },
+  totals: { accounts: 34, activated: 8, neverStarted: 26, atLimit: 3 },
   newAccounts: 2,
-  newlyActivated: [4, 1],
   reachedLimit: 3,
   delivery: {
     sent: 7, delivered: 5, delayed: 1, bounced: 1, complained: 0, awaiting: 0,
@@ -59,9 +55,7 @@ for (const [name, width] of [['mobile-320', 320], ['mobile-375', 375], ['desktop
     for (const label of [
       'Neue Registrierungen', 'Erstmals aktiviert', 'Aktive Accounts',
       'Analysen durchgeführt', 'Neue Projekte', 'Verbrauchte Einheiten',
-      'Accounts (ohne Testkonten)', 'Analysen insgesamt', 'Eindeutige ABAP-Objekte',
-      'Einheiten verbraucht', 'Accounts am Limit', 'Noch nie gestartet',
-      'Mit eigenem Gemini-Key (BYOK)',
+      'Accounts (ohne Testkonten)', 'Accounts am Limit', 'Noch nie gestartet',
     ]) {
       await expect(page.getByText(label, { exact: true }).first()).toBeVisible();
     }
@@ -144,11 +138,10 @@ test.describe('the report names nobody', () => {
 
     await expect(page.getByText('2 neue Registrierungen')).toBeVisible();
     await expect(page.getByText('2 Accounts mit erster Analyse')).toBeVisible();
-    await expect(page.getByText('Analysen je Account diese Woche: 4, 1')).toBeVisible();
     await expect(page.getByText('3 Accounts am Limit')).toBeVisible();
 
     expect(text).toContain('2 neue Registrierungen');
-    expect(text).toContain('2 Accounts, Analysen je Account: 4, 1');
+    expect(text).toMatch(/ERSTMALS AKTIVIERT\n {2}2 Accounts\n/);
     expect(text).toContain('3 Accounts am Limit');
     expect(text).toContain('1 x tenant access request received');
 
