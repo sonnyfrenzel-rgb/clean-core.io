@@ -156,6 +156,43 @@ test.describe('1. the candidate implementations of a call the source cannot reso
     expect(skeleton.notDrawn.unreached).toEqual([]);
     expect(entriesOf(buildProcessSkeleton(source, OLD))).toEqual([1]);
   });
+
+  test('a call matched by the method name alone makes no beginnings: its object may be of a class outside this source', () => {
+    const local = [
+      'REPORT zt_untyped.', //                                              1
+      'CLASS lcl_a DEFINITION.', //                                          2
+      '  PUBLIC SECTION.', //                                                3
+      '    METHODS run.', //                                                 4
+      'ENDCLASS.', //                                                        5
+      'CLASS lcl_a IMPLEMENTATION.', //                                      6
+      '  METHOD run.', //                                                    7
+      '    UPDATE zta SET x = 1.', //                                        8
+      '  ENDMETHOD.', //                                                     9
+      'ENDCLASS.', //                                                       10
+      'CLASS lcl_b DEFINITION.', //                                         11
+      '  PUBLIC SECTION.', //                                               12
+      '    METHODS run.', //                                                13
+      'ENDCLASS.', //                                                       14
+      'CLASS lcl_b IMPLEMENTATION.', //                                     15
+      '  METHOD run.', //                                                   16
+      '    UPDATE ztb SET x = 1.', //                                       17
+      '  ENDMETHOD.', //                                                    18
+      'ENDCLASS.', //                                                       19
+    ];
+    for (const [decl, call] of [
+      // A global factory's object, and a field symbol typed `any`: the source does not say the class.
+      ['DATA gv TYPE i.', '  DATA(go) = zcl_factory=>get( ). go->run( ).'],
+      ['FIELD-SYMBOLS <go> TYPE any.', '  CALL METHOD <go>->run.'],
+    ]) {
+      const source = [...local, decl, 'START-OF-SELECTION.', call].join('\n');
+      const skeleton = buildProcessSkeleton(source, NEW);
+      // The call stays opaque and still names what shares the name here; neither implementation is its beginning.
+      expect(nodesAt(skeleton, 22).find((n) => n.kind === 'call-opaque')?.detail, call).toMatchObject({ ambiguous: true, candidates: ['LCL_A=>RUN', 'LCL_B=>RUN'] });
+      expect(entriesOf(skeleton), call).toEqual([21]);
+      expect(startAt(skeleton, 7), call).toBeUndefined();
+      expect(startAt(skeleton, 16), call).toBeUndefined();
+    }
+  });
 });
 
 /** A template method: the base class calls `me->` on a step a subclass redefines; the report uses the subclass. */

@@ -125,6 +125,10 @@ audit pack holds do not change.
   Tab no longer leaves it either: the edges of the Tab loop counted the map's nodes, which Tab skips, so a Tab from
   the map's one focusable node went out to the page behind (Tab and Shift+Tab walked in the rendered
   `tests/analyze-fullscreen.spec.ts`).
+- Engine 3.2.0: a call matched by the method name alone (`DATA(go) = zcl_factory=>get( ). go->run( ).`, a field
+  symbol typed `any`) no longer makes the implementations here that share the name beginnings "candidate of" it; its
+  object may be of a class outside this source. The call stays opaque and still lists them, as in 3.1.0
+  (`tests/engine-reads-320.spec.ts`). The benchmark figures above were measured before this change.
 - A chart row pressed under the map stays lit when the map is re-read with its AI names: the map was announced as
   gone and then as new on every re-read, which dropped the light and the "Showing: … · Clear" line within seconds for
   an account with a model key. A new map now replaces the old one directly and keeps a spotlight whose elements it

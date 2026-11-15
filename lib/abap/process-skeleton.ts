@@ -1864,7 +1864,9 @@ class SkeletonBuilder {
     for (const statement of this.statements) {
       for (const call of this.methodCallsIn(statement)) {
         if (call.key) this.methodCallSites.set(call.key, [...(this.methodCallSites.get(call.key) ?? []), statement.index]);
-        if (!this.reads320 || !call.ambiguous) continue;
+        // Only a call whose class the source names (`typed`): one matched by the method name alone may reach a class
+        // outside this source, so the implementations here that share the name are no candidates of it.
+        if (!this.reads320 || !call.ambiguous || !call.typed) continue;
         for (const candidate of call.candidates) {
           this.candidateSites.set(candidate, [
             ...(this.candidateSites.get(candidate) ?? []),
