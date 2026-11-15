@@ -91,8 +91,21 @@ export function toHomeRow(project: Project & { id: string }, access: 'own' | 'sh
     status: homeStatus(project),
     lastChange: changed ? formatIsoDate(changed) : null,
     lastChangeText: changed ? formatTextDate(changed) : null,
-    factsKey: `${hasRun ? project.activeRunId : ''}:${source.length}`,
+    factsKey: `${hasRun ? project.activeRunId : ''}:${source.length}:${sourceHash(source)}`,
   };
+}
+
+/**
+ * A short fingerprint of the source for `factsKey` (FNV-1a, 32 bit): an edit that keeps the length still changes
+ * it. A key, not a proof — nothing is signed or compared with it beyond "read the row's figures again".
+ */
+function sourceHash(source: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < source.length; i += 1) {
+    h ^= source.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36);
 }
 
 /* ------------------------------------------------------------------ filter, sort, show */

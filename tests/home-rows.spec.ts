@@ -155,6 +155,15 @@ test.describe('the rows — lib/home-rows.ts (H-O9: every project, lean)', () =>
     expect(row.linesFromRun).toBe(true);
   });
 
+  test('the figures key changes with the run and with any edit of the source, also one that keeps its length', () => {
+    const key = (source: string, run = 'run-a') => toHomeRow(analysed('k', { activeRunId: run }, source)).factsKey;
+    expect(key("REPORT z. WRITE 'a'.")).toBe(key("REPORT z. WRITE 'a'."));
+    expect(key("REPORT z. WRITE 'a'.")).not.toBe(key("REPORT z. WRITE 'b'."));
+    expect(key("REPORT z. WRITE 'a'.")).not.toBe(key("REPORT z. WRITE 'a'.", 'run-b'));
+    // Never the source itself.
+    expect(key('REPORT zsecret_name.')).not.toContain('zsecret_name');
+  });
+
   test('the date is "6 Nov 2026" in the list and ISO only for sorting (H-O10)', () => {
     const row = toHomeRow(base('d', { createdAt: '2026-11-06T10:00:00Z' } as Partial<Project>));
     expect(row.lastChangeText).toBe('6 Nov 2026');

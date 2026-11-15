@@ -129,6 +129,9 @@ audit pack holds do not change.
   symbol typed `any`) no longer makes the implementations here that share the name beginnings "candidate of" it; its
   object may be of a class outside this source. The call stays opaque and still lists them, as in 3.1.0
   (`tests/engine-reads-320.spec.ts`). The benchmark figures above were measured before this change.
+- My workspace reads a row's levels and rules again after any edit of its source, also one that keeps the source's
+  length: the row's key now carries a short fingerprint of the source, never the source (`lib/home-rows.ts`,
+  `tests/home-rows.spec.ts`).
 - An edit of the map asked for on one project no longer opens the editor on the next project the same page shows: the
   request is held for the project and source it was made on (`components/process-map/ProcessMap.tsx`,
   `tests/process-map-draft-identity.spec.ts`).
