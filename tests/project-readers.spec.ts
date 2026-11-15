@@ -131,15 +131,26 @@ test.describe('the rules keep the shape the emulator test depends on', () => {
     // SEC-2026-758, SEC-2026-764 admit a second one, and only on a create: the
     // caller's own write ceiling, read as it stands *after* the request
     // (getAfter/existsAfter), never on a read or a list query.
+    // SEC-2026-980 admits a third, and only on the profile's own create: the
+    // caller's erasure marker, behind exists(), never on a read or a list query.
     const paths = [...text.matchAll(/\/databases\/\$\(database\)\/documents\/[^;\n]*/g)].map((m) => m[0].trim());
-    expect(paths, 'two document paths in the whole file').toEqual([
+    expect(paths, 'three document paths in the whole file').toEqual([
       '/databases/$(database)/documents/users/$(request.auth.uid)',
+      '/databases/$(database)/documents/erased_accounts/$(request.auth.uid)',
       '/databases/$(database)/documents/write_ceilings/$(request.auth.uid)',
     ]);
     const gets = [...text.matchAll(/\b(get|exists|getAfter|existsAfter)\((\w+)\(\)\)/g)].map((m) => `${m[1]}(${m[2]})`);
     expect(new Set(gets), 'every get()/exists() reads one of those paths').toEqual(new Set([
       'exists(callerProfilePath)', 'get(callerProfilePath)', 'existsAfter(ceilingPath)', 'getAfter(ceilingPath)',
+      'exists(erasedMarkerPath)', 'get(erasedMarkerPath)',
     ]));
+    const marker = text.slice(text.indexOf('function erasedRecently()'), text.indexOf('function userClientCreateKeys()'));
+    expect(marker.indexOf('exists(erasedMarkerPath()) &&'), 'the marker is read behind exists()').toBeGreaterThan(-1);
+    expect(marker.indexOf('exists(erasedMarkerPath()) &&')).toBeLessThan(marker.indexOf('get(erasedMarkerPath())'));
+    const askers = [...text.matchAll(/!erasedRecently\(\)/g)].length;
+    expect(askers, 'only the profile create rule asks for the marker').toBe(1);
+    const usersMatch = text.slice(text.indexOf('match /users/{userId}'), text.indexOf('allow update', text.indexOf('match /users/{userId}')));
+    expect(usersMatch, 'and it is the create rule of users/{userId}').toContain('!erasedRecently()');
     const ceiling = text.slice(text.indexOf('function ceilingTaken('), text.indexOf('match /projects/{projectId}'));
     expect(ceiling.indexOf('existsAfter(ceilingPath()) &&'), 'the ceiling is read behind existsAfter()')
       .toBeGreaterThan(-1);
