@@ -382,7 +382,8 @@ test.describe('"Hide" in a browser (server-free, intercepted origin)', () => {
     const card = page.locator('[data-analyze-what-next]');
     await expect(card).toHaveAttribute('data-analyze-what-next', 'closed');
     // One line: its title and "Hide"; the views and tools are not shown until it is opened. (The harness carries no
-    // stylesheet, so the line is measured by what it says, not by its height — the height is the rendered spec's.)
+    // stylesheet, so the line is measured by what it says, not by its height — the height and the one line are measured
+    // in the rendered spec below, at 768 px.)
     expect((await card.innerText()).replace(/\s+/g, ' ').trim()).toBe('What you can do next Hide');
     await expect(card.locator('[data-analyze-what-next-tools]')).toBeHidden();
     await page.locator('[data-analyze-what-next-toggle]').click();
@@ -438,6 +439,23 @@ test.describe('rendered: the endings and the soft gate in Analyze, Business (nee
       return b.top >= a.bottom;
     });
     expect(below, 'the card does not stand below the endings').toBe(true);
+
+    // At 768 px, with the product's stylesheet: one collapsed line — the title and "Hide" side by side, no taller than
+    // one row of the card — that opens in place.
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await expect(card).toHaveAttribute('data-analyze-what-next', 'closed');
+    const line = await card.evaluate((el) => {
+      const title = el.querySelector('[data-analyze-what-next-toggle]')!.getBoundingClientRect();
+      const hide = el.querySelector('[data-analyze-what-next-hide]')!.getBoundingClientRect();
+      return { height: el.getBoundingClientRect().height, titleTop: title.top, hideTop: hide.top, titleH: title.height, hideH: hide.height };
+    });
+    expect(Math.abs(line.titleTop + line.titleH / 2 - (line.hideTop + line.hideH / 2)), 'the title and "Hide" are not on one line').toBeLessThan(4);
+    expect(line.height, 'the collapsed card is more than one line').toBeLessThanOrEqual(Math.max(line.titleH, line.hideH) + 32);
+    await expect(card.locator('[data-analyze-what-next-tools]')).toBeHidden();
+    await card.locator('[data-analyze-what-next-toggle]').click();
+    await expect(card).toHaveAttribute('data-analyze-what-next', 'open');
+    await expect(card.locator('[data-analyze-what-next-tools]')).toBeVisible();
+    await page.setViewportSize({ width: 1440, height: 900 });
 
     // 9b: Hide, a reload, still hidden — and no Firestore write on the way.
     const writes: string[] = [];
