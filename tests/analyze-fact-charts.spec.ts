@@ -12,7 +12,7 @@ import { seedLayoutProject } from './helpers/analyze-layout';
 test.describe('rendered: the charts under the map light the map', () => {
   test.describe.configure({ mode: 'serial' });
 
-  test('Z_MM_PO_APPROVAL: 9 ends in 6 rows; a stop row lights its level; Clear and the keyboard take it back', async ({ page }) => {
+  test('Z_MM_PO_APPROVAL: 10 ends in 7 rows; a stop row lights its level; Clear and the keyboard take it back', async ({ page }) => {
     test.setTimeout(360 * 1000);
     const seeded = await seedLayoutProject('ab7-charts');
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -22,10 +22,14 @@ test.describe('rendered: the charts under the map light the map', () => {
 
     const ends = page.locator('[data-fact-chart="ends"]');
     await expect(ends).toBeVisible({ timeout: 60000 });
-    await expect(ends.locator('[data-fact-chart-sentence]')).toContainText('9 ways');
-    await expect(ends.locator('[data-fact-row]')).toHaveCount(6);
+    // 10 ends (1 normal, 9 stopped) since the 3.1.0 readings draw the map — the figure the server-free half
+    // re-read on 15.11.2026 (tests/process-fact-charts.spec.ts EXPECTED_ENDS, b765faa3); the new stop is
+    // "Stopped in “Request approval”", a seventh row.
+    await expect(ends.locator('[data-fact-chart-sentence]')).toContainText('10 ways');
+    await expect(ends.locator('[data-fact-chart-sentence]')).toContainText('9 stopped on the way');
+    await expect(ends.locator('[data-fact-row]')).toHaveCount(7);
     const counts = await ends.locator('[data-fact-count]').allInnerTexts();
-    expect(counts.reduce((sum, n) => sum + Number(n), 0)).toBe(9);
+    expect(counts.reduce((sum, n) => sum + Number(n), 0)).toBe(10);
     await expect(ends).toContainText('Reconstructed');
 
     // The charts stand below the map, never between the summary and it.

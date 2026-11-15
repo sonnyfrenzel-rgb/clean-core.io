@@ -140,12 +140,17 @@ test.describe('the source: Business on Analyze is the map, not the score', () =>
 });
 
 /**
- * The reading order as drawn: the summary, the map, the first insights, then "Next step", each
- * starting below the one before, and the keyboard reaching them in the same order. The source
- * guard (`tests/a11y-source-guard.spec.ts`) holds the DOM order; this holds what the reader sees.
+ * The reading order as drawn: the summary, the map, the two charts under it, then the text around the map, each
+ * starting below the one before, and the keyboard reaching them in the same order. The source guard
+ * (`tests/a11y-source-guard.spec.ts`) holds the DOM order; this holds what the reader sees.
+ *
+ * Since 3.2.0 the First insights and the "Next step" bar of the v3.1.0 interim are gone (CHANGELOG [Unreleased]:
+ * "The text around the map replaces the first insights in Business" (AB-6), "Two charts below the map" (AB-7), and
+ * the walk-through's endings replaced "Next step" (AB-4) — shown only after the walk-through, so not here on a first
+ * visit). The source test above holds the same order in `AnalyzeBusiness.tsx`.
  */
 async function expectReadingOrder(page: Page): Promise<void> {
-  const blocks = ['[data-analyze-summary]', '[data-analyze-map]', '[data-analyze-interim] [data-first-look]', '[data-analyze-interim] [data-next-step]'];
+  const blocks = ['[data-analyze-summary]', '[data-analyze-map]', '[data-fact-charts]', '[data-around-the-map]'];
   for (const sel of blocks) await expect(page.locator(sel).first(), `${sel} is not shown`).toBeVisible({ timeout: 60000 });
   const tops = await Promise.all(blocks.map(async (sel) => (await page.locator(sel).first().boundingBox())?.y ?? NaN));
   for (let i = 1; i < tops.length; i++) {
