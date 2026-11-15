@@ -134,6 +134,10 @@ audit pack holds do not change.
   an account with a model key. A new map now replaces the old one directly and keeps a spotlight whose elements it
   still holds (`lib/process-map-spotlight.ts`, `tests/process-fact-charts.spec.ts`, rendered
   `tests/analyze-fact-charts.spec.ts` with a key).
+- A credential assigned from a string template is redacted whole however its embedded expressions nest: a template
+  inside `{ … }`, or a `}` or bar inside a literal of the expression, no longer ends the redaction early and leaves the
+  rest of the secret in the snippet. The value is now read by a small scanner instead of one pattern. Same engine
+  reading from 3.2.0; a run of 3.1.0 keeps what it signed (`tests/qa-full-c23d6ca.spec.ts`).
 - A credential assigned from literals joined by `&&` or `&` (`lv_password = |abc| && |def|.`, backtick or quoted
   parts alike) is redacted whole; before, only the first literal went and the rest of the secret stayed in the
   snippet. Same engine reading from 3.2.0 as the redaction above; a run of 3.1.0 keeps what it signed

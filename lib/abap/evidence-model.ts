@@ -422,11 +422,12 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
   // From 3.0.19 (`ENGINE_READS_3019_FROM`) and from 3.0.20 (`ENGINE_READS_3020_FROM`); a run of an
   // earlier engine keeps what it signed.
   // From 3.2.0 (`ENGINE_READS_320_FROM`) the value may also be a backtick literal or a
-  // string template; a template is taken whole up to its closing bar, embedded `{ … }` included, and an
-  // unterminated literal to the end of the snippet — a secret the snippet cut off is still a secret. Literals joined
-  // by `&&` or `&` are one value: the whole chain goes, so no part of a split secret stays readable.
+  // string template; a template is taken whole up to its closing bar, embedded `{ … }` included however they nest
+  // (`literalEnd`), and an unterminated literal to the end of the snippet — a secret the snippet cut off is still a
+  // secret. Literals joined by `&&` or `&` are one value: the whole chain goes, so no part of a split secret stays
+  // readable. The 3.2.0 pattern finds only the name and the `=`; `redactAssignedLiterals` reads the value.
   const assigned = engineReads320Apply(engineVersion)
-    ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)((?:'(?:''|[^'])+(?:'|$)|`(?:``|[^`])+(?:`|$)|\|(?:\\.|\{[^}]*(?:\}|$)|[^|\\{])*(?:\||$))(?:\s*&&?\s*(?:'(?:''|[^'])+(?:'|$)|`(?:``|[^`])+(?:`|$)|\|(?:\\.|\{[^}]*(?:\}|$)|[^|\\{])*(?:\||$)))*)/gi
+    ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)(?=['`|])/gi
     : engineReads3020Apply(engineVersion)
     ? /\b([\w/]*?(?:PASSWORD|PASSWORT|PASSWD|KENNWORT|PWD|SECRET|TOKEN|APIKEY|API_KEY|ACCESS_KEY|ACCESSKEY|AUTH_KEY|PRIVATE_KEY|CREDENTIAL)[\w/]*)\b(\)?\s*(?:=|TYPE\s+[\w/]+(?:\s+LENGTH\s+\d+)?\s+VALUE)\s*)'([^']+)'/gi
     : engineReads3019Apply(engineVersion)
@@ -478,17 +479,108 @@ export function redactCredentials(snippet: string | undefined, engineVersion: st
     // From 3.0.20 every name that carries the word is a credential (`c_token_jwt`, `lv_token2`,
     // `password_type`), unless it only counts or measures one AND holds a plain number: `lv_token_count = '12'`
     // stays readable, a word in such a field does not.
-    .replace(assigned, (m, word, mid, value: string) => {
-      if (!engineReads320Apply(engineVersion)) {
-        return engineReads3020Apply(engineVersion) && COUNTS_A_CREDENTIAL.test(word) && /^\d+$/.test(value) ? m : `${word}${mid}'…<redacted>'`;
+    .replace(/^[\s\S]*$/, (text) => (engineReads320Apply(engineVersion)
+      ? redactAssignedLiterals(text, assigned)
+      : text.replace(assigned, (m, word: string, mid: string, value: string) =>
+        engineReads3020Apply(engineVersion) && COUNTS_A_CREDENTIAL.test(word) && /^\d+$/.test(value) ? m : `${word}${mid}'…<redacted>'`)));
+}
+
+/**
+ * Engine 3.2.0: every value assigned to a credential-named field (`head` finds the name and the `=`), redacted with
+ * its delimiters kept. The value is the literal chain `literalChainEnd` reads from where the match ends; a counter
+ * holding a plain number stays readable.
+ */
+function redactAssignedLiterals(text: string, head: RegExp): string {
+  let out = '';
+  let from = 0;
+  head.lastIndex = 0;
+  for (let m = head.exec(text); m; m = head.exec(text)) {
+    const start = m.index + m[0].length;
+    const end = literalChainEnd(text, start);
+    if (end <= start) continue;
+    const value = text.slice(start, end);
+    const open = value[0];
+    const closed = value.length > 1 && /['`|]$/.test(value);
+    const inner = value.slice(1, closed ? -1 : undefined);
+    out += text.slice(from, m.index);
+    out += COUNTS_A_CREDENTIAL.test(m[1]) && /^\d+$/.test(inner)
+      ? text.slice(m.index, end)
+      : `${m[1]}${m[2]}${open}…<redacted>${closed ? open : ''}`;
+    from = end;
+    head.lastIndex = end;
+  }
+  return out + text.slice(from);
+}
+
+/** Where the literals joined by `&&` or `&` from `start` end; `start` itself when no literal stands there. */
+function literalChainEnd(text: string, start: number): number {
+  let end = literalEnd(text, start);
+  if (end < 0) return start;
+  for (;;) {
+    const join = /^\s*&&?\s*/.exec(text.slice(end));
+    if (!join) return end;
+    const next = literalEnd(text, end + join[0].length);
+    if (next < 0) return end;
+    end = next;
+  }
+}
+
+/**
+ * The end of the literal at `at` — quoted, backtick or string template — or -1 when none, or an empty quoted one,
+ * stands there. A template is followed into its embedded expressions whatever they hold: quoted literals, a `}` or a
+ * bar inside one, templates nested in them. An unterminated literal runs to the end of the text.
+ */
+function literalEnd(text: string, at: number): number {
+  const c = text[at];
+  if (c === "'" || c === '`') {
+    if (at + 1 >= text.length || (text[at + 1] === c && text[at + 2] !== c)) return -1;
+    let j = at + 1;
+    while (j < text.length) {
+      if (text[j] === c) {
+        if (text[j + 1] === c) {
+          j += 2;
+          continue;
+        }
+        return j + 1;
       }
-      // From 3.2.0 `value` is the literal with its delimiters, and the redaction keeps them.
-      const open = value[0];
-      const closed = value.length > 1 && /['`|]$/.test(value);
-      const inner = value.slice(1, closed ? -1 : undefined);
-      if (COUNTS_A_CREDENTIAL.test(word) && /^\d+$/.test(inner)) return m;
-      return `${word}${mid}${open}…<redacted>${closed ? open : ''}`;
-    });
+      j += 1;
+    }
+    return text.length;
+  }
+  if (c === '|') return templateEnd(text, at + 1);
+  return -1;
+}
+
+/** From inside a template: the index after its closing bar, embedded expressions skipped whole. */
+function templateEnd(text: string, from: number): number {
+  let j = from;
+  while (j < text.length) {
+    const c = text[j];
+    if (c === '\\') j += 2;
+    else if (c === '|') return j + 1;
+    else if (c === '{') j = expressionEnd(text, j + 1);
+    else j += 1;
+  }
+  return text.length;
+}
+
+/** From inside an embedded expression `{ … }`: the index after its closing brace, literals and templates skipped whole. */
+function expressionEnd(text: string, from: number): number {
+  let j = from;
+  while (j < text.length) {
+    const c = text[j];
+    if (c === "'" || c === '`') {
+      const end = literalEnd(text, j);
+      j = end < 0 ? j + 2 : end;
+    } else if (c === '|') {
+      j = templateEnd(text, j + 1);
+    } else if (c === '}') {
+      return j + 1;
+    } else {
+      j += 1;
+    }
+  }
+  return text.length;
 }
 
 /** The endings of a name that counts or measures a credential rather than holding one. */

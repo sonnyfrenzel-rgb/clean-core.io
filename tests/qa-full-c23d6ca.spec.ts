@@ -38,6 +38,20 @@ test.describe('a credential in a backtick literal or string template is redacted
     expect(redactCredentials('lv_password = |abc| && |def|.', OLD)).toBe('lv_password = |abc| && |def|.');
   });
 
+  test('a template is redacted whole however its embedded expressions nest', () => {
+    // A template nested in an embedded expression: its bar does not end the outer template.
+    expect(redactCredentials('lv_password = |{ lv_a }{ |x{ lv_b }y| }secret|.', NEW)).toBe('lv_password = |…<redacted>|.');
+    expect(redactCredentials("lv_password = |pre{ to_upper( |a{ 'b' }c| ) }secret-tail|.", NEW)).toBe('lv_password = |…<redacted>|.');
+    // A `}` or a bar inside a literal of the expression ends nothing.
+    expect(redactCredentials("lv_password = |{ cond #( when x = '}' then '|' ) }secret|.", NEW)).toBe('lv_password = |…<redacted>|.');
+    expect(redactCredentials('lv_password = |{ `}|` }secret|.', NEW)).toBe('lv_password = |…<redacted>|.');
+    // Joined to a second template, and cut off inside an expression: all of it goes.
+    expect(redactCredentials('lv_token = |{ |a| }b| && |{ |c| }d|.', NEW)).toBe('lv_token = |…<redacted>|.');
+    expect(redactCredentials("lv_token = |{ cond #( when x = 'y", NEW)).toBe('lv_token = |…<redacted>');
+    // A run of 3.1.0 keeps what it signed.
+    expect(redactCredentials('lv_password = |{ lv_a }{ |x{ lv_b }y| }secret|.', OLD)).toBe('lv_password = |{ lv_a }{ |x{ lv_b }y| }secret|.');
+  });
+
   test('single-quoted values read as before, counters stay readable in every form', () => {
     expect(redactCredentials("lv_password = 'hunter2'.", NEW)).toBe("lv_password = '…<redacted>'.");
     expect(redactCredentials("lv_password = 'it''s-me'.", NEW)).toBe("lv_password = '…<redacted>'.");
