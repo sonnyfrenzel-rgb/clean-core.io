@@ -23,6 +23,7 @@ import type { WalkGuide } from '@/lib/process-walk-guide';
 import type { ProcessTour as Tour } from '@/lib/process-tour';
 import { OPEN_WALK_EVENT, requestProcessWalk, takeProcessWalkRequest } from '@/lib/process-walk-request';
 import ProcessTour, { type TourMove } from './ProcessTour';
+import { sameMapElements } from '@/lib/process-map-identity';
 import { ccModalOpen } from '@/components/cc/modal';
 import {
   MAP_SPOTLIGHT_EVENT,
@@ -242,7 +243,9 @@ export default function WorkspaceProcess({
       window.clearTimeout(timer);
     };
   }, [map.model, signed, tourEngine]);
-  const tour = read && read.model === map.model ? read.tour : null;
+  // The tour read off the map on show — or off the map before a re-read that changed only its names, until the new
+  // one is read: a tour that went null for that moment dropped the reader's station focus and the keys pressed then.
+  const tour = read && sameMapElements(read.model, map.model) ? read.tour : null;
   const [tourOpen, setTourOpen] = useState(false);
   /**
    * The tour's sentences in plain business words (3.0.20, owner decision 2):

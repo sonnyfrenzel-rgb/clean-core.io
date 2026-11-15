@@ -129,6 +129,10 @@ audit pack holds do not change.
   symbol typed `any`) no longer makes the implementations here that share the name beginnings "candidate of" it; its
   object may be of a class outside this source. The call stays opaque and still lists them, as in 3.1.0
   (`tests/engine-reads-320.spec.ts`). The benchmark figures above were measured before this change.
+- The walk-through on the page keeps its place and the keyboard when the map is re-read with its AI names: the tour
+  was dropped until it was read off the new map, so the card lost the focus and the arrow keys pressed in that moment
+  went nowhere. A re-read that changes only names keeps the tour (`lib/process-map-identity.ts`,
+  `tests/process-tour.spec.ts`; rendered `tests/analyze-tour-inline.spec.ts` with a key).
 - A chart row pressed under the map stays lit when the map is re-read with its AI names: the map was announced as
   gone and then as new on every re-read, which dropped the light and the "Showing: … · Clear" line within seconds for
   an account with a model key. A new map now replaces the old one directly and keeps a spotlight whose elements it

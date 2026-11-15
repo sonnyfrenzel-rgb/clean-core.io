@@ -11,6 +11,7 @@ import { walkOrder } from '../lib/process-walk';
 import { ABAP_TOKEN, buildWalkGuide, type WalkGuide } from '../lib/process-walk-guide';
 import { asideSentence, buildProcessTour, MAX_STATIONS, tourReadingOf, type ProcessTour } from '../lib/process-tour';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
+import { sameMapElements } from '../lib/process-map-identity';
 import { readExample } from './helpers/starter-example-files';
 
 /**
@@ -347,5 +348,25 @@ test.describe('where it stands and what it writes', () => {
     expect(demo).toMatch(/<ProcessTour\s/);
     expect(demo).toContain('demo={true}');
     expect(demo).not.toMatch(/usePlainWording|gemini|-client'/);
+  });
+});
+
+test.describe('a map re-read with its names keeps the tour that was read off it', () => {
+  test('the same elements are the same map; other code is not', () => {
+    // A re-read builds a new object from the same source; stored names change labels, never ids.
+    const again = readOf('Z_MM_PO_APPROVAL.abap').model;
+    expect(again).not.toBe(PO.model);
+    expect(sameMapElements(PO.model, again)).toBe(true);
+    const named = { ...again, elements: again.elements.map((e) => ({ ...e, label: `${e.label} (named)` })) };
+    expect(sameMapElements(PO.model, named)).toBe(true);
+    expect(sameMapElements(PO.model, BIG.model)).toBe(false);
+    expect(sameMapElements(PO.model, { ...PO.model, elements: PO.model.elements.slice(1) })).toBe(false);
+    expect(sameMapElements(null, PO.model)).toBe(false);
+  });
+
+  test('the page keeps its tour across such a re-read instead of dropping it until the new one is read', () => {
+    const process = read('components/workspace/WorkspaceProcess.tsx');
+    expect(process).toContain('const tour = read && sameMapElements(read.model, map.model) ? read.tour : null;');
+    expect(process).not.toContain('read.model === map.model ? read.tour');
   });
 });
