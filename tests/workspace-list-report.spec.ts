@@ -100,6 +100,17 @@ async function openWorkspace(page: Page) {
   });
 }
 
+/**
+ * Signs in and opens /dashboard for an account with no project yet. Since
+ * AB-14a that is the first view (home mockup v2.1, state 1), not a list holding
+ * only the demo row.
+ */
+async function openFirstView(page: Page, email: string) {
+  await signIn(page, email);
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('[data-home-first-view]', { timeout: 60000 });
+}
+
 /** The titles actually in the table — so no later assertion can pass on an empty render. */
 async function rowTitles(page: Page): Promise<string[]> {
   return page.locator('[data-cc-table] [data-cc-object-identifier-title]').allInnerTexts();
@@ -121,12 +132,12 @@ test.beforeAll(async () => {
 
 test('the server under test is the one that was changed', async ({ page }) => {
   test.setTimeout(180 * 1000);
-  await openWorkspace(page);
-  // `/admin/workspace` exists only with roadmap 1.8. Several dev servers run on
-  // this machine; a suite that measured another one would report the old
-  // behaviour as a regression.
+  // Several dev servers run on this machine; a suite that measured another one
+  // would report the old behaviour as a regression. The first view of a new
+  // account exists only with AB-14a.
+  await openFirstView(page, ADMIN_EMAIL);
   await expect(page.locator('[data-cc-workspace]')).toHaveCount(1);
-  await expect(page.locator('[data-cc-table]')).toHaveCount(1);
+  await expect(page.locator('[data-home-first-view]')).toHaveCount(1);
 });
 
 test('a community account gets the same "My workspace", and the old address of the list leads there', async ({ page }) => {
@@ -142,36 +153,53 @@ test('a community account gets the same "My workspace", and the old address of t
     timeout: 60000,
   });
   expect(await page.locator('[data-dashboard]').count(), 'both workspaces rendered').toBe(0);
-  await expect(page.locator('h1')).toHaveText(CC_MESSAGES['workspace.title']);
-  // The demo is the list's first row and leads to the workspace demo with its tour.
-  await expect(page.locator('[data-workspace-open="demo"]').first()).toHaveAttribute('href', '/demo/workspace');
+  // AB-14a: no project yet, so the first view — and the demo is its line
+  // "Prefer to look first?", leading to the workspace demo with its tour.
+  await expect(page.locator('h1')).toHaveText(WORKSPACE_MESSAGES['home.title']);
+  await expect(page.locator('[data-home-open-demo]:visible')).toHaveAttribute('href', '/demo/workspace');
 });
 
 test('there is only one "My workspace" at a time on /dashboard', async ({ page }) => {
   test.setTimeout(180 * 1000);
-  await openWorkspace(page);
+  await openFirstView(page, ADMIN_EMAIL);
   await expect(page.locator('[data-cc-workspace]')).toHaveCount(1);
   expect(await page.locator('[data-dashboard]').count(), 'both workspaces rendered').toBe(0);
-  await expect(page.locator('h1')).toHaveText(CC_MESSAGES['workspace.title']);
+  await expect(page.locator('h1')).toHaveCount(1);
 });
 
 test.describe('before the first project', () => {
-  test('the demo is the first row, is not an achievement, and the empty state is the empty one', async ({
-    page,
-  }) => {
+  test('the first view stands where an empty list stood: no table, no empty state, no filter bar', async ({ page }) => {
+    // AB-14a (home mockup v2.1, state 1). The empty list with the demo as its
+    // only row was a list with nothing of the reader's in it; the first view
+    // says what happens and holds the start instead.
     test.setTimeout(180 * 1000);
+    await openFirstView(page, ADMIN_EMAIL);
+    await expect(page.locator('h1')).toHaveText(WORKSPACE_MESSAGES['home.title']);
+    expect(await page.locator('[data-cc-table]').count()).toBe(0);
+    expect(await page.locator('[data-workspace-projects]').count()).toBe(0);
+    expect(await page.locator('[data-cc-empty-state]').count()).toBe(0);
+    expect(await page.locator('[data-workspace-your-turn]').count()).toBe(0);
+    await expect(page.locator('[data-home-start] [data-home-way]')).toHaveCount(2);
+  });
+});
+
+test.describe('with projects', () => {
+  test('the demo is a row, is not an achievement, and an own project means no empty state', async ({ page }) => {
+    test.setTimeout(180 * 1000);
+    // The projects of this block's beforeAll are there (AB-14a: before the
+    // first one, the first view stands instead of the list).
     await openWorkspace(page);
 
     const titles = await rowTitles(page);
     expect(titles.length, 'the table rendered no rows at all').toBeGreaterThan(0);
-    expect(titles[0], 'the demo is not the first row').toContain(DEMO_PROJECT_TITLE);
+    expect(titles.some((t) => t.includes(DEMO_PROJECT_TITLE)), 'the demo is not a row').toBe(true);
     await expect(page.locator(`[data-cc-table] [data-cc-tag]:has-text("${DEMO_TAG}")`)).toBeVisible();
 
     // Roadmap 0.10 marks every phase of the demo unproven: it produces no signed
     // run and executes no test. A first row that reads as a finished project is
     // the flattery this screen exists to refuse — so the demo row says in one
     // plain sentence what it is, and carries no status word and no step bar.
-    const demoRow = page.locator('[data-cc-table-row]').first();
+    const demoRow = page.locator('[data-cc-table-row="demo"]');
     await expect(demoRow.locator('[data-project-sentence]')).toHaveText(WORKSPACE_MESSAGES['myWorkspace.demoSentence']);
     await expect(demoRow).not.toContainText('handed over');
     expect(await demoRow.locator('[data-progress-bar]').count()).toBe(0);
@@ -180,21 +208,11 @@ test.describe('before the first project', () => {
       'the demo row carries a proof chip',
     ).toBe(0);
 
-    // Nothing of the reader's own — so the empty state, the "Your turn" card,
-    // and no filter bar (there is nothing to filter).
-    await expect(page.locator('[data-cc-empty-state="empty"]')).toBeVisible();
+    // A project of the reader's own: no empty state of either kind.
+    expect(await page.locator('[data-cc-empty-state="empty"]').count()).toBe(0);
     expect(await page.locator('[data-cc-empty-state="no-matches"]').count()).toBe(0);
-    await expect(page.locator('[data-workspace-your-turn]')).toBeVisible();
-    expect(
-      // Scoped to the project list: the examples gallery below it has a
-      // filter bar of its own, over a list that is never empty.
-      await page.locator('[data-workspace-projects] [data-cc-filter-bar]').count(),
-      'a filter bar over a table with nothing to filter',
-    ).toBe(0);
   });
-});
 
-test.describe('with projects', () => {
   test.beforeAll(async () => {
     await adminSetDoc('projects', STAGED_ID, {
       name: 'Staged, never analysed',

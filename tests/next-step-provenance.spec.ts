@@ -297,7 +297,7 @@ test.describe('the card, as the reader sees it', () => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${OPEN_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 }); // Analyze, Business since v3.1.0 (ADR-109): the card under the map
 
     const card = page.locator('[data-next-step]');
     await expect(card.locator('[data-next-step-state="open"]')).toHaveAttribute('data-next-step-key', 'design');
@@ -320,7 +320,7 @@ test.describe('the card, as the reader sees it', () => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${DONE_ID}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 }); // Analyze, Business since v3.1.0 (ADR-109): the card under the map
 
     const card = page.locator('[data-next-step]');
     const none = card.locator('[data-next-step-state="none"]');

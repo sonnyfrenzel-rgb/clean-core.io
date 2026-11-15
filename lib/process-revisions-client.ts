@@ -29,8 +29,14 @@ export function processRevisionsPath(projectId: string): string {
   return `/api/projects/${encodeURIComponent(projectId)}/process-revisions`;
 }
 
+/**
+ * The signed-in account's token. Waits for the session to be restored first (v3.1.0): Analyze asks for these on its
+ * first render, before Firebase has read the session back, and a request sent then went without a token (HTTP 401).
+ */
 async function authHeader(): Promise<Record<string, string>> {
-  const user = getAuth().currentUser;
+  const auth = getAuth();
+  await auth.authStateReady?.();
+  const user = auth.currentUser;
   if (!user) return {};
   return { Authorization: `Bearer ${await user.getIdToken()}` };
 }

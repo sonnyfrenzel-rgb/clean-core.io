@@ -34,6 +34,7 @@ import { loadProjectAndHydrate } from '@/lib/project-loader';
 import type { Project, AnalysisData, CodeInventoryItem, DataCouplingEntry } from '@/lib/types';
 import { readModelGaps } from '@/lib/model-gaps';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
+import { useStartRunInFlight } from '@/hooks/useStartRun';
 import { absenceFromError, modelAbsenceReason, type ModelAbsence } from '@/lib/model-stages';
 import CollapsibleAccordion from '@/components/CollapsibleAccordion';
 import { extractCodeInventory, extractDataCoupling, computeComplexityScore, computeCriticalityScore } from '@/lib/abap/code-assessment';
@@ -58,6 +59,7 @@ import { signedRecommendationOf, signedRouteReport } from '@/lib/signed-route-re
 import { buildClassModel } from '@/lib/abap/class-model-resolver';
 import { APP_VERSION } from '@/lib/version';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
+import { useCustomerTexts } from '@/hooks/useCustomerTexts';
 import type { ClassModel, SupportFinding } from '@/lib/abap/class-model';
 import { detectFindings, summarize } from '@/lib/abap/findings-detector';
 import type { SourceFile } from '@/lib/abap/findings-detector';
@@ -142,8 +144,64 @@ import { workflowSteps } from '@/lib/workflow-steps';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { takeOwnCodeHandoff } from '@/lib/own-code-handoff';
 import { countSourceLines } from '@/lib/source-lines';
+import AnalyzeBusiness from '@/components/analyze/AnalyzeBusiness';
+import { createDraftHolder } from '@/lib/process-map-draft';
+import { stageViewOf, useLocationSearch } from '@/lib/location-search';
 
+/**
+ * Analyze — one route, three views (`?view=`; plan
+ * `docs/design/analyze-business-first-plan.md` §4.1, AB-2; ADR-109).
+ *
+ * **Business** (the default, and where a project opens): the map is the page —
+ * `components/analyze/AnalyzeBusiness.tsx`. A project without source has no
+ * map yet, so it gets the upload and start path below (P4).
+ *
+ * **IT and Management** keep today's page, the score hero with its findings
+ * (`AnalyzeScorePage`), until AB-9 and AB-10 give each one page of its own.
+ *
+ * The view is read from the address in the browser (`useLocationSearch`), as
+ * the stage header's view switch writes it, so a switch changes the page in
+ * place. Until the browser has answered, nothing is chosen: a server render
+ * has no query, and choosing Business there would start Business's reads for
+ * a reader who asked for IT.
+ */
 export default function AnalyzePage() {
+  const { projectId } = useParams();
+  // Subscribed to the router too, so a `router.push` to this route with a new query (a run that finished in IT
+  // and goes on to `?first=1`) renders again; the view switch writes the address without the router.
+  useSearchParams();
+  const search = useLocationSearch();
+  /**
+   * The map's unsaved drawing, held here because Analyze, Business is not: a
+   * switch to IT or Management unmounts it, and would otherwise discard the
+   * drawing unasked (held by the workspace shell until 3.1.0, AB-2).
+   */
+  const [processDraft] = useState(createDraftHolder);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center" role="status">
+        <p className="cc-text-body text-cc-ink-muted">Loading project data...</p>
+      </div>
+    );
+  }
+  const view = stageViewOf(search);
+  // A working address of today's page — a re-run it asks for (`?reason=no-run`, `?reason=legacy-run`) or an import it
+  // opens (`?add=usage|atc`) — keeps opening that page, whichever view it names.
+  const params = new URLSearchParams(search);
+  const working = params.has('reason') || params.has('add');
+  if (view === 'business' && !working && typeof projectId === 'string') {
+    const first = params.get('first') === '1';
+    return (
+      <AnalyzeBusiness key={projectId} projectId={projectId} first={first} draftHolder={processDraft} fallback={<AnalyzeScorePage />} />
+    );
+  }
+  return <AnalyzeScorePage />;
+}
+
+/** Today's Analyze page: the score hero, findings, route and folds (ADR-093) — IT and Management until AB-9/AB-10. */
+function AnalyzeScorePage() {
   const { projectId } = useParams();
   const searchParams = useSearchParams();
   const [project, setProject] = useState<Project | null>(null);
@@ -194,13 +252,25 @@ export default function AnalyzePage() {
    * narrative section is not there.
    */
   const modelAvailability = useModelAvailability();
+  /**
+   * The start run of Analyze, Business (`useStartRun`) may still be with the
+   * server when the reader switches to IT or Management: Start stays closed
+   * while it is, and the project is read again once it ends, so a second run
+   * is never offered for the same source.
+   */
+  const startInFlight = useStartRunInFlight(typeof projectId === 'string' ? projectId : '');
   /** Set by the run just completed. `null` on a fresh page — see `narrativeAbsence`. */
   const [lastNarrativeAbsence, setLastNarrativeAbsence] = useState<ModelAbsence>(null);
 
   useEffect(() => {
+    // Only the newest read may land: the read started before a start run ends
+    // can answer after the one started when it ended, and would put the
+    // pre-run project back over the signed result.
+    let current = true;
     const fetchProject = async () => {
       try {
         const hydratedProject = await loadProjectAndHydrate(projectId as string);
+        if (!current) return;
         if (hydratedProject) {
           setProject(hydratedProject);
           // The workspace says "Your analysis is ready" until this browser has
@@ -247,13 +317,16 @@ export default function AnalyzePage() {
           }
         }
       } catch (error) {
-        handleFirestoreError(error, OperationType.GET, `projects/${projectId}`);
+        if (current) handleFirestoreError(error, OperationType.GET, `projects/${projectId}`);
       } finally {
-        setLoading(false);
+        if (current) setLoading(false);
       }
     };
     fetchProject();
-  }, [projectId, searchParams]);
+    return () => {
+      current = false;
+    };
+  }, [projectId, searchParams, startInFlight]);
 
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState('');
@@ -643,7 +716,8 @@ export default function AnalyzePage() {
         // first look. Only once the run is signed — a failed run stays here
         // with its error.
         if (openWorkspaceAfterRunRef.current || firstRunOfProject) {
-          router.push(`/project/${projectId}?first=1`);
+          // On to the project's entry, Analyze in the Business view, with the first look (plan AB-2).
+          router.push(`/project/${projectId}/analyze?first=1`);
         } else {
           // The result stands on this page now, so it has been read here (ADR-090).
           // A first run goes on to the workspace unread — that is where the hint is.
@@ -815,16 +889,18 @@ export default function AnalyzePage() {
   // opens with, before the score (owner, 12.10.2026: the business texts about
   // what a Z program does must get clearly better, Analyze included).
   const summaryEngine = engineVersionOfProject(project);
+  // 3.1.0 (H5b): the project's customer texts — a line of "In short" that says one is marked.
+  const customerTexts = useCustomerTexts(typeof projectId === 'string' ? projectId : null);
   const inShort = useMemo(() => {
     if (!legacyCode) return null;
     try {
-      const facts = programSummaryFactsOf(legacyCode, { engineVersion: summaryEngine });
+      const facts = programSummaryFactsOf(legacyCode, { engineVersion: summaryEngine, customerTexts });
       const summary = programSummary(facts);
       return { lines: businessInShort(summary, { codes: false }), level: summary.level, proposal: purposeProposalOf(project?.analysis, facts), authorClaim: authorClaimOf(facts) };
     } catch {
       return null;
     }
-  }, [legacyCode, project?.analysis, summaryEngine]);
+  }, [legacyCode, project?.analysis, summaryEngine, customerTexts]);
   const programInShort = inShort ? (
     <div className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3">
       <ProgramInShort lines={inShort.lines} level={inShort.level} proposal={inShort.proposal} authorClaim={inShort.authorClaim} headingLevel={2} id="analyze-in-short-title" />
@@ -912,7 +988,9 @@ export default function AnalyzePage() {
    * Why "Start Analysis" is closed, or null when it is open. Shown under the
    * button and tied to it with `aria-describedby` (UX-013, UX-134, UX-165).
    */
-  const startBlockedReason: string | null = stagedScanBlock
+  const startBlockedReason: string | null = startInFlight
+    ? 'The analysis is running. It was started in the Business view; this page shows its result once it is signed.'
+    : stagedScanBlock
     ? `Security Block: ${stagedScanBlock} Remove the flagged content before analysing.`
     : !targetDeployment
       ? 'Select a target operating model (SAP S/4HANA Cloud Public Edition or SAP Cloud ERP Private) above to start.'

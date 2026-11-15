@@ -354,13 +354,15 @@ test.describe('Objects & dependencies, Run & trust, the IT sections (ADR-086)', 
 test.describe('the IT order in the shell, as the source writes it (the page is measured below)', () => {
   test('IT shows only its own answer: no layers, no first look, no "Ask this case" (ADR-086)', () => {
     const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell).toMatch(/const IT_HEAD: readonly ContentBlock\[\] = \[\];/);
-    expect(shell).not.toContain('IT_TAIL');
+    // No block of the shell stands before IT's answer: since v3.1.0 the shell has no order of blocks at all
+    // (the Business view is Analyze's, AB-2), and nothing renders a layer bar or the first look.
+    expect(shell).not.toMatch(/IT_HEAD|IT_TAIL|BUSINESS_ORDER|<WorkspaceLayerBar|<FirstLook\b/);
     expect(shell.indexOf('<ItAnswers')).toBeGreaterThan(0);
-    // The reading the search, the print sheet and the counts use is still
-    // computed in IT (and in Management since ADR-087), without rendering the
-    // first look there.
-    expect(shell).toMatch(/useSourceReading\([\s\S]*?view !== 'business' && firstLookReading === null/);
+    // The reading the search, the print sheet and the counts use is computed
+    // here, in IT and Management, without rendering the first look.
+    expect(shell).toMatch(/const reading = useSourceReading\(/);
+    // "Ask this case" stands under IT's answer, nowhere else.
+    expect(shell).toContain("{view === 'it' ? askThisCase : null}");
     // The demo twin follows: no layer bar and no map in its IT view.
     const demo = read('components/demo/DemoWorkspaceShell.tsx');
     const itBlock = demo.slice(demo.indexOf("{view === 'it' ? ("), demo.indexOf("{view === 'management' ? ("));

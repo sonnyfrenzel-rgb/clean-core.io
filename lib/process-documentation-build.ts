@@ -19,6 +19,9 @@ import { stripModelMarkdown } from '@/lib/model-text';
 import { countSourceLines } from '@/lib/source-lines';
 import { capabilityFactsOf } from '@/lib/documentation-facts';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
+import { engineReads310Apply } from '@/lib/abap/engine-reads-310-gate';
+import { customerTextProvenance, type CustomerTexts } from '@/lib/abap/customer-texts';
+import { APP_VERSION } from '@/lib/version';
 import { screenProgramDocument } from '@/lib/sensitive-text';
 
 /**
@@ -58,6 +61,11 @@ export interface ProcessDocumentationInput {
   skeleton?: ProcessSkeleton;
   /** The engine the active run was made with (`engineVersionOfProject`); left out, the current engine (3.0.20 summary). */
   engineVersion?: string | null;
+  /**
+   * 3.1.0 (H5b): the project's customer texts. The map's names already say them (`useProcessMap`); with them every step
+   * that does carries its provenance, and the summary reads them too.
+   */
+  customerTexts?: CustomerTexts | null;
 }
 
 /** The five things the old blueprint invented, and why the engine has none of them. */
@@ -103,7 +111,7 @@ function cleanName(name: string | null): string | null {
 
 export function buildProcessDocumentation(input: ProcessDocumentationInput): ProcessDocumentation {
   const { source, map } = input;
-  const skeleton = input.skeleton ?? buildProcessSkeleton(source);
+  const skeleton = input.skeleton ?? buildProcessSkeleton(source, { engineVersion: input.engineVersion });
 
   const sentences = buildBusinessStatements(source);
   const statements: DocStatement[] = sentences.map((sentence) => ({
@@ -119,10 +127,13 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
     sentences,
   );
 
+  const texts = engineReads310Apply(input.engineVersion === undefined ? APP_VERSION : input.engineVersion) && input.customerTexts ? input.customerTexts : null;
   const steps: DocStep[] = map.elements.map((element) => {
     const businessName = cleanName(element.businessName);
     const lane = cleanName(element.lane);
+    const customerText = texts ? customerTextProvenance(element.plainName ?? '', texts) : '';
     return {
+      ...(customerText ? { customerText } : {}),
       id: element.id,
       kind: element.kind,
       technicalName: element.technicalName,
@@ -210,6 +221,6 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
     // Owner 11.10.2026: what the program can do, so the business page can say what it does not.
     facts: capabilityFactsOf(source, skeleton),
     // Owner 12.10.2026: what the program is for, so every rendering opens with one summary.
-    summary: programSummaryFactsOf(source, { skeleton, engineVersion: input.engineVersion }),
+    summary: programSummaryFactsOf(source, { skeleton, engineVersion: input.engineVersion, ...(texts ? { customerTexts: texts } : {}) }),
   });
 }

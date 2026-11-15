@@ -483,8 +483,12 @@ test.describe('the IT view on a real project, in a browser', () => {
   test('the IT panel is IT’s, and does not appear in the other two views', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
+    // Business is Analyze's page since v3.1.0 (ADR-109); Management stays the workspace's.
     await page.goto(`/project/${PROJECT_ID}?view=business`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-it-view]')).toHaveCount(0);
+    await page.goto(`/project/${PROJECT_ID}?view=management`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-shell="management"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-it-view]')).toHaveCount(0);
   });
 });

@@ -17,9 +17,10 @@ import { signInViaLanding } from './helpers/sign-in';
  * And 03.10.2026: "the complete process map has to be created directly."
  *
  * Since ADR-072 the start signs the engine's reading itself, so the first look
- * ends on the full map, drawn from that run, right under the answer. This
- * walks the real path — own code, `?first=1`, no Analyze — and reads the first
- * screen after the build-up and again five seconds later.
+ * ends on the full map, drawn from that run. Since v3.1.0 (AB-2, AB-3) the
+ * project opens on that map in Analyze, Business, with no build-up before it.
+ * This walks the real path — own code, `?first=1`, no score page — and reads
+ * the first screen once it stands and again five seconds later.
  */
 
 const firebaseApp = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
@@ -37,7 +38,13 @@ const EMAIL = `first-look-map-${Date.now()}-${Math.random().toString(36).slice(2
 /** What stands in the first screen, at the top of the page. */
 async function firstScreen(page: Page) {
   await page.evaluate(() => window.scrollTo(0, 0));
-  await expect(page.locator('[data-first-look="complete"], [data-first-look="end-state"]')).toBeVisible();
+  // Since AB-2 (ADR-109) the project opens in Analyze, Business: "What this
+  // program does", then the map from the signed run — the first block under it,
+  // starting in the first screen. The first look's blocks stand below the map
+  // (interim until v3.2.0).
+  await expect(page.locator('[data-analyze-summary]')).toBeInViewport();
+  await expect(page.locator('[data-analyze-map]')).toBeInViewport();
+  await expect(page.locator('[data-first-look="end-state"]')).toBeVisible();
   // The process stands in the first screen — since 03.10.2026 as the story of
   // its steps in plain words, the opening of the Business view (owner: "he just
   // wants to know more about his old process") — and the full map, drawn from
@@ -47,15 +54,15 @@ async function firstScreen(page: Page) {
   // under "In short" — which quotes the header's title as the author's claim —
   // and "Started by / Goes in / Comes out". Owner decision 23.10.2026: its first
   // steps stand whole in the first screen of 1440 × 1000, beside the main line.
-  await expect(page.locator('[data-first-look-process="drawn"]')).toBeInViewport();
-  await expect(page.locator('[data-process-story]')).toBeInViewport();
-  await expect(page.locator('[data-process-story-step="1"]')).toBeInViewport({ ratio: 1 });
-  await expect(page.locator('[data-process-story-step="2"]')).toBeInViewport({ ratio: 1 });
+  //
+  // AB-2 moves the map to the top: the story is one of the blocks under it now.
+  // Below the map, so not in the first screen — but shown, not merely in the page.
+  await expect(page.locator('[data-process-story]')).toBeVisible();
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map).toBeVisible();
-  // The main line stays on the right after the build-up (owner 10.10.2026,
-  // reversing 03.10.2026).
-  await expect(page.locator('[data-first-look-process="drawn"]')).toBeVisible();
+  // The picture of the main line beside the first insights retired with the
+  // build-up in v3.1.0 (AB-3): the map above them is the one picture.
+  await expect(page.locator('[data-first-look-process]')).toHaveCount(0);
 }
 
 test.describe('a new project: the first look ends on the full map', () => {
@@ -89,20 +96,39 @@ test.describe('a new project: the first look ends on the full map', () => {
     page.on('framenavigated', (frame) => {
       if (frame === page.mainFrame()) visited.push(frame.url());
     });
+    // Every state the first look takes, from before the press: it reads ("waiting") and then stands in its end
+    // state; the paced build-up retired with 3.1.0 (AB-3) and must not come back on the way.
+    const install = () => {
+      const w = window as unknown as { __firstLookStates?: string[] };
+      if (w.__firstLookStates) return;
+      w.__firstLookStates = [];
+      const note = () => {
+        for (const el of document.querySelectorAll('[data-first-look]')) {
+          const v = el.getAttribute('data-first-look') ?? '';
+          if (!w.__firstLookStates!.includes(v)) w.__firstLookStates!.push(v);
+        }
+      };
+      note();
+      new MutationObserver(note).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-first-look'] });
+    };
+    await page.addInitScript(install);
+    await page.evaluate(install);
     await page.click('[data-own-code-start]');
 
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
-    // The build-up runs on this first visit, and its last moment is the map.
-    await expect(page.locator('[data-first-look="building"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-first-look="complete"]')).toBeVisible({ timeout: 60000 });
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 90000 });
+    // No build-up since AB-2/AB-3: the map stands at once, the first look's blocks below it in their end state.
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-first-look="end-state"]')).toBeVisible({ timeout: 60000 });
+    const states = await page.evaluate(() => (window as unknown as { __firstLookStates?: string[] }).__firstLookStates);
+    expect(states, 'the first look was not recorded from the start').toBeDefined();
+    expect(states!.filter((v) => v !== 'waiting' && v !== 'end-state'), 'the first look built up on its way to the end state').toEqual([]);
     await expect(page.locator('[data-workspace-process="ready"] [data-process-map]')).toBeVisible({ timeout: 90000 });
     await firstScreen(page);
 
-    // Next step first (owner, 03.10.2026), the map directly under the answer,
-    // and the work area after it. Business's one layer stands on its own, with no
-    // bar (ADR-096): its section is the last block.
+    // AB-2: what the program does, then the map, then the first look's blocks
+    // and "Next step" under it (the interim until v3.2.0).
     const order = await page.evaluate(() =>
-      ['[data-next-step]', '[data-first-look]', '[data-workspace-process-block]', '[data-workspace-status-tools]', '[data-workspace-layer-section]'].map(
+      ['[data-analyze-summary]', '[data-workspace-process-block]', '[data-first-look]', '[data-next-step]'].map(
         (sel) => {
           const el = document.querySelector(sel);
           return el ? el.getBoundingClientRect().top + window.scrollY : -1;
@@ -115,6 +141,6 @@ test.describe('a new project: the first look ends on the full map', () => {
     // And it stays.
     await page.waitForTimeout(5000);
     await firstScreen(page);
-    expect(visited.filter((u) => u.includes('/analyze')), 'the start went through Analyze').toEqual([]);
+    expect(visited.filter((u) => u.includes('view=it')), 'the start went through the score page').toEqual([]);
   });
 });

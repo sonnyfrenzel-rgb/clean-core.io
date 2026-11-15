@@ -39,11 +39,13 @@
  */
 
 import type { ProcessSkeleton, SkeletonNode } from './abap/process-skeleton';
-import { plainLabels } from './abap/plain-language';
+import { humaniseField, plainContext, plainLabels, type PlainContext } from './abap/plain-language';
 import { anchorLabel } from './first-look';
 import { readDemoSwitches } from './abap/demo-switches';
 import { engineReads3020Apply } from './abap/engine-reads-3020-gate';
 import { engineReads3021Apply } from './abap/engine-reads-3021-gate';
+import { engineReads310Apply } from './abap/engine-reads-310-gate';
+import { customerTextProvenance, type CustomerTexts } from './abap/customer-texts';
 import { armAroundLine, branchReadingOf, decisionArmsAt, plainValues, rawFieldsOf, type BranchReading } from './abap/branch-messages';
 import { APP_VERSION } from './version';
 import {
@@ -69,6 +71,8 @@ export interface StoryStep {
   anchor: string | null;
   /** The skeleton node the step starts at. */
   nodeId: string;
+  /** 3.1.0 (H5b): "Customer text: CODE “text”" when the step says a customer text; absent otherwise. */
+  customerText?: string;
   /**
    * From engine 3.0.20: the technical checks and stops of the step — counted,
    * never listed (`lib/first-look-plain.ts`). Absent before.
@@ -149,10 +153,13 @@ export function processStory(
    * once, without its message code.
    */
   engineVersion: string | null = APP_VERSION,
+  /** 3.1.0 (H5b): the project's customer texts — the first source of words, each step that says one marked. */
+  customerTexts?: CustomerTexts | null,
 ): ProcessStory {
-  const labels = plainLabels(skeleton, source);
+  const texts = engineReads310Apply(engineVersion) && customerTexts ? customerTexts : null;
+  const labels = plainLabels(skeleton, source, { engineVersion, ...(texts ? { customerTexts: texts } : {}) });
   const reading: FirstLookReading | null = engineReads3020Apply(engineVersion)
-    ? firstLookReadingOf(source, readDemoSwitches(source, engineVersion))
+    ? firstLookReadingOf(source, readDemoSwitches(source, engineVersion), engineVersion)
     : null;
   const plain: BranchReading | null = engineReads3021Apply(engineVersion) ? branchReadingOf(source) : null;
   let testData: ProcessStory['testData'] = null;
@@ -168,6 +175,18 @@ export function processStory(
    * 3.0.21: a check as the business line says it — a part of it on a raw dictionary field by the program's own text on
    * that arm, or left out; null when nothing of it can be said (the step counts it as unsaid). Before, the plain label.
    */
+  /** 3.1.0: the context the labels were worded in, read once on first use. */
+  let wordCtx: PlainContext | null = null;
+  /** 3.1.0: the raw field a part of a label names by the field's dictionary words, not its name. */
+  const wordedRaw = <T extends { words: string[] }>(part: string, raws: T[]): T | null => {
+    if (!engineReads310Apply(engineVersion)) return null;
+    wordCtx ??= plainContext(source, { engineVersion });
+    const ctx = wordCtx;
+    return raws.find((x) => x.words.some((w) => {
+      const name = humaniseField(w, ctx);
+      return name.toLowerCase() !== w.toLowerCase() && wordIn(part, name);
+    })) ?? null;
+  };
   const sayCheck = (node: SkeletonNode): string | null => {
     const label = checkName(node);
     if (!plain || !node.anchor || businessNames?.get(node.id)?.trim()) return label;
@@ -189,7 +208,11 @@ export function processStory(
         continue;
       }
       const hit = raws.find((x) => x.words.some((w) => wordIn(part, w)));
-      if (!hit) said.push(plainValues(part));
+      // 3.1.0 words more dictionary fields ("Mmsta" is "Plant material status"), so the label no longer names the
+      // raw field — the program's own text on that arm still says best what the code values mean (3.0.21).
+      const worded = hit ? null : wordedRaw(part, raws);
+      if (worded) said.push(worded.arm.message ?? plainValues(part));
+      else if (!hit) said.push(plainValues(part));
       else if (hit.arm.message) said.push(hit.arm.message);
     }
     const words = unique(said);
@@ -459,11 +482,15 @@ export function processStory(
   }
 
   return {
-    steps: merged.map(({ text, within, checks, stops, anchor, nodeId, technical, unsaid }) => ({
-      text, within, checks, stops, anchor, nodeId,
-      ...(technical !== undefined ? { technical } : {}),
-      ...(plain && unsaid !== undefined ? { unsaid } : {}),
-    })),
+    steps: merged.map(({ text, within, checks, stops, anchor, nodeId, technical, unsaid }) => {
+      const customerText = texts ? customerTextProvenance([text, within ?? '', ...checks, ...stops].join(' | '), texts) : '';
+      return {
+        text, within, checks, stops, anchor, nodeId,
+        ...(technical !== undefined ? { technical } : {}),
+        ...(plain && unsaid !== undefined ? { unsaid } : {}),
+        ...(customerText ? { customerText } : {}),
+      };
+    }),
     proposedNames: proposed,
     ...(reading ? { testData } : {}),
   };
@@ -497,9 +524,12 @@ export function processChanges(
   max = 5,
   /** From engine 3.0.20 a change to the result list says what each line is marked with (`listChangeAt`). */
   engineVersion: string | null = APP_VERSION,
+  /** 3.1.0 (H5b): the project's customer texts, read under the same engine gate as the story's. */
+  customerTexts?: CustomerTexts | null,
 ): { changes: StoryChange[]; more: number } {
-  const labels = plainLabels(skeleton, source);
-  const reading = engineReads3020Apply(engineVersion) ? firstLookReadingOf(source, null) : null;
+  const texts = engineReads310Apply(engineVersion) && customerTexts ? customerTexts : null;
+  const labels = plainLabels(skeleton, source, { engineVersion, ...(texts ? { customerTexts: texts } : {}) });
+  const reading = engineReads3020Apply(engineVersion) ? firstLookReadingOf(source, null, engineVersion) : null;
   const seen = new Set<string>();
   const all: StoryChange[] = [];
   for (const node of [...skeleton.nodes].sort(order)) {

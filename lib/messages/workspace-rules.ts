@@ -1,8 +1,7 @@
 /**
  * Interface text of the rule-editing mode (mockup `s2`)
- * and the first look's build-up (`s0`) — components/workspace/
- * BusinessRulesEditor.tsx, FirstLookBuildUp.tsx and the
- * parts of FirstLook.tsx they added.
+ * and the first insights — components/workspace/
+ * BusinessRulesEditor.tsx and the parts of FirstLook.tsx they added.
  *
  * One part of the catalogue in `lib/workspace-messages.ts` (DESIGN.md §3).
  * Plain strings only; a sentence with a number in it is a function beside the
@@ -81,46 +80,10 @@ export const WORKSPACE_RULES_MESSAGES = {
   'rules.sourceNoteHelp': 'Optional — for example the customizing table or the paragraph of a regulation.',
   'rules.appliesTo': 'Also applies to',
   'rules.appliesToHelp': 'Other rules in the code that decide the same field.',
-  // FirstLookBuildUp
-  'buildUp.names': 'names',
-  'buildUp.plainNames': 'plain names',
-  'buildUp.codeLabel': 'The source, as it is being read',
-  'buildUp.processLabel': 'The process, growing out of the lines that were read',
-  'buildUp.railLabel': 'What the reading does, in order',
-  'buildUp.railNamesPlain': 'plain names, no model',
-  'buildUp.railNamesProposed': 'names proposed by a model',
-  'buildUp.railMapDrawn': 'drawn from the signed run',
-  'buildUp.railMapRunning': 'signing the reading',
-  'buildUp.railMapWriting': 'writing the narrative (model)',
-  'buildUp.railMapFailed': 'not signed',
-  'buildUp.railMapUnsigned': 'needs a signed run',
-  'buildUp.pause': 'Pause',
-  'buildUp.continue': 'Continue',
-  'buildUp.paused': 'Paused',
-  'buildUp.progressLabel': 'How far the reading has got',
-  'buildUp.headProcess': 'Finding the process in the code…',
-  'buildUp.processHere': 'The process grows here, out of the lines being read.',
-  'buildUp.headNames': 'Each step, in plain words',
-  'buildUp.headNamesProposed': 'Each step, in the names a model proposed',
-  'buildUp.headRulesReading': 'Looking for the rules in the code…',
-  'buildUp.headOpenReading': 'Looking for what the engine cannot judge…',
-  'buildUp.headMap': 'Your process, every step tied to its line',
-  'buildUp.statusDrawn': 'Signed on the server, without a model call — the full map follows below.',
-  'buildUp.statusDrawnModel': 'Signed on the server as one run — the full map follows below.',
-  'buildUp.statusRunning': 'The server reads the same source again and signs it — no model call.',
-  'buildUp.statusRunningModel': 'The server signs the same source as one run, with the narrative if it is written in time.',
-  'buildUp.statusFailed': 'The reading could not be signed — the reason and a way to try again stand where the map goes.',
-  'buildUp.statusUnsigned': 'The full map is drawn only from a signed run — where it goes, the page says how to get one.',
   // FirstLook — the end state of s0 (moment 4)
   'firstLook.showSource': 'Show source',
   'firstLook.hideSource': 'Hide source',
   'firstLook.sourceLabel': 'The lines this card points to',
-  'firstLook.processTitle': 'Main line of the process',
-  'firstLook.processLabel': 'The main line of the process, each step with the line it was read from',
-  'firstLook.processNone': 'The main line could not be drawn from this source.',
-  'firstLook.processMoreBelow': 'The main line goes on below — scroll the drawing',
-  'firstLook.processMoreRight': 'The drawing goes on to the right — scroll it sideways',
-  'firstLook.openMap': 'Open the full map',
   'firstLook.confirmNote': 'No model call · your answers are a self-declaration',
   'firstLook.stripTrace': 'Linked to the code',
   'firstLook.stripConfirmed': 'Rules confirmed',
@@ -330,88 +293,6 @@ export function rulesUnchangedLine(ids: readonly string[]): string {
 }
 
 /* --------------------------------------------------------------- first look */
-
-const BUILD_UP_STAGES = {
-  'code-read': 'Code read',
-  'process-recognised': 'Process recognised',
-  'business-language': 'In business language',
-  rules: 'Rules in the code',
-  'not-determined': 'Not determined',
-  map: 'Process map',
-} as const;
-
-/** The stage's name in the build-up header — the labels of DESIGN.md §5.2. */
-export function buildUpStageLabel(stage: keyof typeof BUILD_UP_STAGES): string {
-  return BUILD_UP_STAGES[stage];
-}
-
-/** One counter of the build-up. */
-export function buildUpCounter(kind: 'lines' | 'tables' | 'nodes' | 'decisions', n: number, of?: number): string {
-  switch (kind) {
-    case 'lines':
-      return `Lines ${n} of ${of ?? n}`;
-    case 'tables':
-      return `Tables ${n}`;
-    case 'nodes':
-      return `Process nodes ${n}`;
-    case 'decisions':
-      return `Decision points ${n}`;
-  }
-}
-
-/** The rail's result for "Code read": "98 lines · 2 tables". */
-export function buildUpRailRead(lines: number, tables: number): string {
-  return `${lines.toLocaleString('en')} ${lines === 1 ? 'line' : 'lines'} · ${tables} ${tables === 1 ? 'table' : 'tables'}`;
-}
-
-/** The rail's result for "Process recognised": "10 nodes · 1 decision point". */
-export function buildUpRailProcess(nodes: number, decisions: number): string {
-  return `${nodes} ${nodes === 1 ? 'node' : 'nodes'} · ${decisions} ${decisions === 1 ? 'decision point' : 'decision points'}`;
-}
-
-/** The rail's result for the rules: "3 hard-coded" or "none hard-coded". */
-export function buildUpRailRules(n: number): string {
-  return n === 0 ? 'none hard-coded' : `${n} hard-coded`;
-}
-
-/** The rail's result for the open points: "7 points" or "none". */
-export function buildUpRailOpen(n: number): string {
-  return n === 0 ? 'none' : `${n} ${n === 1 ? 'point' : 'points'}`;
-}
-
-/** "grows out of L87". */
-export function buildUpGrowsOut(anchor: string): string {
-  return `grows out of ${anchor}`;
-}
-
-/** The headline of step 1: "Reading your 668 lines…". */
-export function buildUpHeadRead(lines: number): string {
-  return `Reading your ${lines.toLocaleString('en')} ${lines === 1 ? 'line' : 'lines'}…`;
-}
-
-/** The headline of the rules step: "11 business rules are hard-coded". */
-export function buildUpHeadRules(n: number): string {
-  if (n === 0) return 'No hard-coded business rule found';
-  return n === 1 ? '1 business rule is hard-coded' : `${n} business rules are hard-coded`;
-}
-
-/** The headline of the open step: "5 points the engine cannot judge — shown, not hidden". */
-export function buildUpHeadOpen(n: number): string {
-  if (n === 0) return 'No point the engine could not judge';
-  return n === 1
-    ? '1 point the engine cannot judge — shown, not hidden'
-    : `${n} points the engine cannot judge — shown, not hidden`;
-}
-
-/** "+ 7 more". */
-export function buildUpMore(n: number): string {
-  return `+ ${n} more`;
-}
-
-/** "+ 20 more names". */
-export function buildUpMoreNames(n: number): string {
-  return `+ ${n} more ${n === 1 ? 'name' : 'names'}`;
-}
 
 /**
  * The rule action of the first look outside Business, where no "Next step"

@@ -72,7 +72,8 @@ function panelOf(source: string, version: string): Panel {
     dependencies: readTableAccess(source),
     traceability: traceabilityOf(applyNaming(proc.context, null)),
     open: notDetermined(null),
-    wording: plainWordingFor(source, proc.skeleton),
+    // Read for the panel's engine, as `FirstLook` does: a 3.0.19 run keeps the words it had before 3.1.0.
+    wording: plainWordingFor(source, proc.skeleton, version),
     inputs: programInputsOf(proc.facts, (n) => humaniseField(n, plainContext(source))),
   });
   const summary = programSummary(programSummaryFactsOf(source, { skeleton: proc.skeleton, ruleSet: rules, engineVersion: version }));
@@ -282,7 +283,9 @@ test.describe('the demo switches (lib/abap/demo-switches.ts, 3.0.20 shapes 4 and
     const build = fs.readFileSync(path.join(process.cwd(), 'lib/process-document-build.ts'), 'utf8');
     expect(build).toMatch(/readDemoSwitches\(source, input\.engineVersion\)/);
     const page = fs.readFileSync(path.join(process.cwd(), 'app/(app)/project/[projectId]/documentation/page.tsx'), 'utf8');
-    expect(page).toMatch(/useProcessDocument\([\s\S]{0,400}?engineVersionOfProject\(project\),\s*\)/);
+    // 3.1.0 (H5b): the project's customer texts follow the engine version — required, so the page cannot drop them
+    // (what the build makes of them: tests/customer-texts-surfaces-310.spec.ts).
+    expect(page).toMatch(/useProcessDocument\([\s\S]{0,400}?engineVersionOfProject\(project\),\s*customerTexts,\s*\)/);
   });
 });
 
@@ -468,5 +471,21 @@ test.describe('rendered (BusinessOpening, static markup)', () => {
     expect(html).toContain('Save the result as a file');
     expect(html).toContain('data-worded-chip=""');
     expect(html).toContain('data-worded-engine-sentence=""');
+  });
+});
+
+test.describe('engine 3.1.0: a chain of checks lists what holds when each arm runs', () => {
+  test('the positive question (E1) does not turn an arm: "Country not DE, AT or CH" stays what the code tests', () => {
+    // `ELSEIF cs_customer-land1 <> 'DE' AND … <> 'AT' AND … <> 'CH'` — 3.1.0 asks it as "Country DE, AT or CH?" with the
+    // branches swapped, which is right for a decision point and wrong for a list of what each arm checks.
+    const source = readExample('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
+    const checks = (version: string) => {
+      const proc = readProcess(source);
+      return processStory(proc.skeleton, source, null, version).steps.flatMap((s) => s.checks);
+    };
+    expect(checks('3.1.0')).toContain('Country not DE, AT or CH, or account group ZINT');
+    expect(checks('3.1.0')).not.toContain('Country DE, AT or CH, or account group ZINT');
+    // An engine before 3.1.0 asks no positive question and keeps its words.
+    expect(checks('3.0.23')).toContain('Country not DE, AT or CH, or account group ZINT');
   });
 });

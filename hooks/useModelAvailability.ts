@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getAuthIfStarted } from '@/lib/firebase';
-import { MODEL_STAGES, isModelStage, modelStagesOf, type ModelStage } from '@/lib/model-stages';
+import { MODEL_STAGES, isModelStage, modelStagesOf, stageModelsFromAnswer, type ModelStage } from '@/lib/model-stages';
 import { isModelKeyProvider, isStageAnswerRecord, type ModelKeyProvider, type StageAnswerRecord } from '@/lib/model-providers';
+import { AUTO_STEPS_NOTICE_WORDING, isAutoStepsNoticeWording, type AutoStepsNoticeWording } from '@/lib/auto-steps-notice';
 
 /**
  * Whether a stage can call a model right now, and why not when it cannot.
@@ -45,11 +46,23 @@ export interface ModelAvailability {
   /** 3.0.21 (A10) — the one-time notice before the first automatic model call was answered or closed. True until known, so nothing shows on a guess. */
   autoStepsNoticeSeen: boolean;
   /**
+   * The wording of that notice the account confirmed (`lib/auto-steps-notice.ts`), null when it never answered.
+   * The wording of this build until known, so nothing shows and nothing waits on a guess.
+   */
+  autoStepsNoticeWording: AutoStepsNoticeWording | null;
+  /**
    * Legal review 06.11.2026 (3.0.21, item 2) — the account's main switch "Automatic AI steps"
    * (`users/{uid}.autoModelSteps`, `lib/auto-model-steps.ts`). True until known; `autoSteps` is false
    * whenever it is off, on every key.
    */
   autoModelSteps: boolean;
+  /** 13.11.2026 — the deployment rewords the draft of the business statements (`lib/statement-rewording.ts`). False until known. */
+  statementsRewording: boolean;
+  /**
+   * 14.11.2026 — per stage, the model a call runs on for this account's key (the deployment's stage list on the
+   * platform key, `lib/gemini-register.ts`). Empty until known; a screen then names its default.
+   */
+  stageModels: Partial<Record<ModelStage, string>>;
   /** The whole point: may this stage generate, given both facts? */
   enabled: (stage: ModelStage) => boolean;
   refresh: () => Promise<void>;
@@ -69,7 +82,10 @@ export function useModelAvailability(): ModelAvailability {
   const [suspendedProvider, setSuspendedProvider] = useState<ModelKeyProvider | null>(null);
   const [suspendedNotice, setSuspendedNotice] = useState<string | null>(null);
   const [autoStepsNoticeSeen, setAutoStepsNoticeSeen] = useState(true);
+  const [autoStepsNoticeWording, setAutoStepsNoticeWording] = useState<AutoStepsNoticeWording | null>(AUTO_STEPS_NOTICE_WORDING);
   const [autoModelSteps, setAutoModelSteps] = useState(true);
+  const [statementsRewording, setStatementsRewording] = useState(false);
+  const [stageModels, setStageModels] = useState<Partial<Record<ModelStage, string>>>({});
 
   const load = useCallback(async () => {
     try {
@@ -94,7 +110,10 @@ export function useModelAvailability(): ModelAvailability {
         suspendedProvider?: unknown;
         suspendedNotice?: unknown;
         autoStepsNoticeSeen?: unknown;
+        autoStepsNoticeWording?: unknown;
         autoModelSteps?: unknown;
+        statementsRewording?: unknown;
+        stageModels?: unknown;
       };
       setStages(modelStagesOf({ modelStages: data.stages }));
       setKeyAvailable(data.keyAvailable === true);
@@ -110,8 +129,19 @@ export function useModelAvailability(): ModelAvailability {
       setSuspendedNotice(typeof data.suspendedNotice === 'string' ? data.suspendedNotice.slice(0, 600) : null);
       // Absent (an older server) reads as seen: the notice never shows on a guess.
       setAutoStepsNoticeSeen(data.autoStepsNoticeSeen !== false);
+      // Absent (an older server) reads as the wording of this build, like `autoStepsNoticeSeen` above.
+      setAutoStepsNoticeWording(
+        data.autoStepsNoticeWording === undefined
+          ? AUTO_STEPS_NOTICE_WORDING
+          : isAutoStepsNoticeWording(data.autoStepsNoticeWording)
+            ? data.autoStepsNoticeWording
+            : null,
+      );
       // Absent (an older server) reads as on, as the stored field does.
       setAutoModelSteps(data.autoModelSteps !== false);
+      // Absent (an older server) reads as off: a second call is never made on a guess.
+      setStatementsRewording(data.statementsRewording === true);
+      setStageModels(stageModelsFromAnswer(data.stageModels));
       setKnown(true);
     } catch {
       /* the screen falls back to "assume it works and let the server answer" */
@@ -146,7 +176,7 @@ export function useModelAvailability(): ModelAvailability {
     [known, keyAvailable, stages],
   );
 
-  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoModelSteps, enabled, refresh: load };
+  return { loading, known, stages, keyAvailable, keySource, provider, answers, autoSteps, suspendedProvider, suspendedNotice, autoStepsNoticeSeen, autoStepsNoticeWording, autoModelSteps, statementsRewording, stageModels, enabled, refresh: load };
 }
 
 export { MODEL_STAGES };

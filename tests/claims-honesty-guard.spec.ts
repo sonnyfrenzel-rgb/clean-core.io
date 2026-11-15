@@ -282,7 +282,7 @@ test.describe('a signed-in account reading its own project', () => {
      * contains "BTP". The reader was shown a "Custom Technical Assessment" of
      * their own code that nothing had assessed.
      */
-    await page.goto(`/project/${BTP}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${BTP}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     // Folded under "Why this route" since the stage became a tool page (§2.11);
     // it was a CcTab before, an aria-pressed button before that.
     await page.getByRole('button', { name: /Why this route/ }).click({ timeout: 60000 });

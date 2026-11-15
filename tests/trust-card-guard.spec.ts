@@ -456,7 +456,7 @@ test.describe('the card on the upload screen', () => {
     }).toPass({ timeout: 30000 });
     await page.click('button[type="submit"]:has-text("Sign In")');
     await page.waitForTimeout(3500);
-    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-stage-title]', { timeout: 60000 });
     await page.waitForSelector('[data-trust-card]', { timeout: 60000 });
   }

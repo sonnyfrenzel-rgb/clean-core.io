@@ -39,5 +39,5 @@ export function sanitizeAtcFindings(findings: AtcFinding[]): AtcFinding[] {
 /** Privacy notice text shown to the user during upload. */
 export const ATC_PRIVACY_NOTICE =
   'Author, reviewer, approver and last-changed-by columns are stripped on import; only the check finding ' +
-  'itself — object, check and message — is stored. The message and check title are kept as ATC wrote them, ' +
+  'itself — object and include, check, message, priority, line and exemption — is stored. The message and check title are kept as ATC wrote them, ' +
   'so a name that stands inside that text is stored with it.';

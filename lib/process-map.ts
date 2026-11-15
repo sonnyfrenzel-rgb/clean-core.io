@@ -494,7 +494,11 @@ export interface ProcessMapModel {
   /** *"Process with 14 steps and 5 decision points."* — `DESIGN.md` §5.7. */
   overview: string;
   /** 2.4's state and its one sentence, passed through unchanged. */
-  naming: { state: NamingState; notice: string | null; named: number };
+  /**
+   * `origin` (v3.1.0): who wrote the stored names, as the server recorded it from the model's receipt — what the AI mark
+   * of each name in a download carries. Null without a naming; absent in a model built before.
+   */
+  naming: { state: NamingState; notice: string | null; named: number; origin?: { provider: string; modelId: string } | null };
   /** The lanes 2.4 proposed, with the sentence every one of them carries. */
   lanes: Array<{
     key: string;
@@ -650,7 +654,10 @@ export function buildProcessMapModel({ bpmn, technical, named, fileName }: Proce
     const node = nodeId ? namedById.get(nodeId) : undefined;
     const plainName = element.trace?.technicalName ? (element.name || null) : null;
     const technicalName = element.trace?.technicalName || element.name || node?.technicalName || element.id;
-    const businessName = node?.businessName ?? null;
+    // A name equal to the one the file already draws is no model text on the map — the export keeps the engine's
+    // name for it too (`applyAiNames`, `lib/bpmn/export.ts`), so neither marks it AI-generated (roadmap 3.1.0).
+    const proposed = node?.businessName?.trim() || null;
+    const businessName = proposed && proposed !== (element.name || '').trim() ? proposed : null;
     const label = businessName ?? plainName ?? technicalName;
     labelOf.set(element.id, label);
     const anchor = element.trace && element.trace.lineStart !== null && element.trace.lineEnd !== null
@@ -736,7 +743,12 @@ export function buildProcessMapModel({ bpmn, technical, named, fileName }: Proce
     })),
     traceability: traceabilityOf(technical?.stats ?? bpmn.stats),
     overview: overviewOf(elements),
-    naming: { state: named.state, notice: named.notice, named: named.counts.named },
+    naming: {
+      state: named.state,
+      notice: named.notice,
+      named: named.counts.named,
+      origin: named.origin ? { provider: named.origin.provider, modelId: named.origin.modelId } : null,
+    },
     lanes: named.lanes.map((lane) => ({
       key: lane.key,
       name: lane.name,
@@ -745,6 +757,69 @@ export function buildProcessMapModel({ bpmn, technical, named, fileName }: Proce
       authorityObject: lane.authorityObject,
       anchor: lane.anchor ? { lineStart: lane.anchor.lineStart, lineEnd: lane.anchor.lineEnd } : null,
     })),
+  };
+}
+
+/** The accessible name an element has with the engine's names only — what the canvas is built with (roadmap 3.1.0). */
+export function engineAccessibleName(element: Omit<ProcessMapElement, 'accessibleName'>): string {
+  return accessibleNameOf({ ...element, businessName: null });
+}
+
+/**
+ * The map's file with the names the reader sees written in — one source of the shown name (v3.1.0 acceptance run).
+ * The guided tour draws the map's file in a viewer of its own (`TourCanvas`), which has no name overlay; drawn as it
+ * is, its canvas said the engine's names ("Prepare the run") while its chapter chips and the map's step list said the
+ * model's ("Prepares the run"). Every element with a business name gets it as its `name`; nothing else of the file
+ * changes. Pure.
+ */
+export function xmlWithShownNames(model: Pick<ProcessMapModel, 'xml' | 'elements'>): string {
+  const names = new Map<string, string>();
+  for (const e of model.elements) if (e.businessName) names.set(e.id, e.businessName);
+  return xmlWithNames(model.xml, names);
+}
+
+const XML_ATTR_ESCAPE: Readonly<Record<string, string>> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
+const XML_ATTR_UNESCAPE: Readonly<Record<string, string>> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&apos;': "'" };
+
+/** `xml` with the `name` of each element whose `id` is a key of `names` set to its value (added where it has none). */
+export function xmlWithNames(xml: string, names: ReadonlyMap<string, string>): string {
+  if (names.size === 0) return xml;
+  return xml.replace(/<([A-Za-z_][\w:.-]*)(\s[^<>]*?)?(\/?)>/g, (tag: string, element: string, attrs: string | undefined, close: string) => {
+    if (!attrs) return tag;
+    const id = /\sid="([^"]*)"/.exec(attrs);
+    if (!id) return tag;
+    const want = names.get(id[1].replace(/&(?:amp|lt|gt|quot|apos);/g, (e) => XML_ATTR_UNESCAPE[e] ?? e));
+    if (want === undefined) return tag;
+    const value = want.replace(/[&<>"]/g, (c) => XML_ATTR_ESCAPE[c] ?? c);
+    const tail = /\s*$/.exec(attrs)?.[0] ?? '';
+    const next = /\sname="[^"]*"/.test(attrs)
+      ? attrs.replace(/\sname="[^"]*"/, () => ` name="${value}"`)
+      : `${attrs.slice(0, attrs.length - tail.length)} name="${value}"${tail}`;
+    return `<${element}${next}${close}>`;
+  });
+}
+
+/**
+ * The model as the reader sees it while the AI names arrive (`lib/naming-arrival.ts`): an element carries its
+ * business name only once its swap has begun, so the step list, the code card and every accessible name say what the
+ * canvas shows. Elements, order, anchors and branches are otherwise the model's.
+ */
+export function withShownNames(model: ProcessMapModel, shown: ReadonlyMap<string, string>): ProcessMapModel {
+  const changed = model.elements.some((e) => (shown.get(e.id) ?? null) !== e.businessName);
+  if (!changed) return model;
+  const named = model.elements.map((e) => {
+    const businessName = shown.get(e.id) ?? null;
+    return { ...e, businessName, label: businessName ?? e.plainName ?? e.technicalName };
+  });
+  const label = new Map(named.map((e) => [e.id, e.label]));
+  const elements = named.map((e) => {
+    const draft = { ...e, branches: e.branches.map((b) => ({ ...b, toLabel: label.get(b.to) ?? b.toLabel })) };
+    return { ...draft, accessibleName: accessibleNameOf(draft) };
+  });
+  return {
+    ...model,
+    elements,
+    naming: { ...model.naming, named: elements.filter((e) => e.businessName !== null).length },
   };
 }
 

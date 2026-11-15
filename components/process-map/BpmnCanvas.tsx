@@ -1,17 +1,16 @@
 'use client';
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css';
 import './process-map.css';
-import { MAP_REVEAL_EVENT, NARROW_CANVAS, fitWhole, fitWithPadding, phoneFitWidth, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
+import { MAP_REVEAL_EVENT, NARROW_CANVAS, fitWhole, fitWithPadding, flooredLevelHeight, phoneFitWidth, placeAnchor, rendererColors, textRendererConfig, type ViewboxCanvas } from './bpmn-view';
 import type { PhoneXml } from './phone-layout';
 import { MapViewTools } from './CanvasViewControls';
 import { useCanvasFullscreen } from './useCanvasFullscreen';
 import { useTouchViewport } from './useTouchViewport';
-import { LABEL_FONT, TASK_PADDING } from '@/lib/bpmn/layout';
-import { wrapText } from '@/lib/bpmn/text-metrics';
+import { applyCanvasNames, clearNameTimers, drawnNames, type CanvasNames, type SwapViewer } from './naming-swap';
 
 /**
  * The diagram half of the process map — roadmap 2.5, reading only.
@@ -128,6 +127,17 @@ export interface BpmnCanvasProps {
   tools?: React.ReactNode | ((filled: boolean) => React.ReactNode);
   /** A panel under the row, inside the frame (the keyboard help). */
   toolsPanel?: React.ReactNode;
+  /**
+   * Roadmap 3.1.0 item 4: the AI names as they arrive (`naming-swap.ts`), laid over the engine's names without
+   * rebuilding the viewer. Null or absent: the canvas shows the engine's names only, as before.
+   */
+  names?: CanvasNames | null;
+  /**
+   * Inline on a phone-wide canvas, grow to show the level whole from top to
+   * bottom at the floor (`flooredLevelHeight`) — Analyze, Business, whose map
+   * is the page (ADR-109; mockup v4.1, phone). Every other map keeps its card.
+   */
+  growToLevel?: boolean;
 }
 
 interface CanvasService extends ViewboxCanvas {
@@ -140,6 +150,26 @@ interface CanvasService extends ViewboxCanvas {
   setRootElement(element: object): void;
   findRoot(id: string): object | undefined;
   getRootElement(): { id: string } | null;
+}
+
+/**
+ * The whole level (`fitWhole`), and — for a map that asks (`growToLevel`) — inline on a phone-wide canvas the height to
+ * show it from top to bottom at the floor (`flooredLevelHeight`): a vertical
+ * swipe there scrolls the page, so a level cut at the bottom edge could not be
+ * read on without full screen. Full screen takes the height its frame gives
+ * (v3.1.0).
+ */
+function showWhole(canvas: CanvasService, host: HTMLElement | null, inFullscreen: boolean): void {
+  // In full screen the frame gives the height (`flex-1` wins over a set height), and the grown height
+  // stays: the page behind keeps its length, so leaving full screen returns to the same place.
+  if (host && !inFullscreen && host.dataset.growToLevel === 'true') {
+    const grown = host.style.height !== '';
+    if (grown) host.style.height = '';
+    const height = flooredLevelHeight(canvas.viewbox().inner, host.clientWidth, host.clientHeight, 3 * window.innerHeight);
+    if (height !== null) host.style.height = `${height}px`;
+    if (grown || height !== null) canvas.resized();
+  }
+  fitWhole(canvas);
 }
 
 interface OverlayAttrs {
@@ -238,6 +268,8 @@ export default function BpmnCanvas({
   levelPath,
   tools,
   toolsPanel,
+  names = null,
+  growToLevel = false,
 }: BpmnCanvasProps) {
   const fitOnOpen = openFit ?? (controls ? 'whole' : 'readable');
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -312,6 +344,11 @@ export default function BpmnCanvas({
   const phoneRef = useRef(phoneXml);
   const narrowRef = useRef(false);
   const [layoutPass, setLayoutPass] = useState(0);
+  /** What the viewer on show has drawn of the AI names; a new viewer starts empty. */
+  const namesDrawnRef = useRef(drawnNames());
+  /** Bumped when a viewer finished its import, and when a held-back name may swap now. */
+  const [drawnPass, setDrawnPass] = useState(0);
+  const namesPendingRef = useRef(false);
 
   useEffect(() => {
     phoneRef.current = phoneXml;
@@ -415,35 +452,7 @@ export default function BpmnCanvas({
 
         // The line anchor under the name: inside an activity at its foot, under
         // the external label of an event or a gateway. The layout left the room.
-        if (node.anchor) {
-          const tag = document.createElement('span');
-          tag.className = 'cc-map-anchor';
-          tag.setAttribute('aria-hidden', 'true');
-          if (node.fact && !shape.label) {
-            const fact = document.createElement('span');
-            fact.className = 'cc-map-fact';
-            fact.textContent = node.fact;
-            tag.appendChild(fact);
-          }
-          const code = document.createElement('span');
-          code.className = 'cc-map-anchor-code';
-          code.textContent = node.anchor;
-          tag.appendChild(code);
-          const label = shape.label;
-          if (label && label.width && label.height) {
-            tag.style.width = `${label.width}px`;
-            overlays.add(label.id, 'cc-anchor', { position: { top: label.height, left: 0 }, scale: true, html: tag });
-          } else if (shape.width > 60) {
-            // Right under the name, which bpmn-js centres in the box.
-            const lines = wrapText(shape.businessObject?.name ?? '', shape.width - 2 * TASK_PADDING, LABEL_FONT, true).length;
-            tag.style.width = `${shape.width}px`;
-            overlays.add(id, 'cc-anchor', {
-              position: { top: Math.round(shape.height / 2 + (lines * LABEL_FONT * 1.2) / 2 + 1), left: 0 },
-              scale: true,
-              html: tag,
-            });
-          }
-        }
+        if (node.anchor) placeAnchor(overlays, shape, node.anchor, node.fact);
       }
 
       // Drilling into a sub-process is bpmn-js's own behaviour on a collapsed
@@ -464,7 +473,7 @@ export default function BpmnCanvas({
           // the page is shown, after bpmn-js has placed it.
           requestAnimationFrame(() => {
             try {
-              if (filledRef.current || fitOnOpenRef.current === 'whole') fitWhole(canvas);
+              if (filledRef.current || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
               else fitWithPadding(canvas);
             } catch {
               /* the viewer went in the meantime */
@@ -491,7 +500,7 @@ export default function BpmnCanvas({
         const asked = canvas.findRoot(`${planeRef.current}_plane`) ?? canvas.findRoot(planeRef.current);
         if (asked) canvas.setRootElement(asked);
       }
-      if (fitOnOpenRef.current === 'whole') fitWhole(canvas);
+      if (fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
       else fitWithPadding(canvas);
 
       if (controlsRef.current) {
@@ -499,6 +508,7 @@ export default function BpmnCanvas({
         setZoom(Math.round(canvas.zoom() * 100));
       }
       applyRovingTabIndex(host, activeRef.current);
+      setDrawnPass((n) => n + 1);
 
       if (refocusRef.current) {
         refocusRef.current = false;
@@ -521,8 +531,33 @@ export default function BpmnCanvas({
         /* a viewer that never finished importing has nothing to tear down */
       }
       viewerRef.current = null;
+      clearNameTimers(namesDrawnRef.current);
+      namesDrawnRef.current = drawnNames();
     };
   }, [xml, nodes, layoutPass]);
+
+  /** The AI names, as they arrive: laid over the viewer on show, compared element by element. */
+  const engineNames = useMemo(() => new Map([...nodes].map(([id, node]) => [id, node.accessibleName])), [nodes]);
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    const host = hostRef.current;
+    if (!viewer || !host) return;
+    try {
+      namesPendingRef.current = applyCanvasNames(viewer as unknown as SwapViewer, host, names, namesDrawnRef.current, engineNames);
+    } catch {
+      /* a viewer still importing has nothing to draw on */
+    }
+  }, [names, engineNames, drawnPass]);
+  /** A name held back under the focus swaps once the focus moves on. */
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return undefined;
+    const moved = () => {
+      if (namesPendingRef.current) setDrawnPass((n) => n + 1);
+    };
+    host.addEventListener('focusout', moved);
+    return () => host.removeEventListener('focusout', moved);
+  }, []);
 
   /** The plane the parent asks for. */
   useEffect(() => {
@@ -536,7 +571,7 @@ export default function BpmnCanvas({
     const current = canvas.getRootElement();
     if (current && (target as { id?: string }).id === current.id) return;
     canvas.setRootElement(target);
-    if (filledRef.current || fitOnOpenRef.current === 'whole') fitWhole(canvas);
+    if (filledRef.current || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
     else fitWithPadding(canvas);
   }, [plane]);
 
@@ -565,7 +600,7 @@ export default function BpmnCanvas({
       try {
         const canvas = viewer.get('canvas');
         canvas.resized();
-        if (filledRef.current || fitOnOpenRef.current === 'whole') fitWhole(canvas);
+        if (filledRef.current || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
         else fitWithPadding(canvas);
       } catch {
         /* a viewer still importing has nothing to measure */
@@ -584,7 +619,7 @@ export default function BpmnCanvas({
       const canvas = viewer.get('canvas');
       canvas.resized();
       // Full screen shows the whole level; back on the page, the level opens as it did.
-      if (filled || fitOnOpenRef.current === 'whole') fitWhole(canvas);
+      if (filled || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filled);
       else fitWithPadding(canvas);
     } catch {
       /* a viewer still importing has nothing to measure */
@@ -597,7 +632,7 @@ export default function BpmnCanvas({
   }, []);
   const fit = useCallback(() => {
     const canvas = viewerRef.current?.get('canvas');
-    if (canvas) fitWhole(canvas);
+    if (canvas) showWhole(canvas, hostRef.current, filledRef.current);
   }, []);
 
   /**
@@ -617,7 +652,7 @@ export default function BpmnCanvas({
       fit: () => {
         const canvas = viewerRef.current?.get('canvas');
         if (!canvas) return;
-        if (controlsRef.current) fitWhole(canvas);
+        if (controlsRef.current) showWhole(canvas, hostRef.current, filledRef.current);
         else fitWithPadding(canvas);
       },
     },
@@ -687,16 +722,17 @@ export default function BpmnCanvas({
   const canvasElement = (
     <div
       data-process-map-canvas=""
+      data-grow-to-level={growToLevel ? 'true' : undefined}
       role="group"
       aria-label={label}
       onKeyDown={controls ? keyDown : onKeyDown}
       className={
         controls && filled
-          ? 'cc-map-canvas min-h-0 w-full flex-1 overflow-hidden rounded-cc-card border border-cc-line'
+          ? `cc-map-canvas min-h-0 w-full flex-1 overflow-hidden rounded-cc-card border border-cc-line${names?.motion ? ' cc-map-motion' : ''}`
           : // The window's height less the page header and the map's own row,
             // between a floor a level can be read in and a ceiling a reader can
             // still scroll past (owner 03.10.2026: more room for the map).
-            'cc-map-canvas h-[420px] w-full overflow-hidden rounded-cc-card border border-cc-line md:h-[clamp(480px,calc(100dvh-14rem),860px)]'
+            `cc-map-canvas h-[420px] w-full overflow-hidden rounded-cc-card border border-cc-line md:h-[clamp(480px,calc(100dvh-14rem),860px)]${names?.motion ? ' cc-map-motion' : ''}`
       }
       ref={hostRef}
     />

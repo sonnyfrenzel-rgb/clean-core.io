@@ -246,8 +246,9 @@ test.describe('where the Stand is asked (CR-15)', () => {
     expect(gate).toBeLessThan(save.indexOf('await saveProcessRevision('));
     expect(save, 'an own save is not handed to the Stand').toContain('onWritten?.(outcome.record.revision)');
 
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    const mounted = shell.slice(shell.indexOf('<WorkspaceProcess'), shell.indexOf('/>', shell.indexOf('<WorkspaceProcess')));
+    // The map is Analyze, Business's since v3.1.0 (AB-2); it keeps the Stand check of the workspace.
+    const business = read('components/analyze/AnalyzeBusiness.tsx');
+    const mounted = business.slice(business.indexOf('<WorkspaceProcess'), business.indexOf('/>', business.indexOf('<WorkspaceProcess')));
     expect(mounted).toContain('beforeWrite={stand.checkBeforeWrite}');
     expect(mounted).toContain('onWritten={stand.adopt}');
   });
@@ -324,7 +325,9 @@ test.describe('the workspace on the screen', () => {
   test('says which Stand it is showing, beside the name of the case (CR-15)', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
+    // The Stand badge stands in the workspace's header, which holds IT and Management since v3.1.0; Business is
+    // Analyze's page (ADR-109), where the Stand guards a save of the map without a badge of its own.
+    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
 
     const badge = page.locator('[data-workspace-revision]');
@@ -375,7 +378,7 @@ test.describe('the workspace on the screen', () => {
     await adminSetDoc(revisions, '1', revision(1));
 
     await signIn(page, ADMIN);
-    await page.goto(`/project/${MOVED_ID}`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${MOVED_ID}?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
     const badge = page.locator('[data-workspace-revision]');
     const banner = page.locator('[data-workspace-revision-banner]');
@@ -420,18 +423,18 @@ test.describe('the workspace on the screen', () => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
     // A shared deep link: one subject, one place in the page.
+    // Since v3.1.0 the link opens Analyze, Business (ADR-109), and the view switch is the tool's own: it changes the
+    // view and stays on the tool (ADR-105).
     await page.goto(`/project/${PROJECT_ID}?view=business#L42`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
+    expect(new URL(page.url()).hash, 'the way into Analyze dropped the fragment').toBe('#L42');
 
-    const itSegment = page.locator('[role="radiogroup"][aria-label="View"] button:has-text("IT")');
+    const itSegment = page.locator('[data-stage-view-switch] [role="radiogroup"][aria-label="View"] button:has-text("IT")');
     await expect(itSegment).toBeVisible({ timeout: 30000 });
     await expect(itSegment).toHaveAttribute('aria-checked', 'false');
     await itSegment.click();
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
-      'data-workspace-shell',
-      'it',
-      { timeout: 30000 },
-    );
+    await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', 'it', { timeout: 30000 });
+    expect(new URL(page.url()).searchParams.get('view')).toBe('it');
     expect(
       new URL(page.url()).hash,
       'the view switch dropped the fragment — same subject, other view, lost place',

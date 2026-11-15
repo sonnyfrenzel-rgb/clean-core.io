@@ -28,7 +28,7 @@ const PLACE_ID = /^[A-Za-z][\w-]{0,63}$/;
  *
  * Nothing is stored and nothing is selected: the fragment stays the address
  * bar's, as the layer's does (ADR-018). The process map has its own follower
- * in the shell, so its id is left to it.
+ * in Analyze, Business (`components/analyze/AnalyzeBusiness.tsx`), so its id is left to it.
  *
  * Every choice has one address (`lib/choice-addresses.ts`, owner 11.10.2026),
  * and three things follow from that here:

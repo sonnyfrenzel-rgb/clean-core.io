@@ -1,6 +1,9 @@
 import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { build } from 'esbuild';
 import { TERMS_VERSION } from '../lib/constants';
 import { archivedTerms } from '../lib/terms-versions';
 import { ARCHIVED_BYOK_ADDENDUM_VERSIONS, archivedAddendum } from '../lib/legal/byok-addendum-versions';
@@ -155,7 +158,36 @@ test('every clean-core.io address a text names is a page', () => {
       fs.existsSync(path.resolve(ROOT, `app/(app)${route}/page.tsx`));
   };
   const all = SOURCES.map((s) => s.text).join('\n');
-  for (const m of all.matchAll(/(?<![\w./@-])clean-core\.io(\/[a-z0-9/-]*[a-z0-9])/g)) {
+  // A dot inside the path belongs to it: the change note names /datenschutz/versions/1.1, not /datenschutz/versions/1.
+  for (const m of all.matchAll(/(?<![\w./@-])clean-core\.io(\/[a-z0-9/.-]*[a-z0-9])/g)) {
     expect(pageFor(m[1]), `the texts name clean-core.io${m[1]}, which is no page`).toBe(true);
+  }
+});
+
+test('every clean-core.io address a text names links to that whole address, its dotted version included', async () => {
+  test.setTimeout(120 * 1000);
+  // The renderer's own autolink, not a copy of its pattern: the component is bundled and rendered as the page renders it.
+  const out = path.resolve(ROOT, 'tmp', 'legal-archive-sync-spec', String(process.pid));
+  fs.mkdirSync(out, { recursive: true });
+  await build({
+    entryPoints: [path.resolve(ROOT, 'components', 'legal', 'LegalDocument.tsx')],
+    outfile: path.join(out, 'LegalDocument.cjs'),
+    bundle: true,
+    format: 'cjs',
+    platform: 'node',
+    jsx: 'automatic',
+    external: ['react', 'react-dom', 'react/jsx-runtime', 'next'],
+    alias: { '@': ROOT },
+    logLevel: 'silent',
+  });
+  const { LegalInline } = require(path.join(out, 'LegalDocument.cjs')) as { LegalInline: (props: { text: string }) => React.ReactElement };
+  const all = SOURCES.map((s) => s.text).join('\n');
+  const addresses = [...new Set([...all.matchAll(/(?<![\w./@-])clean-core\.io(\/[a-z0-9/.-]*[a-z0-9])/g)].map((m) => m[1]))];
+  expect(addresses, 'the texts name a versioned privacy address').toContainEqual(expect.stringMatching(/^\/datenschutz\/versions\/\d+\.\d+$/));
+  for (const route of addresses) {
+    // As a sentence ends on it: the full stop is not part of the link, the dot inside the version is.
+    const html = renderToStaticMarkup(React.createElement(LegalInline, { text: `See clean-core.io${route}.` }));
+    const hrefs = [...html.matchAll(/href="([^"]*)"/g)].map((m) => m[1]);
+    expect(hrefs, `clean-core.io${route}`).toEqual([route]);
   }
 });

@@ -29,7 +29,7 @@ export function buildOriginEngine(
   engineVersion: string | null = APP_VERSION,
 ): OriginEngine {
   const facts = buildProcessFacts(source);
-  const skeleton = buildProcessSkeletonFrom(facts);
+  const skeleton = buildProcessSkeletonFrom(facts, { engineVersion });
   const set = deriveBusinessRulesFrom(source, facts, skeleton, engineVersion);
 
   const rules: OriginEngineObject[] = set.rules.map((rule) => {

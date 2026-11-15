@@ -90,7 +90,10 @@ test.describe('BPMN 2.0 import', () => {
     // line anchors (tests/process-editor-pro.spec.ts, CI of d9a07f20).
     const shipped = path.resolve(__dirname, '..', 'public', 'starter-examples', 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
     const source = fs.readFileSync(shipped, 'utf8').replace(/\r\n/g, '\n');
-    const base = buildReadingExports(source, { processName: 'Order fulfilment audit', sourceFileName: 'Z.abap' }).bpmn.xml;
+    // The reading of a run signed before 3.1.0, which draws both modules. Engine 3.1.0 leaves an entry that draws
+    // nothing between its start and its end out of the business reading (a995d1ca): the empty PBO module goes, and
+    // the shipped example no longer has two "Start" on one level — the tie-breaker is tested where it still applies.
+    const base = buildReadingExports(source, { processName: 'Order fulfilment audit', sourceFileName: 'Z.abap', exporterVersion: '3.0.23' }).bpmn.xml;
     const topLevelStarts = parseBpmn(base).elements.filter((e) => e.tag === 'startEvent' && e.name === 'Start' && e.plane === null);
     expect(topLevelStarts.length, 'the premise: two start events of one name on one level').toBeGreaterThanOrEqual(2);
     const result = await importBpmn(asSignavio(base), { xml: base, revision: 1 });
@@ -99,6 +102,16 @@ test.describe('BPMN 2.0 import', () => {
     expect(result.summary.outside).toBe(0);
     expect(result.summary.matchedByName).toBe(result.summary.flowNodes);
     expect(result.summary.diff.identical, result.summary.diff.summary).toBe(true);
+
+    // And the reading of this release comes back whole the same way: one "Start" on the top level now.
+    const current = buildReadingExports(source, { processName: 'Order fulfilment audit', sourceFileName: 'Z.abap' }).bpmn.xml;
+    expect(parseBpmn(current).elements.filter((e) => e.tag === 'startEvent' && e.name === 'Start' && e.plane === null)).toHaveLength(1);
+    const again = await importBpmn(asSignavio(current), { xml: current, revision: 1 });
+    expect(again.ok, again.ok ? '' : again.message).toBe(true);
+    if (!again.ok) return;
+    expect(again.summary.outside).toBe(0);
+    expect(again.summary.matchedByName).toBe(again.summary.flowNodes);
+    expect(again.summary.diff.identical, again.summary.diff.summary).toBe(true);
   });
 
   test('a line anchor the file claims for itself is not believed', async () => {

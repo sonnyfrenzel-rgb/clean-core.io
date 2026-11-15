@@ -23,7 +23,9 @@ import {
   type OwnCodeRow,
 } from '@/lib/own-code-import';
 import { readUploadedFile } from '@/lib/own-code-zip';
+import { mergeCustomerTexts, storeCustomerTexts } from '@/lib/customer-texts-client';
 import { leaveOwnCodeHandoff } from '@/lib/own-code-handoff';
+import { pastedFileName, takeHomeStart } from '@/lib/home-start-handoff';
 import {
   wt,
   ownCodeStartNext,
@@ -52,6 +54,7 @@ import CcIconButton from '@/components/cc/IconButton';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import CcTextarea from '@/components/cc/Textarea';
 import { NAMING_ASKED_IN_THIS_BUILD, NAMING_PAUSED_REASON } from '@/lib/process-naming';
 import { STATE_CLASSES } from '@/components/cc/state';
 import { cn } from '@/lib/utils';
@@ -170,6 +173,8 @@ export default function OwnCodeImport() {
   const [namingError, setNamingError] = useState('');
   const [startTried, setStartTried] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  /** The paste field: closed, or open with what was pasted so far. */
+  const [pasted, setPasted] = useState<string | null>(null);
 
   useEffect(() => onAuthStateChanged(getAuth(), setUser), []);
 
@@ -203,6 +208,23 @@ export default function OwnCodeImport() {
       setReading((n) => n - 1);
     }
   }, []);
+
+  // What the home page handed over (H-O11): the file the reader dropped or
+  // chose there is read here as if it had been dropped here; "Paste the code"
+  // opens the paste field. Taken once (`lib/home-start-handoff.ts`).
+  useEffect(() => {
+    const handoff = takeHomeStart();
+    if (!handoff) return;
+    if (handoff.kind === 'files') void addFiles(handoff.files);
+    else setPasted('');
+  }, [addFiles]);
+
+  const addPasted = useCallback(() => {
+    const text = (pasted ?? '').trim();
+    if (!text) return;
+    void addFiles([new File([text], pastedFileName(text), { type: 'text/plain' })]);
+    setPasted(null);
+  }, [pasted, addFiles]);
 
   const removeFile = useCallback((id: string) => {
     setFiles((prev) => prev.filter((f) => f.id !== id));
@@ -246,25 +268,32 @@ export default function OwnCodeImport() {
         setBusy(false);
         return;
       }
+      // 3.1.0 (H5b): the customer's dictionary texts of an abapGit upload stay with the project — best effort: without
+      // them the Business view reads as it does for a source without a package.
+      const customerTexts = mergeCustomerTexts(files.map((f) => f.customerTexts));
+      if (customerTexts && !(await storeCustomerTexts(docRef.id, customerTexts))) {
+        console.error('[OwnCodeImport] customer texts not stored');
+      }
       leaveOwnCodeHandoff({
         projectId: docRef.id,
         personalDataKey: hintKey,
         ...(assembly.main?.file ? { fileName: assembly.main.file.split('/').pop() } : {}),
       });
-      // The workspace first, with the first look (owner 02.10.2026) — never
-      // the Analyze tool. The workspace signs the engine's reading at once, so
-      // the full map stands after the build-up (ADR-072); Analyze takes the
-      // handoff above for a later run, so nothing is asked twice.
+      // Analyze in the Business view (plan AB-2, ADR-109): it signs the
+      // engine's reading at once, so the map stands (ADR-072); today's Analyze
+      // page (IT) takes the handoff above for a later run, so nothing is asked
+      // twice.
       // The release is not a field the browser may write; the first run
       // carries it (`lib/start-release-handoff.ts`), as Change target does.
       leaveStartRelease(docRef.id, edition === 'private' ? release : '');
-      router.push(`/project/${docRef.id}?first=1`);
+      // The project's entry since AB-2 (ADR-109): Analyze, Business view, which signs the engine's reading at once.
+      router.push(`/project/${docRef.id}/analyze?first=1`);
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, 'projects');
       setError(err instanceof Error ? err.message : wt('ownCode.createFailed'));
       setBusy(false);
     }
-  }, [busy, user, ready, nameMissing, hintsPending, cost.blocked, trimmedName, assembly.source, assembly.main, hintKey, router, edition, release]);
+  }, [busy, user, ready, nameMissing, hintsPending, cost.blocked, trimmedName, assembly.source, assembly.main, hintKey, router, edition, release, files]);
 
   const toggleNaming = useCallback(
     async (next: boolean) => {
@@ -418,6 +447,32 @@ export default function OwnCodeImport() {
                     {wt('ownCode.dropHelp')}
                   </span>
                 </div>
+
+                {pasted === null ? (
+                  <span>
+                    <CcButton variant="ghost" onClick={() => setPasted('')} data-own-code-paste-open="">
+                      {wt('ownCode.pasteOpen')}
+                    </CcButton>
+                  </span>
+                ) : (
+                  <div data-own-code-paste="" className="flex min-w-0 flex-col gap-2">
+                    <CcTextarea
+                      label={wt('ownCode.pasteLabel')}
+                      value={pasted}
+                      onChange={setPasted}
+                      rows={8}
+                      help={wt('ownCode.pasteHelp')}
+                    />
+                    <span className="flex flex-wrap items-center gap-2">
+                      <CcButton variant="secondary" onClick={addPasted} disabled={pasted.trim() === ''} data-own-code-paste-add="">
+                        {wt('ownCode.pasteAdd')}
+                      </CcButton>
+                      <CcButton variant="ghost" onClick={() => setPasted(null)}>
+                        {wt('ownCode.pasteCancel')}
+                      </CcButton>
+                    </span>
+                  </div>
+                )}
 
                 {reading > 0 ? (
                   <p role="status" className="m-0 text-[12px] font-medium text-cc-ink-muted">{wt('ownCode.reading')}</p>

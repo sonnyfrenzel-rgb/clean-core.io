@@ -325,7 +325,7 @@ const withoutComments = (source: string) => source.replace(/\/\*[\s\S]*?\*\//g, 
 const GATED = 'behind useAuthWanted() (hooks/useAuthWanted.ts): no Auth on a public page without the signed-in hint';
 const CLICK_ONLY = 'only in a handler the reader starts (a click, a save) — never on load';
 const DEMO_AFTER_GATE =
-  'reached through the demo workspace, which renders it only once a profile exists (components/demo/DemoWorkspaceShell.tsx, `if (profileLoading || !enabled)`) — a visitor without the hint is sent to sign in first';
+  'reached through the demo workspace or the demo\'s Analyze, Business, which render it only once a profile exists (components/demo/DemoWorkspaceShell.tsx, components/demo/DemoAnalyzeBusiness.tsx, `if (profileLoading || !enabled)`) — a visitor without the hint is sent to sign in first';
 
 /**
  * Every file a public page of the shell can reach that calls `getAuth()` or

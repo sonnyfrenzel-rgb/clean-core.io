@@ -190,7 +190,8 @@ test.describe('the stage, rendered', () => {
   test('the demo: the same structure', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('/demo/analyze', { waitUntil: 'domcontentloaded' });
+    // The score page is the demo's Analyze in IT since v3.1.0 (its Business view is the map page, AB-2, O10).
+    await page.goto('/demo/analyze?view=it', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-analyze]')).toBeVisible({ timeout: 120000 });
     await expectOnePlaceEach(page);
   });

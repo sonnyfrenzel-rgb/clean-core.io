@@ -63,8 +63,18 @@ async function signIn(page: Page): Promise<void> {
   await page.waitForTimeout(4000);
 }
 
-/** Opens the workspace in a view and waits until the first look has settled. */
+/**
+ * Opens a view of the project and waits until it has settled. Business is
+ * Analyze's page since v3.1.0 (plan AB-2, ADR-109): the map, and the first
+ * insights below it in their end state. IT and Management are the workspace's.
+ */
 async function openWorkspace(page: Page, view: 'business' | 'it' | 'management'): Promise<void> {
+  if (view === 'business') {
+    await page.goto(`/project/${PROJECT_ID}/analyze?view=business`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-analyze-interim] [data-first-look="end-state"]')).toBeVisible({ timeout: 60000 });
+    return;
+  }
   await page.goto(`/project/${PROJECT_ID}?view=${view}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator(`[data-workspace-shell="${view}"]`)).toBeVisible({ timeout: 60000 });
   // Management has no first look since ADR-087 — its answer and one fold,
@@ -80,11 +90,7 @@ async function openWorkspace(page: Page, view: 'business' | 'it' | 'management')
   // answer, so the wait is for that answer to have loaded ("loading" until then).
   if (view === 'it') {
     await expect(page.locator('[data-it-view=""] [data-it-headline]')).toBeVisible({ timeout: 90000 });
-    return;
   }
-  await expect(page.locator('[data-first-look="end-state"], [data-first-look="complete"]')).toBeVisible({
-    timeout: 60000,
-  });
 }
 
 /** The heading levels inside the page content, in document order. */
@@ -138,7 +144,7 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     }
   });
 
-  test('every live region says one thing per event — the build-up announces the newest stage only (§2.8, §8)', async ({
+  test('every live region says one thing per event — the first insights announce the newest stage only (§2.8, §8)', async ({
     page,
   }) => {
     test.setTimeout(240 * 1000);
@@ -159,8 +165,10 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
       };
       new MutationObserver(watch).observe(document, { subtree: true, childList: true, characterData: true });
     });
-    await page.goto(`/project/${PROJECT_ID}?view=business&first=1`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-first-look="complete"], [data-first-look="end-state"]')).toBeVisible({
+    // A first visit, in Analyze, Business since v3.1.0 (AB-2); no build-up since AB-3, so the region
+    // announces the readings as they land.
+    await page.goto(`/project/${PROJECT_ID}/analyze?view=business&first=1`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-interim] [data-first-look="end-state"]')).toBeVisible({
       timeout: 60000,
     });
 
@@ -195,7 +203,9 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await signIn(page);
-    await openWorkspace(page, 'business');
+    // The workspace's header (Details, the view switch, the tools) is IT's and Management's since v3.1.0:
+    // Business is Analyze's page (AB-2), with the stage header's own switch (`tests/stage-view-switch.spec.ts`).
+    await openWorkspace(page, 'it');
 
     // The first Tab stop is the skip link, and it lands in the content.
     // Nothing has been clicked since the navigation, so Tab starts at the top.
@@ -221,14 +231,17 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     const selected = page.locator('[data-workspace-shell] [role="radiogroup"][aria-label="View"] [aria-checked="true"]');
     await selected.focus();
     await page.keyboard.press('ArrowRight');
+    await expect(page).toHaveURL(/view=management/);
+    await expect(page.locator('[data-workspace-shell="management"]')).toBeVisible({ timeout: 30000 });
+    await page.keyboard.press('ArrowLeft');
     await expect(page).toHaveURL(/view=it/);
     await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 30000 });
-    await page.keyboard.press('ArrowLeft');
-    await expect(page).toHaveURL(/view=business/);
 
     // "Tools" is a disclosure: Escape closes it and returns the focus. Since
     // ADR-060 the tools stand open from breakpoint L, so the menu is measured
-    // where Business still has it — breakpoint M.
+    // where Management still has it — breakpoint M (Business had it there too
+    // until its view moved to Analyze in v3.1.0).
+    await openWorkspace(page, 'management');
     await page.setViewportSize({ width: 1000, height: 1200 });
     const tools = page.locator('[data-workspace-tools="menu"] button[aria-expanded]');
     await tools.focus();
@@ -276,7 +289,8 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await signIn(page);
-    await openWorkspace(page, 'business');
+    // The workspace's search is listed: IT, where the workspace stands since v3.1.0 (Business is Analyze's).
+    await openWorkspace(page, 'it');
 
     const help = page.locator('[data-help-menu-trigger]');
     await help.focus();
@@ -318,7 +332,7 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     const context = await browser.newContext({ forcedColors: 'active', viewport: { width: 1440, height: 1200 } });
     const page = await context.newPage();
     await signIn(page);
-    await openWorkspace(page, 'business');
+    await openWorkspace(page, 'it');
 
     const segments = await page
       .locator('[data-workspace-shell] [role="radiogroup"][aria-label="View"] [role="radio"]')
@@ -369,16 +383,17 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await signIn(page);
     await openWorkspace(page, 'business');
 
-    // Next step → the answer → the layer → the folded Not determined (owner,
-    // 03.10.2026: the one next action first, on a phone too), in the DOM and on
-    // the screen — so the focus order is the reading order (§1.6).
+    // Business is Analyze's page since v3.1.0 (AB-2, ADR-109): what the program
+    // does → the map → the first insights → "Next step" (the interim until
+    // v3.2.0), in the DOM and on the screen — so the focus order is the reading
+    // order (§1.6), on a phone too.
     const order = await page.evaluate(() => {
       const pick = (selector: string) => document.querySelector(selector);
       const blocks = [
-        pick('[data-next-step]'),
-        pick('[data-first-look]'),
-        pick('[data-workspace-layer-section]'),
-        pick('#not-determined'),
+        pick('[data-analyze-summary]'),
+        pick('[data-analyze-map]'),
+        pick('[data-analyze-interim] [data-first-look]'),
+        pick('[data-analyze-interim] [data-next-step]'),
       ];
       const tops = blocks.map((el) => (el ? el.getBoundingClientRect().top + window.scrollY : -1));
       const dom = blocks.every((el, i) =>
@@ -392,13 +407,13 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
       expect(order.tops[i], `block ${i} stands above block ${i - 1}`).toBeGreaterThan(order.tops[i - 1]);
     }
 
-    // Nothing in the workspace is wider than a 390px screen.
-    const overflow = await page.locator('[data-workspace-shell]').evaluate((el) => el.scrollWidth - el.clientWidth);
-    expect(overflow, 'the workspace scrolls sideways on a phone').toBeLessThanOrEqual(1);
+    // Nothing on the page is wider than a 390px screen.
+    const overflow = await page.locator('[data-analyze-business]').evaluate((el) => el.scrollWidth - el.clientWidth);
+    expect(overflow, 'Analyze, Business scrolls sideways on a phone').toBeLessThanOrEqual(1);
 
-    // Touch targets: the view switch and every button of the workspace are 44px high.
+    // Touch targets: the view switch and every button of the page are 44px high.
     const heights = await page
-      .locator('[data-workspace-shell] [role="radio"], [data-workspace-shell] [data-cc-button]')
+      .locator('[data-analyze-business] [role="radio"], [data-analyze-business] [data-cc-button]')
       .evaluateAll((els) =>
         els
           .filter((el) => (el as HTMLElement).offsetParent !== null)

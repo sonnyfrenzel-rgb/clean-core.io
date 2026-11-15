@@ -282,19 +282,28 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
               stage is that link, which knows the view it came from; the path
               says where the reader is and leads to the workspace. On a phone the
               bar holds the logo, the quota and the account only — the stage's
-              link is the way back there. */}
+              link is the way back there.
+              Below lg (1024 px) a project's path starts at the project: the
+              "My workspace" crumb before it is not drawn, so the project's name
+              is not cut (owner decision 13.11.2026, ADR-115). The way back to
+              the list stays in the page — "Back to My workspace" on the
+              project's entry, and the logo — and from lg up the path is whole. */}
           {profile && (
             <nav aria-label="Path" data-shell-path="" className="hidden min-w-0 items-center gap-1 text-[13px] font-medium text-cc-ink-muted sm:flex">
               {atWorkspace ? (
                 <span aria-current="page" className="font-semibold text-cc-ink">{nav('nav.myWorkspace')}</span>
               ) : (
-                <Link href="/dashboard" className="whitespace-nowrap text-cc-ink-muted no-underline hover:text-cc-ink hover:underline">
+                <Link
+                  href="/dashboard"
+                  data-shell-path-home=""
+                  className={cn('whitespace-nowrap text-cc-ink-muted no-underline hover:text-cc-ink hover:underline', projectName && 'hidden lg:inline')}
+                >
                   {nav('nav.myWorkspace')}
                 </Link>
               )}
               {projectName && (
                 <>
-                  <ChevronRight size={14} aria-hidden={true} className="shrink-0" />
+                  <ChevronRight size={14} aria-hidden={true} className="hidden shrink-0 lg:block" />
                   {pathCurrent && projectHref ? (
                     <Link
                       href={projectHref}

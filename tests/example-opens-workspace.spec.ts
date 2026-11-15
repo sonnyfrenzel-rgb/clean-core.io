@@ -65,26 +65,55 @@ async function goto(page: Page, url: string) {
 }
 
 /**
- * The workspace, with the first look grown and the full map drawn from the
- * run the start signed (ADR-072) — not the two-node main line, and never a
- * visit to Analyze.
+ * The project's entry since AB-2 (ADR-109): Analyze in the Business view, the
+ * full map drawn from the run the start signed (ADR-072) — not the two-node
+ * main line — with the first look's blocks below it, and never today's score
+ * page (IT's).
  */
 async function expectWorkspaceWithFirstLook(page: Page): Promise<string> {
-  await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 120000 });
-  expect(page.url(), 'an example landed on the Analyze tool').not.toContain('/analyze');
+  await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 120000 });
+  expect(page.url(), 'an example landed on the score page').not.toContain('view=it');
+  // The recorder was installed before the start was pressed (`recordFirstLook`), so no state the first look took
+  // between the press and this line can be missed.
+  expect(await page.evaluate(() => Array.isArray((window as unknown as { __firstLookStates?: unknown }).__firstLookStates)), 'the first look was not recorded from the start').toBe(true);
   const projectId = new URL(page.url()).pathname.split('/')[2];
-  await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 90000 });
+  await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+  await expect(page.locator('[data-analyze-score]'), 'Business shows no score').toHaveCount(0);
   const look = page.locator('[data-first-look]');
   await expect(look).toBeVisible({ timeout: 60000 });
-  await expect(look).toHaveAttribute('data-first-look', /^(building|complete|end-state)$/, { timeout: 60000 });
-  await expect(look).toHaveAttribute('data-first-look', /^(complete|end-state)$/, { timeout: 90000 });
+  await expect(look).toHaveAttribute('data-first-look', 'end-state', { timeout: 90000 });
+  const states = await page.evaluate(() => (window as unknown as { __firstLookStates?: string[] }).__firstLookStates ?? []);
+  expect(states.filter((v) => v !== 'waiting' && v !== 'end-state'), 'the first look took a state other than reading and its end state').toEqual([]);
   const map = page.locator('[data-workspace-process="ready"] [data-process-map]');
   await expect(map, 'the start drew no full map').toBeVisible({ timeout: 60000 });
   // And it stays.
   await page.waitForTimeout(3000);
   await expect(map).toBeVisible();
-  expect(page.url()).not.toContain('/analyze');
+  expect(page.url()).not.toContain('view=it');
   return projectId;
+}
+
+/**
+ * Every state the first look takes, recorded from before the start is pressed: the paced build-up retired with 3.1.0
+ * (AB-3), so the card reads ("waiting") and then stands in its end state — it never builds up. Installed in the
+ * page as it stands (a client-side navigation keeps it) and for every document loaded after it (a full load).
+ */
+async function recordFirstLook(page: Page) {
+  const install = () => {
+    const w = window as unknown as { __firstLookStates?: string[] };
+    if (w.__firstLookStates) return;
+    w.__firstLookStates = [];
+    const note = () => {
+      for (const el of document.querySelectorAll('[data-first-look]')) {
+        const v = el.getAttribute('data-first-look') ?? '';
+        if (!w.__firstLookStates!.includes(v)) w.__firstLookStates!.push(v);
+      }
+    };
+    note();
+    new MutationObserver(note).observe(document, { subtree: true, childList: true, attributes: true, attributeFilter: ['data-first-look'] });
+  };
+  await page.addInitScript(install);
+  await page.evaluate(install);
 }
 
 async function startFromGallery(page: Page, scope: string, name: string) {
@@ -94,13 +123,14 @@ async function startFromGallery(page: Page, scope: string, name: string) {
   if (!(await start.isVisible().catch(() => false))) {
     await page.locator(`${scope} [data-examples-more] button`).first().click({ timeout: 60000 });
   }
+  await recordFirstLook(page);
   await start.click({ timeout: 60000 });
 }
 
-test.describe('an example opens the workspace with the first look, never Analyze (owner 02.10.2026)', () => {
+test.describe('an example opens Analyze, Business, with the map and the first look, never the score page (owner 02.10.2026; AB-2)', () => {
   test.describe.configure({ mode: 'serial' });
 
-  test('from the gallery on "My workspace" — the empty list a new account sees', async ({ page }) => {
+  test('from "My workspace" — the first view a new account sees (AB-14a)', async ({ page }) => {
     test.setTimeout(360 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     const email = await communityAccount('example-list');
@@ -131,9 +161,9 @@ test.describe('an example opens the workspace with the first look, never Analyze
     await page.setViewportSize({ width: 1440, height: 1000 });
     const email = await communityAccount('example-newproject');
     await signInViaLanding(page, email, PASSWORD);
-    await goto(page, '/dashboard');
-    await page.locator('[data-workspace-new-project]').first().click({ timeout: 90000 });
-    await page.waitForURL(/\/admin\/new-project$/, { timeout: 90000 });
+    // A new account's first view has the start built in and no "New project"
+    // (AB-14a); the page itself is the same for every account.
+    await goto(page, '/admin/new-project');
     await expect(page.locator('[data-cc-new-project]')).toBeVisible({ timeout: 90000 });
     await startFromGallery(page, '[data-new-project-examples]', 'Z_MATERIAL_STOCK_CALC');
     await expectWorkspaceWithFirstLook(page);
@@ -152,6 +182,7 @@ test.describe('an example opens the workspace with the first look, never Analyze
     const ack = page.locator('[data-personal-data-hints] input[type="checkbox"]');
     if (await ack.count()) await ack.check();
     await expect(page.locator('[data-own-code-start]')).toBeEnabled({ timeout: 30000 });
+    await recordFirstLook(page);
     await page.click('[data-own-code-start]');
     const projectId = await expectWorkspaceWithFirstLook(page);
 

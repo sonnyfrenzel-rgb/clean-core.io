@@ -38,7 +38,9 @@ const ASKED = new Set<string>();
  *
  * 3.0.21 (owner decision 06.11.2026): while `NAMING_WITHOUT_FACTS_PAUSED`
  * holds, `shouldAskNaming` says no without the engine's facts, so the hook asks
- * nothing and offers no click. No caller passes `withFacts` in this build.
+ * nothing and offers no click. 3.1.0: the page passes `withFacts` from
+ * `namingFactsApply` for the run's engine — the same rule `namingContextOf`
+ * attaches the facts by, so the hook asks exactly when the prompt carries them.
  */
 export function useAutoProcessNaming(input: {
   projectId: string | null;
@@ -51,9 +53,28 @@ export function useAutoProcessNaming(input: {
   autoAllowed: boolean;
   /** The ask would hand the model the engine's facts (`shouldAskNaming`). Absent: nothing is asked while the naming is paused. */
   withFacts?: boolean;
-}): { state: 'idle' | 'asking'; askNow: (() => void) | null } {
+  /** The engine of the project's run (`engineVersionOfProject`) — the map the names are asked for; null: this release. */
+  engineVersion?: string | null;
+  /**
+   * The names wait for the one-time notice on automatic AI steps in the wording that names them
+   * (`namesWaitForNotice`, `lib/auto-steps-notice.ts`): nothing is asked, neither by itself nor on a click.
+   */
+  awaitNotice?: boolean;
+}): {
+  state: 'idle' | 'asking';
+  askNow: (() => void) | null;
+  /** How the last ask of this page ended: stored, or ended without names (3.1.0: the map's status line says so). */
+  outcome: 'stored' | 'failed' | null;
+  /** Names would be asked for this map now, but wait for the notice (`awaitNotice`). */
+  waitsForNotice: boolean;
+} {
   const { projectId, source, owner, availability, state, onStored, autoAllowed, withFacts } = input;
+  const awaitNotice = input.awaitNotice === true;
+  const engineVersion = input.engineVersion ?? null;
   const [asking, setAsking] = useState(false);
+  // The outcome belongs to the map it was asked for (project and source digest): another map on the same page has
+  // had no answer yet, so it reads none rather than an earlier map's failure.
+  const [ended, setEnded] = useState<{ for: string; outcome: 'stored' | 'failed' } | null>(null);
   const [clickedFor, setClickedFor] = useState<string | null>(null);
   const modelEnabled = namingModelEnabled(availability);
   // Primitives for the dependency list: the availability object is new on every render.
@@ -70,32 +91,40 @@ export function useAutoProcessNaming(input: {
     (pid: string, src: string, automatic: boolean) => {
       // Not cancelled by a later render: the ask is taken once, so its answer
       // is always announced and the wait always ends.
+      const askedFor = `${pid}|${sha256Hex(src)}`;
+      const setOutcome = (outcome: 'stored' | 'failed') => setEnded({ for: askedFor, outcome });
       void (async () => {
         setAsking(true);
         try {
           const [naming, client] = await Promise.all([import('@/lib/process-naming'), import('@/lib/process-naming-client')]);
           const outcome = await client.requestProcessNaming(
             pid,
-            naming.namingContextOf(src),
+            naming.namingContextOf(src, engineVersion ? { engineVersion } : {}),
             { known, keyAvailable, stages: { [naming.NAMING_STAGE]: modelEnabled } },
             undefined,
             { automatic },
           );
-          if (!outcome.ok) return;
+          if (!outcome.ok) {
+            setOutcome('failed');
+            return;
+          }
+          setOutcome('stored');
           window.dispatchEvent(new CustomEvent(PROCESS_NAMING_STORED_EVENT, { detail: pid }));
           storedRef.current?.();
         } catch {
           // The plain names stand.
+          setOutcome('failed');
         } finally {
           setAsking(false);
         }
       })();
     },
-    [known, keyAvailable, modelEnabled],
+    [known, keyAvailable, modelEnabled, engineVersion],
   );
 
   const digest = source ? sha256Hex(source) : null;
-  const mode = projectId && digest ? askModeOf({ wanted: shouldAskNaming({ owner, modelEnabled, state, withFacts }), autoAllowed }) : null;
+  const wanted = shouldAskNaming({ owner, modelEnabled, state, withFacts });
+  const mode = projectId && digest && !awaitNotice ? askModeOf({ wanted, autoAllowed }) : null;
 
   useEffect(() => {
     if (!projectId || !source || !digest || mode !== 'auto') return;
@@ -110,8 +139,12 @@ export function useAutoProcessNaming(input: {
     ask(projectId, source, false);
   }, [projectId, source, digest, ask]);
 
+  const outcome = ended && projectId && digest && ended.for === `${projectId}|${digest}` ? ended.outcome : null;
+
   return {
+    outcome,
     state: asking ? 'asking' : 'idle',
     askNow: mode === 'click' && clickedFor !== digest && !asking ? askNow : null,
+    waitsForNotice: awaitNotice && wanted && !!projectId && !!digest,
   };
 }

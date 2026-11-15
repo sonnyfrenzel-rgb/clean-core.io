@@ -39,13 +39,13 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const ROUTE = path.join(ROOT, 'app/api/gemini/route.ts');
+const REGISTER_FILE = path.join(ROOT, 'lib/gemini-register.ts');
 const LEDGER = path.join(ROOT, 'tests/gemini-register-liveness.json');
 
-/** The register, read out of the route rather than duplicated here. */
+/** The register, read out of lib/gemini-register.ts rather than duplicated here. */
 export function readRegister(source) {
   const start = source.indexOf('const ALLOWED_MODELS');
-  if (start === -1) throw new Error('ALLOWED_MODELS not found in app/api/gemini/route.ts');
+  if (start === -1) throw new Error('ALLOWED_MODELS not found in lib/gemini-register.ts');
   const end = source.indexOf('])', start);
   const block = source.slice(start, end);
   const models = [...block.matchAll(/'([^']+)'/g)].map((m) => m[1]);
@@ -109,7 +109,7 @@ export async function probe(model, key, fetchImpl = fetch) {
 
 async function main() {
   const write = process.argv.includes('--write');
-  const models = readRegister(fs.readFileSync(ROUTE, 'utf8'));
+  const models = readRegister(fs.readFileSync(REGISTER_FILE, 'utf8'));
   const key = readKey();
   if (!key) {
     console.error('No GEMINI_API_KEY in the environment or .env.local. Nothing was checked and nothing was written.');
@@ -133,7 +133,7 @@ async function main() {
     const ledger = {
       note:
         'Written by scripts/check-gemini-register.mjs. One real generateContent call per entry of ' +
-        'ALLOWED_MODELS in app/api/gemini/route.ts. tests/gemini-model-pin.spec.ts reads this file ' +
+        'ALLOWED_MODELS in lib/gemini-register.ts. tests/gemini-model-pin.spec.ts reads this file ' +
         'instead of the network. Re-run the script with --write after changing the register.',
       endpoint: 'POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent',
       models: records,

@@ -4,6 +4,7 @@ import { archivedTermsSha256For, isTermsLanguage, type TermsLanguage } from '@/l
 import { PROOF_LOG_RETENTION } from '@/lib/proof-log';
 import { acceptanceEffectiveAt, type ConsentOccasion } from '@/lib/terms-effective';
 import { TERMS_EFFECTIVE_DATE_ISO } from '@/lib/legal/open-values';
+import { PRIVACY_POLICY_CURRENT } from '@/lib/legal/privacy-versions';
 
 /**
  * Server-authoritative Terms/Privacy consent (finding V14).
@@ -79,8 +80,10 @@ export function acceptedTermsLanguageOf(value: unknown): TermsLanguage {
  * immutable audit trail state acceptance of a document this server never served.
  * A consent record whose contents the consenting party chooses is not evidence.
  *
- * The privacy notice is versioned together with the Terms, so the version is
- * derived. `contentSha256` used to be null for a reason worth keeping on the
+ * The version is derived on the server. The privacy policy carried the Terms'
+ * version id until its version 1.1; from 1.2 it has its own numbering and the
+ * record stores its id (`PRIVACY_POLICY_CURRENT.recordId`,
+ * `lib/legal/privacy-versions.ts`), which for 1.1 is that same Terms id. `contentSha256` used to be null for a reason worth keeping on the
  * record: there was nothing honest to put there. The only text of the Terms was
  * a React page, and a hash of its rendered output moves with every build, every
  * Tailwind class and every release stamp in its footer — it would have looked
@@ -160,7 +163,7 @@ export async function recordConsent(
     email,
     kind: 'accepted',
     termsVersion: TERMS_VERSION,
-    privacyVersion: TERMS_VERSION,
+    privacyVersion: PRIVACY_POLICY_CURRENT.recordId,
     termsLanguage: language,
     contentSha256,
     locale: typeof locale === 'string' ? locale.slice(0, 35) : null,

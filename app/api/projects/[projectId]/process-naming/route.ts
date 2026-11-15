@@ -28,6 +28,7 @@ import {
   type ProcessNamingRecord,
 } from '@/lib/process-naming';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { readBoundedRequestJson } from '@/lib/url-validation';
 
 /** The answer, its digest and its receipt, read under a bound before parsing. */
@@ -88,7 +89,7 @@ const DOC = 'current';
 const MAX_SOURCE_BYTES = 400_000;
 
 type Gate =
-  | { ok: true; uid: string; projectId: string; legacyCode: unknown }
+  | { ok: true; uid: string; projectId: string; legacyCode: unknown; engineVersion: string | null }
   | { ok: false; response: NextResponse };
 
 async function openProject(
@@ -190,7 +191,8 @@ async function openProject(
     // refusal keeps saying nothing.
     return { ok: false, response: NextResponse.json({ error: 'Project not found.' }, { status: 404 }) };
   }
-  return { ok: true, uid: decodedToken.uid, legacyCode: project.legacyCode, projectId };
+  // The map the names are for is the one the project's run draws (3.1.0): its engine, not this release.
+  return { ok: true, uid: decodedToken.uid, legacyCode: project.legacyCode, projectId, engineVersion: engineVersionOfProject(project) };
 }
 
 /** A Firestore Timestamp, a Date or an ISO string, as ISO. */
@@ -266,7 +268,7 @@ export async function POST(
     if (Buffer.byteLength(gate.legacyCode, 'utf8') > MAX_SOURCE_BYTES) {
       return NextResponse.json({ error: 'This source is too large to name in one request.', code: 'too-large' }, { status: 413 });
     }
-    const context = namingContextOf(gate.legacyCode);
+    const context = namingContextOf(gate.legacyCode, gate.engineVersion ? { engineVersion: gate.engineVersion } : {});
     // Paused (owner decision 06.11.2026): a naming not built from the engine's
     // facts is not stored. 403 with its own code, as `/api/gemini` answers a
     // switched-off stage; nothing is written, and a stored naming stays as it is.

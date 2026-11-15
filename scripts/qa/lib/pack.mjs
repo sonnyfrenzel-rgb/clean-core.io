@@ -142,6 +142,20 @@ export function partsOf(file, max = BUDGET.maxFileDiffChars) {
   return parts.map((p, i) => ({ ...file, diff: p.text, callers: i ? [] : file.callers, part: { index: i + 1, count: parts.length, lines: p.lines } }));
 }
 
+/** The smallest part a diff is cut into, however large the shared part of a call: below it the hunk context alone dominates. */
+export const MIN_PART_CHARS = 8_000;
+
+/**
+ * The largest part of a file's diff that still fits one call beside what every call repeats (`baseChars`) and what
+ * travels with the file (its callers, carried findings, label). Until 14.11.2026 parts were cut at the fixed
+ * `maxFileDiffChars` alone: on the 3.1.0 range (65 commits) the shared part had grown so large that a 36,000-character
+ * part no longer fitted a call, and six files stayed "not reviewed" in every round — the range could never complete.
+ */
+export function partBudgetFor(file, baseChars, budget = BUDGET) {
+  const room = budget.maxBatchChars - baseChars - fileChars({ ...file, diff: '', part: { index: 1, count: 2, lines: '' } });
+  return Math.max(MIN_PART_CHARS, Math.min(budget.maxFileDiffChars, room));
+}
+
 /** How a part is named wherever it appears alone: in a batch heading and in the list of what was not reviewed. */
 export const partLabel = (f) => (f.part ? `${f.part.index} of ${f.part.count}` : null);
 

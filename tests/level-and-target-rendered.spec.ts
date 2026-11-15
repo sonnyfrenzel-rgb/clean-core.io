@@ -191,7 +191,7 @@ test.describe('the own-code import asks for the target, and the signed run follo
     await expect(page.locator('[data-own-code-start-next]')).not.toContainText('SAP Cloud ERP Private');
     await page.click('[data-own-code-start]');
 
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 90000 });
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 90000 });
     const projectId = new URL(page.url()).pathname.split('/')[2];
     // The signed run carried the chosen edition, and the route kept it on the project.
     await expect

@@ -10,8 +10,15 @@ import { legacyForms, seedLegacyForms, storedFingerprint } from './helpers/legac
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
- * Roadmap 3.0.2, the rendered half — every historical form opens in the
- * workspace, in all three views, and the record is the same afterwards.
+ * Roadmap 3.0.2, the rendered half — every historical form opens in all three
+ * views, and the record is the same afterwards.
+ *
+ * Since 3.1.0 (AB-2, ADR-109 (1) and (3)) Business is Analyze's page: the
+ * workspace route sends `?view=business` to `/project/<id>/analyze`, where a
+ * form with source opens on the map (`[data-analyze-business="ready"]`) and a
+ * form without source keeps opening today's Analyze page. IT and Management stay
+ * on the workspace, and the record gaps are named there (`OpenQuestions`):
+ * Business shows no findings before a click (ADR-109 (2)).
  *
  * `tests/legacy-projects.spec.ts` proves the derivations on the stored shapes
  * without a page. This one proves what only the running app can: that the
@@ -85,7 +92,21 @@ test.describe('historical project forms, opened in the workspace', () => {
       const id = pid(key);
       const before = await storedFingerprint(db, id);
 
-      for (const view of ['business', 'it', 'management']) {
+      // Business first: the workspace sends it to Analyze, which must open on every form and write nothing.
+      await page.goto(`/project/${id}?view=business`, { waitUntil: 'domcontentloaded' });
+      await page.waitForURL(new RegExp(`/project/${id}/analyze(\\?|#|$)`), { timeout: 60000 });
+      const hasSource = typeof form.project.legacyCode === 'string' && form.project.legacyCode.trim() !== '';
+      if (hasSource) {
+        await expect(page.locator('[data-analyze-business="ready"]'), `${key} did not open in business`).toBeVisible({ timeout: 60000 });
+      } else {
+        // No source: today's Analyze page, which offers the upload (ADR-109 (1)).
+        await expect(page.locator('[data-stage-title]'), `${key} did not open in business`).toBeVisible({ timeout: 60000 });
+        await expect(page.locator('[data-analyze-business]')).toHaveCount(0);
+      }
+      const businessText = await page.locator('[data-stage-frame="analyze"]').first().innerText();
+      expect(businessText, `${key} in business`).not.toMatch(/\bundefined\b|\bNaN\b|\[object Object\]/);
+
+      for (const view of ['it', 'management']) {
         await page.goto(`/project/${id}?view=${view}`, { waitUntil: 'domcontentloaded' });
         const shell = page.locator('[data-workspace-shell]');
         await expect(shell, `${key} did not open in ${view}`).toBeVisible({ timeout: 60000 });

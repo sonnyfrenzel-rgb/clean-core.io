@@ -8,7 +8,7 @@ import {
   automaticStepsAllowed,
   isCoveredTrigger,
 } from '../lib/auto-model-steps';
-import { autoStepsSwitchBody, autoStepsSwitchOn } from '../lib/auto-steps-notice';
+import { AUTO_STEPS_NOTICE_WORDING, autoStepsSwitchBody, autoStepsSwitchOn } from '../lib/auto-steps-notice';
 import { startCallsModel } from '../lib/start-run-model';
 import { runModelCallNotice } from '../lib/legal/run-notice';
 import { describeRunCost } from '../lib/run-cost';
@@ -71,8 +71,9 @@ test.describe('the main switch, as a rule', () => {
   });
 
   test('the notice\'s switch writes the main switch, not the stages, and reads its position from it', () => {
-    expect(autoStepsSwitchBody(false)).toEqual({ autoModelSteps: false, autoStepsNotice: 'seen' });
-    expect(autoStepsSwitchBody(true)).toEqual({ autoModelSteps: true, autoStepsNotice: 'seen' });
+    // The notice is recorded with the wording it showed (`autoStepsNoticeWording`, tests/legal-names-wording.spec.ts).
+    expect(autoStepsSwitchBody(false)).toEqual({ autoModelSteps: false, autoStepsNotice: 'seen', autoStepsNoticeWording: AUTO_STEPS_NOTICE_WORDING });
+    expect(autoStepsSwitchBody(true)).toEqual({ autoModelSteps: true, autoStepsNotice: 'seen', autoStepsNoticeWording: AUTO_STEPS_NOTICE_WORDING });
     expect(autoStepsSwitchOn({ autoModelSteps: true })).toBe(true);
     expect(autoStepsSwitchOn({ autoModelSteps: false })).toBe(false);
     const notice = read('components/AutoStepsNotice.tsx');

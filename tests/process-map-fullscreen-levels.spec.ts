@@ -94,6 +94,39 @@ async function openWorkspaceMap(page: Page, acct: SeededProject, phone = false):
   return frame;
 }
 
+/**
+ * Taps an inline control where a finger can reach it. Below `sm` the floating
+ * assistant button stands at the window's bottom right on every page
+ * (`components/GlossaryChatbot.tsx`, block D D.8: the one direct way in on a
+ * phone), so a control scrolled to that corner is under it — and Playwright's
+ * tap does not check the hit target (it tapped "Ask this case" here). The
+ * control is brought to the middle of the window and must be what the finger
+ * hits.
+ */
+async function tapInline(control: Locator) {
+  await control.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  const hit = await control.evaluate((el) => {
+    const r = el.getBoundingClientRect();
+    const at = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+    return at !== null && el.contains(at);
+  });
+  expect(hit, 'something covers the control').toBe(true);
+  await control.tap();
+}
+
+/**
+ * Back as a reader presses it: a frame after the level is on screen. Full
+ * screen records a level's history entry after the page had its turn
+ * (`components/process-map/useCanvasFullscreen.ts`, a macrotask after the
+ * commit); Playwright's Back could come in those few milliseconds — measured
+ * on Analyze, the arrow's entry was pushed 10 ms after the level showed and
+ * Back came first, so it skipped the level (3.1.0).
+ */
+async function backAsReader(page: Page) {
+  await page.evaluate(() => new Promise<void>((done) => requestAnimationFrame(() => setTimeout(done, 0))));
+  await page.goBack();
+}
+
 /** A collapsed sub-process on the level on show, by its drill-down arrow. */
 async function subProcessOnLevel(scope: Locator): Promise<string> {
   const id = await scope.evaluate((root) => {
@@ -269,41 +302,48 @@ test.describe('levels in full screen and inline — desktop', () => {
     await expect(editorPath).toHaveAttribute('data-process-crumb', editorSub);
   });
 
-  test('the map takes the width: details only when a step is chosen, the outline folds and is remembered', async ({ page }) => {
+  test('the map takes the width: the code only when a step is chosen, beside the map; the outline folds and is remembered', async ({ page }) => {
     test.setTimeout(300_000);
+    // Since v3.1.0 the project's map is Analyze, Business (ADR-109), where the map is the page (mockup states 3 and
+    // 7): the outline column starts folded, and a chosen step's code is one panel beside the map — the map draws no
+    // card of its own there, which had squeezed the canvas to a strip (3.1.0 acceptance run).
     await signIn(page, acct);
+    await page.evaluate(() => window.localStorage.removeItem('cc.processMap.outline.page'));
     const frame = await openWorkspaceMap(page, acct);
     const map = page.locator('[data-workspace-process] [data-process-map]').first();
     const share = async () => {
       const [f, m] = await Promise.all([frame.boundingBox(), map.boundingBox()]);
       return f!.width / m!.width;
     };
+    await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
     await expect(page.locator('[data-process-map-details]')).toHaveCount(0);
-    expect(await share(), 'the map is under 70 % of the card with nothing chosen').toBeGreaterThanOrEqual(0.7);
+    expect(await share(), 'the map is under 90 % of the card with nothing chosen').toBeGreaterThanOrEqual(0.9);
     const before = (await frame.boundingBox())!.width;
     if (SHOTS) await map.screenshot({ path: `${SHOTS}/after-inline-1440.png` });
 
-    // A step: the details open beside the map; closing them gives the width back.
+    // A step: its code opens beside the map, never over it; closing it gives the width back.
     const step = frame.locator('[data-map-node]').nth(2);
     await step.click();
-    const details = page.locator('[data-process-map-details]');
-    await expect(details).toBeVisible();
-    if (SHOTS) await map.screenshot({ path: `${SHOTS}/after-inline-details-1440.png` });
-    await details.locator('[data-process-code-card-close]').click();
-    await expect(details).toHaveCount(0);
+    const panel = page.locator('[data-analyze-code-panel]');
+    await expect(panel).toBeVisible();
+    await expect(page.locator('[data-process-map-details]')).toHaveCount(0);
+    const [p, f0] = await Promise.all([panel.boundingBox(), frame.boundingBox()]);
+    expect(p!.x, 'the code panel lies over the map').toBeGreaterThanOrEqual(f0!.x + f0!.width - 1);
+    expect(f0!.width, 'the code panel squeezes the map').toBeGreaterThanOrEqual(600);
+    if (SHOTS) await page.screenshot({ path: `${SHOTS}/after-inline-details-1440.png` });
+    await panel.locator('[data-analyze-code-close]').click();
+    await expect(panel).toHaveCount(0);
     await expect.poll(async () => Math.round((await frame.boundingBox())!.width)).toBe(Math.round(before));
 
-    // The outline folds from the control row, and the choice is kept for this viewer.
+    // The outline opens from the control row, and the choice is kept for this viewer.
     const layout = page.locator('[data-workspace-process] [data-process-map-layout]').first();
-    await expect(layout).toHaveAttribute('data-outline', 'open');
-    await frame.locator('[data-process-outline-toggle]').click();
     await expect(layout).toHaveAttribute('data-outline', 'closed');
-    await expect(page.locator('[data-workspace-process] [data-process-map-outline-column]').first()).toBeHidden();
-    await expect.poll(async () => (await frame.boundingBox())!.width).toBeGreaterThan(before + 100);
+    await frame.locator('[data-process-outline-toggle]').click();
+    await expect(layout).toHaveAttribute('data-outline', 'open');
+    await expect(page.locator('[data-workspace-process] [data-process-map-outline-column]').first()).toBeVisible();
+    await expect.poll(async () => (await frame.boundingBox())!.width).toBeLessThan(before - 100);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-process] [data-process-map-layout]').first()).toHaveAttribute('data-outline', 'closed', { timeout: 120_000 });
-    await page.locator('[data-workspace-process] [data-process-outline-toggle]').first().click();
-    await expect(page.locator('[data-workspace-process] [data-process-map-layout]').first()).toHaveAttribute('data-outline', 'open');
+    await expect(page.locator('[data-workspace-process] [data-process-map-layout]').first()).toHaveAttribute('data-outline', 'open', { timeout: 120_000 });
 
     // Owner 11.10.2026: "BPMN view button labels — and the one circled button
     // does nothing, or I can't see it." Every button of the row says its word
@@ -338,16 +378,16 @@ test.describe('levels in full screen and inline — desktop', () => {
     await mapFrame.locator('[data-map-fullscreen-toggle]').click();
     await expect(mapFrame).toHaveAttribute('data-map-fullscreen', 'false');
 
-    // Narrower than 1280 px: the outline starts folded for a viewer who never chose, and details lie over the map.
-    await page.evaluate(() => window.localStorage.removeItem('cc.processMap.outline'));
+    // Narrower than 1280 px: the outline starts folded, and the code still stands beside the map, not over it.
+    await page.evaluate(() => window.localStorage.removeItem('cc.processMap.outline.page'));
     await page.setViewportSize({ width: 1200, height: 900 });
     const narrow = await openWorkspaceMap(page, acct);
     await expect(page.locator('[data-workspace-process] [data-process-map-layout]').first()).toHaveAttribute('data-outline', 'closed');
-    const width = (await narrow.boundingBox())!.width;
     await narrow.locator('[data-map-node]').nth(2).click();
-    await expect(page.locator('[data-process-map-details]')).toBeVisible();
-    expect(Math.round((await narrow.boundingBox())!.width), 'the details shrank the map instead of lying over it').toBe(Math.round(width));
-    await page.keyboard.press('Escape');
+    await expect(panel).toBeVisible();
+    const [p2, f2] = await Promise.all([panel.boundingBox(), narrow.boundingBox()]);
+    expect(p2!.x, 'the code panel lies over the map').toBeGreaterThanOrEqual(f2!.x + f2!.width - 1);
+    await panel.locator('[data-analyze-code-close]').click();
 
     if (SHOTS) {
       await page.setViewportSize({ width: 1280, height: 900 });
@@ -393,7 +433,8 @@ test.describe('levels in full screen and inline — desktop', () => {
     expect(step).not.toBe('');
     await frame.locator(`[data-map-node="${step}"]`).click();
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'false');
-    await expect(page.locator(`[data-process-code-card="${step}"]`)).toBeVisible();
+    // Analyze, Business since v3.1.0 (ADR-109): the step's code is the page's panel beside the map (mockup state 7).
+    await expect(page.locator('[data-analyze-code-panel]')).toBeVisible();
   });
 });
 
@@ -413,7 +454,7 @@ test.describe('levels in full screen — phone, touch', () => {
     const url = page.url();
     const sub = await subProcessOnLevel(frame);
 
-    await toggle.tap();
+    await tapInline(toggle);
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
     await frame.locator(`[data-map-node="${sub}"]`).tap();
     await expect.poll(() => levelOf(frame)).toBe(sub);
@@ -433,24 +474,24 @@ test.describe('levels in full screen — phone, touch', () => {
     await expect.poll(() => levelOf(frame)).toBe(sub);
 
     // Back: first the level opened in full screen …
-    await page.goBack();
+    await backAsReader(page);
     await expect.poll(() => levelOf(frame)).toBe('top');
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
     // … then the level opened before it (by the control, also in full screen) …
-    await page.goBack();
+    await backAsReader(page);
     await expect.poll(() => levelOf(frame)).toBe(sub);
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
     // … then full screen itself, on the level it was entered on, at the same address.
-    await page.goBack();
+    await backAsReader(page);
     await expect.poll(() => levelOf(frame)).toBe('top');
-    await page.goBack();
+    await backAsReader(page);
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'false', { timeout: 10_000 });
     await page.waitForTimeout(400);
     expect(page.url()).toBe(url);
     expect(await levelOf(frame)).toBe('top');
 
     // Leaving by the button keeps the level open in full screen.
-    await toggle.tap();
+    await tapInline(toggle);
     await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
     await frame.locator(`[data-map-node="${sub}"]`).tap();
     await expect.poll(() => levelOf(frame)).toBe(sub);

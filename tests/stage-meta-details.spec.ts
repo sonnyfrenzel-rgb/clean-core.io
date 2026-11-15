@@ -88,7 +88,8 @@ test.describe('the stage meta line is behind "Details"', () => {
       await expectBehindDetails(page, `[data-testid="demo-stage-${stage}"]`, LINES[stage], /lines/);
     }
     // Analyze: in the score hero, open, and the demo says it was never signed (ADR-093).
-    await page.goto('/demo/analyze', { waitUntil: 'domcontentloaded' });
+    // The score hero is the demo's Analyze in IT since v3.1.0 (its Business view is the map page, AB-2, O10).
+    await page.goto('/demo/analyze?view=it', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90_000 });
     const meta = page.locator('[data-testid="demo-stage-analyze"] [data-analysis-meta]');
     await expect(meta).toBeVisible();
@@ -109,7 +110,7 @@ test.describe('the stage meta line is behind "Details"', () => {
     });
     await signInThroughForm(page, acct);
     // Analyze: the provenance stands open in the score hero (ADR-093).
-    await page.goto(`/project/${acct.projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${acct.projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-analysis-meta]')).toBeVisible({ timeout: 90_000 });
     await expect(page.locator('[data-analysis-meta]')).toContainText('v2.20.0');

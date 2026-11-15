@@ -17,7 +17,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { isSafeODataServicePath } from '../lib/url-validation';
+import { isSafeODataServicePath, requestedODataServicePath } from '../lib/url-validation';
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
@@ -39,6 +39,18 @@ test.describe('OData service paths are constrained, not just hosts', () => {
     // Not a string at all — the body is caller-controlled JSON.
     expect(isSafeODataServicePath(undefined as unknown as string)).toBe(false);
     expect(isSafeODataServicePath({} as unknown as string)).toBe(false);
+  });
+
+  test('a supplied path that is not a string is refused, not replaced by the default', () => {
+    const fallback = '/sap/opu/odata/sap/API_BUSINESS_PARTNER';
+    expect(requestedODataServicePath(undefined, fallback)).toBe(fallback);
+    expect(requestedODataServicePath(null, fallback)).toBe(fallback);
+    expect(requestedODataServicePath('', fallback)).toBe(fallback);
+    expect(requestedODataServicePath('/sap/opu/odata/sap/ZMY_SRV', fallback)).toBe('/sap/opu/odata/sap/ZMY_SRV');
+    for (const bad of [{}, [], 42, true]) expect(requestedODataServicePath(bad, fallback), JSON.stringify(bad)).toBeNull();
+    const route = read('app/api/fetch-s4-metadata/route.ts');
+    expect(route).toContain("requestedODataServicePath(body.servicePath, '/sap/opu/odata/sap/API_BUSINESS_PARTNER')");
+    expect(route).toContain('servicePath === null || !isSafeODataServicePath(servicePath)');
   });
 
   for (const rel of ['app/api/fetch-s4-metadata/route.ts', 'app/api/test-s4-odata-read/route.ts']) {

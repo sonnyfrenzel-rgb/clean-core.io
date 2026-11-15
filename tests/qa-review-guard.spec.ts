@@ -849,7 +849,31 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     expect(report.incomplete).toBe(false);
     // In the pipeline: the diff is no longer cut where it is read, and every file is packed as its parts.
     expect(read('scripts/qa/lib/git-delta.mjs')).not.toMatch(/slice\(0, BUDGET\.maxFileDiffChars\)/);
-    expect(read('scripts/qa/review.mjs')).toMatch(/const entries = files\.flatMap\(\(f\) => partsOf\(f\)\);\s+const \{ batches, notReviewed, estimatedCostUsd \} = packBatches\(entries, baseChars\);/);
+    expect(read('scripts/qa/review.mjs')).toMatch(/const entries = files\.flatMap\(\(f\) => partsOf\(f, partBudgetFor\(f, baseChars\)\)\);\s+const \{ batches, notReviewed, estimatedCostUsd \} = packBatches\(entries, baseChars\);/);
+  });
+
+  test('a large shared part cuts a diff smaller, so every part still fits a call (the 3.1.0 range, 14.11.2026)', async () => {
+    const { partsOf, partBudgetFor, packBatches, MIN_PART_CHARS } = await lib('pack.mjs');
+    const { BUDGET } = await lib('config.mjs');
+    const file = { path: 'lib/abap/state-machine.ts', status: 'M', tags: ['engine'], diff: bigDiff(48, 64), callers: [], carriedChars: 2_000 };
+    // The shared part of the 3.1.0 range: what every call repeats left about 30,000 characters per call.
+    const baseChars = 170_000;
+    // Cut at the fixed limit, as before: a part does not fit beside the shared part and the file stays unread.
+    const before = packBatches(partsOf(file), baseChars, { budget: { ...BUDGET, maxBatches: 45 } });
+    expect(before.notReviewed.length).toBeGreaterThan(0);
+    expect(before.notReviewed[0].reason).toMatch(/exceeds one call's budget/);
+    // Cut to what fits: every part is packed, nothing is left unread, and no line goes missing.
+    const max = partBudgetFor(file, baseChars);
+    expect(max).toBeLessThan(BUDGET.maxFileDiffChars);
+    const parts = partsOf(file, max);
+    const after = packBatches(parts, baseChars, { budget: { ...BUDGET, maxBatches: 45 } });
+    expect(after.notReviewed).toEqual([]);
+    // Exactly: every line of the diff under a hunk header stands in exactly one part, in its order (the lines of
+    // bigDiff are unique, so a dropped, repeated or reordered line shows).
+    expect(parts.flatMap((p: { diff: string }) => bodyLines(p.diff))).toEqual(bodyLines(file.diff));
+    // With room to spare the fixed limit still applies; with none, the floor keeps parts meaningful.
+    expect(partBudgetFor(file, 1_000)).toBe(BUDGET.maxFileDiffChars);
+    expect(partBudgetFor(file, BUDGET.maxBatchChars)).toBe(MIN_PART_CHARS);
   });
 
   test('a part that is not read keeps the whole file unreviewed, the review incomplete and the checkpoint where it was', async () => {
@@ -1553,7 +1577,8 @@ test.describe('the full review of a release on main', () => {
     // A release is never cancelled by the next one, and a main run never shares a group with a dev run.
     // `cancel-in-progress: false` is not enough for the first half: GitHub keeps one pending run per group
     // and cancels it when another queues, so each main run needs a group no other run has (codex code-ci-04).
-    expect(wf()).toContain("group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}");
+    // A manual backlog slice is not cancelled by a dev push either: the push's review would not continue it.
+    expect(wf()).toContain("group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || (github.event_name == 'workflow_dispatch' && inputs.backlog) && format('qa-review-backlog-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}");
     expect(wf()).toContain("cancel-in-progress: ${{ github.ref_name != 'main' }}");
     expect(wf().match(/^\s+group:/gm), 'one concurrency group for the whole workflow').toHaveLength(1);
   });

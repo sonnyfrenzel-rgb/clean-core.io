@@ -129,9 +129,10 @@ test.describe('the card says less; "More about it" says the rest', () => {
     expect(type.happens.text).toBe('It looks at the material type and goes one of 4 ways, depending on its value.');
     expect(type.cases?.text).toMatch(/^It looks at the material type and goes a different way for each value — /);
     // A short sentence stays as it is.
-    const currency = station(PO.tour, 'Currency not EUR?');
+    // Engine 3.1.0 asks the question the positive way round (owner decision E1, 06.11.2026), the answers swapped.
+    const currency = station(PO.tour, 'Currency EUR?');
     expect(currency.cases).toBeNull();
-    expect(currency.happens.text).toBe('It checks: Currency not EUR? If yes, it goes on to “Convert to EUR”. If no, it carries on.');
+    expect(currency.happens.text).toBe('It checks: Currency EUR? If no, it goes on to “Convert to EUR”. If yes, it carries on.');
     // The guide keeps the full sentence as "what happens", so a model's plain wording stays keyed on it.
     const step = PO.guide.byId[cases.id];
     expect(step.happens.text).toBe(cases.cases!.text);
@@ -167,8 +168,11 @@ test.describe('the card says less; "More about it" says the rest', () => {
     expect(own21.checks).toEqual(['Material given', 'Release indicator set', 'Material is blocked for purchasing in this plant', 'Account assignment category', 'Order number given', 'Plant 1000']);
     expect(own21.stops).toEqual(['no material', 'release indicator set']);
     // The message number is a code: not said.
-    const authority = station(PO.tour, 'Not authorized?');
-    expect(authority.story).toEqual([{ step: 'Check authority', checks: [], stops: ['no purchase requisition found'] }]);
+    // 3.1.0 (E1): "Not authorized?" is asked as "Authorized?". Its stops say the messages' own WITH texts (E2): the
+    // authorization stop is no longer worded like the old title "Not authorized?", so it stands, with what the
+    // program says about it ("for purchasing group").
+    const authority = station(PO.tour, 'Authorized?');
+    expect(authority.story).toEqual([{ step: 'Check authority', checks: [], stops: ['purchase requisition not found', 'no authorization for purchasing group'] }]);
     // A story step off the walk goes where the one before it went, and says which it is.
     const info = station(PO.tour, 'Found and price unit above 0?');
     expect(info.story.map((n) => n.step)).toEqual(['Read info record', 'Check price']);

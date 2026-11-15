@@ -1,3 +1,5 @@
+import { namesWording } from '../names-wording';
+
 /**
  * The trust page (/trust), English only — Fassung 1.1 of the legal texts (3.0.21).
  *
@@ -11,6 +13,13 @@ export const TRUST_INTRO_EN = `Clean-Core.io is a free, community-built tool. Tr
 
 Last reviewed {{releaseDate}}. This page describes what is built; where a feature is still being built, we say so.`;
 
+/**
+ * The automatic steps on opening a project, in the wording of this build (`lib/legal/names-wording.ts`): with
+ * business names once the build asks for them, with the sentence that they are paused before.
+ */
+const AUTOMATIC_STAGES_EN_AUTOMATIC = `Two stages — plain-language wording and business names — start by themselves when the owner opens a project, once per project and source version; on your own key they run only if you have switched on automatic steps for it{{autoStepsSwitch}}. Switching the model stages off in the settings stops all of them.`;
+const AUTOMATIC_STAGES_EN_PAUSED = `One stage — plain-language wording — starts by itself when the owner opens a project, once per project and source version (business names, which also did, are paused until they can be built from the code's facts alone); on your own key it runs only if you have switched on automatic steps for it{{autoStepsSwitch}}. Switching the model stages off in the settings stops all of them.`;
+
 export const TRUST_EN = `## Data residency — EU-hosted {#data-residency}
 
 Application storage and primary processing run in Google Cloud Firestore and Cloud Run in **europe-west1 (Belgium, EU)**. Our contracting entity for Google Cloud, Firebase and the paid Gemini API is Google Cloud EMEA Limited, 70 Sir John Rogerson's Quay, Dublin 2, Ireland. AI processing on our key (Google Gemini API) and transactional email (Resend) are among our disclosed processors (full list below): they process data on our behalf, under their standard data-processing terms, which we have accepted and recorded in our records of processing (Art. 30 GDPR), and the transfer safeguards named in the privacy policy. With your own model key, the model call goes to the provider of that key instead — see "Where your code goes".
@@ -19,7 +28,7 @@ Application storage and primary processing run in Google Cloud Firestore and Clo
 
 Your code — together with the engine's findings and the stage's instructions — reaches a model only through our server, and only from the stages that call one. Which provider receives it depends on the key your account uses. Each stage, the model receipt, the audit pack and the delivery package's STATUS.md name the provider, the model and whose key answered. Region, retention and training are set by each provider's own terms and, with your own key, by your account settings — linked here rather than restated.
 
-One stage — plain-language wording — starts by itself when the owner opens a project, once per project and source version (business names, which also did, are paused until they can be built from the code's facts alone); on your own key it runs only if you have switched on automatic steps for it{{autoStepsSwitch}}. Switching the model stages off in the settings stops all of them.
+${namesWording(AUTOMATIC_STAGES_EN_AUTOMATIC, AUTOMATIC_STAGES_EN_PAUSED)}
 
 - **No model — the engine only.** The deterministic engine analyses the code and seals a signed run without any model call; the code goes to no model provider. This is the choice for code that must not reach any model provider. Like every project, it is still stored in Firestore (europe-west1, Belgium) with Google as our processor.
 - **Our key (no own key set).** Google Gemini API on our key — the community key, shown in the app as the platform key, which uses the paid tier only — with Google (Google Cloud EMEA Limited) as our processor under our contract with Google. Google's terms: Gemini API terms (https://ai.google.dev/gemini-api/terms), data logging and retention (https://ai.google.dev/gemini-api/docs/logs-policy).

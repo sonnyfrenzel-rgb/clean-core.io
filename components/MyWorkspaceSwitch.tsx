@@ -3,6 +3,7 @@
 import React from 'react';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import WorkspaceListReport, { type WorkspaceDemoRow } from '@/components/workspace/WorkspaceListReport';
+import type { HomeMapSlice } from '@/lib/home-map-slice';
 
 /**
  * Which "My workspace" an account sees at `/dashboard` — see
@@ -16,16 +17,19 @@ import WorkspaceListReport, { type WorkspaceDemoRow } from '@/components/workspa
  */
 export default function MyWorkspaceSwitch({
   demo,
+  homeSlice = null,
   children,
 }: {
   demo: WorkspaceDemoRow;
+  /** The live slice of the demo map a new account's first view draws (AB-14a, `lib/home-map-slice.ts`). */
+  homeSlice?: HomeMapSlice | null;
   children: React.ReactNode;
 }) {
   const { profile, loading } = useUserProfile();
   const status = (profile as { status?: string } | null)?.status;
   const standing = status !== 'suspended' && status !== 'deleted' && status !== 'pending';
   if (!loading && profile && standing) {
-    return <WorkspaceListReport demo={demo} />;
+    return <WorkspaceListReport demo={demo} homeSlice={homeSlice} />;
   }
   return <>{children}</>;
 }

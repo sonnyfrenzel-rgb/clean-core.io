@@ -3,7 +3,7 @@
 import { createDraftHolder, draftFor, type DraftHolder } from '@/lib/process-map-draft';
 import React, { useCallback, useId, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { Code2, Keyboard, List, Map as MapIcon, PanelLeftClose, PanelLeftOpen, Pencil } from 'lucide-react';
+import { Code2, Keyboard, List, Map as MapIcon, PanelLeftClose, PanelLeftOpen, PenLine, Pencil } from 'lucide-react';
 import CcIconButton from '@/components/cc/IconButton';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import CcMessageStrip from '@/components/cc/MessageStrip';
@@ -14,7 +14,10 @@ import { useProcessOverlays } from '@/hooks/useProcessOverlays';
 import type { CatalogLookupTarget } from '@/lib/assessment-target';
 import type { UsageReport } from '@/lib/abap/usage-model';
 import { UNANCHORED } from '@/lib/process-naming';
-import { EARLY_END_WORD, elementsOfPlane, technicalView, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
+import { EARLY_END_WORD, elementsOfPlane, engineAccessibleName, technicalView, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
+import type { MapNameArrival } from '@/lib/naming-arrival';
+import NamingStatusLine from './NamingStatusLine';
+import type { CanvasNames } from './naming-swap';
 import {
   buildNavigation,
   buildOverlays,
@@ -43,10 +46,12 @@ import ProcessMiniMap from './ProcessMiniMap';
 import ProcessOutline from './ProcessOutline';
 import ProcessSearch from './ProcessSearch';
 import ProcessStepList from './ProcessStepList';
-import { mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
+import { aiLaneMark, aiMarkTooltip, aiNameMark, mapKeyboardHint, mapLanesProposed, mapMeasuredOn, mapStepsLabel, wt } from '@/lib/workspace-messages';
 
 /** Where a viewer's choice to fold the outline is kept — this browser only. */
 const OUTLINE_KEY = 'cc.processMap.outline';
+/** The same choice on Analyze, Business (`layout="page"`), kept apart: the map there opens without the column. */
+const OUTLINE_PAGE_KEY = 'cc.processMap.outline.page';
 
 /**
  * The modeller is loaded when somebody presses *Edit model* and not before: a
@@ -195,8 +200,17 @@ export interface ProcessMapProps {
    * own side panel (it renders `ProcessCodeCard` there), so the code card is
    * not drawn here. Everything else — the props, the address, the keys, the
    * editor — is the same map.
+   *
+   * `page` — Analyze in the Business view, where the map is the page (plan
+   * AB-2, mockup states 3 and 7): the canvas comes first under the page's
+   * summary, with "Map | Steps" in the canvas's own tool row; what reads about
+   * the map — its title and counts, the traceability sentence, the legend, the
+   * notes, the level's line and the filters — stands under it. The outline
+   * column starts folded (a viewer's own choice is kept under its own key), and
+   * the code of a chosen step is the caller's panel beside the map, never a
+   * card inside it, so the canvas keeps its width.
    */
-  layout?: 'workspace' | 'stage';
+  layout?: 'workspace' | 'stage' | 'page';
   /**
    * Zoom, fit and full screen on the canvas, and the whole level on open —
    * never below 40 % on a phone (`fitWhole`). Always on in the `stage`
@@ -227,6 +241,13 @@ export interface ProcessMapProps {
    * Save the server refuses (ADR-083, decision-input audit item 4).
    */
   canEdit?: boolean;
+  /**
+   * Roadmap 3.1.0 item 4 (plan AB-3): the AI names as they arrive (`hooks/useNamingArrival.ts`). Given, the canvas
+   * draws the model's names in place with their pen mark and swap, and one status line stands under the map; `model`
+   * is then the arrival's model, which carries a name only once its swap has begun. Absent (Documentation, the demo):
+   * the canvas shows the engine's names, as before.
+   */
+  nameArrival?: MapNameArrival | null;
 }
 
 export default function ProcessMap({
@@ -251,8 +272,11 @@ export default function ProcessMap({
   exportable = true,
   draftHolder,
   canEdit = true,
+  nameArrival = null,
 }: ProcessMapProps) {
   const stage = layout === 'stage';
+  /** Analyze, Business: the canvas first, everything about it under it, the code in the caller's panel. */
+  const page = layout === 'page';
   /** A phone shows the map and the steps; modelling by touch is not offered (`DESIGN.md` §5.7). */
   const isPhone = useBreakpointS();
   const [viewLocal, setViewLocal] = useState<ProcessMapView>(defaultView);
@@ -335,13 +359,17 @@ export default function ProcessMap({
    * stands under the map and costs it no width, so it starts open there. A
    * phone keeps the mobile pass's order either way: the fold is a desktop one.
    */
+  // Analyze, Business keeps its own choice: the mockup's map has no outline beside it, so it starts folded there
+  // whatever a reader chose on another map (3.1.0, AB-2).
+  const outlineKey = page ? OUTLINE_PAGE_KEY : OUTLINE_KEY;
   const [outlineOpen, setOutlineOpen] = useState<boolean>(() => {
     try {
-      const kept = window.localStorage.getItem(OUTLINE_KEY);
+      const kept = window.localStorage.getItem(outlineKey);
       if (kept === 'open' || kept === 'closed') return kept === 'open';
     } catch {
       /* no storage: the default below */
     }
+    if (page) return false;
     return stage || typeof window === 'undefined' || window.innerWidth >= 1280;
   });
   /**
@@ -356,7 +384,7 @@ export default function ProcessMap({
   const toggleOutline = useCallback(() => {
     const opening = !outlineOpen;
     try {
-      window.localStorage.setItem(OUTLINE_KEY, opening ? 'open' : 'closed');
+      window.localStorage.setItem(outlineKey, opening ? 'open' : 'closed');
     } catch {
       /* the choice holds for this visit */
     }
@@ -372,7 +400,7 @@ export default function ProcessMap({
       if (!onScreen) column.scrollIntoView({ block: 'start' });
       column.focus({ preventScroll: true });
     });
-  }, [outlineOpen, stage]);
+  }, [outlineOpen, stage, outlineKey]);
   /** The keyboard hint, behind the map's help button rather than in a column of its own. */
   const [helpOpen, setHelpOpen] = useState(false);
   const [highlight, setHighlight] = useState<PathHighlight>('none');
@@ -396,7 +424,13 @@ export default function ProcessMap({
    * modeller talked into forgetting. Neither of the two ever touches `model` —
    * the as-is revision after editing is the as-is revision before it.
    */
-  const [editing, setEditing] = useState(false);
+  const [editingAsked, setEditingAsked] = useState(false);
+  /**
+   * Editing is what the reader asked for *and* what this project allows. The instance can outlive a
+   * change of project or of ownership (see the draft below), and a mode asked for on one project must
+   * not open the modeller, with its save, on a project this account may only read.
+   */
+  const editing = editingAsked && canEdit;
   const ownerOnlyId = useId();
   const [session, setSession] = useState(0);
 
@@ -506,9 +540,18 @@ export default function ProcessMap({
 
   const planeElements = useMemo(() => elementsOfPlane(model, plane), [model, plane]);
   const byId = useMemo(() => new Map(model.elements.map((e) => [e.id, e])), [model]);
+  /**
+   * With names arriving, the canvas is built with the engine's accessible names and the names are laid over it
+   * (`naming-swap.ts`): a name arriving must not rebuild the viewer, which would drop the reader's focus. The nodes
+   * keep their identity for as long as nothing but the names changed.
+   */
+  const arriving = nameArrival !== null && !technical;
+  const canvasKey = arriving
+    ? model.elements.map((e) => `${e.id} ${engineAccessibleName(e)} ${e.anchor?.lineStart ?? ''}-${e.anchor?.lineEnd ?? ''} ${e.fact ?? ''}`).join('')
+    : null;
   const canvasNodes = useMemo(
     () => new Map(model.elements.map((e) => [e.id, {
-      accessibleName: e.accessibleName,
+      accessibleName: arriving ? engineAccessibleName(e) : e.accessibleName,
       unanchored: e.anchor === null,
       unanchoredLabel: UNANCHORED,
       // ADR-054's word over an early end — needed where the end is named by
@@ -518,10 +561,27 @@ export default function ProcessMap({
       fact: e.fact,
       opensPlane: e.opensPlane,
     }])),
-    [model],
+    // With names arriving the key stands for the model: everything the canvas is built from, without the names.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [arriving ? canvasKey : model, model.xml, arriving],
   );
 
   const selectedElement: ProcessMapElement | null = selected ? (byId.get(selected) ?? null) : null;
+
+  /** What the canvas lays over the engine's names; the open code card's element waits (ADR-025). */
+  const canvasNames = useMemo((): CanvasNames | null => {
+    if (!arriving || !nameArrival) return null;
+    return {
+      shown: nameArrival.shown,
+      waiting: nameArrival.waiting,
+      motion: nameArrival.motion,
+      accessibleNames: new Map(model.elements.map((e) => [e.id, e.accessibleName])),
+      hold: selected ? new Set([selected]) : new Set(),
+      penLabel: aiNameMark(),
+      penTitle: aiMarkTooltip(aiNameMark(), model.naming.origin),
+      waitingLabel: wt('mapNaming.waiting'),
+    };
+  }, [arriving, nameArrival, model, selected]);
 
   /** Element id → what a reader calls it. The editor names its hints with these. */
   /** What the editor names elements by: always the plain reading, whatever the switch says. */
@@ -680,75 +740,104 @@ export default function ProcessMap({
   const openProblem = problems.get(plane);
 
   /**
-   * In the `stage` layout the parts are reordered, not removed: the toolbar,
+   * In the `stage` and `page` layouts the parts are reordered, not removed: the toolbar,
    * the way up and the canvas first, the filters, legend and notes after it.
    * Elsewhere the wrapper is `display: contents` and the map is what it was.
    */
-  const slot = (order: string) => (stage ? order : 'contents');
+  const slot = (order: string) => (stage || page ? order : 'contents');
   const traceability = (
     <p data-process-map-traceability className={`${stage ? 'text-[12px]' : 'mt-1 text-[13px]'} font-medium text-cc-ink-muted`}>
       {model.traceability.sentence}
       {measuredAt ? ` ${mapMeasuredOn(measuredAt.slice(0, 10))}` : ''}
     </p>
   );
+  const titleBlock = (
+    <div className="min-w-0">
+      <h3 data-process-map-title className="text-[15px] font-bold text-cc-ink">
+        {wt('map.title')}
+      </h3>
+      <p data-process-map-overview className="mt-1 text-[13px] font-medium text-cc-ink-muted">
+        {model.overview}
+      </p>
+      {traceability}
+    </div>
+  );
+  const viewSwitch = (
+    <CcSegmentedControl<ProcessMapView>
+      label={wt('map.viewLabel')}
+      value={view}
+      onChange={setView}
+      segments={[
+        { value: 'map', label: wt('map.viewMap'), icon: <MapIcon size={14} aria-hidden={true} /> },
+        { value: 'steps', label: wt('map.viewSteps'), icon: <List size={14} aria-hidden={true} /> },
+      ]}
+    />
+  );
+  const modeButtons = (
+    <>
+      {/* Roadmap 3.1. Editing is a mode, not a view: *Map* and *Steps* are
+          two renderings of the same thing, and a modeller is a third state
+          of the first one. The reading view stays reachable at all times. */}
+      {modelProp.technicalXml ? (
+        <CcButton
+          data-process-technical-toggle=""
+          aria-pressed={technical}
+          icon={<Code2 size={16} aria-hidden={true} />}
+          onClick={() => setTechnical((was) => !was)}
+        >
+          {wt('map.technicalNames')}
+        </CcButton>
+      ) : null}
+      <CcButton
+        data-process-edit-toggle=""
+        aria-pressed={editing}
+        icon={<Pencil size={16} aria-hidden={true} />}
+        disabled={!canEdit && !editing}
+        aria-describedby={!canEdit ? ownerOnlyId : undefined}
+        onClick={() => {
+          setView('map');
+          setEditingAsked(!editing);
+        }}
+      >
+        {wt(editing ? 'map.stopEditing' : 'map.editModel')}
+      </CcButton>
+      {!canEdit ? (
+        <OwnerOnlyNote id={ownerOnlyId} className="m-0 self-center text-[12px] font-medium text-cc-ink-muted" />
+      ) : null}
+    </>
+  );
+  /**
+   * On the page layout the reading map carries "Map | Steps" in the canvas's own tool row (mockup state 3) and the two
+   * modes under the canvas; the row above it is drawn only where there is no canvas row — the steps, the modeller.
+   */
+  const toolsInCanvas = page && view === 'map' && !editing;
+  const levelLine = openProblem && !editing ? (
+    <p
+      data-process-map-level
+      data-determined={openProblem.determined ? 'true' : 'false'}
+      className="text-[12px] font-medium text-cc-ink-muted"
+    >
+      {openProblem.counters}. {openProblem.text}
+    </p>
+  ) : null;
 
   return (
-    <section data-process-map="" aria-label={wt('map.sectionLabel')} className="flex flex-col gap-3">
-      <div className={stage ? 'order-1 flex flex-wrap items-center justify-end gap-2' : 'flex flex-col gap-3 md:flex-row md:items-start md:justify-between'}>
-        {stage ? null : (
-          <div className="min-w-0">
-            <h3 data-process-map-title className="text-[15px] font-bold text-cc-ink">
-              {wt('map.title')}
-            </h3>
-            <p data-process-map-overview className="mt-1 text-[13px] font-medium text-cc-ink-muted">
-              {model.overview}
-            </p>
-            {traceability}
+    <section data-process-map="" data-process-map-layout-kind={layout} aria-label={wt('map.sectionLabel')} className="flex flex-col gap-3">
+      {toolsInCanvas ? null : (
+        <div className={stage ? 'order-1 flex flex-wrap items-center justify-end gap-2' : page ? 'order-1 flex flex-wrap items-center gap-2' : 'flex flex-col gap-3 md:flex-row md:items-start md:justify-between'}>
+          {stage || page ? null : titleBlock}
+          <div className="flex flex-wrap items-center gap-2">
+            {viewSwitch}
+            {modeButtons}
           </div>
-        )}
-        <div className="flex flex-wrap items-center gap-2">
-          <CcSegmentedControl<ProcessMapView>
-            label={wt('map.viewLabel')}
-            value={view}
-            onChange={setView}
-            segments={[
-              { value: 'map', label: wt('map.viewMap'), icon: <MapIcon size={14} aria-hidden={true} /> },
-              { value: 'steps', label: wt('map.viewSteps'), icon: <List size={14} aria-hidden={true} /> },
-            ]}
-          />
-          {/* Roadmap 3.1. Editing is a mode, not a view: *Map* and *Steps* are
-              two renderings of the same thing, and a modeller is a third state
-              of the first one. The reading view stays reachable at all times. */}
-          {modelProp.technicalXml ? (
-            <CcButton
-              data-process-technical-toggle=""
-              aria-pressed={technical}
-              icon={<Code2 size={16} aria-hidden={true} />}
-              onClick={() => setTechnical((was) => !was)}
-            >
-              {wt('map.technicalNames')}
-            </CcButton>
-          ) : null}
-          <CcButton
-            data-process-edit-toggle=""
-            aria-pressed={editing}
-            icon={<Pencil size={16} aria-hidden={true} />}
-            disabled={!canEdit && !editing}
-            aria-describedby={!canEdit ? ownerOnlyId : undefined}
-            onClick={() => {
-              setView('map');
-              setEditing((was) => !was);
-            }}
-          >
-            {wt(editing ? 'map.stopEditing' : 'map.editModel')}
-          </CcButton>
-          {!canEdit ? (
-            <OwnerOnlyNote id={ownerOnlyId} className="m-0 self-center text-[12px] font-medium text-cc-ink-muted" />
-          ) : null}
         </div>
-      </div>
+      )}
 
       <div className={slot('order-5 flex flex-col gap-2')}>
+      {/* Analyze, Business: the two modes stand under the canvas, beside what reads about the map — the canvas's row
+          keeps the mockup's tools, so it stays one row beside the code panel (mockup state 7). */}
+      {toolsInCanvas ? <div data-process-map-modes="" className="flex flex-wrap items-center gap-2">{modeButtons}</div> : null}
+      {page ? titleBlock : null}
       {stage ? traceability : null}
       <ProcessMapLegend
         entries={model.legend}
@@ -769,25 +858,28 @@ export default function ProcessMap({
       ) : null}
 
       {model.lanes.length > 0 ? (
-        <p data-process-map-lanes className="text-[12px] font-medium text-cc-ink-muted">
-          {mapLanesProposed(model.lanes.map((lane) => lane.name))} {model.lanes[0].statement}
+        <p data-process-map-lanes className="flex flex-wrap items-center gap-x-2 text-[12px] font-medium text-cc-ink-muted">
+          <span
+            data-ai-lane-mark=""
+            title={aiMarkTooltip(aiLaneMark(), model.naming.origin)}
+            className="inline-flex cursor-help items-center gap-1 text-cc-ink"
+          >
+            <PenLine size={12} aria-hidden={true} className="shrink-0 text-cc-warning" />
+            {aiLaneMark()}
+          </span>
+          <span>
+            {mapLanesProposed(model.lanes.map((lane) => lane.name))} {model.lanes[0].statement}
+          </span>
         </p>
       ) : null}
+      {page ? levelLine : null}
       </div>
 
       <div className={slot('order-2 flex flex-col gap-2')}>
 
       {editing || view === 'map' ? null : <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
 
-      {openProblem && !editing ? (
-        <p
-          data-process-map-level
-          data-determined={openProblem.determined ? 'true' : 'false'}
-          className="text-[12px] font-medium text-cc-ink-muted"
-        >
-          {openProblem.counters}. {openProblem.text}
-        </p>
-      ) : null}
+      {page ? null : levelLine}
       </div>
 
       <div className={slot('order-3 flex flex-col gap-3')}>
@@ -868,7 +960,9 @@ export default function ProcessMap({
           aria-label={wt('map.outlineShort')}
           className={stage
             ? `order-2 grid min-w-0 gap-2 lg:max-h-[440px] lg:overflow-y-auto lg:pr-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:grid-rows-[auto_1fr] lg:items-start [&>*:last-child]:lg:col-start-2 [&>*:last-child]:lg:row-span-2 [&>*:last-child]:lg:row-start-1${outlineOpen ? '' : ' lg:hidden'}`
-            : `flex min-w-0 flex-col gap-2${outlineOpen ? '' : ' lg:hidden'}`}
+            // Analyze, Business folds it on every width (the phone's map comes first, mockup state 3); elsewhere a
+            // phone keeps the mobile pass's order.
+            : `flex min-w-0 flex-col gap-2${outlineOpen ? '' : page ? ' hidden' : ' lg:hidden'}`}
         >
           <ProcessSearch model={model} nav={nav} onJump={onJump} />
           <ProcessMiniMap
@@ -922,13 +1016,21 @@ export default function ProcessMap({
                  a prop for callers; every map carries the controls now. */
               controls
               openFit="whole"
-              levelPath={<ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
+              levelPath={page ? (
+                // Analyze, Business (mockup state 3): "Map | Steps" leads the canvas row.
+                <div className="flex flex-wrap items-center gap-2">
+                  {viewSwitch}
+                  <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />
+                </div>
+              ) : <ProcessBreadcrumb crumbs={crumbs} onOpen={setPlane} />}
               tools={(filled: boolean) => (
                 <>
                   {/* The outline stands outside the full-screen frame, so in
                       full screen the toggle would act on nothing in sight. */}
                   {filled ? null : (
-                    <span className="hidden lg:inline-flex">
+                    // Analyze, Business folds the outline on every width, so its toggle is there on every width too;
+                    // elsewhere a phone shows the outline in the mobile pass's order and needs no toggle.
+                    <span className={page ? 'inline-flex' : 'hidden lg:inline-flex'}>
                       <CcIconButton
                         data-process-outline-toggle=""
                         label={wt(outlineOpen ? 'map.outlineHide' : 'map.outlineShow')}
@@ -956,6 +1058,8 @@ export default function ProcessMap({
                   </span>
                 </>
               )}
+              names={canvasNames}
+              growToLevel={page}
               toolsPanel={helpOpen ? (
                 <p
                   data-process-map-hint=""
@@ -987,9 +1091,15 @@ export default function ProcessMap({
               )}
             </>
           )}
+          {nameArrival && !editing ? (
+            <div className="mt-2" data-process-map-naming="">
+              <NamingStatusLine arrival={nameArrival} />
+            </div>
+          ) : null}
           </div>
 
-          {stage || !selectedElement ? null : (
+          {/* The page layout shows the code in the caller's panel beside the map (`WorkspaceProcess` `codeOnClick`). */}
+          {stage || page || !selectedElement ? null : (
             <div
               data-process-map-details=""
               className="mt-3 lg:absolute lg:top-16 lg:right-2 lg:z-cc-popover lg:mt-0 lg:max-h-[calc(100%-5rem)] lg:w-[340px] lg:overflow-y-auto lg:rounded-cc-card lg:shadow-cc-dialog xl:static xl:max-h-none xl:shrink-0 xl:shadow-none"

@@ -5,6 +5,276 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v3.1.0] — 2026-11-15
+
+Analyze opens business first. Every new engine reading is gated from 3.1.0: a run signed by an earlier version reads as before.
+Signed runs and the audit pack do not change.
+
+### Changed
+- Roadmap: My workspace becomes two equal products, Analyse and Re-design, with program tiles for returning
+  accounts, as release 3.3.0 before 3.5.0 (owner decision 14.11.2026, ADR-123).
+- Roadmap: the engine and benchmark part of 3.5.0 (honest measurement, benchmark v2, parse once) and the way to
+  engine 4.0 after 3.5 (own lexer, symbols and dispatch, typed passes, side-by-side switch; owner decision 14.11.2026).
+- Benchmark v2 decided: the expected answers follow DESIGN.md §5.8, honest denominators and a reader score; wave 4 of
+  legacy Z transactions within 50 EUR; abaplint only as an offline oracle (ADR-124).
+- QA: a manual slice can ask for a backlog budget (up to 45 batches under $4) for one range too large for ten; its job may run 120 minutes instead of 30.
+- A project opens in Analyze, Business. The process map is the page, and the map starts within the first screen at
+  1440 × 900. Its tools sit in the canvas's own row, and what describes the map sits under it. With one code panel
+  open beside it, the canvas stays wide (plan AB-2, ADR-109).
+- Step names come from the code's facts at once. Checked AI names replace them visibly, with a status line
+  (AB-1, AB-3, ADR-108). The tour's map, the main map and its step list show the same names.
+- The paced build-up at the start is retired. The first insights stand in their end state below the map.
+- The workspace page keeps only the IT and Management views. The demo opens at `/demo/analyze`, like a project.
+- A new account lands on the home page's new first view with the start built in (AB-14a, ADR-110).
+- An object-oriented program shows its moves as the process: Create, Save, Submit, Approve, Cancel, Apply. Its
+  technical methods are folded (AB-15a, ADR-112).
+- "What this program does" opens on the program's status workflow when it keeps its data in its own objects.
+- Shell bar below 1024 px: inside a project the path starts at the project, without the "My workspace" step, so
+  the project's name is no longer cut off. Help shows as its "?" icon and keeps its name and tooltip (ADR-115).
+- Legal texts: once the release asks for business names again, privacy section 3, the Trust page and the
+  one-time notice before the first automatic model call name them as a second automatic step. Before that
+  release they keep saying the names are paused. The wording waits for the lawyer's release (document 19).
+
+### Decided
+- Engine 4.0 is built in parallel from now on, as its own module tree that nothing reads until the switch (ADR-125); benchmark convention K3 settled: commits stay in the technical layer.
+
+### Fixed
+
+#### Operations and security
+- S/4 metadata: a service path that is not text is refused instead of reading the default service.
+- Portfolio selections, their invitations and the own-key automatic-steps switch read request bodies under a size
+  bound.
+- The automatic-steps switch is recorded in the audit log in the same write as the switch itself.
+- Re-testing a saved own key records its result only on that key, not on one saved while the test ran.
+- Deployment: the list of SAP hosts a connection may use (`S4_HOST_ALLOWLIST`) and the model per stage reach the service as one value each; the deploy step split them at their commas, so only the first host was allowed.
+- QA agent: a push to dev no longer cancels a manually started backlog review; the push's own review would not have continued it.
+
+#### Legal texts and consent
+- Privacy policy: an address with a version number (`clean-core.io/datenschutz/versions/1.2`) links to that version; it linked to `/versions/1`, a page that does not exist, and the browser's prefetch of it never settled.
+- A repeated invitation unsubscribe writes nothing and keeps the first opt-out time.
+- ATC import: the privacy notice names every field that is kept, including include, priority, line and exemption.
+- Verify an audit pack: the AI statement is said to be covered by the signature only for a pack that verified.
+- Invitation unsubscribe: two requests with the same link arriving together store the opt-out once and keep its first time; the list entry is created in one step instead of read, then written.
+
+#### Analyze, the process map and the tour
+- Analyze, Business: on a phone or tablet the outline beside the map can be opened and closed; it was folded with no way to open it below the desktop width.
+- Process map: a failed AI naming of one map is no longer reported for another project or source opened on the same page.
+- Process map: the guided tour shows the same step names as the main map while AI names are still arriving.
+- Analyze: a project read that answers late no longer puts the pre-run state back over the result of a run that has just been signed.
+- Process map: a routine whose only extra elements are log notes stays one step; a routine calling itself is not drawn as a phase of its own.
+- A click on a step with an AI name opens its code. Before, the name's label took the click.
+- Analyze no longer gets refused requests (HTTP 401) while the sign-in is restored.
+- The project search (Ctrl+K) is back where a project opens.
+- Leaving the first view of a new account no longer throws a page error.
+- On a phone, and at 1024 px beside the code panel, Analyze's map grows to show its whole level instead of cutting
+  off a step at its bottom edge. Full screen is unchanged.
+- An old IT address to the process (`?view=it#need`) opened inside the workspace now lands on Analyze's map
+  (`#process-map`), as the direct link does.
+- After a project's first run on Analyze, the page lands in the Business view (the map) that the address names.
+  Before, it stayed in IT, because the view reader read the address before the router had written it.
+- Demo: Analyze, Business draws the map in the page layout with the code panel beside it, as a project does, and
+  opening it clears "result ready" on the demo workspace's Analyze tool.
+- The process modeller no longer stays open, with its Save, when the same map is shown for a project the account may
+  only read.
+- A link to the process map on Analyze, Business now reaches the map even when the project takes longer than five
+  seconds to load.
+- The demo's Analyze summary: each line anchor now opens its lines in the code panel beside the map, as in a project.
+- Process map: an arm that only sets a flag becomes a step only when a later decision reads the same variable; a
+  same-named local in another routine no longer counts.
+- The first-run guide no longer promises a timed first look with Pause and Skip; it describes the first insights as
+  they now appear.
+- The naming status line announces only its settled result to a screen reader, not every count while names arrive.
+- AI names that arrive after the 45-second limit are held back with reduced motion too, as without it.
+- The process map shows "loading" rather than the previous map when the run's engine version changes.
+- Analyze: while the start run begun in the Business view is still being signed, IT and Management keep "Start
+  Analysis" closed and say the analysis is running, and the Business view shows it running instead of a sign button
+  that did nothing.
+- First insights: the short change list beside the story now reads the project's own engine version, as the full
+  list does, so a project read by an earlier engine no longer shows customer texts or list markings in it.
+
+#### Engine readings (gated from 3.1.0; runs signed before keep their reading)
+- Customer texts: storing them re-checks the project in the same transaction, so texts sent while the project is being deleted are not left behind.
+- Business view: a program's own component named with an English word reads as that word, not as "Field KIND".
+- Business view: a check on "not DE, AT or CH" and a `WHILE … <> 0` loop read the way the code tests them; a run signed before 3.1.0 keeps its words.
+- AI names in the delivery package's process documentation name the model that wrote them.
+- Status workflow: a CHECK inside a loop guards only the rest of that pass. It no longer applies to the status moves
+  after ENDLOOP.
+- Business wording: two bounds on one field read "between" or "outside" only where those words keep each endpoint;
+  otherwise the strict and inclusive bounds keep their operators.
+- Customer texts: a decision whose question uses a customer text carries the "Customer text" marker, and a value
+  map sent as an array is refused.
+- Dictionary: RFC_READ_TABLE reads "Read a table via RFC" and no longer claims another system.
+- A table declared with a local row type and filled by a SELECT is now named after the table it is read from ("For
+  each sales order" instead of "For each data").
+- Status workflow: an authority check inside a loop is no longer reported as guarding status moves after the loop,
+  and when two classes implement a method of the same name, a status precondition from a call to one is no longer
+  attributed to the other.
+- Status workflow: a stopping check inside a loop no longer supplies a "from" state to a move after the loop, and a
+  qualified constant (`zif_a=>c_status`) resolves in its own interface or class, never to another type's same-named
+  constant.
+- Customer-text markers match whole words only; a text such as "Plan" is no longer credited to a sentence that says
+  "planned".
+- Business view: methods named `refresh_<something>` are folded as technique only when they refresh the screen
+  (`refresh_alv`, `refresh_grid`, …); a method such as `refresh_credit_limit` stays a step of the process.
+- Customer texts of a large abapGit package are trimmed to what one project document holds instead of failing to store.
+- Rules: a selection parameter is set apart as a test data switch only while no other condition decides on it
+  (`IF p_mode = 1. PERFORM post_orders.` keeps its CASE among the rules).
+- Rules: a value of a thousand million or more is a "no limit" cap only where the rule compares against it; an
+  equality test (`vbeln = '1000000000'`) stays a business rule.
+- Rules: limits on one amount in different currencies are asked together, each with its currency.
+- Rules: a status the program sets itself is no longer called its own marker when a read also fills that field.
+- Business view: a routine called inside a condition is worded with the 3.1.0 vocabulary, and two bounds read as a
+  range ("between", "outside") only when they are numbers in order.
+- Dictionary review list: a domain value is counted only in the cases that write that value, not in every case that
+  names the field.
+- The Business view's change list uses the project's customer texts, as the process story beside it does.
+- Process documentation: an authorization named only in a text literal is no longer reported as the program's own
+  role check.
+- Business rules: an `IMPORT … FROM MEMORY` now counts only the local field it fills as read from outside, not the
+  name the value was stored under, so a status the program sets itself stays its own marker.
+- Author's comments: an escaped `\|` inside a string template no longer ends the template, so a `"` in its text is not
+  quoted as the author's comment.
+- Author's comments: an `&` inside a comment (`Sales & Distribution`) is quoted as written; only the editor's frame signs at its edges are left out.
+- Business rules: an `EXIT` on a test-data selector inside a loop ends that loop, a business use of the selector, so its `CASE` stays among the rules.
+- In short: a German program name written as one word (`ZMM_RECHNUNGSPRUEFUNG`) gives its purpose like the same words written apart; a compound with a word the engine does not know gives none.
+- In short: an inbound IDoc function is said as one SAP calls where a process code is assigned to it; the code alone does not show that assignment.
+- Status workflow: a status check whose stop sits inside a further decision or loop (`IF status <> 'DRAFT'. IF force. RETURN. ENDIF. ENDIF.`) no longer supplies a "from" state; only a stop every path reaches does.
+- Author's comments: a comment at the end of a statement that spans more than three lines is quoted as that statement's own.
+- Customer texts: a sentence that says more than four customer texts names every one of them in its "Customer text" marker.
+- Customer texts: a customer table named by its customer text counts as worded in the business language, as its business term already did.
+- Business view: a stop whose German `WITH` text the engine cannot put into English, with no condition before it, says "Stop with a message in German" and keeps the text in its detail, instead of putting the German into the label.
+- Process map: a field symbol a routine declares for itself (`FIELD-SYMBOLS <x>`, `FIELD-SYMBOL(<x>)`) is no longer taken for the same-named field symbol of another routine, so no flag step is drawn for an unrelated value.
+- In short: names written only inside a text literal (`WRITE 'idoc_contrl idoc_data'`) no longer make a program an inbound IDoc function or a BW extractor.
+
+#### Workspace, Documentation and Testing
+- Documentation: after a reload the business sentences still say what the rewording did to the draft; reading them back left that out.
+- Home: when reading the own project list fails after it had answered empty, the regular page stays instead of the first view for a new account.
+- Demo: confirming the target route no longer loses rule confirmations a browser still held in the demo's older format.
+- Workspace: after an account switch, an earlier error reading the project list no longer shows the regular page before the new list has answered.
+- Home: the recommended example's start button tells a screen reader that the example ran before and that starting it again uses a run, as the list buttons already did.
+- Documentation: where the business sentences are reworded for a business reader, the proposals card says that asking for them takes two model calls.
+- Portfolio: a batch whose first programs could not be stored no longer stays behind and blocks the retry.
+- Portfolio selection invitations follow the same sender rules as project invitations.
+- Portfolio selection invitations share the daily send limit of project invitations.
+- Testing: the note that the owner edited the suite now also stands beside a recorded run with failures.
+- My workspace: an example run before says so in its button's accessible name, not only in the visible badge.
+- Documentation: until the server has said which model the stage runs on, the cost line names no model instead of the
+  product default.
+
+#### Tests
+- Tests: the first look is checked to say the project's customer texts in its story and rule explanation, and pasted code to enter the same file assembly as an upload.
+- Tests: the Documentation page is required to pass the project's customer texts to the process document.
+- Tests: the first look's states are recorded from before the start is pressed, and the process story must be visible, not only present.
+- Tests: the Gemini route is run in process for the automatic-naming notice gate and for the fallback model of the statements stage.
+- Tests: the fallback model of the statements stage is checked in its receipt and in the account's stage record as well as in the answer.
+- Tests: the dictionary review count of a domain value says what it counts and holds an assigned value beside a read one.
+- Tests: a review diff cut into parts must keep every line exactly once and in order, no longer 99 % of its characters.
+- Tests: the customer-texts route refuses a well-formed token naming the owner that no known key signed.
+- Tests: the statement store is run with a reworded answer — merged with a verifying second receipt, the draft kept with any other — instead of reading the route's source.
+- Tests: every clean-core.io address in the legal texts is rendered through the page's own linker and must link to the whole address.
+- Tests: the readability measurement fails when a surface throws, instead of measuring it as empty.
+- Tests: the Business view's primary buttons are counted page-wide again, the "Next step" bar's one named as the only exception.
+- Tests: the modules that read the rewording of the statement draft are pinned, so it cannot reach a signed path unnoticed.
+- Tests: every route that reads a request body under a bound is checked to refuse an oversized one with 413 before using it.
+- Tests: the ATC privacy notice check requires the check title by name and whole words for object and check.
+- Tests: the BPMN download's AI mark is checked on the element the model named, not only counted.
+- Tests: the run hash and both run-signature forms are pinned to known values worked out independently, so a signer and verifier that change together can no longer pass while runs signed before stop verifying.
+- Tests: the C14 notice case "the steps already off" turns off both automatic steps, since the business names start by themselves again in 3.1.0; the outline reset of the navigation acceptance triggers the twisty instead of clicking a position the shrinking list has already moved; the Analyze layout states are measured for an account that has answered the notice on automatic AI steps, which since 3.1.0 stands above the map until it is answered.
+- Tests: the first-screen counter no longer counts a control faded out by its parent or lying beside the viewport.
+- Tests: a stored naming's digest is applied through the map's naming step, not only compared; a line anchor's
+  highlighted row is matched by its line number, not by digits in its code; the readers Analyze calls on its first
+  render must await the session right before every read of the user; the home viewports also fail on a focus outside
+  its frame; the example rerun warning is checked to send no run request; a mockup shot that fails to capture fails
+  the screen capture.
+- Process benchmark tooling: the naming measurement refuses a budget or case count that is not a finite number before it creates a model client, and a measurement whose range and split select no case stops instead of reading the manifest a previous run left behind; the case selection is tested.
+- Process benchmark tooling: the paid stage and statement runners accept only a case id or a starter file name from their id file, so no path outside those folders can reach a prompt, and their spend cap counts the calls in flight, each reserving its worst case before it is sent.
+- Dictionary review list: a domain value is counted for a field only in a case that compares or assigns that value to the field, not in every case that names the field and has the same literal somewhere else.
+- Process benchmark: the run selection the evaluator writes on every run is no longer committed (it slipped in a second time) and is ignored; the corpus stays pinned by its frozen digests.
+- Privacy archive script: an archived version whose file differs from the rendered source is never overwritten, also when the script runs without version ids; it names the files and stops before writing anything, and only `--force` overwrites.
+- Model proxy: the fallback model's call on the community key is counted against the day's platform budget before it is sent; when the budget refuses it or cannot be read, the fallback is not asked and the incomplete first answer is reported as before.
+- Rule baskets (engine 3.1.0): a database read into one routine's local field no longer counts for another routine's local field of the same name, so a status that routine sets and reads back itself is again recognised as its own marker.
+- Documentation: a literal that is only the word "authorization" is output, not a check of the program's own, and an authorization call inside a string template's expression is found again.
+- Statement rewording: a rewording that turns a comparison the other way ("at least 10" into "at most 10") keeps the draft, as a changed number or negation already did.
+- Rule baskets (engine 3.1.0): a method's own parameters count as its own fields too, so a database read into one method's parameter no longer counts for another method's parameter of the same name.
+- Status workflow: a stop inside a `SELECT … INTO TABLE … PACKAGE SIZE … ENDSELECT` loop runs only when rows are found and no longer supplies a "from" state.
+- Documentation: a literal that is the word "authorization" with punctuation around it ('Authorization:') is output too, not a check of the program's own.
+- Statement rewording: a rewording that keeps both bounds of a range but swaps their values ("at least 10 and at most 20" into "at most 10 and at least 20") keeps the draft.
+- Privacy archive script: `--force` overwrites only the versions named with it and never a published one; without ids it overwrites nothing.
+- Process benchmark tooling: a paid runner takes its spend ledger for itself, so a second runner on the same ledger is refused before its first call instead of passing the cap beside the first.
+- German words (engine 3.1.0): a word between string-template pipes or backquotes (`|Rabatt|`) is recognised as German.
+
+### Removed
+- The unused workspace layer section and layer bar, their texts, and the "Back to top of section" spec that tested
+  them (AB-11, brought forward to 3.1.0).
+
+Study for the owner's question of 13.11.2026 (`docs/design/model-combination.md`): whether `gemini-4-hydrogen` and
+the product model together write the business statements better than either alone. The size and fallback rules
+below stay off unless the deployment sets them; the model per stage is switched on for dev and production with
+v3.1.0 (owner decision 14.11.2026, see Changed). The separate hotfix 3.0.24 is dropped.
+
+### Added — the model per stage and the model combination (study 13.11.2026)
+
+- **Two deterministic rules for the statements stage in `/api/gemini`, off by default** (`lib/model-combination.ts`):
+  a prompt longer than `GEMINI_LARGE_PROMPT_CHARS` (default 12,500 characters, about 200 ABAP lines; `0` = every
+  prompt of the stage, which is what the study recommends) is answered by `GEMINI_LARGE_PROMPT_MODEL`; an answer the
+  first model did not finish (output bound, empty, unfinished — not the provider's filter) is asked once more of
+  `GEMINI_FALLBACK_MODEL`, under the same bound and deadline. Both decide by the prompt's length and the answer's
+  finish reason and by nothing a client sent; both run only on the platform key; a named model must be in the
+  register. Measured on 150 learn cases, judged blind in one round: the statements on `gemini-4-hydrogen` at MEDIUM
+  85.2 % equal against 77.2 % on the product model, 5 against 10 sentences contradicting the code, no dropout
+  against 5, 30 s against 72 s median; a rewording of that draft by the product model at LOW (designed, not built)
+  87.8 % and a fifth as many technical sentences.
+- **A thinking level per model and stage** (`lib/model-thinking.ts`): `gemini-4-hydrogen` thinks MEDIUM for the
+  statements (measured blind on the seven largest learn cases: as many statements equal as the default, fewer
+  technical ones, 28 % cheaper and faster, never near the output bound). The product model keeps its default.
+- **The usage log line says how the provider ended the answer** (`finishReason`): a call cut off at the output
+  bound used to read `failed: false` with 32,768 tokens and nothing more.
+- **The business statements reworded for a business reader, off unless `GEMINI_STATEMENTS_REWORDING=on`**
+  (`lib/statement-rewording.ts`, owner decision 13.11.2026): after the draft, a second call of the statements stage
+  in the shape `statements-rewording` (product model, thinking LOW, no schema) rewords every checked sentence; a
+  guard keeps the draft's sentence wherever the rewording moved an anchor, changed the element, lost a number, a
+  quoted literal, a negation or a limit, added an identifier or changed the control flow (a sentence that "ends",
+  "stops", "is left", "is skipped" or "continues" where the draft did not, or no longer does). The store verifies
+  both receipts, merges deterministically on the server and records the draft's model as `origin.draft`; the chip
+  says "Written by … from a draft by …", the panel counts the sentences worded and kept, the button says "Two model
+  calls". Measured blind on 150 learn cases before the guard: 87.8 % equal against 85.2 % for the draft alone, a
+  fifth as many technical sentences. **Measured once on the frozen holdout** (150 cases, 1,759 statements, one blind
+  round, `docs/prozess-benchmark/MODEL-COMBO-FREEZE-2026-11-13.md`): the statements on `gemini-4-hydrogen` MEDIUM
+  84.6 % equal against 68.2 % on the product model (13 of 150 cases lost to its thinking loop), 8 against 15
+  sentences contradicting the code, 32 s against 64 s median; the guarded rewording on top 86.5 %, technical
+  sentences 50 % → 31 %, one contradicting sentence more than the draft.
+- **`tests/prozess-benchmark/weg-b-model.ts`**: the Weg B harness with a selectable model, thinking level and output
+  bound, a spend ledger with a cap, a rewording mode on the product's prompt and guard, and a re-read mode that
+  applies the current guard to stored rewordings without a call.
+
+- **The model per stage, written by the deploy pipeline per environment** (`GEMINI_STAGE_MODELS`,
+  `lib/model-combination.ts`; owner decision 13.11.2026): every call of a named stage runs on that model, answer
+  shapes included, except the rewording of the statements; register-checked, platform key only. `env-ctx` in
+  `.github/workflows/deploy.yml` names the stages per branch — the owner approves each stage after its
+  measurement. `gemini-4-hydrogen` stays under evaluation for clients and is served where the deployment
+  names it. BYOK accounts are unchanged. `tests/prozess-benchmark/stage-bench.ts` measures a stage with the
+  product's own prompt builders and validators before it joins the list.
+
+### Changed — the model per stage
+
+- **Statements, Analyze, Design and Documentation run on `gemini-4-hydrogen` on the platform key, in dev and
+  production, with v3.1.0** (owner decision 14.11.2026, instead of a hotfix 3.0.24): `GEMINI_STAGE_MODELS=
+  statements=…,analyze=…,design=…,documentation=…` in both lanes of `env-ctx`, thinking MEDIUM per
+  `lib/model-thinking.ts`, no rewording step. Measured on the holdout: statements 84.6 % against 68.2 % equal,
+  analyze 40:7 and documentation 41:6 blind wins with fewer sentences contradicting the code; design answered
+  47 of 47 with a usable design and is not yet judged. Testing, Transformation and naming stay on their models;
+  own keys are unchanged. `tests/model-combination.spec.ts` holds both lanes to this list and Testing out of it.
+- **The Documentation page's cost line names the model the stage runs on** (design §3.3): `GET /api/model-stages`
+  reports `stageModels` per stage for the account's key — the deployment's stage list on the platform key, the model
+  the client asks for on an own key — and the line prints the documentation stage's; it named `gemini-3.8-flash`
+  whatever answered. The model register (`ALLOWED_MODELS`, `EVALUATION_ONLY_MODELS`) moved unchanged from
+  `app/api/gemini/route.ts` to `lib/gemini-register.ts` so the route can read it; `tests/stage-model-cost-line.spec.ts`.
+- **The receipt, the stage record and `answeredBy` name the model that answered** (`answeredModel`): the planned
+  model, or the fallback when it answered after an incomplete first answer. The receipt's claim set is unchanged.
+- **The statements output bound is 65,536** (was 32,768): thinking counts against the bound, and on a 1,000-line
+  program a thinking model ended as incomplete inside the old one.
+
+
 ## [v3.0.23] — 2026-11-13
 
 A hotfix after 3.0.22: the leftovers of the 3.0.22 acceptance run and the findings scheduled for it
@@ -334,6 +604,7 @@ The first insights are for understanding only: they explain, they ask for no dec
   rule register of the IT view; Design names them in one line with a link.
 - **The run limit a page shows is the one the server counts against.** An account whose limit the operator raised
   was blocked by the page at five runs while the server would have let it run.
+
 
 ### Removed
 
@@ -6870,6 +7141,7 @@ the analysis engine or the trust chain changed.
   and the setting is tighter — body leading 1.62 → 1.52, a narrower term column —
   so the vocabulary list and the FAQ each fit their page.
 
+
 ### Removed
 - **`/api/share/guide`, the mail-the-PDF endpoint.** Removed at the owner's call
   before it saw real traffic. An unauthenticated endpoint that sends mail from this
@@ -6945,6 +7217,7 @@ Admin Control Room gained a live view of that consumption per user.
 - `tests/admin-usage-panel.spec.ts` — E2E coverage of the panel against a seeded cohort
   (fresh, partial, exhausted, BYOK, pending), including a clipping measurement on the
   expanded detail row.
+
 
 ### Removed
 - The dead client-side charging path: the `incrementTransformations()` no-op in
@@ -7075,6 +7348,7 @@ Promo-Readiness Delta review (2026-07-06). No feature changes.
 - **Footer & sitemap**: added `/terms` and `/licenses` to the shared site footer and sitemap.
 - **Terms consent**: record `termsVersionAccepted` + `termsAcceptedAt` at signup (additive
   Firestore rule, deployed to all databases); `COMMUNITY_QUOTA` centralized.
+
 
 ### Removed
 - **Stale public self-certification / marketing artifacts** carrying unsupported claims:
@@ -7311,6 +7585,7 @@ Special milestone release: a **security-hardened, audit-friendly trust chain and
 ### Changed
 - Auth modal now fully responsive with `max-h-[95vh]`, scroll support, and mobile-optimized padding.
 - Signup form requires GDPR + Terms acceptance before the Register button enables.
+
 
 ### Removed
 - **Pilot Registration Modal (`UserOnboarding.tsx`):** The blocking post-login onboarding modal is removed from `layout.tsx`. Profile creation is now handled inline during authentication.

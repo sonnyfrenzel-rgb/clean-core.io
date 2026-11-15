@@ -754,7 +754,7 @@ test.describe('the panel a reader actually meets', () => {
     });
 
     await signInViaLanding(page, RENDER_EMAIL, RENDER_SIGN_IN, { pauseMs: 3500 });
-    await page.goto(`/project/${RENDER_PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${RENDER_PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
     // Open tasks are listed with everything else this analysis could not
     // determine — the side card "Not determined", the panel one action

@@ -46,7 +46,8 @@ findings into the roadmap. The agent itself changes nothing.
                    │                             seed the demo project · tests/capture-screens.spec.ts:
                    │                             16 screens × desktop/phone × up to 3 screen heights,
                    │                             3 screens with the retired dark theme set (there is no dark mode;
-                   │                             they must match), 7 key views of the mockups 2.8
+                   │                             they must match), 8 mockup pictures (5 views of 2.8,
+                   │                             3 states of the v3.1.0 target mockups)
                    │
                    └─ review   (model + seal key, no npm ci, no third-party code)
                         1. design scan: colours, font sizes, radii, shadows, button styles,
@@ -137,26 +138,38 @@ Guide values: a release with one or two changed screens 0.10–0.40 $; the first
 full review with ≈ 2 MB of code and ≈ 120 images sent 1.50–3 $ (estimate ceiling 6 $). Plus
 ≈ 15 minutes of Actions time for the capture job.
 
-**Target picture: seven key views of the mockups 2.8** (decision Sonny 24.09.2026,
-option B). Binding is `docs/roadmap/clean-core-mockups-v2_8.html` with 16 views;
-only those against which the product is measured are photographed — `MOCKUP_VIEWS` in
-`scripts/ux/lib/config.mjs`, the only list, which the capture also reads from:
+**Target picture: eight mockup pictures** — five key views of the mockups 2.8 and three
+states of the v3.1.0 target mockups (decision Sonny 24.09.2026, option B; swapped on
+12.11.2026). Binding is `docs/roadmap/clean-core-mockups-v2_8.html` with 16 views;
+only those against which the product is measured are photographed — `MOCKUP_VIEWS` and
+`TARGET_SHOTS` in `scripts/ux/lib/config.mjs`, the only lists, which the capture also
+reads from. A target state opens with `#state=<key>&embed=1`:
 
-| View | File | Content |
+| View / state | File | Content |
 |---|---|---|
-| `s0` | `m0-mockup-desktop.jpg` | First look |
-| `s1` | `m1-mockup-desktop.jpg` | Business · Process (BPMN) & rules |
+| Analyze v4.1 `ready` | `m41-analyze-ready-mockup-desktop.jpg` | Analyze, business first · names ready |
+| Analyze v4.1 `complex` | `m41-analyze-complex-mockup-desktop.jpg` | Analyze, business first · a larger program |
+| Home v2 `new` | `m20-home-new-mockup-desktop.jpg` | My workspace · a new account |
 | `s4` | `m4-mockup-desktop.jpg` | IT · Findings & chain |
 | `s5` | `m5-mockup-desktop.jpg` | Management · Decide |
 | `s6` | `m6-mockup-desktop.jpg` | Handover & evidence chain |
 | `s7` | `m7-mockup-desktop.jpg` | My workspace |
 | `s12` | `m12-mockup-desktop.jpg` | Large process · Overview |
 
-The area *system* sees all seven (with the four reference screens 11 of 16 images per
-call), the synthesis three of them (`s0`, `s1`, `s5`, chosen by view, not by position) —
-compared to the six views of the mockups 2.7 one image more, ≈ 0.002 $. The budgets stay.
-One view more or fewer: change only `MOCKUP_VIEWS`; `tests/ux-review-guard.spec.ts`
-keeps 6–8 views, the buttons in the mockup file and the names in lockstep.
+The analyze mockup v4.1 (`docs/roadmap/analyze-business-first-mockup.html`) and the
+home mockup v2 (`docs/roadmap/home-mockup-v2.html`) replace the 2.8 views `s0` (first
+look) and `s1` (Business · Process & rules) for what v3.1.0 builds, so those two are no
+longer photographed (owner decision 12.11.2026: swap, not add). `m41-` and `m20-` name the
+mockup versions; no 2.8 view uses those numbers. The home mockup renders in the app's own
+Inter (`app/fonts/inter-latin-variable.woff2`, by relative path).
+
+The area *system* sees all eight (with the four reference screens 12 of 16 images per
+call), the synthesis three of them (home `new`, Analyze `ready`, `s5`, chosen by state and
+view, not by position). One picture costs ≈ 0.00016 $ (0.10 $ per million input tokens,
+≈ 1,600 tokens per image); the limit is the reviewer's attention per call, not money,
+which is why a new picture replaces an old one. The budgets stay. A picture more or fewer:
+change only `MOCKUP_VIEWS` or `TARGET_SHOTS`; `tests/ux-review-guard.spec.ts` keeps eight
+pictures, the buttons and states in the mockup files and the names in lockstep.
 
 ---
 

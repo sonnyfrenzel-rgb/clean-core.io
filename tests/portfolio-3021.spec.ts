@@ -7,7 +7,9 @@ import { readUploadedFile } from '../lib/own-code-zip';
 import { portfolioAccessOf, millisOfStored } from '../lib/portfolio/access';
 import { abapGitNameOf, splitIntoPrograms } from '../lib/portfolio/batch-split';
 import { isClaimable, nextClaims, outcomeOfRun, programsInWindow, progressOf } from '../lib/portfolio/batch-model';
-import { checkBatchHeader, checkUploadedProgram, stepBatch, appendPrograms, BatchRefusal } from '../lib/portfolio/batch-store';
+import { checkBatchHeader, checkUploadedProgram, stepBatch, appendPrograms, BatchRefusal, createBatchWithPrograms } from '../lib/portfolio/batch-store';
+import { inviterAddressConfirmed } from '../lib/portfolio/access-server';
+import { INVITATION_SEND_DAILY_LIMIT, invitationDailyRefusal } from '../lib/invitation-owner-gate';
 import { portfolioStepFor, runInPortfolioStep } from '../lib/portfolio/run-context';
 import { aggregatePortfolio, type ProgramFacts } from '../lib/portfolio/aggregate';
 import { portfolioCsv, portfolioWorkbook, PROGRAM_COLUMNS } from '../lib/portfolio/export';
@@ -318,7 +320,97 @@ class FakeDoc {
   async create(d: Record<string, unknown>) {
     this.applyCreate(d);
   }
+  async delete() {
+    this.db.docs.delete(this.path);
+  }
 }
+
+test.describe('a batch whose first programs are not stored does not stay behind', () => {
+  const header = { name: 'B', edition: 'private' as const, release: '2025', total: 2 };
+  const program = { name: 'ZREP_A', fileName: 'zrep_a.abap', source: "REPORT zrep_a.\nWRITE / 'a'.\n", missing: [] };
+  const batches = (db: FakeDb) => [...db.docs.keys()].filter((k) => /^portfolio_batches\/[^/]+$/.test(k));
+
+  test('more programs than announced are refused before a batch exists', async () => {
+    const db = new FakeDb();
+    await expect(createBatchWithPrograms(db as never, 'u1', header, [program, program, program])).rejects.toMatchObject({ code: 'batch-overrun' });
+    expect(batches(db)).toEqual([]);
+  });
+
+  test('a failed append takes the new batch with it, and the retry is not refused as one at a time', async () => {
+    const db = new FakeDb();
+    const real = db.runTransaction.bind(db);
+    db.runTransaction = async () => {
+      throw new Error('write failed');
+    };
+    await expect(createBatchWithPrograms(db as never, 'u1', header, [program])).rejects.toThrow('write failed');
+    expect(batches(db)).toEqual([]);
+    db.runTransaction = real;
+    const retried = await createBatchWithPrograms(db as never, 'u1', header, [program]);
+    expect(retried.appended).toBe(1);
+    expect(batches(db)).toEqual([`portfolio_batches/${retried.batchId}`]);
+  });
+
+  test('the upload route creates through it', () => {
+    const route = read('app/api/portfolio/batches/route.ts');
+    expect(route).toContain('await createBatchWithPrograms(gate.db, gate.uid, header, programs)');
+    expect(route).not.toMatch(/await createBatch\(|await appendPrograms\(/);
+  });
+});
+
+test.describe('selection invitations share the daily send budget of project invitations', () => {
+  test('the send after the limit on one day is refused with 429', async () => {
+    const windows = new Map<string, number>();
+    const keys: string[] = [];
+    const limiter = async (key: string, max: number, windowMs: number) => {
+      keys.push(key);
+      expect(windowMs).toBe(24 * 60 * 60 * 1000);
+      const n = (windows.get(key) ?? 0) + 1;
+      windows.set(key, n);
+      if (n > max) throw Object.assign(new Error('Too many requests.'), { status: 429 });
+    };
+    for (let i = 0; i < INVITATION_SEND_DAILY_LIMIT; i++) expect(await invitationDailyRefusal('u1', limiter)).toBeNull();
+    const refused = await invitationDailyRefusal('u1', limiter);
+    expect(refused?.status).toBe(429);
+    expect(await refused?.json()).toMatchObject({ code: 'invitations-daily-limit' });
+    // The key the project invitation route counts under.
+    expect(new Set(keys)).toEqual(new Set(['invitations-day:u1']));
+    expect(read('app/api/projects/[projectId]/invitations/route.ts')).toContain('assertRateLimit(`invitations-day:${gate.uid}`, INVITATION_SEND_DAILY_LIMIT, 24 * 60 * 60 * 1000)');
+  });
+
+  test('the route asks before it creates or mails anything', () => {
+    const src = read('app/api/portfolio/selections/[selectionId]/invitations/route.ts');
+    const post = src.slice(src.indexOf('export async function POST('));
+    const check = post.indexOf('await invitationDailyRefusal(gate.uid)');
+    expect(check).toBeGreaterThan(-1);
+    expect(check).toBeLessThan(post.indexOf('createSelectionInvitation('));
+    expect(check).toBeLessThan(post.indexOf('sendTransactionalMail('));
+  });
+});
+
+test.describe('a selection invitation needs a confirmed inviter address', () => {
+  const profileDb = (data: Record<string, unknown> | undefined) =>
+    ({ collection: () => ({ doc: () => ({ get: async () => ({ data: () => data }) }) }) }) as never;
+
+  test('confirmed on the token, or on the server-written profile field; nothing else', async () => {
+    expect(await inviterAddressConfirmed({ uid: 'u1', emailVerified: true, db: profileDb(undefined) })).toBe(true);
+    expect(await inviterAddressConfirmed({ uid: 'u1', emailVerified: false, db: profileDb({ emailVerified: true }) })).toBe(true);
+    expect(await inviterAddressConfirmed({ uid: 'u1', emailVerified: false, db: profileDb({ emailVerified: 'yes' }) })).toBe(false);
+    expect(await inviterAddressConfirmed({ uid: 'u1', emailVerified: false, db: profileDb(undefined) })).toBe(false);
+    const broken = { collection: () => ({ doc: () => ({ get: async () => { throw new Error('unavailable'); } }) }) } as never;
+    expect(await inviterAddressConfirmed({ uid: 'u1', emailVerified: false, db: broken })).toBe(false);
+  });
+
+  test('the route asks before it creates or mails anything', () => {
+    const src = read('app/api/portfolio/selections/[selectionId]/invitations/route.ts');
+    const post = src.slice(src.indexOf('export async function POST('));
+    const check = post.indexOf('await inviterAddressConfirmed(gate)');
+    expect(check).toBeGreaterThan(-1);
+    expect(check).toBeLessThan(post.indexOf('createSelectionInvitation('));
+    expect(check).toBeLessThan(post.indexOf('sendTransactionalMail('));
+    expect(post).toContain("code: 'email-unconfirmed'");
+    expect(read('lib/portfolio/access-server.ts')).toContain('emailVerified: decodedToken.email_verified === true');
+  });
+});
 
 test.describe('a step makes each project and signs it through the run route, engine only', () => {
   async function seeded() {
@@ -608,6 +700,12 @@ test('My workspace carries the way into the portfolio, for every account', () =>
   // Outside the `hasOwn` branch: a new account with an own key starts here too.
   const actions = src.slice(src.indexOf('actions={', src.indexOf("title={t('workspace.projects')}")));
   expect(actions.indexOf('data-workspace-portfolio')).toBeLessThan(actions.indexOf('{hasOwn ?'));
+  // AB-14a: an account with no project yet sees the first view instead of the
+  // list — the way in is there too, outside any condition.
+  const first = read('components/workspace/HomeFirstView.tsx');
+  const entry = first.indexOf('data-workspace-portfolio=""');
+  expect(entry).toBeGreaterThan(-1);
+  expect(first.slice(Math.max(0, entry - 120), entry)).toContain('href="/portfolio"');
 });
 
 test('account erasure takes the portfolio with it', () => {

@@ -6,10 +6,10 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { anchorsWords } from '@/lib/process-documentation';
 import { CONTRADICTION_LABEL, type StatementContradiction } from '@/lib/statement-contradiction';
 import {
-  STATEMENT_COST_LINE,
-  STATEMENT_COST_LINE_BYOK,
+  statementCostLine,
   type CheckedProposal,
   type ProposalView,
+  type StatementProposalOrigin,
 } from '@/lib/statement-proposal';
 
 /**
@@ -58,11 +58,17 @@ export function ContradictionMark({ contradiction }: { contradiction: StatementC
   );
 }
 
-export function ProposedStatementLine({ proposal }: { proposal: CheckedProposal }) {
+/** The chip's "who wrote it", from the stored origin: the model, and (13.11.2026) the model whose draft it reworded. */
+export function chipOriginOf(origin: StatementProposalOrigin | null | undefined): { provider: string; modelId: string; draft?: { provider: string; modelId: string } } | null {
+  if (!origin) return null;
+  return { provider: origin.provider, modelId: origin.modelId, ...(origin.draft ? { draft: { provider: origin.draft.provider, modelId: origin.draft.modelId } } : {}) };
+}
+
+export function ProposedStatementLine({ proposal, origin }: { proposal: CheckedProposal; origin?: StatementProposalOrigin | null }) {
   return (
     <div data-statement-proposed={proposal.id}>
       <p className="text-[13px] text-cc-ink">
-        {proposal.text} <CcProvenanceChip value={proposal.provenance} />
+        {proposal.text} <CcProvenanceChip value={proposal.provenance} origin={chipOriginOf(origin)} />
       </p>
       {proposal.contradiction && <ContradictionMark contradiction={proposal.contradiction} />}
     </div>
@@ -70,10 +76,10 @@ export function ProposedStatementLine({ proposal }: { proposal: CheckedProposal 
 }
 
 /** One element: the model's sentence on top, the engine's beneath it as the evidence. */
-export function StatementPair({ proposal, evidence }: { proposal: CheckedProposal; evidence: string | null }) {
+export function StatementPair({ proposal, evidence, origin }: { proposal: CheckedProposal; evidence: string | null; origin?: StatementProposalOrigin | null }) {
   return (
     <div data-statement-pair="">
-      <ProposedStatementLine proposal={proposal} />
+      <ProposedStatementLine proposal={proposal} origin={origin} />
       {evidence ? (
         <p data-statement-evidence="" className="mt-1 text-[12px] text-cc-ink-muted">
           <CcProvenanceChip value="reconstructed" /> {evidence}
@@ -93,6 +99,8 @@ export interface StatementProposalPanelProps {
   canRequest: boolean;
   /** The account uses its own Gemini key. */
   byok: boolean;
+  /** 13.11.2026 — the deployment rewords the draft for a business reader: two calls, and the line says so. */
+  rewording?: boolean;
   requesting: boolean;
   message: string | null;
   onRequest: () => void;
@@ -103,14 +111,18 @@ export interface StatementProposalPanelProps {
 function summaryOf(view: ProposalView): string {
   const { statements, discarded, contradicts, unsupported } = view.counts;
   const parts = [`${statements} ${statements === 1 ? 'sentence' : 'sentences'} proposed by the model`];
-  if (view.origin) parts[0] += ` (${view.origin.modelId}${view.proposedAt ? `, ${view.proposedAt.slice(0, 10)}` : ''})`;
+  if (view.origin) {
+    const draft = view.origin.draft ? `, from a draft by ${view.origin.draft.modelId}` : '';
+    parts[0] += ` (${view.origin.modelId}${draft}${view.proposedAt ? `, ${view.proposedAt.slice(0, 10)}` : ''})`;
+  }
+  if (view.rewording) parts.push(`${view.rewording.reworded} worded for a business reader, ${view.rewording.kept} kept as drafted`);
   if (discarded) parts.push(`${discarded} dropped by the check against the code`);
   if (contradicts) parts.push(`${contradicts} ${contradicts === 1 ? 'contradicts' : 'contradict'} the evidence`);
   if (unsupported) parts.push(`${unsupported} not supported by the code`);
   return parts.join(' · ');
 }
 
-export function StatementProposalPanel({ view, canRequest, byok, requesting, message, onRequest, costLine = true }: StatementProposalPanelProps) {
+export function StatementProposalPanel({ view, canRequest, byok, rewording = false, requesting, message, onRequest, costLine = true }: StatementProposalPanelProps) {
   const proposed = view?.state === 'proposed';
   // A reader with nothing stored sees nothing at all: there is no action for
   // them here, and an absence is not news.
@@ -127,7 +139,7 @@ export function StatementProposalPanel({ view, canRequest, byok, requesting, mes
           </CcButton>
           {costLine ? (
             <span data-statement-cost="" className="text-[12px] text-cc-ink-muted">
-              {byok ? STATEMENT_COST_LINE_BYOK : STATEMENT_COST_LINE}
+              {statementCostLine(byok, rewording)}
             </span>
           ) : null}
         </div>

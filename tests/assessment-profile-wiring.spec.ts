@@ -536,7 +536,7 @@ test.describe('7.10 — the routes', () => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.waitForURL(/dashboard/, { timeout: 60_000 }).catch(() => {});
-    await page.goto(`/project/${PROJECT_ID}/analyze`);
+    await page.goto(`/project/${PROJECT_ID}/analyze?view=it`);
     const card = page.locator('[data-assessment-profile]').first();
     await expect(card).toHaveAttribute('data-assessment-profile', 'covered', { timeout: 60_000 });
     await expect(card.locator('[data-profile-line]')).toContainText('private @ 2023 FPS03 · catalog pce-2023-3@');

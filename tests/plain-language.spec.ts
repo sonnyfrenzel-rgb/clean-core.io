@@ -16,6 +16,7 @@ import {
   PLAIN_LABEL_PROVENANCE,
 } from '../lib/abap/plain-language';
 import { corpusFiles, examplePath } from './helpers/starter-example-files';
+import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
 
 /**
  * Plain-language labels for the process map — deterministic, no model.
@@ -33,10 +34,18 @@ function readExample(name: string): string {
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
 const PO = 'Z_MM_PO_APPROVAL.abap';
 
-function labelled(name: string) {
+/**
+ * The owner's examples were pinned on the reading before 3.1.0, and a run signed by such an engine keeps it: those
+ * pins are read for `OLD`, the last release before the gate. Where engine 3.1.0 says it differently on purpose
+ * (`lib/abap/engine-reads-310-gate.ts`, owner decisions E1–E4 of 06.11.2026), the test pins that too, for `NEW`.
+ */
+const OLD = '3.0.23';
+const NEW = ENGINE_READS_310_FROM;
+
+function labelled(name: string, engineVersion?: string) {
   const source = readExample(name);
-  const skeleton = buildProcessSkeleton(source);
-  return { source, skeleton, labels: plainLabels(skeleton, source) };
+  const skeleton = buildProcessSkeleton(source, { engineVersion });
+  return { source, skeleton, labels: plainLabels(skeleton, source, { engineVersion }) };
 }
 
 function nodesIn(skeleton: ProcessSkeleton, region: string): SkeletonNode[] {
@@ -73,11 +82,20 @@ test.describe('plain-language wording — the owner\'s examples', () => {
   });
 
   test('comparisons with literals', () => {
-    const ctx = plainContext(readExample(PO));
+    const ctx = plainContext(readExample(PO), { engineVersion: OLD });
     expect(conditionToQuestion("gs_eban-werks = '1000'", ctx).question).toBe('Plant 1000?');
     expect(conditionToQuestion("gs_eban-waers <> 'EUR'", ctx).question).toBe('Currency not EUR?');
     expect(conditionToPhrase("gs_eban-waers <> 'EUR'", ctx)).toBe('Currency not EUR');
     expect(conditionToQuestion("gs_eban-bednr CP 'EMERG*'", ctx).question)
+      .toBe('Requirement tracking number matches EMERG*?');
+    // 3.1.0 (E1): the negative question is asked the positive way round, its branches swapped; the phrase, which
+    // states the condition, stays.
+    const ctx310 = plainContext(readExample(PO), { engineVersion: NEW });
+    expect(conditionToQuestion("gs_eban-werks = '1000'", ctx310).question).toBe('Plant 1000?');
+    const currency = conditionToQuestion("gs_eban-waers <> 'EUR'", ctx310);
+    expect([currency.question, currency.trueBranch, currency.falseBranch]).toEqual(['Currency EUR?', 'No', 'Yes']);
+    expect(conditionToPhrase("gs_eban-waers <> 'EUR'", ctx310)).toBe('Currency not EUR');
+    expect(conditionToQuestion("gs_eban-bednr CP 'EMERG*'", ctx310).question)
       .toBe('Requirement tracking number matches EMERG*?');
     expect(conditionToPhrase('p_days LT 0')).toBe('Days negative');
     expect(conditionToPhrase('lv_dev_pct > 5')).toBe('Deviation percent above 5');
@@ -116,27 +134,41 @@ test.describe('plain-language wording — the owner\'s examples', () => {
       '  ENDIF.',
       'ENDFORM.',
     ].join('\r\n');
-    const ctx = plainContext(source);
+    const ctx = plainContext(source, { engineVersion: OLD });
     expect(conditionToQuestion('sy-subrc <> 0', ctx, 3).question).toBe('No purchase requisition found?');
     expect(conditionToQuestion('sy-subrc <> 0', ctx, 6).question).toBe('Not authorized?');
     expect(conditionToQuestion('sy-subrc = 0', ctx, 9).question).toBe('Call successful?');
     expect(conditionToQuestion('sy-subrc = 0', ctx, 12).question).toBe('Customer found?');
+    // 3.1.0 (E1): asked the positive way round; the TRUE branch (sy-subrc <> 0) is then "No".
+    const ctx310 = plainContext(source, { engineVersion: NEW });
+    const asked = (condition: string, line: number) => {
+      const q = conditionToQuestion(condition, ctx310, line);
+      return [q.question, q.trueBranch];
+    };
+    expect(asked('sy-subrc <> 0', 3)).toEqual(['Purchase requisition found?', 'No']);
+    expect(asked('sy-subrc <> 0', 6)).toEqual(['Authorized?', 'No']);
+    expect(asked('sy-subrc = 0', 9)).toEqual(['Call successful?', 'Yes']);
+    expect(asked('sy-subrc = 0', 12)).toEqual(['Customer found?', 'Yes']);
     // Without a line nothing is known about the setter: neutral words.
     expect(conditionToQuestion('sy-subrc <> 0').question).toBe('Failed?');
   });
 
   test('error ends: "Stop: no sales organization (E001)"', () => {
-    const { skeleton, labels } = labelled(LEGACY);
-    expect(labelsOf(skeleton, labels, 'form:VALIDATE_SELECTION', 'end-error'))
-      .toEqual(['Stop: no sales organization (E001)', 'Stop: days negative (E001)']);
-    expect(labelsOf(skeleton, labels, 'form:VALIDATE_SELECTION', 'gateway')).toEqual([
-      'Sales organization given?',
-      'Limit missing or above 999999?',
-      'Days negative?',
-      'File given?',
-    ]);
-    expect(labelsOf(skeleton, labels, 'form:VALIDATE_SELECTION', 'start')).toEqual(['Start']);
-    expect(labelsOf(skeleton, labels, 'form:VALIDATE_SELECTION', 'end')).toEqual(['Done']);
+    for (const engine of [OLD, NEW]) {
+      const { skeleton, labels } = labelled(LEGACY, engine);
+      expect(labelsOf(skeleton, labels, 'form:VALIDATE_SELECTION', 'end-error')).toEqual(engine === OLD
+        ? ['Stop: no sales organization (E001)', 'Stop: days negative (E001)']
+        // 3.1.0 (E2): a stop says its message's own WITH text — `MESSAGE e001 WITH 'Sales organization is required'`.
+        : ['Stop: sales organization is required (E001)', 'Stop: days cannot be negative (E001)']);
+      expect(labelsOf(skeleton, labels, 'form:VALIDATE_SELECTION', 'gateway')).toEqual([
+        'Sales organization given?',
+        'Limit missing or above 999999?',
+        'Days negative?',
+        'File given?',
+      ]);
+      expect(labelsOf(skeleton, labels, 'form:VALIDATE_SELECTION', 'start')).toEqual(['Start']);
+      expect(labelsOf(skeleton, labels, 'form:VALIDATE_SELECTION', 'end')).toEqual(['Done']);
+    }
   });
 
   test('early ends say why: "Rejected: no material"', () => {
@@ -144,7 +176,7 @@ test.describe('plain-language wording — the owner\'s examples', () => {
     // The colon matches "Stop:" and "Stopped:". FRGKZ = 'X' is the release
     // indicator being set; "not released" would be a reading the code does
     // not state, so the label says what the condition says.
-    const { skeleton, labels } = labelled(PO);
+    const { skeleton, labels } = labelled(PO, OLD);
     expect(labelsOf(skeleton, labels, 'form:CHECK_REQUISITION')).toEqual([
       'Start',
       'Done',
@@ -176,6 +208,41 @@ test.describe('plain-language wording — the owner\'s examples', () => {
     ]);
     expect(labelsOf(skeleton, labels, 'form:READ_VENDOR', 'end')).toEqual(['Done', 'Rejected: no supplier found']);
     expect(labelsOf(skeleton, labels, 'form:REQUEST_APPROVAL', 'end')).toEqual(['Done', 'Stopped: test run selected']);
+
+    // 3.1.0: an arm that only sets a flag a later decision reads draws that outcome as a step ("Set skip limit",
+    // `armOutcome`); a stop says its message's own text (E2); a negative question is asked the positive way (E1).
+    const now = labelled(PO, NEW);
+    expect(labelsOf(now.skeleton, now.labels, 'form:CHECK_REQUISITION')).toEqual([
+      'Start',
+      'Done',
+      'Material given?',
+      'Reject',
+      'Rejected: no material',
+      'Release indicator set?',
+      'Reject',
+      'Rejected: release indicator set',
+      'Check material status',
+      'Rejected?',
+      'Stopped: rejected',
+      'Check account assignment',
+      'Rejected?',
+      'Stopped: rejected',
+      'Plant 1000?',
+      'Set skip limit',
+    ]);
+    expect(labelsOf(now.skeleton, now.labels, 'form:READ_REQUISITION')).toEqual([
+      'Start',
+      'Done',
+      'Read purchase requisition',
+      'No purchase requisition found',
+      'Stop: purchase requisition not found (E001)',
+      'Currency EUR?',
+      'Convert to EUR',
+      'MRP controller EMG or tracking number EMERG*?',
+      'Set emergency',
+    ]);
+    expect(labelsOf(now.skeleton, now.labels, 'form:READ_VENDOR', 'end')).toEqual(['Done', 'Rejected: no supplier found']);
+    expect(labelsOf(now.skeleton, now.labels, 'form:REQUEST_APPROVAL', 'end')).toEqual(['Done', 'Stopped: test run selected']);
   });
 
   test('the branches of a decision are labelled', () => {
@@ -217,7 +284,7 @@ test.describe('plain-language wording — the owner\'s examples', () => {
   });
 
   test('CHECK: the kept way is Yes, the NOT way is No', () => {
-    const { skeleton, labels } = labelled(PO);
+    const { skeleton, labels } = labelled(PO, OLD);
     const check = skeleton.nodes.find((n) => n.label === 'CHECK gv_on_hold = abap_false');
     expect(labels.nodes.get(check?.id ?? '')).toBe('Not on hold?');
     const flows = skeleton.edges.filter((e) => e.from === check?.id)
@@ -225,6 +292,14 @@ test.describe('plain-language wording — the owner\'s examples', () => {
     expect(flows).toEqual([
       ['NOT ( gv_on_hold = abap_false )', 'No'],
       ['gv_on_hold = abap_false', 'Yes'],
+    ]);
+    // 3.1.0 (E1): asked the positive way round, "On hold?" — the kept way is then No, the stop Yes.
+    const now = labelled(PO, NEW);
+    const check310 = now.skeleton.nodes.find((n) => n.label === 'CHECK gv_on_hold = abap_false');
+    expect(now.labels.nodes.get(check310?.id ?? '')).toBe('On hold?');
+    expect(now.skeleton.edges.filter((e) => e.from === check310?.id).map((e) => [e.condition, now.labels.flow(e)])).toEqual([
+      ['NOT ( gv_on_hold = abap_false )', 'Yes'],
+      ['gv_on_hold = abap_false', 'No'],
     ]);
   });
 
@@ -234,7 +309,7 @@ test.describe('plain-language wording — the owner\'s examples', () => {
     expect(humaniseRoutine('DERIVE_CUSTOMER_RISK')).toBe('Derive customer risk');
     expect(humaniseRoutine('Z_CREDIT_EXPOSURE_READ')).toBe('Credit exposure read');
 
-    const { skeleton, labels } = labelled(LEGACY);
+    const { skeleton, labels } = labelled(LEGACY, OLD);
     const byTechnical = (text: string) => labels.nodes.get(
       skeleton.nodes.find((n) => labels.technical(n.id) === text)?.id ?? '');
     expect(byTechnical('SELECT VBAK')).toBe('Read sales orders');
@@ -246,6 +321,10 @@ test.describe('plain-language wording — the owner\'s examples', () => {
     expect(byTechnical('LOOP AT gt_orders')).toBe('For each order');
     expect(byTechnical('INSERT ZSD_ORD_RISK')).toBe('Create entry in ZSD_ORD_RISK');
     expect(byTechnical('INITIALIZATION')).toBe('Program starts');
+    // 3.1.0: an internal table is named after where its rows come from — gt_orders is selected from VBAK.
+    const now = labelled(LEGACY, NEW);
+    expect(now.labels.nodes.get(now.skeleton.nodes.find((n) => now.labels.technical(n.id) === 'LOOP AT gt_orders')?.id ?? ''))
+      .toBe('For each sales order');
 
     const node = (kind: SkeletonNode['kind'], label: string, detail?: SkeletonNode['detail']): SkeletonNode => ({
       id: 'n', kind, label, anchor: null, region: 'r', container: null, detail,
@@ -300,12 +379,25 @@ test.describe('plain-language wording — the owner\'s examples', () => {
       "    CALL FUNCTION 'Z_DO_SOMETHING'.",
       '  ENDWHILE.',
     ].join('\n');
-    const skeleton = buildProcessSkeleton(source);
-    const labels = plainLabels(skeleton, source);
-    const loops = skeleton.nodes.filter((n) => n.kind === 'loop');
-    expect(loops.map((n) => labels.nodes.get(n.id))).toEqual(['More orders?', 'Count below 3?']);
-    for (const loop of loops) {
-      expect(skeleton.edges.filter((e) => e.from === loop.id).map((e) => labels.flow(e))).toEqual(['Next', 'Done']);
+    for (const engine of [OLD, NEW]) {
+      const skeleton = buildProcessSkeleton(source, { engineVersion: engine });
+      const labels = plainLabels(skeleton, source, { engineVersion: engine });
+      const loops = skeleton.nodes.filter((n) => n.kind === 'loop');
+      // 3.1.0: gt_orders is named after the table it is selected from, VBAK.
+      expect(loops.map((n) => labels.nodes.get(n.id))).toEqual([engine === OLD ? 'More orders?' : 'More sales orders?', 'Count below 3?']);
+      for (const loop of loops) {
+        expect(skeleton.edges.filter((e) => e.from === loop.id).map((e) => labels.flow(e))).toEqual(['Next', 'Done']);
+      }
+    }
+    // A loop's ways out are "Next" and "Done": its question keeps the condition as the code states it. 3.1.0's positive
+    // question (E1) would have asked "Count zero?" beside a "Next" taken while the count is not zero.
+    const negated = source.replace('WHILE lv_count < 3.', 'WHILE lv_count <> 0.').replace('lv_count = lv_count + 1.', 'lv_count = lv_count - 1.');
+    for (const engine of [OLD, NEW]) {
+      const skeleton = buildProcessSkeleton(negated, { engineVersion: engine });
+      const labels = plainLabels(skeleton, negated, { engineVersion: engine });
+      const loop = skeleton.nodes.filter((n) => n.kind === 'loop').pop();
+      expect(labels.nodes.get(loop?.id ?? '')).toBe('Count not zero?');
+      expect(skeleton.edges.filter((e) => e.from === loop?.id).map((e) => labels.flow(e))).toEqual(['Next', 'Done']);
     }
   });
 

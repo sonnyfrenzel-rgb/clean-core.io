@@ -179,7 +179,7 @@ test.describe('the analyze page stores nothing before confirmation, and then the
     test.setTimeout(120 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInViaLanding(page, EMAIL, PASSWORD);
-    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
 
     // The upload opens from the header action "Add ATC results" (owner decision 02.10.2026).
     // Behind the one "Add evidence" menu since ADR-093 (owner decision Q5, 11.10.2026).
@@ -254,7 +254,7 @@ test.describe('a save the server refused is not shown as imported', () => {
     await page.route('**/api/projects/*/commands', (route) =>
       route.fulfill({ status: 403, contentType: 'application/json', body: JSON.stringify({ error: 'Refused for the test.' }) }),
     );
-    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
 
     // The upload opens from the header action "Add ATC results" (owner decision 02.10.2026).
     // Behind the one "Add evidence" menu since ADR-093 (owner decision Q5, 11.10.2026).
@@ -333,7 +333,7 @@ test.describe('the comparison panel, once an analysis exists', () => {
   test('shows both a "both" and an "atc-only" object, each with the honest wording — never merged, never a verdict', async ({ page }) => {
     test.setTimeout(120 * 1000);
     await signInViaLanding(page, EMAIL, PASSWORD);
-    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
 
     // Since 02.10.2026 the imports are a part of the folded "Technical
     // detail", under their own heading — one click, not gone.

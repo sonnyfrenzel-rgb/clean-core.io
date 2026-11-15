@@ -31,7 +31,8 @@ import { archivedTermsSha256 } from '../lib/terms-versions';
  *   CAPTURE_SEGMENTS=3       screen-height pictures from the top instead of one full-page picture —
  *                            a 12,000-pixel page scaled down for a model is unreadable
  *   CAPTURE_DARK=1           the signed-in overview screens once more in the dark theme
- *   CAPTURE_MOCKUPS=1        the key views of the binding 3.0 mockups 2.8 (MOCKUP_VIEWS in scripts/ux/lib/config.mjs)
+ *   CAPTURE_MOCKUPS=1        the key views of the binding 3.0 mockups 2.8 (MOCKUP_VIEWS) and three states of
+ *                            the v3.1.0 target mockups (TARGET_SHOTS), both in scripts/ux/lib/config.mjs
  * File names are the contract with scripts/ux/lib/config.mjs (SHOT_NAME).
  */
 const ENABLED = process.env.CAPTURE_SCREENS === '1';
@@ -298,22 +299,34 @@ test.describe('capture', () => {
       await capture(SCREENS.filter((s) => DARK_SCREENS.includes(s.name)), 'dark');
     }
 
+    // A mockup or target state that did not capture: listed in index.txt, and the test fails once that is written.
+    const mockupFailed: string[] = [];
     if (MOCKUPS) {
-      // The key views of the binding mockups 2.8, and their file names, come from the agent's config —
-      // one list, so the capture and the loader cannot drift apart.
+      // The key views of the binding mockups 2.8 and the target states of v3.1.0 (owner decision
+      // 12.11.2026: swap, not add), and their file names, come from the agent's config — one list, so
+      // the capture and the loader cannot drift apart.
       const ux = await import(pathToFileURL(path.resolve(__dirname, '..', 'scripts', 'ux', 'lib', 'config.mjs')).href);
       const views = ux.MOCKUP_VIEWS as { view: string; screen: string; label: string }[];
+      const targets = ux.TARGET_SHOTS as { file: string; state: string; screen: string; label: string }[];
+      const fileUrl = (file: string) => pathToFileURL(path.resolve(__dirname, '..', file)).href;
       await page.setViewportSize({ width: 1440, height: 1000 });
-      await page.goto(pathToFileURL(path.resolve(__dirname, '..', ux.MOCKUP_FILE as string)).href);
-      for (const { view, screen, label } of views) {
+      await page.goto(fileUrl(ux.MOCKUP_FILE as string));
+      const shots = [
+        ...views.map(({ view, screen, label }) => ({ screen, label: `${view} · ${label}`, open: async () => page.click(`button[data-s="${view}"]`) })),
+        // A target mockup sets its state from the address once, so every state is a fresh load.
+        ...targets.map(({ file, state, screen, label }) => ({ screen, label, open: async () => page.goto(`${fileUrl(file)}#state=${state}&embed=1`) })),
+      ];
+      for (const { screen, label, open } of shots) {
         try {
-          await page.click(`button[data-s="${view}"]`);
+          await open();
           await page.waitForTimeout(600);
+          await page.evaluate(() => document.fonts.ready);
           const file = path.join(OUT, `${screen}-desktop.jpg`);
           await page.screenshot({ path: file, type: 'jpeg', quality: 72 });
-          notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  mockup ${view} · ${label}`);
+          notes.push(`${path.basename(file)}  ${Math.round(fs.statSync(file).size / 1024)} KB  mockup ${label}`);
         } catch (err) {
           notes.push(`${screen}-desktop  FAILED  ${String(err instanceof Error ? err.message : err).slice(0, 120)}`);
+          mockupFailed.push(`${screen}-desktop`);
         }
       }
     }
@@ -324,6 +337,8 @@ test.describe('capture', () => {
     // The capture is only useful if the workflow screens actually rendered.
     const captured = fs.readdirSync(OUT).filter((f) => f.endsWith('.jpg'));
     expect(captured.length).toBeGreaterThan(SCREENS.length);
+    // Every mockup view and target state the agent's config names was written, not only enough screens overall.
+    expect(mockupFailed, 'mockup shots that failed to capture').toEqual([]);
   });
 });
 
@@ -332,7 +347,7 @@ test.describe('capture', () => {
  *
  * The landing page shows the workspace, and the workspace it shows has to be the
  * real one: "no mockup image on a public page". So the pictures are
- * taken here, from the demo project `Z_MM_PO_APPROVAL` in `/demo/workspace` —
+ * taken here, from the demo project `Z_MM_PO_APPROVAL` in `/demo/analyze` (Business) and `/demo/workspace` (IT, Management) —
  * the same engine run every account opens — and committed under
  * `public/landing/`. Run it with every release that changes the workspace or the
  * engine, so picture and product cannot drift apart:
@@ -407,14 +422,18 @@ test.describe('capture the landing page views', () => {
     fs.mkdirSync(out, { recursive: true });
     await signIn(page);
 
+    // Since v3.1.0 the demo opens like a project (AB-2, O10): its Business view is `/demo/analyze`,
+    // `/demo/workspace` keeps IT and Management (and sends a Business address on to Analyze).
+    // The pictures are not re-shot here (AB-12 does that); the addresses only follow the product.
+    const addressOf = (query: string) => (query === '?view=business' ? `/demo/analyze${query}` : `/demo/workspace${query}`);
     const open = async (query: string) => {
-      await page.goto(`/demo/workspace${query}`, { waitUntil: 'domcontentloaded' });
+      await page.goto(addressOf(query), { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
       // The dev server's own badge is not part of the product.
       await page.addStyleTag({ content: 'nextjs-portal{display:none!important}' });
       await waitForDrawnMaps(page);
       await page.waitForTimeout(2500);
-      await assertNoTermsGate(page, `/demo/workspace${query}`);
+      await assertNoTermsGate(page, addressOf(query));
       if (process.env.CAPTURE_LANDING_DEBUG) {
         await page.screenshot({ path: path.join(process.env.CAPTURE_LANDING_DEBUG, `full${query.replace(/\W+/g, '-')}.jpg`), fullPage: true, type: 'jpeg', quality: 60 });
       }
@@ -509,7 +528,7 @@ test.describe('capture the landing page views', () => {
         createdAt: new Date(),
         fromExample: true,
       });
-      await page.goto(`/project/${projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+      await page.goto(`/project/${projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
       const startButton = page.getByRole('button', { name: 'Start Analysis' });
       await startButton.waitFor({ timeout: 120000 });
       await page.waitForTimeout(2000);
@@ -521,16 +540,21 @@ test.describe('capture the landing page views', () => {
       const boxes = dialog.locator('input[type=checkbox]');
       for (let i = 0; i < (await boxes.count()); i++) await boxes.nth(i).check();
       await page.getByRole('button', { name: 'Confirm and start the analysis' }).click();
-      // Since the start lands on the workspace once the run is signed (ADR-072), the
-      // analysis is done when either the score or the done mark on the Analyze tool stands.
+      // Since AB-2 the start lands on Analyze in the Business view once the run is signed: the
+      // analysis is done when the score, the done mark on the Analyze tool or the drawn map stands.
       await expect(
-        page.locator('[data-analyze-score]').or(page.getByRole('link', { name: 'Analyze (done)' })).first(),
+        page
+          .locator('[data-analyze-score]')
+          .or(page.getByRole('link', { name: 'Analyze (done)' }))
+          .or(page.locator('[data-analyze-business="ready"] [data-workspace-process="ready"]'))
+          .first(),
       ).toBeVisible({ timeout: 600000 });
     }
 
     for (const phase of PHASES) {
       const fromRun = STAGE_SHOT_SOURCE[phase.key] === 'run';
-      const url = fromRun ? `/project/${projectId}/${phase.key}` : `/demo/${phase.key}`;
+      // Analyze's score page is its IT view since AB-2 (Business is the map).
+      const url = fromRun ? `/project/${projectId}/${phase.key}${phase.key === 'analyze' ? '?view=it' : ''}` : `/demo/${phase.key}`;
       await page.goto(url, { waitUntil: 'domcontentloaded' });
       if (!fromRun) {
         await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });

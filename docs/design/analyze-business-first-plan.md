@@ -76,7 +76,7 @@ hub leave the app.
 | `components/workspace/BusinessNextStep.tsx` + `lib/business-next-step.ts` | 104 + 51 | `WorkspaceShell`, demo | AB-4 | the two endings |
 | `components/workspace/WorkspaceHub.tsx` + `AnalysisReady.tsx` + `lib/analysis-read.ts` | 321 + 53 + 119 | `WorkspaceShell`, demo | AB-2 | nothing: the project opens on the result (ADR-090 retires) |
 | `components/workspace/CoachMarks.tsx` + `lib/coach-marks.ts` | 390 + 330 | `WorkspaceShell` | AB-11, if P7 | the tour and the invitation bar |
-| `components/workspace/LayerBar.tsx`, `LayerSection.tsx` | 160 + 245 | workspace, demo | AB-11, if O3 | Business has one layer left (`BUSINESS_LAYERS = ['evidence']`, `lib/business-layers.ts`); its content is IT's "Run & trust" |
+| `components/workspace/LayerBar.tsx`, `LayerSection.tsx` | 160 + 245 | workspace, demo | AB-11, if O3 — retired 13.11.2026 (owner decision) | Business has one layer left (`BUSINESS_LAYERS = ['evidence']`, `lib/business-layers.ts`); its content is IT's "Run & trust" |
 | `components/analyze/AnchoredNarrative.tsx` | 130 | Analyze page | AB-9, if P4 | the checked text around the map |
 | `components/analyze/ProgramMap.tsx` | 206 | `EvidenceFindingsTable` | AB-9 (assumption: IT's findings beside their code replace it) | findings with their code |
 | **Sum** | **≈ 5,900** | 18 files (12 components, 6 lib modules) | | |
@@ -174,10 +174,10 @@ Proposed new wording, one line each. A new ADR is written when its package lands
 | ADR-103 | superseded | First insights is Analyze's Business view: map, text around it with line anchors, 2–3 charts, two endings. |
 | ADR-104 | unchanged | Note only: the pen mark per element is the same `proposed` value, never a spark. |
 | ADR-105 | unchanged | Copy names "the view switch", never a position on screen. |
-| new ADR-107 (AB-2) | new | Analyze is business first and is the project's entry; IT and Management are views of the same tool. |
+| new ADR-109 (AB-2) | new | Analyze is business first and is the project's entry; IT and Management are views of the same tool. |
 | new ADR-108 (AB-3) | new | Names swap in per element after the fact check, within 45 s per program, announced in one status line; reduced motion swaps without motion. |
-| new ADR-109 (AB-4) | new | The soft gate, the two equal endings and "What you can do next" live in the browser only; nothing locks, nothing is confirmed. |
-| new ADR-110 (AB-7) | new | Charts under the map count only the engine's facts, each with its lines and *Reconstructed*; no chart without a sentence that says what it shows. |
+| new ADR-111 (AB-4) | new | The soft gate, the two equal endings and "What you can do next" live in the browser only; nothing locks, nothing is confirmed. |
+| new ADR-114 (AB-7) | new | Charts under the map count only the engine's facts, each with its lines and *Reconstructed*; no chart without a sentence that says what it shows. |
 | `DESIGN.md` §5 title and §5.1–5.5 | rewrite | "Analyze opens in the Business view"; §5.1 "The code speaks first — on demand in Business, prominent in IT"; §5.2 the stages become: map with engine names → text and names arrive → invitation; §5.3 without coach mark; §5.4 the 20 s exception describes the arrival, not the code column; §5.5 the page order of v4.1. |
 | `DESIGN.md` §5.6 | amend | The "first answer on screen" of IT and Management as in v4.1. |
 | `DESIGN.md` §2.3 | amend (O8) | "Next step in every view" does not apply to Analyze; the two endings take its place. |
@@ -415,12 +415,49 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   applied; the BPMN download marks exactly the model's names; a run signed by 3.0.21 keeps its picture; the
   readability ratchet does not go up; screenshots of the workspace map before/after shown to Sonny (the UI is still
   today's).
+- **Status (12.11.2026, branch `night/ab1`):** built. The gate is `ENGINE_READS_310_FROM` (it landed with the
+  pre-work merge); `namingFactsApply(engineVersion)` is the one rule for "names only with facts" — the context builder,
+  `withFacts` from `WorkspaceProcess` and `NAMING_ASKED_IN_THIS_BUILD` all read it, so every 3.0.x build stays paused and
+  3.1.0 asks. Specs: `naming-paused-3021` (claims hold for a context without facts; claim 6 a facts context passes),
+  `process-naming-auto`, `statement-proposal-route` (rendered, version-aware), new `naming-facts-starters-310`. Open:
+  privacy §3, the Trust page and the C14 notice still say names are paused — a check in `naming-paused-3021` fails the
+  3.1.0 bump until their new wording is in (legal review); the screenshots before/after for the owner.
+  **Status (13.11.2026, branch `legal/doc19-names`):** the new wording is in and switches with the build
+  (`lib/legal/names-wording.ts`; both directions held by `tests/legal-names-wording.spec.ts`); it goes to the lawyer
+  as document 19 and is released only with his answer.
 - **Risk:** medium. 34 % of nodes stay unnamed and half of the named ones equal the engine label (branch
   measurement), so the visible swap of AB-3 is smaller than in the mockup. `namingFactsOf` always uses the 3.5.0
   labels, also for a project signed by an older engine — check that facts and drawn labels match on such a project.
 
 #### AB-2 — Analyze opens business first: the map is the page · L
 
+- **Status (12.11.2026, worktree branch `night/ab2`, not on `dev`):** built — `AnalyzeBusiness` on the Analyze route
+  for Business, the code panel beside the map (`WorkspaceProcess` `codeOnClick`, `#L42`), the start run moved to
+  Analyze, the entry points and the workspace redirect (`lib/analyze-entry.ts`), the interim blocks below the map;
+  written as **ADR-109** (ADR-107 went to Documentation and ADR-108 to the names' arrival of AB-1/AB-3 the same day);
+  `analyze-business-first` added, `analyze-layout-guard` enforced for 3, 7, 17, the address-only spec changes made.
+  Open: the Business branch of `WorkspaceShell` (unreachable since the redirect), the retirement of `WorkspaceHub`,
+  `AnalysisReady` and their three specs, the demo (O10), and the rendered specs that read the workspace's Business
+  view in depth (listed in the branch's report). No rendered spec was run on the branch.
+  **Status (13.11.2026, branch `night/ab23-rest`):** the open points are built. `WorkspaceShell` draws IT and
+  Management only; `WorkspaceHub` and `AnalysisReady` are gone (`workspace-hub`, `workspace-hub-running` retired;
+  `analysis-ready` keeps the Analyze tool's "Result ready" tag, which stays); the `#process-map` follower and the map's
+  draft moved to Analyze; the target reference line (ADR-089) stands under the interim "Next step". The demo opens on
+  `/demo/analyze`, Business (`DemoAnalyzeBusiness`, same composition; `/demo/workspace` keeps IT and Management). The
+  rendered specs that read the workspace's Business view were rewritten for Analyze, Business or the IT view (listed in
+  the branch's report); none was run on the branch. Left: the workspace no longer marks a start run that Analyze is
+  signing as running in IT and Management (it starts none); `LayerBar`/`LayerSection` have no user left (AB-11, O3).
+  **Status (13.11.2026, branch `night/310-ui`, after the acceptance run on owner example A):** the eight findings
+  are fixed, each with a check that fails without it (`analyze-acceptance-310`): the canvas first at 1440 × 900
+  (`ProcessMap` `layout="page"`, the compact one-row tool bar with the soft-gate hint), one code panel beside the map
+  (no card inside it, outline folded), a name over a step lets the click through, the tour draws the names the chips
+  say, the summary opens on a status workflow where names and shape say nothing (3.1.0 gate), no 401 on load (the
+  token readers wait for the session), the AI mark per name carries the recorded model, no page error when the home
+  slice leaves. The project search (⌘K) stands on Analyze, Business. Not changed: state 17 (welcome back, two ways)
+  is AB-4 (v3.2.0); the OO first level of example A (AB-15a) and the RACI on method steps are engine work, not UI.
+  `layer-back-to-top` tested `LayerSection`, which has no user since AB-2. **Decided (owner, 13.11.2026): retired with
+  v3.1.0 as the first part of AB-11** — the spec, `LayerSection.tsx`, `LayerBar.tsx` (also without a user) and their
+  message strings are deleted on `night/310-ui`; the rest of AB-11 stays in v3.5.0.
 - **Scope:** the Business view of Analyze per mockup states 3, 7 and 17 without the tour, the swap and the text
   blocks: header as today's `StageHeader` (way back, view switch, tools, soft-gate hint), "What this program does"
   with the engine sentence, the invitation bar ("Walk me through it" starts today's tour layer until AB-4; "I'll look
@@ -474,6 +511,15 @@ number; `tests/analyze-layout-guard.spec.ts` (AB-0) at 0 overlaps, 0 clipping, 0
   `first-look-pacing`, `first-look` (its build-up half), `first-look-3021` (its drawing half).
 - **Done when:** [look] for states 1, 2, 3, 18; a failed or slow model leaves every engine name in place and the status
   line says so in one sentence; the page is usable during the whole arrival; an invited reader's visit asks nothing.
+- **Status (12.11.2026, branch `night/ab1`):** the swap, the status line, the 45 s ceiling, reduced motion and the
+  hold under focus are built (`lib/naming-arrival.ts`, `hooks/useNamingArrival.ts`,
+  `components/process-map/naming-swap.ts`, `NamingStatusLine.tsx`; ADR-108); a name equal to the engine's carries no
+  pen mark, on the map as in the download. Specs: `analyze-naming-arrival`, `ai-mark-per-element` (server-free),
+  `analyze-naming-swap` (rendered, not yet run). **Built since (13.11.2026, branch `night/ab23-rest`):** the paced build-up is retired (`FirstLookBuildUp`,
+  `lib/first-look-buildup.ts`, `lib/first-look-excerpt.ts`; `first-look-pacing` and `first-look-buildup-view` retired,
+  the others rewritten) — the First insights stand in their end state below the map. **Not yet:** P2
+  (one facts naming for an older run) is not built: it would change the picture of a run signed before 3.1.0, which the
+  engine rule keeps, so it needs the owner's word first. [look] and the frame-time measurement on state 18 are open.
 - **Risk:** medium. Timing in CI (production build is faster than `next dev`); motion on a canvas of 60+ elements
   (state 18) — measure frame time on the large example before release.
 
@@ -659,7 +705,9 @@ dates do not hold. Until it ships, Business shows two charts.*
 - **Files:** `app/(app)/project/[projectId]/page.tsx`, `components/workspace/WorkspaceShell.tsx`, `LayerBar.tsx`,
   `LayerSection.tsx`, `CoachMarks.tsx`, `lib/coach-marks.ts`, `lib/layer-redirect.ts`, `lib/workspace-back-href.ts`,
   `lib/choice-addresses.ts`, the docs above.
-- **Specs:** change `workspace-shell-guard` (to the redirect), `workspace-layers`, `layer-back-to-top`,
+- **Status (13.11.2026):** `LayerBar.tsx`, `LayerSection.tsx` and `layer-back-to-top` are retired already with v3.1.0
+  (owner decision 13.11.2026; dead code since AB-2). Everything else below is open.
+- **Specs:** change `workspace-shell-guard` (to the redirect), `workspace-layers`, `layer-back-to-top` (retired 13.11.2026),
   `workspace-fragment-guard`, `workspace-view-switch`, `workspace-view-switch-from-layer`, `choice-walk`,
   `choice-addresses`, `follow-hash-scrollbar`, `coach-mark-placement` (retire), `it-view`, `it-findings`,
   `it-view-uses`, `standard-fit-in-it`, `workspace-a11y`, `view-attribute-guard` (stays green unchanged).
@@ -682,7 +730,9 @@ dates do not hold. Until it ships, Business shows two charts.*
 
 - **Mockup:** `scratch/mockups-0511/home-mockup/home-mockup.html` (v2.1 since 06.11.2026; 12 states × 6 viewports in
   `screens/`, overlap check 0 in all 72). Like the Analyze mockup (P10) it is copied unchanged into `docs/roadmap/` with AB-0, as
-  `docs/roadmap/home-mockup-v2.html` together with its local font file; its report is German and stays out of the repo.
+  `docs/roadmap/home-mockup-v2.html`; its report is German and stays out of the repo. One deliberate edit (owner
+  decision 12.11.2026): instead of a copied font file, its `@font-face` points to the app's own byte-identical Inter,
+  `../../app/fonts/inter-latin-variable.woff2` (licence `app/fonts/OFL.txt`).
   State numbers below are the mockup's (1 new account … 12 runs used up).
 - **Why it belongs to the rebuild:** a project now opens in Analyze and First insights is part of Analyze, so the home
   page loses its First-insights remnants and gains a first view that says what happens: one program in, its process
@@ -715,6 +765,12 @@ dates do not hold. Until it ships, Business shows two charts.*
 | H-O8 | Rename | A server route instead of a `firestore.rules` change (rules are deployed by hand). | AB-14b, else later |
 
 ##### AB-14a — v3.1.0 · The first view for a new account (mockup v2.1) · S–M
+
+- **Status (12.11.2026):** built on branch `night/ab14` (ADR-110): `HomeFirstView`, `ToolPathStrip`, the `home`
+  variant of `StarterExamples`, the slice (`lib/bpmn/slice.ts`, `lib/home-map-slice.ts`,
+  `components/process-map/MapSlice.tsx`), the own-code handoff with a paste field (`lib/home-start-handoff.ts`).
+  Rendered specs written, to be run on the production build; [look] at the six viewports still open. The portfolio
+  entry stays on the view (a quiet link; the mockup has none — the 3.0.21 rule "every account sees the way in").
 
 - **Mockup:** v2.1 of the same file, accepted by the owner on 06.11.2026 ("build it exactly like this"); state 1 at
   the six viewports, 0 overlaps, 0 clipping.
@@ -822,6 +878,22 @@ moves forward into v3.2.0; v3.5.0 only wires the card.*
   the holdout untouched.
 
 ##### AB-15a — v3.1.0 · Status workflows as the process, technical methods folded · M–L
+
+*Status 12.11.2026: engine part built on `night/ab15` (ADR-112) — `lib/abap/state-machine.ts`,
+`lib/abap/technical-methods.ts`, the labels in `plain-language.ts`, the fold and the lift in `lib/bpmn/model.ts`
+(`readsObjects`), two skeleton readings (a wrapper that calls a phase stays a phase; `SET HANDLER NEW …->…` binds);
+specs `engine-state-machine` and `engine-method-collapse`. Starter examples read byte-identical. Open: the run of
+owner example A end to end (owner), and the Analyze views (not part of the engine).*
+
+*Status 13.11.2026, round 2 on `night/ab15b` (ADR-112, items 6–9): the acceptance run of owner example A showed the
+workflow two levels down — one method runs it as a `CASE` over the command, and the program's entry is a demo driver.
+Now a command workflow (moves in two or more arms of one decision over a command) is read in `state-machine.ts`, each
+moving arm is one step named as the move with its checks one level down (`lib/bpmn/model.ts`, `readWorkflow`), a demo
+driver's band gives way to the workflow, its steps folded onto the start with their lines. Spec
+`engine-command-workflow` (three sizes, negatives). Starter examples and all LEARN cases draw the same business model;
+`evaluate.ts` on LEARN unchanged with and without `BM_CONCAT=1` (no LEARN case has the shape). Owner example A, run
+locally through the engine: the first level holds the six moving arms of its command decision as steps named as the move, each with its lines; the driver folds onto the start. Open: the
+owner's end-to-end run on the integration state.*
 
 - **Scope:** read classes, interfaces, methods, local classes and events as the program's structure, not its process;
   surface a **state machine** — a status field with its transitions (constants such as DRAFT/SUBMITTED/APPROVED/

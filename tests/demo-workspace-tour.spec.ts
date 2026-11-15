@@ -6,6 +6,7 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { DEMO_TITLE_PREFIX } from '../lib/demo-marks';
 import { TOUR_STATIONS, TOUR_STORAGE_KEY } from '../lib/demo-tour';
+import { ANALYSIS_READ_KEY } from '../lib/analysis-read';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -18,6 +19,13 @@ import { signInViaLanding } from './helpers/sign-in';
  * again" in the help menu — and, since roadmap 3.0.1 (ADR-061), that a
  * community account gets all of it too, while a visitor without an account is
  * sent through sign-in.
+ *
+ * Since v3.1.0 the demo opens like a project (plan AB-2, O10): its Business view
+ * is the demo's Analyze page (`/demo/analyze`, `DemoAnalyzeBusiness`), and
+ * `/demo/workspace` sends a Business address there — so the tour's Business
+ * stations stand on that page and its IT and Management stations in the demo
+ * workspace, and moving on between them navigates. The addresses here stay the
+ * workspace's: they prove the redirect as well.
  *
  * Needs the dev server and the emulators, like every signed-in spec.
  */
@@ -43,8 +51,13 @@ async function signIn(page: Page, email: string) {
 
 async function openDemo(page: Page, query = '') {
   await page.goto(`/demo/workspace${query}`, { waitUntil: 'domcontentloaded' });
+  // Business (or no view) is the demo's Analyze page since v3.1.0.
+  if (query === '' || query === '?view=business') await page.waitForURL(/\/demo\/analyze(\?|$)/, { timeout: 60000 });
   await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90000 });
 }
+
+/** The demo's title: the workspace's own heading in IT and Management, the stage title on Analyze, Business. */
+const TITLE = '[data-workspace-title], [data-stage-title]';
 
 /** The one station or invitation on screen — and there is never more than one. */
 async function onlyStop(page: Page) {
@@ -75,7 +88,7 @@ test('a community account opens the demo workspace and its tour, and has "Show t
   await signIn(page, COMMUNITY);
   await openDemo(page);
   await expect(page.locator('[data-demo-workspace]')).toHaveCount(1);
-  await expect(page.locator('[data-workspace-title]')).toContainText(DEMO_TITLE_PREFIX.trim());
+  await expect(page.locator(TITLE)).toContainText(DEMO_TITLE_PREFIX.trim());
   // The tour starts for it as for anybody: one stop on screen.
   await page.evaluate((key) => window.localStorage.removeItem(key), TOUR_STORAGE_KEY);
   await openDemo(page);
@@ -104,19 +117,17 @@ test('marked as the demo, unsigned, in all three views', async ({ page }) => {
   for (const view of ['business', 'it', 'management'] as const) {
     await openDemo(page, `?view=${view}`);
     await expect(page.locator(`[data-demo-workspace="${view}"]`)).toBeVisible();
-    await expect(page.locator('[data-workspace-title]')).toContainText(DEMO_TITLE_PREFIX.trim());
+    await expect(page.locator(TITLE)).toContainText(DEMO_TITLE_PREFIX.trim());
     await expect(page.locator('[data-demo-unsigned]')).toContainText('never signed');
     if (view === 'business') {
-      // Every layer of the anchor bar is reachable, filled or saying why not.
-      await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(1);
-      // Business has no Need & process (ADR-080): the map is its process, and
-      // the bar opens on one of its own sections.
-      await expect(page.locator('[data-workspace-layer-section="need"]')).toHaveCount(0);
-      // Its one layer is Evidence & controls, without a bar of one tab;
-      // Standard fit is IT's own section (ADR-096).
-      await expect(page.locator('[data-workspace-layer-section="evidence"]')).toHaveCount(1);
+      // Business is the demo's Analyze page since v3.1.0 (AB-2, O10), as a project's: no layer bar and
+      // no layer section — the map is its process, and Evidence & controls is IT's Run & trust (ADR-096).
+      await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(0);
       await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
       await expect(page.locator('[data-demo-business-map] [data-demo-tour-place="process-map"]')).toBeVisible();
+      // The same composition as a project's Analyze, Business: the summary, the invitation, the map first.
+      await expect(page.locator('[data-analyze-business="ready"] [data-analyze-summary] [data-analyze-walk=""]')).toBeVisible();
+      await expect(page.locator('[data-analyze-map]')).toHaveCount(1);
     } else if (view === 'management') {
       // Management shows only its own content (ADR-087): no layer bar, no
       // process map — the decision, the distance to standard, the buckets,
@@ -256,4 +267,57 @@ test('answering the rules as the product asks them changes this browser only, an
   await expect(row(first)).toHaveAttribute('data-demo-rule-answer', 'keep', { timeout: 60000 });
   await page.click('[data-demo-reset]');
   await expect(row(first)).toHaveAttribute('data-demo-rule-answer', 'none');
+});
+
+test('the demo\'s Analyze, Business draws the map as a project\'s: the page layout, a chosen step\'s code in one panel beside it (QA review 268ed7624e53)', async ({ page }) => {
+  test.setTimeout(240 * 1000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page, ADMIN);
+  await openDemo(page, '?view=business');
+  const map = page.locator('[data-demo-business-map] [data-process-map]');
+  await expect(map).toHaveAttribute('data-process-map-layout-kind', 'page', { timeout: 90000 });
+  // No code before a click, and the map draws no code card of its own.
+  await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
+  await page.locator('[data-demo-business-map] [data-map-node]').nth(1).click();
+  const panel = page.locator('[data-analyze-code-panel]');
+  await expect(panel, 'a click on a step opened no code').toBeVisible({ timeout: 30000 });
+  await expect(page.locator('[data-process-map-details]')).toHaveCount(0);
+  const [card, side] = await Promise.all([map.boundingBox(), panel.boundingBox()]);
+  const overlaps = !!card && !!side && card.x < side.x + side.width && side.x < card.x + card.width && card.y < side.y + side.height && side.y < card.y + card.height;
+  expect(overlaps, 'the code panel covers the map').toBe(false);
+  await page.locator('[data-analyze-code-close]').click();
+  await expect(panel).toHaveCount(0);
+});
+
+test('a line anchor of the demo\'s summary opens its lines in the code panel', async ({ page }) => {
+  test.setTimeout(240 * 1000);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await signIn(page, ADMIN);
+  await openDemo(page, '?view=business');
+  const anchor = page.locator('[data-analyze-summary-text] button[data-cc-anchor]').first();
+  await expect(anchor, 'the summary\'s line anchor is no link').toBeVisible({ timeout: 90000 });
+  const line = Number((await anchor.textContent())?.trim().replace(/^L/, ''));
+  expect(Number.isInteger(line) && line > 0, 'the anchor names no single line').toBe(true);
+  await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
+  await anchor.click();
+  const panel = page.locator('[data-analyze-code-panel]');
+  await expect(panel, 'the anchor opened no code').toBeVisible({ timeout: 30000 });
+  // The row's own line number (the first cell of the row in components/cc/CodeSurface.tsx), not any
+  // digits in the code text: the first highlighted row is the anchor's line.
+  await expect(panel.locator('[data-cc-code-line="highlighted"] > span:first-child').first()).toHaveText(String(line));
+  await page.locator('[data-analyze-code-close]').click();
+  await expect(panel).toHaveCount(0);
+});
+
+test('opening the demo\'s Analyze, Business clears "result ready" on the demo workspace\'s Analyze tool (QA review 268ed7624e53)', async ({ page }) => {
+  test.setTimeout(240 * 1000);
+  await signIn(page, ADMIN);
+  await openDemo(page, '?view=it');
+  await page.evaluate((key) => window.localStorage.removeItem(key), ANALYSIS_READ_KEY);
+  await openDemo(page, '?view=it');
+  const ready = page.locator('[data-demo-stages] [data-workspace-tool-result-ready]');
+  await expect(ready, 'the marker is there before Analyze was opened').toHaveCount(1);
+  await openDemo(page, '?view=business');
+  await openDemo(page, '?view=it');
+  await expect(ready).toHaveCount(0);
 });

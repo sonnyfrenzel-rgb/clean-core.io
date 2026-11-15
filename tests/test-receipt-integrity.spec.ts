@@ -14,6 +14,9 @@ import {
   type TestRunReceipt,
 } from '../lib/test-receipt';
 import { sha256Hex } from '../lib/artefact-digest';
+import { workflowSteps } from '../lib/workflow-steps';
+import type { Project } from '../lib/types';
+import { receiptFor } from './helpers/test-receipt';
 
 /**
  * CA-INT-01 — a test receipt counts what it shows, and says whether the suite
@@ -87,5 +90,29 @@ test.describe('where the suite came from', () => {
     expect(OWNER_EDITED_SUITE_NOTE).toMatch(/^Suite edited by the owner/);
     // Server-written only: the client allowlist of firestore.rules does not name it.
     expect(read('firestore.rules')).not.toContain(TEST_SUITE_ORIGIN_FIELD);
+  });
+});
+
+test.describe('the owner-edited note beside every recorded run the Testing phase describes', () => {
+  const cases = [
+    { id: 't1', name: 'Totals', category: 'Unit', description: 'd', priority: 'High' as const, status: 'Passed' as const },
+    { id: 't2', name: 'Rounding', category: 'Unit', description: 'd', priority: 'Medium' as const, status: 'Failed' as const },
+  ];
+  const base: Project = {
+    name: 'Edited suite',
+    legacyCode: 'REPORT z_x.\n',
+    activeRunId: 'run-1',
+    generatedCode: 'export const ok = true;\n',
+    testCases: cases,
+    testSuite: { code: "import { test } from 'node:test';\ntest('t1', () => {});\n" },
+  };
+  const testingOf = (p: Project) => workflowSteps(p).find((s) => s.key === 'testing')!;
+
+  test('a recorded run with a failure says the suite was edited by the owner', () => {
+    const edited = testingOf({ ...base, testRunReceipt: { ...receiptFor(base), suiteOrigin: 'owner-edited' } });
+    expect(edited.badge).toBe('Failures');
+    expect(edited.detail).toContain(OWNER_EDITED_SUITE_NOTE);
+    const generated = testingOf({ ...base, testRunReceipt: { ...receiptFor(base), suiteOrigin: 'generation' } });
+    expect(generated.detail).not.toContain(OWNER_EDITED_SUITE_NOTE);
   });
 });

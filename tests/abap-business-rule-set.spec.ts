@@ -286,7 +286,11 @@ test.describe('candidates that are one rule become one rule', () => {
     expect(critical?.sentences.map((s) => s.key)).toEqual(['declaration', 'condition-if', 'branch-body', 'repeated']);
     expect(critical?.sentences[0].text).toBe('c_critical_score is declared as a constant of type i with the value 80.');
     expect(critical?.sentences[3].text).toBe('The same test stands in 2 places, in CALCULATE_RISK_SCORES and DECIDE_ACTIONS.');
-    expect(critical?.processElements.map((e) => `${e.kind} L${e.lineStart}`)).toEqual(['gateway L388', 'gateway L424']);
+    // Engine 3.1.0 (87415241): the arm of L424 only sets `<fs_order>-action`, which the CASE of L437 reads, so it is
+    // a step of that decision (L425) and an element of the rule. A run signed before 3.1.0 keeps the two gateways.
+    expect(critical?.processElements.map((e) => `${e.kind} L${e.lineStart}`)).toEqual(['gateway L388', 'gateway L424', 'task L425']);
+    expect(ruleAt(deriveBusinessRules(read(LEGACY), '3.0.23'), 22)?.processElements.map((e) => `${e.kind} L${e.lineStart}`))
+      .toEqual(['gateway L388', 'gateway L424']);
 
     const medium = ruleAt(set, 23);
     expect(medium?.id, 'GE c_medium_score is a second number somebody decided').not.toBe(critical?.id);

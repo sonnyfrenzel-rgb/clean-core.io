@@ -1,0 +1,110 @@
+/**
+ * The review list of the curated dictionary for an SAP expert (owner decision 06.11.2026):
+ *
+ *   npx tsx tests/prozess-benchmark/dictionary-review.ts
+ *
+ * Writes docs/review/sap-dictionary-review.csv — every entry of lib/abap/sap-dictionary.ts with its kind, meaning,
+ * source and in how many LEARN cases its code occurs, sorted by that count, with empty columns to tick off
+ * (`ok` / `wrong` / `better wording`). Reads only the case ids under `learn` and `w3_learn` in split.json — never a
+ * holdout case. Deterministic, no model, no network.
+ */
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import {
+  NAMING_ABBREVIATIONS,
+  SAP_AUTHORIZATION_OBJECTS,
+  SAP_FIELD_VALUES,
+  SAP_FIELDS,
+  SAP_FUNCTIONS,
+  SAP_TABLES,
+  SAP_TRANSACTIONS,
+} from '../../lib/abap/sap-dictionary';
+
+const ROOT = join(__dirname, '..', '..');
+
+/**
+ * What one case offers for counting: its identifier tokens, the values of its literals, and the field/value pairs
+ * where a literal stands directly beside a field (`gbstk = 'A'`, `ls_x-gbstk EQ 'A'`, `lv_gbstk = 'A'`), all upper case.
+ */
+export interface CaseUse {
+  tokens: Set<string>;
+  literals: Set<string>;
+  pairs: Set<string>;
+}
+
+const OP = String.raw`\s*(?:=|<>|<=|>=|<|>|\bEQ\b|\bNE\b|\bLT\b|\bGT\b|\bLE\b|\bGE\b)\s*`;
+const NAME = String.raw`([A-Z0-9_/]+(?:-[A-Z0-9_/]+)*)`;
+const LIT = String.raw`(?:'([^'\n]*)'|` + '`([^`\\n]*)`)';
+const NAME_THEN_VALUE = new RegExp(NAME + OP + LIT, 'g');
+const VALUE_THEN_NAME = new RegExp(LIT + OP + NAME, 'g');
+
+/** The identifier tokens of a case, comments and literals left in (a code in a literal counts), and its literal values. */
+export function caseUse(text: string): CaseUse {
+  const upper = text.toUpperCase();
+  const tokens = new Set<string>();
+  for (const m of upper.matchAll(/[A-Z0-9_/]+/g)) {
+    tokens.add(m[0]);
+    for (const part of m[0].split(/[_/]+/)) if (part) tokens.add(part);
+  }
+  // A structure component (`ls_x-gbstk`) and an abbreviation inside a name (`lv_pos`) are tokens too.
+  for (const m of upper.matchAll(/-([A-Z0-9_]+)/g)) tokens.add(m[1]);
+  const literals = new Set<string>();
+  for (const m of upper.matchAll(/'([^'\n]*)'|`([^`\n]*)`/g)) literals.add((m[1] ?? m[2]).trim());
+  // A value belongs to a field only where it is compared with or assigned to that field, in either order.
+  const pairs = new Set<string>();
+  const pair = (name: string, value: string) => {
+    const last = name.split('-').pop() as string;
+    for (const n of new Set([last, ...last.split(/[_/]+/)])) if (n) pairs.add(`${n}=${value.trim()}`);
+  };
+  for (const m of upper.matchAll(NAME_THEN_VALUE)) pair(m[1], m[2] ?? m[3]);
+  for (const m of upper.matchAll(VALUE_THEN_NAME)) pair(m[3], m[1] ?? m[2]);
+  return { tokens, literals, pairs };
+}
+
+/**
+ * In how many cases a code occurs; with a value, only the cases where that value stands beside the field — the same
+ * literal elsewhere in the case does not count for it.
+ */
+export function usedIn(cases: readonly CaseUse[], code: string, value?: string): number {
+  const c = code.toUpperCase();
+  const v = value === undefined ? undefined : value.toUpperCase().trim();
+  return cases.filter((u) => u.tokens.has(c) && (v === undefined || u.pairs.has(`${c}=${v}`))).length;
+}
+
+function main(): void {
+  const split = JSON.parse(readFileSync(join(__dirname, 'split.json'), 'utf8')) as Record<string, unknown>;
+  const learn = [...(split.learn as string[]), ...(split.w3_learn as string[])];
+  const cases: CaseUse[] = [];
+  for (const id of learn) {
+    const dir = join(__dirname, 'cases', id);
+    if (!existsSync(dir)) continue;
+    cases.push(caseUse(readdirSync(dir).filter((f) => f.endsWith('.abap')).map((f) => readFileSync(join(dir, f), 'utf8')).join('\n')));
+  }
+  const used = (code: string, value?: string) => usedIn(cases, code, value);
+
+  interface Row { term: string; kind: string; meaning: string; source: string; used: number }
+  const rows: Row[] = [];
+  for (const [k, v] of Object.entries(SAP_TABLES)) rows.push({ term: k.toUpperCase(), kind: 'table', meaning: v.singular, source: v.source, used: used(k) });
+  for (const [k, v] of Object.entries(SAP_FIELDS)) rows.push({ term: k.toUpperCase(), kind: 'field', meaning: v.singular, source: v.source, used: used(k) });
+  for (const [k, values] of Object.entries(SAP_FIELD_VALUES)) {
+    for (const [value, meaning] of Object.entries(values)) rows.push({ term: `${k.toUpperCase()} = ${value}`, kind: 'domain value', meaning, source: 'sap-domain', used: used(k, value) });
+  }
+  for (const [k, v] of Object.entries(SAP_FUNCTIONS)) rows.push({ term: k, kind: 'function module', meaning: v, source: 'sap-standard', used: used(k) });
+  for (const [k, v] of Object.entries(SAP_TRANSACTIONS)) rows.push({ term: k, kind: 'transaction', meaning: v, source: 'sap-standard', used: used(k) });
+  for (const [k, v] of Object.entries(SAP_AUTHORIZATION_OBJECTS)) rows.push({ term: k, kind: 'authorization object', meaning: v, source: 'sap-standard', used: used(k) });
+  for (const [k, v] of Object.entries(NAMING_ABBREVIATIONS)) rows.push({ term: k, kind: 'name abbreviation', meaning: v, source: 'abap-naming', used: used(k) });
+  rows.sort((a, b) => b.used - a.used || a.kind.localeCompare(b.kind) || a.term.localeCompare(b.term));
+
+  const cell = (s: string | number) => {
+    const t = String(s);
+    return /[",;\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+  };
+  const header = ['term', 'kind', 'meaning', 'source', 'used in N LEARN cases', 'ok (x)', 'wrong (x)', 'better wording', 'reviewer note'];
+  const csv = [header, ...rows.map((r) => [r.term, r.kind, r.meaning, r.source, r.used, '', '', '', ''])].map((r) => r.map(cell).join(',')).join('\n') + '\n';
+  const out = join(ROOT, 'docs', 'review');
+  if (!existsSync(out)) mkdirSync(out, { recursive: true });
+  writeFileSync(join(out, 'sap-dictionary-review.csv'), csv);
+  console.log(`${rows.length} entries, ${rows.filter((r) => r.used > 0).length} used in at least one of ${cases.length} LEARN cases -> docs/review/sap-dictionary-review.csv`);
+}
+
+if (require.main === module) main();

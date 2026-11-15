@@ -105,8 +105,10 @@ test.describe('the four rules of roadmap 3.3', () => {
     // event and one early exit an end of its own, each anchored at its line) —
     // so the two rules about a missing anchor have nothing to say, and saying
     // nothing is the right answer rather than a gap.
+    // 96 with engine 3.1.0: six loop levels begin at a start event on their `LOOP` line (022c9a3a) and three
+    // `ADD_LOG` calls are the outcome of an arm (3bbe6f27) — each anchored at its line.
     expect(model.traceability.unanchored).toBe(0);
-    expect(model.traceability.anchored).toBe(87);
+    expect(model.traceability.anchored).toBe(96);
     expect(counts.byRule.get(TASK_WITHOUT_ANCHOR) ?? 0).toBe(0);
     expect(counts.byRule.get(DEVIATES_WITHOUT_STATE) ?? 0).toBe(0);
 

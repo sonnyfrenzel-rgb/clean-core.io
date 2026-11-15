@@ -149,8 +149,14 @@ test.describe('a stage as a tool, rendered', () => {
       });
       await page.waitForSelector('[data-stage-title]', { timeout: 60000 });
       const back = page.locator('[data-stage-back]');
-      await expect(back, `${st}: the way back`).toHaveText(/Back to project workspace\s·\s.+\s·\sBusiness view, Evidence & controls/, { timeout: 30000 });
-      await expect(back).toHaveAttribute('href', `/project/${acct.projectId}?view=business#evidence`);
+      if (st === 'analyze') {
+        // ADR-109's one exception: Analyze in the Business view is where a project opens; its way back is My workspace.
+        await expect(back, `${st}: the way back`).toHaveText('Back to My workspace', { timeout: 30000 });
+        await expect(back).toHaveAttribute('href', '/dashboard');
+      } else {
+        await expect(back, `${st}: the way back`).toHaveText(/Back to project workspace\s·\s.+\s·\sBusiness view, Evidence & controls/, { timeout: 30000 });
+        await expect(back).toHaveAttribute('href', `/project/${acct.projectId}?view=business#evidence`);
+      }
       await expect(page.locator('[data-stage-tool]'), `${st}: the tool eyebrow`).toContainText('Tool ·');
       await expect(page.locator('nav[aria-label="Workflow phases"]'), `${st}: the old stepper`).toHaveCount(0);
       await expect(page.locator('[aria-label^="Workflow progress"], [data-rail-phase]'), `${st}: the rail`).toHaveCount(0);
@@ -204,7 +210,9 @@ test.describe('a stage as a tool, rendered', () => {
     await page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]').click();
     await page.waitForURL(`**/project/${acct.projectId}/analyze?view=business&from=workspace-tools&layer=evidence`, { timeout: 60000 });
     await expect(page.locator('[data-stage-header="analyze"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-stage-back]')).toHaveText(/Back to project workspace\s·\s.*Business view, Evidence & controls/, { timeout: 30000 });
+    // ADR-109 (2): Analyze in Business is the project's entry; its way back is My workspace, as in the loop above.
+    await expect(page.locator('[data-stage-back]')).toHaveText('Back to My workspace', { timeout: 30000 });
+    await expect(page.locator('[data-stage-back]')).toHaveAttribute('href', '/dashboard');
     await expect(page.locator('[data-stage-tools="open"] a[aria-current="page"]')).toHaveAttribute('data-workspace-tool', 'analyze');
   });
 
@@ -235,7 +243,9 @@ test.describe('a stage as a tool, rendered', () => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 900 });
     for (const st of STAGES) {
-      await page.goto(`/demo/${st}`, { waitUntil: 'domcontentloaded' });
+      // The demo's Analyze opens in Business since v3.1.0 (the map page, which needs an account and leads back
+      // to My workspace, AB-2, O10); its stage page with the way back to the demo workspace is its IT view.
+      await page.goto(st === 'analyze' ? '/demo/analyze?view=it' : `/demo/${st}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
       const bar = page.locator('[data-stage-tools="open"]');
       await expect(bar, `demo ${st}: the tools bar`).toBeVisible();
@@ -256,7 +266,8 @@ test.describe('a stage as a tool, rendered', () => {
       // The way back, above the tools, as on a project's stage (owner 02.10.2026).
       const back = page.locator('[data-stage-back]');
       await expect(back, `demo ${st}: the way back`).toHaveCount(1);
-      await expect(back).toHaveAttribute('href', '/demo/workspace');
+      // Analyze is opened in IT here, and its way back keeps the view it was read in.
+      await expect(back).toHaveAttribute('href', st === 'analyze' ? '/demo/workspace?view=it' : '/demo/workspace');
       await expect(back).toHaveText(/Back to project workspace/);
       const [backTop, barTop] = await Promise.all([
         back.evaluate((el) => el.getBoundingClientRect().top),
@@ -416,7 +427,8 @@ test.describe('a stage reached through a choice leads back to the place that ask
   test('the header draws the origin link in place of the workspace link, and the footer keeps the workspace', () => {
     const header = read('components/StageHeader.tsx');
     expect(header).toMatch(/back\.kind === 'link' && back\.origin \? \(\s*(\/\/[^\n]*\n\s*)*<ChoiceBackLink href=\{back\.origin\.href\} label=\{back\.origin\.label\} stage \/>/);
-    expect(header).toContain('data-stage-back="workspace"');
+    // The workspace link — or, on Analyze in the Business view, the project's entry, My workspace (ADR-109).
+    expect(header).toContain("data-stage-back={toMyWorkspace ? 'my-workspace' : 'workspace'}");
     const link = read('components/ChoiceBackLink.tsx');
     expect(link).toContain("data-stage-back={stage ? 'origin' : undefined}");
     expect(link, 'navigation prints').toMatch(/data-choice-back="header"[\s\S]*cc-no-print/);

@@ -1,6 +1,7 @@
 import { getAuth } from '@/lib/firebase';
 import { callGeminiWithReceipt } from '@/lib/gemini';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
+import { STATEMENT_REWORDING_SHAPE } from '@/lib/statement-rewording';
 import {
   STATEMENT_STAGE,
   isStatementProposalRecord,
@@ -58,6 +59,12 @@ export async function requestStatementProposal(
     {
       callModel: async (prompt) => {
         const { text, receipt } = await callGeminiWithReceipt(prompt, PRODUCT_GEMINI_MODEL, true, STATEMENT_STAGE, signal);
+        return { text, receipt };
+      },
+      // 13.11.2026 — the draft reworded for a business reader, under the same stage, in its own
+      // shape (`lib/statement-rewording.ts`); `runStatementRequest` asks only when the deployment rewords.
+      rewordModel: async (prompt) => {
+        const { text, receipt } = await callGeminiWithReceipt(prompt, PRODUCT_GEMINI_MODEL, true, STATEMENT_STAGE, signal, { responseShape: STATEMENT_REWORDING_SHAPE });
         return { text, receipt };
       },
       store: async (submission) => {

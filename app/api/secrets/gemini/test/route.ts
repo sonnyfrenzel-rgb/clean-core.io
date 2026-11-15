@@ -129,10 +129,10 @@ export async function POST(req: NextRequest) {
     } catch (testErr) {
       // The stored key failed: it stops counting as configured until a test
       // passes again (3.0.21). An entered key that fails changes nothing.
-      if (testingSaved) await recordOwnKeyTest(decodedToken.uid, provider, false);
+      if (testingSaved) await recordOwnKeyTest(decodedToken.uid, provider, false, apiKey!);
       throw testErr;
     }
-    if (testingSaved) await recordOwnKeyTest(decodedToken.uid, provider, true);
+    if (testingSaved) await recordOwnKeyTest(decodedToken.uid, provider, true, apiKey!);
 
     return NextResponse.json({ ok: true, provider });
   } catch (err: any) {

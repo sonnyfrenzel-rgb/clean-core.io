@@ -230,7 +230,7 @@ Fiori app and never says so.
 
 ### 2.1 Shell
 
-- **Shell bar** at the top: logo and product name on the left, path (Workspace › Project), search ⌘K, help, account menu on the right.
+- **Shell bar** at the top: logo and product name on the left, path (Workspace › Project), search ⌘K, help, account menu on the right. Below 1024 px (lg) the path starts at the project — no "My workspace" crumb before it, the way back to the list is the page's own "Back to My workspace" and the logo — and Help is its "?" alone, square (44 px on touch), named by its word and with the word as tooltip (ADR-115).
 - No side navigation in 3.0: a project is one case, the depth lies in the workspace.
 
 ### 2.2 Floorplans
@@ -240,6 +240,16 @@ Fiori app and never says so.
 | **List report** | "My workspace" (project list) | Filter bar (§2.5), toolbar "Projects (23)", table, a row click opens the project |
 | **Object page** | the workspace of a project | Header, toolbar, anchor bar, sections, footer only when editing (§2.3) |
 | **Overview** | Management view of a project | Cards with one answer each, every number with "Why?" |
+
+**An account without a project has no list yet** (ADR-110, home mockup v2.1 state 1, accepted 06.11.2026). "My
+workspace" shows it a first view instead: the welcome, one heading and two sentences on what the product does; the
+seven tools in one quiet line (Analyze outlined as "A complete result on its own", the six after it dashed as
+"Optional, if you want to re-design it"; names and order from `lib/workflow-steps.ts`); and the start built in, with
+two ways side by side — *Try an example* (the recommended example carries the page's only filled button, "Start this
+example"; the other shipped examples as a compact list) and *Analyse your own program* (a drop area, "Choose a file",
+"Paste the code", which open today's own-code start with the file preset, and a live slice of the demo map drawn by
+the map's own renderer). The demo is a line, not a row. No duration is claimed. The first project ends the view: from
+then on the list report above applies.
 
 **With 3.0 everything is new, all of a piece** (ADR-052, Sonny 24.09.2026). No old interface is removed instead
 of being rebuilt: the **old dashboard** (`/dashboard`) and the **old stage demo** (`/demo/[stage]`) are rebuilt according to
@@ -618,10 +628,36 @@ is neither provenance nor object status, and no finding carries a severity that 
 
 ---
 
-## 5. The first look — the workspace opens in the Business view
+## 5. Analyze opens in the Business view
 
-After a code import or an example, the workspace opens in the **Business view** and shows at once which process it
-is (ADR-002).
+**Since v3.1.0 (ADR-109, plan `docs/design/analyze-business-first-plan.md` AB-2, mockup
+`docs/roadmap/analyze-business-first-mockup.html` states 3, 7 and 17)** a project opens in **Analyze, Business view**
+— after a code import, an example, a link to `/project/<id>` and on every return visit — and **the map is the page**:
+
+1. the stage header: the way back to *My workspace*, the view switch, the seven tools in **one compact row** (marks,
+   *Next* tag and legend, no hint line, no *What the tools do*) ending in the quiet hint *Best after the business
+   walk-through* (a hint, never a lock);
+2. *What this program does* in the engine's sentence (*Reconstructed*), with the one invitation: *Walk me through it*
+   (the page's only `primary`) and *I'll look around myself*;
+3. the reconstructed BPMN map from the signed run, **the canvas first** (`ProcessMap` `layout="page"`): its own tool
+   row (Map | Steps, the level path, zoom, fit, Outline, Keyboard, *Technical names*, *Edit model*, full screen), then
+   the canvas, then the naming status line; the map's title and counts, the traceability sentence, the legend, the
+   notes, the level's line and the filters stand **under** the canvas. At 1440 × 900 the canvas starts in the first
+   screen (mockup state 3: about y = 410). The outline column starts folded there (its own remembered choice);
+4. the code **on demand**: a step or a line clicked — or `#L42` in the address — opens its lines in **one** panel
+   beside the map (below it on a narrow screen), never over it, closed by its own button; the map draws no code card
+   of its own on this page, so the canvas keeps its width (mockup state 7). A name laid over a step never takes its
+   click. No score, no findings, no code before a click: those are IT's. The project search (⌘K) stands here too.
+
+Until v3.2.0 the First insights blocks (`BusinessOpening`) and *Next step* stand unchanged below the map; AB-4 and AB-6
+replace them in place, in their end state from the first frame. Analyze shows no coach marks. The paced build-up
+described in §5.1–§5.2 retired with v3.1.0 (AB-3): the names arrive on the map itself (below), and the sections
+describing the build-up stand as the record of what it was. The workspace keeps IT and Management until v3.5.0; its
+Business view, the "Work from this process" hub and the "Your analysis is ready" line are gone (ADR-090 retired). The
+demo opens the same way (§6.1.2).
+
+Before v3.1.0: after a code import or an example, the workspace opened in the **Business view** and showed at once
+which process it is (ADR-002).
 
 > **The wow effect is content the user did not expect, in under three seconds, with a line anchor — the
 > staging only makes visible where it comes from** (ADR-013).
@@ -667,12 +703,12 @@ moment.
    confirmed · Level distribution · Not determined.
 
 **The start signs the reading** (ADR-072). Starting an example, a snippet or one's own code signs the engine's reading
-at once — the same signed run every analysis ends in, at the cost every start screen states before the click. The
-build-up names it as its last moment, "Process map", and the end state stands on the full map, drawn from that signed
-run; the map is never drawn from source no run signed. With the model on (the account's analysis stage and a key —
-owner decision 03.10.2026), the start asks the model for the analysis narrative at the first moment of the build-up,
-with the Analyze prompt, and the one signed run carries it; the last moment waits for it with "Writing the narrative
-(model)…", the seconds waited and "Go on without the narrative", 90 s at most. Without an answer in time the same run
+at once — the same signed run every analysis ends in, at the cost every start screen states before the click — and
+the map is drawn from that signed run; the map is never drawn from source no run signed. Since v3.1.0 the start is
+Analyze, Business's (AB-2), and the map's place says it is being signed; until then the build-up named it as its last
+moment. With the model on (the account's analysis stage and a key — owner decision 03.10.2026), the start asks the
+model for the analysis narrative at once, with the Analyze prompt, and the one signed run carries it; the map's place
+waits for it with "Writing the narrative (model)…", the seconds waited and "Go on without the narrative", 90 s at most. Without an answer in time the same run
 is signed with the engine's reading alone, and the page says the narrative was not written, why, and offers *Write the
 narrative in Analyze* with its cost. With the model off there is no model call.
 
@@ -682,8 +718,24 @@ names, the stage line says "Naming in business language …" with "Cancel". When
 an announcement in the live region — never under an open popover or a focused node; there only once it is
 closed. If the call fails, the technical names stay, and a message strip offers "Retry".
 
-`prefers-reduced-motion` shows the end state at once — the reveal line is still at the top. "Skip" jumps to
-the same end state. A second visit has no build-up.
+**From 3.1.0 the names swap in on the map, visibly, at most 45 s** (ADR-108, mockup *Analyze, business first* v4.1
+states 1, 2, 3 and 18). The map stands with the engine's names at once; an element still waiting carries a small
+waiting mark. The model is asked once, only with the engine's facts (`namingFactsApply`), and its answer walks the map
+in the map's own order — the old name slides up and out, the new one in, a short tint of `--cc-information-bg`, and the
+pen mark of *AI-generated* stays at the element's corner (ADR-104: a pen, never a spark). The name stays inside the
+room the layout made for the engine's name, above the line anchor; a longer one is cut with an ellipsis, and its whole
+text is on the button's accessible name ("… AI-generated name"), in the step list and on the code card. **One status
+line** under the map says what happens: *Naming steps in plain language … 13 of 25*, after 20 s a countdown to the
+ceiling, then *Names are ready. 3 steps kept their technical name (no pen mark).* A name equal to the engine's is no
+swap and carries no mark — the download marks exactly what the map marks. **The ceiling is 45 s per program**, counted
+from the ask: names that are not there by then do not arrive on this visit, and the line says so in one sentence, as it
+does for a failed call — every engine name stays. A name never changes under the focus or an open code card; that
+element swaps once the reader moves on. Names stored before the visit, and every visit under `prefers-reduced-motion`,
+are simply there. An invited reader's visit asks nothing. The swap never rebuilds the map (`naming-swap.ts`).
+
+Since v3.1.0 there is no build-up to skip or slow down: every visit, under `prefers-reduced-motion` too, shows the
+first insights in their end state as soon as the engine's readings are in, and says what it is reading until then
+(AB-3). Before, `prefers-reduced-motion` and "Skip" went straight to that end state, and a second visit had no build-up.
 
 ### 5.3 The first ten seconds after
 
@@ -706,7 +758,8 @@ Confetti, decorative gradients, typewriter effects, pulsing dots, loading animat
 thinking…"*, artificial minimum durations (like the six seconds the Evidence Scanner once took). Everything that costs time and
 shows nothing lowers the credibility the moment needs.
 
-**The one deliberate exception (owner decisions, 01.10.2026 and 03.10.2026, ADR-072):** the first look's build-up
+**The one deliberate exception — retired with v3.1.0** (plan AB-3; the map is the page and its names arrive in place,
+ADR-108; the record follows). **Until then (owner decisions, 01.10.2026 and 03.10.2026, ADR-072):** the first look's build-up
 runs at a pace a first-time reader can follow, about 20 s (within 15–25 s), even when the engine is done in a few frames
 — code read to 2.5 s, process recognised to 8.5 s, names to 11 s, the rules in the code to 14.5 s, what is not
 determined to 17.5 s, the map to 20 s; no step under 2.5 s. Each step says one headline — what it means for the reader
@@ -1111,6 +1164,13 @@ Goal: keep lowering the threshold to the first own use.
   browser and disappears with "Reset demo". Nothing is saved, nothing counts against the quota.
 - **One demo for everyone, no copy per account.** The account stays unchanged, no data per user is created, and
   the demo is always at the product's current state — also for accounts that already exist.
+- **It opens like a project** (v3.1.0, plan AB-2, O10). The demo opens on its Analyze, Business (`/demo/analyze`): the
+  same composition as a project's — the stage header with the way back to My workspace, "What this program does" with
+  "Walk me through it" and "I'll look around myself", the map first, the First insights and "Next step" below it until
+  v3.2.0 — on the demo's data, with no model and no write. What only the demo has stays on that page: the strip, the
+  tour's Business stations, the map's levels, the open questions and its own rules card. `/demo/workspace` keeps IT
+  and Management and sends Business there; the tour moves between the two pages. Like the demo workspace, the
+  Business view needs an account; the demo's Analyze stage in IT stays public.
 - **A new demo, not the old one carried on** (ADR-052). The demo's stages (today `/demo/[stage]`) are rebuilt according to
   this file: the same stage headers (§2.3), tokens, chips and messages as in an own project. The demo
   stays a separate route without a path to signing, quota and export — what is new is the look, not this boundary.
@@ -1228,6 +1288,10 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.17 | 13.11.2026 | Shell bar below 1024 px (§2.1, ADR-115, owner decision 13.11.2026): the path drops the "My workspace" crumb before a project and shows the project and what follows it; Help shows its "?" alone, with its word as accessible name and tooltip. From 1024 px up unchanged. |
+| 1.8.16 | 13.11.2026 | Analyze, Business after the 3.1.0 acceptance run (§5): the canvas first with Map | Steps in its row and everything about the map under it; the tool bar compact in one row with the soft-gate hint; one code panel beside the map (no card inside it); a name over a step lets its click through; the project search on this page |
+| 1.8.15 | 13.11.2026 | The paced build-up retires (plan AB-3): the First insights below the map stand in their end state from the first frame; the start's model wait is said at the map's place (§5.2). The workspace's Business view, its "Work from this process" hub and "Your analysis is ready" line leave the app (ADR-090 retired, AB-2). The demo opens like a project, on its Analyze, Business (O10, §6.1.2) |
+| 1.8.14 | 12.11.2026 | Analyze opens in the Business view and is the project's entry (ADR-109, plan AB-2): the map is the page under "What this program does" and one invitation; code on demand beside the map; the workspace sends Business there; the First insights blocks and "Next step" below the map until v3.2.0; no coach marks in Analyze (§5) |
 | 1.8.13 | 12.10.2026 | Re-entry in Business (ADR-099, owner 12.10.2026, amending ADR-072): one fixed line under the title says what the page is, and a compact tool bar — the same tools, marks and "Next" tag, with the legend — stands in the header above "Next step"; below L the "Tools" menu. The full bar stays in the work area under the map: §2.3 item 3, §2.11, §5.5 |
 | 1.8.12 | 11.10.2026 | Analyze: the Clean Core Score is the hero, and declutter wave 2 (ADR-093, owner approval 11.10.2026, mockup `docs/roadmap/analyze-score-hero-mockup.html`): the score with its band, scale, edition rule, the other edition's figure and its provenance beside the deduction table that sums to the signed score; one row of four facets; the "On this page" bar under the hero without a score anchor; one "Add evidence" and one "Export" menu; complexity/criticality meters and the inventory tables leave Analyze (display only); the hero figure joins the type scale: §1.2, §1.8, §2.3 |
 | 1.8.11 | 10.10.2026 | Analyze is not overlooked (ADR-090, owner 10.10.2026): until this browser has opened Analyze once, a done Analyze carries "Result ready" in every tool bar and the Business work area says "Your analysis is ready" with the signed run's figures; browser-only, the next step unchanged: §2.3 item 3 |

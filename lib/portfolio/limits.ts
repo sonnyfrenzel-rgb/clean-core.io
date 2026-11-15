@@ -57,6 +57,12 @@ export const PORTFOLIO_VIEW_MAX_PROJECTS = 500;
 /** Projects a named selection may list. */
 export const PORTFOLIO_SELECTION_MAX_PROJECTS = PORTFOLIO_VIEW_MAX_PROJECTS;
 
+/**
+ * The bound on a selection request body: a name and at most
+ * `PORTFOLIO_SELECTION_MAX_PROJECTS` ids of up to 128 characters fit with room to spare.
+ */
+export const PORTFOLIO_SELECTION_BODY_LIMITS = { maxBytes: 128 * 1024, timeoutMs: 10_000 };
+
 /** Named selections one account may keep. */
 export const PORTFOLIO_MAX_SELECTIONS = 50;
 

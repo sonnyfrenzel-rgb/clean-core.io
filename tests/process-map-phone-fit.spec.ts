@@ -181,10 +181,12 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     await expect(frame.locator('[data-process-map-canvas]')).toHaveAttribute('data-map-layout', 'phone');
     expect(await frame.locator('.cc-map-anchor-code').count()).toBeGreaterThan(5);
     await expect(frame.locator('.djs-label', { hasText: '?' }).first()).toBeVisible();
+    // Since v3.1.0 this map is Analyze, Business (ADR-109): the step's code is the page's panel under the map on a
+    // phone (mockup state 7), not a card inside the map.
     await frame.locator('[data-map-node]').nth(2).click();
-    const details = page.locator('[data-process-map-details]');
+    const details = page.locator('[data-analyze-code-panel]');
     await expect(details).toBeVisible();
-    await expect(details).toContainText(/line \d+/);
+    await expect(details).toContainText(/[Ll]ines? \d+/);
   });
 
   test('the workspace (Business): a small example that fits keeps its layout', async ({ page }) => {
@@ -207,7 +209,8 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     test.setTimeout(300_000);
     // The demo workspace is for a signed-in account, like a project.
     await signIn(page, small);
-    await page.goto('/demo/workspace?view=business', { waitUntil: 'domcontentloaded' });
+    // The demo's map is its Analyze, Business since v3.1.0 (AB-2, O10).
+    await page.goto('/demo/analyze', { waitUntil: 'domcontentloaded' });
     const frame = await showMap(page, '[data-process-map]');
     await shot(page, 'demo-workspace-390', frame);
     await expectFits(frame, 'demo workspace');

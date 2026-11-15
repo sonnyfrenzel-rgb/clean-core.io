@@ -227,7 +227,7 @@ test.describe('the page, rendered in the workspace', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInThroughForm(page, acct);
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`/project/${acct.projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${acct.projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-analysis-answer]')).toBeVisible({ timeout: 90000 });
     await page.waitForTimeout(1000);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);

@@ -5,7 +5,6 @@ import { build } from 'esbuild';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { readProcess } from '../lib/first-look';
-import { firstLookExcerpt } from '../lib/first-look-excerpt';
 import { DECIDES_SHOWN, IN_SHORT_WORDS, changesOnTop, decidesOnTop, firstLookBrief, isNegativeClause, splitPurpose } from '../lib/first-look-brief';
 import { deriveBusinessRulesFrom } from '../lib/abap/business-rule-set';
 import { explainBusinessRules } from '../lib/abap/business-rule-set-explain';
@@ -61,22 +60,9 @@ async function loadOpeningFor(tag: string): Promise<(props: Record<string, unkno
   return require(out).default;
 }
 
-test.describe('the drawing beside the steps sets the test-data switch apart (fix, 22.10.2026)', () => {
-  const proc = readProcess(RECEIPT);
-
-  test('from engine 3.0.20 the receipt check\'s drawing no longer opens with the demo cases', () => {
-    const names = firstLookExcerpt(proc.skeleton, RECEIPT, 5, '3.0.20').nodes.map((n) => n.name);
-    expect(names.join(' | ')).not.toMatch(/apply case/i);
-    expect(names.join(' | ')).not.toMatch(/demo/i);
-    // The process is still drawn: the switch is passed over, not the program.
-    expect(names.length).toBeGreaterThan(2);
-  });
-
-  test('a run signed by an older engine draws what it drew then', () => {
-    const names = firstLookExcerpt(proc.skeleton, RECEIPT, 5, '3.0.19').nodes.map((n) => n.name);
-    expect(names.join(' | ')).toMatch(/apply case/i);
-  });
-});
+// The drawing beside the steps (the main-line excerpt, `lib/first-look-excerpt.ts`) retired with
+// the paced build-up in v3.1.0 (plan AB-3): the map above the first insights is the picture of the
+// process. The step list's own setting-apart of the test-data switch is held below.
 
 test.describe('the top blocks, cut from the engine\'s own sentences (lib/first-look-brief.ts)', () => {
   test('the purpose sentence is cut only at the summary\'s own seams', () => {
@@ -406,14 +392,19 @@ test.describe('the readings of the 3.0.21 gate on the page', () => {
 test.describe('"Ask this case" leaves the Business view (owner decision 22.10.2026, DESIGN.md §5.3)', () => {
   const shell = read('components/workspace/WorkspaceShell.tsx');
 
-  test('the Business order has no "Ask this case"; IT renders it under its own answer', () => {
-    const order = /const BUSINESS_ORDER[^=]*=\s*\[([\s\S]*?)\];/.exec(shell)?.[1] ?? '';
-    expect(order).toContain("'firstLook'");
-    expect(order.replace(/\/\/.*$/gm, '')).not.toContain("'ask'");
-    expect(shell).toMatch(/view === 'it' \? contentBlocks\.ask : null/);
+  test('Business has no "Ask this case"; IT renders it under its own answer', () => {
+    // Business is Analyze's page since v3.1.0 (AB-2, ADR-109): no "Ask this case" there either.
+    expect(read('components/analyze/AnalyzeBusiness.tsx')).not.toContain('AskThisCase');
+    expect(shell).not.toContain('BUSINESS_ORDER');
+    expect(shell).toMatch(/view === 'it' \? askThisCase : null/);
   });
 
-  test('the decision tip is offered in Business only where the map stands', () => {
-    expect(shell).toMatch(/hasDecision: answer\?\.kind === 'answered' && \(view !== 'business' \|\| decisionTipAtMap\)/);
+  test('the decision tip pointed at the Business map; with the map in Analyze it is offered in no view of the workspace', () => {
+    // Analyze, Business has no coach marks (plan P7: the invitation bar and the tour lead); IT and
+    // Management offer only their own tips, and neither list names the decision point.
+    expect(shell).toContain("const IT_COACH_ORDER: readonly CoachMarkId[] = ['next-step', 'not-determined'];");
+    expect(shell).toContain("const MANAGEMENT_COACH_MARKS: readonly CoachMarkId[] = ['next-step'];");
+    expect(shell).toContain("only: view === 'management' ? MANAGEMENT_COACH_MARKS : view === 'it' ? IT_COACH_ORDER : undefined,");
+    expect(read('components/analyze/AnalyzeBusiness.tsx')).not.toMatch(/useCoachMarks|CoachMarkNote/);
   });
 });

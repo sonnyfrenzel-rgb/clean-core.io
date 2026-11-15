@@ -52,7 +52,7 @@ export async function readPortfolioAccess(db: AdminDb, uid: string, isAdminClaim
 }
 
 export type PortfolioGate =
-  | { ok: true; uid: string; email: string; isAdmin: boolean; db: AdminDb; FieldValue: Awaited<ReturnType<typeof getAdminDb>>['FieldValue'] }
+  | { ok: true; uid: string; email: string; emailVerified: boolean; isAdmin: boolean; db: AdminDb; FieldValue: Awaited<ReturnType<typeof getAdminDb>>['FieldValue'] }
   | { ok: false; response: NextResponse };
 
 export interface PortfolioGateOptions {
@@ -111,8 +111,28 @@ export async function openPortfolioRoute(req: Request, opts: PortfolioGateOption
     ok: true,
     uid: decodedToken.uid,
     email: typeof decodedToken.email === 'string' ? decodedToken.email : '',
+    emailVerified: decodedToken.email_verified === true,
     isAdmin,
     db,
     FieldValue,
   };
 }
+
+/**
+ * Whether the account's address is confirmed, as project invitations require
+ * of an inviter: confirmed on the token, or `emailVerified: true` on the
+ * profile (written by the server only). An unreadable profile confirms nothing.
+ */
+export async function inviterAddressConfirmed(gate: Pick<Extract<PortfolioGate, { ok: true }>, 'uid' | 'emailVerified' | 'db'>): Promise<boolean> {
+  if (gate.emailVerified) return true;
+  try {
+    const profile = await gate.db.collection('users').doc(gate.uid).get();
+    return (profile.data() as { emailVerified?: unknown } | undefined)?.emailVerified === true;
+  } catch {
+    return false;
+  }
+}
+
+/** The answer to an inviter whose address is not confirmed. */
+export const INVITER_UNCONFIRMED_MESSAGE =
+  'Inviting a reader needs a confirmed email address. Confirm your address, sign in again, and then send the invitation.';

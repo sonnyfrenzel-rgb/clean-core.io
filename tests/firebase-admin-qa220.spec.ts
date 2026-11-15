@@ -177,6 +177,15 @@ test.describe('governance actions (f02bdb200067, a4c7686b9c1f)', () => {
     }
   });
 
+  test('the automatic-steps switch commits with its audit row', () => {
+    const body = fn('setOwnKeyAutoSteps');
+    expect(body).toContain("await auditEventRecord(db, uid, on ? 'BYOK_AUTO_STEPS_ON' : 'BYOK_AUTO_STEPS_OFF', uid)");
+    expect(body).toContain("tx.set(db.collection('audit_events').doc(), audit);");
+    expect(body.indexOf("tx.set(db.collection('audit_events')")).toBeGreaterThan(body.indexOf('return db.runTransaction('));
+    const route = fs.readFileSync(path.join(process.cwd(), 'app/api/secrets/gemini/auto-steps/route.ts'), 'utf8');
+    expect(route, 'the route logs the switch a second time, after the fact').not.toContain('logAuditEvent(');
+  });
+
   test('an S/4 grant leaves the access and the record of who granted it', async () => {
     const { db } = await getAdminDb();
     const target = uidOf('s4-target');

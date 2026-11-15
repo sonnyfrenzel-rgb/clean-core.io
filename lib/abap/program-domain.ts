@@ -80,6 +80,37 @@ const WIDER_VERBS: ReadonlyArray<[string, readonly string[]]> = [
 ];
 const NOUN_PHRASE = /^covers the /;
 
+/**
+ * 3.1.0 (concept "Business-Lesbarkeit" H8): the same purpose words in German, the language most customer programs are
+ * named in (`ZMM_RECHNUNGSPRUEFUNG`, `ZSD_LIEFERUNG_KONTROLLE`). Same rule: the verb from the program's name only.
+ */
+const GERMAN_VERBS: ReadonlyArray<[string, readonly string[]]> = [
+  ['checks', ['PRUEF', 'PRUEFEN', 'PRUEFUNG', 'KONTROLLE', 'KONTROLLIEREN', 'PLAUSI', 'VALIDIERUNG']],
+  ['compares', ['ABGLEICH', 'VERGLEICH', 'ABSTIMMUNG']],
+  ['monitors', ['UEBERWACHUNG']],
+  ['lists', ['LISTE', 'UEBERSICHT', 'ANZEIGE']],
+  ['calculates', ['BERECHNUNG', 'KALKULATION', 'ERMITTLUNG']],
+  ['evaluates', ['AUSWERTUNG', 'ANALYSE', 'STATISTIK']],
+  ['covers the approval of', ['GENEHMIGUNG', 'FREIGABE']],
+];
+
+/** 3.1.0: German name tokens of the business objects (`DOMAIN_OBJECTS`), by the same words. */
+const GERMAN_OBJECTS: Readonly<Record<string, readonly string[]>> = Object.freeze({
+  invoices: ['RECHNUNG', 'RECHNUNGEN'],
+  'purchase orders': ['BESTELLUNG', 'BESTELLUNGEN'],
+  'goods receipts': ['WARENEINGANG', 'WARENEINGAENGE', 'WE'],
+  'purchase requisitions': ['BANF', 'BANFEN'],
+  deliveries: ['LIEFERUNG', 'LIEFERUNGEN'],
+  payments: ['ZAHLUNG', 'ZAHLUNGEN'],
+  customers: ['KUNDE', 'KUNDEN', 'DEBITOR', 'DEBITOREN'],
+  suppliers: ['LIEFERANT', 'LIEFERANTEN', 'KREDITOR', 'KREDITOREN'],
+  materials: ['MATERIALIEN'],
+  stock: ['BESTAND', 'BESTAENDE'],
+  'cost centers': ['KOSTENSTELLE', 'KOSTENSTELLEN'],
+  'freight costs': ['FRACHT', 'FRACHTKOSTEN'],
+  prices: ['PREIS', 'PREISE'],
+});
+
 /** Objects a check is made *of*, weighed against the others: an invoice is checked against its order and receipt. */
 const CHECKED = ['supplier invoices', 'invoices', 'billing documents', 'deliveries', 'payments', 'goods receipts'];
 
@@ -99,6 +130,26 @@ export interface ProgramDomain {
 
 const tokensOf = (identifier: string): string[] => identifier.toUpperCase().split(/[_\-/~>=]+/).filter(Boolean);
 
+/** 3.1.0: the German purpose and object words a compound name can be made of (four letters at least). */
+const GERMAN_PARTS = [...new Set([...GERMAN_VERBS.flatMap(([, words]) => words), ...Object.values(GERMAN_OBJECTS).flat()])]
+  .filter((w) => w.length >= 4)
+  .sort((a, b) => b.length - a.length);
+
+/**
+ * A German compound name token split into its known words (`RECHNUNGSPRUEFUNG` → `RECHNUNG`, `PRUEFUNG`), with the
+ * linking `S` between them; null unless the whole token is known words — a part not on the lists is never guessed.
+ */
+function germanParts(token: string): string[] | null {
+  for (const word of GERMAN_PARTS) {
+    if (!token.startsWith(word)) continue;
+    const rest = token.slice(word.length);
+    if (rest === '') return [word];
+    const after = germanParts(rest) ?? (rest.startsWith('S') && rest.length > 1 ? germanParts(rest.slice(1)) : null);
+    if (after) return [word, ...after];
+  }
+  return null;
+}
+
 /** The business object a single name stands for — a called function, a table — or null. */
 export function domainObjectOf(name: string): string | null {
   const tokens = tokensOf(name);
@@ -114,6 +165,8 @@ function joinAnd(items: readonly string[]): string {
 export interface ProgramDomainOptions {
   /** From engine 3.0.21: the wider purpose words (`WIDER_VERBS`). The callers gate it; off by default. */
   wider?: boolean;
+  /** From engine 3.1.0: the German purpose words (`GERMAN_VERBS`, `GERMAN_OBJECTS`). The callers gate it; off by default. */
+  german?: boolean;
 }
 
 /** The purpose the names support, or null when they do not (no verb in the program's name, or no object). */
@@ -128,7 +181,12 @@ export function readProgramDomain(source: string, options: ProgramDomainOptions 
   const program = head ? /^\S+\s+([\w/]+)/.exec(head.text)?.[1] ?? null : null;
   if (!program || !head) return null;
   const nameTokens = tokensOf(program.replace(/^[ZY]_?/i, ''));
-  const verbs = options.wider ? [...VERBS, ...WIDER_VERBS] : VERBS;
+  // 3.1.0: a German name writes its words as one (`ZMM_RECHNUNGSPRUEFUNG`); its parts count beside it.
+  if (options.german) for (const t of [...nameTokens]) if ((germanParts(t)?.length ?? 0) > 1) nameTokens.push(...germanParts(t)!);
+  const verbs = [...VERBS, ...(options.wider ? WIDER_VERBS : []), ...(options.german ? GERMAN_VERBS : [])];
+  const domainObjects = options.german
+    ? DOMAIN_OBJECTS.map((o) => ({ word: o.word, tokens: [...o.tokens, ...(GERMAN_OBJECTS[o.word] ?? [])] }))
+    : DOMAIN_OBJECTS;
   const verb = verbs.find(([, words]) => nameTokens.some((t) => words.includes(t)))?.[0] ?? null;
   if (!verb) return null;
 
@@ -142,7 +200,7 @@ export function readProgramDomain(source: string, options: ProgramDomainOptions 
       ...[...s.text.matchAll(/'((?:[^']|'')*)'/g)].flatMap((m) => m[1].match(/[A-Za-z][\w-]*/g) ?? []),
     ];
     const tokens = new Set(words.flatMap(tokensOf));
-    for (const object of DOMAIN_OBJECTS) {
+    for (const object of domainObjects) {
       if (!object.tokens.some((t) => tokens.has(t))) continue;
       const lines = found.get(object.word) ?? [];
       if (!lines.includes(s.lineStart)) lines.push(s.lineStart);
@@ -177,7 +235,7 @@ export function readProgramDomain(source: string, options: ProgramDomainOptions 
   // A supplier invoice in the code makes the name's "invoice" one.
   const supplier = (found.get('supplier invoices')?.length ?? 0) > 0;
   if (supplier) found.delete('invoices');
-  const inName = [...new Set(DOMAIN_OBJECTS
+  const inName = [...new Set(domainObjects
     .filter((o) => nameTokens.some((t) => o.tokens.includes(t)))
     .map((o) => (o.word === 'invoices' && supplier ? 'supplier invoices' : o.word)))];
   const others = [...found.entries()]

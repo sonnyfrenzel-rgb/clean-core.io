@@ -170,7 +170,7 @@ test('the Analyze stage says "not generated" and shows the evidence instead of a
   const expectedReason: RegExp = availability.keyAvailable ? /switched off/i : /No Gemini key/i;
 
   await signIn(page);
-  await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
 
   const report = page.locator('[data-evidence-only-report]');
   await expect(report, 'a signed run with no narrative rendered nothing at all').toBeVisible({ timeout: 60000 });

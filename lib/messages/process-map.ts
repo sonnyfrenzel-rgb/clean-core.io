@@ -20,6 +20,19 @@ export const PROCESS_MAP_MESSAGES = {
   'map.plainNamesNote':
     'Names in plain language are read from the code without a model (Reconstructed). Technical names shows the names the code itself uses.',
   'map.businessNames': 'Business names',
+  // The AI names arriving on the map (roadmap 3.1.0 item 4, mockup states 1, 2, 3, 18)
+  'mapNaming.progress': 'Naming steps in plain language …',
+  'mapNaming.of': 'of',
+  'mapNaming.subSmall': 'Names change in place as they arrive. You can start the walk-through now.',
+  'mapNaming.subLarge': 'This program is larger, so naming takes up to 45 s. The map and the walk-through work now.',
+  'mapNaming.subLateBefore': 'Waiting for the names, at most',
+  'mapNaming.subLateAfter': 's. Then the steps keep their technical name.',
+  'mapNaming.ready': 'Names are ready.',
+  'mapNaming.keptOne': 'step kept its technical name (no pen mark).',
+  'mapNaming.keptMany': 'steps kept their technical name (no pen mark).',
+  'mapNaming.failed': 'The AI names could not be written this time. The steps keep their technical name.',
+  'mapNaming.timeout': 'The AI names took longer than 45 s. The steps keep their technical name for now.',
+  'mapNaming.waiting': 'Name on its way',
   'map.lanesProposed': 'Lanes proposed:',
   'map.stepsLabel': 'Steps.',
   'map.measuredOn': 'Measured and kept with this model on',
@@ -169,6 +182,31 @@ export const PROCESS_MAP_MESSAGES = {
 
 type ProcessMapKey = keyof typeof PROCESS_MAP_MESSAGES;
 const m = (key: ProcessMapKey): string => PROCESS_MAP_MESSAGES[key];
+
+/** "Naming steps in plain language … 13 of 25". */
+export function namingArrivalProgress(named: number, total: number): string {
+  return `${m('mapNaming.progress')} ${named} ${m('mapNaming.of')} ${total}`;
+}
+
+/** The line under the count while names arrive: what the reader can do, or the countdown to the ceiling. */
+export function namingArrivalWaitSub(large: boolean, secondsLeft: number | null): string {
+  if (secondsLeft !== null) return `${m('mapNaming.subLateBefore')} ${secondsLeft} ${m('mapNaming.subLateAfter')}`;
+  return m(large ? 'mapNaming.subLarge' : 'mapNaming.subSmall');
+}
+
+/** "Names are ready." and, when some kept the engine's name, how many. */
+export function namingArrivalReady(kept: number): string {
+  if (kept <= 0) return m('mapNaming.ready');
+  return `${m('mapNaming.ready')} ${kept} ${m(kept === 1 ? 'mapNaming.keptOne' : 'mapNaming.keptMany')}`;
+}
+
+export function namingArrivalFailed(): string {
+  return m('mapNaming.failed');
+}
+
+export function namingArrivalTimeout(): string {
+  return m('mapNaming.timeout');
+}
 
 /** "Measured and kept with this model on 2026-09-30." */
 export function mapMeasuredOn(date: string): string {

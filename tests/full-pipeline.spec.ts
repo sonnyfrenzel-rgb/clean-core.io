@@ -191,8 +191,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     }
     console.log('[CI DEBUG] Hard navigation to /dashboard committed. Waiting for Workspace h1...');
 
-    // Wait for the dashboard loading guard to resolve and the h1 "Workspace" to appear
-    await page.waitForSelector('h1:has-text("Workspace")', { timeout: 90000 });
+    // Wait for the dashboard loading guard to resolve and "My workspace" to appear —
+    // for an account with no project yet its first view (AB-14a), whose h1 is not "My workspace".
+    await page.waitForSelector('[data-cc-workspace] h1', { timeout: 90000 });
     console.log('Successfully logged in and reached /dashboard.');
 
     // --- STAGE 0.5: CREATE PROJECT ---
@@ -203,7 +204,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // from the Analyze stage's own upload on, so it checks that "New project"
     // is there and then starts from an empty project of this account.
     console.log('Creating a new E2E transformation project...');
-    await expect(page.locator('[data-workspace-new-project]').first()).toBeVisible({ timeout: 60000 });
+    // A new account's first view has the start built in (AB-14a); the list has "New project".
+    await expect(page.locator('[data-workspace-new-project], [data-home-start]').first()).toBeVisible({ timeout: 60000 });
 
     const { adminMergeDoc } = await import('./helpers/admin-seed');
     const projectId = `e2e-pipeline-${branchSuffix}-${Date.now()}`;
@@ -213,7 +215,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
       userId: ownerUid,
       createdAt: new Date(),
     });
-    await page.goto(`/project/${projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('input[type="file"]', { state: 'attached', timeout: 45000 });
     console.log('Project created. Navigated to analyze page.');
 
@@ -299,10 +301,11 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // A project's first run continues in the workspace with the first look
     // (owner 02.10.2026, roadmap 3.0.1); the report is read on the Analyze
     // tool, opened from the workspace's tools bar.
-    await page.waitForURL(new RegExp(`/project/${projectId}\\?first=1`), { timeout: 180000 });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 90000 });
-    await page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]').click({ timeout: 60000 });
-    await page.waitForURL(new RegExp(`/project/${projectId}/analyze`), { timeout: 60000 });
+    await page.waitForURL(new RegExp(`/project/${projectId}/analyze\\?first=1`), { timeout: 180000 });
+    // Since AB-2 the first run continues in Analyze, Business view (the map); the report is IT's, one view switch away.
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+    await page.locator('[data-stage-view-switch] [role="radio"]', { hasText: 'IT' }).click({ timeout: 60000 });
+    await page.waitForURL(new RegExp(`/project/${projectId}/analyze\\?.*view=it`), { timeout: 60000 });
     // The stage answers first since the tool-page rebuild (ADR-029, ADR-050).
     await expect(page.locator('[data-analysis-answer]')).toBeVisible({ timeout: 90000 });
     console.log('Stage 1 Complete: Analysis report parsed and rendered.');

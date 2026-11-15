@@ -14,7 +14,7 @@ import type { LegalBlock } from '@/lib/legal/markup';
 const LINK = 'font-semibold text-cc-brand-strong underline-offset-4 hover:text-cc-brand-deep hover:underline [overflow-wrap:anywhere]';
 
 const AUTOLINK =
-  /(https?:\/\/[^\s)„“"]+)|(info@clean-core\.io)|(?<![\w./@-])(clean-core\.io\/[a-z0-9/-]*[a-z0-9])|(?<=\()(\/(?:datenschutz|terms|how-it-works)(?:\/[a-z-]+)*)(?=\))/g;
+  /(https?:\/\/[^\s)„“"]+)|(info@clean-core\.io)|(?<![\w./@-])(clean-core\.io\/[a-z0-9/.-]*[a-z0-9])|(?<=\()(\/(?:datenschutz|terms|how-it-works)(?:\/[a-z-]+)*)(?=\))/g;
 
 function linkify(text: string, keyBase: string): ReactNode[] {
   const out: ReactNode[] = [];

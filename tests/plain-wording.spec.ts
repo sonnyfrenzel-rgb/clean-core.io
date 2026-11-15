@@ -64,8 +64,16 @@ function mapOf(source: string, file: string): ProcessMapModel {
 }
 const MODEL = mapOf(SOURCE, FILE);
 const GUIDE: WalkGuide = buildWalkGuide(SOURCE, MODEL, walkOrder(MODEL, null));
-const READING = readSource(SOURCE);
-const EXPLAINED = explainBusinessRules(SOURCE, READING.ruleSet, buildProcessFacts(SOURCE));
+/**
+ * The rules as the engine the answers were recorded against read them: before 3.1.0. Engine 3.1.0 draws more steps
+ * (`lib/abap/engine-reads-310-gate.ts`), so a rule's process elements and the order its sentences are offered in move;
+ * the recorded answer names its sentences by position, and against the 3.1.0 order 59 of them come back with another
+ * sentence's anchor and are dropped — as they should be: the digest moves with the engine sentences, and a 3.1.0
+ * project is asked again. 3.0.23 is the last release before the gate.
+ */
+const RECORDED_ENGINE = '3.0.23';
+const READING = readSource(SOURCE, RECORDED_ENGINE);
+const EXPLAINED = explainBusinessRules(SOURCE, READING.ruleSet, buildProcessFacts(SOURCE), RECORDED_ENGINE);
 const ITEMS: Record<PlainScope, PlainItem[]> = {
   walk: plainItemsOf(walkPlainSentences(GUIDE)),
   rules: plainItemsOf(rulePlainSentences(EXPLAINED)),
@@ -303,9 +311,10 @@ test.describe('on screen (server-free render)', () => {
   });
   test('a rule card shows the plain wording, the chip and the fold; without a record the engine sentences', async () => {
     const Flow = await load('components/workspace/RuleDecisionFlow.tsx');
-    const rules = editorRules(READING.ruleSet, plainWordingFor(SOURCE, READING.skeleton));
+    const rules = editorRules(READING.ruleSet, plainWordingFor(SOURCE, READING.skeleton, RECORDED_ENGINE));
     const view = { formatVersion: 1, revision: 1, baselineRevision: 1, subjects: [], entries: [], links: [] };
-    const base = { projectId: 'p1', source: SOURCE, reading: READING, rules, outcome: { ok: true, view }, view, owner: true, reload: () => {} };
+    // The reading's engine, as the product passes it (`engineVersionOfProject`): the explanation is read for it too.
+    const base = { projectId: 'p1', source: SOURCE, reading: READING, engineVersion: RECORDED_ENGINE, rules, outcome: { ok: true, view }, view, owner: true, reload: () => {} };
     const worded = renderToStaticMarkup(React.createElement(Flow, { ...base, plainWording: recordOf('rules') }));
     expect(worded).toContain('data-rule-worded="yes"');
     expect(worded).toContain('data-worded-engine=""');

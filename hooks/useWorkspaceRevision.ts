@@ -51,7 +51,10 @@ export function revisionStandPath(projectId: string): string {
  */
 export async function fetchRevisionStand(projectId: string): Promise<RevisionStand | null> {
   try {
-    const user = getAuth().currentUser;
+    // The session first (v3.1.0): asked on the page's first render, a check sent before it is restored had no token (401).
+    const auth = getAuth();
+    await auth.authStateReady?.();
+    const user = auth.currentUser;
     const headers: Record<string, string> = user
       ? { Authorization: `Bearer ${await user.getIdToken()}` }
       : {};

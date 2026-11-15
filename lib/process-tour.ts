@@ -44,6 +44,7 @@
  */
 import type { ProcessMapModel } from './process-map';
 import { readProcess } from './first-look';
+import { skeletonReadFor } from './abap/process-skeleton';
 import { processStory } from './process-story';
 import { programSummaryFactsOf } from './program-summary-facts';
 import { businessInShort, programSummary, withoutCodes, type SummaryLine } from './program-summary-text';
@@ -498,7 +499,8 @@ export function tourReadingOf(source: string, engineVersion: string | null = APP
     return null;
   }
   try {
-    const story = processStory(readProcess(source).skeleton, source, null, engineVersion);
+    const process = readProcess(source);
+    const story = processStory(skeletonReadFor(process.skeleton, process.facts, engineVersion), source, null, engineVersion);
     reading.story = story.steps.map((s) => ({ text: s.text, nodeId: s.nodeId, anchor: rangeOfLabel(s.anchor), checks: s.checks, stops: s.stops }));
   } catch {
     reading.story = [];

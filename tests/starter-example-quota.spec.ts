@@ -6,7 +6,7 @@ import { initializeApp as initAdmin, getApps as adminApps } from 'firebase-admin
 import { getFirestore as adminFirestore } from 'firebase-admin/firestore';
 import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { starterExampleIndex, fingerprintExampleSource } from '../lib/starter-example-fingerprints';
 import { starterExampleIsFree } from '../lib/run-quota-rule';
@@ -70,6 +70,12 @@ async function resetAccount(over: Record<string, unknown> = {}) {
     activatedAt: new Date(), transformationsUsed: 0, transformationsLimit: 5,
     termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(), ...over,
   });
+}
+
+/** Takes every project of the account off the list, so `/dashboard` shows a new account's first view (AB-14a). */
+async function clearProjects(): Promise<void> {
+  const snap = await db().collection('projects').where('userId', '==', uid).get();
+  await Promise.all(snap.docs.map((d) => d.ref.delete()));
 }
 
 let projectSeq = 0;
@@ -500,9 +506,58 @@ test.describe('the screen says what the click costs, before the click', () => {
     expect(starterExampleIsFree(null, 'Z_MATERIAL_STOCK_CALC')).toBe(true);
   });
 
+  test('the first view marks the example that ran, warns before it runs again, and starts a free one at once', async ({ page }) => {
+    // AB-14a: a new account's examples are on the first view, not in the
+    // gallery. "Free the first time" stands over all of them; the one this
+    // account already had says it uses a run, and asks before it does.
+    test.setTimeout(150 * 1000);
+    await clearProjects();
+    await resetAccount({ starterExamplesUsed: { [EXAMPLE.name]: true } });
+
+    await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3000, alsoGermanLabel: true });
+    await page.evaluate(() => window.stop()).catch(() => {});
+    await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 }).catch(async () => {
+      await page.evaluate(() => window.stop()).catch(() => {});
+      await page.waitForTimeout(1000);
+      await page.goto('/dashboard', { waitUntil: 'commit', timeout: 45000 });
+    });
+
+    const panel = page.locator('[data-home-first-view] [data-testid="starter-examples"]');
+    await expect(panel.getByRole('heading', { name: 'Try an example' })).toBeVisible({ timeout: 45000 });
+    await expect(panel.locator('[data-home-cost="examples"]')).toHaveText('Free the first time');
+    await expect(panel.getByTestId('starter-example-ran-before')).toHaveCount(1);
+    await expect(panel.locator(`[data-example-card="${EXAMPLE.name}"] [data-testid="starter-example-ran-before"]`)).toHaveText(/uses a run/i);
+
+    // No run is asked for while the warning stands: every run request from here on is counted.
+    const runRequests: string[] = [];
+    page.on('request', (r) => {
+      if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/runs/create') runRequests.push(r.url());
+    });
+    await panel.locator(`[data-example-start="${EXAMPLE.name}"]`).click();
+    const warning = panel.getByTestId('starter-example-rerun-warning');
+    await expect(warning).toBeVisible({ timeout: 15000 });
+    await expect(warning).toContainText(
+      'You ran this example before. Running it again uses 1 of your 5 free analysis runs once the analysis completes.',
+    );
+    await expect(page).toHaveURL(/\/dashboard/);
+    expect(runRequests, 'a run was requested while the rerun warning stood').toEqual([]);
+
+    await panel.locator('[data-example-start="Z_INVOICE_EXTRACTOR"]').click();
+    // Into the project's entry, Analyze in the Business view, as a first visit — and the start run signs there.
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 45000 });
+    const projectId = new URL(page.url()).pathname.split('/')[2];
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+    await expect
+      .poll(async () => (await adminGetDoc('projects', projectId))?.activeRunId ?? null, { timeout: 120000 })
+      .toBeTruthy();
+  });
+
   test('the dashboard warns before restarting an example, and does not start it', async ({ page }) => {
     test.setTimeout(150 * 1000);
     await resetAccount({ starterExamplesUsed: { [EXAMPLE.name]: true } });
+    // The gallery under the list: an account with a project (AB-14a — without
+    // one, the first view above stands in its place).
+    await newProject();
 
     await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3000, alsoGermanLabel: true });
     await page.evaluate(() => window.stop()).catch(() => {});
@@ -533,6 +588,10 @@ test.describe('the screen says what the click costs, before the click', () => {
     await expect(panel.getByTestId('starter-example-ran-before'), 'the ran-before badge says a further run costs one')
       .toHaveText(/uses a run/i);
 
+    const runRequests: string[] = [];
+    page.on('request', (r) => {
+      if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/runs/create') runRequests.push(r.url());
+    });
     await panel.locator('[data-example-start="Z_MATERIAL_STOCK_CALC"]').click();
 
     const warning = panel.getByTestId('starter-example-rerun-warning');
@@ -542,10 +601,11 @@ test.describe('the screen says what the click costs, before the click', () => {
     );
     // The warning is a stop, not a label: nothing was started by the click.
     await expect(page).toHaveURL(/\/dashboard/);
+    expect(runRequests, 'a run was requested while the rerun warning stood').toEqual([]);
 
     // A free one goes straight through, so the warning is not simply a broken card.
     await panel.locator('[data-example-start="Z_INVOICE_EXTRACTOR"]').click();
     // Into the workspace, with its first look — every project opens there (3.0.1).
-    await page.waitForURL(/\/project\/[^/?]+\?first=1/, { timeout: 45000 });
+    await page.waitForURL(/\/project\/[^/?]+\/analyze\?first=1/, { timeout: 45000 });
   });
 });

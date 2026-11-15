@@ -1,3 +1,5 @@
+import type { CustomerTexts } from '@/lib/abap/customer-texts';
+import { aiModelWords, UNRECORDED_AI } from '@/lib/ai-marking';
 import { readCallGraph, type CallGraphReport } from '@/lib/abap/call-graph';
 import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import { deriveBusinessRules, type BusinessRuleSet } from '@/lib/abap/business-rule-set';
@@ -95,6 +97,8 @@ export interface ProcessDocumentInput {
   proposals?: ReadonlyArray<{ text: string; anchors: ReadonlyArray<{ lineStart: number; lineEnd: number }>; contradicts?: boolean }> | null;
   /** The engine the active run was made with (`engineVersionOfProject`); left out, the current engine. */
   engineVersion?: string | null;
+  /** 3.1.0 (H5b): the project's customer texts, for the documentation's own reading (`buildProcessDocumentation`). */
+  customerTexts?: CustomerTexts | null;
 }
 
 /* ------------------------------------------------------------------ helpers */
@@ -341,13 +345,13 @@ function plainExpressionOf(expression: string, ctx: PlainCtx): string | null {
 export function buildProcessDocument(input: ProcessDocumentInput): ProcessDocument {
   const { source, map } = input;
   const lines = source.replace(/\r\n?/g, '\n').split('\n');
-  const engine = input.engine ?? buildProcessDocumentation({ source, map, engineVersion: input.engineVersion });
+  const engine = input.engine ?? buildProcessDocumentation({ source, map, engineVersion: input.engineVersion, customerTexts: input.customerTexts ?? null });
   const nav = buildNavigation(map);
   const calls = readCallGraph(source);
   const tables = readTableDependencies(source);
   const allSites = objectSites(tables, calls);
   const sites = sitesByElement(map, nav, allSites, calls);
-  const skeleton: ProcessSkeleton = buildProcessSkeleton(source);
+  const skeleton: ProcessSkeleton = buildProcessSkeleton(source, { engineVersion: input.engineVersion });
   let ruleSet: BusinessRuleSet | null = null;
   try {
     ruleSet = deriveBusinessRules(source, input.engineVersion);
@@ -1656,7 +1660,8 @@ export function technicalTrace(engine: ProcessDocumentation, ctx: TraceContext):
   ];
   const lanes: PdText[] = [
     ...engine.lanes.map((l) => ({ text: `${l.name || '(program)'} — ${l.kind}${l.basis.length ? `, from ${l.basis.join(', ')}` : ''}.`, anchors: [copy(l.anchor)] })),
-    ...engine.proposedLanes.filter((l) => l.anchor).map((l) => ({ text: `${l.name}${l.authorityObject ? ` (${l.authorityObject})` : ''} — AI-generated.`, anchors: [copy(l.anchor!)] })),
+    // A role lane the naming stage proposed carries the provider and the model its receipt recorded, as the names do.
+    ...engine.proposedLanes.filter((l) => l.anchor).map((l) => ({ text: `${l.name}${l.authorityObject ? ` (${l.authorityObject})` : ''} — AI-generated (${aiModelWords(engine.naming.origin ?? UNRECORDED_AI)}).`, anchors: [copy(l.anchor!)] })),
   ];
   return { elements, groups: ordered, merged, luw, lanes };
 }

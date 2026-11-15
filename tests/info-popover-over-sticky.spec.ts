@@ -134,7 +134,8 @@ async function expectOverBar(page: Page, panel: string, bar: string) {
 
 async function openDemo(page: Page, stage: string) {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto(`/demo/${stage}`, { waitUntil: 'domcontentloaded' });
+  // The demo's Analyze score page is its IT view since v3.1.0 (Business is the map page, AB-2, O10).
+  await page.goto(stage === 'analyze' ? '/demo/analyze?view=it' : `/demo/${stage}`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator(SHELL_BAR).first()).toBeVisible({ timeout: 120_000 });
   await expect(page.locator('[data-demo-ready="true"]').first()).toBeAttached({ timeout: 120_000 });
 }

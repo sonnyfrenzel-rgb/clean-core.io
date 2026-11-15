@@ -86,7 +86,7 @@ test.describe('a PCE project shows the core result on Analyze, Transformation an
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInThroughForm(page, acct);
-    await page.goto(`/project/${acct.projectId}/analyze`);
+    await page.goto(`/project/${acct.projectId}/analyze?view=it`);
 
     const findings = page.locator('[data-analysis-findings]');
     await expect(findings).toBeVisible({ timeout: 60000 });

@@ -42,9 +42,12 @@ function exampleFiles(): string[] {
     .sort();
 }
 
-function skeletonOf(file: string) {
-  return buildProcessSkeleton(readFileSync(pinnedExamplePath(file), 'utf8'));
+function skeletonOf(file: string, engineVersion?: string) {
+  return buildProcessSkeleton(readFileSync(pinnedExamplePath(file), 'utf8'), engineVersion === undefined ? {} : { engineVersion });
 }
+
+/** The last engine before the 3.1.0 readings (`ENGINE_READS_310_FROM`): a run it signed keeps its map. */
+const BEFORE_310 = '3.0.23';
 
 /**
  * Every `SkeletonNodeKind` of 2.3, and the kind the comparability table decides
@@ -86,7 +89,7 @@ function comparable(node: { id: string; kind: SkeletonNodeKind; label?: string; 
 }
 
 /** Every element of the eight examples, with its verdict. */
-function allVerdicts() {
+function allVerdicts(engineVersion?: string) {
   const rows: Array<{
     file: string;
     id: string;
@@ -97,7 +100,7 @@ function allVerdicts() {
     reason: string;
   }> = [];
   for (const file of exampleFiles()) {
-    const skeleton = skeletonOf(file);
+    const skeleton = skeletonOf(file, engineVersion);
     const verdicts = classifyElements(skeleton.nodes.map(comparable), skeleton.edges);
     for (const node of skeleton.nodes) {
       const verdict = verdicts.get(node.id)!;
@@ -109,7 +112,9 @@ function allVerdicts() {
 
 test.describe('7.8 / §16 V6 — comparability per element', () => {
   test('the shipped examples are classified, and the counts are pinned', () => {
-    const rows = allVerdicts();
+    // The history below is the reading of every engine before 3.1.0, pinned against the last one; this release's
+    // counts follow at the end of the test.
+    const rows = allVerdicts(BEFORE_310);
     expect(exampleFiles()).toHaveLength(10);
     expect(rows.length).toBeGreaterThan(200);
 
@@ -219,6 +224,29 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     expect(byKind['output']).toEqual({ structural: 28 });
     expect(byKind['error-boundary']).toEqual({ technical: 25 });
 
+    // Engine 3.1.0, this release: **+18 `structural`** and **+18 `business-comparable`**, nothing reclassified and
+    // nothing taken away. Structural: 17 `LOOP AT` levels begin at a start event on their `LOOP` line (022c9a3a —
+    // 9 in the 1.000-line example, 2 in STOCK, 1 each in BP_SYNC, EXPENSE, INVOICE, SALES, the freight check and the
+    // key-user example) and PO's `REQUEST_APPROVAL` plane one start. Business-comparable: 18 tasks — 10 in the
+    // 1.000-line example (seven `ADD_LOG` calls that are an arm's outcome, 3bbe6f27; three flag steps, 87415241), 4
+    // flag steps in PO and 4 in the freight check — while PO's two `REQUEST_APPROVAL` call sites move within the
+    // class, `send-task` → `sub-process`. Gateways, ends, error ends, data objects and boundary events do not move.
+    const now: Record<string, number> = {};
+    const nowByKind: Record<string, Record<string, number>> = {};
+    for (const row of allVerdicts()) {
+      now[row.comparability] = (now[row.comparability] ?? 0) + 1;
+      nowByKind[row.kind] = nowByKind[row.kind] ?? {};
+      nowByKind[row.kind][row.comparability] = (nowByKind[row.kind][row.comparability] ?? 0) + 1;
+    }
+    expect(now).toEqual({ structural: 197, technical: 125, 'business-comparable': 115, unknown: 29 });
+    for (const kind of ['gateway', 'end', 'end-error', 'output', 'error-boundary']) {
+      expect(nowByKind[kind], kind).toEqual(byKind[kind]);
+    }
+    expect(nowByKind['start']).toEqual({ structural: byKind['start'].structural + 18 });
+    expect(nowByKind['task']).toEqual({ ...byKind['task'], 'business-comparable': (byKind['task']['business-comparable'] ?? 0) + 18 });
+    expect(nowByKind['sub-process']).toEqual({ 'business-comparable': byKind['sub-process']['business-comparable'] + 2 });
+    expect(nowByKind['send-task']).toEqual({ 'business-comparable': byKind['send-task']['business-comparable'] - 2 });
+
     // Every class is actually reached — a table that only ever says one thing
     // would pass every assertion below without deciding anything.
     expect(byClass['business-comparable']).toBeGreaterThan(0);
@@ -304,8 +332,11 @@ test.describe('7.8 / §16 V6 — comparability per element', () => {
     // `CALL FUNCTION … EXCEPTIONS` that already carried a boundary event, and
     // the two of them are now one element. 114 since 2.17 (b) — nine loop-body
     // regions, each with an end event of its own. 124 since ADR-054 — nine
-    // plane starts and one early end.
-    expect(skeleton.nodes.length).toBe(124);
+    // plane starts and one early end. 143 with engine 3.1.0 — nine loop-level
+    // starts, seven helper calls and three flag steps, no end among them; a run
+    // signed before 3.1.0 keeps 124.
+    expect(skeletonOf('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap', BEFORE_310).nodes.length).toBe(124);
+    expect(skeleton.nodes.length).toBe(143);
     const verdicts = classifyElements(skeleton.nodes.map(comparable), skeleton.edges);
     for (const node of ends) {
       expect(verdicts.get(node.id)!.mayCarryStandardCandidate).toBe(false);

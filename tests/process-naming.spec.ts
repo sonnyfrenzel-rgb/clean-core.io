@@ -81,7 +81,15 @@ const PROBE = [
   "  UPDATE ekko SET frgke = 'B' WHERE ebeln = lv_ebeln.",
 ].join('\n');
 
-const context = () => namingContextOf(PROBE);
+/**
+ * The mechanism below (what is dropped, under which rule, what the map gets) is read on the engine of the last
+ * release before 3.1.0 — the reading a run signed by 3.0.23 keeps. From 3.1.0 the context also carries the engine's
+ * facts (roadmap 3.1.0 item 1, `namingFactsApply`) and every name is additionally checked against them
+ * (`not-in-facts`): the hand-written names here would then all go under that one rule and hide the rule each test is
+ * about. The facts reading has its own specs: `tests/naming-facts-310.spec.ts`, `tests/naming-facts-starters-310.spec.ts`.
+ */
+const BEFORE_310 = '3.0.23';
+const context = () => namingContextOf(PROBE, { engineVersion: BEFORE_310 });
 
 /**
  * 3.0.21 (owner decision 06.11.2026): the naming is paused for a reading
@@ -92,7 +100,7 @@ const context = () => namingContextOf(PROBE);
  */
 const withFacts = (ctx: NamingContext): NamingContext => ({ ...ctx, facts: new Map() }) as NamingContext;
 /** A reading that hands the model nothing but the skeleton — what every context of this build is. */
-const withoutFacts = () => namingContextFrom(buildProcessFacts(PROBE));
+const withoutFacts = () => namingContextFrom(buildProcessFacts(PROBE), BEFORE_310);
 
 /** The gateway in CHECK_ACCESS, the CASE in DECIDE, the write under it, the unanchored end. */
 function ids(ctx: NamingContext) {
@@ -173,9 +181,20 @@ test.describe('the prompt carries ids, kinds, technical names and conditions —
     // element. The prompt still shows every node the skeleton has — 124 since
     // ADR-054, with a start event inside each of the nine routine planes and
     // five early ends, all of them nodes the naming may name like any other.
-    expect(ctx.skeleton.nodes.length).toBe(124);
+    // 129 from engine 3.1.0 (this build): an arm that only sets a flag a later
+    // decision reads is a step (`gv_emergency`, `gv_skip_limit`, twice
+    // `gv_approved`), and REQUEST_APPROVAL is a sub-process with its own start
+    // instead of two send tasks (CHANGELOG v3.1.0, "Process map: an arm that only
+    // sets a flag ..."; `engineReads310Apply`). A run signed before keeps its 124.
+    expect(ctx.skeleton.nodes.length).toBe(129);
     for (const node of ctx.skeleton.nodes) {
       expect(prompt, `node ${node.id} is missing from the prompt`).toContain(`${node.id} | ${node.kind} | ${node.label}`);
+    }
+    const before = namingContextOf(source, { engineVersion: BEFORE_310 });
+    expect(before.skeleton.nodes.length).toBe(124);
+    const beforePrompt = buildNamingPrompt(before);
+    for (const node of before.skeleton.nodes) {
+      expect(beforePrompt, `node ${node.id} is missing from the 3.0.23 prompt`).toContain(`${node.id} | ${node.kind} | ${node.label}`);
     }
     // The one AUTHORITY-CHECK of the mockup's case, by reference, object and field ids.
     expect(ctx.authorityChecks).toEqual([
@@ -204,6 +223,13 @@ test.describe('the prompt carries ids, kinds, technical names and conditions —
     // `IF sy-subrc <> 0` cannot be named without knowing which routine asks it.
     const heading = lines.slice(0, at).reverse().find((l) => l.startsWith('Part: '));
     expect(heading).toBe('Part: FORM DECIDE');
+    // This build (engine 3.1.0) hands the engine's facts over on the same line, with the id the answer must cite
+    // (roadmap 3.1.0 item 1, `namingFactsApply`); the conditions stay as they were.
+    const now = namingContextOf(PROBE);
+    const nowLines = buildNamingPrompt(now).split('\n');
+    expect(nowLines.find((l) => l.startsWith(`${ids(now).docType} |`))).toBe(
+      `${ids(now).docType} | gateway | gs_eban-bsart | conditions: 'NB' ; 'FO' | facts: [f14] engine: Document type?`,
+    );
   });
 
   test('an AUTHORITY-CHECK in a routine nothing reaches is not offered as the basis of a lane', () => {
@@ -546,7 +572,7 @@ test.describe('what the map gets', () => {
     const record = factsRecordFor(ctx, validated);
 
     // One more statement at the top renumbers every node after it.
-    const edited = namingContextOf(PROBE.replace('START-OF-SELECTION.', 'START-OF-SELECTION.\n  CLEAR lv_secret.'));
+    const edited = namingContextOf(PROBE.replace('START-OF-SELECTION.', 'START-OF-SELECTION.\n  CLEAR lv_secret.'), { engineVersion: BEFORE_310 });
     expect(edited.digest).not.toBe(ctx.digest);
     const view = applyNaming(edited, record);
     expect(view.state).toBe('stale');

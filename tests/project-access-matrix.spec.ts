@@ -382,6 +382,27 @@ const CASES: RouteCase[] = [
     readerAdmitted: false,
   },
   {
+    key: 'app/api/projects/[projectId]/customer-texts/route.ts#GET',
+    what: "the customer's own dictionary texts the Business view names the process with",
+    method: 'GET',
+    path: (p) => `/api/projects/${p}/customer-texts`,
+    refusal: 404,
+    // Read by membership, as the process naming is; none stored on this fixture: `{ texts: null }`.
+    owner: [200],
+    readerAdmitted: true,
+  },
+  {
+    key: 'app/api/projects/[projectId]/customer-texts/route.ts#POST',
+    what: 'storing the dictionary texts the import read from the upload',
+    method: 'POST',
+    path: (p) => `/api/projects/${p}/customer-texts`,
+    body: {},
+    refusal: 404,
+    // The owner's alone; an empty body is not texts, so the owner gets past the gate and stores nothing.
+    owner: [400],
+    readerAdmitted: false,
+  },
+  {
     key: 'app/api/projects/[projectId]/findings/route.ts#GET',
     what: 'the IT view\'s findings — derived from the customer\'s source',
     method: 'GET',
@@ -862,6 +883,8 @@ test('403-vs-404: what a refusal tells a stranger about a project they cannot se
       'app/api/projects/[projectId]/contract/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/repair-drafts/route.ts#POST → 404 vs 404',
       'app/api/projects/[projectId]/decision/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/customer-texts/route.ts#GET → 404 vs 404',
+      'app/api/projects/[projectId]/customer-texts/route.ts#POST → 404 vs 404',
     ].sort(),
   );
   expect(oracle.sort(), 'a route told a stranger whether the project exists').toEqual([]);

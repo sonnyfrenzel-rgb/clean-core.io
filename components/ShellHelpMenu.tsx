@@ -47,7 +47,9 @@ import CcIconButton from '@/components/cc/IconButton';
  * the logo, the path, the quota and the account, and a fifth element pushed it
  * past the screen. The assistant is the floating button and in the account
  * menu there, and a phone has no keyboard to list shortcuts for; a tablet with
- * one still gets `?`.
+ * one still gets `?`. From `sm` to `lg` it is the "?" alone, square, with its
+ * word as the accessible name and the tooltip (owner decision 13.11.2026,
+ * ADR-115): at 768 px the word took the room the project's name needed.
  */
 
 /**
@@ -325,13 +327,22 @@ export default function ShellHelpMenu({
         ref={triggerRef}
         {...triggerProps}
         data-help-menu-trigger=""
-        className={cn(SHELL_TRIGGER, CC_BUTTON_DENSITY_CLASSES.compact, 'hidden pr-2 sm:inline-flex')}
+        title={inProject ? 'Ask this case' : 'Help'}
+        className={cn(
+          SHELL_TRIGGER,
+          CC_BUTTON_DENSITY_CLASSES.compact,
+          'hidden pr-2 sm:inline-flex',
+          // Below lg the icon alone, square, 44 px on a touch screen like the
+          // other controls of the bar (owner decision 13.11.2026, ADR-115).
+          'max-lg:w-8 max-lg:px-0 max-lg:pr-0 max-lg:pointer-coarse:w-11',
+        )}
       >
-        {/* The visible words are the accessible name: no `aria-label` that
-            would say something else than the button does (WCAG 2.5.3). */}
+        {/* The words are the accessible name at every width: no `aria-label`
+            that would say something else than the button does (WCAG 2.5.3).
+            Below lg they are read but not drawn; the title is the tooltip. */}
         <CircleHelp size={16} aria-hidden={true} />
-        {inProject ? 'Ask this case' : 'Help'}
-        <ChevronDown size={14} aria-hidden={true} className="text-cc-ink-muted" />
+        <span data-help-menu-word="" className="max-lg:sr-only">{inProject ? 'Ask this case' : 'Help'}</span>
+        <ChevronDown size={14} aria-hidden={true} className="text-cc-ink-muted max-lg:hidden" />
       </button>
 
       {menuOpen && (

@@ -68,9 +68,12 @@ test('in the tour: said as the demo\'s, nothing to answer', async () => {
 });
 
 test('the demo shows it in the Business view, above the map, and it reaches nothing that stores or calls a model', () => {
-  const shell = read('components/demo/DemoWorkspaceShell.tsx');
-  expect(shell.indexOf('<DemoWalkThrough')).toBeGreaterThan(-1);
-  expect(shell.indexOf('<DemoWalkThrough')).toBeLessThan(shell.indexOf('{mapCard}'));
+  // The demo's Business view is its Analyze page since v3.1.0 (AB-2, O10); the invitation above the map opens it.
+  const business = read('components/demo/DemoAnalyzeBusiness.tsx');
+  expect(business.indexOf('<DemoWalkThrough')).toBeGreaterThan(-1);
+  expect(business.indexOf('<DemoWalkThrough')).toBeLessThan(business.indexOf('<ProcessMap'));
+  expect(business).toContain('open={walkOpen} onOpenChange={setWalkOpen} entry={false}');
+  expect(read('components/demo/DemoWorkspaceShell.tsx')).not.toContain('<DemoWalkThrough');
   const demo = read('components/demo/DemoWalkThrough.tsx');
   expect(demo).not.toMatch(/fetch\(|-client'|gemini|usePlainWording|process-states-client|firebase/);
   expect(demo).toContain('demo={true}');

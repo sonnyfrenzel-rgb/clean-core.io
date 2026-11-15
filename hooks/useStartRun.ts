@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { getAuth } from '@/lib/firebase';
 import { declaredTargetOf } from '@/lib/assessment-target';
 import { signEngineRun, START_NARRATIVE_CEILING_MS } from '@/lib/engine-run';
@@ -29,17 +29,17 @@ import type { Project } from '@/lib/types';
  *   - `failed`  — the route refused or the request failed, with its sentence.
  *
  * **At most one start per project and page view.** The automatic start is
- * asked for by the first look (`?first=1`, first visit), and React may mount
+ * asked for by Analyze, Business (`?first=1`, first visit), and React may mount
  * twice in development; a second request would be a second run — for a
  * shipped example after its free first one, a charged run. The guard is a
  * module set, so a remount cannot start another; a reload is a new page and
- * the first look is then marked seen, so it does not start automatically
+ * the first visit is then marked seen, so it does not start automatically
  * again (the page offers the manual start instead).
  *
  * **With the model on** (owner decision 03.10.2026): when the account's
  * analysis stage is on and a key is available, the start first asks the model
  * for the narrative — the same analysis Analyze runs (`lib/start-narrative.ts`)
- * — while the first look builds up, and signs that one run with it. The wait
+ * — while the map's place says so (`StartNarrativeWait`), and signs that one run with it. The wait
  * ends at `START_NARRATIVE_CEILING_MS`, on a refusal or failure of the call, or
  * when the reader goes on without it (`continueWithout`); the run is then
  * signed with the engine's reading alone and `narrativeMissing` says why. Each
@@ -81,6 +81,39 @@ export interface StartRun {
 }
 
 const started = new Set<string>();
+const inFlightListeners = new Set<() => void>();
+
+/** Marks a project's start run as in flight or ended, and tells every view that listens. */
+function setStarted(projectId: string, on: boolean): void {
+  if (on) started.add(projectId);
+  else started.delete(projectId);
+  for (const listener of inFlightListeners) listener();
+}
+
+/** Whether a start run of this project is with the server in this page view (the module guard above). */
+export function startRunInFlight(projectId: string): boolean {
+  return started.has(projectId);
+}
+
+function subscribeInFlight(listener: () => void): () => void {
+  inFlightListeners.add(listener);
+  return () => {
+    inFlightListeners.delete(listener);
+  };
+}
+
+/**
+ * The same, as a hook that renders again when the run is signed or fails — for
+ * the views that do not hold the start themselves (Analyze IT and Management,
+ * Analyze, Business remounted on the way back), so none offers a second start.
+ */
+export function useStartRunInFlight(projectId: string): boolean {
+  return useSyncExternalStore(
+    subscribeInFlight,
+    () => started.has(projectId),
+    () => false,
+  );
+}
 
 /** The file name the run records: the run's or example's file, the upload's, or one made from the project name. */
 function runFileName(project: Project, projectId: string): string {
@@ -128,10 +161,17 @@ export function useStartRun({
   // one, the server's default (lib/target-edition.ts) — never a silent Private.
   const deployment = targetEditionOf(project?.s4Deployment);
   const startable = !!project && owner && source.trim().length > 0 && !hasRun;
+  const inFlight = useStartRunInFlight(projectId);
+  // When a start held by an earlier mount ends, read the project again: signed, it now carries its run.
+  const wasInFlight = useRef(inFlight);
+  useEffect(() => {
+    if (wasInFlight.current && !inFlight && phase === 'idle') void onSignedRef.current();
+    wasInFlight.current = inFlight;
+  }, [inFlight, phase]);
 
   const start = useCallback(() => {
     if (!project || !startable || started.has(projectId)) return;
-    started.add(projectId);
+    setStarted(projectId, true);
     setPhase('running');
     setMessage(null);
     setNarrativeMissing(null);
@@ -184,11 +224,11 @@ export function useStartRun({
         // The project now carries its run, so `startable` holds the next click
         // back; the module guard would only make a later start, in the same
         // page view, do nothing without a word.
-        started.delete(projectId);
+        setStarted(projectId, false);
         setPhase('signed');
       } catch (err) {
         // A failed start may be tried again by hand.
-        started.delete(projectId);
+        setStarted(projectId, false);
         setMessage(err instanceof Error && err.message ? err.message : 'The run could not be signed.');
         setPhase('failed');
       } finally {
@@ -206,8 +246,8 @@ export function useStartRun({
   }, []);
 
   // The automatic start waits for the account's model answer, so a start with
-  // the model off never asks it, and one with the model on asks it from the
-  // first moment of the build-up.
+  // the model off never asks it, and one with the model on asks it as soon as
+  // the page is ready.
   useEffect(() => {
     if (auto && startable && phase === 'idle' && !model.loading) start();
   }, [auto, startable, phase, start, model.loading]);
@@ -215,10 +255,14 @@ export function useStartRun({
   // An automatic start that only waits for the model answer is already decided:
   // it reads as running, so "Run the analysis" never flashes before it begins.
   const autoPending = auto && startable && phase === 'idle';
+  // A start of this project made by an earlier mount of this page (the reader
+  // switched to IT or Management and back) is still with the server: this one
+  // reads as running too, never as a start button the guard would then ignore.
+  const heldElsewhere = phase === 'idle' && inFlight;
   const visible: StartRunPhase =
     phase === 'running' || phase === 'failed' || phase === 'signed'
       ? phase
-      : autoPending
+      : autoPending || heldElsewhere
         ? 'running'
         : startable
           ? 'ready'

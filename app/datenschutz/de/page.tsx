@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { withTwitterCard } from '@/lib/page-metadata';
 import LegalPage from '@/components/legal/LegalPage';
 import { legalDocumentBlocks } from '@/lib/legal/documents';
+import { PublishedPrivacyVersions } from '@/components/legal/ArchivedPrivacyPage';
 
 /**
  * The privacy policy, German version — Fassung 1.1 (3.0.21). It prevails if
@@ -44,6 +45,7 @@ export default function DatenschutzDePage() {
       blocks={legalDocumentBlocks('privacy', 'de')}
       switchHref="/datenschutz"
       switchDataAttr="data-privacy-language-switch"
+      afterText={<PublishedPrivacyVersions lang="de" />}
     />
   );
 }

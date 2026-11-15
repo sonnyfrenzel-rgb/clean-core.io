@@ -31,7 +31,7 @@
  */
 import { readStatements, type AbapStatement } from './abap/statement-reader';
 import { readBlocks, type BlockStructure } from './abap/block-structure';
-import { conditionToQuestion, humaniseField, plainContext, type PlainContext } from './abap/plain-language';
+import { conditionToPhrase, conditionToQuestion, humaniseField, plainContext, type PlainContext } from './abap/plain-language';
 import { isDemoSubject, type DemoSwitches } from './abap/demo-switches';
 import { isKnownField, tableTerm } from './abap/business-glossary';
 import type { RuleExplanation, RuleSetExplanation } from './abap/business-rule-set-explain';
@@ -45,9 +45,13 @@ export interface FirstLookReading {
   demo: DemoSwitches | null;
 }
 
-export function firstLookReadingOf(source: string, demo: DemoSwitches | null): FirstLookReading {
+/**
+ * `engineVersion`: the engine the words are read for (`engineVersionOfProject`); this release when absent. A run of
+ * an engine before 3.1.0 keeps that engine's vocabulary (`ENGINE_READS_310_FROM`), as the labels beside it do.
+ */
+export function firstLookReadingOf(source: string, demo: DemoSwitches | null, engineVersion: string | null = APP_VERSION): FirstLookReading {
   const statements = readStatements(source);
-  return { ctx: plainContext(source), statements, structure: readBlocks(statements), demo };
+  return { ctx: plainContext(source, { engineVersion }), statements, structure: readBlocks(statements), demo };
 }
 
 const statementAt = (r: FirstLookReading, line: number): number =>
@@ -171,7 +175,11 @@ export function chainWordsAt(r: FirstLookReading, line: number): string | null {
         const value = r.ctx.constants.get(m.toLowerCase());
         return value !== undefined && !/^\d+$/.test(value) ? `'${value}'` : m;
       });
-      return conditionToQuestion(condition, r.ctx, arm.lineStart).question.replace(/\?\s*$/, '');
+      // 3.1.0 asks a negative question the positive way round (E1): its Yes is then where the arm's condition is
+      // false. An arm is listed by what holds when it runs, so a turned question is said as the condition itself.
+      const q = conditionToQuestion(condition, r.ctx, arm.lineStart);
+      if (r.ctx.reads310 && q.trueBranch !== 'Yes') return conditionToPhrase(condition, r.ctx, arm.lineStart);
+      return q.question.replace(/\?\s*$/, '');
     })
     .filter((t): t is string => !!t && !/\b(?:sy-\w+|abap_true|abap_false|[gl][vst]_\w+)\b/i.test(t));
   if (said.length === 0) return null;

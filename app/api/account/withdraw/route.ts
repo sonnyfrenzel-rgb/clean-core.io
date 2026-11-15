@@ -21,8 +21,11 @@ import { withdrawalReceiptPendingMessage } from '@/lib/messages/model-consent';
  * (`lib/withdrawal-queue.ts`) and the deletion follows it: answered 202,
  * `receipt-queued`, with the sentence the person reads — never "try again".
  *
- * The address is the verified token's, never a value out of a request body;
- * the route reads no body.
+ * The address is the account's sign-in address from the verified ID token,
+ * never a value out of a request body; the route reads no body. It is bound to
+ * the account, not proven to be its holder's — a password sign-up does not confirm
+ * addresses, and a withdrawal must not depend on a confirmation the account
+ * was never asked for.
  */
 
 const RECENT_LOGIN_MESSAGE =

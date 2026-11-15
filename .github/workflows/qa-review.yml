@@ -26,6 +26,11 @@ on:
         description: 'Head commit id (optional — default: tip of the dispatched ref)'
         required: false
         type: string
+      backlog:
+        description: 'Backlog slice: up to 45 batches under a $4 cap, for one range too large for ten (owner decision 14.11.2026)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -41,8 +46,12 @@ permissions:
 # its group for. Releases that overlap are therefore reviewed side by side; the
 # cost is that the later one may carry over the findings of the review before the
 # one still running. A main run never shares a group with a dev run.
+#
+# A manual backlog slice has a group of its own too: a dev push would otherwise cancel
+# it, and the push's own review does not continue the slice (it runs without the
+# backlog budget), so the slice would have to be dispatched again.
 concurrency:
-  group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}
+  group: ${{ github.ref_name == 'main' && format('qa-review-main-{0}', github.run_id) || (github.event_name == 'workflow_dispatch' && inputs.backlog) && format('qa-review-backlog-{0}', github.run_id) || format('qa-review-{0}', github.ref_name) }}
   cancel-in-progress: ${{ github.ref_name != 'main' }}
 
 jobs:
@@ -52,7 +61,8 @@ jobs:
     # `inputs.head` only names the range to review; it is never checked out.
     if: vars.QA_REVIEW_ENABLED != 'false' && (github.ref_name == 'dev' || (github.event_name == 'workflow_dispatch' && github.ref_name == 'main'))
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    # A backlog slice reads up to 45 batches; the first one (35 batches) was cancelled at 30 minutes.
+    timeout-minutes: ${{ github.event_name == 'workflow_dispatch' && inputs.backlog && 120 || 30 }}
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
@@ -101,6 +111,8 @@ jobs:
           # Only a manual run passes a base. A push starts from the last reviewed checkpoint, or everything not yet on main.
           QA_BASE_OVERRIDE: ${{ inputs.base }}
           QA_HEAD: ${{ inputs.head || github.sha }}
+          # Only a manual slice can ask for the backlog budget (scripts/qa/lib/config.mjs, BACKLOG_BUDGET).
+          QA_BACKLOG_SLICE: ${{ github.event_name == 'workflow_dispatch' && inputs.backlog && '1' || '' }}
         run: node scripts/qa/review.mjs
 
       - name: Upload sealed report

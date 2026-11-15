@@ -155,14 +155,118 @@ test.describe('three baskets, read off the code (owner decision 21.10.2026)', ()
       '  ENDIF.',
       '',
     ].join('\n');
+    // Engine 3.1.0 (85e6d0e1, ea4dbc46): a field a `SELECT` fills whole is read from outside, so a status the program
+    // also sets is no longer its own marker there. The name-alike rule is read where it still decides: on the source
+    // as written by a run signed before 3.1.0, and with 3.1.0 on the same source whose document the program only
+    // clears, never reads.
+    const readers: Array<[string | undefined, string]> = [
+      ['3.0.23', source],
+      [undefined, source.replace('  SELECT SINGLE * FROM vbak INTO ls_document.', '  CLEAR ls_document.')],
+    ];
+    for (const [engine, text] of readers) {
+      const { ex, reading } = explain(text, engine);
+      const kindOf = (label: RegExp) => ex.rules.find((r) => r.id === ruleId(reading, label))!.basket;
+      // A variable of the same final name is not the document's field: no marker.
+      expect(kindOf(/status = 'A'/).reason.text, engine).not.toMatch(/marker of its own/);
+      // Nor is the same component of a structure of another type.
+      expect(kindOf(/status = 'B'/).reason.text, engine).not.toMatch(/marker of its own/);
+      // The field the program sets itself and reads back is.
+      expect(kindOf(/status = 'C'/).reason.text, engine).toMatch(/marker of its own/);
+    }
+    // And with 3.1.0 on the source as written: the read fills the document, so `C` is the business's to answer.
     const { ex, reading } = explain(source);
-    const kindOf = (label: RegExp) => ex.rules.find((r) => r.id === ruleId(reading, label))!.basket;
-    // A variable of the same final name is not the document's field: no marker.
-    expect(kindOf(/status = 'A'/).reason.text).not.toMatch(/marker of its own/);
-    // Nor is the same component of a structure of another type.
-    expect(kindOf(/status = 'B'/).reason.text).not.toMatch(/marker of its own/);
-    // The field the program sets itself and reads back is.
-    expect(kindOf(/status = 'C'/).reason.text).toMatch(/marker of its own/);
+    expect(ex.rules.find((r) => r.id === ruleId(reading, /status = 'C'/))!.basket.reason.text).not.toMatch(/marker of its own/);
+  });
+
+  test('IMPORT fills only its local target: the stored name beside `=` or `TO` is not a field of the program', () => {
+    const source = (importLine: string) => [
+      'REPORT zsd_status_import.',
+      'DATA: lv_status TYPE c LENGTH 1,',
+      '      lv_saved TYPE c LENGTH 1.',
+      'START-OF-SELECTION.',
+      importLine,
+      "  lv_status = 'A'.",
+      "  IF lv_status = 'A'.",
+      "    WRITE / 'released'.",
+      '  ENDIF.',
+      '',
+    ].join('\n');
+    const reasonOf = (importLine: string) => {
+      const { ex, reading } = explain(source(importLine));
+      return ex.rules.find((r) => r.id === ruleId(reading, /status = 'A'/))!.basket.reason.text;
+    };
+    // `lv_status` is only the name the value was stored under; the import lands in `lv_saved`.
+    expect(reasonOf("  IMPORT lv_status = lv_saved FROM MEMORY ID 'ZST'.")).toMatch(/marker of its own/);
+    expect(reasonOf("  IMPORT lv_status TO lv_saved FROM MEMORY ID 'ZST'.")).toMatch(/marker of its own/);
+    // Where the import lands in `lv_status`, the value can come from outside.
+    expect(reasonOf("  IMPORT stored = lv_status FROM MEMORY ID 'ZST'.")).not.toMatch(/marker of its own/);
+    expect(reasonOf("  IMPORT stored TO lv_status FROM MEMORY ID 'ZST'.")).not.toMatch(/marker of its own/);
+    expect(reasonOf("  IMPORT lv_status FROM MEMORY ID 'ZST'.")).not.toMatch(/marker of its own/);
+  });
+
+  test('a read into one routine\'s local field does not make another routine\'s local of the same name read from outside', () => {
+    const source = (globalField: boolean) => [
+      'REPORT zsd_status_scope.',
+      ...(globalField ? ['DATA lv_status TYPE c LENGTH 1.'] : []),
+      'START-OF-SELECTION.',
+      '  PERFORM load.',
+      '  PERFORM decide.',
+      'FORM load.',
+      ...(globalField ? [] : ['  DATA lv_status TYPE c LENGTH 1.']),
+      '  SELECT SINGLE status FROM zstatus INTO lv_status WHERE id = 1.',
+      'ENDFORM.',
+      'FORM decide.',
+      ...(globalField ? [] : ['  DATA lv_status TYPE c LENGTH 1.']),
+      "  lv_status = 'A'.",
+      "  IF lv_status = 'A'.",
+      "    WRITE / 'released'.",
+      '  ENDIF.',
+      'ENDFORM.',
+      '',
+    ].join('\n');
+    const reasonOf = (globalField: boolean) => {
+      const { ex, reading } = explain(source(globalField));
+      return ex.rules.find((r) => r.id === ruleId(reading, /status = 'A'/))!.basket.reason.text;
+    };
+    // Two locals of one name in two routines are two fields: `decide` sets its own and reads it back.
+    expect(reasonOf(false)).toMatch(/marker of its own/);
+    // One global field that `load` also reads from the database can hold that value: no marker.
+    expect(reasonOf(true)).not.toMatch(/marker of its own/);
+  });
+
+  test('a read into one method\'s formal parameter does not make another method\'s parameter of the same name read from outside', () => {
+    const source = (sameParameter: boolean) => [
+      'REPORT zsd_status_methods.',
+      ...(sameParameter ? [] : ['DATA cv_status TYPE c LENGTH 1.']),
+      'CLASS lcl_flow DEFINITION.',
+      '  PUBLIC SECTION.',
+      `    METHODS load${sameParameter ? ' CHANGING cv_status TYPE c' : ''}.`,
+      `    METHODS decide${sameParameter ? ' CHANGING VALUE(cv_status) TYPE c' : ''}.`,
+      'ENDCLASS.',
+      'CLASS lcl_flow IMPLEMENTATION.',
+      '  METHOD load.',
+      '    SELECT SINGLE status FROM zstatus INTO cv_status WHERE id = 1.',
+      '  ENDMETHOD.',
+      '  METHOD decide.',
+      "    cv_status = 'A'.",
+      "    IF cv_status = 'A'.",
+      "      WRITE / 'released'.",
+      '    ENDIF.',
+      '  ENDMETHOD.',
+      'ENDCLASS.',
+      'START-OF-SELECTION.',
+      '  DATA lv_status TYPE c LENGTH 1.',
+      `  NEW lcl_flow( )->load( ${sameParameter ? 'CHANGING cv_status = lv_status ' : ''}).`,
+      '',
+    ].join('\n');
+    const reasonOf = (sameParameter: boolean) => {
+      const { ex, reading } = explain(source(sameParameter));
+      return ex.rules.find((r) => r.id === ruleId(reading, /status = 'A'/))!.basket.reason.text;
+    };
+    // `decide` has a parameter of its own: it sets it and reads it back, whatever `load` reads into its own.
+    expect(reasonOf(true)).toMatch(/marker of its own/);
+    // Without parameters both methods use one global field, which the database read in `load` also fills: no marker.
+    expect(reasonOf(false)).not.toMatch(/marker of its own/);
   });
 
   test('a value assigned only after the check is no marker the program set', () => {
@@ -489,8 +593,9 @@ test.describe('the register in IT, rendered', () => {
 test.describe('the places (source guards)', () => {
   const shell = read('components/workspace/WorkspaceShell.tsx');
   test('no rule card in the Business view; the first insights say the one sentence and offer no rule decision; the next step leads with no rule', () => {
-    const block = shell.slice(shell.indexOf('    rules:'), shell.indexOf('    statusTools:'));
-    expect(block).toContain('rules: null');
+    // Business is Analyze's page since v3.1.0 (AB-2, ADR-109).
+    const business = read('components/analyze/AnalyzeBusiness.tsx');
+    expect(business).not.toContain('<BusinessRulesEditor');
     expect(shell).not.toContain('<BusinessRulesEditor');
     const firstLook = read('components/workspace/FirstLook.tsx');
     // 3.0.21 (owner decisions 22.10.2026): the Business opening offers no rule action at all, the demo's
@@ -498,10 +603,7 @@ test.describe('the places (source guards)', () => {
     expect(firstLook).not.toContain('onDecideRules=');
     expect(firstLook).toMatch(/<RuleBasketLine [^>]*designHref=\{onReviewRules \? null : undefined\}/);
     expect(firstLook).not.toMatch(/const decideRules\b/);
-    expect(shell).toContain('businessNextStep({ point: nextStep, rules: null, owner })');
-    const order = shell.slice(shell.indexOf('const BUSINESS_ORDER'), shell.indexOf('];', shell.indexOf('const BUSINESS_ORDER')));
-    // Where the rules card stood: under the map, which stays right under the answer (ADR-072).
-    expect(order.indexOf("'process'")).toBeLessThan(order.indexOf("'rules'"));
+    expect(business).toContain('businessNextStep({ point: running, rules: null, owner })');
   });
 
   test('the full register is in IT; the questions stand in Design beside its canvas; open questions lead there', () => {

@@ -16,17 +16,25 @@ test('the start guard lets go of a project once its run is signed and read back'
   const phase = src.indexOf("setPhase('signed');", signed);
   expect(signed, 'the start no longer reads the project back after signing').toBeGreaterThan(-1);
   expect(phase).toBeGreaterThan(signed);
-  expect(src.slice(signed, phase)).toContain('started.delete(projectId);');
+  expect(src.slice(signed, phase)).toContain('setStarted(projectId, false);');
 });
 
 test('a failed start can still be tried again by hand', () => {
   const failed = src.indexOf("setPhase('failed');");
   expect(failed).toBeGreaterThan(-1);
-  expect(src.slice(src.lastIndexOf('catch', failed), failed)).toContain('started.delete(projectId);');
+  expect(src.slice(src.lastIndexOf('catch', failed), failed)).toContain('setStarted(projectId, false);');
 });
 
 test('a running start still blocks a second one', () => {
-  const add = src.indexOf('started.add(projectId);');
+  const add = src.indexOf('setStarted(projectId, true);');
   expect(add).toBeGreaterThan(-1);
   expect(src.slice(0, add)).toContain('started.has(projectId)');
+});
+
+test('the one setter still adds and removes the project, and tells the views', () => {
+  // Every change of the guard goes through setStarted, so IT and Management learn that a start is in flight.
+  const setter = src.slice(src.indexOf('function setStarted('), src.indexOf('function setStarted(') + 400);
+  expect(setter).toContain('started.add(projectId)');
+  expect(setter).toContain('started.delete(projectId)');
+  expect(src.match(/started\.(add|delete)\(/g)?.length, 'the guard is changed outside setStarted').toBe(2);
 });

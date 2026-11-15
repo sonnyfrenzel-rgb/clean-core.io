@@ -22,7 +22,8 @@ export interface StatementProposalState {
 export function useStatementProposal(
   projectId: string | null,
   source: string | null,
-  availability: StatementAvailability | null,
+  /** `useModelAvailability`'s answer, or the three facts alone; `statementsRewording` (13.11.2026) asks for the second call. */
+  availability: (StatementAvailability & { statementsRewording?: boolean }) | null,
 ): StatementProposalState {
   const [held, setHeld] = useState<{ key: string; view: ProposalView | null }>({ key: '', view: null });
   const [requesting, setRequesting] = useState(false);
@@ -55,6 +56,7 @@ export function useStatementProposal(
   const availabilityKnown = availability?.known === true;
   const keyAvailable = availability?.keyAvailable === true;
   const stageOn = availability?.stages?.statements !== false;
+  const rewording = availability?.statementsRewording === true || availability?.rewording === true;
 
   const request = useCallback(() => {
     if (!projectId || !source || requesting) return;
@@ -68,7 +70,7 @@ export function useStatementProposal(
       const outcome = await client.requestStatementProposal(
         projectId,
         lib.statementProposalContextOf(source),
-        availabilityKnown ? { known: true, keyAvailable, stages: { statements: stageOn } } : null,
+        availabilityKnown ? { known: true, keyAvailable, stages: { statements: stageOn }, rewording } : null,
       );
       if (outcome.ok) {
         setHeld({ key, view: lib.applyStatementProposal(source, outcome.record) });
@@ -78,7 +80,7 @@ export function useStatementProposal(
     })()
       .catch((err: unknown) => setMessage(err instanceof Error ? err.message : String(err)))
       .finally(() => setRequesting(false));
-  }, [projectId, source, requesting, key, availabilityKnown, keyAvailable, stageOn]);
+  }, [projectId, source, requesting, key, availabilityKnown, keyAvailable, stageOn, rewording]);
 
   return {
     view: key && held.key === key ? held.view : null,

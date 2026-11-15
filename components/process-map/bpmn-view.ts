@@ -14,7 +14,8 @@
  *   has no second text line, and the layout reserved the room for it.
  */
 
-import { ANCHOR_FONT, LABEL_FONT } from '@/lib/bpmn/layout';
+import { ANCHOR_FONT, LABEL_FONT, TASK_PADDING } from '@/lib/bpmn/layout';
+import { wrapText } from '@/lib/bpmn/text-metrics';
 
 export interface ViewboxCanvas {
   viewbox(): { inner: { x: number; y: number; width: number; height: number }; outer: { width: number; height: number } };
@@ -97,6 +98,31 @@ export function fitWhole(canvas: ViewboxCanvas): void {
 }
 
 /**
+ * The height an inline canvas this wide needs to show the level whole from top
+ * to bottom at the phone's floor, or null where the floor does not apply (a
+ * canvas from {@link NARROW_CANVAS} up) or the level is no taller than `base`.
+ * Inline a vertical swipe scrolls the page and never pans the map
+ * (`useTouchViewport`), so a level cut at the canvas's bottom edge could only
+ * be read further in full screen; the canvas grows instead and the page
+ * scrolls, as the accepted mockup v4.1 draws the phone's map (plan
+ * `docs/design/analyze-business-first-plan.md` N2: scroll, do not shrink).
+ * Depends on the width alone, so growing does not change the answer, and never
+ * above `ceiling`.
+ */
+export function flooredLevelHeight(
+  inner: { width: number; height: number },
+  canvasWidth: number,
+  base: number,
+  ceiling: number,
+): number | null {
+  if (!inner.width || !inner.height || canvasWidth <= 0 || canvasWidth >= NARROW_CANVAS) return null;
+  const scale = Math.max(NARROW_MIN_SCALE, Math.min(1, (canvasWidth - 2 * MARGIN) / inner.width));
+  const needed = Math.ceil(inner.height * scale + 2 * MARGIN);
+  if (needed <= base) return null;
+  return Math.min(needed, Math.max(base, ceiling));
+}
+
+/**
  * The widest drawing, in BPMN units, a canvas this wide shows across at the
  * phone's floor — what the phone's narrow layout is laid out for.
  */
@@ -108,3 +134,57 @@ export function phoneFitWidth(canvasWidth: number): number {
 export const MAP_REVEAL_EVENT = 'cc-map-reveal';
 
 export const ANCHOR_STYLE = `font-size:${ANCHOR_FONT}px;line-height:${Math.ceil(ANCHOR_FONT * 1.2)}px`;
+
+/** What `placeAnchor` needs of bpmn-js's overlays service and of a shape. */
+export interface AnchorOverlays {
+  add(element: string, type: string, overlay: { position: { top: number; left: number }; html: HTMLElement; scale?: boolean }): string;
+}
+
+export interface AnchorShape {
+  id: string;
+  width?: number;
+  height?: number;
+  label?: { id: string; width?: number; height?: number };
+  businessObject?: { name?: string };
+}
+
+/**
+ * The line anchor under an element's name (`L182`) — inside an activity at its
+ * foot, under the external label of an event or a gateway. A phase's counted
+ * fact stands above the anchor inside its activity only: a fact belongs to a
+ * collapsed phase (`model.ts`, `n.inner`), always an activity, and the layout
+ * reserves its line there alone (`layout.ts`, `inside.fact`), so an externally
+ * labelled shape is never handed one. One function, so the reading map and the
+ * home page's slice of the demo map draw it alike.
+ */
+export function placeAnchor(overlays: AnchorOverlays, shape: AnchorShape, anchor: string, fact?: string | null): void {
+  const tag = document.createElement('span');
+  tag.className = 'cc-map-anchor';
+  tag.setAttribute('aria-hidden', 'true');
+  if (fact && !shape.label) {
+    const factEl = document.createElement('span');
+    factEl.className = 'cc-map-fact';
+    factEl.textContent = fact;
+    tag.appendChild(factEl);
+  }
+  const code = document.createElement('span');
+  code.className = 'cc-map-anchor-code';
+  code.textContent = anchor;
+  tag.appendChild(code);
+  const label = shape.label;
+  const width = shape.width ?? 0;
+  const height = shape.height ?? 0;
+  if (label && label.width && label.height) {
+    tag.style.width = `${label.width}px`;
+    overlays.add(label.id, 'cc-anchor', { position: { top: label.height, left: 0 }, scale: true, html: tag });
+  } else if (width > 60) {
+    // Right under the name, which bpmn-js centres in the box.
+    const lines = wrapText(shape.businessObject?.name ?? '', width - 2 * TASK_PADDING, LABEL_FONT, true).length;
+    tag.style.width = `${width}px`;
+    overlays.add(shape.id, 'cc-anchor', {
+      position: { top: Math.round(height / 2 + (lines * LABEL_FONT * 1.2) / 2 + 1), left: 0 },
+      scale: true,
+      html: tag,
+    });
+  }
+}

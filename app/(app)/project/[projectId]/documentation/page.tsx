@@ -29,6 +29,7 @@ import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-c
 import CcStateText from '@/components/cc/StateText';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
+import { useCustomerTexts } from '@/hooks/useCustomerTexts';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
 import HandbookStage from '@/components/documentation/HandbookStage';
 import LevelDRegister from '@/components/documentation/LevelDRegister';
@@ -591,6 +592,7 @@ export default function DocumentationPage() {
     signedSource,
     project?.name || '',
     modelAvailability,
+    { engineVersion: engineVersionOfProject(project) },
   );
 
   /**
@@ -599,7 +601,9 @@ export default function DocumentationPage() {
    * asks, an invited reader reads.
    */
   /** Owner decision 01.10.2026 — the handbook beside the map, read from the same source. */
-  const handbook = useProcessHandbook(signedSource?.source ?? null, processMap.model, engineVersionOfProject(project));
+  // 3.1.0 (H5b): the project's customer texts — every step, line and summary that says one is marked.
+  const customerTexts = useCustomerTexts((Array.isArray(projectId) ? projectId[0] : projectId) ?? null);
+  const handbook = useProcessHandbook(signedSource?.source ?? null, processMap.model, engineVersionOfProject(project), customerTexts);
   const isPhone = useBreakpointS();
 
   /**
@@ -711,6 +715,7 @@ export default function DocumentationPage() {
     typeof project?.analysis === 'string' && project.analysis.trim() ? project.analysis : null,
     proposalInputs,
     engineVersionOfProject(project),
+    customerTexts,
   );
 
   /**
@@ -800,7 +805,7 @@ export default function DocumentationPage() {
 
     try {
       const { buildProcessDocumentation } = await import('@/lib/process-documentation-build');
-      const built = buildProcessDocumentation({ source: signedSource.source, map: processMap.model, engineVersion: engineVersionOfProject(project) });
+      const built = buildProcessDocumentation({ source: signedSource.source, map: processMap.model, engineVersion: engineVersionOfProject(project), customerTexts });
       const stored = JSON.stringify(built);
       // The reader of the stored value is the gate: what is written must read
       // back as an engine document, or nothing is written.
@@ -841,7 +846,7 @@ export default function DocumentationPage() {
     } finally {
       setIsGeneratingDoc(false);
     }
-  }, [projectId, project, signedSource, processMap.model, processMap.status, processMap.reason]);
+  }, [projectId, project, signedSource, processMap.model, processMap.status, processMap.reason, customerTexts]);
 
   /**
    * Generate on open (owner 03.10.2026, analogous to Design).
@@ -1391,17 +1396,22 @@ export default function DocumentationPage() {
   /**
    * What the AI-generated proposals cost before any click — DESIGN.md §2.8, one line
    * for the card (roadmap 3.0.7). Every part of it is a fact of this page: the
-   * model it names is the one `generateBusinessDocumentation` passes to
-   * `/api/gemini`, the key is the one `/api/model-stages` reports, and that
-   * route meters by the hour, not by the analysis run.
+   * model it names is the one the documentation stage runs on for this key, as
+   * `/api/model-stages` reports it (`stageModels`, 14.11.2026 — on the platform
+   * key the deployment may run the stage on another model than the one
+   * `generateBusinessDocumentation` asks for); until that answer is in, no
+   * model — the product default may not be the one the stage runs on. The key is the one the same route reports, and `/api/gemini`
+   * meters by the hour, not by the analysis run.
    */
-  const proposalsCostLine = docProposalsCostLine(PRODUCT_GEMINI_MODEL, modelAvailability.keySource === 'byok')
+  const proposalsCostLine = docProposalsCostLine(modelAvailability.stageModels.documentation, modelAvailability.keySource === 'byok', modelAvailability.statementsRewording)
     + (businessPlan && !businessPlan.whole ? ` ${docPartsCostLine(businessPlan.parts.length)}` : '');
 
   const statementPanelProps = {
     view: statementProposal.view,
     canRequest: isOwner,
     byok: modelAvailability.keySource === 'byok',
+    // 13.11.2026 — the deployment rewords the draft for a business reader: two calls, and the line says so.
+    rewording: modelAvailability.statementsRewording,
     requesting: statementProposal.requesting,
     message: statementProposal.message,
     onRequest: statementProposal.request,

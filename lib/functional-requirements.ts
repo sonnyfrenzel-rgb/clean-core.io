@@ -1059,7 +1059,7 @@ export function buildRequirementSet(input: RequirementInput): RequirementSet {
   const source = input.source.replace(/^﻿/, '').replace(/\r\n?/g, '\n');
   const lines = sourceLines(source);
   const facts = buildProcessFacts(source);
-  const skeleton = buildProcessSkeletonFrom(facts);
+  const skeleton = buildProcessSkeletonFrom(facts, { engineVersion: input.engineVersion });
   const ruleSet = deriveBusinessRulesFrom(source, facts, skeleton, input.engineVersion);
   const plain = plainContext(source);
   const labels = plainLabels(skeleton, source);

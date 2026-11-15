@@ -388,7 +388,7 @@ export function deriveUserChange(source: string, options: UserChangeOptions = {}
       catalogConsulted: Boolean(options.catalog),
     };
   }
-  return userChangeFrom(source, deriveBusinessRules(source, engineVersion), options);
+  return userChangeFrom(source, deriveBusinessRules(source, engineVersion), options, engineVersion);
 }
 
 /**
@@ -399,6 +399,8 @@ export function deriveUserChangeFrom(
   source: string,
   ruleSet: BusinessRuleSet,
   options: UserChangeOptions = {},
+  /** The engine `ruleSet` was read for; its process map is read for the same one. */
+  engineVersion: string | null = APP_VERSION,
 ): UserChangeReport {
   if (typeof source !== 'string' || !source.trim()) {
     return {
@@ -409,7 +411,7 @@ export function deriveUserChangeFrom(
       catalogConsulted: Boolean(options.catalog),
     };
   }
-  return userChangeFrom(source, ruleSet, options);
+  return userChangeFrom(source, ruleSet, options, engineVersion);
 }
 
 /* --------------------------------------------------------------- carriers */
@@ -904,12 +906,13 @@ function userChangeFrom(
   source: string,
   ruleSet: BusinessRuleSet,
   options: UserChangeOptions,
+  engineVersion: string | null,
 ): UserChangeReport {
   const catalog: CatalogLookup | null = options.catalog ?? null;
   const statements = readStatements(source);
   const structure = readBlocks(statements);
   const calls = readCallGraphFrom(statements, structure);
-  const skeleton = buildProcessSkeleton(source);
+  const skeleton = buildProcessSkeleton(source, { engineVersion });
   const coverage: StandardCoverage = deriveStandardCoverageFrom(source, ruleSet, options);
 
   // Which routines each capability's rules stand in. `capabilityKeyOf` is the

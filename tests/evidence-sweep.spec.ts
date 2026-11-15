@@ -138,7 +138,7 @@ async function startSweep(page: Page, projectId: string, { pauseClock }: { pause
   await page.fill('input[type="password"]', SIGN_IN);
   await page.click('button[type="submit"]:has-text("Sign In")');
   await page.waitForTimeout(4000);
-  await page.goto(`/project/${projectId}/analyze`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
 
   const start = page.getByRole('button', { name: /Start Analysis/ });
   await expect(start).toBeVisible({ timeout: 60000 });

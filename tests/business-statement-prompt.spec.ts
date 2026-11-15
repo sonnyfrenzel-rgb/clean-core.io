@@ -185,10 +185,39 @@ test('path B is wired, and only through the proposal stage of 17.10: two importe
   }
   // Sonny, 27.09.2026 (roadmap 17.10): B goes into the Business view — through
   // `lib/statement-proposal.ts` and the route that validates and stores the
-  // answer. No run, no signature, no audit pack reads the module.
+  // answer. No run, no signature, no audit pack reads the module. Owner decision
+  // 13.11.2026 (2): the rewording of that draft (`lib/statement-rewording.ts`, off
+  // unless GEMINI_STATEMENTS_REWORDING=on) reads it too, on the same unsigned path.
   const rel = importers.map((abs) => abs.slice(process.cwd().length + 1).split('\\').join('/')).sort();
   expect(rel, 'another path to the model sentences — does it belong in a signature?').toEqual([
     'app/api/projects/[projectId]/statement-proposal/route.ts',
+    'lib/statement-proposal.ts',
+    'lib/statement-rewording.ts',
+  ]);
+});
+
+test('the rewording of the draft is read only where the draft is: no run, signature or audit pack reaches it', () => {
+  // The comment above says "on the same unsigned path"; this pins it. Every importer of `lib/statement-rewording.ts`
+  // is named here, and none of them is a run, a signature or the audit pack.
+  const IMPORTS_IT = /from '[^']*statement-rewording'|import\('[^']*statement-rewording'\)/;
+  const importers: string[] = [];
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const abs = join(dir, name);
+      if (statSync(abs).isDirectory()) {
+        if (name === 'node_modules' || name.startsWith('.')) continue;
+        walk(abs);
+      } else if (/\.(ts|tsx)$/.test(name) && name !== 'statement-rewording.ts' && IMPORTS_IT.test(readFileSync(abs, 'utf8'))) {
+        importers.push(abs);
+      }
+    }
+  };
+  for (const root of ['app', 'components', 'hooks', 'lib']) walk(join(process.cwd(), root));
+  const rel = importers.map((abs) => abs.slice(process.cwd().length + 1).split('\\').join('/')).sort();
+  expect(rel, 'another path to the rewording — does it belong in a signature?').toEqual([
+    'app/api/model-stages/route.ts',
+    'app/api/projects/[projectId]/statement-proposal/route.ts',
+    'lib/statement-proposal-client.ts',
     'lib/statement-proposal.ts',
   ]);
 });

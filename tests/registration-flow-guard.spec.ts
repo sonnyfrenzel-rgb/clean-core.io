@@ -179,10 +179,12 @@ test.describe('the one welcome mail does the whole job', () => {
     // The five steps are the point: a link alone puts a click between the
     // person and their first result.
     expect(s).toContain('Your first run');
-    expect(s).toContain('Try it with an example');
+    // AB-14a: the words of the new account's first view — "Try an example" and
+    // its one filled button — not the gallery's "Start here" it replaced.
+    expect(s).toContain('Try an example');
     // The recommended first example, under the name the dashboard gives it.
     expect(s).toContain('Z_MM_PO_APPROVAL');
-    expect(s).toContain('Start here');
+    expect(s).toContain('Start this example');
     // Named, not linked: the one link of a user mail is the dashboard (3.0.9).
     expect(s).toContain('Your First Run');
     expect(s).toContain('/dashboard');

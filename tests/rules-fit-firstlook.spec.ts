@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { readSource, readTableAccess } from '../lib/first-look';
+import { readSource } from '../lib/first-look';
 import { plainWordingFor } from '../lib/business-card';
 import {
   draftChecks,
@@ -15,14 +15,6 @@ import {
   stepStrip,
   type RuleDraft,
 } from '../lib/rules-editor';
-import {
-  buildUpEvents,
-  buildUpFrame,
-  codeWindow,
-  BUILD_UP_BUDGET,
-  BUILD_UP_MIN_STEP,
-  BUILD_UP_WINDOW,
-} from '../lib/first-look-buildup';
 import { deriveBusinessRules } from '../lib/abap/business-rule-set';
 import { deriveStandardCoverageFrom, type CatalogLookup } from '../lib/abap/standard-coverage';
 import { workspaceLayers } from '../lib/workspace-model';
@@ -179,68 +171,10 @@ test.describe('s3 — the standard-coverage engine, without a screen', () => {
   });
 });
 
-test.describe('s0 — the first look builds up out of lit lines', () => {
-  const events = buildUpEvents(readTableAccess(SRC), reading.skeleton);
-  const lines = SRC.split('\n');
-
-  test('every event is a real line of the source, in source order', () => {
-    expect(events.length).toBeGreaterThan(10);
-    for (let i = 0; i < events.length; i += 1) {
-      const e = events[i];
-      expect(e.line).toBeGreaterThanOrEqual(1);
-      expect(e.line).toBeLessThanOrEqual(lines.length);
-      if (i > 0) expect(e.line).toBeGreaterThanOrEqual(events[i - 1].line);
-    }
-  });
-
-  test('a counter only rises with a lit line, and never falls', () => {
-    let last = { line: 0, tables: 0, nodes: 0, decisions: 0 };
-    const total = lines.length;
-    for (let t = 0; t <= BUILD_UP_BUDGET.endAt; t += 50) {
-      const frame = buildUpFrame(events, t, total);
-      // Every counter is a count of the lit lines, and every lit line is one
-      // the engine set — a data line only once the reading line has passed it.
-      // (Checked as one value per frame: an expect per event is 40,000 expects.)
-      expect(frame.shown).toBe(frame.lit.length);
-      expect(frame.lit.every((e) => events.includes(e)), `at ${t} ms a lit line is not an event`).toBe(true);
-      const ahead = frame.lit.filter((e) => e.kind === 'data' && e.line > frame.counters.line);
-      expect(ahead, `at ${t} ms a table line is lit before the reading reached it`).toEqual([]);
-      expect(frame.counters.nodes).toBe(frame.lit.filter((e) => e.kind === 'node').length);
-      expect(frame.counters.tables).toBe(new Set(frame.lit.filter((e) => e.kind === 'data').map((e) => e.table)).size);
-      expect(frame.counters.line).toBeGreaterThanOrEqual(last.line);
-      expect(frame.counters.tables).toBeGreaterThanOrEqual(last.tables);
-      expect(frame.counters.nodes).toBeGreaterThanOrEqual(last.nodes);
-      last = frame.counters;
-    }
-    // The reading has read every line, and every event is lit, before the names change.
-    expect(buildUpFrame(events, BUILD_UP_BUDGET.processFrom, total).counters.line).toBe(total);
-    expect(buildUpFrame(events, BUILD_UP_BUDGET.namesFrom, total).shown).toBe(events.length);
-  });
-
-  test('the stages follow the paced budget of ADR-072: read, process, names, rules, open points, map', () => {
-    const b = BUILD_UP_BUDGET;
-    expect(buildUpFrame(events, 100).stage).toBe('code-read');
-    expect(buildUpFrame(events, b.processFrom).stage).toBe('process-recognised');
-    expect(buildUpFrame(events, b.namesFrom).stage).toBe('business-language');
-    expect(buildUpFrame(events, b.namesFrom).named).toBe(true);
-    expect(buildUpFrame(events, b.namesFrom - 1).named).toBe(false);
-    expect(buildUpFrame(events, b.rulesFrom).stage).toBe('rules');
-    expect(buildUpFrame(events, b.openFrom).stage).toBe('not-determined');
-    expect(buildUpFrame(events, b.mapFrom).stage).toBe('map');
-    // Followable, not dragging (owner 03.10.2026): every moment long enough to
-    // read its headline and see what it shows, the whole within 15 to 25 s.
-    const marks = [0, b.processFrom, b.namesFrom, b.rulesFrom, b.openFrom, b.mapFrom, b.endAt];
-    for (let i = 1; i < marks.length; i += 1) expect(marks[i] - marks[i - 1]).toBeGreaterThanOrEqual(BUILD_UP_MIN_STEP);
-    expect(b.endAt).toBeGreaterThanOrEqual(BUILD_UP_WINDOW.min);
-    expect(b.endAt).toBeLessThanOrEqual(BUILD_UP_WINDOW.max);
-  });
-
-  test('the code window stays inside the source', () => {
-    expect(codeWindow(669, 1)).toEqual({ from: 1, to: 12 });
-    expect(codeWindow(669, 669)).toEqual({ from: 658, to: 669 });
-    expect(codeWindow(5, 3)).toEqual({ from: 1, to: 5 });
-  });
-
+// The build-up of s0 (lit lines, counters, the paced budget, the code window)
+// retired with v3.1.0 (plan AB-3): the map is the page in Analyze, Business, and
+// the first insights stand in their end state at once. Its step strip stays.
+test.describe('s0 — the end state of the first insights', () => {
   test('the step strip of the end state is plain words with lines, and says when there is more', () => {
     const strip = stepStrip(reading.skeleton, SRC);
     expect(strip.steps.length).toBeGreaterThan(0);

@@ -78,7 +78,7 @@ test.beforeAll(async () => {
 
 async function openAnalyze(page: import('@playwright/test').Page) {
   await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3500 });
-  await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
 }
 

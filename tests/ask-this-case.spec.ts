@@ -431,7 +431,7 @@ test.describe('the assistant, inside a project, in a browser', () => {
     });
 
     await signIn(page, OWNER);
-    await page.goto(`/project/${LIVE_PROJECT}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${LIVE_PROJECT}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
 
     const button = page.locator('[data-help-menu-trigger]');
     await expect(button).toBeVisible({ timeout: 90000 });
@@ -464,7 +464,7 @@ test.describe('the assistant, inside a project, in a browser', () => {
     });
 
     await signIn(page, OWNER);
-    await page.goto(`/project/${LIVE_PROJECT}/analyze`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${LIVE_PROJECT}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await openChat(page);
 
     await page.fill('input[placeholder*="Ask"]', PRE_ANSWERED_QUESTION);

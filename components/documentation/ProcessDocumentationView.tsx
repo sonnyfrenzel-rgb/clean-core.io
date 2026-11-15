@@ -160,7 +160,7 @@ export default function ProcessDocumentationView({
                     )}
                   </>
                 ),
-                does: proposed ? <StatementPair proposal={proposed} evidence={sentence?.text ?? null} /> : sameAs ? (
+                does: proposed ? <StatementPair proposal={proposed} evidence={sentence?.text ?? null} origin={proposal?.view?.origin} /> : sameAs ? (
                   <span className="text-[11px] text-cc-ink-muted">As at {sameAs}</span>
                 ) : sentence ? sentence.text : '',
                 lines: step.anchor ? (
@@ -224,7 +224,7 @@ export default function ProcessDocumentationView({
                 row.proposals.length > 0 ? (
                   <li key={row.evidence?.id ?? `p-${i}`} data-doc-statement-row="paired" className="flex flex-col md:flex-row md:gap-3">
                     <div className="flex-1">
-                      {row.proposals.map((p) => <ProposedStatementLine key={p.id} proposal={p} />)}
+                      {row.proposals.map((p) => <ProposedStatementLine key={p.id} proposal={p} origin={proposal?.view?.origin} />)}
                       {row.evidence && (
                         <p data-statement-evidence="" className="mt-1 text-[12px] text-cc-ink-muted">
                           <CcProvenanceChip value="reconstructed" /> {row.evidence.text}

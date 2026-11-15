@@ -24,6 +24,7 @@ import {
   type KorpusCase,
 } from '../helpers/korpus-comparison';
 import type { SkeletonEdgeKind } from '../../lib/abap/process-skeleton';
+import { selectBenchmarkIds, type BenchmarkSplit } from './select-ids';
 
 const outArg = process.argv.indexOf('--out');
 const OUT = outArg > 0 ? process.argv[outArg + 1] : join(KORPUS_ROOT, 'results.json');
@@ -35,8 +36,19 @@ const manifestPath = join(KORPUS_ROOT, 'manifest.json');
 const benchmarkIds = readdirSync(join(KORPUS_ROOT, 'cases'))
   .filter((name) => /^BM-\d{3}$/.test(name) && existsSync(join(KORPUS_ROOT, 'cases', name, 'expected.json')))
   .sort();
-const ONLY = process.env.BM_RANGE?.split('-').map(Number);
-const ids = ONLY ? benchmarkIds.filter((id) => Number(id.slice(3)) >= ONLY[0] && Number(id.slice(3)) <= ONLY[1]) : benchmarkIds;
+// BM_SPLIT=learn: only the learning halves of split.json (waves 1+2 and wave 3) are read and measured.
+// The test halves are never opened then — not their source, not their expected answer.
+const ids = selectBenchmarkIds(benchmarkIds, {
+  range: process.env.BM_RANGE,
+  split: process.env.BM_SPLIT,
+  readSplit: () => JSON.parse(readFileSync(join(KORPUS_ROOT, 'split.json'), 'utf8')) as BenchmarkSplit,
+});
+// A selection that keeps no case must not fall back to the manifest a previous run left behind: that one may list
+// test-half cases.
+if (ids.length === 0 && benchmarkIds.length > 0 && (process.env.BM_RANGE || process.env.BM_SPLIT)) {
+  console.error('BM_RANGE/BM_SPLIT select no case; nothing is measured.');
+  process.exit(2);
+}
 if (ids.length > 0) {
   writeFileSync(
     manifestPath,

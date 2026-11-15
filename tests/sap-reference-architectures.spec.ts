@@ -263,7 +263,8 @@ test.describe('the layer reads the target and changes nothing before it', () => 
     expect(read('components/design/CloudServiceIntegrations.tsx')).toContain('REFERENCE_OF_SERVICE[getCloudServiceKey(');
     expect(read('app/(app)/project/[projectId]/delivery/page.tsx')).toContain('referencePatternsReadme(');
     expect(read('lib/design-export.ts')).toContain('designReferenceSection(');
-    expect(read('components/workspace/WorkspaceShell.tsx')).toContain('<TargetReferenceLine');
+    // In Analyze, Business since v3.1.0 (AB-2), under the interim "Next step", as it stood in the workspace's Business view.
+    expect(read('components/analyze/AnalyzeBusiness.tsx')).toContain('<TargetReferenceLine project={project} />');
     expect(read('components/workspace/ManagementExecutive.tsx')).toContain('optionsView.reference');
     expect(read('components/demo/DemoDesign.tsx')).toContain('targetArchitecture={code}');
   });

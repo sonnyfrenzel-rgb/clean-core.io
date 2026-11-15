@@ -5,6 +5,8 @@ import { openPortfolioRoute } from '@/lib/portfolio/access-server';
 import { BatchRefusal } from '@/lib/portfolio/batch-store';
 import { deleteSelection } from '@/lib/portfolio/selection-store';
 import { releaseSelectionProjects, updateSelectionProjects } from '@/lib/portfolio/selection-invitations';
+import { PORTFOLIO_SELECTION_BODY_LIMITS } from '@/lib/portfolio/limits';
+import { readBoundedRequestJson } from '@/lib/url-validation';
 
 /**
  * /api/portfolio/selections/{selectionId} — roadmap 3.0.21.
@@ -33,7 +35,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ se
     if (!gate.ok) return gate.response;
     const { selectionId } = await params;
     if (!isFirestoreId(selectionId)) return NextResponse.json({ error: 'No such selection.' }, { status: 404 });
-    const body = (await req.json().catch(() => null)) as { action?: unknown } | null;
+    const read = await readBoundedRequestJson(req, PORTFOLIO_SELECTION_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body as { action?: unknown } | null;
     const answer =
       body?.action === 'release'
         ? await releaseSelectionProjects(gate.db, gate.uid, selectionId)

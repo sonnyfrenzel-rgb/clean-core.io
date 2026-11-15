@@ -324,7 +324,7 @@ export interface BusinessRuleSet {
 /** Derive the business rules of one ABAP source. No model, no network. */
 export function deriveBusinessRules(source: string, engineVersion: string | null = APP_VERSION): BusinessRuleSet {
   const facts = buildProcessFacts(source);
-  return deriveBusinessRulesFrom(source, facts, buildProcessSkeletonFrom(facts), engineVersion);
+  return deriveBusinessRulesFrom(source, facts, buildProcessSkeletonFrom(facts, { engineVersion }), engineVersion);
 }
 
 /**

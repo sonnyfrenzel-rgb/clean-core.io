@@ -6,20 +6,28 @@ import path from 'path';
  * Owner, 09.10.2026: while the initial analysis of a new project ran, the first
  * look still offered "Run the analysis" in "Next step". The project has no
  * `activeRunId` until the start run is signed, so `nextOpenPoint` names Analyze
- * for the whole run; the workspace now marks that point as running and every
- * "Next step" surface — the Business bar, the IT card, the Management panel —
- * says so instead of offering the button that would start a second run.
+ * for the whole run; the page that holds the start marks that point as running
+ * and its "Next step" says so instead of offering the button that would start
+ * a second run.
  *
- * Source-level, no server: the rendered half needs a start run held open,
- * which is a browser spec of its own (see the note in the report of this fix).
+ * Since v3.1.0 the start run is signed in Analyze, Business (AB-2), and the
+ * workspace — IT and Management only — starts none of its own. The NextStepCard
+ * and Management rules below stay: they are the forms a running point takes.
+ *
+ * Source-level, no server; the rendered half is
+ * `tests/start-run-next-step-rendered.spec.ts`.
  */
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
-test('the workspace marks Analyze as running while the start run is with the server', () => {
+test('Analyze, Business marks Analyze as running while the start run is with the server', () => {
+  const business = read('components/analyze/AnalyzeBusiness.tsx');
+  expect(business).toMatch(/point && point\.key === 'analyze' && startRun\.phase === 'running' \? \{ \.\.\.point, running: true as const \} : point/);
+  expect(business).toContain('businessNextStep({ point: running, rules: null, owner })');
+  // The workspace starts no run, so it has nothing to mark.
   const shell = read('components/workspace/WorkspaceShell.tsx');
-  expect(shell).toContain("const startRunning = startRun?.phase === 'running';");
-  expect(shell).toMatch(/point\.key === 'analyze' && startRunning \? \{ \.\.\.point, running: true as const \}/);
+  expect(shell).not.toMatch(/startRun|useStartRun/);
+  expect(read('app/(app)/project/[projectId]/page.tsx')).not.toMatch(/useStartRun/);
 });
 
 test('"Next step" offers no button for a running point, in both of its forms', () => {

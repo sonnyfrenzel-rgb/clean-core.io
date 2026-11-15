@@ -159,12 +159,16 @@ test.describe('machine strings — rendered', () => {
     const routes: { url: string; ready: string }[] = [
       { url: '/dashboard', ready: 'h1' },
       { url: '/settings', ready: 'h1' },
-      ...(['business', 'it', 'management'] as const).map((v) => ({
+      // Business is Analyze's page since v3.1.0 (AB-2, ADR-109); IT and Management stay on the workspace.
+      { url: `/project/${acct.projectId}/analyze?view=business`, ready: '[data-analyze-business="ready"] h1' },
+      ...(['it', 'management'] as const).map((v) => ({
         url: `/project/${acct.projectId}?view=${v}`,
         ready: `[data-workspace-shell="${v}"] h1`,
       })),
       ...STAGES.map((s) => ({ url: `/project/${acct.projectId}/${s}`, ready: '[data-stage-title]' })),
-      ...(['business', 'it', 'management'] as const).map((v) => ({
+      // The demo opens like a project since v3.1.0 (O10): its Business view is `/demo/analyze`.
+      { url: '/demo/analyze', ready: '[data-analyze-business="ready"][data-demo-ready="true"] h1' },
+      ...(['it', 'management'] as const).map((v) => ({
         url: `/demo/workspace?view=${v}`,
         ready: '[data-demo-ready="true"] h1',
       })),

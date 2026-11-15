@@ -241,7 +241,9 @@ test.describe('fill and repair calls think LOW; nothing else changes', () => {
 
   test('the route sends it on both config branches, and repairs share the fill shape', () => {
     const src = code('app/api/gemini/route.ts');
-    expect(src).toContain('const thinkingConfig = thinkingConfigFor(shape);');
+    // Since 13.11.2026 the call's model and stage go in as well (`lib/model-thinking.ts`): a shape rule still
+    // decides first, and a call without a shape rule keeps the default unless its model has a level for the stage.
+    expect(src).toContain('const thinkingConfig = thinkingConfigFor(shape, process.env, { model: plan.model, stage });');
     const call = src.slice(src.indexOf('ai!.models.generateContent({'), src.indexOf('ai!.models.generateContent({') + 900);
     expect(call.match(/\.\.\.\(thinkingConfig \? \{ thinkingConfig \} : \{\}\)/g)).toHaveLength(2);
     // Since 3.0.21 (SEC-01) every call carries its stage's output bound, on both branches, and nothing else changed.

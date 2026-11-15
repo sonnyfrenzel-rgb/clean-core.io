@@ -10,6 +10,7 @@ import {
   verdictState,
   partlyVerified,
   ed25519Label,
+  aiStatementCoverageLine,
   type VerifyResult,
   type FileVerifyResult,
   type Ed25519Result,
@@ -332,7 +333,7 @@ export default function VerifyPackPage() {
                   </p>
                   {result.manifest.aiGeneration.statement && (
                     <p className="m-0 mt-1 text-[12px] text-cc-ink-muted">
-                      The analysis narrative is model text and not part of this pack; the statement is covered by the signature.
+                      {aiStatementCoverageLine(result)}
                     </p>
                   )}
                 </div>

@@ -115,6 +115,8 @@ export interface DocFlow {
 export interface DocStep {
   /** The BPMN element id — the same id the `.bpmn` export and the map use. */
   id: string;
+  /** 3.1.0 (H5b): "Customer text: CODE “text”" when the step's plain name says a customer text; absent otherwise. */
+  customerText?: string;
   /** "Decision", "Service step" — `kindWord` of the map. */
   kind: string;
   /** The token the skeleton read out of the source. Always there. */
@@ -206,7 +208,8 @@ export interface ProcessDocumentation {
     percent: number | null;
     sentence: string;
   };
-  naming: { state: 'named' | 'not-named' | 'stale'; notice: string | null; named: number };
+  /** `origin` (3.1.0): the model that wrote the names, as recorded from its receipt; absent before, null without one. */
+  naming: { state: 'named' | 'not-named' | 'stale'; notice: string | null; named: number; origin?: { provider: string; modelId: string } | null };
   steps: DocStep[];
   statements: DocStatement[];
   effects: { registrations: DocUpdateRegistration[]; events: DocLuwEvent[] };
@@ -518,10 +521,13 @@ const heading = (level: 2 | 3, anchor: string, title: string): string[] => [`<a 
 export function processDocumentationToMarkdown(doc: ProcessDocumentation, opts: { originMarks?: boolean } = {}): string {
   const A = PROCESS_DOCUMENTATION_ANCHORS;
   // 3.0.21 (T08): a business name or lane from the naming stage is a model's, marked where it stands with the
-  // cc:origin comment pair (its call is not recorded per project). A prompt that reads the file as context passes
+  // cc:origin comment pair. A prompt that reads the file as context passes
   // `originMarks: false` and gets the text it got before.
   const marks = opts.originMarks !== false;
-  const named = (text: string): string => (marks ? `${aiOriginMarkdownOpen(UNRECORDED_AI)}${text}${AI_ORIGIN_MARKDOWN_CLOSE}` : text);
+  // v3.1.0: the mark carries the model the naming was recorded from (`naming.origin`); a document read before says
+  // "not-recorded", as it did.
+  const namesBy = doc.naming.origin ?? UNRECORDED_AI;
+  const named = (text: string): string => (marks ? `${aiOriginMarkdownOpen(namesBy)}${text}${AI_ORIGIN_MARKDOWN_CLOSE}` : text);
   // A legend that calls the business names AI-generated stands only where a step carries one (3.0.21).
   const namedSteps = doc.steps.some((s) => s.businessName);
   const facts = readCapabilityFacts(doc.facts);

@@ -47,8 +47,15 @@ const STAGES = PHASES.map((p) => p.key);
  * Clicking before that tests nothing and fails intermittently, so the page says
  * when it is ready instead of the test guessing.
  */
+/**
+ * The public address of a demo stage. Analyze opens in its Business view since
+ * v3.1.0 (AB-2, O10), the map page, which needs an account like the demo
+ * workspace; the Analyze stage these tests read — the score page — is its IT view.
+ */
+const stageAddress = (stage: string) => (stage === 'analyze' ? '/demo/analyze?view=it' : `/demo/${stage}`);
+
 async function openStage(page: import('@playwright/test').Page, stage: string) {
-  await page.goto(`/demo/${stage}`, { waitUntil: 'domcontentloaded' });
+  await page.goto(stageAddress(stage), { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
 }
 
@@ -194,7 +201,7 @@ test.describe('the demo can never be mistaken for a signed run', () => {
 test.describe('every demo screen says what it is', () => {
   for (const stage of STAGES) {
     test(`/demo/${stage} is marked, unsigned, and invites once`, async ({ page }) => {
-      await page.goto(`/demo/${stage}`, { waitUntil: 'domcontentloaded' });
+      await page.goto(stageAddress(stage), { waitUntil: 'domcontentloaded' });
 
       await expect(page.getByTestId('demo-notice')).toContainText('Demo project');
       await expect(page.getByTestId('demo-notice')).toContainText('Nothing you do here is saved');
@@ -365,24 +372,46 @@ test.describe('the demo costs an account nothing', () => {
     await page.click('button[type="submit"]:has-text("Sign In")');
     await page.waitForURL('**/dashboard', { timeout: 60000 });
 
-    // "My workspace" is the 3.0 list for every account (roadmap 3.0.1): the
-    // demo is its first row, and it opens the demo workspace with its tour.
-    const demoRow = page.locator('[data-workspace-open="demo"]').first();
-    await expect(demoRow).toContainText(DEMO_TITLE_PREFIX.trim(), { timeout: 60000 });
-    await expect(page.getByText('No projects yet')).toBeVisible();
+    // AB-14a: an account with no project lands on the first view, and the demo
+    // is its line "Prefer to look first?" — it opens the demo workspace.
+    await expect(page.locator('[data-home-first-view]')).toBeVisible({ timeout: 60000 });
+    const demoLink = page.locator('[data-home-open-demo]:visible');
+    await expect(demoLink).toHaveCount(1);
+    await expect(demoLink).toHaveAttribute('href', '/demo/workspace');
 
-    await demoRow.click();
-    await page.waitForURL('**/demo/workspace', { timeout: 60000 });
-    await expect(page.locator('[data-demo-workspace]')).toBeAttached({ timeout: 90000 });
+    // The demo opens like a project (v3.1.0, AB-2, O10): the demo workspace sends Business on to
+    // the demo's Analyze, where the map is the page — demo data, no model, no write.
+    const model: string[] = [];
+    page.on('request', (req) => {
+      if (req.url().includes('/api/gemini') || req.url().includes('/api/runs')) model.push(req.url());
+    });
+    await demoLink.click();
+    await page.waitForURL(/\/demo\/analyze(\?|$)/, { timeout: 60000 });
+    await expect(page.locator('[data-analyze-business="ready"][data-demo-workspace="business"]')).toBeAttached({ timeout: 90000 });
+    await expect(page.locator('[data-analyze-summary]')).toBeVisible();
+    await expect(page.locator('[data-analyze-walk=""]')).toBeVisible();
+    await expect(page.locator('[data-analyze-map] [data-process-map-canvas]').first()).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-analyze-interim] [data-first-look="end-state"]')).toBeVisible({ timeout: 90000 });
+    // Its way back is My workspace, as a project's Analyze, Business.
+    await expect(page.locator('[data-stage-back="my-workspace"]')).toHaveCount(1);
+    // IT and Management of the demo stay where they were.
+    await page.goto('/demo/workspace?view=it', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-demo-workspace="it"]')).toBeAttached({ timeout: 90000 });
+    expect(new URL(page.url()).pathname).toBe('/demo/workspace');
+    // IT's link to the map goes to the demo's Analyze with the map's place, as a project's does.
+    await page.goto('/demo/workspace?view=it#need', { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(/\/demo\/analyze#process-map$/, { timeout: 60000 });
 
     for (const stage of STAGES) {
       await page.goto(`/demo/${stage}`, { waitUntil: 'domcontentloaded' });
-      await expect(page.getByTestId('demo-strip')).toBeVisible();
+      await expect(page.getByTestId('demo-strip')).toBeVisible({ timeout: 60000 });
     }
+    expect(model, 'the demo reached the model or the run route').toEqual([]);
 
     // Walking the whole demo created nothing: no project document, so nothing
     // that could be charged, signed or stored per account.
+    // The first view again: it stands for an account without a project.
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-    await expect(page.getByText('No projects yet')).toBeVisible();
+    await expect(page.locator('[data-home-first-view]')).toBeVisible({ timeout: 60000 });
   });
 });

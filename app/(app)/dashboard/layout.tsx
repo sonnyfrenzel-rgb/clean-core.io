@@ -1,4 +1,5 @@
 import { demoListRow } from '@/lib/demo-list-row';
+import { homeMapSlice } from '@/lib/home-map-slice';
 import MyWorkspaceSwitch from '@/components/MyWorkspaceSwitch';
 
 /**
@@ -20,6 +21,15 @@ import MyWorkspaceSwitch from '@/components/MyWorkspaceSwitch';
  * before the next deploy.
  */
 
+/*
+ * AB-14a: the first view of a new account draws a live slice of the demo map
+ * (`lib/home-map-slice.ts`), computed here for the same reason as the demo row
+ * and held the same way — a few kilobytes of BPMN, once per server process.
+ */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
-  return <MyWorkspaceSwitch demo={demoListRow()}>{children}</MyWorkspaceSwitch>;
+  return (
+    <MyWorkspaceSwitch demo={demoListRow()} homeSlice={homeMapSlice()}>
+      {children}
+    </MyWorkspaceSwitch>
+  );
 }

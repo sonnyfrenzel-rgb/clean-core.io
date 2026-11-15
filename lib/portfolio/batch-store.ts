@@ -204,6 +204,30 @@ export async function createBatch(
   return ref.id;
 }
 
+/**
+ * Create a batch with its first programs. More programs than announced are
+ * refused before anything is written; an append that fails takes the new batch
+ * with it — its id was never handed out, and left behind it would refuse the
+ * retry as "one batch at a time". The append is one transaction, so nothing of
+ * it is left to remove.
+ */
+export async function createBatchWithPrograms(
+  db: AdminDb,
+  uid: string,
+  header: ReturnType<typeof checkBatchHeader>,
+  programs: unknown[],
+): Promise<{ batchId: string; appended: number }> {
+  if (programs.length > header.total) throw new BatchRefusal(M.overAnnounced, 400, 'batch-overrun');
+  const batchId = await createBatch(db, uid, header);
+  if (programs.length === 0) return { batchId, appended: 0 };
+  try {
+    return { batchId, appended: await appendPrograms(db, uid, batchId, programs) };
+  } catch (err) {
+    await db.collection(BATCH_COLLECTION).doc(batchId).delete().catch(() => undefined);
+    throw err;
+  }
+}
+
 /** Cancel: nothing queued is taken any more; queued programs fail as cancelled and drop their source. */
 export async function cancelBatch(db: AdminDb, uid: string, batchId: string, FieldValue: FieldValueT): Promise<void> {
   const found = await readBatch(db, uid, batchId);

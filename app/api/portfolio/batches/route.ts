@@ -2,11 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger, errMessage } from '@/lib/logger';
 import { openPortfolioRoute } from '@/lib/portfolio/access-server';
 import {
-  appendPrograms,
   batchesOf,
   BatchRefusal,
   checkBatchHeader,
-  createBatch,
+  createBatchWithPrograms,
   readBatch,
 } from '@/lib/portfolio/batch-store';
 import { PORTFOLIO_UPLOAD_BODY_BYTES } from '@/lib/portfolio/limits';
@@ -69,8 +68,7 @@ export async function POST(req: NextRequest) {
     }
     const header = checkBatchHeader(body);
     const programs = Array.isArray(body.programs) ? body.programs : [];
-    const batchId = await createBatch(gate.db, gate.uid, header);
-    const appended = programs.length > 0 ? await appendPrograms(gate.db, gate.uid, batchId, programs) : 0;
+    const { batchId, appended } = await createBatchWithPrograms(gate.db, gate.uid, header, programs);
     return NextResponse.json({ batchId, appended }, { status: 201 });
   } catch (err: unknown) {
     if (err instanceof BatchRefusal) return refused(err);

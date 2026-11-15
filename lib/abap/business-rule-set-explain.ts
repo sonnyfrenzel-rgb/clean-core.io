@@ -9,6 +9,8 @@ import { hasDemoCases, readDemoSwitches } from './demo-switches';
 import { APP_VERSION } from '../version';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
 import { engineReads3021Apply } from './engine-reads-3021-gate';
+import { engineReads310Apply } from './engine-reads-310-gate';
+import { customerTextProvenance, type CustomerTexts } from './customer-texts';
 
 /**
  * Business rules explained for a business reader — roadmap 3.0.20 "with it",
@@ -154,6 +156,8 @@ export const RULE_BASKET_LABELS: Readonly<Record<RuleBasket, string>> = Object.f
 export interface RuleQuestion {
   /** `Q-BR-004` — after the weightiest rule it asks about. */
   id: string;
+  /** 3.1.0 (H5b): "Customer text: CODE “text”" when the question says a customer text; absent otherwise. */
+  customerText?: string;
   /** The rules it asks about, weightiest first. Never empty. */
   ruleIds: string[];
   topic: RuleTopic;
@@ -211,6 +215,8 @@ export interface RuleExplanation {
   proposal: { kind: RuleProposalKind; reason: ExplainedSentence };
   /** Who is asked about it: the business, nobody (it stays as coded), or it is not determined — with the reason. */
   basket: { kind: RuleBasket; reason: ExplainedSentence };
+  /** 3.1.0 (H5b): "Customer text: CODE “text”" when the title or the sentence says a customer text; absent otherwise. */
+  customerText?: string;
 }
 
 export interface RuleSetExplanation {
@@ -282,7 +288,8 @@ function fieldStem(subject: string | null | undefined): string {
 /** The business words for a subject. A constant is named by its own name, never by its value. */
 function subjectWords(p: RuleParameter | undefined, ctx: PlainContext): string {
   if (!p?.subject) return 'the value';
-  if (operatorOf(p) === 'VALUE') return lcFirst(humaniseField(p.subject)) || 'the value';
+  // A constant's name, not its value; from 3.1.0 with the dictionary (`sap-dictionary.ts`): "Weight unit", not "Gewei".
+  if (operatorOf(p) === 'VALUE') return lcFirst(humaniseField(p.subject, ctx.reads310 ? { ...ctx, constants: new Map() } : undefined)) || 'the value';
   return lcFirst(humaniseField(p.subject, ctx)) || 'the value';
 }
 
@@ -630,6 +637,8 @@ interface RuleContext {
   anchor: SourceRange;
   /** From engine 3.0.20: a cap of a thousand million or more is technical on any subject. */
   reads3020: boolean;
+  /** From engine 3.1.0: such a cap counts only where every test of the rule compares against one (`capOnly`). */
+  reads310: boolean;
   /**
    * From engine 3.0.21: where a constant no condition tests filters what the program reads or sets what it writes
    * (`constantUsesOf`). Non-empty only for such a constant, which is then not `declarationOnly`.
@@ -662,6 +671,7 @@ function contextOf(rule: BusinessRule, facts: ExplainFacts, ctx: PlainContext, r
     statementIndex,
     anchor: uses.length > 0 ? range(uses[0].lineStart, uses[0].lineEnd) : anchor,
     reads3020,
+    reads310: ctx.reads310 === true,
     uses,
   };
 }
@@ -696,6 +706,15 @@ function constantDoes(rc: RuleContext): ExplainedSentence {
   return { text: parts.join(' '), anchors: usesAnchors(rc.uses) };
 }
 
+/** A cap of a thousand million or more (3.0.20). */
+const CAP = /^(?:10{9,}|9{9,})$/;
+/**
+ * From 3.1.0: a parameter that is a cap — the constant's declaration, or a comparison that bounds a value by caps only
+ * (`isCap`). An equality test is not: `= '1000000000'` can be a document number.
+ */
+const capOnly = (isCap: (v: string) => boolean) => (p: RuleParameter): boolean =>
+  operatorOf(p) === 'VALUE' || (/^(?:<|<=|>|>=|BETWEEN)$/.test(operatorOf(p)) && valuesOf(p).length > 0 && valuesOf(p).every(isCap));
+
 function technicalOf(rc: RuleContext, demo: boolean): ExplainedSentence | null {
   const { rule } = rc;
   const values = rule.parameters.flatMap(valuesOf);
@@ -711,8 +730,8 @@ function technicalOf(rc: RuleContext, demo: boolean): ExplainedSentence | null {
   const technicalSubject = rc.stems.length > 0 && rc.stems.every((s) => TECHNICAL_STEM.test(s));
   // From engine 3.0.20 (owner report 21.10.2026, "Only maximum scaled 1000000000000 is processed" first
   // in "What it decides"): a cap of a thousand million or more is "no limit" on any subject.
-  if (rc.reads3020 && values.some((v) => /^(?:10{9,}|9{9,})$/.test(v))) {
-    const v = values.find((x) => /^(?:10{9,}|9{9,})$/.test(x)) ?? '';
+  if (rc.reads3020 && values.some((v) => CAP.test(v)) && (!rc.reads310 || rule.parameters.every(capOnly((v) => CAP.test(v))))) {
+    const v = values.find((x) => CAP.test(x)) ?? '';
     return { text: `${numberWords(v)} is “no limit” written as a number — a technical cap, not a business limit.`, anchors: [where] };
   }
   if (technicalSubject && values.some(isSentinel)) {
@@ -1203,10 +1222,134 @@ function writtenValues(statements: readonly AbapStatement[], demoRoutines: Reado
   return out;
 }
 
+/**
+ * From 3.1.0: the fields a value can reach from outside the program — what a `SELECT` or `FETCH` fills whole
+ * (`INTO x`, `INTO (a, b)`) and what an `IMPORT` lists, as `markerKey` prefixes: `v:<name>` for a variable,
+ * `c:<type>:` for every component of a row. Not `INTO CORRESPONDING FIELDS` (a column the program adds to the row
+ * is not read), not `INTO TABLE`, and not a `LOOP`/`READ TABLE` over a table the program builds itself.
+ */
+interface SourcedFields {
+  /** Keys of the program's global fields, and of every row type. */
+  global: Set<string>;
+  /** Keys of a routine's own local fields, by routine: another routine's local of the same name is another field. */
+  local: Map<string, Set<string>>;
+  routines: Array<{ key: string; start: number; end: number }>;
+}
+
+/**
+ * The formal parameters of each method a class or interface declares (`METHODS m IMPORTING a TYPE … CHANGING
+ * VALUE(b) TYPE … RETURNING VALUE(r) TYPE …`), by `class|method` in lower case.
+ */
+function methodParameters(statements: readonly AbapStatement[]): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  let owner: string | null = null;
+  for (const s of statements) {
+    const keyword = s.keyword.toUpperCase();
+    if (keyword === 'CLASS' || keyword === 'INTERFACE') {
+      const name = /^(?:CLASS|INTERFACE)\s+([\w/]+)/i.exec(s.text.trim())?.[1]?.toLowerCase() ?? null;
+      const declares = (keyword === 'INTERFACE' || /\bDEFINITION\b/i.test(s.text)) && !/\b(?:DEFERRED|LOAD)\b/i.test(s.text);
+      owner = declares ? name : null;
+    }
+    if (keyword === 'ENDCLASS' || keyword === 'ENDINTERFACE') owner = null;
+    if (!owner || (keyword !== 'METHODS' && keyword !== 'CLASS-METHODS')) continue;
+    const m = /^(?:CLASS-)?METHODS\s+([\w/]+)\b([\s\S]*)$/i.exec(s.text.trim());
+    if (!m) continue;
+    const names = new Set<string>();
+    for (const p of m[2].matchAll(/(?:VALUE|REFERENCE)\(\s*([\w/]+)\s*\)|([\w/]+)\s+(?:TYPE|LIKE)\b/gi)) names.add((p[1] ?? p[2]).toLowerCase());
+    out.set(`${owner}|${m[1].toLowerCase()}`, names);
+  }
+  return out;
+}
+
+/**
+ * The routines (FORM, METHOD) of the source with the names each declares for itself: DATA, STATICS, FIELD-SYMBOLS,
+ * inline declarations, FORM parameters, and a METHOD's formal parameters from its class's or interface's declaration.
+ */
+function routineLocals(statements: readonly AbapStatement[]): Array<{ key: string; start: number; end: number; names: Set<string> }> {
+  const out: Array<{ key: string; start: number; end: number; names: Set<string> }> = [];
+  let open: { key: string; start: number; end: number; names: Set<string> } | null = null;
+  const parameters = methodParameters(statements);
+  let implementing: string | null = null;
+  for (const s of statements) {
+    const keyword = s.keyword.toUpperCase();
+    if (keyword === 'CLASS') implementing = /^CLASS\s+([\w/]+)\s+IMPLEMENTATION\b/i.exec(s.text)?.[1]?.toLowerCase() ?? null;
+    if (keyword === 'ENDCLASS') implementing = null;
+    if (keyword === 'FORM' || keyword === 'METHOD') {
+      const name = (/^(?:FORM|METHOD)\s+([\w/~]+)/i.exec(s.text)?.[1] ?? '').toLowerCase();
+      open = { key: `${name}@${s.lineStart}`, start: s.lineStart, end: Infinity, names: new Set() };
+      out.push(open);
+      // `METHOD intf~m` is declared in the interface, `METHOD m` in the class being implemented.
+      const [declaredIn, method] = name.includes('~') ? name.split('~') : [implementing, name];
+      if (keyword === 'METHOD' && declaredIn) for (const p of parameters.get(`${declaredIn}|${method}`) ?? []) open.names.add(p);
+    }
+    if (!open) continue;
+    if (keyword === 'ENDFORM' || keyword === 'ENDMETHOD') {
+      open.end = s.lineEnd;
+      open = null;
+      continue;
+    }
+    if (/^(?:DATA|STATICS|FIELD-SYMBOLS|FORM)$/.test(keyword)) {
+      for (const m of s.text.matchAll(/(<?[\w/]+>?)\s+(?:TYPE|LIKE)\b/gi)) open.names.add(m[1].toLowerCase());
+    }
+    for (const m of s.text.matchAll(/\b(?:DATA|FIELD-SYMBOL)\(\s*(<?[\w/]+>?)\s*\)/gi)) open.names.add(m[1].toLowerCase());
+  }
+  return out;
+}
+
+function sourcedKeys(statements: readonly AbapStatement[], types: ReadonlyMap<string, string>): SourcedFields {
+  const routines = routineLocals(statements);
+  const fields: SourcedFields = { global: new Set(), local: new Map(), routines: routines.map(({ key, start, end }) => ({ key, start, end })) };
+  let routine: (typeof routines)[number] | null = null;
+  const add = (raw: string) => {
+    const name = raw.toLowerCase().replace(/^@/, '').replace(/^data\(|\)$/g, '').trim();
+    if (!/^<?[\w/]+>?$/.test(name)) return;
+    // A routine's own field is sourced in that routine only; a row type stays one field wherever it is declared.
+    const own = routine && routine.names.has(name) ? routine.key : null;
+    const into = own ? (fields.local.get(own) ?? fields.local.set(own, new Set()).get(own)!) : fields.global;
+    into.add(`v:${name}`);
+    (own && !types.has(name) ? into : fields.global).add(`c:${types.get(name) ?? name}:`);
+  };
+  for (const s of statements) {
+    routine = routines.find((r) => s.lineStart >= r.start && s.lineStart <= r.end) ?? null;
+    if (!/^(?:SELECT|FETCH|IMPORT)$/i.test(s.keyword)) continue;
+    const text = s.text.replace(/\.\s*$/, '');
+    for (const m of text.matchAll(/\bINTO\s*\(([^)]*)\)/gi)) for (const name of m[1].split(',')) add(name);
+    for (const m of text.matchAll(/\bINTO\s+(?!CORRESPONDING\b|TABLE\b)(@?(?:DATA\()?<?[\w/]+>?)/gi)) add(m[1]);
+    // `IMPORT p1 = dobj1 p2 TO dobj2 dobj3 FROM …`: only the local targets — `p1`, `p2` are the names the values were
+    // stored under, not fields of this program; in the short form `dobj3` is both.
+    const imported = /^IMPORT\s+([\s\S]*?)\s+FROM\b/i.exec(text)?.[1];
+    if (imported) {
+      const tokens = imported.replace(/=/g, ' = ').split(/\s+/).filter(Boolean);
+      for (let i = 0; i < tokens.length; ) {
+        if (tokens[i + 1] === '=' || /^TO$/i.test(tokens[i + 1] ?? '')) {
+          if (tokens[i + 2]) add(tokens[i + 2]);
+          i += 3;
+        } else {
+          add(tokens[i]);
+          i += 1;
+        }
+      }
+    }
+  }
+  return fields;
+}
+
+/**
+ * Is this `markerKey`, tested on `line`, a field a value can reach from outside the program's own assignments
+ * (`sourcedKeys`)? A routine's local field counts only where the read that fills it is in the same routine.
+ */
+function isSourced(key: string, line: number, sourced: SourcedFields): boolean {
+  const routine = sourced.routines.find((r) => line >= r.start && line <= r.end);
+  const sets = [sourced.global, ...(routine && sourced.local.has(routine.key) ? [sourced.local.get(routine.key)!] : [])];
+  return sets.some((set) => set.has(key) || (key.startsWith('c:') && set.has(key.slice(0, key.lastIndexOf(':') + 1))));
+}
+
 interface BasketFacts {
   /** The program has demo cases of its own — a demo flag or a test data switch (`readDemoSwitches`). */
   hasDemo: boolean;
   written: Map<string, Map<string, number>>;
+  /** From 3.1.0: the fields a read fills (`sourcedKeys`); null for an earlier engine. */
+  sourced: SourcedFields | null;
   /** `declaredTypes` of the source: what makes two components one field. */
   types: ReadonlyMap<string, string>;
   ctx: PlainContext;
@@ -1254,7 +1397,7 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   }
   // "No limit" written as a number on anything but money: a technical cap, whatever the field is called.
   // From engine 3.0.20, like the cap in `technicalOf`: a run of an older engine keeps its reading.
-  if (rc.reads3020 && values.some(isSentinel) && !rc.stems.some((s) => MONEY.test(s))) {
+  if (rc.reads3020 && values.some(isSentinel) && !rc.stems.some((s) => MONEY.test(s)) && (!rc.reads310 || rc.rule.parameters.every(capOnly(isSentinel)))) {
     const v = values.find(isSentinel) ?? '';
     return say('technical', `${numberWords(v)} is “no limit” written as a number — a technical cap, not a business limit.`);
   }
@@ -1271,6 +1414,9 @@ function basketOf(rc: RuleContext & { holdsStop: boolean }, technical: Explained
   // has not made the plant its own marker.
   const markerTopic = topic === 'status' || topic === 'credit' || topic === 'other';
   const marker = markerTopic && tests.length > 0 && tests.every((p) => {
+    // From 3.1.0: a field a read also fills may hold the value from there — the program's assignment does not make it
+    // a marker of its own.
+    if (bf.sourced && isSourced(markerKey(p.subject, bf.types), p.lineStart, bf.sourced)) return false;
     const held = bf.written.get(markerKey(p.subject, bf.types));
     const vs = valuesOf(p).map((v) => v.toUpperCase());
     // Set by the program before it is tested: a value assigned only after the check was read, not set.
@@ -1371,6 +1517,22 @@ function questionOf(group: QuestionInput[], ctx: PlainContext): RuleQuestion {
   const base = { id: `Q-${ids[0]}`, ruleIds: ids, topic: first.explanation.topic, weight };
   const subject = first.t?.subject ?? first.rc.subject;
   const tests = group.map((g) => g.t);
+  // From 3.1.0: limits on one amount grouped across currencies keep each limit's currency.
+  const monies = group.map((g) => amountInCurrency(g.rc, ctx));
+  const money0 = monies.find((m) => m !== null);
+  if (ctx.reads310 && group.length > 1 && money0 && group.every((g, k) => monies[k] !== null || isLimit(g.t))) {
+    const limits = [...new Set(group.map((g, k) => {
+      const m = monies[k];
+      return m ? `${OPERATOR_WORDS[operatorOf(m.limit)]} ${numberWords(valuesOf(m.limit)[0])} ${m.currency}` : `${OPERATOR_WORDS[g.t!.op]} ${numberWords(g.t!.values[0])}`;
+    }))];
+    return {
+      ...base,
+      topic: 'amounts',
+      shape: 'limits',
+      statement: { text: `The program works with ${limits.length === 1 ? 'one limit' : `${limits.length} limits`} on ${theSubject(money0.subject)}: ${joinWords(limits)}.`, anchors },
+      ask: 'Are these limits still right?',
+    };
+  }
   if (group.length > 1 && tests.every(isLimit)) {
     const limits = [...new Set(tests.map((t) => `${OPERATOR_WORDS[t!.op]} ${numberWords(t!.values[0])}`))];
     return {
@@ -1452,10 +1614,13 @@ export function explainBusinessRules(
   facts: ExplainFacts,
   /** The engine the explanation is read for (`ENGINE_READS_3020_FROM`). */
   engineVersion: string | null = APP_VERSION,
+  /** 3.1.0 (H5b): the project's customer texts — the first source of words, each title and question that says one marked. */
+  customerTexts?: CustomerTexts | null,
 ): RuleSetExplanation {
   const reads3020 = engineReads3020Apply(engineVersion);
   const reads3021 = engineReads3021Apply(engineVersion);
-  const ctx = plainContext(source);
+  const texts = engineReads310Apply(engineVersion) && customerTexts ? customerTexts : null;
+  const ctx = plainContext(source, { engineVersion, ...(texts ? { customerTexts: texts } : {}) });
   const hasInclude = facts.statements.some((s) => s.keyword.toUpperCase() === 'INCLUDE' && !/^INCLUDE\s+(?:TYPE|STRUCTURE)\b/i.test(s.text));
   // The values the code tests one field against, across rules — for "handled by another rule".
   const siblings = new Map<string, string[]>();
@@ -1472,7 +1637,14 @@ export function explainBusinessRules(
   const demoRoutines = new Set((set.demoCases ? readDemoSwitches(source, engineVersion)?.routines ?? [] : []).map((r) => r.toUpperCase()));
   const types = declaredTypes(facts.statements);
   const hasDemo = hasDemoCases(source, engineVersion);
-  const basketFacts: BasketFacts = { written: writtenValues(facts.statements, demoRoutines, types), types, ctx, hasInclude, hasDemo };
+  const basketFacts: BasketFacts = {
+    written: writtenValues(facts.statements, demoRoutines, types),
+    sourced: engineReads310Apply(engineVersion) ? sourcedKeys(facts.statements, types) : null,
+    types,
+    ctx,
+    hasInclude,
+    hasDemo,
+  };
   const asked: QuestionInput[] = [];
   const rules: RuleExplanation[] = set.rules.map((rule) => {
     const rc = contextOf(rule, facts, ctx, reads3020, reads3021);
@@ -1524,7 +1696,18 @@ export function explainBusinessRules(
   const order = ordered.flatMap((t) => t.ruleIds);
   const baskets: Record<RuleBasket, string[]> = { business: [], technical: [], undetermined: [] };
   for (const id of order) baskets[byId.get(id)!.basket.kind].push(id);
-  return { rules, order, topics: ordered, baskets, questions: questionsOf(asked, ctx) };
+  const questions = questionsOf(asked, ctx);
+  if (!texts) return { rules, order, topics: ordered, baskets, questions };
+  // 3.1.0 (H5b): a title or a question that says a customer text carries its provenance.
+  const markedRules = rules.map((r) => {
+    const customerText = customerTextProvenance([r.headline ?? '', r.protects.text].join(' | '), texts);
+    return customerText ? { ...r, customerText } : r;
+  });
+  const markedQuestions = questions.map((q) => {
+    const customerText = customerTextProvenance(q.statement.text, texts);
+    return customerText ? { ...q, customerText } : q;
+  });
+  return { rules: markedRules, order, topics: ordered, baskets, questions: markedQuestions };
 }
 
 /**

@@ -65,19 +65,20 @@ export interface RouteDef {
 /** The catalogue object the walk opens: a table every S/4 system has. */
 export const CATALOG_OBJECT = 'vbak';
 
-/** The workspace's first look has built up (`components/workspace/FirstLook.tsx`), as `workspace-a11y` waits for it. */
-const FIRST_LOOK_DONE = '[data-first-look="end-state"], [data-first-look="complete"]';
+/** The first insights stand in their end state (`components/workspace/FirstLook.tsx`; no build-up since v3.1.0, AB-3). */
+const FIRST_LOOK_DONE = '[data-first-look="end-state"]';
 
 /**
- * What says each view of the workspace has drawn its content. Only Business
- * still draws the first look: IT shows only its own answer since ADR-086
+ * What says each view has drawn its content. Only Business — Analyze's page
+ * since v3.1.0 (AB-2, ADR-109) — still draws the first look, below the map:
+ * IT shows only its own answer since ADR-086
  * (254ab06e) and Management only its decision since ADR-087 (7fecaa01), so
  * waiting for the first look there waits for something that never comes.
  * `data-it-view=""` is the loaded IT answer (`"loading"` while it is not);
  * Management's trend reads the runs until `data-management-history="read"`.
  */
 const VIEW_READY = {
-  business: FIRST_LOOK_DONE,
+  business: `[data-analyze-business="ready"] [data-analyze-map], [data-analyze-interim] ${FIRST_LOOK_DONE}`,
   it: '[data-it-view=""] [data-it-headline]',
   management: '[data-management-history="read"] [data-management-executive]',
 } as const;
@@ -92,26 +93,45 @@ export const ROUTES: RouteDef[] = [
   { key: 'clean-core-explained', route: '/clean-core-explained', session: 'public', url: '/clean-core-explained', ready: ['h1'] },
   { key: 'trust', route: '/trust', session: 'public', url: '/trust', ready: ['h1'] },
   { key: 'how-to', route: '/how-to', session: 'public', url: '/how-to', ready: ['h1'] },
-  { key: 'demo-analyze', route: '/demo/[stage] (analyze)', session: 'public', url: '/demo/analyze', ready: ['h1'] },
+  // The demo opens like a project since v3.1.0 (AB-2, O10): its Analyze, Business is the map page and needs
+  // an account like the demo workspace; the public Analyze stage is its IT view.
+  { key: 'demo-analyze', route: '/demo/analyze (IT)', session: 'public', url: '/demo/analyze?view=it', ready: ['h1'] },
+  {
+    key: 'demo-analyze-business',
+    route: '/demo/analyze (Business)',
+    session: 'signed-in',
+    url: '/demo/analyze',
+    ready: ['[data-analyze-business="ready"][data-demo-ready="true"] h1', `[data-analyze-interim] ${FIRST_LOOK_DONE}`],
+  },
   // ADR-078: the Design tool's requirements workspace, in the demo and on the seeded project.
   { key: 'demo-requirements', route: '/demo/[stage]/requirements', session: 'public', url: '/demo/design/requirements', ready: ['[data-spec-workspace][data-spec-state="ready"]'] },
   // Every signed-in account's since 3.0.1; a visitor is sent to sign in and back (DemoWorkspaceShell).
-  { key: 'demo-workspace', route: '/demo/workspace', session: 'signed-in', url: '/demo/workspace', ready: ['[data-demo-ready="true"] h1', FIRST_LOOK_DONE] },
+  // IT and Management only since v3.1.0: a Business address goes on to `/demo/analyze`.
+  { key: 'demo-workspace', route: '/demo/workspace (IT)', session: 'signed-in', url: '/demo/workspace?view=it', ready: ['[data-demo-workspace="it"][data-demo-ready="true"] h1'] },
   { key: 'settings', route: '/settings', session: 'signed-in', url: '/settings', ready: ['h1'] },
   { key: 'admin-workspace', route: '/admin/workspace', session: 'signed-in', url: '/admin/workspace', ready: ['h1'] },
   { key: 'dashboard', route: '/dashboard', session: 'signed-in', url: '/dashboard', ready: ['h1'] },
-  ...(['business', 'it', 'management'] as const).map((view) => ({
+  // Business is Analyze's page since v3.1.0 (AB-2, ADR-109); IT and Management stay on the workspace.
+  {
+    key: 'project-business',
+    route: '/project/[id]/analyze (business)',
+    session: 'signed-in' as const,
+    url: '/project/{project}/analyze?view=business',
+    ready: ['[data-analyze-business="ready"] h1', VIEW_READY.business],
+  },
+  ...(['it', 'management'] as const).map((view) => ({
     key: `project-${view}`,
     route: `/project/[id] (${view})`,
     session: 'signed-in' as const,
     url: `/project/{project}?view=${view}`,
     ready: [`[data-workspace-shell="${view}"] h1`, VIEW_READY[view]],
   })),
+  // Analyze's own address is its Business view (`project-business` above); the score page is its IT view.
   ...STAGES.map((stage) => ({
     key: `stage-${stage}`,
-    route: `/project/[id]/${stage}`,
+    route: `/project/[id]/${stage}${stage === 'analyze' ? ' (IT)' : ''}`,
     session: 'signed-in' as const,
-    url: `/project/{project}/${stage}`,
+    url: `/project/{project}/${stage}${stage === 'analyze' ? '?view=it' : ''}`,
     ready: ['[data-stage-title]'],
   })),
   {

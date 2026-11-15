@@ -60,6 +60,8 @@ import { pinnedExamplePath } from './helpers/starter-example-files';
 
 const read = (name: string) => readFileSync(pinnedExamplePath(name), 'utf8');
 const LEGACY = 'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap';
+/** The last engine before the 3.1.0 readings (`ENGINE_READS_310_FROM`): a run it signed keeps its reading. */
+const BEFORE_310 = '3.0.23';
 
 const sha = (value: unknown) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
 
@@ -257,14 +259,29 @@ test.describe('the business rules of a large source', () => {
       'Z_ORDER_INTEGRITY_CHECK.txt': '637f970bd6e90a83b09b145bc90610332111a52f8380f9e77dfbf4795906094e',
       'Z_SALES_ORDER_CREATOR.txt': '7b079dd80f1dc957a1c6c298de9e68cc6fb21515621ff38b0948fb8c6626f177',
     };
+    // These are the reading of every engine before 3.1.0, pinned against the last one: a run signed by it keeps them.
     for (const [name, digest] of Object.entries(pinned)) {
-      expect(sha(deriveBusinessRules(read(name))), `${name} reads differently now`).toBe(digest);
+      expect(sha(deriveBusinessRules(read(name), BEFORE_310)), `${name} reads differently now`).toBe(digest);
+    }
+    // **Engine 3.1.0 moved two, by process elements only.** Compared field by field against the reading above: the
+    // rule count is identical in all eight, and the only differing values are `rules[].processElements` — an arm that
+    // only sets a flag a later decision reads is a step of that decision (87415241), so the rule names it: the
+    // 1.000-line example's BR-004/BR-005 gain the `<fs_order>-action` steps of L425 and L428; `Z_MM_PO_APPROVAL`
+    // gains `gv_emergency` (L73), `gv_skip_limit` (L88) and `gv_approved` (L549), and the call of `REQUEST_APPROVAL`
+    // its rule names is a phase now (`send-task` → `sub-process`). The other six read as before.
+    const pinned310: Record<string, string> = {
+      ...pinned,
+      'ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap': '28b7669e0f116ba1f42dd9a8266da54409fd4c0e14b6a7ab685663a91b63659c',
+      'Z_MM_PO_APPROVAL.abap': '6b93640b4b874f4ad3ea6ba6766e197eb299380594512a9f5d9bfa25b2c381cd',
+    };
+    for (const [name, digest] of Object.entries(pinned310)) {
+      expect(sha(deriveBusinessRules(read(name))), `${name} reads differently now (engine 3.1.0)`).toBe(digest);
     }
   });
 
   test('and so is the reading of a 172 kB source that does hit the indexed lookup', () => {
     const composite = legacyWithCheckGuards(400);
-    const set = deriveBusinessRules(composite);
+    const set = deriveBusinessRules(composite, BEFORE_310);
     // Unmoved by 2.17 (b) — the count is the measurement here, and the digest
     // moved for the one reason the test above names: the 1.000-line program at
     // the head of this composite carries ten rules inside a `LOOP AT`, and they
@@ -275,6 +292,11 @@ test.describe('the business rules of a large source', () => {
     // the test above).
     expect(set.rules).toHaveLength(818);
     expect(sha(set)).toBe('727819f3cffaf92ab889d4ff2c2246de461c5fc90983add243abcc98acc46f53');
+    // Engine 3.1.0: the same 818 rules, and the digest moved for the one reason the test above names — two rules of
+    // the 1.000-line program at its head name the flag steps of L425 and L428 among their process elements.
+    const set310 = deriveBusinessRules(composite);
+    expect(set310.rules).toHaveLength(818);
+    expect(sha(set310)).toBe('5d1498f14ebf7c733dc940dd9d285814c94b003907f48a6ff1e961c591934f30');
   });
 });
 

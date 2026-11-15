@@ -254,7 +254,7 @@ function ruleSetOf(source: string | null | undefined, engineVersion: string | nu
 /** `deriveBusinessRules`, keeping the facts: the same rules, the same numbers. */
 function readRuleSet(source: string, engineVersion: string | null): { set: BusinessRuleSet; facts: ProcessFacts } {
   const facts = buildProcessFacts(source);
-  return { set: deriveBusinessRulesFrom(source, facts, buildProcessSkeletonFrom(facts), engineVersion), facts };
+  return { set: deriveBusinessRulesFrom(source, facts, buildProcessSkeletonFrom(facts, { engineVersion }), engineVersion), facts };
 }
 
 /** The topics, or none when the explanation cannot be written — the register never fails over its prose. */

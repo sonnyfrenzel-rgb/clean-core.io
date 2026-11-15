@@ -72,13 +72,18 @@ test('a draft held by the caller outlives the map that drew it', () => {
   expect(createDraftHolder().get()).toBeNull();
 });
 
-test('the workspace holds the draft above the view switch and hands it down to the map', () => {
+test('Analyze holds the draft above the view switch and hands it down to the map', () => {
   const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
-  const shell = read('components/workspace/WorkspaceShell.tsx');
-  const holderAt = shell.indexOf('useState(createDraftHolder)');
-  expect(holderAt, 'the shell keeps no draft, so a view switch discards it').toBeGreaterThan(-1);
-  const mount = shell.slice(shell.indexOf('<WorkspaceProcess'), shell.indexOf('/>', shell.indexOf('<WorkspaceProcess')));
-  expect(mount, 'the shell does not hand its draft to the process block').toMatch(/\bdraftHolder=\{processDraft\}/);
+  // Since v3.1.0 the map is Analyze, Business's (AB-2): the route holds the draft, because a switch to IT or
+  // Management unmounts the Business page (it was the workspace shell's while the map stood there).
+  const route = read('app/(app)/project/[projectId]/analyze/page.tsx');
+  const holderAt = route.indexOf('useState(createDraftHolder)');
+  expect(holderAt, 'the route keeps no draft, so a view switch discards it').toBeGreaterThan(-1);
+  expect(route).toContain('draftHolder={processDraft}');
+  const business = read('components/analyze/AnalyzeBusiness.tsx');
+  expect(business, 'the Business page makes a draft of its own, which a view switch would discard').not.toContain('createDraftHolder');
+  const mount = business.slice(business.indexOf('<WorkspaceProcess'), business.indexOf('/>', business.indexOf('<WorkspaceProcess')));
+  expect(mount, 'the Business page does not hand the draft to the process block').toMatch(/\bdraftHolder=\{draftHolder\}/);
 
   const process = read('components/workspace/WorkspaceProcess.tsx');
   const map = jsxOf(process, 'ProcessMap');
@@ -86,4 +91,18 @@ test('the workspace holds the draft above the view switch and hands it down to t
 
   const pm = read('components/process-map/ProcessMap.tsx');
   expect(pm).toContain('const drafts = draftHolder ?? ownDraft;');
+});
+
+/**
+ * QA review of 0c6b49ec357c (74b480f956ec): the edit mode is state of the instance, and the instance can be
+ * handed a project this account may only read. The modeller — and its save — opens only while the project
+ * allows editing, whatever was asked for before.
+ */
+test('the modeller opens only while the project allows editing', () => {
+  const src = fs.readFileSync(path.resolve(__dirname, '..', 'components', 'process-map', 'ProcessMap.tsx'), 'utf8');
+  expect(src).toContain('const editing = editingAsked && canEdit;');
+  expect(src).not.toMatch(/const \[editing, setEditing\]/);
+  // Every way into the modeller reads the derived mode, never the asked one.
+  expect(src).toMatch(/\{editing && view === 'map' && !isPhone \? \(/);
+  expect(src.match(/editingAsked/g)?.length, 'the asked mode is read outside its declaration and its derivation').toBe(2);
 });

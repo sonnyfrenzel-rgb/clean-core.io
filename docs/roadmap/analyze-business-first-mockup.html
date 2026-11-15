@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analyze on the map · mock-up v4</title>
+<style>
+/* =====================================================================
+   Mock-up v3, not product code. Analyze opens on the BPMN map. The map is
+   there at once with the engine's names; the AI names arrive in the
+   background and swap in visibly (owner, O2). Business text around the
+   map, three charts below it, code on demand (owner, O4), full screen
+   with navigation, editing and the tour. IT and Management: one page each,
+   everything at once. Nothing may cover anything: panels sit beside or
+   below the map, never on it.
+   Look: app/globals.css tokens, StageHeader, ToolBar, StageViewSwitch,
+   process-map.css, CanvasViewControls / BpmnEditor (full screen).
+   Content: Z_MM_PO_APPROVAL (552 lines).
+   ===================================================================== */
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-deep:#006b2c;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --cc-code-bg:#030712;--cc-code-ink:#e5e7eb;--cc-code-muted:#9ca3af;--cc-code-keyword:#c4b5fd;--cc-code-literal:#fcd34d;--cc-code-name:#93c5fd;
+  --cc-score-1:#b91c1c;--cc-score-2:#d97706;--cc-score-3:#4f46e5;--cc-score-4:#1e1b4b;
+  --cc-radius-card:12px;--cc-radius-row:8px;--cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+p{margin:0}h1,h2,h3,h4{margin:0}
+button{font-family:inherit;cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+
+/* ---------- doc chrome (not product) ---------- */
+.mock{position:sticky;top:0;z-index:200;background:#1f1147;color:#fff;font-size:12px;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin-right:6px}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}
+.mock button.on{background:#e9e5ff;color:#1f1147}
+.mock .d{flex-basis:100%;color:#cfc8f3;font-weight:500;padding-top:2px}
+body.embed .mock{display:none}
+
+/* ---------- shell bar ---------- */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:16px;letter-spacing:-.02em;line-height:1.15}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--cc-field-border);border-radius:8px;height:32px;padding:0 10px;color:var(--cc-ink-muted);font-size:13px;width:220px;background:#fff}
+.search kbd{margin-left:auto;font-family:var(--mono);font-size:11px;border:1px solid var(--cc-line);border-radius:4px;padding:0 4px}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* ---------- StageFrame + StageHeader ---------- */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 32px}
+.headrow{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none;margin-top:6px}
+.vs{margin-left:auto}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:4px 12px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);border-radius:6px;display:inline-flex;align-items:center;gap:5px;min-height:28px}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.seg button.soft{color:#6b7280;font-weight:500}
+.tools{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tools .k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool.cur .ck{color:#a7f3d0}
+.tool.soft{color:var(--cc-ink-muted);font-weight:500;background:var(--cc-surface-muted)}
+.tools .legend{margin-left:auto;font-size:12px;font-weight:500;color:var(--cc-ink-muted);display:flex;gap:12px}
+.tools .legend span{display:inline-flex;gap:4px;align-items:center}
+.tools .hint{margin-left:4px;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+.sh{display:flex;align-items:flex-end;gap:16px;margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px}
+
+/* ---------- cc components ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.1;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;white-space:nowrap;text-decoration:none}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink-muted)}
+.btn.ghost[aria-pressed=true]{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn[disabled]{opacity:.5}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff}
+.pv svg.i{width:12px;height:12px}
+.pv.rec{color:var(--cc-information);border-color:var(--cc-information)}
+.pv.ai{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral)}
+.pv.imp{color:var(--cc-information);border-color:var(--cc-information)}
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.muted{color:var(--cc-ink-muted)}
+.sm{font-size:13px}
+.k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.h2{font-size:15px;font-weight:700}
+.mtag{display:inline-flex;font-size:11px;font-weight:600;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 5px;white-space:nowrap}
+.ln{font-size:12px;font-weight:500;color:var(--cc-ink-muted);text-decoration:underline;text-decoration-color:#c3c8d0;text-underline-offset:2px;background:none;border:0;padding:0;white-space:nowrap;font-family:var(--mono)}
+.anc{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--cc-information);background:var(--cc-information-bg);border:1px solid var(--cc-information-border);border-radius:4px;padding:0 5px;line-height:17px;margin:1px 2px 1px 0;white-space:nowrap}
+.strip{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--cc-information-border);background:var(--cc-information-bg);border-radius:8px;padding:10px 12px;font-size:13px;font-weight:500;line-height:1.5;color:var(--cc-ink);margin-top:12px}
+.strip svg{color:var(--cc-information);margin-top:2px}
+.strip .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- code ---------- */
+.code{background:var(--cc-code-bg);color:var(--cc-code-ink);font-family:var(--mono);font-size:12px;border-radius:8px;padding:6px 0;line-height:1.6;overflow-x:auto}
+.code .l{display:flex;white-space:pre}
+.code .l .no{width:40px;text-align:right;color:var(--cc-code-muted);padding-right:10px;flex:none}
+.code .l .tx{padding-right:12px}
+.code .l.hl{background:rgb(59 130 246 / .28);box-shadow:inset 3px 0 0 var(--cc-code-name)}
+.code .kw{color:var(--cc-code-keyword)}.code .lit{color:var(--cc-code-literal)}.code .cm{color:var(--cc-code-muted)}
+
+/* ---------- business: summary above the map ---------- */
+.sumcard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 24px;align-items:start;background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);padding:14px 18px;margin-top:12px}
+.sumcard h2{font-size:15px;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sumcard .txt p{font-size:14px;line-height:1.55;font-weight:500;margin-top:4px;max-width:900px}
+.sumcard .txt p.why{color:var(--cc-ink-muted);font-size:13px}
+.sumcard .acts{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.sumcard .ways-c{min-width:300px}
+.wait{display:inline-block;height:10px;border-radius:5px;background:linear-gradient(90deg,#eef0f3,#f6f7f9,#eef0f3);vertical-align:middle}
+.grow{display:none}.grow.in{display:block}
+.grow-p{display:block}.grow-p.out{display:none}
+li.grow.in{display:flex}
+.gl{animation:fadein .5s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* ---------- the map ---------- */
+.mapgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:12px;align-items:start}
+.mapgrid.side{grid-template-columns:minmax(0,1fr) 360px}
+.mapcol{min-width:0}
+.maptools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--cc-line);border-radius:12px;padding:6px 8px;margin-bottom:8px}
+.maptools .seg button{font-size:12px;padding:3px 10px;min-height:26px}
+.maptools .tb{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;color:var(--cc-ink-muted);border:1px solid var(--cc-field-border);background:#fff;border-radius:8px;padding:4px 8px;min-height:28px}
+.maptools .z{min-width:40px;text-align:center;font-size:12px;font-weight:600;color:var(--cc-ink-muted);font-variant-numeric:tabular-nums}
+.maptools .sp{margin-left:auto}
+.maptools .showing{font-size:12px;font-weight:600;color:var(--cc-ink);display:inline-flex;gap:6px;align-items:center;background:var(--cc-information-bg);border:1px solid var(--cc-information-border);border-radius:8px;padding:3px 8px}
+.mapcard{position:relative;overflow-x:auto;overflow-y:hidden;border-radius:12px;border:1px solid var(--cc-line);background:var(--cc-surface);box-shadow:var(--cc-shadow)}
+.mapcard svg.map{display:block}
+.mapnote{display:flex;gap:8px 16px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+.mapnote .pen{color:var(--cc-warning)}
+.status{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;background:#fff;border:1px solid var(--cc-line);border-radius:8px;padding:8px 12px;margin-top:8px;font-size:13px;font-weight:500}
+.status .bar{flex:0 0 140px;height:4px;background:var(--cc-line);border-radius:2px;overflow:hidden}
+.status .bar i{display:block;height:100%;background:var(--cc-ink)}
+.status .sub{color:var(--cc-ink-muted);font-size:12px}
+.status .dotx{width:8px;height:8px;border-radius:999px;background:var(--cc-information);flex:none;animation:pulse 1.2s ease-in-out infinite}
+.status.calm .dotx{background:var(--cc-success);animation:none}
+@keyframes pulse{50%{opacity:.35}}
+
+/* SVG: bpmn-js look in product tokens */
+.el .sh{fill:var(--cc-surface);stroke:var(--cc-ink);stroke-width:2;transition:fill .3s}
+.el.end .sh{stroke-width:4}
+.el text{fill:var(--cc-ink);font-family:var(--sans);font-size:12px}
+.el text.anc{fill:var(--cc-ink-muted);font-family:var(--mono);font-size:11px}
+.el .mk{stroke:var(--cc-ink);stroke-width:2;fill:none}
+.el .pen{fill:none;stroke:var(--cc-warning);stroke-width:1.6}
+.el .wt circle{fill:var(--cc-ink-muted)}
+.el .badge rect{fill:#fff;stroke:var(--cc-neutral-border)}
+.el .badge text{fill:var(--cc-neutral);font-size:11px;font-weight:600}
+.el.swap .sh{fill:var(--cc-information-bg)}
+.el{cursor:pointer}
+.fl path{fill:none;stroke:var(--cc-ink);stroke-width:1.5}
+.fl text{fill:var(--cc-ink);font-size:12px;font-family:var(--sans)}
+.band rect{fill:var(--cc-surface-muted);stroke:var(--cc-line)}
+.band text{fill:var(--cc-ink-muted);font-size:11px;font-weight:600;letter-spacing:.08em}
+.map.open .el,.map.open .fl{animation:fadein .4s ease both}
+/* focus: tour station, chart highlight, search hit (process-map.css .cc-tour-canvas) */
+.t .el.dim .sh,.t .el.dim .mk{stroke:var(--cc-line)}
+.t .el.dim text{fill:var(--cc-ink-muted)}
+.t .el.dim .pen{opacity:.4}
+.t .fl.dim path{stroke:var(--cc-line)}
+.t .fl.dim text{fill:var(--cc-ink-muted)}
+.t .el.here .sh{stroke:var(--cc-ink);stroke-width:3;fill:var(--cc-information-bg)}
+.t .el.here text{font-weight:600}
+.el.sel .sh{stroke:var(--cc-information);stroke-width:3}
+.selbox{fill:none;stroke:var(--cc-information);stroke-width:1.5;stroke-dasharray:4 3}
+
+/* side column: tour card or code panel (beside the map, never on it) */
+.sidecol{display:flex;flex-direction:column;gap:12px;min-width:0}
+.tour{display:flex;flex-direction:column;background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow)}
+.tour-head{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--cc-line)}
+.tour-head .pos{font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.dots{display:flex;gap:4px;margin-left:auto}
+.dots i{width:6px;height:6px;border-radius:999px;background:var(--cc-line);display:block}
+.dots i.d{background:var(--cc-ink-muted)}
+.dots i.c{background:var(--cc-ink);width:14px}
+.tour-card{display:flex;flex-direction:column;gap:10px;padding:16px}
+.tour-card .q{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.tour-card h2{font-size:17px;font-weight:700;line-height:1.35}
+.tour-card .nar p{font-size:14px;line-height:1.6;font-weight:500}
+.tour-card .nar p+p{margin-top:8px}
+.tour-card .quiet{font-size:13px;color:var(--cc-ink-muted);line-height:1.5}
+.prov{display:flex;gap:6px 8px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--cc-ink-muted)}
+.tour-nav{display:flex;align-items:center;gap:8px;padding:12px 16px;border-top:1px solid var(--cc-line);flex-wrap:wrap}
+.tour-nav .r{margin-left:auto;display:flex;gap:8px}
+.codepanel{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.codepanel .top{display:flex;gap:8px;align-items:flex-start}
+.codepanel .top .x{margin-left:auto}
+.codepanel h3{font-size:15px;font-weight:700;line-height:1.35}
+
+/* charts below the map (recharts look: thin bars, 4px round ends, ink text) */
+.charts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:16px}
+.chart{padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.chart h3{font-size:14px;font-weight:700}
+.chart .take{font-size:13px;font-weight:600;line-height:1.45}
+.chart .foot{font-size:12px;color:var(--cc-ink-muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:auto;padding-top:4px}
+.bars{display:grid;gap:2px;margin:2px 0}
+.brow{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(60px,1fr) 28px;gap:8px;align-items:center;border:0;background:none;padding:5px 6px;border-radius:8px;text-align:left;font-size:13px;font-weight:500;color:var(--cc-ink);width:100%}
+.brow:hover,.brow.on{background:var(--cc-information-bg)}
+.brow .lab{line-height:1.3}
+.brow .lab small{display:block;font-size:12px;color:var(--cc-ink-muted);font-weight:500}
+.brow .track{height:12px;position:relative}
+.brow .track i{position:absolute;left:0;top:0;bottom:0;border-radius:0 4px 4px 0;background:var(--cc-information)}
+.brow .track i.out{background:#fff;border:1.5px dashed var(--cc-information)}
+.brow .v{font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.stack1{display:flex;gap:2px;height:14px;margin-top:2px}
+.stack1 i{display:block;height:100%;border-radius:2px}
+.stack1 i.a{background:var(--cc-information);border-radius:4px 0 0 4px}
+.stack1 i.b{background:#fff;border:1.5px dashed var(--cc-information);border-radius:0 4px 4px 0}
+.keyrow{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--cc-ink-muted);font-weight:500}
+.keyrow span{display:inline-flex;gap:5px;align-items:center}
+.keyrow i{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--cc-information)}
+.keyrow i.b{background:#fff;border:1.5px dashed var(--cc-information)}
+
+/* business text below the charts */
+.about{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr) minmax(0,1.2fr);gap:12px;margin-top:12px;align-items:start}
+.about section{padding:16px 18px}
+.about h3{font-size:14px;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.runs{list-style:none;margin:8px 0 0;padding:0;counter-reset:r}
+.runs li{padding:8px 0 8px 12px;border-left:3px solid transparent;margin-left:-12px;padding-left:12px}
+.runs li.now{border-left-color:var(--cc-ink);background:var(--cc-information-bg);border-radius:0 8px 8px 0}
+.runs li b{font-size:13px;font-weight:700;display:block}
+.runs li p{font-size:14px;line-height:1.55;font-weight:500;margin-top:2px}
+.who,.qs{list-style:none;margin:8px 0 0;padding:0}
+.who li,.qs li{font-size:14px;line-height:1.5;font-weight:500;padding:7px 0;border-top:1px solid #eef0f3}
+.who li:first-child,.qs li:first-child{border-top:0}
+.who li b{font-weight:700}
+.qs li{display:flex;gap:8px}
+.qs li .n{flex:none;width:20px;height:20px;border-radius:999px;border:1.5px solid var(--cc-field-border);font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-top:1px}
+.hint2{font-size:12px;color:var(--cc-ink-muted);line-height:1.5;margin-top:8px}
+
+/* endings */
+.ways{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.way{background:#fff;border:1px solid var(--cc-line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;box-shadow:var(--cc-shadow)}
+.way h3{font-size:14px;font-weight:700}
+.way p{font-size:13px;color:var(--cc-ink-muted);line-height:1.5;flex:1}
+.ways-c{display:grid;gap:10px}
+.ways-c .btn{width:100%;justify-content:space-between}
+.ways-c p{font-size:12px;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+.extras{display:flex;gap:8px 16px;flex-wrap:wrap;margin-top:10px}
+.extras .lnk{display:inline-flex;gap:6px;align-items:center;font-weight:500;color:var(--cc-ink-muted)}
+.endsec{margin-top:16px;display:grid;grid-template-columns:300px minmax(0,1fr);gap:12px;align-items:stretch}
+.walked{background:#fff;border:1px solid var(--cc-line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;align-items:flex-start;box-shadow:var(--cc-shadow)}
+
+/* IT + management: one page each */
+.page{display:grid;gap:12px;margin-top:14px}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:12px;align-items:start}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start}
+.sec{padding:16px 20px;min-width:0}
+.sec > .h2{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec .lede{font-size:13px;color:var(--cc-ink-muted);margin-top:2px;line-height:1.5}
+.fig{display:flex;align-items:baseline;gap:8px;margin-top:6px}
+.fig b{font-size:56px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.fig span{font-size:16px;font-weight:600;color:var(--cc-ink-muted)}
+.band2{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:15px;font-weight:700;flex-wrap:wrap}
+.band2 i{width:12px;height:12px;border-radius:3px;background:var(--cc-score-1)}
+.band2 small{font-size:13px;font-weight:500;color:var(--cc-ink-muted)}
+.scale{position:relative;margin-top:14px;height:12px;display:flex;gap:2px}
+.scale span{height:12px;border-radius:2px}
+.scale .m{position:absolute;top:-5px;width:6px;height:22px;background:var(--cc-ink);border-radius:2px;box-shadow:0 0 0 2px #fff;transform:translateX(-3px)}
+.note{font-size:12px;color:var(--cc-ink-muted);line-height:1.5;margin-top:10px}
+.lv{display:inline-flex;align-items:center;height:20px;padding:0 6px;border-radius:4px;font-size:12px;font-weight:600;border:1px solid;margin:4px 3px 0 0;white-space:nowrap}
+.lv.B{background:#f3f4f6;border-color:#d1d5db;color:#374151}
+.lv.C{background:var(--cc-warning-bg);border-color:var(--cc-warning-border);color:var(--cc-warning)}
+.lv.D{background:var(--cc-error-bg);border-color:var(--cc-error-border);color:var(--cc-error)}
+.lv.U{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink-muted);border-style:dashed}
+.facts{list-style:none;margin:8px 0 0;padding:0}
+.facts li{font-size:14px;font-weight:500;line-height:1.5;padding:7px 0;border-top:1px solid #eef0f3}
+.facts li:first-child{border-top:0}
+.facts b{font-weight:700}
+.dt{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+.dt th{text-align:left;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);padding:6px 8px;border-bottom:1px solid var(--cc-line);background:var(--cc-surface-muted)}
+.dt td{padding:8px;border-bottom:1px solid #eef0f3;font-weight:500;vertical-align:top;line-height:1.4}
+.dt td code,.cd{font-family:var(--mono);font-size:12px;background:var(--cc-code-bg);color:var(--cc-code-ink);border-radius:4px;padding:1px 6px;white-space:nowrap}
+.tblwrap{overflow-x:auto}
+.find{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:16px;padding:14px 0;border-top:1px solid var(--cc-line);align-items:start}
+.find:first-of-type{border-top:0}
+.find h3{font-size:14px;font-weight:700;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.find p{font-size:13px;line-height:1.55;color:var(--cc-ink);margin-top:4px}
+.sev{display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--cc-error);flex:none}
+.sev.m{background:var(--cc-warning-mark)}.sev.n{background:#fff;border:1.5px dashed var(--cc-neutral)}
+.mainseq{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:16px;margin-top:10px;align-items:start}
+.calls{list-style:none;margin:0;padding:0;font-size:13px}
+.calls li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;padding:2px 0;line-height:1.6;font-weight:500}
+.calls li span{font-family:var(--mono);font-size:12px;color:var(--cc-ink-muted);text-align:right}
+.ctx{display:flex;gap:8px;align-items:flex-start;font-size:13px;color:var(--cc-ink);background:var(--cc-information-bg);border:1px solid var(--cc-information-border);border-radius:8px;padding:8px 10px;line-height:1.5;margin-top:12px}
+.ctx svg{color:var(--cc-information);margin-top:3px}
+.big{font-size:20px;font-weight:700;line-height:1.35}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.tile{padding:14px 16px}
+.tile .v{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.1}
+.tile .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.tile p{font-size:12px;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+.indic{border:1.5px solid var(--cc-ink);border-radius:12px;padding:14px 16px;background:var(--cc-surface)}
+.indic .big{margin-top:4px}
+.opt th.on,.opt td.on{background:var(--cc-information-bg)}
+.opt th.on{color:var(--cc-ink)}
+.steps{list-style:none;margin:8px 0 0;padding:0;counter-reset:s}
+.steps li{display:flex;gap:10px;padding:7px 0;border-top:1px solid #eef0f3;font-size:14px;font-weight:500;line-height:1.5}
+.steps li:first-child{border-top:0}
+.steps li .n{flex:none;width:22px;height:22px;border-radius:999px;background:var(--cc-ink);color:#fff;font-size:12px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;margin-top:1px}
+
+/* ---------- full screen (BpmnEditor .cc-editor-fullscreen) ---------- */
+.fs{position:fixed;inset:0;z-index:100;background:var(--cc-page);display:flex;flex-direction:column;gap:8px;padding:8px;overflow:hidden}
+.fsbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;background:#fff;border:1px solid var(--cc-line);border-radius:12px;padding:8px}
+.fsbar .ttl{font-size:14px;font-weight:700;display:flex;flex-direction:column;line-height:1.25;margin-right:8px}
+.fsbar .ttl small{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.fsbar .vr{height:24px;border-left:1px solid var(--cc-line)}
+.fsbar .sp{margin-left:auto}
+.fsbar .tb,.palette .tb{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink);border:1px solid var(--cc-field-border);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;white-space:nowrap}
+.fsbar .tb[aria-pressed=true]{background:var(--cc-ink);color:#fff;border-color:var(--cc-ink)}
+.fsbar .z{min-width:44px;text-align:center;font-size:12px;font-weight:600;color:var(--cc-ink-muted);font-variant-numeric:tabular-nums}
+.fsfind{display:flex;align-items:center;gap:8px;border:1px solid var(--cc-field-border);border-radius:8px;height:32px;padding:0 10px;font-size:13px;width:220px;background:#fff;color:var(--cc-ink)}
+.fsfind.empty{color:var(--cc-ink-muted)}
+.switch{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;border:1px solid var(--cc-field-border);border-radius:8px;padding:4px 10px;min-height:32px;background:#fff;color:var(--cc-ink)}
+.switch .tr{width:28px;height:16px;border-radius:999px;background:#d1d5db;position:relative;flex:none}
+.switch .tr::after{content:"";position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:999px;background:#fff}
+.switch[aria-pressed=true] .tr{background:var(--cc-ink)}
+.switch[aria-pressed=true] .tr::after{left:14px}
+.palette{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:12px;padding:8px}
+.palette .grp{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.palette .grp > span{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.fsnote{font-size:12px;font-weight:500;color:var(--cc-ink-muted);padding:0 4px}
+.fsbody{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:8px}
+.fscanvas{min-width:0;min-height:0;overflow:auto;border:1px solid var(--cc-line);border-radius:12px;background:#fff}
+.fscanvas svg.map{display:block}
+.rail{min-height:0;overflow:auto;display:flex;flex-direction:column;gap:8px}
+.rail .panel{background:#fff;border:1px solid var(--cc-line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.rail .panel h4{font-size:13px;font-weight:700}
+.mini svg{display:block;width:100%;height:auto;border:1px solid var(--cc-line);border-radius:8px;background:var(--cc-surface-muted)}
+.hits{list-style:none;margin:0;padding:0}
+.hits li{display:flex;gap:8px;align-items:center;justify-content:space-between;padding:6px 0;border-top:1px solid #eef0f3;font-size:13px;font-weight:500}
+.hits li:first-child{border-top:0}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.fld .in{border:1px solid var(--cc-field-border);border-radius:8px;padding:7px 10px;font-size:13px;font-weight:500;color:var(--cc-ink);background:#fff;min-height:34px}
+.fld .in.ro{background:var(--cc-surface-muted);font-family:var(--mono);font-size:12px}
+.fld small{font-weight:500;line-height:1.4}
+.rail .acts{display:flex;gap:8px;flex-wrap:wrap}
+.fsstatus{margin:0}
+
+
+/* v4: what comes next, after the walk-through (in the flow, never on top) */
+.seg button.nudge{box-shadow:inset 0 0 0 2px var(--cc-information-border);color:var(--cc-ink)}
+.nextcard{margin-top:12px;background:#fff;border:1px solid var(--cc-information-border);border-radius:12px;box-shadow:var(--cc-shadow);padding:12px 16px;display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:12px 24px;position:relative}
+.nextcard .nxtop{grid-column:1 / -1;display:flex;gap:12px;align-items:center}
+.nextcard .nxtop > button{margin-left:auto}
+.nextcard.closed{padding:8px 16px}
+.nxtoggle{border:0;background:none;padding:0;font:inherit;font-size:15px;font-weight:700;color:var(--cc-ink);display:inline-flex;gap:6px;align-items:center}
+.nxtoggle .chev{display:inline-flex;transition:transform .2s}
+.nxtoggle .chev.o{transform:rotate(90deg)}
+.nextcard h2{font-size:15px;font-weight:700}
+.nextcard h3{font-size:13px;font-weight:700}
+.nviews,.ntools{list-style:none;margin:6px 0 0;padding:0}
+.nviews li{padding:4px 0}
+.nviews button{display:flex;gap:8px;align-items:flex-start;text-align:left;border:0;background:none;padding:4px 6px;border-radius:8px;font-size:13px;font-weight:500;line-height:1.45;color:var(--cc-ink);width:100%}
+.nviews button:hover{background:var(--cc-information-bg)}
+.nviews b{font-weight:700;white-space:nowrap}
+.nviews .up{color:var(--cc-information);margin-top:2px}
+.ntools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 16px}
+.ntools li{font-size:13px;line-height:1.45;font-weight:500;padding:3px 0;color:var(--cc-ink-muted)}
+.ntools li b{color:var(--cc-ink);font-weight:700}
+.redesign{font-size:12px;color:var(--cc-ink-muted);line-height:1.5;margin:0;padding:0;list-style:none}
+.redesign li{padding:1px 0}
+.redesign b{color:var(--cc-ink);font-weight:600}
+@media (max-width:1279px){ .ntools{grid-template-columns:repeat(2,minmax(0,1fr))} }
+@media (max-width:1023px){ .nextcard{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:640px){ .ntools{grid-template-columns:minmax(0,1fr)} }
+
+/* ---------- responsive ---------- */
+.only-phone{display:none}
+@media (max-width:1279px){
+  .mapgrid.side{grid-template-columns:minmax(0,1fr) 320px}
+  .about{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .about .runsec{grid-column:1 / -1}
+  .tools .hint,.tools .legend{flex-basis:100%;margin-left:0}
+}
+@media (max-width:1100px){
+  .mapgrid.side{grid-template-columns:minmax(0,1fr)}
+  .mapgrid.side .sidecol{order:-1}
+  .charts{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .charts .chart:last-child{grid-column:1 / -1}
+  .row2{grid-template-columns:minmax(0,1fr)}
+  .row3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .row3 > :last-child{grid-column:1 / -1}
+  .mainseq{grid-template-columns:minmax(0,1fr)}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .fsbody{grid-template-columns:minmax(0,1fr) 300px}
+}
+@media (max-width:1023px){
+  .shell .search{display:none}
+  .mapgrid.side{grid-template-columns:minmax(0,1fr)}
+  .sumcard{grid-template-columns:minmax(0,1fr)}
+  .sumcard .acts{justify-content:flex-start}
+  .endsec{grid-template-columns:minmax(0,1fr)}
+  .find{grid-template-columns:minmax(0,1fr)}
+  .fs{overflow:auto}
+  .fsbody{display:flex;flex-direction:column;flex:none}
+  .fscanvas{height:60vh;flex:none}
+  .rail{overflow:visible}
+}
+@media (max-width:767px){
+  .path{display:none}
+  .charts,.about,.row3,.ways,.tiles{grid-template-columns:minmax(0,1fr)}
+  .charts .chart:last-child,.row3 > :last-child,.about .runsec{grid-column:auto}
+}
+@media (max-width:640px){
+  .only-phone{display:inline-flex}
+  .only-desk{display:none!important}
+  .shell{padding:0 12px;gap:10px;height:52px}
+  .frame{padding:12px 16px 24px}
+  .headrow{flex-direction:column;gap:8px}
+  .vs{margin-left:0;width:100%}
+  .vs .seg{display:flex;width:100%}
+  .vs .seg button{flex:1;justify-content:center}
+  .tools .tool:not(.menu){display:none}
+  .sh .lead{display:none}
+  .sumcard{padding:12px 14px}
+  .sumcard .ways-c{min-width:0}
+  .maptools .tb .w{display:none}
+  .fig b{font-size:48px}
+  .dt .hp{display:none}
+  .fsfind{width:100%}
+  .fsbar .ttl{flex-basis:100%}
+}
+@media (prefers-reduced-motion: reduce){ .map.open .el,.map.open .fl,.gl{animation:none} .el .nm{transition:none} .status .dotx{animation:none} }
+</style>
+</head>
+<body>
+<div class="mock" id="mock"></div>
+<div id="app"></div>
+<script>
+const SRC = ["*&---------------------------------------------------------------------*","*& Report  Z_MM_PO_APPROVAL","*& Emergency purchase approval","*&---------------------------------------------------------------------*","*& Fictional but realistic MM example for Clean-Core.io:","*& purchase requisition check, vendor block list, price tolerance","*& against the purchasing info record, approval by department head","*& or manager, purchase order via BAPI with batch-input fallback.","*& Synthetic input only - not for productive SAP import.","*&---------------------------------------------------------------------*","REPORT z_mm_po_approval MESSAGE-ID zmm_po.","","TABLES: eban, eina, eine, lfa1, lfm1, t16fs, csks, zmm_vend_block, zmm_po_appr.","","TYPE-POOLS: abap.","","CONSTANTS: c_doc_type      TYPE esart VALUE 'NB',","           c_release_group TYPE frggr VALUE 'ZE',","           c_purch_org     TYPE ekorg VALUE '1000'.","","DATA: gs_eban       TYPE eban,","      gs_lfa1       TYPE lfa1,","      gv_amount     TYPE bapicurext,","      gv_ref_price  TYPE bapicurext,","      gv_emergency  TYPE abap_bool,","      gv_skip_limit TYPE abap_bool,","      gv_rejected   TYPE abap_bool,","      gv_on_hold    TYPE abap_bool,","      gv_approved   TYPE abap_bool,","      gv_approver   TYPE xubname,","      gv_ebeln      TYPE ebeln,","      gv_message    TYPE char255,","      gt_return     TYPE STANDARD TABLE OF bapiret2 WITH DEFAULT KEY.","","SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE text-001.","PARAMETERS: p_banfn TYPE eban-banfn OBLIGATORY DEFAULT '0010000001',","            p_bnfpo TYPE eban-bnfpo DEFAULT '00010',","            p_file  TYPE string LOWER CASE,","            p_test  AS CHECKBOX DEFAULT 'X'.","SELECTION-SCREEN END OF BLOCK b01.","START-OF-SELECTION.","  PERFORM check_authority.","  PERFORM read_requisition.","  PERFORM check_requisition.","  CHECK gv_rejected = abap_false.","  PERFORM upload_attachment.","  PERFORM read_vendor.","  PERFORM check_vendor.","  CHECK gv_rejected = abap_false.","  PERFORM read_info_record.","  PERFORM check_price.","  CHECK gv_on_hold = abap_false.","  PERFORM decide_approval.","  PERFORM notify_requester.","  PERFORM write_result_list.","","*&---------------------------------------------------------------------*","*&      Form  READ_REQUISITION","*&---------------------------------------------------------------------*","FORM read_requisition.","  SELECT SINGLE * FROM eban INTO gs_eban","    WHERE banfn = p_banfn","      AND bnfpo = p_bnfpo","      AND loekz = space.","  IF sy-subrc <> 0.","    MESSAGE e001 WITH 'Purchase requisition not found' p_banfn.","  ENDIF.","  gv_amount = gs_eban-menge * gs_eban-preis / gs_eban-peinh.","  IF gs_eban-waers <> 'EUR'.","    PERFORM convert_to_eur USING gs_eban-waers CHANGING gv_amount.","  ENDIF.","  IF gs_eban-dispo = 'EMG' OR gs_eban-bednr CP 'EMERG*'.","    gv_emergency = abap_true.","  ENDIF.","ENDFORM.","","FORM check_requisition.","  IF gs_eban-matnr IS INITIAL.","    PERFORM reject USING 'Material missing on the requisition'.","    RETURN.","  ENDIF.","  IF gs_eban-frgkz = 'X'.","    PERFORM reject USING 'Requisition is blocked for release'.","    RETURN.","  ENDIF.","  PERFORM check_material_status.","  IF gv_rejected = abap_true.","    RETURN.","  ENDIF.","  PERFORM check_account_assignment.","  IF gv_rejected = abap_true.","    RETURN.","  ENDIF.","  \"Plant 1000 is the central warehouse","  IF gs_eban-werks = '1000'.","    gv_skip_limit = abap_true.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  CHECK_AUTHORITY","*&---------------------------------------------------------------------*","FORM check_authority.","  DATA lv_ekgrp TYPE eban-ekgrp.","","  SELECT SINGLE ekgrp FROM eban INTO lv_ekgrp","    WHERE banfn = p_banfn","      AND bnfpo = p_bnfpo.","  IF sy-subrc <> 0.","    MESSAGE e001 WITH 'Purchase requisition not found' p_banfn.","  ENDIF.","","  \"Only the purchasing group of the requisition may approve","  \"(emergency procurement, ticket MM-2211)","","  AUTHORITY-CHECK OBJECT 'M_BANF_EKG'","    ID 'ACTVT' FIELD '02'","    ID 'EKGRP' FIELD lv_ekgrp.","  IF sy-subrc <> 0.","    MESSAGE e002 WITH 'No authorization for purchasing group' lv_ekgrp.","  ENDIF.","ENDFORM.","","FORM upload_attachment.","  DATA lt_bin TYPE STANDARD TABLE OF solix WITH DEFAULT KEY.","  DATA lv_length TYPE i.","","  CHECK p_file IS NOT INITIAL.","  CALL FUNCTION 'GUI_UPLOAD'","    EXPORTING","      filename   = p_file","      filetype   = 'BIN'","    IMPORTING","      filelength = lv_length","    TABLES","      data_tab   = lt_bin","    EXCEPTIONS","      file_open_error = 1","      file_read_error = 2","      OTHERS          = 3.","  IF sy-subrc <> 0.","    MESSAGE w003 WITH 'Attachment could not be read:' p_file.","  ELSE.","    PERFORM store_attachment TABLES lt_bin USING lv_length.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  READ_VENDOR","*&---------------------------------------------------------------------*","FORM read_vendor.","  DATA ls_lfm1 TYPE lfm1.","","  SELECT SINGLE * FROM lfa1 INTO gs_lfa1","    WHERE lifnr = gs_eban-flief.","  IF sy-subrc <> 0.","    PERFORM reject USING 'Fixed vendor missing on the requisition'.","    RETURN.","  ENDIF.","","  SELECT SINGLE * FROM lfm1 INTO ls_lfm1","    WHERE lifnr = gs_eban-flief","      AND ekorg = c_purch_org.","  IF sy-subrc <> 0.","    PERFORM reject USING 'Vendor not created for purchasing org 1000'.","  ENDIF.","ENDFORM.","","FORM convert_to_eur USING iv_waers TYPE waers","                 CHANGING cv_amount TYPE bapicurext.","  DATA lv_local TYPE bapicurext.","","  CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'","    EXPORTING","      date             = sy-datum","      foreign_amount   = cv_amount","      foreign_currency = iv_waers","      local_currency   = 'EUR'","    IMPORTING","      local_amount     = lv_local","    EXCEPTIONS","      no_rate_found    = 1","      OTHERS           = 2.","  IF sy-subrc = 0.","    cv_amount = lv_local.","  ELSE.","    MESSAGE w004 WITH 'No exchange rate for' iv_waers.","  ENDIF.","ENDFORM.","","FORM check_cost_center.","  SELECT SINGLE * FROM csks","    WHERE kokrs = '1000'","      AND kostl = gs_eban-kostl","      AND datbi >= sy-datum.","  IF sy-subrc <> 0.","    PERFORM reject USING 'Cost center not valid today'.","  ENDIF.","ENDFORM.","","FORM check_account_assignment.","  CASE gs_eban-knttp.","    WHEN 'K'.","      PERFORM check_cost_center.","    WHEN 'F'.","      IF gs_eban-aufnr IS INITIAL.","        PERFORM reject USING 'Internal order missing'.","      ENDIF.","    WHEN space.","      \"Stock material - no account assignment needed","    WHEN OTHERS.","      PERFORM reject USING 'Account assignment category not allowed'.","  ENDCASE.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  CHECK_VENDOR","*&---------------------------------------------------------------------*","FORM check_vendor.","  DATA lv_lifnr TYPE lifnr.","","  SELECT SINGLE lifnr FROM zmm_vend_block INTO lv_lifnr","    WHERE lifnr = gs_eban-flief","      AND blocked = 'X'.","  IF sy-subrc = 0.","    PERFORM reject USING 'Vendor is on the block list'.","  ENDIF.","ENDFORM.","","FORM reject USING iv_reason TYPE clike.","  gv_rejected = abap_true.","  gv_message  = iv_reason.","  MESSAGE s005 WITH 'Requisition rejected:' iv_reason.","  PERFORM log_approval.","ENDFORM.","","FORM hold_for_buyer.","  gv_on_hold = abap_true.","  gv_message = 'Price deviates from the info record - buyer review'.","  UPDATE eban SET statu = 'H'","    WHERE banfn = p_banfn","      AND bnfpo = p_bnfpo.","  COMMIT WORK.","  PERFORM log_approval.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  READ_INFO_RECORD","*&---------------------------------------------------------------------*","FORM read_info_record.","  DATA: ls_eina TYPE eina,","        ls_eine TYPE eine.","","  SELECT SINGLE * FROM eina INTO ls_eina","    WHERE matnr = gs_eban-matnr","      AND lifnr = gs_eban-flief.","  IF sy-subrc <> 0.","    CLEAR gv_ref_price.","    RETURN.","  ENDIF.","","  SELECT SINGLE * FROM eine INTO ls_eine","    WHERE infnr = ls_eina-infnr","      AND ekorg = c_purch_org","      AND werks = gs_eban-werks.","  IF sy-subrc = 0 AND ls_eine-peinh > 0.","    gv_ref_price = ls_eine-netpr / ls_eine-peinh.","  ENDIF.","ENDFORM.","","FORM check_material_status.","  DATA lv_mmsta TYPE marc-mmsta.","","  SELECT SINGLE mmsta FROM marc INTO lv_mmsta","    WHERE matnr = gs_eban-matnr","      AND werks = gs_eban-werks.","  IF lv_mmsta = '01' OR lv_mmsta = 'Z9'.","    PERFORM reject USING 'Material is blocked for purchasing in this plant'.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  CHECK_LIMIT","*&---------------------------------------------------------------------*","FORM check_limit USING iv_amount TYPE bapicurext.","  DATA: ls_t16fs TYPE t16fs,","        lv_ok    TYPE abap_bool.","","  SELECT SINGLE * FROM t16fs INTO ls_t16fs","    WHERE frggr = c_release_group.","  IF sy-subrc = 0.","    lv_ok = cl_mm_internal=>check_limit( iv_amount   = iv_amount","                                         is_strategy = ls_t16fs ).","    IF lv_ok = abap_false.","      gv_message = 'Amount above the release limit'.","    ENDIF.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  CHECK_PRICE","*&---------------------------------------------------------------------*","FORM check_price.","  DATA: lv_price   TYPE bapicurext,","        lv_ref     TYPE bapicurext,","        lv_dev_pct TYPE p LENGTH 7 DECIMALS 2.","","  CHECK gv_ref_price > 0.","  lv_price = gs_eban-preis / gs_eban-peinh.","  lv_ref   = gv_ref_price.","  lv_dev_pct = ( lv_price - lv_ref )","             * 100 / lv_ref.","","  \"Tolerance agreed with purchasing","  IF lv_dev_pct > 5.","    PERFORM hold_for_buyer.","    RETURN.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  DECIDE_APPROVAL","*&---------------------------------------------------------------------*","FORM decide_approval.","  IF gv_emergency = abap_true AND gv_amount <= '50000.00'.","    PERFORM find_department_head CHANGING gv_approver.","    PERFORM request_approval USING gv_approver 'DEPT_HEAD'.","  ELSEIF gv_skip_limit = abap_false.","    PERFORM check_limit USING gv_amount.","    PERFORM find_manager CHANGING gv_approver.","    PERFORM request_approval USING gv_approver 'MANAGER'.","  ELSE.","    gv_approved = abap_true.","    gv_message  = 'Approved without limit check (central warehouse)'.","  ENDIF.","  IF gv_approved = abap_true.","    PERFORM create_purchase_order.","  ENDIF.","  PERFORM log_approval.","ENDFORM.","","FORM log_approval.","  DATA ls_appr TYPE zmm_po_appr.","","  ls_appr-mandt    = sy-mandt.","  ls_appr-banfn    = p_banfn.","  ls_appr-bnfpo    = p_bnfpo.","  ls_appr-approver = gv_approver.","  ls_appr-amount   = gv_amount.","  ls_appr-message  = gv_message.","  ls_appr-erdat    = sy-datum.","  ls_appr-erzet    = sy-uzeit.","  INSERT zmm_po_appr FROM ls_appr.","ENDFORM.","","FORM find_department_head CHANGING cv_approver TYPE xubname.","  SELECT SINGLE uname FROM zmm_dept_head INTO cv_approver","    WHERE kostl = gs_eban-kostl.","  IF sy-subrc <> 0.","    cv_approver = 'PURCH_LEAD'.","  ENDIF.","ENDFORM.","INCLUDE z_mm_po_notify.","","FORM find_manager CHANGING cv_approver TYPE xubname.","  DATA lv_pernr TYPE pernr_d.","","  SELECT SINGLE pernr FROM pa0105 INTO lv_pernr","    WHERE usrid = gs_eban-afnam","      AND subty = '0001'.","  SELECT SINGLE usrid FROM pa0105 INTO cv_approver","    WHERE pernr = lv_pernr","      AND subty = '0001'.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  NOTIFY_REQUESTER","*&---------------------------------------------------------------------*","FORM notify_requester.","  DATA: lv_fm_name TYPE rs38l_fnam,","        lv_variant TYPE char10.","","  SELECT SINGLE fm_name FROM zmm_notify_cfg INTO lv_fm_name","    WHERE werks = gs_eban-werks.","  CHECK sy-subrc = 0.","  CALL FUNCTION lv_fm_name","    EXPORTING","      iv_banfn   = p_banfn","      iv_message = gv_message","    EXCEPTIONS","      OTHERS     = 1.","  IF sy-subrc <> 0.","    MESSAGE w007 WITH 'Notification failed for' p_banfn.","  ENDIF.","ENDFORM.","INCLUDE z_mm_po_log.","","*&---------------------------------------------------------------------*","*&      Form  REQUEST_APPROVAL","*&---------------------------------------------------------------------*","FORM request_approval USING iv_approver TYPE xubname","                            iv_role     TYPE char10.","  DATA: lv_objkey TYPE swo_typeid,","        lt_cont   TYPE STANDARD TABLE OF swcont WITH DEFAULT KEY,","        ls_cont   TYPE swcont.","","  IF p_test = abap_true.","    gv_approved = abap_true.","    gv_message  = 'Test mode: approval simulated'.","    RETURN.","  ENDIF.","","  CONCATENATE p_banfn p_bnfpo INTO lv_objkey.","  ls_cont-element = 'APPROVER'.","  ls_cont-value   = iv_approver.","  APPEND ls_cont TO lt_cont.","  ls_cont-element = 'ROLE'.","  ls_cont-value   = iv_role.","  APPEND ls_cont TO lt_cont.","","  CALL FUNCTION 'SAP_WAPI_CREATE_EVENT'","    EXPORTING","      object_type = 'BUS2105'","      object_key  = lv_objkey","      event       = 'ZAPPROVE'","    TABLES","      input_container = lt_cont.","  COMMIT WORK.","","  \"Approval arrives asynchronously in the workflow; the report","  \"treats the request as approved for emergency orders","  IF iv_role = 'DEPT_HEAD'.","    gv_approved = abap_true.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  CREATE_PURCHASE_ORDER","*&---------------------------------------------------------------------*","FORM create_purchase_order.","  DATA: ls_header  TYPE bapimepoheader,","        ls_headerx TYPE bapimepoheaderx,","        lt_item    TYPE STANDARD TABLE OF bapimepoitem WITH DEFAULT KEY,","        lt_itemx   TYPE STANDARD TABLE OF bapimepoitemx WITH DEFAULT KEY,","        ls_item    TYPE bapimepoitem,","        ls_itemx   TYPE bapimepoitemx,","        ls_return  TYPE bapiret2.","","  ls_header-doc_type   = c_doc_type.","  ls_header-vendor     = gs_eban-flief.","  ls_header-purch_org  = c_purch_org.","  ls_header-pur_group  = gs_eban-ekgrp.","  ls_header-comp_code  = '1000'.","  ls_headerx-doc_type  = abap_true.","  ls_headerx-vendor    = abap_true.","  ls_headerx-purch_org = abap_true.","  ls_headerx-pur_group = abap_true.","  ls_headerx-comp_code = abap_true.","","  ls_item-po_item    = '00010'.","  ls_item-material   = gs_eban-matnr.","  ls_item-plant      = gs_eban-werks.","  ls_item-quantity   = gs_eban-menge.","  ls_item-preq_no    = p_banfn.","  ls_item-preq_item  = p_bnfpo.","  APPEND ls_item TO lt_item.","  ls_itemx-po_item   = '00010'.","  ls_itemx-material  = abap_true.","  ls_itemx-plant     = abap_true.","  ls_itemx-quantity  = abap_true.","  ls_itemx-preq_no   = abap_true.","  ls_itemx-preq_item = abap_true.","  APPEND ls_itemx TO lt_itemx.","","  CALL FUNCTION 'BAPI_PO_CREATE1'","    EXPORTING","      poheader         = ls_header","      poheaderx        = ls_headerx","    IMPORTING","      exppurchaseorder = gv_ebeln","    TABLES","      return           = gt_return","      poitem           = lt_item","      poitemx          = lt_itemx.","","  READ TABLE gt_return INTO ls_return WITH KEY type = 'E'.","  IF sy-subrc = 0.","    PERFORM create_po_batch_input.","  ELSE.","    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'","      EXPORTING","        wait = abap_true.","    CONCATENATE 'Purchase order' gv_ebeln 'created' INTO gv_message","      SEPARATED BY space.","  ENDIF.","ENDFORM.","","FORM create_po_batch_input.","  DATA: lt_bdc  TYPE STANDARD TABLE OF bdcdata WITH DEFAULT KEY,","        ls_bdc  TYPE bdcdata,","        lt_msg  TYPE STANDARD TABLE OF bdcmsgcoll WITH DEFAULT KEY.","","  ls_bdc-program  = 'SAPLMEGUI'.","  ls_bdc-dynpro   = '0014'.","  ls_bdc-dynbegin = 'X'.","  APPEND ls_bdc TO lt_bdc.","  CLEAR ls_bdc.","  ls_bdc-fnam = 'MEPO_TOPLINE-SUPERFIELD'.","  ls_bdc-fval = gs_eban-flief.","  APPEND ls_bdc TO lt_bdc.","  ls_bdc-fnam = 'BDC_OKCODE'.","  ls_bdc-fval = '=MESAVE'.","  APPEND ls_bdc TO lt_bdc.","","  CALL TRANSACTION 'ME21N' USING lt_bdc","    MODE 'N'","    UPDATE 'S'","    MESSAGES INTO lt_msg.","  IF sy-subrc <> 0.","    gv_message = 'Purchase order could not be created'.","  ELSE.","    gv_message = 'Purchase order created by batch input'.","  ENDIF.","ENDFORM.","","FORM store_attachment TABLES it_bin STRUCTURE solix","                      USING iv_length TYPE i.","  DATA lv_objkey TYPE swo_typeid.","","  CONCATENATE p_banfn p_bnfpo INTO lv_objkey.","  INSERT zmm_po_attach FROM @( VALUE #( mandt  = sy-mandt","                                        objkey = lv_objkey","                                        length = iv_length","                                        erdat  = sy-datum ) ).","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  WRITE_RESULT_LIST","*&---------------------------------------------------------------------*","FORM write_result_list.","  FORMAT COLOR COL_HEADING.","  WRITE: / 'Emergency purchase approval', sy-datum, sy-uzeit.","  FORMAT RESET.","  ULINE.","  WRITE: / 'Requisition:', p_banfn, p_bnfpo,","         / 'Vendor:     ', gs_lfa1-lifnr, gs_lfa1-name1,","         / 'Amount EUR: ', gv_amount,","         / 'Approver:   ', gv_approver,","         / 'Order:      ', gv_ebeln,","         / 'Result:     ', gv_message.","  ULINE.","ENDFORM."];
+const P = {
+  check:'<path d="M20 6 9 17l-5-5"/>', arrow:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>', left:'<path d="m15 18-6-6 6-6"/>',
+  down:'<path d="m6 9 6 6 6-6"/>', right:'<path d="m9 18 6-6-6-6"/>',
+  pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>', rec:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  pause:'<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>', play:'<path d="m6 4 14 8-14 8Z"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>', help:'<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+  shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>', scan:'<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>', plus:'<path d="M12 5v14M5 12h14"/>', minus:'<path d="M5 12h14"/>', fit:'<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/>',
+  max:'<path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/>', min:'<path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="m14 10 7-7"/><path d="m3 21 7-7"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', dl:'<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>',
+  menu:'<path d="M4 6h16M4 12h16M4 18h16"/>', x:'<path d="M18 6 6 18M6 6l12 12"/>', code:'<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>',
+  undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>', redo:'<path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/>', grid:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>',
+  map:'<path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3Z"/><path d="M9 3v15M15 6v15"/>', edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
+};
+const ic = (n,c='') => `<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
+const chip = { rec:(t='Reconstructed')=>`<span class="pv rec">${ic('rec')}${t}</span>`, ai:()=>`<span class="pv ai">${ic('pen')}AI-generated</span>`, nd:(t='Not determined')=>`<span class="pv nd">${t}</span>`, imp:()=>`<span class="pv imp">Imported</span>` };
+const ILL = '<span class="mtag">mock-up: figures illustrative</span>';
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function hl(s){ let h=esc(s); if(/^\s*\*/.test(s)||/^\s*"/.test(s)) return `<span class="cm">${h}</span>`; h=h.replace(/('[^']*')/g,'<span class="lit">$1</span>'); return h.replace(/\b(FORM|ENDFORM|PERFORM|IF|ELSEIF|ELSE|ENDIF|SELECT|SINGLE|FROM|INTO|WHERE|AND|OR|UPDATE|SET|INSERT|CALL|FUNCTION|TRANSACTION|USING|CHECK|RETURN|DATA|TYPE|PARAMETERS|SELECTION-SCREEN|START-OF-SELECTION|MESSAGE|WITH|COMMIT|WORK|DEFAULT|OBLIGATORY|AS|CHECKBOX|EXPORTING|IMPORTING|TABLES|CHANGING|INCLUDE|MODE|AUTHORITY-CHECK|OBJECT|ID|FIELD)\b/g,'<span class="kw">$1</span>'); }
+function codeBlock(a,b,ctx=1){ let o=''; for(let i=Math.max(1,a-ctx);i<=Math.min(SRC.length,b+ctx);i++) o+=`<div class="l ${i>=a&&i<=b?'hl':''}"><span class="no">${i}</span><span class="tx">${hl(SRC[i-1]||'')}</span></div>`; return `<div class="code" role="region" aria-label="Lines ${a} to ${b}">${o}</div>`; }
+const A = (l)=>`<span class="anc">L${l}</span>`;
+
+/* ---------- the map: main line of Z_MM_PO_APPROVAL ----------
+   [id, kind, x, y, final name (AI, hand-written for the mock-up), line, ai?, engine name, code lines [a,b]] */
+const E = [
+ ['S','s',50,150,'Someone starts it from the entry screen','41',0,null,[35,41]],
+ ['T1','t',175,150,'Check the person may approve','42',1,'Check authorization M_BANF_EKG',[113,121]],
+ ['G0','g',300,150,'Allowed?','119',1,'Return code is 0?',[116,121]],
+ ['E0','ee',300,282,'Stops: not allowed','120',1,'Message E002',[119,121]],
+ ['T2','t',425,150,'Read the requisition','43',1,'Read EBAN',[60,75]],
+ ['T3','t',590,150,'Check the requisition','44',1,'Perform check_requisition',[77,98]],
+ ['G1','g',715,150,'Complete and valid?','45',1,'Rejected flag not set?',[45,45]],
+ ['E1','ee',715,282,'Stops: rejected, with the reason','230',1,'Perform reject',[230,235]],
+ ['T4','t',840,150,'Read and check the vendor','46–48',1,'Read LFA1, LFM1, block list',[151,167]],
+ ['G2','g',965,150,'Vendor allowed?','49',1,'Rejected flag not set?',[49,49]],
+ ['E2','ee',965,282,'Stops: vendor rejected','226',1,'Perform reject',[225,227]],
+ ['T5','t',1090,150,'Compare the price with the agreed price','50–51',1,'Compare with EINE net price',[303,319]],
+ ['G3','g',1215,150,'More than 5 % above?','315',1,'Deviation > 5?',[314,318]],
+ ['W1','t',1215,282,'Put the requisition on hold','240–242',1,'Update EBAN status H',[237,245]],
+ ['E3','ee',1345,282,'On hold for the buyer','239',1,'End after hold_for_buyer',[237,239]],
+ ['LT','lt',1345,150,'On to the approval','52',0,null,[52,53]],
+ ['LC','lc',50,508,'From the checks','53',0,null,[52,53]],
+ ['G4','g',175,508,'Emergency, at most 50,000.00?','325',1,'Emergency and amount ≤ 50000?',[324,335]],
+ ['T6a','t',320,410,'Ask the department head','326–327',1,'Read ZMM_DEPT_HEAD',[325,327]],
+ ['T6b','t',320,508,'Check the limit, ask a manager','329–331',1,'Check limit via CL_MM_INTERNAL',[328,331]],
+ ['T7','t',480,508,'Send the approval request','421–427',1,'Raise workflow event ZAPPROVE',[421,434]],
+ ['G5','g',610,508,'Approved?','336',1,'Approved flag set?',[336,338]],
+ ['E4','ee',610,622,'Ends without an order','340',1,'End decide_approval',[336,340]],
+ ['W2','t',740,508,'Create the purchase order','475–484',1,'Call BAPI_PO_CREATE1',[475,484]],
+ ['G6','g',870,508,'Order created?','487',1,'Return without error?',[486,489]],
+ ['W3','t',870,622,'Create it through the order screen','515–518',1,'Batch input ME21N',[515,518]],
+ ['T8','t',1020,508,'Record it and tell the requester','339, 54',1,'Insert ZMM_PO_APPR, notify',[339,354]],
+ ['T9','t',1170,508,'Show the result list','55',1,'Write list output',[540,552]],
+ ['EN','e',1310,508,'Done','55',0,null,[55,55]],
+];
+const F = [
+ ['S','T1'],['T1','G0'],['G0','T2','Yes'],['G0','E0','No'],['T2','T3'],['T3','G1'],['G1','T4','Yes'],['G1','E1','No'],['T4','G2'],['G2','T5','Yes'],['G2','E2','No'],['T5','G3'],['G3','LT','No'],['G3','W1','Yes'],['W1','E3'],
+ ['LC','G4'],['G4','T6a','Yes'],['G4','T6b','No'],['T6a','T7'],['T6b','T7'],['T7','G5'],['G5','W2','Yes'],['G5','E4','No'],['W2','G6'],['G6','T8','Yes'],['G6','W3','No'],['W3','T8'],['T8','T9'],['T9','EN'],
+];
+const TW=136, TH=80, GS=25, ER=18, LH=15;
+const EL = Object.fromEntries(E.map(e=>[e[0],{id:e[0],k:e[1],x:e[2],y:e[3],name:e[4],line:e[5],ai:e[6],eng:e[7]||e[4],code:e[8]}]));
+const X0=-12, Y0=34, MAPW=1424, MAPH=676;
+
+/* naming in the background (owner decision O2): engine names at once, AI names swap in, at most 45 s */
+const NAME_AT = {T1:2.0,G0:2.6,E0:3.1,T2:3.9,T3:4.6,G1:5.4,E1:6.0,T4:6.9,G2:7.5,E2:8.2,T5:9.0,G3:9.8,W1:10.6,E3:11.3,G4:12.4,T6a:13.0,T6b:13.9,T7:15.0,G5:15.8,E4:16.6,W2:17.9,T8:19.5};
+const KEPT = ['G6','W3','T9'];   // no AI name within 45 s: keep the engine name, no pen
+const AI_IDS = E.filter(e=>e[6]).map(e=>e[0]);
+const LIMIT = 45, SWAP = 0.9;
+const TEXT_AT = {sum:5.5, why:7.5, who:8.5, run0:11, run1:13.5, run2:16, run3:18.5, qs:21};
+
+function port(n,side){ const w = n.k==='t'?TW/2 : n.k==='g'?GS : ER; const h = n.k==='t'?TH/2 : n.k==='g'?GS : ER;
+  return side==='r'?[n.x+w,n.y]:side==='l'?[n.x-w,n.y]:side==='b'?[n.x,n.y+h]:[n.x,n.y-h]; }
+function route(a,b){ const A=EL[a],B=EL[b];
+  if (Math.abs(A.y-B.y)<2) return [port(A,'r'),port(B,'l')];
+  if (B.y>A.y && Math.abs(A.x-B.x)<2) return [port(A,'b'),port(B,'t')];
+  if (B.y>A.y){ const p=port(A,'b'),q=port(B,'l'); return [p,[p[0],q[1]],q]; }
+  if (B.y<A.y && A.k==='g'){ const p=port(A,'t'),q=port(B,'l'); return [p,[p[0],q[1]],q]; }
+  const p=port(A,'r'),q=port(B,'b'); return [p,[q[0],p[1]],q]; }
+function wrap(s,max){ const w=s.split(' '); const out=[]; let cur=''; for(const x of w){ if((cur+' '+x).trim().length>max && cur){out.push(cur);cur=x;} else cur=(cur+' '+x).trim(); } if(cur)out.push(cur); return out; }
+const PEN = (x,y)=>`<g class="pen" transform="translate(${x},${y}) scale(.5)"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></g>`;
+const WAIT = (x,y)=>`<g class="wt" transform="translate(${x},${y})"><circle cx="0" cy="0" r="1.6"/><circle cx="5" cy="0" r="1.6"/><circle cx="10" cy="0" r="1.6"/></g>`;
+// label lines for one name, per kind; returns svg text
+function nameTexts(n, name){
+  if (n.k==='t'){ const L=wrap(name,18); const last=n.y+TH/2-24; const y0=last-(L.length-1)*LH; return L.map((l,i)=>`<text x="${n.x}" y="${y0+i*LH}" text-anchor="middle">${esc(l)}</text>`).join(''); }
+  if (n.k==='g'){ const L=wrap(name,n.id==='G4'?15:20);
+    if (n.id==='G4') return L.map((l,i)=>`<text x="${n.x}" y="${n.y+GS+18+i*LH}" text-anchor="middle">${esc(l)}</text>`).join('');
+    return L.map((l,i)=>`<text x="${n.x}" y="${n.y-GS-10-(L.length-1-i)*LH}" text-anchor="middle">${esc(l)}</text>`).join(''); }
+  const L=wrap(name, n.k==='lc'?12:16); return L.map((l,i)=>`<text x="${n.x}" y="${n.y+ER+16+i*LH}" text-anchor="middle">${esc(l)}</text>`).join('');
+}
+function nlines(n,name){ return wrap(name, n.k==='t'?18 : n.k==='g'?(n.id==='G4'?15:20) : n.k==='lc'?12:16).length; }
+function elSvg(n){
+  let g='', anc='', mark='', pen='', wt='';
+  const maxL = Math.max(nlines(n,n.name), nlines(n,n.eng));
+  if (n.k==='t'){
+    g=`<rect class="sh" x="${n.x-TW/2}" y="${n.y-TH/2}" width="${TW}" height="${TH}" rx="10"/>`;
+    anc=`<text class="anc" x="${n.x}" y="${n.y+TH/2-6}" text-anchor="middle">line ${n.line}</text>`;
+    pen=PEN(n.x+TW/2-16,n.y-TH/2+3); wt=WAIT(n.x+TW/2-20,n.y-TH/2+10);
+  } else if (n.k==='g'){
+    g=`<path class="sh" d="M${n.x} ${n.y-GS} L${n.x+GS} ${n.y} L${n.x} ${n.y+GS} L${n.x-GS} ${n.y} Z"/><path class="mk" d="M${n.x-7} ${n.y-7} L${n.x+7} ${n.y+7} M${n.x+7} ${n.y-7} L${n.x-7} ${n.y+7}"/>`;
+    anc = n.id==='G4' ? `<text class="anc" x="${n.x}" y="${n.y+GS+20+maxL*LH}" text-anchor="middle">line ${n.line}</text>` : `<text class="anc" x="${n.x+8}" y="${n.y+GS+40}">line ${n.line}</text>`;
+    pen=PEN(n.x+GS-1,n.y-GS+1); wt=WAIT(n.x-GS-12,n.y-GS+4);
+  } else {
+    if (n.k==='e'||n.k==='ee') g=`<circle class="sh" cx="${n.x}" cy="${n.y}" r="${ER}"/>`; else g=`<circle class="sh" cx="${n.x}" cy="${n.y}" r="${ER}"/>`;
+    if (n.k==='lt'||n.k==='lc') mark=`<path class="mk" d="M${n.x-8} ${n.y-4} h8 v-5 l8 9 -8 9 v-5 h-8 Z" style="${n.k==='lt'?'fill:var(--cc-ink)':''}"/>`;
+    anc=`<text class="anc" x="${n.x}" y="${n.y+ER+18+maxL*LH}" text-anchor="middle">line ${n.line}</text>`;
+    pen=PEN(n.x+ER+1,n.y-ER-4); wt=WAIT(n.x+ER+3,n.y-ER+2);
+    if (n.k==='ee') g+=`<g class="badge"><rect x="${n.x-28}" y="${n.y-ER-21}" width="56" height="16" rx="4"/><text x="${n.x}" y="${n.y-ER-9}" text-anchor="middle">early end</text></g>`;
+  }
+  if (n.id==='T8') g+=`<g class="badge"><rect x="${n.x-62}" y="${n.y-TH/2-21}" width="124" height="16" rx="4"/><text x="${n.x}" y="${n.y-TH/2-9}" text-anchor="middle">2 parts not in the upload</text></g>`;
+  const names = n.ai ? `<g class="nm eng">${nameTexts(n,n.eng)}</g><g class="nm fin">${nameTexts(n,n.name)}</g>${pen}${wt}` : `<g class="nm">${nameTexts(n,n.name)}</g>`;
+  return `<g class="el ${(n.k==='e'||n.k==='ee')?'end':''}" data-id="${n.id}" role="button" tabindex="-1" aria-label="${esc(n.name)}, line ${n.line}">${g}${mark}${names}${anc}</g>`;
+}
+function flowSvg(f){ const pts=route(f[0],f[1]); const d='M'+pts.map(p=>p.join(' ')).join(' L');
+  const last=pts[pts.length-1], prev=pts[pts.length-2]; const ang=Math.atan2(last[1]-prev[1],last[0]-prev[0]);
+  const ax=(a)=>[last[0]-9*Math.cos(ang+a),last[1]-9*Math.sin(ang+a)]; const [p1,p2]=[ax(.4),ax(-.4)];
+  let lab=''; if(f[2]){ const p=pts[0], q=pts[1]; const horiz=Math.abs(p[1]-q[1])<2; const lx = horiz ? p[0]+12 : p[0]+6; const ly = horiz ? p[1]-7 : (q[1]>p[1] ? p[1]+17 : p[1]-8); lab=`<text x="${lx}" y="${ly}">${f[2]}</text>`; }
+  return `<g class="fl" data-from="${f[0]}" data-to="${f[1]}"><path d="${d}"/><path d="M${last.join(' ')} L${p1.join(' ')} L${p2.join(' ')} Z" style="fill:var(--cc-ink);stroke:none"/>${lab}</g>`; }
+function mapSvg(id='map', open=false){
+  return `<svg class="map ${open?'open':''}" id="${id}" role="img" aria-label="Process map: Emergency purchase approval, 29 elements" viewBox="${X0} ${Y0} ${MAPW} ${MAPH}" preserveAspectRatio="xMinYMin meet">
+  <g class="band"><rect x="0" y="40" width="1400" height="322" rx="8"/><text x="14" y="60">PART 1 · CHECKING THE REQUISITION</text></g>
+  <g class="band"><rect x="0" y="374" width="1400" height="330" rx="8"/><text x="14" y="394">PART 2 · APPROVAL AND ORDER</text></g>
+  <g class="flows">${F.map(flowSvg).join('')}</g><g class="els">${E.map(e=>elSvg(EL[e[0]])).join('')}</g></svg>`;
+}
+function miniSvg(){
+  const r = E.map(e=>{const n=EL[e[0]]; return n.k==='t'?`<rect x="${n.x-TW/2}" y="${n.y-TH/2}" width="${TW}" height="${TH}" rx="10" fill="#fff" stroke="#0b1c30" stroke-width="4"/>`: `<circle cx="${n.x}" cy="${n.y}" r="${n.k==='g'?24:18}" fill="#fff" stroke="#0b1c30" stroke-width="4"/>`;}).join('');
+  return `<svg viewBox="${X0} ${Y0} ${MAPW} ${MAPH}" aria-label="Overview map"><rect x="0" y="40" width="1400" height="322" fill="#f1f3f6"/><rect x="0" y="374" width="1400" height="330" fill="#f1f3f6"/>${r}<rect id="minivp" x="0" y="40" width="900" height="600" fill="rgb(29 78 216 / .08)" stroke="#1d4ed8" stroke-width="8"/></svg>`;
+}
+
+/* ---------- names + growing text, per frame ---------- */
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function shown(id){ const n=EL[id]; return (!n.ai || nameP(id,M.t)>=1) ? n.name : n.eng; }
+function nameP(id,t){ const at=NAME_AT[id]; return at===undefined?0:clamp((t-at)/SWAP,0,1); }
+function namedCount(t){ return AI_IDS.filter(id=>nameP(id,t)>=1).length; }
+function applyNames(){
+  const t=M.t;
+  document.querySelectorAll('svg.map .el').forEach(g=>{ const id=g.dataset.id; if(!EL[id]||!EL[id].ai) return;
+    const p=nameP(id,t); const eng=g.querySelector('.nm.eng'), fin=g.querySelector('.nm.fin');
+    eng.style.opacity = 1-clamp(p/0.45,0,1); eng.style.transform=`translateY(${-3*p}px)`;
+    fin.style.opacity = clamp((p-0.45)/0.55,0,1); fin.style.transform=`translateY(${-3*(1-p)}px)`;
+    eng.style.display = p>=1?'none':''; fin.style.display = p<=0?'none':'';
+    g.classList.toggle('swap', p>0 && p<1);
+    g.querySelector('.pen').style.opacity = p;
+    g.querySelector('.wt').style.display = (p===0 && t<LIMIT) ? '' : 'none';
+  });
+  document.querySelectorAll('[data-at]').forEach(el=>{ const on = t>=TEXT_AT[el.dataset.at]; el.classList.toggle('in',on); });
+  document.querySelectorAll('[data-until]').forEach(el=>{ el.classList.toggle('out', t>=TEXT_AT[el.dataset.until]); });
+  const st=document.getElementById('status'); if(st) st.outerHTML = statusLine();
+}
+function statusLine(){
+  const t=M.t, n=namedCount(t), total=AI_IDS.length;
+  if (M.complex) return `<div class="status" id="status" role="status"><span class="dotx"></span><span>Naming steps in plain language … 9 of 61</span><span class="bar"><i style="width:15%"></i></span><span class="sub">This program is larger, so naming takes up to 45 s. The map and the walk-through work now.</span></div>`;
+  if (t>=LIMIT || n===total){ const kept=total-n; return `<div class="status calm" id="status" role="status"><span class="dotx"></span><span>Names are ready.${kept?` ${kept} steps kept their technical name (no pen mark).`:''}</span></div>`; }
+  const sub = n<22 ? 'Names change in place as they arrive. You can start the walk-through now.' : `Waiting for ${total-n} more names, at most ${Math.max(1,Math.ceil(LIMIT-t))} s. Then they keep their technical name.`;
+  return `<div class="status" id="status" role="status"><span class="dotx"></span><span>Naming steps in plain language … ${n} of ${total}</span><span class="bar"><i style="width:${Math.round(n/total*100)}%"></i></span><span class="sub">${sub}</span></div>`;
+}
+let raf=null;
+function play(){ cancelAnimationFrame(raf); const start=performance.now()-M.t*1000; const step=(now)=>{ if(M.paused) return; M.t=(now-start)/1000; applyNames(); if(M.t<LIMIT+1) raf=requestAnimationFrame(step); }; raf=requestAnimationFrame(step); }
+
+/* ---------- tour stations ---------- */
+const STATIONS = [
+ {id:'S', hl:['S'], run:0, q:'Who starts it, and what goes in', t:'Someone starts it from the entry screen',
+  nar:[`A person enters the requisition number and item on an entry screen. A file can be attached.`, `“Test run” is ticked by default. In a test run the approval is only simulated, but the purchase order is still created.`], lines:[['36–39',36,39],['407–411',407,411]]},
+ {id:'T3', hl:['T1','G0','T2','T3','G1','T4','G2','T5'], run:1, q:'How it works', t:'First, the requisition is checked',
+  nar:[`Before anything is ordered, it checks four things in order: may this person approve, is the requisition complete, is the vendor allowed, is the price close to the agreed price.`, `Each check can stop the case with a message.`], lines:[['42–51',42,51]]},
+ {id:'G3', hl:['G3','W1','E3','LT'], run:1, q:'Decision point', t:'More than 5 % above the agreed price?',
+  nar:[`Yes: the requisition goes on hold for a buyer. Nothing is ordered.`, `No: the case goes on to approval. The 5 % is fixed in the program.`], lines:[['315',314,318]]},
+ {id:'W1', hl:['W1'], run:1, q:'What it changes', t:'The requisition is put on hold',
+  nar:[`Here the program changes data in SAP: it sets the requisition to “on hold”.`, `It writes directly, not through SAP's functions for requisitions.`], lines:[['240–242',237,245]]},
+ {id:'G4', hl:['G4','T6a','T6b'], run:2, q:'Decision point', t:'An emergency of at most 50,000.00?',
+  nar:[`Yes: the department head is asked. The request counts as approved as soon as it is sent.`, `No: the program checks the release limit and asks a manager. Plant 1000 is approved without an approver.`], lines:[['325',324,335],['432–434',430,434]]},
+ {id:'T7', hl:['T7','G5','E4'], run:2, q:'Step by step', t:'The approval request goes out',
+  nar:[`The approver gets a request through SAP's approval workflow.`, `Approved: on to the order. Not approved: the case ends and the program records it.`], lines:[['421–427',421,428],['336',336,338]]},
+ {id:'W2', hl:['W2','G6','W3','T8'], run:3, q:'What it changes', t:'The purchase order is created',
+  nar:[`The program creates the purchase order in SAP. If that fails, it tries again by filling in SAP's order screen.`, `It saves its own record of the approval and the attachment, and tells the requester.`], lines:[['475–484',475,484],['515–518',515,518]]},
+ {id:'E1', hl:['E0','E1','E2','E3','E4'], run:1, q:'When something goes wrong', t:'Where the case can stop',
+  nar:[`The case can stop at five points. Each stop shows the program's own message, for example “No authorization for purchasing group” or “Vendor is on the block list”.`, `A price too far off does not stop the case. It goes on hold.`], lines:[['120',119,121],['79',78,80],['226',225,227]]},
+ {id:'EN', hl:['EN','T9'], run:3, q:'In the end', t:'You now know what this program does', end:true},
+];
+
+/* ---------- business text (hand-written to show the target tone) ---------- */
+const SUMMARY = `It handles urgent purchases. Someone enters an emergency purchase requisition. The program checks it, gets it approved and creates the purchase order in SAP. If the price is more than 5 % above the agreed price, it puts the requisition on hold for a buyer.`;
+const WHY = `From the code: urgent requisitions get approved and ordered in one run, without the normal purchasing steps. The code does not say this in words. Confirm it with the process owner.`;
+const RUNS = [
+ {t:'It starts', p:`A person enters the requisition number on an entry screen. “Test run” is ticked by default. In a test run the approval is only simulated.`, l:[['36–39',36,39],['407–411',407,411]]},
+ {t:'First it checks', p:`It checks four things in order: may this person approve, is the requisition complete, is the vendor allowed, is the price close to the agreed price. Each check can stop the case with a message. If the price is more than 5 % above, the requisition goes on hold.`, l:[['42–51',42,51],['315',314,318]]},
+ {t:'Then it gets approval', p:`Emergencies up to 50,000.00 go to the department head. Everything else goes to a manager, within the release limit. Plant 1000 needs no approver. The request goes out through SAP's approval workflow. Without approval, the case ends.`, l:[['325–335',324,335],['421–427',421,428]]},
+ {t:'Then it orders', p:`With approval, it creates the purchase order. If that fails, it tries again by filling in SAP's order screen. Then it saves the approval, tells the requester and shows a result list.`, l:[['475–518',475,484],['339',339,339]]},
+];
+const WHO = [
+ ['The requester','enters the requisition and gets the result','54',379,395],
+ ['The department head','approves emergencies up to 50,000.00','326–327',356,362],
+ ['A manager','approves the rest, within the release limit. The program finds the manager in HR data','329–331',365,374],
+ ['A buyer','checks requisitions on hold because of the price','239',237,245],
+ ['Plant 1000 (central warehouse)','its requisitions are approved without an approver','95, 333',94,97],
+];
+const QS = [
+ ['The department head’s approval counts as given when the request is sent. So the order is created before anyone approves. Is that intended?','432–434',430,434],
+ ['A test run, ticked by default, still creates a real purchase order. Is that intended?','39, 407–411',407,411],
+ ['Plant 1000 gets no approver at all. Should that stay?','95, 333',332,335],
+ ['Is 5 % above the agreed price still the right limit for a hold?','315',314,318],
+ ['Should emergencies up to 50,000.00 still need only the department head?','325',324,327],
+ ['What do the two missing parts do: the message to the requester and the log?','363, 396',363,363],
+];
+
+/* ---------- charts: engine facts, illustrative figures ---------- */
+const CH_ENDS = [
+ ['Purchase order created','directly, or through the order screen',2,['W2','W3','G6','T8','T9','EN']],
+ ['Stopped by a requisition check','material, release block, cost centre …',7,['T2','T3','G1','E1']],
+ ['Stopped by a vendor check','missing, other purchasing org, block list',3,['T4','G2','E2']],
+ ['Stopped: no permission','or requisition not found',2,['T1','G0','E0']],
+ ['On hold for a buyer','price more than 5 % above',1,['T5','G3','W1','E3']],
+ ['Ends without an order','not approved, or order screen failed',2,['G5','E4','W3']],
+];
+const CH_DATA = [
+ ['Purchase requisition','puts it on hold',true,['W1']],
+ ['Purchase order','creates it',true,['W2','W3']],
+ ['Approval record','its own, one per case',true,['T8']],
+ ['Attachment','its own, the uploaded file',true,['S']],
+];
+const CH_READS = 'vendor, agreed price, material in the plant, cost centre, release limits, HR data (to find the manager), department heads, notice settings';
+const CH_RULES = [
+ ['Checks','material, vendor, block list, cost centre …',9,['T1','G0','T3','G1','T4','G2']],
+ ['Limits','5 % · 50,000.00 · release limit',3,['G3','G4','T6b']],
+ ['Approvals','department head · manager',2,['T6a','T6b','T7','G5']],
+ ['Exceptions','plant 1000 · test run on by default',2,['G4','S']],
+];
+
+/* ---------- state ---------- */
+const PRESETS = {
+  play:     {stage:'ready', t:0, live:true, d:'0 · Playable: the map is there at once with the engine names; AI names swap in live (≤45 s); text grows; nothing blocks.'},
+  early:    {stage:'ready', t:3.3, d:'1 · Naming, early (3 s): map complete with engine names, the first plain names arriving.'},
+  mid:      {stage:'ready', t:11.32, d:'2 · Naming, mid-swap (11 s): 13 of 25 named, “Put the requisition on hold” swapping in, “On hold for the buyer” starting, the rest still loading.'},
+  ready:    {stage:'ready', t:50, d:'3 · Names ready: 22 AI names, 3 kept their technical name; summary, charts and text complete; one invitation.'},
+  tourearly:{stage:'tour', t:13.2, st:1, d:'4 · Walk-through started while names still arrive (not blocked).'},
+  tour:     {stage:'tour', t:50, st:4, d:'5 · Walk-through, step 5 of 9 (decision point): card beside the map, map scrolled so the station is in view.'},
+  last:     {stage:'tour', t:50, st:8, d:'6 · Last step: a natural end and two equal ways on.'},
+  code:     {stage:'ready', t:50, code:'W1', d:'7 · Code on demand: “Put the requisition on hold” clicked — its lines open beside the map.'},
+  chart:    {stage:'ready', t:50, hl:'ends:1', d:'8 · Chart click: “Stopped by a requisition check” highlights its elements on the map.'},
+  done:     {stage:'done', t:50, d:'9 · Business, done: “See it from another side” (IT, Management) and what the other tools do, in the flow; summary with the two ways on; map, charts, text.'},
+  touch:    {stage:'ready', t:50, note:'Design', d:'10 · Soft gate: Design clicked before the walk-through — one calm note in the flow, nothing covered.'},
+  itfirst:  {stage:'ready', t:50, view:'it', skipped:true, d:'11 · IT opened first: everything on one page, one sentence of business context on top.'},
+  it:       {stage:'done', t:50, view:'it', d:'12 · IT, done: the same calm “what next” card, then everything on one page, led by code.'},
+  mgmt:     {stage:'done', t:50, view:'management', d:'13 · Management, done: the “what next” card, then everything on one page — decision summary, indication, options, effort, risk, next steps.'},
+  fsnav:    {stage:'done', t:50, fs:true, find:'order', d:'14 · Full screen, navigating: zoom, fit, overview map, find a step.'},
+  fsedit:   {stage:'done', t:50, fs:true, edit:true, sel:'W2', d:'15 · Full screen, editing switched on: tools, palette, properties of the selected step.'},
+  fstour:   {stage:'tour', t:50, st:4, fs:true, d:'16 · Walk-through in full screen: card in the side rail, station in view.'},
+  nexthid:  {stage:'done', t:50, nextHidden:true, d:'9b · Business, done, after “Hide”: the card is gone (remembered per project in the browser); a quiet link below the endings brings it back.'},
+  ret:      {stage:'return', t:50, d:'17 · Return visit: summary with the two ways on, no banner.'},
+  complex:  {stage:'ready', t:9, complex:true, d:'18 · A larger program: map there at once, naming 9 of 61 with an honest reason.'},
+};
+let M={};
+const NEXT_KEY = 'cc.analyze.nextHidden.emergency-purchase-approval'; // per project, browser only
+function setPreset(k){ cancelAnimationFrame(raf); const p=PRESETS[k]; M={key:k, view:'business', st:0, zoom:1, nextOpen: innerWidth>=1024, nextHidden: localStorage.getItem(NEXT_KEY)==='1', ...JSON.parse(JSON.stringify(p))}; render(); if(M.live){ if(matchMedia('(prefers-reduced-motion: reduce)').matches){M.t=LIMIT;applyNames();} else play(); } }
+const walked = () => M.stage==='done' || M.stage==='return' || (M.stage==='tour' && M.st===STATIONS.length-1);
+function focusIds(){
+  if (M.stage==='tour') return STATIONS[M.st].hl;
+  if (M.hl){ const [c,i]=M.hl.split(':'); const src = c==='ends'?CH_ENDS : c==='data'?CH_DATA : CH_RULES; return src[+i][3]; }
+  if (M.find) return E.filter(e=>new RegExp(M.find,'i').test(shown(e[0]))).map(e=>e[0]);
+  return null;
+}
+
+/* ---------- header ---------- */
+function shell(){ return `<header class="shell"><div class="logo"><span class="lg">${ic('shield')}</span><span><span class="n">Clean-Core<em>.io</em></span><span class="s">Free Community Edition</span></span></div>
+ <nav class="path" aria-label="Path">My workspace ${ic('right','s')} Emergency purchase approval ${ic('right','s')} <span class="cur">Analyze</span></nav>
+ <div class="shell-r"><span class="search">${ic('search')} Search this project <kbd>⌘K</kbd></span><span class="ib" aria-label="Help">${ic('help')}</span><span class="av">SF</span></div></header>`; }
+function viewSwitch(){ const quiet=!walked();
+   const nudge = walked() && !M.nextHidden;
+  const b=(v,t)=>{ const on=M.view===v; return `<button class="${on?'on':''} ${quiet&&!on?'soft':''} ${nudge&&!on?'nudge':''}" role="radio" aria-checked="${on}" data-view="${v}">${t}</button>`; };
+  return `<div class="vs"><div class="seg" role="radiogroup" aria-label="View">${b('business','Business')}${b('it','IT')}${b('management','Management')}</div></div>`; }
+const TOOL_SAYS = {Design:'Decide on each business rule and get a draft of a new clean-core version.', Transformation:'Generates the new code from the draft.', Documentation:'Writes the process documentation for export.', Testing:'Prepares test cases that show the new version does the same job.', Economics:'Compares the cost of keep, rebuild and retire with your own figures.', Delivery:'Hands everything over as one package.'};
+const VIEW_SAYS = {business:['Business','the process step by step, in plain words'], it:['IT','the code behind each step, the findings and the clean core level'], management:['Management','what it costs, the risk and what to decide']};
+function nextCard(){
+  if (!walked() || M.nextHidden || M.fs) return '';
+  const others = Object.keys(VIEW_SAYS).filter(v=>v!==M.view);
+  const open = M.nextOpen;
+  const head = `<div class="nxtop"><h2 id="nx-h"><button class="nxtoggle" data-togglenext aria-expanded="${open}">What you can do next <span class="chev ${open?'o':''}">${ic('right','s')}</span></button></h2><button class="lnk" data-hidenext style="font-weight:500;color:var(--cc-ink-muted)">Hide</button></div>`;
+  if (!open) return `<section class="nextcard closed" aria-labelledby="nx-h">${head}</section>`;
+  return `<section class="nextcard" aria-labelledby="nx-h">${head}
+   <div><h3>The other views</h3><ul class="nviews">${others.map(v=>`<li><button data-view="${v}"><span class="up">${ic('arrow','s')}</span><span><b>${VIEW_SAYS[v][0]}:</b> ${VIEW_SAYS[v][1]}.</span></button></li>`).join('')}</ul><p class="hint2" style="margin-top:2px">Same program, same analysis. Use the view switch above.</p></div>
+   <div><h3>The other tools <span class="sm muted" style="font-weight:500">(optional)</span></h3><ul class="ntools">${Object.keys(TOOL_SAYS).map(t=>`<li><b>${t}:</b> ${TOOL_SAYS[t]}</li>`).join('')}</ul></div></section>`;
+}
+function toolBar(){ const quiet=!walked(); const names=['Analyze','Design','Transformation','Documentation','Testing','Economics','Delivery'];
+  let h=`<div class="tools" aria-label="Tools"><span class="k">Tools</span><button class="tool menu only-phone">${ic('menu','s')} Tools ${ic('down','s')}</button>`;
+  names.forEach((n,i)=>{ if(i===0) h+=`<span class="tool cur" aria-current="page">${n}${walked()?`<span class="ck">${ic('check','s')}</span>`:''}</span>`;
+    else h+=`<a class="tool ${quiet?'soft':''}" href="#" data-tool="${n}" title="${TOOL_SAYS[n]}">${n}</a>`; });
+  h+= quiet ? `<span class="hint only-desk">Best after the business walk-through</span>` : `<span class="legend only-desk"><span><span style="color:var(--cc-success)">${ic('check','s')}</span>used</span><span><span style="display:inline-block;width:8px;height:8px;border-radius:999px;background:var(--cc-warning-mark)"></span>out of date</span></span>`;
+  h+='</div>';
+  if (M.note) h+=`<div class="strip" role="note" aria-label="Before you open ${M.note}">${ic('info','s')}<p><b>You haven't walked through the process yet.</b> It takes about five minutes and makes ${M.note} easier to follow.</p><span class="acts"><button class="btn secondary" data-start>Walk through first</button><button class="btn ghost" data-closenote>Continue to ${M.note}</button></span></div>`;
+  return h; }
+function stageHeader(){
+  const lead = {business:'What this program does, read from its code.', it:'How the program is built and what it touches in SAP, with its code.', management:'What this program means for the business and what to decide.'}[M.view];
+  return `<div class="sh"><div><p class="eyebrow">Tool · Emergency purchase approval</p><h1>${ic('scan')}Analyze</h1><p class="lead">${lead}</p></div></div>`; }
+
+/* ---------- endings ---------- */
+function waysCompact(){ return `<div class="ways-c"><div><button class="btn secondary">Re-design this program ${ic('arrow','s')}</button><p>Decide on each business rule: keep, change or drop. Design drafts a new clean-core version. About 30 minutes. Nothing changes in SAP.</p></div><div><button class="btn secondary">Analyse another Z program ${ic('arrow','s')}</button><p>Upload one, or open Freight rate check or Invoice extractor.</p></div></div>`; }
+function waysFull(){ return `<div class="ways">
+   <div class="way"><h3>Re-design this program</h3><ul class="redesign"><li><b>What happens:</b> Design takes you through the program's business rules one by one. For each rule you decide: keep, change or drop. Design then drafts a new clean-core version.</li><li><b>What you do:</b> decide on each rule. About 30 minutes for this program.</li><li><b>Nothing changes in SAP.</b> The draft stays in your workspace.</li></ul><button class="btn secondary">Open Design ${ic('arrow','s')}</button></div>
+   <div class="way"><h3>Analyse another Z program</h3><p>Upload another program, or open Freight rate check or Invoice extractor.</p><button class="btn secondary">Choose a program ${ic('arrow','s')}</button></div></div>`; }
+function extras(kind){ const dl = kind==='it'?'Download findings (PDF, CSV)': kind==='management'?'Download as one page (PDF)':'Download the process (BPMN, PDF)';
+  return `<p class="extras"><button class="lnk">${ic('user','s')} Invite a colleague to read</button><button class="lnk">${ic('dl','s')} ${dl}</button></p>`; }
+function endSection(title, sub, kind){ const back = walked() && M.nextHidden ? `<p class="extras" style="margin-top:4px"><button class="lnk" data-shownext style="font-weight:500;color:var(--cc-ink-muted)">What you can do next</button></p>` : '';
+  return `<section class="endsec" aria-label="Ways on"><div class="walked"><p class="sm"><b>${title}</b></p><p class="sm muted">${sub}</p>${extras(kind)}${back}</div>${waysFull()}</section>${nextCard()}`; }
+
+/* ---------- business ---------- */
+function lnBtn(l){ return `<button class="ln" data-lines="${l[1]}-${l[2]}">line ${l[0]}</button>`; }
+function summaryCard(){
+  if (M.stage==='tour') return '';
+  const after = M.stage==='done'||M.stage==='return';
+  let acts='';
+  if (M.stage==='ready' && !M.complex) acts=`<div class="acts"><button class="btn primary lg" data-start>${ic('play','s')} Walk me through it</button><button class="btn ghost lg" data-self>I'll look around myself</button></div>`;
+  if (after) acts = `<div>${waysCompact()}</div>`;
+  const eyebrow = M.stage==='return' ? `<p class="k">Welcome back · walked through on 05 Nov · <button class="lnk" data-start>Walk through again</button></p>` : after ? `<p class="k">You walked through all 9 steps · <button class="lnk" data-start>Walk through again</button></p>` : '';
+  return `<section class="sumcard" aria-labelledby="sum-h"><div class="txt">${eyebrow}<h2 id="sum-h">What this program does ${chip.ai()}</h2>
+    <p class="grow-p" data-until="sum"><span class="wait" style="width:62%"></span> <span class="sm muted">Writing a short summary from the code …</span></p>
+    <p class="grow gl" data-at="sum">${SUMMARY}</p></div>${acts}</section>`;
+}
+function mapTools(fsOff){
+  const f=focusIds(); let showing='';
+  if (M.hl){ const [c,i]=M.hl.split(':'); const src=c==='ends'?CH_ENDS:c==='data'?CH_DATA:CH_RULES; showing=`<span class="showing">Showing: ${src[+i][0]} <button class="lnk" data-clearhl>Clear</button></span>`; }
+  return `<div class="maptools" role="group" aria-label="Map tools"><div class="seg" role="radiogroup" aria-label="Show as"><button class="on" role="radio" aria-checked="true">Map</button><button role="radio" aria-checked="false">Steps</button></div>
+   <button class="tb" data-zoom="0.8" aria-label="Zoom out">${ic('minus','s')}<span class="w">Zoom out</span></button><span class="z" id="zoom">100%</span><button class="tb" data-zoom="1.25" aria-label="Zoom in">${ic('plus','s')}<span class="w">Zoom in</span></button><button class="tb" data-fit aria-label="Fit">${ic('fit','s')}<span class="w">Fit</span></button>
+   ${showing}<span class="sp"></span><button class="tb" data-fs aria-label="Full screen">${ic('max','s')}<span class="w">Full screen</span></button></div>`;
+}
+function mapNote(){ return `<div class="mapnote"><span><span class="pen">${ic('pen','s')}</span> Names: AI-generated from the code's facts, checked against them</span><span>${chip.rec()} Structure read from the code</span><span>Click a step to see its code lines</span></div>`; }
+function tourCard(){
+  const s=STATIONS[M.st], n=STATIONS.length;
+  const dots = STATIONS.map((_,i)=>`<i class="${i<M.st?'d':i===M.st?'c':''}"></i>`).join('');
+  let body='', nav='';
+  if (!s.end){
+    body = `<p class="q">${s.q}</p><h2 tabindex="-1">${s.t}</h2><div class="nar">${s.nar.map(p=>`<p>${p}</p>`).join('')}</div>
+    <p class="prov">${chip.ai()} <span>Code:</span> ${s.lines.map(l=>lnBtn(l)).join(' ')}</p>`;
+    nav = `<button class="btn ghost" data-back ${M.st===0?'disabled':''}>${ic('left','s')} Back</button><button class="btn ghost" data-pausetour>${ic('pause','s')} Pause</button><span class="r"><button class="btn primary" data-next>Next ${ic('arrow','s')}</button></span>`;
+  } else {
+    body = `<p class="q">In the end</p><h2 tabindex="-1">${s.t}</h2>
+    <div class="nar"><p>It takes one emergency requisition, checks it, gets it approved and creates the purchase order. At the end it tells the requester and shows the result.</p></div>
+    <p class="quiet">Two parts were not in the upload, so what they do is open. The 6 questions for the process owner are below the map.</p>
+    <p class="quiet">You can stop here. Everything stays in your workspace.</p>${waysCompact()}${extras('business')}`;
+    nav = `<button class="btn ghost" data-back>${ic('left','s')} Back</button><span class="r"><button class="btn ghost" data-finish>Close the walk-through</button></span>`;
+  }
+  return `<section class="tour" aria-label="Walk-through"><div class="tour-head"><span class="pos">Step ${M.st+1} of ${n}</span><span class="dots" aria-hidden="true">${dots}</span></div><div class="tour-card">${body}</div><div class="tour-nav">${nav}</div></section>`;
+}
+function codePanel(){
+  let a,b,title,sub;
+  if (M.code && EL[M.code]){ const n=EL[M.code]; [a,b]=n.code; title=shown(n.id); sub=`line ${n.line}`; }
+  else { [a,b]=M.lines.split('-').map(Number); title='The code behind this statement'; sub=`lines ${a}–${b}`; }
+  return `<section class="codepanel" aria-label="Code lines"><div class="top"><div><p class="k">The code behind it · ${sub}</p><h3>${esc(title)}</h3></div><button class="ib x" data-closecode aria-label="Close the code">${ic('x','s')}</button></div>
+   <p class="prov">${chip.rec('As read from the code')}</p>${codeBlock(a,b,2)}
+   <p class="sm muted" style="line-height:1.5">The name on the map is written from these lines. ${M.stage==='tour'?'<button class="lnk" data-closecode>Back to step '+(M.st+1)+'</button>':''}</p></section>`;
+}
+function chartsRow(){
+  const hlKey = M.hl||'';
+  const rows=(c,list,max)=>list.map((r,i)=>`<button class="brow ${hlKey===c+':'+i?'on':''}" data-hl="${c}:${i}" title="${r[0]}: ${r[2]}. Show on the map"><span class="lab">${r[0]}<small>${r[1]}</small></span><span class="track"><i style="width:${Math.round(r[2]/max*100)}%"></i></span><span class="v">${r[2]}</span></button>`).join('');
+  const dataRows = CH_DATA.map((r,i)=>`<button class="brow ${hlKey==='data:'+i?'on':''}" data-hl="data:${i}" style="grid-template-columns:minmax(0,1fr) auto"><span class="lab">${r[0]}<small>${r[1]}</small></span><span class="v" style="font-weight:600;font-size:12px;color:var(--cc-ink-muted)">changes</span></button>`).join('');
+  return `<div class="charts">
+   <section class="card chart" aria-labelledby="c1"><h3 id="c1">How a case can end</h3><p class="take">2 of 17 ways end with a purchase order. The other 15 stop or hold the case.</p>
+     <div class="bars">${rows('ends',CH_ENDS,7)}</div><p class="foot">Counted from the code’s branches and messages · ${chip.rec()} ${ILL}</p></section>
+   <section class="card chart" aria-labelledby="c2"><h3 id="c2">What it changes, what it only reads</h3><p class="take">It changes 4 kinds of records and reads 8, including HR data.</p>
+     <div class="stack1" role="img" aria-label="4 changed, 8 only read"><i class="a" style="flex:4"></i><i class="b" style="flex:8"></i></div>
+     <p class="keyrow"><span><i></i>Changes 4</span><span><i class="b"></i>Only reads 8</span></p>
+     <div class="bars">${dataRows}</div><p class="sm muted" style="line-height:1.5">Only reads: ${CH_READS}.</p>
+     <p class="foot">From the program's reads and writes · lines 240, 353, 475, 515, 531 · ${chip.rec()} ${ILL}</p></section>
+   <section class="card chart" aria-labelledby="c3"><h3 id="c3">The rules it applies</h3><p class="take">Three values decide the outcome: 5 %, 50,000.00 and the release limit.</p>
+     <div class="bars">${rows('rules',CH_RULES,9)}</div><p class="foot">Rules read from the conditions · lines 95, 315, 325, 292 · ${chip.rec()} ${ILL}</p></section>
+  </div>`;
+}
+function aboutRow(){
+  const cur = M.stage==='tour' ? STATIONS[M.st].run : -1;
+  const runs = RUNS.map((r,i)=>`<li class="grow ${cur===i?'now':''}" data-at="run${i}" style="${'display:'}" ><div><b>${i+1}. ${r.t}${cur===i?' <span class="sm muted" style="font-weight:600">· you are here</span>':''}</b><p>${r.p}</p><p class="prov" style="margin-top:4px">${r.l.map(l=>lnBtn(l)).join(' ')}</p></div></li>`).join('');
+  return `<div class="about">
+   <section class="card runsec" aria-labelledby="a1"><h3 id="a1">How it runs ${chip.ai()}</h3>
+     <p class="grow-p hint2" data-until="run0"><span class="wait" style="width:50%"></span> Written step by step as the names arrive.</p><ol class="runs">${runs}</ol></section>
+   <section class="card" aria-labelledby="a2"><h3 id="a2">Why it exists ${chip.ai()}</h3>
+     <p class="grow-p hint2" data-until="why"><span class="wait" style="width:40%"></span> …</p><p class="grow gl" data-at="why" style="font-size:14px;line-height:1.55;font-weight:500;margin-top:6px">${WHY}</p>
+     <h3 style="margin-top:14px">Who is involved ${chip.rec()}</h3>
+     <p class="grow-p hint2" data-until="who"><span class="wait" style="width:40%"></span> Reading the roles …</p>
+     <ul class="who grow" data-at="who">${WHO.map(w=>`<li><b>${w[0]}</b>: ${w[1]}. ${lnBtn([w[2],w[3],w[4]])}</li>`).join('')}</ul>
+     <p class="hint2 grow" data-at="who">This is what the code shows. Check who does it today.</p></section>
+   <section class="card" aria-labelledby="a3"><h3 id="a3">Questions to settle with the business</h3>
+     <p class="grow-p hint2" data-until="qs"><span class="wait" style="width:45%"></span> Collecting the questions the code cannot answer …</p>
+     <ol class="qs grow" data-at="qs">${QS.map((q,i)=>`<li><span class="n">${i+1}</span><span>${q[0]} ${lnBtn([q[1],q[2],q[3]])}</span></li>`).join('')}</ol>
+     <p class="hint2 grow" data-at="qs">For the process owner. IT has its own questions in the IT view.</p></section>
+  </div>`;
+}
+function businessView(){
+  if (M.complex) return complexView();
+  const side = M.stage==='tour' || M.code || M.lines;
+  let sidecol='';
+  if (side) sidecol = `<aside class="sidecol">${(M.code||M.lines)?codePanel():tourCard()}</aside>`;
+  const after = M.stage==='done'||M.stage==='return';
+  return `${summaryCard()}<div class="mapgrid ${side?'side':''}"><div class="mapcol">${mapTools()}<div class="mapcard" id="mapcard">${mapSvg('map', M.live)}</div>${statusLine()}${mapNote()}${M.stage==='look'?`<p class="sm muted" style="margin-top:8px">Look around. <button class="lnk" data-start>Walk me through it</button> is here when you want it.</p>`:''}</div>${sidecol}</div>${chartsRow()}${aboutRow()}${after?endSection('That was the process.', 'You can stop here. It stays in your workspace.', 'business'):''}`;
+}
+function complexView(){
+  const names=[['Selection entered','Selection entered',1],['Check the selection','Perform check_selection',1],['Check the person may run it','Authority check V_VBAK_VKO',1],['Prepare the run','Perform init_run',0],['Select the open orders','Select VBAK',0],['Select their items','Select VBAP',0],['Add customer details','Read KNA1',0],['Add material and stock','Read MARA, MARD',0]];
+  let g=''; names.forEach((n,i)=>{ const x=70+i*165, y=190; const nm=n[2]?n[0]:n[1];
+    if(i===0) g+=`<g class="el"><circle class="sh" cx="${x}" cy="${y}" r="18"/><text x="${x}" y="${y+36}" text-anchor="middle">${nm}</text><text class="anc" x="${x}" y="${y+51}" text-anchor="middle">line ${159+i}</text></g>`;
+    else { const L=wrap(nm,17); g+=`<g class="el"><rect class="sh" x="${x-66}" y="${y-36}" width="132" height="72" rx="10"/>${L.map((l,j)=>`<text x="${x}" y="${y+15-(L.length-1-j)*15-6}" text-anchor="middle">${esc(l)}</text>`).join('')}${n[2]?PEN(x+50,y-33):WAIT(x+44,y-26)}<text class="anc" x="${x}" y="${y+29}" text-anchor="middle">line ${159+i}</text></g>`; }
+    if(i>0) g+=`<g class="fl"><path d="M${x-165+(i===1?18:66)} ${y} L${x-66} ${y}"/></g>`; });
+  for (let k=0;k<3;k++){ const y=380+k*100; g+=`<g class="band"><rect x="0" y="${y-34}" width="1400" height="84" rx="8"/><text x="14" y="${y-14}">SUB-PROCESS ${k+2} OF 4</text></g>`; }
+  return `<section class="sumcard"><div class="txt"><h2>What this program does ${chip.ai()}</h2><p class="grow-p"><span class="wait" style="width:62%"></span> <span class="sm muted">Writing a short summary from the code …</span></p></div><div class="acts"><button class="btn primary lg" data-start>${ic('play','s')} Walk me through it</button></div></section>
+   <div class="mapgrid"><div class="mapcol">${mapTools()}<div class="mapcard" id="mapcard"><svg class="map" id="map" viewBox="-12 120 1424 560" preserveAspectRatio="xMinYMin meet"><g class="band"><rect x="0" y="130" width="1400" height="130" rx="8"/><text x="14" y="148">MAIN RUN · 1 OF 4 SUB-PROCESSES</text></g>${g}</svg></div>${statusLine()}${mapNote()}</div></div>`;
+}
+
+/* ---------- IT: everything on one page, led by code ---------- */
+function itView(){
+  const ctx = M.skipped ? `<p class="ctx">${ic('info','s')}<span>In short: it approves emergency purchase requisitions and creates the purchase orders. The process is in the <button class="lnk" data-view="business">Business view</button>.</span></p>` : '';
+  const calls = [['42','check_authority','permission for the purchasing group'],['43','read_requisition','reads the requisition (EBAN)'],['44','check_requisition','9 checks, may reject'],['45','CHECK','stops if rejected'],['46','upload_attachment','file via SAP GUI'],['47–48','read/check_vendor','LFA1, LFM1, block list'],['50–51','read_info_record, check_price','5 % tolerance, may hold'],['52','CHECK','stops if on hold'],['53','decide_approval','approver, workflow, PO'],['54','notify_requester','dynamic call'],['55','write_result_list','list output']];
+  const find = (sev,lvl,title,why,a,b,ctxl=0)=>`<div class="find"><div><h3><span class="sev ${sev}"></span>${title} <span class="lv ${lvl[0]}">${lvl}</span></h3><p>${why}</p><p class="prov" style="margin-top:6px">${A(a===b?a:a+'–'+b)}</p></div>${codeBlock(a,b,ctxl)}</div>`;
+  return `${ctx}<div class="page">
+   <div class="row2">
+    <section class="card sec" aria-labelledby="i1"><h2 class="h2" id="i1">${ic('code','s')} The main sequence ${chip.rec()}</h2><p class="lede">One report, 552 lines. Everything runs from these 15 lines. Each call is a routine further down.</p>
+      <div class="mainseq">${codeBlock(41,55,0)}<ul class="calls" aria-label="What each call does">${calls.map(c=>`<li><span>${c[0]}</span><div><b style="font-family:var(--mono);font-size:12px">${c[1]}</b>: ${c[2]}</div></li>`).join('')}</ul></div></section>
+    <section class="card sec" aria-labelledby="i2"><h2 class="h2" id="i2">Clean core score</h2><div class="fig"><b>40</b><span>of 100</span></div><p class="band2"><i></i>Far from clean core <small>· band 5–59</small></p>
+      <div class="scale" aria-hidden="true"><span style="flex:60;background:var(--cc-score-1)"></span><span style="flex:21;background:var(--cc-score-2)"></span><span style="flex:10;background:var(--cc-score-3)"></span><span style="flex:9;background:var(--cc-score-4)"></span><span class="m" style="left:40%"></span></div>
+      <p class="sm" style="line-height:1.55;margin-top:12px">Most of the distance: the direct write to EBAN (−20) and the batch input to ME21N (−10). 20 points stand for what could not be assessed ${chip.nd()}.</p>
+      <p class="k" style="margin-top:12px">Clean core levels ${chip.imp()}</p><p><span class="lv B">B 2</span><span class="lv C">C 17</span><span class="lv D">D 2</span><span class="lv U">Unknown 4</span></p>
+      <p class="note">A grade for this code. Not a compliance percentage and not an SAP measure. ${chip.rec('Reconstructed · fixed rules')} ${ILL}</p></section>
+   </div>
+   <section class="card sec" aria-labelledby="i3"><h2 class="h2" id="i3">Findings, with their code</h2><p class="lede">22 findings in 28 places. The five most important, each next to its lines. The other 17 below. ${ILL}</p>
+     ${find('','D · direct write','Direct write to SAP table EBAN','Sets the requisition status with UPDATE and commits in the routine. No SAP function for requisitions is used, so SAP\'s checks and change documents are skipped.',240,243)}
+     ${find('','D · batch input','Batch input to ME21N','The fallback fills SAP\'s order screen field by field. If the screen changes, it breaks without an error. It cannot run in a cloud system.',515,518)}
+     ${find('m','C · not released','Call to an SAP-internal class','CL_MM_INTERNAL is not a released API; it may change with any upgrade.',292,293)}
+     ${find('m','C · GUI','File upload through the SAP GUI','GUI_UPLOAD needs a desktop session. It does not run in background or in a browser.',129,132)}
+     ${find('n','Unknown · dynamic','Function module named at run time','The name comes from table ZMM_NOTIFY_CFG, per plant. What is called cannot be read from the code.',383,386)}
+     <div class="tblwrap"><table class="dt"><thead><tr><th>The other 17</th><th>Count</th><th>Level</th><th class="hp">Example</th></tr></thead><tbody>
+      <tr><td>Values written into the code (plant 1000, purchasing org 1000, EUR, release group ZE, 5 %)</td><td>6</td><td><span class="lv C">C</span></td><td class="hp"><code>'1000'</code> ${A(19)}</td></tr>
+      <tr><td>Reads of SAP tables without a released view</td><td>5</td><td><span class="lv C">C</span></td><td class="hp"><code>SELECT … FROM lfm1</code> ${A(161)}</td></tr>
+      <tr><td>Obsolete language (TABLES, TYPE-POOLS, FORM routines)</td><td>4</td><td><span class="lv B">B</span></td><td class="hp"><code>TABLES: eban …</code> ${A(13)}</td></tr>
+      <tr><td>Reads HR data directly</td><td>1</td><td><span class="lv C">C</span></td><td class="hp"><code>FROM pa0105</code> ${A(368)}</td></tr>
+      <tr><td>COMMIT WORK inside a routine</td><td>1</td><td><span class="lv C">C</span></td><td class="hp"><code>COMMIT WORK.</code> ${A(428)}</td></tr></tbody></table></div>
+     <p class="sm" style="margin-top:8px"><button class="lnk">All 22 findings, as a table</button></p></section>
+   <section class="card sec" aria-labelledby="i4"><h2 class="h2" id="i4">What it touches in SAP</h2><p class="lede">Every object with the statement that touches it.</p>
+     <div class="tblwrap"><table class="dt"><thead><tr><th>Object</th><th>How</th><th>Statement</th><th class="hp">Line</th></tr></thead><tbody>
+      <tr><td>EBAN purchase requisitions</td><td>read, <b>written directly</b></td><td><code>UPDATE eban SET statu = 'H'</code></td><td class="hp">${A(61)}${A(240)}</td></tr>
+      <tr><td>LFA1, LFM1, EINA, EINE, MARC, CSKS, T16FS</td><td>read</td><td><code>SELECT SINGLE * FROM lfa1</code></td><td class="hp">${A(154)}${A(254)}${A(274)}</td></tr>
+      <tr><td>PA0105 (HR communication data)</td><td>read</td><td><code>SELECT SINGLE pernr FROM pa0105</code></td><td class="hp">${A(368)}</td></tr>
+      <tr><td>BAPI_PO_CREATE1, BAPI_TRANSACTION_COMMIT</td><td>called</td><td><code>CALL FUNCTION 'BAPI_PO_CREATE1'</code></td><td class="hp">${A(475)}${A(490)}</td></tr>
+      <tr><td>ME21N</td><td>batch input</td><td><code>CALL TRANSACTION 'ME21N'</code></td><td class="hp">${A(515)}</td></tr>
+      <tr><td>SAP_WAPI_CREATE_EVENT (BUS2105, ZAPPROVE)</td><td>called</td><td><code>CALL FUNCTION 'SAP_WAPI_CREATE_EVENT'</code></td><td class="hp">${A(421)}</td></tr>
+      <tr><td>CONVERT_TO_LOCAL_CURRENCY · GUI_UPLOAD</td><td>called</td><td><code>CALL FUNCTION 'GUI_UPLOAD'</code></td><td class="hp">${A(173)}${A(129)}</td></tr>
+      <tr><td>ZMM_PO_APPR, ZMM_PO_ATTACH</td><td>own tables, written</td><td><code>INSERT zmm_po_appr FROM ls_appr</code></td><td class="hp">${A(353)}${A(531)}</td></tr>
+      <tr><td>ZMM_VEND_BLOCK, ZMM_DEPT_HEAD, ZMM_NOTIFY_CFG</td><td>own tables, read</td><td><code>SELECT SINGLE lifnr FROM zmm_vend_block</code></td><td class="hp">${A(222)}${A(357)}${A(383)}</td></tr>
+     </tbody></table></div></section>
+   <div class="row3">
+    <section class="card sec" aria-labelledby="i5"><h2 class="h2" id="i5">Structure and dependencies</h2><ul class="facts">
+      <li><b>Entry screen</b>: 4 parameters, the test switch on by default ${A('36–39')}</li>${''}
+      <li><b>25 routines</b> (FORM), called from the main sequence ${A('41–55')}</li>
+      <li><b>2 includes</b> named but not in the upload: Z_MM_PO_NOTIFY, Z_MM_PO_LOG ${A(363)}${A(396)}</li>
+      <li><b>1 call</b> whose target is chosen at run time ${A(386)}</li>
+      <li><b>Workflow</b>: raises event ZAPPROVE on BUS2105; the approval comes back asynchronously ${A(421)}${A(430)}</li></ul>
+      ${codeBlock(36,39,0)}</section>
+    <section class="card sec" aria-labelledby="i6"><h2 class="h2" id="i6">Risks for a change</h2><ul class="facts">
+      <li><b>Order before approval</b>: the department head’s request counts as approved when sent ${A('432–434')}</li>
+      <li><b>Test run still orders</b>: approval is simulated, the order is created ${A('407–411')}${A(337)}</li>
+      <li><b>Silent breakage</b>: the batch-input fallback depends on screen 0014 of SAPLMEGUI ${A(503)}</li>
+      <li><b>Hidden behaviour</b>: two includes and one dynamic call are not visible ${A(363)}${A(386)}</li></ul></section>
+    <section class="card sec" aria-labelledby="i7"><h2 class="h2" id="i7">Open technical questions</h2><ul class="facts">
+      <li>Add the includes Z_MM_PO_NOTIFY and Z_MM_PO_LOG ${A(363)}${A(396)}</li><li>Name the function module called at run time ${A(386)}</li>
+      <li>Add ATC results. 5 local calls are not assessed</li><li>Add usage data. How often it runs is unknown</li></ul>
+      <p class="sm" style="margin-top:8px"><button class="lnk">Add evidence</button></p></section>
+   </div>
+   ${endSection('That is the technical view.','Everything is on this page. You can stop here.', 'it')}</div>`;
+}
+
+/* ---------- Management: everything on one page ---------- */
+function mgmtView(){
+  return `<div class="page">
+   <div class="row2">
+    <section class="card sec" aria-labelledby="m1"><p class="k">What it is for</p><p class="big" id="m1" style="margin-top:4px">It approves emergency purchase requisitions and creates the purchase orders in one run, for purchasing organization 1000.</p>
+      <p class="sm muted" style="margin-top:8px;line-height:1.5">People involved, from the code: requester, department heads, managers, buyers. ${chip.rec()}</p>
+      <p class="sm" style="margin-top:12px;line-height:1.55"><b>What needs a decision:</b> orders are created before the department head approves, and a test run creates real orders. Both are business questions.</p></section>
+    <section class="indic" aria-labelledby="m2"><p class="k">Indication from the analysis</p><p class="big" id="m2">Rebuild, on SAP standard with a small extension</p>
+      <ul class="facts"><li>SAP standard covers most of it: release strategy and workflow for requisitions</li><li>Two parts are far from SAP standard: the direct change of requisitions and the automated order screen</li><li>The rules are few: 3 limits, 2 approvers</li></ul>
+      <p class="note">This is an indication, not a decision. You decide keep, rebuild or retire. Design and Economics work it out with your figures. ${ILL}</p></section>
+   </div>
+   <div class="tiles">
+    <section class="card tile"><p class="k">Distance to SAP standard</p><p class="v">40 <small>of 100 · far</small></p><p>Mostly from two parts of the code.</p></section>
+    <section class="card tile"><p class="k">Records it changes</p><p class="v">4 <small>kinds</small></p><p>Requisitions, orders, and two of its own.</p></section>
+    <section class="card tile"><p class="k">People involved</p><p class="v">4 <small>roles</small></p><p>Plus one plant that needs no approver.</p></section>
+    <section class="card tile"><p class="k">How often it is used</p><p class="v">Not known</p><p>IT can add usage data. ${chip.nd()}</p></section>
+   </div>
+   <section class="card sec" aria-labelledby="m3"><h2 class="h2" id="m3">Options with rough effort ${ILL}</h2><p class="lede">Based on code size and findings. Economics turns this into costs with your own rates.</p>
+    <div class="tblwrap"><table class="dt opt"><thead><tr><th></th><th>Keep</th><th class="on">Rebuild · indicated</th><th>Retire</th></tr></thead><tbody>
+     <tr><td><b>What it means</b></td><td>Leave it as it is, retest with every upgrade</td><td class="on">SAP release strategy and workflow, plus a small extension for the emergency rules</td><td>Switch it off; urgent purchases go the normal way</td></tr>
+     <tr><td><b>Effort now</b></td><td>none</td><td class="on">about 20–35 person-days</td><td>about 3–5 person-days</td></tr>
+     <tr><td><b>Over 5 years</b></td><td>about 25–40 person-days of upkeep and retests</td><td class="on">about 5–10 person-days</td><td>manual effort for each urgent case</td></tr>
+     <tr><td><b>Main risk</b></td><td>the direct change of requisitions or the order screen breaks after an upgrade</td><td class="on">the business must confirm the rules first (6 questions)</td><td>urgent purchases lose their fast path</td></tr></tbody></table></div></section>
+   <div class="row3">
+    <section class="card sec" aria-labelledby="m4"><h2 class="h2" id="m4">Risk if nothing changes</h2><ul class="facts">
+      <li><b>Orders without approval</b>: emergency orders are created before anyone approves</li><li><b>Real orders from test runs</b>: the test switch is on by default</li><li><b>Upgrade breakage</b>: two parts bypass SAP's own functions</li></ul></section>
+    <section class="card sec" aria-labelledby="m5"><h2 class="h2" id="m5">Next steps</h2><ol class="steps">
+      <li><span class="n">1</span><span>Settle the 6 business questions with the process owner. They are in the Business view</span></li>
+      <li><span class="n">2</span><span>IT adds the two missing parts and the usage data</span></li>
+      <li><span class="n">3</span><span>Decide keep, rebuild or retire. Economics works out the costs</span></li></ol></section>
+    <section class="card sec" aria-labelledby="m6"><h2 class="h2" id="m6">Still open</h2><ul class="facts"><li><b>Usage</b>: unknown until IT adds usage data</li><li><b>Two parts</b> not in the upload: the message and the log</li><li><b>Who approves today</b>: the code shows roles, not people</li></ul></section>
+   </div>
+   ${endSection('That is the management view.','Everything is on this page. You can stop here.', 'management')}</div>`;
+}
+
+/* ---------- full screen ---------- */
+function fullScreen(){
+  const edit = !!M.edit;
+  const pal = [['Events',['Start event','Intermediate event','End event']],['Gateways',['Exclusive gateway','Parallel gateway']],['Tasks',['Task','Sub-process']],['Structure',['Pool','Lane']]];
+  let rail='';
+  if (M.stage==='tour') rail = tourCard();
+  else if (M.code||M.lines) rail = codePanel();
+  else if (edit && M.sel){ const n=EL[M.sel]; rail = `<section class="panel" aria-labelledby="pp"><h4 id="pp">Properties</h4>
+     <label class="fld">Name<span class="in">${esc(shown(n.id))}</span><small>The name a business reader sees. The technical name stays in the file.</small></label>
+     <label class="fld">Technical name<span class="in ro">BAPI_PO_CREATE1</span><small>The token in the code this element was read from. Read-only.</small></label>
+     <label class="fld">Element type<span class="in">Task</span></label>
+     <div class="fld">Line anchor<span>${lnBtn([n.line,n.code[0],n.code[1]])}</span></div>
+     <div class="fld">Where this comes from<span class="prov">${chip.rec()} ${chip.ai()}</span></div>
+     <label class="fld">Documentation<span class="in" style="min-height:56px"></span><small>Kept in the BPMN file and shown in SAP Signavio and other tools.</small></label>
+     <div class="acts"><button class="btn primary">Apply</button><button class="btn ghost">Append next step</button><button class="btn ghost">Delete element</button></div></section>`; }
+  else if (M.find){ const hits=focusIds(); rail = `<section class="panel"><h4>${hits.length} steps match “${M.find}”</h4><ul class="hits">${hits.map(id=>`<li><span>${shown(id)}</span>${lnBtn([EL[id].line,EL[id].code[0],EL[id].code[1]])}</li>`).join('')}</ul><p class="sm muted">Click a hit to jump to it on the map.</p></section>`; }
+  else rail = `<section class="panel"><h4>Nothing selected</h4><p class="sm muted">Click a step to see its code lines${edit?' or change it':''}.</p></section>`;
+  const mini = `<section class="panel mini"><h4>Overview map</h4>${miniSvg()}</section>`;
+  return `<div class="fs" role="dialog" aria-label="Process map, full screen">
+   <div class="fsbar" role="group" aria-label="Map tools"><span class="ttl"><small>Emergency purchase approval</small>Process · main level</span>
+    <span class="fsfind ${M.find?'':'empty'}">${ic('search','s')} ${M.find?'order':'Find a step'}</span>
+    <span class="vr"></span><button class="tb" data-zoom="0.8">${ic('minus','s')} Zoom out</button><span class="z" id="zoom">100%</span><button class="tb" data-zoom="1.25">${ic('plus','s')} Zoom in</button><button class="tb" data-fit>${ic('fit','s')} Fit</button><button class="tb" aria-pressed="true">${ic('map','s')} Overview map</button>
+    <span class="vr"></span><button class="switch" data-edit aria-pressed="${edit}"><span class="tr"></span>Edit</button>
+    ${M.stage==='tour'?'':`<button class="tb" data-start>${ic('play','s')} Walk me through it</button>`}
+    <span class="sp"></span><button class="btn ghost" data-fs aria-pressed="true">${ic('min','s')} Leave full screen</button></div>
+   ${edit?`<div class="fsbar" role="group" aria-label="Editor tools"><button class="tb">${ic('undo','s')} Undo</button><button class="tb" disabled>${ic('redo','s')} Redo</button><span class="vr"></span><button class="tb">${ic('grid','s')} Tidy layout</button><button class="tb">Compare with the as-is process</button><span class="vr"></span><button class="tb">Import BPMN</button><span class="fsnote">Export</span><button class="tb">${ic('dl','s')} BPMN 2.0</button><button class="tb">SVG</button><button class="tb">PNG</button><span class="sp"></span><button class="btn primary">Save as revision</button></div>
+   <div class="palette" role="group" aria-label="Add elements">${pal.map(g=>`<div class="grp"><span>${g[0]}</span>${g[1].map(x=>`<button class="tb">${x}</button>`).join('')}</div>`).join('')}</div>
+   <p class="fsnote">Editing a draft. The reconstructed as-is process (revision 1) stays unchanged whatever you save.</p>`:''}
+   <div class="fsbody"><div class="fscanvas" id="mapcard">${mapSvg('map')}</div><div class="rail">${rail}${mini}</div></div></div>`;
+}
+
+/* ---------- render + camera ---------- */
+function render(){
+  document.getElementById('mock').innerHTML = `<b>MOCK-UP v4 · Analyze on the map</b>`+Object.keys(PRESETS).map(k=>`<button class="${M.key===k?'on':''}" data-preset="${k}">${PRESETS[k].d.split(':')[0]}</button>`).join('')+`<span class="d">${PRESETS[M.key].d}</span>`;
+  if (M.fs){ document.getElementById('app').innerHTML = fullScreen(); }
+  else {
+    const content = M.view==='it' ? itView() : M.view==='management' ? mgmtView() : businessView();
+    document.getElementById('app').innerHTML = shell()+`<main class="frame"><div class="headrow"><a class="back" href="#">${ic('left','s')} My workspace</a>${viewSwitch()}</div>${toolBar()}${stageHeader()}${content}</main>`;
+  }
+  const svg=document.getElementById('map');
+  if (svg && !M.complex){ markFocus(svg); applyNames(); }
+  camera();
+}
+function markFocus(svg){
+  const ids = focusIds(); svg.classList.toggle('t', !!ids);
+  svg.querySelectorAll('.el').forEach(g=>{ const h=!!ids && ids.includes(g.dataset.id); g.classList.toggle('here',h); g.classList.toggle('dim',!!ids && !h); g.classList.toggle('sel', g.dataset.id===M.code || g.dataset.id===M.sel); g.classList.toggle('prime', M.stage==='tour' && g.dataset.id===STATIONS[M.st].id); });
+  svg.querySelectorAll('.fl').forEach(g=>{ const h=!!ids && ids.includes(g.dataset.from)&&ids.includes(g.dataset.to); g.classList.toggle('dim',!!ids && !h); });
+}
+function camera(){
+  const svg=document.getElementById('map'), card=document.getElementById('mapcard'); if(!svg||!card) return;
+  const W=card.clientWidth; if(!W) return;
+  const vb = svg.viewBox.baseVal; const mw=vb.width, mh=vb.height;
+  let s;
+  if (M.fs){ const H=card.clientHeight; s = clamp(Math.min((W-4)/mw,(H-4)/mh),0.83,1.2); }
+  else s = clamp((W-2)/mw, 0.83, 1.05);
+  s *= M.zoom;
+  const fids = M.complex ? null : focusIds();
+  if (fids && W>=600 && M.zoom===1){ let a=1e9,b=-1e9,c=1e9,d=-1e9; fids.forEach(id=>{const n=EL[id]; a=Math.min(a,n.x-85); b=Math.max(b,n.x+85); c=Math.min(c,n.y-80); d=Math.max(d,n.y+90);});
+    s = Math.min(s, Math.max(0.6,(W-8)/(b-a))); if (M.fs) s = Math.min(s, Math.max(0.6,(card.clientHeight-8)/(d-c))); }
+  svg.style.width = Math.round(mw*s)+'px'; svg.style.height = Math.round(mh*s)+'px';
+  const z=document.getElementById('zoom'); if(z) z.textContent=Math.round(s*100)+'%';
+  const ids = M.complex ? null : (focusIds() || (M.code?[M.code]:M.sel?[M.sel]:null));
+  if (ids){
+    const prime = M.stage==='tour' ? STATIONS[M.st].id : null;
+    let x1=1e9,x2=-1e9,y1=1e9,y2=-1e9; (W<600 && prime ? [prime] : ids).forEach(id=>{ const n=EL[id]; x1=Math.min(x1,n.x-80); x2=Math.max(x2,n.x+80); y1=Math.min(y1,n.y-70); y2=Math.max(y2,n.y+80); });
+    card.scrollLeft = clamp(((x1+x2)/2 - vb.x)*s - W/2, 0, card.scrollWidth-W);
+    if (M.fs) card.scrollTop = clamp(((y1+y2)/2 - vb.y)*s - card.clientHeight/2, 0, card.scrollHeight-card.clientHeight);
+  } else { card.scrollLeft = 0; card.scrollTop = 0; }
+  const mv=document.getElementById('minivp'); if(mv){ mv.setAttribute('x', vb.x + card.scrollLeft/s); mv.setAttribute('y', vb.y + card.scrollTop/s); mv.setAttribute('width', Math.min(mw, W/s)); mv.setAttribute('height', Math.min(mh, card.clientHeight/s)); }
+}
+
+document.addEventListener('click',e=>{
+  const elg = e.target.closest && e.target.closest('svg.map .el');
+  if (elg && !M.complex){ M.code=elg.dataset.id; M.lines=null; if(M.edit) M.sel=elg.dataset.id; render(); return; }
+  const t=e.target.closest('button,a'); if(!t) return;
+  if(t.dataset.preset){ setPreset(t.dataset.preset); return; }
+  e.preventDefault();
+  if(t.dataset.view){ if(t.dataset.view!==M.view){ M.view=t.dataset.view; if(!walked()) M.skipped=true; } render(); window.scrollTo(0,0); return; }
+  if(t.dataset.tool){ if(!walked()){ M.note=t.dataset.tool; render(); } return; }
+  if(t.dataset.lines){ M.lines=t.dataset.lines; M.code=null; render(); return; }
+  if(t.dataset.hl){ M.hl = M.hl===t.dataset.hl?null:t.dataset.hl; render(); if(M.hl) document.getElementById('mapcard').scrollIntoView({block:'center'}); return; }
+  if(t.dataset.zoom){ M.zoom*=+t.dataset.zoom; camera(); return; }
+  if(t.hasAttribute('data-fit')){ M.zoom=1; camera(); return; }
+  if(t.hasAttribute('data-clearhl')){ M.hl=null; render(); return; }
+  if(t.hasAttribute('data-fs')){ M.fs=!M.fs; M.zoom=1; render(); return; }
+  if(t.hasAttribute('data-edit')){ M.edit=!M.edit; render(); return; }
+  if(t.hasAttribute('data-closecode')){ M.code=null; M.lines=null; render(); return; }
+  if(t.hasAttribute('data-hidenext')){ M.nextHidden=true; localStorage.setItem(NEXT_KEY,'1'); render(); return; }
+  if(t.hasAttribute('data-shownext')){ M.nextHidden=false; M.nextOpen=true; localStorage.removeItem(NEXT_KEY); render(); return; }
+  if(t.hasAttribute('data-togglenext')){ M.nextOpen=!M.nextOpen; render(); return; }
+  if(t.hasAttribute('data-closenote')){ M.note=null; render(); return; }
+  if(t.hasAttribute('data-start')){ M.view='business'; M.stage='tour'; M.st=0; M.note=null; M.code=null; M.lines=null; M.hl=null; render(); return; }
+  if(t.hasAttribute('data-self')){ M.stage='look'; render(); return; }
+  if(t.hasAttribute('data-next')){ M.st=Math.min(STATIONS.length-1,M.st+1); M.code=null; M.lines=null; render(); return; }
+  if(t.hasAttribute('data-back')){ M.st=Math.max(0,M.st-1); M.code=null; M.lines=null; render(); return; }
+  if(t.hasAttribute('data-pausetour')){ M.stage='ready'; render(); return; }
+  if(t.hasAttribute('data-finish')){ M.stage='done'; render(); return; }
+});
+window.addEventListener('resize',camera);
+const h=new URLSearchParams(location.hash.slice(1)); if(h.get('embed')==='1') document.body.classList.add('embed');
+setPreset(PRESETS[h.get('state')]?h.get('state'):'play');
+</script>
+</body>
+</html>

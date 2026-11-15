@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { FileCode2 } from 'lucide-react';
+import { FileCode2, X } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
@@ -29,7 +29,10 @@ import { isConfirmedState } from '@/lib/rules-editor';
 import type { ElementState, StateSubject } from '@/lib/process-states';
 import { anchorWords } from '@/lib/rule-anchor';
 import { useAutoProcessNaming } from '@/hooks/useAutoProcessNaming';
+import { useNamingArrival } from '@/hooks/useNamingArrival';
 import AskOnClick from './AskOnClick';
+import AutoStepsNotice from '@/components/AutoStepsNotice';
+import { namesWaitForNotice } from '@/lib/auto-steps-notice';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import type { StartRun } from '@/hooks/useStartRun';
 import { describeRunCost } from '@/lib/run-cost';
@@ -40,6 +43,7 @@ import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { useProcessMap } from '@/hooks/useProcessMap';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
+import { namingFactsApply } from '@/lib/process-naming';
 import { codeCardLabel, codeCardLines, tokenizeAbapLine, type ProcessMapElement, type ProcessMapModel } from '@/lib/process-map';
 import { ensureProcessBaseline, fetchLatestRevision, revisionOutcomeSentence, saveProcessRevision } from '@/lib/process-revisions-client';
 import { newerBase, revisionLine } from '@/lib/process-revisions';
@@ -47,7 +51,7 @@ import type { OpenedRevision } from '@/components/process-map/BpmnEditor';
 import { signedSourceAbsence, signedSourceOf } from '@/lib/signed-source';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import type { NotDetermined, WorkspaceView } from '@/lib/workspace-model';
-import { bizLinesLabel, bizShowingLines, wt } from '@/lib/workspace-messages';
+import { bizLinesLabel, bizShowingLines, namesWaitForNoticeNote, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 import type { DraftHolder } from '@/lib/process-map-draft';
 
@@ -94,6 +98,8 @@ export default function WorkspaceProcess({
   draftHolder,
   startRun,
   coach,
+  codeOnClick = false,
+  openLines = null,
 }: {
   project: Project | null;
   projectId: string;
@@ -127,6 +133,19 @@ export default function WorkspaceProcess({
    * reader to select, and takes their clicks.
    */
   coach?: React.ReactNode;
+  /**
+   * Analyze in the Business view (plan AB-2, mockup states 3 and 7): the code
+   * speaks on demand — no source column until a step or a line is chosen, then
+   * the cited lines in a panel beside the map (below it on a narrow screen),
+   * never over it, with a way to close it. The workspace keeps its column.
+   */
+  codeOnClick?: boolean;
+  /**
+   * A line range asked for from outside the map — a `#L42` address, a line
+   * anchor in the text around the map. `key` changes with every ask, so the
+   * same lines can be opened again after the panel was closed.
+   */
+  openLines?: { lineStart: number; lineEnd: number; key: number } | null;
 }) {
   const signed = useMemo(() => signedSourceOf(project), [project]);
   const absence = useMemo(() => signedSourceAbsence(project), [project]);
@@ -139,6 +158,7 @@ export default function WorkspaceProcess({
   const map = useProcessMap(projectId || null, signed, project?.name || '', availability, {
     measure: false,
     reload: namingRead,
+    engineVersion: engineVersionOfProject(project),
   });
   const owner = useIsOwner(project);
   const isS = useBreakpointS();
@@ -249,31 +269,6 @@ export default function WorkspaceProcess({
     [projectId, stateView, reloadStates],
   );
   /**
-   * The map's legend, as the Business view counts it: *Confirmed* is the steps
-   * a business answer stands on, read from the need revision; *Proven* is left
-   * out, because nothing a business reader can do in this product writes it —
-   * the map file marks every element Reconstructed, and Proven would need
-   * evidence from a running system the product does not import per element.
-   * A counter that can never move is not shown where it cannot change.
-   */
-  const shownModel = useMemo(() => {
-    if (!model) return model;
-    const confirmed = Object.values(answers).filter((e) => isConfirmedState(e.state)).length;
-    const total = model.legend.reduce((sum, entry) => sum + entry.count, 0);
-    return {
-      ...model,
-      legend: model.legend
-        .filter((entry) => entry.value !== 'proven')
-        .map((entry) =>
-          entry.value === 'confirmed'
-            ? { ...entry, count: confirmed }
-            : entry.value === 'reconstructed'
-              ? { ...entry, count: Math.max(0, total - confirmed) }
-              : entry,
-        ),
-    };
-  }, [model, answers]);
-  /**
    * "Walk through the process" from the top of the Business view or the First
    * insights (`ProcessTourEntry`): the tour opens at its first step, over the
    * page — while it is still being read it says so. Only on that click; it
@@ -297,6 +292,21 @@ export default function WorkspaceProcess({
    * names, with nothing said about it.
    */
   const bumpNaming = useCallback(() => setNamingRead((n) => n + 1), []);
+  /**
+   * The business names wait for the one-time notice on automatic AI steps while the account has not confirmed the
+   * wording that names them (`lib/auto-steps-notice.ts`): the hook asks nothing by itself and offers no click, the
+   * notice stands above the map, and the server refuses an automatic naming call until then. Only where names would
+   * be asked for this map at all (`naming.waitsForNotice`): a map already named waits for nothing.
+   */
+  const noticePending = !!owner && namesWaitForNotice({
+    known: availability.known,
+    keyAvailable: availability.keyAvailable,
+    autoSteps: availability.autoSteps,
+    stages: availability.stages,
+    seen: availability.autoStepsNoticeSeen,
+    wording: availability.autoStepsNoticeWording,
+    mainSwitch: availability.autoModelSteps,
+  });
   const naming = useAutoProcessNaming({
     projectId: projectId || null,
     source: signed?.source ?? null,
@@ -307,12 +317,55 @@ export default function WorkspaceProcess({
     // 3.0.21 (owner decision B6): by itself only on the platform key or with
     // "Automatic steps" on for the own key; otherwise on a click.
     autoAllowed: availability.autoSteps,
+    awaitNotice: noticePending,
+    engineVersion: engineVersionOfProject(project),
+    // 3.1.0 (roadmap item 1): names only with the engine's facts — the ask hands
+    // them over exactly when the context for this run's engine carries them.
+    withFacts: namingFactsApply(engineVersionOfProject(project)),
   });
+  /**
+   * Roadmap 3.1.0 item 4: the AI names swap in on the map as they arrive, within 45 s, with one status line
+   * (`hooks/useNamingArrival.ts`). Until a name's swap begins, the map and everything read off it keep the engine's.
+   */
+  const arrival = useNamingArrival({
+    model,
+    asking: naming.state === 'asking',
+    outcome: naming.outcome,
+    identity: `${projectId}|${model?.xml ?? ''}`,
+  });
+  /**
+   * The map's legend, as the Business view counts it: *Confirmed* is the steps
+   * a business answer stands on, read from the need revision; *Proven* is left
+   * out, because nothing a business reader can do in this product writes it —
+   * the map file marks every element Reconstructed, and Proven would need
+   * evidence from a running system the product does not import per element.
+   * A counter that can never move is not shown where it cannot change.
+   */
+  const shownModel = useMemo(() => {
+    const model = arrival?.model ?? null;
+    if (!model) return model;
+    const confirmed = Object.values(answers).filter((e) => isConfirmedState(e.state)).length;
+    const total = model.legend.reduce((sum, entry) => sum + entry.count, 0);
+    return {
+      ...model,
+      legend: model.legend
+        .filter((entry) => entry.value !== 'proven')
+        .map((entry) =>
+          entry.value === 'confirmed'
+            ? { ...entry, count: confirmed }
+            : entry.value === 'reconstructed'
+              ? { ...entry, count: Math.max(0, total - confirmed) }
+              : entry,
+        ),
+    };
+  }, [arrival?.model, answers]);
+  // The names the reader sees on the map, so the code panel's title says what the canvas and the step list say
+  // (one source of the shown name, 3.1.0): an AI name only once its swap has begun.
   const byId = useMemo(() => {
     const out = new Map<string, ProcessMapElement>();
-    for (const element of model?.elements ?? []) out.set(element.id, element);
+    for (const element of (shownModel ?? model)?.elements ?? []) out.set(element.id, element);
     return out;
-  }, [model]);
+  }, [shownModel, model]);
   const selectedElement = selected ? byId.get(selected) ?? null : null;
   /**
    * The step answered beside the map. Listed by the need view once the process
@@ -392,6 +445,21 @@ export default function WorkspaceProcess({
 
   const marked: Range | null = selectedElement?.anchor ?? looseRange;
 
+  /** A line range asked for from outside (`openLines`), once the map can say which step it belongs to. */
+  const askedLines = useRef<number | null>(null);
+  useEffect(() => {
+    if (!openLines || !model || askedLines.current === openLines.key) return;
+    askedLines.current = openLines.key;
+    openRange({ lineStart: openLines.lineStart, lineEnd: openLines.lineEnd });
+  }, [openLines, model, openRange]);
+
+  /** Closes the code panel of `codeOnClick`: nothing selected, no loose range. */
+  const closeCode = useCallback(() => {
+    setSelected(null);
+    setLooseRange(null);
+    setFullSource(false);
+  }, []);
+
   const lines: CcCodeLine[] = useMemo(() => {
     if (!signed) return [];
     if (fullSource) {
@@ -451,7 +519,8 @@ export default function WorkspaceProcess({
     return { revision: record.revision, xml: record.xml, line: revisionLine(record), origin: record.origin };
   }, [projectId]);
 
-  const analyzeHref = stageHref({ base: `/project/${projectId}`, path: 'analyze', view, from: WORKSPACE_RETURN.tools });
+  // On Analyze's own Business view (`codeOnClick`) the way to a run is today's page there, in IT.
+  const analyzeHref = stageHref({ base: `/project/${projectId}`, path: 'analyze', view: codeOnClick ? 'it' : view, from: WORKSPACE_RETURN.tools });
 
   /* ------------------------------------------------------------ no map */
 
@@ -689,33 +758,105 @@ export default function WorkspaceProcess({
     </div>
   );
 
+  /*
+   * The code on demand (Analyze, Business — plan AB-2, mockup state 7): the
+   * lines of the chosen step or line range, ± the usual context, in a panel
+   * beside the map. Nothing until a click; closed by its own button.
+   */
+  const codePanel =
+    codeOnClick && marked ? (
+      <aside
+        ref={columnRef}
+        data-workspace-source-column="panel"
+        data-analyze-code-panel=""
+        aria-labelledby="analyze-code-panel-title"
+        className="flex min-w-0 flex-col gap-3 self-start rounded-cc-card border border-cc-line bg-cc-surface p-4"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="m-0 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+              {`${wt('abiz.codeTitle')} · ${bizLinesLabel(marked.lineStart, marked.lineEnd)}`}
+            </p>
+            <h3 id="analyze-code-panel-title" className="m-0 mt-1 text-[15px] leading-snug font-bold break-words text-cc-ink">
+              {selectedElement ? selectedElement.label : signed.fileName}
+            </h3>
+          </div>
+          <CcButton variant="ghost" onClick={closeCode} aria-label={wt('abiz.codeClose')} data-analyze-code-close="">
+            <X size={16} aria-hidden={true} />
+          </CcButton>
+        </div>
+        {owner && selectedElement && stepSubject ? (
+          <div data-workspace-step-need="" className="flex flex-col gap-2 border-b border-cc-line pb-3">
+            <p className="m-0 text-[13px] font-semibold text-cc-ink">{wt('biz.stepNeedTitle')}</p>
+            <StateChoice
+              key={selectedElement.id}
+              subject={stepSubject}
+              entry={answers[selectedElement.id] ?? null}
+              busy={answering?.subject === selectedElement.id && answering.error === null}
+              error={answering?.subject === selectedElement.id ? answering.error : null}
+              onConfirm={(state, note) => answerStep(selectedElement.id, state, note)}
+            />
+          </div>
+        ) : null}
+        {lines.length > 0 ? (
+          <div className={fullSource ? 'max-h-112 overflow-y-auto' : 'overflow-x-auto'}>
+            <CcCodeSurface lines={lines} label={codeCardLabel(signed.fileName, marked, signed.source)} />
+          </div>
+        ) : null}
+        <p className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('abiz.codeLine')}</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <CcButton onClick={() => setFullSource((v) => !v)} aria-pressed={fullSource} data-workspace-source-full="">
+            {fullSource ? wt('biz.showMarkedOnly') : wt('biz.showFullSource')}
+          </CcButton>
+        </div>
+      </aside>
+    ) : null;
+
   /* ------------------------------------------------------------ the map */
 
   return (
     <div data-workspace-process={model ? 'ready' : map.status} className="flex flex-col gap-4">
       {/* The eyebrow of mockup s1. The map names itself (its own title,
-          legend and provenance counts), so the card around it carries none. */}
-      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          legend and provenance counts), so the card around it carries none.
+          On Analyze, Business (`codeOnClick`) the map follows the summary
+          straight away, as in mockup state 3: the heading is for a screen
+          reader only. */}
+      <div className={codeOnClick ? 'contents' : 'flex flex-wrap items-center justify-between gap-x-4 gap-y-2'}>
         <h2
           id="workspace-process-title"
-          className="m-0 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase"
+          className={codeOnClick ? 'sr-only' : 'm-0 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase'}
         >
           {wt('biz.needAndProcess')}
         </h2>
         <AskOnClick askNow={naming.askNow} step="names" />
       </div>
+      {naming.waitsForNotice ? (
+        <div data-names-wait-notice="" className="flex flex-col gap-2">
+          <AutoStepsNotice model={availability} reader={!owner} />
+          <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{namesWaitForNoticeNote()}</p>
+        </div>
+      ) : null}
       {/* The guided tour, over the page while it is open (owner decision
-          21.10.2026): the map and the narration on one screen. */}
+          21.10.2026): the map and the narration on one screen, with the
+          names the main map shows at this moment, also while names arrive. */}
       {tourOpen && model ? (
-        <ProcessTour tour={tour} model={model} onClose={closeTour} say={wording.say} designHref={designHref} askWording={wording.askNow} />
+        <ProcessTour tour={tour} model={shownModel ?? model} onClose={closeTour} say={wording.say} designHref={designHref} askWording={wording.askNow} />
       ) : null}
       {coach}
-      <div data-coach-target="decision">
-        <CcCard>
+      <div
+        className={
+          codeOnClick && codePanel
+            ? 'grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] xl:grid-cols-[minmax(0,1fr)_minmax(0,28rem)]'
+            : undefined
+        }
+      >
+      <div data-coach-target="decision" className="min-w-0">
+        <CcCard density={codeOnClick ? 'compact' : 'cozy'}>
           {model ? (
             <ProcessMap
               key={isS ? 'steps' : 'map'}
               model={shownModel ?? model}
+              nameArrival={arrival}
               source={signed.source}
               measuredAt={map.measuredAt}
               usage={project?.usageReport ?? null}
@@ -730,6 +871,8 @@ export default function WorkspaceProcess({
               // step list stays one tab away.
               defaultView="map"
               canvasControls
+              // Analyze, Business: the canvas first, its code in the panel beside it (mockup states 3 and 7).
+              layout={codeOnClick ? 'page' : 'workspace'}
               save={save}
               openLatest={openLatest}
               projectId={projectId || null}
@@ -747,8 +890,15 @@ export default function WorkspaceProcess({
             </div>
           )}
         </CcCard>
+        {codeOnClick && model ? (
+          <p data-analyze-map-hint="" className="m-0 mt-2 text-[12px] leading-snug font-medium text-cc-ink-muted">
+            {wt('abiz.mapHint')}
+          </p>
+        ) : null}
       </div>
-      {model ? column : null}
+      {codePanel}
+      </div>
+      {model && !codeOnClick ? column : null}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { readProgramDomain } from '../lib/abap/program-domain';
 import { ENGINE_READS_3021_FROM, engineReads3021Apply } from '../lib/abap/engine-reads-3021-gate';
 import { branchReadingOf, decisionArmsAt, messageOf, plainValues, rawFieldsOf } from '../lib/abap/branch-messages';
 import { readExample } from './helpers/starter-example-files';
+import { skeletonReadFor } from '../lib/abap/process-skeleton';
 
 /**
  * Roadmap 3.0.21 — "First insights becomes the strongest page", the engine
@@ -37,7 +38,10 @@ const DELIVERY = readExample('Z_SD_DELIVERY_PRIORITY.abap');
 const LEGACY = readExample('ZLEGACY_ORDER_FULFILLMENT_AUDIT_1000LOC.abap');
 
 function storyOf(source: string, version: string): ProcessStory {
-  return processStory(readProcess(source).skeleton, source, null, version);
+  // The story of a run is read off the map its engine drew (`skeletonReadFor`, as `lib/process-tour.ts` does): since
+  // APP_VERSION reached 3.1.0, `readProcess` draws the 3.1.0 map, which a 3.0.20 or 3.0.21 run never had.
+  const process = readProcess(source);
+  return processStory(skeletonReadFor(process.skeleton, process.facts, version), source, null, version);
 }
 const allChecks = (s: ProcessStory) => s.steps.flatMap((step) => step.checks);
 const allStops = (s: ProcessStory) => s.steps.flatMap((step) => step.stops);

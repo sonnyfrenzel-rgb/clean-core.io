@@ -27,6 +27,14 @@ export type ModelUsageFields = {
   totalTokenCount: number | null;
   /** The provider call threw: no answer, and no counts unless it sent some. */
   failed: boolean;
+  /**
+   * How the provider ended the answer (`STOP`, `MAX_TOKENS`, …), or null when it
+   * said nothing or the call threw. Added 13.11.2026: an answer cut off at the
+   * output bound is a completed call that the route then refuses
+   * (`lib/model-completion.ts`), and a log line with `failed: false` and 32,768
+   * tokens said nothing about it.
+   */
+  finishReason: string | null;
 };
 
 const count = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null);
@@ -39,6 +47,7 @@ export function modelUsageLog(input: {
   leased: boolean;
   durationMs: number;
   failed?: boolean;
+  finishReason?: string | null;
 }): ModelUsageFields {
   const u = (typeof input.usage === 'object' && input.usage !== null ? input.usage : {}) as Record<string, unknown>;
   return {
@@ -53,5 +62,6 @@ export function modelUsageLog(input: {
     thoughtsTokenCount: count(u.thoughtsTokenCount),
     totalTokenCount: count(u.totalTokenCount),
     failed: input.failed === true,
+    finishReason: typeof input.finishReason === 'string' && input.finishReason ? input.finishReason : null,
   };
 }
