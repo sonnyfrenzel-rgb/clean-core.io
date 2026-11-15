@@ -86,6 +86,19 @@ async function exerciseTheMap(page: Page, label: string) {
   const filled = await frame.boundingBox();
   expect(filled!.width, `${label}: full screen does not fill the window`).toBeGreaterThan(size.width - 2);
   expect((await nodesInsideCanvas(page)).outside, `${label}: steps outside the map in full screen`).toEqual([]);
+  // A modal dialog with a name, without the page's own full-screen parts too, and Tab stays inside it both ways.
+  await expect(frame).toHaveAttribute('role', 'dialog');
+  await expect(frame).toHaveAttribute('aria-modal', 'true');
+  await expect(frame).toHaveAccessibleName('Process map, full screen');
+  const stops = await frame.evaluate((el) =>
+    [...el.querySelectorAll<HTMLElement>('button, a[href], input, select, textarea, [tabindex]')]
+      .filter((n) => n.tabIndex >= 0 && !(n as HTMLButtonElement).disabled && n.getClientRects().length > 0).length);
+  for (const key of ['Tab', 'Shift+Tab']) {
+    for (let i = 0; i < stops + 2; i += 1) {
+      await page.keyboard.press(key);
+      expect(await frame.evaluate((el) => el.contains(document.activeElement)), `${label}: ${key} #${i + 1} left the full screen`).toBe(true);
+    }
+  }
   await toggle.click();
   await expect(frame).toHaveAttribute('data-map-fullscreen', 'false');
   await expect(toggle).toBeFocused();

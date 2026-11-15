@@ -9,6 +9,7 @@ import { MAP_REVEAL_EVENT, NARROW_CANVAS, fitWhole, fitWithPadding, flooredLevel
 import type { PhoneXml } from './phone-layout';
 import { MapViewTools } from './CanvasViewControls';
 import { FOCUSABLE } from '@/components/cc/modal';
+import { wt } from '@/lib/workspace-messages';
 import { useCanvasFullscreen } from './useCanvasFullscreen';
 import { useTouchViewport } from './useTouchViewport';
 import { cameraFor, stationBounds, type StationShape } from './TourCanvas';
@@ -932,10 +933,12 @@ export default function BpmnCanvas({
       data-map-fullscreen-editing={own ? (editing ? 'true' : 'false') : undefined}
       data-map-plane={plane ?? 'top'}
       data-map-follow={follow ?? undefined}
-      role={own ? 'dialog' : undefined}
-      aria-label={own ? fullscreenParts.label : undefined}
-      aria-modal={own ? true : undefined}
-      onKeyDown={own ? keepTabInside : undefined}
+      // Every full screen is a modal dialog that keeps Tab inside — with its own parts or, for Documentation, the
+      // workspace and the demo, without them; only the layout is the parts' alone.
+      role={filled ? 'dialog' : undefined}
+      aria-label={own ? fullscreenParts.label : filled ? wt('fullScreen.dialogLabel') : undefined}
+      aria-modal={filled ? true : undefined}
+      onKeyDown={filled ? keepTabInside : undefined}
       className={filled ? 'cc-editor-fullscreen flex min-w-0 flex-col gap-2 overflow-hidden' : 'flex min-w-0 flex-col gap-2'}
     >
       {own ? (

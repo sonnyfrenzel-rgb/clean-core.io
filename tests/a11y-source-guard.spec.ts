@@ -309,8 +309,8 @@ test.describe('the map in full screen on Analyze, Business (AB-5, 3.2.0)', () =>
   const hook = code('components/process-map/useCanvasFullscreen.ts');
 
   test('it is a dialog with a name', () => {
-    expect(canvas).toContain("role={own ? 'dialog' : undefined}");
-    expect(canvas).toContain('aria-label={own ? fullscreenParts.label : undefined}');
+    expect(canvas).toContain("role={filled ? 'dialog' : undefined}");
+    expect(canvas).toContain("aria-label={own ? fullscreenParts.label : filled ? wt('fullScreen.dialogLabel') : undefined}");
     expect(read('lib/messages/analyze-fullscreen.ts')).toContain("'fullScreen.dialogLabel': 'Process map, full screen'");
   });
 
@@ -320,7 +320,7 @@ test.describe('the map in full screen on Analyze, Business (AB-5, 3.2.0)', () =>
     expect(canvas).toContain('const leaveRef = toggleRef;');
     expect(bar).toContain('buttonRef={tools.leaveRef}');
     // Inside: Tab and Shift+Tab wrap at the dialog's edges.
-    expect(canvas).toContain('onKeyDown={own ? keepTabInside : undefined}');
+    expect(canvas).toContain('onKeyDown={filled ? keepTabInside : undefined}');
     expect(canvas).toMatch(/const keepTabInside = useCallback\(\(event[\s\S]*?event\.key !== 'Tab'[\s\S]*?last\.focus\(\)[\s\S]*?first\.focus\(\)/);
     // Out: back to the toggle, or to the control that asked for full screen ("Edit model").
     expect(hook).toMatch(/if \(lost\) toggleRef\.current\?\.focus\(\);/);
@@ -332,7 +332,7 @@ test.describe('the map in full screen on Analyze, Business (AB-5, 3.2.0)', () =>
     expect(canvas).toContain('escapeInside: bodyRef,');
     // Marked aria-modal, so a screen reader stays inside; `ccModalOpen` leaves the frame out, so the hook's own Escape
     // still leaves full screen while a dialog over it keeps Escape first.
-    expect(canvas).toContain('aria-modal={own ? true : undefined}');
+    expect(canvas).toContain('aria-modal={filled ? true : undefined}');
     expect(code('components/cc/modal.ts')).toContain(`document.querySelector('[aria-modal="true"]:not([data-map-canvas-frame])')`);
     expect(canvas).toContain('data-map-canvas-frame=""');
   });

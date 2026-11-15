@@ -129,6 +129,11 @@ audit pack holds do not change.
   symbol typed `any`) no longer makes the implementations here that share the name beginnings "candidate of" it; its
   object may be of a class outside this source. The call stays opaque and still lists them, as in 3.1.0
   (`tests/engine-reads-320.spec.ts`). The benchmark figures above were measured before this change.
+- Every full screen of the map is a named modal dialog that keeps Tab inside — in Documentation, the workspace and the
+  demo too, not only on Analyze (`components/process-map/BpmnCanvas.tsx`; rendered
+  `tests/documentation-map-controls.spec.ts`).
+- The walk-through resumed at a later station opens there also when its tour is read after the card opened; before, it
+  fell back to the first station (`components/workspace/ProcessTour.tsx`, `tests/analyze-tour-inline.spec.ts`).
 - `npm run retention:verify` fails when the policy file loses the row of a retention TTL policy (`usage_reports`,
   `erased_accounts`) or names another field in it, instead of passing without checking that policy
   (`scripts/retention-verify.ts`, `tests/retention-verify.spec.ts`).

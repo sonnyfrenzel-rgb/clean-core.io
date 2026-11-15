@@ -110,9 +110,9 @@ test.describe('the source: full screen is the page layout\'s, everything else ke
 
   test('the frame is a named dialog with focus in and out, Escape, and Tab kept inside (BpmnCanvas)', () => {
     const canvas = code(CANVAS);
-    expect(canvas).toContain("role={own ? 'dialog' : undefined}");
-    expect(canvas).toContain('aria-label={own ? fullscreenParts.label : undefined}');
-    expect(canvas).toContain('onKeyDown={own ? keepTabInside : undefined}');
+    expect(canvas).toContain("role={filled ? 'dialog' : undefined}");
+    expect(canvas).toContain("aria-label={own ? fullscreenParts.label : filled ? wt('fullScreen.dialogLabel') : undefined}");
+    expect(canvas).toContain('onKeyDown={filled ? keepTabInside : undefined}');
     // Only real Tab stops are the edges; that Tab stays inside is walked in the rendered state 14 below, both ways.
     expect(canvas).toContain('.filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0)');
     // Escape inside the editor ends a tool, not full screen.
