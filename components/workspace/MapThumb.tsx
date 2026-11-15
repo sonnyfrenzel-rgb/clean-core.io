@@ -37,7 +37,7 @@ export default function MapThumb({
   const [x, y, w, h] = parsed.viewBox;
   return (
     <div className={frame} role="img" aria-label={mapThumbLabel(objectName, steps)} data-map-thumb="drawn">
-      <svg viewBox={`${x} ${y} ${w} ${h}`} aria-hidden={true} className="size-full p-2.5" preserveAspectRatio="xMidYMid meet">
+      <svg viewBox={`${x} ${y} ${w} ${h}`} aria-hidden={true} className="size-full p-2" preserveAspectRatio="xMidYMid meet">
         <g fill="none" className="stroke-cc-ink-muted" strokeWidth={1} vectorEffect="non-scaling-stroke">
           {parsed.items.map((item, i) =>
             item.kind === 'flow' || item.kind === 'message' ? (

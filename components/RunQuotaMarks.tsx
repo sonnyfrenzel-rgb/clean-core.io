@@ -18,7 +18,7 @@ export default function RunQuotaMarks({ profile }: { profile: QuotaSubject | nul
   if (limit < 1 || limit > QUOTA_MARKS_MAX) return null;
   const left = runsRemaining(profile);
   return (
-    <span aria-hidden={true} data-shell-quota-marks={`${left}/${limit}`} className="inline-flex items-center gap-0.5">
+    <span aria-hidden={true} data-shell-quota-marks={`${left}/${limit}`} className="inline-flex items-center gap-px">
       {Array.from({ length: limit }, (_, i) => (
         <i
           key={i}

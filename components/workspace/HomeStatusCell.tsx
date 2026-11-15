@@ -23,14 +23,14 @@ export function HomeStatusBlock({ status }: { status: HomeStatus }) {
   return (
     <span className="flex min-w-0 items-start gap-2" data-home-status={status.kind}>
       <span aria-hidden={true} className={cn('mt-1 inline-block h-3 w-3 shrink-0 rounded-full', PROGRESS_TONE_CLASS[status.tone])} />
-      <span className="flex min-w-0 flex-col gap-0.5">
+      <span className="flex min-w-0 flex-col gap-1">
         <span className="text-[13px] leading-snug font-semibold text-cc-ink" data-home-status-title="">
           {status.title}
         </span>
         <span
           data-home-status-detail={status.detailTone}
           className={cn(
-            'inline-flex flex-wrap items-center gap-1.5 text-[12px] leading-snug font-medium',
+            'inline-flex flex-wrap items-center gap-2 text-[12px] leading-snug font-medium',
             status.detailTone === 'err' ? 'text-cc-error' : status.detailTone === 'warn' ? 'text-cc-ink' : 'text-cc-ink-muted',
           )}
         >
@@ -47,7 +47,7 @@ export function HomeStatusBlock({ status }: { status: HomeStatus }) {
 /** Six segments, two looks: done (ink) and not done (line). Decorative — the sentence beside it says the count. */
 function RedesignBar({ done }: { done: number }) {
   return (
-    <span aria-hidden={true} data-home-redesign-bar={done} title={wt('homeList.redesignBar')} className="inline-flex items-center gap-0.5">
+    <span aria-hidden={true} data-home-redesign-bar={done} title={wt('homeList.redesignBar')} className="inline-flex items-center gap-px">
       {Array.from({ length: REDESIGN_TOTAL }, (_, i) => (
         <i key={i} className={cn('inline-block h-1.5 w-3 rounded-full', i < done ? 'bg-cc-ink' : 'bg-cc-line')} />
       ))}
@@ -80,7 +80,7 @@ export function HomeNextCell({
     </>
   );
   return (
-    <span className="flex min-w-0 flex-col items-start gap-0.5" data-home-next={next.path}>
+    <span className="flex min-w-0 flex-col items-start gap-1" data-home-next={next.path}>
       {next.run && onRun ? (
         <button type="button" className={NEXT_LINK} onClick={onRun} data-home-run={projectId}>
           {label}

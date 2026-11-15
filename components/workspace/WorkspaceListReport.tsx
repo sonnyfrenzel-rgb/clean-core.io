@@ -88,7 +88,7 @@ import { APP_VERSION } from '@/lib/version';
  * A new account sees the first view with the start built in (AB-14a, `HomeFirstView`). A returning account sees the
  * list of the home page v2 (AB-14b, mockup `docs/roadmap/home-mockup-v2.html`, states 2–9, 11, 12):
  *
- *   - **every project**, not the newest 25 (H-O9, QA finding `c559b61a9b31`): the own rows come lean from
+ *   - **every project**, not the newest 25 (H-O9): the own rows come lean from
  *     `GET /api/workspace-rows` (`lib/home-rows.ts`) — no source code in them — and search, filters and sort run over
  *     all of them;
  *   - **four columns**: Project, Status, Next step, Last change, with the new status words (H-O3, `lib/home-status.ts`)
@@ -877,11 +877,11 @@ export default function WorkspaceListReport({
                     onClick={() => setTab(x.key)}
                     onKeyDown={onTabKey}
                     data-home-tab={x.key}
-                    className={`-mb-px inline-flex items-center gap-1.5 border-b-2 px-2 py-2 text-[13px] font-semibold ${current === x.key ? 'border-cc-ink text-cc-ink' : 'border-transparent text-cc-ink-muted'}`}
+                    className={`-mb-px inline-flex items-center gap-2 border-b-2 px-2 py-2 text-[13px] font-semibold ${current === x.key ? 'border-cc-ink text-cc-ink' : 'border-transparent text-cc-ink-muted'}`}
                   >
                     <span className="hidden sm:inline">{x.long}</span>
                     <span className="sm:hidden">{x.short}</span>
-                    <span className="rounded-full bg-cc-surface-muted px-1.5 text-[11px] font-semibold text-cc-ink-muted tabular-nums">{x.count}</span>
+                    <span className="rounded-full bg-cc-surface-muted px-2 text-[11px] font-semibold text-cc-ink-muted tabular-nums">{x.count}</span>
                   </button>
                 ))}
               </div>

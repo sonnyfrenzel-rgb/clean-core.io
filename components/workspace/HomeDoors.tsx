@@ -61,7 +61,7 @@ function Door({
       <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cc-surface-muted text-cc-ink">{icon}</span>
       <div className="min-w-0 flex-1">
         <h2 className="m-0 text-[14px] font-bold text-cc-ink">{title}</h2>
-        <p className="mt-0.5 mb-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{body}</p>
+        <p className="mt-1 mb-0 text-[12px] leading-snug font-medium text-cc-ink-muted">{body}</p>
       </div>
       <Link href={href} className="inline-flex items-center gap-1 text-[13px] font-semibold text-cc-ink underline underline-offset-2">
         {action}

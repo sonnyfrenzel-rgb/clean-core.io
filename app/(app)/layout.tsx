@@ -349,7 +349,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                 {/* On a phone the label may take two lines: "N of 5 runs left"
                     (3.0.21) beside the project search, the help and the account
                     menu is two pixels wider than a 360 px screen. */}
-                <div className="flex items-center justify-end gap-1.5">
+                <div className="flex items-center justify-end gap-2">
                   {/* AB-14b: the free runs as small marks; decorative, the words say it. */}
                   <RunQuotaMarks profile={profile} />
                   <div data-shell-quota="" className="text-right text-[12px] font-semibold text-cc-ink-muted sm:whitespace-nowrap">
