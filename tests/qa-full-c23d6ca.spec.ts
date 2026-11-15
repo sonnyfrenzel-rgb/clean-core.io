@@ -52,6 +52,17 @@ test.describe('a credential in a backtick literal or string template is redacted
     expect(redactCredentials('lv_password = |{ lv_a }{ |x{ lv_b }y| }secret|.', OLD)).toBe('lv_password = |{ lv_a }{ |x{ lv_b }y| }secret|.');
   });
 
+  test('an empty first literal opens the chain like any other: the rest of it is redacted', () => {
+    expect(redactCredentials("lv_password = '' && |secret|.", NEW)).toBe("lv_password = '…<redacted>'.");
+    expect(redactCredentials('lv_password = `` && `secret`.', NEW)).toBe('lv_password = `…<redacted>`.');
+    expect(redactCredentials("lv_password = '' & 'x'.", NEW)).toBe("lv_password = '…<redacted>'.");
+    expect(redactCredentials('lv_password = || && |secret|.', NEW)).toBe('lv_password = |…<redacted>|.');
+    // An empty value alone goes too: redacting more, never less.
+    expect(redactCredentials("lv_password = ''.", NEW)).toBe("lv_password = '…<redacted>'.");
+    // A quote doubled inside a literal is still one escaped quote, not an empty literal.
+    expect(redactCredentials("lv_password = '''abc'.", NEW)).toBe("lv_password = '…<redacted>'.");
+  });
+
   test('single-quoted values read as before, counters stay readable in every form', () => {
     expect(redactCredentials("lv_password = 'hunter2'.", NEW)).toBe("lv_password = '…<redacted>'.");
     expect(redactCredentials("lv_password = 'it''s-me'.", NEW)).toBe("lv_password = '…<redacted>'.");

@@ -526,14 +526,16 @@ function literalChainEnd(text: string, start: number): number {
 }
 
 /**
- * The end of the literal at `at` — quoted, backtick or string template — or -1 when none, or an empty quoted one,
- * stands there. A template is followed into its embedded expressions whatever they hold: quoted literals, a `}` or a
+ * The end of the literal at `at` — quoted, backtick or string template, empty ones included — or -1 when none stands
+ * there. A template is followed into its embedded expressions whatever they hold: quoted literals, a `}` or a
  * bar inside one, templates nested in them. An unterminated literal runs to the end of the text.
  */
 function literalEnd(text: string, at: number): number {
   const c = text[at];
   if (c === "'" || c === '`') {
-    if (at + 1 >= text.length || (text[at + 1] === c && text[at + 2] !== c)) return -1;
+    if (at + 1 >= text.length) return -1;
+    // An empty literal is a literal: the chain it opens goes on (`'' && |secret|`).
+    if (text[at + 1] === c && text[at + 2] !== c) return at + 2;
     let j = at + 1;
     while (j < text.length) {
       if (text[j] === c) {
