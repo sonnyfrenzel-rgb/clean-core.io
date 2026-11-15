@@ -118,10 +118,11 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     purpose: 'the same choice for the process map on Analyze, Business view, kept apart',
     lifetime: 'until cleared site data',
     writtenFor: 'signed-in',
-    namedInPolicy: false,
+    namedInPolicy: true,
   },
-  // My workspace (3.2.0, AB-14b; `lib/home-list-prefs.ts`): not named in privacy policy 1.3 either — also listed in
-  // `HOME_PRIVACY_PENDING_STORAGE_KEYS`; the owner decides whether the switch is remembered at all.
+  // My workspace (3.2.0, AB-14b; `lib/home-list-prefs.ts`): not named in privacy policy 1.3 — also listed in
+  // `HOME_PRIVACY_PENDING_STORAGE_KEYS`. Owner decision 15.11.2026: the switch is not to be stored (document 21 does
+  // not name it); while the code still writes it, this entry says so.
   {
     key: 'cc.workspace.figures',
     match: 'exact',
@@ -132,8 +133,7 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     writtenFor: 'signed-in',
     namedInPolicy: false,
   },
-  // Analyze, Business (3.2.0, AB-4, ADR-118; `lib/analyze-progress.ts`): privacy policy 1.3 names these; until it is
-  // published, section 7 does not.
+  // Analyze, Business (3.2.0, AB-4, ADR-118; `lib/analyze-progress.ts`): section 7 names these since privacy policy 1.3.
   {
     key: 'cc.analyze.walked.',
     match: 'prefix',
@@ -142,7 +142,7 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     purpose: 'the soft-gate hint goes, the two endings and "What you can do next" show',
     lifetime: 'until cleared site data',
     writtenFor: 'signed-in',
-    namedInPolicy: false,
+    namedInPolicy: true,
   },
   {
     key: 'cc.analyze.nextHidden.',
@@ -152,7 +152,7 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     purpose: 'the card stays hidden for this project until it is brought back',
     lifetime: 'until cleared site data',
     writtenFor: 'signed-in',
-    namedInPolicy: false,
+    namedInPolicy: true,
   },
   {
     key: 'cc.analyze.toolOpened.',
@@ -162,7 +162,7 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     purpose: 'the tool bar shows its "Next" tag only once a later tool was used',
     lifetime: 'until cleared site data',
     writtenFor: 'signed-in',
-    namedInPolicy: false,
+    namedInPolicy: true,
   },
   {
     key: 'cc-fr-derived-',
@@ -202,7 +202,7 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     purpose: 'a public page loads the sign-in SDK only where an account was signed in, so it contacts nobody else before sign-in',
     lifetime: 'removed on sign-out and on an expired session',
     writtenFor: 'signed-in',
-    namedInPolicy: false,
+    namedInPolicy: true,
   },
   /* ---------------------------------------------------------------- session storage */
   {
@@ -223,7 +223,7 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     purpose: 'after "Skip questions" in Design a reload in the same tab does not ask again',
     lifetime: 'until the tab is closed',
     writtenFor: 'signed-in',
-    namedInPolicy: false,
+    namedInPolicy: true,
   },
   {
     key: 'cc_chunk_reload_at',

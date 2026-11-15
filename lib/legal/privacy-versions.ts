@@ -11,10 +11,11 @@ import type { LegalLang } from './open-values';
  * `/datenschutz/versions/<id>` (English) and `/datenschutz/versions/<id>/de` (German, which prevails). The sign-up
  * dialog names the version of the policy, and the consent record stores its id (`privacyVersion`).
  *
- * Which version is in force is the build's: version 1.2 from the release whose texts say business names start by
- * themselves again (`LEGAL_TEXTS_NAMES_AUTOMATIC`, `lib/legal/names-wording.ts`), version 1.1 before. Both texts come
- * from the one source (`privacyDeFor` / `privacyEnFor`), and `tests/legal-names-wording.spec.ts` holds each archived
- * file to the source as rendered for its version.
+ * Which version is in force is the build's: the newest version whose texts say business names start by themselves
+ * (`LEGAL_TEXTS_NAMES_AUTOMATIC`, `lib/legal/names-wording.ts`), version 1.1 before — 1.2 was that version from
+ * 3.1.0, 1.3 (the usage figures of section 9, lawyer-approved document 21) is it from 3.2.0. Every version comes from
+ * the one source (`privacyDeFor` / `privacyEnFor`, rendered by version id), and `tests/legal-names-wording.spec.ts`
+ * holds each archived file to the source as rendered for its version.
  *
  * A published version is immutable, as for the Terms (`lib/terms-versions.ts`): its file is never edited, the digest
  * below is the SHA-256 of the LF-normalised file, and a change is a new version. `scripts/legal/archive-privacy.ts`
@@ -23,7 +24,7 @@ import type { LegalLang } from './open-values';
  * Import-light (the names rule and a type), so the sign-up dialog and the consent record read it.
  */
 
-export type PrivacyVersionId = '1.1' | '1.2';
+export type PrivacyVersionId = '1.1' | '1.2' | '1.3';
 
 export interface PrivacyPolicyVersion {
   id: PrivacyVersionId;
@@ -38,6 +39,11 @@ export interface PrivacyPolicyVersion {
   recordId: string;
   /** The texts render this version when business names start by themselves (true) or are paused (false). */
   namesAutomatic: boolean;
+  /**
+   * The texts name the weekly usage figures (section 9, with the references to it in sections 2, 5 and 6) and the
+   * further browser storage entries in section 7 — from version 1.3 (legal review, document 21).
+   */
+  usageFigures: boolean;
   /** Repository-relative paths of the immutable archived texts. */
   files: Record<LegalLang, string>;
   /** SHA-256 of each LF-normalised file, lowercase hex. */
@@ -54,6 +60,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     date: { en: '9 November 2026', de: '09.11.2026' },
     recordId: '2026-11-09',
     namesAutomatic: false,
+    usageFigures: false,
     files: { en: 'docs/privacy/1.1.md', de: 'docs/privacy/1.1.de.md' },
     // Rendered from the source with the names paused; byte for byte what main published from 9 November 2026
     // (compared against the rendering of the release of 13 November 2026 when this archive was made).
@@ -69,10 +76,26 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     date: { en: '15 November 2026', de: '15.11.2026' },
     recordId: '1.2',
     namesAutomatic: true,
+    usageFigures: false,
     files: { en: 'docs/privacy/1.2.md', de: 'docs/privacy/1.2.de.md' },
     sha256: {
       en: 'e77e23885f626b27cb3423577a2f51737429dfb5f27313bd831cc0394d2f98b7',
       de: '991fd8c62d2b7ff248d8a390617bd824faff71e310da9bbd1c6d572f6f8b80aa',
+    },
+  },
+  {
+    // The version that goes live with 3.2.0: the passages of document 21, approved unchanged by the lawyer (owner,
+    // 15.11.2026) — the weekly usage figures (section 9) and further entries of local and session storage (section 7).
+    id: '1.3',
+    dateIso: '2026-11-16',
+    date: { en: '16 November 2026', de: '16.11.2026' },
+    recordId: '1.3',
+    namesAutomatic: true,
+    usageFigures: true,
+    files: { en: 'docs/privacy/1.3.md', de: 'docs/privacy/1.3.de.md' },
+    sha256: {
+      en: '94540d9a86de24f2ad06345eb794afedee155ec7eaa215e46e7453cc4806775f',
+      de: '79ec79b8c1e63bc0200200a12aae514532b6d7517039e6e4d04c272596e5a2c2',
     },
   },
 ];
@@ -83,9 +106,9 @@ export function privacyVersion(id: PrivacyVersionId): PrivacyPolicyVersion {
   return v;
 }
 
-/** The version a build renders: 1.2 once business names start by themselves, 1.1 before. */
+/** The version a build renders: 1.3 once business names start by themselves, 1.1 before (1.2 stays archived). */
 export function privacyVersionFor(namesAutomatic: boolean): PrivacyPolicyVersion {
-  return privacyVersion(namesAutomatic ? '1.2' : '1.1');
+  return privacyVersion(namesAutomatic ? '1.3' : '1.1');
 }
 
 /** The version in force in this build. */
@@ -112,23 +135,38 @@ export function previousPrivacyVersion(id: PrivacyVersionId): PrivacyPolicyVersi
   return i > 0 ? PRIVACY_POLICY_VERSIONS[i - 1] : null;
 }
 
+/** What a version changed, said at its top after the version line — from 1.2, in the lawyer's wording. */
+const CHANGE_NOTES: Partial<Record<PrivacyVersionId, Record<LegalLang, string>>> = {
+  // Legal review, document 19.
+  '1.2': {
+    de: 'Fachliche Namen der Prozessschritte schlägt wieder automatisch ein Modell vor (Abschnitt 3).',
+    en: 'business names of the process steps are again proposed automatically by a model (section 3).',
+  },
+  // Legal review, document 21, passage 2.1 (approved unchanged).
+  '1.3': {
+    de: 'Abschnitt 9 beschreibt den wöchentlichen Bericht mit Zahlen zur Nutzung; die Abschnitte 2, 5, 6 und 7 verweisen darauf, und Abschnitt 7 nennt weitere Einträge der lokalen und der Sitzungsspeicherung.',
+    en: 'section 9 describes the weekly report with usage figures; sections 2, 5, 6 and 7 refer to it, and section 7 names further entries in local and session storage.',
+  },
+};
+
 /**
  * The head of the policy for a version: its version line and, from 1.2, the change note in the lawyer's wording
- * (legal review, document 19) with the real address of the previous version. Version 1.1 keeps the line it was
- * published with.
+ * (legal review, documents 19 and 21) with the real address of the previous version. Version 1.1 keeps the line it
+ * was published with.
  */
-export function privacyHeadFor(namesAutomatic: boolean, lang: LegalLang): string {
-  if (!namesAutomatic) return lang === 'de' ? '**Stand:** {{releaseDate}}.' : 'Version of {{releaseDate}}.';
-  const v = privacyVersion('1.2');
-  const prev = privacyVersion('1.1');
+export function privacyHeadFor(id: PrivacyVersionId, lang: LegalLang): string {
+  const note = CHANGE_NOTES[id];
+  const prev = previousPrivacyVersion(id);
+  if (!note || !prev) return lang === 'de' ? '**Stand:** {{releaseDate}}.' : 'Version of {{releaseDate}}.';
+  const v = privacyVersion(id);
   if (lang === 'de') {
     return [
       `**Fassung ${v.id}, Stand ${v.date.de}.**`,
-      `Geändert am ${v.date.de}: Fachliche Namen der Prozessschritte schlägt wieder automatisch ein Modell vor (Abschnitt 3). Die vorige Fassung vom ${prev.date.de} finden Sie unter ${privacyVersionAddress(prev.id, 'de')}.`,
+      `Geändert am ${v.date.de}: ${note.de} Die vorige Fassung vom ${prev.date.de} finden Sie unter ${privacyVersionAddress(prev.id, 'de')}.`,
     ].join('\n\n');
   }
   return [
     `Version ${v.id}, as of ${v.date.en}.`,
-    `Changed on ${v.date.en}: business names of the process steps are again proposed automatically by a model (section 3). The previous version of ${prev.date.en} is at ${privacyVersionAddress(prev.id, 'en')}.`,
+    `Changed on ${v.date.en}: ${note.en} The previous version of ${prev.date.en} is at ${privacyVersionAddress(prev.id, 'en')}.`,
   ].join('\n\n');
 }
