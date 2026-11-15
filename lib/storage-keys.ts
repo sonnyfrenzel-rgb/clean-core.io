@@ -186,9 +186,10 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     match: 'exact',
     area: 'session',
     holds: 'the time of the last automatic reload',
-    purpose: 'a page that failed to load after a new release reloads once, not in a loop',
+    purpose:
+      'a page that failed to load after a new release reloads once, not in a loop; only with the signed-in hint set — without sign-in the browser’s own record of a reload is the guard and nothing is written (lib/stale-build.ts)',
     lifetime: 'until the tab is closed',
-    writtenFor: 'anyone',
+    writtenFor: 'signed-in',
     namedInPolicy: true,
   },
   {

@@ -30,6 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   holds that no sign-in goes by redirect and nothing asks for a redirect result.
 
 ### Changed
+- Without sign-in, a page that failed to load a chunk after a release writes nothing to the browser (privacy policy
+  section 7: no session storage before sign-in). The reload-loop guard `cc_chunk_reload_at` is written to session
+  storage only when the signed-in hint is set; for everybody else the browser's own Navigation Timing record is the
+  guard — a document that came from a reload does not reload again, so a build that keeps failing stops after one
+  reload and shows the new-version card (`lib/stale-build.ts`, `tests/stale-build-signed-out-storage.spec.ts`; the
+  storage register now says "signed-in").
 - The weekly usage report holds only what privacy policy 1.3 names (owner decision 15.11.2026: trim the report to
   the text). Gone from the report, the stored snapshot and the mail: the count of accounts with their own model key,
   distinct analysed programmes, the all-time totals of runs, used and granted units, and the list of analyses per
