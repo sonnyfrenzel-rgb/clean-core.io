@@ -1730,8 +1730,11 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-976 | low | P3 | next patch after 3.1.0 · pack-verifier hardening | scheduled |
 | SEC-2026-977 | low | P3 | next patch after 3.1.0 · model-call hardening | scheduled |
 | SEC-2026-978 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
-| SEC-2026-979 | medium | P2 | 3.2.0 rules deploy (with SEC-2026-778) | fixed on dev, released with v3.2.0 (rules deploy at release) |
-| SEC-2026-980 | medium | P2 | 3.2.0 rules deploy | fixed on dev, released with v3.2.0 (rules deploy at release) |
+| SEC-2026-979 | medium | P2 | 3.2.0 rules deploy (with SEC-2026-778) | released with v3.2.0, rules deployed 16.11.2026 |
+| SEC-2026-980 | medium | P2 | 3.2.0 rules deploy | released with v3.2.0, rules deployed 16.11.2026 |
+| SEC-2026-1000 | low | P3 | next patch after 3.2.0 | scheduled |
+| SEC-2026-1001 | info | P3 | next patch after 3.2.0 | scheduled |
+| SEC-2026-1002 | info | P3 | next rules deploy | scheduled |
 | SEC-2026-981 | medium | P3 | with SEC-2026-763 | scheduled |
 | SEC-2026-982 | low | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 | SEC-2026-983 | low | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
@@ -1739,6 +1742,8 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-985 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 
 **Audit of v3.0.23 (`0ba01d7`), 13.11.2026: 0 critical, 0 high, 1 medium, 2 low, 1 info — all 33 candidates verified by the agent, all 4 findings checked by hand.** SEC-2026-975 to -977 go to the next patch after 3.1.0 (pack-verifier and model-call hardening); SEC-2026-978 joins the comment-hygiene decision. The reasons are in the sealed register.
+
+**Audit of v3.2.0 (`f54653c`), 16.11.2026: 0 critical, 0 high, 1 medium, 5 low, 5 info — all 68 candidates verified by the agent, all 11 findings checked by hand.** Eight refuted (SEC-2026-992 to -999), three scheduled as P3 (SEC-2026-1000 to -1002).
 
 **Audit of v3.1.0 (`c23d6ca`), 15.11.2026: 0 critical, 0 high, 5 medium, 5 low, 5 info — all 98 candidates verified by the agent, all 15 findings checked by hand.** SEC-2026-979 and -980 go into the 3.2.0 rules deploy; SEC-2026-981 joins SEC-2026-763; SEC-2026-982 to -985 join the comment-hygiene decision; six were refuted (SEC-2026-986 to -991); one awaits the owner's decision; one repeats a registered finding. The reasons are in the sealed register.
 
