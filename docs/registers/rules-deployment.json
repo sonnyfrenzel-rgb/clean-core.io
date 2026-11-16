@@ -7,8 +7,8 @@
   "purpose": "Which text of firestore.rules is live. CI never deploys the rules; a human does, by hand, and the same command records the result here. The offline check (npm run rules:check, tests/rules-deploy-order.spec.ts) compares this record with the working copy and refuses the one order that breaks production: an app that depends on rules which have not been deployed. The online check (npm run rules:verify) asks production what it is actually serving, which is the only way to catch a record that was updated without a deploy.",
   "whyThisExists": "On 16.09.2026 it was checked for the first time what cleancore-491216 really serves: the ruleset of 20.08.2026 — three tightenings behind the repository, without anyone knowing. In production `termsVersionAccepted`/`termsAcceptedAt` were still client-writable (finding V14, long closed in the repo), `email_events` not yet locked, and the admin read access to projects still open. Sonny then deployed and the result was checked against the Rules API: identical. This record is meant to make exactly this drift visible from now on.",
   "deployed": {
-    "sha256OfLfNormalisedText": "00191548a696ba71e5392977aa8cefa3c269c9e8f02b25d7eed3fbd7657db471",
-    "deployedAt": "2026-11-10",
+    "sha256OfLfNormalisedText": "7c05e09a924ba81536e921e3647ed877f212e2e44fdc0272615c123d83ca7b0d",
+    "deployedAt": "2026-11-16",
     "deployedBy": "Sonny, 09.10.2026, right after v3.0.6 went live — npm run deploy:rules from his signed-in CLI; rules:verify: production, record and working copy agree on all six databases",
     "project": "cleancore-491216",
     "rulesetName": "projects/cleancore-491216/rulesets/6866185e-a6fa-4cd8-962d-10b68abf7874",
@@ -35,14 +35,5 @@
       "updatedAt"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
-  },
-  "pending": {
-    "sha256OfLfNormalisedText": "7c05e09a924ba81536e921e3647ed877f212e2e44fdc0272615c123d83ca7b0d",
-    "recordedAt": "2026-11-15",
-    "recordedFor": "3.2.0 (AB-14b, AB-14c data; SEC-2026-979, SEC-2026-980): a type line for the server-written project summary (the map miniature, brought from 3.3.0 ADR-123 unchanged); files and abap_examples closed to client create and update (no writer in the app); the profile create refused while an erasure marker holds (erased_accounts, Admin SDK only). Deploy by hand after the 3.2.0 release, with the erased_accounts TTL policy.",
-    "addsToClient": [],
-    "removesFromClient": [],
-    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
-    "note": "Until the deploy, the old rules are live. `npm run deploy:rules` rolls out and deletes this block."
   }
 }
