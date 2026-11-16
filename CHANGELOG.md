@@ -5,6 +5,24 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Operations
+- The 3.2.0 Firestore rules are deployed and verified on every database (16.11.2026,
+  `docs/registers/rules-deployment.json`); the TTL on `erased_accounts.expiresAt` is active and
+  `scripts/retention-verify.ts` passes.
+- The privacy policy 1.3 notice to every account is sent on the morning of 16.11.2026.
+
+### Reviews
+- Security audit of v3.2.0: SEC-2026-992 to -999 refuted; SEC-2026-1000 and -1001 scheduled for the next
+  patch, SEC-2026-1002 for the next rules deploy (`docs/ROADMAP.md` §12).
+- QA full review of v3.2.0: the one high finding refuted; the QA review of 72ff92919908 recorded.
+
+### Under investigation
+- An owner report of 16.11.2026: after the footer link "Tenant Security" on the landing page the product shell
+  can look half signed in. Not reproduced yet for a signed-out visitor (production) or a signed-in account
+  (emulator); the fix goes into 3.2.1 once the state that shows it is known.
+
 ## [v3.2.0] — 2026-11-16
 
 The Business page is complete. Every new engine reading is gated from 3.2.0: a run signed before 3.2.0 keeps what
