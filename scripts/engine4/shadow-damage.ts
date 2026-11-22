@@ -3,6 +3,7 @@
  *
  *   npx tsx scripts/engine4/shadow-damage.ts            # summary and categories
  *   npx tsx scripts/engine4/shadow-damage.ts --samples  # plus samples per category
+ *   npx tsx scripts/engine4/shadow-damage.ts --corpus <MANIFEST.json> [--group <g>]  # an external sample
  *
  * The clean corpus has no unclosed block, so the plain shadow (`shadow.ts`) can
  * only show that both engines agree on well-formed code. Recovery is where the
@@ -20,7 +21,9 @@
  *   - **collateral:** the other regions (blocks of the old kinds, routines,
  *     function modules, event blocks) whose first or last line moved against
  *     the reading of the undamaged file, or which vanished or appeared;
- *   - **false flags:** unterminated reports on any block but the victim.
+ *   - **false flags:** unterminated reports on any block but the victim that
+ *     the engine does not already give on the undamaged file (those are counted
+ *     apart: the clean corpus has none, a real-code sample can).
  *
  * Where the two engines differ, the difference is put into a named category.
  * Nothing here is wired into the product.
@@ -31,7 +34,7 @@ import { lex } from '../../lib/engine4/lexer';
 import { statements } from '../../lib/engine4/statements';
 import { kindInfo } from '../../lib/engine4/statement-kinds';
 import { blocks as newBlocks } from '../../lib/engine4/blocks';
-import { macrosByFile, shadowCorpus, type CorpusFile } from './shadow';
+import { corpusFromArgs, macrosByFile, shadowCorpus, type CorpusFile } from './shadow';
 
 const REGION_KINDS = new Set([
   'if', 'case', 'loop', 'do', 'while', 'try', 'select', 'at', 'provide', 'form', 'method', 'module', 'class', 'interface', 'define', 'function', 'event',
@@ -104,7 +107,10 @@ export function damages(file: CorpusFile, macros: string[]): Damage[] {
 interface Outcome {
   victimFlagged: boolean;
   collateral: string[];
+  /** Unterminated reports on other blocks that the undamaged file does not have. */
   falseFlags: number[];
+  /** Unterminated reports the engine already gives on the undamaged file (shifted): not caused by the damage. */
+  preexisting: number[];
 }
 
 /** Compare the damaged reading with the clean one, lines behind the deleted one shifted up by one. */
@@ -126,17 +132,19 @@ function outcome(clean: Reading, damaged: Reading, d: Damage): Outcome {
   }
   for (const key of damaged.regions.keys()) if (key !== victimNow && !expected.has(key)) collateral.push(`${key} appeared`);
   const victimLine = shift(d.victim.line);
+  const before = new Set([...clean.unterminated].map(shift));
   return {
     victimFlagged: d.victim.kind === 'select' || damaged.unterminated.has(victimLine),
     collateral,
-    falseFlags: [...damaged.unterminated].filter((l) => l !== victimLine),
+    falseFlags: [...damaged.unterminated].filter((l) => l !== victimLine && !before.has(l)),
+    preexisting: [...damaged.unterminated].filter((l) => l !== victimLine && before.has(l)),
   };
 }
 
 export interface DamageReport {
   damages: number;
-  old: { victimFlagged: number; withCollateral: number; collateral: number; falseFlags: number };
-  new: { victimFlagged: number; withCollateral: number; collateral: number; falseFlags: number };
+  old: { victimFlagged: number; withCollateral: number; collateral: number; falseFlags: number; preexisting: number };
+  new: { victimFlagged: number; withCollateral: number; collateral: number; falseFlags: number; preexisting: number };
   categories: Record<string, number>;
   samples: Record<string, string[]>;
 }
@@ -148,8 +156,11 @@ export interface DamageReport {
 export function categorizeDamage(d: Damage, o: Outcome, n: Outcome): string {
   const better = n.collateral.length <= o.collateral.length && n.falseFlags.length <= o.falseFlags.length && (n.victimFlagged || !o.victimFlagged);
   if (d.victim.kind === 'function' && !o.victimFlagged && n.victimFlagged) return 'function-module-is-a-block';
+  const sameButPreexisting = o.victimFlagged === n.victimFlagged && o.collateral.join('|') === n.collateral.join('|') && o.falseFlags.join('|') === n.falseFlags.join('|');
+  if (sameButPreexisting) return 'flags-the-engine-already-gives-on-the-undamaged-file';
   if (d.victim.kind === 'define' && !better) return 'unclosed-macro-body-reads-on-as-macro';
   if (better && !o.victimFlagged && n.victimFlagged) return 'indentation-picks-the-block-that-lost-its-closer';
+  if (better && o.collateral.length > 0 && o.collateral.every((c) => c.startsWith('module@'))) return 'flow-logic-module-is-a-call';
   const toEnd = (c: string[]) => c.filter((x) => x.includes(` ends ${d.lastLine} not `)).length;
   if (better && toEnd(o.collateral) > toEnd(n.collateral)) return 'open-block-ends-with-its-routine-not-at-end-of-source';
   if (better && ['form', 'method', 'module', 'class', 'interface', 'function', 'event'].includes(d.victim.kind)) return 'routine-ends-at-next-routine';
@@ -159,8 +170,8 @@ export function categorizeDamage(d: Damage, o: Outcome, n: Outcome): string {
 export function runDamageShadow(corpus: CorpusFile[] = shadowCorpus()): DamageReport {
   const r: DamageReport = {
     damages: 0,
-    old: { victimFlagged: 0, withCollateral: 0, collateral: 0, falseFlags: 0 },
-    new: { victimFlagged: 0, withCollateral: 0, collateral: 0, falseFlags: 0 },
+    old: { victimFlagged: 0, withCollateral: 0, collateral: 0, falseFlags: 0, preexisting: 0 },
+    new: { victimFlagged: 0, withCollateral: 0, collateral: 0, falseFlags: 0, preexisting: 0 },
     categories: {},
     samples: {},
   };
@@ -179,8 +190,10 @@ export function runDamageShadow(corpus: CorpusFile[] = shadowCorpus()): DamageRe
         if (out.collateral.length) t.withCollateral += 1;
         t.collateral += out.collateral.length;
         t.falseFlags += out.falseFlags.length;
+        t.preexisting += out.preexisting.length;
       }
-      const same = o.victimFlagged === n.victimFlagged && o.collateral.join('|') === n.collateral.join('|') && o.falseFlags.join('|') === n.falseFlags.join('|');
+      const same = o.victimFlagged === n.victimFlagged && o.collateral.join('|') === n.collateral.join('|') && o.falseFlags.join('|') === n.falseFlags.join('|') &&
+        o.preexisting.length === n.preexisting.length;
       if (same) continue;
       const category = categorizeDamage(d, o, n);
       r.categories[category] = (r.categories[category] ?? 0) + 1;
@@ -188,8 +201,8 @@ export function runDamageShadow(corpus: CorpusFile[] = shadowCorpus()): DamageRe
       if (list.length < 50) {
         list.push(
           `${file.name}: ${d.closer} on line ${d.line} deleted (closed ${d.victim.kind}@${d.victim.line})\n` +
-          `    old: flagged ${o.victimFlagged}, collateral ${o.collateral.length} ${o.collateral.slice(0, 4).join('; ')}, false flags ${o.falseFlags.join(',') || '-'}\n` +
-          `    new: flagged ${n.victimFlagged}, collateral ${n.collateral.length} ${n.collateral.slice(0, 4).join('; ')}, false flags ${n.falseFlags.join(',') || '-'}`,
+          `    old: flagged ${o.victimFlagged}, collateral ${o.collateral.length} ${o.collateral.slice(0, 4).join('; ')}, false flags ${o.falseFlags.join(',') || '-'}, already on the undamaged file ${o.preexisting.length}\n` +
+          `    new: flagged ${n.victimFlagged}, collateral ${n.collateral.length} ${n.collateral.slice(0, 4).join('; ')}, false flags ${n.falseFlags.join(',') || '-'}, already on the undamaged file ${n.preexisting.length}`,
         );
       }
     }
@@ -199,7 +212,7 @@ export function runDamageShadow(corpus: CorpusFile[] = shadowCorpus()): DamageRe
 
 export function formatDamage(r: DamageReport, withSamples: boolean): string {
   const side = (name: string, t: DamageReport['old']) =>
-    `${name}: victim flagged ${t.victimFlagged}/${r.damages}, damages with collateral ${t.withCollateral}, collateral regions ${t.collateral}, false unterminated ${t.falseFlags}`;
+    `${name}: victim flagged ${t.victimFlagged}/${r.damages}, damages with collateral ${t.withCollateral}, collateral regions ${t.collateral}, false unterminated ${t.falseFlags} (plus ${t.preexisting} already reported on the undamaged file)`;
   const lines = [
     `damages ${r.damages}`,
     side('old', r.old),
@@ -212,5 +225,5 @@ export function formatDamage(r: DamageReport, withSamples: boolean): string {
 }
 
 if (require.main === module) {
-  console.log(formatDamage(runDamageShadow(), process.argv.includes('--samples')));
+  console.log(formatDamage(runDamageShadow(corpusFromArgs()), process.argv.includes('--samples')));
 }

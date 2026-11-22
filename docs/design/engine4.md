@@ -655,11 +655,87 @@ taken on 15.11.2026.
 - Until that tree exists, an engine 4 layer that needs a list either keeps its own small table of names, as
   `conventions.ts` does, or waits. It never imports `lib/abap/`.
 
+## Real-code sample (15.11.2026)
+
+The sample stays outside the repository (ADR-125 (5)); only aggregate numbers are recorded here. Both shadow
+scripts read it with `--corpus <MANIFEST.json> [--group <g>]` (`manifestCorpus` in `shadow.ts`). The
+manifest records each file's repository, licence, commit and path.
+
+- **Public group: 300 files, 156,047 lines** from 17 public GitHub repositories whose `LICENSE` file is MIT
+  (12 repositories, 244 files) or Apache-2.0 (5 repositories, 56 files), checked before cloning. These
+  include abapGit, abap2xlsx, the ABAP cheat sheets, abapOpenChecks, the ABAP SDK for Azure, code pal, ajson,
+  ABAP Logger, mockup loader and several standalone reports. Files are deduplicated by content hash. About
+  half carry legacy markers: 40 programs or includes, 29 function-group files (12 of them dynpro flow logic),
+  33 plain reports or includes, 192 FORMs, 101 event blocks, 74 macros with 1,079 macro calls, 8 function
+  modules, 21 modules and 14 `SELECT … ENDSELECT` loops. The rest are classes (114), local classes (16),
+  test classes (54) and interfaces (14).
+- **Owner groups: 12 files, 18,544 lines** of real or realistic legacy programs, read in place and never
+  copied: 4 owner examples, plus 8 further programs. 4 of the further 12 files the owner supplied were byte
+  for byte copies of owner examples and are counted once. One is a different version of a starter example.
+
+### Shadow on the clean sample
+
+| Measure | Public (300) | Owner (12) |
+|---|---|---|
+| Statements: old / new | 88,084 / 88,118 | 17,619 / 17,620 |
+| Aligned, end line agrees on aligned pairs | 99.96 %, 100 % | 99.99 %, 100 % |
+| Uncovered characters / lexer errors | 0 / 0 | 0 / 0 |
+| `Unknown` statements (new) | 12 | 0 |
+| Blocks of the old kinds: old / new | 13,680 / 13,465 | 1,854 / 1,853 |
+| **Unterminated: old / new** | **167 / 1** | **0 / 0** |
+| Containers with the same kind, name and lines | 5,926 of 6,083 | 414 of 414 |
+
+**The one block L2 reports as unterminated is a true positive.** A public learning program spells `ENDIF`
+as `ENFIF`; the file does not compile. **So L2 gives no false unterminated block on the clean sample.**
+
+The old engine gives 166 false ones. They have five causes, and L2 reads each of them correctly:
+
+- 96 `MODULE` calls in dynpro flow logic: the old engine opens a module block for each.
+- 26 `CLASS … DEFINITION LOCAL FRIENDS`: the old engine opens a class block.
+- 21 functional calls of a method named `module(`.
+- 21 `IF`, `CASE` and `METHOD` blocks where a string template breaks across lines (review §2.4).
+- 2 assignments to a variable named `class`.
+
+Every other L2 difference on the sample also traces to a file holding one of these causes, or to a macro
+body whose `IF` the old engine nests as code. The enclosing chains differ on 10 % of the public statements,
+almost all of them behind a `LOCAL FRIENDS` line. 8,372 of the 8,443 sit in the 17 files that have one.
+
+### Damage shadow on the sample
+
+817 damages (one closer line deleted at a quarter, half and three quarters of each file). The script now
+counts apart the flags an engine already gives on the undamaged file. On the learn corpus there are none,
+so its numbers above are unchanged.
+
+| Measure | Old | New |
+|---|---|---|
+| Block that lost its closer flagged | 755 / 817 | 816 / 817 |
+| Damages with collateral | 60 | 11 |
+| Collateral regions | 97 | 90 |
+| False unterminated blocks caused by the damage | 59 | 9 |
+
+The outcomes differ in 173 damages, and the script names a cause for each of them. In 165 the new outcome
+is better:
+
+- 82 where only the old engine's flags on the undamaged file carry over.
+- 58 where indentation picks the block that lost its closer.
+- 22 in dynpro flow logic, where `MODULE` is a call.
+- 3 where a function module is a block.
+
+In the other **8 the new outcome is worse: `unclosed-macro-body-reads-on-as-macro`**. These 8 damages
+account for all 9 false flags and for 79 of the 90 collateral regions. The one victim that is not flagged
+sits in a file whose closers are indented two columns deeper than their openers. The nearest block takes
+the closer, and the old engine does the same.
+
+### Speed on the sample
+
+All 312 files, median of 5: new L0+L1 680 ms, new L2 51 ms, old `readStatements` 4,762 ms, old `readBlocks`
+31 ms. The largest file (9,459 lines) takes 24 ms in L0+L1 and 2 ms in L2. The old reader takes 196 ms.
+
 ## Next steps
 
-1. **The 300-file real-code sample** outside the repository (ADR-125 (5)): run L2 over it and count the
-   unterminated blocks (target: 0 false ones), and run the damage shadow and `shadow-parsed` on it.
-2. **Phase 0 wiring**, after the owner decision above.
+1. **Decide questions 5 to 9 below** with the sample's evidence. Rerun both shadows on the sample after
+   every L2 change (it stays outside the repository, so the specs cannot read it).
+2. **Phase 0 wiring** (3.5.0 item 2): see the Phase 0 section above.
 3. Remove the two other statement splitters (`declaration-parser.tokenize`, `plain-language.splitStatements`)
    once their readers consume `ParsedSource`. Not started: it needs step 2.
 4. **L3, second half:** class and interface declarations (visibility, `FINAL`/`ABSTRACT`, events, aliases,
@@ -670,22 +746,84 @@ taken on 15.11.2026.
 
 Settled 14.11.2026 by owner defaults: decimals stay numbers plus a warning (built); macro calls are
 recognised and expansion comes later; `AT <field group>` is a block opener; `ENDEXEC` is its own statement.
-Still open, each with the default this step built:
+Still open, each with the default this step built. Under each question is the evidence from the real-code
+sample (15.11.2026) and a recommendation. Variants were measured on scratch copies of `lib/engine4/`. None
+of them is built.
 
 5. **A lost `END-OF-DEFINITION`.** At present the macro body runs to the next `DEFINE` or
    `END-OF-DEFINITION`, and the code behind it is not read as code (2 of 962 damages). The alternative is to
    end an unclosed body at the first statement that cannot stand in a macro, such as an event or a FORM.
    That needs a firm list of what a macro may contain. **Default: keep it, and decide with L3/L4 macro
    expansion.**
+   - *Language.* A missing `END-OF-DEFINITION` is a syntax error, so no reading is "the" right one.
+     abaplint, used as an offline oracle, also reads the rest of the source as macro content.
+   - *Sample.* 74 macros in the public group, 3 in the owner group and 13 in the learn corpus. Of the 74
+     public ones, 32 are defined inside a METHOD, 22 at class level and 20 at program level. The 90 clean
+     macro bodies hold 647 statements. None of them is a routine, class, interface or event boundary (FORM,
+     ENDFORM, METHOD, ENDMETHOD, FUNCTION, MODULE, CLASS, ENDCLASS, the event keywords). None of them begins
+     a line at or left of the `DEFINE` column.
+   - *Default on the sample.* This is the only damage where L2 does worse than the old engine. 8 damages
+     cause all 9 false flags and 79 of the 90 collateral regions. A macro inside a METHOD that loses its end
+     swallows the rest of the class.
+   - *Variant* (body ends at a routine, class, interface or event boundary, or at a line that starts at or
+     left of the `DEFINE` column). On the sample, collateral goes from 90 to 3 and false flags from 9 to 1.
+     On the learn corpus, collateral goes from 49 to 42 and false flags from 2 to 1. The macro category
+     disappears on both, and nothing changes on clean code.
+   - **Recommendation: change it.** End the body at the first such statement, with a diagnostic on the
+     `DEFINE`. Macro expansion (L3/L4) does not depend on this.
 6. **Indentation as a tie-breaker.** It finds the block that lost its closer in 34 more damages, and it
    changes nothing on clean code (0 false unterminated blocks either way). It can still mislead on code that
    is indented wrongly *and* damaged. **Default: on, with a look-back of eight blocks.**
+   - *Language.* A closer always closes the innermost open block. Indentation means nothing to the compiler.
+     Clean ABAP asks for Pretty Printer indentation ("Indent and snap to tab"), which is why it is a useful
+     signal on damaged code.
+   - *Sample, as written.* Without the tie-breaker, 58 of 817 victims go unflagged (with it, 1), and false
+     flags rise from 9 to 67.
+   - *Sample, with indentation disturbed on purpose.* The tie-breaker runs on clean code too. With every
+     line indented at random it reports **463 false unterminated blocks on clean code**. With 10 % of the
+     lines shifted by up to four columns it reports 46. Without it, the count is 1, the true positive.
+     Removing all indentation or indenting every closer two columns deeper changes nothing.
+   - *Variant "only where damage is"* (read by nearest block first, and use indentation only inside a
+     routine where that reading finds an unclosed block or a stray closer). On the sample as written it matches
+     the current default exactly: 816 of 817 victims flagged, 9 false flags. On clean code it reports the true
+     positive and nothing else, under every disturbance. With 10 % of the lines shifted and one closer
+     deleted, it gives 54 false flags. The current default gives 30 plus 137 that are already there on the
+     undamaged file, and the variant without indentation gives 67. With every line indented at random, it
+     gives 300, against 1,470 for the current default and 67 without indentation. A whole-file gate (use
+     indentation anywhere once the file has damage) did worse: 1,465 under random indentation.
+   - **Recommendation: change it.** Keep the tie-breaker, but run it only where the nearest-block reading
+     already finds damage. A file that balances is then read exactly as the compiler reads it, whatever its
+     indentation. The look-back of eight can stay.
 7. **A METHOD outside a class** stands at program level with an `info`, not a warning, because uploads are
    often a single pasted method. **Default: keep it.**
+   - *Language.* `METHOD` is allowed only in `CLASS … IMPLEMENTATION`. Elsewhere it is a syntax error, and
+     abaplint reports "Unexpected METHODIMPLEMENTATION".
+   - *Sample.* 0 of 312 files, because abapGit-style files always carry their class. The learn corpus has 6,
+     in 3 cases: 2 pasted single methods and 4 methods of a Web Dynpro component, whose source export has no
+     `CLASS` around its methods.
+   - **Recommendation: keep it.** These are normal uploads, not damage, so an info is the right level.
 8. **Event blocks are not ended by `DEFINE`.** The old engine ends them there, but `DEFINE` is no processing
    block. On the corpus this changes nothing. **Default: the language reading.**
+   - *Language.* The ABAP cheat sheet on selection screens and lists ("Event Blocks") says an event block
+     is ended by the next processing block and has no closing statement. A macro definition is not a
+     processing block, so the statements behind `END-OF-DEFINITION` still belong to the event.
+   - *Sample.* 0 macros are defined inside an event block, in the sample (77 macros) and in the learn
+     corpus (13). The variant that ends events at `DEFINE` gives identical numbers.
+   - **Recommendation: keep the language reading.**
 9. **Logical-database `GET node` events** are not event blocks yet (`Get` has no `event` column), because the
    corpus has none and `GET` has many other forms. **Default: leave it out until a case needs it.**
+   - *Correction.* The learn corpus does have them: 3 HR cases (`NODES peras` with `GET peras`). In 2 cases
+     the GET block's statements land at program level. In the third, they are attributed to the
+     `START-OF-SELECTION` before them, which is wrong.
+   - *Sample.* The 312 files have no `NODES` and no `GET node`. But 6 other `GET` statements (`GET BIT` 4,
+     `GET CURSOR` 1, `GET LOCALE` 1) and 2 more `GET CURSOR` in the learn corpus fall into the catch-all
+     `Get` row today. Giving `Get` an `event` column as it stands would make each of them an event and cut
+     its routine in two.
+   - **Recommendation: change it, narrowly.** First add rows for the other `GET` forms (`BIT`, `CURSOR`,
+     `LOCALE`, `PF-STATUS`, `RUN TIME`, `DATASET`, `PROPERTY`). Then make only
+     `GET <node> [LATE] [FIELDS …].` an event. abaplint also keeps the node form apart from `GET TIME`
+     and `GET CURSOR`. Optionally, L3 can confirm the node against a `NODES`/`TABLES` declaration across
+     the includes; in one of the 3 cases the declaration sits in the TOP include.
 10. **Several objects in one upload.** L3 keeps every object: a report, its classes, its function modules. The
     shipping join reads only one program and drops the rest, 62 files on the learn corpus. Whether a project or a
     run should read all objects is a product decision for the switch, not one for L3. **Default: L3 returns all
