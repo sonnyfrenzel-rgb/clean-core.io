@@ -52,7 +52,8 @@ import {
 import {
 
 } from './skeleton/recognisers';
-import { settleEarlyEnds, type EarlyEnd } from './skeleton/early-ends';
+import { settleEarlyEnds } from './skeleton/early-ends';
+import { newWalkState, type WalkCallback, type WalkState } from './skeleton/walk/state';
 import { assignmentTarget, classOf, leavesDialogStep } from './skeleton/statement-readers';
 import { chainReportEvents } from './skeleton/report-chain';
 import { addSubProcessStarts, markEmptyEntries } from './skeleton/starts';
@@ -605,25 +606,14 @@ interface WalkContext {
 class SkeletonBuilder {
   /** The graph every pass reads and writes — engine 4 phase 3 (`skeleton/graph.ts`). */
   private graph = new SkeletonGraph();
+  /** The walk's mutable state (`skeleton/walk/state.ts`). */
+  private walk: WalkState = newWalkState();
   private blockAt = new Map<number, Block>();
   private branchAt = new Map<number, Branch>();
   private formBlocks = new Map<string, Block>();
-  /** ADR-066 (03.10.2026): the files a run of file statements works on, by node id — `CLOSE DATASET` joins only a run of its own file. */
-  private fileRunDatasets = new Map<string, Set<string>>();
   private effects = new Map<string, Set<FormEffect>>();
   private helpers = new Set<string>();
-  /** The chain of routines being expanded right now — the floor of `routineRegion`. */
-  private expanding: string[] = [];
   private macros = new Map<string, { block: Block }>();
-  /**
-   * Lane evidence — roadmap 2.16. Collected **inside the walk** on purpose:
-   * that is what makes "a piece of evidence in code no entry point reaches does
-   * not count" true rather than asserted. `legacy_call_screen_example` of the
-   * 1.000-line example is never walked, so its `CALL SCREEN 9000` (L670) never
-   * gets here, and no lane is opened for a screen nobody can reach.
-   */
-  private evidence: LaneEvidence[] = [];
-  private evidenceSeen = new Set<string>();
   private selectionNames = new Set<string>();
   private performedFrom = new Map<string, string[]>();
   /** `FUNCTION name.` … `ENDFUNCTION.` — roadmap 2.14. Not a block: ABAP closes it, `block-structure.ts` does not open it. */
@@ -638,24 +628,6 @@ class SkeletonBuilder {
    * `execute` of one class made a private `execute` of another an entry.
    */
   private externallyCallableMethods = new Map<string, string>();
-  /** Region keys of the entries built, so `unreached()` does not also list them as not reached. */
-  private entryOfBlock = new Set<number>();
-  /**
-   * Routines a walked call names, and everything they perform in turn — the
-   * reachability the **drawing** has, as opposed to the one 2.2's call graph
-   * computes from event blocks. They differ exactly where an entry is a routine
-   * itself: a form performed by a user-exit form is drawn inside it, and must
-   * then not also be listed as code no entry reaches.
-   */
-  private reachedRoutines = new Set<string>();
-  /** Did the walk pass a `CALL SCREEN`? */
-  private screenCalled = false;
-  /**
-   * Routines a walked `CALL FUNCTION … STARTING NEW TASK` names with
-   * `PERFORMING form ON END OF TASK` or `CALLING meth ON END OF TASK`, in the
-   * order the walk met them — see `callbackEntries`.
-   */
-  private callbacks: Array<{ key: string; label: string; site: AbapStatement; trigger: string }> = [];
   /**
    * Every routine a call in this source can open as a sub-process (D2): the
    * forms under their name, as before, and the methods this source implements
@@ -673,7 +645,6 @@ class SkeletonBuilder {
   private localData: Set<string> = new Set();
   /** Roadmap 3.0.7 — the batch-input calls, read field by field, by statement index. */
   private batchInput = new Map<number, BatchInputCall>();
-  private regionOfRoutine = new Map<string, SkeletonRegion>();
   /** `METHOD name.` inside `CLASS x IMPLEMENTATION`, one row per implementation. */
   private methodImpls: MethodImpl[] = [];
   /** Classes and interfaces this source defines or implements, upper-cased. */
@@ -699,39 +670,14 @@ class SkeletonBuilder {
    * (`readMethodCallSites`), so nothing below changes its map.
    */
   private candidateSites = new Map<string, Array<{ index: number; label: string; line: number; of: number }>>();
-  /**
-   * Engine 3.2.0: the handlers registered when the walk passed each ambiguous call, by statement index. A candidate
-   * implementation runs inside that call, so what `SET HANDLER` registered before it is registered in the candidate
-   * too (`buildEntryRegion`) — the handlers a `RAISE EVENT` in the candidate runs are the ones the caller bound.
-   */
-  private registrationsAtCall = new Map<number, Set<string>>();
-  /** Engine 3.2.0: the `CALL SCREEN` statements the walk passed — the screen modules run inside them. */
-  private screenCallSites: number[] = [];
   /** `METHODS m FOR EVENT ev OF cls` — the event each implemented handler method declares, upper-cased. */
   private handlerEvent = new Map<string, { event: string; of: string }>();
   /** Handler methods a `SET HANDLER` of this source registers, in the order it first names them. */
   private boundHandlers: string[] = [];
   /** Handlers some `SET HANDLER … ACTIVATION` of this source may switch off — never a binding. */
   private deregisteredHandlers = new Set<string>();
-  /** Bound handlers whose `SET HANDLER` the walk has passed, so a later `RAISE EVENT` may run them. */
-  private registeredInWalk = new Set<string>();
-  /**
-   * Boundary events of a TRY that nothing enters: no node to attach to, and the
-   * flow before the TRY already cut off (`LEAVE PROGRAM`, `SUBMIT` …) in a
-   * region that has steps before it.
-   */
-  private cutOffBoundaries = new Set<string>();
-  /** > 0 while a branch whose arms the reader cannot separate is walked — no registration counts there. */
-  private registrationFrozen = 0;
   /** The event blocks of the report (one program run), for `registeredBefore`. */
   private runEntries: EntryPoint[] = [];
-  /**
-   * ADR-054. Every early end the walk drew, with the statement it stands on —
-   * `settleEarlyEnds` decides afterwards which of them really skip something.
-   */
-  private earlyEnds: EarlyEnd[] = [];
-  /** ADR-054. The last statement index each region's walk covers — where its normal end takes over. */
-  private regionLast = new Map<string, number>();
   /** The walk's read-only questions about the source (`skeleton/walk-readers.ts`). */
   private readers!: WalkReaders;
 
@@ -821,16 +767,16 @@ class SkeletonBuilder {
       declarations: d,
       dispatch: { methodCallSites: this.methodCallSites, candidateSites: this.candidateSites },
       graph: this.graph,
-      entryOfBlock: this.entryOfBlock,
+      entryOfBlock: this.walk.entryOfBlock,
     });
     const entries = this.entryReader.readEntryPoints();
     this.runEntries = entries.filter((e) => e.origin === 'event' || e.origin === 'implicit');
     for (const entry of entries) this.buildEntryRegion(entry);
-    for (const entry of this.entryReader.deferredModuleEntries(this.screenCalled)) this.buildEntryRegion(entry);
+    for (const entry of this.entryReader.deferredModuleEntries(this.walk.screenCalled)) this.buildEntryRegion(entry);
     // A callback's own walk can start another task, so this runs until the
     // walks name nothing new.
-    for (let next = 0; next < this.callbacks.length; next++) {
-      const entry = this.callbackEntry(this.callbacks[next]);
+    for (let next = 0; next < this.walk.callbacks.length; next++) {
+      const entry = this.callbackEntry(this.walk.callbacks[next]);
       if (entry) this.buildEntryRegion(entry);
     }
     // ADR-054, once every region is walked: an early end is only early where
@@ -839,8 +785,8 @@ class SkeletonBuilder {
       statements: this.statements,
       structure: this.structure,
       blockAt: this.blockAt,
-      earlyEnds: this.earlyEnds,
-      regionLast: this.regionLast,
+      earlyEnds: this.walk.earlyEnds,
+      regionLast: this.walk.regionLast,
       runEntryRanks: this.runEntries.map((e) => e.rank),
     });
     collapseSmallRegions(this.graph, { reads310: this.reads310 });
@@ -856,10 +802,10 @@ class SkeletonBuilder {
     // block that ends normally hands over to the next one.
     chainReportEvents(this.graph);
     if (this.reads310) markEmptyEntries(this.graph);
-    noteUnreachableSteps(this.graph, { statements: this.statements, cutOffBoundaries: this.cutOffBoundaries });
+    noteUnreachableSteps(this.graph, { statements: this.statements, cutOffBoundaries: this.walk.cutOffBoundaries });
     // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`
     // is the pass that can still drop one.
-    const lanes = buildLanes(this.graph, { statements: this.statements, evidence: this.evidence });
+    const lanes = buildLanes(this.graph, { statements: this.statements, evidence: this.walk.evidence });
     // Roadmap 2.12, after every pass that can still drop a node.
     const luw = attachLuwStates(this.graph, {
       statements: this.statements, structure: this.structure, control: this.control, calls: this.calls,
@@ -870,7 +816,7 @@ class SkeletonBuilder {
       edges: this.graph.edges,
       regions: this.graph.regions,
       lanes,
-      laneEvidence: this.evidence,
+      laneEvidence: this.walk.evidence,
       entries: this.graph.regions
         .filter((r) => r.kind === 'entry')
         .sort((a, b) => (a.runtimeRank ?? 0) - (b.runtimeRank ?? 0)
@@ -881,8 +827,8 @@ class SkeletonBuilder {
         structure: this.structure,
         calls: this.calls,
         formBlocks: this.formBlocks,
-        entryOfBlock: this.entryOfBlock,
-        reachedRoutines: this.reachedRoutines,
+        entryOfBlock: this.walk.entryOfBlock,
+        reachedRoutines: this.walk.reachedRoutines,
         helpers: this.helpers,
         methodImpls: this.methodImpls,
         methodCallSites: this.methodCallSites,
@@ -915,7 +861,7 @@ class SkeletonBuilder {
     if (!this.boundHandlers.length) return [];
     if (inWalk) {
       // At the walk's `RAISE`: only a registration the walk has already passed.
-      return this.handlersRaisedBy(statement).filter((key) => this.registeredInWalk.has(key));
+      return this.handlersRaisedBy(statement).filter((key) => this.walk.registeredInWalk.has(key));
     }
     return this.dispatch.handlersRaisedBy(statement);
   }
@@ -1007,10 +953,10 @@ class SkeletonBuilder {
   }
 
   private pushCallback(key: string, label: string, site: AbapStatement, trigger = 'ON END OF TASK'): void {
-    if (this.callbacks.some((c) => c.key === key)) return;
-    this.callbacks.push({ key, label, site, trigger });
+    if (this.walk.callbacks.some((c) => c.key === key)) return;
+    this.walk.callbacks.push({ key, label, site, trigger });
     // Engine 3.2.0: the callback runs in the session that registered it, with what is registered here.
-    if (this.reads320) this.registrationsAtCall.set(site.index, new Set(this.registeredInWalk));
+    if (this.reads320) this.walk.registrationsAtCall.set(site.index, new Set(this.walk.registeredInWalk));
   }
 
   /**
@@ -1018,10 +964,10 @@ class SkeletonBuilder {
    * already drawn: a callback the source also performs is a sub-process of that
    * caller, and drawing it a second time as a beginning would be D3 again.
    */
-  private callbackEntry(callback: { key: string; label: string; site: AbapStatement; trigger: string }): EntryPoint | null {
+  private callbackEntry(callback: WalkCallback): EntryPoint | null {
     const block = this.routineBlocks.get(callback.key);
-    if (!block || this.reachedRoutines.has(callback.key) || this.entryOfBlock.has(block.openIndex)) return null;
-    this.entryOfBlock.add(block.openIndex);
+    if (!block || this.walk.reachedRoutines.has(callback.key) || this.walk.entryOfBlock.has(block.openIndex)) return null;
+    this.walk.entryOfBlock.add(block.openIndex);
     return {
       statement: this.statements[block.openIndex],
       lastIndex: block.closeIndex - 1,
@@ -1072,7 +1018,7 @@ class SkeletonBuilder {
     region.endNodeId = end.id;
 
     const from = entry.implicit ? entry.statement.index : entry.statement.index + 1;
-    this.regionLast.set(region.key, entry.lastIndex);
+    this.walk.regionLast.set(region.key, entry.lastIndex);
     // What `SET HANDLER` registered holds only within one run. Every entry
     // that is called on its own — a function module, a method called from
     // outside, a screen module, a bare FORM, a callback, an event handler —
@@ -1080,7 +1026,7 @@ class SkeletonBuilder {
     // run: a block starts with what the blocks that run **before** it (runtime
     // order, rule 4 — not the order they are written in) register
     // unconditionally (`registeredBefore`).
-    this.registeredInWalk = entry.origin === 'event' || entry.origin === 'implicit'
+    this.walk.registeredInWalk = entry.origin === 'event' || entry.origin === 'implicit'
       ? this.registeredBefore(entry)
       : this.registeredAtEntry(entry);
     const exits = this.walkRange(from, entry.lastIndex, {
@@ -1138,16 +1084,16 @@ class SkeletonBuilder {
       const key = `${classOf(this.statements, this.structure, entry.statement.index) ?? ''}=>${entry.label.toUpperCase()}`;
       sites.push(...(this.candidateSites.get(key) ?? []).map((site) => site.index));
     } else if (entry.origin === 'module') {
-      sites.push(...this.screenCallSites);
+      sites.push(...this.walk.screenCallSites);
     } else if (entry.origin === 'callback' && entry.site !== undefined) {
       sites.push(entry.site);
     }
-    for (const site of sites) for (const handler of this.registrationsAtCall.get(site) ?? []) out.add(handler);
+    for (const site of sites) for (const handler of this.walk.registrationsAtCall.get(site) ?? []) out.add(handler);
     return out;
   }
 
   private routineRegion(name: string): SkeletonRegion | null {
-    const known = this.regionOfRoutine.get(name);
+    const known = this.walk.regionOfRoutine.get(name);
     if (known) return known;
     const block = this.routineBlocks.get(name);
     if (!block) return null;
@@ -1163,10 +1109,10 @@ class SkeletonBuilder {
     // answers the way the macro floor above does: read what can be read, and
     // say what was left unread rather than fail. Real chains are two digits at
     // most; this one is the last link that still gets opened.
-    if (this.expanding.length >= MAX_PERFORM_EXPANSION) {
+    if (this.walk.expanding.length >= MAX_PERFORM_EXPANSION) {
       this.graph.note('expansion-depth-reached', this.statements[block.openIndex],
         `${name} is performed ${MAX_PERFORM_EXPANSION} calls deep, in a chain that starts at `
-        + `${this.expanding[0]}. The call is drawn; what this routine does is not read, `
+        + `${this.walk.expanding[0]}. The call is drawn; what this routine does is not read, `
         + 'so no step inside it is in this skeleton.');
       return null;
     }
@@ -1182,7 +1128,7 @@ class SkeletonBuilder {
       effects: [...(this.effects.get(name) ?? [])],
     };
     this.graph.regions.push(region);
-    this.regionOfRoutine.set(name, region);
+    this.walk.regionOfRoutine.set(name, region);
 
     const closer = this.statements[block.closeIndex];
     const end = block.terminated
@@ -1199,19 +1145,19 @@ class SkeletonBuilder {
     const [from, to] = bodyRange(block);
     const guarded = this.readers.readGuard(from, to, region);
     const before = this.graph.nodes.length;
-    this.regionLast.set(region.key, to);
-    this.expanding.push(name);
-    const registered = new Set(this.registeredInWalk);
+    this.walk.regionLast.set(region.key, to);
+    this.walk.expanding.push(name);
+    const registered = new Set(this.walk.registeredInWalk);
     const exits = this.walkRange(guarded, to, {
       region, container: name, loops: [], loopBreaks: [],
     }, []);
-    this.expanding.pop();
+    this.walk.expanding.pop();
     // A routine that can leave before its end (`CHECK`, `RETURN`, `EXIT`,
     // `STOP`, `LEAVE`, an error end) may return without its `SET HANDLER`
     // having run — its registrations do not reach the caller. Its region is
     // also built once and reused, so what it registers is kept only where no
     // way out precedes it anywhere.
-    if (this.readers.canLeaveEarly(from, to)) this.registeredInWalk = registered;
+    if (this.readers.canLeaveEarly(from, to)) this.walk.registeredInWalk = registered;
     // The walk gives a sub-process no start event — the call site is where it
     // begins, and `addSubProcessStarts` adds one only once it is known that the
     // routine is drawn as a plane of its own (ADR-054) — so its first node is
@@ -1243,12 +1189,12 @@ class SkeletonBuilder {
           // not run at all, so it registers only for what follows it inside
           // that block. Past the block the registrations are what they were
           // before it.
-          const registered = new Set(this.registeredInWalk);
+          const registered = new Set(this.walk.registeredInWalk);
           if (block.kind === 'if' || block.kind === 'case') live = this.walkBranch(block, ctx, live);
           else if (block.kind === 'try') live = this.walkTry(block, ctx, live);
           else if (block.kind === 'at') live = this.walkGroupChange(block, ctx, live);
           else live = this.walkLoop(block, ctx, live);
-          this.registeredInWalk = registered;
+          this.walk.registeredInWalk = registered;
           i = block.closeIndex + 1;
           continue;
         }
@@ -1343,7 +1289,7 @@ class SkeletonBuilder {
     if (branch.kind !== 'case' || !branch.selector) return false;
     const selector = branch.selector.trim().toUpperCase();
     if (selector === 'SY-UCOMM') return true;
-    const callback = this.callbacks.find((c) => c.trigger === 'ALV I_CALLBACK_USER_COMMAND'
+    const callback = this.walk.callbacks.find((c) => c.trigger === 'ALV I_CALLBACK_USER_COMMAND'
       && ctx.region.kind === 'entry' && ctx.container?.toUpperCase() === c.label.toUpperCase());
     if (!callback) return false;
     const block = this.routineBlocks.get(callback.key);
@@ -1361,11 +1307,11 @@ class SkeletonBuilder {
       // nothing inside it is lost. Its arms cannot be told apart, so nothing
       // registered inside it counts, not even later in the same body:
       // registrations are kept frozen while it is walked.
-      const registered = this.registeredInWalk;
-      this.registrationFrozen += 1;
+      const registered = this.walk.registeredInWalk;
+      this.walk.registrationFrozen += 1;
       const walked = this.walkRange(block.openIndex + 1, block.closeIndex - 1, ctx, incoming);
-      this.registrationFrozen -= 1;
-      this.registeredInWalk = registered;
+      this.walk.registrationFrozen -= 1;
+      this.walk.registeredInWalk = registered;
       return walked;
     }
 
@@ -1394,9 +1340,9 @@ class SkeletonBuilder {
     // before the branch; what one arm registers holds for the rest of that arm
     // only (`walkRange` restores the state before the block once all arms are
     // walked).
-    const registered = new Set(this.registeredInWalk);
+    const registered = new Set(this.walk.registeredInWalk);
     for (let a = 0; a < branch.arms.length; a++) {
-      this.registeredInWalk = new Set(registered);
+      this.walk.registeredInWalk = new Set(registered);
       const arm = branch.arms[a];
       const next = branch.arms[a + 1];
       const bodyFrom = arm.headerIndex + 1;
@@ -1741,7 +1687,7 @@ class SkeletonBuilder {
     const beforeProtected = this.graph.nodes.length;
     // A handler runs when the protected part broke off somewhere, so it — and
     // each handler after it — starts from what was registered before the TRY.
-    const registered = new Set(this.registeredInWalk);
+    const registered = new Set(this.walk.registeredInWalk);
     // Nothing enters the TRY although its region already drew steps: what stood
     // before it does not come back. At the start of a region an empty `incoming`
     // only means the walk began here, and the region's entry reaches it. A
@@ -1771,10 +1717,10 @@ class SkeletonBuilder {
         for (const entry of incoming) {
           this.graph.edges.push({ from: entry.from, to: boundary.id, kind: 'boundary', condition: '' });
         }
-        if (cutOff) this.cutOffBoundaries.add(boundary.id);
+        if (cutOff) this.walk.cutOffBoundaries.add(boundary.id);
       }
       const to = (handlers[h + 1] ?? block.closeIndex) - 1;
-      this.registeredInWalk = new Set(registered);
+      this.walk.registeredInWalk = new Set(registered);
       const handled = this.walkRange(handlers[h] + 1, to, ctx,
         [{ from: boundary.id, condition: '', kind: 'sequence' }]);
       if (header.keyword !== 'CLEANUP') {
@@ -1968,11 +1914,11 @@ class SkeletonBuilder {
       return keep(node);
     }
     if (/^CALL\s+SCREEN\b/i.test(text)) {
-      this.screenCalled = true;
+      this.walk.screenCalled = true;
       // Engine 3.2.0: the screen's modules run in this session, with what is registered here.
       if (this.reads320) {
-        this.screenCallSites.push(statement.index);
-        this.registrationsAtCall.set(statement.index, new Set(this.registeredInWalk));
+        this.walk.screenCallSites.push(statement.index);
+        this.walk.registrationsAtCall.set(statement.index, new Set(this.walk.registeredInWalk));
       }
       const screen = /^CALL\s+SCREEN\s+([\w/]+)/i.exec(text)?.[1] ?? 'CALL SCREEN';
       // 2.16: a dynpro is a person. The token is written the way the source
@@ -2039,7 +1985,7 @@ class SkeletonBuilder {
       // file) the step it belongs to is already drawn, and it draws nothing.
       const dataset = datasetOf(statement);
       if (outputRun?.detail?.target === 'file' && outputRun.anchor && dataset
-        && this.fileRunDatasets.get(outputRun.id)?.has(dataset)) {
+        && this.walk.fileRunDatasets.get(outputRun.id)?.has(dataset)) {
         outputRun.anchor.lineEnd = statement.lineEnd;
         (outputRun.detail as { statements: number }).statements += 1;
         return { exits: incoming, outputRun };
@@ -2056,12 +2002,12 @@ class SkeletonBuilder {
         outputRun.anchor.lineEnd = statement.lineEnd;
         const detail = outputRun.detail as { statements: number };
         detail.statements += 1;
-        if (dataset) this.fileRunDatasets.get(outputRun.id)?.add(dataset);
+        if (dataset) this.walk.fileRunDatasets.get(outputRun.id)?.add(dataset);
         return { exits: incoming, outputRun };
       }
       const node = this.graph.addNode('output', statement.keyword, anchorOf(statement), ctx.region,
         ctx.container, { detail: { statements: 1, target } });
-      if (target === 'file') this.fileRunDatasets.set(node.id, new Set(dataset ? [dataset] : []));
+      if (target === 'file') this.walk.fileRunDatasets.set(node.id, new Set(dataset ? [dataset] : []));
       this.graph.connect(incoming, node.id);
       return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: node };
     }
@@ -2111,7 +2057,7 @@ class SkeletonBuilder {
     if (!handlers || handlers.deregisters) return;
     for (const { key, name } of handlers) {
       if (!this.boundHandlers.includes(key)) continue;
-      if (!this.registrationFrozen) this.registeredInWalk.add(key);
+      if (!this.walk.registrationFrozen) this.walk.registeredInWalk.add(key);
       const declared = this.handlerEvent.get(key);
       if (!declared || this.classNames.has(declared.of)) continue;
       this.pushCallback(key, name, statement, `EVENT ${declared.event} OF ${declared.of}`);
@@ -2170,7 +2116,7 @@ class SkeletonBuilder {
     for (const exit of incoming) {
       this.graph.edges.push({ from: exit.from, to: node.id, kind: kind ?? exit.kind, condition: exit.condition, reason });
     }
-    this.earlyEnds.push({ node, statementIndex: statement.index, region: ctx.region });
+    this.walk.earlyEnds.push({ node, statementIndex: statement.index, region: ctx.region });
   }
 
   /**
@@ -2331,7 +2277,7 @@ class SkeletonBuilder {
           'The name of the method is computed at run time. The call is drawn, its target is not claimed.');
       }
       // Engine 3.2.0: the candidates of this call run inside it, with what is registered here.
-      if (this.reads320 && call.ambiguous) this.registrationsAtCall.set(statement.index, new Set(this.registeredInWalk));
+      if (this.reads320 && call.ambiguous) this.walk.registrationsAtCall.set(statement.index, new Set(this.walk.registeredInWalk));
       const node = this.graph.addNode('call-opaque', call.label, at, ctx.region, ctx.container, {
         detail: {
           method: true,
@@ -2372,7 +2318,7 @@ class SkeletonBuilder {
    */
   private walkAlternatives(call: MethodCall, at: NodeAnchor, ctx: WalkContext, incoming: Exit[]): Exit[] {
     // The candidates run inside this call, with what is registered here (as for the opaque call).
-    this.registrationsAtCall.set(at.statementIndex, new Set(this.registeredInWalk));
+    this.walk.registrationsAtCall.set(at.statementIndex, new Set(this.walk.registeredInWalk));
     const gateway = this.graph.addNode('gateway', call.label, at, ctx.region, ctx.container, {
       detail: { method: true, alternatives: call.candidates.length, ambiguous: true, candidates: call.candidates },
     });
@@ -2543,9 +2489,9 @@ class SkeletonBuilder {
     statement: AbapStatement,
   ): void {
     const key = `${anchor.statementIndex}|${kind}|${token}`;
-    if (this.evidenceSeen.has(key)) return;
-    this.evidenceSeen.add(key);
-    this.evidence.push({ kind, token, anchor, statement: statement.keyword });
+    if (this.walk.evidenceSeen.has(key)) return;
+    this.walk.evidenceSeen.add(key);
+    this.walk.evidence.push({ kind, token, anchor, statement: statement.keyword });
   }
 
   /**
@@ -2589,8 +2535,8 @@ class SkeletonBuilder {
     const queue = [name];
     while (queue.length) {
       const next = queue.pop() as string;
-      if (this.reachedRoutines.has(next)) continue;
-      this.reachedRoutines.add(next);
+      if (this.walk.reachedRoutines.has(next)) continue;
+      this.walk.reachedRoutines.add(next);
       queue.push(...(this.performedFrom.get(next) ?? []));
     }
   }
