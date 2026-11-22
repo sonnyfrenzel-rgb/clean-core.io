@@ -196,7 +196,7 @@ const CHANGE_NOTES: Partial<Record<PrivacyVersionId, Record<LegalLang, string>>>
     en: 'section 9 describes the weekly report with usage figures; sections 2, 5, 6 and 7 refer to it, and section 7 names further entries in local and session storage.',
   },
   // Legal review, document 20, passage 2.4 (proposed for the next version), adapted to what 1.4 changes: no session
-  // storage entry, and the section 3 sentence of statement 20c E3. PENDING the owner's / lawyer's OK before release.
+  // storage entry, and the section 3 sentence of statement 20c E3. Approved by the owner on 22.11.2026.
   '1.4': {
     de: 'Abschnitt 7 nennt die Sicht und die Darstellung von „My workspace“; Abschnitt 3 nennt die Kurzfassung, die unser Server für diese Übersicht zu jedem Projekt ablegt.',
     en: 'section 7 names the view and the layout of My workspace; section 3 names the short summary our server keeps of every project for this overview.',

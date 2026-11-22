@@ -199,7 +199,7 @@ const STATEMENT_20C = {
 
 /**
  * The change note of 1.4: document 20, passage 2.4, adapted to what 1.4 changes (no session storage entry; the
- * section 3 sentence of statement 20c E3). Pending the owner's / lawyer's OK before release.
+ * section 3 sentence of statement 20c E3). Approved by the owner on 22.11.2026.
  */
 const DOC20_HEAD = {
   de: 'Abschnitt 7 nennt die Sicht und die Darstellung von „My workspace“; Abschnitt 3 nennt die Kurzfassung, die unser Server für diese Übersicht zu jedem Projekt ablegt.',
