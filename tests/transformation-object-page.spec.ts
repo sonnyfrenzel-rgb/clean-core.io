@@ -110,7 +110,7 @@ test.describe('the figures are counts of what the engine and the package hold', 
     expect(changeOrder(f, track)).toHaveLength(units.length);
   });
 
-  test('the demo figures are the release file’s: 26 findings at 32 places in the code', () => {
+  test('the demo figures are the release file’s: 24 findings at 27 places in the code (v3.4.0)', () => {
     const fig = transformationFigures(buildDemoProject().analyze.findings);
     expect(fig.findings).toBe(DEMO_RELEASE.figures.distinctFindings);
     expect(fig.places).toBe(DEMO_RELEASE.figures.findings);

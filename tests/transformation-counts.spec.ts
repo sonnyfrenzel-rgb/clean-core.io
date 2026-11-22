@@ -82,9 +82,10 @@ test('the demo counts its distinct findings wherever it counts findings, never i
   // distinct findings (ENQUEUE, ELBK, EKKO/EKPO, ZMM_BUDGET, ADR6/USR21, the second EBAN write); the review task stays.
   // 23 and 22 since the demo record was regenerated under the 3.0.18 engine (4d0f9cef): E6 (03f0ffe6) makes the
   // calls of SAP_WAPI_CREATE_EVENT and BAPI_PO_CREATE1, classic APIs not released for ABAP Cloud, two classic-api
-  // findings, each with target routes.
-  const DEMO_DISTINCT_FINDINGS = 23;
-  const DEMO_FINDINGS_WITH_TARGET = 22;
+  // findings, each with target routes. 24 and 23 since v3.4.0: the class gap (ER-03, owner decision 22.11.2026)
+  // makes the use of CL_MM_INTERNAL one `unreleased-class` finding for the whole file, with target routes.
+  const DEMO_DISTINCT_FINDINGS = 24;
+  const DEMO_FINDINGS_WITH_TARGET = 23;
   expect(distinctFindings, 'the demo was regenerated: re-derive the pinned counts below').toBe(DEMO_DISTINCT_FINDINGS);
   const demo = buildDemoProject();
   const rows = findingRows(demo.analyze.findings);

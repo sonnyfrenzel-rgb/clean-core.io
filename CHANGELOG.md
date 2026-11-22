@@ -7,7 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Unreleased — 3.4.0, in short
+## [v3.4.0] — 2026-11-23
+
 The engine release. What changes for anyone who analyses a program:
 
 - **Faster analysis of large programs.** The engine reads a source once and every reader shares that reading, and the
@@ -63,7 +64,10 @@ an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are uncha
   its coverage; `tests/engine-340-scoped-constants.spec.ts`). Display readers without the option keep the old lookup.
 - The class-gap finding stands where every other finding stands: at the first line of the statement that names the
   class, quoting the statement as read (no comment), and in line order among the findings
-  (`tests/abap-metamorphic.spec.ts` P2 and P3 at 3.4.0).
+  (`tests/abap-metamorphic.spec.ts` P2 and P3 at 3.4.0). Being one finding per object for the whole file (owner
+  decision 22.11.2026), it is exempt from P4's row union like the call graph and the coverage summary: a program
+  joined to itself names each object once. P4 asserts instead that the objects of the joined file are the union of
+  the parts' objects (for `A + A`, exactly those of `A`), each with both parts' lines.
 - **The skeleton builder as typed passes** (engine 4 phase 3, `lib/abap/skeleton/`): `process-skeleton.ts` split into
   passes and its hotspot removed (25k lines: 20.2 s to 0.3–0.5 s), byte-neutral on 1,656 frozen skeleton digests
   (`tests/fixtures/skeleton-v3.2.0-frozen.json`, `tests/skeleton-frozen-digests.spec.ts`).
