@@ -281,6 +281,14 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
   test('none of the three calls a generated suite tested', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
+    // 3.3.0 (ADR-123): the home list of 3.2.0 is My workspace's list mode; tiles are the default.
+    await page.addInitScript(() => {
+      try {
+        window.localStorage.setItem('cc.workspace.mode', 'list');
+      } catch {
+        /* storage refused: the tiles stand */
+      }
+    });
 
     await signInViaLanding(page, EMAIL, PASSWORD);
 

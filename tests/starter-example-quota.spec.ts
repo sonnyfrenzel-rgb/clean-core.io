@@ -533,6 +533,8 @@ test.describe('the screen says what the click costs, before the click', () => {
     page.on('request', (r) => {
       if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/runs/create') runRequests.push(r.url());
     });
+    // Since 3.3.0 (ADR-123, the mock-up) the other examples sit behind "6 more examples" at every width.
+    await panel.locator('[data-home-more-examples]').click();
     await panel.locator(`[data-example-start="${EXAMPLE.name}"]`).click();
     const warning = panel.getByTestId('starter-example-rerun-warning');
     await expect(warning).toBeVisible({ timeout: 15000 });
