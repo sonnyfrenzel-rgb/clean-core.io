@@ -2192,12 +2192,27 @@ function buildAbapEvidenceRead(
   // every line it stands on. Read from the L4 reference table (ADR-141). An object another finding of this run
   // already names is said there. Added after every other detector, so no earlier finding changes its id.
   if (engineReads340Apply(engine)) {
-    const sourceLines = code.split(/\r?\n/);
     const named = new Set(findings.map((f) => (f.objectName ?? '').trim().toUpperCase()).filter(Boolean));
+    // Every other finding stands at the first line of its statement and quotes the statement as read (comments
+    // dropped). The references name the line of the class name itself, which in a statement written over several
+    // lines is not the statement's first: anchored there, re-wrapping a statement moved the finding, and the
+    // snippet quoted the raw line with its comment (metamorphic P2/P3, `tests/abap-metamorphic.spec.ts`).
+    const statementAt = (line: number) => {
+      let lo = 0;
+      let hi = statements.length - 1;
+      let at = -1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (statements[mid].line <= line) { at = mid; lo = mid + 1; } else hi = mid - 1;
+      }
+      return at >= 0 ? statements[at] : null;
+    };
     for (const ref of readSapClassReferences(code, catalogSnapshot)) {
       if (named.has(ref.name)) continue;
+      const first = statementAt(ref.lines[0]);
+      const lines = [...new Set(ref.lines.map((l) => statementAt(l)?.line ?? l))];
       const what = CLASS_KIND_WORDS[ref.kind];
-      const where = ref.lines.length === 1 ? `line ${ref.lines[0]}` : `lines ${ref.lines.join(', ')}`;
+      const where = lines.length === 1 ? `line ${lines[0]}` : `lines ${lines.join(', ')}`;
       const said = classStateSentence(ref.name, what, ref.state);
       addFinding({
         kind: 'unreleased-class',
@@ -2207,9 +2222,9 @@ function buildAbapEvidenceRead(
         confidence: 'High',
         objectName: ref.name,
         objectType: CLASS_OBJECT_TYPES[ref.kind],
-        lineStart: ref.lines[0],
-        lines: ref.lines,
-        snippet: (sourceLines[ref.lines[0] - 1] ?? ref.name).trim(),
+        lineStart: lines[0],
+        lines,
+        snippet: first ? first.text : ref.name,
         technicalDetail: `${said} The source uses it on ${where} (${ref.uses.map((u) => CLASS_USE_WORDS[u] ?? u).join(', ')}).`,
         // No A–D letter here: the finding goes into the signed run, and the level stays out of it.
         cleanCoreImpact: 'ABAP Cloud code may use only classes and interfaces SAP releases for it. Every use of this one ties the program to an SAP object that carries no stability contract, so it is replaced before the code runs in ABAP Cloud, and it is a risk in every upgrade of classic ABAP.',
@@ -2217,6 +2232,17 @@ function buildAbapEvidenceRead(
         targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP'],
         source: 'catalog-match',
       });
+      // In line order among the findings before it, as every statement-reading detector adds its own: appended at
+      // the end, the finding of the first program in a concatenation stood after the second program's findings
+      // (metamorphic P4, concatenation is union).
+      const added = findings[findings.length - 1];
+      if (added?.kind === 'unreleased-class') {
+        const at = findings.findIndex((f) => f !== added && f.lineStart > added.lineStart);
+        if (at >= 0) {
+          findings.pop();
+          findings.splice(at, 0, added);
+        }
+      }
     }
   }
 
