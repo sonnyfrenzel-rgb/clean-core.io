@@ -34,7 +34,21 @@ interface Statement { text: string; line: number; }
  * `readStatements` has stated both rules for a
  * while; this reader now states neither, it asks.
  */
-export function tokenize(source: string): Statement[] {
+export interface TokenizeOptions {
+  /**
+   * From engine 3.2.1 (`ENGINE_READS_321_FROM`, ER-01): the comment scan of a
+   * line starts in the literal state the line before ended in. An embedded
+   * expression of a string template may span lines, so a line can begin
+   * inside `|… { …` — and a `"` in the template text behind the closing `}`
+   * is text, not a comment. Scanned afresh, that `"` cut the line, the
+   * closing `|` and its period were lost, and the whole rest of the file
+   * became one statement no detector and no coverage rule read. Off, every
+   * line's comment scan starts fresh, as in the engines before.
+   */
+  multiLineTemplates?: boolean;
+}
+
+export function tokenize(source: string, options: TokenizeOptions = {}): Statement[] {
   const lines = source.split(/\r?\n/);
   const statements: Statement[] = [];
   /** The statement so far. Trimmed when it is pushed, not in between. */
@@ -72,14 +86,31 @@ export function tokenize(source: string): Statement[] {
     // example. The rule lives once, in `statement-reader.ts`, with the two real
     // lines that disagree written out beside it.
     if (isAbapCommentLine(line, buf.length > 0)) continue;
-    // Strip inline comment ("...) when it is not inside a literal. A literal
-    // does not span lines in ABAP, so the scanner starts fresh on each one.
-    const inLine = createLiteralScanner();
+    // Strip inline comment ("...) when it is not inside a literal. Before
+    // 3.2.1 the scanner started fresh on each line ("a literal does not span
+    // lines"); from 3.2.1 (`multiLineTemplates`) the one scanner of the whole
+    // source decides, because an embedded expression `{ … }` of a template
+    // does span lines. `codeAt[c]` keeps its answer for each kept character, so
+    // the split below reads the same state without feeding the scanner twice.
     let clean = '';
-    for (let c = 0; c < line.length; c++) {
-      const ch = line[c];
-      if (inLine(ch) && ch === '"') break; // rest is comment
-      clean += ch;
+    let codeAt: boolean[] | null = null;
+    if (options.multiLineTemplates) {
+      codeAt = [];
+      for (let c = 0; c < line.length; c++) {
+        const ch = line[c];
+        const code = outside(ch);
+        // A `"` outside every text — in code or in an embedded expression — opens a comment.
+        if (ch === '"' && !outside.inText()) break;
+        codeAt.push(code);
+        clean += ch;
+      }
+    } else {
+      const inLine = createLiteralScanner();
+      for (let c = 0; c < line.length; c++) {
+        const ch = line[c];
+        if (inLine(ch) && ch === '"') break; // rest is comment
+        clean += ch;
+      }
     }
 
     if (!buf) {
@@ -93,12 +124,15 @@ export function tokenize(source: string): Statement[] {
     const piece = clean.trim();
     if (!piece) continue;
     const segment = buf ? ` ${piece}` : piece;
+    // Where `piece` starts in `clean`, and in `segment` — to read `codeAt`.
+    const lead = clean.length - clean.trimStart().length;
+    const shift = buf ? 1 : 0;
 
     // Split out completed statements on '.' — outside every literal form, and
     // never between two digits, where the period is a decimal point.
     for (let c = 0; c < segment.length; c++) {
       const ch = segment[c];
-      const code = outside(ch);
+      const code = codeAt ? c >= shift && codeAt[lead + c - shift] === true : outside(ch);
       const decimal = /\d/.test(previous) && /\d/.test(segment[c + 1] ?? '');
       previous = ch;
       if (ch === '.' && code && !decimal) {

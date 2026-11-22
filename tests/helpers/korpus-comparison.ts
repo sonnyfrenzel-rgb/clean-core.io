@@ -399,8 +399,9 @@ export interface EngineReading {
 export type SkeletonMutation = (skeleton: ProcessSkeleton, file: string) => ProcessSkeleton;
 
 /**
- * KORPUS_ENGINE_VERSION: the engine version the skeleton is read for (`buildProcessSkeleton`'s gate); unset, this
- * release. A measurement of a gated reading sets it to the gate's version (3.1.0) before `APP_VERSION` reaches it.
+ * KORPUS_ENGINE_VERSION: the engine version the skeleton and the evidence are read for (`buildProcessSkeleton`'s and
+ * `buildAbapEvidence`'s gates); unset, this release. A measurement of a gated reading sets it to the gate's version
+ * (3.1.0, 3.2.1) before `APP_VERSION` reaches it.
  */
 const ENGINE_VERSION = process.env.KORPUS_ENGINE_VERSION || undefined;
 
@@ -414,7 +415,7 @@ export function readWithEngine(
   const uses = new Map<string, ObjectUse>();
   let routeCount = 0;
   const perFile = korpusCase.sources.map((source) => {
-    const evidence = buildAbapEvidence(source.code, source.name, deployment);
+    const evidence = buildAbapEvidence(source.code, source.name, deployment, undefined, ENGINE_VERSION);
     const facts = buildProcessFacts(source.code);
     const tables = extractDataCoupling(source.code).map((entry) => ({
       name: entry.tableName.toUpperCase(),

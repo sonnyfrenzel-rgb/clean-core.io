@@ -17,6 +17,8 @@ import { engineReads3019Apply } from './engine-reads-3019-gate';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
 import { engineReads3021Apply } from './engine-reads-3021-gate';
 import { engineReads320Apply } from './engine-reads-320-gate';
+import { engineReads321Apply } from './engine-reads-321-gate';
+import { resolveDynamicCalls } from './dynamic-call-resolution';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { keyUserApplies } from './key-user-gate';
 import { readKeyUserCandidates, type KeyUserReading } from './key-user-candidates';
@@ -730,10 +732,23 @@ export function buildAbapEvidence(
   const REPLACE_WHEN = 'Replace it when the UI has to run in a browser or the SAP Fiori launchpad, or when the target is SAP S/4HANA Cloud Public Edition: then with a Fiori Elements app on a RAP service.';
   const findings: EvidenceFinding[] = [];
   const notes: EvidenceNote[] = [];
-  const statements = tokenize(code);
+  // From 3.2.1 (`ENGINE_READS_321_FROM`, ER-01): an embedded expression of a string template spans lines,
+  // so a `"` in the template's text is no comment. The table dependencies and the coverage read the same cut.
+  const reads321 = engineReads321Apply(engine);
+  const tokenizeOptions = { multiLineTemplates: reads321 };
+  const statements = tokenize(code, tokenizeOptions);
+  // From 3.2.1 (ER-02): a dynamic `CALL FUNCTION name` whose name the source closes is the call of that module
+  // (`resolveDynamicCalls`), keyed by statement index.
+  const resolvedCalls = reads321 ? resolveDynamicCalls(statements) : null;
   // From 3.0.18 (`ENGINE_READS_FROM`): a constant names a module only where a call uses it.
   // From 3.2.0 (`ENGINE_READS_320_FROM`): a copy overwritten before any call of its target names no module.
-  const dynamicNames = reads ? dynamicCallNames(statements, engineReads320Apply(engine)) : null;
+  // From 3.2.1: a resolved call is read at the call, so it makes no constant or copy a called name.
+  const dynamicNames = reads
+    ? dynamicCallNames(
+      resolvedCalls ? statements.map((st, i) => (resolvedCalls.has(i) ? { text: '' } : st)) : statements,
+      engineReads320Apply(engine),
+    )
+    : null;
   let idCounter = 1;
   const isPublicCloud = deployment === 'public';
 
@@ -741,7 +756,7 @@ export function buildAbapEvidence(
   // data coupling (`table-dependencies.ts`). A type reference is a dependency
   // but no access, and a possible target of an unresolved dynamic name is not
   // an access either (R26): neither becomes a finding here.
-  const dependencies = readTableDependencies(code);
+  const dependencies = readTableDependencies(code, tokenizeOptions);
   const accessesAt = new Map<number, TableDependency[]>();
   for (const dependency of dependencies.dependencies) {
     if (dependency.access === 'reference' || dependency.possibleTargetOf) continue;
@@ -1046,6 +1061,16 @@ export function buildAbapEvidence(
      * the transaction code and the function-module name are literal contents.
      */
     const codeText = maskLiterals(text);
+    /**
+     * From 3.2.1 (ER-02): the statement as the function-module detectors read it. A dynamic call whose name the
+     * source closes reads as the literal call of that module (`CALL FUNCTION lv_fm.` → `CALL FUNCTION 'X'.`), so
+     * the catalog and the module detectors answer it at the call. Only those detectors read it; every snippet
+     * keeps `text`, the statement as written.
+     */
+    const resolvedModule = resolvedCalls?.get(statementIndex);
+    const fmText = resolvedModule
+      ? text.replace(/^(\s*CALL\s+FUNCTION\s+)[A-Za-z_][\w/]*/i, (_m, head: string) => `${head}'${resolvedModule}'`)
+      : text;
 
     // -- 1. Table Accesses --
     // Read by `readTableDependencies`, the one reader of `SELECT … FROM`, the
@@ -1199,7 +1224,7 @@ export function buildAbapEvidence(
     // `statement-reader.ts` documents. So this reads `text`, not `codeText` —
     // but only the literal a `CALL FUNCTION` (or a constant) names: in
     // `PERFORM add_log USING 'GUI_DOWNLOAD'` the name is a message.
-    const alvModule = calledModule(text, 'REUSE_ALV_(?:GRID|LIST)_DISPLAY', dynamicNames);
+    const alvModule = calledModule(fmText, 'REUSE_ALV_(?:GRID|LIST)_DISPLAY', dynamicNames);
     if (alvModule && guideline) {
       // From 3.0.12 (`GUIDELINE_CHECKS_FROM`): an ALV list is classic
       // technology, not a defect to replace on sight.
@@ -1278,7 +1303,7 @@ export function buildAbapEvidence(
         });
       }
     }
-    const guiModule = guideline ? calledModule(text, '(?:GUI|WS)_(?:DOWNLOAD|UPLOAD)', dynamicNames) : null;
+    const guiModule = guideline ? calledModule(fmText, '(?:GUI|WS)_(?:DOWNLOAD|UPLOAD)', dynamicNames) : null;
     if (guideline && (guiModule || /\bCL_GUI_FRONTEND_SERVICES\b/i.test(codeText))) {
       // From 3.0.18 (`ENGINE_READS_FROM`) a file-picker dialog is what it is: the
       // user picks a path, and no file moves through this call.
@@ -1493,7 +1518,7 @@ export function buildAbapEvidence(
     }
 
     // SAPOffice legacy mailing — a function-module name, read from `text`.
-    if (namesModule(text, 'SO_NEW_DOCUMENT_SEND_API1', dynamicNames)) {
+    if (namesModule(fmText, 'SO_NEW_DOCUMENT_SEND_API1', dynamicNames)) {
       addFinding({
         kind: 'legacy-mail',
         title: 'Legacy Mail Service (SO_NEW_DOCUMENT_SEND_API1)',
@@ -1517,7 +1542,7 @@ export function buildAbapEvidence(
     // 3.0.18, raises no finding: classic ABAP may call it. The finding cites SAP's state, never
     // the A–D letter, because findings go into the signed run.
     {
-      const local = /^\s*CALL\s+FUNCTION\s+'([^']+)'/i.exec(text);
+      const local = /^\s*CALL\s+FUNCTION\s+'([^']+)'/i.exec(fmText);
       if (local && (guideline ? rfcDestinationOf(text, fixes) !== 'remote' : !/\bDESTINATION\b/i.test(codeText))) {
         const fm = local[1].toUpperCase();
         const answer = functionModuleCatalogAnswer(fm, catalogSnapshot);
@@ -2154,6 +2179,9 @@ export function buildAbapEvidence(
     datasetAssessed: reads,
     // From 3.0.21 a macro is named where it is used (`ENGINE_READS_3021_FROM`).
     macroUsesNamed: engineReads3021Apply(engine),
+    // From 3.2.1 (`ENGINE_READS_321_FROM`): the statements cut as above, and the dynamic calls the source closes.
+    multiLineTemplates: reads321,
+    ...(resolvedCalls ? { resolvedCalls } : {}),
   });
   // From 3.0.17 (`STATED_REQUIREMENTS_FROM`): what the owner states in the
   // comments, beside the findings and never among them.

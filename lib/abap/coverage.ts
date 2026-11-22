@@ -104,6 +104,22 @@ export interface CoverageOptions {
    * earlier engine, keeps the definition alone with its earlier sentence.
    */
   macroUsesNamed?: boolean;
+  /**
+   * From engine 3.2.1 (`ENGINE_READS_321_FROM`, ER-01): the statements are cut
+   * with `tokenize`'s `multiLineTemplates`, so a string template whose embedded
+   * expression spans lines no longer swallows the rest of the source — and with
+   * it every construct this report should have listed. The engine passes true
+   * from that version; `resolvedCalls` indices assume it.
+   */
+  multiLineTemplates?: boolean;
+  /**
+   * From engine 3.2.1 (ER-02): the dynamic `CALL FUNCTION name` statements whose
+   * name the source closes, by statement index, with the module they call
+   * (`resolveDynamicCalls`). Such a call is no `dynamic-invocation` gap: it is
+   * read as the literal call of that module — answered by the catalog where
+   * `answerCall` knows it, a `local-function-call` gap where not.
+   */
+  resolvedCalls?: ReadonlyMap<number, string>;
 }
 
 interface Rule {
@@ -291,14 +307,18 @@ function macroDefinitions(statements: ReturnType<typeof tokenize>): Map<string, 
 export function assessCoverage(code: string, options: CoverageOptions = {}): CoverageReport {
   const unassessed: UnassessedConstruct[] = [];
   const answered: CatalogAnsweredCall[] = [];
-  const unresolved = new Set(readTableDependencies(code).unresolved.map((target) => target.statement));
+  const cut = { multiLineTemplates: options.multiLineTemplates === true };
+  const unresolved = new Set(readTableDependencies(code, cut).unresolved.map((target) => target.statement));
   const carried = includesCarried(code);
-  const statements = tokenize(code);
+  const statements = tokenize(code, cut);
   const macros = options.macroUsesNamed ? macroDefinitions(statements) : new Map<string, number>();
   let inMacroBody = false;
 
   for (const [index, stmt] of statements.entries()) {
-    const upper = maskLiterals(stmt.text).toUpperCase().trim();
+    // From 3.2.1 (ER-02): a call whose name the source closes reads as the literal call of that module.
+    const resolved = options.resolvedCalls?.get(index);
+    const masked = maskLiterals(stmt.text).toUpperCase().trim();
+    const upper = resolved ? masked.replace(/^CALL\s+FUNCTION\s+[A-Z_][\w/]*/, "CALL FUNCTION ' '") : masked;
     // A macro used inside another macro's body is the nesting this engine
     // does not follow; the body is reported with its definition.
     const head = /^([\w/-]+)\s*:?/.exec(upper)?.[1] ?? '';
@@ -317,7 +337,7 @@ export function assessCoverage(code: string, options: CoverageOptions = {}): Cov
       // What the catalog already knows is not a gap: a local call of a
       // function module SAP's files list is answered by them.
       if (rule.gap === 'local-function-call' && options.answerCall) {
-        const name = /^\s*CALL\s+FUNCTION\s+'([^']+)'/i.exec(stmt.text)?.[1];
+        const name = resolved ?? /^\s*CALL\s+FUNCTION\s+'([^']+)'/i.exec(stmt.text)?.[1];
         const answer = name ? options.answerCall(name) : null;
         if (answer) {
           answered.push({ ...answer, line: stmt.line, snippet: trim(stmt.text) });

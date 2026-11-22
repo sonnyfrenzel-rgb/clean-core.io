@@ -18,6 +18,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   patch, SEC-2026-1002 for the next rules deploy (`docs/ROADMAP.md` §12).
 - QA full review of v3.2.0: the one high finding refuted; the QA review of 72ff92919908 recorded.
 
+### Fixed
+- Engine 3.2.1 (ER-01, gated from `ENGINE_READS_321_FROM`, `lib/abap/engine-reads-321-gate.ts`): a string template
+  whose embedded expression `{ … }` spans lines, with a `"` in the template text of its last line, no longer swallows
+  the rest of the source. The statement reader under the findings, the table dependencies and the coverage started
+  its comment scan afresh on every line, took that `"` for a comment, lost the closing `|` and its period, and read
+  the rest of the file as one statement: the coverage reported no gap and `complete: true` over code no rule had
+  read. The comment scan now carries the literal state of the line before (`tokenize`, `multiLineTemplates`). A run
+  of 3.2.0 or older keeps what it signed (`tests/engine-reads-321.spec.ts`).
+- Engine 3.2.1 (ER-02, same gate): a dynamic `CALL FUNCTION name` whose name the source closes — a constant, a
+  `DATA … VALUE '…'` the source never names again, or a literal or constant assigned on the straight line right
+  before the call — is read as the call of that module (`lib/abap/dynamic-call-resolution.ts`): the catalog answers it
+  as it answers a literal call, its findings stand at the call, and it is no `dynamic-invocation` gap. The ALV,
+  frontend-file and SAPoffice findings no longer stand on the `CONSTANTS` line while the call itself is listed as not
+  determined. A reassignment in a branch or loop, a parameter, a second declaration, any other mention of the
+  variable, a structure component or a `DESTINATION` keeps the call dynamic. Reference corpus: CC-006 and CC-011 now
+  agree on the level when measured at 3.2.1 (`KORPUS_ENGINE_VERSION=3.2.1`; `tests/helpers/korpus-comparison.ts` now
+  passes that version to the evidence too); `tests/korpus/baseline.json` strikes the two entries with the version
+  bump. `SELECT … FROM (lv_tab)` with `DATA lv_tab … VALUE '…'` is read by another resolver
+  (`readTableDependencies`) and stays a `dynamic-target` gap.
+
 ### Under investigation
 - An owner report of 16.11.2026: after the footer link "Tenant Security" on the landing page the product shell
   can look half signed in. Not reproduced yet for a signed-out visitor (production) or a signed-in account
