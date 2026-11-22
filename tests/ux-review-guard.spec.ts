@@ -44,9 +44,10 @@ test.describe('one pinned image-capable model, and it can only read', () => {
   test('the body a UX call sends carries only parameters every eligible endpoint of the pinned model supports (3.0.18 item 10)', async () => {
     // The UX run of 06.10.2026 (d9278367) died on HTTP 404 "no model or endpoint matches ... the required
     // parameters": with require_parameters one unsupported parameter (then `temperature`) leaves no endpoint.
-    // OpenRouter's endpoint list for openai/gpt-6-luna, read 18.10.2026 (GET /api/v1/models/openai/gpt-6-luna/endpoints):
-    // every endpoint at or below the $0.10/$0.50 ceiling supports these, plus seed/tools/verbosity we do not send;
-    // input modalities file, image, text; max completion tokens 128,000.
+    // OpenRouter's endpoint list for openai/gpt-6-luna-pro, read 22.11.2026 (GET /api/v1/models/openai/gpt-6-luna-pro/endpoints):
+    // input modalities file, image, text; max completion tokens 128,000. Endpoints at or below the $0.10/$0.50 ceiling:
+    // OpenAI $0.05/$0.25 and OpenAI $0.10/$0.50 support all three; Azure $0.10/$0.50 lacks one, so `require_parameters`
+    // keeps it out; the OpenAI $0.20/$1.00 tier is above `max_price`. (Until 22.11.2026 the model was openai/gpt-6-luna.)
     const SUPPORTED = ['max_tokens', 'reasoning', 'response_format'];
     // Not sampling or generation parameters: the model id, the conversation, and OpenRouter's own routing/accounting.
     const ENVELOPE = ['messages', 'model', 'provider', 'usage'];
