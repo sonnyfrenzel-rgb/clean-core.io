@@ -1,5 +1,6 @@
 import { maskLiterals, type AbapStatement, type SourceRange } from './statement-reader';
 import { type Block } from './block-structure';
+import { type Branch } from './control-flow';
 import { type ProcessFacts } from './process-facts';
 
 /**
@@ -226,8 +227,18 @@ class LuwReader {
   private blockAt = new Map<number, Block>();
   private forms = new Map<string, Block>();
   private localForms = new Set<string>();
+  /**
+   * Engine 4 phase 3 (performance, byte-neutral): the branch each statement opens — the first, as the `find` it
+   * replaces answered — and the `PERFORM` sites of each form (`performSitesOf`), read once per reader instead of
+   * once per scan and per registration path. At 50k lines these two scans were most of the skeleton's time.
+   */
+  private branchAt = new Map<number, Branch>();
+  private performSites = new Map<string, AbapStatement[]>();
 
   constructor(private facts: ProcessFacts) {
+    for (const branch of facts.control.branches) {
+      if (!this.branchAt.has(branch.openIndex)) this.branchAt.set(branch.openIndex, branch);
+    }
     for (const block of facts.structure.blocks) {
       this.blockAt.set(block.openIndex, block);
       if (block.kind === 'form') {
@@ -325,9 +336,7 @@ class LuwReader {
         // The end of a FORM: the path goes on at every PERFORM of it.
         const form = this.formAround(index);
         if (!form || visitedForms.has(form)) return { outcomes, covered: false, left, end: 'container', at: scan.at };
-        const sites = statements.filter((s) => s.keyword === 'PERFORM'
-          && /^PERFORM\s+([\w/]+)/i.exec(maskLiterals(s.text))?.[1]?.toUpperCase() === form
-          && !/\bIN\s+PROGRAM\b/i.test(s.text));
+        const sites = this.performSitesOf(form);
         if (sites.length === 0) return { outcomes, covered: false, left, end: 'container', at: scan.at };
         const next = new Set(visitedForms).add(form);
         const results = sites.map((site) => this.fromRegistration(site.index, next));
@@ -352,7 +361,7 @@ class LuwReader {
    * covers. A loop never covers — its body may run no time at all.
    */
   private scan(from: number, to: number, inLoop: boolean, visitedForms: Set<string>, depth: number): ScanResult {
-    const { statements, control } = this.facts;
+    const { statements } = this.facts;
     const outcomes: OutcomeAtEvent[] = [];
     let left: number | null = null;
     let i = from;
@@ -367,7 +376,7 @@ class LuwReader {
         continue;
       }
       if (block && FLOW.has(block.kind)) {
-        const branch = control.branches.find((b) => b.openIndex === i);
+        const branch = this.branchAt.get(i);
         if (branch && (block.kind === 'if' || block.kind === 'case')) {
           const arms = branch.arms.map((arm, k) => {
             const end = (branch.arms[k + 1]?.headerIndex ?? branch.closeIndex) - 1;
@@ -439,6 +448,17 @@ class LuwReader {
       i += 1;
     }
     return { outcomes, covered: false, left, end: i >= statements.length ? 'eof' : 'arm', at: Math.min(i, statements.length - 1) };
+  }
+
+  /** Every `PERFORM` of `form` in this program, in statement order — read once per form. */
+  private performSitesOf(form: string): AbapStatement[] {
+    const known = this.performSites.get(form);
+    if (known) return known;
+    const sites = this.facts.statements.filter((s) => s.keyword === 'PERFORM'
+      && /^PERFORM\s+([\w/]+)/i.exec(maskLiterals(s.text))?.[1]?.toUpperCase() === form
+      && !/\bIN\s+PROGRAM\b/i.test(s.text));
+    this.performSites.set(form, sites);
+    return sites;
   }
 
   private formAround(index: number): string | null {

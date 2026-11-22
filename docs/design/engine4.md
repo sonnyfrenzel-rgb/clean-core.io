@@ -1233,6 +1233,155 @@ on 109 files) with our own classes: "complete" today is a statement about the de
 **Gate:** the ledger changes what a run says about completeness, so it reaches a run only as a gated reading of the
 switch; until then it is computed in the shadow only.
 
+## Phase 3: the skeleton builder as typed passes (22.11.2026, `build/engine4-p3`)
+
+Owner decision 22.11.2026: engine 4.0 complete by 3.5.0, phases 1–4; the switch rule stays. Engine review §8.1 (L6)
+and §8.5 (phase 3, "highest risk"). This section is the plan, written before the first pass moved, and the
+ledger of what moved.
+
+### What is split
+
+`SkeletonBuilder` in `lib/abap/process-skeleton.ts` (5,817 lines in the file on `integrate/engine4`, about 4,600
+in the class; the review counted 4,312 on 13.11.) builds the whole skeleton in one stateful object: 4 graph
+arrays, an id allocator and about 50 private fields that one method writes and another reads later. Its
+`build()` is already a sequence of passes; the seams are the calls in that method. Nothing about the order is
+changed by the split: the order *is* the 60 days of decisions the review warns about, so each pass keeps its
+place in `build()` and only moves out of the class.
+
+### The model and the pass signature
+
+- `lib/abap/skeleton/graph.ts`: `SkeletonGraph` — `nodes`, `edges`, `regions`, `notes` and the node-id
+  allocator (`addNode`, rule 7; `connect`; `note`). One object, mutable, handed from pass to pass. Its arrays may be
+  replaced (`graph.nodes = graph.nodes.filter(…)`); only `addNode` mints an id. `SkeletonReadings` (`reads310`,
+  `reads320`) and `Exit` live here too.
+- A pass is a function `pass(graph, input, readings?) → void | product`. `input` is a typed interface named after
+  the pass that lists exactly what the pass reads besides the graph; the walk's products a pass needs (early ends,
+  lane evidence, reached routines …) are fields of it. A pass imports only types from `process-skeleton.ts`, so
+  the builder imports the passes and never the other way round.
+- Shared readers move once, unchanged: `skeleton/anchors.ts` (`anchorOf`, `tokenIndexOf`, `bodyRange`, `snippet`,
+  `programName`), `skeleton/statement-readers.ts` (`leavesDialogStep`, `resultParameters`, `assignmentTarget`,
+  `classOf`), `skeleton/keywords.ts` (`FLOW_BLOCKS`, `ARM_HEADERS`, `LOOP_CLOSERS`, the report ranks). These files
+  are where the recognisers gather — the "one recogniser per concept" half of phase 3 starts from them.
+
+### The passes, in `build()` order
+
+| # | Pass | Module | Input (besides the graph) | Output | Reading |
+|---|---|---|---|---|---|
+| 1 | declarations | `skeleton/declarations.ts` | statements, blocks, branches, call graph | `SourceDeclarations`: blocks by opener, branches, macros, forms, routines, methods, classes, superclasses, function and enhancement blocks, externally callable methods, selection names, local data, batch input, method call sites, candidate sites, event handlers | `reads320` (candidate sites, dispatch) |
+| 2 | effects | `skeleton/effects.ts` | `SourceDeclarations`, branches | effects per routine, `performedFrom`, helpers | `reads310`, `reads320` |
+| 3 | not-read notes | `skeleton/source-notes.ts` | statements, blocks, branches, call graph | notes | — |
+| 4 | entries | `skeleton/entries.ts` | `SourceDeclarations`, effects | `EntryPoint[]`, run entries | `reads310`, `reads320` |
+| 5 | walk | `skeleton/walk/*` (planned, last) | `SourceDeclarations`, effects, entries | regions, nodes, edges; the walk's products: early ends, region ends, lane evidence, reached routines, cut-off boundaries, callbacks (which add entries while the walk runs) | both |
+| 6 | early ends | `skeleton/early-ends.ts` | statements, blocks, early ends, region ends, run ranks | edges moved, end nodes dropped | — |
+| 7 | collapse | `skeleton/collapse.ts` | — | call-site kinds | `reads310` |
+| 8 | guards | `skeleton/guards.ts` | — | conditional edges into guarded calls | — |
+| 9 | technical gateways | `skeleton/technical-gateways.ts` | — | gateways folded onto boundaries | — |
+| 10 | sub-process starts | `skeleton/starts.ts` | — | one start per plane | `reads310` |
+| 11 | report chain | `skeleton/report-chain.ts` | — | `runtime-order`/`stop` edges | — |
+| 12 | empty entries | `skeleton/starts.ts` | — | `region.drawsNothing` | `reads310` (whether it runs) |
+| 13 | unreachable notes | `skeleton/unreachable-notes.ts` | statements, cut-off boundaries | notes | — |
+| 14 | lanes | `skeleton/lanes.ts` | statements, lane evidence | `SkeletonLane[]` | — |
+| 15 | LUW | `skeleton/luw.ts` | the facts | `SkeletonLuw`, node details | — |
+| 16 | not drawn | `skeleton/not-drawn.ts` | statements, blocks, call graph, forms, entries built, reached routines, helpers, methods, call sites | `notDrawn` | — |
+
+**Extraction order: from the back.** Passes 6–16 read the finished graph plus a handful of walk products; they
+move first, each in its own commit. Then 3, 1 and 2 (they read only the source). Entries (4) next. The walk (5)
+last, split inside itself along its own seams (`walkBranch`, `walkLoop`/`walkMultiInstanceLoop`, `walkTry`,
+`walkParallel`, `walkStatement` and the call walkers), because it is mutually recursive with `routineRegion` and
+carries most of the state.
+
+### What proves each pass neutral
+
+A pass is committed only when every check below is unchanged byte for byte; a pass that cannot be proven is
+stopped, recorded here, and the next independent one taken.
+
+1. `tests/skeleton-frozen-digests.spec.ts`: `tests/fixtures/skeleton-v3.2.0-frozen.json`, 1,656 SHA-256 digests of
+   `JSON.stringify(buildProcessSkeleton(source, { engineVersion }))` — key order included — for 552 sources
+   (7 starters, 150 learn cases concatenated, 387 learn files one by one, 8 probes; never the holdout) on each
+   engine line the skeleton reads differently: 3.0.23, 3.1.0 (`reads310`), 3.2.0 (`reads320`). Captured from
+   `lib/` at 3892cfca before the first pass. 237 sources draw differently under 3.1.0 than 3.0.23 and 22 under
+   3.2.0 than 3.1.0, so both gates are exercised.
+2. `scripts/engine/skeleton-neutrality.ts check --mutations 3`: every third of the 29 deterministic mutations of
+   `parse-once-neutrality.ts` (CRLF, tabs, deleted/duplicated/split lines, truncation, inserted `'` `|` `"` `{`
+   `.`) of each of the 552 sources, against a baseline captured from an untouched checkout of 3892cfca. This is
+   where unclosed blocks, recovered containers and early ends in odd places are exercised.
+3. The same on the external real-code sample, public group (300 files, outside the repository, ADR-125 (5)),
+   with mutations.
+4. `engine-frozen-digests.spec.ts` (evidence and route, 330), the skeleton specs (`abap-process-skeleton`,
+   `process-skeleton-*`, `engine-reads-320`, `engine-method-collapse`, `callback-reachability`, `luw-states`), the
+   golden masters and the reference corpus (`korpus-*`), server-free.
+
+Nothing here touches what a signed run rebuilds to: the output is identical by the checks above, and no reading,
+gate or version changes.
+
+### Ledger (22.11.2026)
+
+Every row is a commit on `build/engine4-p3`. "Frozen" is check 1 on that commit; the mutation and external runs
+(checks 2 and 3) ran on the commits marked ✓ and cover every commit before them.
+
+| Pass | Module | Commit | Frozen | Mutations (43,014) · external (10,800) |
+|---|---|---|---|---|
+| harness | `scripts/engine/skeleton-neutrality.ts`, fixture, spec | 1bd22864 | captured | baseline from 3892cfca |
+| 0 graph | `skeleton/graph.ts`, `skeleton/anchors.ts` | 88c7330a | 1,656/1,656 | ✓ (0a97375f) |
+| perf | parse-once scope around the skeleton build | 0a97375f | 1,656/1,656 | ✓ 0 moved |
+| perf | `luw-states.ts`: perform sites and branches read once | f302f2fa | 1,656/1,656 | ✓ 0 · 0 moved |
+| 15 LUW | `skeleton/luw.ts` | eca54345 | 1,656/1,656 | ✓ (with f302f2fa) |
+| 16 not drawn | `skeleton/not-drawn.ts` | 4a540951 | 1,656/1,656 | ✓ (719e95fd) |
+| 14 lanes | `skeleton/lanes.ts` | 7f820d4d | 1,656/1,656 | ✓ (719e95fd) |
+| 13 unreachable notes | `skeleton/unreachable-notes.ts` | 05cd3c27 | 1,656/1,656 | ✓ (719e95fd) |
+| 10, 12 starts | `skeleton/starts.ts` | 49d28462 | 1,656/1,656 | ✓ (719e95fd) |
+| 11 report chain | `skeleton/report-chain.ts`, `skeleton/keywords.ts` | 699efac3 | 1,656/1,656 | ✓ (719e95fd) |
+| 9 technical gateways | `skeleton/technical-gateways.ts` | ad7b4485 | 1,656/1,656 | ✓ (719e95fd) |
+| 8 guards | `skeleton/guards.ts` | 69aed001 | 1,656/1,656 | ✓ (719e95fd) |
+| 7 collapse | `skeleton/collapse.ts` | 9a6a7b2c | 1,656/1,656 | ✓ (719e95fd) |
+| 6 early ends | `skeleton/early-ends.ts`, `skeleton/statement-readers.ts` | 719e95fd | 1,656/1,656 | ✓ 0 · 0 moved |
+| 3 not-read notes | `skeleton/source-notes.ts` | 06ba99ae | 1,656/1,656 | ✓ (ed289189) |
+| 1 declarations | `skeleton/declarations.ts` | ba494de9 | 1,656/1,656 | ✓ (ed289189) |
+| recognisers | `skeleton/recognisers.ts` (32 readers and tables) | 96080dfd | 1,656/1,656 | ✓ (ed289189) |
+| 2 effects | `skeleton/effects.ts` | ed289189 | 1,656/1,656 | ✓ 0 · 0 moved |
+| dispatch | `skeleton/dispatch.ts` (`MethodDispatch`) | 76f83d7e | 1,656/1,656 | ✓ (5b4ffe9f) |
+| 4 entries | `skeleton/entries.ts` (`EntryReader`) | 5b4ffe9f | 1,656/1,656 | ✓ 0 · 0 moved |
+| walk readers | `skeleton/walk-readers.ts` (`WalkReaders`) | 5266b4f9 | 1,656/1,656 | ✓ 0 · 0 moved |
+| tidy | section headers, blank lines | 726f7dd0 | 1,656/1,656 | — (comments only) |
+
+On 5266b4f9, in parse-once verify mode (`ENGINE_PARSE_ONCE_VERIFY=1`), 34 server-free spec files with 1,922 tests: 1,919 pass, 2 skipped, 1 red — `engine-version-callers.spec.ts` "no call outside tests/ leaves the engine version to the default", red with the same seven script call sites (`scripts/engine/frozen-digests.ts`, `scaling-guard.ts`, `scripts/engine4/shadow-references.ts`, `timing-parse.ts`) on the untouched `integrate/engine4` (3892cfca) as well; none of them is a file of this strand. The skeleton, LUW, golden-master, reference-corpus (`korpus-*`), frozen evidence (330) and rebuild (v3.0.11/v3.0.12) specs are among the green.
+
+Two pieces are not graph passes and are named for what they are: `MethodDispatch` (which implementation a call
+reaches, the calls of one statement, the bound event handlers; it keeps the builder's caches) and `WalkReaders`
+(the walk's read-only questions about the source). Both are asked by passes; neither draws.
+
+**Performance, the user-visible part.** The independent engine review measured the skeleton super-linear
+(10k → 25k lines 7.9×). The profile put 68 % of the time at 15k lines in `luw-states.ts fromRegistration`, re-masking
+every `PERFORM` for every registration path, because the skeleton build ran outside the parse-once scope. Two
+neutral fixes (0a97375f, f302f2fa). `buildProcessSkeletonFrom` on the 1,000-line starter concatenated, this
+machine, Node 24, other agents running (`scripts/engine/skeleton-timing.ts`):
+
+| Lines | Before | After |
+|---|---|---|
+| 1k | 54 ms | 24 ms |
+| 5k | 240 ms | 60 ms |
+| 10k | 1,597 ms | 94–108 ms |
+| 25k | 20,171 ms | 325–482 ms |
+| 50k | not measured (15k: 6,451 ms) | 1,030–1,287 ms |
+
+`buildProcessFacts` is now the larger half (25k: 0.5–0.7 s, 50k: 1.9–2.1 s).
+
+**What remains.** `process-skeleton.ts` went from 5,817 to 2,608 lines; the passes are 21 modules in
+`lib/abap/skeleton/` (about 3,900 lines with their comments). What is left in `SkeletonBuilder` is pass 5, the walk:
+`buildEntryRegion`, `routineRegion` and the `walk*` methods (39 methods, `walkStatement` alone 291 lines), plus the
+callbacks the walk discovers and the lane evidence it records. It is one mutually recursive component over about 20
+pieces of walk state (`registeredInWalk`, `registrationFrozen`, `expanding`, `regionOfRoutine`, `earlyEnds`,
+`callbacks`, `screenCalled`, `reachedRoutines`, …). The next step is a typed `WalkState` object and one module per
+walker (`walk/branch.ts`, `walk/loop.ts`, `walk/try.ts`, `walk/parallel.ts`, `walk/calls.ts`, `walk/statement.ts`),
+again one at a time behind the same four checks. Then the second half of phase 3: one recogniser per concept with a
+probe spec (the recognisers now sit in `skeleton/recognisers.ts`, `statement-readers.ts`, `walk-readers.ts` and
+`dispatch.ts`), and closing review §5 #2–#6, #9 as gated readings.
+
+**The helper seam (review B2).** Whether a routine is a step or a technical helper is decided in one place,
+`skeleton/effects.ts` `directEffects`; `notDrawn.technicalHelpers` lists what it folded. A routine whose table write
+that list does not recognise is folded and its write is not drawn. Widening the list is a reading (a new engine
+version), not part of this refactor; the seam is documented in the module header.
+
 ## Next steps
 
 1. ~~Build ADR-134 Q5, Q6 and Q9~~ (built, see above). Rerun both shadows on the sample after every L2 change
