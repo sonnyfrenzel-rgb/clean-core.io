@@ -21,7 +21,8 @@ code. Prior art supplied concepts only, and no third-party source is copied.
 | L4 references (first step) | `references.ts` | `references(statements, tree) → ReferenceTable`: every SAP reference with line, use and resolution | built, inert |
 | L4 graded | `graded.ts`, `lib/knowledge/` | `gradeReferences(table) → GradedReference[]`: SAP's facts and a standing per reference (no A–D letter) | built, inert |
 | L4 values | `values.ts` | `valueAt(valueContext(statements, tree), name, statement) → ValueAnswer`: scoped, loop- and call-aware, FORM parameters over call sites, provenance | built, inert |
-| L3 declarations, rest of L4, L5–L6 | — | class/interface declarations, screens, scopes and data flow, calls, process model (review §8.1) | later |
+| L3 declarations | `declarations.ts` | `declarations(statements, tree) → Declarations`: classes, interfaces, members, implementations | built, inert |
+| rest of L3/L4, L5–L6 | — | screens, call graph, process model (review §8.1) | later |
 
 `index.ts` is the public surface. `readSource(source)` runs L0 and L1 in one call and returns the statements
 together with the diagnostics of both layers.
@@ -1029,6 +1030,34 @@ another write in another FORM): no answer becomes more certain (`constant` > `va
 
 Different single value: 0 everywhere. The real corpora hardly meet the unsound cases (their dynamic names were
 open already); the probes and the metamorphic generator do. Inert: nothing in the product reads `values.ts`.
+
+## L3 second half: class and interface declarations (22.11.2026, `build/engine4-p12`)
+
+`declarations(statements, tree)` (`lib/engine4/declarations.ts`) reads every `CLASS … DEFINITION` and `INTERFACE`
+block of L2 and every `CLASS … IMPLEMENTATION`: options (global, ABSTRACT, FINAL, CREATE, FOR TESTING, INHERITING
+FROM, FRIENDS, GLOBAL FRIENDS), and per member its section and flags — methods (static, abstract, final,
+redefinition, constructor, class constructor, FOR TESTING, `FOR EVENT e OF t`, parameters with direction, passing,
+type, OPTIONAL, DEFAULT, PREFERRED, RAISING, classic EXCEPTIONS), attributes (static, READ-ONLY, constant, type,
+value; a `BEGIN OF … END OF` structure is one attribute), events, aliases, interfaces (with ABSTRACT/FINAL METHODS,
+ALL METHODS ABSTRACT), types. Implementations map each `METHOD x.` (`INTF~M` included) to its L2 block — the input
+of the call graph. `DEFERRED`/`LOAD` names are `announced`; `LOCAL FRIENDS` is a friendship, not a class.
+
+**Shadow against `parseDeclarations`** (`scripts/engine4/shadow-declarations.ts`; `unexplained` empty on both):
+
+| | Learn corpus | Public sample |
+|---|---|---|
+| Types old / new / options agree | 152 / 152 / 152 | 548 / 610 / 533 |
+| Members old / new / agree | 514 / 439 / 424 | 5,693 / 5,480 / 5,428 |
+| `old-reads-structure-components-as-attributes` | 64 | 177 |
+| `old-reads-begin-of-as-an-attribute` | 22 | 72 |
+| `new-reads-the-begin-of-structure-name` | 11 | 36 |
+| `old-cuts-an-interface-method-name` (`METHODS if_x~m REDEFINITION` read as `IF_X`) | 8 | 30 |
+| `old-splitter-stops-before-it` (the old splitter never closes a literal and reads nothing after it) | — | 77 types in 4 files |
+| `old-reads-local-friends-as-a-class` | — | 15 |
+| `method-named-like-an-option` (`METHODS abstract …`) | — | 2 |
+
+Every category is an old-parser defect except the static flag of constants, which the shadow compares as the old
+parser writes it: a constant is a static attribute in ABAP (`class=>c`), and L3 says so.
 
 ## L4: graded references through `lib/knowledge/` (22.11.2026, `build/engine4-p12`)
 
