@@ -54,6 +54,8 @@ import {
 } from './skeleton/recognisers';
 import { settleEarlyEnds } from './skeleton/early-ends';
 import { newWalkState, type WalkCallback, type WalkState } from './skeleton/walk/state';
+import type { WalkContext, Walker } from './skeleton/walk/walker';
+import { markReached, readLaneEvidence, recordEvidence } from './skeleton/walk/records';
 import { assignmentTarget, classOf, leavesDialogStep } from './skeleton/statement-readers';
 import { chainReportEvents } from './skeleton/report-chain';
 import { addSubProcessStarts, markEmptyEntries } from './skeleton/starts';
@@ -594,20 +596,13 @@ export function skeletonReadFor(
   return buildProcessSkeletonFrom(typeof facts === 'function' ? facts() : facts, { engineVersion });
 }
 
-interface WalkContext {
-  region: SkeletonRegion;
-  container: string | null;
-  /** Ids of the enclosing loop nodes of this region, innermost last. */
-  loops: string[];
-  /** Exits that leave each enclosing loop early, innermost last. */
-  loopBreaks: Exit[][];
-}
-
 class SkeletonBuilder {
   /** The graph every pass reads and writes — engine 4 phase 3 (`skeleton/graph.ts`). */
   private graph = new SkeletonGraph();
   /** The walk's mutable state (`skeleton/walk/state.ts`). */
   private walk: WalkState = newWalkState();
+  /** The walk as one typed object, handed to every walker module (`skeleton/walk/walker.ts`). */
+  private w!: Walker;
   private blockAt = new Map<number, Block>();
   private branchAt = new Map<number, Branch>();
   private formBlocks = new Map<string, Block>();
@@ -771,6 +766,37 @@ class SkeletonBuilder {
     });
     const entries = this.entryReader.readEntryPoints();
     this.runEntries = entries.filter((e) => e.origin === 'event' || e.origin === 'implicit');
+    this.w = {
+      graph: this.graph,
+      input: {
+        statements: this.statements,
+        structure: this.structure,
+        calls: this.calls,
+        blockAt: this.blockAt,
+        branchAt: this.branchAt,
+        formBlocks: this.formBlocks,
+        routineBlocks: this.routineBlocks,
+        macros: this.macros,
+        localData: this.localData,
+        batchInput: this.batchInput,
+        methodImpls: this.methodImpls,
+        classNames: this.classNames,
+        effects: this.effects,
+        helpers: this.helpers,
+        performedFrom: this.performedFrom,
+        dispatch: this.dispatch,
+        boundHandlers: this.boundHandlers,
+        handlerEvent: this.handlerEvent,
+        candidateSites: this.candidateSites,
+        readers: this.readers,
+        entryReader: this.entryReader,
+        runEntries: this.runEntries,
+      },
+      state: this.walk,
+      readings: { reads310: this.reads310, reads320: this.reads320 },
+      range: (from, to, ctx, incoming) => this.walkRange(from, to, ctx, incoming),
+      routineRegion: (name) => this.routineRegion(name),
+    };
     for (const entry of entries) this.buildEntryRegion(entry);
     for (const entry of this.entryReader.deferredModuleEntries(this.walk.screenCalled)) this.buildEntryRegion(entry);
     // A callback's own walk can start another task, so this runs until the
@@ -1823,7 +1849,7 @@ class SkeletonBuilder {
       // 2.16: `VIA JOB` hands the run to a batch work process — a system, not a
       // person. The token is the two words the source writes.
       if (/\bVIA\s+JOB\b/i.test(text)) {
-        this.recordEvidence('system', 'VIA JOB',
+        recordEvidence(this.w, 'system', 'VIA JOB',
           anchorOf(statement, tokenIndexOf(statement, /^VIA$/i)), statement);
       }
       this.graph.connect(incoming, node.id);
@@ -1878,7 +1904,7 @@ class SkeletonBuilder {
       // `MESSAGE i012(zsd)` names itself; `MESSAGE lv_text TYPE 'I'` names
       // only its type, and that is what the token then says.
       const id = (this.reads320 ? /^MESSAGE\s+i\d/i : /^MESSAGE\s+[iI]\d/).test(text) ? label : "TYPE 'I'";
-      this.recordEvidence('human', `MESSAGE ${id}`, anchorOf(statement), statement);
+      recordEvidence(this.w, 'human', `MESSAGE ${id}`, anchorOf(statement), statement);
       return keep(this.graph.addNode('user-task', label, anchorOf(statement), ctx.region, ctx.container, {
         detail: { message: 'I' },
       }));
@@ -1923,7 +1949,7 @@ class SkeletonBuilder {
       const screen = /^CALL\s+SCREEN\s+([\w/]+)/i.exec(text)?.[1] ?? 'CALL SCREEN';
       // 2.16: a dynpro is a person. The token is written the way the source
       // writes it, `SCREEN 9000`, and both words are in the statement.
-      this.recordEvidence('human', `SCREEN ${screen.toUpperCase()}`, anchorOf(statement, 1), statement);
+      recordEvidence(this.w, 'human', `SCREEN ${screen.toUpperCase()}`, anchorOf(statement, 1), statement);
       return keep(this.graph.addNode('user-task', screen, anchorOf(statement, 2), ctx.region, ctx.container));
     }
 
@@ -2027,7 +2053,7 @@ class SkeletonBuilder {
       const object = /\bOBJECT\s+(?:'([^']*)'|`([^`]*)`|([\w/]+))/i.exec(text);
       const token = (object?.[1] ?? object?.[2] ?? object?.[3] ?? '').toUpperCase();
       if (token) {
-        this.recordEvidence('authority', token,
+        recordEvidence(this.w, 'authority', token,
           anchorOf(statement, tokenIndexOf(statement, /^OBJECT$/i) + 1), statement);
       }
     }
@@ -2194,7 +2220,7 @@ class SkeletonBuilder {
     incoming: Exit[],
     extra: Record<string, string | number | boolean | string[]> = {},
   ): Exit[] {
-    this.markReached(key);
+    markReached(this.w, key);
     if (this.helpers.has(key)) {
       // §5.8: a routine without an effect of its own is part of its caller.
       return incoming;
@@ -2256,7 +2282,7 @@ class SkeletonBuilder {
       const at = anchorOf(statement, this.readers.callToken(statement, call));
       if (call.key && this.routineBlocks.has(call.key)) {
         if (!call.standalone && this.helpers.has(call.key)) {
-          this.markReached(call.key);
+          markReached(this.w, call.key);
           continue;
         }
         const impl = this.methodImpls.find((m) => m.key === call.key);
@@ -2369,7 +2395,7 @@ class SkeletonBuilder {
       },
     });
     this.graph.connect(incoming, node.id);
-    this.readLaneEvidence(statement, kind, label, call?.destination);
+    readLaneEvidence(this.w, statement, kind, label, call?.destination);
     this.recordCallback(statement);
     const exits: Exit[] = [{ from: node.id, condition: '', kind: 'sequence' }];
 
@@ -2471,74 +2497,6 @@ class SkeletonBuilder {
       return at('output', body.keyword, { statements: 1, target: isFileOutput(body) ? 'file' : 'list' });
     }
     return null;
-  }
-
-  /* ---------------- roadmap 2.16 — the lane evidence the walk records (`skeleton/lanes.ts` builds the lanes) ---------------- */
-
-  /**
-   * One piece of lane evidence, recorded where the walk reads it.
-   *
-   * Deduplicated by statement, kind and token: a routine performed from three
-   * places is walked three times, and one `AUTHORITY-CHECK` written once is one
-   * piece of evidence however often the flow passes it.
-   */
-  private recordEvidence(
-    kind: LaneEvidenceKind,
-    token: string,
-    anchor: NodeAnchor,
-    statement: AbapStatement,
-  ): void {
-    const key = `${anchor.statementIndex}|${kind}|${token}`;
-    if (this.walk.evidenceSeen.has(key)) return;
-    this.walk.evidenceSeen.add(key);
-    this.walk.evidence.push({ kind, token, anchor, statement: statement.keyword });
-  }
-
-  /**
-   * What a `CALL FUNCTION` says about who acts — 2.16, three of the four kinds.
-   *
-   * The *kind* of the node is the evidence for a person: `functionTaskKind`
-   * already decided `user-task` from the §5.8 list of function modules a person
-   * looks at or answers (ALV, `POPUP_*`, `F4IF_*`), and reading that decision
-   * here rather than matching the names a second time keeps one rule in one
-   * place. `IN UPDATE TASK`, `IN BACKGROUND TASK` and `DESTINATION` are read off
-   * the statement, in the words the source writes them in.
-   */
-  private readLaneEvidence(
-    statement: AbapStatement,
-    kind: SkeletonNodeKind,
-    label: string,
-    destination: string | undefined,
-  ): void {
-    const text = statement.text;
-    if (kind === 'user-task') {
-      this.recordEvidence('human', label, anchorOf(statement, 2), statement);
-    }
-    if (/\bIN\s+UPDATE\s+TASK\b/i.test(text)) {
-      this.recordEvidence('system', 'UPDATE TASK',
-        anchorOf(statement, tokenIndexOf(statement, /^UPDATE$/i)), statement);
-    }
-    if (/\bIN\s+BACKGROUND\s+TASK\b/i.test(text)) {
-      this.recordEvidence('system', 'BACKGROUND TASK',
-        anchorOf(statement, tokenIndexOf(statement, /^BACKGROUND$/i)), statement);
-    }
-    if (destination) {
-      // Recorded, never a lane: another system is a collapsed pool (§5.8), and
-      // `lib/bpmn/model.ts` has drawn it as one since 2.6.
-      this.recordEvidence('foreign-system', destination.toUpperCase(),
-        anchorOf(statement, tokenIndexOf(statement, /^DESTINATION$/i) + 1), statement);
-    }
-  }
-
-  /** A routine the walk calls runs, and so does everything it calls in turn. */
-  private markReached(name: string): void {
-    const queue = [name];
-    while (queue.length) {
-      const next = queue.pop() as string;
-      if (this.walk.reachedRoutines.has(next)) continue;
-      this.walk.reachedRoutines.add(next);
-      queue.push(...(this.performedFrom.get(next) ?? []));
-    }
   }
 
 }
