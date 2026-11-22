@@ -1067,6 +1067,53 @@ offline oracle) found 117 statement types, 81 of which never get a finding or a 
 Effort: the kind-table column and the ledger type are small (S); registering today's ~40 readers is the bulk (M,
 one reader per commit); the shadow and the coverage wording are S each.
 
+## Statement ledger by effect class (built inert, 22.11.2026, `build/engine4-p12`)
+
+The engine review of 22.11.2026 (§3 L1) replaced the per-reader design above: instead of every reader calling
+`ledger.judge(i)`, **every row of the kind table carries an effect class** (`effect` in `statement-kinds.ts`, required
+by the type, so a new row does not compile without one): `declaration`, `structure`, `control`, `compute`, `dbRead`,
+`dbWrite`, `transaction`, `callOut`, `ui`, `fileMemory`, `authorization`, `dynamic`, `unknown`. Block closers are
+`structure`; a macro body is `structure` (it runs where the macro is called; the call is `dynamic`).
+
+`lib/engine4/ledger.ts`:
+
+- `effectOf(statement, references)` refines the kind's class per statement: `INSERT`/`UPDATE`/`MODIFY`/`DELETE`
+  are `dbWrite` only where L4 names a database table written, else `compute` (an internal table); a statement whose
+  object name stays open (`CALL FUNCTION lv` without one value, `values.ts`) is `dynamic`.
+- `ledger(statements, consumers, { references, fallback })`: a statement is `neutral` (`declaration`, `structure`),
+  `claimed` (a consumer claims its class) or `unclaimed`. `complete` = no unclaimed statement, no `Unknown`, no
+  fallback reason. `unknown` cannot be claimed. `unclaimedKinds` is the coverage wording ("12 statements of a kind
+  the engine does not read: …").
+- `ENGINE4_CONSUMERS` today: only L4 references (`dbRead`, `dbWrite`, `authorization`). Engine 4's own ledger is
+  therefore complete on 29 of 394 corpus files, honestly, until L5/L6 readings claim the rest.
+
+**Shadow against today's engine** (`scripts/engine4/shadow-ledger.ts`): a statement is *judged today* when a finding
+covers its lines, a coverage gap stands on its line, or a process-skeleton node is anchored on it; otherwise it
+passes *silently*.
+
+| | Learn corpus (394 files, 18,250 statements) | Public sample (300 files, 88,118) |
+|---|---|---|
+| Files today calls `coverage.complete` | 190 | 162 |
+| …of them with silent statements of an effect class | **154** (1,643 statements) | **142** (6,986) |
+| `dbWrite` silent | 0 of 115 | 1 of 90 |
+| `dbRead` silent | 8 of 479 | 36 of 355 |
+| `transaction` silent | 14 of 85 (all `ROLLBACK WORK`) | 14 of 24 |
+| `fileMemory` silent | 20 of 50 | 146 of 154 |
+| `ui` silent | 642 of 1,438 | 803 of 1,072 |
+| Kinds of an effect class today never judges | 31 | 49 |
+
+The 31 on the learn corpus (pinned in `tests/engine4-ledger.spec.ts`; a kind leaves the list when a reading starts
+judging it): selection-screen declarations (`PARAMETERS` 298, `SELECT-OPTIONS` 90, `SELECTION-SCREEN` 88),
+`Unknown` 73 (macro calls of another include: the ledger reads one file at a time here), `SORT`, `ADD`,
+`SET PF-STATUS`, `WAIT`, `SET TITLEBAR`, **`ROLLBACK WORK` 14**, `COLLECT`, `ENDEXEC`, `MOVE-CORRESPONDING`,
+`GET TIME`, `REFRESH`, `SPLIT`, `SET PARAMETER`, **`READ ENTITIES` 6**, `CALL TRANSFORMATION`, `DESCRIBE`,
+`TRANSLATE`, `GET CURSOR`, `CATCH SYSTEM-EXCEPTIONS`, `SUM`, `ASSIGN`, `REJECT`, `RETRY`, `HIDE`, `FETCH`,
+`CLOSE CURSOR`, `CONDENSE`. This confirms the abaplint sweep's finding (81 statement types without a finding or gap
+on 109 files) with our own classes: "complete" today is a statement about the detectors, not about the program.
+
+**Gate:** the ledger changes what a run says about completeness, so it reaches a run only as a gated reading of the
+switch; until then it is computed in the shadow only.
+
 ## Next steps
 
 1. ~~Build ADR-134 Q5, Q6 and Q9~~ (built, see above). Rerun both shadows on the sample after every L2 change
@@ -1083,8 +1130,8 @@ one reader per commit); the shadow and the coverage wording are S each.
    interfaces, SAP identifiers; level, state, successor per reference) instead of the shadow's `lib/abap` import;
    then a reading that reports the class, interface and exception gap (question 18), gated; then scopes and data
    flow across routines (dynamic names set in another routine, parameters).
-6. **Statement ledger** (design above): the `neutral` column in the kind table, the `Ledger` type, the shadow
-   against today's coverage with the abaplint sweep as baseline.
+6. ~~Statement ledger~~ (built by effect class, above). Next: L5/L6 readings claim their classes; the coverage
+   wording from `unclaimedKinds`, gated.
 
 ## Open design questions for the owner
 
