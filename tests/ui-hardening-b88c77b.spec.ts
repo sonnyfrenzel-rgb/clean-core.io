@@ -380,13 +380,13 @@ test.describe('an export does not push the project towards the 1 MiB cap', () =>
     };
     for (const dir of ['app', 'components', 'hooks', 'lib']) walk(dir);
     expect(readers, 'a new reader of `exports` appeared').toEqual({
-      'app/(app)/dashboard/page.tsx': ['project.exports', 'project.exports'],
+      'app/(app)/dashboard/LegacyDashboard.tsx': ['project.exports', 'project.exports'],
       'app/(app)/project/[projectId]/analyze/page.tsx': ['project.exports'],
       'app/(app)/project/[projectId]/design/page.tsx': ['currentProject.exports'],
       'lib/project-loader.ts': ['data.exports', 'runData.exports'],
     });
 
-    const dashboard = read('app/(app)/dashboard/page.tsx');
+    const dashboard = read('app/(app)/dashboard/LegacyDashboard.tsx');
     const block = dashboard.slice(dashboard.indexOf('const dynamicExports'));
     expect(block.slice(0, 400), 'the reader expects a record, not a string').toMatch(/value\.title/);
     expect(block.slice(0, 400)).toMatch(/value\.content/);

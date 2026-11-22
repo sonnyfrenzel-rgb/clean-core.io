@@ -81,7 +81,7 @@ test.describe('the screens use the shared rules, not private copies', () => {
   const read = (rel: string) => readFileSync(join(process.cwd(), rel), 'utf8');
 
   test('the dashboard asks the rule module', () => {
-    const s = read('app/(app)/dashboard/page.tsx');
+    const s = read('app/(app)/dashboard/LegacyDashboard.tsx');
     expect(s).toContain("from '@/lib/run-quota-rule'");
     // No hand-rolled comparison left to drift from the server's answer.
     expect(s).not.toMatch(/transformationsUsed[^\n]*>=[^\n]*transformationsLimit/);

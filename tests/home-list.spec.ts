@@ -79,6 +79,15 @@ function staged(uid: string, n: number) {
 }
 
 async function open(page: Page, email: string) {
+  // 3.3.0 (ADR-123): My workspace opens on tiles; this spec holds the home list of 3.2.0, which is its list mode,
+  // remembered by the browser (`lib/workspace-prefs.ts`). The spec opens it there.
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.setItem('cc.workspace.mode', 'list');
+    } catch {
+      /* storage refused: the tiles stand */
+    }
+  });
   await page.setViewportSize({ width: 1440, height: 1400 });
   await signInViaLanding(page, email, SIGN_IN);
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
@@ -146,8 +155,8 @@ test('four columns, the new status words, and dates as "6 Nov 2026"', async ({ p
   for (const date of await page.locator('[data-home-date]').allInnerTexts()) expect(date.trim()).toMatch(/^\d{1,2} [A-Z][a-z]{2} \d{4}$/);
   // An analysed project with nothing changed has nothing open — re-design is never offered here.
   await expect(page.locator('[data-home-next="design"]')).toHaveCount(0);
-  // "New analysis" is the page's one filled button.
-  await expect(page.locator('[data-workspace-new-project]')).toHaveText(WORKSPACE_MESSAGES['homeList.newAnalysis']);
+  // 3.3.0: the head is the tiles' head in both modes — the next analysis starts from "Analyse another Z program".
+  await expect(page.locator('[data-ws-analyse-another]')).toBeVisible();
 });
 
 test('the filters run over every project; "Needs your attention" lists at most three, with their reason', async ({ page }) => {

@@ -335,7 +335,7 @@ test.describe('what a review covers', () => {
     const { assignAreas, packAreas } = await lib('areas.mjs');
     const files = [
       { path: 'app/(app)/project/[projectId]/analyze/page.tsx', text: "import { Finding } from '@/components/FindingCard';\nimport { StageHeader } from '@/components/StageHeader';" },
-      { path: 'app/(app)/dashboard/page.tsx', text: "import { StageHeader } from '../../../components/StageHeader';" },
+      { path: 'app/(app)/dashboard/LegacyDashboard.tsx', text: "import { StageHeader } from '../../../components/StageHeader';" },
       { path: 'components/FindingCard.tsx', text: "import { Chip } from './Chip';" },
       { path: 'components/Chip.tsx', text: 'export const Chip = 1;' },
       { path: 'components/StageHeader.tsx', text: 'export const StageHeader = 1;' },
@@ -345,7 +345,7 @@ test.describe('what a review covers', () => {
     const a = assignAreas(files);
     expect(Object.fromEntries(a)).toEqual({
       'app/(app)/project/[projectId]/analyze/page.tsx': 'analyse',
-      'app/(app)/dashboard/page.tsx': 'rahmen',
+      'app/(app)/dashboard/LegacyDashboard.tsx': 'rahmen',
       'components/FindingCard.tsx': 'analyse',
       'components/Chip.tsx': 'analyse',
       'components/StageHeader.tsx': 'system',

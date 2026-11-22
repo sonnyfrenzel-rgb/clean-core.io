@@ -563,6 +563,14 @@ test.describe('the screen says what the click costs, before the click', () => {
     // so the warning is asked of it there.
     await newProject();
 
+    // 3.3.0 (ADR-123): the doors stand in My workspace's list mode (the home list of 3.2.0); tiles are the default.
+    await page.addInitScript(() => {
+      try {
+        window.localStorage.setItem('cc.workspace.mode', 'list');
+      } catch {
+        /* storage refused: the tiles stand */
+      }
+    });
     await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3000, alsoGermanLabel: true });
     await page.evaluate(() => window.stop()).catch(() => {});
     try {

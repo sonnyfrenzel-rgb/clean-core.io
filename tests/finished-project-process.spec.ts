@@ -73,7 +73,7 @@ test.describe('a finished project reopens on its process', () => {
     const open = workflowSteps({ ...finishedProject(), documentation: undefined } as Project);
     expect(projectContinueHref('p1', open)).toBe('/project/p1/documentation');
 
-    const dashboard = read('app/(app)/dashboard/page.tsx');
+    const dashboard = read('app/(app)/dashboard/LegacyDashboard.tsx');
     expect(dashboard).toContain('<Link href={projectOpenHref(project.id)} data-dashboard-open={project.id}');
     expect(dashboard).toContain('projectContinueHref(project.id, workflowSteps(project))');
     expect(dashboard).not.toMatch(/\/project\/\$\{project\.id\}\/\$\{next\.path\}/);

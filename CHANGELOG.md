@@ -7,6 +7,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (3.3.0 — My workspace, two products; integrated on 3.2.0)
+- 3.3.0, step 1 (ADR-123): a new account's My workspace offers two equal products. "Analyse it" holds the
+  two starts side by side, the example and your own code, with what an analysis costs. "Re-design it" shows its six
+  tools, says it is not counted against your runs, and starts with "Re-design an example end to end": the example's
+  analysis runs, then Design opens on it. The intent stays in this session's memory and is never stored. Nothing
+  says "optional" any more. After the demo, a banner continues it ("Run Z_MM_PO_APPROVAL yourself"). The slice of
+  the demo map left the page, so no bpmn-js loads on My workspace.
+- 3.3.0, step 2 (ADR-123 (5), W11): the project summary every signed run has written since 3.2.0 (AB-14c) is what
+  the tiles read — the map's top level as compact geometry, its number of elements, the run's score, recommendation
+  and the process's business name. The own rows of My workspace (`GET /api/workspace-rows`) now carry each project's
+  tile, computed on the server like the row itself: still no source code, no artefact and no model text
+  (`lib/home-rows.ts`, `tests/home-rows.spec.ts`).
+- 3.3.0, step 3a (ADR-123 (4)): a returning account sees its programs as tiles in three sections. "Next step" holds
+  the page's one filled button and a line for another program that waits. "At a glance" shows five count tiles from
+  three programs on; they are the filter, and they count changes in the last 7 days. "Your programs" gives each
+  program a tile of one size: its map as a thumbnail, three facts (steps, clean core score, decision), and a line for
+  Analyse and for Re-design, each with one action. A decision other than Rebuild reads "Not needed — decided: …"
+  (W5). "Read as Business · IT · Management" only marks one fact and opens the analysis in that view (W9). The home
+  list of 3.2.0 (AB-14b: tabs, "Needs your attention", the Figures switch, the two doors) is the list mode, one click
+  away; its levels and rules are read per row in that mode only. The last tile and
+  "Analyse another Z program" start the next analysis. Lens and mode are remembered by this browser only
+  (`cc.workspace.lens`, `cc.workspace.mode`). The example gallery and the sharing card moved behind the start panel
+  and "Sharing".
+- 3.3.0, step 4 (ADR-123 (5)): My workspace no longer renders the old dashboard while the profile loads. It shows
+  its own frame at final sizes, and the account shell holds a screen-high place while it waits for the sign-in
+  answer, so the footer no longer jumps. The old dashboard moved to `app/(app)/dashboard/LegacyDashboard.tsx` and
+  loads only for the accounts that get it (suspended, being activated, no profile yet). The invite dialog loads on
+  first use. Measured on production builds against the emulators, before (integrate/3.2.0) → after, 1440 / 390:
+  CLS 0.52–0.99 → ≤ 0.007; JavaScript decoded 4.8–5.0 MB → 2.9–3.7 MB (transferred 1.25–1.57 MB → 0.93–1.19 MB);
+  bpmn-js on a new account's page yes → no; first tile or start card 120–300 ms in both (local emulator).
+  `tests/workspace-performance.spec.ts` measures it and runs unchanged against a checkout of the release before.
+- 3.3.0, owner answers of 14.11.2026 (ADR-123 (7)): a program tile is titled with the business name of its process —
+  the title line of the source's header as the engine reads it from engine 3.0.21 ("Emergency purchase approval"),
+  never a model's answer — with the project's name small below it; without a title line, or where both are the same,
+  the project's name is the title, said once. The name travels in the server-written project summary
+  (`processTitle`); `scripts/backfill-project-summary.ts` also gives an earlier summary its name. Delete and Invite
+  still name the project. The unused slice of the demo map is gone (`lib/home-map-slice.ts`,
+  `components/process-map/MapSlice.tsx` and the cut `lib/bpmn/slice.ts` only it used, with the export's `view`
+  hook). The stored lens, mode and demo mark are read hydration-safe instead of in a `useState` initialiser. The two
+  storage keys stay; `PRIVACY_PENDING_STORAGE_KEYS` in `lib/workspace-prefs.ts` registers them for the Privacy
+  Policy's list until the lawyer's text names them (privacy texts not changed here).
+
 ### Operations
 - The 3.2.0 Firestore rules are deployed and verified on every database (16.11.2026,
   `docs/registers/rules-deployment.json`); the TTL on `erased_accounts.expiresAt` is active and

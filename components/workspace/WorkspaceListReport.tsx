@@ -2,12 +2,11 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { onAuthStateChanged, type User } from 'firebase/auth';
 import { doc, getDoc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { targetEditionOf } from '@/lib/target-edition';
 import { createWithinCeiling } from '@/lib/write-ceiling';
-import { Layers, Plus } from 'lucide-react';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { withStoredArtefactRows, withStoredArtefacts } from '@/lib/project-artefacts-client';
 import { useUserProfile } from '@/hooks/useUserProfile';
@@ -22,7 +21,6 @@ import {
   homeRunWhat,
   homeScoreLabel,
   homeTruncated,
-  homeWelcomeBack,
   rowFindingsLabel,
   rowLinesLabel,
   rowRulesLabel,
@@ -68,7 +66,6 @@ import CcSelect from '@/components/cc/Select';
 import CcTable, { type CcTableColumn, type CcTableRowSpec } from '@/components/cc/Table';
 import CcTag from '@/components/cc/Tag';
 import { CcNoMatches } from '@/components/cc/EmptyState';
-import InviteReaderDialog from '@/components/InviteReaderDialog';
 import LevelCounts from './LevelCounts';
 import OpenInvitations from './OpenInvitations';
 import WorkspaceRowActions from './WorkspaceRowActions';
@@ -76,7 +73,17 @@ import HomeFirstView from './HomeFirstView';
 import HomeAttentionCard from './HomeAttentionCard';
 import HomeDoors from './HomeDoors';
 import { HomeNextCell, HomeStatusBlock } from './HomeStatusCell';
-import type { HomeMapSlice } from '@/lib/home-map-slice';
+import WorkspaceTiles from './WorkspaceTiles';
+import WorkspaceSkeleton from './WorkspaceSkeleton';
+import type { ProgramTile } from '@/lib/workspace-tiles';
+import {
+  useStoredWorkspaceLens,
+  useStoredWorkspaceMode,
+  rememberWorkspaceLens,
+  rememberWorkspaceMode,
+  type WorkspaceLens,
+  type WorkspaceMode,
+} from '@/lib/workspace-prefs';
 import { aiAuthorshipFactsOf, withProjectExportAiGeneration } from '@/lib/ai-authorship';
 import { isEngineDocumentation } from '@/lib/process-documentation';
 import { APP_VERSION } from '@/lib/version';
@@ -152,15 +159,14 @@ async function readOwnProject(id: string): Promise<ListedProject | null> {
   return snap.exists() ? { ...(snap.data() as Project), id } : null;
 }
 
-export default function WorkspaceListReport({
-  homeSlice = null,
-}: {
+/** Loaded when someone invites, not with the page (3.3.0, ADR-123 (5)). */
+const InviteReaderDialog = dynamic(() => import('@/components/InviteReaderDialog'), { ssr: false });
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- the server layout passes the demo; the page has no use for it since AB-14b
+export default function WorkspaceListReport(_props: {
   /** Kept for the server layout that passes it; the demo is a door below the list since AB-14b, not a row. */
   demo: WorkspaceDemoRow;
-  /** The live slice of the demo map for a new account's first view (AB-14a); null draws none. */
-  homeSlice?: HomeMapSlice | null;
 }) {
-  const router = useRouter();
   const isS = useBreakpointS();
   const { profile, loading: profileLoading } = useUserProfile();
   const modelAvailability = useModelAvailability();
@@ -194,6 +200,22 @@ export default function WorkspaceListReport({
   /** The own list could not be read: the list page stands with a notice, never the first view. */
   const [ownFailedFor, setOwnFailedFor] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // ADR-123 (W9): the lens and tiles-or-list, remembered by this browser only (`lib/workspace-prefs.ts`).
+  // Read hydration-safe (`useStoredWorkspaceLens`); a choice made here wins over what was stored.
+  const storedLens = useStoredWorkspaceLens();
+  const storedMode = useStoredWorkspaceMode();
+  const [chosenLens, setLens] = useState<WorkspaceLens | null>(null);
+  const [chosenMode, setMode] = useState<WorkspaceMode | null>(null);
+  const lens = chosenLens ?? storedLens;
+  const mode = chosenMode ?? storedMode;
+  const chooseLens = useCallback((next: WorkspaceLens) => {
+    setLens(next);
+    rememberWorkspaceLens(next);
+  }, []);
+  const chooseMode = useCallback((next: WorkspaceMode) => {
+    setMode(next);
+    rememberWorkspaceMode(next);
+  }, []);
 
   useEffect(() => onAuthStateChanged(getAuth(), (u) => setUser(u)), []);
 
@@ -322,16 +344,15 @@ export default function WorkspaceListReport({
   // figures of the rows on screen, or every analysed row while a level filter
   // needs them (a filter must never hide a project for being slow).
   useEffect(() => {
+    // ADR-123 (5): the tiles read the lean rows and their summary only; the levels and rules are read per row in
+    // list mode, as in 3.2.0 — the rows on screen with the figures on, or every analysed row while a level filter needs them.
     const candidates = projects.filter((r) => r.hasSource && r.hasRun);
-    const ids = filter.level
-      ? candidates
-      : figures && tab === 'mine'
-        ? candidates.filter((r) => visibleRows.some((v) => v.id === r.id))
-        : [];
+    const onScreen = figures && tab === 'mine' ? candidates.filter((r) => visibleRows.some((v) => v.id === r.id)) : [];
+    const ids = mode !== 'list' ? [] : filter.level ? candidates : onScreen;
     const map = new Map<string, string>();
     for (const row of ids) map.set(row.id, row.factsKey);
     setWanted(map);
-  }, [projects, visibleRows, filter.level, figures, tab, setWanted]);
+  }, [mode, projects, visibleRows, filter.level, figures, tab, setWanted]);
 
   const active = homeFilterActive(filter);
   const clear = useCallback(() => setFilter(EMPTY_HOME_FILTER), []);
@@ -510,14 +531,11 @@ export default function WorkspaceListReport({
   }, [deleting, user, refresh]);
 
   const attention = useMemo(() => attentionRows(projects), [projects]);
+  // The tiles of 3.3.0 come with the lean rows, computed on the server (`lib/home-rows.ts`).
+  const tiles: ProgramTile[] = useMemo(() => projects.map((r) => r.tile), [projects]);
 
-  if (profileLoading) {
-    return (
-      <div className="mx-auto my-12 max-w-md text-center text-[13px] font-medium text-cc-ink-muted">
-        {t('state.loading')}
-      </div>
-    );
-  }
+  // ADR-123: the frame with the final sizes, never a line of text that the page then replaces.
+  if (profileLoading || !user) return <WorkspaceSkeleton />;
 
   // AB-14a: an account with no project of its own and none shared with it
   // lands on the first view (home mockup v2.1, state 1) — the start built in,
@@ -529,17 +547,11 @@ export default function WorkspaceListReport({
   const sharedAnswered = !!user && sharedLoaded?.uid === user.uid;
   const ownFailed = !!user && ownFailedFor === user.uid;
   if (user && !ownFailed && (!ownAnswered || (projects.length === 0 && !sharedAnswered))) {
-    return (
-      <div className="cc min-h-screen bg-cc-page" data-workspace-waiting="">
-        <div className="mx-auto my-12 max-w-md text-center text-[13px] font-medium text-cc-ink-muted" role="status">
-          {t('state.loading')}
-        </div>
-      </div>
-    );
+    return <WorkspaceSkeleton />;
   }
   // A listener that answered empty and then failed leaves its empty rows behind: that is no answer to decide on.
   if (user && !ownFailed && ownAnswered && sharedAnswered && projects.length === 0 && shared.length === 0) {
-    return <HomeFirstView userId={user.uid} profile={profile ?? null} slice={homeSlice} />;
+    return <HomeFirstView userId={user.uid} profile={profile ?? null} />;
   }
 
   const actionsOf = (row: HomeRow) => (
@@ -805,58 +817,28 @@ export default function WorkspaceListReport({
     </section>
   );
 
-  return (
-    <div className="cc min-h-screen bg-cc-page px-4 py-6 sm:px-6" data-cc-workspace="">
-      <div className="mx-auto flex max-w-[1280px] flex-col gap-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">{t('workspace.title')}</h1>
-            <p className="mt-1 mb-0 text-[13px] font-medium text-cc-ink-muted">{homeWelcomeBack(profile?.firstName)}</p>
-          </div>
-          <span className="flex flex-wrap items-center gap-2">
-            {/* Roadmap 3.0.21: the portfolio — many programs in one batch, one
-                aggregated view. Every account sees the way in, outside any
-                condition; the page says why it is closed without an own model key. */}
-            <CcLinkButton href="/portfolio" variant="ghost" density="cozy" icon={<Layers size={16} aria-hidden={true} />} data-workspace-portfolio="">
-              {wt('portfolio.entry')}
-            </CcLinkButton>
-            {/* H-O13: the only filled button of the page. */}
-            <CcButton
-              variant="primary"
-              icon={<Plus size={16} aria-hidden={true} />}
-              onClick={() => router.push('/admin/new-project')}
-              data-workspace-new-project=""
-            >
-              {wt('homeList.newAnalysis')}
-            </CcButton>
-          </span>
-        </div>
+  const limitStrip = quotaExhausted(profile) ? (
+    // The free runs are spent: said where the account lands, with the way on to
+    // an own key (roadmap 3.0.21 (3)) — not only once a start has been refused.
+    <div data-workspace-limit="">
+      <CcMessageStrip
+        state="warning"
+        headline={wt('myWorkspace.limitReached')}
+        actions={
+          <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
+            {OWN_KEY_ACTION}
+          </CcLinkButton>
+        }
+      >
+        {quotaSpentSentence(profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK)}
+      </CcMessageStrip>
+    </div>
+  ) : null;
 
-        {/* The free runs are spent: said where the account lands, with the way
-            on to an own key (roadmap 3.0.21 (3)) — not only once a start has
-            been refused. */}
-        {quotaExhausted(profile) ? (
-          <div data-workspace-limit="">
-            <CcMessageStrip
-              state="warning"
-              headline={wt('myWorkspace.limitReached')}
-              actions={
-                <CcLinkButton href={OWN_KEY_HREF} variant="ghost" data-own-key-link="">
-                  {OWN_KEY_ACTION}
-                </CcLinkButton>
-              }
-            >
-              {quotaSpentSentence(profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK)}
-            </CcMessageStrip>
-          </div>
-        ) : null}
-
-        {ownFailed ? (
-          <CcMessageStrip state="error" announce>
-            {wt('homeList.listFailed')}
-          </CcMessageStrip>
-        ) : null}
-
+  // The list mode of 3.3.0 (ADR-123): the home list of 3.2.0 (AB-14b) as it was — "Needs your attention", the tabs
+  // My projects / Shared with me / Invitations sent with sort and the figures switch, and the two doors below.
+  const listSection = (
+    <div className="flex flex-col gap-4">
         <HomeAttentionCard
           shown={attention.shown}
           total={attention.total}
@@ -869,7 +851,7 @@ export default function WorkspaceListReport({
           }}
         />
 
-        <div data-workspace-projects="" ref={listRef}>
+        <div data-workspace-list="" ref={listRef}>
           <section aria-label={wt('homeList.projectsLabel')} className="rounded-cc-card border border-cc-line bg-cc-surface p-4">
             <div className="mb-3 flex flex-wrap items-end justify-between gap-3 border-b border-cc-line">
               <div role="tablist" aria-label={wt('homeList.projectsLabel')} className="flex flex-wrap gap-1">
@@ -949,8 +931,87 @@ export default function WorkspaceListReport({
           </section>
         </div>
 
-        <HomeDoors />
+      <HomeDoors />
+    </div>
+  );
+
+  // Sharing — read access by invitation to one confirmed address, and nothing
+  // else (roadmap phase 5). What others shared with you, and what you sent
+  // that nobody has answered yet. Behind "Sharing" under the tiles (ADR-123);
+  // in list mode the same lives in the tabs.
+  const sharingSection = (
+    <section
+      aria-labelledby="ws-sharing-title"
+      className="flex flex-col gap-4 rounded-cc-card border border-cc-line bg-cc-surface p-4"
+      data-ws-sharing-section=""
+    >
+      <div>
+        <h2 id="ws-sharing-title" className="m-0 text-[15px] font-bold text-cc-ink">
+          {wt('myWorkspace.sharingTitle')}
+        </h2>
+        <p className="mt-1 mb-0 text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('myWorkspace.sharingLead')}</p>
       </div>
+      {sharedRows.length > 0 ? (
+        sharedPanel
+      ) : (
+        <p className="m-0 text-[13px] font-medium text-cc-ink-muted" data-workspace-shared-with-you="">
+          {wt('myWorkspace.sharedWithYouEmpty')}
+        </p>
+      )}
+      {hasOwn ? (
+        <div>
+          <p className="mt-0 mb-3 text-[13px] leading-snug font-medium text-cc-ink-muted">{wt('homeList.invitesNote')}</p>
+          <OpenInvitations emptyText={wt('homeList.noInvitations')} />
+        </div>
+      ) : null}
+    </section>
+  );
+
+  const actionsFor = (tile: ProgramTile) => {
+    const row = tile.access === 'own' ? projects.find((r) => r.id === tile.id) : undefined;
+    return row
+      ? {
+          // Delete and Invite name the project, never the process (owner decision 14.11.2026).
+          onInvite: () => setInviting({ id: tile.id, name: tile.projectName }),
+          onDuplicate: () => void duplicate(row),
+          onExport: () => void exportJson(row),
+          onDelete: () => setDeleting({ id: tile.id, name: tile.projectName }),
+        }
+      : undefined;
+  };
+
+  const tileNotices = [
+    limitStrip ? <React.Fragment key="limit">{limitStrip}</React.Fragment> : null,
+    ownFailed ? (
+      <CcMessageStrip key="own-failed" state="error" announce>
+        {wt('homeList.listFailed')}
+      </CcMessageStrip>
+    ) : null,
+    // In list mode the error stands above the list, where the action was taken.
+    actionError && mode !== 'list' ? (
+      <CcMessageStrip key="action-error" state="error" announce>
+        {actionError}
+      </CcMessageStrip>
+    ) : null,
+  ].filter(Boolean);
+
+  return (
+    <div className="cc min-h-screen bg-cc-page" data-cc-workspace="">
+      <WorkspaceTiles
+        userId={user.uid}
+        profile={profile ?? null}
+        tiles={tiles}
+        sharedCount={sharedRows.length}
+        openInvitations={null}
+        lens={lens}
+        onLens={chooseLens}
+        mode={mode}
+        onMode={chooseMode}
+        list={listSection}
+        sharing={sharingSection}
+        actionsFor={actionsFor}
+        notices={tileNotices.length > 0 ? <>{tileNotices}</> : null}
+      />
 
       {confirming ? (
         <CcMessageBox

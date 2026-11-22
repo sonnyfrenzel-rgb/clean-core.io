@@ -995,7 +995,7 @@ test.describe('the register matches the code', () => {
     const writers = [
       ...register.stages.map((s) => stageSource(s)),
       src('app/api/runs/create/route.ts'),
-      src('app/(app)/dashboard/page.tsx'),
+      src('app/(app)/dashboard/LegacyDashboard.tsx'),
     ];
     for (const text of writers) {
       expect(text, 'something writes `presentation` now — update L-09').not.toMatch(/\bpresentation:\s/);

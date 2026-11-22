@@ -7,6 +7,19 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { signInViaLanding } from './helpers/sign-in';
 
+// 3.3.0 (ADR-123): My workspace opens on tiles; the table this spec holds is its list mode, one click away and
+// remembered by the browser (`lib/workspace-prefs.ts`). The spec opens it there.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.setItem('cc.workspace.mode', 'list');
+    } catch {
+      /* storage refused: the tiles stand */
+    }
+  });
+});
+
+
 /**
  * No screen that loads code on demand throws (owner, 02.10.2026: starting an
  * example from "My workspace" ended in "Something went wrong!" with
@@ -65,12 +78,16 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
     const errors = recordPageErrors(page);
 
     await page.evaluate(() => window.stop()).catch(() => {});
-    await page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 90000 });
+    // The sign-in's own way to /dashboard can still be in flight and abort this one — the retry of example-opens-workspace.
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 90000 }).catch(async () => {
+      await page.waitForTimeout(1500);
+      await page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 90000 });
+    });
     const list = page.locator('[data-cc-workspace]');
     await expect(list).toBeVisible({ timeout: 90000 });
     const start = list.locator('[data-example-start="Z_MATERIAL_STOCK_CALC"]').first();
     if (!(await start.isVisible().catch(() => false))) {
-      await list.locator('[data-examples-more] button').first().click({ timeout: 60000 });
+      await list.locator('[data-home-more-examples], [data-examples-more] button').first().click({ timeout: 60000 });
     }
     await start.click({ timeout: 60000 });
 

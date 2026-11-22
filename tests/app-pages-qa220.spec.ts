@@ -115,7 +115,7 @@ test.describe('state defects on dashboard, admin and settings', () => {
   });
 
   test('Dashboard: the one-time project fetch cannot land after cleanup or after the listener', () => {
-    const s = read('app/(app)/dashboard/page.tsx');
+    const s = read('app/(app)/dashboard/LegacyDashboard.tsx');
     const effect = slice(s, "where('userId', '==', user.uid),", 2000);
     expect(effect).toMatch(/getDocs\(q\)\.then\(\(snapshot\) => \{\s*if \(cancelled \|\| live\) return;/);
     expect(effect).toMatch(/onSnapshot\(q, \(snapshot\) => \{\s*live = true;/);
@@ -123,13 +123,13 @@ test.describe('state defects on dashboard, admin and settings', () => {
   });
 
   test('Dashboard: static announcements carry no invented timestamp', () => {
-    const s = read('app/(app)/dashboard/page.tsx');
+    const s = read('app/(app)/dashboard/LegacyDashboard.tsx');
     expect(s).not.toContain("'Just now'");
     expect(s).not.toContain('activePost.createdAt');
   });
 
   test('Dashboard: a stale deliverable is marked in the list, the viewer and the file name', () => {
-    const s = read('app/(app)/dashboard/page.tsx');
+    const s = read('app/(app)/dashboard/LegacyDashboard.tsx');
     const fn = slice(s, 'function ProjectDeliverables(', 9000);
     expect(fn).toContain('staleness(project)');
     expect(fn).toContain('<CcProvenanceChip value="stale" note="source changed" />');

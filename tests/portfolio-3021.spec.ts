@@ -693,15 +693,17 @@ test.describe('selections and sharing', () => {
 /* ------------------------------------------------------------ the entry */
 
 test('My workspace carries the way into the portfolio, for every account', () => {
-  const src = read('components/workspace/WorkspaceListReport.tsx');
+  // 3.3.0 (ADR-123): in the line under the programs, after the tiles-or-list choice has closed — so it stands in
+  // both modes, for every returning account, with or without own projects.
+  const src = read('components/workspace/WorkspaceTiles.tsx');
   const at = src.indexOf('data-workspace-portfolio=""');
   expect(at).toBeGreaterThan(-1);
-  expect(src.slice(Math.max(0, at - 200), at)).toContain('<CcLinkButton href="/portfolio"');
-  // AB-14b: in the page's head, beside "New analysis", outside every condition
-  // (the head renders for every returning account, with or without own projects).
-  const head = src.slice(src.indexOf("<h1 className="), src.indexOf('data-workspace-new-project=""'));
-  expect(head).toContain('data-workspace-portfolio=""');
-  expect(head).not.toMatch(/\{\w+ \? \(/);
+  expect(src.indexOf('data-workspace-portfolio=""', at + 1)).toBe(-1);
+  expect(src.slice(Math.max(0, at - 120), at)).toContain('href="/portfolio"');
+  const modes = src.indexOf("{mode === 'list' ? (");
+  expect(modes).toBeGreaterThan(-1);
+  expect(at).toBeGreaterThan(src.indexOf('</section>', modes));
+  expect(read('components/workspace/WorkspaceListReport.tsx')).toContain('<WorkspaceTiles');
   // AB-14a: an account with no project yet sees the first view instead of the
   // list — the way in is there too, outside any condition.
   const first = read('components/workspace/HomeFirstView.tsx');

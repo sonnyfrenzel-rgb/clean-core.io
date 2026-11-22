@@ -9,6 +9,19 @@ import { WORKSPACE_MESSAGES } from '../lib/workspace-messages';
 import { DEMO_PROJECT_TITLE, DEMO_TAG, DEMO_WORKSPACE_ROUTE } from '../lib/demo-marks';
 import { signInViaLanding } from './helpers/sign-in';
 
+// 3.3.0 (ADR-123): My workspace opens on tiles; the table this spec holds is its list mode, one click away and
+// remembered by the browser (`lib/workspace-prefs.ts`). The spec opens it there.
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.setItem('cc.workspace.mode', 'list');
+    } catch {
+      /* storage refused: the tiles stand */
+    }
+  });
+});
+
+
 /**
  * Roadmap 1.8 — "My workspace" as a List Report, observed rather than grepped.
  *

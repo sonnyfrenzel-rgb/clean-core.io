@@ -14,7 +14,6 @@ import { applyNaming, NAMING_FORMAT_VERSION, NAMING_MADE_FROM_FACTS, namingConte
 import { buildProcessMapModel, xmlWithNames, xmlWithShownNames } from '../lib/process-map';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 import { buildProcessDocumentation } from '../lib/process-documentation-build';
-import { sliceViewbox } from '../components/process-map/MapSlice';
 import { programSummaryFactsOf } from '../lib/program-summary-facts';
 import { businessInShort, programSummary, workflowLine } from '../lib/program-summary-text';
 import { ENGINE_READS_310_FROM } from '../lib/abap/engine-reads-310-gate';
@@ -38,7 +37,7 @@ import { aiOriginMarksIn } from '../lib/ai-marking';
  *   6. Every Analyze load sent `process-revisions` and `customer-texts` before the session was restored: HTTP 401.
  *   7. The delivery package marked every AI name "not-recorded", although the naming carries its model.
  *   8. Leaving the home view of a new account threw "SVGMatrix scale non-finite" (the map slice fitted a frame of
- *      width 0).
+ *      width 0). Since 3.3.0 the home view draws no map, and the slice was removed (owner decision 14.11.2026).
  */
 
 const ROOT = path.resolve(__dirname, '..');
@@ -85,14 +84,8 @@ test.describe('server-free: the fixes as code', () => {
     expect(css).toMatch(rule);
   });
 
-  test('8. a frame of no width is not fitted: no view box of width 0, no non-finite scale', () => {
-    const inner = { x: 10, y: 20, width: 600, height: 200 };
-    expect(sliceViewbox(inner, 0)).toBeNull();
-    expect(sliceViewbox(inner, Number.NaN)).toBeNull();
-    expect(sliceViewbox({ ...inner, width: 0 }, 400)).toBeNull();
-    const placed = sliceViewbox(inner, 400)!;
-    expect(Number.isFinite(placed.viewbox.width) && placed.viewbox.width > 0).toBe(true);
-    expect(Number.isFinite(placed.height) && placed.height > 0).toBe(true);
+  test('8. the map slice that fitted a frame of no width is gone with the map on the home view (3.3.0)', () => {
+    expect(fs.existsSync(path.join(ROOT, 'components/process-map/MapSlice.tsx'))).toBe(false);
   });
 
   /** A program that keeps its records in its own objects and moves them through a status workflow — no table. */
@@ -346,7 +339,8 @@ test.describe('rendered: leaving the first view of a new account', () => {
     await signInViaLanding(page, email, password);
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
     const view = page.locator('[data-home-first-view]');
-    await expect(view.locator('[data-home-map-slice="drawn"]')).toBeVisible({ timeout: 90_000 });
+    // 3.3.0 (ADR-123): no slice of the map on My workspace any more; leaving it still throws nothing.
+    await expect(view.locator('[data-home-paste]')).toBeVisible({ timeout: 90_000 });
     errors.length = 0;
     // Leave in the app (no reload), as a reader does: the paste way in.
     await view.locator('[data-home-paste]').click();

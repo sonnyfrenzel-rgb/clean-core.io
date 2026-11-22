@@ -4,6 +4,7 @@ import { countSourceLines } from '@/lib/source-lines';
 import { sourceFileName } from '@/lib/source-file-name';
 import { summaryOf } from '@/lib/project-summary';
 import { HOME_STATUS_LABEL, HOME_STATUS_ORDER, homeStatus, type HomeStatus, type HomeStatusKind } from '@/lib/home-status';
+import { toProgramTile, type ProgramTile } from '@/lib/workspace-tiles';
 
 /**
  * One row of the home page's project list (AB-14b, mockup `docs/roadmap/home-mockup-v2.html`, states 2–9, 11, 12):
@@ -53,12 +54,17 @@ export interface HomeRow {
    * (`hooks/useWorkspaceRowFacts.ts`). Never the source itself.
    */
   factsKey: string;
+  /**
+   * The same project as a program tile of 3.3.0 (ADR-123, `lib/workspace-tiles.ts`), computed here with the row so
+   * the tiles need no project document in the browser either: geometry and words, no source, no model text.
+   */
+  tile: ProgramTile;
 }
 
 /** Every key a row carries. A key outside this list is not sent — the spec checks it. */
 export const HOME_ROW_KEYS: readonly (keyof HomeRow)[] = [
   'id', 'name', 'program', 'access', 'fromExample', 'hasSource', 'hasRun', 'lines', 'linesFromRun', 'findings', 'score',
-  'status', 'lastChange', 'lastChangeText', 'factsKey',
+  'status', 'lastChange', 'lastChangeText', 'factsKey', 'tile',
 ];
 
 /** "Z_MM_PO_APPROVAL.abap" → "Z_MM_PO_APPROVAL". */
@@ -92,6 +98,7 @@ export function toHomeRow(project: Project & { id: string }, access: 'own' | 'sh
     lastChange: changed ? formatIsoDate(changed) : null,
     lastChangeText: changed ? formatTextDate(changed) : null,
     factsKey: `${hasRun ? project.activeRunId : ''}:${source.length}:${sourceHash(source)}`,
+    tile: toProgramTile(project, access),
   };
 }
 
@@ -209,6 +216,20 @@ function isHomeStatus(v: unknown): v is HomeStatus {
   return true;
 }
 
+/** A program tile as the route sends it: the shape the tiles read, checked field by field (`lib/workspace-tiles.ts`). */
+function isProgramTile(v: unknown, id: string): v is ProgramTile {
+  if (!isObj(v) || v.id !== id) return false;
+  if (v.access !== 'own' && v.access !== 'shared') return false;
+  if (typeof v.title !== 'string' || typeof v.projectName !== 'string' || typeof v.titleIsProcess !== 'boolean') return false;
+  if (!strOrNull(v.objectName) || !numOrNull(v.lines) || typeof v.example !== 'boolean' || typeof v.href !== 'string') return false;
+  if (!strOrNull(v.thumb) || !numOrNull(v.steps) || !numOrNull(v.score)) return false;
+  if (v.decision !== null && !(isObj(v.decision) && typeof v.decision.option === 'string' && typeof v.decision.confirmed === 'boolean')) return false;
+  if (!isObj(v.analyse) || typeof v.analyse.kind !== 'string') return false;
+  if (!isObj(v.redesign) || typeof v.redesign.kind !== 'string') return false;
+  if (!Array.isArray(v.track) || !v.track.every((m) => ['done', 'now', 'todo', 'signed'].includes(m as string))) return false;
+  return strOrNull(v.lastChange) && typeof v.sortKey === 'string';
+}
+
 /** The rows of `GET /api/workspace-rows`, read back strictly: a row not exactly of the shape is dropped. */
 export function homeRowsOf(body: unknown): HomeRow[] | null {
   if (!isObj(body) || !Array.isArray(body.rows)) return null;
@@ -220,6 +241,7 @@ export function homeRowsOf(body: unknown): HomeRow[] | null {
     if (typeof r.fromExample !== 'boolean' || typeof r.hasSource !== 'boolean' || typeof r.hasRun !== 'boolean') continue;
     if (!numOrNull(r.lines) || typeof r.linesFromRun !== 'boolean' || !numOrNull(r.findings) || !numOrNull(r.score)) continue;
     if (!isHomeStatus(r.status) || !strOrNull(r.lastChange) || !strOrNull(r.lastChangeText) || typeof r.factsKey !== 'string') continue;
+    if (!isProgramTile(r.tile, r.id)) continue;
     const row = Object.fromEntries(HOME_ROW_KEYS.map((k) => [k, r[k]])) as unknown as HomeRow;
     out.push(row);
   }

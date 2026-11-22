@@ -9,15 +9,7 @@ import { STARTER_EXAMPLES } from '../lib/starter-examples';
 import { exampleTiers } from '../lib/example-catalog';
 import { countSourceLines } from '../lib/source-lines';
 import { PHASES } from '../lib/workflow-steps';
-import { buildDemoProject } from '../lib/demo-project';
-import { elementsOfPlane } from '../lib/process-map';
-import { anchorText } from '../lib/bpmn/layout';
-import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
-import { buildExportModel } from '../lib/bpmn/model';
-import { sliceModel } from '../lib/bpmn/slice';
-import { computeHomeMapSlice, HOME_SLICE_ELEMENTS } from '../lib/home-map-slice';
-import { MAX_HEIGHT, MIN_SCALE, sliceScale, sliceViewbox } from '../components/process-map/MapSlice';
-import { leaveHomeStart, pastedFileName, takeHomeStart } from '../lib/home-start-handoff';
+import { leaveHomeStart, leaveRedesignAfterAnalysis, pastedFileName, takeHomeStart, takeRedesignAfterAnalysis } from '../lib/home-start-handoff';
 import { WORKSPACE_PAGE_MESSAGES } from '../lib/messages/workspace';
 import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import { verifyRunIntegrity } from '../lib/run-signature';
@@ -28,8 +20,8 @@ import { layoutCheck, layoutClean, PRODUCT_LAYOUT } from './helpers/overlap';
  * AB-14a — the first view of a new account (home mockup v2.1, state 1;
  * `docs/design/analyze-business-first-plan.md`, AB-14a).
  *
- * Server-free half: the slice of the demo map is the demo map's own first
- * elements (H-O1, no hand-written name), the path's names are the tool bar's,
+ * Server-free half: no map on the view and no slice of the demo map left in
+ * the code (3.3.0, ADR-123 (5); removed 14.11.2026), the path's names are the tool bar's,
  * every shipped example is offered with the line count of its file, the page
  * claims no duration (H-O2), and the start's one filled button is "Start this
  * example" (H-O15).
@@ -45,144 +37,57 @@ const code = (rel: string) => read(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace
 
 const HOME_FILES = [
   'components/workspace/HomeFirstView.tsx',
+  'components/workspace/HomeStartParts.tsx',
   'components/workspace/ToolPathStrip.tsx',
-  'components/process-map/MapSlice.tsx',
 ];
 
 /* --------------------------------------------------------------- server-free */
 
-test.describe('the slice of the demo map (H-O1)', () => {
-  test('its elements are the demo map\'s first ones, with the map\'s labels and anchors', () => {
-    const slice = computeHomeMapSlice(HOME_SLICE_ELEMENTS);
-    expect(slice, 'the slice was refused: an element differs from the demo map').not.toBeNull();
-    const map = buildDemoProject().documentation.process!.model;
-    const first = elementsOfPlane(map, null).slice(0, HOME_SLICE_ELEMENTS);
-    expect(slice!.elements).toEqual(
-      first.map((e) => ({ id: e.id, label: e.label, anchor: anchorText(e.anchor), fact: e.fact })),
-    );
-    expect(slice!.elements).toHaveLength(4);
-    expect(slice!.objectName).toBe('Z_MM_PO_APPROVAL');
-    expect(slice!.topLevelElements).toBe(elementsOfPlane(map, null).length);
-    // Every element an anchor: what the view promises ("every step with its code lines").
-    for (const e of slice!.elements) expect(e.anchor, e.label).toMatch(/^L\d+/);
-  });
-
-  test('the file draws those elements and nothing else, top to bottom', () => {
-    const slice = computeHomeMapSlice(HOME_SLICE_ELEMENTS)!;
-    const shapes = [...slice.xml.matchAll(/<bpmndi:BPMNShape id="[^"]+" bpmnElement="([^"]+)"/g)].map((m) => m[1]);
-    expect(shapes.sort()).toEqual(slice.elements.map((e) => e.id).sort());
-    // Each shape below the one before it.
-    const ys = slice.elements.map((e) => {
-      const m = new RegExp(`bpmnElement="${e.id}"[^>]*>\\s*<dc:Bounds x="[\\d.-]+" y="([\\d.-]+)"`).exec(slice.xml);
-      return Number(m?.[1]);
-    });
-    for (let i = 1; i < ys.length; i++) expect(ys[i], `element ${i} is not below element ${i - 1}`).toBeGreaterThan(ys[i - 1]);
-    // A slice, not the map: a few kilobytes.
-    expect(slice.xml.length).toBeLessThan(16_000);
-  });
-
-  test('no name of the slice is written into the home page\'s code', () => {
-    const slice = computeHomeMapSlice(HOME_SLICE_ELEMENTS)!;
-    const own = [...HOME_FILES, 'lib/home-map-slice.ts'].map(code).join('\n');
-    for (const e of slice.elements) expect(own, `"${e.label}" is hand-written`).not.toContain(e.label);
-    const messages = JSON.stringify(WORKSPACE_PAGE_MESSAGES);
-    for (const e of slice.elements) expect(messages, `"${e.label}" is in the catalogue`).not.toContain(e.label);
-  });
-
-  test('the cut changes nothing it keeps and leaves the model it was given alone', () => {
-    const source = read('public/starter-examples/Z_MM_PO_APPROVAL.abap').replace(/\r\n/g, '\n');
-    const model = buildExportModel(buildProcessSkeleton(source));
-    const before = JSON.stringify(model.root.nodes.map((n) => [n.id, n.name, n.outgoing]));
-    const keep = model.root.nodes.slice(0, 3).map((n) => n.id);
-    const sliced = sliceModel(model, keep);
-    expect(JSON.stringify(model.root.nodes.map((n) => [n.id, n.name, n.outgoing]))).toBe(before);
-    expect(sliced.containers).toHaveLength(1);
-    expect(sliced.root.nodes.map((n) => n.id)).toEqual(keep);
-    expect(sliced.root.nodes.map((n) => n.name)).toEqual(model.root.nodes.slice(0, 3).map((n) => n.name));
-    for (const f of sliced.root.flows) {
-      expect(keep).toContain(f.sourceId);
-      expect(keep).toContain(f.targetId);
+test.describe('no map on My workspace (ADR-123 (5))', () => {
+  test('3.3.0: the slice of the demo map is gone — its files, its cut and every import of them (owner decision 14.11.2026)', () => {
+    // AB-14a drew four elements of the demo map on a new account's first view. 3.3.0 draws no map there, and the
+    // owner removed the unused slice: its loader, its canvas and the model cut that only it used.
+    for (const gone of ['lib/home-map-slice.ts', 'components/process-map/MapSlice.tsx', 'lib/bpmn/slice.ts']) {
+      expect(fs.existsSync(path.join(ROOT, gone)), gone).toBe(false);
     }
-    expect(sliced.lanes).toEqual([]);
-    expect(sliced.root.annotations).toEqual([]);
+    const offenders: string[] = [];
+    const walk = (dir: string) => {
+      for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+        const rel = `${dir}/${e.name}`;
+        if (e.isDirectory()) walk(rel);
+        else if (/\.(?:ts|tsx|mjs)$/.test(e.name) && /(?:from|import\()\s*['"][^'"]*(?:home-map-slice|process-map\/MapSlice|bpmn\/slice)['"]/.test(code(rel))) offenders.push(rel);
+      }
+    };
+    for (const d of ['app', 'components', 'hooks', 'lib', 'scripts', 'tests']) walk(d);
+    expect(offenders).toEqual([]);
+    // The export has no view hook left for a cut: what it lays out is the whole model.
+    expect(code('lib/bpmn/export.ts')).not.toMatch(/options\.view\b/);
   });
 
-  test('the slice is drawn by the Analyze map\'s renderer, not a new one', () => {
-    const slice = code('components/process-map/MapSlice.tsx');
-    expect(slice).toMatch(/import\('bpmn-js\/lib\/Viewer'\)/);
-    expect(slice).toMatch(/from '\.\/bpmn-view'/);
-    expect(slice).toContain('placeAnchor(');
-    expect(slice).toContain("import './process-map.css'");
-    // The reading map draws its anchors with the same function.
-    expect(code('components/process-map/BpmnCanvas.tsx')).toContain('placeAnchor(');
-    // The home page takes the picture from components/process-map, and draws no SVG of its own.
-    const home = code('components/workspace/HomeFirstView.tsx');
-    expect(home).toContain("import('@/components/process-map/MapSlice')");
-    expect(home).not.toMatch(/<svg|<path|<rect/);
-  });
-});
-
-test.describe('a narrow slice scrolls rather than shrinking below the floor or being cut (ADR-110)', () => {
-  test('the scale never drops below MIN_SCALE, and the drawing at that scale is laid out whole', () => {
-    expect(MIN_SCALE).toBe(0.75);
-    // Fits: drawn at the width the frame allows, no wider than the frame.
-    const small = { x: 0, y: 0, width: 200, height: 150 };
-    expect(sliceScale(small, 320)).toBe(1);
-    expect(sliceViewbox(small, 320)!.width).toBe(320);
-    // Too wide for a phone card at the floor: the drawing keeps the floor and grows wider than the frame.
-    const wide = { x: 40, y: 10, width: 900, height: 200 };
-    const frame = 300;
-    expect(sliceScale(wide, frame)).toBe(MIN_SCALE);
-    const placed = sliceViewbox(wide, frame)!;
-    expect(placed.scale).toBe(MIN_SCALE);
-    expect(placed.width).toBeGreaterThan(frame);
-    expect(placed.width).toBeGreaterThanOrEqual((wide.width + 24) * MIN_SCALE);
-    // The camera sees the whole drawing across: nothing left of it or right of it is cut.
-    expect(placed.viewbox.x).toBeLessThanOrEqual(wide.x);
-    expect(placed.viewbox.x + placed.viewbox.width).toBeGreaterThanOrEqual(wide.x + wide.width);
-    expect(placed.viewbox.width * placed.scale).toBeCloseTo(placed.width, 5);
-    // Too tall for the height cap at the floor: taller than MAX_HEIGHT, and all of it in the view box.
-    const tall = { x: 0, y: 30, width: 200, height: 900 };
-    const high = sliceViewbox(tall, 320)!;
-    expect(high.scale).toBe(MIN_SCALE);
-    expect(high.height).toBeGreaterThan(MAX_HEIGHT);
-    expect(high.viewbox.y).toBeLessThanOrEqual(tall.y);
-    expect(high.viewbox.y + high.viewbox.height).toBeGreaterThanOrEqual(tall.y + tall.height);
-    // Between floor and cap the drawing is scaled to the cap, not cut by it.
-    const capped = sliceViewbox({ x: 0, y: 0, width: 200, height: 450 }, 320)!;
-    expect(capped.scale).toBeGreaterThanOrEqual(MIN_SCALE);
-    expect(capped.height).toBeLessThanOrEqual(MAX_HEIGHT + 1);
-  });
-
-  test('the frame scrolls instead of clipping, is reachable by keyboard, and leaves the wheel to the page at its edge', () => {
-    const src = code('components/process-map/MapSlice.tsx');
-    expect(src).toContain('Math.max(MIN_SCALE, fit)');
-    // The frame scrolls; nothing in the component clips the drawing.
-    expect(src).toMatch(/className=\{`[^`]*\boverflow-auto\b/);
-    expect(src).not.toMatch(/overflow-hidden|overflow-x-hidden|overflow-y-hidden|overflow:\s*'hidden'/);
-    expect(src).toMatch(/maxHeight:\s*MAX_HEIGHT/);
-    // Keyboard: focusable while it scrolls, named, with a visible focus ring.
-    expect(src).toMatch(/tabIndex=\{scrolls \? 0 : undefined\}/);
-    expect(src).toMatch(/aria-label=\{/);
-    expect(src).toMatch(/focus-visible:outline-cc-focus/);
-    // The wheel is the browser's: no handler, no containment that would swallow the page's scroll.
-    expect(src).not.toMatch(/onWheel|addEventListener\(\s*'wheel'|overscroll-(?:contain|none)|overscrollBehavior/);
-    // The drawing takes no pointer, so wheel and touch reach the frame; the frame itself does not disable them.
-    expect(src).toMatch(/data-map-slice-drawing=""[^>]*pointer-events-none/);
-    const frameTag = /<div\s+ref=\{frameRef\}[\s\S]*?\n\s*>/.exec(src)?.[0] ?? '';
-    expect(frameTag).toContain('data-home-map-slice');
-    expect(frameTag).not.toContain('pointer-events-none');
-    expect(src).not.toMatch(/touch-none|touchAction/);
-    // Opens on the first element without moving the page.
-    expect(src).toContain('openOn(viewer, frame, elements[0]?.id)');
-    expect(src).not.toContain('scrollIntoView(');
+  test('3.3.0: My workspace draws no map — no bpmn-js, no slice, on the page (ADR-123 (5))', () => {
+    for (const f of [...HOME_FILES, 'components/workspace/WorkspaceListReport.tsx', 'components/MyWorkspaceSwitch.tsx', 'app/(app)/dashboard/layout.tsx']) {
+      const src = code(f);
+      expect(src, f).not.toContain('MapSlice');
+      expect(src, f).not.toContain('bpmn-js');
+      expect(src, f).not.toContain('homeMapSlice');
+    }
   });
 });
 
-test.describe('the path of the seven tools', () => {
-  test('names and order are the tool bar\'s, never written twice', () => {
+test.describe('two equal products (ADR-123)', () => {
+  test('the six re-design tools: names and order are the tool bar\'s, never written twice, nothing "optional"', () => {
     const strip = code('components/workspace/ToolPathStrip.tsx');
     expect(strip).toContain("import { PHASES } from '@/lib/workflow-steps'");
+    expect(strip).toContain('PHASES.slice(1)');
+    const home = Object.entries(WORKSPACE_PAGE_MESSAGES).filter(([k]) => k.startsWith('home.')).map(([, v]) => v).join('\n');
+    expect(home).not.toMatch(/optional/i);
+    expect(home).not.toMatch(/launchpad/i);
+    // Both products have a card and a cost line (W8).
+    const view = code('components/workspace/HomeFirstView.tsx');
+    expect(view).toContain('data-home-product="analyse"');
+    expect(view).toContain('data-home-product="redesign"');
+    expect(WORKSPACE_PAGE_MESSAGES['home.analyse.cost']).toBe('1 analysis run per program');
+    expect(WORKSPACE_PAGE_MESSAGES['home.redesign.cost']).toBe('Not counted against your runs');
     for (const p of PHASES) expect(strip, `"${p.label}" is written into the strip`).not.toContain(`'${p.label}'`);
     for (const p of PHASES) expect(strip).not.toMatch(new RegExp(`>\\s*${p.label}\\s*<`));
     // A purpose line for every tool, and none for a tool that does not exist.
@@ -207,11 +112,15 @@ test.describe('the start', () => {
     const examples = code('components/StarterExamples.tsx');
     const home = examples.slice(examples.indexOf("if (variant === 'home')"), examples.indexOf("if (variant === 'home')") + 12_000);
     const branch = home.slice(0, home.indexOf('\n  return ('));
-    expect(branch.match(/variant="primary"/g) ?? []).toHaveLength(1);
-    expect(branch).toMatch(/variant="primary"[\s\S]{0,400}home\.startExample/);
+    expect(branch.match(/'primary'/g) ?? []).toHaveLength(1);
+    expect(branch).toMatch(/variant=\{homePrimary \? 'primary' : 'secondary'\}[\s\S]{0,400}home\.startExample/);
     const view = code('components/workspace/HomeFirstView.tsx');
-    expect(view).not.toContain('variant="primary"');
-    expect(view).toMatch(/variant="ghost"[\s\S]{0,200}data-home-choose-file/);
+    // The view's own primary is the banner's after the demo (W7), and the example's start is secondary exactly then.
+    expect(view.match(/variant="primary"/g) ?? []).toHaveLength(1);
+    expect(view).toMatch(/fromDemo \? \(\s*<div\s+data-home-from-demo/);
+    expect(view).toContain('homePrimary={!fromDemo}');
+    expect(view).toMatch(/variant="secondary"[\s\S]{0,200}data-home-redesign-example/);
+    expect(code('components/workspace/HomeStartParts.tsx')).toMatch(/variant="ghost"[\s\S]{0,200}data-home-choose-file/);
     expect(WORKSPACE_PAGE_MESSAGES['home.startExample']).toBe('Start this example');
   });
 
@@ -236,7 +145,19 @@ test.describe('the start', () => {
     expect(takeHomeStart()).toEqual({ kind: 'paste' });
     // The start takes it, and nothing on the home page reads the file.
     expect(code('components/workspace/OwnCodeImport.tsx')).toContain('takeHomeStart()');
-    expect(code('components/workspace/HomeFirstView.tsx')).not.toMatch(/\.text\(\)|FileReader|arrayBuffer/);
+    expect(code('components/workspace/HomeStartParts.tsx')).not.toMatch(/\.text\(\)|FileReader|arrayBuffer/);
+  });
+
+  test('"Re-design an example end to end" travels as an intent in module memory, once, and Analyze opens Design on it (W4)', () => {
+    expect(takeRedesignAfterAnalysis('p1')).toBe(false);
+    leaveRedesignAfterAnalysis('p1');
+    expect(takeRedesignAfterAnalysis('p2')).toBe(false);
+    expect(takeRedesignAfterAnalysis('p1')).toBe(true);
+    expect(takeRedesignAfterAnalysis('p1')).toBe(false);
+    const examples = code('components/StarterExamples.tsx');
+    expect(examples).toContain("if (afterRun.current === 'design') leaveRedesignAfterAnalysis(docRef.id);");
+    const analyze = code('components/analyze/AnalyzeBusiness.tsx');
+    expect(analyze).toMatch(/if \(takeRedesignAfterAnalysis\(projectId\)\) \{\s*router\.push\(`\/project\/\$\{encodeURIComponent\(projectId\)\}\/design`\);/);
   });
 
   test('a pasted program travels under its own name', () => {
@@ -278,7 +199,7 @@ async function openHome(page: Page) {
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   const view = page.locator('[data-home-first-view]');
   await expect(view).toBeVisible({ timeout: 90_000 });
-  await expect(view.locator('[data-home-map-slice="drawn"]')).toBeVisible({ timeout: 60_000 });
+  await expect(view.locator('[data-home-start-example]')).toBeVisible({ timeout: 60_000 });
   return view;
 }
 
@@ -295,14 +216,17 @@ test.describe('a fresh account lands on the first view', () => {
     });
   });
 
-  test('one filled button, every example, the live slice and the path, and no duration', async ({ page }) => {
+  test('two equal products, one filled button, every example, the six tools, and no duration', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
     const view = await openHome(page);
 
-    await expect(view.getByRole('heading', { level: 1 })).toHaveText('See your Z program as a business process');
+    await expect(view.getByRole('heading', { level: 1 })).toHaveText('What do you want to do with your Z program?');
     await expect(view).toContainText('Welcome, Mara.');
+    await expect(view.locator('[data-home-product]')).toHaveCount(2);
+    await expect(view.locator('#home-analyse-title')).toHaveText('Analyse it — understand what it does');
+    await expect(view.locator('#home-redesign-title')).toHaveText('Re-design it — build its clean core successor');
 
     // Exactly one filled button on the page, and it is the recommended example's.
     const primaries = page.locator('[data-cc-button="primary"]:visible');
@@ -310,8 +234,10 @@ test.describe('a fresh account lands on the first view', () => {
     await expect(primaries).toHaveText(/Start this example/);
     await expect(primaries).toHaveAttribute('data-example-start', 'Z_MM_PO_APPROVAL');
     await expect(view.locator('[data-cc-button="ghost"][data-home-choose-file]')).toBeVisible();
+    await expect(view.locator('[data-cc-button="secondary"][data-home-redesign-example]')).toBeVisible();
 
-    // All seven shipped examples, each with the line count of its file.
+    // All seven shipped examples, each with the line count of its file — six behind "6 more examples".
+    await view.locator('[data-home-more-examples]').click();
     for (const e of STARTER_EXAMPLES) {
       const card = view.locator(`[data-example-card="${e.name}"]`);
       await expect(card, e.name).toBeVisible();
@@ -319,24 +245,15 @@ test.describe('a fresh account lands on the first view', () => {
     }
     await expect(view.locator('[data-example-card]')).toHaveCount(STARTER_EXAMPLES.length);
 
-    // The slice: the demo map's first elements, their names and their lines.
-    const slice = computeHomeMapSlice(HOME_SLICE_ELEMENTS)!;
-    const drawn = view.locator('[data-home-map-slice="drawn"]');
-    const anchors = await drawn.locator('.cc-map-anchor-code').allInnerTexts();
-    expect(anchors.map((a) => a.trim()).sort()).toEqual(slice.elements.map((e) => e.anchor).filter(Boolean).sort());
-    const svgText = (await drawn.locator('svg text').allTextContents()).join(' ').replace(/\s+/g, ' ');
-    for (const e of slice.elements) {
-      for (const word of e.label.split(/\s+/)) expect(svgText, e.label).toContain(word);
-    }
-    await expect(drawn).toHaveAttribute('aria-label', new RegExp(slice.elements[0].anchor!));
-
-    // The path, in the tool bar's order.
+    // The products in the tool bar's order: Analyze, then the six of Re-design.
     const steps = await view.locator('[data-home-path-step]').evaluateAll((els) => els.map((e) => e.getAttribute('data-home-path-step')));
     expect(steps).toEqual(PHASES.map((p) => p.key));
 
-    // No duration claim (H-O2).
+    // No duration claim (H-O2), nothing optional, no map drawn.
     const text = await view.innerText();
     expect(text).not.toMatch(/\bseconds?\b|\bminutes?\b/i);
+    expect(text).not.toMatch(/optional/i);
+    await expect(page.locator('.djs-container, [data-home-map-slice]')).toHaveCount(0);
 
     // No list, no demo row, no First insights on this view.
     await expect(page.locator('[data-workspace-projects]')).toHaveCount(0);
@@ -354,20 +271,27 @@ test.describe('a fresh account lands on the first view', () => {
       await page.waitForTimeout(400);
       const report = await page.evaluate(layoutCheck, {
         ...PRODUCT_LAYOUT,
-        // The slice is one picture: its labels and anchors are bpmn-js's, placed by the layout.
-        ignore: `${PRODUCT_LAYOUT.ignore}, [data-home-map-slice]`,
+        ignore: PRODUCT_LAYOUT.ignore,
       });
       if (!layoutClean(report)) {
         failures.push(`${name}: ${JSON.stringify({ overlaps: report.overlaps, clipped: report.clipped, focusOut: report.focusOut, overflowX: report.overflowX })}`);
       }
+      if (width > 600) {
+        // The pair: two cards side by side, starting and ending together (equal weight).
+        const [a, b] = await page.evaluate(() =>
+          [...document.querySelectorAll('[data-home-product]')].map((c) => {
+            const r = c.getBoundingClientRect();
+            return { top: r.top, bottom: r.bottom };
+          }),
+        );
+        expect(Math.abs(a.top - b.top), `${name}: the products do not start together`).toBeLessThanOrEqual(1);
+        expect(Math.abs(a.bottom - b.bottom), `${name}: the products do not end together`).toBeLessThanOrEqual(1);
+      }
       if (name === '1440x900') {
-        // v2.1 closed the gap bottom-left: the demo line ends where the start card ends.
-        const gap = await page.evaluate(() => {
-          const card = document.querySelector('[data-home-start]')!.getBoundingClientRect();
-          const demo = [...document.querySelectorAll('[data-home-demo]')].find((d) => (d as HTMLElement).offsetParent !== null)!;
-          return card.bottom - demo.getBoundingClientRect().bottom;
-        });
-        expect(gap, 'empty area under the demo line, bottom-left').toBeLessThanOrEqual(40);
+        const tops = await page.evaluate(() =>
+          [...document.querySelectorAll('[data-home-way] h3')].map((h) => h.getBoundingClientRect().top + window.scrollY),
+        );
+        for (const top of tops) expect(top, 'a way of the start is below the first screen').toBeLessThan(height);
       }
       if (name === 'phone') {
         const tops = await page.evaluate(() =>
@@ -378,96 +302,6 @@ test.describe('a fresh account lands on the first view', () => {
       }
     }
     expect(failures).toEqual([]);
-  });
-
-  test('on a phone the slice is drawn at the readability floor or above and scrolls to every element, never cut (ADR-110)', async ({ page }) => {
-    test.setTimeout(240 * 1000);
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await signInViaLanding(page, EMAIL, PASSWORD);
-    await page.setViewportSize({ width: 390, height: 844 });
-    const view = await openHome(page);
-    const frame = view.locator('[data-home-map-slice="drawn"]');
-    await frame.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(400);
-    const slice = computeHomeMapSlice(HOME_SLICE_ELEMENTS)!;
-
-    const measure = (ids: string[]) =>
-      frame.evaluate((el, shapeIds) => {
-        const box = el.getBoundingClientRect();
-        const drawing = el.querySelector<HTMLElement>('[data-map-slice-drawing]')!;
-        const viewport = el.querySelector<SVGGElement>('svg .viewport')!;
-        const scale = viewport.getCTM()!.a;
-        const shapes = shapeIds.map((id) => {
-          const r = el.querySelector(`[data-element-id="${id}"]`)!.getBoundingClientRect();
-          // Content coordinates: where the shape sits in the scrolled area, independent of the scroll position.
-          return { id, left: r.left - box.left - el.clientLeft + el.scrollLeft, right: r.right - box.left - el.clientLeft + el.scrollLeft,
-            top: r.top - box.top - el.clientTop + el.scrollTop, bottom: r.bottom - box.top - el.clientTop + el.scrollTop,
-            visible: r.right > box.left && r.left < box.right && r.bottom > box.top && r.top < box.bottom };
-        });
-        return {
-          scale, scrollWidth: el.scrollWidth, scrollHeight: el.scrollHeight, clientWidth: el.clientWidth, clientHeight: el.clientHeight,
-          drawingWidth: drawing.offsetWidth, drawingHeight: drawing.offsetHeight, overflow: getComputedStyle(el).overflowX,
-          tabIndex: el.getAttribute('tabindex'), scrolls: el.getAttribute('data-map-slice-scrolls'), shapes,
-          pageOverflowX: document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        };
-      }, ids);
-
-    const ids = slice.elements.map((e) => e.id);
-    const opened = await measure(ids);
-    expect(opened.pageOverflowX, 'the page scrolls sideways at 390 px').toBeLessThanOrEqual(0);
-    expect(opened.scale, 'drawn below the readability floor').toBeGreaterThanOrEqual(0.75 - 1e-3);
-    expect(opened.overflow).toBe('auto');
-    // Nothing cut: the scrolled area holds the whole drawing, and every element lies inside it.
-    expect(opened.scrollWidth).toBeGreaterThanOrEqual(opened.drawingWidth);
-    expect(opened.scrollHeight).toBeGreaterThanOrEqual(opened.drawingHeight);
-    for (const s of opened.shapes) {
-      expect(s.left, `${s.id} is cut on the left`).toBeGreaterThanOrEqual(-1);
-      expect(s.right, `${s.id} is cut on the right`).toBeLessThanOrEqual(opened.scrollWidth + 1);
-      expect(s.top, `${s.id} is cut at the top`).toBeGreaterThanOrEqual(-1);
-      expect(s.bottom, `${s.id} is cut at the bottom`).toBeLessThanOrEqual(opened.scrollHeight + 1);
-    }
-    // Opens on the first element.
-    expect(opened.shapes[0].visible, 'the first element is not in view on open').toBe(true);
-    expect(opened.scrolls).toBe(opened.scrollWidth > opened.clientWidth || opened.scrollHeight > opened.clientHeight ? 'true' : 'false');
-
-    // Today's demo slice fits a phone card at the floor. A narrower card must not shrink it below the floor
-    // or cut it: the card is narrowed in place and the slice, refitted by its own resize handling, has to scroll.
-    await frame.evaluate((el) => {
-      (el.parentElement as HTMLElement).style.width = '200px';
-    });
-    await expect(frame).toHaveAttribute('data-map-slice-scrolls', 'true', { timeout: 10_000 });
-    const narrow = await measure(ids);
-    expect(narrow.pageOverflowX, 'the page scrolls sideways with a narrow slice').toBeLessThanOrEqual(0);
-    expect(narrow.scale, 'a narrow slice drawn below the readability floor').toBeGreaterThanOrEqual(0.75 - 1e-3);
-    expect(narrow.scrollWidth, 'a narrow slice does not scroll across').toBeGreaterThan(narrow.clientWidth);
-    expect(narrow.scrollWidth).toBeGreaterThanOrEqual(narrow.drawingWidth);
-    for (const s of narrow.shapes) {
-      expect(s.left, `${s.id} is cut on the left`).toBeGreaterThanOrEqual(-1);
-      expect(s.right, `${s.id} is cut on the right`).toBeLessThanOrEqual(narrow.scrollWidth + 1);
-      expect(s.bottom, `${s.id} is cut at the bottom`).toBeLessThanOrEqual(narrow.scrollHeight + 1);
-    }
-    // Reachable by keyboard: a Tab lands on it with a visible ring, and the arrow keys move it.
-    expect(narrow.tabIndex).toBe('0');
-    await frame.focus();
-    await page.keyboard.press('Shift+Tab');
-    await page.keyboard.press('Tab');
-    expect(await frame.evaluate((el) => document.activeElement === el && el.matches(':focus-visible'))).toBe(true);
-    const ring = await frame.evaluate((el) => getComputedStyle(el).outlineStyle);
-    expect(ring, 'no visible focus on the scrolling slice').not.toBe('none');
-    await frame.evaluate((el) => {
-      el.scrollLeft = 0;
-    });
-    await page.keyboard.press('ArrowRight');
-    await expect.poll(() => frame.evaluate((el) => el.scrollLeft), { timeout: 5_000 }).toBeGreaterThan(0);
-    // Every element can be brought into view by scrolling the slice.
-    for (const s of narrow.shapes) {
-      await frame.evaluate((el, at) => {
-        el.scrollLeft = Math.max(0, (at.left + at.right) / 2 - el.clientWidth / 2);
-        el.scrollTop = Math.max(0, (at.top + at.bottom) / 2 - el.clientHeight / 2);
-      }, s);
-      const after = await measure([s.id]);
-      expect(after.shapes[0].visible, `${s.id} cannot be scrolled into view`).toBe(true);
-    }
   });
 
   test('"Choose a file" opens today\'s start with the file in it', async ({ page }) => {

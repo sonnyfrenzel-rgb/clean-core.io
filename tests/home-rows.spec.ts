@@ -301,9 +301,11 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
     expect(list).toContain('<CcRunCost cost={costFor(confirming.callModel)} />');
   });
 
-  test('"New analysis" is the page\'s only filled button (H-O13); the row menu has no "Open project"', () => {
+  test('the list mode adds no filled button (H-O13; since 3.3.0 the page\'s one is "Next step"); the row menu has no "Open project"', () => {
     const list = code('components/workspace/WorkspaceListReport.tsx');
-    expect(list.match(/variant="primary"/g) ?? []).toHaveLength(1);
+    // 3.3.0 (ADR-123): the head is the tiles' head in both modes, and the page's one filled action is the next step
+    // (`tests/workspace-tiles.spec.ts`), so the list adds none.
+    expect(list.match(/variant="primary"/g) ?? []).toHaveLength(0);
     expect(list).toContain('showOpen={false}');
     expect(code('components/workspace/HomeAttentionCard.tsx')).not.toContain('variant="primary"');
     expect(code('components/workspace/HomeDoors.tsx')).not.toContain('variant="primary"');

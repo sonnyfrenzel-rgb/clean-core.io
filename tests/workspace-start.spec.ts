@@ -79,7 +79,11 @@ async function recordTipsDuringBuildUp(page: Page) {
 async function startExample(page: Page, viewport: { width: number; height: number }) {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.evaluate(() => window.stop()).catch(() => {});
-  await page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 90000 });
+  // The sign-in's own way to /dashboard can still be in flight and abort this one — the retry of example-opens-workspace.
+  await page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 90000 }).catch(async () => {
+    await page.waitForTimeout(1500);
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded', timeout: 90000 });
+  });
   const list = page.locator('[data-cc-workspace]');
   await expect(list).toBeVisible({ timeout: 90000 });
   await page.setViewportSize(viewport);

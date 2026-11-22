@@ -27,7 +27,8 @@ import { createWithinCeiling } from '../lib/write-ceiling';
  *
  * Every refusal is paired with the write the app itself performs succeeding, in
  * the shape the app sends it (hooks/useUserProfile.ts, components/LandingModals.tsx,
- * app/(app)/settings/page.tsx, the project stages), so no assertion can pass
+ * app/(app)/settings/page.tsx,
+ * app/(app)/dashboard/LegacyDashboard.tsx, the project stages), so no assertion can pass
  * because the call fails anyway. `files` and `abap_examples` have no writer in
  * the app any more and are closed to every client create and update; their test
  * says so with a well-formed document.

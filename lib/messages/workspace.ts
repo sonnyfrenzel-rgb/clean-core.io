@@ -204,42 +204,117 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'newProject.nothingCreated': 'Nothing was created.',
   'newProject.personalDataPending':
     'Read the lines above and tick the box to carry on. Nothing has been created yet.',
-  // My workspace — the first view of a new account (AB-14a, home mockup v2.1, state 1)
-  'home.title': 'See your Z program as a business process',
+  // My workspace — the first view of a new account: two equal products (ADR-123, mock-up direction A)
+  'home.title': 'What do you want to do with your Z program?',
   'home.lead':
-    'Clean-Core.io reads your custom ABAP and shows what it does as a business process, what it touches in SAP and how far it is from clean core. If you want, it then helps you re-design it.',
-  'home.pathTitle': 'What Clean-Core.io does, step by step',
-  'home.pathComplete': 'A complete result on its own',
-  'home.pathOptional': 'Optional, if you want to re-design it',
-  'home.path.analyze': 'Process map, SAP objects used, findings and clean core level. Business, IT and management view.',
+    'Two things, on the same evidence: your ABAP, read line by line. Every statement keeps the code line it comes from.',
+  'home.productsTitle': 'Two products on the same evidence',
+  'home.path.analyze':
+    'The process as a map, the hard-coded rules, the SAP objects it uses, its findings and clean core score — in a Business, IT and Management view.',
   'home.path.design': 'Keep, change or drop each rule',
   'home.path.transformation': 'New code in ABAP Cloud (RAP) or CAP',
   'home.path.documentation': 'Readable documents to export',
   'home.path.testing': 'Tests for the new version',
   'home.path.tco': 'Cost and effort, to decide',
   'home.path.delivery': 'A signed evidence package',
-  'home.startTitle': 'Start your first analysis',
+  'home.analyse.mark': 'Analyse',
+  'home.analyse.title': 'Analyse it — understand what it does',
+  'home.analyse.getsShort': 'Process map, rules, SAP objects and clean core score.',
+  'home.analyse.cost': '1 analysis run per program',
+  'home.redesign.mark': 'Re-design',
+  'home.redesign.title': 'Re-design it — build its clean core successor',
+  'home.redesign.gets':
+    'From the same evidence: a decision per rule, new code in ABAP Cloud (RAP) or CAP, documentation, tests, economics — and a signed delivery package.',
+  'home.redesign.getsShort': 'From the same evidence: new code, tests, economics and a signed delivery.',
+  'home.redesign.cost': 'Not counted against your runs',
+  'home.redesign.costMeta': 'It builds on the analysis run',
+  'home.redesign.toolsTitle': 'The six tools of Re-design',
+  'home.redesign.startsLead': 'Re-design starts from an analysis',
+  'home.redesign.startsRest': ', so the evidence is there first.',
+  'home.redesign.how1': 'Analyse the program — an example or your own code.',
+  'home.redesign.how2': 'Design opens on its result; the six tools follow in order.',
+  'home.redesign.example': 'Re-design an example end to end',
   'home.exampleTitle': 'Try an example',
   'home.exampleCost': 'Free the first time',
   'home.recommended': 'Recommended',
   'home.startExample': 'Start this example',
   'home.otherExamples': 'Other examples',
-  'home.ownTitle': 'Analyse your own program',
+  'home.ownTitle': 'Upload your own code',
   'home.dropWide': 'Drop a program file here',
   'home.dropTouch': 'Add one program',
-  'home.dropTypes': 'ABAP source as .abap or .txt',
+  'home.dropTypes': 'ABAP source as .abap or .txt, or an abapGit ZIP',
   'home.chooseFile': 'Choose a file',
   'home.paste': 'Paste the code',
-  'home.noFile': 'No file? Ask your SAP developer for the program source as a text file.',
-  'home.whatYouGet': 'What you get:',
+  'home.safe': 'Stored in the EU · only you and whom you invite · never sold.',
+  'home.safeLink': 'What happens to your code?',
   'home.ownNote': 'Nothing is analysed until you start.',
   'home.portfolioLead': 'Many programs at once?',
   'home.sliceUnavailable': 'The picture of the map could not be drawn here. The demo shows the whole map.',
   'home.demoAsk': 'Prefer to look first?',
-  'home.demoBody': 'The demo is a finished example. Nothing runs and nothing is saved.',
   'home.openDemo': 'Open the demo',
   // My workspace — a returning account's programs as tiles (ADR-123, mock-up direction A)
   'ws.tile.mapAfterRun': 'Map after the next run',
+  'ws.analyseAnother': 'Analyse another Z program',
+  'ws.analyseAnotherShort': 'Analyse a program',
+  'ws.redesignProgram': 'Re-design a program',
+  'ws.startPanel': 'Start an analysis',
+  'ws.nextStep': 'Next step',
+  'ws.alsoWaiting': 'Also waiting',
+  'ws.atAGlance': 'At a glance',
+  'ws.yourPrograms': 'Your programs',
+  'ws.showAll': 'Show all',
+  'ws.readAs': 'Read as',
+  'ws.showAs': 'Show as',
+  'ws.tiles': 'Tiles',
+  'ws.list': 'List',
+  'ws.lens.business': 'Business',
+  'ws.lens.it': 'IT',
+  'ws.lens.management': 'Management',
+  'ws.kpi.all': 'Programs',
+  'ws.kpi.allNote': 'in your workspace',
+  'ws.kpi.analysed': 'Analysed',
+  'ws.kpi.analysedNote': 'all current',
+  'ws.kpi.redesign': 'In re-design',
+  'ws.kpi.redesignNone': 'none under way',
+  'ws.kpi.delivered': 'Signed deliveries',
+  'ws.kpi.deliveredNone': 'none yet',
+  'ws.kpi.attention': 'Needs attention',
+  'ws.kpi.attentionNote': 'code changed or not analysed',
+  'ws.kpi.attentionNone': 'nothing waiting',
+  'ws.tile.more': 'More',
+  'ws.tile.example': 'Example',
+  'ws.tile.analyse': 'Analyse',
+  'ws.tile.redesign': 'Re-design',
+  'ws.fact.steps': 'Process map',
+  'ws.fact.score': 'Clean core',
+  'ws.fact.confirmed': 'Confirmed decision',
+  'ws.fact.confirmedShort': 'Confirmed',
+  'ws.fact.proposed': 'Proposed decision',
+  'ws.fact.proposedShort': 'Proposed',
+  'ws.fact.pending': 'Pending',
+  'ws.fact.noDecision': 'Not decided',
+  'ws.an.stale': 'Code changed since the analysis',
+  'ws.an.notAnalysed': 'Not analysed yet',
+  'ws.an.noCode': 'No code uploaded yet',
+  'ws.an.open': 'Open the analysis',
+  'ws.an.rerun': 'Run the analysis again',
+  'ws.an.run': 'Run the analysis',
+  'ws.an.addCode': 'Add the code',
+  'ws.an.redesignWaits': 'Re-design waits for it',
+  'ws.rd.waits': 'Waits for the analysis',
+  'ws.rd.afterRun': 'After the new run',
+  'ws.rd.notStarted': 'Not started',
+  'ws.rd.startsInDesign': 'Starts in Design',
+  'ws.rd.start': 'Re-design this program',
+  'ws.rd.nothingBuilt': 'Nothing is built',
+  'ws.rd.openDecision': 'Open the decision',
+  'ws.rd.openDelivery': 'Open the delivery',
+  'ws.newTile': 'Analyse another Z program',
+  'ws.moreExamples': 'More examples',
+  'ws.sharing': 'Sharing',
+  'ws.portfolio': 'Many programs at once?',
+  'ws.loading': 'Loading your programs…',
+  'ws.noMatch': 'No program matches this count.',
   // My workspace — the 3.0 list (mockup s7), its sharing section and row menu
   'myWorkspace.limitReached': 'Limit reached.',
   'myWorkspace.colLevels': 'Levels',
@@ -361,9 +436,150 @@ export function withdrawSentence(email: string): string {
   return `The link sent to ${email} stops working at once. If they have not opened it yet, they never will; you can invite them again later.`;
 }
 
+/** My workspace, returning: the greeting. */
+export function wsWelcomeBack(firstName: string | null | undefined): string {
+  const name = (firstName ?? '').trim();
+  return name ? `Welcome back, ${name}.` : 'Welcome back.';
+}
+
+/** "Analysed · signed 6 Nov" — the Analyse line of a tile with a signed run. */
+export function wsAnalysedOn(on: string | null): string {
+  return on ? `Analysed · signed ${on}` : 'Analysed · signed';
+}
+
+/** "Design · step 1 of 6". */
+export function wsRedesignStep(tool: string, n: number): string {
+  return `${tool} · step ${n} of 6`;
+}
+
+/** "Signed delivery · 10 Nov". */
+export function wsDeliveredOn(on: string | null): string {
+  return on ? `Signed delivery · ${on}` : 'Signed delivery';
+}
+
+/** W5: a decision that builds nothing. */
+export function wsNotNeeded(option: string, confirmed: boolean): string {
+  return `Not needed — ${confirmed ? 'decided' : 'proposed'}: ${option}`;
+}
+
+/** "Continue: Testing". */
+export function wsContinue(tool: string): string {
+  return `Continue: ${tool}`;
+}
+
+/** The Next step card's title. */
+export function wsNextTitle(title: string, kind: 'continue' | 'start-redesign' | 'rerun' | 'analyse', tool: string): string {
+  switch (kind) {
+    case 'continue':
+      return `${title} — Re-design at ${tool}`;
+    case 'start-redesign':
+      return `${title} — ready for Re-design`;
+    case 'rerun':
+      return `${title} — the code changed since the analysis`;
+    default:
+      return `${title} — not analysed yet`;
+  }
+}
+
+/** The Next step card's sentence: what is done, and what comes next, in the tools' own purpose lines. */
+export function wsNextBody(done: readonly string[], comesNext: string): string {
+  const list = done.length <= 1 ? (done[0] ?? '') : `${done.slice(0, -1).join(', ')} and ${done[done.length - 1]}`;
+  const head = done.length === 0 ? '' : `${list} ${done.length === 1 ? 'is' : 'are'} done. `;
+  return `${head}Next: ${comesNext.charAt(0).toLowerCase()}${comesNext.slice(1)}.`;
+}
+
+export function wsNextBodyRerun(): string {
+  return 'Every figure stands on the signed run, so a new run comes first. Re-design goes on from it.';
+}
+
+export function wsNextBodyStart(): string {
+  return 'The analysis is signed. Design opens on its result: keep, change or drop each rule.';
+}
+
+export function wsNextBodyAnalyse(): string {
+  return 'The code is uploaded. One run reads it and draws its process map.';
+}
+
+/** "Order fulfilment audit report — the code changed since the analysis." */
+export function wsAlsoWaiting(title: string, stale: boolean): string {
+  return stale ? `${title} — the code changed since the analysis.` : `${title} — not analysed yet.`;
+}
+
+/** "3 changed in the last 7 days". */
+export function wsChangedThisWeek(n: number): string {
+  return `${n} changed in the last 7 days`;
+}
+
+/** The count beside "Your programs", with the filter. */
+export function wsProgramsCount(shown: number, all: number): string {
+  return shown === all ? String(all) : `${shown} of ${all}`;
+}
+
+/** "1 out of date". */
+export function wsOutOfDate(n: number): string {
+  return `${n} out of date`;
+}
+
+/** The tools the programs in re-design stand at: "Design and Testing". */
+export function wsToolsAt(tools: readonly string[]): string {
+  return tools.length <= 1 ? (tools[0] ?? '') : `${tools.slice(0, -1).join(', ')} and ${tools[tools.length - 1]}`;
+}
+
+/** The line under the programs: what is shared, both ways. */
+export function wsSharedLine(sharedWithYou: number, openInvitations: number | null): string {
+  const a = `Shared with you: ${sharedWithYou} ${sharedWithYou === 1 ? 'program' : 'programs'}`;
+  return openInvitations === null ? `${a}.` : `${a} · Invitations you sent: ${openInvitations} open.`;
+}
+
+/** The facts cell of a tile: "94 steps". */
+export function wsSteps(n: number): string {
+  return `${n} ${n === 1 ? 'step' : 'steps'}`;
+}
+
+/** The Analyse card and the start tile: what is left. */
+export function wsQuotaLine(runsLeft: string): string {
+  return `${runsLeft} · the same code again is free`;
+}
+
+/** Shown only from three programs on (W10). */
+export function wsKpiLabel(kind: 'all' | 'analysed' | 'redesign' | 'delivered' | 'attention', n: number): string {
+  const name = { all: 'Programs', analysed: 'Analysed', redesign: 'In re-design', delivered: 'Signed deliveries', attention: 'Needs attention' }[kind];
+  return `${name}: ${n}`;
+}
+
 /** What a screen reader hears for a program's map thumbnail. */
 export function mapThumbLabel(objectName: string, steps: number | null): string {
   return steps === null ? `Process map of ${objectName}` : `Process map of ${objectName}, ${steps} steps`;
+}
+
+/** The cost line of the Analyse card: what is left, and that the same code is free again (W8). */
+export function homeAnalyseCostLine(runsLeft: string): string {
+  return `${runsLeft} · the same code again is free`;
+}
+
+/** Beside "Re-design an example end to end": which example, and what its run costs (W4, W8). */
+export function homeRedesignExampleMeta(objectName: string, free: boolean): string {
+  return free ? `${objectName} · free the first time` : `${objectName} · uses one analysis run`;
+}
+
+/** The demo line under the pair. */
+export function homeDemoBody(objectName: string): string {
+  return `The demo is a finished example of ${objectName}. Nothing runs and nothing is saved.`;
+}
+
+/** After the demo (W7): the banner that continues it. */
+export function homeFromDemoTitle(objectName: string): string {
+  return `You have seen ${objectName} in the demo.`;
+}
+
+export function homeFromDemoBody(short: boolean): string {
+  return short
+    ? 'Run it yourself, free the first time — or upload your own.'
+    : 'Now run it yourself — free the first time — and keep the result, or upload your own Z program.';
+}
+
+export function homeFromDemoRun(objectName: string): string {
+  return `Run ${objectName} yourself`;
 }
 
 /** The first view of a new account (AB-14a): the greeting, with the first name when the profile has one. */
@@ -380,27 +596,6 @@ export function homeMoreExamples(n: number): string {
 /** A shipped example's size in the compact list. */
 export function homeExampleLines(n: string): string {
   return `${n} lines`;
-}
-
-/** The tag of the own-code way: the free runs as `QUOTA_NAME` says them, or the own key. */
-export function homeOwnCost(limit: number, selfFunded: boolean): string {
-  return selfFunded ? 'Your own model key' : `${limit} free analysis runs`;
-}
-
-/** The line under it — one run per program, and what is left (`runsLeftLabel`). */
-export function homeOwnLine(runsLeft: string): string {
-  return `One run per program. ${runsLeft}.`;
-}
-
-/** Beside the live slice of the demo map. */
-export function homeSliceLead(objectName: string): string {
-  return `the process as a map, every step with its code lines. Here the start of ${objectName}.`;
-}
-
-/** What a screen reader hears for the slice: the map, and each element with its line. */
-export function homeSliceLabel(objectName: string, elements: ReadonlyArray<{ label: string; anchor: string | null }>): string {
-  const parts = elements.map((e) => (e.anchor ? `${e.label} (${e.anchor})` : e.label));
-  return `Start of the process map of ${objectName}: ${parts.join(', ')}.`;
 }
 
 /** My workspace on a phone — the facts line of a project card. */

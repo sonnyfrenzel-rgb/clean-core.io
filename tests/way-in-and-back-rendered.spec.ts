@@ -177,6 +177,14 @@ test('(8) a tab whose build the server no longer runs says so when it comes back
 
 test('(12) the start names the target as one line, and the own-code footer follows the edition chosen', async ({ page }) => {
   test.setTimeout(180 * 1000);
+  // 3.3.0 (ADR-123): the doors stand in My workspace's list mode (the home list of 3.2.0); tiles are the default.
+  await page.addInitScript(() => {
+    try {
+      window.localStorage.setItem('cc.workspace.mode', 'list');
+    } catch {
+      /* storage refused: the tiles stand */
+    }
+  });
   await signInViaLanding(page, OWNER, PASSWORD);
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   // This account has a project, so its home is the list. Since AB-14b the example
