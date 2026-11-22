@@ -7,7 +7,8 @@ name: UX Review
 # Started by hand only (owner decision, 06.10.2026). Until then every push to main
 # and dev started it; the reviews of the 3.0.x releases failed at the model's output
 # limit one after another and were paid for each time, while the owner had parked the
-# agent. `gh workflow run ux-review.yml --ref main -f mode=delta` runs it.
+# agent. `gh workflow run ux-review.yml --ref main -f mode=delta` runs it — on main only;
+# dispatched on any other ref, every job is skipped.
 #
 # Three jobs, three trust levels:
 #   scope    no secrets          decides whether a run happens and why — the mode itself needs the sealed reports
@@ -38,9 +39,10 @@ permissions:
 # it, and a release would go unreviewed. Runs share nothing.
 
 jobs:
+  # Runs on main only, like security-audit.yml; started on any other ref, every job is skipped.
   scope:
     name: Scope
-    if: vars.UX_REVIEW_ENABLED != 'false'
+    if: vars.UX_REVIEW_ENABLED != 'false' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     outputs:
@@ -175,13 +177,14 @@ jobs:
     name: Review (sealed)
     needs: [scope, capture]
     # Runs when the capture failed too: a review without pictures says so and stays incomplete.
-    if: ${{ !cancelled() && needs.scope.result == 'success' && needs.scope.outputs.mode != 'skip' }}
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' && needs.scope.result == 'success' && needs.scope.outputs.mode != 'skip' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
         with:
+          ref: ${{ github.sha }} # the dispatched commit of main, not whatever main points to when the job starts
           fetch-depth: 0 # the delta needs the last reviewed release
           persist-credentials: false
 
