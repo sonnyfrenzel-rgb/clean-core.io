@@ -17,6 +17,7 @@ import { APP_VERSION } from '../version';
 import { SkeletonGraph, type Exit, type SkeletonReadings } from './skeleton/graph';
 import { anchorOf, bodyRange, programName, snippet, tokenIndexOf } from './skeleton/anchors';
 import { buildLanes } from './skeleton/lanes';
+import { noteUnreachableSteps } from './skeleton/unreachable-notes';
 import { attachLuwStates } from './skeleton/luw';
 import { notDrawn } from './skeleton/not-drawn';
 import {
@@ -1400,7 +1401,7 @@ class SkeletonBuilder {
     // block that ends normally hands over to the next one.
     this.chainReportEvents();
     if (this.reads310) this.markEmptyEntries();
-    this.noteUnreachableSteps();
+    noteUnreachableSteps(this.graph, { statements: this.statements, cutOffBoundaries: this.cutOffBoundaries });
     // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`
     // is the pass that can still drop one.
     const lanes = buildLanes(this.graph, { statements: this.statements, evidence: this.evidence });
@@ -5170,40 +5171,6 @@ class SkeletonBuilder {
         }
       }
       if (!changed) break;
-    }
-  }
-
-  /**
-   * A step nothing can reach, because what stands before it never comes back.
-   *
-   * `SUBMIT` without `AND RETURN`, `LEAVE PROGRAM`, `MESSAGE … TYPE 'E'`: the
-   * statements written after one of those are still read and still anchored —
-   * dropping them would cost the reader the lines — but they hang off no flow,
-   * and a node with no way in is said out loud rather than drawn as if
-   * something led to it.
-   *
-   * A boundary event is not one of them. It is attached to an activity rather
-   * than reached by a sequence flow, so "nothing leads to it" is a statement
-   * about this reader's graph and not about the program — and it was made about
-   * a `CATCH` whose protected part simply drew no node (CR-07). Unreachable is
-   * claimed where the source shows it.
-   */
-  private noteUnreachableSteps(): void {
-    const reached = new Set(this.graph.edges.map((e) => e.to));
-    const entryNodes = new Set(this.graph.regions.map((r) => r.entryNodeId));
-    for (const node of this.graph.nodes) {
-      if (reached.has(node.id) || entryNodes.has(node.id) || node.kind === 'start') continue;
-      // A boundary is skipped unless its TRY was entered by nothing after an
-      // abort.
-      if (node.kind === 'error-boundary' && !this.cutOffBoundaries.has(node.id)) continue;
-      const statement = node.anchor ? this.statements[node.anchor.statementIndex] : undefined;
-      this.graph.notes.push({
-        reason: 'unreachable-after-abort',
-        detail: `Nothing in this source leads to ${node.kind} "${node.label}": what stands before it in ${node.container ?? 'the program'} does not come back.`,
-        snippet: statement ? snippet(statement.text) : node.label,
-        lineStart: node.anchor?.lineStart ?? 0,
-        lineEnd: node.anchor?.lineEnd ?? 0,
-      });
     }
   }
 
