@@ -415,7 +415,7 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
   dataName: string;
 }) {
-  // A radio group as WAI-ARIA describes it (QA review 9c44faece6d3): one tab stop, the chosen option; the arrow keys
+  // A radio group as WAI-ARIA describes it: one tab stop, the chosen option; the arrow keys
   // move to the next or previous option and choose it, Home and End to the first and last.
   const chosen = Math.max(0, options.findIndex((o) => o.value === value));
   const onKey = (e: React.KeyboardEvent<HTMLButtonElement>, i: number) => {
