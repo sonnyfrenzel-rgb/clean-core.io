@@ -142,8 +142,8 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     workspace: true,
     files: { en: 'docs/privacy/1.4.md', de: 'docs/privacy/1.4.de.md' },
     sha256: {
-      en: 'ea90bc95a20b71adb09dbef6c8ec0e599daed98bc2859298b74318a4b835e004',
-      de: '55e8c5be9dd3af604c45891732e25dfabe2b3780a06e990aa0610b33067813c4',
+      en: '6b4a6348c9f63b0b277a674aa42816770e067e5f1f96204e86982a1a8ef38f20',
+      de: '89ef9d056a1556d1d1c6407473e96d5a602c60dd861fc2b257264f0764738ae3',
     },
   },
 ];
@@ -195,10 +195,11 @@ const CHANGE_NOTES: Partial<Record<PrivacyVersionId, Record<LegalLang, string>>>
     de: 'Abschnitt 9 beschreibt den wöchentlichen Bericht mit Zahlen zur Nutzung; die Abschnitte 2, 5, 6 und 7 verweisen darauf, und Abschnitt 7 nennt weitere Einträge der lokalen und der Sitzungsspeicherung.',
     en: 'section 9 describes the weekly report with usage figures; sections 2, 5, 6 and 7 refer to it, and section 7 names further entries in local and session storage.',
   },
-  // Legal review, document 20, passage 2.4 (the head of the next version), word for word.
+  // Legal review, document 20, passage 2.4 (proposed for the next version), adapted to what 1.4 changes: no session
+  // storage entry, and the section 3 sentence of statement 20c E3. PENDING the owner's / lawyer's OK before release.
   '1.4': {
-    de: 'Abschnitt 7 nennt weitere Einträge der lokalen und der Sitzungsspeicherung, darunter die Sicht und die Darstellung von „My workspace“.',
-    en: 'section 7 names further entries in local and session storage, among them the view and the layout of My workspace.',
+    de: 'Abschnitt 7 nennt die Sicht und die Darstellung von „My workspace“; Abschnitt 3 nennt die Kurzfassung, die unser Server für diese Übersicht zu jedem Projekt ablegt.',
+    en: 'section 7 names the view and the layout of My workspace; section 3 names the short summary our server keeps of every project for this overview.',
   },
 };
 

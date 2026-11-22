@@ -197,10 +197,13 @@ const STATEMENT_20C = {
   ],
 } as const;
 
-/** The change note of 1.4: document 20, passage 2.4, word for word. */
+/**
+ * The change note of 1.4: document 20, passage 2.4, adapted to what 1.4 changes (no session storage entry; the
+ * section 3 sentence of statement 20c E3). Pending the owner's / lawyer's OK before release.
+ */
 const DOC20_HEAD = {
-  de: 'Abschnitt 7 nennt weitere Einträge der lokalen und der Sitzungsspeicherung, darunter die Sicht und die Darstellung von „My workspace“.',
-  en: 'section 7 names further entries in local and session storage, among them the view and the layout of My workspace.',
+  de: 'Abschnitt 7 nennt die Sicht und die Darstellung von „My workspace“; Abschnitt 3 nennt die Kurzfassung, die unser Server für diese Übersicht zu jedem Projekt ablegt.',
+  en: 'section 7 names the view and the layout of My workspace; section 3 names the short summary our server keeps of every project for this overview.',
 } as const;
 
 const privacyFor = (lang: 'de' | 'en', id: PrivacyVersionId) => (lang === 'de' ? privacyDeFor(id) : privacyEnFor(id));

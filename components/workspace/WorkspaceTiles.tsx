@@ -66,8 +66,8 @@ import { HOME_LINK, OwnCodeWay, ProductMark } from './HomeStartParts';
  *   3. **Your programs** — one tile per program, all one size: its map as a
  *      thumbnail, three facts (steps, clean core score, decision), and a line per
  *      product, Analyse and Re-design, each with one action. The lens
- *      "Read as Business · IT · Management" only marks one fact and opens the
- *      analysis in that view (W9). The table, direction B, is the list mode one
+ *      "Read as Business · IT · Management" only marks one fact (W9); the
+ *      analysis opens as always (privacy policy 1.4, section 7). The table, direction B, is the list mode one
  *      click away; the last tile starts the next analysis.
  *
  * Every figure is read from the project list and the server-written summary on
@@ -79,8 +79,9 @@ import { HOME_LINK, OwnCodeWay, ProductMark } from './HomeStartParts';
 const TOOL_LABEL = Object.fromEntries(PHASES.map((p) => [p.key, p.label])) as Record<PhaseKey, string>;
 
 const toolHref = (tile: ProgramTile, key: PhaseKey) => `${tile.href}/${key}`;
-const analysisHref = (tile: ProgramTile, lens: WorkspaceLens) =>
-  lens === 'business' ? `${tile.href}/analyze` : `${tile.href}/analyze?view=${lens}`;
+// The lens only decides which fact a tile highlights; the analysis opens as it always does. Privacy policy 1.4,
+// section 7 (lawyer, statement 20c E2): the view "only decides which figure the tiles highlight".
+const analysisHref = (tile: ProgramTile) => `${tile.href}/analyze`;
 
 function Dot({ tone }: { tone: 'waiting' | 'moving' | 'outdated' }) {
   return (
@@ -155,7 +156,7 @@ function AnalyseLine({ tile, lens }: { tile: ProgramTile; lens: WorkspaceLens })
     );
   const action =
     a.kind === 'signed' ? (
-      <ActionLink href={analysisHref(tile, lens)} data-tile-action="open-analysis">{wt('ws.an.open')}</ActionLink>
+      <ActionLink href={analysisHref(tile)} data-tile-action="open-analysis">{wt('ws.an.open')}</ActionLink>
     ) : (
       <ActionLink href={`${tile.href}/analyze`} data-tile-action="run">
         {a.kind === 'stale' ? wt('ws.an.rerun') : a.kind === 'no-code' ? wt('ws.an.addCode') : wt('ws.an.run')}

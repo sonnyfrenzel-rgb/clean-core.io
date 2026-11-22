@@ -24,7 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   three programs on; they are the filter, and they count changes in the last 7 days. "Your programs" gives each
   program a tile of one size: its map as a thumbnail, three facts (steps, clean core score, decision), and a line for
   Analyse and for Re-design, each with one action. A decision other than Rebuild reads "Not needed — decided: …"
-  (W5). "Read as Business · IT · Management" only marks one fact and opens the analysis in that view (W9). The home
+  (W5). "Read as Business · IT · Management" only marks one fact (W9); the analysis opens as always, because privacy policy 1.4 says the view decides nothing else. The home
   list of 3.2.0 (AB-14b: tabs, "Needs your attention", the Figures switch, the two doors) is the list mode, one click
   away; its levels and rules are read per row in that mode only. The last tile and
   "Analyse another Z program" start the next analysis. Lens and mode are remembered by this browser only
