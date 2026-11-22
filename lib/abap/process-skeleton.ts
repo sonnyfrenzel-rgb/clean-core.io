@@ -18,10 +18,7 @@ import { EntryReader, type EntryPoint } from './skeleton/entries';
 import { WalkReaders } from './skeleton/walk-readers';
 import { settleEarlyEnds } from './skeleton/early-ends';
 import { newWalkState, type WalkState } from './skeleton/walk/state';
-import type { Walker } from './skeleton/walk/walker';
-import { walkRange } from './skeleton/walk/range';
-import { buildEntryRegion, routineRegion } from './skeleton/walk/regions';
-import { callbackEntry } from './skeleton/walk/callbacks';
+import { createWalker, walkEntries } from './skeleton/walk/walk';
 import { chainReportEvents } from './skeleton/report-chain';
 import { addSubProcessStarts, markEmptyEntries } from './skeleton/starts';
 import { noteUnreachableSteps } from './skeleton/unreachable-notes';
@@ -542,8 +539,6 @@ class SkeletonBuilder {
   private graph = new SkeletonGraph();
   /** The walk's mutable state (`skeleton/walk/state.ts`). */
   private walk: WalkState = newWalkState();
-  /** The walk as one typed object, handed to every walker module (`skeleton/walk/walker.ts`). */
-  private w!: Walker;
   private blockAt = new Map<number, Block>();
   private branchAt = new Map<number, Branch>();
   private formBlocks = new Map<string, Block>();
@@ -707,45 +702,32 @@ class SkeletonBuilder {
     });
     const entries = this.entryReader.readEntryPoints();
     this.runEntries = entries.filter((e) => e.origin === 'event' || e.origin === 'implicit');
-    this.w = {
-      graph: this.graph,
-      input: {
-        statements: this.statements,
-        structure: this.structure,
-        calls: this.calls,
-        blockAt: this.blockAt,
-        branchAt: this.branchAt,
-        formBlocks: this.formBlocks,
-        routineBlocks: this.routineBlocks,
-        macros: this.macros,
-        localData: this.localData,
-        batchInput: this.batchInput,
-        methodImpls: this.methodImpls,
-        classNames: this.classNames,
-        effects: this.effects,
-        helpers: this.helpers,
-        performedFrom: this.performedFrom,
-        dispatch: this.dispatch,
-        boundHandlers: this.boundHandlers,
-        handlerEvent: this.handlerEvent,
-        candidateSites: this.candidateSites,
-        readers: this.readers,
-        entryReader: this.entryReader,
-        runEntries: this.runEntries,
-      },
-      state: this.walk,
-      readings: { reads310: this.reads310, reads320: this.reads320 },
-      range: (from, to, ctx, incoming) => walkRange(this.w, from, to, ctx, incoming),
-      routineRegion: (name) => routineRegion(this.w, name),
-    };
-    for (const entry of entries) buildEntryRegion(this.w, entry);
-    for (const entry of this.entryReader.deferredModuleEntries(this.walk.screenCalled)) buildEntryRegion(this.w, entry);
-    // A callback's own walk can start another task, so this runs until the
-    // walks name nothing new.
-    for (let next = 0; next < this.walk.callbacks.length; next++) {
-      const entry = callbackEntry(this.w, this.walk.callbacks[next]);
-      if (entry) buildEntryRegion(this.w, entry);
-    }
+    // Pass 5, the walk (`skeleton/walk/`).
+    const walker = createWalker(this.graph, {
+      statements: this.statements,
+      structure: this.structure,
+      calls: this.calls,
+      blockAt: this.blockAt,
+      branchAt: this.branchAt,
+      formBlocks: this.formBlocks,
+      routineBlocks: this.routineBlocks,
+      macros: this.macros,
+      localData: this.localData,
+      batchInput: this.batchInput,
+      methodImpls: this.methodImpls,
+      classNames: this.classNames,
+      effects: this.effects,
+      helpers: this.helpers,
+      performedFrom: this.performedFrom,
+      dispatch: this.dispatch,
+      boundHandlers: this.boundHandlers,
+      handlerEvent: this.handlerEvent,
+      candidateSites: this.candidateSites,
+      readers: this.readers,
+      entryReader: this.entryReader,
+      runEntries: this.runEntries,
+    }, this.walk, { reads310: this.reads310, reads320: this.reads320 });
+    walkEntries(walker, entries);
     // ADR-054, once every region is walked: an early end is only early where
     // something drawn would still have followed it.
     settleEarlyEnds(this.graph, {
