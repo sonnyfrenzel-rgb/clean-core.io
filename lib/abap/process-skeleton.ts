@@ -9,8 +9,7 @@ import { readReferenceTypes, resolveMethodTarget } from './method-resolution';
 import { candidatesForCall, readClassHierarchy, type ClassHierarchy } from './class-hierarchy';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { type LuwEvent, type UpdateRegistration } from './luw-states';
-import { localDataObjectsOf } from './table-dependencies';
-import { readBatchInputFrom, type BatchInputCall } from './batch-input';
+import { type BatchInputCall } from './batch-input';
 import { engineReads310Apply } from './engine-reads-310-gate';
 import { engineReads320Apply } from './engine-reads-320-gate';
 import { APP_VERSION } from '../version';
@@ -19,6 +18,7 @@ import { anchorOf, bodyRange, programName, snippet, tokenIndexOf } from './skele
 import { buildLanes } from './skeleton/lanes';
 import { FLOW_BLOCKS } from './skeleton/keywords';
 import { noteWhatIsNotRead } from './skeleton/source-notes';
+import { readDeclarations, type MethodImpl } from './skeleton/declarations';
 import { settleEarlyEnds, type EarlyEnd } from './skeleton/early-ends';
 import { assignmentTarget, classOf, leavesDialogStep } from './skeleton/statement-readers';
 import { chainReportEvents } from './skeleton/report-chain';
@@ -549,15 +549,6 @@ const DECLARES = new Set([
   'ALIASES', 'EVENTS', 'CLASS-EVENTS', 'ENUM', 'ENDENUM', 'MESH',
 ]);
 
-/**
- * A RAP behaviour handler method — roadmap 2.14. The `FOR …` clause is the
- * source saying, in words that stand in it, that the runtime calls this method;
- * corpus case CC-059 declares `set_status FOR DETERMINE ON MODIFY` in a
- * `PRIVATE SECTION` and its expected process begins there all the same.
- */
-const RAP_HANDLER =
-  /\bFOR\s+(DETERMINE|VALIDATE|MODIFY|READ|LOCK|ACTION|FEATURES|BEHAVIOR|PRECHECK|NUMBERING|GLOBAL\s+AUTHORIZATION|INSTANCE\s+AUTHORIZATION|GLOBAL\s+FEATURES|INSTANCE\s+FEATURES)\b/i;
-
 /** Function modules that send something out of the system — §5.8 Send-Task. */
 const SEND_FUNCTIONS = new Set([
   'SO_NEW_DOCUMENT_SEND_API1', 'SO_NEW_DOCUMENT_ATT_SEND_API1',
@@ -940,18 +931,6 @@ export function skeletonReadFor(
   return buildProcessSkeletonFrom(typeof facts === 'function' ? facts() : facts, { engineVersion });
 }
 
-/** One `METHOD name.` inside a `CLASS x IMPLEMENTATION` of this source (D2). */
-interface MethodImpl {
-  /** `CLASS=>METHOD`, upper-cased — the routine key. */
-  key: string;
-  cls: string;
-  /** As the implementation writes it, upper-cased: `RUN`, `ZIF_X~RUN`. */
-  name: string;
-  /** The part after `~`, or the name itself. */
-  short: string;
-  block: Block;
-}
-
 /**
  * One method call the source writes (D2) — `CALL METHOD x->m`, `x->m( … )`,
  * `cls=>m( … )`, `me->m( … )`, `m( … )`, and a constructor behind `NEW` or
@@ -1186,25 +1165,23 @@ class SkeletonBuilder {
   ) {}
 
   build(): ProcessSkeleton {
-    this.localData = localDataObjectsOf(this.statements);
-    for (const call of readBatchInputFrom(this.statements)) this.batchInput.set(call.statementIndex, call);
-    for (const block of this.structure.blocks) this.blockAt.set(block.openIndex, block);
-    for (const branch of this.control.branches) this.branchAt.set(branch.openIndex, branch);
-    for (const block of this.structure.blocks) {
-      if (block.kind === 'define') {
-        const name = /^DEFINE\s+([\w/]+)/i.exec(this.statements[block.openIndex].text);
-        if (name) this.macros.set(name[1].toUpperCase(), { block });
-      }
-      if (block.kind !== 'form') continue;
-      const m = /^FORM\s+([\w/]+)/i.exec(this.statements[block.openIndex].text);
-      if (m) this.formBlocks.set(m[1].toUpperCase(), block);
-    }
-    for (const [name, block] of this.formBlocks) this.routineBlocks.set(name, block);
-    this.readMethodImplementations();
-    this.readFunctionBlocks();
-    this.readEnhancementBlocks();
-    this.readMethodVisibility();
-    this.readSelectionScreen();
+    const d = readDeclarations({ statements: this.statements, structure: this.structure, control: this.control });
+    this.localData = d.localData;
+    this.batchInput = d.batchInput;
+    this.blockAt = d.blockAt;
+    this.branchAt = d.branchAt;
+    this.macros = d.macros;
+    this.formBlocks = d.formBlocks;
+    this.routineBlocks = d.routineBlocks;
+    this.methodImpls = d.methodImpls;
+    this.classNames = d.classNames;
+    this.definedClasses = d.definedClasses;
+    this.superOf = d.superOf;
+    this.functionBlocks = d.functionBlocks;
+    this.enhancementBlocks = d.enhancementBlocks;
+    this.externallyCallableMethods = d.externallyCallableMethods;
+    this.redefinedFromOutside = d.redefinedFromOutside;
+    this.selectionNames = d.selectionNames;
     this.readMethodCallSites();
     this.readEventHandlers();
     this.readEffects();
@@ -1284,14 +1261,6 @@ class SkeletonBuilder {
   }
 
   /* ---------------- what the source declares ---------------- */
-
-  private readSelectionScreen(): void {
-    for (const statement of this.statements) {
-      if (statement.keyword !== 'PARAMETERS' && statement.keyword !== 'SELECT-OPTIONS') continue;
-      const m = /^(?:PARAMETERS|SELECT-OPTIONS)\s+([\w/]+)/i.exec(statement.text);
-      if (m) this.selectionNames.add(m[1].toUpperCase());
-    }
-  }
 
   /* ---------------- which routines are steps ---------------- */
 
@@ -1485,42 +1454,6 @@ class SkeletonBuilder {
   }
 
   /* ---------------- D2: method calls ---------------- */
-
-  /**
-   * The methods this source implements, and the classes it names — read once,
-   * before the effects, because a method is a routine there (D2).
-   */
-  private readMethodImplementations(): void {
-    for (const block of this.structure.blocks) {
-      const opener = this.statements[block.openIndex];
-      if (block.kind === 'class' || block.kind === 'interface') {
-        const name = /^(?:CLASS|INTERFACE)\s+([\w/]+)/i.exec(opener.text);
-        if (name) this.classNames.add(name[1].toUpperCase());
-        if (name && /^CLASS\s+[\w/]+\s+DEFINITION\b/i.test(opener.text)
-          && !/\bDEFINITION\s+(?:DEFERRED|LOAD)\b/i.test(opener.text)) {
-          this.definedClasses.add(name[1].toUpperCase());
-        }
-        const parent = /\bINHERITING\s+FROM\s+([\w/]+)/i.exec(opener.text);
-        if (name && parent) this.superOf.set(name[1].toUpperCase(), parent[1].toUpperCase());
-        continue;
-      }
-      if (block.kind !== 'method') continue;
-      // A `METHOD` with no class around it at all is an excerpt — one method of
-      // a class the upload does not hold (a Web Dynpro controller, a gateway
-      // method pasted on its own). It is still a routine: a call on its name
-      // reaches it, and the class it belongs to is simply not written, so its
-      // key carries an empty class.
-      const bare = !(this.structure.enclosing[block.openIndex] ?? []).some((b) => b.kind === 'class');
-      const cls = bare ? '' : classOf(this.statements, this.structure, block.openIndex);
-      const name = /^METHOD\s+([\w/~]+)/i.exec(opener.text)?.[1]?.toUpperCase();
-      if (cls === null || !name) continue;
-      const key = `${cls}=>${name}`;
-      if (this.routineBlocks.has(key)) continue;
-      const tilde = name.lastIndexOf('~');
-      this.methodImpls.push({ key, cls, name, short: tilde < 0 ? name : name.slice(tilde + 1), block });
-      this.routineBlocks.set(key, block);
-    }
-  }
 
   /**
    * Which class a reference variable holds, as far as the source says it in so
@@ -2172,34 +2105,6 @@ class SkeletonBuilder {
     return out;
   }
 
-  /**
-   * `FUNCTION name.` … `ENDFUNCTION.` — read here rather than in
-   * `block-structure.ts` because ABAP's own block table is shared with the
-   * branch reader, the call graph and the comparability rules, and a new kind
-   * in it changes what every one of them sees. What this needs is the range.
-   */
-  private readFunctionBlocks(): void {
-    const open: number[] = [];
-    for (let i = 0; i < this.statements.length; i++) {
-      const statement = this.statements[i];
-      if (statement.nativeSql) continue;
-      if (statement.keyword === 'FUNCTION') { open.push(i); continue; }
-      if (statement.keyword !== 'ENDFUNCTION') continue;
-      const openIndex = open.pop();
-      if (openIndex === undefined) continue;
-      const name = /^FUNCTION\s+([\w/]+)/i.exec(this.statements[openIndex].text);
-      if (name) this.functionBlocks.push({ name: name[1], openIndex, closeIndex: i });
-    }
-    // An opener nothing closed: the range runs to the end of the file, the same
-    // floor `block-structure.ts` uses, and `noteWhatIsNotRead` has already said
-    // that an unterminated container is a guess rather than an anchor.
-    for (const openIndex of open) {
-      const name = /^FUNCTION\s+([\w/]+)/i.exec(this.statements[openIndex].text);
-      if (name) this.functionBlocks.push({ name: name[1], openIndex, closeIndex: this.statements.length });
-    }
-    this.functionBlocks.sort((a, b) => a.openIndex - b.openIndex);
-  }
-
   private functionEntries(): EntryPoint[] {
     return this.functionBlocks.map((fn) => {
       const opener = this.statements[fn.openIndex];
@@ -2216,116 +2121,6 @@ class SkeletonBuilder {
         trigger: null,
       };
     });
-  }
-
-  /**
-   * What a class **definition** in this source declares callable from outside
-   * it: the `PUBLIC SECTION`, the interfaces it implements, and the RAP handler
-   * methods the framework calls whatever section they stand in.
-   *
-   * A private method is not here, and a class implementation whose definition
-   * is in another file declares nothing here — both stay silent rather than
-   * being assumed public.
-   */
-  private readMethodVisibility(): void {
-    for (const block of this.structure.blocks) {
-      if (block.kind !== 'class' && block.kind !== 'interface') continue;
-      const opener = this.statements[block.openIndex];
-      const owner = /^(?:CLASS|INTERFACE)\s+([\w/]+)/i.exec(opener.text)?.[1]?.toUpperCase() ?? '';
-      // A class's methods are its own; an interface's are reached as `zif~name`.
-      const keyOf = (method: string) => (block.kind === 'interface' ? `${owner}~${method}` : `${owner}=>${method}`);
-      this.readRedefinitions(block);
-      // **Local is not public.** `PUBLIC SECTION` in a `CLASS lcl_x DEFINITION`
-      // means public *within this program*; only `DEFINITION PUBLIC` — a global
-      // class — is callable from outside the source. Without that distinction
-      // the six local helper classes of `Z_ORDER_INTEGRITY_CHECK` each became a
-      // beginning of the process, which is six sentences the source does not
-      // write. A RAP handler is read below whatever its class is, because there
-      // the `FOR …` clause is the evidence rather than the visibility.
-      if (block.kind === 'class'
-        && !/^CLASS\s+[\w/]+\s+DEFINITION\b[^.]*\bPUBLIC\b/i.test(opener.text)) {
-        this.readRapHandlers(block);
-        continue;
-      }
-      // An interface declares nothing but public methods; a class starts private.
-      let visible = block.kind === 'interface';
-      for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
-        const statement = this.statements[i];
-        if (statement.keyword === 'PUBLIC') {
-          visible = /^PUBLIC\s+SECTION\b/i.test(statement.text);
-          continue;
-        }
-        if (statement.keyword === 'PROTECTED' || statement.keyword === 'PRIVATE') {
-          visible = false;
-          continue;
-        }
-        if (statement.keyword === 'INTERFACES') {
-          // Every method of the interface is reachable as `zif~name`, and the
-          // prefix is what the implementation writes, so the prefix is recorded.
-          const name = /^INTERFACES\s+([\w/]+)/i.exec(statement.text);
-          if (visible && name) this.externallyCallableMethods.set(`${owner}=>${name[1].toUpperCase()}~`, 'interface');
-          continue;
-        }
-        if (statement.keyword !== 'METHODS' && statement.keyword !== 'CLASS-METHODS') continue;
-        const name = /^(?:CLASS-)?METHODS\s+([\w/~]+)/i.exec(statement.text);
-        if (!name) continue;
-        const handler = RAP_HANDLER.exec(statement.text);
-        if (handler) {
-          this.externallyCallableMethods.set(keyOf(name[1].toUpperCase()), `RAP ${handler[1].toUpperCase()}`);
-          continue;
-        }
-        if (visible) this.externallyCallableMethods.set(keyOf(name[1].toUpperCase()), 'public');
-      }
-    }
-  }
-
-  /**
-   * The one thing a **local** class can still say: that its method is a RAP
-   * handler. `lhc_order` of corpus case CC-059 declares `set_status FOR
-   * DETERMINE ON MODIFY` in its `PRIVATE SECTION`, and the runtime calls it
-   * regardless — the `FOR` clause stands in the source and the section does
-   * not contradict it.
-   */
-  private readRapHandlers(block: Block): void {
-    if (!/\bDEFINITION\b/i.test(this.statements[block.openIndex].text)) return;
-    const owner = /^CLASS\s+([\w/]+)/i.exec(this.statements[block.openIndex].text)?.[1]?.toUpperCase() ?? '';
-    for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
-      const statement = this.statements[i];
-      if (statement.keyword !== 'METHODS' && statement.keyword !== 'CLASS-METHODS') continue;
-      const name = /^(?:CLASS-)?METHODS\s+([\w/~]+)/i.exec(statement.text);
-      const handler = RAP_HANDLER.exec(statement.text);
-      if (name && handler) {
-        this.externallyCallableMethods.set(`${owner}=>${name[1].toUpperCase()}`, `RAP ${handler[1].toUpperCase()}`);
-      }
-    }
-  }
-
-  /**
-   * `METHODS name REDEFINITION` in a class that inherits from a class this
-   * source does not hold — a gateway `*_DPC_EXT` redefining `…_GET_ENTITYSET`,
-   * a RAP saver redefining `save_modified`, a subclass of a framework class.
-   *
-   * A redefinition replaces a method the **superclass** declares, and the one
-   * that calls it is the superclass's code — the dispatcher, the framework —
-   * which is not in this source. That is written down twice here: the word
-   * `REDEFINITION` and the `INHERITING FROM` a class the source does not
-   * define. Its section is the superclass's decision (a protected redefinition
-   * is the usual shape), so the visibility rule of 2.14 does not reach it —
-   * the same reason a RAP handler is read whatever its section.
-   *
-   * A superclass this source **does** hold is not outside: there the call is
-   * in the source, or it is polymorphism the reader does not resolve.
-   */
-  private readRedefinitions(block: Block): void {
-    const opener = this.statements[block.openIndex].text;
-    const cls = /^CLASS\s+([\w/]+)\s+DEFINITION\b/i.exec(opener)?.[1]?.toUpperCase();
-    const superclass = cls ? this.superOf.get(cls) : undefined;
-    if (!cls || !superclass || this.classNames.has(superclass)) return;
-    const global = /^CLASS\s+[\w/]+\s+DEFINITION\b[^.]*\bPUBLIC\b/i.test(opener);
-    for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
-      const m = /^(?:CLASS-)?METHODS\s+([\w/~]+)\s+(?:FINAL\s+)?REDEFINITION\b/i.exec(this.statements[i].text);
-      if (m) this.redefinedFromOutside.set(`${cls}=>${m[1].toUpperCase()}`, { superclass, global });
-    }
   }
 
   /**
@@ -2494,40 +2289,6 @@ class SkeletonBuilder {
       });
     }
     return out;
-  }
-
-  /**
-   * ADR-066 — a `FORM` that SAP calls by a documented convention, which no
-   * `PERFORM` of this source names. It is called from outside exactly as a
-   * `MODULE … INPUT` is, so it is an entry **beside** the event blocks and the
-   * other outside entries, not a last resort. The convention is the trigger;
-   * which output type or which standard transaction runs it is configuration
-   * outside the source, and `noteTriggers` says so.
-   */
-  /**
-   * ADR-066 — `ENHANCEMENT n name.` … `ENDENHANCEMENT.` standing at program
-   * level. The ABAP keyword documentation: the block is the source code plug-in
-   * of an enhancement implementation, and the program it enhances runs it at
-   * its enhancement option (an implicit one at the start or end of a routine,
-   * or an `ENHANCEMENT-POINT`/`-SECTION`). That program is not this source, so
-   * it is an entry of its own; which enhancement option is noted, not guessed.
-   * One inside a FORM or method is part of that routine's flow and is not here.
-   */
-  private readEnhancementBlocks(): void {
-    const open: number[] = [];
-    for (let i = 0; i < this.statements.length; i++) {
-      const statement = this.statements[i];
-      if (statement.nativeSql) continue;
-      if (statement.keyword === 'ENHANCEMENT') {
-        if (!(this.structure.enclosing[i] ?? []).length) open.push(i);
-        continue;
-      }
-      if (statement.keyword !== 'ENDENHANCEMENT' || !open.length) continue;
-      const openIndex = open.pop() as number;
-      const name = /^ENHANCEMENT\s+\d+\s+([\w/]+)/i.exec(this.statements[openIndex].text)?.[1];
-      this.enhancementBlocks.push({ name: name ?? 'ENHANCEMENT', openIndex, closeIndex: i });
-    }
-    this.enhancementBlocks.sort((a, b) => a.openIndex - b.openIndex);
   }
 
   private enhancementEntries(): EntryPoint[] {
