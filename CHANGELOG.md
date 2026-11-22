@@ -57,8 +57,10 @@ an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are uncha
   engine digest, and pushes the fixture and `lib/engine-releases.json` to the bot branch
   `chore/engine-release-capture`. `tests/engine-frozen-digests.spec.ts` checks every release fixture,
   `tests/engine-digest.spec.ts` the registry against the fixtures.
-- **Input hygiene**: a byte order mark is dropped and a lone CR ends a line before the engine reads a source. A program
-  saved with CR-only line ends read as one comment line — no finding and a "complete" coverage.
+- **Input hygiene** (`lib/abap/input-hygiene.ts`): from 3.4.0 a byte order mark is dropped and a lone CR ends a line
+  before the engine reads a source, so a program saved with CR-only line ends is read line by line. Before 3.4.0 such
+  a program was read as one comment line — no finding and a "complete" coverage; a run signed by an earlier engine
+  still rebuilds that way. A `\r\n` line end is left as it is, so no line number of any other source moves.
 - **`INSERT REPORT` is no table write**: `INSERT/DELETE/READ REPORT`, `TEXTPOOL` and `DYNPRO` were read as a CRITICAL
   write to a standard table named `REPORT`.
 - **A constant closes a dynamic target only in its own scope** (B1 of the engine review of 22.11.2026): the table
