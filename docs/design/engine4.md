@@ -1,6 +1,6 @@
 # Engine 4.0: the new engine's module tree
 
-Status: first step, 14 November 2026. Owner decisions: ADR-124 and ADR-125 in
+Status: L0–L2 and the Phase 0 foundation, 15 November 2026. Owner decisions: ADR-124 and ADR-125 in
 `docs/design/decisions.md`. Background: engine review `docs/design/engine-review-2026-11.md`, §2.4, §3, §4.3,
 §8 and §11.
 
@@ -16,6 +16,7 @@ code. Prior art supplied concepts only, and no third-party source is copied.
 | L0 Lexer | `lexer.ts`, `tokens.ts` | `lex(source) → { tokens, diagnostics }` | built |
 | L1 Statements | `statements.ts`, `statement-kinds.ts` | `statements(tokens, { macros? }) → Statement[]` | built |
 | L2 Blocks | `blocks.ts` | `blocks(statements) → BlockTree` with recovery | built |
+| Phase 0 | `parsed-source.ts`, `compat.ts` | `parseSource(source) → ParsedSource` (the shipping statement view, masks, container index) | built, not wired |
 | L3–L6 | — | object model, symbols, calls, process model (review §8.1) | later |
 
 `index.ts` is the public surface. `readSource(source)` runs L0 and L1 in one call and returns the statements
@@ -259,16 +260,117 @@ L2 alone is slower than `readBlocks` because it builds the full tree with branch
 module returns ranges and copies of the enclosing chains. Read together, the new L0–L2 take 81 ms at 25k
 lines, and the old statement and block readers take 500 ms.
 
+## Phase 0 "parse once": the foundation (15.11.2026)
+
+Owner go of 15.11.2026. Engine review §4.3 and §11 step 2; ADR-125 (4).
+
+### Which route, and why
+
+**The `ParsedSource` and its proof are built in `lib/engine4/`. No reader in `lib/abap/` has moved yet.**
+Wiring is the next step, and it needs an owner decision.
+
+ADR-125 (4) makes Phase 0 the strand's first piece: "the parsed source of 3.5.0 is built on L0/L1 rather
+than written twice". But (1) says that `lib/abap/` imports nothing from `lib/engine4/` until the switch,
+and (2) says the strand is wired into nothing before engine 4.0.0. (4) names no exception to either rule,
+and `tests/engine4-layer-guard.spec.ts` enforces (1). Moving one reader onto `ParsedSource` would break that
+guard and change the ADR, which is not this step's call to make. So this step builds everything the move
+needs and proves it neutral. Each reader can then move with no new design work once the owner allows it.
+
+### What it built
+
+- `lib/engine4/parsed-source.ts`: `parseSource(source, { macros? }) → ParsedSource`, exported from
+  `index.ts`. Everything in it is computed once:
+  - `source`, `lines`, `tokens`, `statements` (L1), `tree` (L2) and `diagnostics`. The tokens keep
+    comments, pseudo-comments, pragmas, literal texts and qualified names (`ls-f`, `lo->m`, `cl=>m`)
+    exactly as written. A reader that looks one of them up in a curated list loses nothing.
+  - `compat`: the shipping `AbapStatement[]`, built from the tokens (`compat.ts`). `CompatStatement` has
+    the shape of `AbapStatement` field for field, so it is assignable to it by structure without an import.
+  - `maskedText(i)`: the shipping `maskLiterals(compat[i].text)`, derived from the token kinds (literal
+    contents blanked, delimiters kept, a template's `{ … }` blanked). This is what replaces the
+    `maskLiterals(…)` calls, 81 of them in `lib/` outside `statement-reader.ts`.
+  - `maskNonCode()` and `maskComments()`: the whole-source masks, derived from the tokens and computed on
+    first use.
+  - `containers`: routines, classes, function modules and event blocks from the block tree, in the shipping
+    order. `containerAt(line)` answers like the shipping `containerAt`, but by lookup instead of a scan
+    over every container (the review's `containerAt` hotspot).
+  - `recovered`: L2 had to recover (an unclosed block or a closer with nothing to close).
+- **Two places copy a shipping reading that L1 deliberately does not share**, so that the move is neutral.
+  Native SQL between `EXEC SQL` and `ENDEXEC` is cut at every period, and its last piece is joined with
+  `ENDEXEC`. The AMDP body stays one statement, and its `"…"` identifiers are masked as comments. The
+  shadow category `native-sql-region` is where L1 is right. Fixing it is a gated reading later, not
+  Phase 0.
+
+### The proof: `scripts/engine4/shadow-parsed.ts`
+
+Run with `npx tsx scripts/engine4/shadow-parsed.ts [--samples]`. The spec is
+`tests/engine4-parsed-source.spec.ts`. The corpus is the same one as the L0/L1 shadow: the starter
+examples and the benchmark learn halves, never the holdout.
+
+| Check, per file | Corpus (394 files, 33,688 lines) | Damaged (962 sources) |
+|---|---|---|
+| `compat` deep-equal to `readStatements` | 394 / 394 (18,257 statements) | 961 / 962 |
+| `maskedText(i)` = `maskLiterals(text)` | 18,257 / 18,257 | 48,662 / 48,662 |
+| `maskNonCode()` / `maskComments()` identical | 394 / 394 each | 962 / 962 |
+| `containers` identical, order included | 394 / 394 | 814 / 962; all 148 others `recovered` |
+| `containerAt` identical on every line | 394 / 394 | 814 / 962 |
+
+**Why this proves a move neutral.** A reader is a pure function of the statements, the masks, the
+containers and the source. On a file where all of these are identical, the reader cannot tell
+`ParsedSource` from the shipping products, so its output, and every frozen digest built from it, stays
+the same. On the corpus that holds for every file. The shipping frozen oracles and goldens
+(`engine-version-rebuild`, the three `golden-master` specs) and the benchmark learn halves were run on
+this branch. They are unchanged by construction, because `lib/abap/` is untouched.
+
+**Where it is not neutral, and pinned** (the spec fails if this list changes):
+
+- **Damaged code, containers.** The 148 damages where L2 recovers differently from `readBlocks` (see "Shadow
+  on damaged code" above; L2 is right). Every one of them has `recovered` set. A neutral wiring keeps the
+  shipping container reader for a recovered source until a gated reading switches it.
+- **An AMDP method that lost its `ENDMETHOD`** (1 damage, BM-258). The shipping reader then reads the body
+  as ABAP, and the compat view keeps it native.
+- **Outside the corpus:** a template expression across lines (review §2.4; the shipping reader ends the
+  statement in the wrong place), an unterminated literal (the shipping mask runs on into the next
+  statement), and `CLASS … DEFINITION LOCAL FRIENDS` (review §2.4; the shipping reader opens a class
+  container). In each of the three the new reading is the right one. Wiring would change it, so each one
+  needs a gate, or a fallback to the shipping reader where `diagnostics` name the case.
+
+### Speed: `scripts/engine4/timing-parse.ts`
+
+"One read" means producing every product `ParsedSource` hands over (statements, blocks/containers, the mask
+of every statement, both whole-source masks, `containerAt` for every line). The shipping way and
+`parseSource` are compared on the 1,000-line starter concatenated, median of 5:
+
+| Lines | Shipping way | `parseSource` | Factor |
+|---|---|---|---|
+| 1k | 23 ms | 5 ms | 4.3× |
+| 10k | 197 ms | 44 ms | 4.4× |
+| 25k | 1,072 ms | 213 ms | 5.0× |
+| 50k | 2,227 ms | 287 ms | 7.8× |
+
+The evidence pass today re-reads and re-masks the same text again and again. Under the V8 profiler
+(`--profile`), `buildAbapEvidence` spends **285 of 612 ms (47 %) at 1k lines and 4,732 of 7,098 ms (67 %)
+at 10k lines** in `statement-reader.ts` and `block-structure.ts` (self time). Parse once can remove that
+share, down to the one read above. The end-to-end "after" can only be measured once readers consume
+`ParsedSource`, so this step reports no product speed-up.
+
+### The wiring step, pending the owner
+
+1. **Decision:** an ADR-125 amendment that lets `lib/abap/` import `lib/engine4/parsed-source` (and only
+   that) before the switch, as the "shared foundation" of (4), with the layer guard narrowed to that one
+   module.
+2. One entry point (`buildAbapEvidence`, `buildProcessFacts`, …) calls `parseSource` once and passes the
+   `ParsedSource` down. Readers that take `statements: AbapStatement[]` take `parsed.compat`, and
+   `maskLiterals(s.text)` becomes `parsed.maskedText(s.index)`. A recovered source keeps `readBlocks` for
+   its containers. One reader per commit, and the frozen digests and goldens run on each.
+3. Then item 3 below.
+
 ## Next steps
 
 1. **The 300-file real-code sample** outside the repository (ADR-125 (5)): run L2 over it and count the
-   unterminated blocks (target: 0 false ones), and run the damage shadow on it.
-2. **Phase 0 "parse once" (3.5.0) on top of L0–L2:** one `ParsedSource` holding tokens, statements, masked
-   text derived from tokens (which replaces the 80 `maskLiterals` call sites), the block tree as the block
-   index and the container index. It sits behind the existing `AbapStatement` interface, so readers move
-   over one at a time and the frozen digests prove each move neutral.
+   unterminated blocks (target: 0 false ones), and run the damage shadow and `shadow-parsed` on it.
+2. **Phase 0 wiring**, after the owner decision above.
 3. Remove the two other statement splitters (`declaration-parser.tokenize`, `plain-language.splitStatements`)
-   once their readers consume `ParsedSource`.
+   once their readers consume `ParsedSource`. Not started: it needs step 2.
 4. **L3:** upload layout and includes, which supply the macro names across files (the shadow already passes
    them per case) and settle `RP_PROVIDE_FROM_LAST`.
 

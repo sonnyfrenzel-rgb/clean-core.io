@@ -72,7 +72,7 @@ interface Damage {
 }
 
 /** Up to three closer lines per file, at fixed positions. */
-function damages(file: CorpusFile, macros: string[]): Damage[] {
+export function damages(file: CorpusFile, macros: string[]): Damage[] {
   const list = statements(lex(file.source).tokens, { macros });
   const tree = newBlocks(list);
   const lines = file.source.split('\n');
