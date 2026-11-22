@@ -3,7 +3,6 @@ import { type Block, type BlockStructure } from './block-structure';
 import { type Branch, type ControlFlowReport } from './control-flow';
 import { type CallGraphReport } from './call-graph';
 import { databaseWriteIn } from './open-sql-discrimination';
-import { namesThisProgram } from './callback-registrations';
 import { readDecisionTable } from './decision-table';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
 import { type LuwEvent, type UpdateRegistration } from './luw-states';
@@ -12,7 +11,7 @@ import { engineReads310Apply } from './engine-reads-310-gate';
 import { engineReads320Apply } from './engine-reads-320-gate';
 import { APP_VERSION } from '../version';
 import { SkeletonGraph, type Exit, type SkeletonReadings } from './skeleton/graph';
-import { anchorOf, bodyRange, programName, snippet, tokenIndexOf } from './skeleton/anchors';
+import { anchorOf, bodyRange, snippet, tokenIndexOf } from './skeleton/anchors';
 import { buildLanes } from './skeleton/lanes';
 import { FLOW_BLOCKS } from './skeleton/keywords';
 import { noteWhatIsNotRead } from './skeleton/source-notes';
@@ -20,7 +19,7 @@ import { readDeclarations, type MethodImpl } from './skeleton/declarations';
 import { isInternalWrite, readEffects } from './skeleton/effects';
 import { MethodDispatch, type MethodCall } from './skeleton/dispatch';
 import { DECLARATIVE } from './skeleton/keywords';
-import { CANDIDATE_TRIGGER, EntryReader, RUNTIME_ORDER, type EntryPoint } from './skeleton/entries';
+import { CANDIDATE_TRIGGER, EntryReader, type EntryPoint } from './skeleton/entries';
 import { WalkReaders, type ParallelGroup } from './skeleton/walk-readers';
 import {
   AMDP_METHOD,
@@ -31,7 +30,6 @@ import {
   FLAG_ASSIGNMENT,
   MESSAGE_ROW,
   adbcExecution,
-  alvEventRows,
   amdpTables,
   closesDataset,
   datasetOf,
@@ -46,17 +44,12 @@ import {
   receivesResults,
   selectTables,
 } from './skeleton/recognisers';
-import {
-
-} from './skeleton/recognisers';
-import {
-
-} from './skeleton/recognisers';
 import { settleEarlyEnds } from './skeleton/early-ends';
-import { newWalkState, type WalkCallback, type WalkState } from './skeleton/walk/state';
+import { newWalkState, type WalkState } from './skeleton/walk/state';
 import type { WalkContext, Walker } from './skeleton/walk/walker';
 import { markReached, readLaneEvidence, recordEvidence } from './skeleton/walk/records';
-import { assignmentTarget, classOf, leavesDialogStep } from './skeleton/statement-readers';
+import { callbackEntry, handlersRaisedBy, recordCallback, recordHandlerRegistration } from './skeleton/walk/callbacks';
+import { classOf, leavesDialogStep } from './skeleton/statement-readers';
 import { chainReportEvents } from './skeleton/report-chain';
 import { addSubProcessStarts, markEmptyEntries } from './skeleton/starts';
 import { noteUnreachableSteps } from './skeleton/unreachable-notes';
@@ -738,7 +731,7 @@ class SkeletonBuilder {
       macros: this.macros,
       localData: this.localData,
       callsIn: (statement) => this.dispatch.methodCallsIn(statement),
-      handlersRaisedBy: (statement) => this.handlersRaisedBy(statement),
+      handlersRaisedBy: (statement) => (this.boundHandlers.length ? this.dispatch.handlersRaisedBy(statement) : []),
     }, { reads310: this.reads310, reads320: this.reads320 });
     this.effects = routineEffects.effects;
     this.performedFrom = routineEffects.performedFrom;
@@ -802,7 +795,7 @@ class SkeletonBuilder {
     // A callback's own walk can start another task, so this runs until the
     // walks name nothing new.
     for (let next = 0; next < this.walk.callbacks.length; next++) {
-      const entry = this.callbackEntry(this.walk.callbacks[next]);
+      const entry = callbackEntry(this.w, this.walk.callbacks[next]);
       if (entry) this.buildEntryRegion(entry);
     }
     // ADR-054, once every region is walked: an early end is only early where
@@ -874,138 +867,6 @@ class SkeletonBuilder {
     return {
       ...(call.screens.length ? { batchInputScreens: call.screens.map((s) => `${s.program} ${s.screen}`) } : {}),
       ...(call.fields.length ? { batchInputFields: [...new Set(call.fields.map((f) => f.raw))] } : {}),
-    };
-  }
-
-  /**
-   * The registered handlers a `RAISE EVENT` runs: those declared for this event
-   * of the raising class, of a class it inherits from, or of the interface the
-   * statement names (`RAISE EVENT lif_x~ev`). In the order `SET HANDLER`
-   * registered them — the order the runtime calls them in.
-   */
-  private handlersRaisedBy(statement: AbapStatement, inWalk = false): string[] {
-    if (!this.boundHandlers.length) return [];
-    if (inWalk) {
-      // At the walk's `RAISE`: only a registration the walk has already passed.
-      return this.handlersRaisedBy(statement).filter((key) => this.walk.registeredInWalk.has(key));
-    }
-    return this.dispatch.handlersRaisedBy(statement);
-  }
-
-  /* ---------------- callbacks the walk discovers (entries of their own; `skeleton/entries.ts` has the rest) ---------------- */
-
-  /**
-   * `CALL FUNCTION … STARTING NEW TASK … PERFORMING form ON END OF TASK` (or
-   * `CALLING meth ON END OF TASK`) — the routine the **runtime** calls when the
-   * asynchronous task ends.
-   *
-   * No `PERFORM` names it, so the call graph of 2.2 counts it as unreachable,
-   * and until 27.09.2026 this file listed the one routine that takes the task's
-   * results — `RECEIVE RESULTS`, the checks on them, the log — under "not
-   * reached", although the statement right here names it as the thing that
-   * runs. It is the same kind of evidence as a `MODULE … INPUT` (D1): a caller
-   * outside the source's own flow, written down in the source. So it becomes an
-   * entry of its own, and only once the walk has passed the call that names it:
-   * a callback of a call nothing reaches is not reached either.
-   *
-   * It is not drawn at the call site as a sub-process on purpose. It does not
-   * run there — the caller goes on at once, and the callback runs whenever the
-   * task comes back — so a box in the caller's sequence would put it in an
-   * order the program does not have.
-   */
-  private recordCallback(statement: AbapStatement): void {
-    this.recordAlvCallbacks(statement);
-    if (!/\bSTARTING\s+NEW\s+TASK\b/i.test(statement.text)) return;
-    const code = maskLiterals(statement.text);
-    const form = /\bPERFORMING\s+([\w/]+)\s+ON\s+END\s+OF\s+TASK\b/i.exec(code);
-    if (form) {
-      const key = form[1].toUpperCase();
-      if (this.formBlocks.has(key)) this.pushCallback(key, form[1], statement);
-      return;
-    }
-    const method = /\bCALLING\s+(?:([\w/]+|<[\w/]+>)(->|=>))?([\w/~]+)\s+ON\s+END\s+OF\s+TASK\b/i.exec(code);
-    if (!method) return;
-    const { key, ambiguous } = this.dispatch.resolveMethod(method[1] ?? null, (method[2] as '->' | '=>' | undefined) ?? null,
-      method[3].toUpperCase(), statement.index);
-    if (key && !ambiguous && this.routineBlocks.has(key)) this.pushCallback(key, method[3], statement);
-  }
-
-  /**
-   * SAP convention (ALV list/grid, type pool SLIS): the `REUSE_ALV_*` function
-   * modules call back FORMs of the program named in `I_CALLBACK_PROGRAM`, and
-   * the caller names each FORM as a **literal** — in a parameter
-   * `I_CALLBACK_<event>` (`I_CALLBACK_USER_COMMAND`, `I_CALLBACK_PF_STATUS_SET`,
-   * `I_CALLBACK_TOP_OF_PAGE`, `I_CALLBACK_HTML_TOP_OF_PAGE`, …) or in the
-   * `FORM` column of the event table it passes as `IT_EVENTS` (`slis_alv_event`:
-   * `NAME` is the event, `FORM` the routine, e.g. `TOP_OF_PAGE`).
-   *
-   * The ALV runtime performs those FORMs when the person presses a function
-   * key or the list is drawn — no `PERFORM` of this source names them, so they
-   * were listed as "not reached" although the call says in so many words that
-   * they run. They become callbacks exactly like a FORM named `ON END OF TASK`:
-   * an entry of their own once the walk has passed the call, with the
-   * parameter as their trigger. Only where `I_CALLBACK_PROGRAM` is written
-   * (without it the ALV calls back nothing) and does not name another program
-   * by literal — the FORMs are looked up in that program.
-   */
-  private recordAlvCallbacks(statement: AbapStatement): void {
-    const text = statement.text;
-    if (!/^CALL\s+FUNCTION\s+'REUSE_ALV_[\w]*'/i.test(text)) return;
-    const program = /\bI_CALLBACK_PROGRAM\s*=\s*('[^']*'|[\w/-]+)/i.exec(text);
-    if (!program) return;
-    if (!namesThisProgram(program[1], this.statements, programName(this.statements)?.name ?? null, statement)) return;
-    for (const m of text.matchAll(/\b(I_CALLBACK_(?!PROGRAM\b)[\w]+)\s*=\s*'([\w/]+)'/gi)) {
-      const key = m[2].toUpperCase();
-      if (this.formBlocks.has(key)) this.pushCallback(key, m[2], statement, `ALV ${m[1].toUpperCase()}`);
-    }
-    const events = /\bIT_EVENTS\s*=\s*(<?[\w/]+>?)/i.exec(text);
-    if (!events) return;
-    // The event table is filled elsewhere in the source: `ls_event-form =
-    // 'TOP_OF_PAGE'.` or `VALUE #( ( name = … form = 'TOP_OF_PAGE' ) )`. A
-    // literal in a `FORM` component that names a FORM of this source is that
-    // registration — but only in a statement that fills **this** table: one
-    // that assigns the table itself, or a row of it (a `FORM = '…'` of any
-    // other structure registers nothing).
-    const rows = alvEventRows(this.statements, events[1].toUpperCase());
-    for (const other of this.statements) {
-      const target = /^(<?[\w/]+>?)(?:-[\w/-]+)?\s*\??=(?!=)/.exec(other.text)?.[1]?.toUpperCase()
-        ?? assignmentTarget(other.text) ?? /^MODIFY\s+(?:TABLE\s+)?([\w/]+)/i.exec(other.text)?.[1]?.toUpperCase();
-      if (!target || !rows.has(target)) continue;
-      for (const m of other.text.matchAll(/(?:-|\s|\()FORM\s*=\s*'([\w/]+)'/gi)) {
-        const key = m[1].toUpperCase();
-        if (this.formBlocks.has(key)) this.pushCallback(key, m[1], statement, 'ALV IT_EVENTS');
-      }
-    }
-  }
-
-  private pushCallback(key: string, label: string, site: AbapStatement, trigger = 'ON END OF TASK'): void {
-    if (this.walk.callbacks.some((c) => c.key === key)) return;
-    this.walk.callbacks.push({ key, label, site, trigger });
-    // Engine 3.2.0: the callback runs in the session that registered it, with what is registered here.
-    if (this.reads320) this.walk.registrationsAtCall.set(site.index, new Set(this.walk.registeredInWalk));
-  }
-
-  /**
-   * The entry a recorded callback opens — or `null` where the routine is
-   * already drawn: a callback the source also performs is a sub-process of that
-   * caller, and drawing it a second time as a beginning would be D3 again.
-   */
-  private callbackEntry(callback: WalkCallback): EntryPoint | null {
-    const block = this.routineBlocks.get(callback.key);
-    if (!block || this.walk.reachedRoutines.has(callback.key) || this.walk.entryOfBlock.has(block.openIndex)) return null;
-    this.walk.entryOfBlock.add(block.openIndex);
-    return {
-      statement: this.statements[block.openIndex],
-      lastIndex: block.closeIndex - 1,
-      endStatement: this.statements[Math.min(block.closeIndex, this.statements.length - 1)],
-      label: callback.label,
-      rank: RUNTIME_ORDER.length,
-      implicit: false,
-      origin: 'callback',
-      // Determined, unlike the other entries that are not event blocks: the
-      // statement that names it says what calls it.
-      trigger: callback.trigger,
-      site: callback.site.index,
     };
   }
 
@@ -1879,7 +1740,7 @@ class SkeletonBuilder {
       // Unless the source binds them (`readEventHandlers`): then the event
       // runs those methods here, one after the other, and each is drawn as a
       // call on it would be — sub-process, one step, or folded as a helper.
-      const handlers = this.handlersRaisedBy(statement, true);
+      const handlers = handlersRaisedBy(this.w, statement, true);
       if (handlers.length) {
         let live = incoming;
         for (const key of handlers) {
@@ -2057,37 +1918,9 @@ class SkeletonBuilder {
           anchorOf(statement, tokenIndexOf(statement, /^OBJECT$/i) + 1), statement);
       }
     }
-    if (statement.keyword === 'SET') this.recordHandlerRegistration(statement);
+    if (statement.keyword === 'SET') recordHandlerRegistration(this.w, statement);
     // D2: a method call — the whole statement, or an operand of it.
     return { exits: this.walkMethodCalls(statement, ctx, incoming), outputRun: null };
-  }
-
-  /**
-   * `SET HANDLER lo->on_click FOR go_grid` where `on_click` is declared `FOR
-   * EVENT double_click OF cl_gui_alv_grid` and that class is **not** in this
-   * source: the method is called by code outside the source, when that class
-   * raises the event — no `RAISE EVENT` here will ever run it
-   * (`handlersRaisedBy`). It is the same kind of evidence as `ON END OF TASK`
-   * (`recordCallback`): the source registers a routine for the runtime to call
-   * back, in so many words. So it becomes an entry of its own, once the walk
-   * has passed the registration, with the event as its trigger — which the
-   * declaration names, so it is determined. A handler of a class this source
-   * holds is left to its `RAISE EVENT` — which runs it only once the walk has
-   * passed this registration (`registeredInWalk`).
-   * A handler the source may deregister anywhere is bound nowhere
-   * (`readEventHandlers`), so it opens neither.
-   */
-  private recordHandlerRegistration(statement: AbapStatement): void {
-    if (!this.boundHandlers.length) return;
-    const handlers = this.dispatch.handlersSetBy(statement);
-    if (!handlers || handlers.deregisters) return;
-    for (const { key, name } of handlers) {
-      if (!this.boundHandlers.includes(key)) continue;
-      if (!this.walk.registrationFrozen) this.walk.registeredInWalk.add(key);
-      const declared = this.handlerEvent.get(key);
-      if (!declared || this.classNames.has(declared.of)) continue;
-      this.pushCallback(key, name, statement, `EVENT ${declared.event} OF ${declared.of}`);
-    }
   }
 
   private leaveTo(
@@ -2396,7 +2229,7 @@ class SkeletonBuilder {
     });
     this.graph.connect(incoming, node.id);
     readLaneEvidence(this.w, statement, kind, label, call?.destination);
-    this.recordCallback(statement);
+    recordCallback(this.w, statement);
     const exits: Exit[] = [{ from: node.id, condition: '', kind: 'sequence' }];
 
     if (/\bEXCEPTIONS\b/i.test(statement.text) && this.readers.handlesSubrcAfter(statement.index)) {
