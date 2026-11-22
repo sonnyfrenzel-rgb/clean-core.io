@@ -32,6 +32,7 @@ import type { WalkContext, Walker } from './skeleton/walk/walker';
 import { walkStatement } from './skeleton/walk/statement';
 import { walkParallel } from './skeleton/walk/parallel';
 import { walkLoop } from './skeleton/walk/loop';
+import { walkTry } from './skeleton/walk/try';
 import { walkMethodCalls } from './skeleton/walk/calls';
 import { callbackEntry } from './skeleton/walk/callbacks';
 import { classOf } from './skeleton/statement-readers';
@@ -1047,7 +1048,7 @@ class SkeletonBuilder {
           // before it.
           const registered = new Set(this.walk.registeredInWalk);
           if (block.kind === 'if' || block.kind === 'case') live = this.walkBranch(block, ctx, live);
-          else if (block.kind === 'try') live = this.walkTry(block, ctx, live);
+          else if (block.kind === 'try') live = walkTry(this.w, block, ctx, live);
           else if (block.kind === 'at') live = this.walkGroupChange(block, ctx, live);
           else live = walkLoop(this.w, block, ctx, live);
           this.walk.registeredInWalk = registered;
@@ -1358,79 +1359,6 @@ class SkeletonBuilder {
     const body = this.walkRange(block.openIndex + 1, block.closeIndex - 1, ctx,
       [{ from: gateway.id, condition, kind: 'conditional' }]);
     return [...body, { from: gateway.id, condition: '', kind: 'default' }];
-  }
-
-  /**
-   * `TRY … CATCH … ENDTRY` — §5.8's error boundary event.
-   *
-   * The protected part is the flow; every `CATCH` is a boundary event on the
-   * first node of that part, and its handler joins the flow after the construct.
-   */
-  private walkTry(block: Block, ctx: WalkContext, incoming: Exit[]): Exit[] {
-    const handlers: number[] = [];
-    for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
-      const enclosing = this.structure.enclosing[i];
-      if (enclosing[enclosing.length - 1] !== block) continue;
-      if (this.statements[i].keyword === 'CATCH' || this.statements[i].keyword === 'CLEANUP') {
-        handlers.push(i);
-      }
-    }
-    const protectedTo = (handlers[0] ?? block.closeIndex) - 1;
-    const beforeProtected = this.graph.nodes.length;
-    // A handler runs when the protected part broke off somewhere, so it — and
-    // each handler after it — starts from what was registered before the TRY.
-    const registered = new Set(this.walk.registeredInWalk);
-    // Nothing enters the TRY although its region already drew steps: what stood
-    // before it does not come back. At the start of a region an empty `incoming`
-    // only means the walk began here, and the region's entry reaches it. A
-    // routine's end event is added before its body is walked and is no step.
-    const cutOff = incoming.length === 0
-      && this.graph.nodes.slice(0, beforeProtected)
-        .some((n) => n.region === ctx.region.key && n.id !== ctx.region.endNodeId);
-    const exits = this.walkRange(block.openIndex + 1, protectedTo, ctx, incoming);
-    const attachedTo = this.graph.nodes.slice(beforeProtected).find((n) => n.region === ctx.region.key) ?? null;
-
-    const out = [...exits];
-    for (let h = 0; h < handlers.length; h++) {
-      const header = this.statements[handlers[h]];
-      const boundary = this.graph.addNode('error-boundary', afterKeyword(header) || header.keyword,
-        anchorOf(header), ctx.region, ctx.container, {
-          detail: { attachedTo: attachedTo?.id ?? '', source: header.keyword },
-        });
-      if (attachedTo) {
-        this.graph.edges.push({ from: attachedTo.id, to: boundary.id, kind: 'boundary', condition: '' });
-      } else {
-        // A protected part that drew no node still runs, so its handler is still
-        // a path the program can take. Leaving the boundary unconnected made
-        // `noteUnreachableSteps` say the opposite — that nothing leads to the
-        // CATCH because what stands before it does not come back — with no
-        // control flow anywhere in the source to show it (CR-07). The handler
-        // hangs on what entered the TRY.
-        for (const entry of incoming) {
-          this.graph.edges.push({ from: entry.from, to: boundary.id, kind: 'boundary', condition: '' });
-        }
-        if (cutOff) this.walk.cutOffBoundaries.add(boundary.id);
-      }
-      const to = (handlers[h + 1] ?? block.closeIndex) - 1;
-      this.walk.registeredInWalk = new Set(registered);
-      const handled = this.walkRange(handlers[h] + 1, to, ctx,
-        [{ from: boundary.id, condition: '', kind: 'sequence' }]);
-      if (header.keyword !== 'CLEANUP') {
-        out.push(...handled);
-        continue;
-      }
-      // A CLEANUP runs while an exception this TRY does not catch passes on to
-      // an outer handler. When it is done the exception goes on propagating:
-      // the statement after ENDTRY is never next. Its
-      // end is an error end on the CLEANUP itself, not the normal flow.
-      if (handled.length) {
-        const passOn = this.graph.addNode('end-error', 'CLEANUP', anchorOf(header), ctx.region, ctx.container, {
-          detail: { propagates: true },
-        });
-        this.graph.connect(handled, passOn.id);
-      }
-    }
-    return out;
   }
 
 }
