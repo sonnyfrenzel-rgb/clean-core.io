@@ -133,12 +133,12 @@ test.describe('L3: a report and its includes', () => {
     expect(codes(l)).toEqual(['not-referenced']);
   });
 
-  test('a TOP that declares a local class DEFERRED stays the TOP (the shipping join renames it to the class)', () => {
+  test('a TOP that declares a local class DEFERRED stays the TOP (the shipping join agrees since 07cf0e32)', () => {
     const files = [f('zrep.abap', 'REPORT zrep.', 'INCLUDE zrep_top.', 'INCLUDE zrep_c01.'), f('zrep_top.abap', 'CLASS lcl DEFINITION DEFERRED.', 'DATA go TYPE REF TO lcl.'), f('zrep_c01.abap', 'CLASS lcl DEFINITION.', 'ENDCLASS.', 'CLASS lcl IMPLEMENTATION.', 'ENDCLASS.')];
     const l = layout(files);
     expect(orderOf(l)).toEqual(['ZREP', 'ZREP_TOP', 'ZREP_C01']);
     expect(l.objects[0].missing).toEqual([]);
-    expect(resolveIncludes(Object.fromEntries(files.map((x) => [x.name, x.source]))).missing).toEqual(['ZREP_TOP', 'ZREP_C01']);
+    expect(resolveIncludes(Object.fromEntries(files.map((x) => [x.name, x.source]))).missing).toEqual([]);
   });
 
   test('two copies of one include: the first is read, the second reported', () => {

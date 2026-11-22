@@ -731,6 +731,40 @@ the closer, and the old engine does the same.
 All 312 files, median of 5: new L0+L1 680 ms, new L2 51 ms, old `readStatements` 4,762 ms, old `readBlocks`
 31 ms. The largest file (9,459 lines) takes 24 ms in L0+L1 and 2 ms in L2. The old reader takes 196 ms.
 
+## Integration on `origin/dev` (22.11.2026)
+
+Branch `integrate/engine4`, cut from `origin/dev` 6ee15d05 (v3.2.0 plus the post-release docs), with the four strand
+branches merged: `build/engine4` (L0–L2), `build/engine4-parse-once` (Phase 0), `build/engine4-l3` (L3 layout) and
+`build/engine4-sample-tools` (external sample). All four share e8151ad6 and were 218 commits behind `dev`. The strand
+stays inert: `tests/engine4-layer-guard.spec.ts` passes, nothing outside `lib/engine4/`, `scripts/engine4/` and the
+`engine4-*` specs imports it.
+
+Conflicts were in the shared files only (`CHANGELOG.md`, `docs/design/engine4.md`, `lib/engine4/index.ts`,
+`scripts/engine4/shadow*.ts`, `tests/shard-plan.json`); the code of the four branches did not overlap. The shard
+plan was taken from `dev` and refreshed (`node scripts/test/shard-plan.mjs refresh`).
+
+**One spec changed because `dev` moved under it.** `engine4-layout.spec.ts` asserted the shipping upload's
+local-class defect (question 11): `resolveIncludes` reported `ZREP_TOP` and `ZREP_C01` missing. 3.2.0 fixed the
+defect (07cf0e32, "an include with a local class stays an include", ADR-134 Q11), so the spec now asserts that the
+shipping join and L3 agree. The L3 shadow moved with it (below).
+
+Checks on the integrated tree: `npx tsc --noEmit` clean; `npm run lint` 0 errors (416 warnings, all pre-existing on
+`dev`); the eight `engine4-*` specs, 379 tests, pass server-free
+(`npx playwright test -c playwright.serverfree.config.ts tests/engine4-`).
+
+Every offline shadow re-run against **today's** shipping readers (`dev`, 218 commits newer than the branches):
+
+| Shadow | Result on 22.11.2026 | Change from 15.11. |
+|---|---|---|
+| `shadow.ts`, corpus (394 files, 33,688 lines) | statements 18,257 / 18,250, aligned 99.85 %; L2 blocks 2,729 = 2,729, containers 1,221 = 1,221, chains 100 %; `unexplained` 0 | none |
+| `shadow-damage.ts`, corpus (962 damages) | victim flagged old 907, new 961; false unterminated old 35, new 2 | none |
+| `shadow-parsed.ts` (Phase 0 proof) | `compat` = `readStatements` 394 / 394; masks 18,257 / 18,257; containers and `containerAt` 394 / 394; damaged 961 / 962, containers 814 (all others `recovered`) | none: today's readers still match `ParsedSource` byte for byte |
+| `shadow-layout.ts` (157 uploads) | join reads 335 files (drops 59, all `further-object`), L3 394; main file agrees 131 (83.4 %); missing includes agree 157 (100 %) | join-reads-local-class category gone (fixed in 3.2.0); main 128 → 131, missing 147 → 157 |
+| `shadow.ts --corpus` sample (312 files, 174,591 lines) | statements 105,703 / 105,738, aligned 99.96 %; `Unknown` 12; unterminated old 167, new 1 (the true `ENFIF`) | none |
+| `shadow-damage.ts --corpus` sample (817 damages) | victim flagged old 755, new 816; false unterminated old 59, new 9 | none (ADR-134 Q5/Q6 not built yet, see next steps) |
+| `timing.ts` (L0+L1 / old statements) | 1k 3 / 13 ms, 10k 20 / 117 ms, 25k 45 / 568 ms, 50k 147 / 1,119 ms | within noise |
+| `timing-parse.ts` (one read, old / new) | 1k 4.0×, 10k 3.3×, 25k 5.0×, 50k 5.3× | within noise (this machine, Node 24) |
+
 ## Next steps
 
 1. **Decide questions 5 to 9 below** with the sample's evidence. Rerun both shadows on the sample after
