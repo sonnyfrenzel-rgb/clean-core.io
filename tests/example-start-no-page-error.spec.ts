@@ -150,7 +150,9 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
       // Since AB-14b a run from a row starts only through a confirmation dialog
       // with its cost and model (CHANGELOG [Unreleased], Home page v2 part 2);
       // the row's Run is `data-home-run`, and "Run analysis" in the dialog starts it.
-      const run = page.locator(`[data-home-run="${stagedId}"]`);
+      // Since 3.3.0 a project not analysed yet is also listed under "Needs your
+      // attention" with the same Run; the table row's Run is the last one.
+      const run = page.locator(`[data-home-run="${stagedId}"]`).last();
       await expect(run).toBeVisible({ timeout: 90000 });
       await run.click();
       const dialog = page.locator('[data-cc-message-box]');

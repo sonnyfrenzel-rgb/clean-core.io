@@ -81,13 +81,13 @@ async function instrument(page: Page) {
     const w = window as unknown as { __p: { cls: number; win: number; winStart: number; winLast: number; tiles: number | null; longEnd: number; tbt: number; bpmn: boolean } };
     w.__p = { cls: 0, win: 0, winStart: -Infinity, winLast: -Infinity, tiles: null, longEnd: 0, tbt: 0, bpmn: false };
     try {
-      // Session windows as web-vitals computes CLS: a shift more than 1 s after the last one, or more than 5 s after
+      // Session windows as web-vitals computes CLS: a shift 1 s or more after the last one, or 5 s or more after
       // the window began, opens a new window; CLS is the largest window.
       new PerformanceObserver((l) => {
         for (const e of l.getEntries() as unknown as Array<{ hadRecentInput: boolean; value: number; startTime: number }>) {
           if (e.hadRecentInput) continue;
           const p = w.__p;
-          if (e.startTime - p.winLast > 1000 || e.startTime - p.winStart > 5000) {
+          if (e.startTime - p.winLast >= 1000 || e.startTime - p.winStart >= 5000) {
             p.win = 0;
             p.winStart = e.startTime;
           }
