@@ -19,6 +19,7 @@ code. Prior art supplied concepts only, and no third-party source is copied.
 | Phase 0 | `parsed-source.ts`, `compat.ts` | `parseSource(source) → ParsedSource` (the shipping statement view, masks, container index) | built; **wired** into `readStatements` (ADR-133, 22.11.2026, `integrate/engine4`) |
 | L3 Upload layout | `layout.ts`, `conventions.ts` | `layout(files) → UploadLayout`; `readUpload(files)` runs L0–L2 per part with L3's macros | built (layout and includes) |
 | L4 references (first step) | `references.ts` | `references(statements, tree) → ReferenceTable`: every SAP reference with line, use and resolution | built, inert |
+| L4 graded | `graded.ts`, `lib/knowledge/` | `gradeReferences(table) → GradedReference[]`: SAP's facts and a standing per reference (no A–D letter) | built, inert |
 | L4 values | `values.ts` | `valueAt(valueContext(statements, tree), name, statement) → ValueAnswer`: scoped, loop- and call-aware, FORM parameters over call sites, provenance | built, inert |
 | L3 declarations, rest of L4, L5–L6 | — | class/interface declarations, screens, scopes and data flow, calls, process model (review §8.1) | later |
 
@@ -1028,6 +1029,47 @@ another write in another FORM): no answer becomes more certain (`constant` > `va
 
 Different single value: 0 everywhere. The real corpora hardly meet the unsound cases (their dynamic names were
 open already); the probes and the metamorphic generator do. Inert: nothing in the product reads `values.ts`.
+
+## L4: graded references through `lib/knowledge/` (22.11.2026, `build/engine4-p12`)
+
+ADR-133 (2) built, facts only. `lib/knowledge/` holds:
+
+- `cloudification.ts`: SAP's release file (latest) and classification file, read from where the sync writes them
+  (`lib/abap/generated/*.json`), with their `meta` (`CLOUDIFICATION_META`: source, release, fetch date, `sourceSha256`).
+  `sapFacts(name)` → listed, release state, classification state, object type, successors, SAP's or the customer's.
+- `identifiers.ts`: released classes (1,417) and interfaces (3,356), released CDS views (public and private lists),
+  SAP's classic BAPIs (3,091).
+- `type-groups.ts`: the sixteen SAP type groups, held equal to `KNOWN_TYPE_GROUPS` of `table-dependencies.ts` by a spec.
+
+The tree imports only itself and the synced JSON (`tests/engine4-layer-guard.spec.ts`, new test); `lib/engine4/`
+may import `./` and `../knowledge/` and nothing else. **No level rule moved:** the A–D letter is a rule on top of the
+facts (`abcd-classification.ts`) and a signed-pack guard (`tests/process-overlays.spec.ts`) watches that module by
+path; moving it needs its guard moved with it, which is a coordinated step with the strand that works on the
+class-gap findings, not this one.
+
+`lib/engine4/graded.ts`: `gradeReferences(table)` → every reference the source does not define, with `facts` and one
+`standing`: `customer`, `released`, `classicApi`, `notReleased`, `unlisted` (an SAP-looking name neither file holds),
+`unknown` (namespaced and unlisted, or a dynamic name that stays open). The release state decides before the
+classification, as in the level rule (`CL_HTTP_CLIENT`: `classicAPI` and `notToBeReleased` → `notReleased`).
+
+**Shadow** (`scripts/engine4/shadow-knowledge.ts`): the facts `sapFacts` reads equal the facts `getSapObjectStates`
+reads for every reference — **4,881 / 4,881** on the learn corpus, **18,032 / 18,032** on the public sample. Each
+standing maps to exactly one level of today's rule on the corpus (released → A 139, classicApi → B 306,
+notReleased → D 668, unlisted → C 2,538, customer → no level 1,168); on the public sample notReleased is D 132 or C
+12 (deprecated with a successor), as the rule says. The reading that turns standings into findings (question 18,
+the class/interface/exception gap) is the gated step after this.
+
+## Fuzz corpus (22.11.2026, `scripts/engine4/fuzz.ts`, outside CI)
+
+Every engine 4 layer (L0 coverage, L1, L2 tree invariants, `parseSource`, L4 references, the value reading of every
+dynamic name, the ledger) over a corpus and 17 mutations (truncation, deleted/inserted characters, deleted and
+duplicated lines, inserted `'` `|` `{` `` ` ``, dropped periods, bare CR, BOM+CRLF, NBSP and tabs, upper case,
+shuffled lines, everything on one line, random indentation), each read twice for determinism.
+
+| Corpus | Sources | Throws | Nondeterministic | Slowest (all layers, one read) |
+|---|---|---|---|---|
+| Public sample (300 files) | 8,700 | 0 | 0 | 581 ms (7,925 lines) |
+| Owner copy (12 files) | 348 | 0 | 0 | 121 ms (2,764 lines) |
 
 ## Statement ledger (design, 22.11.2026)
 

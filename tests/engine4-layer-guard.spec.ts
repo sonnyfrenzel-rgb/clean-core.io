@@ -41,11 +41,28 @@ function importsOf(file: string): string[] {
   return out;
 }
 
-test('lib/engine4 imports only from lib/engine4', () => {
+test('lib/engine4 imports only from lib/engine4 and the knowledge tree (ADR-133 (2))', () => {
   const bad: string[] = [];
   for (const file of engineFiles()) {
     for (const spec of importsOf(file)) {
-      if (!spec.startsWith('./')) bad.push(`${path.basename(file)} → ${spec}`);
+      if (!spec.startsWith('./') && !spec.startsWith('../knowledge/')) bad.push(`${path.basename(file)} → ${spec}`);
+    }
+  }
+  expect(bad).toEqual([]);
+});
+
+/**
+ * ADR-133 (2): `lib/knowledge/` is pure data — its own modules and the synced JSON under `lib/abap/generated/`,
+ * nothing else: no code of `lib/abap/`, nothing of `lib/engine4/`, React, Firebase or I/O.
+ */
+test('lib/knowledge imports only itself and synced JSON', () => {
+  const dir = path.join(ROOT, 'lib', 'knowledge');
+  const bad: string[] = [];
+  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.ts'))) {
+    for (const spec of importsOf(path.join(dir, f))) {
+      if (spec.startsWith('./')) continue;
+      if (/^\.\.\/abap\/generated\/[\w.-]+\.json$/.test(spec)) continue;
+      bad.push(`${f} → ${spec}`);
     }
   }
   expect(bad).toEqual([]);
