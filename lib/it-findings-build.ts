@@ -15,7 +15,11 @@ import {
 } from '@/lib/abap/abcd-classification';
 import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import type { CallGraphReport } from '@/lib/abap/call-graph';
-import type { ItFindingRow, ItFindingsSource, ItUseRow } from './it-findings';
+import type { ItFindingRow, ItFindingsSource, ItTypeGroup, ItUseRow } from './it-findings';
+import { readSapTypeReferences } from '@/lib/abap/sap-class-references';
+import { engineReads340Apply } from '@/lib/abap/engine-reads-340-gate';
+import { cleanSource } from '@/lib/abap/input-hygiene';
+import { APP_VERSION } from '@/lib/version';
 import { countSourceLines } from '@/lib/source-lines';
 
 /**
@@ -166,6 +170,10 @@ export function findingsOf(
   return {
     rows,
     uses: usesOf(source, facts.calls, rows, catalogSnapshot),
+    // From 3.4.0 (`ENGINE_READS_340_FROM`): the DDIC types by level, display only.
+    ...(engineReads340Apply(engineVersion === undefined ? APP_VERSION : engineVersion)
+      ? { ddicTypes: ddicTypeGroups(cleanSource(source), catalogSnapshot) }
+      : {}),
     sourceSha256: sha256Hex(source),
     rulesDerived: rules.rules.length,
     catalog: getCatalogSnapshotRef(catalogSnapshot),
@@ -177,6 +185,25 @@ export function findingsOf(
       answered: evidence.coverage.answered?.length ?? 0,
     },
   };
+}
+
+/* ------------------------------------------------------------ DDIC types (3.4.0) */
+
+/**
+ * The DDIC types the code declares with, grouped by the level SAP's files give them, worst level first and names in
+ * alphabetical order (owner decision 22.11.2026: in the IT view only, grouped by level, not as findings). Static
+ * references only (ADR-141).
+ */
+export function ddicTypeGroups(source: string, catalogSnapshot: string | undefined): ItTypeGroup[] {
+  const byLevel = new Map<ItTypeGroup['level'], ItTypeGroup['types']>();
+  for (const t of readSapTypeReferences(source, catalogSnapshot)) {
+    const held = byLevel.get(t.level) ?? [];
+    held.push({ name: t.name, lines: t.lines, state: t.state ?? null });
+    byLevel.set(t.level, held);
+  }
+  return (['D', 'C', 'B', 'A'] as const)
+    .filter((level) => byLevel.has(level))
+    .map((level) => ({ level, types: byLevel.get(level)!.sort((a, b) => a.name.localeCompare(b.name)) }));
 }
 
 /* ------------------------------------------------------------ what the code uses */

@@ -286,6 +286,8 @@ export interface AuditMetadata {
     /** Mirrors the signed run's `modelParticipation`; absent on runs written before 1.2. */
     modelParticipation?: import('./model-stages').ModelParticipation;
     engineVersion: string;
+    /** Roadmap 3.4.0 item (3): mirrors the signed run's `model.engineDigest`; absent before 3.4.0. */
+    engineDigest?: string;
     byokUsed: boolean;
     analysisTimestamp?: string;
     designTimestamp?: string;

@@ -147,6 +147,8 @@ export const KIND_LABEL: Readonly<Record<EvidenceKind, { one: string; many: stri
   // From engine 3.0.18 (`ENGINE_READS_FROM`, lib/abap/engine-reads-gate.ts).
   'classic-api': { one: 'Call of a classic API not released for ABAP Cloud', many: 'Calls of classic APIs not released for ABAP Cloud' },
   'dataset-io': { one: 'File on the application server', many: 'Files on the application server' },
+  // From engine 3.4.0 (`ENGINE_READS_340_FROM`, lib/abap/engine-reads-340-gate.ts).
+  'unreleased-class': { one: 'Use of an SAP class or interface not released for ABAP Cloud', many: 'Uses of SAP classes and interfaces not released for ABAP Cloud' },
 };
 
 export function kindLabel(kind: string, count: number): string {

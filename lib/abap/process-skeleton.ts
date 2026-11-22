@@ -1,4 +1,5 @@
 import { afterKeyword, maskLiterals, type AbapStatement, type SourceRange } from './statement-reader';
+import { sourceForEngine } from './input-hygiene';
 import { type Block, type BlockStructure } from './block-structure';
 import { type Branch, type ControlFlowReport } from './control-flow';
 import { type CallGraphReport } from './call-graph';
@@ -1005,7 +1006,9 @@ export interface SkeletonBuildOptions {
 }
 
 export function buildProcessSkeleton(source: string, options: SkeletonBuildOptions = {}): ProcessSkeleton {
-  return buildProcessSkeletonFrom(buildProcessFacts(source), options);
+  // From 3.4.0 (`input-hygiene.ts`): a byte order mark is dropped and a lone CR ends a line.
+  const read = sourceForEngine(source, options.engineVersion === undefined ? APP_VERSION : options.engineVersion);
+  return buildProcessSkeletonFrom(buildProcessFacts(read), options);
 }
 
 /**

@@ -102,6 +102,11 @@ export const WORKSPACE_IT_MESSAGES = {
   'itv.objectsTitle': 'Objects & dependencies',
   'itv.objectsLead':
     'The program’s own objects and everything the code calls, reads or writes — one row per object and use, with its lines, the clean core level SAP’s catalog gives it under the target profile, and the successor a finding names. The level describes the object; a finding is a separate statement and has its own list.',
+  'itv.typesTitle': 'DDIC types the code declares with',
+  'itv.typesLead':
+    'The data elements, structures and table types the code declares its data with, grouped by the clean core level SAP’s catalog gives them under the target profile. They are not findings: a type a program declares with is a dependency to check when the code moves, and it is listed here so the move can be planned. Only names written in the code are listed, never one read from a variable.',
+  'itv.typesLevel': 'Level',
+  'itv.typesLines': 'lines',
   'itv.objectsNotRecorded': 'Neither the program’s own objects nor what the code uses are recorded for this project.',
   'itv.objectsCaption': 'Own objects and the objects the code uses, with owner, use, lines, clean core level and successor',
   'itv.colOwner': 'Own or SAP',

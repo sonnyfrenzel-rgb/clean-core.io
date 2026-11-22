@@ -773,6 +773,16 @@ export function readStatements(source: string): AbapStatement[] {
   return list.map((s) => ({ ...s }));
 }
 
+/**
+ * The parse-once reading of a source itself, for a reader that needs the L1 statements and the L2 block tree
+ * rather than the shipping statement view — from 3.4.0 the reference table behind the class gap
+ * (`sap-class-references.ts`, ADR-141). Parsed on every call: it is asked once per build, and only by a reading
+ * behind its gate, so the statement scope above keeps its one job.
+ */
+export function parsedSourceOf(source: string): ParsedSource {
+  return parseSource(source);
+}
+
 /** The text of a statement with its leading keyword removed. */
 export function afterKeyword(statement: AbapStatement): string {
   return statement.text.slice(statement.keyword.length).trim();

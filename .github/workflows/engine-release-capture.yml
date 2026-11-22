@@ -1,0 +1,162 @@
+name: Capture the frozen engine digests of a release
+
+# Roadmap 3.4.0 item (4), owner decision 22.11.2026: every release freezes what its engine answered — the evidence
+# and route of the starter examples, the benchmark learn halves (never the holdout) and the probes, both editions,
+# plus the process skeleton and the business statements (format 3) — and its engine digest
+# (scripts/engine/engine-digest.cjs). tests/engine-frozen-digests.spec.ts then checks every release fixture on every
+# CI run, and the model card of a run names the release its engine digest matches ("unreleased build" otherwise).
+#
+# Runs on every push to main. Nothing to do when lib/version.ts names a version whose fixture exists (a hotfix of an
+# earlier release, a docs-only merge). Otherwise it runs `frozen-digests.ts capture` for that version on the release
+# commit and pushes the two new data files — tests/fixtures/engine-<version>-frozen.json and lib/engine-releases.json
+# — to the bot branch chore/engine-release-capture, which reaches dev like the catalog sync
+# (sync-catalog.yml: Actions may not open pull requests here). The weekly QA pipeline check reports the branch while
+# it is ahead of main (scripts/qa/lib/health.mjs, BOT_BRANCHES).
+#
+# Two jobs, as in sync-catalog.yml: the job that installs and runs project code holds a read-only token and hands
+# over only the two data files as an artifact; the push job starts from a fresh checkout, runs no npm at all,
+# accepts nothing but the expected paths, and runs git with hooks and fsmonitor switched off.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: engine-release-capture
+  cancel-in-progress: false
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    outputs:
+      captured: ${{ steps.capture.outputs.captured }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          persist-credentials: false
+
+      - name: Read the release version
+        id: version
+        run: |
+          version=$(sed -n "s/^export const APP_VERSION = '\(v[0-9.]*\)';.*/\1/p" lib/version.ts)
+          if [ -z "$version" ]; then echo "::error::lib/version.ts names no APP_VERSION"; exit 1; fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if [ -f "tests/fixtures/engine-$version-frozen.json" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Already frozen
+        if: steps.version.outputs.exists == 'true'
+        run: echo "### ${{ steps.version.outputs.version }} is frozen already" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Setup Node.js
+        if: steps.version.outputs.exists == 'false'
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install Dependencies
+        if: steps.version.outputs.exists == 'false'
+        run: npm ci --foreground-scripts
+
+      - name: Capture the release
+        id: capture
+        if: steps.version.outputs.exists == 'false'
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          npx tsx scripts/engine/frozen-digests.ts capture --engine "$VERSION" --commit "${GITHUB_SHA::8}"
+          npx tsx scripts/engine/frozen-digests.ts check --file "engine-$VERSION-frozen.json"
+          out="$RUNNER_TEMP/engine-release"
+          mkdir -p "$out/tests/fixtures" "$out/lib"
+          cp "tests/fixtures/engine-$VERSION-frozen.json" "$out/tests/fixtures/"
+          cp lib/engine-releases.json "$out/lib/"
+          echo "captured=true" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the data files
+        if: steps.capture.outputs.captured == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: engine-release-${{ github.run_id }}
+          path: ${{ runner.temp }}/engine-release/
+          retention-days: 1
+          if-no-files-found: error
+
+  push:
+    needs: capture
+    if: needs.capture.outputs.captured == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # push the bot branch; nothing else
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Download the data files
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: engine-release-${{ github.run_id }}
+          path: ${{ runner.temp }}/engine-release
+
+      # The artifact may hold the new fixture and the release registry and nothing else.
+      - name: Accept only the expected paths
+        env:
+          VERSION: ${{ needs.capture.outputs.version }}
+        run: |
+          src="$RUNNER_TEMP/engine-release"
+          fixture="./tests/fixtures/engine-$VERSION-frozen.json"
+          unexpected=$(cd "$src" && find . -mindepth 1 \( -type l -o \( -type d ! -path ./tests ! -path ./tests/fixtures ! -path ./lib \) -o \( -type f ! -path "$fixture" ! -path ./lib/engine-releases.json \) -o \( ! -type f ! -type d \) \) -print)
+          if [ -n "$unexpected" ]; then
+            echo "::error::The capture artifact holds unexpected paths:"
+            echo "$unexpected"
+            exit 1
+          fi
+          if [ -e "$fixture" ]; then
+            echo "::error::$fixture exists in the checkout: a frozen file is never regenerated"
+            exit 1
+          fi
+          cp "$src/$fixture" "$fixture"
+          cp "$src/lib/engine-releases.json" lib/engine-releases.json
+          changes=$(git status --porcelain --untracked-files=all)
+          stray=$(printf '%s\n' "$changes" | grep -vE "^.. (tests/fixtures/engine-$VERSION-frozen\.json|lib/engine-releases\.json)$" | grep -v '^$' || true)
+          if [ -n "$stray" ]; then
+            echo "::error::The working tree changed outside the fixture and the registry:"
+            echo "$stray"
+            exit 1
+          fi
+
+      - name: Commit the capture
+        env:
+          VERSION: ${{ needs.capture.outputs.version }}
+        run: |
+          git checkout -B chore/engine-release-capture
+          git add "tests/fixtures/engine-$VERSION-frozen.json" lib/engine-releases.json
+          git -c core.hooksPath=/dev/null -c core.fsmonitor=false \
+            -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "chore(engine): frozen digests and engine digest of $VERSION"
+
+      - name: Push the capture to its branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.capture.outputs.version }}
+        run: |
+          git -c core.hooksPath=/dev/null -c core.fsmonitor=false -c credential.helper= \
+            push --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:chore/engine-release-capture
+          {
+            echo "### $VERSION frozen"
+            echo
+            echo "Branch \`chore/engine-release-capture\` holds the frozen digests and the engine digest of $VERSION."
+            echo "Bring it in through \`dev\`; the weekly QA pipeline check reports it until then."
+          } >> "$GITHUB_STEP_SUMMARY"

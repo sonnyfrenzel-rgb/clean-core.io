@@ -48,6 +48,7 @@ import {
   type ChainLinkId,
   type ItFindingRow,
   type ItFindingsSource,
+  type ItTypeGroup,
 } from '@/lib/it-findings';
 import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import {
@@ -706,6 +707,9 @@ export default function ItAnswers({
                 what is wrong matters more to the IT reader than the inventory. */}
             <ObjectsCard objects={objects} catalogNote={profile.note} />
 
+            {/* 3.4.0 (owner decision 22.11.2026): the DDIC types by level — IT view only, never findings. */}
+            {source?.ddicTypes && source.ddicTypes.length > 0 ? <DdicTypesCard groups={source.ddicTypes} /> : null}
+
             {/* The open questions — in this view, not at the foot of the page
                 (ADR-081): the same list as in Business and Management. */}
             {openQuestions ? (
@@ -852,6 +856,52 @@ function ObjectsCard({ objects, catalogNote }: { objects: ItObjects; catalogNote
             </p>
           </div>
         )}
+      </CcCard>
+    </div>
+  );
+}
+
+/**
+ * The DDIC types the code declares with, one folded group per clean core level, worst first (roadmap 3.4.0, owner
+ * decision 22.11.2026). Display only: the groups come from the findings route and are never stored or signed.
+ */
+function DdicTypesCard({ groups }: { groups: ItTypeGroup[] }) {
+  const total = groups.reduce((n, g) => n + g.types.length, 0);
+  return (
+    <div data-it-ddic-types="" className="scroll-mt-28">
+      <CcCard title={wt('itv.typesTitle')} count={total}>
+        <p data-it-lead="types" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
+          {wt('itv.typesLead')}
+        </p>
+        <div className="mt-2">
+          {groups.map((g) => (
+            <div key={g.level} data-it-ddic-level={g.level}>
+              <CcDisclosure
+                title={`${wt('itv.typesLevel')} ${g.level}`}
+                count={g.types.length}
+                summary={
+                  <span className="font-mono">
+                    {g.types.slice(0, 6).map((t) => t.name).join(', ')}
+                    {g.types.length > 6 ? ' …' : ''}
+                  </span>
+                }
+              >
+                <ul className="m-0 list-none p-0">
+                  {g.types.map((t) => (
+                    <li key={t.name} data-it-ddic-type={t.name} className="text-[12px] leading-snug font-medium text-cc-ink">
+                      <span className="font-mono font-semibold break-all">{t.name}</span>
+                      <span className="text-cc-ink-muted">
+                        {' · '}
+                        {wt('itv.typesLines')} {t.lines.join(', ')}
+                        {t.state ? ` · ${t.state}` : ''}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </CcDisclosure>
+            </div>
+          ))}
+        </div>
       </CcCard>
     </div>
   );

@@ -57,21 +57,29 @@ test('lib/engine4 imports only from lib/engine4', () => {
  * module; every other import of the strand stays forbidden until the switch.
  */
 const PARSE_ONCE_EXCEPTION = { file: path.join('lib', 'abap', 'statement-reader.ts'), spec: '../engine4/parsed-source' };
+/**
+ * ADR-141 (draft, 3.4.0): the class gap reads the L4 reference table, static references only. Exactly this file,
+ * exactly this module.
+ */
+const REFERENCES_EXCEPTION = { file: path.join('lib', 'abap', 'sap-class-references.ts'), spec: '../engine4/references' };
 
-test('nothing in the product imports lib/engine4 before the switch, except the parse-once reader (ADR-133)', () => {
+test('nothing in the product imports lib/engine4 before the switch, except the parse-once reader (ADR-133) and the class gap (ADR-141)', () => {
   const bad: string[] = [];
   let exceptionSeen = false;
+  let referencesSeen = false;
   for (const dir of ['app', 'components', 'hooks', 'lib']) {
     for (const file of walk(path.join(ROOT, dir))) {
       const rel = path.relative(ROOT, file);
       for (const spec of importsOf(file).filter((s) => /(?:^|\/)engine4(?:\/|$)/.test(s))) {
         if (rel === PARSE_ONCE_EXCEPTION.file && spec === PARSE_ONCE_EXCEPTION.spec) exceptionSeen = true;
+        else if (rel === REFERENCES_EXCEPTION.file && spec === REFERENCES_EXCEPTION.spec) referencesSeen = true;
         else bad.push(`${rel} → ${spec}`);
       }
     }
   }
   expect(bad).toEqual([]);
   expect(exceptionSeen).toBe(true);
+  expect(referencesSeen).toBe(true);
 });
 
 test('no file over 1,500 lines and no function over 150 lines in lib/engine4', () => {

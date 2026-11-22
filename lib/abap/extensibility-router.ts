@@ -7,6 +7,7 @@ import { readClaimsApply } from './read-claims-gate';
 import { citeStatement, statedRequirementsApply, statedTargetOf, type StatedRequirement } from './stated-requirements';
 import { keyUserApplies } from './key-user-gate';
 import { engineReads3021Apply } from './engine-reads-3021-gate';
+import { engineReads340Apply } from './engine-reads-340-gate';
 import type { KeyUserBlockerCode, KeyUserReading, KeyUserScope, KeyUserTool } from './key-user-candidates';
 
 export interface DecisionCheckpoint {
@@ -193,6 +194,8 @@ const KIND_LABELS: Record<string, string> = {
   // The kinds of 3.0.18 (`ENGINE_READS_FROM`, `evidence-model.ts`).
   'classic-api': 'classic APIs not released for ABAP Cloud',
   'dataset-io': 'files on the application server',
+  // The kind of 3.4.0 (`ENGINE_READS_340_FROM`, `evidence-model.ts`).
+  'unreleased-class': 'SAP classes and interfaces not released for ABAP Cloud',
 };
 
 const labelFor = (kind: string) => KIND_LABELS[kind] ?? kind;
@@ -791,6 +794,10 @@ export function routeExtensibility(
     // From 3.0.18: a classic API and a file on the application server do not
     // run in ABAP Cloud either; neither forces a side-by-side split.
     ...(readClaims ? ['classic-api', 'dataset-io'] : []),
+    // From 3.4.0: an SAP class or interface not released for ABAP Cloud is
+    // replaced on-stack like an unreleased function module; it forces no
+    // side-by-side split.
+    ...(engineReads340Apply(engineVersion) ? ['unreleased-class'] : []),
     ...(localRfc.length > 0 ? ['rfc-call'] : []),
   ]);
   const reworkKinds = [...new Set([
@@ -973,6 +980,17 @@ export function routeExtensibility(
     if (classic.length > 0) {
       const names = [...new Set(classic.map((f) => f.objectName).filter(Boolean))];
       rationale = `${rationale} ${names.join(', ')} ${names.length === 1 ? 'is a classic API' : 'are classic APIs'} SAP does not release for ABAP Cloud: on this route ${names.length === 1 ? 'its call is' : 'their calls are'} replaced by the released API of the same business object, or kept in classic ABAP behind a wrapper.`;
+    }
+  }
+  // From 3.4.0 (`ENGINE_READS_340_FROM`; the findings exist from that engine
+  // on): what the SAP classes and interfaces not released for ABAP Cloud mean
+  // for the route, whichever branch chose it.
+  if (engineReads340Apply(engineVersion)) {
+    const classes = findings.filter((f) => f.kind === 'unreleased-class');
+    if (classes.length > 0) {
+      const names = [...new Set(classes.map((f) => f.objectName).filter(Boolean))];
+      const shown = names.length > 5 ? `${names.slice(0, 5).join(', ')} and ${names.length - 5} more` : names.join(', ');
+      rationale = `${rationale} The program uses ${names.length} SAP ${names.length === 1 ? 'class or interface' : 'classes and interfaces'} SAP does not release for ABAP Cloud (${shown}): each use is replaced by a released class or interface for the same purpose, or wrapped in classic ABAP behind a released interface.`;
     }
   }
   // From 3.0.13 (`PRECISION_FIXES_FROM`, roadmap 3.0.13 rule 2): how much of

@@ -18,6 +18,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   patch, SEC-2026-1002 for the next rules deploy (`docs/ROADMAP.md` §12).
 - QA full review of v3.2.0: the one high finding refuted; the QA review of 72ff92919908 recorded.
 
+### 3.4.0 — the engine release (owner decision 22.11.2026)
+Every reading below is gated by engine version (`ENGINE_READS_340_FROM`, `lib/abap/engine-reads-340-gate.ts`): a run of
+an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are unchanged (330 of 330).
+
+- **The class gap is closed** (ER-03). Every SAP class, interface and exception class a program writes by name and
+  SAP's files grade at level C or D is one finding per object, kind `unreleased-class`, listing every line it stands on
+  (`lines`). The names come from the L4 reference table, static references only: a name read from a constant, a start
+  value or an assignment never becomes a finding (ADR-141, draft). An object another finding already names is said
+  there. The finding cites SAP's state, never the A–D letter; it costs no score points and is rework on the ABAP
+  Cloud track, named in the route's rationale. Measured on the starter examples and the reference corpus: 4 new
+  findings (one starter, two corpus cases), no score and no route moved.
+- **DDIC types by level in the IT view.** The data elements, structures and table types a program declares with are
+  graded and shown grouped by level, worst first ("DDIC types the code declares with"); not findings, never signed.
+- **`engineDigest` on the model card** beside `engineVersion`: a SHA-256 over the TypeScript modules the three engine
+  entry points reach (`scripts/engine/engine-digest.cjs` defines the files), computed at build time by
+  `next.config.mjs`, signed in the run (`model.engineDigest`) and mirrored on the project's model card and in the
+  audit pack's model card and engine metadata, with the release it matches or "unreleased build". A run signed before
+  3.4.0 has none and verifies as it was sealed. v3.2.0's digest is recorded after the fact from its release merge.
+- **Frozen digests per release, captured in the release workflow**: `.github/workflows/engine-release-capture.yml`
+  runs on every push to `main` whose version has no fixture yet, captures the starters, the benchmark learn halves
+  and the probes (never the holdout) in a new format 3 that adds the process skeleton, the business statements and the
+  engine digest, and pushes the fixture and `lib/engine-releases.json` to the bot branch
+  `chore/engine-release-capture`. `tests/engine-frozen-digests.spec.ts` checks every release fixture,
+  `tests/engine-digest.spec.ts` the registry against the fixtures.
+- **Input hygiene**: a byte order mark is dropped and a lone CR ends a line before the engine reads a source. A program
+  saved with CR-only line ends read as one comment line — no finding and a "complete" coverage.
+- **`INSERT REPORT` is no table write**: `INSERT/DELETE/READ REPORT`, `TEXTPOOL` and `DYNPRO` were read as a CRITICAL
+  write to a standard table named `REPORT`.
+- The L4 reference table no longer reads a RAP entity alias (`FOR order~set_status`, EML) as an interface.
+- The scaling guard measures the process skeleton and the business statements too, at today's curve (5k → 10k lines) plus a noise margin, so a
+  regression fails; both are super-linear today (25k lines: about 19 s and 25 s).
+
 ### Engine (3.5.0 line, ADR-133)
 - Parse once, wired and proven neutral: `readStatements` reads the engine 4.0 strand's `ParsedSource` and falls back to the 3.x scanner wherever the two could differ; every build reads a source once, `containerAt` answers from an index. Signed output does not change (a new frozen-digest fixture for v3.2.0, the v3.0.11 and v3.0.12 oracles, the golden masters, and 52,950 mutated sources in verify mode). `buildAbapEvidence` on 25,000 lines takes 5 s instead of 32 s; a scaling guard keeps twice the input under 2.4 times the time (`tests/engine-scaling-guard.spec.ts`), and frozen digests per release are checked on every run (`tests/engine-frozen-digests.spec.ts`).
 
