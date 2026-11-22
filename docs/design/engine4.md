@@ -767,8 +767,8 @@ Every offline shadow re-run against **today's** shipping readers (`dev`, 218 com
 
 ## Next steps
 
-1. **Decide questions 5 to 9 below** with the sample's evidence. Rerun both shadows on the sample after
-   every L2 change (it stays outside the repository, so the specs cannot read it).
+1. **Build ADR-134 Q5, Q6 and Q9** (decided; below). Rerun both shadows on the sample after every L2 change
+   (it stays outside the repository, so the specs cannot read it).
 2. **Phase 0 wiring** (3.5.0 item 2): see the Phase 0 section above.
 3. Remove the two other statement splitters (`declaration-parser.tokenize`, `plain-language.splitStatements`)
    once their readers consume `ParsedSource`. Not started: it needs step 2.
@@ -777,6 +777,10 @@ Every offline shadow re-run against **today's** shipping readers (`dev`, 218 com
    top of the layout. The layout part is done (above).
 
 ## Open design questions for the owner
+
+**Questions 5–17 are decided: ADR-134 (15.11.2026 evening).** Q5, Q6 and Q9 change as recommended below (not
+built yet on the strand), Q7 and Q8 stay, Q10–Q17 are accepted as built. Q11, the shipping upload defect, was
+fixed in 3.2.0 (07cf0e32). The text below is the record the decision was taken on.
 
 Settled 14.11.2026 by owner defaults: decimals stay numbers plus a warning (built); macro calls are
 recognised and expansion comes later; `AT <field group>` is a block opener; `ENDEXEC` is its own statement.
