@@ -552,9 +552,9 @@ export function mapThumbLabel(objectName: string, steps: number | null): string 
   return steps === null ? `Process map of ${objectName}` : `Process map of ${objectName}, ${steps} steps`;
 }
 
-/** The cost line of the Analyse card: what is left, and that the same code is free again (W8). */
+/** The cost line of the Analyse card: what is left, and that the same code is free again (W8) — the start tile's line. */
 export function homeAnalyseCostLine(runsLeft: string): string {
-  return `${runsLeft} · the same code again is free`;
+  return wsQuotaLine(runsLeft);
 }
 
 /** Beside "Re-design an example end to end": which example, and what its run costs (W4, W8). */

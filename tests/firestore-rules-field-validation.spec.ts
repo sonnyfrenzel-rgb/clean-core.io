@@ -389,7 +389,14 @@ test('a browser changes the source only of a project without a summary, and neve
   // Every other client field of the same project still updates.
   expect(await denied(() => updateDoc(ref, { s4Deployment: 'public' })), 'an edition').toBe(false);
 
-  // A project without a summary keeps the source write the rules allowed before.
+  // A signed run whose summary write failed has no summary, and its source is still not the browser's (QA review
+  // 1d658b69a3d6): the source the run signed must stay the project's source.
+  const signedNoSummary = `fields-signed-nosummary-${stamp}`;
+  await adminSetDoc('projects', signedNoSummary, { name: 'Signed, no summary fixture', status: 'analyzed', userId: uids.owner, createdAt: new Date(), legacyCode: 'REPORT z_a.', activeRunId: 'run-a' });
+  expect(await denied(() => updateDoc(doc(owner.db, 'projects', signedNoSummary), { legacyCode: 'REPORT z_b.' })), 'a new source under a signed run without a summary').toBe(true);
+  expect(await denied(() => updateDoc(doc(owner.db, 'projects', signedNoSummary), { s4Deployment: 'public' })), 'an edition of the same project').toBe(false);
+
+  // A project without a summary and without a signed run keeps the source write the rules allowed before.
   const without = `fields-nosummary-${stamp}`;
   await adminSetDoc('projects', without, { name: 'No summary fixture', status: 'uploaded', userId: uids.owner, createdAt: new Date(), legacyCode: 'REPORT z_a.' });
   expect(await denied(() => updateDoc(doc(owner.db, 'projects', without), { legacyCode: 'REPORT z_b.' })), 'a new source without a summary').toBe(false);

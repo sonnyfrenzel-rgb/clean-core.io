@@ -147,7 +147,7 @@ scan green again.
 - The project summary never outlives the source it was taken from (lawyer, statement 20c E3 (4)). `POST
   /api/runs/create` removes the previous run's summary in the same transaction that writes the new source and active
   run, then writes this run's summary whole; a failed write leaves none (the separate clean-up after a failed write is
-  gone). `firestore.rules` lets a browser change `legacyCode` only on a project without a summary, and `summary`
+  gone). `firestore.rules` lets a browser change `legacyCode` only on a project without a summary and without a signed run, and `summary`
   stays off the client allowlist. No app path writes the source of an existing project from the browser; the rule
   closes the door the allowlist still left open. Recorded as pending in `docs/registers/rules-deployment.json`: the
   rules go live **before** the 3.3.0 code (lawyer). Specs: `tests/project-summary.spec.ts` (server-free),
@@ -215,6 +215,24 @@ scan green again.
   passes that version to the evidence too); `tests/korpus/baseline.json` strikes the two entries with the version
   bump. `SELECT … FROM (lv_tab)` with `DATA lv_tab … VALUE '…'` is read by another resolver
   (`readTableDependencies`) and stays a `dynamic-target` gap.
+- QA review of 6cbb4fd5d133, round 1. The project summary a signed run writes after its commit is written only while
+  that run is still the project's active run (`writeProjectSummary` in a transaction): two runs of one project could
+  commit one after the other and write their summaries in the other order, leaving the earlier run's summary under
+  the newer run's source (ddce067b4191; lawyer, statement 20c E3 (4); behavioural test in
+  `tests/project-summary.spec.ts`, 5dfd492bd01d). `firestore.rules` also refuses a browser's `legacyCode` change on a
+  project with a signed run (`activeRunId`), not only on one with a summary — a failed summary write leaves a signed
+  run without one (1d658b69a3d6; emulator test in `tests/firestore-rules-field-validation.spec.ts`). The pending
+  record in `docs/registers/rules-deployment.json` carries the new text; the rules still go live before the 3.3.0
+  code. The workspace's lens and mode controls answer the arrow keys with one tab stop, as a radio group does
+  (9c44faece6d3). `homeAnalyseCostLine` says the start tile's line through `wsQuotaLine` (e88165b56339). Tests:
+  `full-pipeline` requires an actionable, enabled start again, not the tiles container (92ba4ba017dc, 38a985dd8002);
+  the rendered workspace spec requires both products' starts enabled, a 16 px side gutter, and that Design opens on
+  the same project whose run is signed (33418c4b3b46, 89dc729101ad, afa4774ce08d); the affected-rendered fixture
+  keeps the dashboard route beside `LegacyDashboard.tsx` (35ee16103b6a); `tests/workspace-performance.spec.ts`
+  reports CLS by session windows as web-vitals does, and transferred JavaScript by `transferSize` only, with the
+  compressed size its own figure (03a0ca726c01, f9ba67e85085). The step-4 figures above were taken before that
+  change: their CLS summed every shift (an upper bound of the standard figure), and their "transferred" sizes
+  counted a cached script's compressed size.
 
 ### Under investigation
 - An owner report of 16.11.2026: after the footer link "Tenant Security" on the landing page the product shell

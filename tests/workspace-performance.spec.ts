@@ -22,8 +22,16 @@ import { signInViaLanding } from './helpers/sign-in';
  *   - `quiet`  — `tiles` or the end of the last long task, whichever is later:
  *                when the page answers a click without delay (interactive);
  *   - `tbt`    — total blocking time of the long tasks (> 50 ms);
- *   - `cls`    — cumulative layout shift;
- *   - `scriptKb` — JavaScript transferred; `bpmnJs` — whether bpmn-js loaded.
+ *   - `cls`    — cumulative layout shift as the web-vitals define it: shifts
+ *                without recent input, grouped into session windows (a gap of
+ *                at most 1 s, a window of at most 5 s), the largest window
+ *                (QA review 03a0ca726c01);
+ *   - `scriptKb` — JavaScript transferred over the network (`transferSize`; a
+ *                script from the cache counts 0, and `scriptTransferUnknown`
+ *                counts the scripts whose transfer size the browser withholds,
+ *                QA review f9ba67e85085); `scriptKbEncoded` and
+ *                `scriptKbDecoded` — their size compressed and unpacked, cached
+ *                or not; `bpmnJs` — whether bpmn-js loaded.
  * Written to `test-results/workspace-performance-<PERF_LABEL>.json`.
  *
  * Meaningful only on a production build (`CI=1`, Playwright runs `npm start`).
@@ -70,11 +78,23 @@ async function seed(uid: string) {
 
 async function instrument(page: Page) {
   await page.addInitScript(() => {
-    const w = window as unknown as { __p: { cls: number; tiles: number | null; longEnd: number; tbt: number; bpmn: boolean } };
-    w.__p = { cls: 0, tiles: null, longEnd: 0, tbt: 0, bpmn: false };
+    const w = window as unknown as { __p: { cls: number; win: number; winStart: number; winLast: number; tiles: number | null; longEnd: number; tbt: number; bpmn: boolean } };
+    w.__p = { cls: 0, win: 0, winStart: -Infinity, winLast: -Infinity, tiles: null, longEnd: 0, tbt: 0, bpmn: false };
     try {
+      // Session windows as web-vitals computes CLS: a shift 1 s or more after the last one, or 5 s or more after
+      // the window began, opens a new window; CLS is the largest window.
       new PerformanceObserver((l) => {
-        for (const e of l.getEntries() as unknown as Array<{ hadRecentInput: boolean; value: number }>) if (!e.hadRecentInput) w.__p.cls += e.value;
+        for (const e of l.getEntries() as unknown as Array<{ hadRecentInput: boolean; value: number; startTime: number }>) {
+          if (e.hadRecentInput) continue;
+          const p = w.__p;
+          if (e.startTime - p.winLast >= 1000 || e.startTime - p.winStart >= 5000) {
+            p.win = 0;
+            p.winStart = e.startTime;
+          }
+          p.win += e.value;
+          p.winLast = e.startTime;
+          p.cls = Math.max(p.cls, p.win);
+        }
       }).observe({ type: 'layout-shift', buffered: true });
       new PerformanceObserver((l) => {
         for (const e of l.getEntries()) {
@@ -109,7 +129,10 @@ async function loadOnce(page: Page) {
       quiet: tiles === null ? null : Math.round(Math.max(tiles, w.__p.longEnd)),
       tbt: Math.round(w.__p.tbt),
       cls: Math.round(w.__p.cls * 10000) / 10000,
-      scriptKb: Math.round(scripts.reduce((n, s) => n + (s.transferSize || s.encodedBodySize || 0), 0) / 1024),
+      scriptKb: Math.round(scripts.reduce((n, s) => n + (s.transferSize || 0), 0) / 1024),
+      // A cross-origin script without Timing-Allow-Origin reports 0 for every size: neither cached nor transferred.
+      scriptTransferUnknown: scripts.filter((s) => s.transferSize === 0 && s.encodedBodySize === 0 && s.decodedBodySize === 0).length,
+      scriptKbEncoded: Math.round(scripts.reduce((n, s) => n + (s.encodedBodySize || 0), 0) / 1024),
       scriptKbDecoded: Math.round(scripts.reduce((n, s) => n + (s.decodedBodySize || 0), 0) / 1024),
       bpmnJs: w.__p.bpmn || scripts.some((s) => /bpmn/i.test(s.name)),
     };

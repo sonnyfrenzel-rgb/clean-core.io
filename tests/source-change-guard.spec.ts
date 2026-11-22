@@ -295,9 +295,12 @@ test.describe('server side', () => {
   });
 
   test('a source written without a new run is refused by the pack', async ({ request }) => {
-    // The analyze page never does this. A direct write can — legacyCode is in
-    // the client allowlist — so the server checks the digest itself.
-    await clientWrite('legacyCode', 'REPORT z_c.\n');
+    // The analyze page never does this. Since 3.3.0 the rules refuse a browser
+    // that changes the source of a project with a signed run (firestore.rules,
+    // isValidProjectFieldChange); a write that gets past them anyway (the Admin
+    // SDK stands in for it here) still meets the server's own digest check.
+    await clientWrite('legacyCode', 'REPORT z_c.\n', 403);
+    await adminMergeDoc('projects', PROJECT_ID, { legacyCode: 'REPORT z_c.\n' });
     const res = await pack(request);
     expect(res.status()).toBe(409);
     expect((await res.json()).blockers).toContain('source-changed');
