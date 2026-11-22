@@ -17,6 +17,7 @@ import { APP_VERSION } from '../version';
 import { SkeletonGraph, type Exit, type SkeletonReadings } from './skeleton/graph';
 import { anchorOf, bodyRange, programName, snippet, tokenIndexOf } from './skeleton/anchors';
 import { buildLanes } from './skeleton/lanes';
+import { addSubProcessStarts, markEmptyEntries } from './skeleton/starts';
 import { noteUnreachableSteps } from './skeleton/unreachable-notes';
 import { attachLuwStates } from './skeleton/luw';
 import { notDrawn } from './skeleton/not-drawn';
@@ -1396,11 +1397,11 @@ class SkeletonBuilder {
     this.foldTechnicalGateways();
     // ADR-054, after the fold, so what the fold decides is exactly what it
     // decided before a plane had a start event of its own.
-    this.addSubProcessStarts();
+    addSubProcessStarts(this.graph, { reads310: this.reads310 });
     // Roadmap 3.0.7, once every node and end is settled: a reporting event
     // block that ends normally hands over to the next one.
     this.chainReportEvents();
-    if (this.reads310) this.markEmptyEntries();
+    if (this.reads310) markEmptyEntries(this.graph);
     noteUnreachableSteps(this.graph, { statements: this.statements, cutOffBoundaries: this.cutOffBoundaries });
     // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`
     // is the pass that can still drop one.
@@ -4608,77 +4609,6 @@ class SkeletonBuilder {
       j += 1;
     }
     return false;
-  }
-
-  /**
-   * ADR-054 — a start event inside every plane a reader can open.
-   *
-   * A routine the map draws as a sub-process with a plane of its own gets a
-   * start event there, anchored at its `FORM`/`METHOD` line, so every level
-   * that opens has a visible beginning and a visible end, as Signavio draws
-   * one. It lives **only** in the routine's region: the caller still sees one
-   * box, which is what the call site is.
-   *
-   * "A plane of its own" is exactly what `lib/bpmn/model.ts` expands: a call
-   * site of kind `sub-process` with `expandsTo`. A routine `collapseSmallRegions`
-   * turned into the one step it does, a business-rule task, a technical helper
-   * (no region at all) and the body of a multi-instance `LOOP AT` get none.
-   */
-  /**
-   * Engine 3.1.0 — an entry process that draws nothing between its start and its end says nothing to a business
-   * reader: eight empty methods of a BAdI interface were eight maps "Start → Done". Marked here
-   * (`SkeletonRegion.drawsNothing`), left out by the business reading only. A reporting event block is never
-   * marked: it hands the run over to the next one (`chainReportEvents`), and leaving it out would cut that chain.
-   */
-  private markEmptyEntries(): void {
-    const kinds = new Map<string, Set<string>>();
-    for (const node of this.graph.nodes) {
-      const own = kinds.get(node.region);
-      if (own) own.add(node.kind);
-      else kinds.set(node.region, new Set([node.kind]));
-    }
-    for (const region of this.graph.regions) {
-      if (region.kind !== 'entry') continue;
-      const start = this.graph.nodes.find((n) => n.id === region.entryNodeId);
-      const origin = start?.detail?.origin;
-      if (origin === 'event' || origin === 'implicit') continue;
-      const own = kinds.get(region.key) ?? new Set<string>();
-      if ([...own].every((kind) => kind === 'start' || kind === 'end')) region.drawsNothing = true;
-    }
-  }
-
-  private addSubProcessStarts(): void {
-    const planes = new Set<string>();
-    for (const node of this.graph.nodes) {
-      if (node.kind === 'sub-process' && node.expandsTo) planes.add(node.expandsTo);
-    }
-    // Engine 3.1.0 — the loop levels too (decided 27.09.2026, the follow-up ADR-054 named): the body of a
-    // multi-instance `LOOP AT` is a plane of its own exactly as a routine is, and it begins where the iteration
-    // begins, at a start event on the `LOOP` line. A body that draws nothing has no plane and gets none.
-    if (this.reads310) {
-      for (const node of this.graph.nodes) {
-        if (node.kind === 'loop' && node.detail?.multiInstance === true && node.expandsTo) planes.add(node.expandsTo);
-      }
-    }
-    for (const region of this.graph.regions) {
-      if (region.kind !== 'sub-process' || !planes.has(region.key)) continue;
-      if (region.multiInstance && !this.reads310) continue;
-      if (!region.anchor || !/^(?:form|method|loop):/.test(region.key)) continue;
-      const end = this.graph.nodes.find((n) => n.id === region.endNodeId);
-      const first = this.graph.nodes.findIndex((n) => n.region === region.key);
-      const start = this.graph.addNode('start', region.label, region.anchor, region, end?.container ?? region.label, {
-        detail: { subProcess: true, ...(region.multiInstance ? { loopLevel: true } : {}) },
-      });
-      // `addNode` appends; the start goes before the first node of its region,
-      // so the file lists a plane in the order it is read.
-      if (first >= 0) {
-        this.graph.nodes.pop();
-        this.graph.nodes.splice(first, 0, start);
-      }
-      const to = region.entryNodeId ?? region.endNodeId;
-      if (to) this.graph.edges.push({ from: start.id, to, kind: 'sequence', condition: '' });
-      region.entryNodeId = start.id;
-    }
   }
 
   /**
