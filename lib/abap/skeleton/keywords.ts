@@ -20,3 +20,27 @@ export const ARM_HEADERS = new Set(['ELSE', 'ELSEIF', 'WHEN', 'CATCH', 'CLEANUP'
 
 /** ADR-054. Falling through one of these runs the loop again — something still follows. */
 export const LOOP_CLOSERS = new Set(['ENDLOOP', 'ENDDO', 'ENDWHILE', 'ENDSELECT', 'ENDPROVIDE']);
+
+/** Statements that declare rather than do. None of them is a step. */
+export const DECLARATIVE = new Set([
+  'REPORT', 'PROGRAM', 'FUNCTION-POOL', 'TABLES', 'TYPES', 'DATA', 'CONSTANTS',
+  'FIELD-SYMBOLS', 'PARAMETERS', 'SELECT-OPTIONS', 'SELECTION-SCREEN', 'RANGES',
+  'STATICS', 'CLASS-DATA', 'TYPE-POOLS', 'INFOTYPES', 'NODES', 'INCLUDE',
+  'DEFINE', 'END-OF-DEFINITION', 'ENDFORM', 'ENDMODULE', 'ENDMETHOD',
+  'ENDCLASS', 'ENDINTERFACE', 'CONTROLS', 'TYPE-POOL',
+]);
+
+/**
+ * Everything `DECLARATIVE` holds, plus the words that open and close a named
+ * region and the words a class or interface body declares with. A source in
+ * which every statement is one of these **runs nothing** — roadmap 2.14 calls
+ * that "not applicable" and says so, rather than returning zero steps in
+ * silence. `METHOD`/`ENDMETHOD` belong here: an interface names methods and
+ * implements none.
+ */
+export const DECLARES = new Set([
+  ...DECLARATIVE,
+  'CLASS', 'INTERFACE', 'METHOD', 'FUNCTION', 'ENDFUNCTION', 'FORM', 'MODULE',
+  'PUBLIC', 'PROTECTED', 'PRIVATE', 'METHODS', 'CLASS-METHODS', 'INTERFACES',
+  'ALIASES', 'EVENTS', 'CLASS-EVENTS', 'ENUM', 'ENDENUM', 'MESH',
+]);
