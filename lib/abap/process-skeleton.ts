@@ -14,6 +14,8 @@ import { readBatchInputFrom, type BatchInputCall } from './batch-input';
 import { engineReads310Apply } from './engine-reads-310-gate';
 import { engineReads320Apply } from './engine-reads-320-gate';
 import { APP_VERSION } from '../version';
+import { SkeletonGraph, type Exit, type SkeletonReadings } from './skeleton/graph';
+import { anchorOf, bodyRange, snippet, tokenIndexOf } from './skeleton/anchors';
 import {
   hasOnlyTechnicalConditions,
   isTechnicalGateway,
@@ -639,38 +641,6 @@ const MESSAGE_ROW = /\b(?:MSGTY|MSGNO|MSGID|MSGV1)\s*=|\bTYPE\s*=[\s\S]*\bMESSAG
 /** Engine 3.1.0 (`collectStep`): the table such a statement adds its row to. */
 const COLLECT_TARGET = /\b(?:TO|INTO\s+TABLE|INTO)\s+((?:<[\w/]+>|[\w/]+)(?:-[\w/]+)*)(?:\[\])?\s*(?:\.|$|\s(?:SORTED|REFERENCE|ASSIGNING)\b)/i;
 
-function snippet(text: string): string {
-  return text.length > 160 ? `${text.slice(0, 157)}...` : text;
-}
-
-/**
- * The statements inside a block, first and last, both inclusive.
- *
- * A block nothing closed has its last statement *as* its `closeIndex` rather
- * than one past it, and reading it with the terminated formula silently drops
- * the last statement of the routine — which for an unterminated `FORM` is the
- * one statement that made it a step at all.
- */
-function bodyRange(block: Block): [number, number] {
-  return [block.openIndex + 1, block.terminated ? block.closeIndex - 1 : block.closeIndex];
-}
-
-/** 0-based index of the first token equal to `word`, or 0 when there is none. */
-function tokenIndexOf(statement: AbapStatement, word: RegExp): number {
-  const tokens = statement.text.split(' ');
-  const at = tokens.findIndex((t) => word.test(t));
-  return at < 0 ? 0 : at;
-}
-
-function anchorOf(statement: AbapStatement, tokenOffset = 0): NodeAnchor {
-  return {
-    statementIndex: statement.index,
-    tokenOffset,
-    lineStart: statement.lineStart,
-    lineEnd: statement.lineEnd,
-  };
-}
-
 /**
  * `MESSAGE … INTO field` fills the message fields and the target and shows
  * nothing: no dialog, no status line, no termination, whatever its type. It is
@@ -1029,15 +999,6 @@ export function buildProcessSkeletonFrom(facts: ProcessFacts, options: SkeletonB
   return skeleton;
 }
 
-/**
- * The gated readings a build carries, one flag per gate. Each later gate implies the earlier ones
- * (`engineVersionAtLeast`), so two builds draw the same map exactly when every flag agrees (`sameReadings`).
- */
-interface SkeletonReadings {
-  reads310: boolean;
-  reads320: boolean;
-}
-
 /** Which gated readings a build for `engineVersion` carries; absent, this release's. */
 function readsOf(engineVersion: string | null | undefined): SkeletonReadings {
   const version = engineVersion === undefined ? APP_VERSION : engineVersion;
@@ -1066,13 +1027,6 @@ export function skeletonReadFor(
   const drawn = readFor.get(skeleton);
   if (drawn === undefined || sameReadings(drawn, readsOf(engineVersion))) return skeleton;
   return buildProcessSkeletonFrom(typeof facts === 'function' ? facts() : facts, { engineVersion });
-}
-
-interface Exit {
-  from: string;
-  condition: string;
-  kind: SkeletonEdgeKind;
-  reason?: SkeletonEdgeReason;
 }
 
 /** One `METHOD name.` inside a `CLASS x IMPLEMENTATION` of this source (D2). */
@@ -1228,13 +1182,8 @@ function failureArm(arms: SkeletonEdge[]): SkeletonEdge | null {
 }
 
 class SkeletonBuilder {
-  private nodes: SkeletonNode[] = [];
-  private edges: SkeletonEdge[] = [];
-  private regions: SkeletonRegion[] = [];
-  private notes: SkeletonNote[] = [];
-  /** Next free slot per statement — the second half of a node's identity. */
-  private slots = new Map<number, number>();
-  private unanchoredCount = 0;
+  /** The graph every pass reads and writes — engine 4 phase 3 (`skeleton/graph.ts`). */
+  private graph = new SkeletonGraph();
   private blockAt = new Map<number, Block>();
   private branchAt = new Map<number, Branch>();
   private formBlocks = new Map<string, Block>();
@@ -1453,12 +1402,12 @@ class SkeletonBuilder {
     const luw = this.attachLuwStates();
 
     return {
-      nodes: this.nodes,
-      edges: this.edges,
-      regions: this.regions,
+      nodes: this.graph.nodes,
+      edges: this.graph.edges,
+      regions: this.graph.regions,
       lanes,
       laneEvidence: this.evidence,
-      entries: this.regions
+      entries: this.graph.regions
         .filter((r) => r.kind === 'entry')
         .sort((a, b) => (a.runtimeRank ?? 0) - (b.runtimeRank ?? 0)
           || (a.anchor?.lineStart ?? 0) - (b.anchor?.lineStart ?? 0))
@@ -1469,9 +1418,9 @@ class SkeletonBuilder {
         technicalHelpers: this.technicalHelpers(),
         clones: this.clones(),
       },
-      anchoredNodes: this.nodes.length - this.unanchoredCount,
-      unanchoredNodes: this.unanchoredCount,
-      notes: this.notes,
+      anchoredNodes: this.graph.nodes.length - this.graph.unanchoredCount,
+      unanchoredNodes: this.graph.unanchoredCount,
+      notes: this.graph.notes,
       luw,
     };
   }
@@ -1490,7 +1439,7 @@ class SkeletonBuilder {
       calls: this.calls,
     });
     const registrations = model.registrations.map((registration) => {
-      const node = this.nodes.find((n) => n.anchor?.statementIndex === registration.statementIndex
+      const node = this.graph.nodes.find((n) => n.anchor?.statementIndex === registration.statementIndex
         && n.kind !== 'error-boundary');
       if (node) {
         node.detail = {
@@ -1506,65 +1455,6 @@ class SkeletonBuilder {
     return { registrations, events: model.events };
   }
 
-  /* ---------------- nodes and edges ---------------- */
-
-  /**
-   * Rule 7. The slot counts up per statement, so a statement that yields two
-   * nodes yields two identities. A node with no statement gets `nd-x-<n>`, which
-   * cannot collide with an anchored one either.
-   */
-  private addNode(
-    kind: SkeletonNodeKind,
-    label: string,
-    anchor: NodeAnchor | null,
-    region: SkeletonRegion,
-    container: string | null,
-    extra: Partial<SkeletonNode> = {},
-  ): SkeletonNode {
-    let id: string;
-    if (anchor) {
-      const slot = this.slots.get(anchor.statementIndex) ?? 0;
-      this.slots.set(anchor.statementIndex, slot + 1);
-      id = `nd-${anchor.statementIndex}-${slot}`;
-    } else {
-      this.unanchoredCount += 1;
-      id = `nd-x-${this.unanchoredCount}`;
-    }
-    const node: SkeletonNode = {
-      id,
-      kind,
-      label,
-      anchor,
-      region: region.key,
-      container,
-      ...extra,
-    };
-    this.nodes.push(node);
-    return node;
-  }
-
-  private connect(from: Exit[], to: string): void {
-    for (const exit of from) {
-      this.edges.push({
-        from: exit.from,
-        to,
-        kind: exit.kind,
-        condition: exit.condition,
-        ...(exit.reason ? { reason: exit.reason } : {}),
-      });
-    }
-  }
-
-  private note(reason: SkeletonNoteReason, statement: AbapStatement, detail: string): void {
-    this.notes.push({
-      reason,
-      detail,
-      snippet: snippet(statement.text),
-      lineStart: statement.lineStart,
-      lineEnd: statement.lineEnd,
-    });
-  }
-
   /* ---------------- what the source declares ---------------- */
 
   private readSelectionScreen(): void {
@@ -1578,26 +1468,26 @@ class SkeletonBuilder {
   private noteWhatIsNotRead(): void {
     for (const statement of this.statements) {
       if (statement.keyword === 'INCLUDE' && !/^INCLUDE\s+STRUCTURE\b/i.test(statement.text)) {
-        this.note('include-not-read', statement,
+        this.graph.note('include-not-read', statement,
           'The text of an INCLUDE is not part of this source, so whatever it contributes to the process is not in this skeleton.');
       }
       if (statement.nativeSql) {
-        this.note('native-sql', statement,
+        this.graph.note('native-sql', statement,
           'Native SQL is passed through to the database unread. What it touches is not drawn.');
       }
       if (statement.keyword === 'COMMIT' || statement.keyword === 'ROLLBACK') {
-        this.note('commit-boundary', statement,
+        this.graph.note('commit-boundary', statement,
           'A commit boundary is IT knowledge and belongs in the Technical overlay, not in the flow. What it does to an update registration — dispatched or discarded — is recorded as a state of the process model.');
       }
     }
     for (const branch of this.control.notHandled) {
       if (branch.reason !== 'chained-branch') continue;
-      this.notes.push({ ...branch, reason: 'chained-branch' });
+      this.graph.notes.push({ ...branch, reason: 'chained-branch' });
     }
     for (const open of this.structure.unterminated) {
       const statement = this.statements.find((s) => s.lineStart === open.lineStart);
       if (!statement) continue;
-      this.note('unterminated-container', statement,
+      this.graph.note('unterminated-container', statement,
         `No closing statement ends this ${open.kind}. Everything read inside it runs to the end of the file and is a guess, not an anchor.`);
     }
     for (const perform of this.calls.performs) {
@@ -1606,7 +1496,7 @@ class SkeletonBuilder {
         (s) => s.lineStart === perform.lineStart && s.text === perform.text,
       );
       if (statement) {
-        this.note('dynamic-call', statement,
+        this.graph.note('dynamic-call', statement,
           'The name of the routine is computed at run time. The call is drawn, its target is not claimed.');
       }
     }
@@ -2973,7 +2863,7 @@ class SkeletonBuilder {
                     ? 'no call in this source reaches it and the definition of its class is not in this source, '
                       + 'so its caller is outside this source'
                   : 'no PERFORM in this source reaches it, so its caller is outside this source';
-      this.note('entry-trigger-not-determined', entry.statement,
+      this.graph.note('entry-trigger-not-determined', entry.statement,
         `The process is drawn as beginning at the ${what} ${entry.label} because ${proof}. `
         + 'What triggers it — a remote call, an IDoc, a BAdI, a batch job or a person — is not in this '
         + 'source and is not determined.');
@@ -3001,7 +2891,7 @@ class SkeletonBuilder {
       || this.statements.some((st) => !DECLARES.has(st.keyword) && !st.nativeSql);
     if (interfaces.length && !executable) {
       const opener = this.statements[interfaces[0].openIndex];
-      this.notes.push({
+      this.graph.notes.push({
         reason: 'entry-not-applicable',
         detail:
           'This source declares an interface and implements nothing: it names methods and their parameters, '
@@ -3015,7 +2905,7 @@ class SkeletonBuilder {
       return;
     }
     if (!executable) {
-      this.notes.push({
+      this.graph.notes.push({
         reason: 'entry-not-applicable',
         detail:
           'This source declares and does not run: every statement in it is a declaration. A process view is '
@@ -3035,7 +2925,7 @@ class SkeletonBuilder {
       const name = /^INCLUDE\s+([\w/]+)/i.exec(statement.text);
       if (name && !includes.includes(name[1])) includes.push(name[1]);
     }
-    this.notes.push({
+    this.graph.notes.push({
       reason: 'no-entry-point',
       detail:
         'This source names no event block, no function module, no externally callable method, no screen '
@@ -3093,7 +2983,7 @@ class SkeletonBuilder {
 
   private buildEntryRegion(entry: EntryPoint): void {
     const key = `entry:${entry.label}@${entry.statement.lineStart}`;
-    if (this.regions.some((r) => r.key === key)) return;
+    if (this.graph.regions.some((r) => r.key === key)) return;
     const region: SkeletonRegion = {
       key,
       kind: 'entry',
@@ -3103,10 +2993,10 @@ class SkeletonBuilder {
       endNodeId: '',
       entryNodeId: null,
     };
-    this.regions.push(region);
+    this.graph.regions.push(region);
 
     const container = entry.implicit ? null : entry.label;
-    const start = this.addNode('start', entry.label, anchorOf(entry.statement), region, container, {
+    const start = this.graph.addNode('start', entry.label, anchorOf(entry.statement), region, container, {
       detail: {
         implicit: entry.implicit,
         runtimeRank: entry.rank,
@@ -3120,7 +3010,7 @@ class SkeletonBuilder {
     // The normal end of a named region is its closing word, not the last
     // statement before it (2.14): `ENDMETHOD` is where the method ends, and
     // corpus cases CC-040 and CC-057 anchor their end node exactly there.
-    const end = this.addNode('end', entry.label, anchorOf(entry.endStatement), region, container);
+    const end = this.graph.addNode('end', entry.label, anchorOf(entry.endStatement), region, container);
     region.endNodeId = end.id;
 
     const from = entry.implicit ? entry.statement.index : entry.statement.index + 1;
@@ -3139,7 +3029,7 @@ class SkeletonBuilder {
       region, container, loops: [], loopBreaks: [],
     }, [{ from: start.id, condition: '', kind: 'sequence' }]);
     region.entryNodeId = start.id;
-    this.connect(exits, end.id);
+    this.graph.connect(exits, end.id);
   }
 
   /**
@@ -3226,7 +3116,7 @@ class SkeletonBuilder {
     // say what was left unread rather than fail. Real chains are two digits at
     // most; this one is the last link that still gets opened.
     if (this.expanding.length >= MAX_PERFORM_EXPANSION) {
-      this.note('expansion-depth-reached', this.statements[block.openIndex],
+      this.graph.note('expansion-depth-reached', this.statements[block.openIndex],
         `${name} is performed ${MAX_PERFORM_EXPANSION} calls deep, in a chain that starts at `
         + `${this.expanding[0]}. The call is drawn; what this routine does is not read, `
         + 'so no step inside it is in this skeleton.');
@@ -3243,15 +3133,15 @@ class SkeletonBuilder {
       entryNodeId: null,
       effects: [...(this.effects.get(name) ?? [])],
     };
-    this.regions.push(region);
+    this.graph.regions.push(region);
     this.regionOfRoutine.set(name, region);
 
     const closer = this.statements[block.closeIndex];
     const end = block.terminated
-      ? this.addNode('end', name, anchorOf(closer), region, name)
+      ? this.graph.addNode('end', name, anchorOf(closer), region, name)
       // Rule 1: nothing closed this routine, so where it ends is a guess. A node
       // that says so must not look like a node that carries a range.
-      : this.addNode('end', name, null, region, name, {
+      : this.graph.addNode('end', name, null, region, name, {
         unanchoredReason: method
           ? `METHOD ${method.name} is not closed by ENDMETHOD in this source, so it has no end to anchor to.`
           : `FORM ${name} is not closed by ENDFORM in this source, so it has no end to anchor to.`,
@@ -3260,7 +3150,7 @@ class SkeletonBuilder {
 
     const [from, to] = bodyRange(block);
     const guarded = this.readGuard(from, to, region);
-    const before = this.nodes.length;
+    const before = this.graph.nodes.length;
     this.regionLast.set(region.key, to);
     this.expanding.push(name);
     const registered = new Set(this.registeredInWalk);
@@ -3281,8 +3171,8 @@ class SkeletonBuilder {
     // It is looked up by region and not by position: a `PERFORM` inside this
     // routine builds the region it opens *before* it adds its own call site, so
     // the node at `before` can belong to a routine one level down.
-    region.entryNodeId = this.nodes.slice(before).find((n) => n.region === region.key)?.id ?? null;
-    this.connect(exits, end.id);
+    region.entryNodeId = this.graph.nodes.slice(before).find((n) => n.region === region.key)?.id ?? null;
+    this.graph.connect(exits, end.id);
     return region;
   }
 
@@ -3472,11 +3362,11 @@ class SkeletonBuilder {
    */
   private walkParallel(group: ParallelGroup, ctx: WalkContext, incoming: Exit[]): Exit[] {
     const first = this.statements[group.members[0]];
-    const fork = this.addNode('parallel-gateway', 'STARTING NEW TASK',
+    const fork = this.graph.addNode('parallel-gateway', 'STARTING NEW TASK',
       anchorOf(first, tokenIndexOf(first, /^STARTING$/i)), ctx.region, ctx.container, {
         detail: { direction: 'diverging', branches: group.members.length },
       });
-    this.connect(incoming, fork.id);
+    this.graph.connect(incoming, fork.id);
 
     const branchExits: Exit[] = [];
     for (const member of group.members) {
@@ -3491,7 +3381,7 @@ class SkeletonBuilder {
       // is no `WAIT` in it. So the caller is one more branch of the same fork:
       // it runs concurrently with the tasks, and the asynchronous branches end
       // where the source stops speaking about them.
-      this.note('fork-without-join', first,
+      this.graph.note('fork-without-join', first,
         `${group.members.length} tasks are started asynchronously and nothing in this source waits for them. `
         + 'The caller carries on at once, so no step after the fork depends on a result: the branches are drawn '
         + 'without a join, and where each task ends is outside this program.');
@@ -3499,9 +3389,9 @@ class SkeletonBuilder {
     }
 
     const wait = this.statements[group.joinIndex];
-    const join = this.addNode('parallel-gateway', snippet(wait.text), anchorOf(wait),
+    const join = this.graph.addNode('parallel-gateway', snippet(wait.text), anchorOf(wait),
       ctx.region, ctx.container, { detail: { direction: 'converging', branches: group.members.length } });
-    this.connect(branchExits, join.id);
+    this.graph.connect(branchExits, join.id);
     return [{ from: join.id, condition: '', kind: 'sequence' }];
   }
 
@@ -3560,14 +3450,14 @@ class SkeletonBuilder {
     // kind and its arms: the process benchmark's blind expected answers model
     // all 7 such tables of its learning half (6 cases) as a gateway.
     const table = readDecisionTable(branch, this.statements);
-    const gateway = this.addNode('gateway', label, anchorOf(opener), ctx.region, ctx.container, {
+    const gateway = this.graph.addNode('gateway', label, anchorOf(opener), ctx.region, ctx.container, {
       detail: {
         branchId: branch.id, branchKind: branch.kind, arms: branch.arms.length,
         ...(this.decidesUserCommand(branch, ctx) ? { userAction: true } : {}),
         ...(table ? { decisionTable: table.field } : {}),
       },
     });
-    this.connect(before, gateway.id);
+    this.graph.connect(before, gateway.id);
 
     const exits: Exit[] = [];
     let hasDefault = false;
@@ -3589,8 +3479,8 @@ class SkeletonBuilder {
         condition: arm.condition,
         kind: isDefault ? 'default' : 'conditional',
       };
-      const before = this.nodes.length;
-      const edgesBefore = this.edges.length;
+      const before = this.graph.nodes.length;
+      const edgesBefore = this.graph.edges.length;
       let armExits = this.walkRange(bodyFrom, bodyTo, ctx, [armEntry]);
       if (this.reads310 && !table) armExits = this.armOutcome(armEntry, armExits, before, edgesBefore, bodyFrom, bodyTo, block, ctx);
       exits.push(...armExits);
@@ -3624,27 +3514,27 @@ class SkeletonBuilder {
     block: Block,
     ctx: WalkContext,
   ): Exit[] {
-    const drawn = this.nodes.slice(nodesBefore);
+    const drawn = this.graph.nodes.slice(nodesBefore);
     if (drawn.length === 0) {
-      const untouched = this.edges.length === edgesBefore && exits.length === 1 && exits[0].from === entry.from
+      const untouched = this.graph.edges.length === edgesBefore && exits.length === 1 && exits[0].from === entry.from
         && exits[0].kind === entry.kind && exits[0].condition === entry.condition;
       if (!untouched) return exits;
       const step = this.helperStep(from, to, block, ctx) ?? this.collectStep(from, to, block, ctx)
         ?? this.flagStep(from, to, block, ctx);
       if (!step) return exits;
-      this.connect(exits, step.id);
+      this.graph.connect(exits, step.id);
       return [{ from: step.id, condition: '', kind: 'sequence' }];
     }
     if (drawn.length !== 1 || (drawn[0].kind !== 'end' && drawn[0].kind !== 'end-error')) return exits;
-    const into = this.edges.slice(edgesBefore).filter((e) => e.to === drawn[0].id);
-    if (into.length !== 1 || into[0].from !== entry.from || this.edges.length !== edgesBefore + 1) return exits;
+    const into = this.graph.edges.slice(edgesBefore).filter((e) => e.to === drawn[0].id);
+    if (into.length !== 1 || into[0].from !== entry.from || this.graph.edges.length !== edgesBefore + 1) return exits;
     const step = this.helperStep(from, to, block, ctx);
     if (!step) return exits;
     // The step was appended after the end; it goes before it, so the file lists the arm in reading order.
-    this.nodes.pop();
-    this.nodes.splice(nodesBefore, 0, step);
+    this.graph.nodes.pop();
+    this.graph.nodes.splice(nodesBefore, 0, step);
     into[0].to = step.id;
-    this.edges.push({ from: step.id, to: drawn[0].id, kind: 'sequence', condition: '' });
+    this.graph.edges.push({ from: step.id, to: drawn[0].id, kind: 'sequence', condition: '' });
     return exits;
   }
 
@@ -3674,7 +3564,7 @@ class SkeletonBuilder {
       const texts = [...statement.text.matchAll(/'((?:[^']|'')*)'|`((?:[^`]|``)*)`/g)]
         .map((m) => (m[1] ?? m[2] ?? '').replace(/''/g, "'").trim())
         .filter((text) => /[A-Za-z]{2}/.test(text) && text.includes(' '));
-      return this.addNode('task', label, {
+      return this.graph.addNode('task', label, {
         ...anchorOf(statement, token),
         ...(routine ? { secondary: { lineStart: routine.lineStart, lineEnd: routine.lineEnd, reason: 'routine-definition' as const } } : {}),
       }, ctx.region, ctx.container, {
@@ -3708,7 +3598,7 @@ class SkeletonBuilder {
       if (MESSAGE_ROW.test(bare)) continue;
       const routine = [...around].reverse().find((b) => b.kind === 'form' || b.kind === 'method');
       if (routine && this.declaresLocally(routine, table)) continue;
-      return this.addNode('task', table.toUpperCase(),
+      return this.graph.addNode('task', table.toUpperCase(),
         anchorOf(statement, tokenIndexOf(statement, new RegExp(`^${table}(?:\\[\\])?\\.?$`, 'i'))),
         ctx.region, ctx.container, {
           detail: { operation: statement.keyword, internalTable: true, collects: true },
@@ -3788,7 +3678,7 @@ class SkeletonBuilder {
     if (!flags.length) return null;
     const first = flags[0];
     const readAt = this.decisionsReading(first.field, block);
-    return this.addNode('task', snippet(first.statement.text), anchorOf(first.statement), ctx.region, ctx.container, {
+    return this.graph.addNode('task', snippet(first.statement.text), anchorOf(first.statement), ctx.region, ctx.container, {
       detail: {
         flagStep: true,
         flag: first.field.toUpperCase(),
@@ -3874,9 +3764,9 @@ class SkeletonBuilder {
   private walkGroupChange(block: Block, ctx: WalkContext, incoming: Exit[]): Exit[] {
     const opener = this.statements[block.openIndex];
     const condition = afterKeyword(opener);
-    const gateway = this.addNode('gateway', snippet(opener.text), anchorOf(opener),
+    const gateway = this.graph.addNode('gateway', snippet(opener.text), anchorOf(opener),
       ctx.region, ctx.container, { detail: { source: 'AT', condition } });
-    this.connect(incoming, gateway.id);
+    this.graph.connect(incoming, gateway.id);
     const body = this.walkRange(block.openIndex + 1, block.closeIndex - 1, ctx,
       [{ from: gateway.id, condition, kind: 'conditional' }]);
     return [...body, { from: gateway.id, condition: '', kind: 'default' }];
@@ -3972,9 +3862,9 @@ class SkeletonBuilder {
       entryNodeId: null,
       multiInstance: true,
     };
-    this.regions.push(region);
+    this.graph.regions.push(region);
 
-    const node = this.addNode('loop', table, anchorOf(opener), ctx.region, ctx.container, {
+    const node = this.graph.addNode('loop', table, anchorOf(opener), ctx.region, ctx.container, {
       expandsTo: region.key,
       detail: {
         loopKind: 'multi-instance',
@@ -3983,18 +3873,18 @@ class SkeletonBuilder {
         isSequential: true,
       },
     });
-    this.connect(incoming, node.id);
+    this.graph.connect(incoming, node.id);
 
     // The body is walked before the region gets an end node, because whether it
     // needs one is what the walk answers. Nothing in the body can read
     // `region.endNodeId` on the way: every statement that would — `CHECK`,
     // `RETURN`, `STOP`, a `SUBMIT` that does not come back — is a statement
     // `bodyStaysInLoop` has already refused.
-    const before = this.nodes.length;
+    const before = this.graph.nodes.length;
     const exits = this.walkRange(block.openIndex + 1, block.closeIndex - 1, {
       region, container: ctx.container, loops: [], loopBreaks: [],
     }, []);
-    const body = this.nodes.slice(before).filter((n) => n.region === region.key);
+    const body = this.graph.nodes.slice(before).filter((n) => n.region === region.key);
 
     // **A body that draws nothing gets no plane.** `LOOP AT gt_orders … lv_sum
     // = lv_sum + ls-netwr … ENDLOOP` is a calculation, and §5.8 gives a
@@ -4003,20 +3893,20 @@ class SkeletonBuilder {
     // exactly this: *an activity* with the marker on it, no sub-process. The
     // loop keeps its anchor, its table and its marker and stops expanding.
     if (!body.length) {
-      this.regions = this.regions.filter((r) => r !== region);
+      this.graph.regions = this.graph.regions.filter((r) => r !== region);
       delete node.expandsTo;
       return [{ from: node.id, condition: '', kind: 'sequence' }];
     }
 
     const closer = this.statements[block.closeIndex];
     const end = block.terminated
-      ? this.addNode('end', table, anchorOf(closer), region, ctx.container)
-      : this.addNode('end', table, null, region, ctx.container, {
+      ? this.graph.addNode('end', table, anchorOf(closer), region, ctx.container)
+      : this.graph.addNode('end', table, null, region, ctx.container, {
         unanchoredReason: `LOOP AT ${table} is not closed by ENDLOOP in this source, so its body has no end to anchor to.`,
       });
     region.endNodeId = end.id;
     region.entryNodeId = body[0].id;
-    this.connect(exits, end.id);
+    this.graph.connect(exits, end.id);
 
     return [{ from: node.id, condition: '', kind: 'sequence' }];
   }
@@ -4033,17 +3923,17 @@ class SkeletonBuilder {
     }
     const tables = isSelect ? selectTables(opener.text) : [];
     const node = isSelect && tables.length
-      ? this.addNode('read', tables[0], anchorOf(opener, tokenIndexOf(opener, /^FROM$/i) + 1),
+      ? this.graph.addNode('read', tables[0], anchorOf(opener, tokenIndexOf(opener, /^FROM$/i) + 1),
         ctx.region, ctx.container, {
           detail: { tables, iterates: true, loopKind: 'multi-instance' },
         })
-      : this.addNode('loop', table ?? opener.keyword, anchorOf(opener), ctx.region, ctx.container, {
+      : this.graph.addNode('loop', table ?? opener.keyword, anchorOf(opener), ctx.region, ctx.container, {
         detail: {
           loopKind: block.kind === 'loop' ? 'multi-instance' : 'standard',
           ...(table ? { over: table.toUpperCase() } : {}),
         },
       });
-    this.connect(incoming, node.id);
+    this.graph.connect(incoming, node.id);
 
     const breaks: Exit[] = [];
     const bodyExits = this.walkRange(block.openIndex + 1, block.closeIndex - 1, {
@@ -4052,7 +3942,7 @@ class SkeletonBuilder {
       loopBreaks: [...ctx.loopBreaks, breaks],
     }, [{ from: node.id, condition: '', kind: 'sequence' }]);
     for (const exit of bodyExits) {
-      this.edges.push({ from: exit.from, to: node.id, kind: 'loop-back', condition: exit.condition });
+      this.graph.edges.push({ from: exit.from, to: node.id, kind: 'loop-back', condition: exit.condition });
     }
     return [{ from: node.id, condition: '', kind: 'sequence' }, ...breaks];
   }
@@ -4073,7 +3963,7 @@ class SkeletonBuilder {
       }
     }
     const protectedTo = (handlers[0] ?? block.closeIndex) - 1;
-    const beforeProtected = this.nodes.length;
+    const beforeProtected = this.graph.nodes.length;
     // A handler runs when the protected part broke off somewhere, so it — and
     // each handler after it — starts from what was registered before the TRY.
     const registered = new Set(this.registeredInWalk);
@@ -4082,20 +3972,20 @@ class SkeletonBuilder {
     // only means the walk began here, and the region's entry reaches it. A
     // routine's end event is added before its body is walked and is no step.
     const cutOff = incoming.length === 0
-      && this.nodes.slice(0, beforeProtected)
+      && this.graph.nodes.slice(0, beforeProtected)
         .some((n) => n.region === ctx.region.key && n.id !== ctx.region.endNodeId);
     const exits = this.walkRange(block.openIndex + 1, protectedTo, ctx, incoming);
-    const attachedTo = this.nodes.slice(beforeProtected).find((n) => n.region === ctx.region.key) ?? null;
+    const attachedTo = this.graph.nodes.slice(beforeProtected).find((n) => n.region === ctx.region.key) ?? null;
 
     const out = [...exits];
     for (let h = 0; h < handlers.length; h++) {
       const header = this.statements[handlers[h]];
-      const boundary = this.addNode('error-boundary', afterKeyword(header) || header.keyword,
+      const boundary = this.graph.addNode('error-boundary', afterKeyword(header) || header.keyword,
         anchorOf(header), ctx.region, ctx.container, {
           detail: { attachedTo: attachedTo?.id ?? '', source: header.keyword },
         });
       if (attachedTo) {
-        this.edges.push({ from: attachedTo.id, to: boundary.id, kind: 'boundary', condition: '' });
+        this.graph.edges.push({ from: attachedTo.id, to: boundary.id, kind: 'boundary', condition: '' });
       } else {
         // A protected part that drew no node still runs, so its handler is still
         // a path the program can take. Leaving the boundary unconnected made
@@ -4104,7 +3994,7 @@ class SkeletonBuilder {
         // control flow anywhere in the source to show it (CR-07). The handler
         // hangs on what entered the TRY.
         for (const entry of incoming) {
-          this.edges.push({ from: entry.from, to: boundary.id, kind: 'boundary', condition: '' });
+          this.graph.edges.push({ from: entry.from, to: boundary.id, kind: 'boundary', condition: '' });
         }
         if (cutOff) this.cutOffBoundaries.add(boundary.id);
       }
@@ -4121,10 +4011,10 @@ class SkeletonBuilder {
       // the statement after ENDTRY is never next. Its
       // end is an error end on the CLEANUP itself, not the normal flow.
       if (handled.length) {
-        const passOn = this.addNode('end-error', 'CLEANUP', anchorOf(header), ctx.region, ctx.container, {
+        const passOn = this.graph.addNode('end-error', 'CLEANUP', anchorOf(header), ctx.region, ctx.container, {
           detail: { propagates: true },
         });
-        this.connect(handled, passOn.id);
+        this.graph.connect(handled, passOn.id);
       }
     }
     return out;
@@ -4140,7 +4030,7 @@ class SkeletonBuilder {
   ): { exits: Exit[]; outputRun: SkeletonNode | null } {
     const text = statement.text;
     const keep = (node: SkeletonNode): { exits: Exit[]; outputRun: null } => {
-      this.connect(incoming, node.id);
+      this.graph.connect(incoming, node.id);
       return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: null };
     };
 
@@ -4156,9 +4046,9 @@ class SkeletonBuilder {
       // Without USING it touches no dictionary object, only what it is handed:
       // work done by the database, not a read of it.
       return keep(tables.length
-        ? this.addNode('read', tables[0], anchorOf(statement), ctx.region, ctx.container,
+        ? this.graph.addNode('read', tables[0], anchorOf(statement), ctx.region, ctx.container,
           { detail: { tables, amdp: true } })
-        : this.addNode('service-task', amdp[1].toUpperCase(), anchorOf(statement), ctx.region, ctx.container,
+        : this.graph.addNode('service-task', amdp[1].toUpperCase(), anchorOf(statement), ctx.region, ctx.container,
           { detail: { amdp: true, returns: true } }));
     }
     if (DECLARATIVE.has(statement.keyword)) {
@@ -4204,7 +4094,7 @@ class SkeletonBuilder {
     if (statement.keyword === 'SUBMIT') {
       const returns = /\bAND\s+RETURN\b/i.test(text) || /\bVIA\s+JOB\b/i.test(text);
       const program = /^SUBMIT\s+(?:\(\s*([\w/]+)\s*\)|'([^']*)'|([\w/]+))/i.exec(text);
-      const node = this.addNode('call-activity',
+      const node = this.graph.addNode('call-activity',
         (program?.[2] ?? program?.[3] ?? program?.[1] ?? 'SUBMIT').toUpperCase(),
         anchorOf(statement, 1), ctx.region, ctx.container, {
           detail: { returns, viaJob: /\bVIA\s+JOB\b/i.test(text), dynamic: Boolean(program?.[1]) },
@@ -4215,23 +4105,23 @@ class SkeletonBuilder {
         this.recordEvidence('system', 'VIA JOB',
           anchorOf(statement, tokenIndexOf(statement, /^VIA$/i)), statement);
       }
-      this.connect(incoming, node.id);
+      this.graph.connect(incoming, node.id);
       if (returns) return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: null };
-      this.edges.push({ from: node.id, to: ctx.region.endNodeId, kind: 'sequence', condition: '', reason: 'no-return' });
+      this.graph.edges.push({ from: node.id, to: ctx.region.endNodeId, kind: 'sequence', condition: '', reason: 'no-return' });
       return { exits: [], outputRun: null };
     }
     if (/^LEAVE\s+TO\s+TRANSACTION\b/i.test(text)) {
       const code = /TRANSACTION\s+'([^']*)'/i.exec(text)?.[1]?.toUpperCase();
-      const node = this.addNode('call-activity', code ?? 'LEAVE TO TRANSACTION',
+      const node = this.graph.addNode('call-activity', code ?? 'LEAVE TO TRANSACTION',
         anchorOf(statement), ctx.region, ctx.container, { detail: { returns: false } });
-      this.connect(incoming, node.id);
-      this.edges.push({ from: node.id, to: ctx.region.endNodeId, kind: 'sequence', condition: '', reason: 'no-return' });
+      this.graph.connect(incoming, node.id);
+      this.graph.edges.push({ from: node.id, to: ctx.region.endNodeId, kind: 'sequence', condition: '', reason: 'no-return' });
       return { exits: [], outputRun: null };
     }
     if (/^LEAVE\s+PROGRAM\b/i.test(text) || isErrorMessage(text, this.reads320) || raisesException(statement)) {
-      const node = this.addNode('end-error', this.errorLabel(statement), anchorOf(statement),
+      const node = this.graph.addNode('end-error', this.errorLabel(statement), anchorOf(statement),
         ctx.region, ctx.container);
-      this.connect(incoming, node.id);
+      this.graph.connect(incoming, node.id);
       return { exits: [], outputRun: null };
     }
     if (isRaiseEvent(text)) {
@@ -4254,7 +4144,7 @@ class SkeletonBuilder {
         }
         return { exits: live, outputRun: null };
       }
-      return keep(this.addNode('call-opaque', event, anchorOf(statement, 2), ctx.region, ctx.container, {
+      return keep(this.graph.addNode('call-opaque', event, anchorOf(statement, 2), ctx.region, ctx.container, {
         detail: { event: true, dynamic: true, returns: true },
       }));
     }
@@ -4268,7 +4158,7 @@ class SkeletonBuilder {
       // only its type, and that is what the token then says.
       const id = (this.reads320 ? /^MESSAGE\s+i\d/i : /^MESSAGE\s+[iI]\d/).test(text) ? label : "TYPE 'I'";
       this.recordEvidence('human', `MESSAGE ${id}`, anchorOf(statement), statement);
-      return keep(this.addNode('user-task', label, anchorOf(statement), ctx.region, ctx.container, {
+      return keep(this.graph.addNode('user-task', label, anchorOf(statement), ctx.region, ctx.container, {
         detail: { message: 'I' },
       }));
     }
@@ -4286,7 +4176,7 @@ class SkeletonBuilder {
       const call = this.calls.transactions.find(
         (t) => t.lineStart === statement.lineStart && t.text === statement.text,
       );
-      const node = this.addNode('transaction', call?.code ?? call?.codeExpression ?? 'CALL TRANSACTION',
+      const node = this.graph.addNode('transaction', call?.code ?? call?.codeExpression ?? 'CALL TRANSACTION',
         anchorOf(statement, 2), ctx.region, ctx.container, {
           detail: {
             batchInput: call?.batchInput ?? false,
@@ -4313,13 +4203,13 @@ class SkeletonBuilder {
       // 2.16: a dynpro is a person. The token is written the way the source
       // writes it, `SCREEN 9000`, and both words are in the statement.
       this.recordEvidence('human', `SCREEN ${screen.toUpperCase()}`, anchorOf(statement, 1), statement);
-      return keep(this.addNode('user-task', screen, anchorOf(statement, 2), ctx.region, ctx.container));
+      return keep(this.graph.addNode('user-task', screen, anchorOf(statement, 2), ctx.region, ctx.container));
     }
 
     if (statement.keyword === 'SELECT' || isEmbeddedSelect(text)) {
       const tables = selectTables(text);
       if (tables.length) {
-        return keep(this.addNode('read', tables[0],
+        return keep(this.graph.addNode('read', tables[0],
           anchorOf(statement, tokenIndexOf(statement, /^FROM$/i) + 1), ctx.region, ctx.container, {
             detail: { tables, single: /^SELECT\s+SINGLE\b/i.test(text) },
           }));
@@ -4332,19 +4222,19 @@ class SkeletonBuilder {
       // program — no SAP data store, no effect. `MODIFY gt_fieldcat FROM
       // gs_fieldcat` drawn as a write read as if the field catalogue were a
       // table of the system.
-      return keep(this.addNode('task', write.table.toUpperCase(),
+      return keep(this.graph.addNode('task', write.table.toUpperCase(),
         anchorOf(statement, tokenIndexOf(statement, new RegExp(`^${write.table}$`, 'i'))),
         ctx.region, ctx.container, { detail: { operation: write.keyword, internalTable: true } }));
     }
     if (write) {
-      return keep(this.addNode('write', write.table.toUpperCase(),
+      return keep(this.graph.addNode('write', write.table.toUpperCase(),
         anchorOf(statement, tokenIndexOf(statement, new RegExp(`^${write.table}$`, 'i'))),
         ctx.region, ctx.container, { detail: { operation: write.keyword } }));
     }
 
     const adbc = adbcExecution(text);
     if (adbc) {
-      return keep(this.addNode('call-opaque', adbc.method,
+      return keep(this.graph.addNode('call-opaque', adbc.method,
         anchorOf(statement, tokenIndexOf(statement, /EXECUTE_(?:UPDATE|QUERY|DDL)/i)),
         ctx.region, ctx.container, {
           detail: {
@@ -4363,7 +4253,7 @@ class SkeletonBuilder {
       // remote function module returned — a step with the other task, drawn
       // as the service task the starting call is, under the module's name.
       const name = /^RECEIVE\s+RESULTS\s+FROM\s+FUNCTION\s+'([^']+)'/i.exec(text)?.[1]?.toUpperCase();
-      return keep(this.addNode('service-task', name ?? 'RECEIVE RESULTS', anchorOf(statement, name ? 4 : 0),
+      return keep(this.graph.addNode('service-task', name ?? 'RECEIVE RESULTS', anchorOf(statement, name ? 4 : 0),
         ctx.region, ctx.container, { detail: { receivesResults: true, returns: true } }));
     }
 
@@ -4394,10 +4284,10 @@ class SkeletonBuilder {
         if (dataset) this.fileRunDatasets.get(outputRun.id)?.add(dataset);
         return { exits: incoming, outputRun };
       }
-      const node = this.addNode('output', statement.keyword, anchorOf(statement), ctx.region,
+      const node = this.graph.addNode('output', statement.keyword, anchorOf(statement), ctx.region,
         ctx.container, { detail: { statements: 1, target } });
       if (target === 'file') this.fileRunDatasets.set(node.id, new Set(dataset ? [dataset] : []));
-      this.connect(incoming, node.id);
+      this.graph.connect(incoming, node.id);
       return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: node };
     }
 
@@ -4467,7 +4357,7 @@ class SkeletonBuilder {
     reason: SkeletonEdgeReason,
   ): void {
     for (const exit of incoming) {
-      this.edges.push({ from: exit.from, to, kind, condition: exit.condition, reason });
+      this.graph.edges.push({ from: exit.from, to, kind, condition: exit.condition, reason });
     }
   }
 
@@ -4506,11 +4396,11 @@ class SkeletonBuilder {
   ): void {
     if (!incoming.length) return;
     const keyword = words ?? statement.keyword.toUpperCase();
-    const node = this.addNode('end', keyword, anchorOf(statement), ctx.region, ctx.container, {
+    const node = this.graph.addNode('end', keyword, anchorOf(statement), ctx.region, ctx.container, {
       detail: { early: true, exit: keyword, routine: ctx.container ?? ctx.region.label },
     });
     for (const exit of incoming) {
-      this.edges.push({ from: exit.from, to: node.id, kind: kind ?? exit.kind, condition: exit.condition, reason });
+      this.graph.edges.push({ from: exit.from, to: node.id, kind: kind ?? exit.kind, condition: exit.condition, reason });
     }
     this.earlyEnds.push({ node, statementIndex: statement.index, region: ctx.region });
   }
@@ -4525,7 +4415,7 @@ class SkeletonBuilder {
   private settleEarlyEnds(): void {
     if (!this.earlyEnds.length) return;
     const drawn = new Map<string, Set<number>>();
-    for (const node of this.nodes) {
+    for (const node of this.graph.nodes) {
       if (!node.anchor || node.detail?.early === true) continue;
       const own = drawn.get(node.region);
       if (own) own.add(node.anchor.statementIndex);
@@ -4555,10 +4445,10 @@ class SkeletonBuilder {
       const results = this.resultWrites(statementIndex);
       const counted = results.size ? new Set([...own, ...results]) : own;
       if (this.skipsSomething(statementIndex, last, counted)) continue;
-      for (const edge of this.edges) if (edge.to === node.id) edge.to = region.endNodeId;
+      for (const edge of this.graph.edges) if (edge.to === node.id) edge.to = region.endNodeId;
       dropped.add(node.id);
     }
-    if (dropped.size) this.nodes = this.nodes.filter((n) => !dropped.has(n.id));
+    if (dropped.size) this.graph.nodes = this.graph.nodes.filter((n) => !dropped.has(n.id));
   }
 
   /**
@@ -4569,8 +4459,8 @@ class SkeletonBuilder {
    * the end of the block before.
    */
   private reportEventChain(): Array<{ region: SkeletonRegion; rank: number; startId: string }> {
-    const starts = new Map(this.nodes.filter((n) => n.kind === 'start').map((n) => [n.id, n]));
-    return this.regions
+    const starts = new Map(this.graph.nodes.filter((n) => n.kind === 'start').map((n) => [n.id, n]));
+    return this.graph.regions
       .filter((r) => r.kind === 'entry' && typeof r.runtimeRank === 'number' && r.runtimeRank <= RANK_END_OF_SELECTION)
       .flatMap((region) => {
         const start = region.entryNodeId ? starts.get(region.entryNodeId) : undefined;
@@ -4621,9 +4511,9 @@ class SkeletonBuilder {
   private chainReportEvents(): void {
     const chain = this.reportEventChain();
     if (chain.length < 2) return;
-    const present = new Set(this.nodes.map((n) => n.id));
+    const present = new Set(this.graph.nodes.map((n) => n.id));
     const into = new Map<string, SkeletonEdge[]>();
-    for (const edge of this.edges) into.set(edge.to, [...(into.get(edge.to) ?? []), edge]);
+    for (const edge of this.graph.edges) into.set(edge.to, [...(into.get(edge.to) ?? []), edge]);
     const endOfSelection = chain.find((c) => c.rank === RANK_END_OF_SELECTION);
     for (let i = 0; i < chain.length - 1; i++) {
       const { region, rank } = chain[i];
@@ -4631,16 +4521,16 @@ class SkeletonBuilder {
       const end = region.endNodeId;
       const arriving = into.get(end) ?? [];
       if (present.has(end) && arriving.length > 0 && !arriving.some((e) => e.reason === 'no-return')) {
-        this.edges.push({ from: end, to: next.startId, kind: 'sequence', condition: '', reason: 'runtime-order' });
+        this.graph.edges.push({ from: end, to: next.startId, kind: 'sequence', condition: '', reason: 'runtime-order' });
       }
-      for (const node of this.nodes) {
+      for (const node of this.graph.nodes) {
         if (node.region !== region.key || node.detail?.early !== true) continue;
         const exit = String(node.detail.exit ?? '').toUpperCase();
         if (rank > RANK_LOAD_OF_PROGRAM && rank < RANK_START_OF_SELECTION && (exit === 'EXIT' || exit === 'RETURN')) {
-          this.edges.push({ from: node.id, to: next.startId, kind: 'sequence', condition: '', reason: 'runtime-order' });
+          this.graph.edges.push({ from: node.id, to: next.startId, kind: 'sequence', condition: '', reason: 'runtime-order' });
         } else if (exit === 'STOP' && endOfSelection && endOfSelection.rank > rank
           && (rank === RANK_START_OF_SELECTION || rank === RANK_GET)) {
-          this.edges.push({ from: node.id, to: endOfSelection.startId, kind: 'sequence', condition: '', reason: 'stop' });
+          this.graph.edges.push({ from: node.id, to: endOfSelection.startId, kind: 'sequence', condition: '', reason: 'stop' });
         }
       }
     }
@@ -4758,14 +4648,14 @@ class SkeletonBuilder {
    */
   private markEmptyEntries(): void {
     const kinds = new Map<string, Set<string>>();
-    for (const node of this.nodes) {
+    for (const node of this.graph.nodes) {
       const own = kinds.get(node.region);
       if (own) own.add(node.kind);
       else kinds.set(node.region, new Set([node.kind]));
     }
-    for (const region of this.regions) {
+    for (const region of this.graph.regions) {
       if (region.kind !== 'entry') continue;
-      const start = this.nodes.find((n) => n.id === region.entryNodeId);
+      const start = this.graph.nodes.find((n) => n.id === region.entryNodeId);
       const origin = start?.detail?.origin;
       if (origin === 'event' || origin === 'implicit') continue;
       const own = kinds.get(region.key) ?? new Set<string>();
@@ -4775,34 +4665,34 @@ class SkeletonBuilder {
 
   private addSubProcessStarts(): void {
     const planes = new Set<string>();
-    for (const node of this.nodes) {
+    for (const node of this.graph.nodes) {
       if (node.kind === 'sub-process' && node.expandsTo) planes.add(node.expandsTo);
     }
     // Engine 3.1.0 — the loop levels too (decided 27.09.2026, the follow-up ADR-054 named): the body of a
     // multi-instance `LOOP AT` is a plane of its own exactly as a routine is, and it begins where the iteration
     // begins, at a start event on the `LOOP` line. A body that draws nothing has no plane and gets none.
     if (this.reads310) {
-      for (const node of this.nodes) {
+      for (const node of this.graph.nodes) {
         if (node.kind === 'loop' && node.detail?.multiInstance === true && node.expandsTo) planes.add(node.expandsTo);
       }
     }
-    for (const region of this.regions) {
+    for (const region of this.graph.regions) {
       if (region.kind !== 'sub-process' || !planes.has(region.key)) continue;
       if (region.multiInstance && !this.reads310) continue;
       if (!region.anchor || !/^(?:form|method|loop):/.test(region.key)) continue;
-      const end = this.nodes.find((n) => n.id === region.endNodeId);
-      const first = this.nodes.findIndex((n) => n.region === region.key);
-      const start = this.addNode('start', region.label, region.anchor, region, end?.container ?? region.label, {
+      const end = this.graph.nodes.find((n) => n.id === region.endNodeId);
+      const first = this.graph.nodes.findIndex((n) => n.region === region.key);
+      const start = this.graph.addNode('start', region.label, region.anchor, region, end?.container ?? region.label, {
         detail: { subProcess: true, ...(region.multiInstance ? { loopLevel: true } : {}) },
       });
       // `addNode` appends; the start goes before the first node of its region,
       // so the file lists a plane in the order it is read.
       if (first >= 0) {
-        this.nodes.pop();
-        this.nodes.splice(first, 0, start);
+        this.graph.nodes.pop();
+        this.graph.nodes.splice(first, 0, start);
       }
       const to = region.entryNodeId ?? region.endNodeId;
-      if (to) this.edges.push({ from: start.id, to, kind: 'sequence', condition: '' });
+      if (to) this.graph.edges.push({ from: start.id, to, kind: 'sequence', condition: '' });
       region.entryNodeId = start.id;
     }
   }
@@ -4819,9 +4709,9 @@ class SkeletonBuilder {
     const condition = afterKeyword(statement);
     // D2: `CHECK lo->m( ) = …` runs the method before it decides.
     const before = this.walkMethodCalls(statement, ctx, incoming);
-    const gateway = this.addNode('gateway', snippet(statement.text), anchorOf(statement, 1),
+    const gateway = this.graph.addNode('gateway', snippet(statement.text), anchorOf(statement, 1),
       ctx.region, ctx.container, { detail: { source: 'CHECK', condition } });
-    this.connect(before, gateway.id);
+    this.graph.connect(before, gateway.id);
 
     const falsePath: Exit[] = [{ from: gateway.id, condition: `NOT ( ${condition} )`, kind: 'conditional' }];
     if (ctx.loops.length) {
@@ -4849,7 +4739,7 @@ class SkeletonBuilder {
     const local = target && !call?.program && this.formBlocks.has(target);
 
     if (!local) {
-      const node = this.addNode('call-opaque',
+      const node = this.graph.addNode('call-opaque',
         target ?? call?.text ?? 'PERFORM', anchorOf(statement, 1), ctx.region, ctx.container, {
           detail: {
             dynamic: call?.dynamic ?? false,
@@ -4858,7 +4748,7 @@ class SkeletonBuilder {
             returns: true,
           },
         });
-      this.connect(incoming, node.id);
+      this.graph.connect(incoming, node.id);
       return { exits: [{ from: node.id, condition: '', kind: 'sequence' }] };
     }
 
@@ -4901,12 +4791,12 @@ class SkeletonBuilder {
         ? { secondary: { lineStart: block.lineStart, lineEnd: block.lineEnd, reason: 'routine-definition' as const } }
         : {}),
     };
-    const node = this.addNode(onlyRule ? 'business-rule-task' : 'sub-process', label,
+    const node = this.graph.addNode(onlyRule ? 'business-rule-task' : 'sub-process', label,
       anchor, ctx.region, ctx.container, {
         ...(region ? { expandsTo: region.key } : {}),
         detail: { effects: [...effects], ...extra },
       });
-    this.connect(incoming, node.id);
+    this.graph.connect(incoming, node.id);
     return [{ from: node.id, condition: '', kind: 'sequence' }];
   }
 
@@ -4961,12 +4851,12 @@ class SkeletonBuilder {
         continue;
       }
       if (call.dynamic) {
-        this.note('dynamic-call', statement,
+        this.graph.note('dynamic-call', statement,
           'The name of the method is computed at run time. The call is drawn, its target is not claimed.');
       }
       // Engine 3.2.0: the candidates of this call run inside it, with what is registered here.
       if (this.reads320 && call.ambiguous) this.registrationsAtCall.set(statement.index, new Set(this.registeredInWalk));
-      const node = this.addNode('call-opaque', call.label, at, ctx.region, ctx.container, {
+      const node = this.graph.addNode('call-opaque', call.label, at, ctx.region, ctx.container, {
         detail: {
           method: true,
           dynamic: call.dynamic,
@@ -4978,7 +4868,7 @@ class SkeletonBuilder {
           returns: true,
         },
       });
-      this.connect(live, node.id);
+      this.graph.connect(live, node.id);
       live = [{ from: node.id, condition: '', kind: 'sequence' }];
     }
     return live;
@@ -5007,10 +4897,10 @@ class SkeletonBuilder {
   private walkAlternatives(call: MethodCall, at: NodeAnchor, ctx: WalkContext, incoming: Exit[]): Exit[] {
     // The candidates run inside this call, with what is registered here (as for the opaque call).
     this.registrationsAtCall.set(at.statementIndex, new Set(this.registeredInWalk));
-    const gateway = this.addNode('gateway', call.label, at, ctx.region, ctx.container, {
+    const gateway = this.graph.addNode('gateway', call.label, at, ctx.region, ctx.container, {
       detail: { method: true, alternatives: call.candidates.length, ambiguous: true, candidates: call.candidates },
     });
-    this.connect(incoming, gateway.id);
+    this.graph.connect(incoming, gateway.id);
     const exits: Exit[] = [];
     for (const key of call.candidates) {
       const impl = this.methodImpls.find((m) => m.key === key);
@@ -5019,10 +4909,10 @@ class SkeletonBuilder {
         ...at,
         ...(block ? { secondary: { lineStart: block.lineStart, lineEnd: block.lineEnd, reason: 'routine-definition' as const } } : {}),
       };
-      const node = this.addNode('call-activity', key, anchor, ctx.region, ctx.container, {
+      const node = this.graph.addNode('call-activity', key, anchor, ctx.region, ctx.container, {
         detail: { method: true, alternativeOf: call.label, implementation: key, ...(impl ? { class: impl.cls } : {}) },
       });
-      this.connect([{ from: gateway.id, condition: impl?.cls ?? key, kind: 'conditional' }], node.id);
+      this.graph.connect([{ from: gateway.id, condition: impl?.cls ?? key, kind: 'conditional' }], node.id);
       exits.push({ from: node.id, condition: '', kind: 'sequence' });
     }
     return exits;
@@ -5054,7 +4944,7 @@ class SkeletonBuilder {
     const label = call?.name
       ?? /^CALL\s+FUNCTION\s+([\w/-]+)/i.exec(statement.text)?.[1]?.toUpperCase()
       ?? 'CALL FUNCTION';
-    const node = this.addNode(kind, label, anchorOf(statement, 2), ctx.region, ctx.container, {
+    const node = this.graph.addNode(kind, label, anchorOf(statement, 2), ctx.region, ctx.container, {
       detail: {
         bapi: call?.bapi ?? false,
         dynamic: call?.dynamic ?? false,
@@ -5066,17 +4956,17 @@ class SkeletonBuilder {
         returns: true,
       },
     });
-    this.connect(incoming, node.id);
+    this.graph.connect(incoming, node.id);
     this.readLaneEvidence(statement, kind, label, call?.destination);
     this.recordCallback(statement);
     const exits: Exit[] = [{ from: node.id, condition: '', kind: 'sequence' }];
 
     if (/\bEXCEPTIONS\b/i.test(statement.text) && this.handlesSubrcAfter(statement.index)) {
-      const boundary = this.addNode('error-boundary', label,
+      const boundary = this.graph.addNode('error-boundary', label,
         anchorOf(statement, tokenIndexOf(statement, /^EXCEPTIONS$/i)), ctx.region, ctx.container, {
           detail: { attachedTo: node.id, exceptions: this.exceptionNames(statement.text) },
         });
-      this.edges.push({ from: node.id, to: boundary.id, kind: 'boundary', condition: '' });
+      this.graph.edges.push({ from: node.id, to: boundary.id, kind: 'boundary', condition: '' });
       exits.push({ from: boundary.id, condition: '', kind: 'sequence' });
     }
     return { exits };
@@ -5096,17 +4986,17 @@ class SkeletonBuilder {
     const badi = /^CALL\s+BADI\s+([\w/]+|<[\w/]+>)->([\w/~]+)/i.exec(maskLiterals(statement.text));
     const exit = /^CALL\s+CUSTOMER-FUNCTION\s+'(\d+)'/i.exec(statement.text);
     const label = badi ? `${badi[1]}->${badi[2]}`.toUpperCase() : exit ? `CUSTOMER-FUNCTION ${exit[1]}` : statement.keyword;
-    const node = this.addNode('service-task', label, anchorOf(statement, 2), ctx.region, ctx.container, {
+    const node = this.graph.addNode('service-task', label, anchorOf(statement, 2), ctx.region, ctx.container, {
       detail: { enhancement: badi ? 'badi' : 'customer-function', ...(badi ? { method: true } : {}), returns: true },
     });
-    this.connect(incoming, node.id);
+    this.graph.connect(incoming, node.id);
     const exits: Exit[] = [{ from: node.id, condition: '', kind: 'sequence' }];
     if (/\bEXCEPTIONS\b/i.test(statement.text) && this.handlesSubrcAfter(statement.index)) {
-      const boundary = this.addNode('error-boundary', label,
+      const boundary = this.graph.addNode('error-boundary', label,
         anchorOf(statement, tokenIndexOf(statement, /^EXCEPTIONS$/i)), ctx.region, ctx.container, {
           detail: { attachedTo: node.id, exceptions: this.exceptionNames(statement.text) },
         });
-      this.edges.push({ from: node.id, to: boundary.id, kind: 'boundary', condition: '' });
+      this.graph.edges.push({ from: node.id, to: boundary.id, kind: 'boundary', condition: '' });
       exits.push({ from: boundary.id, condition: '', kind: 'sequence' });
     }
     return { exits };
@@ -5146,7 +5036,7 @@ class SkeletonBuilder {
   private walkMacroCall(statement: AbapStatement, ctx: WalkContext, incoming: Exit[]): { exits: Exit[] } {
     const macro = this.macros.get(statement.keyword);
     if (!macro) return { exits: incoming };
-    this.note('macro-call', statement,
+    this.graph.note('macro-call', statement,
       `The body of macro ${statement.keyword} is expanded here by the compiler. Its effects are anchored at this call site; the definition is a secondary range.`);
 
     let live = incoming;
@@ -5154,7 +5044,7 @@ class SkeletonBuilder {
       const body = this.statements[i];
       const node = this.macroEffectNode(body, statement, ctx);
       if (!node) continue;
-      this.connect(live, node.id);
+      this.graph.connect(live, node.id);
       live = [{ from: node.id, condition: '', kind: 'sequence' }];
     }
     return { exits: live };
@@ -5166,7 +5056,7 @@ class SkeletonBuilder {
     ctx: WalkContext,
   ): SkeletonNode | null {
     const at = (kind: SkeletonNodeKind, label: string, detail?: SkeletonNode['detail']) =>
-      this.addNode(kind, label, {
+      this.graph.addNode(kind, label, {
         ...anchorOf(site),
         secondary: { lineStart: body.lineStart, lineEnd: body.lineEnd, reason: 'macro-definition' },
       }, ctx.region, ctx.container, { detail: { ...(detail ?? {}), fromMacro: site.keyword } });
@@ -5217,7 +5107,7 @@ class SkeletonBuilder {
     // pass then costs what its own nodes cost.
     const inRegion = new Map<string, SkeletonNode[]>();
     const callersOf = new Map<string, SkeletonNode[]>();
-    for (const node of this.nodes) {
+    for (const node of this.graph.nodes) {
       const own = inRegion.get(node.region);
       if (own) own.push(node);
       else inRegion.set(node.region, [node]);
@@ -5227,9 +5117,9 @@ class SkeletonBuilder {
       else callersOf.set(node.expandsTo, [node]);
     }
 
-    for (let pass = 0; pass <= this.regions.length; pass++) {
+    for (let pass = 0; pass <= this.graph.regions.length; pass++) {
       let changed = false;
-      for (const region of this.regions) {
+      for (const region of this.graph.regions) {
         if (region.kind !== 'sub-process') continue;
         // Roadmap 2.17 (b): the body of a `LOOP AT` is a region, but it is not a
         // routine small enough to be one step. Collapsing it would put the
@@ -5316,15 +5206,15 @@ class SkeletonBuilder {
    * claimed where the source shows it.
    */
   private noteUnreachableSteps(): void {
-    const reached = new Set(this.edges.map((e) => e.to));
-    const entryNodes = new Set(this.regions.map((r) => r.entryNodeId));
-    for (const node of this.nodes) {
+    const reached = new Set(this.graph.edges.map((e) => e.to));
+    const entryNodes = new Set(this.graph.regions.map((r) => r.entryNodeId));
+    for (const node of this.graph.nodes) {
       if (reached.has(node.id) || entryNodes.has(node.id) || node.kind === 'start') continue;
       // A boundary is skipped unless its TRY was entered by nothing after an
       // abort.
       if (node.kind === 'error-boundary' && !this.cutOffBoundaries.has(node.id)) continue;
       const statement = node.anchor ? this.statements[node.anchor.statementIndex] : undefined;
-      this.notes.push({
+      this.graph.notes.push({
         reason: 'unreachable-after-abort',
         detail: `Nothing in this source leads to ${node.kind} "${node.label}": what stands before it in ${node.container ?? 'the program'} does not come back.`,
         snippet: statement ? snippet(statement.text) : node.label,
@@ -5343,15 +5233,15 @@ class SkeletonBuilder {
    * switch is on the node either way.
    */
   private applyGuards(): void {
-    for (const region of this.regions) {
+    for (const region of this.graph.regions) {
       const guard = region.guard;
       if (!guard) continue;
-      const callers = this.nodes.filter((n) => n.expandsTo === region.key);
+      const callers = this.graph.nodes.filter((n) => n.expandsTo === region.key);
       const ids = new Set(callers.map((n) => n.id));
       for (const caller of callers) {
         caller.detail = { ...(caller.detail ?? {}), guard: guard.condition };
       }
-      for (const edge of this.edges) {
+      for (const edge of this.graph.edges) {
         if (!ids.has(edge.to) || edge.condition) continue;
         edge.kind = 'conditional';
         edge.condition = guard.condition;
@@ -5447,7 +5337,7 @@ class SkeletonBuilder {
    * lane and stays visible in `laneEvidence`.
    */
   private buildLanes(): SkeletonLane[] {
-    if (!this.nodes.length) return [];
+    if (!this.graph.nodes.length) return [];
     const lanes: SkeletonLane[] = [];
 
     const runEvidence = this.evidence
@@ -5455,7 +5345,7 @@ class SkeletonBuilder {
       .sort((a, b) => a.anchor.statementIndex - b.anchor.statementIndex);
     const named = runEvidence[0];
     const program = this.programName();
-    const entry = this.regions.find((r) => r.kind === 'entry' && r.anchor);
+    const entry = this.graph.regions.find((r) => r.kind === 'entry' && r.anchor);
     const anchor = named?.anchor ?? program?.anchor ?? entry?.anchor ?? this.firstAnchor();
     if (!anchor) return [];
 
@@ -5475,7 +5365,7 @@ class SkeletonBuilder {
       }),
       anchor,
       evidence: runEvidence,
-      nodeIds: this.nodes.map((n) => n.id),
+      nodeIds: this.graph.nodes.map((n) => n.id),
       status: 'reconstructed',
     });
 
@@ -5510,7 +5400,7 @@ class SkeletonBuilder {
   }
 
   private firstAnchor(): NodeAnchor | null {
-    return this.nodes.find((n) => n.anchor)?.anchor ?? null;
+    return this.graph.nodes.find((n) => n.anchor)?.anchor ?? null;
   }
 
   /* ---------------- roadmap 2.15 ---------------- */
@@ -5565,16 +5455,16 @@ class SkeletonBuilder {
    * flow, only from one node further up.
    */
   private foldTechnicalGateways(): void {
-    const byId = new Map(this.nodes.map((n) => [n.id, n]));
+    const byId = new Map(this.graph.nodes.map((n) => [n.id, n]));
     const outgoing = new Map<string, SkeletonEdge[]>();
     const incoming = new Map<string, SkeletonEdge[]>();
-    for (const edge of this.edges) {
+    for (const edge of this.graph.edges) {
       const from = outgoing.get(edge.from);
       if (from) from.push(edge); else outgoing.set(edge.from, [edge]);
       const to = incoming.get(edge.to);
       if (to) to.push(edge); else incoming.set(edge.to, [edge]);
     }
-    const entryNodes = new Set(this.regions.map((r) => r.entryNodeId));
+    const entryNodes = new Set(this.graph.regions.map((r) => r.entryNodeId));
     const droppedNodes = new Set<string>();
     const droppedEdges = new Set<SkeletonEdge>();
     /**
@@ -5593,7 +5483,7 @@ class SkeletonBuilder {
       into: SkeletonEdge[];
     }> = [];
 
-    for (const gateway of this.nodes) {
+    for (const gateway of this.graph.nodes) {
       if (gateway.kind !== 'gateway' || entryNodes.has(gateway.id)) continue;
       const arms = outgoing.get(gateway.id) ?? [];
       const into = incoming.get(gateway.id) ?? [];
@@ -5699,8 +5589,8 @@ class SkeletonBuilder {
       if (survivor.kind === 'default' || survivor.kind === 'conditional') survivor.kind = 'sequence';
     }
 
-    if (droppedNodes.size) this.nodes = this.nodes.filter((n) => !droppedNodes.has(n.id));
-    if (droppedEdges.size) this.edges = this.edges.filter((e) => !droppedEdges.has(e));
+    if (droppedNodes.size) this.graph.nodes = this.graph.nodes.filter((n) => !droppedNodes.has(n.id));
+    if (droppedEdges.size) this.graph.edges = this.graph.edges.filter((e) => !droppedEdges.has(e));
   }
 
   /** A routine the walk calls runs, and so does everything it calls in turn. */
