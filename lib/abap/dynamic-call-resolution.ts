@@ -1,7 +1,7 @@
 import { maskLiterals } from './statement-reader';
 
 /**
- * ER-01/ER-02 — from engine 3.2.1 (`ENGINE_READS_321_FROM`): the function module a dynamic
+ * ER-01/ER-02 — from engine 3.3.0 (`ENGINE_READS_330_FROM`): the function module a dynamic
  * `CALL FUNCTION name` calls, where the source closes the name.
  *
  * A dynamic call whose name the program fixes is not dynamic in any sense that matters to the reader:

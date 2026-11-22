@@ -105,7 +105,7 @@ export interface CoverageOptions {
    */
   macroUsesNamed?: boolean;
   /**
-   * From engine 3.2.1 (`ENGINE_READS_321_FROM`, ER-01): the statements are cut
+   * From engine 3.3.0 (`ENGINE_READS_330_FROM`, ER-01): the statements are cut
    * with `tokenize`'s `multiLineTemplates`, so a string template whose embedded
    * expression spans lines no longer swallows the rest of the source — and with
    * it every construct this report should have listed. The engine passes true
@@ -113,7 +113,7 @@ export interface CoverageOptions {
    */
   multiLineTemplates?: boolean;
   /**
-   * From engine 3.2.1 (ER-02): the dynamic `CALL FUNCTION name` statements whose
+   * From engine 3.3.0 (ER-02): the dynamic `CALL FUNCTION name` statements whose
    * name the source closes, by statement index, with the module they call
    * (`resolveDynamicCalls`). Such a call is no `dynamic-invocation` gap: it is
    * read as the literal call of that module — answered by the catalog where
@@ -315,7 +315,7 @@ export function assessCoverage(code: string, options: CoverageOptions = {}): Cov
   let inMacroBody = false;
 
   for (const [index, stmt] of statements.entries()) {
-    // From 3.2.1 (ER-02): a call whose name the source closes reads as the literal call of that module.
+    // From 3.3.0 (ER-02): a call whose name the source closes reads as the literal call of that module.
     const resolved = options.resolvedCalls?.get(index);
     const masked = maskLiterals(stmt.text).toUpperCase().trim();
     const upper = resolved ? masked.replace(/^CALL\s+FUNCTION\s+[A-Z_][\w/]*/, "CALL FUNCTION ' '") : masked;

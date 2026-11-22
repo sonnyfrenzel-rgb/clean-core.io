@@ -23,9 +23,9 @@ import { engineVersionAtLeast } from '../score-rule';
  *
  * Pure: no imports beyond the version comparison.
  */
-export const ENGINE_READS_321_FROM = '3.2.1';
+export const ENGINE_READS_330_FROM = '3.3.0';
 
 /** True when a run of this engine version carries the readings above. A missing or unreadable version does not. */
-export function engineReads321Apply(engineVersion: string | null | undefined): boolean {
-  return engineVersionAtLeast(engineVersion, ENGINE_READS_321_FROM);
+export function engineReads330Apply(engineVersion: string | null | undefined): boolean {
+  return engineVersionAtLeast(engineVersion, ENGINE_READS_330_FROM);
 }

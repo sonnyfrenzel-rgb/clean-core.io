@@ -17,7 +17,7 @@ import { engineReads3019Apply } from './engine-reads-3019-gate';
 import { engineReads3020Apply } from './engine-reads-3020-gate';
 import { engineReads3021Apply } from './engine-reads-3021-gate';
 import { engineReads320Apply } from './engine-reads-320-gate';
-import { engineReads321Apply } from './engine-reads-321-gate';
+import { engineReads330Apply } from './engine-reads-330-gate';
 import { resolveDynamicCalls } from './dynamic-call-resolution';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { keyUserApplies } from './key-user-gate';
@@ -732,17 +732,17 @@ export function buildAbapEvidence(
   const REPLACE_WHEN = 'Replace it when the UI has to run in a browser or the SAP Fiori launchpad, or when the target is SAP S/4HANA Cloud Public Edition: then with a Fiori Elements app on a RAP service.';
   const findings: EvidenceFinding[] = [];
   const notes: EvidenceNote[] = [];
-  // From 3.2.1 (`ENGINE_READS_321_FROM`, ER-01): an embedded expression of a string template spans lines,
+  // From 3.3.0 (`ENGINE_READS_330_FROM`, ER-01): an embedded expression of a string template spans lines,
   // so a `"` in the template's text is no comment. The table dependencies and the coverage read the same cut.
-  const reads321 = engineReads321Apply(engine);
-  const tokenizeOptions = { multiLineTemplates: reads321 };
+  const reads330 = engineReads330Apply(engine);
+  const tokenizeOptions = { multiLineTemplates: reads330 };
   const statements = tokenize(code, tokenizeOptions);
-  // From 3.2.1 (ER-02): a dynamic `CALL FUNCTION name` whose name the source closes is the call of that module
+  // From 3.3.0 (ER-02): a dynamic `CALL FUNCTION name` whose name the source closes is the call of that module
   // (`resolveDynamicCalls`), keyed by statement index.
-  const resolvedCalls = reads321 ? resolveDynamicCalls(statements) : null;
+  const resolvedCalls = reads330 ? resolveDynamicCalls(statements) : null;
   // From 3.0.18 (`ENGINE_READS_FROM`): a constant names a module only where a call uses it.
   // From 3.2.0 (`ENGINE_READS_320_FROM`): a copy overwritten before any call of its target names no module.
-  // From 3.2.1: a resolved call is read at the call, so it makes no constant or copy a called name.
+  // From 3.3.0: a resolved call is read at the call, so it makes no constant or copy a called name.
   const dynamicNames = reads
     ? dynamicCallNames(
       resolvedCalls ? statements.map((st, i) => (resolvedCalls.has(i) ? { text: '' } : st)) : statements,
@@ -1062,7 +1062,7 @@ export function buildAbapEvidence(
      */
     const codeText = maskLiterals(text);
     /**
-     * From 3.2.1 (ER-02): the statement as the function-module detectors read it. A dynamic call whose name the
+     * From 3.3.0 (ER-02): the statement as the function-module detectors read it. A dynamic call whose name the
      * source closes reads as the literal call of that module (`CALL FUNCTION lv_fm.` → `CALL FUNCTION 'X'.`), so
      * the catalog and the module detectors answer it at the call. Only those detectors read it; every snippet
      * keeps `text`, the statement as written.
@@ -2179,8 +2179,8 @@ export function buildAbapEvidence(
     datasetAssessed: reads,
     // From 3.0.21 a macro is named where it is used (`ENGINE_READS_3021_FROM`).
     macroUsesNamed: engineReads3021Apply(engine),
-    // From 3.2.1 (`ENGINE_READS_321_FROM`): the statements cut as above, and the dynamic calls the source closes.
-    multiLineTemplates: reads321,
+    // From 3.3.0 (`ENGINE_READS_330_FROM`): the statements cut as above, and the dynamic calls the source closes.
+    multiLineTemplates: reads330,
     ...(resolvedCalls ? { resolvedCalls } : {}),
   });
   // From 3.0.17 (`STATED_REQUIREMENTS_FROM`): what the owner states in the

@@ -36,7 +36,7 @@ interface Statement { text: string; line: number; }
  */
 export interface TokenizeOptions {
   /**
-   * From engine 3.2.1 (`ENGINE_READS_321_FROM`, ER-01): the comment scan of a
+   * From engine 3.3.0 (`ENGINE_READS_330_FROM`, ER-01): the comment scan of a
    * line starts in the literal state the line before ended in. An embedded
    * expression of a string template may span lines, so a line can begin
    * inside `|… { …` — and a `"` in the template text behind the closing `}`
@@ -87,8 +87,8 @@ export function tokenize(source: string, options: TokenizeOptions = {}): Stateme
     // lines that disagree written out beside it.
     if (isAbapCommentLine(line, buf.length > 0)) continue;
     // Strip inline comment ("...) when it is not inside a literal. Before
-    // 3.2.1 the scanner started fresh on each line ("a literal does not span
-    // lines"); from 3.2.1 (`multiLineTemplates`) the one scanner of the whole
+    // 3.3.0 the scanner started fresh on each line ("a literal does not span
+    // lines"); from 3.3.0 (`multiLineTemplates`) the one scanner of the whole
     // source decides, because an embedded expression `{ … }` of a template
     // does span lines. `codeAt[c]` keeps its answer for each kept character, so
     // the split below reads the same state without feeding the scanner twice.

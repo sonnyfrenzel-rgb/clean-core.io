@@ -1026,7 +1026,7 @@ function isRepositoryStructureName(name: string, ctx: Context): boolean {
 /**
  * `options` are `tokenize`'s, so the statement indices this report gives agree
  * with the caller's own `tokenize(source, options)` — the evidence engine passes
- * `multiLineTemplates` from 3.2.1 (`ENGINE_READS_321_FROM`).
+ * `multiLineTemplates` from 3.3.0 (`ENGINE_READS_330_FROM`).
  */
 export function readTableDependencies(source: string, options: TokenizeOptions = {}): TableDependencyReport {
   const ctx = buildContext(source, options);
