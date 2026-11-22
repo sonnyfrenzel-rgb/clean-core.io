@@ -22,7 +22,8 @@ code. Prior art supplied concepts only, and no third-party source is copied.
 | L4 graded | `graded.ts`, `lib/knowledge/` | `gradeReferences(table) → GradedReference[]`: SAP's facts and a standing per reference (no A–D letter) | built, inert |
 | L4 values | `values.ts` | `valueAt(valueContext(statements, tree), name, statement) → ValueAnswer`: scoped, loop- and call-aware, FORM parameters over call sites, provenance | built, inert |
 | L3 declarations | `declarations.ts` | `declarations(statements, tree) → Declarations`: classes, interfaces, members, implementations | built, inert |
-| rest of L3/L4, L5–L6 | — | screens, call graph, process model (review §8.1) | later |
+| L5 calls | `calls.ts` | `callGraph(statements, tree) → CallGraph`: routines, edges with dispatch and FINAL pruning, reachability | built, inert |
+| rest of L3–L6 | — | screens, handler registration, exception routing, process model (review §8.1) | later |
 
 `index.ts` is the public surface. `readSource(source)` runs L0 and L1 in one call and returns the statements
 together with the diagnostics of both layers.
@@ -1031,6 +1032,30 @@ another write in another FORM): no answer becomes more certain (`constant` > `va
 Different single value: 0 everywhere. The real corpora hardly meet the unsound cases (their dynamic names were
 open already); the probes and the metamorphic generator do. Inert: nothing in the product reads `values.ts`.
 
+## Retiring the other splitters (22.11.2026, `build/engine4-p12`)
+
+`declaration-parser.tokenize` and `plain-language`'s statement split now read the parse-once tokens, the way
+`readStatements` does since Phase 0 — a pure refactor, no gate:
+
+- `statement-reader.ts` exports `parsedSource(source)` (one `ParsedSource` per source and build inside
+  `withParsedSource`, which `readStatements` now shares) and `periodStatements(parsed)`: the source statements cut at
+  every period, chains not expanded, per row the text from the first to the last code token.
+- `tokenize` joins those pieces with one blank, as its scan did; `plainStatements` collapses whitespace, as its scan
+  did. Each keeps its 3.x scan (`tokenizeShipping`, `splitStatements`) as reference and fallback: every
+  `parseOnceFallback` reason, plus for `tokenize` a **bare carriage return** (one line for the scan, a line break
+  for the lexer) and for `plain-language` an **indented `*` line** (a comment for the lexer, code for the scan) and
+  a **template with an escape** (`|a\|b|`: the scan knows no escape and ends the template there). The last two are
+  defects of the old scans that the move keeps, byte-neutral; fixing them is a gated reading.
+- Verify mode (`ENGINE_PARSE_ONCE_VERIFY=1`) compares both with their scans and throws on a difference.
+
+| Proof | Result |
+|---|---|
+| `scripts/engine/splitter-neutrality.ts`, learn corpus + mutations (30,732 sources) | `tokenize` 21,116 served, 0 differ; plain 21,305 served, 0 differ |
+| …public sample (23,400 sources) | `tokenize` 13,439 served, 0 differ; plain 13,432 served, 0 differ (the template-escape class was found here: 101 differences before the rule) |
+| Frozen digests | 330 / 330 unchanged |
+| Parse-once mutation run | 20,728 served, 0 differ (unchanged) |
+| 355 server-free spec files that import `lib/` or `scripts/`, in verify mode | 6,137 passed; 5 failed, none from this change: two shard-plan checks (the new specs, refreshed below), the public-text inventory (`engine4.md` has no entry, as on `integrate/engine4`), and two that fail on this machine for reasons of their own (`tar` in `sec-2026-897-902`, CRLF in `test-run-lock`) |
+
 ## L3 second half: class and interface declarations (22.11.2026, `build/engine4-p12`)
 
 `declarations(statements, tree)` (`lib/engine4/declarations.ts`) reads every `CLASS … DEFINITION` and `INTERFACE`
@@ -1058,6 +1083,29 @@ of the call graph. `DEFERRED`/`LOAD` names are `announced`; `LOCAL FRIENDS` is a
 
 Every category is an old-parser defect except the static flag of constants, which the shadow compares as the old
 parser writes it: a constant is a static attribute in ABAP (`class=>c`), and L3 says so.
+
+## L5 first step: the call graph (22.11.2026, `build/engine4-p12`)
+
+`callGraph(statements, tree)` (`lib/engine4/calls.ts`): every routine (FORM, `METHOD CLASS=>M`, FUNCTION, MODULE,
+event block, program level) and one edge per call — PERFORM (static; dynamic through `values.ts`; `IN PROGRAM`
+external), CALL FUNCTION (through the reference table, so values resolve variables), method calls with the class
+from the call or the receiver's declared type, **dispatch** over subclasses that redefine and over interface
+implementers, **FINAL pruning** (a FINAL class or method has one target), `super->` without dispatch, constructors,
+and `RAISE EVENT` to every `FOR EVENT` handler (an over-approximation until handler registration is read).
+Reachability from the entries (events, program level, modules, function modules, public methods of a global
+class, interface methods of a global class, class constructors, event handlers, FOR TESTING methods); `certain`
+only without a dynamic or unresolved edge.
+
+**Shadow against `readCallGraph`** (`scripts/engine4/shadow-calls.ts`; today has PERFORM edges only):
+
+| | Learn corpus | Public sample |
+|---|---|---|
+| PERFORM edges old / new / agree | 217 / 217 / 217 | 326 / 326 / 326 |
+| Unreachable FORMs old / new / agree | 296 / 296 / 296 | 34 / 34 / 34 |
+| Method call edges static / dispatch / external / unresolved | 92 / 9 / 229 / 116 | 5,507 / 314 / 7,323 / 847 |
+
+Not built yet: handler registration (`SET HANDLER`), callbacks by name (`callback-registrations.ts` today),
+screens ↔ modules, user-exit includes, exception routing, chained calls past the first link, EML.
 
 ## L4: graded references through `lib/knowledge/` (22.11.2026, `build/engine4-p12`)
 
@@ -1192,8 +1240,8 @@ switch; until then it is computed in the shadow only.
 2. **Phase 0, the rest** (3.5.0 item 2): `engineDigest` (owner decision, "Phase 0 wiring"); hand `ParsedSource`
    itself to the readers that also mask (`maskedText(i)`) and nest (`containers`) instead of the source-keyed
    scope; the remaining hotspots (`valueAlongTheRun`, `call-graph`); the capture step in the release routine.
-3. Remove the two other statement splitters (`declaration-parser.tokenize`, `plain-language.splitStatements`)
-   once their readers consume `ParsedSource`.
+3. ~~Remove the two other statement splitters~~ (on parse once since 22.11.2026, above; their scans stay as
+   fallback until the gated readings fix the three classes they keep).
 4. **L3, second half:** class and interface declarations (visibility, `FINAL`/`ABSTRACT`, events, aliases,
    redefinitions, `RAISING`) and screens by number from `MODULE` names and `CALL SCREEN` (review §8.1), on
    top of the layout. The layout part is done (above).

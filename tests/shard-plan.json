@@ -833,7 +833,8 @@
         "tests/dsag-citations.spec.ts",
         "tests/engine-method-collapse.spec.ts",
         "tests/engine4-acceptance.spec.ts",
-        "tests/engine4-references.spec.ts",
+        "tests/engine4-layout.spec.ts",
+        "tests/engine4-splitters.spec.ts",
         "tests/enhancement-detection.spec.ts",
         "tests/evidence-sweep.spec.ts",
         "tests/findings-focus-names.spec.ts",
@@ -980,7 +981,8 @@
         "tests/engine-honesty-guard.spec.ts",
         "tests/engine-reads-3018.spec.ts",
         "tests/engine-state-machine.spec.ts",
-        "tests/engine4-lexer.spec.ts",
+        "tests/engine4-knowledge.spec.ts",
+        "tests/engine4-references.spec.ts",
         "tests/example-start-no-page-error.spec.ts",
         "tests/examples-3018-engine.spec.ts",
         "tests/export-inertness-guard.spec.ts",
@@ -1073,7 +1075,7 @@
         "tests/verify-export-runtime.spec.ts",
         "tests/workspace-layers.spec.ts"
       ],
-      "seconds": 922
+      "seconds": 923
     },
     {
       "files": [
@@ -1121,7 +1123,8 @@
         "tests/engine-read-claims-3018.spec.ts",
         "tests/engine-reads-3021.spec.ts",
         "tests/engine4-blocks.spec.ts",
-        "tests/engine4-shadow.spec.ts",
+        "tests/engine4-ledger.spec.ts",
+        "tests/engine4-statements.spec.ts",
         "tests/error-wording-guard.spec.ts",
         "tests/example-opens-workspace.spec.ts",
         "tests/firestore-rules-admin-writes.spec.ts",
@@ -1268,7 +1271,8 @@
         "tests/engine-steps-wording-310.spec.ts",
         "tests/engine-version-callers.spec.ts",
         "tests/engine-version-rebuild.spec.ts",
-        "tests/engine4-parsed-source.spec.ts",
+        "tests/engine4-layer-guard.spec.ts",
+        "tests/engine4-shadow.spec.ts",
         "tests/evidence-firestore-values.spec.ts",
         "tests/export-escaping-guard.spec.ts",
         "tests/extensibility-route-guard.spec.ts",
@@ -1363,7 +1367,7 @@
         "tests/workspace-print-sheet.spec.ts",
         "tests/workspace-start.spec.ts"
       ],
-      "seconds": 922
+      "seconds": 923
     },
     {
       "files": [
@@ -1431,8 +1435,9 @@
         "tests/engine-call-contract.spec.ts",
         "tests/engine-judgement-honesty.spec.ts",
         "tests/engine-reads-320.spec.ts",
-        "tests/engine4-layer-guard.spec.ts",
-        "tests/engine4-statements.spec.ts",
+        "tests/engine4-calls.spec.ts",
+        "tests/engine4-lexer.spec.ts",
+        "tests/engine4-values.spec.ts",
         "tests/evidence-engine-v118.spec.ts",
         "tests/evidence-model-qa220.spec.ts",
         "tests/extensibility-router-qa220.spec.ts",
@@ -1603,7 +1608,7 @@
         "tests/workspace-toolbar.spec.ts",
         "tests/write-ceiling-guard.spec.ts"
       ],
-      "seconds": 922
+      "seconds": 923
     },
     {
       "files": [
@@ -1649,7 +1654,8 @@
         "tests/engine-precision-fixes.spec.ts",
         "tests/engine-rules-3013.spec.ts",
         "tests/engine-scaling-guard.spec.ts",
-        "tests/engine4-layout.spec.ts",
+        "tests/engine4-declarations.spec.ts",
+        "tests/engine4-parsed-source.spec.ts",
         "tests/erased-account-marker.spec.ts",
         "tests/evidence-chain-covers.spec.ts",
         "tests/evidence-engine-load-states.spec.ts",
@@ -1747,7 +1753,7 @@
         "tests/www-redirect.spec.ts",
         "tests/zero-llm-path.spec.ts"
       ],
-      "seconds": 922
+      "seconds": 923
     }
   ]
 }
