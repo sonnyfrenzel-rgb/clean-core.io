@@ -257,3 +257,44 @@ test.describe('the backfill', () => {
     expect(src).not.toMatch(/console\.log\([^)]*doc\.id/);
   });
 });
+
+test.describe('a changed source never stands under the old summary (lawyer, statement 20c E3 (4))', () => {
+  test('runs/create removes the previous summary in the commit that replaces the source, and writes the new one after it', () => {
+    const route = code('app/api/runs/create/route.ts');
+    // The one transaction that writes the new source and the new active run.
+    const commit = route.indexOf('activeRunId: runId,');
+    expect(commit, 'the project write of the commit').toBeGreaterThan(0);
+    const setEnd = route.indexOf('{ merge: true }', commit);
+    expect(route.slice(commit, setEnd)).toContain('legacyCode,');
+    // In the same transaction callback, after the source and the active run are set.
+    const removal = route.indexOf('tx.update(projectRef, { summary: FieldValue.delete() });');
+    expect(removal).toBeGreaterThan(setEnd);
+    expect(route.slice(setEnd, removal)).not.toContain('runTransaction');
+    expect(route.slice(setEnd, removal)).not.toMatch(/\}\);\s*\}\s*catch \(txErr\)/);
+    // This run's summary is written whole after the commit; a failed write leaves none, since the commit removed it.
+    const write = route.indexOf('await writeProjectSummary(db, projectId, summary);');
+    expect(write).toBeGreaterThan(removal);
+    expect([...route.matchAll(/summary:\s*FieldValue\.delete\(\)/g)], 'removed once, in the commit').toHaveLength(1);
+    expect(code('lib/project-summary-server.ts')).toContain("update({ summary })");
+  });
+
+  test('firestore.rules: a browser changes the source only of a project without a summary, and never touches the summary', () => {
+    const rules = read('firestore.rules').replace(/\r\n/g, '\n');
+    expect(rules).toContain("(!('legacyCode' in changed) || !('summary' in data))");
+    // `summary` stays off the client allowlist, so a browser can neither set nor remove it.
+    const allowlist = /affectedKeys\(\)\.hasOnly\(\[([\s\S]*?)\]\)/g;
+    for (const m of rules.matchAll(allowlist)) expect(m[1]).not.toContain("'summary'");
+    // The record says the tightening is pending and goes live before the code.
+    const record = JSON.parse(read('docs/registers/rules-deployment.json'));
+    if (record.pending) expect(record.pending.recordedFor).toContain('BEFORE the 3.3.0 code');
+  });
+
+  test('no browser path writes the source of an existing project', () => {
+    // The source reaches an existing project only through POST /api/runs/create; the client writes it on create only
+    // (OwnCodeImport, StarterExamples, the copy actions). A new client path would need the summary rule above in mind.
+    const files = ['app/(app)/project/[projectId]/analyze/page.tsx', 'components/workspace/WorkspaceListReport.tsx', 'components/workspace/OwnCodeImport.tsx'];
+    for (const f of files) {
+      for (const m of code(f).matchAll(/updateDoc\(([\s\S]*?)\);/g)) expect(m[1], `${f}: updateDoc with the source`).not.toContain('legacyCode');
+    }
+  });
+});

@@ -5,14 +5,13 @@
  * server sees it; views are views only (CLAUDE.md). A browser that refuses
  * storage simply starts from Business and tiles each time.
  *
- * Both keys must be named in the Privacy Policy's list of local-storage keys
- * before this ships (`lib/legal/texts/privacy.en.ts` / `.de.ts`, the list that
- * names `cc.workspace.coachMarks.dismissed` and the demo's `cc.demo.tour.v1`).
- * The owner decided on 14.11.2026 to keep both; the lawyer's text is prepared
- * separately, so the privacy texts are not edited here.
- * {@link PRIVACY_PENDING_STORAGE_KEYS} is the register of what that text has to
- * add, and `tests/workspace-tiles.spec.ts` holds it: a key leaves the register
- * once the published text names it.
+ * Both keys are named in the Privacy Policy's list of local-storage keys since
+ * version 1.4 (`lib/legal/texts/privacy.en.ts` / `.de.ts`; lawyer, statement
+ * 20c E1, with the sentence that the view says nothing about the reader's role,
+ * E2). The owner decided on 14.11.2026 to keep both.
+ * {@link PRIVACY_PENDING_STORAGE_KEYS} is the register of what that text still
+ * has to add — empty since 1.4 — and `tests/workspace-tiles.spec.ts` holds it:
+ * a key leaves the register once the published text names it.
  *
  * What each key holds — nothing personal, nothing about a project:
  *   - `cc.workspace.lens`: `business`, `it` or `management` — the lens of the tiles.
@@ -29,10 +28,10 @@ export const WORKSPACE_MODE_KEY = 'cc.workspace.mode';
 
 /**
  * Local-storage keys this release adds that the Privacy Policy's list does not
- * name yet (ADR-123 (7)(i); owner decision 14.11.2026: keep them, lawyer text
- * pending). Release 3.3.0 waits for this list to be empty.
+ * name yet (ADR-123 (7)(i)). Release 3.3.0 waited for this list to be empty:
+ * privacy policy 1.4 names both keys (lawyer, statement 20c).
  */
-export const PRIVACY_PENDING_STORAGE_KEYS: readonly string[] = [WORKSPACE_LENS_KEY, WORKSPACE_MODE_KEY];
+export const PRIVACY_PENDING_STORAGE_KEYS: readonly string[] = [];
 
 export function readWorkspaceLens(): WorkspaceLens {
   try {

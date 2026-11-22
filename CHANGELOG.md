@@ -48,6 +48,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   hook). The stored lens, mode and demo mark are read hydration-safe instead of in a `useState` initialiser. The two
   storage keys stay; `PRIVACY_PENDING_STORAGE_KEYS` in `lib/workspace-prefs.ts` registers them for the Privacy
   Policy's list until the lawyer's text names them (privacy texts not changed here).
+- Privacy policy 1.4, built word for word from the lawyer's statement 20c (E4: "1.4 with 3.3.0: the workspace keys,
+  E2, E3"). Section 7 names `cc.workspace.lens` and `cc.workspace.mode` in the wording of document 20, 2.1/2.2
+  (approved in E1), right after `cc.workspace.analysis.read`, and closes the local-storage list with the E2 sentence
+  that the view says nothing about the reader's role. Section 3 appends the E3 sentence on the project summary,
+  with the title line (the summary carries `processTitle`). The head carries document 20's change note 2.4. Archived
+  at `/datenschutz/versions/1.4` and `/1.4/de` (`docs/privacy/1.4*.md`, digests in `lib/legal/privacy-versions.ts`);
+  1.1 to 1.3 render byte for byte as archived. The sign-up box now takes version, date and address from the version
+  record. The date is one constant, `PRIVACY_14_DATE_ISO`, provisionally 22.11.2026 — it becomes the release day of
+  3.3.0. `PRIVACY_PENDING_STORAGE_KEYS` is empty and the storage register marks both keys as named. No notice mail
+  (20c E5).
+- The project summary never outlives the source it was taken from (lawyer, statement 20c E3 (4)). `POST
+  /api/runs/create` removes the previous run's summary in the same transaction that writes the new source and active
+  run, then writes this run's summary whole; a failed write leaves none (the separate clean-up after a failed write is
+  gone). `firestore.rules` lets a browser change `legacyCode` only on a project without a summary, and `summary`
+  stays off the client allowlist. No app path writes the source of an existing project from the browser; the rule
+  closes the door the allowlist still left open. Recorded as pending in `docs/registers/rules-deployment.json`: the
+  rules go live **before** the 3.3.0 code (lawyer). Specs: `tests/project-summary.spec.ts` (server-free),
+  `tests/firestore-rules-field-validation.spec.ts` (emulator).
 
 ### Operations
 - The 3.2.0 Firestore rules are deployed and verified on every database (16.11.2026,

@@ -35,5 +35,14 @@
       "updatedAt"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "c69f7d9a04560b98d8b53226cbcd364d70c370843ac8fb86a44a0feca4874636",
+    "recordedAt": "2026-11-22",
+    "recordedFor": "3.3.0 (lawyer, statement 20c E3 (4); privacy policy 1.4): a browser may change legacyCode only of a project without the server-written summary, so a changed source never stands under the old header title line. A tightening: no client field gained or lost, and no app path writes legacyCode to an existing project. The lawyer asked for this rule to be live BEFORE the 3.3.0 code: deploy by hand (npm run deploy:rules) before the release goes to main.",
+    "addsToClient": [],
+    "removesFromClient": [],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
+    "note": "Until the deploy, the old rules are live. Order: rules first (lawyer, statement 20c), then the 3.3.0 release. `npm run deploy:rules` rolls out and deletes this block."
   }
 }
