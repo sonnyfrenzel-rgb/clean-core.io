@@ -1008,6 +1008,11 @@ export async function POST(req: NextRequest) {
         if (sourceChange) {
           tx.update(projectRef, { 'auditMetadata.sourceChange': sourceChange });
         }
+        // 3.3.0 (lawyer, statement 20c E3 (4)): the previous run's project summary — which carries the old source's
+        // header title line — goes in the same commit that replaces the source and the active run, so no moment
+        // exists in which the new source stands under the old summary. This run's summary is written after the
+        // commit (below); when that fails, the project simply has none.
+        tx.update(projectRef, { summary: FieldValue.delete() });
       });
     } catch (txErr) {
       if (!(txErr instanceof ProjectTooLargeError)) throw txErr;
@@ -1152,7 +1157,9 @@ export async function POST(req: NextRequest) {
     // the map's thumbnail and size, the rules, the score and the recommendation
     // of this run. Admin SDK only, outside the signed run and the audit pack;
     // bound to `runId`, so a summary of an earlier run is never shown for this
-    // one. Its failure fails nothing: the tile then says "Map after the next run".
+    // one. Written only while this run is still the project's active run, so a
+    // late write never lands under a newer run's source.
+    // Its failure fails nothing: the tile then says "Map after the next run".
     try {
       const summary = computeProjectSummary({
         runId,
@@ -1171,6 +1178,8 @@ export async function POST(req: NextRequest) {
         projectId,
         error: errMessage(summaryErr),
       });
+      // Every signed run replaces the summary whole (lawyer, statement 20c): the previous run's went with the commit
+      // above, so a write that failed here leaves the project with none — never with the earlier run's.
     }
 
     return NextResponse.json({

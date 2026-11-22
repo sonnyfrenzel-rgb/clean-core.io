@@ -14,9 +14,11 @@ import { TERMS_DE } from '../lib/legal/texts/terms.de';
 import { TERMS_EN } from '../lib/legal/texts/terms.en';
 import { blockText, legalBlocks, toArchiveMarkdown } from '../lib/legal/markup';
 import {
+  PRIVACY_14_DATE_ISO,
   PRIVACY_ARCHIVE_DIR,
   PRIVACY_POLICY_CURRENT,
   PRIVACY_POLICY_VERSIONS,
+  privacyDateOf,
   privacyVersion,
   privacyVersionAddress,
   privacyVersionFor,
@@ -177,6 +179,33 @@ const DOC21 = {
   ],
 } as const;
 
+/**
+ * Version 1.4: the passages of statement 20c, word for word — the two My workspace entries of section 7 (document 20,
+ * 2.1/2.2, approved in E1), the sentence on the view (E2) and the sentence on the project summary in section 3 (E3,
+ * with the title line, since the summary carries `processTitle`).
+ */
+const STATEMENT_20C = {
+  de: [
+    'welche Analysen Sie gelesen haben (cc.workspace.analysis.read), durch welche Sicht – Business, IT oder Management – Sie „My workspace“ lesen (cc.workspace.lens) und ob Sie Ihre Programme dort als Kacheln oder als Liste sehen (cc.workspace.mode); ob die Gliederung der Prozesskarte offen ist',
+    'Die Sicht in „My workspace“ bestimmt nur, welche Angabe auf den Kacheln hervorgehoben wird; sie sagt nichts über Ihre Rolle aus und wird nirgends sonst gespeichert.',
+    'Für die Übersicht „My workspace“ legt unser Server zu jedem Projekt eine Kurzfassung des letzten signierten Laufs ab: Zahlen, Score und Empfehlung, den Umriss der Prozesskarte ohne Beschriftung und die Titelzeile aus dem Kopfkommentar Ihres Codes; ein Modell wirkt daran nicht mit. Sie wird mit jedem neuen Lauf ersetzt und mit dem Projekt gelöscht.',
+  ],
+  en: [
+    'which analyses you have read (cc.workspace.analysis.read), which view — Business, IT or Management — you read My workspace through (cc.workspace.lens) and whether you see your programs there as tiles or as a list (cc.workspace.mode); whether the outline of the process map is open',
+    'The view in My workspace only decides which figure the tiles highlight; it says nothing about your role and is stored nowhere else.',
+    "For the My workspace overview our server keeps a short summary of the last signed run of every project: figures, score and recommendation, the outline of the process map without labels and the title line of your code's header comment; no model is involved. It is replaced with every new run and deleted with the project.",
+  ],
+} as const;
+
+/**
+ * The change note of 1.4: document 20, passage 2.4, adapted to what 1.4 changes (no session storage entry; the
+ * section 3 sentence of statement 20c E3). Approved by the owner on 22.11.2026.
+ */
+const DOC20_HEAD = {
+  de: 'Abschnitt 7 nennt die Sicht und die Darstellung von „My workspace“; Abschnitt 3 nennt die Kurzfassung, die unser Server für diese Übersicht zu jedem Projekt ablegt.',
+  en: 'section 7 names the view and the layout of My workspace; section 3 names the short summary our server keeps of every project for this overview.',
+} as const;
+
 const privacyFor = (lang: 'de' | 'en', id: PrivacyVersionId) => (lang === 'de' ? privacyDeFor(id) : privacyEnFor(id));
 const renderedPolicy = (lang: 'de' | 'en', id: PrivacyVersionId) => legalBlocks(privacyFor(lang, id), lang).map(blockText).join('\n');
 
@@ -313,10 +342,8 @@ test.describe('B3: the privacy policy has its own version, an archive and a chan
   });
 
   test('version 1.3 of 16 November 2026: the approved passages of document 21, and none of them before it', () => {
-    expect(PRIVACY_POLICY_CURRENT.id).toBe(LEGAL_TEXTS_NAMES_AUTOMATIC ? '1.3' : '1.1');
-    expect(privacyVersionFor(true).id).toBe('1.3');
-    expect(privacyVersionFor(true).date).toEqual({ en: '16 November 2026', de: '16.11.2026' });
-    expect(privacyVersionFor(true).dateIso).toBe('2026-11-16');
+    expect(privacyVersion('1.3').date).toEqual({ en: '16 November 2026', de: '16.11.2026' });
+    expect(privacyVersion('1.3').dateIso).toBe('2026-11-16');
     expect(renderedPolicy('en', '1.3')).toContain('Version 1.3, as of 16 November 2026.');
     expect(renderedPolicy('de', '1.3')).toContain('Fassung 1.3, Stand 16.11.2026.');
     for (const lang of ['de', 'en'] as const) {
@@ -333,6 +360,41 @@ test.describe('B3: the privacy policy has its own version, an archive and a chan
     // The change note names the real address of the previous version.
     expect(CHANGE_NOTE_13.en).toContain(`${privacyVersionAddress('1.2', 'en')}.`);
     expect(CHANGE_NOTE_13.de).toContain(`${privacyVersionAddress('1.2', 'de')}.`);
+  });
+
+  test('version 1.4: My workspace in the wording of statement 20c, in force from 3.3.0, and none of it before', () => {
+    // One date for the whole version, provisional until the release day of 3.3.0 is fixed.
+    const v = privacyVersion('1.4');
+    expect(v.dateIso).toBe(PRIVACY_14_DATE_ISO);
+    expect(v.date).toEqual(privacyDateOf(PRIVACY_14_DATE_ISO));
+    expect(privacyDateOf('2026-11-22')).toEqual({ en: '22 November 2026', de: '22.11.2026' });
+    expect(privacyDateOf('2026-12-03')).toEqual({ en: '3 December 2026', de: '03.12.2026' });
+    expect(v.dateIso > privacyVersion('1.3').dateIso, '1.4 takes effect after 1.3').toBe(true);
+    expect(PRIVACY_POLICY_CURRENT.id).toBe(LEGAL_TEXTS_NAMES_AUTOMATIC ? '1.4' : '1.1');
+    expect(privacyVersionFor(true).id).toBe('1.4');
+    expect(renderedPolicy('en', '1.4')).toContain(`Version 1.4, as of ${v.date.en}.`);
+    expect(renderedPolicy('de', '1.4')).toContain(`Fassung 1.4, Stand ${v.date.de}.`);
+    for (const lang of ['de', 'en'] as const) {
+      const blocks = legalBlocks(privacyFor(lang, '1.4'), lang).map(blockText);
+      const note =
+        lang === 'de'
+          ? `Geändert am ${v.date.de}: ${DOC20_HEAD.de} Die vorige Fassung vom 16.11.2026 finden Sie unter ${privacyVersionAddress('1.3', 'de')}.`
+          : `Changed on ${v.date.en}: ${DOC20_HEAD.en} The previous version of 16 November 2026 is at ${privacyVersionAddress('1.3', 'en')}.`;
+      expect(blocks[2], 'the change note stands right after the version line').toBe(note);
+      for (const passage of STATEMENT_20C[lang]) {
+        expect(renderedPolicy(lang, '1.4'), passage.slice(0, 60)).toContain(passage);
+        for (const id of ['1.1', '1.2', '1.3'] as const) expect(renderedPolicy(lang, id), `${id}: ${passage.slice(0, 60)}`).not.toContain(passage);
+      }
+      // Everything 1.3 said stays: the passages of document 21 are all still there.
+      for (const passage of DOC21[lang]) expect(renderedPolicy(lang, '1.4'), passage.slice(0, 60)).toContain(passage);
+      // The sentence on the summary closes the storage paragraph of section 3.
+      const s3 = blocks.find((b) => b.startsWith(lang === 'de' ? 'Die von Ihnen hochgeladenen ABAP-Quelldateien' : 'The ABAP source files you upload'));
+      expect(s3?.endsWith(STATEMENT_20C[lang][2])).toBe(true);
+      // The view sentence closes the local-storage list, before session storage.
+      const text = renderedPolicy(lang, '1.4');
+      expect(text.indexOf(STATEMENT_20C[lang][1])).toBeLessThan(text.indexOf(lang === 'de' ? 'In der Sitzungsspeicherung' : 'In session storage'));
+      expect(text.indexOf(STATEMENT_20C[lang][1])).toBeGreaterThan(text.indexOf('cc-business-layer-writing-…)'));
+    }
   });
 
   test('every version is archived: the file is the source rendered for it, and its digest is the one on record', () => {
@@ -361,7 +423,8 @@ test.describe('B3: the privacy policy has its own version, an archive and a chan
     }
     expect(publishedPrivacyVersions(privacyVersionFor(false)).map((v) => v.id)).toEqual(['1.1']);
     expect(publishedPrivacyVersions(privacyVersion('1.2')).map((v) => v.id)).toEqual(['1.1', '1.2']);
-    expect(publishedPrivacyVersions(privacyVersionFor(true)).map((v) => v.id)).toEqual(['1.1', '1.2', '1.3']);
+    expect(publishedPrivacyVersions(privacyVersion('1.3')).map((v) => v.id)).toEqual(['1.1', '1.2', '1.3']);
+    expect(publishedPrivacyVersions(privacyVersionFor(true)).map((v) => v.id)).toEqual(['1.1', '1.2', '1.3', '1.4']);
     const archive = read('components/legal/ArchivedPrivacyPage.tsx');
     expect(archive).toContain('if (!publishedPrivacyVersions().some((v) => v.id === id)) notFound();');
     expect(archive).toContain('robots: { index: false, follow: true }');
@@ -375,12 +438,14 @@ test.describe('B3: the privacy policy has its own version, an archive and a chan
     const v = privacyVersionFor(true);
     const de = `Ich habe die Datenschutzerklärung (Fassung ${v.id}, Stand ${v.date.de}, Wortlaut: ${privacyVersionAddress(v.id, 'de')}) zur Kenntnis genommen.`;
     const en = `I have taken note of the Privacy Policy (version ${v.id}, as of ${v.date.en}, wording: ${privacyVersionAddress(v.id, 'en')}).`;
-    expect(src).toContain(de);
-    expect(src).toContain(en);
-    expect(consentText(CONSENT_TEXTS.signup.privacyCheckbox, 'de') === de, 'the German box names version 1.3 exactly in the build that has it').toBe(
+    // Version, date and address come from the version record, so the provisional date of 1.4 has one place.
+    expect(src).toContain('const PRIVACY_IN_FORCE = privacyVersionFor(true);');
+    expect(src).not.toMatch(/Fassung 1\.\d, Stand|version 1\.\d, as of/);
+    expect(v.id).toBe('1.4');
+    expect(consentText(CONSENT_TEXTS.signup.privacyCheckbox, 'de') === de, 'the German box names version 1.4 exactly in the build that has it').toBe(
       LEGAL_TEXTS_NAMES_AUTOMATIC,
     );
-    expect(consentText(CONSENT_TEXTS.signup.privacyCheckbox, 'en') === en, 'the English box names version 1.3 exactly in the build that has it').toBe(
+    expect(consentText(CONSENT_TEXTS.signup.privacyCheckbox, 'en') === en, 'the English box names version 1.4 exactly in the build that has it').toBe(
       LEGAL_TEXTS_NAMES_AUTOMATIC,
     );
   });
@@ -407,7 +472,8 @@ test.describe('B3: the privacy policy has its own version, an archive and a chan
     await recordConsent({ uid: 'u-privacy', email: null, source: 'spec', now: new Date('2026-11-21T10:00:00Z') }, deps);
     const event = writes.find((w) => w.path.startsWith('consent_events/'));
     expect(event?.data.privacyVersion).toBe(PRIVACY_POLICY_CURRENT.recordId);
-    expect(privacyVersionFor(true).recordId).toBe('1.3');
+    expect(privacyVersionFor(true).recordId).toBe('1.4');
+    expect(privacyVersion('1.3').recordId).toBe('1.3');
     expect(privacyVersion('1.2').recordId).toBe('1.2');
     expect(privacyVersionFor(false).recordId, 'version 1.1 keeps the id it was recorded with').toBe('2026-11-09');
   });

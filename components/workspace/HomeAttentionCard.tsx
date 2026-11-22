@@ -2,9 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowRight, Clock, XCircle } from 'lucide-react';
+import { ArrowRight, Clock } from 'lucide-react';
 import CcCard from '@/components/cc/Card';
-import { ATTENTION_LABEL } from '@/lib/home-status';
+import { ATTENTION_REASON_LABEL, attentionOf, programNextLink } from '@/lib/workspace-tiles';
 import type { HomeRow } from '@/lib/home-rows';
 import { homeAttentionShowAll, wt } from '@/lib/workspace-messages';
 import { HomeNextCell } from './HomeStatusCell';
@@ -12,11 +12,10 @@ import { HomeNextCell } from './HomeStatusCell';
 /**
  * "Needs your attention" (AB-14b, mockup `attentionCard`; replaces the "Your turn" card of 3.0).
  *
- * Only when there is a reason, and only three reasons exist (`lib/home-status.ts`): the code changed since the
- * analysis, the design no longer matches the analysis, a test run failed. A project that was analysed and left there
- * has nothing open and never stands here — the old card listed the next open step of every project, so a returning
- * account with ten analysed programs was told ten times to draft a design (H-O3: re-design is never offered as a next
- * step on the home page). At most three; "Show all N in the list" filters the list to them.
+ * Only when there is a reason, and the reason is the one the "Needs attention" count tile counts (`attentionOf` in
+ * `lib/workspace-tiles.ts`, owner decision 22.11.2026): the code changed since the analysis, or the program was not
+ * analysed yet. Each row names its reason, and its next step comes from the same function as its tile's
+ * (`programNextLink`). At most three; "Show all N in the list" filters the list to them.
  */
 export default function HomeAttentionCard({
   shown,
@@ -36,7 +35,7 @@ export default function HomeAttentionCard({
       <CcCard title={wt('homeList.attentionTitle')} level={2} count={total} density="cozy">
         <ul className="m-0 flex list-none flex-col p-0">
           {shown.map((row) => {
-            const reason = row.status.attention!;
+            const reason = attentionOf(row.tile)!;
             return (
               <li
                 key={row.id}
@@ -48,17 +47,13 @@ export default function HomeAttentionCard({
                 </Link>
                 <span
                   data-home-attention-reason={reason}
-                  className={`inline-flex items-center gap-1 text-[12px] font-medium ${reason === 'test-failed' ? 'text-cc-error' : 'text-cc-ink'}`}
+                  className="inline-flex items-center gap-1 text-[12px] font-medium text-cc-ink"
                 >
-                  {reason === 'test-failed' ? (
-                    <XCircle size={13} aria-hidden={true} />
-                  ) : (
-                    <Clock size={13} aria-hidden={true} className="text-cc-warning-mark" />
-                  )}
-                  {ATTENTION_LABEL[reason]}
+                  <Clock size={13} aria-hidden={true} className={reason === 'code-changed' ? 'text-cc-warning-mark' : 'text-cc-ink-muted'} />
+                  {ATTENTION_REASON_LABEL[reason]}
                 </span>
                 <span className="ml-auto">
-                  <HomeNextCell projectId={row.id} next={row.status.next} onRun={onRun(row)} compact />
+                  <HomeNextCell projectId={row.id} next={programNextLink(row.tile)} onRun={onRun(row)} compact />
                 </span>
               </li>
             );

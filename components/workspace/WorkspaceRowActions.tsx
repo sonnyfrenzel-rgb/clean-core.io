@@ -47,6 +47,7 @@ export default function WorkspaceRowActions({
   owner,
   handlers,
   showOpen = true,
+  compact = false,
 }: {
   id: string;
   name: string;
@@ -59,6 +60,11 @@ export default function WorkspaceRowActions({
    * way in, and the row menu carries neither "Open project" nor a First-insights link.
    */
   showOpen?: boolean;
+  /**
+   * A program tile (ADR-123): only the menu, as a 32 px square of dots — the tile's
+   * title already opens the project, so there is no second "Open".
+   */
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   // The table scrolls sideways (`overflow-x-auto`), which clips anything that
@@ -131,11 +137,15 @@ export default function WorkspaceRowActions({
               setOpen((v) => !v);
             }}
             data-workspace-more={id}
-            className={cn(TRIGGER, CC_BUTTON_VARIANT_CLASSES.ghost)}
+            className={cn(TRIGGER, compact && 'md:px-2', CC_BUTTON_VARIANT_CLASSES.ghost)}
           >
-            <MoreHorizontal size={16} aria-hidden={true} className="md:hidden" />
-            <span className="hidden md:inline">{wt('myWorkspace.actionsLabel')}</span>
-            <ChevronDown size={14} aria-hidden={true} className="hidden md:inline" />
+            <MoreHorizontal size={16} aria-hidden={true} className={compact ? undefined : 'md:hidden'} />
+            {compact ? null : (
+              <>
+                <span className="hidden md:inline">{wt('myWorkspace.actionsLabel')}</span>
+                <ChevronDown size={14} aria-hidden={true} className="hidden md:inline" />
+              </>
+            )}
           </button>
           {open ? (
             <span
@@ -169,7 +179,7 @@ export default function WorkspaceRowActions({
           ) : null}
         </>
       ) : null}
-      {showOpen ? (
+      {showOpen && !compact ? (
       <Link
         href={href}
         aria-label={`${wt('myWorkspace.openProject')} ${name}`}

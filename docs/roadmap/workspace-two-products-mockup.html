@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My workspace · two products · mock-up</title>
+<!--
+  Mock-up, not product code. "My workspace" after the owner's wish of
+  13.11.2026: two equal products, Analyse and Re-design, on the first screen
+  after sign-in — "absolutely fantastic", tidy, clear, graphically strong but
+  not playful, professional and beginner-friendly, for Business, IT and
+  Management readers, fast, oriented on modern tile-based ERP home pages
+  without copying any of them, and built from Clean-Core.io's own design
+  (DESIGN.md tokens, Inter, lucide-style icons).
+
+  Content: the shipped starter examples of lib/starter-examples.ts as stand-ins
+  for an account's own programs. Figures of Z_MM_PO_APPROVAL are the demo
+  record of v3.0.23 (lib/demo-release.json: score 40, 26 findings, 12 rules,
+  94 process steps, route In-App (ABAP Cloud)); every other figure is
+  illustrative and marked so on screen.
+
+  Map thumbnails: compacted from the demo map as bpmn-js 18.28.0 rendered it
+  for docs/roadmap/demo-showcase-mockup.html (bpmn.io licence) — shapes and
+  connections only, 0.5–2.2 kB each. The Z_MM_PO_APPROVAL thumbnail is its
+  real top level; the others reuse sub-levels of the same map and are
+  stand-ins. This is the proposed precomputed thumbnail, proven on real data.
+
+  Self-contained: the app's own Inter by relative path (app/fonts, OFL),
+  no other font, script, image or request.
+-->
+<style>
+@font-face{font-family:Inter;src:url(../../app/fonts/inter-latin-variable.woff2) format("woff2");font-weight:300 900;font-style:normal;font-display:swap}
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-deep:#006b2c;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --cc-on-dark:#fff;
+  --cc-radius-card:12px;--cc-radius-row:8px;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --mk-bar:#1f1147;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+html,body{margin:0;background:var(--cc-page);color:var(--cc-ink);font-family:var(--sans);font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+h1,h2,h3,p,ul,ol{margin:0;padding:0}
+ul,ol{list-style:none}
+a{color:inherit}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+svg.i.s{width:14px;height:14px}
+svg.i.l{width:20px;height:20px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.show-s{display:none}
+.mono{font-family:var(--mono);font-size:12px;font-weight:500}
+.tab{font-variant-numeric:tabular-nums}
+
+/* ---------- mock-up chrome (not part of the page) ---------- */
+.mock{position:sticky;top:0;z-index:200;background:var(--mk-bar);color:#fff;font-size:12px;padding:6px 12px;display:flex;align-items:center;gap:4px 10px;flex-wrap:wrap}
+.mock .grp{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.mock b{font-weight:700;margin-right:2px;color:#cfc8f3}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;cursor:pointer}
+.mock button[aria-pressed="true"]{background:#e9e5ff;color:var(--mk-bar)}
+.mock :focus-visible{outline-color:#fff}
+html.nochrome .mock,html.nochrome .panels-fab{display:none}
+html.nochrome .stage{padding:0}
+html.nochrome .vp{border:0!important;border-radius:0!important}
+.mock .ttl{font-weight:800;color:#fff;margin-right:6px}
+.illus{display:inline-flex;font-size:11px;font-weight:600;color:#6d28d9;border:1px dashed #6d28d9;border-radius:4px;padding:0 6px;background:#f5f3ff;white-space:nowrap}
+.panels-fab{position:fixed;right:12px;bottom:12px;z-index:120;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:calc(100vw - 24px)}
+.panels-fab button{font:700 13px/1 var(--sans);background:var(--mk-bar);color:#fff;border:0;border-radius:999px;padding:10px 14px;box-shadow:var(--cc-shadow-dialog);cursor:pointer}
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:240;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(760px,100vw);background:var(--cc-surface);z-index:250;box-shadow:var(--cc-shadow-dialog);transform:translateX(105%);display:flex;flex-direction:column}
+@media (prefers-reduced-motion:no-preference){.drawer{transition:transform .2s}}
+.drawer.open{transform:none}
+.drawer header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;border-bottom:1px solid var(--cc-line);background:var(--cc-surface-muted)}
+.drawer header h2{font-size:18px}
+.drawer header button{font:700 14px var(--sans);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:6px 12px;cursor:pointer}
+.drawer .body{overflow:auto;padding:16px 18px 80px;font-size:14px}
+.drawer h3{font-size:15px;margin:22px 0 8px}
+.drawer h3:first-child{margin-top:0}
+.drawer p{margin:0 0 8px}
+.drawer ol{list-style:decimal;padding-left:22px}
+.drawer ul{list-style:disc;padding-left:20px}
+.drawer li{margin:0 0 6px}
+.drawer table{border-collapse:collapse;width:100%;font-size:13px;margin:4px 0 8px}
+.drawer th,.drawer td{border-bottom:1px solid var(--cc-line);padding:6px;text-align:left;vertical-align:top}
+.drawer th{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.drawer .rec{background:var(--cc-brand-surface);border:1px solid var(--cc-brand-strong);border-radius:8px;padding:10px 12px;margin:8px 0}
+.drawer .warn{background:var(--cc-warning-bg);border:1px solid var(--cc-warning-border);border-radius:8px;padding:10px 12px;margin:8px 0}
+.ok{color:var(--cc-success);font-weight:700}.no{color:var(--cc-error);font-weight:700}.mid{color:var(--cc-warning);font-weight:700}
+
+/* ---------- viewport frame ---------- */
+.stage{padding:16px 0 96px}
+.vp{width:var(--vpw,1440px);max-width:100%;margin:0 auto;background:var(--cc-page);border:1px solid var(--cc-line);container-type:inline-size;container-name:ws;overflow:hidden}
+@media (max-width:1460px){.vp{border-left:0;border-right:0}}
+.stage[data-w="390"] .vp{border:1px solid var(--cc-line);border-radius:12px}
+
+/* ---------- app shell header ---------- */
+.top{background:#fff;border-bottom:1px solid var(--cc-line)}
+.top .in{max-width:1280px;margin:0 auto;height:56px;display:flex;align-items:center;gap:20px;padding:0 32px}
+.logo{display:flex;align-items:center;gap:9px;text-decoration:none;flex:none}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-size:16px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted);line-height:1.2}
+.nav{display:flex;align-self:stretch}
+.nav a{display:flex;align-items:center;font-size:14px;font-weight:600;color:var(--cc-ink);text-decoration:none;border-bottom:2px solid var(--cc-ink);padding-top:2px}
+.top .r{margin-left:auto;display:flex;align-items:center;gap:10px}
+.runs{font-size:12px;font-weight:600;color:var(--cc-ink-muted);white-space:nowrap}
+.ib{width:36px;height:36px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;display:inline-flex;align-items:center;justify-content:center;color:var(--cc-ink-muted);cursor:pointer}
+.av{width:36px;height:36px;border-radius:8px;border:0;background:var(--cc-ink);color:#fff;font-size:12px;font-weight:700;cursor:pointer}
+
+/* ---------- page ---------- */
+.page{max-width:1280px;margin:0 auto;padding:28px 32px 48px;display:flex;flex-direction:column;gap:24px}
+.hello{font-size:13px;font-weight:600;color:var(--cc-ink-muted)}
+.h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;color:var(--cc-ink)}
+.h1.big{font-size:28px;letter-spacing:-.025em}
+.lead{font-size:15px;font-weight:500;color:var(--cc-ink-muted);max-width:760px;margin-top:6px}
+.phead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.phead .acts{display:flex;gap:8px;flex-wrap:wrap}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.h2{font-size:15px;font-weight:700}
+.h3{font-size:14px;font-weight:700}
+.muted{color:var(--cc-ink-muted)}
+.small{font-size:13px;font-weight:500}
+.meta{font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:20px 24px}
+.sechead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.sechead .l{display:flex;align-items:baseline;gap:8px}
+.count{font-size:13px;font-weight:600;color:var(--cc-ink-muted)}
+
+/* buttons — DESIGN §1.5, exactly four (dark unused here) */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 16px;border-radius:8px;font-weight:600;font-size:14px;border:1px solid transparent;text-decoration:none;white-space:nowrap;cursor:pointer}
+.btn.c{min-height:32px;padding:0 12px;font-size:13px}
+.btn.primary{background:var(--cc-brand-strong);color:#fff}
+.btn.primary:hover{background:var(--cc-brand-deep)}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink-muted)}
+.link{display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-decoration-color:var(--cc-field-border);text-underline-offset:3px;background:none;border:0;padding:0;cursor:pointer;white-space:nowrap}
+.link:hover{text-decoration-color:currentColor}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:none;border-radius:6px;padding:4px 10px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);cursor:pointer;white-space:nowrap}
+.seg button[aria-checked="true"]{background:var(--cc-ink);color:#fff}
+
+/* chips / tags — DESIGN §4 */
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;border-radius:999px;padding:0 8px;border:1px solid;line-height:20px;white-space:nowrap}
+.chip.n{color:var(--cc-neutral);background:var(--cc-neutral-bg);border-color:var(--cc-neutral-border)}
+.chip.ok{color:var(--cc-success);background:var(--cc-success-bg);border-color:var(--cc-success)}
+.chip.info{color:var(--cc-information);background:var(--cc-information-bg);border-color:var(--cc-information)}
+.chip.warn{color:var(--cc-warning);background:var(--cc-warning-bg);border-color:var(--cc-warning-line)}
+.chip.free{color:var(--cc-brand-strong);background:var(--cc-brand-surface);border-color:var(--cc-success-border)}
+.tag{display:inline-flex;font-size:12px;font-weight:600;color:var(--cc-ink-muted);border:1px solid var(--cc-line);border-radius:999px;padding:0 8px;line-height:20px;white-space:nowrap}
+
+/* status with a dot — DESIGN §2.4 / project-progress: hollow, ink, warning */
+.st{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink);min-width:0}
+.st .d{width:8px;height:8px;border-radius:50%;flex:none;background:var(--cc-ink)}
+.st .d.w{background:#fff;border:1.5px solid var(--cc-field-border)}
+.st .d.o{background:var(--cc-warning-mark)}
+.st .d.e{background:var(--cc-error)}
+.st.ok{color:var(--cc-success)}
+.st.ok svg{color:var(--cc-success)}
+.st.warn{color:var(--cc-warning)}
+
+/* product marks — the two products, same shape, same weight */
+.pmark{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink)}
+.pmark .pi{width:24px;height:24px;border-radius:6px;border:1px solid var(--cc-ink);display:inline-flex;align-items:center;justify-content:center}
+
+/* ---------- map thumbnail ---------- */
+.thumb{background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.thumb svg{width:100%;height:100%;padding:10px}
+.mapthumb rect,.mapthumb circle,.mapthumb polygon{fill:#fff;stroke:var(--cc-ink);stroke-width:1.25;vector-effect:non-scaling-stroke}
+.mapthumb rect.p{fill:var(--cc-surface-muted)}
+.mapthumb circle.e{stroke-width:2.25}
+.mapthumb .c path{fill:none;stroke:var(--cc-ink-muted);stroke-width:1;vector-effect:non-scaling-stroke}
+.mapthumb .c path.a{stroke:var(--cc-field-border);stroke-dasharray:2 3}
+.thumb .none{font-size:12px;font-weight:600;color:var(--cc-ink-muted);padding:0 12px;text-align:center}
+
+/* ---------- start ways (example + own code) ---------- */
+.ways{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0}
+.way{padding:16px 20px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.way + .way{border-left:1px solid var(--cc-line)}
+.wayh{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ex{border:1px solid var(--cc-line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:#fff}
+.ex .nm{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ex p{font-size:13px;font-weight:500;color:var(--cc-ink-muted)}
+.ex .go{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:4px}
+.drop{border:1.5px dashed var(--cc-field-border);border-radius:8px;background:var(--cc-surface-muted);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
+.drop .t{display:flex;gap:12px;align-items:center}
+.drop .ic{width:36px;height:36px;border-radius:8px;border:1px solid var(--cc-line);background:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.drop .b{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.get{display:flex;flex-direction:column;gap:8px;max-width:420px}
+.calm{font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+.calm a{font-weight:600;color:var(--cc-ink);text-decoration:underline;text-decoration-color:var(--cc-field-border);text-underline-offset:3px}
+.exlist{display:flex;flex-direction:column}
+.exlist li{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:baseline;padding:7px 0;border-top:1px solid var(--cc-line);font-size:13px}
+.exlist li .ds{color:var(--cc-ink-muted);font-weight:500;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.exlist li .ln{font-size:12px;color:var(--cc-ink-muted);font-weight:600;white-space:nowrap}
+
+/* ---------- direction A: tiles ---------- */
+.pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.prod{display:flex;flex-direction:column;min-width:0}
+.prod .ph{padding:20px 24px 14px;display:flex;flex-direction:column;gap:6px}
+.prod .ph .h2{font-size:18px;font-weight:800;letter-spacing:-.015em}
+.prod .gets{font-size:14px;font-weight:500;color:var(--cc-ink-muted)}
+.prod .cost{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+.prod .foot{margin-top:auto;border-top:1px solid var(--cc-line)}
+.steps6{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:0}
+.steps6 li{border:1px solid var(--cc-line);border-radius:8px;padding:8px;background:#fff;min-width:0}
+.steps6 li b{display:block;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.steps6 li span{display:block;font-size:12px;font-weight:500;color:var(--cc-ink-muted);line-height:1.35}
+.rdstart{padding:16px 24px 20px;display:flex;flex-direction:column;gap:10px}
+.rdstart .how{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);align-items:start}
+.rdstart .how .n{width:20px;height:20px;border-radius:50%;border:1px solid var(--cc-field-border);display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--cc-ink-muted);background:#fff;margin-top:1px}
+.demoline{display:flex;align-items:center;gap:12px;border:1px solid var(--cc-line);border-radius:12px;background:var(--cc-surface-muted);padding:12px 16px}
+.demoline .ic{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-line);background:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.demoline p{flex:1;min-width:0;font-size:13px;font-weight:500;color:var(--cc-ink-muted)}
+.demoline p b{color:var(--cc-ink);font-weight:600}
+.h2banner{display:flex;gap:16px;align-items:center;border:1px solid var(--cc-information-border);background:var(--cc-information-bg);border-radius:12px;padding:14px 18px}
+.h2banner .tx{flex:1;min-width:0}
+.h2banner .tx b{display:block;font-size:15px;font-weight:700}
+.h2banner .tx span{font-size:13px;font-weight:500;color:var(--cc-ink-muted)}
+.h2banner .ac{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* next step strip */
+.next{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:16px;align-items:center;padding:16px 20px}
+.next .nt{min-width:0}
+.next .nt b{display:block;font-size:15px;font-weight:700}
+.next .nt span{font-size:13px;font-weight:500;color:var(--cc-ink-muted)}
+.next .thumb{width:120px;height:64px}
+.also{border-top:1px solid var(--cc-line);padding:10px 20px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:13px;font-weight:500;color:var(--cc-ink-muted)}
+
+/* KPI tiles — one number each, they are the filter */
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.kpi{all:unset;box-sizing:border-box;background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);padding:14px 16px;display:flex;flex-direction:column;gap:2px;cursor:pointer;min-width:0}
+.kpi:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+.kpi[aria-pressed="true"]{border-color:var(--cc-ink);box-shadow:inset 0 0 0 1px var(--cc-ink)}
+.kpi .k{font-size:12px;font-weight:600;color:var(--cc-ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .v{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi .u{font-size:12px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .bar{display:flex;gap:2px;height:4px;margin-top:6px}
+.kpi .bar i{flex:1;border-radius:2px;background:var(--cc-line)}
+.kpi .bar i.on{background:var(--cc-ink)}
+.kpi .bar i.w{background:var(--cc-warning-mark)}
+.kpi .bar i.g{background:var(--cc-success)}
+
+/* program tiles */
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.tile{display:flex;flex-direction:column;min-width:0;height:100%}
+.tile .th{padding:16px 18px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tile .th .tt{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.tile .th h3{font-size:15px;font-weight:700;line-height:1.35;min-width:0}
+.tile .th h3 a{text-decoration:none}
+.tile .th h3 a:hover{text-decoration:underline}
+.tile .id{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.tile .thumb{margin:4px 18px 0;height:118px}
+.facts{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,.8fr) minmax(0,1.35fr);margin:12px 18px 0;border:1px solid var(--cc-line);border-radius:8px}
+.facts > div{padding:6px 8px;min-width:0}
+.facts > div + div{border-left:1px solid var(--cc-line)}
+.facts .fv{font-size:15px;font-weight:700;line-height:1.3;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.facts .fk{font-size:12px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.facts > div.on{background:var(--cc-surface-muted);box-shadow:inset 0 -2px 0 var(--cc-ink)}
+.facts > div:first-child{border-radius:8px 0 0 8px}.facts > div:last-child{border-radius:0 8px 8px 0}
+.prow{display:grid;grid-template-columns:76px minmax(0,1fr);gap:4px 8px;align-items:center;padding:10px 18px}
+.prow .pa{grid-column:2;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:20px}
+.prow + .prow{border-top:1px solid var(--cc-line)}
+.prows{margin-top:12px;border-top:1px solid var(--cc-line)}
+.prow .pn{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.prow .ps{min-width:0;display:flex;flex-direction:column;gap:3px}
+.prow .ps .st{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.track{display:grid;grid-template-columns:repeat(6,1fr);gap:2px;height:4px;width:100%;max-width:150px}
+.track i{border-radius:2px;background:var(--cc-line)}
+.track i.on{background:var(--cc-ink)}
+.track i.g{background:var(--cc-success)}
+.track i.now{background:var(--cc-ink);box-shadow:0 0 0 1px #fff,0 0 0 2px var(--cc-ink)}
+.tile.newt{border:1.5px dashed var(--cc-field-border);background:var(--cc-surface-muted);box-shadow:none}
+.newt .nb{padding:16px 18px;display:flex;flex-direction:column;gap:12px;height:100%}
+.toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.toolbar .lb{font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.lenshint{font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+
+/* ---------- direction B: spotlight + list ---------- */
+.bgrid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:16px;align-items:stretch}
+.spot{display:flex;flex-direction:column}
+.spot .sb{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:20px;padding:20px 24px}
+.spot .sb .thumb{height:150px}
+.spot .say{font-size:14px;font-weight:500;color:var(--cc-ink);margin-top:8px}
+.ptrack{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,6fr);gap:12px;padding:0 24px 16px}
+.ptrack .grp{min-width:0}
+.ptrack.two{padding:0;grid-template-columns:minmax(0,1.2fr) minmax(0,4fr);gap:24px}
+.ptrack .grp .lbl{display:block;margin-bottom:6px}
+.ptrack ol{display:grid;gap:4px}
+.ptrack .g1 ol{grid-template-columns:1fr}
+.ptrack .g6 ol{display:flex;flex-wrap:wrap}
+.ptrack .g6 li{flex:1 1 auto}
+.ptrack li{font-size:12px;font-weight:600;border-radius:6px;padding:4px 6px;border:1px solid var(--cc-line);background:#fff;color:var(--cc-ink-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:flex;align-items:center;gap:4px}
+.ptrack li.done{color:var(--cc-ink)}
+.ptrack li.done svg{color:var(--cc-success)}
+.ptrack li.now{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.spot .sf{margin-top:auto;border-top:1px solid var(--cc-line);padding:12px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.startc.stack .ways{grid-template-columns:1fr}
+.startc.stack .way + .way{border-left:0;border-top:1px solid var(--cc-line)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:left;padding:10px 16px;border-bottom:1px solid var(--cc-line);white-space:nowrap}
+.tbl td{padding:12px 16px;border-bottom:1px solid var(--cc-line);vertical-align:middle}
+.tbl tr.grp td{background:var(--cc-surface-muted);font-size:12px;font-weight:700;color:var(--cc-ink);padding:6px 16px}
+.tbl .pt{display:flex;align-items:center;gap:12px;min-width:0}
+.tbl .pt .thumb{width:72px;height:44px;flex:none}
+.tbl .pt .thumb svg{padding:4px}
+.tbl .pt b{display:block;font-size:13px;font-weight:600}
+.tbl td .sub .track{margin-top:6px}
+.tbl td .sub{display:block;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+.mcards{display:none}
+
+/* ---------- direction C: story-first ---------- */
+.story{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0}
+.story > div{padding:18px 20px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.story > div + div{border-left:1px solid var(--cc-line)}
+.story .thumb{height:120px}
+.story .codeb{background:#030712;color:#e5e7eb;font-family:var(--mono);font-size:11px;line-height:1.6;border-radius:8px;padding:10px 12px;height:120px;overflow:hidden;white-space:pre}
+.story .codeb .k{color:#c4b5fd}.story .codeb .l{color:#fcd34d}.story .codeb .m{color:#9ca3af}
+.story .over{display:grid;grid-template-columns:2fr 1fr;border-top:1px solid var(--cc-line)}
+.feed li{display:grid;grid-template-columns:120px minmax(0,1fr) auto;gap:16px;align-items:center;padding:14px 20px}
+.feed li + li{border-top:1px solid var(--cc-line)}
+.feed .thumb{height:64px}
+.feed b{display:block;font-size:15px;font-weight:700}
+.feed span.w{font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+
+/* ---------- skeletons — final sizes, no shimmer (motion only explains a change) ---------- */
+.sk{background:var(--cc-line);border-radius:6px;display:block}
+.skc{background:#fff;border:1px solid var(--cc-line);border-radius:12px}
+
+/* ---------- popover / sheet ---------- */
+.inlinestart{border:1px solid var(--cc-line)}
+
+/* ---------- 1100 px and below ---------- */
+@container ws (max-width:1180px){
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .bgrid{grid-template-columns:1fr}
+  .startc.stack .ways{grid-template-columns:1fr 1fr}
+  .startc.stack .way + .way{border-left:1px solid var(--cc-line);border-top:0}
+  .kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+}
+@container ws (max-width:1340px){
+  .pair .ways{grid-template-columns:1fr}
+  .pair .way + .way{border-left:0;border-top:1px solid var(--cc-line)}
+  .steps6{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+/* ---------- phone (≤ 600 px) ---------- */
+@container ws (max-width:600px){
+  .top .in{padding:0 16px;gap:10px}
+  .logo .s,.nav{display:none}
+  .runs b{display:none}
+  .page{padding:16px 16px 40px;gap:16px}
+  .h1.big{font-size:22px}
+  .lead{font-size:14px}
+  .pair{grid-template-columns:1fr}
+  .prod .ph{padding:16px 16px 10px}
+  .prod .ph .h2{font-size:16px}
+  .prod .gets{font-size:13px}
+  .way{padding:12px 16px}
+  .ways,.pair .ways{grid-template-columns:1fr}
+  .way + .way,.startc .way + .way,.startc.stack .way + .way{border-left:0;border-top:1px solid var(--cc-line)}
+  .startc.stack .ways{grid-template-columns:1fr}
+  .exlist,.hide-s{display:none}
+  .drop .t .tx2{display:none}
+  .rdstart{padding:12px 16px 16px}
+  .steps6{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .demoline{flex-wrap:wrap}
+  .h2banner{flex-direction:column;align-items:stretch;padding:12px 14px}
+  .phead .acts{width:100%;display:grid;grid-template-columns:1fr 1fr}
+  .phead .acts .btn{padding:0 8px;font-size:13px;white-space:normal;line-height:1.25;min-height:44px;text-align:center}
+  .next{grid-template-columns:1fr;gap:10px;padding:14px 16px}
+  .next .thumb{display:none}
+  .next .btn{width:100%}
+  .also{padding:10px 16px}
+  .kpis{gap:8px}
+  .kpi{padding:10px 12px}
+  .kpi .v{font-size:22px}
+  .tiles{grid-template-columns:1fr;gap:12px}
+  .tile .thumb{height:96px}
+  .toolbar{gap:8px}
+  .spot .sb{grid-template-columns:1fr;padding:16px}
+  .spot .sb .thumb{height:120px}
+  .ptrack{grid-template-columns:1fr;padding:0 16px 12px}
+  .spot .sf{padding:12px 16px}
+  .spf{padding:0 16px 12px!important}
+  .tblwrap{display:none}
+  .mcards{display:flex;flex-direction:column;gap:8px}
+  .story{grid-template-columns:1fr}
+  .story > div + div{border-left:0;border-top:1px solid var(--cc-line)}
+  .story .over{grid-template-columns:1fr}
+  .feed li{grid-template-columns:1fr;gap:6px;padding:12px 16px}
+  .feed .thumb{display:none}
+  .sechead{margin-bottom:8px}
+  .order-s-1{order:-1}
+  .get{display:none}
+  .ptrack.two{grid-template-columns:1fr;gap:16px}
+  .kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .kpis .kpi:first-child{grid-column:auto}
+  .kpi .u,.kpi .bar{display:none}
+  .kpi .k{white-space:normal;line-height:1.3}
+  .phead .acts .lg-l{display:none}
+  .show-s{display:inline}
+  .ex p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .prod .cost .meta{display:none}
+}
+.mcard{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.mcard .r{display:flex;gap:8px;align-items:center;justify-content:space-between}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+</style>
+</head>
+<body>
+
+<div class="mock" role="group" aria-label="Mock-up controls">
+  <span class="ttl">My workspace · two products</span>
+  <span class="grp"><b>Direction</b>
+    <button type="button" data-set="dir" data-v="A">A Tiles</button>
+    <button type="button" data-set="dir" data-v="B">B Spotlight + list</button>
+    <button type="button" data-set="dir" data-v="C">C Story-first</button></span>
+  <span class="grp"><b>State</b>
+    <button type="button" data-set="st" data-v="new">New account</button>
+    <button type="button" data-set="st" data-v="demo">New, after the demo</button>
+    <button type="button" data-set="st" data-v="ret">Returning</button>
+    <button type="button" data-set="st" data-v="spent">Returning, runs used</button>
+    <button type="button" data-set="st" data-v="load">Loading</button></span>
+  <span class="grp"><b>Width</b>
+    <button type="button" data-set="w" data-v="1440">1440</button>
+    <button type="button" data-set="w" data-v="1280">1280</button>
+    <button type="button" data-set="w" data-v="390">390</button></span>
+</div>
+
+<div class="stage" id="stage">
+  <div class="vp" id="vp">
+    <header class="top"><div class="in">
+      <a class="logo" href="#" aria-label="Clean-Core.io, My workspace">
+        <span class="lg"><svg class="i l" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+        <span><span class="n">Clean-Core<em>.io</em></span><span class="s">Free Community Edition</span></span>
+      </a>
+      <nav class="nav" aria-label="Main"><a href="#" aria-current="page">My workspace</a></nav>
+      <div class="r">
+        <span class="runs" id="runs"></span>
+        <button class="ib" type="button" aria-label="Help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+        <button class="av" type="button" aria-label="Account menu">MW</button>
+      </div>
+    </div></header>
+    <main class="page" id="page" aria-live="polite"></main>
+  </div>
+</div>
+
+<div class="panels-fab" role="group" aria-label="Mock-up panels">
+  <button type="button" data-open="p-today">Today, critiqued</button>
+  <button type="button" data-open="p-perf">Data and speed</button>
+  <button type="button" data-open="p-owner">For the owner</button>
+</div>
+<div class="scrim" id="scrim"></div>
+
+<!-- ======================= panel: today ======================= -->
+<aside class="drawer" id="p-today" aria-labelledby="p-today-h" tabindex="-1" hidden>
+  <header><h2 id="p-today-h">Today's My workspace, critiqued</h2><button type="button" data-close>Close</button></header>
+  <div class="body">
+    <p>Read from the code of v3.0.23 (<code>components/workspace/HomeFirstView.tsx</code>, <code>ToolPathStrip.tsx</code>, <code>WorkspaceListReport.tsx</code>, <code>components/MyWorkspaceSwitch.tsx</code>) and rendered from the accepted home mock-up v2.1 that state 1 was built to (<code>docs/roadmap/home-mockup-v2.html</code>). The running app was not started for this (shared :3000).</p>
+    <h3>New account (HomeFirstView) — the first five seconds</h3>
+    <ul>
+      <li><b>Business reader:</b> the h1 "See your Z program as a business process" lands. Then a row of seven tools, six of them dashed under "Optional, if you want to re-design it" — the eye reads "the second half is extra". Re-design, half of what the product does, is presented as an afterthought.</li>
+      <li><b>IT reader:</b> finds the example and the drop area quickly; the map slice that shows what you get sits below the fold at 1440 (it starts at about 730 px) and is drawn by the full bpmn-js renderer.</li>
+      <li><b>Management reader:</b> nothing says what a decision or a delivery looks like; cost is a chip ("5 free analysis runs") without saying that the six re-design tools cost nothing.</li>
+      <li><b>Phone:</b> the own-code start begins at about 720 px of 844 — "Upload your own code" is not in the first viewport, the example is.</li>
+      <li><b>Noise:</b> the tool strip carries seven descriptions before the user has done anything; the lead repeats the h1; "If you want, it then helps you re-design it" is the second sentence that makes Re-design optional.</li>
+    </ul>
+    <h3>Returning account (WorkspaceListReport) — the first five seconds</h3>
+    <ul>
+      <li><b>One table of eight columns</b> (Project, Lines, Findings, Levels, Rules confirmed, Status, Last change, Actions 232 px). It is honest and complete, and it is an IT screen: a business reader sees counts with no picture of what the program does; a manager sees no portfolio at a glance (how many analysed, in re-design, delivered).</li>
+      <li><b>Two of the eight columns say "Reading…" first:</b> Levels and Rules are fetched per visible row from <code>/findings</code> (which runs the evidence engine over the source) and <code>/process-states</code>, two projects at a time. Five rows = ten requests in three waves.</li>
+      <li><b>The product's best picture — the process map — is absent</b> from the list. Projects are rows, not objects.</li>
+      <li><b>Re-design is invisible as a product:</b> it appears only as a status sentence ("Re-design under way") and a next-step link.</li>
+      <li><b>Starting something new</b> is "New project" → <code>/admin/new-project</code>, one page more; the example gallery and the sharing card sit below the list, out of sight.</li>
+      <li><b>A flash:</b> while the profile loads, <code>MyWorkspaceSwitch</code> renders its children — the old dashboard page — and then swaps to the list report. Both are in the route's bundle.</li>
+    </ul>
+    <h3>What is good and is kept</h3>
+    <ul>
+      <li>Plain words, status as text with a dot, no green unless evidenced, numbers that say "not analysed" instead of 0.</li>
+      <li>Example and own code side by side for a new account (AB-14a) — kept in every direction.</li>
+      <li>The own-code handoff (<code>lib/home-start-handoff.ts</code> → own-code start, ADR-042) — kept unchanged.</li>
+    </ul>
+  </div>
+</aside>
+
+<!-- ======================= panel: data and speed ======================= -->
+<aside class="drawer" id="p-perf" aria-labelledby="p-perf-h" tabindex="-1" hidden>
+  <header><h2 id="p-perf-h">Data and speed</h2><button type="button" data-close>Close</button></header>
+  <div class="body">
+    <h3>What My workspace loads today (from the code)</h3>
+    <ol>
+      <li><b>Server:</b> <code>app/(app)/dashboard/layout.tsx</code> computes the demo row and the home map slice once per server process (cached) — cheap after the first request.</li>
+      <li><b>Client bundle:</b> <code>page.tsx</code> is a client component (46.7 kB of source with markdown formatters, sanitizer, dialogs) and is in the bundle even though <code>MyWorkspaceSwitch</code> replaces it with <code>WorkspaceListReport</code> (1,068 lines, ~25 cc components, the analysis-run client) for every account in good standing. <b>Heavy part 1.</b></li>
+      <li><b>Waterfall:</b> auth state → profile document → projects query (one query) and the shared-with-me query → per visible row two API calls, two rows at a time. <b>Heavy part 2:</b> <code>/api/projects/:id/findings</code> runs the evidence engine over the source on each first visit of a row.</li>
+      <li><b>New account:</b> the map slice loads bpmn-js (NavigatedViewer) through <code>next/dynamic</code> to draw four elements. <b>Heavy part 3</b> — hundreds of kB of JavaScript for a picture.</li>
+      <li><b>Flash:</b> the old dashboard renders while the profile loads, then is swapped (layout shift).</li>
+    </ol>
+    <p>No current <code>next build</code> output was on disk (<code>.next</code> holds only a cache), so no byte figures are claimed; measuring them is step 1 of the build.</p>
+
+    <h3>Targets (every direction)</h3>
+    <table>
+      <tr><th>Target</th><th>How</th></tr>
+      <tr><td>Frame paints at once, CLS 0</td><td>Server-render the shell and the page header; skeletons have the final tile and row sizes; no swap from the old dashboard (decide the view from the session on the server, or render nothing but the skeleton until the profile answers).</td></tr>
+      <tr><td>The user's tiles in &lt; 1 s</td><td>One projects query; every tile figure read from the project document — no per-row API call at load.</td></tr>
+      <tr><td>Interactive &lt; 2 s</td><td>Code-split: the start ways' upload logic, the run client, dialogs (invite, delete), the list mode and the example list load on first use. No new library.</td></tr>
+      <tr><td>Map thumbnails</td><td>A precomputed SVG of 0.5–2.2 kB per project (proven in this file on the demo map: its top level compacts to 2,249 bytes), drawn as inline SVG — never bpmn-js per tile. The new-account slice uses the same SVG instead of bpmn-js.</td></tr>
+    </table>
+
+    <h3>Per element: data, where it comes from, cost at load</h3>
+    <table>
+      <tr><th>Element</th><th>Data</th><th>Exists today?</th><th>Cost at load</th></tr>
+      <tr><td>Title, Z name, lines, example tag</td><td>project document</td><td class="ok">yes</td><td>in the one query</td></tr>
+      <tr><td>Analyse status (analysed, signed, out of date, failed)</td><td><code>workflowSteps()</code> over the project document</td><td class="ok">yes</td><td>none (pure)</td></tr>
+      <tr><td>Re-design step and "n of 6" track</td><td><code>workflowSteps()</code></td><td class="ok">yes</td><td>none (pure)</td></tr>
+      <tr><td>Clean core score</td><td><code>project.cleanCoreScore</code> (hydrated from the signed run)</td><td class="mid">on the document, but the hydration rule must hold for list reads</td><td>in the query</td></tr>
+      <tr><td>Decision (Keep / Rebuild / Move to SAP standard / Retire, proposed or confirmed)</td><td><code>targetArchitecture</code>, <code>originalRecommendation</code>, <code>approvedByArchitect</code> → <code>optionOfArchitecture()</code></td><td class="ok">yes</td><td>in the query</td></tr>
+      <tr><td>Process steps count</td><td>skeleton of the map</td><td class="no">no — needs the summary</td><td>0 with the summary</td></tr>
+      <tr><td>Map thumbnail</td><td>compacted SVG of the map's top level</td><td class="no">no — needs the summary</td><td>~2 kB per tile with the summary</td></tr>
+      <tr><td>Rules "4 of 12 confirmed"</td><td>process-state register</td><td class="mid">only via <code>/process-states</code> per project</td><td>shown on demand (IT lens / list mode) or in the summary</td></tr>
+      <tr><td>Levels A–D distribution</td><td>findings route (runs the engine)</td><td class="mid">only via <code>/findings</code> per project</td><td>not on the tile; list mode reads it lazily as today</td></tr>
+      <tr><td>KPI counts</td><td>derived from the same project list</td><td class="ok">yes</td><td>none</td></tr>
+      <tr><td>"Changed in the last 7 days"</td><td><code>updatedAt</code></td><td class="ok">yes</td><td>none</td></tr>
+      <tr><td>"Since your last visit"</td><td>a last-visit time</td><td class="no">no — would be an account field; not proposed</td><td>—</td></tr>
+      <tr><td>Story feed (direction C)</td><td>signed runs + stage artefact times</td><td class="mid">runs yes; stage events scattered</td><td>a second query</td></tr>
+    </table>
+
+    <h3>The one server-side addition: a project summary</h3>
+    <p>When a run is signed (<code>app/api/runs/create/route.ts</code>) and when the map is saved, the server writes a small <b>project</b>-level summary with the Admin SDK: <code>mapThumb</code> (SVG string, ≤ 4 kB, geometry only, no names, no code), <code>mapSteps</code>, <code>rulesDerived</code>. No account field. Clients may never write it (Firestore rules: deny the keys on client update — rules deploy is manual). A one-off backfill script for existing projects; a project without a summary shows "Map after the next run" in the thumbnail place. It is <b>not</b> part of the signed run or the audit pack, like the level.</p>
+
+    <h3>Per direction</h3>
+    <table>
+      <tr><th></th><th>A Tiles</th><th>B Spotlight + list</th><th>C Story-first</th></tr>
+      <tr><td>Queries at load</td><td>1 (projects) + shared</td><td>1 + shared</td><td>2 (projects + runs)</td></tr>
+      <tr><td>Thumbnails at load</td><td>one per visible tile, ~2 kB each</td><td>one (spotlight) + 72 px per row</td><td>three in the feed</td></tr>
+      <tr><td>Needs the summary</td><td>yes, for the picture and the steps</td><td>for the thumbnails; the rest works without</td><td>yes, plus an event query</td></tr>
+      <tr><td>Fast without the summary?</td><td>yes, but tiles lose the picture (falls back to "Map after the next run")</td><td>yes</td><td>no</td></tr>
+    </table>
+  </div>
+</aside>
+
+<!-- ======================= panel: owner ======================= -->
+<aside class="drawer" id="p-owner" aria-labelledby="p-owner-h" tabindex="-1" hidden>
+  <header><h2 id="p-owner-h">For the owner</h2><button type="button" data-close>Close</button></header>
+  <div class="body">
+    <div class="rec"><b>Recommendation: direction A, Tiles</b> — with B's table as its list mode one click away, and the project summary on the server. It is the only direction that makes each program a living object (its map, its score, its decision, where it stands in both products) and shows the portfolio at a glance, and it is fast once the summary exists. If 3.5.0 has no room: ship the two-product wording and the new-account pair (step 1 below) in 3.5.0 and the tiles in 3.5.1.</div>
+
+    <h3>The style brief, checked per direction</h3>
+    <table>
+      <tr><th>Rule</th><th>A Tiles</th><th>B Spotlight + list</th><th>C Story-first</th></tr>
+      <tr><td>Tidy — few elements, one hierarchy</td><td class="ok">yes: four blocks (next step, at a glance, programs, nothing else)</td><td class="ok">yes</td><td class="no">no: feed, story band, list and start compete</td></tr>
+      <tr><td>Clear — one obvious next action</td><td class="ok">"Next step" card, the only primary</td><td class="ok">spotlight primary</td><td class="mid">every feed item has an action</td></tr>
+      <tr><td>Appealing, not playful — real product visuals</td><td class="ok">map per tile, score, track</td><td class="mid">one map, then a table</td><td class="ok">strong for one program</td></tr>
+      <tr><td>Professional and beginner-friendly</td><td class="ok">tiles for the overview, list mode for the expert, the new account's pair explains itself</td><td class="ok">best for the expert</td><td class="no">reads well once, tires at ten programs</td></tr>
+      <tr><td>Business, IT and Management on one screen</td><td class="ok">three facts per tile, lens only highlights</td><td class="mid">IT-leaning table</td><td class="mid">business-leaning</td></tr>
+      <tr><td>Both starts in the first viewport (new account, 1440 and 390)</td><td class="ok">yes</td><td class="ok">yes</td><td class="mid">yes only because the starts move above the story on a phone</td></tr>
+      <tr><td>Fast</td><td class="ok">with the summary</td><td class="ok">yes</td><td class="no">second query, more pictures</td></tr>
+    </table>
+    <p><b>C fails "tidy" and "professional" for a returning account</b> and is shown only for comparison — dropped. Its new-account story band is the one idea worth keeping; it already lives on the landing and in the demo, so My workspace does not need it.</p>
+
+    <h3>Decisions</h3>
+    <ol>
+      <li><b>W1 Product names:</b> "Analyse" and "Re-design" (recommended: the landing CTA already says "Analyse your own Z program", and Analyze's ending card says "Re-design this program"), or "Understand" / "Rebuild" — but "Rebuild" is already one of the four decision options (Keep, Rebuild, Move to SAP standard, Retire), so it would mean two things. "Modernise" is vaguer. Tool names stay (Analyze, Design … Delivery).</li>
+      <li><b>W2 Spelling:</b> the tool is "Analyze" (US, <code>PHASES</code>), the product verb "Analyse" (UK, landing and own-code copy). Keep both as today, or align the tool to "Analyse" (touches every guard that names it). Recommended: keep, the product word is a verb and the tool a name.</li>
+      <li><b>W3 Re-design without "optional":</b> both products as equal cards for a new account; for a returning account each program shows both lines with an action each. Agreed?</li>
+      <li><b>W4 How Re-design starts:</b> honest version proposed — "Re-design starts from an analysis, so the evidence is there first". Two starts: "Re-design an example end to end" (runs the analysis of Z_MM_PO_APPROVAL — free the first time — and opens Design instead of Analyze), and "Re-design a program" for an analysed one. The intent travels in the same session handoff as the own-code start, no stored field.</li>
+      <li><b>W5 When the decision is not Rebuild:</b> Keep, Move to SAP standard and Retire build nothing. Recommended: the Re-design line then says "Not needed — decided: Retire" and offers "Open the decision", instead of pushing a re-design.</li>
+      <li><b>W6 Header:</b> no own header entry for Re-design (recommended — the header holds places, not products; both products start from My workspace and from each program). Alternative: "Re-design" as a filter link in the header.</li>
+      <li><b>W7 Landing:</b> the landing's two CTAs ("Watch the 4-minute demo", "Analyse your own Z program — free account") stay; the landing's product section names the same two products with the same words, and after the demo the H2 banner here continues it ("You have seen Z_MM_PO_APPROVAL…").</li>
+      <li><b>W8 Cost per product:</b> Analyse: "1 analysis run per program, 5 free, examples free the first time, the same code again free" (<code>lib/run-quota-rule.ts</code>, <code>reserveRunQuota</code>). Re-design: "Not counted against your runs" — the six tools are unmetered (<code>lib/constants.ts</code>). Say both on the cards, as drawn.</li>
+      <li><b>W9 Lenses:</b> "Read as Business · IT · Management" only highlights one of the three facts per tile and opens the program in that view. Remembered per browser, never stored. Agreed, or no lens on this page at all?</li>
+      <li><b>W10 KPIs:</b> five count tiles from the project list, shown from three programs on; they are the filter (no second filter bar). "Changed in the last 7 days" instead of "since your last visit" (no account field).</li>
+      <li><b>W11 Project summary on the server</b> (Data and speed panel): agreed as a project-level, Admin-SDK-only field set, outside the signed run?</li>
+      <li><b>W12 Release slot</b> (below).</li>
+    </ol>
+
+    <h3>Tile principles taken from modern ERP home pages — and how ours differ</h3>
+    <table>
+      <tr><th>Principle taken</th><th>Ours</th></tr>
+      <tr><td>A calm grid of tiles, one size per kind</td><td>Program tiles all one size; count tiles one size; our 12 px card radius, 1 px line, flat shadow.</td></tr>
+      <tr><td>One object or one action per tile</td><td>One program per tile; the start is one tile; each count tile is one filter.</td></tr>
+      <tr><td>Title, short subtitle, one key figure or micro chart</td><td>Business title, Z name in mono, the map thumbnail as the picture, three facts (steps, score, decision) with the lens marking one.</td></tr>
+      <tr><td>A clear status</td><td>Our status dot with text (hollow, ink, warning) per product; green only for a signed run or delivery.</td></tr>
+      <tr><td>Sections and an overview-page feel</td><td>"Next step", "At a glance", "Your programs" — three sections, no more.</td></tr>
+      <tr><td>Not taken</td><td>No SAP font, icons, colours, theme names or layouts; no tile groups the user arranges; no news tiles; no "launchpad" word anywhere.</td></tr>
+    </table>
+
+    <h3>New visual elements (derived from existing ones)</h3>
+    <ul>
+      <li><b>Program tile</b> — a <code>CcCard</code> with the object identifier, a thumbnail and two status rows built from <code>ProjectProgressCell</code>.</li>
+      <li><b>Map thumbnail</b> — the map's geometry in our map ink and surface tokens; no labels (names need the full map).</li>
+      <li><b>Re-design track</b> — six segments, the same segment logic as the old stepper, ink for done, ring for the current step, green only when the delivery is signed.</li>
+      <li><b>Count tile</b> — a pressable card with one figure (the score's hero style, 28 px instead of 64).</li>
+      <li><b>Product mark</b> — micro label + 16 px lucide icon (workflow for Analyse, wrench for Re-design), same shape for both.</li>
+    </ul>
+
+    <h3>What changes in code (direction A)</h3>
+    <ul>
+      <li><code>components/workspace/HomeFirstView.tsx</code> — the two product cards; the start ways move into the Analyse card; Re-design card with its two starts. The "optional" sentence in the JSDoc and ADR-110 (2) are superseded (new ADR).</li>
+      <li><code>components/workspace/ToolPathStrip.tsx</code> — becomes the "six tools" list of the Re-design card and the Analyze tool line of the Analyse card; both groups solid, no dashed "optional" group.</li>
+      <li><code>lib/messages/workspace.ts</code> — <code>home.pathOptional</code>, <code>home.pathComplete</code>, <code>home.lead</code> rewritten; new <code>home.product.*</code> and <code>ws.tile.*</code> keys.</li>
+      <li><code>components/workspace/WorkspaceListReport.tsx</code> — split: <code>WorkspaceTiles</code> (default) and the existing table as list mode (lazy); <code>NextStepCard</code> replaces <code>YourTurnCard</code>'s place; KPI tiles; the start tile; the example gallery and sharing card move behind "Analyse another Z program" and a "Shared" count.</li>
+      <li><code>hooks/useWorkspaceRowFacts.ts</code> — only in list mode.</li>
+      <li><code>lib/home-map-slice.ts</code> → serve the compacted SVG; <code>components/process-map/MapSlice</code> leaves the first view (no bpmn-js on My workspace).</li>
+      <li><code>app/api/runs/create/route.ts</code> + the map save route — write the project summary; <code>firestore.rules</code> — deny client writes of the summary keys; backfill script under <code>scripts/</code>.</li>
+      <li><code>components/MyWorkspaceSwitch.tsx</code> — no render of the old page while the profile loads (skeleton instead).</li>
+      <li><code>lib/home-start-handoff.ts</code> — one more intent ("re-design after the analysis"); the own-code start itself unchanged.</li>
+      <li>Guards: <code>tests/cc-style-guard.spec.ts</code> (messages), the home first-view specs, <code>workflow-style-guard</code> unaffected; <code>tests/capture-screens.spec.ts</code> gets the new captures. Run <code>grep -rl HomeFirstView tests/</code> before moving anything.</li>
+    </ul>
+
+    <h3>Effort</h3>
+    <table>
+      <tr><th>Step</th><th>Effort</th></tr>
+      <tr><td>1. Two-product wording + new-account pair (works in A and B; no server change)</td><td>1.5–2 days</td></tr>
+      <tr><td>2. Project summary on the server + rules + backfill</td><td>1.5–2 days</td></tr>
+      <tr><td>3a. Direction A returning: next step, counts, tiles, lens, list mode, skeletons, start tile</td><td>4–5 days</td></tr>
+      <tr><td>3b. Direction B returning instead: spotlight, start card, grouped table</td><td>3 days</td></tr>
+      <tr><td>4. Performance: drop the old page from the route, code-split, no bpmn-js on the page, measure before/after</td><td>1–1.5 days</td></tr>
+      <tr><td>Guards, captures, docs, CHANGELOG</td><td>1 day</td></tr>
+      <tr><td><b>Total A</b> / <b>Total B</b> / C (not recommended)</td><td><b>9–11.5 days</b> / <b>8–9.5 days</b> / ~11 days</td></tr>
+    </table>
+
+    <h3>Slot</h3>
+    <div class="warn">3.5.0 (23.12.2026) already carries the Claude key, the landing rebuild and the demo showcase, and the roadmap calls it at risk. Adding 9–11 days of My workspace to it would make it late. Proposed: <b>step 1 in 3.5.0</b> (it removes "optional" in the same release that the landing and the showcase speak of two products — the vocabulary has to agree on the day 3.5 goes live), <b>steps 2–4 as 3.5.1</b> in January. If 3.5.0 slips anyway, do not pull the tiles in to fill it.</div>
+    <p>Mock-up limits: thumbnails of the other programs reuse sub-levels of the demo map; their figures are illustrative. Every behaviour drawn here uses data that exists today, or the project summary named above.</p>
+  </div>
+</aside>
+
+<script>
+(function(){
+'use strict';
+var THUMBS = /*THUMBS*/{"0":"<svg viewBox=\"175 75 1356 896\" class=\"mapthumb\" aria-hidden=\"true\"><g class=\"c\"><path class=\"a\" d=\"M536,596L536,659\"/><path class=\"a\" d=\"M1257,596L1257,659\"/><path d=\"M298,285L436,285\"/><path d=\"M636,285L692,285\"/><path d=\"M892,285L951,285\"/><path d=\"M1151,285L1232,285\"/><path d=\"M1247,300L1247,503C1247,506,1245,508,1242,508L1164,508C1162,508,1159,511,1159,513L1159,863C1159,866,1157,868,1154,868L1056,868C1054,868,1051,871,1051,873L1051,890\"/><path d=\"M1282,285L1366,285\"/><path d=\"M1436,343L1436,478C1436,481,1434,483,1431,483L295,483C293,483,290,486,290,488L290,497\"/><path d=\"M380,556L486,556\"/><path d=\"M586,556L767,556\"/><path d=\"M802,571L802,855C802,858,805,860,807,860L1036,860C1039,860,1041,863,1041,865L1041,893\"/><path d=\"M817,556L951,556\"/><path d=\"M1151,556L1207,556\"/><path d=\"M1307,556L1421,556\"/><path d=\"M1436,571L1436,871C1436,874,1434,876,1431,876L1066,876C1064,876,1061,879,1061,881L1061,893\"/><path d=\"M1446,581L1446,591C1446,594,1444,596,1441,596L1320,596C1318,596,1315,599,1315,601L1315,830C1315,833,1313,835,1310,835L295,835C293,835,290,838,290,840L290,849\"/><path d=\"M380,908L436,908\"/><path d=\"M636,908L742,908\"/><path d=\"M842,908L1033,908\"/></g><circle class=\"s\" cx=\"280\" cy=\"285\" r=\"18\"/><circle class=\"e\" cx=\"1051\" cy=\"908\" r=\"18\"/><rect class=\"p\" x=\"436\" y=\"226\" width=\"200\" height=\"117\" rx=\"10\"/><rect class=\"p\" x=\"692\" y=\"226\" width=\"200\" height=\"117\" rx=\"10\"/><rect class=\"p\" x=\"951\" y=\"226\" width=\"200\" height=\"117\" rx=\"10\"/><polygon class=\"g\" points=\"1257,260 1282,285 1257,310 1232,285\"/><rect class=\"p\" x=\"1366\" y=\"226\" width=\"160\" height=\"117\" rx=\"10\"/><rect class=\"p\" x=\"180\" y=\"497\" width=\"200\" height=\"117\" rx=\"10\"/><rect class=\"t\" x=\"486\" y=\"516\" width=\"100\" height=\"80\" rx=\"10\"/><polygon class=\"g\" points=\"792,531 817,556 792,581 767,556\"/><rect class=\"p\" x=\"951\" y=\"497\" width=\"200\" height=\"117\" rx=\"10\"/><rect class=\"t\" x=\"1207\" y=\"516\" width=\"100\" height=\"80\" rx=\"10\"/><polygon class=\"g\" points=\"1446,531 1471,556 1446,581 1421,556\"/><rect class=\"p\" x=\"180\" y=\"849\" width=\"200\" height=\"117\" rx=\"10\"/><rect class=\"p\" x=\"436\" y=\"849\" width=\"200\" height=\"117\" rx=\"10\"/><rect class=\"t\" x=\"742\" y=\"868\" width=\"100\" height=\"80\" rx=\"10\"/><rect class=\"t\" x=\"180\" y=\"80\" width=\"560\" height=\"80\" rx=\"10\"/></svg>","3":"<svg viewBox=\"161 88 944 574\" class=\"mapthumb\" aria-hidden=\"true\"><g class=\"c\"><path class=\"a\" d=\"M339,195L339,288\"/><path class=\"a\" d=\"M635,165L605,165C603,165,600,168,600,170L600,308C600,311,598,313,595,313L364,313\"/><path d=\"M735,155L791,155\"/><path d=\"M826,170L826,298C826,301,829,303,831,303L985,303\"/><path d=\"M841,155L900,155\"/><path d=\"M990,213L990,282C990,285,988,287,985,287L731,287C729,287,726,290,726,292L726,449C726,452,724,454,721,454L171,454C169,454,166,457,166,459L166,502C166,505,169,507,171,507L190,507\"/><path d=\"M215,532L215,604C215,607,218,609,220,609L324,609\"/><path d=\"M230,517L314,517\"/><path d=\"M364,517L455,517\"/><path d=\"M354,527L458,527\"/><path d=\"M223,155L289,155\"/><path d=\"M389,155L448,155\"/><path d=\"M498,155L635,155\"/><path d=\"M483,170L483,298C483,301,486,303,488,303L670,303\"/></g><circle class=\"s\" cx=\"205\" cy=\"155\" r=\"18\"/><circle class=\"e\" cx=\"473\" cy=\"517\" r=\"18\"/><rect class=\"t\" x=\"289\" y=\"115\" width=\"100\" height=\"80\" rx=\"10\"/><polygon class=\"g\" points=\"473,130 498,155 473,180 448,155\"/><circle class=\"e\" cx=\"685\" cy=\"313\" r=\"18\"/><rect class=\"t\" x=\"635\" y=\"110\" width=\"100\" height=\"89\" rx=\"10\"/><polygon class=\"g\" points=\"816,130 841,155 816,180 791,155\"/><circle class=\"e\" cx=\"1000\" cy=\"313\" r=\"18\"/><rect class=\"p\" x=\"900\" y=\"96\" width=\"200\" height=\"117\" rx=\"10\"/><polygon class=\"g\" points=\"205,492 230,517 205,542 180,517\"/><circle class=\"e\" cx=\"339\" cy=\"619\" r=\"18\"/><polygon class=\"g\" points=\"339,492 364,517 339,542 314,517\"/></svg>","4":"<svg viewBox=\"175 69 590 503\" class=\"mapthumb\" aria-hidden=\"true\"><g class=\"c\"><path class=\"a\" d=\"M453,330L453,361C453,364,456,366,458,366L496,366C499,366,501,369,501,371L501,479C501,482,499,484,496,484L458,484C456,484,453,487,453,489L453,498\"/><path class=\"a\" d=\"M592,191L592,508C592,511,590,513,587,513L468,513\"/><path class=\"a\" d=\"M443,454L443,498\"/><path d=\"M307,166L307,275C307,278,310,280,312,280L393,280\"/><path d=\"M322,151L418,151\"/><path d=\"M468,151L552,151\"/><path d=\"M297,176L297,399C297,402,300,404,302,404L393,404\"/><path d=\"M493,280L747,280C750,280,752,278,752,275L752,124C752,122,750,119,747,119L731,119C729,119,726,122,726,124L726,133\"/><path d=\"M652,151L708,151\"/><path d=\"M458,161L539,161C542,161,544,164,544,166L544,194C544,197,547,199,549,199L689,199C692,199,694,197,694,194L694,166C694,164,697,161,699,161L711,161\"/><path d=\"M312,161L371,161C374,161,376,159,376,156L376,93C376,91,379,88,381,88L689,88C692,88,694,91,694,93L694,136C694,139,697,141,699,141L711,141\"/><path d=\"M493,404L755,404C758,404,760,402,760,399L760,117C760,115,758,112,755,112L721,112C719,112,716,115,716,117L716,136\"/><path d=\"M216,151L272,151\"/></g><circle class=\"s\" cx=\"198\" cy=\"151\" r=\"18\"/><circle class=\"e\" cx=\"726\" cy=\"151\" r=\"18\"/><polygon class=\"g\" points=\"297,126 322,151 297,176 272,151\"/><rect class=\"t\" x=\"393\" y=\"250\" width=\"100\" height=\"80\" rx=\"10\"/><polygon class=\"g\" points=\"443,126 468,151 443,176 418,151\"/><rect class=\"t\" x=\"552\" y=\"111\" width=\"100\" height=\"80\" rx=\"10\"/><rect class=\"t\" x=\"393\" y=\"374\" width=\"100\" height=\"80\" rx=\"10\"/></svg>","6":"<svg viewBox=\"175 75 626 542\" class=\"mapthumb\" aria-hidden=\"true\"><g class=\"c\"><path class=\"a\" d=\"M322,448L322,439C322,437,320,434,317,434L263,434C261,434,258,432,258,429L258,153C258,151,261,148,263,148L272,148\"/><path class=\"a\" d=\"M488,374L488,448\"/><path class=\"a\" d=\"M498,543L498,534C498,532,501,529,503,529L541,529C544,529,546,527,546,524L546,291C546,289,544,286,541,286L493,286C491,286,488,284,488,281L488,195\"/><path class=\"a\" d=\"M664,178L664,303C664,306,667,308,669,308L696,308C699,308,701,311,701,313L701,429C701,432,699,434,696,434L503,434C501,434,498,437,498,439L498,448\"/><path d=\"M352,206L352,319C352,322,355,324,357,324L438,324\"/><path d=\"M538,334L636,334\"/><path d=\"M372,138L428,138\"/><path d=\"M528,210L528,268C528,271,531,273,533,273L639,273C642,273,644,271,644,268L644,178\"/><path d=\"M704,138L760,138\"/><path d=\"M548,138L591,138C594,138,596,136,596,133L596,95C596,93,599,90,601,90L741,90C744,90,746,93,746,95L746,123C746,126,749,128,751,128L763,128\"/><path d=\"M216,138L272,138\"/></g><circle class=\"s\" cx=\"198\" cy=\"138\" r=\"18\"/><circle class=\"e\" cx=\"778\" cy=\"138\" r=\"18\"/><rect class=\"t\" x=\"272\" y=\"85\" width=\"100\" height=\"106\" rx=\"10\"/><rect class=\"t\" x=\"438\" y=\"294\" width=\"100\" height=\"80\" rx=\"10\"/><circle class=\"e\" cx=\"654\" cy=\"334\" r=\"18\"/><rect class=\"t\" x=\"428\" y=\"80\" width=\"120\" height=\"115\" rx=\"10\"/><rect class=\"t\" x=\"604\" y=\"98\" width=\"100\" height=\"80\" rx=\"10\"/></svg>","8":"<svg viewBox=\"175 69 1034 880\" class=\"mapthumb\" aria-hidden=\"true\"><g class=\"c\"><path class=\"a\" d=\"M699,384L699,340\"/><path class=\"a\" d=\"M709,494L709,485C709,483,712,480,714,480L752,480C755,480,757,478,757,475L757,248C757,246,755,243,752,243L714,243C712,243,709,241,709,238L709,176\"/><path class=\"a\" d=\"M865,384L865,375C865,373,868,370,870,370L908,370C911,370,913,368,913,365L913,253C913,251,911,248,908,248L870,248C868,248,865,246,865,243L865,176\"/><path class=\"a\" d=\"M446,790L446,875\"/><path d=\"M456,151L456,281C456,284,459,286,461,286L649,286\"/><path d=\"M749,296L805,296\"/><path d=\"M471,136L649,136\"/><path d=\"M749,136L805,136\"/><path d=\"M905,136L961,136\"/><path d=\"M905,286L1127,286C1130,286,1132,284,1132,281L1132,151\"/><path d=\"M1061,136L1117,136\"/><path d=\"M461,146L636,146C639,146,641,149,641,151L641,179C641,182,644,184,646,184L1098,184C1101,184,1103,182,1103,179L1103,151C1103,149,1106,146,1108,146L1127,146\"/><path d=\"M1152,151L1152,170C1152,173,1155,175,1157,175L1173,175C1176,175,1178,178,1178,180L1178,665C1178,668,1176,670,1173,670L275,670C273,670,270,673,270,675L270,684\"/><path d=\"M340,750L396,750\"/><path d=\"M1142,161L1142,691C1142,694,1140,696,1137,696L461,696C459,696,456,699,456,701L456,710\"/><path d=\"M496,750L681,750\"/><path d=\"M278,136L421,136\"/></g><circle class=\"s\" cx=\"260\" cy=\"136\" r=\"18\"/><circle class=\"e\" cx=\"699\" cy=\"750\" r=\"18\"/><polygon class=\"g\" points=\"446,111 471,136 446,161 421,136\"/><rect class=\"t\" x=\"649\" y=\"251\" width=\"100\" height=\"89\" rx=\"10\"/><rect class=\"t\" x=\"805\" y=\"256\" width=\"100\" height=\"80\" rx=\"10\"/><rect class=\"t\" x=\"649\" y=\"96\" width=\"100\" height=\"80\" rx=\"10\"/><rect class=\"t\" x=\"805\" y=\"96\" width=\"100\" height=\"80\" rx=\"10\"/><rect class=\"t\" x=\"961\" y=\"96\" width=\"100\" height=\"80\" rx=\"10\"/><polygon class=\"g\" points=\"1142,111 1167,136 1142,161 1117,136\"/><rect class=\"p\" x=\"180\" y=\"684\" width=\"160\" height=\"132\" rx=\"10\"/><rect class=\"t\" x=\"396\" y=\"710\" width=\"100\" height=\"80\" rx=\"10\"/></svg>"};
+
+/* ---------------- icons (lucide shapes, ISC) ---------------- */
+var IC = {
+  arrow:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  upload:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+  clip:'<rect width="8" height="4" x="8" y="2" rx="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+  play:'<circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>',
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  ccheck:'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  clock:'<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  plus:'<path d="M5 12h14"/><path d="M12 5v14"/>',
+  grid:'<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+  list:'<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>',
+  flow:'<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>',
+  wrench:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  more:'<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
+  code:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m10 13-2 2 2 2"/><path d="m14 17 2-2-2-2"/>',
+  file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>'
+};
+function ic(n, cls){ return '<svg class="i'+(cls?' '+cls:'')+'" viewBox="0 0 24 24" aria-hidden="true">'+IC[n]+'</svg>'; }
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+/* ---------------- data ---------------- */
+var EXAMPLES = [
+  {z:'Z_MM_PO_APPROVAL', lines:552, d:'Emergency purchase approval: vendor and price checks, approval, purchase order.'},
+  {z:'Z_SD_FREIGHT_RATE_CHECK', lines:407, d:'Checks freight charges before goods issue'},
+  {z:'Z_SD_DELIVERY_PRIORITY', lines:132, d:'Sets the delivery priority of sales orders'},
+  {z:'ZLEGACY_ORDER_FULFILLMENT_AUDIT', lines:1000, d:'A grown order report with many findings'},
+  {z:'Z_MATERIAL_STOCK_CALC', lines:99, d:'Values material stock'},
+  {z:'Z_SALES_ORDER_CREATOR', lines:98, d:'Creates sales orders in bulk'},
+  {z:'Z_INVOICE_EXTRACTOR', lines:87, d:'Writes billing documents to a CSV file'}
+];
+var RD = ['Design','Transformation','Documentation','Testing','Economics','Delivery'];
+var RD_WHAT = ['Keep, change or drop each rule','New code in ABAP Cloud (RAP) or CAP','Readable documents to export','Tests for the new version','Cost and effort, to decide','A signed evidence package'];
+/* an: done | stale ; rd: -1 not started, 0..5 current step index, 6 delivered */
+var PROGRAMS = [
+  {id:'po', t:'Emergency purchase approval', z:'Z_MM_PO_APPROVAL', lines:552, ex:true, th:0, steps:94, score:40, dec:'Rebuild', decS:'confirmed in Design', an:'done', anW:'6 Nov', rd:3, ch:'today', real:true,
+    say:'Checks an urgent purchase requisition, the person who approves it, the vendor and the price, then creates the purchase order. A price more than 5 % above the agreed one puts it on hold for a buyer.'},
+  {id:'fr', t:'Freight charge check before goods issue', z:'Z_SD_FREIGHT_RATE_CHECK', lines:407, ex:true, th:3, steps:61, score:52, dec:'Rebuild', decS:'proposed', an:'done', anW:'11 Nov', rd:0, ch:'yesterday',
+    say:'Weighs each outbound delivery, prices it from the rate card and compares it with the quote of the external carrier system.'},
+  {id:'ms', t:'Material stock valuation', z:'Z_MATERIAL_STOCK_CALC', lines:99, ex:true, th:6, steps:18, score:74, dec:'Rebuild', decS:'confirmed in Design', an:'done', anW:'4 Nov', rd:6, rdW:'10 Nov', ch:'3 days ago',
+    say:'Values material stock per plant and storage location.'},
+  {id:'dp', t:'Delivery priority of sales orders', z:'Z_SD_DELIVERY_PRIORITY', lines:132, ex:true, th:8, steps:27, score:81, dec:'Rebuild', decS:'proposed · key-user tools', an:'done', anW:'2 Nov', rd:-1, ch:'11 days ago',
+    say:'Derives and checks a priority class for each sales order and lists open orders per class.'},
+  {id:'oa', t:'Order fulfilment audit report', z:'ZLEGACY_ORDER_FULFILLMENT_AUDIT', lines:1000, ex:true, th:4, steps:143, score:12, dec:'Retire', decS:'proposed', an:'stale', anW:'29 Oct', rd:-1, ch:'2 days ago',
+    say:'Checks credit, reconciles inventory and logs the remediation of open orders.'}
+];
+
+/* ---------------- state ---------------- */
+var S = { dir:'A', st:'new', w:'1440', lens:'business', view:'tiles', kpi:'all', startOpen:false, more:false };
+try { var saved = JSON.parse(localStorage.getItem('ws2-mock')||'{}'); for (var k in saved) if (k in S) S[k]=saved[k]; } catch(e) {}
+var qs = new URLSearchParams(location.search);
+['dir','st','w','lens','view'].forEach(function(k){ if (qs.get(k)) S[k]=qs.get(k); });
+if (qs.get('chrome')==='0') document.documentElement.classList.add('nochrome');
+function save(){ try { localStorage.setItem('ws2-mock', JSON.stringify({dir:S.dir,st:S.st,w:S.w,lens:S.lens,view:S.view})); } catch(e) {} }
+
+/* ---------------- shared pieces ---------------- */
+function thumb(p, h){
+  var svg = THUMBS[p.th];
+  return '<div class="thumb"'+(h?' style="height:'+h+'px"':'')+' role="img" aria-label="Process map of '+esc(p.z)+', '+p.steps+' steps">'+(svg||'<span class="none">Map after the next run</span>')+'</div>';
+}
+function quotaLine(){ return S.st==='spent' ? 'All 5 free runs used' : (S.st==='new'||S.st==='demo' ? '5 of 5 runs left' : '3 of 5 runs left'); }
+function exampleWay(opts){
+  opts = opts||{};
+  var first = EXAMPLES[0];
+  var rest = EXAMPLES.slice(1);
+  var list = '<ul class="exlist" aria-label="Other examples">'+rest.slice(0, opts.short?3:6).map(function(e){
+      return '<li><span class="mono">'+e.z+'</span><span class="ds">'+esc(e.d)+'</span><span class="ln">'+e.lines.toLocaleString('en')+' lines</span></li>'; }).join('')+'</ul>';
+  return '<div class="way">'+
+    '<div class="wayh"><h3 class="h3">Try an example</h3><span class="chip free">Free the first time</span></div>'+
+    '<div class="ex"><div class="nm"><span class="mono">'+first.z+'</span><span class="tag">Recommended</span></div>'+
+      '<p>'+esc(first.d)+' '+first.lines+' lines.</p>'+
+      '<div class="go">'+(opts.noPrimary?'<button class="btn secondary c" type="button">Start this example'+ic('arrow','s')+'</button>':'<button class="btn primary c" type="button">Start this example'+ic('arrow','s')+'</button>')+
+      '<button class="link" type="button">'+(opts.short?'6 more examples':'More examples')+ic('arrow','s')+'</button></div></div>'+
+    (opts.noList?'':list)+
+  '</div>';
+}
+function ownWay(opts){
+  opts = opts||{};
+  var spent = S.st==='spent';
+  return '<div class="way">'+
+    '<div class="wayh"><h3 class="h3">Upload your own code</h3>'+(opts.noChip?'':'<span class="chip n">'+(spent?'Your own key':'1 run per program')+'</span>')+'</div>'+
+    (spent ? '<p class="small muted">You’ve used all 5 free analysis runs. Add your own model key in Settings for unlimited runs — Clean-Core.io stays free. <button class="link" type="button">Add your own key</button></p>' : '')+
+    '<div class="drop"><div class="t"><span class="ic">'+ic('upload')+'</span><div><b class="h3" style="display:block"><span class="hide-s">Drop a program file here</span><span class="show-s">Add one program</span></b><span class="small muted tx2">ABAP source as .abap or .txt, or an abapGit ZIP</span></div></div>'+
+      '<div class="b"><button class="btn ghost c" type="button">'+ic('file','s')+'Choose a file</button><button class="link" type="button">'+ic('clip','s')+'Paste the code</button></div></div>'+
+    (opts.get ? '<div class="get"><p class="calm"><b style="color:var(--cc-ink)">What you get:</b> the process as a map, every step with its code lines. Here Z_MM_PO_APPROVAL.</p>'+thumb(PROGRAMS[0],150)+'</div>' : '')+
+    '<p class="calm">Stored in the EU · only you and whom you invite · never sold. <a href="#">What happens to your code?</a></p>'+
+  '</div>';
+}
+function demoLine(){
+  return '<div class="demoline"><span class="ic">'+ic('play')+'</span><p><b>Prefer to look first?</b> The demo is a finished example of Z_MM_PO_APPROVAL. Nothing runs and nothing is saved.</p><button class="link" type="button">Open the demo'+ic('arrow','s')+'</button></div>';
+}
+function h2banner(){
+  return '<div class="h2banner" data-from-demo=""><div class="tx"><b>You have seen Z_MM_PO_APPROVAL in the demo.</b><span class="hide-s">Now run it yourself — free the first time — and keep the result, or upload your own Z program.</span><span class="show-s">Run it yourself, free the first time — or upload your own.</span></div>'+
+    '<div class="ac"><button class="btn primary" type="button">Run Z_MM_PO_APPROVAL yourself'+ic('arrow','s')+'</button></div></div>';
+}
+function pmark(kind){
+  return '<span class="pmark"><span class="pi">'+ic(kind==='a'?'flow':'wrench','s')+'</span>'+(kind==='a'?'Analyse':'Re-design')+'</span>';
+}
+function anStatus(p){
+  if (p.an==='stale') return '<span class="st warn"><span class="d o"></span>Code changed since the analysis</span>';
+  return '<span class="st ok">'+ic('ccheck','s')+'Analysed · signed '+p.anW+'</span>';
+}
+function rdStatus(p){
+  if (p.dec==='Retire' || p.dec==='Keep') return '<span class="st"><span class="d w"></span>Not needed — proposed: '+p.dec+'</span>';
+  if (p.rd<0) return '<span class="st"><span class="d w"></span>Not started</span>';
+  if (p.rd>=6) return '<span class="st ok">'+ic('ccheck','s')+'Signed delivery · '+p.rdW+'</span>';
+  return '<span class="st"><span class="d"></span>'+RD[p.rd]+' · step '+(p.rd+1)+' of 6</span>';
+}
+function track(p){
+  var h='';
+  for (var i=0;i<6;i++){
+    var c = p.rd>=6 ? 'g' : (i<p.rd ? 'on' : (i===p.rd ? 'now' : ''));
+    h+='<i class="'+c+'"></i>';
+  }
+  return '<span class="track" aria-hidden="true">'+h+'</span>';
+}
+function anAction(p){
+  if (p.an==='stale') return '<button class="link" type="button">Run the analysis again'+ic('arrow','s')+'</button>';
+  var v = S.lens==='it'?'IT':S.lens==='mgmt'?'Management':'Business';
+  return '<button class="link" type="button" title="Opens in the '+v+' view">Open the analysis'+ic('arrow','s')+'</button>';
+}
+function rdAction(p){
+  if (p.dec==='Retire' || p.dec==='Keep') return '<button class="link" type="button">Open the decision'+ic('arrow','s')+'</button>';
+  if (p.an==='stale') return '<span class="meta">After the new run</span>';
+  if (p.rd<0) return '<button class="link" type="button">Re-design this program'+ic('arrow','s')+'</button>';
+  if (p.rd>=6) return '<button class="link" type="button">Open the delivery'+ic('arrow','s')+'</button>';
+  return '<button class="link" type="button">Continue: '+RD[p.rd]+ic('arrow','s')+'</button>';
+}
+function facts(p){
+  function cell(key, v, k){ return '<div class="'+(S.lens===key?'on':'')+'"><div class="fv">'+v+'</div><div class="fk">'+k+'</div></div>'; }
+  return '<div class="facts">'+
+    cell('business', p.steps+' steps', 'Process map')+
+    cell('it', p.score+'<span class="muted" style="font-weight:600;font-size:12px">/100</span>', 'Clean core')+
+    cell('mgmt', p.dec, p.decS.indexOf('confirmed')===0?'<span class="hide-s">Confirmed decision</span><span class="show-s">Confirmed</span>':'<span class="hide-s">Proposed decision</span><span class="show-s">Proposed</span>')+
+  '</div>';
+}
+function lensSeg(){
+  var o=[['business','Business'],['it','IT'],['mgmt','Management']];
+  return '<span class="toolbar"><span class="lb" id="lens-l">Read as</span><span class="seg" role="radiogroup" aria-labelledby="lens-l">'+o.map(function(x){
+    return '<button type="button" role="radio" aria-checked="'+(S.lens===x[0])+'" data-lens="'+x[0]+'">'+x[1]+'</button>'; }).join('')+'</span></span>';
+}
+function viewSeg(){
+  return '<span class="seg hide-s" role="radiogroup" aria-label="Show as"><button type="button" role="radio" aria-checked="'+(S.view==='tiles')+'" data-view="tiles">'+ic('grid','s')+' Tiles</button><button type="button" role="radio" aria-checked="'+(S.view==='list')+'" data-view="list">'+ic('list','s')+' List</button></span>';
+}
+function headRet(){
+  return '<div class="phead"><div><p class="hello">Welcome back, Mara.</p><h1 class="h1">My workspace</h1></div>'+
+    '<div class="acts"><button class="btn secondary" type="button" data-startopen="1" aria-expanded="'+S.startOpen+'">'+ic('flow','s')+'<span class="lg-l">Analyse another Z program</span><span class="show-s">Analyse a program</span></button>'+
+    '<button class="btn secondary" type="button">'+ic('wrench','s')+'Re-design a program</button></div></div>'+
+    (S.startOpen ? '<section class="card inlinestart" aria-label="Start an analysis"><div class="ways">'+exampleWay({short:true,noPrimary:true})+ownWay()+'</div></section>' : '')+
+    (S.st==='spent' ? '<div class="h2banner" style="background:var(--cc-warning-bg);border-color:var(--cc-warning-border)"><div class="tx"><b>All 5 free analysis runs are used.</b><span>Re-design keeps working — it is not counted. For more analyses, add your own model key; Clean-Core.io stays free.</span></div><div class="ac"><button class="btn ghost" type="button">Add your own key</button></div></div>' : '');
+}
+function filterBy(list){
+  return list.filter(function(p){
+    if (S.kpi==='all') return true;
+    if (S.kpi==='an') return p.an==='done';
+    if (S.kpi==='rd') return p.rd>=0 && p.rd<6;
+    if (S.kpi==='del') return p.rd>=6;
+    if (S.kpi==='att') return p.an==='stale';
+    return true;
+  });
+}
+
+/* ================= DIRECTION A — Tiles ================= */
+function A_new(){
+  var demo = S.st==='demo';
+  return (demo? h2banner() : '')+
+  '<div><p class="hello">Welcome, Mara.</p><h1 class="h1 big">What do you want to do with your Z program?</h1>'+
+    '<p class="lead hide-s">Two things, on the same evidence: your ABAP, read line by line. Every statement keeps the code line it comes from.</p></div>'+
+  '<div class="pair">'+
+    '<section class="card prod" aria-labelledby="pa"><div class="ph">'+pmark('a')+
+      '<h2 class="h2" id="pa">Analyse it — understand what it does</h2>'+
+      '<p class="gets"><span class="hide-s">The process as a map, the hard-coded rules, the SAP objects it uses, its findings and clean core score — in a Business, IT and Management view.</span><span class="show-s">Process map, rules, SAP objects and clean core score.</span></p>'+
+      '<div class="cost"><span class="chip n">1 analysis run per program</span><span class="meta">'+quotaLine()+' · the same code again is free</span></div></div>'+
+      '<div class="foot ways">'+exampleWay({short:true, noPrimary:demo, noList:true})+ownWay({noChip:true})+'</div></section>'+
+    '<section class="card prod" aria-labelledby="pr"><div class="ph">'+pmark('r')+
+      '<h2 class="h2" id="pr">Re-design it — build its clean core successor</h2>'+
+      '<p class="gets"><span class="hide-s">From the same evidence: a decision per rule, new code in ABAP Cloud (RAP) or CAP, documentation, tests, economics — and a signed delivery package.</span><span class="show-s">From the same evidence: new code, tests, economics and a signed delivery.</span></p>'+
+      '<div class="cost"><span class="chip free">Not counted against your runs</span><span class="meta">It builds on the analysis run</span></div></div>'+
+      '<div style="padding:0 24px" class="rdsteps"><ol class="steps6">'+RD.map(function(r,i){ return '<li><b>'+r+'</b><span>'+RD_WHAT[i]+'</span></li>'; }).join('')+'</ol></div>'+
+      '<div class="foot rdstart" style="margin-top:16px">'+
+        '<p class="small muted"><b style="color:var(--cc-ink)">Re-design starts from an analysis</b>, so the evidence is there first.</p>'+
+        '<div class="how"><span class="n">1</span><span>Analyse the program — an example or your own code.</span><span class="n">2</span><span>Design opens on its result; the six tools follow in order.</span></div>'+
+        '<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="btn secondary c" type="button">Re-design an example end to end'+ic('arrow','s')+'</button><span class="meta">Z_MM_PO_APPROVAL · free the first time</span></div>'+
+      '</div></section>'+
+  '</div>'+
+  (demo? '' : demoLine());
+}
+function A_ret(){
+  var all = PROGRAMS, list = filterBy(all);
+  var nInRd = all.filter(function(p){return p.rd>=0&&p.rd<6;}).length;
+  var kp = [
+    ['all','Programs', all.length, 'in your workspace', bar(all.length,all.length,'on')],
+    ['an','Analysed', all.filter(function(p){return p.an==='done';}).length, '1 out of date', bar(4,5,'on',1)],
+    ['rd','In re-design', nInRd, 'Design and Testing', bar(nInRd,5,'on')],
+    ['del','Signed deliveries', all.filter(function(p){return p.rd>=6;}).length, 'Material stock valuation', bar(1,5,'g')],
+    ['att','Needs attention', 1, 'Code changed since', bar(1,5,'w')]
+  ];
+  function bar(n,of,c,w){ var h=''; for(var i=0;i<of;i++){ h+='<i class="'+(i<n?c:(w&&i===n?'w':''))+'"></i>'; } return '<span class="bar" aria-hidden="true">'+h+'</span>'; }
+  var p0 = all[0];
+  return headRet()+
+  '<section class="card" aria-labelledby="nx"><div class="next">'+thumb(p0)+
+    '<div class="nt"><span class="lbl" id="nx">Next step</span><b>'+esc(p0.t)+' — Re-design at Testing</b><span>Design, Transformation and Documentation are done. Tests for the new version come next.</span></div>'+
+    '<button class="btn primary" type="button">Continue: Testing'+ic('arrow','s')+'</button></div>'+
+    '<div class="also"><span class="st warn"><span class="d o"></span>Also waiting</span><span>Order fulfilment audit report — the code changed since the analysis.</span><button class="link" type="button">Run the analysis again'+ic('arrow','s')+'</button></div></section>'+
+  '<section aria-labelledby="ag"><div class="sechead"><div class="l"><h2 class="h2" id="ag">At a glance</h2><span class="meta">3 changed in the last 7 days</span></div><span class="illus">mock-up: figures illustrative except Z_MM_PO_APPROVAL</span></div>'+
+    '<div class="kpis">'+kp.map(function(k){ return '<button type="button" class="kpi" data-kpi="'+k[0]+'" aria-pressed="'+(S.kpi===k[0] && k[0]!=='all')+'"><span class="k">'+k[1]+'</span><span class="v">'+k[2]+'</span><span class="u">'+k[3]+'</span>'+k[4]+'</button>'; }).join('')+'</div></section>'+
+  '<section aria-labelledby="yp"><div class="sechead"><div class="l"><h2 class="h2" id="yp">Your programs</h2><span class="count">'+list.length+(S.kpi!=='all'?' of '+all.length+' · <button class="link" type="button" data-kpi="all">Show all</button>':'')+'</span></div>'+
+    '<div class="toolbar">'+lensSeg()+viewSeg()+'</div></div>'+
+    (S.view==='list' ? '<div class="card tblwrap">'+B_table(list,false)+'</div>'+B_mcards(list) :
+    '<div class="tiles">'+list.map(A_tile).join('')+(S.kpi==='all'?A_newTile():'')+'</div>')+
+  '</section>'+
+  '<p class="meta" style="font-weight:500">Shared with you: 2 programs · Invitations you sent: 1 open. <button class="link" type="button">Sharing'+ic('arrow','s')+'</button></p>';
+}
+function A_tile(p){
+  return '<article class="card tile" aria-labelledby="t-'+p.id+'"><div class="th"><div class="tt"><h3 id="t-'+p.id+'"><a href="#">'+esc(p.t)+'</a></h3><button class="ib" style="width:32px;height:32px;flex:none" type="button" aria-label="More for '+esc(p.t)+'">'+ic('more','s')+'</button></div>'+
+    '<div class="id"><span class="mono">'+p.z+'</span><span class="meta">· '+p.lines.toLocaleString('en')+' lines</span>'+(p.ex?'<span class="tag">Example</span>':'')+'</div></div>'+
+    thumb(p)+facts(p)+
+    '<div class="prows"><div class="prow"><span class="pn">Analyse</span><div class="ps">'+anStatus(p)+'</div><div class="pa"><span class="meta">'+(p.an==='stale'?'Re-design waits for it':'')+'</span>'+anAction(p)+'</div></div>'+
+    '<div class="prow"><span class="pn">Re-design</span><div class="ps">'+rdStatus(p)+'</div><div class="pa">'+(p.rd>=0&&p.dec!=='Retire'?track(p):'<span class="meta">'+(p.dec==='Retire'?'Nothing is built':'Starts in Design')+'</span>')+rdAction(p)+'</div></div></div>'+
+  '</article>';
+}
+function A_newTile(){
+  return '<article class="card tile newt" aria-labelledby="t-new"><div class="nb">'+pmark('a')+
+    '<h3 class="h2" id="t-new" style="font-size:16px">Analyse another Z program</h3>'+
+    '<div class="ex"><div class="nm"><span class="mono">Z_SALES_ORDER_CREATOR</span><span class="chip free">Free the first time</span></div><p>Creates sales orders in bulk. 98 lines.</p><div class="go"><button class="btn secondary c" type="button">Start this example'+ic('arrow','s')+'</button><button class="link" type="button">More examples'+ic('arrow','s')+'</button></div></div>'+
+    '<div class="drop" style="padding:10px 12px"><div class="b"><button class="btn ghost c" type="button">'+ic('upload','s')+'Upload your own code</button><button class="link" type="button">'+ic('clip','s')+'Paste the code</button></div><span class="calm">'+quotaLine()+' · the same code again is free</span></div>'+
+  '</div></article>';
+}
+
+/* ================= DIRECTION B — Spotlight + list ================= */
+function B_new(){
+  var demo = S.st==='demo';
+  return (demo? h2banner() : '')+
+  '<div><p class="hello">Welcome, Mara.</p><h1 class="h1 big">See your Z program as a business process — then re-design it</h1>'+
+    '<p class="lead hide-s">Start with one program. Analyse and Re-design work on the same evidence, every statement with its code line.</p></div>'+
+  '<section class="card startc" aria-label="Start your first analysis"><div class="ways">'+exampleWay({noPrimary:demo})+ownWay({get:true})+'</div></section>'+
+  B_products()+
+  (demo? '' : demoLine());
+}
+function B_products(){
+  return '<section aria-labelledby="two"><h2 class="sr" id="two">Two products, one evidence</h2><div class="card" style="padding:16px 20px"><div class="ptrack two">'+
+    '<div class="grp g1">'+pmark('a')+'<p class="small muted" style="margin:6px 0 8px">Understand what it does — a complete result on its own.</p><ol><li class="done">'+ic('flow','s')+'Analyze</li></ol><p class="meta" style="margin-top:8px">1 run per program · examples free the first time</p></div>'+
+    '<div class="grp g6">'+pmark('r')+'<p class="small muted" style="margin:6px 0 8px">Build its clean core successor from the same evidence, through to a signed delivery.</p><ol>'+RD.map(function(r){return '<li class="done">'+r+'</li>';}).join('')+'</ol><p class="meta" style="margin-top:8px">Not counted against your runs · starts from an analysis · <button class="link" type="button">Re-design an example end to end'+ic('arrow','s')+'</button></p></div>'+
+  '</div></div></section>';
+}
+function B_ret(){
+  var p = PROGRAMS[0];
+  var steps = RD.map(function(r,i){ var c = i<p.rd?'done':(i===p.rd?'now':''); return '<li class="'+c+'">'+(c==='done'?ic('check','s'):'')+r+'</li>'; }).join('');
+  return headRet()+
+  '<div class="bgrid">'+
+    '<section class="card spot" aria-labelledby="sp"><div class="sb"><div style="min-width:0"><span class="lbl">Continue where you left off · '+p.ch+'</span>'+
+      '<h2 class="h1" id="sp" style="margin-top:6px">'+esc(p.t)+'</h2><div class="id" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:2px"><span class="mono">'+p.z+'</span><span class="meta">· 552 lines · score 40/100 · decision: Rebuild, confirmed</span></div>'+
+      '<p class="say">'+esc(p.say)+'</p></div>'+thumb(p)+'</div>'+
+      '<div class="ptrack"><div class="grp g1"><span class="lbl">Analyse</span><ol><li class="done">'+ic('check','s')+'Analyze</li></ol></div><div class="grp g6"><span class="lbl">Re-design · step 4 of 6</span><ol>'+steps+'</ol></div></div>'+
+      '<div style="padding:0 24px 16px" class="spf">'+facts(p).replace('class="facts"','class="facts" style="margin:0"')+'</div>'+
+      '<div class="sf"><button class="btn primary" type="button">Continue: Testing'+ic('arrow','s')+'</button><button class="link" type="button">Open the analysis'+ic('arrow','s')+'</button></div></section>'+
+    '<section class="card startc stack" aria-label="Start an analysis"><div class="ways">'+exampleWay({short:true,noPrimary:true,noList:true})+ownWay()+'</div></section>'+
+  '</div>'+
+  '<section aria-labelledby="bl"><div class="sechead"><div class="l"><h2 class="h2" id="bl">Your programs</h2><span class="count">5</span></div><div class="toolbar"><span class="lb">Grouped by Re-design</span><span class="illus">mock-up: figures illustrative except Z_MM_PO_APPROVAL</span></div></div>'+
+    '<div class="card tblwrap">'+B_table(PROGRAMS,true)+'</div>'+B_mcards(PROGRAMS)+'</section>';
+}
+function B_table(list, grouped){
+  var groups = grouped ? [
+    ['In re-design', list.filter(function(p){return p.rd>=0&&p.rd<6;})],
+    ['Analysed — re-design not started or not needed', list.filter(function(p){return p.rd<0;})],
+    ['Delivered', list.filter(function(p){return p.rd>=6;})]
+  ] : [[null, list]];
+  var rows = groups.map(function(g){
+    if (!g[1].length) return '';
+    return (g[0]?'<tr class="grp"><td colspan="5">'+g[0]+' ('+g[1].length+')</td></tr>':'')+g[1].map(function(p){
+      return '<tr><td><div class="pt">'+thumb(p)+'<div style="min-width:0"><b>'+esc(p.t)+'</b><span class="sub mono">'+p.z+'</span></div></div></td>'+
+        '<td>'+anStatus(p)+'<span class="sub">score '+p.score+'/100 · '+p.steps+' steps</span></td>'+
+        '<td>'+rdStatus(p)+'<span class="sub">'+(p.rd>=0&&p.dec!=='Retire'?track(p):'Decision: '+p.dec+', '+p.decS)+'</span></td>'+
+        '<td><div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start">'+anAction(p)+rdAction(p)+'</div></td>'+
+        '<td class="tab" style="white-space:nowrap">'+p.ch+'</td></tr>';
+    }).join('');
+  }).join('');
+  return '<table class="tbl"><caption class="sr">Your programs</caption><thead><tr><th>Program</th><th>Analyse</th><th>Re-design</th><th>Next</th><th>Changed</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+function B_mcards(list){
+  return '<ul class="mcards" aria-label="Your programs">'+list.map(function(p){
+    return '<li class="card mcard"><div><b class="h3" style="display:block">'+esc(p.t)+'</b><span class="mono muted">'+p.z+'</span></div>'+
+      '<div class="r"><span class="pn lbl">Analyse</span>'+anStatus(p)+'</div><div style="text-align:right">'+anAction(p)+'</div>'+
+      '<div class="r"><span class="pn lbl">Re-design</span>'+rdStatus(p)+'</div><div style="text-align:right">'+rdAction(p)+'</div></li>';
+  }).join('')+'</ul>';
+}
+
+/* ================= DIRECTION C — Story-first (dropped, for comparison) ================= */
+function C_story(){
+  var p = PROGRAMS[0];
+  return '<section class="card" aria-labelledby="cs"><div style="padding:16px 20px 0"><span class="lbl">One program, start to finish</span><h2 class="h2" id="cs" style="font-size:18px;margin-top:2px">From Z_MM_PO_APPROVAL to its signed successor</h2></div>'+
+    '<div class="story"><div>'+pmark('a')+'<div class="codeb"><span class="m">41</span> <span class="k">START-OF-SELECTION</span>.\n<span class="m">42</span>   <span class="k">PERFORM</span> check_authority.\n<span class="m">43</span>   <span class="k">PERFORM</span> read_requisition.\n<span class="m">44</span>   <span class="k">PERFORM</span> check_requisition.\n<span class="m">45</span>   <span class="k">CHECK</span> gv_rejected = abap_false.\n<span class="m">46</span>   <span class="k">PERFORM</span> upload_attachment.\n<span class="m">47</span>   <span class="k">PERFORM</span> read_vendor.</div><p class="small muted">Your ABAP, read line by line.</p></div>'+
+    '<div>'+pmark('a')+thumb(p)+'<p class="small muted">The process as a map: 94 steps, 12 rules, each with its line.</p></div>'+
+    '<div>'+pmark('r')+'<div class="thumb" style="height:120px;flex-direction:column;gap:6px"><span class="st ok">'+ic('ccheck','s')+'Signed delivery</span><span class="meta">Design → … → Delivery</span></div><p class="small muted">A decision per rule, new code, tests — signed.</p></div></div></section>';
+}
+function C_new(){
+  var demo = S.st==='demo';
+  return (demo? h2banner() : '')+
+  '<div><p class="hello">Welcome, Mara.</p><h1 class="h1 big">Your Z program: understood, then re-designed</h1></div>'+
+  '<div class="order-s-1"><section class="card startc" aria-label="Start"><div class="ways">'+exampleWay({short:true,noPrimary:demo,noList:true})+ownWay()+'</div></section></div>'+
+  C_story()+(demo?'':demoLine());
+}
+function C_ret(){
+  var it = [
+    [PROGRAMS[0],'Emergency purchase approval moved to Testing.','today','Continue: Testing'],
+    [PROGRAMS[4],'The code of Order fulfilment audit report changed since its analysis.','2 days ago','Run the analysis again'],
+    [PROGRAMS[2],'Material stock valuation was delivered — signed.','3 days ago','Open the delivery']
+  ];
+  return headRet()+
+  '<section class="card" aria-labelledby="cf"><div style="padding:14px 20px 0" class="sechead"><div class="l"><h2 class="h2" id="cf">In the last 7 days</h2></div><span class="illus">mock-up: figures illustrative</span></div>'+
+  '<ul class="feed">'+it.map(function(x,i){ return '<li>'+thumb(x[0])+'<div style="min-width:0"><span class="w">'+x[2]+'</span><b>'+esc(x[1])+'</b><span class="small muted">'+esc(x[0].say)+'</span></div>'+(i===0?'<button class="btn primary c" type="button">'+x[3]+ic('arrow','s')+'</button>':'<button class="link" type="button">'+x[3]+ic('arrow','s')+'</button>')+'</li>'; }).join('')+'</ul></section>'+
+  '<section aria-labelledby="ca"><div class="sechead"><div class="l"><h2 class="h2" id="ca">All programs</h2><span class="count">5</span></div></div><div class="card tblwrap">'+B_table(PROGRAMS,false)+'</div>'+B_mcards(PROGRAMS)+'</section>';
+}
+
+/* ================= loading ================= */
+function sk(w,h,extra){ return '<span class="sk" style="width:'+w+';height:'+h+'px;'+(extra||'')+'"></span>'; }
+function skTile(){ return '<div class="skc" style="padding:16px 18px;display:flex;flex-direction:column;gap:8px;min-height:372px" aria-hidden="true">'+sk('70%',18)+sk('45%',12)+sk('100%',118,'margin-top:6px;border-radius:8px')+sk('100%',44,'margin-top:6px;border-radius:8px')+sk('100%',36,'margin-top:10px')+sk('100%',36)+'</div>'; }
+function loading(){
+  var head = '<div class="phead"><div><p class="hello">Welcome back, Mara.</p><h1 class="h1">My workspace</h1></div><div class="acts"><button class="btn secondary" type="button">'+ic('flow','s')+'Analyse another Z program</button><button class="btn secondary" type="button">'+ic('wrench','s')+'Re-design a program</button></div></div>';
+  var note = '<p class="sr" role="status">Loading your programs…</p>';
+  if (S.dir==='A') return head+note+'<div class="skc" style="height:98px;padding:16px 20px;display:flex;gap:16px;align-items:center" aria-hidden="true">'+sk('120px',64,'flex:none;border-radius:8px')+'<span style="flex:1;display:flex;flex-direction:column;gap:8px">'+sk('20%',10)+sk('50%',16)+sk('70%',12)+'</span></div><div class="kpis" aria-hidden="true">'+[1,2,3,4,5].map(function(){return '<div class="skc" style="height:96px;padding:14px 16px;display:flex;flex-direction:column;gap:8px">'+sk('60%',12)+sk('30%',24)+'</div>';}).join('')+'</div><div class="tiles">'+[1,2,3].map(skTile).join('')+'</div>';
+  if (S.dir==='B') return head+note+'<div class="bgrid" aria-hidden="true"><div class="skc" style="height:330px;padding:20px 24px;display:flex;flex-direction:column;gap:10px">'+sk('30%',12)+sk('55%',22)+sk('80%',14)+sk('100%',150,'border-radius:8px')+'</div><div class="skc" style="height:330px"></div></div><div class="skc" aria-hidden="true" style="padding:12px 16px;display:flex;flex-direction:column;gap:18px">'+[1,2,3,4,5].map(function(){return sk('100%',44);}).join('')+'</div>';
+  return head+note+'<div class="skc" aria-hidden="true" style="padding:14px 20px;display:flex;flex-direction:column;gap:18px">'+[1,2,3].map(function(){return sk('100%',64);}).join('')+'</div>';
+}
+
+/* ================= render ================= */
+var page = document.getElementById('page');
+function render(){
+  document.getElementById('stage').setAttribute('data-w', S.w);
+  document.getElementById('vp').style.setProperty('--vpw', S.w+'px');
+  document.getElementById('runs').innerHTML = quotaLine().replace('runs left','<b>free</b> runs left');
+  var isNew = S.st==='new' || S.st==='demo';
+  var html;
+  if (S.st==='load') html = loading();
+  else if (S.dir==='A') html = isNew ? A_new() : A_ret();
+  else if (S.dir==='B') html = isNew ? B_new() : B_ret();
+  else html = isNew ? C_new() : C_ret();
+  page.innerHTML = html;
+  document.querySelectorAll('.mock [data-set]').forEach(function(b){ b.setAttribute('aria-pressed', String(S[b.dataset.set]===b.dataset.v)); });
+  save();
+}
+document.addEventListener('click', function(e){
+  var t = e.target.closest('button,a'); if (!t) return;
+  if (t.tagName==='A') e.preventDefault();
+  if (t.dataset.set){ S[t.dataset.set]=t.dataset.v; S.startOpen=false; S.kpi='all'; render(); return; }
+  if (t.dataset.lens){ S.lens=t.dataset.lens; render(); return; }
+  if (t.dataset.view){ S.view=t.dataset.view; render(); return; }
+  if (t.dataset.kpi){ S.kpi = (S.kpi===t.dataset.kpi && t.dataset.kpi!=='all') ? 'all' : t.dataset.kpi; render(); return; }
+  if (t.dataset.startopen){ S.startOpen=!S.startOpen; render(); return; }
+  if (t.dataset.open){ openPanel(t.dataset.open); return; }
+  if (t.hasAttribute('data-close')){ closePanel(); return; }
+});
+var scrim = document.getElementById('scrim'), openEl=null, opener=null;
+function openPanel(id){ closePanel(); openEl=document.getElementById(id); opener=document.activeElement; openEl.hidden=false; requestAnimationFrame(function(){ openEl.classList.add('open'); scrim.classList.add('on'); openEl.focus(); }); }
+function closePanel(){ if(!openEl) return; openEl.classList.remove('open'); scrim.classList.remove('on'); var el=openEl; openEl=null; setTimeout(function(){ el.hidden=true; }, 220); if(opener) opener.focus(); }
+scrim.addEventListener('click', closePanel);
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePanel(); });
+if (qs.get('panel')) { openPanel(qs.get('panel')); }
+render();
+})();
+</script>
+</body>
+</html>

@@ -204,8 +204,12 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // from the Analyze stage's own upload on, so it checks that "New project"
     // is there and then starts from an empty project of this account.
     console.log('Creating a new E2E transformation project...');
-    // A new account's first view has the start built in (AB-14a); the list has "New project".
-    await expect(page.locator('[data-workspace-new-project], [data-home-start]').first()).toBeVisible({ timeout: 60000 });
+    // A new account's first view has the start built in (AB-14a); the list has "New project"; the tiles of a
+    // returning account (3.3.0) have "Analyse another Z program". An actionable start, not a container (QA review
+    // 92ba4ba017dc, 38a985dd8002).
+    const start = page.locator('[data-workspace-new-project], [data-home-start-example], [data-ws-analyse-another]').first();
+    await expect(start).toBeVisible({ timeout: 60000 });
+    await expect(start).toBeEnabled();
 
     const { adminMergeDoc } = await import('./helpers/admin-seed');
     const projectId = `e2e-pipeline-${branchSuffix}-${Date.now()}`;

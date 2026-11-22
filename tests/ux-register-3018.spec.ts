@@ -134,7 +134,7 @@ test('UX-120, UX-128, UX-137: the remaining one-off radii and the scroll height 
 });
 
 test('UX-136, UX-158: Invite on a dashboard row carries its name', () => {
-  const src = code('app/(app)/dashboard/page.tsx');
+  const src = code('app/(app)/dashboard/LegacyDashboard.tsx');
   const at = src.indexOf('data-invite-open=""');
   const open = src.lastIndexOf('<Cc', at);
   expect(src.slice(open, open + 10), 'Invite is an icon-only button again').toMatch(/^<CcButton\s/);

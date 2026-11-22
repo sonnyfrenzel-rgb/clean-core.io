@@ -120,6 +120,28 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     writtenFor: 'signed-in',
     namedInPolicy: true,
   },
+  // My workspace (3.3.0, ADR-123 (W9), `lib/workspace-prefs.ts`; owner decision 14.11.2026: keep both). Section 7
+  // names them since privacy policy 1.4 (lawyer, statement 20c E1, in the wording of document 20, 2.1/2.2).
+  {
+    key: 'cc.workspace.lens',
+    match: 'exact',
+    area: 'local',
+    holds: '"business", "it" or "management"',
+    purpose: 'the view the tiles of My workspace are read in',
+    lifetime: 'until cleared site data',
+    writtenFor: 'signed-in',
+    namedInPolicy: true,
+  },
+  {
+    key: 'cc.workspace.mode',
+    match: 'exact',
+    area: 'local',
+    holds: '"tiles" or "list"',
+    purpose: 'My workspace shows the programs as tiles or as the list',
+    lifetime: 'until cleared site data',
+    writtenFor: 'signed-in',
+    namedInPolicy: true,
+  },
   // The "Figures" switch of My workspace (3.2.0, AB-14b) stores nothing: owner decision 15.11.2026, so
   // `cc.workspace.figures` is gone and privacy policy 1.3 need not name it.
   // Analyze, Business (3.2.0, AB-4, ADR-118; `lib/analyze-progress.ts`): section 7 names these since privacy policy 1.3.

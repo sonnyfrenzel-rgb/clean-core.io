@@ -76,7 +76,11 @@ test.describe('Dashboard — starter examples', () => {
     const panel = page.locator('[data-home-first-view] [data-testid="starter-examples"]');
     await expect(panel.getByRole('heading', { name: 'Try an example' })).toBeVisible({ timeout: 30000 });
 
-    // Every shipped example is offered, including the large one.
+    // Every shipped example is offered, including the large one. Since 3.3.0
+    // (ADR-123, the mock-up) the others sit behind "6 more examples" at every
+    // width, not only on a phone; one click opens them.
+    await panel.locator('[data-home-more-examples]').click();
+    await expect(panel.locator('[data-home-more-examples]')).toHaveAttribute('aria-expanded', 'true');
     const names = panel.locator('[data-example-card]').getByTestId('starter-example-name');
     // Six since 18.10.2026: three examples that made no sense were retired (since 3.0.18 in tests/fixtures/retired-starter-examples/);
     // seven since 3.0.19, with the key-user example Z_SD_DELIVERY_PRIORITY.

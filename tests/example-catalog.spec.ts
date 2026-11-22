@@ -73,7 +73,7 @@ test('one gallery on every page that offers examples, one card, one action patte
   expect(component.match(/data-example-kind=/g)?.length, 'two card markups again').toBe(1);
   expect(component).not.toContain('Start project');
   expect(component).toContain('EXAMPLE_SNIPPETS');
-  expect(read('app/(app)/dashboard/page.tsx')).toContain('<StarterExamples');
+  expect(read('app/(app)/dashboard/LegacyDashboard.tsx')).toContain('<StarterExamples');
   expect(read('components/workspace/NewProject.tsx')).toContain('<StarterExamples');
   // The filters live behind "More examples", not in front of the first card.
   const more = component.indexOf('data-examples-more');

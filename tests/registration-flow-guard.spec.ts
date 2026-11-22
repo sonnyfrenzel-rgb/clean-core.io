@@ -81,7 +81,7 @@ test.describe('the approval gate is gone, not merely bypassed', () => {
   });
 
   test('the dashboard no longer tells anyone to wait for an administrator', () => {
-    const s = read('app/(app)/dashboard/page.tsx');
+    const s = read('app/(app)/dashboard/LegacyDashboard.tsx');
     expect(s).not.toContain('manually approve');
     expect(s).not.toContain('under review');
     // The pending branch offers the same idempotent call instead of a wait.

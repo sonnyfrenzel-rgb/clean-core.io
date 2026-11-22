@@ -469,7 +469,7 @@ test.describe('every reader and writer goes through the store', () => {
   test('the browser loads the artefacts wherever it reads a project document', () => {
     expect(read('lib/project-loader.ts')).toMatch(/withStoredArtefacts\(projectId, stored\)/);
     expect(read('hooks/useTestExecution.ts')).toContain('withStoredArtefacts(projectId');
-    expect(read('app/(app)/dashboard/page.tsx')).toContain('withStoredArtefactRows(');
+    expect(read('app/(app)/dashboard/LegacyDashboard.tsx')).toContain('withStoredArtefactRows(');
     // AB-14b (H-O9): the own rows are computed on the server, which fills the
     // artefacts in itself; the browser still does for the shared projects and
     // for an export, the two places it reads a whole project document.

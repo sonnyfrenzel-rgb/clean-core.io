@@ -2,7 +2,7 @@ import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { mapThumbOf, parseMapThumb, processTitleOf, summaryOf, MAP_THUMB_MAX, PROCESS_TITLE_MAX, PROJECT_SUMMARY_VERSION } from '../lib/project-summary';
-import { computeProjectSummary, mapFiguresOf, refreshSummaryMap } from '../lib/project-summary-server';
+import { computeProjectSummary, mapFiguresOf, refreshSummaryMap, writeProjectSummary } from '../lib/project-summary-server';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 import { sha256Hex } from '../lib/artefact-digest';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
@@ -164,6 +164,48 @@ test.describe('bound to the active run', () => {
     expect(await refreshSummaryMap(db, 'p1', 'run-b', { xml, revision: 5 })).toBe(false);
     expect((doc.summary as { mapRevision: number }).mapRevision).toBe(4);
   });
+
+  test('a late summary of an earlier run never lands under a newer run (QA review ddce067b4191, 5dfd492bd01d)', async () => {
+    // A store of the project and its signed runs, with Firestore's transaction surface. Every write is recorded, so
+    // the test sees that the writer touches the project's `summary` and nothing else — never a run document.
+    const project: Record<string, unknown> = { activeRunId: 'run-a', legacyCode: 'A' };
+    const runs: Record<string, Record<string, unknown>> = { 'run-a': { sig: 'a' }, 'run-b': { sig: 'b' } };
+    const writes: Array<{ ref: string; patch: Record<string, unknown> }> = [];
+    const projectRef = { path: 'projects/p1' };
+    const db = {
+      collection: () => ({ doc: () => projectRef }),
+      runTransaction: async <T,>(fn: (tx: unknown) => Promise<T>) => fn({
+        get: async () => ({ exists: true, get: (field: string) => project[field] }),
+        update: (ref: { path: string }, patch: Record<string, unknown>) => {
+          writes.push({ ref: ref.path, patch });
+          Object.assign(project, patch);
+        },
+      }),
+    } as unknown as Parameters<typeof writeProjectSummary>[0];
+    const ofRun = (runId: string, source: string) => computeProjectSummary({
+      runId, sourceSha256: sha256Hex(source), source: demoSource, processName: 'P', sourceFileName: 'p.abap',
+      engineVersion: APP_VERSION, cleanCoreScore: 50, recommendation: null,
+    });
+    const before = JSON.stringify(runs);
+
+    // Run A commits; before its summary is written, run B commits with another source.
+    project.summary = undefined;
+    Object.assign(project, { activeRunId: 'run-b', legacyCode: 'B' });
+    // B's summary lands first, then A's arrives late: refused, B's stays.
+    expect(await writeProjectSummary(db, 'p1', ofRun('run-b', 'B'))).toBe(true);
+    expect(await writeProjectSummary(db, 'p1', ofRun('run-a', 'A'))).toBe(false);
+    expect((project.summary as { runId: string }).runId).toBe('run-b');
+    expect(summaryOf(project)?.runId).toBe('run-b');
+    // The writer wrote once, to the project document, the key `summary` only; the signed runs are untouched.
+    expect(writes).toHaveLength(1);
+    expect(writes[0].ref).toBe('projects/p1');
+    expect(Object.keys(writes[0].patch)).toEqual(['summary']);
+    expect(JSON.stringify(runs)).toBe(before);
+
+    // A project that is gone is not written either.
+    const gone = { ...db, runTransaction: async <T,>(fn: (tx: unknown) => Promise<T>) => fn({ get: async () => ({ exists: false, get: () => undefined }), update: () => { throw new Error('written'); } }) } as typeof db;
+    expect(await writeProjectSummary(gone, 'p1', ofRun('run-b', 'B'))).toBe(false);
+  });
 });
 
 test.describe('written by the server only, outside the signed run', () => {
@@ -255,5 +297,50 @@ test.describe('the backfill', () => {
     const src = read('scripts/backfill-project-summary.ts');
     expect(src).toContain("Refusing to run in CI");
     expect(src).not.toMatch(/console\.log\([^)]*doc\.id/);
+  });
+});
+
+test.describe('a changed source never stands under the old summary (lawyer, statement 20c E3 (4))', () => {
+  test('runs/create removes the previous summary in the commit that replaces the source, and writes the new one after it', () => {
+    const route = code('app/api/runs/create/route.ts');
+    // The one transaction that writes the new source and the new active run.
+    const commit = route.indexOf('activeRunId: runId,');
+    expect(commit, 'the project write of the commit').toBeGreaterThan(0);
+    const setEnd = route.indexOf('{ merge: true }', commit);
+    expect(route.slice(commit, setEnd)).toContain('legacyCode,');
+    // In the same transaction callback, after the source and the active run are set.
+    const removal = route.indexOf('tx.update(projectRef, { summary: FieldValue.delete() });');
+    expect(removal).toBeGreaterThan(setEnd);
+    expect(route.slice(setEnd, removal)).not.toContain('runTransaction');
+    expect(route.slice(setEnd, removal)).not.toMatch(/\}\);\s*\}\s*catch \(txErr\)/);
+    // This run's summary is written whole after the commit; a failed write leaves none, since the commit removed it.
+    const write = route.indexOf('await writeProjectSummary(db, projectId, summary);');
+    expect(write).toBeGreaterThan(removal);
+    expect([...route.matchAll(/summary:\s*FieldValue\.delete\(\)/g)], 'removed once, in the commit').toHaveLength(1);
+    // Written only while the project's active run is the summary's run (QA review ddce067b4191).
+    const server = code('lib/project-summary-server.ts');
+    expect(server).toContain("snap.get('activeRunId') !== summary.runId) return false;");
+    expect(server).toContain('tx.update(ref, { summary });');
+  });
+
+  test('firestore.rules: a browser changes the source only of a project without a summary, and never touches the summary', () => {
+    const rules = read('firestore.rules').replace(/\r\n/g, '\n');
+    // Nor of a project with a signed run: a failed summary write leaves a signed run without one (QA review 1d658b69a3d6).
+    expect(rules).toContain("(!('legacyCode' in changed) || (!('summary' in data) && before.get('activeRunId', null) == null))");
+    // `summary` stays off the client allowlist, so a browser can neither set nor remove it.
+    const allowlist = /affectedKeys\(\)\.hasOnly\(\[([\s\S]*?)\]\)/g;
+    for (const m of rules.matchAll(allowlist)) expect(m[1]).not.toContain("'summary'");
+    // The record says the tightening is pending and goes live before the code.
+    const record = JSON.parse(read('docs/registers/rules-deployment.json'));
+    if (record.pending) expect(record.pending.recordedFor).toContain('BEFORE the 3.3.0 code');
+  });
+
+  test('no browser path writes the source of an existing project', () => {
+    // The source reaches an existing project only through POST /api/runs/create; the client writes it on create only
+    // (OwnCodeImport, StarterExamples, the copy actions). A new client path would need the summary rule above in mind.
+    const files = ['app/(app)/project/[projectId]/analyze/page.tsx', 'components/workspace/WorkspaceListReport.tsx', 'components/workspace/OwnCodeImport.tsx'];
+    for (const f of files) {
+      for (const m of code(f).matchAll(/updateDoc\(([\s\S]*?)\);/g)) expect(m[1], `${f}: updateDoc with the source`).not.toContain('legacyCode');
+    }
   });
 });

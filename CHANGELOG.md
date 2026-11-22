@@ -5,6 +5,163 @@ All notable changes to the Clean-Core.io platform are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [v3.3.0] — 2026-11-23
+
+My workspace offers two products, Analyse and Re-design, and a returning account sees its programs as tiles. The
+privacy policy 1.4 takes effect with it. Engine 3.3.0 carries two readings of the engine review of 22.11.2026
+(ER-01, ER-02), gated from 3.3.0: a run signed before 3.3.0 keeps what it signed; a run signed by engine 3.3.0
+carries them, so some of its findings and its coverage differ (see Fixed). How runs are signed and what the audit
+pack holds do not change. With it: the 3.2.0 rules deployed, the privacy policy 1.3 notice sent, the weekly secret
+scan green again.
+
+### Added (3.3.0 — My workspace, two products; integrated on 3.2.0)
+- 3.3.0, step 1 (ADR-123): a new account's My workspace offers two equal products. "Analyse it" holds the
+  two starts side by side, the example and your own code, with what an analysis costs. "Re-design it" shows its six
+  tools, says it is not counted against your runs, and starts with "Re-design an example end to end": the example's
+  analysis runs, then Design opens on it. The intent stays in this session's memory and is never stored. Nothing
+  says "optional" any more. After the demo, a banner continues it ("Run Z_MM_PO_APPROVAL yourself"). The slice of
+  the demo map left the page, so no bpmn-js loads on My workspace.
+- 3.3.0, step 2 (ADR-123 (5), W11): the project summary every signed run has written since 3.2.0 (AB-14c) is what
+  the tiles read — the map's top level as compact geometry, its number of elements, the run's score, recommendation
+  and the process's business name. The own rows of My workspace (`GET /api/workspace-rows`) now carry each project's
+  tile, computed on the server like the row itself: still no source code, no artefact and no model text
+  (`lib/home-rows.ts`, `tests/home-rows.spec.ts`).
+- 3.3.0, step 3a (ADR-123 (4)): a returning account sees its programs as tiles in three sections. "Next step" holds
+  the page's one filled button and a line for another program that waits. "At a glance" shows five count tiles from
+  three programs on; they are the filter, and they count changes in the last 7 days. "Your programs" gives each
+  program a tile of one size: its map as a thumbnail, three facts (steps, clean core score, decision), and a line for
+  Analyse and for Re-design, each with one action. A decision other than Rebuild reads "Not needed — decided: …"
+  (W5). "Read as Business · IT · Management" only marks one fact (W9); the analysis opens as always, because privacy policy 1.4 says the view decides nothing else. The home
+  list of 3.2.0 (AB-14b: tabs, "Needs your attention", the Figures switch, the two doors) is the list mode, one click
+  away; its levels and rules are read per row in that mode only. The last tile and
+  "Analyse another Z program" start the next analysis. Lens and mode are remembered by this browser only
+  (`cc.workspace.lens`, `cc.workspace.mode`). The example gallery and the sharing card moved behind the start panel
+  and "Sharing".
+- 3.3.0, step 4 (ADR-123 (5)): My workspace no longer renders the old dashboard while the profile loads. It shows
+  its own frame at final sizes, and the account shell holds a screen-high place while it waits for the sign-in
+  answer, so the footer no longer jumps. The old dashboard moved to `app/(app)/dashboard/LegacyDashboard.tsx` and
+  loads only for the accounts that get it (suspended, being activated, no profile yet). The invite dialog loads on
+  first use. Measured on production builds against the emulators, before (integrate/3.2.0) → after, 1440 / 390:
+  CLS 0.52–0.99 → ≤ 0.007; JavaScript decoded 4.8–5.0 MB → 2.9–3.7 MB (transferred 1.25–1.57 MB → 0.93–1.19 MB);
+  bpmn-js on a new account's page yes → no; first tile or start card 120–300 ms in both (local emulator).
+  `tests/workspace-performance.spec.ts` measures it and runs unchanged against a checkout of the release before.
+- 3.3.0, owner answers of 14.11.2026 (ADR-123 (7)): a program tile is titled with the business name of its process —
+  the title line of the source's header as the engine reads it from engine 3.0.21 ("Emergency purchase approval"),
+  never a model's answer — with the project's name small below it; without a title line, or where both are the same,
+  the project's name is the title, said once. The name travels in the server-written project summary
+  (`processTitle`); `scripts/backfill-project-summary.ts` also gives an earlier summary its name. Delete and Invite
+  still name the project. The unused slice of the demo map is gone (`lib/home-map-slice.ts`,
+  `components/process-map/MapSlice.tsx` and the cut `lib/bpmn/slice.ts` only it used, with the export's `view`
+  hook). The stored lens, mode and demo mark are read hydration-safe instead of in a `useState` initialiser. The two
+  storage keys stay; `PRIVACY_PENDING_STORAGE_KEYS` in `lib/workspace-prefs.ts` registers them for the Privacy
+  Policy's list until the lawyer's text names them (privacy texts not changed here).
+- Privacy policy 1.4, built word for word from the lawyer's statement 20c (E4: "1.4 with 3.3.0: the workspace keys,
+  E2, E3"). Section 7 names `cc.workspace.lens` and `cc.workspace.mode` in the wording of document 20, 2.1/2.2
+  (approved in E1), right after `cc.workspace.analysis.read`, and closes the local-storage list with the E2 sentence
+  that the view says nothing about the reader's role. Section 3 appends the E3 sentence on the project summary,
+  with the title line (the summary carries `processTitle`). The head carries document 20's change note 2.4. Archived
+  at `/datenschutz/versions/1.4` and `/1.4/de` (`docs/privacy/1.4*.md`, digests in `lib/legal/privacy-versions.ts`);
+  1.1 to 1.3 render byte for byte as archived. The sign-up box now takes version, date and address from the version
+  record. The date is one constant, `PRIVACY_14_DATE_ISO`: 23.11.2026, the release day of 3.3.0.
+  `PRIVACY_PENDING_STORAGE_KEYS` is empty and the storage register marks both keys as named. No notice mail
+  (20c E5).
+- The project summary never outlives the source it was taken from (lawyer, statement 20c E3 (4)). `POST
+  /api/runs/create` removes the previous run's summary in the same transaction that writes the new source and active
+  run, then writes this run's summary whole; a failed write leaves none (the separate clean-up after a failed write is
+  gone). `firestore.rules` lets a browser change `legacyCode` only on a project without a summary and without a signed run, and `summary`
+  stays off the client allowlist. No app path writes the source of an existing project from the browser; the rule
+  closes the door the allowlist still left open. Recorded as pending in `docs/registers/rules-deployment.json`: the
+  rules go live **before** the 3.3.0 code (lawyer). Specs: `tests/project-summary.spec.ts` (server-free),
+  `tests/firestore-rules-field-validation.spec.ts` (emulator).
+- 3.3.0, owner decisions of 22.11.2026: the list mode and the tiles now say the same thing.
+  - "Needs attention" has one meaning in both places: the code changed since the analysis, or the program was not
+    analysed yet. Before, the count tile said 2 and the list's "Needs your attention" box said 1, because the box
+    counted changed code only. The box, its Status filter and the count tile now use one predicate,
+    `needsAttention`/`attentionOf` in `lib/workspace-tiles.ts`. Each row of the box still names its reason.
+  - Each program's next step has one source, `programNextStep`/`programNextLink`. The tile's actions, the list's
+    Next step column and the Next step card's button all read it. A signed program reads "Re-design this program" in
+    the list too (before: "Nothing open"). A retired one reads "Open the decision" with "Not needed — decided:
+    Retire" under it. A re-design under way reads "Continue: Testing".
+  - On a new account's Analyse card, the recommended example's text is clamped to three lines from 601 px on, as in
+    the mock-up, so the Re-design card beside it has no empty band at 1440.
+  - Map thumbnails have one maximum scale (`thumbDisplayViewBox`, at least 600 × 500 BPMN units, the mock-up's
+    reference density). A small map is drawn centred at that scale, so twenty steps folded into four sub-processes
+    no longer show as four boxes the size of the tile. Large maps still fit their frame.
+  - Specs: `tests/home-rows.spec.ts`, `tests/workspace-tiles.spec.ts`, `tests/home-list.spec.ts`,
+    `tests/workflow-phases-guard.spec.ts`.
+
+### Operations
+- The 3.2.0 Firestore rules are deployed and verified on every database (16.11.2026,
+  `docs/registers/rules-deployment.json`); the TTL on `erased_accounts.expiresAt` is active and
+  `scripts/retention-verify.ts` passes.
+- The one-time privacy policy 1.3 notice was sent on 22.11.2026 with the owner's go, to 68 accounts in two runs
+  (40 + 28, none failed). The scheduled send of 16.11.2026 had been switched off because nobody could supervise
+  it; since then two accounts had joined, so the guard on the recipient count stopped the first attempt and was
+  re-run with the current count.
+- The weekly full-history secret scan (`security-ci.yml`, gitleaks) was red on `main` since 12.10.2026 on eight
+  false positives, no leaked secret: a fake token in the redaction spec, a local perf placeholder, two camelCase
+  keys and public SAP interface names in the synced catalog. Each is allowlisted in `.gitleaks.toml` by rule, path
+  and shape, not by fingerprint.
+- The SAP identifier sync of 16.11.2026 is merged: no identifier added or removed, only timestamps, the SAP docs
+  source revision and its attribution links.
+- The UX review agent runs on `openai/gpt-6-luna-pro` instead of `openai/gpt-6-luna` (owner request 22.11.2026):
+  the same price per token, image input, the same parameters.
+
+### Planned
+- An external review of the engine was reproduced claim by claim and scheduled as ER-01 to ER-07
+  (`docs/ROADMAP.md`): two defects, fixed in this release (ER-01, ER-02, see Fixed), a reference inventory and a statement ledger for engine 4,
+  curated exit successors, a behaviour diff with the 3.5.1 quality row; abaplint at analysis time declined.
+
+### Reviews
+- Security audit of v3.2.0: SEC-2026-992 to -999 refuted; SEC-2026-1000 and -1001 scheduled for the next
+  patch, SEC-2026-1002 for the next rules deploy (`docs/ROADMAP.md` §12).
+- QA full review of v3.2.0: the one high finding refuted; the QA review of 72ff92919908 recorded.
+
+### Fixed
+- Engine 3.3.0 (ER-01, gated from `ENGINE_READS_330_FROM`, `lib/abap/engine-reads-330-gate.ts`): a string template
+  whose embedded expression `{ … }` spans lines, with a `"` in the template text of its last line, no longer swallows
+  the rest of the source. The statement reader under the findings, the table dependencies and the coverage started
+  its comment scan afresh on every line, took that `"` for a comment, lost the closing `|` and its period, and read
+  the rest of the file as one statement: the coverage reported no gap and `complete: true` over code no rule had
+  read. The comment scan now carries the literal state of the line before (`tokenize`, `multiLineTemplates`). A run
+  of 3.2.0 or older keeps what it signed (`tests/engine-reads-330.spec.ts`).
+- Engine 3.3.0 (ER-02, same gate): a dynamic `CALL FUNCTION name` whose name the source closes — a constant, a
+  `DATA … VALUE '…'` the source never names again, or a literal or constant assigned on the straight line right
+  before the call — is read as the call of that module (`lib/abap/dynamic-call-resolution.ts`): the catalog answers it
+  as it answers a literal call, its findings stand at the call, and it is no `dynamic-invocation` gap. The ALV,
+  frontend-file and SAPoffice findings no longer stand on the `CONSTANTS` line while the call itself is listed as not
+  determined. A reassignment in a branch or loop, a parameter, a second declaration, any other mention of the
+  variable, a structure component or a `DESTINATION` keeps the call dynamic. Reference corpus: CC-006 and CC-011 now
+  agree on the level when measured at 3.3.0 (`KORPUS_ENGINE_VERSION=3.3.0`; `tests/helpers/korpus-comparison.ts` now
+  passes that version to the evidence too); `tests/korpus/baseline.json` strikes the two entries with the version
+  bump. `SELECT … FROM (lv_tab)` with `DATA lv_tab … VALUE '…'` is read by another resolver
+  (`readTableDependencies`) and stays a `dynamic-target` gap.
+- QA review of 6cbb4fd5d133, round 1. The project summary a signed run writes after its commit is written only while
+  that run is still the project's active run (`writeProjectSummary` in a transaction): two runs of one project could
+  commit one after the other and write their summaries in the other order, leaving the earlier run's summary under
+  the newer run's source (ddce067b4191; lawyer, statement 20c E3 (4); behavioural test in
+  `tests/project-summary.spec.ts`, 5dfd492bd01d). `firestore.rules` also refuses a browser's `legacyCode` change on a
+  project with a signed run (`activeRunId`), not only on one with a summary — a failed summary write leaves a signed
+  run without one (1d658b69a3d6; emulator test in `tests/firestore-rules-field-validation.spec.ts`). The pending
+  record in `docs/registers/rules-deployment.json` carries the new text; the rules still go live before the 3.3.0
+  code. The workspace's lens and mode controls answer the arrow keys with one tab stop, as a radio group does
+  (9c44faece6d3). `homeAnalyseCostLine` says the start tile's line through `wsQuotaLine` (e88165b56339). Tests:
+  `full-pipeline` requires an actionable, enabled start again, not the tiles container (92ba4ba017dc, 38a985dd8002);
+  the rendered workspace spec requires both products' starts enabled, a 16 px side gutter, and that Design opens on
+  the same project whose run is signed (33418c4b3b46, 89dc729101ad, afa4774ce08d); the affected-rendered fixture
+  keeps the dashboard route beside `LegacyDashboard.tsx` (35ee16103b6a); `tests/workspace-performance.spec.ts`
+  reports CLS by session windows as web-vitals does, and transferred JavaScript by `transferSize` only, with the
+  compressed size its own figure (03a0ca726c01, f9ba67e85085). The step-4 figures above were taken before that
+  change: their CLS summed every shift (an upper bound of the standard figure), and their "transferred" sizes
+  counted a cached script's compressed size.
+
+### Under investigation
+- An owner report of 16.11.2026: after the footer link "Tenant Security" on the landing page the product shell
+  can look half signed in. Not reproduced yet for a signed-out visitor (production) or a signed-in account
+  (emulator); the fix goes into the next patch once the state that shows it is known.
+
 ## [v3.2.0] — 2026-11-16
 
 The Business page is complete. Every new engine reading is gated from 3.2.0: a run signed before 3.2.0 keeps what

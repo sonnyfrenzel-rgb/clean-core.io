@@ -1,6 +1,14 @@
 import { resolveLegalSource } from './markup';
 import { namesWording } from './names-wording';
 import type { LegalLang } from './open-values';
+import { privacyVersionAddress, privacyVersionFor } from './privacy-versions';
+
+/**
+ * The privacy policy the sign-up box names where business names start by themselves: its version, its date and its
+ * fixed address all come from the version record (`lib/legal/privacy-versions.ts`), so a new version — or a
+ * changed date of an unpublished one — changes the box with it and nowhere else.
+ */
+const PRIVACY_IN_FORCE = privacyVersionFor(true);
 
 /**
  * The consent, confirmation and ending texts of Fassung 1.1 (C1–C11 of the
@@ -48,11 +56,11 @@ export const CONSENT_TEXTS = {
      */
     privacyCheckbox: {
       de: namesWording(
-        'Ich habe die Datenschutzerklärung (Fassung 1.3, Stand 16.11.2026, Wortlaut: clean-core.io/datenschutz/versions/1.3/de) zur Kenntnis genommen.',
+        `Ich habe die Datenschutzerklärung (Fassung ${PRIVACY_IN_FORCE.id}, Stand ${PRIVACY_IN_FORCE.date.de}, Wortlaut: ${privacyVersionAddress(PRIVACY_IN_FORCE.id, 'de')}) zur Kenntnis genommen.`,
         'Ich habe die Datenschutzerklärung (Stand {{releaseDate}}, Wortlaut: clean-core.io/datenschutz/de) zur Kenntnis genommen.',
       ),
       en: namesWording(
-        'I have taken note of the Privacy Policy (version 1.3, as of 16 November 2026, wording: clean-core.io/datenschutz/versions/1.3).',
+        `I have taken note of the Privacy Policy (version ${PRIVACY_IN_FORCE.id}, as of ${PRIVACY_IN_FORCE.date.en}, wording: ${privacyVersionAddress(PRIVACY_IN_FORCE.id, 'en')}).`,
         'I have taken note of the Privacy Policy (version of {{releaseDate}}, wording: clean-core.io/datenschutz).',
       ),
     },

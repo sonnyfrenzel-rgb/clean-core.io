@@ -13,7 +13,8 @@ import type { LegalLang } from './open-values';
  *
  * Which version is in force is the build's: the newest version whose texts say business names start by themselves
  * (`LEGAL_TEXTS_NAMES_AUTOMATIC`, `lib/legal/names-wording.ts`), version 1.1 before — 1.2 was that version from
- * 3.1.0, 1.3 (the usage figures of section 9, lawyer-approved document 21) is it from 3.2.0. Every version comes from
+ * 3.1.0, 1.3 (the usage figures of section 9, lawyer-approved document 21) from 3.2.0, 1.4 (My workspace, statement 20c)
+ * from 3.3.0. Every version comes from
  * the one source (`privacyDeFor` / `privacyEnFor`, rendered by version id), and `tests/legal-names-wording.spec.ts`
  * holds each archived file to the source as rendered for its version.
  *
@@ -24,7 +25,25 @@ import type { LegalLang } from './open-values';
  * Import-light (the names rule and a type), so the sign-up dialog and the consent record read it.
  */
 
-export type PrivacyVersionId = '1.1' | '1.2' | '1.3';
+export type PrivacyVersionId = '1.1' | '1.2' | '1.3' | '1.4';
+
+/**
+ * The day version 1.4 takes effect — 23.11.2026, the release day of 3.3.0 (the version was built on 22.11.2026 with
+ * that day as a provisional date; the archives were written again with the release day before 3.3.0 went to main).
+ * Every date of 1.4 — the version record, the version line, the change note, the sign-up box — is derived from this
+ * one constant. Once published, it never changes.
+ */
+export const PRIVACY_14_DATE_ISO = '2026-11-23';
+
+const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** An ISO day in each language's own form: "22 November 2026" / "22.11.2026". */
+export function privacyDateOf(iso: string): Record<LegalLang, string> {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) throw new Error(`not an ISO day: ${iso}`);
+  const [, y, mo, d] = m;
+  return { en: `${Number(d)} ${MONTHS_EN[Number(mo) - 1]} ${y}`, de: `${d}.${mo}.${y}` };
+}
 
 export interface PrivacyPolicyVersion {
   id: PrivacyVersionId;
@@ -44,6 +63,12 @@ export interface PrivacyPolicyVersion {
    * further browser storage entries in section 7 — from version 1.3 (legal review, document 21).
    */
   usageFigures: boolean;
+  /**
+   * The texts name My workspace — the two browser storage entries of its view and layout and the sentence on the view
+   * in section 7, and the project summary in section 3 — from version 1.4 (legal review, document 20, statement 20c
+   * E1–E4).
+   */
+  workspace: boolean;
   /** Repository-relative paths of the immutable archived texts. */
   files: Record<LegalLang, string>;
   /** SHA-256 of each LF-normalised file, lowercase hex. */
@@ -61,6 +86,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     recordId: '2026-11-09',
     namesAutomatic: false,
     usageFigures: false,
+    workspace: false,
     files: { en: 'docs/privacy/1.1.md', de: 'docs/privacy/1.1.de.md' },
     // Rendered from the source with the names paused; byte for byte what main published from 9 November 2026
     // (compared against the rendering of the release of 13 November 2026 when this archive was made).
@@ -77,6 +103,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     recordId: '1.2',
     namesAutomatic: true,
     usageFigures: false,
+    workspace: false,
     files: { en: 'docs/privacy/1.2.md', de: 'docs/privacy/1.2.de.md' },
     sha256: {
       en: 'e77e23885f626b27cb3423577a2f51737429dfb5f27313bd831cc0394d2f98b7',
@@ -92,10 +119,29 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     recordId: '1.3',
     namesAutomatic: true,
     usageFigures: true,
+    workspace: false,
     files: { en: 'docs/privacy/1.3.md', de: 'docs/privacy/1.3.de.md' },
     sha256: {
       en: '94540d9a86de24f2ad06345eb794afedee155ec7eaa215e46e7453cc4806775f',
       de: '79ec79b8c1e63bc0200200a12aae514532b6d7517039e6e4d04c272596e5a2c2',
+    },
+  },
+  {
+    // The version that goes live with 3.3.0 (lawyer, statement 20c E4 (a): "1.4 mit 3.3.0: Workspace-Schlüssel, E2,
+    // E3"): the two storage entries of My workspace in the wording of document 20, 2.1/2.2 (approved, 20c E1), the
+    // sentence on the view (20c E2) and the sentence on the project summary in section 3 (20c E3). No notice mail
+    // (20c E5). In force from the release day of 3.3.0 (`PRIVACY_14_DATE_ISO`).
+    id: '1.4',
+    dateIso: PRIVACY_14_DATE_ISO,
+    date: privacyDateOf(PRIVACY_14_DATE_ISO),
+    recordId: '1.4',
+    namesAutomatic: true,
+    usageFigures: true,
+    workspace: true,
+    files: { en: 'docs/privacy/1.4.md', de: 'docs/privacy/1.4.de.md' },
+    sha256: {
+      en: 'd044c4fd43d076f0ed5f3c25a9bedc890e01ef8dfbe8796e0a771c3bac2ecae6',
+      de: '3704e60dea033be0001498d4f32e740cbf166a23546bf69014d0d0f66876800a',
     },
   },
 ];
@@ -106,9 +152,9 @@ export function privacyVersion(id: PrivacyVersionId): PrivacyPolicyVersion {
   return v;
 }
 
-/** The version a build renders: 1.3 once business names start by themselves, 1.1 before (1.2 stays archived). */
+/** The version a build renders: 1.4 once business names start by themselves, 1.1 before (1.2 and 1.3 stay archived). */
 export function privacyVersionFor(namesAutomatic: boolean): PrivacyPolicyVersion {
-  return privacyVersion(namesAutomatic ? '1.3' : '1.1');
+  return privacyVersion(namesAutomatic ? '1.4' : '1.1');
 }
 
 /** The version in force in this build. */
@@ -146,6 +192,12 @@ const CHANGE_NOTES: Partial<Record<PrivacyVersionId, Record<LegalLang, string>>>
   '1.3': {
     de: 'Abschnitt 9 beschreibt den wöchentlichen Bericht mit Zahlen zur Nutzung; die Abschnitte 2, 5, 6 und 7 verweisen darauf, und Abschnitt 7 nennt weitere Einträge der lokalen und der Sitzungsspeicherung.',
     en: 'section 9 describes the weekly report with usage figures; sections 2, 5, 6 and 7 refer to it, and section 7 names further entries in local and session storage.',
+  },
+  // Legal review, document 20, passage 2.4 (proposed for the next version), adapted to what 1.4 changes: no session
+  // storage entry, and the section 3 sentence of statement 20c E3. Approved by the owner on 22.11.2026.
+  '1.4': {
+    de: 'Abschnitt 7 nennt die Sicht und die Darstellung von „My workspace“; Abschnitt 3 nennt die Kurzfassung, die unser Server für diese Übersicht zu jedem Projekt ablegt.',
+    en: 'section 7 names the view and the layout of My workspace; section 3 names the short summary our server keeps of every project for this overview.',
   },
 };
 

@@ -208,6 +208,24 @@ export function parseMapThumb(thumb: unknown): ParsedThumb | null {
   return { viewBox, items };
 }
 
+/**
+ * The smallest area of the map, in BPMN units, a thumbnail ever shows (owner decision 22.11.2026). A small map is
+ * drawn at the scale this area would get, centred, never blown up to fill the frame: twenty steps drawn as four
+ * collapsed sub-processes used to become four boxes the size of the tile. 600 × 500 is the reference density of the
+ * mock-up (`docs/roadmap/workspace-two-products-mockup.html`, whose smallest map is 590 × 503): a step (100 × 80)
+ * stays about a fifth of the tile's height. Larger maps are untouched and keep fitting the frame.
+ */
+export const THUMB_MIN_VIEW: readonly [number, number] = [600, 500];
+
+/** The viewBox a thumbnail is drawn with: the map's own, widened about its centre to at least {@link THUMB_MIN_VIEW}. */
+export function thumbDisplayViewBox(viewBox: ParsedThumb['viewBox']): ParsedThumb['viewBox'] {
+  const [x, y, w, h] = viewBox;
+  const [minW, minH] = THUMB_MIN_VIEW;
+  const W = Math.max(w, minW);
+  const H = Math.max(h, minH);
+  return [x - (W - w) / 2, y - (H - h) / 2, W, H];
+}
+
 /* ------------------------------------------------------------------ reading */
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);

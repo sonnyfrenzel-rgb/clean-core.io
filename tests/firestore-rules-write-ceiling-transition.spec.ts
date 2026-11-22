@@ -31,8 +31,8 @@ import { connectAuthToEmulator, connectFirestoreToEmulator } from './helpers/emu
  * longer close `write_ceilings`.
  */
 
-// The commit whose rules are recorded as deployed (docs/registers/rules-deployment.json, 00191548…; 3.0.21's rules, deployed 10.11.2026).
-const DEPLOYED_RULES_COMMIT = 'a9b5ab52';
+// The commit whose rules are recorded as deployed (docs/registers/rules-deployment.json, 7c05e09a…; 3.2.0's rules, deployed 16.11.2026).
+const DEPLOYED_RULES_COMMIT = 'f54653cd';
 const ROOT = path.resolve(__dirname, '..');
 const [EMU_HOST, EMU_PORT] = (process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8080').split(':');
 

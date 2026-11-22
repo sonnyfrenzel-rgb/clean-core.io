@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { Info, Play } from 'lucide-react';
 import StageFrame from '@/components/StageFrame';
 import StageHeader from '@/components/StageHeader';
@@ -38,6 +39,7 @@ import { myWorkspaceHref } from '@/lib/workspace-back-href';
 import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
 import { analyzeLinesFromHash } from '@/lib/analyze-entry';
+import { takeRedesignAfterAnalysis } from '@/lib/home-start-handoff';
 import { gateBody, gateContinue, gateLabel, WALKED_BEFORE, walkedAll, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 
@@ -127,15 +129,22 @@ export default function AnalyzeBusiness({
     };
   }, [projectId]);
 
+  const router = useRouter();
   /** Read again once the start run is signed, so the map draws from the run (ADR-072). */
   const reload = useCallback(async () => {
+    // "Re-design an example end to end" (ADR-123, W4): the analysis is signed,
+    // so Design opens on its result instead of Analyze. Taken once.
+    if (takeRedesignAfterAnalysis(projectId)) {
+      router.push(`/project/${encodeURIComponent(projectId)}/design`);
+      return;
+    }
     try {
       const loaded = await loadProjectAndHydrate(projectId);
       if (loaded) setProject(loaded);
     } catch {
       /* the next visit reads it */
     }
-  }, [projectId]);
+  }, [projectId, router]);
 
   // The start signs by itself only on the first visit after an import or an
   // example (`?first=1`), as the workspace's build-up did; `null` until the

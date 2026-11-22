@@ -256,9 +256,9 @@ test.describe('a signed-in account reading its own project', () => {
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-cc-workspace]', { timeout: 60000 });
     await expect(page.locator('[data-forum-readonly]')).toHaveCount(0);
-    expect(read('app/(app)/dashboard/page.tsx')).not.toContain('data-forum-readonly');
+    expect(read('app/(app)/dashboard/LegacyDashboard.tsx')).not.toContain('data-forum-readonly');
     // Nor does its help text promise the board (QA review of 65f4fcc37189).
-    expect(read('app/(app)/dashboard/page.tsx')).not.toMatch(/Announcements:|release notes from the team/);
+    expect(read('app/(app)/dashboard/LegacyDashboard.tsx')).not.toMatch(/Announcements:|release notes from the team/);
     const text = await page.locator('body').innerText();
     for (const gone of [
       'Post to Forum',
@@ -675,7 +675,7 @@ test.describe('64a43c210f49 · the read-only board does not promise a discussion
   test('there is no board left to promise one (owner 02.10.2026, ADR-061)', () => {
     // QA review of 4b4586aff273 caught a "Technical Q&A" topic on a read-only
     // board. The board itself is gone now, topics and all.
-    const src = read('app/(app)/dashboard/page.tsx');
+    const src = read('app/(app)/dashboard/LegacyDashboard.tsx');
     expect(src).not.toMatch(/Technical Q&A|ForumTopic|TOPIC_LABEL/);
     expect(src).not.toContain('Read-only posts from the Clean-Core team');
   });

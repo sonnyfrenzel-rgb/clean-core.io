@@ -16,6 +16,7 @@ const APP = [
   'app/page.tsx',
   'app/(app)/layout.tsx',
   'app/(app)/dashboard/page.tsx',
+  'app/(app)/dashboard/LegacyDashboard.tsx',
   'app/(app)/demo/workspace/page.tsx',
   'app/(app)/demo/[stage]/page.tsx',
   'app/(app)/project/[projectId]/layout.tsx',
@@ -70,6 +71,15 @@ test('a changed page selects the specs that open it, by Next precedence, plus th
   expect(names(await pick(['app/(app)/demo/workspace/page.tsx']))).toEqual(['tests/core-one.spec.ts', 'tests/demo-literal.spec.ts']);
   // A catch-all takes the deeper path.
   expect(names(await pick(['app/docs/[...slug]/page.tsx']))).toEqual(['tests/core-one.spec.ts', 'tests/docs-deep.spec.ts']);
+});
+
+test('the dashboard route and the old dashboard it loads both select the specs that open /dashboard (QA review 35ee16103b6a)', async () => {
+  const r = await pick(['app/(app)/dashboard/page.tsx']);
+  expect(names(r)).toEqual(['tests/core-one.spec.ts']);
+  expect(r[0].reasons).toContain('/dashboard → app/(app)/dashboard/page.tsx');
+  const legacy = await pick(['app/(app)/dashboard/LegacyDashboard.tsx']);
+  expect(names(legacy)).toEqual(['tests/core-one.spec.ts']);
+  expect(legacy[0].reasons).toContain('/dashboard → app/(app)/dashboard/LegacyDashboard.tsx');
 });
 
 test('a changed route handler selects the specs that call it, with request or fetch', async () => {

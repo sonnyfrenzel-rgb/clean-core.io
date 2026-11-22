@@ -533,6 +533,8 @@ test.describe('the screen says what the click costs, before the click', () => {
     page.on('request', (r) => {
       if (r.method() === 'POST' && new URL(r.url()).pathname === '/api/runs/create') runRequests.push(r.url());
     });
+    // Since 3.3.0 (ADR-123, the mock-up) the other examples sit behind "6 more examples" at every width.
+    await panel.locator('[data-home-more-examples]').click();
     await panel.locator(`[data-example-start="${EXAMPLE.name}"]`).click();
     const warning = panel.getByTestId('starter-example-rerun-warning');
     await expect(warning).toBeVisible({ timeout: 15000 });
@@ -563,6 +565,14 @@ test.describe('the screen says what the click costs, before the click', () => {
     // so the warning is asked of it there.
     await newProject();
 
+    // 3.3.0 (ADR-123): the doors stand in My workspace's list mode (the home list of 3.2.0); tiles are the default.
+    await page.addInitScript(() => {
+      try {
+        window.localStorage.setItem('cc.workspace.mode', 'list');
+      } catch {
+        /* storage refused: the tiles stand */
+      }
+    });
     await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3000, alsoGermanLabel: true });
     await page.evaluate(() => window.stop()).catch(() => {});
     try {

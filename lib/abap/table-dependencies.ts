@@ -1,4 +1,4 @@
-import { tokenize } from './declaration-parser';
+import { tokenize, type TokenizeOptions } from './declaration-parser';
 import { createLiteralScanner, maskNonCode } from './statement-reader';
 import { databaseWriteIn, isDatasetDeletion, isEntityManipulation, isInternalTableOperation, writesDatabaseOnly } from './open-sql-discrimination';
 import { readConstantDeclarations } from './business-rules';
@@ -409,8 +409,8 @@ interface Context {
  */
 const MACRO_EXPANSION_BUDGET = 2000;
 
-function buildContext(source: string): Context {
-  const statements = tokenize(source);
+function buildContext(source: string, options: TokenizeOptions): Context {
+  const statements = tokenize(source, options);
   const code = statements.map((s) => codeOnly(s.text));
 
   const tablesNames = new Set<string>();
@@ -1023,8 +1023,13 @@ function isRepositoryStructureName(name: string, ctx: Context): boolean {
   return !ctx.typeGroups.some((group) => name.startsWith(`${group}_`));
 }
 
-export function readTableDependencies(source: string): TableDependencyReport {
-  const ctx = buildContext(source);
+/**
+ * `options` are `tokenize`'s, so the statement indices this report gives agree
+ * with the caller's own `tokenize(source, options)` — the evidence engine passes
+ * `multiLineTemplates` from 3.3.0 (`ENGINE_READS_330_FROM`).
+ */
+export function readTableDependencies(source: string, options: TokenizeOptions = {}): TableDependencyReport {
+  const ctx = buildContext(source, options);
   const sink = new Sink(ctx);
 
   ctx.statements.forEach((statement, i) => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { parseMapThumb } from '@/lib/project-summary';
+import { parseMapThumb, thumbDisplayViewBox } from '@/lib/project-summary';
 import { mapThumbLabel, wt } from '@/lib/workspace-messages';
 
 /**
@@ -8,6 +8,10 @@ import { mapThumbLabel, wt } from '@/lib/workspace-messages';
  * the map's own ink and surface tokens. No labels: names need the full map. No
  * bpmn-js and nothing from the database as markup: the string is read strictly
  * (`parseMapThumb`) and each shape is a React element.
+ *
+ * One maximum scale (`thumbDisplayViewBox`): a small map is drawn centred at
+ * the mock-up's reference density, never blown up to fill the frame; a large
+ * map still fits.
  *
  * Without a readable thumbnail the place says so in words ("Map after the next
  * run") at the same size, so the tile does not move when the picture arrives.
@@ -34,7 +38,7 @@ export default function MapThumb({
       </div>
     );
   }
-  const [x, y, w, h] = parsed.viewBox;
+  const [x, y, w, h] = thumbDisplayViewBox(parsed.viewBox);
   return (
     <div className={frame} role="img" aria-label={mapThumbLabel(objectName, steps)} data-map-thumb="drawn">
       <svg viewBox={`${x} ${y} ${w} ${h}`} aria-hidden={true} className="size-full p-2" preserveAspectRatio="xMidYMid meet">

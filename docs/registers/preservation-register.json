@@ -13,7 +13,7 @@
     "verifiedAgainstCommit": "9edb37f366525a104598be8c0d7168ffe119df44",
     "verifiedAgainstBranch": "origin/dev",
     "verifiedOn": "2026-09-16",
-    "appVersion": "v3.2.0",
+    "appVersion": "v3.3.0",
     "phaseContract": "lib/workflow-steps.ts",
     "hydration": "lib/project-loader.ts",
     "runGuard": "lib/run-guard.ts",
@@ -38,7 +38,7 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "7c05e09a924ba81536e921e3647ed877f212e2e44fdc0272615c123d83ca7b0d",
+      "sha256OfLfNormalisedText": "91559a6078a48019a9e0f84bae1189e14085f93cae560dfb3ee89ec81d85af9b",
       "deploymentRecord": "docs/registers/rules-deployment.json",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {
@@ -138,7 +138,8 @@
       "recommendationConfidence",
       "recommendationJustification",
       "auditPackExportedAt",
-      "auditPackExportedRunId"
+      "auditPackExportedRunId",
+      "summary"
     ],
     "hydration": {
       "reader": "loadProjectAndHydrate(projectId)",
@@ -149,7 +150,7 @@
         "exports"
       ],
       "onMissingRun": "_runLoadFailed = true, _runLoadError set; in-memory only, never persisted.",
-      "consequence": "Every field in projectFieldsDeletedByRunsCreate except the two audit-pack export markers reaches a stage only through hydration. A reader that does not hydrate (the dashboard) never sees them. auditPackExportedAt and auditPackExportedRunId are the exception: they sit inside auditMetadata, are not on the run, and runs/create deletes them because an audit pack exported for the previous run is not one for this run (codex code-trust-07); POST /api/audit-pack/create writes them again on the next export."
+      "consequence": "Every field in projectFieldsDeletedByRunsCreate except the two audit-pack export markers and `summary` reaches a stage only through hydration. A reader that does not hydrate (the dashboard) never sees them. auditPackExportedAt and auditPackExportedRunId are the exception: they sit inside auditMetadata, are not on the run, and runs/create deletes them because an audit pack exported for the previous run is not one for this run (codex code-trust-07); POST /api/audit-pack/create writes them again on the next export. `summary` is the other exception: the server's mirror of the active run for My workspace's tiles (3.3.0, ADR-123), never hydrated into a stage; runs/create deletes it in the same commit that replaces the source and the active run and then writes this run's summary whole, so no earlier run's summary stays on the project and none stands under a changed source (lawyer, statement 20c E3 (4)); a browser may not change the source of a project that has a summary (firestore.rules, isValidProjectFieldChange)."
     },
     "stalenessTrackedArtefacts": [
       "solutionDesign",

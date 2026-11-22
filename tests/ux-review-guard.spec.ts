@@ -29,14 +29,14 @@ test.describe('one pinned image-capable model, and it can only read', () => {
   test('the pinned model at its list price, no tools, no fallbacks, no data collection', async () => {
     // Owner decision, 06.10.2026: pinned again after the Auto Router (01.–06.10.2026); before it meta/muse-spark-1.3.
     const { UX_MODEL, PRICE_PER_MTOK } = await lib('config.mjs');
-    expect(UX_MODEL).toEqual({ model: 'openai/gpt-6-luna', price: { input: 0.1, output: 0.5 } });
+    expect(UX_MODEL).toEqual({ model: 'openai/gpt-6-luna-pro', price: { input: 0.1, output: 0.5 } });
     expect(PRICE_PER_MTOK).toBe(UX_MODEL.price);
     const src = read('scripts/ux/review.mjs');
     expect(src).toMatch(/callReviewer\(\{\s*apiKey: env\.OPENROUTER_API_KEY,\s*model: UX_MODEL\.model,\s*price: UX_MODEL\.price,/);
     expect(src).not.toMatch(/tools:|tool_choice/);
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
     const req = buildRequest({ system: 's', user: [], schema: {}, effort: 'low', model: UX_MODEL.model, price: UX_MODEL.price });
-    expect(req.model).toBe('openai/gpt-6-luna');
+    expect(req.model).toBe('openai/gpt-6-luna-pro');
     expect(req.plugins).toBeUndefined();
     expect(req.provider).toEqual({ allow_fallbacks: false, data_collection: 'deny', require_parameters: true, max_price: { prompt: UX_MODEL.price.input, completion: UX_MODEL.price.output } });
   });
@@ -44,9 +44,10 @@ test.describe('one pinned image-capable model, and it can only read', () => {
   test('the body a UX call sends carries only parameters every eligible endpoint of the pinned model supports (3.0.18 item 10)', async () => {
     // The UX run of 06.10.2026 (d9278367) died on HTTP 404 "no model or endpoint matches ... the required
     // parameters": with require_parameters one unsupported parameter (then `temperature`) leaves no endpoint.
-    // OpenRouter's endpoint list for openai/gpt-6-luna, read 18.10.2026 (GET /api/v1/models/openai/gpt-6-luna/endpoints):
-    // every endpoint at or below the $0.10/$0.50 ceiling supports these, plus seed/tools/verbosity we do not send;
-    // input modalities file, image, text; max completion tokens 128,000.
+    // OpenRouter's endpoint list for openai/gpt-6-luna-pro, read 22.11.2026 (GET /api/v1/models/openai/gpt-6-luna-pro/endpoints):
+    // input modalities file, image, text; max completion tokens 128,000. Endpoints at or below the $0.10/$0.50 ceiling:
+    // OpenAI $0.05/$0.25 and OpenAI $0.10/$0.50 support all three; Azure $0.10/$0.50 lacks one, so `require_parameters`
+    // keeps it out; the OpenAI $0.20/$1.00 tier is above `max_price`. (Until 22.11.2026 the model was openai/gpt-6-luna.)
     const SUPPORTED = ['max_tokens', 'reasoning', 'response_format'];
     // Not sampling or generation parameters: the model id, the conversation, and OpenRouter's own routing/accounting.
     const ENVELOPE = ['messages', 'model', 'provider', 'usage'];
@@ -335,7 +336,7 @@ test.describe('what a review covers', () => {
     const { assignAreas, packAreas } = await lib('areas.mjs');
     const files = [
       { path: 'app/(app)/project/[projectId]/analyze/page.tsx', text: "import { Finding } from '@/components/FindingCard';\nimport { StageHeader } from '@/components/StageHeader';" },
-      { path: 'app/(app)/dashboard/page.tsx', text: "import { StageHeader } from '../../../components/StageHeader';" },
+      { path: 'app/(app)/dashboard/LegacyDashboard.tsx', text: "import { StageHeader } from '../../../components/StageHeader';" },
       { path: 'components/FindingCard.tsx', text: "import { Chip } from './Chip';" },
       { path: 'components/Chip.tsx', text: 'export const Chip = 1;' },
       { path: 'components/StageHeader.tsx', text: 'export const StageHeader = 1;' },
@@ -345,7 +346,7 @@ test.describe('what a review covers', () => {
     const a = assignAreas(files);
     expect(Object.fromEntries(a)).toEqual({
       'app/(app)/project/[projectId]/analyze/page.tsx': 'analyse',
-      'app/(app)/dashboard/page.tsx': 'rahmen',
+      'app/(app)/dashboard/LegacyDashboard.tsx': 'rahmen',
       'components/FindingCard.tsx': 'analyse',
       'components/Chip.tsx': 'analyse',
       'components/StageHeader.tsx': 'system',

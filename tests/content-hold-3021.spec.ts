@@ -354,6 +354,6 @@ test('the account reads why its project is gone, and that it cannot delete it wh
   expect(s).toContain('Project p1 is blocked since 2026-11-10');
   expect(s).toMatch(/nobody can open it, this account included/);
   expect(s).toMatch(/cannot be deleted from here while it is retained/);
-  expect(read('app/(app)/dashboard/page.tsx')).toContain('<ContentBlockNotice profile={profile} />');
+  expect(read('app/(app)/dashboard/LegacyDashboard.tsx')).toContain('<ContentBlockNotice profile={profile} />');
   expect(contentBlocksOfProfile({ contentBlocks: { x: { projectId: 1 } } })).toEqual([]);
 });
