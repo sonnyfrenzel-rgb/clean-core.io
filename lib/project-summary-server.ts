@@ -98,9 +98,20 @@ export function processTitleFor(source: string, engineVersion: string | null): s
 
 type AdminDb = FirebaseFirestore.Firestore;
 
-/** Writes the whole summary — after a signed run, and from the backfill. */
-export async function writeProjectSummary(db: AdminDb, projectId: string, summary: ProjectSummary): Promise<void> {
-  await db.collection('projects').doc(projectId).update({ summary });
+/**
+ * Writes the whole summary after a signed run — only while the project's active run is still the run the summary is
+ * of (lawyer, statement 20c E3 (4); QA review ddce067b4191). Two runs of one project can commit one after the other
+ * and write their summaries in the other order; without this check the late write of the earlier run would put its
+ * summary under the newer run's source. Returns whether it wrote. (The backfill writes with its own precondition.)
+ */
+export async function writeProjectSummary(db: AdminDb, projectId: string, summary: ProjectSummary): Promise<boolean> {
+  const ref = db.collection('projects').doc(projectId);
+  return db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists || snap.get('activeRunId') !== summary.runId) return false;
+    tx.update(ref, { summary });
+    return true;
+  });
 }
 
 /**

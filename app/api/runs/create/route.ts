@@ -1157,7 +1157,9 @@ export async function POST(req: NextRequest) {
     // the map's thumbnail and size, the rules, the score and the recommendation
     // of this run. Admin SDK only, outside the signed run and the audit pack;
     // bound to `runId`, so a summary of an earlier run is never shown for this
-    // one. Its failure fails nothing: the tile then says "Map after the next run".
+    // one. Written only while this run is still the project's active run, so a
+    // late write never lands under a newer run's source (QA review ddce067b4191).
+    // Its failure fails nothing: the tile then says "Map after the next run".
     try {
       const summary = computeProjectSummary({
         runId,
