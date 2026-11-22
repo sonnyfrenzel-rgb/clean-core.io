@@ -18,7 +18,7 @@ import { readDeclarations, type MethodImpl } from './skeleton/declarations';
 import { readEffects } from './skeleton/effects';
 import { MethodDispatch } from './skeleton/dispatch';
 import { CANDIDATE_TRIGGER, EntryReader, type EntryPoint } from './skeleton/entries';
-import { WalkReaders, type ParallelGroup } from './skeleton/walk-readers';
+import { WalkReaders } from './skeleton/walk-readers';
 import {
   BUILDS_TABLE,
   BUILT_IN_FLAG_VALUES,
@@ -31,6 +31,7 @@ import { settleEarlyEnds } from './skeleton/early-ends';
 import { newWalkState, type WalkState } from './skeleton/walk/state';
 import type { WalkContext, Walker } from './skeleton/walk/walker';
 import { walkStatement } from './skeleton/walk/statement';
+import { walkParallel } from './skeleton/walk/parallel';
 import { walkMethodCalls } from './skeleton/walk/calls';
 import { callbackEntry } from './skeleton/walk/callbacks';
 import { classOf } from './skeleton/statement-readers';
@@ -1065,7 +1066,7 @@ class SkeletonBuilder {
       const parallel = this.readers.parallelGroupAt(i, to);
       if (parallel) {
         outputRun = null;
-        live = this.walkParallel(parallel, ctx, live);
+        live = walkParallel(this.w, parallel, ctx, live);
         i = parallel.resumeIndex;
         continue;
       }
@@ -1076,53 +1077,6 @@ class SkeletonBuilder {
       i += 1;
     }
     return live;
-  }
-
-  /* ---------------- roadmap 2.17 (a) — parallelism ---------------- */
-
-  /**
-   * The fork, its branches and — where the source waits — the join.
-   *
-   * Rule 6 holds for both gateways. The fork is named `STARTING NEW TASK`,
-   * three words that stand in the source, and is anchored at the `STARTING`
-   * token of the first call, which is the evidence it is drawn from; the join
-   * carries the `WAIT` statement as the source writes it, anchored at it. A
-   * parallel gateway carries no condition, here or in the file — it is not a
-   * decision, which is why the kind is `parallel-gateway` and not `gateway`.
-   */
-  private walkParallel(group: ParallelGroup, ctx: WalkContext, incoming: Exit[]): Exit[] {
-    const first = this.statements[group.members[0]];
-    const fork = this.graph.addNode('parallel-gateway', 'STARTING NEW TASK',
-      anchorOf(first, tokenIndexOf(first, /^STARTING$/i)), ctx.region, ctx.container, {
-        detail: { direction: 'diverging', branches: group.members.length },
-      });
-    this.graph.connect(incoming, fork.id);
-
-    const branchExits: Exit[] = [];
-    for (const member of group.members) {
-      branchExits.push(...walkStatement(this.w, this.statements[member], ctx,
-        [{ from: fork.id, condition: '', kind: 'sequence' }], null).exits);
-    }
-    if (group.joinIndex === null) {
-      // **The caller's continuation is not the exit of the tasks.** Handing the
-      // branch exits back would let the walker hang the next statement of the
-      // caller on them, and the diagram would then say the caller ran on *after
-      // the tasks came back*. The source says the opposite — that is why there
-      // is no `WAIT` in it. So the caller is one more branch of the same fork:
-      // it runs concurrently with the tasks, and the asynchronous branches end
-      // where the source stops speaking about them.
-      this.graph.note('fork-without-join', first,
-        `${group.members.length} tasks are started asynchronously and nothing in this source waits for them. `
-        + 'The caller carries on at once, so no step after the fork depends on a result: the branches are drawn '
-        + 'without a join, and where each task ends is outside this program.');
-      return [{ from: fork.id, condition: '', kind: 'sequence' }];
-    }
-
-    const wait = this.statements[group.joinIndex];
-    const join = this.graph.addNode('parallel-gateway', snippet(wait.text), anchorOf(wait),
-      ctx.region, ctx.container, { detail: { direction: 'converging', branches: group.members.length } });
-    this.graph.connect(branchExits, join.id);
-    return [{ from: join.id, condition: '', kind: 'sequence' }];
   }
 
   /**
