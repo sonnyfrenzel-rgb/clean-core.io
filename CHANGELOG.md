@@ -63,7 +63,10 @@ an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are uncha
 - **A constant closes a dynamic target only in its own scope** (B1 of the engine review of 22.11.2026): the table
   dependencies looked a constant up in the whole source, so `CONSTANTS lv_other … VALUE 'VBAK'` in one `FORM` made
   `DELETE FROM (lv_other)` in another `FORM` a CRITICAL write to VBAK. A constant of a `FORM`, method or function
-  module is now seen only there; a global one is hidden in a routine that declares the name itself. The statement
+  module is now seen only there; a global one is hidden in a routine that declares the name itself — a `DATA`, a
+  `STATICS`, an inline `DATA( )`, a `FORM` parameter or a method's formal parameter from its `METHODS` declaration
+  (QA 7db68ed0ee64: the method parameter was missed, so a parameter named like a global constant still closed the
+  target on that constant). The statement
   becomes a `dynamic-target` gap (`readTableDependencies` option `scopedConstants`, passed by the evidence engine and
   its coverage; `tests/engine-340-scoped-constants.spec.ts`). Display readers without the option keep the old lookup.
 - The class-gap finding stands where every other finding stands: at the first line of the statement that names the

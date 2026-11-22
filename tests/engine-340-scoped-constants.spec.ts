@@ -109,3 +109,42 @@ ENDFORM.
 `;
   expect(readTableDependencies(code, { scopedConstants: true })).toEqual(readTableDependencies(code));
 });
+
+test('a method parameter hides a global constant of the same name (QA 7db68ed0ee64)', () => {
+  // The parameter stands in the class definition, not in METHOD … ENDMETHOD; it hides the global constant as
+  // much as a FORM parameter does. Before the fix the DELETE in `purge` was a CRITICAL write to VBAK.
+  const code = `REPORT zmethod_param.
+CONSTANTS lv_tab TYPE tabname VALUE 'VBAK'.
+CLASS lcl DEFINITION.
+  PUBLIC SECTION.
+    METHODS purge IMPORTING lv_tab TYPE tabname.
+    METHODS: keep IMPORTING iv_other TYPE tabname,
+      wipe IMPORTING VALUE(lv_tab) TYPE tabname.
+    CLASS-METHODS sees.
+ENDCLASS.
+CLASS lcl IMPLEMENTATION.
+  METHOD purge.
+    DELETE FROM (lv_tab).
+  ENDMETHOD.
+  METHOD keep.
+    DELETE FROM (lv_tab).
+  ENDMETHOD.
+  METHOD wipe.
+    DELETE FROM (lv_tab).
+  ENDMETHOD.
+  METHOD sees.
+    DELETE FROM (lv_tab).
+  ENDMETHOD.
+ENDCLASS.
+`;
+  const read = (scopedConstants: boolean) => {
+    const r = readTableDependencies(code, { multiLineTemplates: true, scopedConstants });
+    return {
+      writes: r.dependencies.filter((d) => d.access !== 'read' && !d.possibleTargetOf).map((d) => `${d.line}:${d.table}`),
+      open: r.unresolved.map((u) => u.line),
+    };
+  };
+  expect(read(true)).toEqual({ writes: ['15:VBAK', '21:VBAK'], open: [12, 18] });
+  // Before 3.4.0 (the whole-source lookup) every DELETE closed on the global constant, as it signed.
+  expect(read(false)).toEqual({ writes: ['12:VBAK', '15:VBAK', '18:VBAK', '21:VBAK'], open: [] });
+});

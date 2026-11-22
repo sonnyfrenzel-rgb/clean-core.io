@@ -403,7 +403,8 @@ export interface TableDependencyOptions extends TokenizeOptions {
    * target (`FROM (lc_tab)`, R07) only where ABAP lets the statement see it. A `CONSTANTS` inside a `FORM`, a method
    * or a function module is local to it; one declared anywhere else (the program's global part, an event block, a
    * class definition) is seen everywhere except in a routine that declares the name itself — its own constant, a
-   * `DATA`/`STATICS`, an inline `DATA( )`, or a `FORM` parameter. Before, the constant was looked up by name in the
+   * `DATA`/`STATICS`, an inline `DATA( )`, a `FORM` parameter, or a method's formal parameter (its `METHODS`
+   * declaration). Before, the constant was looked up by name in the
    * whole source: `CONSTANTS lv_other … VALUE 'VBAK'` in one `FORM` made `DELETE FROM (lv_other)` in another a
    * CRITICAL write to VBAK. Off, the whole-source lookup of the engines before.
    */
@@ -550,10 +551,49 @@ function escapeRegExp(text: string): string {
 }
 
 /**
- * Does this routine declare `name` itself, as anything but a constant — `DATA`, `STATICS`, an inline `DATA( )`, or
- * a parameter on its `FORM` line? Then a global constant of that name is hidden in it.
+ * Does a `METHODS` / `CLASS-METHODS` declaration give this method a formal parameter `name`? A method's parameters
+ * stand in the class (or interface) definition, not in the `METHOD … ENDMETHOD` that `declaresLocally` reads. The
+ * declaration in the definition of the method's own class decides; a redefinition, an interface method
+ * (`zif_x~run`) or a class whose definition is not in this source falls back to every declaration of a method of
+ * that name in the source — the target then stays open rather than closed by a constant the method may not see.
+ */
+function methodDeclaresParameter(ctx: Context, method: Container, name: string): boolean {
+  const short = method.name.split('~').pop() ?? method.name;
+  const parameter = new RegExp(`(?:^|[\\s(!])${escapeRegExp(name)}\\s*\\)?\\s+(?:TYPE|LIKE)\\b`, 'i');
+  const owner = method.name.includes('~')
+    ? undefined
+    : ctx.constants.containers.find(
+        (c) => c.kind === 'class' && c.lineStart <= method.lineStart && method.lineEnd <= c.lineEnd,
+      );
+  let own: boolean | null = null;
+  let anywhere = false;
+  for (let i = 0; i < ctx.statements.length; i++) {
+    const methods = /^(?:CLASS-)?METHODS\b\s*:?\s*([\s\S]*)$/i.exec(ctx.code[i].trim());
+    if (!methods) continue;
+    const line = ctx.statements[i].line;
+    const inOwnClass =
+      owner !== undefined &&
+      ctx.constants.containers.some(
+        (c) => c.kind === 'class' && c !== owner && c.name === owner.name && c.lineStart <= line && line <= c.lineEnd,
+      );
+    for (const part of methods[1].split(',')) {
+      const declared = /^([\w/~]+)([\s\S]*)$/.exec(part.trim());
+      if (!declared || declared[1].toUpperCase().split('~').pop() !== short) continue;
+      const declares = parameter.test(declared[2]);
+      anywhere ||= declares;
+      if (inOwnClass && !/\bREDEFINITION\b/i.test(declared[2])) own = (own ?? false) || declares;
+    }
+  }
+  return own ?? anywhere;
+}
+
+/**
+ * Does this routine declare `name` itself, as anything but a constant — `DATA`, `STATICS`, an inline `DATA( )`, a
+ * parameter on its `FORM` line, or a formal parameter of the method (`methodDeclaresParameter`)? Then a global
+ * constant of that name is hidden in it.
  */
 function declaresLocally(ctx: Context, scope: Container, name: string): boolean {
+  if (scope.kind === 'method' && methodDeclaresParameter(ctx, scope, name)) return true;
   const word = escapeRegExp(name);
   const inline = new RegExp(`\\bDATA\\(\\s*${word}\\s*\\)`, 'i');
   const parameter = new RegExp(`\\b(?:USING|CHANGING|TABLES)\\b.*?(?:^|[\\s(])(?:VALUE\\(\\s*)?${word}(?=$|[\\s,.)])`, 'i');
