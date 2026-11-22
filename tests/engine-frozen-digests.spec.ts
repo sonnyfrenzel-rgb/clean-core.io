@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { checkFrozen, frozenFiles } from '../scripts/engine/frozen-digests';
 
 /**
@@ -28,3 +29,20 @@ for (const name of frozenFiles()) {
     expect(r.moved).toEqual([]);
   });
 }
+
+test('the capture runs on main only: dispatched on another ref, nothing is captured or pushed (QA 8bcde2dc4871)', () => {
+  const wf = readFileSync('.github/workflows/engine-release-capture.yml', 'utf8').replace(/\r\n/g, '\n');
+  const jobs = wf.slice(wf.indexOf('\njobs:\n'));
+  const job = (name: string) => {
+    const start = jobs.indexOf(`\n  ${name}:\n`);
+    expect(start).toBeGreaterThan(-1);
+    const rest = jobs.slice(start + 1);
+    const next = rest.slice(1).search(/\n {2}[\w-]+:\n/);
+    return next === -1 ? rest : rest.slice(0, next + 1);
+  };
+  expect(wf).toMatch(/\n {2}push:\n {4}branches: \[main\]\n/);
+  expect(job('capture')).toMatch(/\n {4}if: github\.ref == 'refs\/heads\/main'\n/);
+  // The job with the write token runs only after a capture on main, never on its own.
+  expect(job('push')).toMatch(/\n {4}needs: capture\n/);
+  expect(job('push')).not.toMatch(/always\(\)|!cancelled\(\)/);
+});

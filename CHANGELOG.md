@@ -51,7 +51,8 @@ an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are uncha
   audit pack's model card and engine metadata, with the release it matches or "unreleased build". A run signed before
   3.4.0 has none and verifies as it was sealed. v3.2.0's digest is recorded after the fact from its release merge.
 - **Frozen digests per release, captured in the release workflow**: `.github/workflows/engine-release-capture.yml`
-  runs on every push to `main` whose version has no fixture yet, captures the starters, the benchmark learn halves
+  runs on every push to `main` whose version has no fixture yet (a manual run too, from `main` only: dispatched on any
+  other ref the capture and the push job are skipped, QA 8bcde2dc4871), captures the starters, the benchmark learn halves
   and the probes (never the holdout) in a new format 3 that adds the process skeleton, the business statements and the
   engine digest, and pushes the fixture and `lib/engine-releases.json` to the bot branch
   `chore/engine-release-capture`. `tests/engine-frozen-digests.spec.ts` checks every release fixture,

@@ -16,6 +16,10 @@ name: Capture the frozen engine digests of a release
 # Two jobs, as in sync-catalog.yml: the job that installs and runs project code holds a read-only token and hands
 # over only the two data files as an artifact; the push job starts from a fresh checkout, runs no npm at all,
 # accepts nothing but the expected paths, and runs git with hooks and fsmonitor switched off.
+#
+# Main only, the push and a manual retry alike: dispatched on any other ref, the capture job is skipped and so is
+# the push job that needs it, so a fixture and a registry are only ever captured from a release commit on main
+# (QA 8bcde2dc4871).
 on:
   push:
     branches: [main]
@@ -30,6 +34,7 @@ concurrency:
 
 jobs:
   capture:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       captured: ${{ steps.capture.outputs.captured }}
