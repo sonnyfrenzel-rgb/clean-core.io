@@ -835,6 +835,153 @@ Every offline shadow re-run against **today's** shipping readers (`dev`, 218 com
 | `timing.ts` (L0+L1 / old statements) | 1k 3 / 13 ms, 10k 20 / 117 ms, 25k 45 / 568 ms, 50k 147 / 1,119 ms | within noise |
 | `timing-parse.ts` (one read, old / new) | 1k 4.0×, 10k 3.3×, 25k 5.0×, 50k 5.3× | within noise (this machine, Node 24) |
 
+## L4: references (22.11.2026, first step of Phase 2)
+
+Engine review §8.1 L4 ("symbols") starts with the part a reader of clean core needs first: **every SAP object the
+code points at, countable, with its line**. An external review (22.11.2026) named the gap in today's engine: only
+`SELECT` tables and `CALL FUNCTION` literals become findings; `TYPE REF TO cl_gui_alv_grid`,
+`cl_salv_table=>factory( )` and `CREATE OBJECT` get none, although the catalog already grades classes and
+interfaces (1,461 CLAS and 3,385 INTF rows; `gradeSapObject` answers `CL_GUI_ALV_GRID` and `CL_SALV_TABLE` B,
+`IF_HTTP_CLIENT` D). The gap is extraction, not knowledge. This step closes the extraction, inert.
+
+### Contract
+
+`references(statements, tree) → ReferenceTable` (`lib/engine4/references.ts`, exported from `index.ts`):
+
+- `references`: one `Reference` per name, in source order, with
+  - `kind`: `class`, `interface`, `classOrInterface` (the syntax does not say which: `TYPE REF TO x`, `x=>c`),
+    `exception`, `type`, `table` (database table or view, CDS included), `functionModule`, `messageClass`,
+    `authorizationObject`, `transaction`, `program`, `transformation`, `typePool`;
+  - `use`: `typeRef`, `type`, `staticAccess`, `interfaceAccess`, `instantiation`, `cast`, `catch`, `raise`,
+    `raising`, `inherit`, `implement`, `friend`, `declare`, `read`, `write`, `call` / `callRemote` /
+    `callUpdateTask` / `callNewTask` / `callBackgroundTask`, `message`, `authorityCheck`, `callTransaction`,
+    `leaveToTransaction`, `submit`, `performInProgram`, `transform`, `typePool`;
+  - `statement`, `row`, `col`; `component` (`TYPE vbak-vbeln`), `number` (`MESSAGE e001(zmsg)`);
+  - `resolution`: `static` (a name), `literal` (`'X'`), `constant` (`CONSTANTS … VALUE`), `value` (`DATA …
+    VALUE`, never written again), `assigned` (a literal on the straight path before the use), `onlyValue`
+    (every write in the source puts the same literal in), `declaredType` (`CREATE OBJECT o` with `o TYPE REF TO
+    x`), `dynamic` (unresolved: `name` null, `candidates` = every literal the source writes into the variable);
+  - `via`: the variable and the row its value was set on;
+  - `defined`: the source defines the name itself (local class, interface or type; the uploaded class).
+- `definitions`: the classes, interfaces and types the source defines.
+- `counts`: references per kind that the source does not define — the countable claim.
+
+**Straight path** (`assigned`): the last mention of the variable before the use is a literal write, and the write
+stands in the same branch of every block around it as the use (the L2 branch path is a prefix). A write in the
+`THEN` branch and a use after `ENDIF`, or in the `ELSE` branch, is no straight path. Any other mention between
+(a read, an `INTO`, a `CHANGING`) ends the straight path: the claim is conservative by construction.
+
+**What it does not do:** it knows no catalog. Whether a name is SAP's, its level, its release state and its
+successor are the consumer's question: today the shadow asks `lib/abap/catalog-service.ts` (scripts may);
+engine 4 will ask `lib/knowledge/` (ADR-133 (2)) at L5/the readings. Level and successor are therefore not fields
+of `Reference`; a graded reference is `Reference & { level, state, successor }` one layer up. It does not follow
+data across routines (L4 proper: scopes and data flow) and does not expand macros (it reads macro bodies as code).
+
+### What is extracted, by statement
+
+| Source | Reference |
+|---|---|
+| `TYPE x`, `TYPE [STANDARD…] TABLE OF x`, `TYPE LINE OF x`, `TYPE RANGE OF x`, `CREATE DATA … TYPE x`, `INCLUDE TYPE x`, `SELECT-OPTIONS … FOR x-f` | `type` (built-in and generic types left out) |
+| `TYPE REF TO x` | `classOrInterface`, `typeRef` |
+| `x=>m`, `x~m` (outside SQL) | `classOrInterface` `staticAccess`, `interface` `interfaceAccess` |
+| `NEW x( )`, `CAST x( )`, `CONV/VALUE/CORRESPONDING/EXACT/REF x( )` | `class` `instantiation`, `classOrInterface` `cast`, `type` |
+| `CREATE OBJECT o [TYPE x | TYPE (v)]` | `class` `instantiation`; without `TYPE` from `o`'s declaration (`declaredType`) |
+| `CLASS … INHERITING FROM x`, `FRIENDS x`, `INTERFACES x`, `ALIASES … FOR x~m` | `class` `inherit`, `classOrInterface` `friend`, `interface` `implement` |
+| `CATCH x y`, `RAISE [RESUMABLE] EXCEPTION TYPE x`, `RAISING x` (METHODS, FORM, EVENTS) | `exception` |
+| `MESSAGE e001(x)`, `MESSAGE ID 'X'|v`, `REPORT … MESSAGE-ID x` | `messageClass` (with the number) |
+| `AUTHORITY-CHECK OBJECT 'X'|v` | `authorizationObject` |
+| `CALL TRANSACTION 'X'|v`, `LEAVE TO TRANSACTION` | `transaction` |
+| `CALL FUNCTION 'X'|v [DESTINATION|IN UPDATE TASK|STARTING NEW TASK|IN BACKGROUND TASK]` | `functionModule` with the call form |
+| `SUBMIT x|(v)`, `PERFORM f IN PROGRAM x`, `PERFORM f(x)` | `program` |
+| `SELECT/OPEN CURSOR/WITH … FROM x | JOIN x | FROM (v)`, `UPDATE x`, `INSERT x FROM` / `INSERT INTO x`, `MODIFY x FROM`, `DELETE FROM x` / `DELETE x FROM`, `TABLES x` | `table` `read`/`write`/`declare`; a declared data object is an internal table, not a reference |
+| `CALL TRANSFORMATION x|(v)`, `TYPE-POOLS x` | `transformation`, `typePool` |
+
+### Shadow against today's evidence (`scripts/engine4/shadow-references.ts`)
+
+For each reference the source does not define: the catalog's level (`gradeSapObject`, A–D or not listed) and
+whether `buildAbapEvidence` names the object in a finding, on its line or anywhere. Corpus: 394 files (starters
+and learn halves, never the holdout).
+
+| Kind | Refs | Defined in source | Dynamic resolved / open | SAP-listed | A/B/C/D | Named by today (line / anywhere) | Listed C/D, never named |
+|---|---|---|---|---|---|---|---|
+| type | 3,207 | 520 | 0 / 0 | 2,378 | 52/0/1,951/375 | 3 / 413 | 2,016 |
+| table | 754 | 0 | 0 / 1 | 516 | 1/0/263/252 | 476 / 701 | 47 |
+| functionModule | 457 | 0 | 0 / 8 | 409 | 0/190/218/1 | 228 / 232 | 209 |
+| classOrInterface | 403 | 35 | 0 / 0 | 159 | 31/71/24/33 | 1 / 1 | 57 |
+| exception | 304 | 44 | 0 / 0 | 79 | 15/33/24/7 | 1 / 3 | 31 |
+| messageClass | 145 | 0 | 0 / 7 | 1 | 0/0/1/0 | 0 / 0 | 1 |
+| class | 114 | 32 | 0 / 2 | 41 | 21/4/16/0 | 0 / 1 | 16 |
+| interface | 104 | 29 | 0 / 0 | 59 | 19/8/32/0 | 1 / 2 | 32 |
+| authorizationObject | 33 | 0 | 0 / 0 | 23 | 0/0/23/0 | 0 / 0 | 23 |
+| program, transaction, typePool, transformation | 42 | 0 | 1 / 4 | 33 | 0/0/33/0 | 25 / 25 | 13 |
+| **all** | **5,563** | **660** | **1 / 22** | **3,698** | | **735 / 1,378** | **2,445** |
+
+On the external real-code sample (312 files, more object-oriented): 25,468 references, 6,984 defined in the source;
+classes, interfaces and exception classes 14,882 (of them 5,865 SAP-listed), named by today's evidence 79 times;
+873 listed as C or D and never named.
+
+**Verdict on the review's claim: confirmed.** Of 925 class, interface and exception references in the corpus
+(338 SAP-listed), today's evidence names 7; 136 are listed C or D and never named. Tables and function modules are
+covered (701 of 754 and 232 of 457 named; the function modules not named are mostly classic APIs and BAPIs that
+today answer in the coverage report, not as findings).
+
+**The other way round:** 11 objects today names that the table does not hold, all explained — `PERAS`
+(logical-database node, question 9), names read out of native SQL and AMDP bodies (`WMS`, `:IT_VERBRAUCH;`),
+enhancement and transport names that are no objects, and one CDS call with parameters that today names with its
+bracket (`ZI_OFFENEPOSTEN(`). The spec pins the set.
+
+**What the numbers say for the readings:** the `type` row is mostly DDIC data elements and structures, which the
+catalog lists as C (not released for ABAP Cloud). Counting them is right; reporting each one as a finding would
+be noise. A reading on top of L4 should group them (per object, per level) and show them in the IT view, not
+as one finding per line. That is a product decision for the readings (question 18 below).
+
+**Dynamic names in the corpus:** 23 of 5,563 are dynamic; 1 resolves (a transaction), 22 stay open with their
+candidates. The resolution rules are proven by the spec, not by corpus volume; the sample adds 5 resolved and 98
+open.
+
+### Specs
+
+`tests/engine4-references.spec.ts`: every kind on one program (33 references, each with row, use and
+resolution), the branch rule, local definitions and internal tables, and the shadow floors.
+
+## Statement ledger (design, 22.11.2026)
+
+**Goal:** `coverage.complete` becomes a provable claim. Today it is computed from what the detectors know to be
+unassessed (`coverage.ts`); a statement no detector looks at and no rule lists is silently "covered". A sweep of
+109 non-holdout repository files (5,748 statements, 22.11.2026, by another agent with `@abaplint/core` as an
+offline oracle) found 117 statement types, 81 of which never get a finding or a coverage gap (`ROLLBACK WORK`,
+`MESSAGE`, `CALL KERNEL`, `RECEIVE`, `READ ENTITIES`, `WAIT`, `LEAVE …`). That set is the shadow baseline.
+
+**Design:**
+
+1. **Every L1 statement gets exactly one ledger state:**
+   - `judged(by: reader[])`: at least one reader read it and either produced output (a finding, a node, a fact)
+     or recorded an explicit "nothing to say" verdict for it;
+   - `neutral(reason)`: its kind carries a reason in the kind table that no reader needs to look at it
+     (declarations without a reference, closers, `ELSE`, list output such as `WRITE`/`ULINE`/`SKIP`, comments
+     are no statements). The reason is data in `statement-kinds.ts` (a `neutral` column), reviewed once per kind;
+   - `unread`: everything else. **`Unknown` statements and any kind without a reader and without a reason fall
+     here.**
+2. **Readers register what they read.** A reader receives `ParsedSource` and a `Ledger` handle and calls
+   `ledger.judge(statementIndex, readerId)` for every statement it consumed. In engine 4 every reading is such a
+   reader; in today's engine the readers that move onto `ParsedSource` register as they move (one reader per
+   commit, frozen digests unchanged, because the ledger is beside the evidence, not in it).
+3. **`coverage.complete` = no `unread` statement.** The coverage report lists the unread ones with their lines,
+   grouped by kind ("12 statements of a kind the engine does not read: `CALL KERNEL` 1, `RECEIVE` 3, …").
+4. **Shadow:** the ledger against today's `coverage`: every statement today calls covered that the ledger calls
+   `unread` is a silent gap (the 81 kinds), every statement today lists as a gap that the ledger calls judged is
+   a contradiction. The abaplint sweep supplies the statement-type baseline (offline only, ADR-125 (5)).
+5. **Gate:** the ledger changes what a run says about completeness, so its effect on the evidence is a gated
+   reading (from the release that switches it); the ledger itself is computed for every run and is not signed
+   until then.
+6. **Lexical defects** (ER-01, a multi-line template with `"` on its last line) make the statement list itself
+   wrong; L0 already reads that case correctly and the parse-once fallback keeps the shipping reading for it, so
+   the ledger must report a source that fell back (`parseOnceFallback` reason) as "read by the old reader" until
+   that reader is retired.
+
+Effort: the kind-table column and the ledger type are small (S); registering today's ~40 readers is the bulk (M,
+one reader per commit); the shadow and the coverage wording are S each.
+
 ## Next steps
 
 1. **Build ADR-134 Q5, Q6 and Q9** (decided; below). Rerun both shadows on the sample after every L2 change
@@ -847,6 +994,12 @@ Every offline shadow re-run against **today's** shipping readers (`dev`, 218 com
 4. **L3, second half:** class and interface declarations (visibility, `FINAL`/`ABSTRACT`, events, aliases,
    redefinitions, `RAISING`) and screens by number from `MODULE` names and `CALL SCREEN` (review §8.1), on
    top of the layout. The layout part is done (above).
+5. **L4, the rest:** grade the reference table through `lib/knowledge/` (catalog, released classes and
+   interfaces, SAP identifiers; level, state, successor per reference) instead of the shadow's `lib/abap` import;
+   then a reading that reports the class, interface and exception gap (question 18), gated; then scopes and data
+   flow across routines (dynamic names set in another routine, parameters).
+6. **Statement ledger** (design above): the `neutral` column in the kind table, the `Ledger` type, the shadow
+   against today's coverage with the abaplint sweep as baseline.
 
 ## Open design questions for the owner
 
@@ -965,3 +1118,12 @@ of them is built.
 17. **The workbench role order** when no main program states the order: TOP, local classes, function modules,
     FORMs, PBO, PAI, events, tests. Local classes come before function modules because a class must be defined
     before the code that uses it (SAP's generated frame only fixes TOP and UXX). **Default: as built.**
+18. **How the reference gap becomes visible** (new, 22.11.2026). L4 counts 925 class, interface and exception
+    references on the corpus that today's evidence does not name (136 of them listed C or D), and 2,016 DDIC types
+    listed C. Options: (a) one finding per object (not per line) for classes, interfaces and exceptions listed C or
+    D, with its lines, the DDIC types only in the IT view grouped by level; (b) everything only in the IT view as
+    a reference list with levels, no new findings; (c) findings for everything. **Default proposed: (a), behind an
+    engine gate (it changes signed findings).**
+19. **`engineDigest` in the signed run** (Phase 0, new). It changes what a run stores and signs. **Default
+    proposed: on the model card beside `engineVersion`, computed at build time; "unreleased build" when it
+    matches no frozen release.**

@@ -77,6 +77,7 @@ export function readSource(source: string, options: StatementsOptions = {}): { s
   return { statements: list, tree, diagnostics: [...lexed.diagnostics, ...list.flatMap((s) => s.diagnostics), ...tree.diagnostics] };
 }
 
+export { references, type Reference, type ReferenceKind, type ReferenceTable, type ReferenceUse, type Resolution } from './references';
 export { parseSource, type CompatContainer, type CompatStatement, type ParsedSource } from './parsed-source';
 /**
  * Read a whole upload: its layout (L3), then every part through L1 and L2 with
