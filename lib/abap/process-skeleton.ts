@@ -25,13 +25,13 @@ import {
   COLLECT_TARGET,
   FLAG_ASSIGNMENT,
   MESSAGE_ROW,
-  selectTables,
 } from './skeleton/recognisers';
 import { settleEarlyEnds } from './skeleton/early-ends';
 import { newWalkState, type WalkState } from './skeleton/walk/state';
 import type { WalkContext, Walker } from './skeleton/walk/walker';
 import { walkStatement } from './skeleton/walk/statement';
 import { walkParallel } from './skeleton/walk/parallel';
+import { walkLoop } from './skeleton/walk/loop';
 import { walkMethodCalls } from './skeleton/walk/calls';
 import { callbackEntry } from './skeleton/walk/callbacks';
 import { classOf } from './skeleton/statement-readers';
@@ -1049,7 +1049,7 @@ class SkeletonBuilder {
           if (block.kind === 'if' || block.kind === 'case') live = this.walkBranch(block, ctx, live);
           else if (block.kind === 'try') live = this.walkTry(block, ctx, live);
           else if (block.kind === 'at') live = this.walkGroupChange(block, ctx, live);
-          else live = this.walkLoop(block, ctx, live);
+          else live = walkLoop(this.w, block, ctx, live);
           this.walk.registeredInWalk = registered;
           i = block.closeIndex + 1;
           continue;
@@ -1358,123 +1358,6 @@ class SkeletonBuilder {
     const body = this.walkRange(block.openIndex + 1, block.closeIndex - 1, ctx,
       [{ from: gateway.id, condition, kind: 'conditional' }]);
     return [...body, { from: gateway.id, condition: '', kind: 'default' }];
-  }
-
-  /**
-   * `LOOP AT <table> … ENDLOOP` whose body stays inside it — roadmap 2.17 (b).
-   *
-   * `DESIGN.md` §5.8 draws this as *Mehrfach-Instanz, sequenziell*: one activity
-   * that contains the body and repeats it per row, not a gateway with a cycle
-   * hanging off it. The body becomes a **region** of its own, exactly the way a
-   * `FORM` does, so every reader downstream — the export model, the layout, the
-   * navigation of 2.9 — draws it as a collapsed sub-process without needing to
-   * know that a loop rather than a routine opened it. What makes it a
-   * *multi-instance* sub-process rather than a plain one is `detail`, which
-   * `lib/bpmn/export.ts` turns into `multiInstanceLoopCharacteristics`.
-   *
-   * The anchor is the `LOOP AT` statement and the label is the table token, as
-   * before; the region's end node is anchored at the `ENDLOOP`. No node here
-   * says anything the source does not write (rule 6).
-   */
-  private walkMultiInstanceLoop(
-    block: Block,
-    ctx: WalkContext,
-    incoming: Exit[],
-    table: string,
-  ): Exit[] {
-    const opener = this.statements[block.openIndex];
-    const region: SkeletonRegion = {
-      key: `loop:${table.toUpperCase()}@${opener.lineStart}`,
-      kind: 'sub-process',
-      label: table,
-      anchor: anchorOf(opener),
-      endNodeId: '',
-      entryNodeId: null,
-      multiInstance: true,
-    };
-    this.graph.regions.push(region);
-
-    const node = this.graph.addNode('loop', table, anchorOf(opener), ctx.region, ctx.container, {
-      expandsTo: region.key,
-      detail: {
-        loopKind: 'multi-instance',
-        over: table.toUpperCase(),
-        multiInstance: true,
-        isSequential: true,
-      },
-    });
-    this.graph.connect(incoming, node.id);
-
-    // The body is walked before the region gets an end node, because whether it
-    // needs one is what the walk answers. Nothing in the body can read
-    // `region.endNodeId` on the way: every statement that would — `CHECK`,
-    // `RETURN`, `STOP`, a `SUBMIT` that does not come back — is a statement
-    // `bodyStaysInLoop` has already refused.
-    const before = this.graph.nodes.length;
-    const exits = this.walkRange(block.openIndex + 1, block.closeIndex - 1, {
-      region, container: ctx.container, loops: [], loopBreaks: [],
-    }, []);
-    const body = this.graph.nodes.slice(before).filter((n) => n.region === region.key);
-
-    // **A body that draws nothing gets no plane.** `LOOP AT gt_orders … lv_sum
-    // = lv_sum + ls-netwr … ENDLOOP` is a calculation, and §5.8 gives a
-    // calculation no element — so the region would hold one end event and
-    // nothing to reach it. §5.8 offers the other half of the same row for
-    // exactly this: *an activity* with the marker on it, no sub-process. The
-    // loop keeps its anchor, its table and its marker and stops expanding.
-    if (!body.length) {
-      this.graph.regions = this.graph.regions.filter((r) => r !== region);
-      delete node.expandsTo;
-      return [{ from: node.id, condition: '', kind: 'sequence' }];
-    }
-
-    const closer = this.statements[block.closeIndex];
-    const end = block.terminated
-      ? this.graph.addNode('end', table, anchorOf(closer), region, ctx.container)
-      : this.graph.addNode('end', table, null, region, ctx.container, {
-        unanchoredReason: `LOOP AT ${table} is not closed by ENDLOOP in this source, so its body has no end to anchor to.`,
-      });
-    region.endNodeId = end.id;
-    region.entryNodeId = body[0].id;
-    this.graph.connect(exits, end.id);
-
-    return [{ from: node.id, condition: '', kind: 'sequence' }];
-  }
-
-  private walkLoop(block: Block, ctx: WalkContext, incoming: Exit[]): Exit[] {
-    const opener = this.statements[block.openIndex];
-    const table = /^LOOP\s+AT\s+([\w/<>]+)/i.exec(opener.text)?.[1];
-    const isSelect = block.kind === 'select';
-    // Roadmap 2.17 (b): the default of `DESIGN.md` §5.8 for a `LOOP AT` over a
-    // table, and the exception `lib/bpmn/model.ts` argued for stays where its
-    // argument holds — a body that leaves the block.
-    if (block.kind === 'loop' && table && this.readers.bodyStaysInLoop(block)) {
-      return this.walkMultiInstanceLoop(block, ctx, incoming, table);
-    }
-    const tables = isSelect ? selectTables(opener.text) : [];
-    const node = isSelect && tables.length
-      ? this.graph.addNode('read', tables[0], anchorOf(opener, tokenIndexOf(opener, /^FROM$/i) + 1),
-        ctx.region, ctx.container, {
-          detail: { tables, iterates: true, loopKind: 'multi-instance' },
-        })
-      : this.graph.addNode('loop', table ?? opener.keyword, anchorOf(opener), ctx.region, ctx.container, {
-        detail: {
-          loopKind: block.kind === 'loop' ? 'multi-instance' : 'standard',
-          ...(table ? { over: table.toUpperCase() } : {}),
-        },
-      });
-    this.graph.connect(incoming, node.id);
-
-    const breaks: Exit[] = [];
-    const bodyExits = this.walkRange(block.openIndex + 1, block.closeIndex - 1, {
-      ...ctx,
-      loops: [...ctx.loops, node.id],
-      loopBreaks: [...ctx.loopBreaks, breaks],
-    }, [{ from: node.id, condition: '', kind: 'sequence' }]);
-    for (const exit of bodyExits) {
-      this.graph.edges.push({ from: exit.from, to: node.id, kind: 'loop-back', condition: exit.condition });
-    }
-    return [{ from: node.id, condition: '', kind: 'sequence' }, ...breaks];
   }
 
   /**
