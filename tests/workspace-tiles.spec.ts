@@ -14,7 +14,7 @@ import {
   type ListedProject,
 } from '../lib/workspace-tiles';
 import { parseMapThumb, thumbDisplayViewBox, THUMB_MIN_VIEW } from '../lib/project-summary';
-import { WORKSPACE_PAGE_MESSAGES } from '../lib/messages/workspace';
+import { WORKSPACE_PAGE_MESSAGES, homeAnalyseCostLine, wsQuotaLine } from '../lib/messages/workspace';
 import { PRIVACY_PENDING_STORAGE_KEYS, WORKSPACE_LENS_KEY, WORKSPACE_MODE_KEY } from '../lib/workspace-prefs';
 
 /**
@@ -203,6 +203,13 @@ test.describe('one next step per program, one reason for attention (owner decisi
     expect(thumbDisplayViewBox([0, 0, 2000, 200])).toEqual([0, -150, 2000, 500]);
     expect(code('components/workspace/MapThumb.tsx')).toContain('thumbDisplayViewBox(parsed.viewBox)');
   });
+});
+
+test('the Analyse card and the start tile say what is left in one wording (QA review e88165b56339)', () => {
+  for (const left of ['3 of 5 runs left', '']) {
+    expect(wsQuotaLine(left)).toBe(`${left} · the same code again is free`);
+    expect(homeAnalyseCostLine(left)).toBe(wsQuotaLine(left));
+  }
 });
 
 test.describe('the page', () => {

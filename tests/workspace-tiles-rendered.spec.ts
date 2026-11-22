@@ -8,7 +8,7 @@ import { TERMS_VERSION } from '../lib/constants';
 import { sha256Hex } from '../lib/artefact-digest';
 import { computeProjectSummary } from '../lib/project-summary-server';
 import { APP_VERSION } from '../lib/version';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import { signInViaLanding } from './helpers/sign-in';
 import { layoutCheck, PRODUCT_LAYOUT } from './helpers/overlap';
 
@@ -193,6 +193,23 @@ test.describe('a new account: two equal products', () => {
       const view = page.locator('[data-home-first-view]');
       await expect(view).toBeVisible({ timeout: 120_000 });
       await expect(view.locator('[data-home-product]')).toHaveCount(2);
+      // Each product has its start, visible and enabled (QA review 33418c4b3b46): Analyse starts the example or takes
+      // the own code; Re-design starts the example end to end (walked by the W4 test below).
+      const analyse = view.locator('[data-home-product="analyse"]');
+      await expect(analyse.locator('[data-home-start-example]')).toBeVisible();
+      await expect(analyse.locator('[data-home-start-example]')).toBeEnabled();
+      await expect(analyse.locator('[data-home-choose-file]')).toBeVisible();
+      await expect(analyse.locator('[data-home-choose-file]')).toBeEnabled();
+      const redesign = view.locator('[data-home-product="redesign"] [data-home-redesign-example]');
+      await expect(redesign).toBeVisible();
+      await expect(redesign).toBeEnabled();
+      // The page keeps a side gutter of at least 16 px on both sides (QA review afa4774ce08d).
+      const gutters = await view.locator('[data-home-product]').first().evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { left: r.left, right: document.documentElement.clientWidth - r.right };
+      });
+      expect(gutters.left).toBeGreaterThanOrEqual(16);
+      expect(gutters.right).toBeGreaterThanOrEqual(16);
       const tops = await page.evaluate(() => [...document.querySelectorAll('[data-home-way] h3')].map((e) => e.getBoundingClientRect().top + window.scrollY));
       expect(tops).toHaveLength(2);
       for (const top of tops) expect(top, 'a start below the first screen').toBeLessThan(h);
@@ -216,7 +233,16 @@ test.describe('Re-design an example end to end (W4)', () => {
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
     await page.locator('[data-home-redesign-example]').click({ timeout: 120_000 });
     await page.waitForURL(/\/project\/[^/?#]+\/analyze\?first=1/, { timeout: 120_000 });
+    const analysed = new URL(page.url()).pathname.split('/')[2];
     await page.waitForURL(/\/project\/[^/?#]+\/design/, { timeout: 180_000 });
+    // Design opens on the same project, and only after its run is signed (QA review 89dc729101ad).
+    expect(new URL(page.url()).pathname.split('/')[2]).toBe(analysed);
+    const project = await adminGetDoc('projects', analysed);
+    expect(typeof project?.activeRunId, 'the example’s run is signed').toBe('string');
+    const run = await adminGetDoc(`projects/${analysed}/runs`, project!.activeRunId as string);
+    expect(run, 'the active run exists').not.toBeNull();
+    expect(typeof run?.runHash, 'the run carries its hash').toBe('string');
+    expect(typeof run?.signature, 'the run carries its signature').toBe('string');
   });
 });
 
@@ -239,6 +265,13 @@ test.describe('a returning account: next step, counts, tiles', () => {
       const m = await measure(page, `returning-${w}`);
 
       await expect(page.locator('[data-program-tile]')).toHaveCount(programs.length);
+      // The page keeps a side gutter of at least 16 px on both sides (QA review afa4774ce08d).
+      const gutters = await page.locator('[data-program-tile]').first().evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        return { left: r.left, right: document.documentElement.clientWidth - r.right };
+      });
+      expect(gutters.left).toBeGreaterThanOrEqual(16);
+      expect(gutters.right).toBeGreaterThanOrEqual(16);
       await expect(page.locator('[data-start-tile]')).toBeVisible();
       await expect(page.locator('[data-ws-next]')).toHaveAttribute('data-ws-next', 'start-redesign');
       await expect(page.locator('[data-kpi]')).toHaveCount(5);
@@ -291,6 +324,18 @@ test.describe('a returning account: next step, counts, tiles', () => {
     await shot(page, 'returning-1440-lens-it');
     await page.reload();
     await expect(page.locator('[data-lens="it"]')).toHaveAttribute('aria-checked', 'true', { timeout: 120_000 });
+    // A radio group answers the arrow keys, with one tab stop on the chosen option (QA review 9c44faece6d3).
+    const lensIt = page.locator('[data-lens="it"]');
+    const lensMgmt = page.locator('[data-lens="management"]');
+    await expect(lensIt).toHaveAttribute('tabindex', '0');
+    await expect(page.locator('[data-lens="business"]')).toHaveAttribute('tabindex', '-1');
+    await lensIt.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(lensMgmt).toHaveAttribute('aria-checked', 'true');
+    await expect(lensMgmt).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect(lensIt).toHaveAttribute('aria-checked', 'true');
+    await expect(lensIt).toBeFocused();
 
     await page.locator('[data-mode="list"]').click();
     await expect(page.locator('[data-workspace-list] table')).toBeVisible({ timeout: 30_000 });

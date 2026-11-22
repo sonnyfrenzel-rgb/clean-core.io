@@ -415,6 +415,22 @@ function Segmented<T extends string>({
   onChange: (v: T) => void;
   dataName: string;
 }) {
+  // A radio group as WAI-ARIA describes it (QA review 9c44faece6d3): one tab stop, the chosen option; the arrow keys
+  // move to the next or previous option and choose it, Home and End to the first and last.
+  const chosen = Math.max(0, options.findIndex((o) => o.value === value));
+  const onKey = (e: React.KeyboardEvent<HTMLButtonElement>, i: number) => {
+    const n = options.length;
+    const to =
+      e.key === 'ArrowRight' || e.key === 'ArrowDown' ? (i + 1) % n
+      : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? (i - 1 + n) % n
+      : e.key === 'Home' ? 0
+      : e.key === 'End' ? n - 1
+      : -1;
+    if (to < 0) return;
+    e.preventDefault();
+    onChange(options[to].value);
+    (e.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[to])?.focus();
+  };
   return (
     <span
       role="radiogroup"
@@ -422,13 +438,15 @@ function Segmented<T extends string>({
       aria-labelledby={labelledBy}
       className="inline-flex rounded-cc-row border border-cc-field-border bg-cc-surface p-0.5"
     >
-      {options.map((o) => (
+      {options.map((o, i) => (
         <button
           key={o.value}
           type="button"
           role="radio"
           aria-checked={value === o.value}
+          tabIndex={i === chosen ? 0 : -1}
           onClick={() => onChange(o.value)}
+          onKeyDown={(e) => onKey(e, i)}
           {...{ [`data-${dataName}`]: o.value }}
           className="group inline-flex cursor-pointer rounded-[6px] text-[13px] font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus"
         >
