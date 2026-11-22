@@ -1,4 +1,4 @@
-import { afterKeyword, maskLiterals, type AbapStatement, type SourceRange } from './statement-reader';
+import { afterKeyword, maskLiterals, withParsedSource, type AbapStatement, type SourceRange } from './statement-reader';
 import { type Block, type BlockStructure } from './block-structure';
 import { type Branch, type ControlFlowReport } from './control-flow';
 import { type CallGraphReport } from './call-graph';
@@ -987,14 +987,17 @@ export function buildProcessSkeleton(source: string, options: SkeletonBuildOptio
  */
 export function buildProcessSkeletonFrom(facts: ProcessFacts, options: SkeletonBuildOptions = {}): ProcessSkeleton {
   const reads = readsOf(options.engineVersion);
-  const skeleton = new SkeletonBuilder(
+  // Engine 4 phase 3: the skeleton build is a parse-once scope of its own (`withParsedSource`), so every
+  // `maskLiterals` of the same text inside it — the LUW pass reads one per PERFORM per registration — is computed
+  // once. A pure function memoised: neutral by construction, and proven by the frozen skeleton digests.
+  const skeleton = withParsedSource(() => new SkeletonBuilder(
     facts.statements,
     facts.structure,
     facts.control,
     facts.calls,
     reads.reads310,
     reads.reads320,
-  ).build();
+  ).build());
   readFor.set(skeleton, reads);
   return skeleton;
 }
