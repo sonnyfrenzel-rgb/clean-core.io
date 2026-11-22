@@ -294,3 +294,6 @@ export function functionTaskKind(name: string | undefined): SkeletonNodeKind {
   if (FILE_FUNCTIONS.has(bare)) return 'output';
   return 'service-task';
 }
+
+/** Engine 3.2.0: the two statements that call an enhancement outside this source (`walkEnhancementCall`). */
+export const ENHANCEMENT_CALL = /^CALL\s+(?:BADI|CUSTOMER-FUNCTION)\b/i;

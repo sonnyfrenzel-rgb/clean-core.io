@@ -2,7 +2,7 @@ import { afterKeyword, maskLiterals, withParsedSource, type AbapStatement, type 
 import { type Block, type BlockStructure } from './block-structure';
 import { type Branch, type ControlFlowReport } from './control-flow';
 import { type CallGraphReport } from './call-graph';
-import { databaseWriteIn, writesDatabaseOnly, type SqlWrite } from './open-sql-discrimination';
+import { databaseWriteIn } from './open-sql-discrimination';
 import { namesThisProgram } from './callback-registrations';
 import { readDecisionTable } from './decision-table';
 import { readReferenceTypes, resolveMethodTarget } from './method-resolution';
@@ -19,12 +19,13 @@ import { buildLanes } from './skeleton/lanes';
 import { FLOW_BLOCKS } from './skeleton/keywords';
 import { noteWhatIsNotRead } from './skeleton/source-notes';
 import { readDeclarations, type MethodImpl } from './skeleton/declarations';
+import { isInternalWrite, readEffects } from './skeleton/effects';
 import {
   AMDP_METHOD,
   BUILDS_TABLE,
   BUILT_IN_FLAG_VALUES,
   COLLECT_TARGET,
-  DECIDING_BLOCKS,
+  ENHANCEMENT_CALL,
   FLAG_ASSIGNMENT,
   MESSAGE_ROW,
   OUTPUT_CONTROL,
@@ -518,8 +519,6 @@ const CANDIDATE_TRIGGER = 'candidate of ';
  */
 const MAX_ALTERNATIVES = 4;
 
-/** Engine 3.2.0: the two statements that call an enhancement outside this source (`walkEnhancementCall`). */
-const ENHANCEMENT_CALL = /^CALL\s+(?:BADI|CUSTOMER-FUNCTION)\b/i;
 
 /** The classic event blocks, in the order ABAP runs them (rule 4). */
 const RUNTIME_ORDER: Array<{ test: RegExp; rank: number }> = [
@@ -930,7 +929,20 @@ class SkeletonBuilder {
     this.selectionNames = d.selectionNames;
     this.readMethodCallSites();
     this.readEventHandlers();
-    this.readEffects();
+    const routineEffects = readEffects({
+      statements: this.statements,
+      structure: this.structure,
+      control: this.control,
+      routineBlocks: this.routineBlocks,
+      formBlocks: this.formBlocks,
+      macros: this.macros,
+      localData: this.localData,
+      callsIn: (statement) => this.methodCallsIn(statement),
+      handlersRaisedBy: (statement) => this.handlersRaisedBy(statement),
+    }, { reads310: this.reads310, reads320: this.reads320 });
+    this.effects = routineEffects.effects;
+    this.performedFrom = routineEffects.performedFrom;
+    this.helpers = routineEffects.helpers;
     noteWhatIsNotRead(this.graph, {
       statements: this.statements, structure: this.structure, control: this.control, calls: this.calls,
     });
@@ -1008,61 +1020,6 @@ class SkeletonBuilder {
 
   /* ---------------- what the source declares ---------------- */
 
-  /* ---------------- which routines are steps ---------------- */
-
-  /**
-   * A routine is a step only when it writes, reads, calls another system,
-   * involves a person, ends the process with an error, checks an authorization,
-   * or classifies from literals (`DESIGN.md` §5.8). Everything else is a
-   * technical helper and is folded into its caller.
-   *
-   * The effect travels along `PERFORM`: `process_actions` does nothing itself
-   * and performs three routines that all do something, so it is a step. Without
-   * the closure the phase of the process with the most effect in it would be the
-   * one that disappears.
-   *
-   * Since 27.09.2026 (D2) the same holds for a method this source implements:
-   * §5.8 names "a `FORM`/method with an effect of its own" in one breath, so a
-   * method is a routine here, and the effect travels along a method call that
-   * resolves to one exactly as it travels along a `PERFORM`.
-   */
-  private readEffects(): void {
-    for (const [name, block] of this.routineBlocks) {
-      this.effects.set(name, this.directEffects(block));
-      this.performedFrom.set(name, []);
-    }
-    for (const [name, block] of this.routineBlocks) {
-      const performed: string[] = [];
-      const [from, to] = bodyRange(block);
-      for (let i = from; i <= to; i++) {
-        const statement = this.statements[i];
-        for (const call of this.methodCallsIn(statement)) {
-          if (call.key) performed.push(call.key);
-        }
-        if (isRaiseEvent(statement.text)) performed.push(...this.handlersRaisedBy(statement));
-        if (statement.keyword !== 'PERFORM') continue;
-        const m = /^PERFORM\s+([\w/]+)/i.exec(statement.text);
-        if (m && this.formBlocks.has(m[1].toUpperCase())) performed.push(m[1].toUpperCase());
-      }
-      this.performedFrom.set(name, performed);
-    }
-    let changed = true;
-    while (changed) {
-      changed = false;
-      for (const [name, performed] of this.performedFrom) {
-        const own = this.effects.get(name) as Set<FormEffect>;
-        for (const target of performed) {
-          for (const effect of this.effects.get(target) ?? []) {
-            if (own.has(effect)) continue;
-            own.add(effect);
-            changed = true;
-          }
-        }
-      }
-    }
-    for (const [name, set] of this.effects) if (set.size === 0) this.helpers.add(name);
-  }
-
   private batchInputDetail(index: number): Record<string, string[]> {
     const call = this.batchInput.get(index);
     if (!call) return {};
@@ -1070,133 +1027,6 @@ class SkeletonBuilder {
       ...(call.screens.length ? { batchInputScreens: call.screens.map((s) => `${s.program} ${s.screen}`) } : {}),
       ...(call.fields.length ? { batchInputFields: [...new Set(call.fields.map((f) => f.raw))] } : {}),
     };
-  }
-
-  /** Roadmap 3.0.7: is this write target a data object of the program rather than a database table? */
-  private isInternalTable(name: string): boolean {
-    return this.localData.has(name.toUpperCase().replace(/\[\]$/, ''));
-  }
-
-  /** A write to a data object of the program — never an UPDATE, which only names a database table. */
-  private isInternalWrite(write: SqlWrite): boolean {
-    return !writesDatabaseOnly(write) && this.isInternalTable(write.table);
-  }
-
-  private directEffects(block: Block, expanding: Set<string> = new Set()): Set<FormEffect> {
-    const out = new Set<FormEffect>();
-    // ADR-066. An AMDP method (`METHOD m BY DATABASE PROCEDURE|FUNCTION …`)
-    // runs its body on the database: it reads the database objects its USING
-    // clause names (or, without one, at least its own parameters there). Its
-    // SQLScript is not read (`statement-reader.ts` keeps it as native code),
-    // so it is not a technical helper with nothing in it but a read step.
-    if (block.kind === 'method' && AMDP_METHOD.test(this.statements[block.openIndex].text)) {
-      out.add(amdpTables(this.statements[block.openIndex].text).length ? 'read' : 'call');
-    }
-    const [from, to] = bodyRange(block);
-    for (let i = from; i <= to; i++) {
-      const statement = this.statements[i];
-      if (statement.nativeSql) continue;
-      // Rule 2: the effect of a macro belongs to the routine that uses it, so
-      // the body is read here as if it stood at the call site.
-      const macro = this.macros.get(statement.keyword);
-      if (macro) {
-        // A macro that names itself, or a ring of two, is not ABAP the compiler
-        // would take — but this reader is not the compiler, and without a floor
-        // the recursion ran until the stack gave out, which made one crafted
-        // DEFINE the end of the whole analysis.
-        // A macro already being expanded is read once.
-        if (!expanding.has(statement.keyword)) {
-          expanding.add(statement.keyword);
-          for (const effect of this.directEffects(macro.block, expanding)) out.add(effect);
-          expanding.delete(statement.keyword);
-        }
-        continue;
-      }
-      const text = statement.text;
-      if ((statement.keyword === 'SELECT' || isEmbeddedSelect(text)) && selectTables(text).length) out.add('read');
-      // An internal table changed keeps the routine a step, as a database write
-      // does — changing the kind alone folded whole calculation routines of the
-      // shipped examples into their callers (roadmap 3.0.7) — but as `compute`.
-      const written = databaseWriteIn(text);
-      if (written) out.add(this.isInternalWrite(written) ? 'compute' : 'write');
-      if (adbcExecution(text)) out.add('call');
-      if (/^CALL\s+FUNCTION\b/i.test(text)) {
-        const kind = functionTaskKind(/^CALL\s+FUNCTION\s+'([^']+)'/i.exec(text)?.[1]?.toUpperCase());
-        if (kind === 'user-task') out.add('human');
-        else if (kind === 'output') out.add('file');
-        else out.add('call');
-      }
-      if (/^CALL\s+TRANSACTION\b/i.test(text) || statement.keyword === 'SUBMIT') out.add('call');
-      // Engine 3.2.0: a BAdI call or a customer-function call reaches an enhancement outside this source.
-      if (this.reads320 && ENHANCEMENT_CALL.test(text)) out.add('call');
-      if (receivesResults(text)) out.add('call');
-      if (/^CALL\s+SCREEN\b/i.test(text)) out.add('human');
-      if (isListOutput(statement) || isFileOutput(statement)) out.add('file');
-      if (isErrorMessage(text, this.reads320) || raisesException(statement)) out.add('error');
-      // The handlers of an event are called, whoever they turn out to be. Where
-      // the source binds them, their own effect travels instead (`readEffects`).
-      if (isRaiseEvent(text) && !this.handlersRaisedBy(statement).length) out.add('call');
-      if (isInfoMessage(text, this.reads320)) out.add('human');
-      if (/^LEAVE\s+PROGRAM\b/i.test(text)) out.add('error');
-      if (statement.keyword === 'AUTHORITY-CHECK') out.add('authority');
-      const perform = /^PERFORM\s+([\w/]+)/i.exec(text);
-      if (perform && !this.formBlocks.has(perform[1].toUpperCase())) out.add('call');
-      if (this.methodCallsIn(statement).some((call) => call.standalone && !call.key)) out.add('call');
-    }
-    if (out.size === 0 && this.classifiesFromLiterals(block)) out.add('business-rule');
-    if (out.size === 0 && this.reads310 && this.buildsWhileDeciding(block)) out.add('compute');
-    return out;
-  }
-
-  /**
-   * Engine 3.1.0 — a routine that builds a table while it decides or iterates is a calculation.
-   *
-   * Since 3.0.7 a routine that changes an internal table (`MODIFY gt_out …`, `DELETE lt_rows WHERE …`) is a step
-   * of the process (`compute`), but the commonest way to build one — `APPEND … TO`, `COLLECT … INTO`,
-   * `INSERT … INTO TABLE` — counted for nothing, so a routine that walks the contracts, decides which ones
-   * qualify and appends the new rents was folded into its caller as a technical helper, with every decision in
-   * it. §5.8 folds a routine *without an effect of its own*; building the result set by decisions is one.
-   * Kept narrow on purpose: a routine that only appends one row (`add_message`, `add_issue`) decides nothing
-   * and stays a helper — the rule needs the append to stand **inside** a branch or a loop of the routine's own.
-   * A log helper that appends its line and then counts warnings by level (`add_log`) appends beside its branch,
-   * not in it, and stays a helper too.
-   */
-  private buildsWhileDeciding(block: Block): boolean {
-    const [from, to] = bodyRange(block);
-    for (let i = from; i <= to; i++) {
-      const statement = this.statements[i];
-      if (statement.nativeSql || !BUILDS_TABLE.test(maskLiterals(statement.text))) continue;
-      // The row is added under a decision or per iteration of this routine: an append beside a branch (a log
-      // helper that appends its line and then counts warnings) builds nothing by deciding.
-      const around = this.structure.enclosing[i] ?? [];
-      if (around.some((outer) => outer.openIndex > block.openIndex && DECIDING_BLOCKS.has(outer.kind))) return true;
-    }
-    return false;
-  }
-
-  /**
-   * Does this routine classify or score from literals — §5.8's Business-Rule-Task?
-   *
-   * The discriminator is a **structure component**. `derive_customer_risk` tests
-   * `cs_customer-sperr = 'X'` and `decide_actions` writes
-   * `<fs_order>-action = 'SET_DELIVERY_BLOCK'`: a field of a business object
-   * against a literal. `add_log` tests its own flat parameter `iv_level` against
-   * `'WARN'` and counts up a global, and §5.8 names it as a technical helper —
-   * so a flat name against a literal is deliberately not enough.
-   */
-  private classifiesFromLiterals(block: Block): boolean {
-    const component = /[\w<>]+-[\w]+/;
-    const literal = /'[^']*'/;
-    for (const branch of this.control.branches) {
-      if (branch.openIndex <= block.openIndex || branch.closeIndex >= block.closeIndex) continue;
-      for (const arm of branch.arms) {
-        if (component.test(arm.condition) && literal.test(arm.condition)) return true;
-      }
-      for (let i = branch.openIndex + 1; i < branch.closeIndex; i++) {
-        if (/^[\w<>/]+-[\w-]+\s*=\s*'/.test(this.statements[i].text)) return true;
-      }
-    }
-    return false;
   }
 
   /* ---------------- D2: method calls ---------------- */
@@ -3504,7 +3334,7 @@ class SkeletonBuilder {
       return { exits: incoming, outputRun: null };
     }
     const write = databaseWriteIn(text);
-    if (write && this.isInternalWrite(write)) {
+    if (write && isInternalWrite(this.localData, write)) {
       // Roadmap 3.0.7: a change to an internal table is a plain step of the
       // program — no SAP data store, no effect. `MODIFY gt_fieldcat FROM
       // gs_fieldcat` drawn as a write read as if the field catalogue were a
@@ -4057,7 +3887,7 @@ class SkeletonBuilder {
       }, ctx.region, ctx.container, { detail: { ...(detail ?? {}), fromMacro: site.keyword } });
 
     const write = databaseWriteIn(body.text);
-    if (write && this.isInternalWrite(write)) {
+    if (write && isInternalWrite(this.localData, write)) {
       return at('task', write.table.toUpperCase(), { operation: write.keyword, internalTable: true });
     }
     if (write) return at('write', write.table.toUpperCase(), { operation: write.keyword });
