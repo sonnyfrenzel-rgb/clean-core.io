@@ -17,7 +17,9 @@ import { APP_VERSION } from '../version';
 import { SkeletonGraph, type Exit, type SkeletonReadings } from './skeleton/graph';
 import { anchorOf, bodyRange, programName, snippet, tokenIndexOf } from './skeleton/anchors';
 import { buildLanes } from './skeleton/lanes';
-import { RANK_END_OF_SELECTION, RANK_GET, RANK_START_OF_SELECTION } from './skeleton/keywords';
+import { FLOW_BLOCKS } from './skeleton/keywords';
+import { settleEarlyEnds, type EarlyEnd } from './skeleton/early-ends';
+import { assignmentTarget, classOf, leavesDialogStep } from './skeleton/statement-readers';
 import { chainReportEvents } from './skeleton/report-chain';
 import { addSubProcessStarts, markEmptyEntries } from './skeleton/starts';
 import { noteUnreachableSteps } from './skeleton/unreachable-notes';
@@ -577,18 +579,6 @@ const SWITCH_CONSTANTS = new Set([
   'SPACE', 'IS', 'NOT', 'INITIAL', 'AND', 'OR', 'EQ', 'NE', 'X',
 ]);
 
-/** Blocks the walker descends into. Containers and macro bodies are not among them. */
-const FLOW_BLOCKS = new Set(['if', 'case', 'loop', 'do', 'while', 'select', 'try', 'at', 'provide']);
-
-/**
- * ADR-054. The statements that hand control to the next arm of the construct
- * around them: falling through one of them means leaving that construct.
- */
-const ARM_HEADERS = new Set(['ELSE', 'ELSEIF', 'WHEN', 'CATCH', 'CLEANUP']);
-
-/** ADR-054. Falling through one of these runs the loop again — something still follows. */
-const LOOP_CLOSERS = new Set(['ENDLOOP', 'ENDDO', 'ENDWHILE', 'ENDSELECT', 'ENDPROVIDE']);
-
 /**
  * The flow blocks `walkLoop` opens, and therefore the ones an `EXIT`, a
  * `CONTINUE` or a `CHECK` inside them acts on (`ctx.loops`). Roadmap 2.17 (b)
@@ -685,27 +675,6 @@ function isInfoMessage(text: string, anyCase = false): boolean {
  */
 function isRaiseEvent(text: string): boolean {
   return /^RAISE\s+EVENT\b/i.test(text);
-}
-
-/**
- * `LEAVE SCREEN`, `LEAVE TO SCREEN n` and `LEAVE LIST-PROCESSING` — the words
- * of the statement that leaves, or `null`.
- *
- * All three end the processing of the current dialog step on the spot: the
- * runtime goes on with the next screen (or back to the caller for screen 0),
- * resp. with the screen list processing was started from — never with the
- * statement after it. Until 27.09.2026 they fell through to the branch for
- * moves and calculations, and the walk carried on as if the module went on:
- * `WHEN 'BACK'. LEAVE TO SCREEN 0.` led straight into the save of the next arm.
- * They leave the block from wherever they stand, exactly as a `RETURN` does, so
- * they end the same way (ADR-054, `leaveEarly`).
- *
- * `LEAVE TO LIST-PROCESSING` is the opposite and is not here: it only switches
- * the output of the current step to a list, and the statement after it runs.
- */
-function leavesDialogStep(text: string): string | null {
-  const m = /^LEAVE\s+(TO\s+SCREEN|SCREEN|LIST-PROCESSING)\b/i.exec(text);
-  return m ? `LEAVE ${m[1].replace(/\s+/g, ' ').toUpperCase()}` : null;
 }
 
 /** ADR-066 — the trigger of a FORM called by output control. */
@@ -821,54 +790,6 @@ const AMDP_METHOD = /^METHOD\s+([\w/~]+)\s+BY\s+DATABASE\s+(?:PROCEDURE|FUNCTION
 function amdpTables(opener: string): string[] {
   const using = /\bUSING\s+([\s\S]+)$/i.exec(opener.replace(/\.\s*$/, ''))?.[1] ?? '';
   return using.split(/[\s,]+/).filter((t) => /^[\w/]+$/.test(t)).map((t) => t.toUpperCase());
-}
-
-/** The words that open or close a parameter section of a `FORM` or `METHODS` signature. */
-const SIGNATURE_WORDS = /\b(?:IMPORTING|EXPORTING|CHANGING|RETURNING|RAISING|EXCEPTIONS|USING|TABLES|REDEFINITION|ABSTRACT|FINAL)\b/gi;
-
-/**
- * ADR-066 — the parameter names, upper-cased, in the signature sections whose
- * opening word `sections` matches (`CHANGING` of a FORM; `EXPORTING`,
- * `CHANGING`, `RETURNING` of a method). A typed section is read by its
- * `TYPE`/`LIKE`/`STRUCTURE` words; an untyped one (`CHANGING cv_ok cv_msg`)
- * is all names.
- */
-function resultParameters(signature: string, sections: RegExp): string[] {
-  const text = signature.replace(/\.\s*$/, '');
-  const marks = [...text.matchAll(SIGNATURE_WORDS)];
-  const out: string[] = [];
-  marks.forEach((mark, k) => {
-    if (!sections.test(mark[0])) return;
-    const from = (mark.index ?? 0) + mark[0].length;
-    const body = text.slice(from, k + 1 < marks.length ? marks[k + 1].index : text.length);
-    if (/\b(?:TYPE|LIKE|STRUCTURE)\b/i.test(body)) {
-      for (const p of body.matchAll(/(?:^|\s)(?:(?:VALUE|REFERENCE)\(\s*([\w/]+)\s*\)|([\w/]+))\s+(?:TYPE|LIKE|STRUCTURE)\b/gi)) {
-        out.push((p[1] ?? p[2]).toUpperCase());
-      }
-      return;
-    }
-    for (const token of body.trim().split(/\s+/)) {
-      const name = /^(?:(?:VALUE|REFERENCE)\(\s*)?([\w/]+)\)?$/i.exec(token)?.[1];
-      if (name) out.push(name.toUpperCase());
-    }
-  });
-  return out;
-}
-
-/**
- * ADR-066 — the data object a statement assigns as a whole or in a component,
- * upper-cased, or `null`: `x = …`, `x-comp = …`, `APPEND … TO x`, `INSERT …
- * INTO [TABLE] x`, `COLLECT … INTO x`, `MOVE … TO x`, `CLEAR x`.
- */
-function assignmentTarget(text: string): string | null {
-  const direct = /^([\w/]+)(?:-[\w/-]+)?\s*\??=(?!=)/.exec(text);
-  if (direct) return direct[1].toUpperCase();
-  const into = /^(?:APPEND|INSERT|COLLECT)\b[\s\S]*?\b(?:TO|INTO(?:\s+TABLE)?)\s+([\w/]+)/i.exec(text);
-  if (into) return into[1].toUpperCase();
-  const move = /^MOVE(?:-CORRESPONDING)?\b[\s\S]*\bTO\s+([\w/]+)/i.exec(text);
-  if (move) return move[1].toUpperCase();
-  const clear = /^(?:CLEAR|FREE|REFRESH)\s+([\w/]+)/i.exec(text);
-  return clear ? clear[1].toUpperCase() : null;
 }
 
 /**
@@ -1235,9 +1156,7 @@ class SkeletonBuilder {
    * ADR-054. Every early end the walk drew, with the statement it stands on —
    * `settleEarlyEnds` decides afterwards which of them really skip something.
    */
-  private earlyEnds: Array<{ node: SkeletonNode; statementIndex: number; region: SkeletonRegion }> = [];
-  /** ADR-066. `resultWrites` per routine opener. */
-  private resultWriteCache = new Map<number, Set<number>>();
+  private earlyEnds: EarlyEnd[] = [];
   /** ADR-054. The last statement index each region's walk covers — where its normal end takes over. */
   private regionLast = new Map<string, number>();
   /** Engine 3.1.0: the decisions reading each field, by upper-cased field — `decisionsReading`. */
@@ -1302,7 +1221,14 @@ class SkeletonBuilder {
     }
     // ADR-054, once every region is walked: an early end is only early where
     // something drawn would still have followed it.
-    this.settleEarlyEnds();
+    settleEarlyEnds(this.graph, {
+      statements: this.statements,
+      structure: this.structure,
+      blockAt: this.blockAt,
+      earlyEnds: this.earlyEnds,
+      regionLast: this.regionLast,
+      runEntryRanks: this.runEntries.map((e) => e.rank),
+    });
     collapseSmallRegions(this.graph, { reads310: this.reads310 });
     applyGuards(this.graph);
     // Roadmap 2.15: after the guards, so a folded run switch is already on its
@@ -1619,7 +1545,7 @@ class SkeletonBuilder {
       // reaches it, and the class it belongs to is simply not written, so its
       // key carries an empty class.
       const bare = !(this.structure.enclosing[block.openIndex] ?? []).some((b) => b.kind === 'class');
-      const cls = bare ? '' : this.classOf(block.openIndex);
+      const cls = bare ? '' : classOf(this.statements, this.structure, block.openIndex);
       const name = /^METHOD\s+([\w/~]+)/i.exec(opener.text)?.[1]?.toUpperCase();
       if (cls === null || !name) continue;
       const key = `${cls}=>${name}`;
@@ -1628,17 +1554,6 @@ class SkeletonBuilder {
       this.methodImpls.push({ key, cls, name, short: tilde < 0 ? name : name.slice(tilde + 1), block });
       this.routineBlocks.set(key, block);
     }
-  }
-
-  /** The class whose `IMPLEMENTATION` encloses this statement, upper-cased, or `null`. */
-  private classOf(index: number): string | null {
-    const enclosing = this.structure.enclosing[index] ?? [];
-    for (let i = enclosing.length - 1; i >= 0; i--) {
-      if (enclosing[i].kind !== 'class') continue;
-      const m = /^CLASS\s+([\w/]+)\s+IMPLEMENTATION\b/i.exec(this.statements[enclosing[i].openIndex].text);
-      return m ? m[1].toUpperCase() : null;
-    }
-    return null;
   }
 
   /**
@@ -1688,7 +1603,7 @@ class SkeletonBuilder {
     index: number,
   ): { key: string | null; ambiguous: boolean; candidates: string[]; typed: boolean } {
     const model = { impls: this.methodImpls, superOf: this.superOf, refTypes: this.refTypes };
-    const ownClass = this.classOf(index);
+    const ownClass = classOf(this.statements, this.structure, index);
     const { key, ambiguous, candidates, byClass } = resolveMethodTarget(
       model,
       qualifier,
@@ -1810,7 +1725,7 @@ class SkeletonBuilder {
       return this.handlersRaisedBy(statement).filter((key) => this.registeredInWalk.has(key));
     }
     const written = /^RAISE\s+EVENT\s+([\w/~]+)/i.exec(statement.text)?.[1]?.toUpperCase();
-    const raiser = this.classOf(statement.index);
+    const raiser = classOf(this.statements, this.structure, statement.index);
     if (!written || !raiser) return [];
     const tilde = written.lastIndexOf('~');
     const event = tilde < 0 ? written : written.slice(tilde + 1);
@@ -1884,7 +1799,7 @@ class SkeletonBuilder {
         op = trailing[1] as '->' | '=>';
         qualifier = ')';
       } else if (!trailing && /[\w/\-+~<>@]$/.test(before)) continue;
-      if (op === null && !this.classOf(index)) continue;
+      if (op === null && !classOf(this.statements, this.structure, index)) continue;
       const name = m[3].toUpperCase();
       const resolved = this.resolveMethod(qualifier, op, name, index);
       out.push({
@@ -1967,7 +1882,7 @@ class SkeletonBuilder {
       if (depth === 0) flat += ch;
     }
     if (/=/.test(flat.replace(/->|=>/g, ''))) return -1;
-    if (!this.classOf(statement.index) && !/->|=>/.test(flat)) return -1;
+    if (!classOf(this.statements, this.structure, statement.index) && !/->|=>/.test(flat)) return -1;
     return last;
   }
 
@@ -2487,7 +2402,7 @@ class SkeletonBuilder {
       const opener = this.statements[block.openIndex];
       const name = /^METHOD\s+([\w/~]+)/i.exec(opener.text);
       if (!name) continue;
-      const key = `${this.classOf(block.openIndex) ?? ''}=>${name[1].toUpperCase()}`;
+      const key = `${classOf(this.statements, this.structure, block.openIndex) ?? ''}=>${name[1].toUpperCase()}`;
       const trigger = this.candidateTrigger(key, block);
       if (!trigger) continue;
       const sites = this.methodCallSites.get(key) ?? [];
@@ -2545,7 +2460,7 @@ class SkeletonBuilder {
    */
   private implementedInterfaceMethod(name: string, openIndex: number): string | null {
     if (this.writesEventBlock || !name.includes('~')) return null;
-    const cls = this.classOf(openIndex);
+    const cls = classOf(this.statements, this.structure, openIndex);
     if (cls && this.definedClasses.has(cls)) return null;
     return 'interface';
   }
@@ -2557,7 +2472,7 @@ class SkeletonBuilder {
       const opener = this.statements[block.openIndex];
       const name = /^METHOD\s+([\w/~]+)/i.exec(opener.text);
       if (!name) continue;
-      const cls = this.classOf(block.openIndex);
+      const cls = classOf(this.statements, this.structure, block.openIndex);
       const key = `${cls ?? ''}=>${name[1].toUpperCase()}`;
       const trigger = this.methodTrigger(cls, name[1]) ?? this.implementedInterfaceMethod(name[1], block.openIndex)
         ?? this.redefinitionTrigger(key);
@@ -2976,7 +2891,7 @@ class SkeletonBuilder {
     if (!this.reads320) return out;
     const sites: number[] = [];
     if (entry.trigger?.startsWith(CANDIDATE_TRIGGER)) {
-      const key = `${this.classOf(entry.statement.index) ?? ''}=>${entry.label.toUpperCase()}`;
+      const key = `${classOf(this.statements, this.structure, entry.statement.index) ?? ''}=>${entry.label.toUpperCase()}`;
       sites.push(...(this.candidateSites.get(key) ?? []).map((site) => site.index));
     } else if (entry.origin === 'module') {
       sites.push(...this.screenCallSites);
@@ -4302,158 +4217,6 @@ class SkeletonBuilder {
       this.graph.edges.push({ from: exit.from, to: node.id, kind: kind ?? exit.kind, condition: exit.condition, reason });
     }
     this.earlyEnds.push({ node, statementIndex: statement.index, region: ctx.region });
-  }
-
-  /**
-   * ADR-054, "no tangle". An early end whose statement stands directly before
-   * the block's end — nothing drawn in between — is the normal end, and its
-   * flows go back to it. Decided on the complete walk, because whether anything
-   * is drawn after a statement is only known once the statements after it have
-   * been walked.
-   */
-  private settleEarlyEnds(): void {
-    if (!this.earlyEnds.length) return;
-    const drawn = new Map<string, Set<number>>();
-    for (const node of this.graph.nodes) {
-      if (!node.anchor || node.detail?.early === true) continue;
-      const own = drawn.get(node.region);
-      if (own) own.add(node.anchor.statementIndex);
-      else drawn.set(node.region, new Set([node.anchor.statementIndex]));
-    }
-    const dropped = new Set<string>();
-    for (const { node, statementIndex, region } of this.earlyEnds) {
-      const last = this.regionLast.get(region.key);
-      if (last === undefined || !region.endNodeId) continue;
-      // ADR-066. `LEAVE SCREEN`, `LEAVE TO SCREEN n` and `LEAVE LIST-PROCESSING`
-      // are never the routine's normal end, wherever they stand: the ABAP
-      // keyword documentation has them end the current dialog step on the spot
-      // — the rest of the screen's flow logic (the PAI/PBO modules after this
-      // one) does not run, and the runtime goes on with screen n (or back to
-      // the caller for 0). `ENDMODULE` hands back to that flow logic. So the
-      // end stays its own even with nothing drawn behind it in the module.
-      if (leavesDialogStep(this.statements[statementIndex].text)) continue;
-      // ADR-066. An exit that skips an assignment to a result parameter of its
-      // routine (`CHANGING` of a FORM; `EXPORTING`, `CHANGING`, `RETURNING` of
-      // a method) is not the normal end either: the caller gets another result
-      // back — `cv_ok` stays initial — whether or not a step is drawn between.
-      // Roadmap 3.0.7. `EXIT`, `RETURN` and `STOP` in `START-OF-SELECTION` or
-      // `GET` skip the reporting events still to come, so they are never the
-      // block's normal end while one follows — see `chainReportEvents`.
-      if (this.skipsLaterReportEvents(region, this.statements[statementIndex].keyword)) continue;
-      const own = drawn.get(region.key) ?? new Set<number>();
-      const results = this.resultWrites(statementIndex);
-      const counted = results.size ? new Set([...own, ...results]) : own;
-      if (this.skipsSomething(statementIndex, last, counted)) continue;
-      for (const edge of this.graph.edges) if (edge.to === node.id) edge.to = region.endNodeId;
-      dropped.add(node.id);
-    }
-    if (dropped.size) this.graph.nodes = this.graph.nodes.filter((n) => !dropped.has(n.id));
-  }
-
-  /**
-   * Roadmap 3.0.7 — whether an early exit with this keyword, in this region,
-   * ends the reporting run rather than the block: `EXIT` and `RETURN` (and
-   * `STOP`, which goes on with `END-OF-SELECTION` only) in `START-OF-SELECTION`
-   * or `GET`, while a later reporting event block exists that it skips. The
-   * ABAP keyword documentation on `EXIT`/`STOP` in processing blocks: after
-   * those two events are left with `EXIT`, no further reporting event is
-   * raised and the list is displayed; `STOP` raises `END-OF-SELECTION`.
-   */
-  private skipsLaterReportEvents(region: SkeletonRegion, keyword: string): boolean {
-    if (region.kind !== 'entry' || !['EXIT', 'RETURN', 'STOP'].includes(keyword.toUpperCase())) return false;
-    const rank = region.runtimeRank;
-    if (rank !== RANK_START_OF_SELECTION && rank !== RANK_GET) return false;
-    return this.runEntries.some((e) => e.rank > rank && e.rank <= RANK_END_OF_SELECTION);
-  }
-
-  /**
-   * ADR-066 — the statements of the FORM or method around `index` that assign
-   * one of its result parameters, by statement index. Empty outside a routine,
-   * or where the signature names no result parameter this reader can find.
-   */
-  private resultWrites(index: number): Set<number> {
-    const enclosing = this.structure.enclosing[index] ?? [];
-    const routine = [...enclosing].reverse().find((b) => b.kind === 'form' || b.kind === 'method');
-    if (!routine) return new Set();
-    const cached = this.resultWriteCache.get(routine.openIndex);
-    if (cached) return cached;
-    const opener = this.statements[routine.openIndex].text;
-    const params = new Set(routine.kind === 'form'
-      ? resultParameters(opener, /\bCHANGING\b/i)
-      : this.methodResultParameters(routine.openIndex));
-    const out = new Set<number>();
-    if (params.size) {
-      for (let i = routine.openIndex + 1; i < routine.closeIndex; i++) {
-        const target = assignmentTarget(this.statements[i].text);
-        if (target && params.has(target)) out.add(i);
-      }
-    }
-    this.resultWriteCache.set(routine.openIndex, out);
-    return out;
-  }
-
-  /**
-   * The `EXPORTING`, `CHANGING` and `RETURNING` parameters the declaration of
-   * the method at `openIndex` names — read off `METHODS name …` in its class's
-   * `DEFINITION`, or for `zif~name` in the interface. A declaration this
-   * source does not hold yields none.
-   */
-  private methodResultParameters(openIndex: number): string[] {
-    const written = /^METHOD\s+([\w/~]+)/i.exec(this.statements[openIndex].text)?.[1]?.toUpperCase();
-    if (!written) return [];
-    const tilde = written.indexOf('~');
-    const owner = tilde < 0 ? this.classOf(openIndex) : written.slice(0, tilde);
-    const name = tilde < 0 ? written : written.slice(tilde + 1);
-    if (!owner) return [];
-    for (const block of this.structure.blocks) {
-      if (block.kind !== 'class' && block.kind !== 'interface') continue;
-      const head = this.statements[block.openIndex].text;
-      const declares = block.kind === 'interface'
-        ? new RegExp(`^INTERFACE\\s+${owner.replace(/\//g, '\\/')}\\b(?!\\s+(?:DEFERRED|LOAD)\\b)`, 'i').test(head)
-        : new RegExp(`^CLASS\\s+${owner.replace(/\//g, '\\/')}\\s+DEFINITION\\b(?!\\s+(?:DEFERRED|LOAD)\\b)`, 'i').test(head);
-      if (!declares) continue;
-      for (let i = block.openIndex + 1; i < block.closeIndex; i++) {
-        const text = this.statements[i].text;
-        const m = /^(?:CLASS-)?METHODS\s+([\w/~]+)/i.exec(text);
-        if (m && m[1].toUpperCase() === name) return resultParameters(text, /\b(?:EXPORTING|CHANGING|RETURNING)\b/i);
-      }
-    }
-    return [];
-  }
-
-  /**
-   * Does leaving at `index` skip anything this region draws? The way the
-   * program would have gone without the exit is followed statement by
-   * statement: an arm header leaves its construct, a loop's closing word runs
-   * the loop again (so the exit skips the rest of it), a flow block counts with
-   * everything inside it, and a container is stepped over as `walkRange` steps
-   * over it.
-   */
-  private skipsSomething(index: number, last: number, drawn: ReadonlySet<number>): boolean {
-    let j = index + 1;
-    while (j <= last) {
-      const block = this.blockAt.get(j);
-      if (block) {
-        if (FLOW_BLOCKS.has(block.kind)) {
-          for (let k = j; k <= Math.min(block.closeIndex, last); k++) if (drawn.has(k)) return true;
-        }
-        j = Math.max(j + 1, block.closeIndex + 1);
-        continue;
-      }
-      const keyword = this.statements[j].keyword.toUpperCase();
-      if (ARM_HEADERS.has(keyword)) {
-        const enclosing = this.structure.enclosing[j] ?? [];
-        const owner = enclosing[enclosing.length - 1];
-        if (owner && owner.closeIndex > j) {
-          j = owner.closeIndex;
-          continue;
-        }
-      }
-      if (LOOP_CLOSERS.has(keyword)) return true;
-      if (drawn.has(j)) return true;
-      j += 1;
-    }
-    return false;
   }
 
   /**
