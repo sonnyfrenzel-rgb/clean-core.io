@@ -9,20 +9,19 @@ import { engineReads310Apply } from './engine-reads-310-gate';
 import { engineReads320Apply } from './engine-reads-320-gate';
 import { APP_VERSION } from '../version';
 import { SkeletonGraph, type SkeletonReadings } from './skeleton/graph';
-import { anchorOf, bodyRange } from './skeleton/anchors';
 import { buildLanes } from './skeleton/lanes';
 import { noteWhatIsNotRead } from './skeleton/source-notes';
 import { readDeclarations, type MethodImpl } from './skeleton/declarations';
 import { readEffects } from './skeleton/effects';
 import { MethodDispatch } from './skeleton/dispatch';
-import { CANDIDATE_TRIGGER, EntryReader, type EntryPoint } from './skeleton/entries';
+import { EntryReader, type EntryPoint } from './skeleton/entries';
 import { WalkReaders } from './skeleton/walk-readers';
 import { settleEarlyEnds } from './skeleton/early-ends';
 import { newWalkState, type WalkState } from './skeleton/walk/state';
 import type { Walker } from './skeleton/walk/walker';
 import { walkRange } from './skeleton/walk/range';
+import { buildEntryRegion, routineRegion } from './skeleton/walk/regions';
 import { callbackEntry } from './skeleton/walk/callbacks';
-import { classOf } from './skeleton/statement-readers';
 import { chainReportEvents } from './skeleton/report-chain';
 import { addSubProcessStarts, markEmptyEntries } from './skeleton/starts';
 import { noteUnreachableSteps } from './skeleton/unreachable-notes';
@@ -468,23 +467,6 @@ export interface SkeletonLuw {
 }
 
 /* ------------------------------------------------------------------ *
- * Keyword tables. Every one of them decides a kind out of §5.8, and
- * every one is a list of words the source may contain — never a guess
- * about what the program means.
- * ------------------------------------------------------------------ */
-
-/**
- * How many `PERFORM`s deep the walk opens a routine before it says so instead.
- *
- * The walk follows a chain of calls by recursing once per link, so the chain's
- * depth is the call stack's depth — and a source that is one long chain ended
- * the whole analysis in a `RangeError` (see `routineRegion`). Two hundred is far
- * past any chain a program written by a person has, and far short of the depth
- * at which this walk runs out of stack (measured: between 800 and 1200 links).
- */
-const MAX_PERFORM_EXPANSION = 200;
-
-/* ------------------------------------------------------------------ *
  * The build.
  * ------------------------------------------------------------------ */
 
@@ -754,15 +736,15 @@ class SkeletonBuilder {
       state: this.walk,
       readings: { reads310: this.reads310, reads320: this.reads320 },
       range: (from, to, ctx, incoming) => walkRange(this.w, from, to, ctx, incoming),
-      routineRegion: (name) => this.routineRegion(name),
+      routineRegion: (name) => routineRegion(this.w, name),
     };
-    for (const entry of entries) this.buildEntryRegion(entry);
-    for (const entry of this.entryReader.deferredModuleEntries(this.walk.screenCalled)) this.buildEntryRegion(entry);
+    for (const entry of entries) buildEntryRegion(this.w, entry);
+    for (const entry of this.entryReader.deferredModuleEntries(this.walk.screenCalled)) buildEntryRegion(this.w, entry);
     // A callback's own walk can start another task, so this runs until the
     // walks name nothing new.
     for (let next = 0; next < this.walk.callbacks.length; next++) {
       const entry = callbackEntry(this.w, this.walk.callbacks[next]);
-      if (entry) this.buildEntryRegion(entry);
+      if (entry) buildEntryRegion(this.w, entry);
     }
     // ADR-054, once every region is walked: an early end is only early where
     // something drawn would still have followed it.
@@ -824,195 +806,5 @@ class SkeletonBuilder {
       luw,
     };
   }
-
-  /* ---------------- what the walk asks of the declarations and the dispatch ---------------- */
-
-  /* ---------------- the regions ---------------- */
-
-  private buildEntryRegion(entry: EntryPoint): void {
-    const key = `entry:${entry.label}@${entry.statement.lineStart}`;
-    if (this.graph.regions.some((r) => r.key === key)) return;
-    const region: SkeletonRegion = {
-      key,
-      kind: 'entry',
-      label: entry.label,
-      anchor: anchorOf(entry.statement),
-      runtimeRank: entry.rank,
-      endNodeId: '',
-      entryNodeId: null,
-    };
-    this.graph.regions.push(region);
-
-    const container = entry.implicit ? null : entry.label;
-    const start = this.graph.addNode('start', entry.label, anchorOf(entry.statement), region, container, {
-      detail: {
-        implicit: entry.implicit,
-        runtimeRank: entry.rank,
-        // Roadmap 2.14: which of the six the reader is looking at, and what the
-        // source said to justify it. `trigger: null` is the honest half — the
-        // source proves the routine is callable and not what calls it.
-        origin: entry.origin,
-        ...(entry.trigger ? { trigger: entry.trigger } : { triggerNotDetermined: true }),
-      },
-    });
-    // The normal end of a named region is its closing word, not the last
-    // statement before it (2.14): `ENDMETHOD` is where the method ends, and
-    // corpus cases CC-040 and CC-057 anchor their end node exactly there.
-    const end = this.graph.addNode('end', entry.label, anchorOf(entry.endStatement), region, container);
-    region.endNodeId = end.id;
-
-    const from = entry.implicit ? entry.statement.index : entry.statement.index + 1;
-    this.walk.regionLast.set(region.key, entry.lastIndex);
-    // What `SET HANDLER` registered holds only within one run. Every entry
-    // that is called on its own — a function module, a method called from
-    // outside, a screen module, a bare FORM, a callback, an event handler —
-    // starts with nothing registered. The event blocks of a report are one
-    // run: a block starts with what the blocks that run **before** it (runtime
-    // order, rule 4 — not the order they are written in) register
-    // unconditionally (`registeredBefore`).
-    this.walk.registeredInWalk = entry.origin === 'event' || entry.origin === 'implicit'
-      ? this.registeredBefore(entry)
-      : this.registeredAtEntry(entry);
-    const exits = walkRange(this.w, from, entry.lastIndex, {
-      region, container, loops: [], loopBreaks: [],
-    }, [{ from: start.id, condition: '', kind: 'sequence' }]);
-    region.entryNodeId = start.id;
-    this.graph.connect(exits, end.id);
-  }
-
-  /**
-   * The region a routine opens — a `FORM`, or since D2 a method this source
-   * implements — built once however often it is called.
-   */
-  /**
-   * The handlers the event blocks that run before this one register for
-   * certain: a `SET HANDLER` standing at the top level of such a block — in
-   * no branch, loop or TRY, and not in a routine it calls — in a block that
-   * cannot be left before its end. Anything less certain is left out, and the
-   * `RAISE` it would have opened stays opaque.
-   */
-  private registeredBefore(entry: EntryPoint): Set<string> {
-    const out = new Set<string>();
-    if (!this.boundHandlers.length) return out;
-    for (const earlier of this.runEntries) {
-      if (earlier === entry || earlier.rank >= entry.rank) continue;
-      const from = earlier.implicit ? earlier.statement.index : earlier.statement.index + 1;
-      if (this.readers.canLeaveEarly(from, earlier.lastIndex)) continue;
-      // The implicit START-OF-SELECTION is scattered between blocks: only its own statements.
-      const own = earlier.implicit ? new Set(this.entryReader.programLevelStatements().map((s) => s.index)) : null;
-      for (let i = from; i <= earlier.lastIndex; i++) {
-        if ((this.structure.enclosing[i] ?? []).length || (own && !own.has(i))) continue;
-        const handlers = this.dispatch.handlersSetBy(this.statements[i]);
-        if (!handlers || handlers.deregisters) continue;
-        for (const { key } of handlers) if (this.boundHandlers.includes(key)) out.add(key);
-      }
-    }
-    return out;
-  }
-
-  /**
-   * Engine 3.2.0 — what an entry that runs **inside** this program's run starts with: the handlers registered when
-   * the walk passed the statement that hands over to it (`registrationsAtCall`), of every such statement walked
-   * before this entry is built. Three such entries: a candidate implementation runs inside the ambiguous call that
-   * reaches it (`candidateEntries`); a screen module runs inside the `CALL SCREEN` of the report that showed the
-   * screen (`deferredModuleEntries`); a callback runs in the session that registered it (`callbackEntry`). An ABAP
-   * event handler registered with `SET HANDLER` stays registered for the whole internal session, so a `RAISE EVENT`
-   * in any of them runs it. Every other entry called on its own starts with nothing registered — and so does every
-   * entry of an older engine, whose map stays as it was.
-   */
-  private registeredAtEntry(entry: EntryPoint): Set<string> {
-    const out = new Set<string>();
-    if (!this.reads320) return out;
-    const sites: number[] = [];
-    if (entry.trigger?.startsWith(CANDIDATE_TRIGGER)) {
-      const key = `${classOf(this.statements, this.structure, entry.statement.index) ?? ''}=>${entry.label.toUpperCase()}`;
-      sites.push(...(this.candidateSites.get(key) ?? []).map((site) => site.index));
-    } else if (entry.origin === 'module') {
-      sites.push(...this.walk.screenCallSites);
-    } else if (entry.origin === 'callback' && entry.site !== undefined) {
-      sites.push(entry.site);
-    }
-    for (const site of sites) for (const handler of this.walk.registrationsAtCall.get(site) ?? []) out.add(handler);
-    return out;
-  }
-
-  private routineRegion(name: string): SkeletonRegion | null {
-    const known = this.walk.regionOfRoutine.get(name);
-    if (known) return known;
-    const block = this.routineBlocks.get(name);
-    if (!block) return null;
-    const method = this.methodImpls.find((impl) => impl.key === name);
-
-    // A chain of PERFORMs is followed by recursion — this method, the walk over
-    // the routine it opens, and the PERFORM in that routine call one another —
-    // so the depth of the chain is the depth of the call stack. A source with a
-    // 6000-link chain fits in 410 kB, well under the 1 MB a `legacyCode` field
-    // may hold, and the stack gave out before the walk did: `RangeError:
-    // Maximum call stack size exceeded` out of `buildProcessSkeleton`, and with
-    // it every reading derived from it. The floor
-    // answers the way the macro floor above does: read what can be read, and
-    // say what was left unread rather than fail. Real chains are two digits at
-    // most; this one is the last link that still gets opened.
-    if (this.walk.expanding.length >= MAX_PERFORM_EXPANSION) {
-      this.graph.note('expansion-depth-reached', this.statements[block.openIndex],
-        `${name} is performed ${MAX_PERFORM_EXPANSION} calls deep, in a chain that starts at `
-        + `${this.walk.expanding[0]}. The call is drawn; what this routine does is not read, `
-        + 'so no step inside it is in this skeleton.');
-      return null;
-    }
-
-    const opener = this.statements[block.openIndex];
-    const region: SkeletonRegion = {
-      key: method ? `method:${name}` : `form:${name}`,
-      kind: 'sub-process',
-      label: method ? method.name : name,
-      anchor: anchorOf(opener),
-      endNodeId: '',
-      entryNodeId: null,
-      effects: [...(this.effects.get(name) ?? [])],
-    };
-    this.graph.regions.push(region);
-    this.walk.regionOfRoutine.set(name, region);
-
-    const closer = this.statements[block.closeIndex];
-    const end = block.terminated
-      ? this.graph.addNode('end', name, anchorOf(closer), region, name)
-      // Rule 1: nothing closed this routine, so where it ends is a guess. A node
-      // that says so must not look like a node that carries a range.
-      : this.graph.addNode('end', name, null, region, name, {
-        unanchoredReason: method
-          ? `METHOD ${method.name} is not closed by ENDMETHOD in this source, so it has no end to anchor to.`
-          : `FORM ${name} is not closed by ENDFORM in this source, so it has no end to anchor to.`,
-      });
-    region.endNodeId = end.id;
-
-    const [from, to] = bodyRange(block);
-    const guarded = this.readers.readGuard(from, to, region);
-    const before = this.graph.nodes.length;
-    this.walk.regionLast.set(region.key, to);
-    this.walk.expanding.push(name);
-    const registered = new Set(this.walk.registeredInWalk);
-    const exits = walkRange(this.w, guarded, to, {
-      region, container: name, loops: [], loopBreaks: [],
-    }, []);
-    this.walk.expanding.pop();
-    // A routine that can leave before its end (`CHECK`, `RETURN`, `EXIT`,
-    // `STOP`, `LEAVE`, an error end) may return without its `SET HANDLER`
-    // having run — its registrations do not reach the caller. Its region is
-    // also built once and reused, so what it registers is kept only where no
-    // way out precedes it anywhere.
-    if (this.readers.canLeaveEarly(from, to)) this.walk.registeredInWalk = registered;
-    // The walk gives a sub-process no start event — the call site is where it
-    // begins, and `addSubProcessStarts` adds one only once it is known that the
-    // routine is drawn as a plane of its own (ADR-054) — so its first node is
-    // the one nothing inside the region points at.
-    // It is looked up by region and not by position: a `PERFORM` inside this
-    // routine builds the region it opens *before* it adds its own call site, so
-    // the node at `before` can belong to a routine one level down.
-    region.entryNodeId = this.graph.nodes.slice(before).find((n) => n.region === region.key)?.id ?? null;
-    this.graph.connect(exits, end.id);
-    return region;
-  }
-
 }
 
