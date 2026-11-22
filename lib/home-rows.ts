@@ -4,7 +4,7 @@ import { countSourceLines } from '@/lib/source-lines';
 import { sourceFileName } from '@/lib/source-file-name';
 import { summaryOf } from '@/lib/project-summary';
 import { HOME_STATUS_LABEL, HOME_STATUS_ORDER, homeStatus, type HomeStatus, type HomeStatusKind } from '@/lib/home-status';
-import { toProgramTile, type ProgramTile } from '@/lib/workspace-tiles';
+import { needsAttention, toProgramTile, type ProgramTile } from '@/lib/workspace-tiles';
 
 /**
  * One row of the home page's project list (AB-14b, mockup `docs/roadmap/home-mockup-v2.html`, states 2–9, 11, 12):
@@ -126,7 +126,7 @@ export const FIRST_ROWS = 10;
 /** The attention card's most rows (plan AB-14b: "at most three"). */
 export const ATTENTION_SHOWN = 3;
 
-/** The Status filter's extra value: every project with a reason for attention. */
+/** The Status filter's extra value: every project with a reason for attention (`needsAttention`, the tiles' own). */
 export const ATTENTION_FILTER = 'attention';
 
 export interface HomeFilter {
@@ -167,7 +167,7 @@ export function filterHomeRows(
   const needle = filter.search.trim().toLowerCase();
   return rows.filter((row) => {
     if (filter.status === ATTENTION_FILTER) {
-      if (!row.status.attention) return false;
+      if (!needsAttention(row.tile)) return false;
     } else if (filter.status && row.status.kind !== filter.status) return false;
     if (filter.level && hasLevel(row, filter.level) === false) return false;
     if (!needle) return true;
@@ -179,18 +179,20 @@ export function filterHomeRows(
 export function homeStatusOptions(rows: readonly HomeRow[]): Array<{ value: string; label: string }> {
   const kinds: HomeStatusKind[] = HOME_STATUS_ORDER.filter((k) => rows.some((r) => r.status.kind === k));
   const options = kinds.map((k) => ({ value: k as string, label: HOME_STATUS_LABEL[k] }));
-  if (rows.some((r) => r.status.attention)) options.push({ value: ATTENTION_FILTER, label: ATTENTION_FILTER_LABEL });
+  if (rows.some((r) => needsAttention(r.tile))) options.push({ value: ATTENTION_FILTER, label: ATTENTION_FILTER_LABEL });
   return options;
 }
 
 export const ATTENTION_FILTER_LABEL = 'Needs attention';
 
 /**
- * "Needs your attention" — only own projects with a reason (code changed, design no longer fits, a failed test run),
- * newest first, at most {@link ATTENTION_SHOWN}; `total` counts them all. No reason, no card.
+ * "Needs your attention" — only own projects with a reason, newest first, at most {@link ATTENTION_SHOWN}; `total`
+ * counts them all. No reason, no card. The reason is the tiles' own (`needsAttention` in `lib/workspace-tiles.ts`,
+ * owner decision 22.11.2026): the code changed since the analysis, or it was not analysed yet — so this box and the
+ * "Needs attention" count tile always say the same number.
  */
 export function attentionRows(rows: readonly HomeRow[]): { shown: HomeRow[]; total: number } {
-  const all = sortHomeRows(rows.filter((r) => r.access === 'own' && r.status.attention !== null), 'last-change');
+  const all = sortHomeRows(rows.filter((r) => r.access === 'own' && needsAttention(r.tile)), 'last-change');
   return { shown: all.slice(0, ATTENTION_SHOWN), total: all.length };
 }
 

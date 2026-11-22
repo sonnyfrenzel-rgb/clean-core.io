@@ -20,7 +20,8 @@ const OLD_FIGURES_KEY = 'cc.workspace.figures';
  *   2. The rows reach the browser without source code.
  *   3. Four columns, the new status words, dates as "6 Nov 2026".
  *   4. Filters from ten projects on, over all of them.
- *   5. "Needs your attention" only with a reason — at most three, and not at all for an account without one.
+ *   5. "Needs your attention" only with a reason (the count tile's: code changed or not analysed) — at most three, and
+ *      not at all for an account without one.
  *   6. A run from a row only through the confirmation dialog with its cost and model; Cancel starts nothing.
  *   7. The "Figures" switch, for this page view only: nothing stored, off again after a reload (owner, 15.11.2026).
  *   8. Tabs: Shared with me appears with a shared project.
@@ -153,8 +154,12 @@ test('four columns, the new status words, and dates as "6 Nov 2026"', async ({ p
   expect(titles.length).toBeGreaterThan(0);
   for (const title of titles) expect(['No code yet', 'Not analysed yet', 'Analysed', 'Re-design under way', 'Re-design done', 'Handed over']).toContain(title.trim());
   for (const date of await page.locator('[data-home-date]').allInnerTexts()) expect(date.trim()).toMatch(/^\d{1,2} [A-Z][a-z]{2} \d{4}$/);
-  // An analysed project with nothing changed has nothing open — re-design is never offered here.
-  await expect(page.locator('[data-home-next="design"]')).toHaveCount(0);
+  // Owner decision 22.11.2026: the Next step is the tile's own — an analysed project with nothing changed reads
+  // "Re-design this program" here as on its tile, never "Nothing open". The newest ten (21–30) are staged or changed;
+  // the unchanged analysed ones (3–15) are behind "Show all".
+  await page.locator('[data-workspace-show-all]').click();
+  await expect(page.locator('#home-panel-mine [data-home-next="design"]').first()).toContainText('Re-design this program');
+  await expect(page.locator('#home-panel-mine [data-home-next="none"]')).toHaveCount(0);
   // 3.3.0: the head is the tiles' head in both modes — the next analysis starts from "Analyse another Z program".
   await expect(page.locator('[data-ws-analyse-another]')).toBeVisible();
 });
@@ -165,13 +170,17 @@ test('the filters run over every project; "Needs your attention" lists at most t
   const card = page.locator('[data-home-attention]');
   await expect(card).toHaveCount(1);
   await expect(card.locator('[data-home-attention-row]')).toHaveCount(3);
-  for (const reason of await card.locator('[data-home-attention-reason]').allInnerTexts()) {
-    expect(reason.trim()).toBe('The code changed since the analysis');
-  }
-  // Five have a reason: the analysed projects 18, 21, 24, 27 and 30, whose code changed since.
+  // Owner decision 22.11.2026: the reason is the "Needs attention" tile's own — code changed, or not analysed yet.
+  const reasons = (await card.locator('[data-home-attention-reason]').allInnerTexts()).map((r) => r.trim());
+  for (const reason of reasons) expect(['The code changed since the analysis', 'Not analysed yet']).toContain(reason);
+  // The newest three: 30 (code changed), 29 and 28 (staged).
+  expect(reasons).toEqual(['The code changed since the analysis', 'Not analysed yet', 'Not analysed yet']);
+  // Twenty-five have a reason: the twenty staged projects, and the analysed 18, 21, 24, 27 and 30 whose code changed.
+  await expect(card).toContainText('25');
   await card.locator('[data-home-attention-all]').click();
+  await page.locator('[data-workspace-show-all]').click();
   const attention = page.locator('#home-panel-mine [data-cc-table] [data-workspace-open]');
-  await expect(attention).toHaveCount(5);
+  await expect(attention).toHaveCount(25);
 });
 
 test('a run from a row asks first, with cost and model; Cancel starts nothing', async ({ page }) => {

@@ -18,6 +18,7 @@ import {
   type HomeRow,
 } from '../lib/home-rows';
 import { homeStatus, ATTENTION_LABEL, HOME_STATUS_LABEL, REDESIGN_TOTAL } from '../lib/home-status';
+import { attentionOf, programNextLink, tileCounts, tileMatches } from '../lib/workspace-tiles';
 import { computeProjectInShort, inShortOf, inShortSentencesOf, PROJECT_IN_SHORT_VERSION } from '../lib/project-in-short';
 import { STORAGE_KEYS } from '../lib/storage-keys';
 import { sha256Hex, artefactDigest } from '../lib/artefact-digest';
@@ -34,7 +35,8 @@ import type { Project } from '../lib/types';
  *   - every project is listed (H-O9, QA `c559b61a9b31`): no `limit(25)` anywhere on the way, the rows come lean from
  *     the server — no source code in a row;
  *   - the new status words (H-O3): analysed alone is complete, re-design is named only once started, never offered;
- *   - "Needs your attention" only with one of three reasons, at most three;
+ *   - "Needs your attention" only with a reason — the tiles' own (code changed, not analysed yet), at most three;
+ *   - the Next step column reads the tile's own next step (owner decision 22.11.2026);
  *   - "In short" is written by the server with the run, from the engine only, outside the signed run.
  */
 
@@ -189,21 +191,61 @@ test.describe('the rows — lib/home-rows.ts (H-O9: every project, lean)', () =>
     expect(kept.map((r) => r.id)).toEqual(['p1', 'p2']);
   });
 
-  test('"Needs your attention" lists only rows with a reason, own ones, at most three', () => {
+  test('"Needs your attention" lists only rows with a reason, own ones, at most three — the tiles\' own reason', () => {
     const changed = (id: string, day: string) =>
       toHomeRow(analysed(id, { legacyCode: `${DEMO}\n* ${id}`, updatedAt: day } as Partial<Project>));
-    const rows = [...thirty, changed('c1', '2026-11-01'), changed('c2', '2026-11-03'), changed('c3', '2026-11-02'), changed('c4', '2026-10-30')];
+    const signedOnly = thirty.filter((r) => r.hasRun);
+    const rows = [...signedOnly, changed('c1', '2026-11-01'), changed('c2', '2026-11-03'), changed('c3', '2026-11-02'), changed('c4', '2026-10-30')];
     const shared = { ...changed('s1', '2026-11-05'), access: 'shared' as const };
     const { shown, total } = attentionRows([...rows, shared]);
     expect(total).toBe(4);
     expect(shown.map((r) => r.id)).toEqual(['c2', 'c3', 'c1']);
+    expect(shown.map((r) => attentionOf(r.tile))).toEqual(['code-changed', 'code-changed', 'code-changed']);
     expect(ATTENTION_SHOWN).toBe(3);
-    // No reason, no card: thirty projects analysed or staged carry none.
-    expect(attentionRows(thirty).total).toBe(0);
-    // The status filter offers "Needs attention" only when there is one.
-    expect(homeStatusOptions(thirty).map((o) => o.value)).not.toContain(ATTENTION_FILTER);
+    // No reason, no card: signed programs whose code did not change carry none.
+    expect(attentionRows(signedOnly).total).toBe(0);
+    expect(homeStatusOptions(signedOnly).map((o) => o.value)).not.toContain(ATTENTION_FILTER);
     expect(homeStatusOptions(rows).map((o) => o.value)).toContain(ATTENTION_FILTER);
     expect(filterHomeRows(rows, { ...EMPTY_HOME_FILTER, status: ATTENTION_FILTER })).toHaveLength(4);
+    // Owner decision 22.11.2026: a program not analysed yet needs attention too — the twenty staged ones of the thirty.
+    expect(attentionRows(thirty).total).toBe(20);
+    expect(attentionOf(thirty[1].tile)).toBe('not-analysed');
+  });
+
+  test('the box and the count tile say the same number, from one predicate (owner decision 22.11.2026)', () => {
+    const changed = toHomeRow(analysed('c9', { legacyCode: `${DEMO}\n* c9` } as Partial<Project>));
+    const rows = [...thirty, changed];
+    const tiles = rows.map((r) => r.tile);
+    expect(attentionRows(rows).total).toBe(tileCounts(tiles).attention);
+    expect(attentionRows(rows).total).toBe(21);
+    expect(filterHomeRows(rows, { ...EMPTY_HOME_FILTER, status: ATTENTION_FILTER }).map((r) => r.id).sort()).toEqual(
+      tiles.filter((t) => tileMatches(t, 'attention')).map((t) => t.id).sort(),
+    );
+    // One predicate: the box and the Status filter read the tiles' `needsAttention`, not a status of their own.
+    const lib = code('lib/home-rows.ts');
+    expect(lib).toContain('needsAttention(r.tile)');
+    expect(lib).toContain('needsAttention(row.tile)');
+    expect(lib).not.toContain('status.attention');
+    const card = code('components/workspace/HomeAttentionCard.tsx');
+    expect(card).toContain('attentionOf(row.tile)');
+    expect(card).toContain('ATTENTION_REASON_LABEL[reason]');
+  });
+
+  test('the Next step column reads the tile\'s own next step (owner decision 22.11.2026)', () => {
+    // A signed program reads "Re-design this program" in both places, not "Nothing open" in the list.
+    expect(programNextLink(thirty[0].tile)).toEqual({ label: 'Re-design this program', tool: 'Design', path: 'design', run: false, note: null });
+    // A retired one: "Open the decision", with the tile's "Not needed — decided: Retire" under it.
+    const retired = toHomeRow(analysed('r1', { targetArchitecture: 'retire', approvedByArchitect: true } as Partial<Project>));
+    expect(programNextLink(retired.tile)).toEqual({ label: 'Open the decision', tool: 'Design', path: 'design', run: false, note: 'Not needed — decided: Retire' });
+    // Not analysed and changed code are runs, through the dialog.
+    expect(programNextLink(thirty[1].tile)).toMatchObject({ label: 'Run the analysis', path: 'analyze', run: true });
+    const changed = toHomeRow(analysed('c8', { legacyCode: `${DEMO}\n* c8` } as Partial<Project>));
+    expect(programNextLink(changed.tile)).toMatchObject({ label: 'Run the analysis again', path: 'analyze', run: true });
+    // No code at all: add it, nothing to run.
+    expect(programNextLink(toHomeRow(base('n1')).tile)).toMatchObject({ label: 'Add the code', path: 'analyze', run: false });
+    const list = code('components/workspace/WorkspaceListReport.tsx');
+    expect(list).toContain('next={programNextLink(row.tile)}');
+    expect(list).not.toContain('row.status.next');
   });
 
   test('the route\'s answer is read back strictly: a row of another shape is dropped', () => {

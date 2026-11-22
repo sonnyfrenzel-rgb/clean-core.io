@@ -15,8 +15,10 @@ import type { Project } from '@/lib/types';
  * Read from the phase contract (`workflowSteps`, `staleness`) and never from `project.status`, a string a client can
  * write. The dot keeps its three looks (`ProgressTone`), never green.
  *
- * "Needs your attention" has exactly three reasons (H-O3, plan AB-14b): the code changed since the analysis, the
- * design no longer matches the analysis, a test run failed. Nothing else puts a project there.
+ * `attention` names what the status line warns about: the code changed since the analysis, the design no longer
+ * matches the analysis, a test run failed. Since 3.3.0 it no longer decides the "Needs your attention" box, and the
+ * list's Next step column no longer reads `next`: both come from the program tile (`needsAttention` and
+ * `programNextLink` in `lib/workspace-tiles.ts`, owner decision 22.11.2026), so the list and the tiles cannot differ.
  *
  * Pure: no React, no Firestore. The server's row source (`/api/workspace-rows`) and the browser both read it.
  */

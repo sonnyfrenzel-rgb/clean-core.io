@@ -12,6 +12,8 @@ import { formatNumber } from '@/lib/format';
 import {
   COUNTS_FROM,
   nextStepOf,
+  programNextLabel,
+  programNextStep,
   REDESIGN_KEYS,
   tileCounts,
   tileMatches,
@@ -25,7 +27,6 @@ import {
   wsAlsoWaiting,
   wsAnalysedOn,
   wsChangedThisWeek,
-  wsContinue,
   wsDeliveredOn,
   wsNextBody,
   wsNextBodyAnalyse,
@@ -159,7 +160,7 @@ function AnalyseLine({ tile }: { tile: ProgramTile }) {
       <ActionLink href={analysisHref(tile)} data-tile-action="open-analysis">{wt('ws.an.open')}</ActionLink>
     ) : (
       <ActionLink href={`${tile.href}/analyze`} data-tile-action="run">
-        {a.kind === 'stale' ? wt('ws.an.rerun') : a.kind === 'no-code' ? wt('ws.an.addCode') : wt('ws.an.run')}
+        {programNextLabel(programNextStep(tile))}
       </ActionLink>
     );
   return (
@@ -180,7 +181,7 @@ function RedesignLine({ tile }: { tile: ProgramTile }) {
     case 'not-needed':
       status = <Status tone="waiting">{wsNotNeeded(DECISION_OPTION_LABELS[r.option], r.confirmed)}</Status>;
       left = meta(wt('ws.rd.nothingBuilt'));
-      action = <ActionLink href={toolHref(tile, 'design')} data-tile-action="open-decision">{wt('ws.rd.openDecision')}</ActionLink>;
+      action = <ActionLink href={toolHref(tile, 'design')} data-tile-action="open-decision">{programNextLabel({ kind: 'open-decision', key: 'design', run: false })}</ActionLink>;
       break;
     case 'waits':
       status = <Status tone="waiting">{wt('ws.rd.waits')}</Status>;
@@ -190,17 +191,17 @@ function RedesignLine({ tile }: { tile: ProgramTile }) {
     case 'not-started':
       status = <Status tone="waiting">{wt('ws.rd.notStarted')}</Status>;
       left = meta(wt('ws.rd.startsInDesign'));
-      action = <ActionLink href={toolHref(tile, 'design')} data-tile-action="start-redesign">{wt('ws.rd.start')}</ActionLink>;
+      action = <ActionLink href={toolHref(tile, 'design')} data-tile-action="start-redesign">{programNextLabel({ kind: 'start-redesign', key: 'design', run: false })}</ActionLink>;
       break;
     case 'step':
       status = <Status tone="moving">{wsRedesignStep(TOOL_LABEL[r.key], r.index + 1)}</Status>;
       left = <Track marks={tile.track} />;
-      action = <ActionLink href={toolHref(tile, r.key)} data-tile-action="continue">{wsContinue(TOOL_LABEL[r.key])}</ActionLink>;
+      action = <ActionLink href={toolHref(tile, r.key)} data-tile-action="continue">{programNextLabel({ kind: 'continue', key: r.key, run: false })}</ActionLink>;
       break;
     case 'delivered':
       status = <Status tone="signed">{wsDeliveredOn(r.on)}</Status>;
       left = <Track marks={tile.track} />;
-      action = <ActionLink href={toolHref(tile, 'delivery')} data-tile-action="open-delivery">{wt('ws.rd.openDelivery')}</ActionLink>;
+      action = <ActionLink href={toolHref(tile, 'delivery')} data-tile-action="open-delivery">{programNextLabel({ kind: 'open-delivery', key: 'delivery', run: false })}</ActionLink>;
       break;
   }
   return (
@@ -594,13 +595,7 @@ export default function WorkspaceTiles({
               density="cozy"
               data-ws-next-go=""
             >
-              {next.kind === 'continue'
-                ? wsContinue(TOOL_LABEL[next.key])
-                : next.kind === 'start-redesign'
-                  ? wt('ws.rd.start')
-                  : next.kind === 'rerun'
-                    ? wt('ws.an.rerun')
-                    : wt('ws.an.run')}
+              {programNextLabel(programNextStep(next.tile))}
               <ArrowRight size={14} aria-hidden={true} />
             </CcLinkButton>
           </div>
@@ -609,7 +604,7 @@ export default function WorkspaceTiles({
               <Status tone="outdated">{wt('ws.alsoWaiting')}</Status>
               <span>{wsAlsoWaiting(alsoWaiting.title, alsoWaiting.analyse.kind === 'stale')}</span>
               <ActionLink href={`${alsoWaiting.href}/analyze`} data-ws-also-go="">
-                {alsoWaiting.analyse.kind === 'stale' ? wt('ws.an.rerun') : wt('ws.an.run')}
+                {programNextLabel(programNextStep(alsoWaiting))}
               </ActionLink>
             </div>
           ) : null}

@@ -75,7 +75,7 @@ import HomeDoors from './HomeDoors';
 import { HomeNextCell, HomeStatusBlock } from './HomeStatusCell';
 import WorkspaceTiles from './WorkspaceTiles';
 import WorkspaceSkeleton from './WorkspaceSkeleton';
-import type { ProgramTile } from '@/lib/workspace-tiles';
+import { attentionOf, programNextLink, type ProgramTile } from '@/lib/workspace-tiles';
 import {
   useStoredWorkspaceLens,
   useStoredWorkspaceMode,
@@ -101,7 +101,7 @@ import { APP_VERSION } from '@/lib/version';
  *     and dates as "6 Nov 2026" (H-O10); the figures one switch away ("Figures", kept for this page view only: nothing
  *     is stored, owner decision 15.11.2026);
  *   - **tabs**: My projects, Shared with me, Invitations sent — the old Sharing card lives in them;
- *   - **"Needs your attention"** only with a reason (code changed, design no longer fits, a failed test run);
+ *   - **"Needs your attention"** only with a reason — the "Needs attention" tile's own (code changed, not analysed yet);
  *   - the demo and the examples as **two doors** below the list;
  *   - a run from a row **only through the confirmation dialog** with its cost and model (today's sentence, H-O12).
  *
@@ -443,7 +443,7 @@ export default function WorkspaceListReport(_props: {
   /** The run dialog for a row whose next step is a run, when this account may start it here. */
   const runFor = useCallback(
     (row: HomeRow) =>
-      row.status.next?.run && runnable(row) && !runs[row.id]
+      programNextLink(row.tile).run && runnable(row) && !runs[row.id]
         ? () => setConfirming({ row, callModel: modelAvailability.enabled('analyze') })
         : undefined,
     [runnable, runs, modelAvailability],
@@ -662,7 +662,7 @@ export default function WorkspaceListReport(_props: {
       cells: {
         project: nameCell(row),
         status: <HomeStatusBlock status={row.status} />,
-        next: <HomeNextCell projectId={row.id} next={row.status.next} onRun={runFor(row)} />,
+        next: <HomeNextCell projectId={row.id} next={programNextLink(row.tile)} onRun={runFor(row)} />,
         lastChange: dateCell(row),
         actions: actionsOf(row),
       },
@@ -689,7 +689,7 @@ export default function WorkspaceListReport(_props: {
             <HomeStatusBlock status={row.status} />
             {figures ? factsLine(row) : null}
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <HomeNextCell projectId={row.id} next={row.status.next} onRun={runFor(row)} compact />
+              <HomeNextCell projectId={row.id} next={programNextLink(row.tile)} onRun={runFor(row)} compact />
               {dateCell(row)}
             </div>
           </>
@@ -1016,7 +1016,7 @@ export default function WorkspaceListReport(_props: {
       {confirming ? (
         <CcMessageBox
           open
-          title={confirming.row.status.attention === 'code-changed' ? wt('homeList.runAgainTitle') : wt('homeList.runTitle')}
+          title={attentionOf(confirming.row.tile) === 'code-changed' ? wt('homeList.runAgainTitle') : wt('homeList.runTitle')}
           confirmLabel={wt('homeList.runConfirm')}
           onCancel={() => setConfirming(null)}
           onConfirm={() => {

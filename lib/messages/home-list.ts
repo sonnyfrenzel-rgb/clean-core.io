@@ -40,7 +40,7 @@ export const HOME_LIST_MESSAGES = {
   'homeList.noInvitations': 'No open invitations.',
   'homeList.nothingMeasured': 'Nothing measured yet',
   'homeList.attentionTitle': 'Needs your attention',
-  'homeList.attentionFoot': 'A project shows up here when its code changed, its design no longer matches the analysis, or a test run failed.',
+  'homeList.attentionFoot': 'A project shows up here when its code changed since the analysis or it was not analysed yet.',
   'homeList.doorDemoTitle': 'Demo',
   'homeList.doorDemoBody': 'A finished example to look around in. Nothing runs and nothing is saved.',
   'homeList.doorDemoAction': 'Open the demo',

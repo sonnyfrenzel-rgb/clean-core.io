@@ -1,6 +1,8 @@
 import type { Project } from '@/lib/types';
-import { staleness, workflowSteps, nextPhaseKey, toolOnRecord, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
-import { optionOfArchitecture, type DecisionOption } from '@/lib/decision-options';
+import { PHASES, staleness, workflowSteps, nextPhaseKey, toolOnRecord, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
+import { DECISION_OPTION_LABELS, optionOfArchitecture, type DecisionOption } from '@/lib/decision-options';
+import { wsContinue, wsDeliveredOn, wsNotNeeded, wt } from '@/lib/workspace-messages';
+import { ATTENTION_LABEL } from '@/lib/home-status';
 import { countSourceLines } from '@/lib/source-lines';
 import { summaryOf } from '@/lib/project-summary';
 import { isoDate } from '@/lib/workspace-rows';
@@ -160,6 +162,110 @@ export function toProgramTile(project: ListedProject, access: 'own' | 'shared' =
   };
 }
 
+/* ------------------------------------------------------------------ attention and next step, one source */
+
+/**
+ * Why a program needs attention — the one definition both modes read (owner decision 22.11.2026): the code changed
+ * since the analysis, or nobody analysed it yet. The count tile, its filter, the list mode's "Needs your attention"
+ * box and its Status filter all ask this function; each row names its reason with {@link ATTENTION_REASON_LABEL}.
+ * A program with no code at all is not "waiting": there is nothing to analyse yet.
+ */
+export type ProgramAttention = 'code-changed' | 'not-analysed';
+
+export function attentionOf(tile: Pick<ProgramTile, 'analyse'>): ProgramAttention | null {
+  if (tile.analyse.kind === 'stale') return 'code-changed';
+  if (tile.analyse.kind === 'not-analysed') return 'not-analysed';
+  return null;
+}
+
+export function needsAttention(tile: Pick<ProgramTile, 'analyse'>): boolean {
+  return attentionOf(tile) !== null;
+}
+
+export const ATTENTION_REASON_LABEL: Readonly<Record<ProgramAttention, string>> = Object.freeze({
+  'code-changed': ATTENTION_LABEL['code-changed'],
+  'not-analysed': wt('ws.an.notAnalysed'),
+});
+
+export type ProgramNextKind = 'add-code' | 'analyse' | 'rerun' | 'start-redesign' | 'continue' | 'open-decision' | 'open-delivery';
+
+/** A program's own next step: what it does and the tool it opens. */
+export interface ProgramNext {
+  kind: ProgramNextKind;
+  key: PhaseKey;
+  /** The step is an analysis run: a caller starts it through the confirmation dialog, never directly. */
+  run: boolean;
+}
+
+/**
+ * The one next step of one program — the same on its tile, in the list mode's Next step column and on the page's
+ * Next step card (owner decision 22.11.2026). The analysis comes first while it is missing or out of date; on a
+ * signed one, the Re-design product's action: start it, continue at its tool, open the decision that builds nothing
+ * (W5), or open the signed delivery.
+ */
+export function programNextStep(tile: Pick<ProgramTile, 'analyse' | 'redesign'>): ProgramNext {
+  const a = tile.analyse;
+  if (a.kind === 'no-code') return { kind: 'add-code', key: 'analyze', run: false };
+  if (a.kind === 'not-analysed') return { kind: 'analyse', key: 'analyze', run: true };
+  if (a.kind === 'stale') return { kind: 'rerun', key: 'analyze', run: true };
+  const r = tile.redesign;
+  switch (r.kind) {
+    case 'not-needed':
+      return { kind: 'open-decision', key: 'design', run: false };
+    case 'delivered':
+      return { kind: 'open-delivery', key: 'delivery', run: false };
+    case 'step':
+      return { kind: 'continue', key: r.key, run: false };
+    default:
+      // 'not-started' — and 'waits', which a signed analysis never has.
+      return { kind: 'start-redesign', key: 'design', run: false };
+  }
+}
+
+const TOOL_LABEL = Object.fromEntries(PHASES.map((p) => [p.key, p.label])) as Record<PhaseKey, string>;
+
+/** The words of a next step — the tile's action, the list's link and the Next step card's button say the same. */
+export function programNextLabel(next: ProgramNext): string {
+  switch (next.kind) {
+    case 'add-code':
+      return wt('ws.an.addCode');
+    case 'analyse':
+      return wt('ws.an.run');
+    case 'rerun':
+      return wt('ws.an.rerun');
+    case 'start-redesign':
+      return wt('ws.rd.start');
+    case 'continue':
+      return wsContinue(TOOL_LABEL[next.key]);
+    case 'open-decision':
+      return wt('ws.rd.openDecision');
+    case 'open-delivery':
+      return wt('ws.rd.openDelivery');
+  }
+}
+
+/** The list mode's Next step cell for a program: the link, the route under the project, and the line under it. */
+export interface ProgramNextLink {
+  label: string;
+  tool: string;
+  path: string;
+  run: boolean;
+  /** Said under the link instead of "in {tool}": the decision that builds nothing, or the signed delivery. */
+  note: string | null;
+}
+
+export function programNextLink(tile: Pick<ProgramTile, 'analyse' | 'redesign'>): ProgramNextLink {
+  const next = programNextStep(tile);
+  const r = tile.redesign;
+  const note =
+    next.kind === 'open-decision' && r.kind === 'not-needed'
+      ? wsNotNeeded(DECISION_OPTION_LABELS[r.option], r.confirmed)
+      : next.kind === 'open-delivery' && r.kind === 'delivered'
+        ? wsDeliveredOn(r.on)
+        : null;
+  return { label: programNextLabel(next), tool: TOOL_LABEL[next.key], path: next.key, run: next.run, note };
+}
+
 /* ------------------------------------------------------------------ counts and filter */
 
 export type TileFilter = 'all' | 'analysed' | 'redesign' | 'delivered' | 'attention';
@@ -175,7 +281,7 @@ export function tileMatches(tile: ProgramTile, filter: TileFilter): boolean {
     case 'delivered':
       return tile.redesign.kind === 'delivered';
     case 'attention':
-      return tile.analyse.kind === 'stale' || tile.analyse.kind === 'not-analysed';
+      return needsAttention(tile);
     default:
       return true;
   }
@@ -239,18 +345,16 @@ export type NextStep =
  */
 export function nextStepOf(tiles: readonly ProgramTile[]): { next: NextStep | null; alsoWaiting: ProgramTile | null } {
   const own = [...tiles].filter((t) => t.access === 'own').sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+  // Every program's own next step, from the one function its tile and its list row read (`programNextStep`).
+  const steps = own.map((tile) => ({ tile, step: programNextStep(tile) }));
+  const first = (kind: ProgramNextKind) => steps.find((s) => s.step.kind === kind) ?? null;
   let next: NextStep | null = null;
-  const inStep = own.find((t) => t.redesign.kind === 'step');
-  if (inStep && inStep.redesign.kind === 'step') next = { kind: 'continue', tile: inStep, key: inStep.redesign.key };
+  const inStep = first('continue');
+  if (inStep) next = { kind: 'continue', tile: inStep.tile, key: inStep.step.key };
   else {
-    const ready = own.find((t) => t.redesign.kind === 'not-started');
-    const stale = own.find((t) => t.analyse.kind === 'stale');
-    const fresh = own.find((t) => t.analyse.kind === 'not-analysed');
-    if (ready) next = { kind: 'start-redesign', tile: ready };
-    else if (stale) next = { kind: 'rerun', tile: stale };
-    else if (fresh) next = { kind: 'analyse', tile: fresh };
+    const pick = first('start-redesign') ?? first('rerun') ?? first('analyse');
+    if (pick) next = { kind: pick.step.kind as 'start-redesign' | 'rerun' | 'analyse', tile: pick.tile };
   }
-  const alsoWaiting =
-    own.find((t) => (t.analyse.kind === 'stale' || t.analyse.kind === 'not-analysed') && t.id !== next?.tile.id) ?? null;
+  const alsoWaiting = own.find((t) => needsAttention(t) && t.id !== next?.tile.id) ?? null;
   return { next, alsoWaiting };
 }

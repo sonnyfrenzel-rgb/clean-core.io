@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { ArrowRight, Clock, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { PROGRESS_TONE_CLASS } from '@/lib/project-progress';
-import { REDESIGN_TOTAL, type HomeNext, type HomeStatus } from '@/lib/home-status';
+import { REDESIGN_TOTAL, type HomeStatus } from '@/lib/home-status';
+import type { ProgramNextLink } from '@/lib/workspace-tiles';
 import { homeNextIn, wt } from '@/lib/workspace-messages';
 
 /**
@@ -16,8 +17,10 @@ import { homeNextIn, wt } from '@/lib/workspace-messages';
  * re-design the small six-segment bar (H-O4, the owner's question: two looks, no legend, only on re-design) stands
  * before the line "2 of 6 steps done", which says the same in words.
  *
- * Next step: one link that says what it does and the tool it opens below it, or "Nothing open". An analysis run is
- * never started from here directly: the caller gives `onRun`, which opens the confirmation dialog with cost and model.
+ * Next step: one link that says what it does and, below it, the tool it opens — or what the program's tile says there
+ * (the decision that builds nothing, the signed delivery). The step is the tile's own (`programNextLink` in
+ * `lib/workspace-tiles.ts`, owner decision 22.11.2026). An analysis run is never started from here directly: the caller
+ * gives `onRun`, which opens the confirmation dialog with cost and model.
  */
 export function HomeStatusBlock({ status }: { status: HomeStatus }) {
   return (
@@ -64,7 +67,7 @@ export function HomeNextCell({
   compact = false,
 }: {
   projectId: string;
-  next: HomeNext | null;
+  next: Pick<ProgramNextLink, 'label' | 'tool' | 'path' | 'run'> & { note?: string | null } | null;
   /** Given when the next step is a run this account may start: opens the confirmation dialog. */
   onRun?: () => void;
   /** On a phone card the tool line is left out (the card is narrow; the link says what it does). */
@@ -90,7 +93,11 @@ export function HomeNextCell({
           {label}
         </Link>
       )}
-      {compact ? null : <span className="text-[12px] font-medium text-cc-ink-muted">{homeNextIn(next.tool)}</span>}
+      {compact ? null : (
+        <span className="text-[12px] font-medium text-cc-ink-muted" data-home-next-note={next.note ? '' : undefined}>
+          {next.note ?? homeNextIn(next.tool)}
+        </span>
+      )}
     </span>
   );
 }

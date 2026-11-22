@@ -294,6 +294,16 @@ test.describe('a returning account: next step, counts, tiles', () => {
 
     await page.locator('[data-mode="list"]').click();
     await expect(page.locator('[data-workspace-list] table')).toBeVisible({ timeout: 30_000 });
+    // Owner decisions 22.11.2026: "Needs your attention" counts what the count tile counts (the changed and the
+    // staged program), and each row's next step is its tile's.
+    const box = page.locator('[data-home-attention]');
+    await expect(box.locator('[data-home-attention-row]')).toHaveCount(2);
+    await expect(box.locator(`[data-home-attention-row="${programs[3].id}"]`)).toContainText('The code changed since the analysis');
+    await expect(box.locator(`[data-home-attention-row="${programs[4].id}"]`)).toContainText('Not analysed yet');
+    const retired = page.locator(`#home-panel-mine [data-cc-table-row="${programs[2].id}"]`);
+    await expect(retired.locator('[data-home-next]')).toContainText('Open the decision');
+    await expect(retired.locator('[data-home-next]')).toContainText('Not needed — decided: Retire');
+    await expect(page.locator(`#home-panel-mine [data-cc-table-row="${programs[0].id}"] [data-home-next]`)).toContainText('Re-design this program');
     await shot(page, 'returning-1440-list');
     await page.locator('[data-mode="tiles"]').click();
     await page.locator('[data-lens="business"]').click();
@@ -315,6 +325,7 @@ test.describe('a returning account: next step, counts, tiles', () => {
     await page.evaluate(() => window.localStorage.setItem('cc.workspace.mode', 'list'));
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-list]')).toBeVisible({ timeout: 120_000 });
+    await shot(page, 'returning-390-list');
     await page.locator('[data-mode="tiles"]').click();
     await expect(page.locator('[data-program-tile]').first()).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('[data-mode="list"]')).toBeHidden();

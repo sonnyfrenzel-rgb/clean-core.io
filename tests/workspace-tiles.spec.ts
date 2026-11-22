@@ -2,7 +2,18 @@ import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { sha256Hex } from '../lib/artefact-digest';
-import { nextStepOf, tileCounts, tileMatches, toProgramTile, COUNTS_FROM, type ListedProject } from '../lib/workspace-tiles';
+import {
+  attentionOf,
+  nextStepOf,
+  programNextLabel,
+  programNextStep,
+  tileCounts,
+  tileMatches,
+  toProgramTile,
+  COUNTS_FROM,
+  type ListedProject,
+} from '../lib/workspace-tiles';
+import { parseMapThumb, thumbDisplayViewBox, THUMB_MIN_VIEW } from '../lib/project-summary';
 import { WORKSPACE_PAGE_MESSAGES } from '../lib/messages/workspace';
 import { PRIVACY_PENDING_STORAGE_KEYS, WORKSPACE_LENS_KEY, WORKSPACE_MODE_KEY } from '../lib/workspace-prefs';
 
@@ -147,6 +158,50 @@ test.describe('the counts are the filter, and the next step is one', () => {
   test('a shared program is never the next step', () => {
     const shared = toProgramTile(signed('s'), 'shared');
     expect(nextStepOf([shared]).next).toBeNull();
+  });
+});
+
+test.describe('one next step per program, one reason for attention (owner decisions 22.11.2026)', () => {
+  test('the tile, the list and the Next step card read the same next step', () => {
+    const cases: Array<[ListedProject, string, string, boolean]> = [
+      [project('n', { legacyCode: '' }), 'add-code', 'Add the code', false],
+      [project('a'), 'analyse', 'Run the analysis', true],
+      [signed('e', { legacyCode: `${SOURCE}WRITE 2.
+` }), 'rerun', 'Run the analysis again', true],
+      [signed('b'), 'start-redesign', 'Re-design this program', false],
+      [signed('d', { targetArchitecture: 'retire', approvedByArchitect: true }), 'open-decision', 'Open the decision', false],
+    ];
+    for (const [p, kind, label, run] of cases) {
+      const next = programNextStep(toProgramTile(p));
+      expect([next.kind, programNextLabel(next), next.run], p.id).toEqual([kind, label, run]);
+    }
+    // The Next step card picks among the same steps, and its button says the same words.
+    const { next } = nextStepOf([toProgramTile(signed('b'))]);
+    expect(next?.kind).toBe('start-redesign');
+    const page = code('components/workspace/WorkspaceTiles.tsx');
+    expect(page).toContain('programNextLabel(programNextStep(next.tile))');
+    expect(page).toContain('programNextLabel(programNextStep(tile))');
+  });
+
+  test('attention is code changed or not analysed — never a program without code, never a signed one', () => {
+    expect(attentionOf(toProgramTile(project('a')))).toBe('not-analysed');
+    expect(attentionOf(toProgramTile(signed('e', { legacyCode: `${SOURCE}WRITE 2.
+` })))).toBe('code-changed');
+    expect(attentionOf(toProgramTile(signed('b')))).toBeNull();
+    expect(attentionOf(toProgramTile(project('n', { legacyCode: '' })))).toBeNull();
+  });
+
+  test('a small map is never blown up: one maximum scale, centred; a large map keeps its own frame', () => {
+    const small = parseMapThumb('v1;V 0 0 100 50;S 10 25;E 90 25;F 28 25 72 25')!;
+    const [x, y, w, h] = thumbDisplayViewBox(small.viewBox);
+    expect([w, h]).toEqual([...THUMB_MIN_VIEW]);
+    // Centred: the map's own centre stays the centre.
+    expect([x + w / 2, y + h / 2]).toEqual([50, 25]);
+    const large: [number, number, number, number] = [175, 75, 1356, 896];
+    expect(thumbDisplayViewBox(large)).toEqual(large);
+    // Wide and flat: only the missing height is added.
+    expect(thumbDisplayViewBox([0, 0, 2000, 200])).toEqual([0, -150, 2000, 500]);
+    expect(code('components/workspace/MapThumb.tsx')).toContain('thumbDisplayViewBox(parsed.viewBox)');
   });
 });
 

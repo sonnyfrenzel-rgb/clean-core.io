@@ -555,7 +555,8 @@ export default function StarterExamples({
             <CcTag>{wt('home.recommended')}</CcTag>
             <RanBefore account={account} name={rec.name} />
           </div>
-          <p className="m-0 line-clamp-2 text-[13px] leading-normal font-medium text-cc-ink-muted min-[601px]:line-clamp-none">
+          {/* Three lines at most from 601 px on, as in the mock-up: the Re-design card beside it keeps no empty band (owner, 22.11.2026). */}
+          <p className="m-0 line-clamp-2 text-[13px] leading-normal font-medium text-cc-ink-muted min-[601px]:line-clamp-3">
             {rec.summary} <span data-example-lines={rec.lines}>{lines(rec.lines)}.</span>
           </p>
           <div className="mt-1 flex flex-wrap items-center gap-3">

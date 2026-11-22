@@ -66,6 +66,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   closes the door the allowlist still left open. Recorded as pending in `docs/registers/rules-deployment.json`: the
   rules go live **before** the 3.3.0 code (lawyer). Specs: `tests/project-summary.spec.ts` (server-free),
   `tests/firestore-rules-field-validation.spec.ts` (emulator).
+- 3.3.0, owner decisions of 22.11.2026: the list mode and the tiles now say the same thing.
+  - "Needs attention" has one meaning in both places: the code changed since the analysis, or the program was not
+    analysed yet. Before, the count tile said 2 and the list's "Needs your attention" box said 1, because the box
+    counted changed code only. The box, its Status filter and the count tile now use one predicate,
+    `needsAttention`/`attentionOf` in `lib/workspace-tiles.ts`. Each row of the box still names its reason.
+  - Each program's next step has one source, `programNextStep`/`programNextLink`. The tile's actions, the list's
+    Next step column and the Next step card's button all read it. A signed program reads "Re-design this program" in
+    the list too (before: "Nothing open"). A retired one reads "Open the decision" with "Not needed — decided:
+    Retire" under it. A re-design under way reads "Continue: Testing".
+  - On a new account's Analyse card, the recommended example's text is clamped to three lines from 601 px on, as in
+    the mock-up, so the Re-design card beside it has no empty band at 1440.
+  - Map thumbnails have one maximum scale (`thumbDisplayViewBox`, at least 600 × 500 BPMN units, the mock-up's
+    reference density). A small map is drawn centred at that scale, so twenty steps folded into four sub-processes
+    no longer show as four boxes the size of the tile. Large maps still fit their frame.
+  - Specs: `tests/home-rows.spec.ts`, `tests/workspace-tiles.spec.ts`, `tests/home-list.spec.ts`,
+    `tests/workflow-phases-guard.spec.ts`.
 
 ### Operations
 - The 3.2.0 Firestore rules are deployed and verified on every database (16.11.2026,
