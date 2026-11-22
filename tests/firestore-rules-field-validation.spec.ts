@@ -372,3 +372,25 @@ test("test cases and manual test requirements are the server's, and the non-func
   expect(await denied(() => write({ auditTrail: 'Change documents on EBAN.', monitoring: 'Job log.' })), 'the Design stage write').toBe(false);
   expect(await denied(() => updateDoc(ref, { solutionDesign: '{"summary":"y"}', nonFunctionalRequirements: deleteField() })), 'design without NFR').toBe(false);
 });
+
+/* 3.3.0 — lawyer, statement 20c E3 (4): a changed source never stands under the old project summary. */
+
+test('a browser changes the source only of a project without a summary, and never writes or removes the summary', async () => {
+  const summary = { version: 1, runId: 'run-a', sourceSha256: 's', mapThumb: null, mapSteps: 3, mapRevision: 1, rulesDerived: 2, cleanCoreScore: 50, recommendation: 'rap', processTitle: 'Emergency purchase approval', writtenAt: '' };
+  const withSummary = `fields-summary-${stamp}`;
+  await adminSetDoc('projects', withSummary, { name: 'Summary fixture', status: 'analyzed', userId: uids.owner, createdAt: new Date(), legacyCode: 'REPORT z_a.', activeRunId: 'run-a', summary });
+  const ref = doc(owner.db, 'projects', withSummary);
+  // A cleaned source under the old summary would keep the old title line on the tile.
+  expect(await denied(() => updateDoc(ref, { legacyCode: 'REPORT z_b.' })), 'a new source under a summary').toBe(true);
+  // The summary stays the server's: a browser neither removes it nor sets it, alone or with the source.
+  expect(await denied(() => updateDoc(ref, { summary: deleteField() })), 'removing the summary').toBe(true);
+  expect(await denied(() => updateDoc(ref, { legacyCode: 'REPORT z_b.', summary: deleteField() })), 'the source with the summary removed').toBe(true);
+  expect(await denied(() => updateDoc(ref, { summary: { ...summary, processTitle: 'x' } })), 'changing the summary').toBe(true);
+  // Every other client field of the same project still updates.
+  expect(await denied(() => updateDoc(ref, { s4Deployment: 'public' })), 'an edition').toBe(false);
+
+  // A project without a summary keeps the source write the rules allowed before.
+  const without = `fields-nosummary-${stamp}`;
+  await adminSetDoc('projects', without, { name: 'No summary fixture', status: 'uploaded', userId: uids.owner, createdAt: new Date(), legacyCode: 'REPORT z_a.' });
+  expect(await denied(() => updateDoc(doc(owner.db, 'projects', without), { legacyCode: 'REPORT z_b.' })), 'a new source without a summary').toBe(false);
+});

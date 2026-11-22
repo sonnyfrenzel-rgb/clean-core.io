@@ -287,7 +287,7 @@ test.describe('a returning account: next step, counts, tiles', () => {
     await expect(page.locator('[data-tile-fact="business"][data-lens-on="true"]').first()).toBeVisible();
     await page.locator('[data-lens="it"]').click();
     await expect(page.locator('[data-tile-fact="it"][data-lens-on="true"]')).toHaveCount(programs.length);
-    await expect(page.locator('[data-tile-action="open-analysis"]').first()).toHaveAttribute('href', /analyze\?view=it$/);
+    await expect(page.locator('[data-tile-action="open-analysis"]').first()).toHaveAttribute('href', /\/analyze$/); // the lens highlights a fact only (privacy 1.4, 20c E2)
     await shot(page, 'returning-1440-lens-it');
     await page.reload();
     await expect(page.locator('[data-lens="it"]')).toHaveAttribute('aria-checked', 'true', { timeout: 120_000 });

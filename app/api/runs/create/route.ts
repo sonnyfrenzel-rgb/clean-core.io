@@ -1008,6 +1008,11 @@ export async function POST(req: NextRequest) {
         if (sourceChange) {
           tx.update(projectRef, { 'auditMetadata.sourceChange': sourceChange });
         }
+        // 3.3.0 (lawyer, statement 20c E3 (4)): the previous run's project summary — which carries the old source's
+        // header title line — goes in the same commit that replaces the source and the active run, so no moment
+        // exists in which the new source stands under the old summary. This run's summary is written after the
+        // commit (below); when that fails, the project simply has none.
+        tx.update(projectRef, { summary: FieldValue.delete() });
       });
     } catch (txErr) {
       if (!(txErr instanceof ProjectTooLargeError)) throw txErr;
@@ -1171,9 +1176,8 @@ export async function POST(req: NextRequest) {
         projectId,
         error: errMessage(summaryErr),
       });
-      // Every signed run replaces the summary whole (lawyer, statement 20c): when this run's could not be written,
-      // the previous run's goes rather than stay on the project.
-      await db.collection('projects').doc(projectId).update({ summary: FieldValue.delete() }).catch(() => {});
+      // Every signed run replaces the summary whole (lawyer, statement 20c): the previous run's went with the commit
+      // above, so a write that failed here leaves the project with none — never with the earlier run's.
     }
 
     return NextResponse.json({

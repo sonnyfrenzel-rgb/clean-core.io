@@ -313,6 +313,15 @@ service cloud.firestore {
     // server's.
     //
     // `updatedAt`: only the time of the write itself (serverTimestamp()).
+    //
+    // `legacyCode` (3.3.0, lawyer, statement 20c E3 (4)): the project summary
+    // (`summary`, Admin SDK only) carries the title line of the source's header
+    // comment, so a source must never change underneath it — a cleaned upload
+    // that removes a name would otherwise leave the old title line on the tile.
+    // POST /api/runs/create replaces the source and removes the summary in one
+    // transaction; a browser may change the source only of a project that has
+    // no summary. No stage of the app writes `legacyCode` to an existing
+    // project; this closes the door the allowlist below still leaves open.
     function isValidProjectFieldChange(data, before, changed) {
       return (!('status' in changed) ||
                 (data.status == 'designed' &&
@@ -326,7 +335,8 @@ service cloud.firestore {
              (!('coverageEstimate' in changed) || isValidCoverageEstimate(data.coverageEstimate)) &&
              (!('testSuite' in changed) || isValidTestSuite(data.testSuite)) &&
              (!('exports' in changed) || isExportsRemovalOnly(data, before)) &&
-             (!('updatedAt' in changed) || data.updatedAt == request.time);
+             (!('updatedAt' in changed) || data.updatedAt == request.time) &&
+             (!('legacyCode' in changed) || !('summary' in data));
     }
 
     // The three keys of CoverageEstimate (lib/types.ts), each optional and typed.
