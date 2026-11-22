@@ -28,14 +28,12 @@ import type { LegalLang } from './open-values';
 export type PrivacyVersionId = '1.1' | '1.2' | '1.3' | '1.4';
 
 /**
- * The day version 1.4 takes effect — the release day of 3.3.0, which is not fixed yet. PROVISIONAL (22.11.2026, the
- * day the version was built): set it to the real release day before 3.3.0 goes to main, then delete
- * `docs/privacy/1.4.md` and `docs/privacy/1.4.de.md` (not yet published, but this build already counts 1.4 as in force,
- * so `--force` refuses them), run `npx tsx scripts/legal/archive-privacy.ts 1.4` and put the printed digests below.
+ * The day version 1.4 takes effect — 23.11.2026, the release day of 3.3.0 (the version was built on 22.11.2026 with
+ * that day as a provisional date; the archives were written again with the release day before 3.3.0 went to main).
  * Every date of 1.4 — the version record, the version line, the change note, the sign-up box — is derived from this
- * one constant.
+ * one constant. Once published, it never changes.
  */
-export const PRIVACY_14_DATE_ISO = '2026-11-22';
+export const PRIVACY_14_DATE_ISO = '2026-11-23';
 
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -132,7 +130,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     // The version that goes live with 3.3.0 (lawyer, statement 20c E4 (a): "1.4 mit 3.3.0: Workspace-Schlüssel, E2,
     // E3"): the two storage entries of My workspace in the wording of document 20, 2.1/2.2 (approved, 20c E1), the
     // sentence on the view (20c E2) and the sentence on the project summary in section 3 (20c E3). No notice mail
-    // (20c E5). The date is provisional until the release day is fixed (`PRIVACY_14_DATE_ISO`).
+    // (20c E5). In force from the release day of 3.3.0 (`PRIVACY_14_DATE_ISO`).
     id: '1.4',
     dateIso: PRIVACY_14_DATE_ISO,
     date: privacyDateOf(PRIVACY_14_DATE_ISO),
@@ -142,8 +140,8 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     workspace: true,
     files: { en: 'docs/privacy/1.4.md', de: 'docs/privacy/1.4.de.md' },
     sha256: {
-      en: '6b4a6348c9f63b0b277a674aa42816770e067e5f1f96204e86982a1a8ef38f20',
-      de: '89ef9d056a1556d1d1c6407473e96d5a602c60dd861fc2b257264f0764738ae3',
+      en: 'd044c4fd43d076f0ed5f3c25a9bedc890e01ef8dfbe8796e0a771c3bac2ecae6',
+      de: '3704e60dea033be0001498d4f32e740cbf166a23546bf69014d0d0f66876800a',
     },
   },
 ];

@@ -5,8 +5,8 @@ import { privacyVersionAddress, privacyVersionFor } from './privacy-versions';
 
 /**
  * The privacy policy the sign-up box names where business names start by themselves: its version, its date and its
- * fixed address all come from the version record (`lib/legal/privacy-versions.ts`), so a new version — and the
- * provisional date of 1.4 — changes the box with it and nowhere else.
+ * fixed address all come from the version record (`lib/legal/privacy-versions.ts`), so a new version — or a
+ * changed date of an unpublished one — changes the box with it and nowhere else.
  */
 const PRIVACY_IN_FORCE = privacyVersionFor(true);
 
