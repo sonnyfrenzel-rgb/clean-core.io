@@ -40,6 +40,9 @@ regexes = [
   # Deterministic CI test placeholders — not real credentials.
   '''test-approval-secret-key-\d+''',
   '''test-mfa-pepper-[a-z0-9-]+''',
+  # The perf harness's local default for the approval secret (scripts/perf/playwright.perf.config.ts),
+  # set only when the variable is absent; same placeholder shape as the CI one above.
+  '''perf-approval-secret-key-\d+''',
 ]
 
 # -- Rule-scoped exceptions for test fixtures ---------------------------------
@@ -77,6 +80,25 @@ condition = "AND"
 paths = ['''^tests/korpus/cases/[^/]+/expected\.json$''', '''^docs/korpus/referenzkorpus-v[0-9.]+\.md$''']
 regexTarget = "match"
 regexes = ['''objectKey["':\s]+Z[A-Z0-9_]+["']?$''']
+
+[[rules.allowlists]]
+description = "Credential-redaction fixtures: the one fake token the redaction spec feeds in and asserts is removed."
+condition = "AND"
+paths = ['''^tests/credential-redaction\.spec\.ts$''']
+regexTarget = "secret"
+regexes = ['''^Zt9xQ2wE7rT1$''']
+[[rules.allowlists]]
+description = "Legal open values: an entry's key is a camelCase identifier (t03AdditionalAgreementAcceptance, s4ApprovalCriteria), not a credential."
+condition = "AND"
+paths = ['''^lib/legal/open-values\.ts$''', '''^tests/legal-acceptance-cases\.spec\.ts$''']
+regexTarget = "line"
+regexes = ['''^\s*key: '[a-z][a-z0-9]*(?:[A-Z][a-z0-9]+)+',\s*$''']
+[[rules.allowlists]]
+description = "Generated SAP catalog: the released-interfaces list is one JSON line of public SAP interface names (if_abap_api_state, ...) synced from SAP/abap-atc-cr-cv-s4hc."
+condition = "AND"
+paths = ['''^lib/abap/generated/released-interfaces\.latest\.json$''']
+regexTarget = "line"
+regexes = ['''^\{"meta":\{"source":"https://raw\.githubusercontent\.com/SAP/abap-atc-cr-cv-s4hc/''']
 
 [[rules]]
 id = "jwt"

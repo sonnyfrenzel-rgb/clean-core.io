@@ -1,6 +1,6 @@
 {
  "format": 2,
- "syncedAt": "2026-10-13T04:43:45.608Z",
+ "syncedAt": "2026-11-16T07:04:31.983Z",
  "sources": [
   {
    "key": "sap-cloudification-repository",
@@ -44,7 +44,7 @@
    "label": "CDS views SAP has released",
    "release": "SAP S/4HANA Cloud Public Edition, latest",
    "url": "https://raw.githubusercontent.com/SAP/abap-atc-cr-cv-s4hc/main/src/objectReleaseInfoLatest.json",
-   "fetchedAt": "2026-10-13T04:43:27.084Z",
+   "fetchedAt": "2026-11-16T07:04:15.551Z",
    "sourceSha256": "407843e4a566cd20beb348c07e298188d261f93950b25ea15eea66307ed6b63d",
    "count": 6859,
    "status": "fetched",
@@ -6915,7 +6915,7 @@
    "label": "CDS views SAP has released",
    "release": "SAP S/4HANA Cloud Private Edition, latest",
    "url": "https://raw.githubusercontent.com/SAP/abap-atc-cr-cv-s4hc/main/src/objectReleaseInfo_PCELatest.json",
-   "fetchedAt": "2026-10-13T04:43:29.944Z",
+   "fetchedAt": "2026-11-16T07:04:17.973Z",
    "sourceSha256": "8c703dc82f8040959298ec6ea2e1ae0edeb064d9da1713313c9bcc1450db3aa6",
    "count": 7088,
    "status": "fetched",
@@ -14015,8 +14015,8 @@
    "label": "BAPIs SAP classifies as classic APIs (not released for ABAP Cloud)",
    "release": "SAP object classifications",
    "url": "https://raw.githubusercontent.com/SAP/abap-atc-cr-cv-s4hc/main/src/objectClassifications_SAP.json",
-   "fetchedAt": "2026-10-13T04:43:32.740Z",
-   "sourceSha256": "70a9e6f427bdb8dd92e9fa19b7dda273b4f59d46eb6c8763bc865e24edb69ae7",
+   "fetchedAt": "2026-11-16T07:04:20.413Z",
+   "sourceSha256": "70ea2beee43d694df890b865d9d179f704927077c1eb7927c82ef3b523910a89",
    "count": 3091,
    "status": "fetched",
    "names": [
@@ -17121,8 +17121,8 @@
    "path": "docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md",
    "product": "SAP S/4HANA Cloud",
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:40.448Z",
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:27.479Z",
    "count": 4,
    "status": "fetched"
   },
@@ -17132,8 +17132,8 @@
    "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
    "product": "SAP S/4HANA Cloud",
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z",
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z",
    "count": 20,
    "status": "fetched"
   },
@@ -17143,8 +17143,8 @@
    "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
    "product": "SAP BTP ABAP Environment",
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z",
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z",
    "count": 27,
    "status": "fetched"
   },
@@ -17154,8 +17154,8 @@
    "path": "docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md",
    "product": "SAP S/4HANA Cloud",
    "license": "CC-BY-4.0",
-   "sourceRevision": "d0fee5a1719cc3472fb98b2f85513e3e1232ad84",
-   "observedAt": "2026-10-13T04:43:44.322Z",
+   "sourceRevision": "e011e9d04fe06def42cb5f0f9315da6ffa36c855",
+   "observedAt": "2026-11-16T07:04:30.854Z",
    "count": 3,
    "status": "fetched"
   }
@@ -17179,11 +17179,11 @@
     "key": "sapdocs-s4hc-service-plans",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:40.448Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:27.479Z"
   },
   {
    "id": "SAP_COM_0009",
@@ -17203,11 +17203,11 @@
     "key": "sapdocs-s4hc-service-plans",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:40.448Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:27.479Z"
   },
   {
    "id": "SAP_COM_0092",
@@ -17225,11 +17225,11 @@
     "key": "sapdocs-s4hc-service-plans",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:40.448Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:27.479Z"
   },
   {
    "id": "SAP_COM_0109",
@@ -17249,11 +17249,11 @@
     "key": "sapdocs-s4hc-service-plans",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:40.448Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:27.479Z"
   },
   {
    "id": "SAP_COM_0008",
@@ -17271,11 +17271,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0009",
@@ -17293,11 +17293,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0091",
@@ -17315,11 +17315,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0092",
@@ -17337,11 +17337,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0095",
@@ -17359,11 +17359,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0165",
@@ -17381,11 +17381,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0516",
@@ -17403,11 +17403,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0531",
@@ -17425,11 +17425,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0545",
@@ -17447,11 +17447,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0566",
@@ -17469,11 +17469,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0594",
@@ -17491,11 +17491,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0642",
@@ -17513,11 +17513,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0647",
@@ -17535,11 +17535,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0659",
@@ -17557,11 +17557,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0845",
@@ -17579,11 +17579,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0861",
@@ -17601,11 +17601,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0884",
@@ -17623,11 +17623,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0892",
@@ -17645,11 +17645,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0897",
@@ -17667,11 +17667,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0A00",
@@ -17689,11 +17689,11 @@
     "key": "sapdocs-s4hc-register-system",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:41.744Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:28.615Z"
   },
   {
    "id": "SAP_COM_0011",
@@ -17711,11 +17711,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0065",
@@ -17733,11 +17733,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0093",
@@ -17755,11 +17755,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0193",
@@ -17777,11 +17777,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0276",
@@ -17799,11 +17799,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0327",
@@ -17821,11 +17821,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0366",
@@ -17843,11 +17843,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0454",
@@ -17865,11 +17865,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0464",
@@ -17887,11 +17887,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0466",
@@ -17909,11 +17909,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0467",
@@ -17931,11 +17931,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0503",
@@ -17953,11 +17953,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0510",
@@ -17975,11 +17975,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0527",
@@ -17997,11 +17997,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0542",
@@ -18019,11 +18019,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0548",
@@ -18041,11 +18041,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0582",
@@ -18063,11 +18063,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0599",
@@ -18085,11 +18085,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0623",
@@ -18107,11 +18107,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0636",
@@ -18129,11 +18129,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0647",
@@ -18151,11 +18151,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0683",
@@ -18173,11 +18173,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0735",
@@ -18195,11 +18195,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0750",
@@ -18217,11 +18217,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0763",
@@ -18239,11 +18239,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0834",
@@ -18261,11 +18261,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0901",
@@ -18283,11 +18283,11 @@
     "key": "sapdocs-btp-abap-managed-scenarios",
     "repo": "SAP-docs/btp-cloud-platform",
     "path": "docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md",
-    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
+    "url": "https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5",
-   "observedAt": "2026-10-13T04:43:43.035Z"
+   "sourceRevision": "e8f79601111549741a8aee51e4754d2d43f8780a",
+   "observedAt": "2026-11-16T07:04:29.737Z"
   },
   {
    "id": "SAP_COM_0531",
@@ -18305,11 +18305,11 @@
     "key": "sapdocs-datasphere-s4hc-connectivity",
     "repo": "SAP-docs/sap-datasphere",
     "path": "docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md",
-    "url": "https://github.com/SAP-docs/sap-datasphere/blob/d0fee5a1719cc3472fb98b2f85513e3e1232ad84/docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md"
+    "url": "https://github.com/SAP-docs/sap-datasphere/blob/e011e9d04fe06def42cb5f0f9315da6ffa36c855/docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d0fee5a1719cc3472fb98b2f85513e3e1232ad84",
-   "observedAt": "2026-10-13T04:43:44.322Z"
+   "sourceRevision": "e011e9d04fe06def42cb5f0f9315da6ffa36c855",
+   "observedAt": "2026-11-16T07:04:30.854Z"
   },
   {
    "id": "SAP_COM_0532",
@@ -18327,11 +18327,11 @@
     "key": "sapdocs-datasphere-s4hc-connectivity",
     "repo": "SAP-docs/sap-datasphere",
     "path": "docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md",
-    "url": "https://github.com/SAP-docs/sap-datasphere/blob/d0fee5a1719cc3472fb98b2f85513e3e1232ad84/docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md"
+    "url": "https://github.com/SAP-docs/sap-datasphere/blob/e011e9d04fe06def42cb5f0f9315da6ffa36c855/docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d0fee5a1719cc3472fb98b2f85513e3e1232ad84",
-   "observedAt": "2026-10-13T04:43:44.322Z"
+   "sourceRevision": "e011e9d04fe06def42cb5f0f9315da6ffa36c855",
+   "observedAt": "2026-11-16T07:04:30.854Z"
   },
   {
    "id": "SAP_COM_0722",
@@ -18349,20 +18349,20 @@
     "key": "sapdocs-datasphere-s4hc-connectivity",
     "repo": "SAP-docs/sap-datasphere",
     "path": "docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md",
-    "url": "https://github.com/SAP-docs/sap-datasphere/blob/d0fee5a1719cc3472fb98b2f85513e3e1232ad84/docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md"
+    "url": "https://github.com/SAP-docs/sap-datasphere/blob/e011e9d04fe06def42cb5f0f9315da6ffa36c855/docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md"
    },
    "license": "CC-BY-4.0",
-   "sourceRevision": "d0fee5a1719cc3472fb98b2f85513e3e1232ad84",
-   "observedAt": "2026-10-13T04:43:44.322Z"
+   "sourceRevision": "e011e9d04fe06def42cb5f0f9315da6ffa36c855",
+   "observedAt": "2026-11-16T07:04:30.854Z"
   }
  ],
  "conflicts": [],
  "notice": [
   "SAP Cloudification Repository (https://github.com/SAP/abap-atc-cr-cv-s4hc), Apache License 2.0: names of released CDS views and classic BAPIs.",
-  "© SAP SE and contributors, CC BY 4.0 — source: https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md; adapted (extracted ID and title)",
-  "© SAP SE and contributors, CC BY 4.0 — source: https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md; adapted (extracted ID and title)",
-  "© SAP SE and contributors, CC BY 4.0 — source: https://github.com/SAP-docs/btp-cloud-platform/blob/d1c13753eb527f6b34b2c0a1e6101dd2b5b9d3e5/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md; adapted (extracted ID and title)",
-  "© SAP SE and contributors, CC BY 4.0 — source: https://github.com/SAP-docs/sap-datasphere/blob/d0fee5a1719cc3472fb98b2f85513e3e1232ad84/docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md; adapted (extracted ID and title)"
+  "© SAP SE and contributors, CC BY 4.0 — source: https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/supported-service-plans-for-sap-s-4hana-cloud-925c00a.md; adapted (extracted ID and title)",
+  "© SAP SE and contributors, CC BY 4.0 — source: https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/40-extensions/register-an-sap-s-4hana-cloud-system-in-a-global-account-in-sap-btp-28171b6.md; adapted (extracted ID and title)",
+  "© SAP SE and contributors, CC BY 4.0 — source: https://github.com/SAP-docs/btp-cloud-platform/blob/e8f79601111549741a8aee51e4754d2d43f8780a/docs/50-administration-and-ops/overview-of-communication-scenarios-managed-by-sap-2d16f49.md; adapted (extracted ID and title)",
+  "© SAP SE and contributors, CC BY 4.0 — source: https://github.com/SAP-docs/sap-datasphere/blob/e011e9d04fe06def42cb5f0f9315da6ffa36c855/docs/Administering/Preparing-Connectivity/prepare-connectivity-to-sap-s-4hana-cloud-abb159e.md; adapted (extracted ID and title)"
  ],
  "summary": {
   "byKind": {
@@ -18377,60 +18377,9 @@
    "SAP S/4HANA Cloud, release not stated": 27,
    "SAP BTP ABAP Environment, release not stated": 27
   },
-  "added": [
-   "communication-scenario:SAP_COM_0008@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0008@sapdocs-s4hc-service-plans",
-   "communication-scenario:SAP_COM_0009@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0009@sapdocs-s4hc-service-plans",
-   "communication-scenario:SAP_COM_0011@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0065@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0091@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0092@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0092@sapdocs-s4hc-service-plans",
-   "communication-scenario:SAP_COM_0093@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0095@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0109@sapdocs-s4hc-service-plans",
-   "communication-scenario:SAP_COM_0165@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0193@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0276@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0327@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0366@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0454@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0464@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0466@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0467@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0503@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0510@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0516@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0527@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0531@sapdocs-datasphere-s4hc-connectivity",
-   "communication-scenario:SAP_COM_0531@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0532@sapdocs-datasphere-s4hc-connectivity",
-   "communication-scenario:SAP_COM_0542@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0545@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0548@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0566@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0582@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0594@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0599@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0623@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0636@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0642@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0647@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0647@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0659@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0683@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0722@sapdocs-datasphere-s4hc-connectivity",
-   "communication-scenario:SAP_COM_0735@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0750@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0763@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0834@sapdocs-btp-abap-managed-scenarios",
-   "communication-scenario:SAP_COM_0845@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0861@sapdocs-s4hc-register-system",
-   "communication-scenario:SAP_COM_0884@sapdocs-s4hc-register-system"
-  ],
+  "added": [],
   "removed": [],
-  "addedCount": 54,
+  "addedCount": 0,
   "removedCount": 0
  }
 }

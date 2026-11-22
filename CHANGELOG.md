@@ -53,7 +53,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The 3.2.0 Firestore rules are deployed and verified on every database (16.11.2026,
   `docs/registers/rules-deployment.json`); the TTL on `erased_accounts.expiresAt` is active and
   `scripts/retention-verify.ts` passes.
-- The privacy policy 1.3 notice to every account is sent on the morning of 16.11.2026.
+- The one-time privacy policy 1.3 notice was sent on 22.11.2026 with the owner's go, to 68 accounts in two runs
+  (40 + 28, none failed). The scheduled send of 16.11.2026 had been switched off because nobody could supervise
+  it; since then two accounts had joined, so the guard on the recipient count stopped the first attempt and was
+  re-run with the current count.
+- The weekly full-history secret scan (`security-ci.yml`, gitleaks) was red on `main` since 12.10.2026 on eight
+  false positives, no leaked secret: a fake token in the redaction spec, a local perf placeholder, two camelCase
+  keys and public SAP interface names in the synced catalog. Each is allowlisted in `.gitleaks.toml` by rule, path
+  and shape, not by fingerprint.
+- The SAP identifier sync of 16.11.2026 is merged: no identifier added or removed, only timestamps, the SAP docs
+  source revision and its attribution links.
+- The UX review agent runs on `openai/gpt-6-luna-pro` instead of `openai/gpt-6-luna` (owner request 22.11.2026):
+  the same price per token, image input, the same parameters.
+
+### Planned
+- An external review of the engine was reproduced claim by claim and scheduled as ER-01 to ER-07
+  (`docs/ROADMAP.md`): two defects for the next patch, a reference inventory and a statement ledger for engine 4,
+  curated exit successors, a behaviour diff with the 3.5.1 quality row; abaplint at analysis time declined.
 
 ### Reviews
 - Security audit of v3.2.0: SEC-2026-992 to -999 refuted; SEC-2026-1000 and -1001 scheduled for the next

@@ -105,8 +105,8 @@ There is **no** Firebase Hosting deploy; `firebase.json` is only rules + emulato
 
 ## QA agent — always on for `dev` (since 2026-09-15, until Sonny revokes it)
 
-**Since 2026-10-06 every agent pins its model again — no Auto Router** (`openai/gpt-6-luna` for the QA delta
-and UX, `openai/gpt-6-luna-pro` for the QA full review and security, all $0.10/$0.50 per M tokens). Five days
+**Since 2026-10-06 every agent pins its model again — no Auto Router** (`openai/gpt-6-luna` for the QA delta;
+`openai/gpt-6-luna-pro` for the QA full review, security and, since 22.11.2026, UX — all $0.10/$0.50 per M tokens). Five days
 of the router cost $82.81, failed on rate limits and output limits, and hid the security cost. Requests must
 carry only parameters the model's endpoints support (`require_parameters`): `temperature` gave HTTP 404.
 
@@ -141,7 +141,7 @@ Runbook: `docs/SECURITY-AUDIT-AGENT.md`. Revoke: `gh variable set SECURITY_AUDIT
 
 ## UX agent — started by hand only (since 2026-10-06; on every release from 2026-09-15)
 
-`gh workflow run ux-review.yml --ref main -f mode=delta`. `.github/workflows/ux-review.yml`: `openai/gpt-6-luna` (reads images) reviews
+`gh workflow run ux-review.yml --ref main -f mode=delta`. `.github/workflows/ux-review.yml`: `openai/gpt-6-luna-pro` (reads images) reviews
 what a release changed for users — source, a deterministic design scan of the whole
 product, and screenshots from `tests/capture-screens.spec.ts` (seeded demo project,
 desktop/phone/dark, plus the 3.0 mockups). Until a complete full review exists, every automatic run reviews the whole product,

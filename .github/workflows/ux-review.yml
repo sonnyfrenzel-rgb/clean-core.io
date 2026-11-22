@@ -1,7 +1,7 @@
 name: UX Review
 
 # The UX agent (docs/UX-REVIEW-AGENT.md): a UX review by one pinned image-capable model
-# (openai/gpt-6-luna) from the source a release changed, a design scan of the whole
+# (openai/gpt-6-luna-pro) from the source a release changed, a design scan of the whole
 # product and screenshots of the screens it touches.
 #
 # Started by hand only (owner decision, 06.10.2026). Until then every push to main
