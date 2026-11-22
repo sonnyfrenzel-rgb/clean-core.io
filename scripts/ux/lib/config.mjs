@@ -5,6 +5,11 @@
  */
 
 /**
+ * Owner request 22.11.2026 ("a better model at the same price"): openai/gpt-6-luna-pro. The OpenRouter model list of
+ * 22.11.2026 prices it exactly like gpt-6-luna ($0.10/$0.50 per M tokens, the same long-prompt tier above 272k),
+ * with image input and the same supported parameters, and the QA full review and the security audit already run
+ * on it. It reasons longer, so a run spends more output tokens; the budget below caps that as before.
+ *
  * Pinned again (owner decision, 06.10.2026): openai/gpt-6-luna, which reads images (OpenRouter model list,
  * 06.10.2026), at $0.10/$0.50. From 01.10. to 06.10.2026 the Auto Router chose per call; what follows is the record
  * of that week.
@@ -19,7 +24,7 @@
  * `maxPrice` (USD per million tokens) is sent as `provider.max_price`, so no endpoint above it serves a call, and
  * every estimate below is made at exactly that price. The reports name every model that answered (meta.models).
  */
-export const UX_MODEL = { model: 'openai/gpt-6-luna', price: { input: 0.1, output: 0.5 } };
+export const UX_MODEL = { model: 'openai/gpt-6-luna-pro', price: { input: 0.1, output: 0.5 } };
 
 /** Every estimate at the price the request carries as its ceiling. */
 export const PRICE_PER_MTOK = UX_MODEL.price;

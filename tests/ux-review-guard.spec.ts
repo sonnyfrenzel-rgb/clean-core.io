@@ -29,14 +29,14 @@ test.describe('one pinned image-capable model, and it can only read', () => {
   test('the pinned model at its list price, no tools, no fallbacks, no data collection', async () => {
     // Owner decision, 06.10.2026: pinned again after the Auto Router (01.–06.10.2026); before it meta/muse-spark-1.3.
     const { UX_MODEL, PRICE_PER_MTOK } = await lib('config.mjs');
-    expect(UX_MODEL).toEqual({ model: 'openai/gpt-6-luna', price: { input: 0.1, output: 0.5 } });
+    expect(UX_MODEL).toEqual({ model: 'openai/gpt-6-luna-pro', price: { input: 0.1, output: 0.5 } });
     expect(PRICE_PER_MTOK).toBe(UX_MODEL.price);
     const src = read('scripts/ux/review.mjs');
     expect(src).toMatch(/callReviewer\(\{\s*apiKey: env\.OPENROUTER_API_KEY,\s*model: UX_MODEL\.model,\s*price: UX_MODEL\.price,/);
     expect(src).not.toMatch(/tools:|tool_choice/);
     const { buildRequest } = await import(path.resolve(ROOT, 'scripts/qa/lib/openrouter.mjs'));
     const req = buildRequest({ system: 's', user: [], schema: {}, effort: 'low', model: UX_MODEL.model, price: UX_MODEL.price });
-    expect(req.model).toBe('openai/gpt-6-luna');
+    expect(req.model).toBe('openai/gpt-6-luna-pro');
     expect(req.plugins).toBeUndefined();
     expect(req.provider).toEqual({ allow_fallbacks: false, data_collection: 'deny', require_parameters: true, max_price: { prompt: UX_MODEL.price.input, completion: UX_MODEL.price.output } });
   });
