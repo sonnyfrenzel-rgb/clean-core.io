@@ -24,6 +24,7 @@ import { noteUnreachableSteps } from './skeleton/unreachable-notes';
 import { attachLuwStates } from './skeleton/luw';
 import { notDrawn } from './skeleton/not-drawn';
 import { foldTechnicalGateways } from './skeleton/technical-gateways';
+import { applyGuards } from './skeleton/guards';
 
 /**
  * The process skeleton — roadmap 2.3.
@@ -1316,7 +1317,7 @@ class SkeletonBuilder {
     // something drawn would still have followed it.
     this.settleEarlyEnds();
     this.collapseSmallRegions();
-    this.applyGuards();
+    applyGuards(this.graph);
     // Roadmap 2.15: after the guards, so a folded run switch is already on its
     // flow when the conditions of a gateway are read — and before the notes,
     // which are counted over the graph this pass leaves behind.
@@ -4958,31 +4959,6 @@ class SkeletonBuilder {
         }
       }
       if (!changed) break;
-    }
-  }
-
-  /**
-   * §5.8's conditional flow: the run switch sits on the edge, not on a gateway.
-   *
-   * An edge that already carries a condition keeps it — an `IF` around the call
-   * said something the switch does not, and joining the two with an `AND` this
-   * engine wrote would be a condition nobody put in the source (rule 6). The
-   * switch is on the node either way.
-   */
-  private applyGuards(): void {
-    for (const region of this.graph.regions) {
-      const guard = region.guard;
-      if (!guard) continue;
-      const callers = this.graph.nodes.filter((n) => n.expandsTo === region.key);
-      const ids = new Set(callers.map((n) => n.id));
-      for (const caller of callers) {
-        caller.detail = { ...(caller.detail ?? {}), guard: guard.condition };
-      }
-      for (const edge of this.graph.edges) {
-        if (!ids.has(edge.to) || edge.condition) continue;
-        edge.kind = 'conditional';
-        edge.condition = guard.condition;
-      }
     }
   }
 
