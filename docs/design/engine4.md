@@ -1092,6 +1092,19 @@ Every row is a commit on `build/engine4-p3`. "Frozen" is check 1 on that commit;
 | 4 entries | `skeleton/entries.ts` (`EntryReader`) | 5b4ffe9f | 1,656/1,656 | ✓ 0 · 0 moved |
 | walk readers | `skeleton/walk-readers.ts` (`WalkReaders`) | 5266b4f9 | 1,656/1,656 | ✓ 0 · 0 moved |
 | tidy | section headers, blank lines | 726f7dd0 | 1,656/1,656 | — (comments only) |
+| 5 walk state | `skeleton/walk/state.ts` (`WalkState`, 16 fields) | a6bf6942 | 1,656/1,656 | ✓ (235600de) |
+| 5 walker | `skeleton/walk/walker.ts` (`Walker`, `WalkInput`, `WalkContext`), `walk/records.ts` | 2ec22777 | 1,656/1,656 | ✓ (235600de) |
+| 5 callbacks | `skeleton/walk/callbacks.ts` | d23224f5 | 1,656/1,656 | ✓ (235600de) |
+| 5 calls | `skeleton/walk/calls.ts` | 225907dc | 1,656/1,656 | ✓ (235600de) |
+| 5 statement | `skeleton/walk/statement.ts` | c4c90cd2 | 1,656/1,656 | ✓ (235600de) |
+| 5 parallel | `skeleton/walk/parallel.ts` | 753ae090 | 1,656/1,656 | ✓ (235600de) |
+| 5 loop | `skeleton/walk/loop.ts` | 193b59bc | 1,656/1,656 | ✓ (235600de) |
+| 5 try | `skeleton/walk/try.ts` | 235600de | 1,656/1,656 | ✓ 0 · 0 moved |
+| 5 branch | `skeleton/walk/branch.ts` | 751703b7 | 1,656/1,656 | ✓ (bedfed38) |
+| 5 range | `skeleton/walk/range.ts` (`Walker.range`) | 18a55119 | 1,656/1,656 | ✓ (bedfed38) |
+| 5 regions | `skeleton/walk/regions.ts` (`Walker.routineRegion`) | 98448ebd | 1,656/1,656 | ✓ (bedfed38) |
+| 5 one call | `skeleton/walk/walk.ts` (`createWalker`, `walkEntries`) | bedfed38 | 1,656/1,656 | ✓ 0 · 0 moved |
+| probes | `tests/skeleton-recognisers.spec.ts` (25 tests, one group per concept) | 25e22eae | — (no lib change) | — |
 
 On 5266b4f9, in parse-once verify mode (`ENGINE_PARSE_ONCE_VERIFY=1`), 34 server-free spec files with 1,922 tests: 1,919 pass, 2 skipped, 1 red — `engine-version-callers.spec.ts` "no call outside tests/ leaves the engine version to the default", red with the same seven script call sites (`scripts/engine/frozen-digests.ts`, `scaling-guard.ts`, `scripts/engine4/shadow-references.ts`, `timing-parse.ts`) on the untouched `integrate/engine4` (3892cfca) as well; none of them is a file of this strand. The skeleton, LUW, golden-master, reference-corpus (`korpus-*`), frozen evidence (330) and rebuild (v3.0.11/v3.0.12) specs are among the green.
 
@@ -1115,16 +1128,44 @@ machine, Node 24, other agents running (`scripts/engine/skeleton-timing.ts`):
 
 `buildProcessFacts` is now the larger half (25k: 0.5–0.7 s, 50k: 1.9–2.1 s).
 
-**What remains.** `process-skeleton.ts` went from 5,817 to 2,608 lines; the passes are 21 modules in
-`lib/abap/skeleton/` (about 3,900 lines with their comments). What is left in `SkeletonBuilder` is pass 5, the walk:
-`buildEntryRegion`, `routineRegion` and the `walk*` methods (39 methods, `walkStatement` alone 291 lines), plus the
-callbacks the walk discovers and the lane evidence it records. It is one mutually recursive component over about 20
-pieces of walk state (`registeredInWalk`, `registrationFrozen`, `expanding`, `regionOfRoutine`, `earlyEnds`,
-`callbacks`, `screenCalled`, `reachedRoutines`, …). The next step is a typed `WalkState` object and one module per
-walker (`walk/branch.ts`, `walk/loop.ts`, `walk/try.ts`, `walk/parallel.ts`, `walk/calls.ts`, `walk/statement.ts`),
-again one at a time behind the same four checks. Then the second half of phase 3: one recogniser per concept with a
-probe spec (the recognisers now sit in `skeleton/recognisers.ts`, `statement-readers.ts`, `walk-readers.ts` and
-`dispatch.ts`), and closing review §5 #2–#6, #9 as gated readings.
+**Pass 5, the walk (22.11.2026, 12 commits).** The walk was one mutually recursive component inside the class: 39
+methods over 16 fields of shared state. It moved in three steps, each commit byte-neutral on the frozen skeletons:
+
+1. **The state, typed.** `WalkState` (`skeleton/walk/state.ts`) holds the 16 fields the walkers share
+   (`registeredInWalk`, `registrationFrozen`, `expanding`, `regionOfRoutine`, `earlyEnds`, `regionLast`,
+   `callbacks`, `screenCalled`, `screenCallSites`, `registrationsAtCall`, `reachedRoutines`, `entryOfBlock`,
+   `cutOffBoundaries`, `evidence`, `evidenceSeen`, `fileRunDatasets`). The passes after the walk read its products
+   from it by name.
+2. **The walk, one object.** `Walker` (`skeleton/walk/walker.ts`) is `graph`, `input` (`WalkInput`: the source and
+   what passes 1, 2 and 4 read, never written by the walk), `state` and `readings`, plus the two functions the
+   walkers recurse through, `range` and `routineRegion`. Every walker is a function of its own module taking the
+   walker first; the recursion goes through those two functions, never through an import, so no walker module
+   imports one that imports it back. While the walkers moved one at a time, the two functions pointed back into
+   the class; the last commit binds them to the modules (`createWalker`).
+3. **One module per walker, leaf first.** `records` (lane evidence, reached routines), `callbacks`, `calls`,
+   `statement`, `parallel`, `loop`, `try`, `branch`, `range`, `regions`, then `walk.ts` (`createWalker`,
+   `walkEntries`): pass 5 is now one call in `build()`. Each module body is the method body as it was, `this.`
+   replaced by `w.graph`/`w.input`/`w.state`/`w.readings`; the order of every test and every write is unchanged.
+
+The recursion has one more stack frame per level than before (the arrow in `createWalker`). The expansion floor
+(`MAX_PERFORM_EXPANSION`, 200 links; the stack gave out between 800 and 1,200) keeps its margin, and the mutated
+corpus — unclosed blocks, deep chains — drew the same skeletons, including the same `throw:` digests.
+
+Proof at the end of pass 5 (bedfed38): frozen 1,656/1,656 on every commit; mutations 43,014 and external 10,800
+(`--mutations 7`, 300 public files) compared, 0 moved, at 235600de and at bedfed38. In parse-once verify mode, 36
+server-free spec files with 1,965 tests (the 34 above, `skeleton-recognisers`, `shard-plan`): 1,962 pass, 2 skipped,
+1 red — the same `engine-version-callers.spec.ts` test with the same seven script call sites as on 3892cfca. Timing
+(`skeleton-timing.ts`, median of 3, other agents running), skeleton on top of facts: 1k 33 ms, 5k 81 ms, 10k 117 ms,
+25k 477 ms, 50k 1,185 ms — inside the ranges measured before pass 5; the extra frame costs nothing measurable.
+
+**What remains.** `process-skeleton.ts` went from 5,817 to 792 lines (types, the public functions, and a builder
+that is `build()` and its field list); the passes are 34 modules in `lib/abap/skeleton/` and `skeleton/walk/`.
+The second half of phase 3 has begun with the probe spec `tests/skeleton-recognisers.spec.ts`: one group per concept
+(messages and the 3.2.0 case gate, `RAISE`, reads, list and file output, function-module task kinds and
+enhancement calls, FORM conventions, the 3.1.0 arm outcomes, ALV event rows). Still open: the recognisers that sit
+outside `recognisers.ts` (`statement-readers.ts`, `walk-readers.ts`, `dispatch.ts`, the inline tests in
+`walk/statement.ts` such as `SUBMIT … AND RETURN`, `LEAVE TO TRANSACTION`, `CALL SCREEN`) gathered one per concept
+behind the same probes, and closing review §5 #2–#6, #9 as gated readings.
 
 **The helper seam (review B2).** Whether a routine is a step or a technical helper is decided in one place,
 `skeleton/effects.ts` `directEffects`; `notDrawn.technicalHelpers` lists what it folded. A routine whose table write
