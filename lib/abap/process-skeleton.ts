@@ -18,6 +18,7 @@ import { SkeletonGraph, type Exit, type SkeletonReadings } from './skeleton/grap
 import { anchorOf, bodyRange, programName, snippet, tokenIndexOf } from './skeleton/anchors';
 import { buildLanes } from './skeleton/lanes';
 import { FLOW_BLOCKS } from './skeleton/keywords';
+import { noteWhatIsNotRead } from './skeleton/source-notes';
 import { settleEarlyEnds, type EarlyEnd } from './skeleton/early-ends';
 import { assignmentTarget, classOf, leavesDialogStep } from './skeleton/statement-readers';
 import { chainReportEvents } from './skeleton/report-chain';
@@ -1207,7 +1208,9 @@ class SkeletonBuilder {
     this.readMethodCallSites();
     this.readEventHandlers();
     this.readEffects();
-    this.noteWhatIsNotRead();
+    noteWhatIsNotRead(this.graph, {
+      statements: this.statements, structure: this.structure, control: this.control, calls: this.calls,
+    });
 
     const entries = this.readEntryPoints();
     this.runEntries = entries.filter((e) => e.origin === 'event' || e.origin === 'implicit');
@@ -1287,43 +1290,6 @@ class SkeletonBuilder {
       if (statement.keyword !== 'PARAMETERS' && statement.keyword !== 'SELECT-OPTIONS') continue;
       const m = /^(?:PARAMETERS|SELECT-OPTIONS)\s+([\w/]+)/i.exec(statement.text);
       if (m) this.selectionNames.add(m[1].toUpperCase());
-    }
-  }
-
-  private noteWhatIsNotRead(): void {
-    for (const statement of this.statements) {
-      if (statement.keyword === 'INCLUDE' && !/^INCLUDE\s+STRUCTURE\b/i.test(statement.text)) {
-        this.graph.note('include-not-read', statement,
-          'The text of an INCLUDE is not part of this source, so whatever it contributes to the process is not in this skeleton.');
-      }
-      if (statement.nativeSql) {
-        this.graph.note('native-sql', statement,
-          'Native SQL is passed through to the database unread. What it touches is not drawn.');
-      }
-      if (statement.keyword === 'COMMIT' || statement.keyword === 'ROLLBACK') {
-        this.graph.note('commit-boundary', statement,
-          'A commit boundary is IT knowledge and belongs in the Technical overlay, not in the flow. What it does to an update registration — dispatched or discarded — is recorded as a state of the process model.');
-      }
-    }
-    for (const branch of this.control.notHandled) {
-      if (branch.reason !== 'chained-branch') continue;
-      this.graph.notes.push({ ...branch, reason: 'chained-branch' });
-    }
-    for (const open of this.structure.unterminated) {
-      const statement = this.statements.find((s) => s.lineStart === open.lineStart);
-      if (!statement) continue;
-      this.graph.note('unterminated-container', statement,
-        `No closing statement ends this ${open.kind}. Everything read inside it runs to the end of the file and is a guess, not an anchor.`);
-    }
-    for (const perform of this.calls.performs) {
-      if (!perform.dynamic) continue;
-      const statement = this.statements.find(
-        (s) => s.lineStart === perform.lineStart && s.text === perform.text,
-      );
-      if (statement) {
-        this.graph.note('dynamic-call', statement,
-          'The name of the routine is computed at run time. The call is drawn, its target is not claimed.');
-      }
     }
   }
 
