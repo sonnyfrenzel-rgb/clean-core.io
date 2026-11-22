@@ -17,6 +17,7 @@ import { APP_VERSION } from '../version';
 import { SkeletonGraph, type Exit, type SkeletonReadings } from './skeleton/graph';
 import { anchorOf, bodyRange, snippet, tokenIndexOf } from './skeleton/anchors';
 import { attachLuwStates } from './skeleton/luw';
+import { notDrawn } from './skeleton/not-drawn';
 import {
   hasOnlyTechnicalConditions,
   isTechnicalGateway,
@@ -1418,12 +1419,17 @@ class SkeletonBuilder {
         .sort((a, b) => (a.runtimeRank ?? 0) - (b.runtimeRank ?? 0)
           || (a.anchor?.lineStart ?? 0) - (b.anchor?.lineStart ?? 0))
         .map((r) => r.key),
-      notDrawn: {
-        unreached: this.unreached(),
-        unreachedLines: this.unreachedLines(),
-        technicalHelpers: this.technicalHelpers(),
-        clones: this.clones(),
-      },
+      notDrawn: notDrawn({
+        statements: this.statements,
+        structure: this.structure,
+        calls: this.calls,
+        formBlocks: this.formBlocks,
+        entryOfBlock: this.entryOfBlock,
+        reachedRoutines: this.reachedRoutines,
+        helpers: this.helpers,
+        methodImpls: this.methodImpls,
+        methodCallSites: this.methodCallSites,
+      }),
       anchoredNodes: this.graph.nodes.length - this.graph.unanchoredCount,
       unanchoredNodes: this.graph.unanchoredCount,
       notes: this.graph.notes,
@@ -5580,104 +5586,5 @@ class SkeletonBuilder {
     }
   }
 
-  /** Not reached by 2.2's call graph **and** not drawn by this walk. */
-  private isUnreachedForm(name: string): boolean {
-    return this.calls.unreachable.includes(name) && !this.reachedRoutines.has(name);
-  }
-
-  private unreached(): UnreachedRegion[] {
-    const out: UnreachedRegion[] = [];
-    for (const name of this.calls.unreachable) {
-      const block = this.formBlocks.get(name);
-      if (!block || this.entryOfBlock.has(block.openIndex) || !this.isUnreachedForm(name)) continue;
-      out.push({ name, kind: 'form', lineStart: block.lineStart, lineEnd: block.lineEnd });
-    }
-    // A screen module runs from a dynpro, and the dynpro is not in this source.
-    // Until 2.14 that made it unreached code; it no longer does, because the
-    // `MODULE … INPUT` line is itself the source saying the screen runtime
-    // calls it. A module that is **not** an entry — one this source never
-    // reaches and never declares as a screen event — is still counted here.
-    for (const block of this.structure.blocks) {
-      if (block.kind !== 'module' || this.entryOfBlock.has(block.openIndex)) continue;
-      const name = /^MODULE\s+([\w/]+)/i.exec(this.statements[block.openIndex].text)?.[1];
-      if (name) {
-        out.push({ name: name.toUpperCase(), kind: 'module', lineStart: block.lineStart, lineEnd: block.lineEnd });
-      }
-    }
-    return out.sort((a, b) => a.lineStart - b.lineStart);
-  }
-
-  private unreachedLines(): number {
-    return this.unreached().reduce((sum, r) => sum + (r.lineEnd - r.lineStart + 1), 0);
-  }
-
-  private technicalHelpers(): FoldedForm[] {
-    const out: FoldedForm[] = [];
-    for (const name of this.helpers) {
-      // D2: a method without an effect of its own is folded into its caller
-      // like a form, and said here like one — but only where a walked call
-      // actually folded it, since no call graph of methods says more.
-      const method = this.methodImpls.find((impl) => impl.key === name);
-      if (method) {
-        if (!this.reachedRoutines.has(name)) continue;
-        out.push({
-          name,
-          lineStart: method.block.lineStart,
-          lineEnd: method.block.lineEnd,
-          callSites: (this.methodCallSites.get(name) ?? []).length,
-        });
-        continue;
-      }
-      if (this.isUnreachedForm(name)) continue;
-      const block = this.formBlocks.get(name);
-      if (!block) continue;
-      out.push({
-        name,
-        lineStart: block.lineStart,
-        lineEnd: block.lineEnd,
-        // Counted off 2.2's call graph, not off the walk: a helper performed
-        // only by another helper is never walked and would otherwise read as
-        // called from nowhere.
-        callSites: this.calls.performs.filter((p) => p.target === name).length,
-      });
-    }
-    return out.sort((a, b) => a.lineStart - b.lineStart);
-  }
-
-  /**
-   * §5.8: *"14 forms identical except the rule number"*.
-   *
-   * Two routines are the same shape when their bodies match once every number is
-   * replaced by `#` and every occurrence of their own name is removed — which is
-   * exactly what the fourteen rule routines of the reference case differ by.
-   */
-  private clones(): CloneGroup[] {
-    const groups = new Map<string, string[]>();
-    for (const [name, block] of this.formBlocks) {
-      const body: string[] = [];
-      // The `FORM` header is part of the shape: two routines with the same body
-      // and different parameters are not the same routine.
-      for (let i = block.openIndex; i <= bodyRange(block)[1]; i++) {
-        body.push(this.statements[i].text.toUpperCase().replace(/\d+/g, '#'));
-      }
-      const shape = body.join(' | ').split(name.toUpperCase()).join('<SELF>');
-      groups.set(shape, [...(groups.get(shape) ?? []), name]);
-    }
-    const out: CloneGroup[] = [];
-    for (const [shape, names] of groups) {
-      if (names.length < 2) continue;
-      const blocks = names
-        .map((n) => this.formBlocks.get(n))
-        .filter((b): b is Block => b !== undefined);
-      if (!blocks.length) continue;
-      out.push({
-        names: names.sort(),
-        lineStart: Math.min(...blocks.map((b) => b.lineStart)),
-        lineEnd: Math.max(...blocks.map((b) => b.lineEnd)),
-        shape: snippet(shape),
-      });
-    }
-    return out.sort((a, b) => a.lineStart - b.lineStart);
-  }
 }
 
