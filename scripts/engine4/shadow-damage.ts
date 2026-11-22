@@ -28,7 +28,7 @@
  * Where the two engines differ, the difference is put into a named category.
  * Nothing here is wired into the product.
  */
-import { readStatements } from '../../lib/abap/statement-reader';
+import { readStatementsShipping as readStatements } from '../../lib/abap/statement-reader';
 import { readBlocks } from '../../lib/abap/block-structure';
 import { lex } from '../../lib/engine4/lexer';
 import { statements } from '../../lib/engine4/statements';

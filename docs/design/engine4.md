@@ -16,9 +16,10 @@ code. Prior art supplied concepts only, and no third-party source is copied.
 | L0 Lexer | `lexer.ts`, `tokens.ts` | `lex(source) → { tokens, diagnostics }` | built |
 | L1 Statements | `statements.ts`, `statement-kinds.ts` | `statements(tokens, { macros? }) → Statement[]` | built |
 | L2 Blocks | `blocks.ts` | `blocks(statements) → BlockTree` with recovery | built |
-| Phase 0 | `parsed-source.ts`, `compat.ts` | `parseSource(source) → ParsedSource` (the shipping statement view, masks, container index) | built, not wired |
+| Phase 0 | `parsed-source.ts`, `compat.ts` | `parseSource(source) → ParsedSource` (the shipping statement view, masks, container index) | built; **wired** into `readStatements` (ADR-133, 22.11.2026, `integrate/engine4`) |
 | L3 Upload layout | `layout.ts`, `conventions.ts` | `layout(files) → UploadLayout`; `readUpload(files)` runs L0–L2 per part with L3's macros | built (layout and includes) |
-| L3 declarations, L4–L6 | — | class/interface declarations, screens, symbols, calls, process model (review §8.1) | later |
+| L4 references (first step) | `references.ts` | `references(statements, tree) → ReferenceTable`: every SAP reference with line, use and resolution | built, inert |
+| L3 declarations, rest of L4, L5–L6 | — | class/interface declarations, screens, scopes and data flow, calls, process model (review §8.1) | later |
 
 `index.ts` is the public surface. `readSource(source)` runs L0 and L1 in one call and returns the statements
 together with the diagnostics of both layers.
@@ -354,7 +355,7 @@ at 10k lines** in `statement-reader.ts` and `block-structure.ts` (self time). Pa
 share, down to the one read above. The end-to-end "after" can only be measured once readers consume
 `ParsedSource`, so this step reports no product speed-up.
 
-### The wiring step, pending the owner
+### The wiring step, pending the owner (settled by ADR-133; built, see "Phase 0 wiring")
 
 1. **Decision:** an ADR-125 amendment that lets `lib/abap/` import `lib/engine4/parsed-source` (and only
    that) before the switch, as the "shared foundation" of (4), with the layer guard narrowed to that one
@@ -364,6 +365,75 @@ share, down to the one read above. The end-to-end "after" can only be measured o
    `maskLiterals(s.text)` becomes `parsed.maskedText(s.index)`. A recovered source keeps `readBlocks` for
    its containers. One reader per commit, and the frozen digests and goldens run on each.
 3. Then item 3 below.
+### Phase 0 wiring (22.11.2026, `integrate/engine4`)
+
+ADR-133 (1) settled the decision above: from the 3.5.0 line today's engine may read `ParsedSource`. The wiring is
+built and proven byte-neutral. It is a pure refactor: no engine version gate, no change to any signed output.
+
+**What is wired** (`lib/abap/statement-reader.ts`, `block-structure.ts`, `callback-registrations.ts`):
+
+1. **`readStatements(source)` reads through `parseSource(source).compat`.** The 3.x scanner stays as
+   `readStatementsShipping` and answers wherever the two readings could differ (`parseOnceFallback`):
+   - a lexer error: an unterminated literal, template, template expression or native SQL block, a stray brace,
+     an unknown character;
+   - an L2 recovery (`recovered`);
+   - native SQL or AMDP anywhere in the source (`EXEC SQL`, `ENDEXEC`, `BY DATABASE`);
+   - a string template whose `{ … }` runs across lines (review §2.4; also the ER-01 case of a multi-line
+     template whose last line holds a `"`);
+   - a period inside a template expression, a period between two digits (`ls_p000.1`, `4.03.2011`), an unquoted
+     decimal.
+   Each class was found or confirmed by the mutation run below; the parsed view never serves one of them.
+2. **One reading per build.** `withParsedSource(fn)` wraps the entry points `buildAbapEvidence`,
+   `buildProcessFacts` (so `buildProcessSkeleton`) and `buildBusinessStatements`. Inside it a source is read
+   once and `maskLiterals(text)` is computed once per text. Every caller gets fresh copies, so a reader that
+   changes its list cannot change the next reader's. The scope ends with the build, so no customer source is
+   kept in memory after it. The builders are synchronous, so two requests cannot share a scope.
+3. **Hotspots** (review §4.3): `containerAt` answers from a painted index from the second lookup in the same
+   list on (the scan stays as `containerAtScan`, the reference); `namesThisProgram` reads what a statement writes
+   into a variable once per list and variable, not once per ALV registration.
+4. **Verify mode:** `ENGINE_PARSE_ONCE_VERIFY=1` makes every parsed reading also run the scanner and throw on a
+   difference. **Kill switch:** `PARSE_ONCE_READER = false` restores the 3.x reader everywhere.
+5. The layer guard allows exactly one import of the strand from the product:
+   `lib/abap/statement-reader.ts` → `../engine4/parsed-source` (`tests/engine4-layer-guard.spec.ts`).
+
+**Proof of neutrality**
+
+| Check | Result |
+|---|---|
+| `tests/fixtures/engine-v3.2.0-frozen.json`, new: 330 digests of evidence and route (7 starters, 150 learn cases, 8 probes, both editions), captured from `lib/` at 6ee15d05 **before** the wiring (`scripts/engine/frozen-digests.ts capture`) | 330 / 330 unchanged after the wiring, in verify mode |
+| `engine-version-rebuild.spec.ts`: the v3.0.11 (610) and v3.0.12 (616) frozen oracles | unchanged, in verify mode |
+| The three `golden-master` specs | pass, in verify mode |
+| Mutation run `scripts/engine/parse-once-neutrality.ts`: the corpus and 29,550 mutated sources (CRLF, tabs, deleted, duplicated and split lines, truncation, inserted `'`, `|`, `"`, `{`, `.`) | 20,728 served by the parsed view, **0 differ** from the scanner; 8,822 fall back |
+| The same on the external real-code sample (312 files, 23,400 sources) | 13,992 served, **0 differ**; 9,408 fall back (897 of them templates across lines) |
+| Before the fallback rules were complete, the same run found 18 differing sources | each one is a class above now |
+| Server-free specs that import `lib/` (about 490 files, 6,653 tests, the engine, golden and frozen specs among them) in verify mode | pass; the one red test (`firestore-rules.spec.ts`) needs the emulator and is unrelated. Specs that talk to the emulators were left out (shared emulators) |
+| `tests/parse-once-wiring.spec.ts` | corpus byte for byte, the fallback classes, scope and copies, the container index against the scan on every line |
+
+**Speed** (`buildAbapEvidence`, the 1,000-line starter concatenated, this machine, Node 24):
+
+| Lines | Before | After |
+|---|---|---|
+| 1k | 348 ms | 116 ms |
+| 10k | 7.6 s | 0.9–1.9 s |
+| 20k | 25.2 s | 2.8–4.0 s |
+| 25k | 31.7 s | 5.0 s (target: under 8 s) |
+| 50k | 82.6 s | 10–11 s |
+
+**Scaling guard** (`scripts/engine/scaling-guard.ts`, `tests/engine-scaling-guard.spec.ts`; 2× input ≤ 2.4× time,
+median of 3): 1k → 2k 1.72×, 10k → 20k 2.12×, 25k → 50k 2.19×. Before the wiring 10k → 20k was 3.3×. The rest of
+the superlinear time sits in `callback-registrations` (`valueAlongTheRun`, per registration) and `call-graph`;
+both are hotspots for the next step, not needed for the guard.
+
+**Frozen digests per release** (`scripts/engine/frozen-digests.ts`, `tests/engine-frozen-digests.spec.ts`): a
+format-2 fixture per release over starters, learn halves and probes (never the holdout), captured once and never
+regenerated; the spec checks every such file. The release routine should run `capture --engine vX.Y.Z --commit
+<sha>` on the release commit (not yet in a workflow).
+
+**Not done, needs the owner:** `engineDigest` in every run (review §4.2 C, §8.3). It changes what `/api/runs/create`
+stores and signs, so it is no neutral refactor. Proposal: SHA-256 over the sorted `lib/abap/**` and
+`lib/engine4/**` sources plus the catalog `sourceSha256`s, computed at build time into a generated module, written
+on the run's model card beside `engineVersion`; a digest that matches no frozen release reads "unreleased build".
+
 ## L3 step: upload layout and includes (15.11.2026)
 
 Owner go 15.11.2026. This is the first half of L3 in the engine review §8.1, the upload layout and the include
@@ -769,9 +839,11 @@ Every offline shadow re-run against **today's** shipping readers (`dev`, 218 com
 
 1. **Build ADR-134 Q5, Q6 and Q9** (decided; below). Rerun both shadows on the sample after every L2 change
    (it stays outside the repository, so the specs cannot read it).
-2. **Phase 0 wiring** (3.5.0 item 2): see the Phase 0 section above.
+2. **Phase 0, the rest** (3.5.0 item 2): `engineDigest` (owner decision, "Phase 0 wiring"); hand `ParsedSource`
+   itself to the readers that also mask (`maskedText(i)`) and nest (`containers`) instead of the source-keyed
+   scope; the remaining hotspots (`valueAlongTheRun`, `call-graph`); the capture step in the release routine.
 3. Remove the two other statement splitters (`declaration-parser.tokenize`, `plain-language.splitStatements`)
-   once their readers consume `ParsedSource`. Not started: it needs step 2.
+   once their readers consume `ParsedSource`.
 4. **L3, second half:** class and interface declarations (visibility, `FINAL`/`ABSTRACT`, events, aliases,
    redefinitions, `RAISING`) and screens by number from `MODULE` names and `CALL SCREEN` (review §8.1), on
    top of the layout. The layout part is done (above).

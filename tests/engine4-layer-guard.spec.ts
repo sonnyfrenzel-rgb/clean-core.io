@@ -51,14 +51,27 @@ test('lib/engine4 imports only from lib/engine4', () => {
   expect(bad).toEqual([]);
 });
 
-test('nothing in the product imports lib/engine4 before the switch', () => {
+/**
+ * ADR-133 (1), the one exception: from the 3.5.0 line the shipping statement
+ * reader reads the parse-once `ParsedSource`. Exactly this file, exactly this
+ * module; every other import of the strand stays forbidden until the switch.
+ */
+const PARSE_ONCE_EXCEPTION = { file: path.join('lib', 'abap', 'statement-reader.ts'), spec: '../engine4/parsed-source' };
+
+test('nothing in the product imports lib/engine4 before the switch, except the parse-once reader (ADR-133)', () => {
   const bad: string[] = [];
+  let exceptionSeen = false;
   for (const dir of ['app', 'components', 'hooks', 'lib']) {
     for (const file of walk(path.join(ROOT, dir))) {
-      if (importsOf(file).some((spec) => /(?:^|\/)engine4(?:\/|$)/.test(spec))) bad.push(path.relative(ROOT, file));
+      const rel = path.relative(ROOT, file);
+      for (const spec of importsOf(file).filter((s) => /(?:^|\/)engine4(?:\/|$)/.test(s))) {
+        if (rel === PARSE_ONCE_EXCEPTION.file && spec === PARSE_ONCE_EXCEPTION.spec) exceptionSeen = true;
+        else bad.push(`${rel} → ${spec}`);
+      }
     }
   }
   expect(bad).toEqual([]);
+  expect(exceptionSeen).toBe(true);
 });
 
 test('no file over 1,500 lines and no function over 150 lines in lib/engine4', () => {

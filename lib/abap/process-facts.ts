@@ -1,4 +1,4 @@
-import { readStatements, type AbapStatement } from './statement-reader';
+import { readStatements, withParsedSource, type AbapStatement } from './statement-reader';
 import { readBlocks, type BlockStructure } from './block-structure';
 import { readControlFlowFrom, type ControlFlowReport } from './control-flow';
 import { readCallGraphFrom, type CallGraphReport } from './call-graph';
@@ -30,6 +30,11 @@ export interface ProcessFacts {
 }
 
 export function buildProcessFacts(source: string): ProcessFacts {
+  // Parse once (3.5.0, ADR-133): one reading of `source` for every reader below.
+  return withParsedSource(() => buildProcessFactsRead(source));
+}
+
+function buildProcessFactsRead(source: string): ProcessFacts {
   const statements = readStatements(source);
   const structure = readBlocks(statements);
   return {

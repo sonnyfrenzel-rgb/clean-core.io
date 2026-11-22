@@ -58,7 +58,7 @@
  * are the anchors and the evidence behind them.
  */
 
-import { readStatements, type AbapStatement, type SourceRange } from './statement-reader';
+import { readStatements, withParsedSource, type AbapStatement, type SourceRange } from './statement-reader';
 import { genitivePhrase, isKnownField, nounPhrase, tableTerm, termFor, type BusinessTerm } from './business-glossary';
 import { buildProcessFacts } from './process-facts';
 import { readLuwStates, type LuwModel } from './luw-states';
@@ -3234,6 +3234,11 @@ function listSentence(
  * single statement. `attachTo` chooses per node.
  */
 export function buildBusinessStatements(source: string): BusinessStatement[] {
+  // Parse once (3.5.0, ADR-133): one reading of `source` for the statements and the facts below.
+  return withParsedSource(() => buildBusinessStatementsRead(source));
+}
+
+function buildBusinessStatementsRead(source: string): BusinessStatement[] {
   const statements = readStatements(source);
   // The same reading as in the skeleton: the sentence condenses the model's
   // effect status (2.12); it does not form one of its own.

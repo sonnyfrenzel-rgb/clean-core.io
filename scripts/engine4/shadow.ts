@@ -24,7 +24,7 @@
  */
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { basename, dirname, join } from 'path';
-import { readStatements, type AbapStatement } from '../../lib/abap/statement-reader';
+import { readStatementsShipping as readStatements, type AbapStatement } from '../../lib/abap/statement-reader';
 import { readBlocks, type BlockStructure } from '../../lib/abap/block-structure';
 import { lex, uncoveredCharacters } from '../../lib/engine4/lexer';
 import { statements, type Statement } from '../../lib/engine4/statements';

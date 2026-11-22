@@ -18,8 +18,8 @@
  * source). On a file where all of these are identical, moving that reader onto
  * `ParsedSource` cannot change its output. Nothing here is wired into the product.
  */
-import { readStatements, maskLiterals, maskNonCode, maskComments, type AbapStatement } from '../../lib/abap/statement-reader';
-import { readBlocks, containerAt } from '../../lib/abap/block-structure';
+import { readStatementsShipping as readStatements, maskLiterals, maskNonCode, maskComments, type AbapStatement } from '../../lib/abap/statement-reader';
+import { readBlocks, containerAtScan as containerAt } from '../../lib/abap/block-structure';
 import { parseSource, type ParsedSource } from '../../lib/engine4/parsed-source';
 import { macroNames, statements } from '../../lib/engine4/statements';
 import { lex } from '../../lib/engine4/lexer';

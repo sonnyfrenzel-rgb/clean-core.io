@@ -39,6 +39,8 @@
  * `nativeSql` rather than parsed — it carries no ABAP periods, and its
  * `:host_variable` colons are not chain operators.
  */
+// ADR-133 (1): the one module of the engine 4.0 strand today's engine may read.
+import { parseSource, type ParsedSource } from '../engine4/parsed-source';
 
 /** Where something sits in the source. Always a range, never a bare line. */
 export interface SourceRange {
@@ -249,6 +251,15 @@ function blank(text: string): string {
  * is an offset in the real one.
  */
 export function maskLiterals(text: string): string {
+  // Parse once (3.5.0): inside a build the same text is masked once (a pure function, so neutral).
+  const memo = maskScope?.get(text);
+  if (memo !== undefined) return memo;
+  const out = maskLiteralsScan(text);
+  maskScope?.set(text, out);
+  return out;
+}
+
+function maskLiteralsScan(text: string): string {
   const scan = createLiteralScanner();
   let out = '';
   for (let i = 0; i < text.length; i++) {
@@ -498,12 +509,16 @@ function emit(out: AbapStatement[], scanned: Scanned, from: number, to: number, 
 }
 
 /**
- * Every statement in the source, in the order it is written.
+ * Every statement in the source, in the order it is written — the shipping
+ * character scanner of 3.x, unchanged.
  *
  * Comments are gone, literals are respected, chains are expanded, and each
- * statement carries the line it starts on and the line it ends on.
+ * statement carries the line it starts on and the line it ends on. Since the
+ * 3.5.0 line `readStatements` (below) reads through the parse-once
+ * `ParsedSource` and falls back to this reader wherever the two could differ;
+ * the shadow scripts and the verify mode compare against this one.
  */
-export function readStatements(source: string): AbapStatement[] {
+export function readStatementsShipping(source: string): AbapStatement[] {
   const lines = source.split(/\r?\n/);
   const out: AbapStatement[] = [];
   // Characters of the statement being assembled, with the line each came from.
@@ -601,6 +616,161 @@ export function readStatements(source: string): AbapStatement[] {
   if (pending.chars.length) emit(out, pending, 0, pending.chars.length, nativeSql);
 
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// Parse once (roadmap 3.5.0 item 2; ADR-133 (1); docs/design/engine4.md,
+// "Phase 0 wiring").
+//
+// `readStatements` hands every reader the statements of one `ParsedSource`
+// (lib/engine4/parsed-source.ts, the engine 4.0 strand's L0–L2) instead of
+// scanning the text again. It is a pure refactor: on every source where the
+// parsed view could differ from the shipping scanner, it falls back to
+// `readStatementsShipping`, and the frozen digests, the goldens and the verify
+// mode prove the rest byte for byte.
+//
+//   - **Fallback** (`parseOnceFallback`): a lexer error (an unterminated
+//     literal, template or native SQL block, a stray brace, an unknown
+//     character), a string template whose expression runs across lines, or a
+//     block tree that had to recover. Each is a class where the shadow showed
+//     or could not exclude a difference (engine4.md, "Where it is not neutral").
+//   - **One read per build:** inside `withParsedSource(fn)` — the entry points
+//     `buildAbapEvidence`, `buildProcessFacts`, `buildProcessSkeleton` and
+//     `buildBusinessStatements` — a source is read once and every later call
+//     gets a copy. Outside a scope nothing is kept, so no customer source stays
+//     in memory after the build that read it.
+//   - **Copies:** every call returns fresh objects, so a reader that changes
+//     its list or a statement cannot change what the next reader sees.
+//   - **Verify mode** (`ENGINE_PARSE_ONCE_VERIFY=1`): every parsed reading is
+//     compared with the shipping scanner and a difference throws. The engine
+//     specs run in this mode prove the wiring neutral on everything they read.
+//   - **Kill switch:** `PARSE_ONCE_READER = false` restores the 3.x reader.
+// ---------------------------------------------------------------------------
+
+/** Off restores the shipping scanner everywhere (the parsed view is then never built). */
+export const PARSE_ONCE_READER = true;
+
+/** The lexer and block diagnostics after which the shipping scanner reads the source. */
+const FALLBACK_CODES = new Set<string>([
+  'unterminated-literal',
+  'unterminated-template',
+  'unterminated-template-expression',
+  'unexpected-brace',
+  'unknown-character',
+  'unterminated-native-sql',
+]);
+
+const NATIVE_REGION = /\bEXEC\s+SQL\b|\bENDEXEC\b|\bBY\s+DATABASE\b/i;
+
+/** Why a parsed source is read by the shipping scanner instead, or null when the parsed view serves. */
+export function parseOnceFallback(parsed: ParsedSource): string | null {
+  const diagnostic = parsed.diagnostics.find((d) => FALLBACK_CODES.has(d.code));
+  if (diagnostic) return diagnostic.code;
+  if (parsed.recovered) return 'recovered';
+  // Native SQL and AMDP bodies: the shipping scanner's region rules (a flag read off
+  // the text, `ENDEXEC` joined to the last piece) are copied, not proven on damaged
+  // headers (`scripts/engine/parse-once-neutrality.ts`, insert-brace and insert-period).
+  if (NATIVE_REGION.test(parsed.source)) return 'native-sql';
+  const source = parsed.source;
+  const digit = (i: number) => i >= 0 && i < source.length && source.charCodeAt(i) >= 48 && source.charCodeAt(i) <= 57;
+  // A string template whose `{ … }` runs across lines: the shipping scanner cuts it
+  // per line (review §2.4), the token reading does not. A period inside `{ … }` ends
+  // the statement for the token reading and not for the scanner. A period between two
+  // digits (`ls_p000.1`, `4.03.2011`) is no end for the scanner and one for the tokens.
+  let open: number | null = null;
+  let depth = 0;
+  for (const t of parsed.tokens) {
+    if (t.kind === 'period') {
+      if (depth > 0) return 'period-in-template';
+      if (digit(t.offset - 1) && digit(t.offset + 1)) return 'period-between-digits';
+    }
+    if (t.kind === 'number' && t.text.includes('.')) return 'unquoted-decimal';
+    if (t.kind === 'templateBegin') {
+      if (depth === 0) open = t.row;
+      depth += 1;
+    } else if (t.kind === 'templateMiddle' || t.kind === 'templateEnd') {
+      if (open !== null && t.row !== open) return 'template-across-lines';
+      if (t.kind === 'templateEnd') {
+        depth = Math.max(0, depth - 1);
+        if (depth === 0) open = null;
+      }
+    } else if (depth > 0 && open !== null && t.row !== open) {
+      return 'template-across-lines';
+    }
+  }
+  return null;
+}
+
+const statistics = { parsed: 0, fallback: 0, reused: 0, shipping: 0 };
+
+/** How the reader has answered since the process started (diagnostics for scripts and specs only). */
+export function parseOnceStatistics(): Readonly<typeof statistics> {
+  return { ...statistics };
+}
+
+function verifyMode(): boolean {
+  return typeof process !== 'undefined' && process.env?.ENGINE_PARSE_ONCE_VERIFY === '1';
+}
+
+/** The statements of one source as the parsed view gives them, or the shipping scanner's where it must. */
+function readOnce(source: string): AbapStatement[] {
+  if (!PARSE_ONCE_READER) {
+    statistics.shipping += 1;
+    return readStatementsShipping(source);
+  }
+  const parsed = parseSource(source);
+  if (parseOnceFallback(parsed) !== null) {
+    statistics.fallback += 1;
+    return readStatementsShipping(source);
+  }
+  statistics.parsed += 1;
+  const list: AbapStatement[] = parsed.compat;
+  if (verifyMode()) {
+    const shipping = readStatementsShipping(source);
+    if (JSON.stringify(shipping) !== JSON.stringify(list)) {
+      const i = shipping.findIndex((s, k) => JSON.stringify(s) !== JSON.stringify(list[k]));
+      throw new Error(`parse once is not neutral at statement ${i < 0 ? shipping.length : i}: shipping ${JSON.stringify(shipping[i] ?? null)}, parsed ${JSON.stringify(list[i] ?? null)}`);
+    }
+  }
+  return list;
+}
+
+let scope: Map<string, AbapStatement[]> | null = null;
+let maskScope: Map<string, string> | null = null;
+
+/**
+ * Run a synchronous build with one reading per source: inside `fn`, every
+ * `readStatements(source)` of the same text reuses the first reading. Nested
+ * scopes join the outer one; the scope ends with the outermost call.
+ */
+export function withParsedSource<T>(fn: () => T): T {
+  if (scope) return fn();
+  scope = new Map();
+  maskScope = new Map();
+  try {
+    return fn();
+  } finally {
+    scope = null;
+    maskScope = null;
+  }
+}
+
+/**
+ * Every statement in the source, in the order it is written.
+ *
+ * Comments are gone, literals are respected, chains are expanded, and each
+ * statement carries the line it starts on and the line it ends on. Read through
+ * the parse-once `ParsedSource` (see above); byte for byte what
+ * `readStatementsShipping` answers.
+ */
+export function readStatements(source: string): AbapStatement[] {
+  let list = scope?.get(source);
+  if (list) statistics.reused += 1;
+  else {
+    list = readOnce(source);
+    scope?.set(source, list);
+  }
+  return list.map((s) => ({ ...s }));
 }
 
 /** The text of a statement with its leading keyword removed. */

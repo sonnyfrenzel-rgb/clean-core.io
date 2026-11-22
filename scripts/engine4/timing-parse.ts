@@ -20,8 +20,8 @@
  */
 import { Session } from 'inspector';
 import { performance } from 'perf_hooks';
-import { readStatements, maskLiterals, maskNonCode, maskComments } from '../../lib/abap/statement-reader';
-import { readBlocks, containerAt } from '../../lib/abap/block-structure';
+import { readStatementsShipping as readStatements, maskLiterals, maskNonCode, maskComments } from '../../lib/abap/statement-reader';
+import { readBlocks, containerAtScan as containerAt } from '../../lib/abap/block-structure';
 import { buildAbapEvidence } from '../../lib/abap/evidence-model';
 import { parseSource } from '../../lib/engine4/parsed-source';
 import { sourceOf } from './timing';

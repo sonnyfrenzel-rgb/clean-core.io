@@ -11,7 +11,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { performance } from 'perf_hooks';
-import { readStatements } from '../../lib/abap/statement-reader';
+import { readStatementsShipping as readStatements } from '../../lib/abap/statement-reader';
 import { readBlocks } from '../../lib/abap/block-structure';
 import { lex } from '../../lib/engine4/lexer';
 import { statements } from '../../lib/engine4/statements';

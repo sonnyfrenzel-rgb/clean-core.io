@@ -7,7 +7,7 @@ import { tableTerm, termFor } from './business-glossary';
 
 import { assessCoverage, type CoverageReport } from './coverage';
 import { readTableDependencies, type DependencyRoute, type TableDependency } from './table-dependencies';
-import { maskLiterals, readStatements } from './statement-reader';
+import { maskLiterals, readStatements, withParsedSource } from './statement-reader';
 import { BTP } from '../sap-naming';
 import { APP_VERSION } from '../version';
 import { guidelineChecksApply } from './guideline-checks-gate';
@@ -692,6 +692,17 @@ function batchInputDetail(call: BatchInputCall | undefined, writes: BatchInputWr
  * appear only for a run of that engine or later.
  */
 export function buildAbapEvidence(
+  code: string,
+  fileName: string,
+  deployment?: 'public' | 'private',
+  catalogSnapshot?: string,
+  engineVersion?: string | null,
+): AbapEvidenceReport {
+  // Parse once (3.5.0, ADR-133): every reader of this build shares one reading of `code`.
+  return withParsedSource(() => buildAbapEvidenceRead(code, fileName, deployment, catalogSnapshot, engineVersion));
+}
+
+function buildAbapEvidenceRead(
   code: string,
   fileName: string,
   deployment?: 'public' | 'private',
