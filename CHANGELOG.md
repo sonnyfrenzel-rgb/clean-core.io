@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v3.3.0] — 2026-11-23
+
+My workspace offers two products, Analyse and Re-design, and a returning account sees its programs as tiles. The
+privacy policy 1.4 takes effect with it. Engine 3.3.0 carries two readings of the engine review of 22.11.2026
+(ER-01, ER-02), gated from 3.3.0: a run signed before 3.3.0 keeps what it signed; a run signed by engine 3.3.0
+carries them, so some of its findings and its coverage differ (see Fixed). How runs are signed and what the audit
+pack holds do not change. With it: the 3.2.0 rules deployed, the privacy policy 1.3 notice sent, the weekly secret
+scan green again.
+
 ### Added (3.3.0 — My workspace, two products; integrated on 3.2.0)
 - 3.3.0, step 1 (ADR-123): a new account's My workspace offers two equal products. "Analyse it" holds the
   two starts side by side, the example and your own code, with what an analysis costs. "Re-design it" shows its six
@@ -55,8 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with the title line (the summary carries `processTitle`). The head carries document 20's change note 2.4. Archived
   at `/datenschutz/versions/1.4` and `/1.4/de` (`docs/privacy/1.4*.md`, digests in `lib/legal/privacy-versions.ts`);
   1.1 to 1.3 render byte for byte as archived. The sign-up box now takes version, date and address from the version
-  record. The date is one constant, `PRIVACY_14_DATE_ISO`, provisionally 22.11.2026 — it becomes the release day of
-  3.3.0. `PRIVACY_PENDING_STORAGE_KEYS` is empty and the storage register marks both keys as named. No notice mail
+  record. The date is one constant, `PRIVACY_14_DATE_ISO`: 23.11.2026, the release day of 3.3.0.
+  `PRIVACY_PENDING_STORAGE_KEYS` is empty and the storage register marks both keys as named. No notice mail
   (20c E5).
 - The project summary never outlives the source it was taken from (lawyer, statement 20c E3 (4)). `POST
   /api/runs/create` removes the previous run's summary in the same transaction that writes the new source and active
@@ -102,7 +111,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Planned
 - An external review of the engine was reproduced claim by claim and scheduled as ER-01 to ER-07
-  (`docs/ROADMAP.md`): two defects for the next patch, a reference inventory and a statement ledger for engine 4,
+  (`docs/ROADMAP.md`): two defects, fixed in this release (ER-01, ER-02, see Fixed), a reference inventory and a statement ledger for engine 4,
   curated exit successors, a behaviour diff with the 3.5.1 quality row; abaplint at analysis time declined.
 
 ### Reviews
@@ -133,7 +142,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Under investigation
 - An owner report of 16.11.2026: after the footer link "Tenant Security" on the landing page the product shell
   can look half signed in. Not reproduced yet for a signed-out visitor (production) or a signed-in account
-  (emulator); the fix goes into 3.2.1 once the state that shows it is known.
+  (emulator); the fix goes into the next patch once the state that shows it is known.
 
 ## [v3.2.0] — 2026-11-16
 
