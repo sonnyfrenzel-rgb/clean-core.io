@@ -145,6 +145,20 @@ const NEW_RUN = new Set([
   'app/(app)/admin/new-project/page.tsx#stageFact', // a shipped example, read by this engine
   'scripts/record-plain-wording.ts#exampleSentences', // fixtures recorded over a shipped example
   'scripts/record-case-answers.ts#main',
+  // 3.4.0 (engine 4 strand, parse once, scaling guard): diagnostics that measure or shadow this engine.
+  'scripts/engine/scaling-guard.ts#evidenceMillis',
+  'scripts/engine4/shadow-ledger.ts#runLedgerShadow',
+  'scripts/engine4/shadow-references.ts#shadowFile',
+  'scripts/engine4/timing-parse.ts#<module>',
+]);
+
+/**
+ * `file#function` where the version is that of a recorded release, replayed on purpose (3.4.0): the frozen digests
+ * capture and check what one release's engine answered (`scripts/engine/frozen-digests.ts`), so the version comes from
+ * the fixture or the release being captured, never from a project or from `APP_VERSION`.
+ */
+const RELEASE_REPLAY = new Set([
+  'scripts/engine/frozen-digests.ts#digestOf',
 ]);
 
 function calleeName(expr: ts.Expression): string | null {
@@ -271,6 +285,7 @@ function versionSource(
 ): { ok: boolean; source: string; wrapper?: Rule & { name: string } } {
   if (!expr) return { ok: false, source: 'missing' };
   if (isRebuildCall(expr)) return { ok: true, source: 'rebuild' };
+  if (RELEASE_REPLAY.has(place)) return { ok: true, source: 'release-replay' };
   if (ts.isIdentifier(expr) && expr.text === 'APP_VERSION') {
     return NEW_RUN.has(place) ? { ok: true, source: 'new-run' } : { ok: false, source: `APP_VERSION outside a new run (${place})` };
   }

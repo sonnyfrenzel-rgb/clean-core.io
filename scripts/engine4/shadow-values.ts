@@ -8,7 +8,9 @@
  * Every newly open answer is put into the reason that opened it: a write in another processing unit (routine or
  * event block), in another scope, a loop around the use, or a call between write and use. Never reads the holdout.
  */
-import { readSource } from '../../lib/engine4/index';
+// Aliased: engine 4's reader takes no engine version, and `readSource` is the name of a versioned reader
+// `tests/engine-version-callers.spec.ts` checks.
+import { readSource as readEngine4Source } from '../../lib/engine4/index';
 import { references } from '../../lib/engine4/references';
 import type { Block, BlockTree } from '../../lib/engine4/blocks';
 import type { Statement } from '../../lib/engine4/statements';
@@ -124,7 +126,7 @@ export function runValueShadow(corpus: CorpusFile[]): ValueShadow {
   };
   for (const file of corpus) {
     r.files += 1;
-    const { statements: list, tree } = readSource(file.source);
+    const { statements: list, tree } = readEngine4Source(file.source);
     const refs = references(list, tree).references.filter((x) => x.via && x.resolution !== 'declaredType');
     const uses = new Set(refs.map((x) => x.statement));
     const c = valueContext(list, tree, uses);

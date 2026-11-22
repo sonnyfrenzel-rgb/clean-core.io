@@ -12,10 +12,13 @@
  */
 import { buildAbapEvidence } from '../../lib/abap/evidence-model';
 import { buildProcessSkeleton } from '../../lib/abap/process-skeleton';
-import { readSource } from '../../lib/engine4/index';
+// Aliased: engine 4's reader takes no engine version, and `readSource` is the name of a versioned reader
+// `tests/engine-version-callers.spec.ts` checks.
+import { readSource as readEngine4Source } from '../../lib/engine4/index';
 import { references } from '../../lib/engine4/references';
 import { effectOf, ENGINE4_CONSUMERS, ledger, NEUTRAL_CLASSES, referencesByStatement, type EffectClass } from '../../lib/engine4/ledger';
 import { corpusFromArgs, type CorpusFile } from './shadow';
+import { APP_VERSION } from '../../lib/version';
 
 export interface LedgerShadow {
   files: number;
@@ -43,13 +46,13 @@ export function runLedgerShadow(corpus: CorpusFile[]): LedgerShadow {
   };
   for (const file of corpus) {
     r.files += 1;
-    const { statements: list, tree } = readSource(file.source);
+    const { statements: list, tree } = readEngine4Source(file.source);
     const table = references(list, tree);
     const refs = referencesByStatement(table);
     const judged = new Uint8Array(file.source.split('\n').length + 2);
     let complete = false;
     try {
-      const ev = buildAbapEvidence(file.source, `${file.name.replace(/[^\w.]/g, '_')}`, 'private');
+      const ev = buildAbapEvidence(file.source, `${file.name.replace(/[^\w.]/g, '_')}`, 'private', undefined, APP_VERSION);
       complete = ev.coverage.complete;
       for (const f of ev.findings) for (let l = f.lineStart; l <= (f.lineEnd ?? f.lineStart); l++) if (l < judged.length) judged[l] = 1;
       for (const u of ev.coverage.unassessed) if (u.line < judged.length) judged[u.line] = 1;

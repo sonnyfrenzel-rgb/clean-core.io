@@ -10,7 +10,9 @@
  * Never reads the holdout.
  */
 import { getSapObjectStates, gradeSapObject } from '../../lib/abap/catalog-service';
-import { readSource } from '../../lib/engine4/index';
+// Aliased: engine 4's reader takes no engine version, and `readSource` is the name of a versioned reader
+// `tests/engine-version-callers.spec.ts` checks.
+import { readSource as readEngine4Source } from '../../lib/engine4/index';
 import { references } from '../../lib/engine4/references';
 import { gradeReferences, standingCounts, type GradedReference } from '../../lib/engine4/graded';
 import { corpusFromArgs, type CorpusFile } from './shadow';
@@ -31,7 +33,7 @@ export function runKnowledgeShadow(corpus: CorpusFile[]): KnowledgeShadow {
   const all: GradedReference[] = [];
   for (const file of corpus) {
     r.files += 1;
-    const { statements, tree } = readSource(file.source);
+    const { statements, tree } = readEngine4Source(file.source);
     const graded = gradeReferences(references(statements, tree));
     r.graded += graded.length;
     all.push(...graded);

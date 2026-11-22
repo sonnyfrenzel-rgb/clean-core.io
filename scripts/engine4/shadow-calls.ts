@@ -9,7 +9,9 @@
  * Never reads the holdout.
  */
 import { readCallGraph } from '../../lib/abap/call-graph';
-import { readSource } from '../../lib/engine4/index';
+// Aliased: engine 4's reader takes no engine version, and `readSource` is the name of a versioned reader
+// `tests/engine-version-callers.spec.ts` checks.
+import { readSource as readEngine4Source } from '../../lib/engine4/index';
 import { callGraph } from '../../lib/engine4/calls';
 import { corpusFromArgs, type CorpusFile } from './shadow';
 
@@ -32,7 +34,7 @@ export function runCallShadow(corpus: CorpusFile[]): CallShadow {
   for (const file of corpus) {
     r.files += 1;
     const old = readCallGraph(file.source);
-    const { statements, tree } = readSource(file.source);
+    const { statements, tree } = readEngine4Source(file.source);
     const g = callGraph(statements, tree);
     const name = (key: string) => key.replace(/^(FORM|FUNCTION|MODULE) /, '').replace(/^METHOD .*=>/, '').replace(/^EVENT (.*)@\d+$/, '$1').replace(/^PROGRAM$/, '');
     const oldEdges = old.edges.map((e) => `${e.from ?? ''}->${e.to}`);

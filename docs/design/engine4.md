@@ -510,7 +510,7 @@ naming conventions are data in `conventions.ts`.
 4. **Conventions**, for parts that nothing includes:
    - a class include suffix (`CCDEF`/`CCMAC`/`CCIMP`/`CCAU` after `=` or `_`; `CU`/`CO`/`CI`/`CP`/`CMnnn`
      only after `=` padding) joins that class;
-   - a workbench include suffix (`TOP`, `SEL`/`SCR`, `CLS`/`Cnn`/`Dnn`, `UXX`/`Unn`, `Fnn`, `Onn`, `Inn`, `Enn`,
+   - an ABAP include-name suffix (`TOP`, `SEL`/`SCR`, `CLS`/`Cnn`/`Dnn`, `UXX`/`Unn`, `Fnn`, `Onn`, `Inn`, `Enn`,
      `Pnn`, `Tnn`, optionally after `_`) joins its host. `L<fg>…` belongs to function group `<fg>`, `M…` to
      module pool `SAPM…`, `ZX<grp>…` to SAP's exit group `X<grp>`, and any other stem to the report of that
      name. If the upload lacks the host, the host is created with `main: null`;
@@ -520,7 +520,7 @@ naming conventions are data in `conventions.ts`.
    A function module in a file of its own joins the function group when the upload holds exactly one.
 5. **Order.** From the main part, includes are expanded in place, depth first, exactly where their `INCLUDE`
    statement stands. In an abapGit function group, `INCLUDE l<fg>uxx` is `generated`: the module files stand
-   where UXX would. Parts the main does not reach follow in the workbench's role order. So does the whole
+   where UXX would. Parts the main does not reach follow in SAP's include role order. So does the whole
    object when it has no main, or when it is a class whose main file holds no `INCLUDE`. The role order is:
    1. class local definitions, then class macros;
    2. TOP;
@@ -661,8 +661,8 @@ taken on 15.11.2026.
 
 | Source | Data | Read today by | Sync | Licence | Engine 4 layer |
 |---|---|---|---|---|---|
-| SAP Cloudification Repository, release states (25,467 objects) | `lib/abap/generated/cloudification-repo.latest.json` | `catalog-service.ts`, `catalog-index.ts`, `sap-code-copy.ts`, then the A–D grade | `scripts/sync-cloudification-repo.ts`, `npm run sync:catalog`, `sync-catalog.yml`, Mon 06:00 UTC | Apache-2.0 (`THIRD-PARTY-NOTICES.md` §1) | L4 (a known SAP type, table or class is *void* but named, not unknown); L5 (target `external` with a release state); the readings |
-| Cloudification object classifications (8,600) | `…/cloudification-repo.classifications-sap.json` | same | same | Apache-2.0 | L5/readings (the A–D grade stays outside signed packs) |
+| SAP Cloudification Repository, release states (25,467 objects) | `lib/abap/generated/cloudification-repo.latest.json` | `catalog-service.ts`, `catalog-index.ts`, `sap-code-copy.ts`, then the grade Level A–D | `scripts/sync-cloudification-repo.ts`, `npm run sync:catalog`, `sync-catalog.yml`, Mon 06:00 UTC | Apache-2.0 (`THIRD-PARTY-NOTICES.md` §1) | L4 (a known SAP type, table or class is *void* but named, not unknown); L5 (target `external` with a release state); the readings |
+| Cloudification object classifications (8,600) | `…/cloudification-repo.classifications-sap.json` | same | same | Apache-2.0 | L5/readings (the grade Level A–D stays outside signed packs) |
 | Private Edition snapshots (4 releases) | `…/cloudification-repo.pce-*.json` | `catalog-snapshots.ts` | same, every release | Apache-2.0 | readings (grade per target release) |
 | Released classes (1,417) and interfaces (3,356) | `…/released-classes.latest.json`, `…/released-interfaces.latest.json` | `key-user-candidates.ts`, `lib/transformation/*` | derived by the same sync | Apache-2.0 | L4: `TYPE REF TO` a released class or interface resolves to a known external type; L5: calls to them are `external` |
 | SAP identifiers: CDS views 13,947, function modules 3,091, communication scenarios 54 | `lib/abap/generated/sap-identifiers.json` | `lib/sap-identifier-lists.ts` and the UI (the engine only cites it) | `scripts/sync-sap-identifiers.ts`, `npm run sync:identifiers`, Mon 06:45 UTC | Apache-2.0 plus CC BY 4.0 per fact | **L3** (a `CALL FUNCTION` target that is SAP's is no missing upload); L5 (`external` function module) |
@@ -679,7 +679,7 @@ taken on 15.11.2026.
 | CDS catalog (6 table sets) | `lib/abap/cds-catalog.ts` | readings |
 | SAP dictionary: tables, fields, values, function modules and BAPIs, transactions, authorisation objects | `lib/abap/sap-dictionary.ts` (pure data) | L4 (known SAP tables and fields as typed *void*); L6 (business names) |
 | Plain glossary, business glossary, German terms, program domain | `lib/abap/plain-glossary.ts`, `business-glossary.ts`, `german-terms.ts`, `program-domain.ts` | L6 and the business language, not parsing |
-| A–D levels, legacy technology, copied SAP code, header rules, key-user tools | `lib/abap/abcd-classification.ts`, `legacy-technology.ts`, `sap-code-copy.ts` (the `SAPM`/`SAPL` rule), `header-rules.ts`, `key-user-candidates.ts` | readings on top of L3–L5. **L3** gives `sap-code-copy` its objects: a `SAPL…`/`SAPM…` main is now an object with a type |
+| Level A–D, legacy technology, copied SAP code, header rules, key-user tools | `lib/abap/abcd-classification.ts`, `legacy-technology.ts`, `sap-code-copy.ts` (the `SAPM`/`SAPL` rule), `header-rules.ts`, `key-user-candidates.ts` | readings on top of L3–L5. **L3** gives `sap-code-copy` its objects: a `SAPL…`/`SAPM…` main is now an object with a type |
 | Keyword and stop lists (`EVENT_KEYWORDS`, `CONDITION_KEYWORDS`, `SQL_KEYWORDS`, `KNOWN_TYPE_GROUPS` with 16 type groups, `SYSTEM_STRUCTURES`, `HYPHENATED_KEYWORDS`, …) | spread through `block-structure.ts`, `engine-rules.ts`, `security-review.ts`, `table-dependencies.ts`, … | **L1**: the kind table replaces the keyword lists, and the shadow proves it; `KNOWN_TYPE_GROUPS` belongs in **L3** (a `TYPE-POOLS` name that is SAP's is no missing upload) and L4 |
 | Scope items and scenarios, SAP naming aliases | `lib/sap-scope-items.ts`, `lib/sap-curated-lists.ts`, `lib/sap-naming.ts` | readings (not the engine's parse) |
 | Starter examples (7 files) | `public/starter-examples/` | every shadow and spec; already used by L0–L3 |
@@ -689,7 +689,7 @@ taken on 15.11.2026.
 - The **conventions** are new data in `lib/engine4/conventions.ts`. The shipping engine had none of them. It
   only knew abapGit's file names (`include-resolution.ts`) and `SAPL…` in `lib/portfolio/batch-split.ts`. The new
   data covers:
-  - workbench include suffixes;
+  - ABAP include-name suffixes;
   - `L<fg>`, `M…`, `SAPL…`/`SAPM…` hosts;
   - `ZX…` exit includes;
   - class-pool includes `CCDEF`/`CCMAC`/`CCIMP`/`CCAU`/`CU`/`CO`/`CI`/`CP`/`CMnnn`;
@@ -697,7 +697,7 @@ taken on 15.11.2026.
   - the customer namespace;
   - the HR system macros.
 
-  They are written from the workbench's naming and abapGit's file layout (concept only, review §12, prior art
+  They are written from SAP's include naming and abapGit's file layout (concept only, review §12, prior art
   SAP/abap-file-formats).
 - Not used yet, and next for L3:
   - `sap-identifiers.json` function modules, so a `CALL FUNCTION 'BAPI_…'` is never mistaken for a missing
@@ -1556,7 +1556,7 @@ of them is built.
 16. **Missing SAP includes.** An `INCLUDE` outside the customer namespace (`DBPNPMAC`, `<ICON>`-style
     standard includes) is `missing-sap-include` (info), not a question to the reader. **Default: as built.
     Customer names are `Z…`/`Y…`, `/ns/`, and the `L`/`M`/`SAPL`/`SAPM` frames around them.**
-17. **The workbench role order** when no main program states the order: TOP, local classes, function modules,
+17. **The include role order** when no main program states the order: TOP, local classes, function modules,
     FORMs, PBO, PAI, events, tests. Local classes come before function modules because a class must be defined
     before the code that uses it (SAP's generated frame only fixes TOP and UXX). **Default: as built.**
 18. **How the reference gap becomes visible** (new, 22.11.2026). L4 counts 925 class, interface and exception

@@ -25,6 +25,7 @@ import { readBlocks, containerAtScan as containerAt } from '../../lib/abap/block
 import { buildAbapEvidence } from '../../lib/abap/evidence-model';
 import { parseSource } from '../../lib/engine4/parsed-source';
 import { sourceOf } from './timing';
+import { APP_VERSION } from '../../lib/version';
 
 function median(f: () => void): number {
   f();
@@ -96,8 +97,8 @@ if (require.main === module) {
       console.log('lines | buildAbapEvidence | of it in statement-reader/block-structure (self time)');
       for (const n of [1000, 10000]) {
         const src = sourceOf(n);
-        buildAbapEvidence(src, 'z.abap', 'private');
-        const r = await profile(() => buildAbapEvidence(src, 'z.abap', 'private'));
+        buildAbapEvidence(src, 'z.abap', 'private', undefined, APP_VERSION);
+        const r = await profile(() => buildAbapEvidence(src, 'z.abap', 'private', undefined, APP_VERSION));
         console.log(`${n} | ${r.total.toFixed(0)} ms | ${r.reading.toFixed(0)} ms (${((100 * r.reading) / r.total).toFixed(0)} %)`);
       }
     }

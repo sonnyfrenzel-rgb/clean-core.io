@@ -20,9 +20,12 @@
  */
 import { buildAbapEvidence } from '../../lib/abap/evidence-model';
 import { gradeSapObject } from '../../lib/abap/catalog-service';
-import { readSource } from '../../lib/engine4/index';
+// Aliased: engine 4's reader takes no engine version, and `readSource` is the name of a versioned reader
+// `tests/engine-version-callers.spec.ts` checks.
+import { readSource as readEngine4Source } from '../../lib/engine4/index';
 import { references, type Reference, type ReferenceKind } from '../../lib/engine4/references';
 import { corpusFromArgs, type CorpusFile } from './shadow';
+import { APP_VERSION } from '../../lib/version';
 
 interface Row {
   total: number;
@@ -54,11 +57,11 @@ function rowOf(r: ReferenceShadow, kind: string): Row {
 
 export function shadowFile(r: ReferenceShadow, file: CorpusFile): void {
   r.files += 1;
-  const read = readSource(file.source);
+  const read = readEngine4Source(file.source);
   const table = references(read.statements, read.tree);
   let named: Array<{ name: string; from: number; to: number; kind: string }> = [];
   try {
-    const evidence = buildAbapEvidence(file.source, file.name.split('/').pop() ?? 'z.abap', 'private');
+    const evidence = buildAbapEvidence(file.source, file.name.split('/').pop() ?? 'z.abap', 'private', undefined, APP_VERSION);
     named = evidence.findings
       .filter((f) => f.objectName)
       .map((f) => ({ name: f.objectName!.toUpperCase(), from: f.lineStart, to: f.lineEnd ?? f.lineStart, kind: f.kind }));

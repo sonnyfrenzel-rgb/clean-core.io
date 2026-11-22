@@ -22,17 +22,18 @@ import { buildAbapEvidence } from '../../lib/abap/evidence-model';
 import { buildProcessSkeleton } from '../../lib/abap/process-skeleton';
 import { buildBusinessStatements } from '../../lib/abap/business-statement';
 import { sourceOf } from '../engine4/timing';
+import { APP_VERSION } from '../../lib/version';
 
 export const SCALING_LIMIT = 2.4;
 export const SCALING_SIZES = [1_000, 10_000, 25_000] as const;
 
 export function evidenceMillis(lines: number, runs = 3): number {
   const source = sourceOf(lines);
-  buildAbapEvidence(source, 'z.abap', 'private');
+  buildAbapEvidence(source, 'z.abap', 'private', undefined, APP_VERSION);
   const times: number[] = [];
   for (let i = 0; i < runs; i++) {
     const t0 = performance.now();
-    buildAbapEvidence(source, 'z.abap', 'private');
+    buildAbapEvidence(source, 'z.abap', 'private', undefined, APP_VERSION);
     times.push(performance.now() - t0);
   }
   return times.sort((a, b) => a - b)[Math.floor(runs / 2)];

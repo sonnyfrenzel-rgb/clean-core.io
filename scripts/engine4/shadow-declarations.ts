@@ -10,7 +10,9 @@
  */
 import { parseDeclarations, tokenize } from '../../lib/abap/declaration-parser';
 import type { ClassNode } from '../../lib/abap/class-model';
-import { readSource } from '../../lib/engine4/index';
+// Aliased: engine 4's reader takes no engine version, and `readSource` is the name of a versioned reader
+// `tests/engine-version-callers.spec.ts` checks.
+import { readSource as readEngine4Source } from '../../lib/engine4/index';
 import { declarations, type TypeDeclaration } from '../../lib/engine4/declarations';
 import { corpusFromArgs, type CorpusFile } from './shadow';
 
@@ -72,7 +74,7 @@ export function runDeclarationShadow(corpus: CorpusFile[]): DeclarationShadow {
   for (const file of corpus) {
     r.files += 1;
     const old = parseDeclarations(file.source, file.name);
-    const { statements, tree } = readSource(file.source);
+    const { statements, tree } = readEngine4Source(file.source);
     const d = declarations(statements, tree);
     const localFriends = new Set(d.localFriends.map((x) => x.name));
     r.oldTypes += old.length;

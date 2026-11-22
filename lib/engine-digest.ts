@@ -41,7 +41,7 @@ export function engineDigestLabel(digest: string | null | undefined): string {
   return releases.length ? `release ${releases.join(', ')}` : 'unreleased build';
 }
 
-/** The digest and its label on one line: `237f3208… (release v3.2.0)`. */
+/** The digest and its label on one line: `237f3208… (release vX.Y.Z)`. */
 export function engineDigestLine(digest: string | null | undefined): string {
   return digest ? `${digest} (${engineDigestLabel(digest)})` : 'not recorded';
 }
