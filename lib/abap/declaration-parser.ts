@@ -2,7 +2,9 @@ import type {
   ClassNode, MethodDecl, AttributeDecl, EventDecl, AliasDecl,
   ParamDef, TypeRef, Visibility, SourceRef,
 } from './class-model';
-import { isAbapCommentLine, createLiteralScanner } from './statement-reader';
+import {
+  isAbapCommentLine, createLiteralScanner, parsedSource, parseOnceFallback, periodStatements, PARSE_ONCE_READER, type ParsedSource,
+} from './statement-reader';
 
 /**
  * ABAP declaration parser — parses ONLY the declaration parts of class/interface
@@ -35,6 +37,41 @@ interface Statement { text: string; line: number; }
  * while; this reader now states neither, it asks.
  */
 export function tokenize(source: string): Statement[] {
+  if (!PARSE_ONCE_READER) return tokenizeShipping(source);
+  const parsed = parsedSource(source);
+  if (tokenizeFallback(parsed) !== null) return tokenizeShipping(source);
+  const list = tokenizeParsed(parsed);
+  if (typeof process !== 'undefined' && process.env?.ENGINE_PARSE_ONCE_VERIFY === '1') {
+    const shipping = tokenizeShipping(source);
+    if (JSON.stringify(shipping) !== JSON.stringify(list)) {
+      throw new Error(`parse once is not neutral in tokenize: ${JSON.stringify(shipping.find((x, k) => JSON.stringify(x) !== JSON.stringify(list[k])) ?? null)}`);
+    }
+  }
+  return list;
+}
+
+/**
+ * Parse once (3.5.0; docs/design/engine4.md, "Retiring the other splitters"): the statements are read off the
+ * parse-once tokens (`periodStatements`), joined line by line with one blank as the scan below joins them.
+ * Where `parseOnceFallback` names a reason, and for a bare carriage return (one line here, a line break for the
+ * lexer), the scan below answers; `scripts/engine/splitter-neutrality.ts` proves the rest byte for byte.
+ */
+export function tokenizeFallback(parsed: ParsedSource): string | null {
+  const reason = parseOnceFallback(parsed);
+  if (reason) return reason;
+  if (/\r(?!\n)/.test(parsed.source)) return 'bare-carriage-return';
+  return null;
+}
+
+function tokenizeParsed(parsed: ParsedSource): Statement[] {
+  // The scan pushes a statement at its period only: a last one without a period is dropped.
+  return periodStatements(parsed)
+    .filter((p) => p.terminated)
+    .map((p) => ({ text: p.pieces.map((x) => x.trim()).filter(Boolean).join(' '), line: p.row }));
+}
+
+/** The 3.x scan, kept as the reference and the fallback. */
+export function tokenizeShipping(source: string): Statement[] {
   const lines = source.split(/\r?\n/);
   const statements: Statement[] = [];
   /** The statement so far. Trimmed when it is pushed, not in between. */

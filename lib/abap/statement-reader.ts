@@ -42,6 +42,8 @@
 // ADR-133 (1): the one module of the engine 4.0 strand today's engine may read.
 import { parseSource, type ParsedSource } from '../engine4/parsed-source';
 
+export type { ParsedSource } from '../engine4/parsed-source';
+
 /** Where something sits in the source. Always a range, never a bare line. */
 export interface SourceRange {
   /** 1-based line where it starts. */
@@ -712,13 +714,66 @@ function verifyMode(): boolean {
   return typeof process !== 'undefined' && process.env?.ENGINE_PARSE_ONCE_VERIFY === '1';
 }
 
+/** One period-terminated source statement of a parsed source, as the other splitters cut it. */
+export interface PeriodStatement {
+  /** Row of its first code token. */
+  row: number;
+  /** Row of its period, or of its last token when the source ends without one. */
+  endRow: number;
+  /** Per row it spans, the source text from its first to its last code token on that row (comments left out). */
+  pieces: string[];
+  terminated: boolean;
+}
+
+/**
+ * The source statements of a parsed source, cut at every period: chains are not expanded, pragmas stay, comments
+ * do not. What `declaration-parser.tokenize` and `plain-language` cut by scanning the text, read off the tokens.
+ */
+export function periodStatements(parsed: ParsedSource): PeriodStatement[] {
+  const out: PeriodStatement[] = [];
+  let pieces: string[] = [];
+  let open = false;
+  let startRow = 0;
+  let row = 0;
+  let first = -1;
+  let last = -1;
+  const closeRow = () => {
+    if (first >= 0) pieces.push(parsed.lines[row - 1].slice(first - 1, last - 1));
+    first = -1;
+  };
+  for (const t of parsed.tokens) {
+    if (t.kind === 'comment' || t.kind === 'pseudoComment') continue;
+    if (t.kind === 'period') {
+      closeRow();
+      if (open) out.push({ row: startRow, endRow: t.row, pieces, terminated: true });
+      pieces = [];
+      open = false;
+      continue;
+    }
+    if (!open) {
+      open = true;
+      startRow = t.row;
+      row = t.row;
+      first = t.col;
+    } else if (t.row !== row) {
+      closeRow();
+      row = t.row;
+      first = t.col;
+    }
+    last = t.col + t.text.length;
+  }
+  closeRow();
+  if (open) out.push({ row: startRow, endRow: row, pieces, terminated: false });
+  return out;
+}
+
 /** The statements of one source as the parsed view gives them, or the shipping scanner's where it must. */
 function readOnce(source: string): AbapStatement[] {
   if (!PARSE_ONCE_READER) {
     statistics.shipping += 1;
     return readStatementsShipping(source);
   }
-  const parsed = parseSource(source);
+  const parsed = parsedSource(source);
   if (parseOnceFallback(parsed) !== null) {
     statistics.fallback += 1;
     return readStatementsShipping(source);
@@ -737,6 +792,23 @@ function readOnce(source: string): AbapStatement[] {
 
 let scope: Map<string, AbapStatement[]> | null = null;
 let maskScope: Map<string, string> | null = null;
+let parsedScope: Map<string, ParsedSource> | null = null;
+
+/**
+ * The parse-once reading of a source: inside `withParsedSource` one per source and build, outside a fresh one.
+ * For the other splitters of `lib/abap` (`declaration-parser.tokenize`, `plain-language`), which cut the same
+ * statements from it instead of scanning the text a third and fourth time; each keeps its own scanner as the
+ * fallback wherever `parseOnceFallback` names a reason, and a neutrality run proves the rest byte for byte.
+ * Never change what it returns: every reader shares it.
+ */
+export function parsedSource(source: string): ParsedSource {
+  let parsed = parsedScope?.get(source);
+  if (!parsed) {
+    parsed = parseSource(source);
+    parsedScope?.set(source, parsed);
+  }
+  return parsed;
+}
 
 /**
  * Run a synchronous build with one reading per source: inside `fn`, every
@@ -747,11 +819,13 @@ export function withParsedSource<T>(fn: () => T): T {
   if (scope) return fn();
   scope = new Map();
   maskScope = new Map();
+  parsedScope = new Map();
   try {
     return fn();
   } finally {
     scope = null;
     maskScope = null;
+    parsedScope = null;
   }
 }
 
