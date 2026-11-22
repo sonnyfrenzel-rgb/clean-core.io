@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Unreleased — 3.4.0, in short
+The engine release. What changes for anyone who analyses a program:
+
+- **Faster analysis of large programs.** The engine reads a source once and every reader shares that reading, and the
+  process outline is built in passes that no longer repeat work. Measured on a program of 25,000 lines: the evidence
+  takes about 5 seconds instead of 32, the process outline well under a second instead of about 20. The results are
+  the same byte for byte; only the time changed.
+- **SAP classes and interfaces are graded.** Every SAP class, interface and exception class a program names, and that
+  SAP's files place at level C or D, is now a finding of its own with every line it stands on. Before, almost all of
+  them went unmentioned. The data types the code declares with are shown by level in the IT view.
+- **An engine fingerprint on every run.** The model card names the exact engine build that read the code, beside the
+  version, and the signed run and the audit pack carry it, so a reader can tell which engine answered.
+- **Honest coverage for files saved with CR-only line ends or a byte order mark.** Such a file used to be read as one
+  comment line: no finding, and a coverage that said "complete". It is now read line by line like any other file.
+- **Fewer false findings.** `INSERT REPORT`, `DELETE REPORT` and `READ REPORT` (and their `TEXTPOOL` and `DYNPRO`
+  forms) are no longer reported as a critical write to a table called `REPORT`. A constant declared in one
+  subroutine no longer decides which table a dynamic statement in another subroutine touches: `DELETE FROM (name)`
+  was reported as a critical write to a table the statement never names; it is now listed as not determined.
+- Runs signed by an earlier engine keep exactly what they signed: every change above applies from engine 3.4.0 on.
+
 ### 3.4.0 — the engine release (owner decision 22.11.2026)
 Every reading below is gated by engine version (`ENGINE_READS_340_FROM`, `lib/abap/engine-reads-340-gate.ts`): a run of
 an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are unchanged (330 of 330).
@@ -35,6 +55,15 @@ an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are uncha
   saved with CR-only line ends read as one comment line — no finding and a "complete" coverage.
 - **`INSERT REPORT` is no table write**: `INSERT/DELETE/READ REPORT`, `TEXTPOOL` and `DYNPRO` were read as a CRITICAL
   write to a standard table named `REPORT`.
+- **A constant closes a dynamic target only in its own scope** (B1 of the engine review of 22.11.2026): the table
+  dependencies looked a constant up in the whole source, so `CONSTANTS lv_other … VALUE 'VBAK'` in one `FORM` made
+  `DELETE FROM (lv_other)` in another `FORM` a CRITICAL write to VBAK. A constant of a `FORM`, method or function
+  module is now seen only there; a global one is hidden in a routine that declares the name itself. The statement
+  becomes a `dynamic-target` gap (`readTableDependencies` option `scopedConstants`, passed by the evidence engine and
+  its coverage; `tests/engine-340-scoped-constants.spec.ts`). Display readers without the option keep the old lookup.
+- **The skeleton builder as typed passes** (engine 4 phase 3, `lib/abap/skeleton/`): `process-skeleton.ts` split into
+  passes and its hotspot removed (25k lines: 20.2 s to 0.3–0.5 s), byte-neutral on 1,656 frozen skeleton digests
+  (`tests/fixtures/skeleton-v3.2.0-frozen.json`, `tests/skeleton-frozen-digests.spec.ts`).
 - The L4 reference table no longer reads a RAP entity alias (`FOR order~set_status`, EML) as an interface.
 - The scaling guard measures the process skeleton and the business statements too, at today's curve (5k → 10k lines) plus a noise margin, so a
   regression fails; both are super-linear today (25k lines: about 19 s and 25 s).
