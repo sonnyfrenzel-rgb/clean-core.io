@@ -1171,6 +1171,9 @@ export async function POST(req: NextRequest) {
         projectId,
         error: errMessage(summaryErr),
       });
+      // Every signed run replaces the summary whole (lawyer, statement 20c): when this run's could not be written,
+      // the previous run's goes rather than stay on the project.
+      await db.collection('projects').doc(projectId).update({ summary: FieldValue.delete() }).catch(() => {});
     }
 
     return NextResponse.json({

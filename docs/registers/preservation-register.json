@@ -138,7 +138,8 @@
       "recommendationConfidence",
       "recommendationJustification",
       "auditPackExportedAt",
-      "auditPackExportedRunId"
+      "auditPackExportedRunId",
+      "summary"
     ],
     "hydration": {
       "reader": "loadProjectAndHydrate(projectId)",
@@ -149,7 +150,7 @@
         "exports"
       ],
       "onMissingRun": "_runLoadFailed = true, _runLoadError set; in-memory only, never persisted.",
-      "consequence": "Every field in projectFieldsDeletedByRunsCreate except the two audit-pack export markers reaches a stage only through hydration. A reader that does not hydrate (the dashboard) never sees them. auditPackExportedAt and auditPackExportedRunId are the exception: they sit inside auditMetadata, are not on the run, and runs/create deletes them because an audit pack exported for the previous run is not one for this run (codex code-trust-07); POST /api/audit-pack/create writes them again on the next export."
+      "consequence": "Every field in projectFieldsDeletedByRunsCreate except the two audit-pack export markers and `summary` reaches a stage only through hydration. A reader that does not hydrate (the dashboard) never sees them. auditPackExportedAt and auditPackExportedRunId are the exception: they sit inside auditMetadata, are not on the run, and runs/create deletes them because an audit pack exported for the previous run is not one for this run (codex code-trust-07); POST /api/audit-pack/create writes them again on the next export. `summary` is the other exception: the server's mirror of the active run for My workspace's tiles (3.3.0, ADR-123), never hydrated into a stage; every signed run replaces it whole, and runs/create deletes it only when this run's summary could not be written, so no earlier run's summary stays on the project (lawyer, statement 20c)."
     },
     "stalenessTrackedArtefacts": [
       "solutionDesign",
