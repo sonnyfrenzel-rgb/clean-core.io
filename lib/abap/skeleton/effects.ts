@@ -77,7 +77,6 @@ export function isInternalWrite(localData: ReadonlySet<string>, write: SqlWrite)
   return !writesDatabaseOnly(write) && isInternalTable(localData, write.table);
 }
 
-
 /**
  * A routine is a step only when it writes, reads, calls another system,
  * involves a person, ends the process with an error, checks an authorization,

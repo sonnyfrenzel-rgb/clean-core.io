@@ -511,9 +511,6 @@ export interface SkeletonLuw {
  */
 const MAX_ALTERNATIVES = 4;
 
-
-
-
 /**
  * How many `PERFORM`s deep the walk opens a routine before it says so instead.
  *
@@ -897,7 +894,7 @@ class SkeletonBuilder {
     };
   }
 
-  /* ---------------- what the source declares ---------------- */
+  /* ---------------- what the walk asks of the declarations and the dispatch ---------------- */
 
   private batchInputDetail(index: number): Record<string, string[]> {
     const call = this.batchInput.get(index);
@@ -907,8 +904,6 @@ class SkeletonBuilder {
       ...(call.fields.length ? { batchInputFields: [...new Set(call.fields.map((f) => f.raw))] } : {}),
     };
   }
-
-  /* ---------------- D2: method calls ---------------- */
 
   /**
    * The registered handlers a `RAISE EVENT` runs: those declared for this event
@@ -925,7 +920,7 @@ class SkeletonBuilder {
     return this.dispatch.handlersRaisedBy(statement);
   }
 
-  /* ---------------- rule 4: the entry points ---------------- */
+  /* ---------------- callbacks the walk discovers (entries of their own; `skeleton/entries.ts` has the rest) ---------------- */
 
   /**
    * `CALL FUNCTION … STARTING NEW TASK … PERFORMING form ON END OF TASK` (or
@@ -2532,9 +2527,7 @@ class SkeletonBuilder {
     return null;
   }
 
-  /* ---------------- after the walk ---------------- */
-
-  /* ---------------- roadmap 2.16 — who acts ---------------- */
+  /* ---------------- roadmap 2.16 — the lane evidence the walk records (`skeleton/lanes.ts` builds the lanes) ---------------- */
 
   /**
    * One piece of lane evidence, recorded where the walk reads it.
@@ -2590,8 +2583,6 @@ class SkeletonBuilder {
         anchorOf(statement, tokenIndexOf(statement, /^DESTINATION$/i) + 1), statement);
     }
   }
-
-  /* ---------------- roadmap 2.15 ---------------- */
 
   /** A routine the walk calls runs, and so does everything it calls in turn. */
   private markReached(name: string): void {

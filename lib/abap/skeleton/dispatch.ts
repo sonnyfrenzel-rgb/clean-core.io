@@ -413,5 +413,4 @@ export class MethodDispatch {
     if (!classOf(this.input.statements, this.input.structure, statement.index) && !/->|=>/.test(flat)) return -1;
     return last;
   }
-
 }
