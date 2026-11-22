@@ -8,10 +8,9 @@ import { type BatchInputCall } from './batch-input';
 import { engineReads310Apply } from './engine-reads-310-gate';
 import { engineReads320Apply } from './engine-reads-320-gate';
 import { APP_VERSION } from '../version';
-import { SkeletonGraph, type Exit, type SkeletonReadings } from './skeleton/graph';
+import { SkeletonGraph, type SkeletonReadings } from './skeleton/graph';
 import { anchorOf, bodyRange } from './skeleton/anchors';
 import { buildLanes } from './skeleton/lanes';
-import { FLOW_BLOCKS } from './skeleton/keywords';
 import { noteWhatIsNotRead } from './skeleton/source-notes';
 import { readDeclarations, type MethodImpl } from './skeleton/declarations';
 import { readEffects } from './skeleton/effects';
@@ -20,12 +19,8 @@ import { CANDIDATE_TRIGGER, EntryReader, type EntryPoint } from './skeleton/entr
 import { WalkReaders } from './skeleton/walk-readers';
 import { settleEarlyEnds } from './skeleton/early-ends';
 import { newWalkState, type WalkState } from './skeleton/walk/state';
-import type { WalkContext, Walker } from './skeleton/walk/walker';
-import { walkStatement } from './skeleton/walk/statement';
-import { walkParallel } from './skeleton/walk/parallel';
-import { walkLoop } from './skeleton/walk/loop';
-import { walkTry } from './skeleton/walk/try';
-import { walkBranch, walkGroupChange } from './skeleton/walk/branch';
+import type { Walker } from './skeleton/walk/walker';
+import { walkRange } from './skeleton/walk/range';
 import { callbackEntry } from './skeleton/walk/callbacks';
 import { classOf } from './skeleton/statement-readers';
 import { chainReportEvents } from './skeleton/report-chain';
@@ -758,7 +753,7 @@ class SkeletonBuilder {
       },
       state: this.walk,
       readings: { reads310: this.reads310, reads320: this.reads320 },
-      range: (from, to, ctx, incoming) => this.walkRange(from, to, ctx, incoming),
+      range: (from, to, ctx, incoming) => walkRange(this.w, from, to, ctx, incoming),
       routineRegion: (name) => this.routineRegion(name),
     };
     for (const entry of entries) this.buildEntryRegion(entry);
@@ -878,7 +873,7 @@ class SkeletonBuilder {
     this.walk.registeredInWalk = entry.origin === 'event' || entry.origin === 'implicit'
       ? this.registeredBefore(entry)
       : this.registeredAtEntry(entry);
-    const exits = this.walkRange(from, entry.lastIndex, {
+    const exits = walkRange(this.w, from, entry.lastIndex, {
       region, container, loops: [], loopBreaks: [],
     }, [{ from: start.id, condition: '', kind: 'sequence' }]);
     region.entryNodeId = start.id;
@@ -997,7 +992,7 @@ class SkeletonBuilder {
     this.walk.regionLast.set(region.key, to);
     this.walk.expanding.push(name);
     const registered = new Set(this.walk.registeredInWalk);
-    const exits = this.walkRange(guarded, to, {
+    const exits = walkRange(this.w, guarded, to, {
       region, container: name, loops: [], loopBreaks: [],
     }, []);
     this.walk.expanding.pop();
@@ -1017,59 +1012,6 @@ class SkeletonBuilder {
     region.entryNodeId = this.graph.nodes.slice(before).find((n) => n.region === region.key)?.id ?? null;
     this.graph.connect(exits, end.id);
     return region;
-  }
-
-  /* ---------------- the walk ---------------- */
-
-  private walkRange(from: number, to: number, ctx: WalkContext, incoming: Exit[]): Exit[] {
-    let live = incoming;
-    /** The output node a run of list statements is being folded into. */
-    let outputRun: SkeletonNode | null = null;
-    let i = from;
-
-    while (i <= to) {
-      const statement = this.statements[i];
-      const block = this.blockAt.get(i);
-
-      if (block) {
-        outputRun = null;
-        if (FLOW_BLOCKS.has(block.kind) && block.closeIndex <= to) {
-          // A `SET HANDLER` inside a branch, a loop body or a TRY/CATCH may
-          // not run at all, so it registers only for what follows it inside
-          // that block. Past the block the registrations are what they were
-          // before it.
-          const registered = new Set(this.walk.registeredInWalk);
-          if (block.kind === 'if' || block.kind === 'case') live = walkBranch(this.w, block, ctx, live);
-          else if (block.kind === 'try') live = walkTry(this.w, block, ctx, live);
-          else if (block.kind === 'at') live = walkGroupChange(this.w, block, ctx, live);
-          else live = walkLoop(this.w, block, ctx, live);
-          this.walk.registeredInWalk = registered;
-          i = block.closeIndex + 1;
-          continue;
-        }
-        // A container, a macro body, or a construct that runs past this range:
-        // not a flow of this region, so it is stepped over rather than opened.
-        i = Math.max(i + 1, Math.min(block.closeIndex + 1, to + 1));
-        continue;
-      }
-
-      // Roadmap 2.17 (a), before the single statement: two or more
-      // `STARTING NEW TASK` calls the source proves are waited for are one
-      // fork, not a chain of service tasks.
-      const parallel = this.readers.parallelGroupAt(i, to);
-      if (parallel) {
-        outputRun = null;
-        live = walkParallel(this.w, parallel, ctx, live);
-        i = parallel.resumeIndex;
-        continue;
-      }
-
-      const produced = walkStatement(this.w, statement, ctx, live, outputRun);
-      outputRun = produced.outputRun;
-      live = produced.exits;
-      i += 1;
-    }
-    return live;
   }
 
 }
