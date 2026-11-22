@@ -133,6 +133,14 @@ interface Scan {
   barriers: number[];
   diagnostics: Diagnostic[];
   flowLogic: boolean;
+  /**
+   * ADR-134 Q6: statements where indentation may break a tie, or null for none.
+   * Set for the second pass only, over the routines where the first pass (nearest
+   * block, as the compiler reads) found damage.
+   */
+  indent: Uint8Array | null;
+  /** The frames the first pass found damage in: an unclosed block's routine, a stray closer's routine. */
+  damaged: Set<Frame>;
 }
 
 function diag(s: Scan, at: number, code: Diagnostic['code'], message: string, severity: Diagnostic['severity']): void {
@@ -179,11 +187,24 @@ function pop(s: Scan, last: number, byCloser: boolean): void {
   if (frame.candidate) { frame.dropped = true; return; }
   if (b.kind === 'event') return;
   b.termination = 'unclosed';
+  s.damaged.add(ROUTINE_LIKE.has(b.kind) ? frame : damageHost(s));
   const opener = s.list[b.first];
   const keyword = OPENER_KEYWORD.get(b.kind as BlockKind) ?? b.kind;
   const closer = CLOSER_KEYWORD.get(b.kind as BlockKind) ?? 'its closer';
   const until = last + 1 < s.list.length ? `before line ${s.list[last + 1].start.row}` : 'at the end of the source';
   diag(s, b.first, 'unclosed-block', `${keyword} on line ${opener.start.row} has no ${closer}; the block ends ${until}.`, 'warning');
+}
+
+/** Frames that are their own damage region when they lose their closer (ADR-134 Q6). */
+const ROUTINE_LIKE = new Set<BlockType>(['form', 'function', 'module', 'method', 'class', 'interface', 'enhancement', 'enhancementSection']);
+
+/** The innermost open routine-like frame (or the program): where damage at the current statement lies. */
+function damageHost(s: Scan): Frame {
+  for (let k = s.barriers.length - 1; k >= 0; k--) {
+    const f = s.stack[s.barriers[k]];
+    if (f && f.block.kind !== 'define') return f;
+  }
+  return s.stack[0];
 }
 
 /** How many open blocks of one kind the indentation rule looks past. A constant keeps the layer linear. */
@@ -204,6 +225,7 @@ function target(s: Scan, kind: BlockKind, at: number): number {
   const floor = BARRIER.has(kind) ? -1 : (s.barriers[s.barriers.length - 1] ?? -1);
   const nearest = list[list.length - 1];
   if (nearest <= floor) return -1;
+  if (!s.indent || !s.indent[at]) return nearest;
   const col = s.list[at].start.col;
   if (s.list[s.stack[nearest].block.first].start.col === col) return nearest;
   for (let k = list.length - 2; k >= 0 && k >= list.length - 1 - INDENT_LOOKBACK; k--) {
@@ -219,6 +241,7 @@ function close(s: Scan, at: number, kind: BlockKind): void {
   if (pos < 0) {
     const keyword = CLOSER_KEYWORD.get(kind) ?? kind;
     diag(s, at, 'unexpected-closer', `${keyword} closes no open ${OPENER_KEYWORD.get(kind) ?? kind}.`, 'warning');
+    s.damaged.add(damageHost(s));
     return;
   }
   while (s.stack.length - 1 > pos) pop(s, at - 1, false);
@@ -230,6 +253,7 @@ function middle(s: Scan, at: number, kind: BlockKind): boolean {
   if (pos < 0) {
     const keyword = unitsOf(s.list[at].tokens)[0];
     diag(s, at, 'unexpected-middle', `${keyword} stands outside an open ${OPENER_KEYWORD.get(kind) ?? kind}.`, 'warning');
+    s.damaged.add(damageHost(s));
     return false;
   }
   while (s.stack.length - 1 > pos) pop(s, at - 1, false);
@@ -256,6 +280,10 @@ function step(s: Scan, at: number): void {
   if (st.kind === 'Process') s.flowLogic = true;
   if (st.kind === 'Module' && s.flowLogic) return;
   const info = kindInfo(st.kind);
+  // ADR-134 Q5: a macro body holds only macro-context statements. Once L1 has
+  // ended a body that lost its END-OF-DEFINITION, the DEFINE ends with it.
+  const top = s.stack[s.stack.length - 1].block;
+  if (top.kind === 'define' && st.kind !== 'EndOfDefinition') pop(s, at - 1, false);
   if (info.closes) close(s, at, info.closes);
   else if (info.middle) middle(s, at, info.middle);
   else if (info.opens) open(s, at, info.opens, !!info.candidate);
@@ -308,8 +336,7 @@ function assemble(list: readonly Statement[], frames: Frame[]): { blocks: Block[
   return { blocks, owner };
 }
 
-/** The block tree of a statement list. Never throws; damage is recovered and diagnosed. */
-export function blocks(list: readonly Statement[]): BlockTree {
+function scan(list: readonly Statement[], indent: Uint8Array | null): { s: Scan; root: Block } {
   const origin: Position = list.length ? list[0].start : { row: 1, col: 1 };
   const root: Block = {
     id: 0, kind: 'program', name: null, opener: null, closer: null, termination: 'implicit',
@@ -319,9 +346,39 @@ export function blocks(list: readonly Statement[]): BlockTree {
   const rootFrame: Frame = { block: root, candidate: false, dropped: false, middles: [] };
   const s: Scan = {
     list, frames: [rootFrame], stack: [rootFrame], byKind: new Map([['program', [0]]]), barriers: [0], diagnostics: [], flowLogic: false,
+    indent, damaged: new Set(),
   };
   for (let at = 0; at < list.length; at++) step(s, at);
   while (s.stack.length > 1) pop(s, list.length - 1, false);
+  return { s, root };
+}
+
+/**
+ * The block tree of a statement list. Never throws; damage is recovered and diagnosed.
+ *
+ * Two passes at most (ADR-134 Q6). The first reads as the compiler does: every
+ * closer takes the nearest open block of its kind. A source that balances is
+ * done. Where the first pass found damage (an unclosed block, a stray closer or
+ * middle), the routine around it is read again with indentation as the
+ * tie-breaker, so a lost inner `ENDLOOP` flags the inner LOOP. Indentation
+ * never decides anything in a routine that balances.
+ */
+export function blocks(list: readonly Statement[]): BlockTree {
+  let { s, root } = scan(list, null);
+  if (s.damaged.size > 0) {
+    const delta = new Int32Array(list.length + 1);
+    for (const f of s.damaged) {
+      delta[f.block.first] += 1;
+      delta[Math.min(list.length, f.block.last + 1)] -= 1;
+    }
+    const indent = new Uint8Array(list.length);
+    let run = 0;
+    for (let i = 0; i < list.length; i++) {
+      run += delta[i];
+      indent[i] = run > 0 ? 1 : 0;
+    }
+    ({ s, root } = scan(list, indent));
+  }
   for (const f of s.frames) {
     const b = f.block;
     if (b.opener === null || list.length === 0) continue;

@@ -210,6 +210,52 @@ test.describe('L2: recovery', () => {
     expect(outline(tree)).toEqual(['define A 1-2 unclosed', 'define B 3-5', 'if 6-7']);
   });
 
+  test('ADR-134 Q5: a macro body that lost its END-OF-DEFINITION ends at the first routine boundary', () => {
+    const src = ['CLASS c IMPLEMENTATION.', '  METHOD a.', '    DEFINE m.', '      WRITE &1.', '      CLEAR &2.', '  ENDMETHOD.', '  METHOD b.', '    IF x = 1.', '    ENDIF.', '  ENDMETHOD.', 'ENDCLASS.'].join('\n');
+    const { tree, list } = read(src);
+    expect(list.map((s) => s.context)).toEqual(['abap', 'abap', 'abap', 'macro', 'macro', 'abap', 'abap', 'abap', 'abap', 'abap', 'abap']);
+    expect(outline(tree)).toEqual(['class C 1-11', '  method A 2-6', '    define M 3-5 unclosed', '  method B 7-10', '    if 8-9']);
+    expect(codes(tree)).toEqual(['unclosed-block@3']);
+  });
+
+  test('ADR-134 Q5: … or at the first line that starts at or left of the DEFINE column', () => {
+    const src = ['FORM f.', '  DEFINE m.', '    WRITE &1.', '  IF x = 1.', '  ENDIF.', 'ENDFORM.'].join('\n');
+    const { tree, list } = read(src);
+    expect(list.map((s) => s.context)).toEqual(['abap', 'abap', 'macro', 'abap', 'abap', 'abap']);
+    expect(outline(tree)).toEqual(['form F 1-6', '  define M 2-3 unclosed', '  if 4-5']);
+    // A body on the DEFINE's own line, and body lines indented deeper, stay macro text.
+    const one = read('DEFINE m. WRITE &1. END-OF-DEFINITION.\nm 1.');
+    expect(one.list.map((s) => s.context)).toEqual(['abap', 'macro', 'abap', 'abap']);
+    expect(one.tree.diagnostics).toEqual([]);
+  });
+
+  test('ADR-134 Q6: a file that balances is read as the compiler reads it, whatever its indentation', () => {
+    // The ENDLOOP in column 1 closes the inner LOOP (the nearest), though the outer one stands in column 1.
+    const { tree } = read('LOOP AT a INTO x.\n  LOOP AT b INTO y.\n    z = 1.\nENDLOOP.\n    w = 2.\n  ENDLOOP.');
+    expect(outline(tree)).toEqual(['loop 1-6', '  loop 2-4']);
+    expect(tree.diagnostics).toEqual([]);
+  });
+
+  test('ADR-134 Q6: indentation decides only inside the routine where the nearest reading found damage', () => {
+    const src = [
+      'FORM ok.', '  LOOP AT a INTO x.', '    LOOP AT b INTO y.', '  ENDLOOP.', '    ENDLOOP.', 'ENDFORM.',
+      'FORM bad.', '  LOOP AT a INTO x.', '    LOOP AT b INTO y.', '      z = 1.', '  ENDLOOP.', 'ENDFORM.',
+    ].join('\n');
+    const { tree } = read(src);
+    expect(outline(tree)).toEqual(['form OK 1-6', '  loop 2-5', '    loop 3-4', 'form BAD 7-12', '  loop 8-11', '    loop 9-10 unclosed']);
+    expect(codes(tree)).toEqual(['unclosed-block@9']);
+  });
+
+  test('ADR-134 Q9: only GET <node> is an event block; the other GET forms are statements', () => {
+    const src = ['NODES peras.', 'START-OF-SELECTION.', '  GET CURSOR FIELD f.', '  GET BIT 1 OF h INTO b.', 'GET peras.', '  WRITE 1.', 'GET peras LATE.', '  WRITE 2.', 'GET pernr FIELDS pernr-pernr.', 'END-OF-SELECTION.'].join('\n');
+    const { tree, list } = read(src);
+    expect(list.map((s) => s.kind)).toEqual(['Nodes', 'StartOfSelection', 'GetCursor', 'GetBit', 'GetNode', 'Write', 'GetNode', 'Write', 'GetNode', 'EndOfSelection']);
+    expect(outline(tree)).toEqual([
+      'event START-OF-SELECTION 2-4 implicit', 'event GET 5-6 implicit', 'event GET 7-8 implicit', 'event GET 9-9 implicit', 'event END-OF-SELECTION 10-10 implicit',
+    ]);
+    expect(tree.diagnostics).toEqual([]);
+  });
+
   test('a control closer does not reach across an enhancement around it', () => {
     const { tree } = read('IF a = 1.\n  ENHANCEMENT 1 zenh.\n    ENDIF.\n  ENDENHANCEMENT.\nENDIF.');
     expect(outline(tree)).toEqual(['if 1-5', '  enhancement 2-4']);
@@ -322,6 +368,18 @@ test.describe('L2: invariants, determinism, speed', () => {
       const src = Array.from({ length: 1 + Math.floor(rnd() * 60) }, () => vocabulary[Math.floor(rnd() * vocabulary.length)]).join('\n');
       const { list, tree } = read(src);
       checkInvariants(list, tree);
+    }
+  });
+
+  test('ADR-134 Q6: random indentation changes nothing on code that balances', () => {
+    let seed = 11;
+    const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x80000000);
+    for (const [name, src] of starters()) {
+      // Shift every line that does not start a comment or continue a literal by 0-12 columns.
+      const shaken = src.split('\n').map((line) => (/^\*/.test(line) ? line : ' '.repeat(Math.floor(rnd() * 13)) + line.trimStart())).join('\n');
+      const { tree } = read(shaken);
+      expect(tree.diagnostics, name).toEqual([]);
+      expect(outline(tree).map((l) => l.replace(/ \d+-\d+/, '')), name).toEqual(outline(read(src).tree).map((l) => l.replace(/ \d+-\d+/, '')));
     }
   });
 

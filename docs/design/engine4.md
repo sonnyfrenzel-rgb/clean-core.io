@@ -835,6 +835,42 @@ Every offline shadow re-run against **today's** shipping readers (`dev`, 218 com
 | `timing.ts` (L0+L1 / old statements) | 1k 3 / 13 ms, 10k 20 / 117 ms, 25k 45 / 568 ms, 50k 147 / 1,119 ms | within noise |
 | `timing-parse.ts` (one read, old / new) | 1k 4.0×, 10k 3.3×, 25k 5.0×, 50k 5.3× | within noise (this machine, Node 24) |
 
+## ADR-134 Q5, Q6 and Q9 built (22.11.2026, `build/engine4-p12`)
+
+- **Q5, a lost `END-OF-DEFINITION`** (`statements.ts`, `blocks.ts`): a macro body ends at the first routine, class,
+  interface or event boundary, or at the first statement that starts a line at or left of the `DEFINE` column. The
+  statement is read as code again, and L2 ends the `DEFINE` before it as `unclosed` (the `unclosed-block`
+  diagnostic stands on the `DEFINE`).
+- **Q6, indentation only where damage is** (`blocks.ts`): `blocks()` reads first as the compiler does (the
+  nearest open block takes every closer). Only if that pass finds damage (an unclosed block, a stray closer or
+  middle) is the routine around the damage read a second time with indentation as the tie-breaker (look-back 8).
+  Two linear passes at most. A spec shakes the indentation of every starter example (0–12 columns per line): no
+  diagnostic, the same tree.
+- **Q9, `GET <node>`** (`statement-kinds.ts`): rows `GetBit`, `GetCursor`, `GetLocale`, `GetPfStatus`,
+  `GetRunTime`, `GetDataset`, `GetProperty`; then `GetNode` (`GET <node> [LATE] [FIELDS …].`) is an event block.
+  The compat container view (`parsed-source.ts`) folds a GET event into the event right before it, or leaves it
+  out, as `readBlocks` does, so `ParsedSource.containers` stays the shipping view.
+
+| Shadow | Before (22.11. integration) | After |
+|---|---|---|
+| Damage, learn corpus (962) | victim flagged 961, collateral 1 region, false unterminated 2 | 961, collateral 1, false **1** |
+| Damage, public sample (781 of 300 files) | — (817 incl. owner: collateral 90, false 9) | 780 / 781 flagged, collateral **1**, false **1** |
+| Damage, owner copy (36 of 12 files, `scratch/engine4-sample-desktop`) | | 36 / 36, collateral 0, false 0 |
+| Clean public sample: unterminated old / new | 167 / 1 | 167 / 1 (unchanged) |
+| Learn corpus L2 containers | 1,221 = 1,221 | 1,220 + 1 range cut by a GET event (BM-151), + 3 new GET events (BM-141, -146, -151), category `get-node-is-an-event` |
+| Category `unclosed-macro-body-reads-on-as-macro` | 8 | gone |
+
+The damage shadow now also accepts an event block that ends earlier because the deleted line was its last
+statement (an event has no closer); this changes no number of the old engine.
+
+**Neutrality** (these three files feed today's reader through `parseSource`): frozen digests 330 / 330 unchanged;
+mutation run on the corpus 29,550 sources, 20,728 served, 0 differ; on the public sample 22,500 sources, 13,454
+served, 0 differ.
+
+**Owner sample path.** `manifestCorpus` refuses any file under `Desktop`, `OneDrive…` or `mike-local`. The owner
+group is read from `scratch/engine4-sample-desktop` through a manifest of its own, never through the `source`
+paths of `scratch/engine4-sample/MANIFEST.json`.
+
 ## L4: references (22.11.2026, first step of Phase 2)
 
 Engine review §8.1 L4 ("symbols") starts with the part a reader of clean core needs first: **every SAP object the
@@ -984,7 +1020,7 @@ one reader per commit); the shadow and the coverage wording are S each.
 
 ## Next steps
 
-1. **Build ADR-134 Q5, Q6 and Q9** (decided; below). Rerun both shadows on the sample after every L2 change
+1. ~~Build ADR-134 Q5, Q6 and Q9~~ (built, see above). Rerun both shadows on the sample after every L2 change
    (it stays outside the repository, so the specs cannot read it).
 2. **Phase 0, the rest** (3.5.0 item 2): `engineDigest` (owner decision, "Phase 0 wiring"); hand `ParsedSource`
    itself to the readers that also mask (`maskedText(i)`) and nest (`containers`) instead of the source-keyed

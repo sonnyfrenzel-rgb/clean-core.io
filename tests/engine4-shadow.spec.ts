@@ -31,8 +31,13 @@ test('the new statement layer agrees with the shipping one, and every difference
   expect(l2.matched).toBe(l2.oldBlocks);
   expect(l2.sameRange).toBe(l2.matched);
   expect([l2.oldUnterminated, l2.newUnclosed]).toEqual([0, 0]);
-  expect(l2.containersAgree).toBe(l2.oldContainers);
-  expect(l2.newContainers).toBe(l2.oldContainers);
+  // ADR-134 Q9: the three HR cases' `GET peras` blocks are events in L2 (BM-141, BM-146, BM-151);
+  // in BM-151 the GET event cuts the START-OF-SELECTION before it, where the shipping reader runs on.
+  const getNew = r.categories['l2-container-new-only:get-node-is-an-event'] ?? 0;
+  const getRange = r.categories['l2-container-range:get-node-is-an-event'] ?? 0;
+  expect([getNew, getRange]).toEqual([3, 1]);
+  expect(l2.containersAgree + getRange).toBe(l2.oldContainers);
+  expect(l2.newContainers).toBe(l2.oldContainers + getNew);
   expect(l2.enclosingAgree).toBe(r.aligned);
 });
 

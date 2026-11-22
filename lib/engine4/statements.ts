@@ -17,7 +17,7 @@
  */
 import type { Diagnostic, Position, Token } from './tokens';
 import { tokenEndCol } from './tokens';
-import { matchRow, unitsOf, type StatementKind } from './statement-kinds';
+import { kindInfo, matchRow, unitsOf, type StatementKind } from './statement-kinds';
 
 export type StatementContext = 'abap' | 'macro' | 'native';
 
@@ -134,6 +134,23 @@ interface Builder {
   out: Statement[];
   macros: Set<string>;
   inMacro: boolean;
+  /** Column of the `DEFINE` whose body is open. */
+  macroCol: number;
+}
+
+/**
+ * Kinds that never stand in a macro body (ADR-134 Q5): routine, class,
+ * interface and event boundaries. A body that meets one has lost its
+ * END-OF-DEFINITION, and the statement is read as code again.
+ */
+const MACRO_BOUNDARY = new Set<StatementKind>([
+  'Form', 'EndForm', 'Method', 'MethodAmdp', 'EndMethod', 'Function', 'EndFunction', 'Module', 'EndModule',
+  'ClassDefinition', 'ClassImplementation', 'EndClass', 'Interface', 'EndInterface',
+]);
+
+function endsMacroBody(b: Builder, kind: StatementKind, first: Token, lineStart: boolean): boolean {
+  if (MACRO_BOUNDARY.has(kind) || kindInfo(kind).event) return true;
+  return lineStart && first.col <= b.macroCol;
 }
 
 function positionOf(token: Token): Position {
@@ -152,10 +169,14 @@ function emit(
   chain: Omit<ChainInfo, 'count'> | null,
   pragmas: Token[],
   diagnostics: Diagnostic[],
+  lineStart = false,
 ): void {
   if (own.length === 0) return;
   const tokens = [...head, ...own];
   const kind = classify(tokens, b.macros);
+  if (b.inMacro && kind !== 'EndOfDefinition' && kind !== 'Define' && (chain === null || chain.index === 0) && endsMacroBody(b, kind, tokens[0], lineStart)) {
+    b.inMacro = false;
+  }
   // A macro cannot define a macro: a DEFINE inside a body means the body before it lost its END-OF-DEFINITION.
   const context: StatementContext = b.inMacro && kind !== 'EndOfDefinition' && kind !== 'Define' ? 'macro' : 'abap';
   const diags = [...diagnostics];
@@ -185,6 +206,7 @@ function emit(
     const units = unitsOf(tokens);
     if (units[1]) b.macros.add(units[1]);
     b.inMacro = true;
+    b.macroCol = tokens[0].col;
   } else if (kind === 'EndOfDefinition') {
     b.inMacro = false;
   }
@@ -201,7 +223,7 @@ function depthDelta(t: Token): number {
 }
 
 /** One source statement (code tokens up to its period), expanded when it is a chain. */
-function emitSource(b: Builder, code: Token[], pragmas: Token[], period: Token | null): void {
+function emitSource(b: Builder, code: Token[], pragmas: Token[], period: Token | null, lineStart = false): void {
   const diagnostics: Diagnostic[] = [];
   if (!period && code.length) {
     const last = code[code.length - 1];
@@ -219,7 +241,7 @@ function emitSource(b: Builder, code: Token[], pragmas: Token[], period: Token |
     return;
   }
   if (colonAt === -1) {
-    emit(b, [], code, period, null, pragmas, diagnostics);
+    emit(b, [], code, period, null, pragmas, diagnostics, lineStart);
     return;
   }
   const colon = code[colonAt];
@@ -236,13 +258,13 @@ function emitSource(b: Builder, code: Token[], pragmas: Token[], period: Token |
       continue;
     }
     if (depth === 0 && t.kind === 'comma') {
-      if (part.length) emit(b, head, part, t, { index: index++, colon }, pragmas, diagnostics.splice(0));
+      if (part.length) emit(b, head, part, t, { index: index++, colon }, pragmas, diagnostics.splice(0), lineStart);
       part = [];
       continue;
     }
     part.push(t);
   }
-  emit(b, head, part, period, { index: index++, colon }, pragmas, diagnostics.splice(0));
+  emit(b, head, part, period, { index: index++, colon }, pragmas, diagnostics.splice(0), lineStart);
   for (let s = first; s < b.out.length; s++) {
     const c = b.out[s].chain;
     if (c) c.count = index;
@@ -280,9 +302,12 @@ export function macroNames(list: readonly Statement[]): string[] {
 
 /** Every statement of a token stream, in source order. */
 export function statements(tokens: readonly Token[], options: StatementsOptions = {}): Statement[] {
-  const b: Builder = { out: [], macros: new Set([...(options.macros ?? [])].map((m) => m.toUpperCase())), inMacro: false };
+  const b: Builder = { out: [], macros: new Set([...(options.macros ?? [])].map((m) => m.toUpperCase())), inMacro: false, macroCol: 0 };
   let code: Token[] = [];
   let pragmas: Token[] = [];
+  /** Row of the last code token, pragma or period read; a statement whose first token is on a new row starts a line. */
+  let lastRow = 0;
+  let lineStart = false;
   let i = 0;
   while (i < tokens.length) {
     const t = tokens[i];
@@ -301,15 +326,18 @@ export function statements(tokens: readonly Token[], options: StatementsOptions 
       continue;
     }
     if (t.kind === 'period') {
-      if (code.length) emitSource(b, code, pragmas, t);
+      if (code.length) emitSource(b, code, pragmas, t, lineStart);
       code = [];
       pragmas = [];
+      lastRow = t.row;
       i += 1;
       continue;
     }
+    if (code.length === 0) lineStart = t.row !== lastRow;
     code.push(t);
+    lastRow = t.row;
     i += 1;
   }
-  if (code.length) emitSource(b, code, pragmas, null);
+  if (code.length) emitSource(b, code, pragmas, null, lineStart);
   return b.out;
 }

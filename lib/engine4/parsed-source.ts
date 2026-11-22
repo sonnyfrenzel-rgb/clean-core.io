@@ -74,8 +74,24 @@ function containersOf(tree: BlockTree): CompatContainer[] {
   const of = (b: Block): CompatContainer => ({ kind: b.kind as CompatContainer['kind'], name: b.name ?? '', lineStart: b.start.row, lineEnd: b.end.row });
   const byOpener = (a: Block, b: Block) => (a.opener ?? 0) - (b.opener ?? 0);
   const blocksOf = (test: (b: Block) => boolean) => tree.blocks.filter(test).sort(byOpener).map(of);
+  // ADR-134 Q9: `GET <node>` is an event block in L2. The shipping reader has no
+  // such event, so the compat view folds it into the event right before it (the
+  // shipping range) or leaves it out (no container), as `readBlocks` does.
+  const events: CompatContainer[] = [];
+  let previous: Block | null = null;
+  for (const b of tree.blocks.filter((x) => x.kind === 'event').sort(byOpener)) {
+    if (b.name === 'GET') {
+      if (previous && previous.last + 1 === b.first) {
+        events[events.length - 1].lineEnd = b.end.row;
+        previous = b;
+      }
+      continue;
+    }
+    events.push(of(b));
+    previous = b;
+  }
   return [
-    ...blocksOf((b) => b.kind === 'event'),
+    ...events,
     ...blocksOf((b) => ROUTINE_KINDS.has(b.kind)),
     ...blocksOf((b) => b.kind === 'function'),
   ];

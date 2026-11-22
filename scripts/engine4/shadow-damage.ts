@@ -128,7 +128,8 @@ function outcome(clean: Reading, damaged: Reading, d: Damage): Outcome {
   for (const [key, last] of expected) {
     const now = damaged.regions.get(key);
     if (now === undefined) collateral.push(`${key} vanished`);
-    else if (now !== last) collateral.push(`${key} ends ${now} not ${last}`);
+    // An event block has no closer and ends on its last statement: when the deleted line was that statement, it ends earlier.
+    else if (now !== last && !(key.startsWith('event@') && last === d.line && now < d.line)) collateral.push(`${key} ends ${now} not ${last}`);
   }
   for (const key of damaged.regions.keys()) if (key !== victimNow && !expected.has(key)) collateral.push(`${key} appeared`);
   const victimLine = shift(d.victim.line);

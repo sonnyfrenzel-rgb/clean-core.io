@@ -101,6 +101,18 @@ function selectMayLoop(units: readonly string[]): boolean {
   return true;
 }
 
+/**
+ * `GET <node> [LATE] [FIELDS f1 f2 …].` — the event of a logical database (ADR-134 Q9).
+ * The node is one plain name; every other GET form is matched by its own row first.
+ */
+function isNodeEvent(units: readonly string[]): boolean {
+  if (!/^[A-Z_\/][A-Z0-9_\/]*$/.test(units[1] ?? '')) return false;
+  let i = 2;
+  if (units[i] === 'LATE') i += 1;
+  if (i === units.length) return true;
+  return units[i] === 'FIELDS' && i + 1 < units.length;
+}
+
 const ROWS = [
   // Programs and includes
   { kind: 'Report', pattern: ['REPORT'] },
@@ -317,6 +329,16 @@ const ROWS = [
   { kind: 'GetReference', pattern: ['GET', 'REFERENCE'] },
   { kind: 'GetTime', pattern: ['GET', 'TIME'] },
   { kind: 'GetParameter', pattern: ['GET', 'PARAMETER'] },
+  // ADR-134 Q9: the other GET forms have rows of their own, so that only
+  // `GET <node> [LATE] [FIELDS …].` — a logical-database node — is an event block.
+  { kind: 'GetBit', pattern: ['GET', 'BIT'] },
+  { kind: 'GetCursor', pattern: ['GET', 'CURSOR'] },
+  { kind: 'GetLocale', pattern: ['GET', 'LOCALE'] },
+  { kind: 'GetPfStatus', pattern: ['GET', 'PF-STATUS'] },
+  { kind: 'GetRunTime', pattern: ['GET', 'RUN', 'TIME'] },
+  { kind: 'GetDataset', pattern: ['GET', 'DATASET'] },
+  { kind: 'GetProperty', pattern: ['GET', 'PROPERTY'] },
+  { kind: 'GetNode', pattern: ['GET', '*'], event: true, when: isNodeEvent },
   { kind: 'Get', pattern: ['GET'] },
   { kind: 'SetParameter', pattern: ['SET', 'PARAMETER'] },
   { kind: 'SetPfStatus', pattern: ['SET', 'PF-STATUS'] },

@@ -103,6 +103,9 @@ export function manifestCorpus(manifestPath: string, group?: string): CorpusFile
     .filter((f) => !group || f.group === group)
     .map((f) => {
       const path = f.source ?? join(base, f.file as string);
+      // Owner rule (17.11.2026): no script reads the Desktop, OneDrive or mike-local. The owner
+      // sample is read from its copy under scratch/engine4-sample-desktop only.
+      if (/[\\/](Desktop|OneDrive[^\\/]*|mike-local)[\\/]/i.test(path)) throw new Error(`refused: ${f.group} file outside the allowed copies`);
       const name = f.source ? `${f.group}/${basename(f.source)}` : (f.file as string);
       return { name, group: f.source ? name : `${f.group}/${f.repo}`, source: readFileSync(path, 'utf8').replace(/^﻿/, '') };
     });
@@ -401,11 +404,16 @@ function compareBlocks(r: ShadowReport, file: CorpusFile, old: OldSide, newList:
     if (nb && nb.end.row === c.lineEnd) { l2.containersAgree += 1; continue; }
     const i = old.list.findIndex((s) => s.lineStart === c.lineStart);
     const oldDesc = `${c.kind} ${c.name} ${c.lineStart}-${c.lineEnd} :: ${textOld(i)}`;
+    // ADR-134 Q9: a logical-database `GET <node>` event inside the old container ends it there.
+    const cutByGetNode = nb && c.kind === 'event' && nb.end.row < c.lineEnd &&
+      tree.blocks.some((b) => b.kind === 'event' && b.opener !== null && newList[b.opener].kind === 'GetNode' && b.start.row > nb.end.row && b.start.row <= c.lineEnd);
+    if (cutByGetNode) { sample('l2-container-range:get-node-is-an-event', c.lineStart, oldDesc, describeNew(nb, newList)); continue; }
     sample(`${nb ? 'l2-container-range' : 'l2-container-old-only'}:${categorizeBlock(textOld(i), textNew(toNew.get(i)))}`, c.lineStart, oldDesc, nb ? describeNew(nb, newList) : textNew(toNew.get(i)));
   }
   for (const [k, nb] of newContainers) {
     if (seen.has(k)) continue;
     const i = fromNew.get(nb.opener as number);
+    if (nb.opener !== null && newList[nb.opener].kind === 'GetNode') { sample('l2-container-new-only:get-node-is-an-event', nb.start.row, textOld(i), describeNew(nb, newList)); continue; }
     sample(`l2-container-new-only:${categorizeBlock(textOld(i), textNew(nb.opener as number))}`, nb.start.row, textOld(i), describeNew(nb, newList));
   }
 
