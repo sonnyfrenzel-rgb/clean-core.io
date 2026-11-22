@@ -191,7 +191,24 @@ test.describe('three jobs, three trust levels', () => {
   test('the review reads the screenshots of its own run by the name the capture job gave them', () => {
     expect(job('capture')).toContain('artifact: ${{ steps.artifact.outputs.name }}');
     expect(job('review')).toContain('CAPTURE: ${{ needs.capture.outputs.artifact }}');
-    expect(job('review')).toMatch(/if: \$\{\{ !cancelled\(\) && needs\.scope\.result == 'success'/);
+    expect(job('review')).toMatch(/if: \$\{\{ !cancelled\(\) && github\.ref == 'refs\/heads\/main' && needs\.scope\.result == 'success'/);
+  });
+
+  test('it runs on main only: dispatched on any other ref, no job runs and no key is handed out (SEC-35f5c34-01)', () => {
+    const MAIN = "github.ref == 'refs/heads/main'";
+    expect(job('scope')).toContain(`if: vars.UX_REVIEW_ENABLED != 'false' && ${MAIN}`);
+    // capture needs a successful scope; review checks the ref itself, as the one job that holds keys.
+    expect(job('capture')).toMatch(/\n {4}needs: scope\r?\n/);
+    expect(job('capture')).not.toMatch(/always\(\)|!cancelled\(\)/);
+    // Every job that reads a secret carries the same guard in its own condition.
+    const guarded = ['scope', 'capture', 'review'].filter((name) => /secrets\./.test(job(name)));
+    expect(guarded).toEqual(['review']);
+    for (const name of guarded) {
+      const cond = job(name).split(/\r?\n/).find((l) => /^ {4}if: /.test(l)) || '';
+      expect(cond).toContain(MAIN);
+    }
+    expect(job('review')).toContain('ref: ${{ github.sha }}');
+    expect(wf()).not.toMatch(/github\.ref_name == 'dev'|refs\/heads\/dev/);
   });
 
   test('no step can fail on its own loop control', () => {

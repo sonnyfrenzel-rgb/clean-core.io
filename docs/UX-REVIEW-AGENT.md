@@ -4,6 +4,7 @@
 
 > **Changed on 06.10.2026 (owner decision) — this block wins over anything below that contradicts it.**
 > - No push starts it: `gh workflow run ux-review.yml --ref main -f mode=delta` (or `mode=full`).
+> - Since 3.4.x it runs on `main` only: started on any other ref, every job is skipped (`tests/ux-review-guard.spec.ts`).
 > - Pinned model again, no Auto Router: `openai/gpt-6-luna-pro` (reads images; was `openai/gpt-6-luna` until 22.11.2026), $0.10/$0.50 per M tokens
 >   (`UX_MODEL` in `scripts/ux/lib/config.mjs`).
 > Passages below that describe the Auto Router, its cost tiers and price ceilings record the week of
