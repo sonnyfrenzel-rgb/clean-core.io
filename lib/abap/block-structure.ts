@@ -336,6 +336,50 @@ export function readBlocks(statements: AbapStatement[]): BlockStructure {
  * carrying into a process element.
  */
 export function containerAt(containers: Container[], line: number): Container | null {
+  // Parse once, hotspot (3.5.0; engine review §4.3 "containerAt"): from the second
+  // lookup in the same list on, a painted index answers in constant time. The
+  // index is the scan below, precomputed: same winner on every line (proven by
+  // `tests/parse-once-wiring.spec.ts` against the scan).
+  const index = containerIndexOf(containers);
+  if (index && Number.isInteger(line) && line >= 0) return line < index.length ? index[line] : null;
+  return containerAtScan(containers, line);
+}
+
+/** Lists seen once (`null`) or indexed; a list that changed length since is indexed again. */
+const containerIndexes = new WeakMap<Container[], { length: number; at: Array<Container | null> | null }>();
+/** Beyond this the index is not built and the scan answers. */
+const MAX_INDEXED_LINE = 2_000_000;
+
+function containerIndexOf(containers: Container[]): Array<Container | null> | null {
+  const entry = containerIndexes.get(containers);
+  if (!entry || entry.length !== containers.length) {
+    // First sight: a list built for one lookup is not worth an index.
+    containerIndexes.set(containers, { length: containers.length, at: null });
+    return null;
+  }
+  if (entry.at) return entry.at;
+  let max = 0;
+  for (const c of containers) {
+    if (!Number.isInteger(c.lineStart) || !Number.isInteger(c.lineEnd) || c.lineEnd > MAX_INDEXED_LINE) return null;
+    max = Math.max(max, c.lineEnd);
+  }
+  const at: Array<Container | null> = new Array(max + 1).fill(null);
+  const order = containers.map((c, i) => ({ c, i }));
+  // The scan's winner: a routine over an event block; then the later start; then
+  // the earlier in the list. Painted in reverse priority, so the winner paints last.
+  for (const event of [true, false]) {
+    const group = order.filter(({ c }) => (c.kind === 'event') === event);
+    group.sort((a, b) => a.c.lineStart - b.c.lineStart || b.i - a.i);
+    for (const { c } of group) {
+      for (let l = Math.max(0, c.lineStart); l <= c.lineEnd; l++) at[l] = c;
+    }
+  }
+  entry.at = at;
+  return at;
+}
+
+/** The shipping scan; the reference the index is proven against. */
+export function containerAtScan(containers: Container[], line: number): Container | null {
   const rank = (c: Container) => (c.kind === 'event' ? 0 : 1);
   let best: Container | null = null;
   for (const container of containers) {

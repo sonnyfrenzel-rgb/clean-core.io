@@ -97,6 +97,17 @@ export function alvEventRows(statements: readonly AbapStatement[], table: string
   return rows;
 }
 
+const writesKnown = new WeakMap<readonly AbapStatement[], Map<string, Map<AbapStatement, 'self' | 'other' | null>>>();
+
+/** The per-statement writes of one variable already read in this list. */
+function writesKnownFor(statements: readonly AbapStatement[], name: string): Map<AbapStatement, 'self' | 'other' | null> {
+  let byName = writesKnown.get(statements);
+  if (!byName) writesKnown.set(statements, (byName = new Map()));
+  let known = byName.get(name);
+  if (!known) byName.set(name, (known = new Map()));
+  return known;
+}
+
 /**
  * Whether the value passed as `I_CALLBACK_PROGRAM` names this program: a
  * literal equal to its own name, `sy-repid`/`sy-cprog`, or a variable this
@@ -140,7 +151,17 @@ export function namesThisProgram(
   ];
   type Write = { line: number; self: boolean };
   /** What a statement does to the variable: fills it from this program, writes anything else, or nothing. */
+  // Parse once, hotspot (3.5.0): what a statement writes depends on the variable
+  // alone, so it is read once per list and variable, not once per registration.
+  const known = writesKnownFor(statements, name);
   const writeOf = (s: AbapStatement): 'self' | 'other' | null => {
+    const hit = known.get(s);
+    if (hit !== undefined) return hit;
+    const write = writeOfRead(s);
+    known.set(s, write);
+    return write;
+  };
+  const writeOfRead = (s: AbapStatement): 'self' | 'other' | null => {
     const text = s.text.trim();
     if (/^(?:DATA|STATICS|CONSTANTS)\b/i.test(text)) return declaredSelf.test(text) ? 'self' : null;
     if (selfWrites.some((re) => re.test(text))) return 'self';
