@@ -669,6 +669,34 @@ const UNION_SECTIONS = SECTIONS.filter(
   (s) => s.name !== 'call graph' && s.name !== 'coverage' && s.name !== 'data coupling',
 );
 
+/**
+ * **Findings about the whole file, one per object.** From engine 3.4.0 the class
+ * gap (`unreleased-class`) is one finding per SAP class or interface for the
+ * whole file, listing every line it stands on (owner decision 22.11.2026, ADR-141
+ * draft). Joining a program to itself names each object once, not twice, so its
+ * rows are not a union — a whole-file answer like the call graph's conclusions
+ * and the coverage summary, and exempt from the row union the same way. What
+ * does hold, and is asserted instead: the set of objects of the joined file is
+ * the union of the parts' sets (for `A + A`, exactly the set of `A`), each with
+ * both parts' lines.
+ */
+const WHOLE_FILE_FINDING_KINDS = new Set<string>(['unreleased-class']);
+const perStatement = (r: Reading): Reading => ({
+  ...r,
+  evidence: { ...r.evidence, findings: r.evidence.findings.filter((f) => !WHOLE_FILE_FINDING_KINDS.has(f.kind)) },
+});
+const wholeFileObjects = (r: Reading, m: Move): Map<string, number[]> => {
+  const objects = new Map<string, number[]>();
+  for (const f of r.evidence.findings) {
+    if (!WHOLE_FILE_FINDING_KINDS.has(f.kind)) continue;
+    const key = `${f.kind} | ${f.objectName ?? '-'}`;
+    objects.set(key, [...(objects.get(key) ?? []), ...(f.lines ?? [f.lineStart]).map((n) => m.start(n))]);
+  }
+  return objects;
+};
+const objectRows = (objects: Map<string, number[]>): string[] =>
+  [...objects].map(([key, lines]) => `${key} | ${[...new Set(lines)].sort((a, b) => a - b).join(',')}`).sort();
+
 test.describe('P4 — concatenation is union', () => {
   for (const first of FILES) {
     test(`${first} followed by each of the eight: the parts, unchanged`, () => {
@@ -694,18 +722,27 @@ test.describe('P4 — concatenation is union', () => {
             ),
           );
 
+        const [partA, partB, whole] = [perStatement(readA), perStatement(readB), perStatement(both)];
         for (const section of UNION_SECTIONS) {
           const parts = [
-            ...section.rows(readA, STILL),
-            ...(section.name === 'branches' ? carriedOn(section.rows(readB, shift)) : section.rows(readB, shift)),
+            ...section.rows(partA, STILL),
+            ...(section.name === 'branches' ? carriedOn(section.rows(partB, shift)) : section.rows(partB, shift)),
           ];
           expect(parts, `${label}: ${section.name} is not the union of the parts`)
-            .toEqual(section.rows(both, STILL));
+            .toEqual(section.rows(whole, STILL));
         }
         expect(
-          [...snippetRows(readA), ...snippetRows(readB)],
+          [...snippetRows(partA), ...snippetRows(partB)],
           `${label}: snippets`,
-        ).toEqual(snippetRows(both));
+        ).toEqual(snippetRows(whole));
+        // Whole-file findings (owner decision 22.11.2026): the set of objects is
+        // the union of the parts' sets, each object with both parts' lines.
+        const unionOfObjects = wholeFileObjects(readA, STILL);
+        for (const [key, lines] of wholeFileObjects(readB, shift)) {
+          unionOfObjects.set(key, [...(unionOfObjects.get(key) ?? []), ...lines]);
+        }
+        expect(objectRows(wholeFileObjects(both, STILL)), `${label}: the objects of the whole-file findings`)
+          .toEqual(objectRows(unionOfObjects));
         // Coverage: every unassessed construct of both parts, in order, at its
         // own line. Only the per-gap `firstLine` summary is a whole-file answer.
         expect(
