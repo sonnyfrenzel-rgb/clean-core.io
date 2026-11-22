@@ -19,6 +19,7 @@ code. Prior art supplied concepts only, and no third-party source is copied.
 | Phase 0 | `parsed-source.ts`, `compat.ts` | `parseSource(source) → ParsedSource` (the shipping statement view, masks, container index) | built; **wired** into `readStatements` (ADR-133, 22.11.2026, `integrate/engine4`) |
 | L3 Upload layout | `layout.ts`, `conventions.ts` | `layout(files) → UploadLayout`; `readUpload(files)` runs L0–L2 per part with L3's macros | built (layout and includes) |
 | L4 references (first step) | `references.ts` | `references(statements, tree) → ReferenceTable`: every SAP reference with line, use and resolution | built, inert |
+| L4 values | `values.ts` | `valueAt(valueContext(statements, tree), name, statement) → ValueAnswer`: scoped, loop- and call-aware, FORM parameters over call sites, provenance | built, inert |
 | L3 declarations, rest of L4, L5–L6 | — | class/interface declarations, screens, scopes and data flow, calls, process model (review §8.1) | later |
 
 `index.ts` is the public surface. `readSource(source)` runs L0 and L1 in one call and returns the statements
@@ -979,6 +980,54 @@ open.
 
 `tests/engine4-references.spec.ts`: every kind on one program (33 references, each with row, use and
 resolution), the branch rule, local definitions and internal tables, and the shadow floors.
+
+## L4: values — which values a name can hold (22.11.2026, `build/engine4-p12`)
+
+The independent engine review of 22.11.2026 (A1–A3) found the first-step resolver of the reference table unsound:
+it took the last write in **source order**, across routines and event blocks, ignored scopes (a `CONSTANTS` of one
+FORM resolved the same name in another) and ignored loops (a write after the use inside a `DO` never reached it).
+Probe `p11`: a global set to `'Z_HARMLESS_READ'`, then `PERFORM call_it`, then set to `'BAPI_ACC_DOCUMENT_POST'`,
+then `PERFORM call_it` again — the table answered `BAPI_ACC_DOCUMENT_POST` (`assigned`) for the call in the FORM.
+
+`lib/engine4/values.ts` replaces it: `valueContext(statements, tree)` once, then `valueAt(context, name, statement)`
+→ `{ name, resolution, row, candidates, provenance, scope }`. `references()` asks it for every dynamic name.
+
+- **Scope from L2.** Names declared in a FORM, method, function module or module (including the FORM's and the
+  method's parameters, from `FORM …` and the class definition's `METHODS …`) are that routine's; a class's attributes
+  are the class's; the rest is global. Only mentions in the same scope count.
+- **Straight path** (`assigned`, `value`): the last mention before the use is a literal write **in the same
+  processing unit** (routine or event block), on a branch path that is a prefix of the use's; no loop around the use
+  but not the write mentions the name; for a name that is not routine-local, no call (PERFORM, CALL FUNCTION/METHOD,
+  a functional call, `CREATE OBJECT`, `RAISE EVENT`, a macro, an unknown statement) stands between them or in such a
+  loop.
+- **FORM parameters** (`parameter`): closed over every `PERFORM` of the upload, each actual resolved at its call site
+  (literal, constant, or recursively, depth 4). No call site, a dynamic `PERFORM (lv)`, or `PERFORM f IN PROGRAM x`
+  / `f(x)` (the reading cannot see that program's arguments) keep it open. The closed world is the upload.
+- **Off the straight path** (`onlyValue`) every write in the scope must put in the same literal **and the start
+  value must be that literal too**: a variable declared without `VALUE` can reach the use blank. The metamorphic
+  spec found this: adding `g1 = 'Z_W'` in an uncalled FORM turned an open answer into `Z_W onlyValue`.
+- **Provenance:** every answer lists the writes and call sites it read, with row, value and how (`declaration`,
+  `constant`, `assignment`, `move`, `other`, `callSite`).
+
+**Proof.** `tests/engine4-values.spec.ts`: A1 (scope: a constant of another FORM, a local hiding a global, a class
+attribute per class), A2 (a write after the use in a loop; a write before it in the same iteration; a call in the
+loop), A3 (two writes before two PERFORMs; a call between write and use opens a global, not a local; another event
+block), FORM parameters (one value, two values, a constant passed in, no site, `IN PROGRAM`, dynamic PERFORM).
+**Metamorphic:** 400 random reports with globals, FORMs, parameters, locals, IF/DO nesting and PERFORMs, each under
+five transformations that only add paths (FORMs reordered, a write wrapped in IF, wrapped in DO, another call site,
+another write in another FORM): no answer becomes more certain (`constant` > `value` = `assigned` > `parameter` >
+`onlyValue` > open) or a different single value, over more than 3,000 compared answers.
+
+**Shadow** (`scripts/engine4/shadow-values.ts`, the first-step resolver pinned in the script):
+
+| Corpus | Dynamic names | Old resolved / open | New resolved / open | Changed |
+|---|---|---|---|---|
+| Learn corpus (394 files) | 23 | 1 / 22 | 1 / 22 | none |
+| Public sample (300 files) | 101 | 4 / 97 | 2 / 99 | 2 newly open (`sy-msgid` in mockup loader: a call between write and use; the start value may reach the use) |
+| Owner copy (12 files) | 2 | 1 / 1 | 1 / 1 | none |
+
+Different single value: 0 everywhere. The real corpora hardly meet the unsound cases (their dynamic names were
+open already); the probes and the metamorphic generator do. Inert: nothing in the product reads `values.ts`.
 
 ## Statement ledger (design, 22.11.2026)
 

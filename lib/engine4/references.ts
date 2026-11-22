@@ -18,9 +18,10 @@
  * question (today the shadow script asks `lib/abap/catalog-service.ts`; later
  * `lib/knowledge/`, ADR-133 (2)). Nothing in the product reads it.
  */
-import type { Block, BlockTree } from './blocks';
+import type { BlockTree } from './blocks';
 import type { Statement } from './statements';
 import type { Token } from './tokens';
+import { valueAt, valueContext, type Provenance } from './values';
 
 export type ReferenceKind =
   | 'class'
@@ -80,8 +81,10 @@ export type Resolution =
   | 'value'
   /** A literal assigned on the straight path before the use. */
   | 'assigned'
-  /** Every write anywhere in the source puts the same literal in. */
+  /** Every write in the variable's scope puts the same literal in. */
   | 'onlyValue'
+  /** A FORM parameter every call site of the source passes the same value. */
+  | 'parameter'
   /** From the declared type of the object (`CREATE OBJECT o` with `o TYPE REF TO x`). */
   | 'declaredType'
   /** Not resolved: `name` is null, `candidates` lists what the source ever writes. */
@@ -107,6 +110,9 @@ export interface Reference {
   defined: boolean;
   /** A message number (`MESSAGE e001(zmsg)`). */
   number?: string;
+  /** For a name read out of a variable: the writes and call sites the answer rests on, and the variable's scope (`values.ts`). */
+  provenance?: Provenance[];
+  scope?: string;
 }
 
 export interface ReferenceTable {
@@ -226,75 +232,6 @@ function collectDefinitions(list: readonly Statement[]): Definitions {
   }
   d.types.delete('');
   return d;
-}
-
-/** The branch path of a statement: for each block around it, which branch it stands in. */
-function branchPath(tree: BlockTree, index: number): string[] {
-  const out: string[] = [];
-  for (let b: Block | null = tree.blocks[tree.owner[index]] ?? null; b; b = b.parent) {
-    const k = b.branches.findIndex((br) => br.first <= index && index <= br.last);
-    out.push(`${b.id}:${k}`);
-  }
-  return out.reverse();
-}
-
-interface Write { statement: number; row: number; value: string | null; constant: boolean; declared: boolean }
-
-/** Every write the source makes into `name`: literal ones with their value, any other with `null`. */
-function writesOf(list: readonly Statement[], name: string, uses: ReadonlySet<number>): Write[] {
-  const out: Write[] = [];
-  for (const s of list) {
-    if (uses.has(s.index)) continue;
-    const u = ownUnits(s);
-    const at = u.findIndex((x) => x.kind === 'name' && x.up === name);
-    if (at < 0) continue;
-    const row = u[at].token.row;
-    if (DECLARING_KINDS.has(s.kind) && at === 0) {
-      const v = u.findIndex((x) => x.up === 'VALUE');
-      if (v > 0) out.push({ statement: s.index, row, value: u[v + 1]?.kind === 'literal' ? (u[v + 1].value ?? null) : null, constant: s.kind === 'Constants', declared: true });
-      continue;
-    }
-    if (s.kind === 'Assignment' && at === 0 && u[1]?.up === '=') {
-      out.push({ statement: s.index, row, value: u.length === 3 && u[2].kind === 'literal' ? (u[2].value ?? null) : null, constant: false, declared: false });
-      continue;
-    }
-    if (s.kind === 'Move' && u[at - 1]?.up === 'TO') {
-      out.push({ statement: s.index, row, value: u.length === 4 && u[1].kind === 'literal' ? (u[1].value ?? null) : null, constant: false, declared: false });
-      continue;
-    }
-    // Any other mention may write it (INTO, CHANGING, CLEAR, a method's parameter, …): not a literal.
-    out.push({ statement: s.index, row, value: null, constant: false, declared: DECLARING_KINDS.has(s.kind) });
-  }
-  return out;
-}
-
-interface Resolver {
-  list: readonly Statement[];
-  tree: BlockTree;
-  uses: Set<number>;
-}
-
-/** Resolve the dynamic name in variable `variable` at statement `at`. */
-function resolve(r: Resolver, variable: string, at: number): Pick<Reference, 'name' | 'resolution' | 'via' | 'candidates'> {
-  const writes = writesOf(r.list, variable, r.uses);
-  const real = writes.filter((w) => !(w.declared && w.value === null));
-  const constant = writes.find((w) => w.constant && w.value !== null);
-  if (constant) return { name: constant.value!.toUpperCase(), resolution: 'constant', via: { variable, row: constant.row } };
-  const candidates = [...new Set(real.filter((w) => w.value !== null).map((w) => w.value!.toUpperCase()))];
-  // The last mention before the use, if it is a literal write on the straight path.
-  const before = real.filter((w) => w.statement < at);
-  const last = before[before.length - 1];
-  if (last && last.value !== null) {
-    const pw = branchPath(r.tree, last.statement);
-    const pu = branchPath(r.tree, at);
-    if (pw.every((p, k) => pu[k] === p)) {
-      return { name: last.value.toUpperCase(), resolution: last.declared ? 'value' : 'assigned', via: { variable, row: last.row } };
-    }
-  }
-  if (real.length > 0 && real.every((w) => w.value !== null) && candidates.length === 1) {
-    return { name: candidates[0], resolution: real.length === 1 && real[0].declared ? 'value' : 'onlyValue', via: { variable, row: real[0].row } };
-  }
-  return { name: null, resolution: 'dynamic', via: { variable, row: null }, candidates };
 }
 
 interface Emit {
@@ -550,9 +487,19 @@ export function references(list: readonly Statement[], tree: BlockTree): Referen
     generalReferences(s, u, emit);
     statementReferences(s, u, emit, dyn, defs);
   }
-  const resolver: Resolver = { list, tree, uses: new Set(pending.map((p) => p.s.index)) };
+  // Dynamic names: the scoped, sound value reading (values.ts). The use statements only read their variable.
+  const context = valueContext(list, tree, new Set(pending.map((p) => p.s.index)));
   for (const p of pending) {
-    const r = resolve(resolver, p.n.variable!, p.s.index);
+    const variable = p.n.variable!;
+    const a = valueAt(context, variable, p.s.index);
+    const r: Pick<Reference, 'name' | 'resolution' | 'via' | 'candidates' | 'provenance' | 'scope'> = {
+      name: a.name,
+      resolution: a.resolution,
+      via: { variable, row: a.row },
+      provenance: a.provenance,
+      scope: a.scope,
+      ...(a.resolution === 'dynamic' ? { candidates: a.candidates ?? [] } : {}),
+    };
     out.push({ kind: p.kind, use: p.use, statement: p.s.index, row: p.n.unit.token.row, col: p.n.unit.token.col, defined: isDefined(p.kind, r.name), ...p.extra, ...r });
   }
   out.sort((a, b) => a.row - b.row || a.col - b.col);
