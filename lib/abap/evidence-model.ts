@@ -822,7 +822,9 @@ function buildAbapEvidenceRead(
   // data coupling (`table-dependencies.ts`). A type reference is a dependency
   // but no access, and a possible target of an unresolved dynamic name is not
   // an access either (R26): neither becomes a finding here.
-  const dependencies = readTableDependencies(code, tokenizeOptions);
+  // From 3.4.0 (`ENGINE_READS_340_FROM`, B1): a constant closes a dynamic target only in the scope it is declared in.
+  const scopedConstants = engineReads340Apply(engine);
+  const dependencies = readTableDependencies(code, { ...tokenizeOptions, scopedConstants });
   const accessesAt = new Map<number, TableDependency[]>();
   // From 3.4.0 (`ENGINE_READS_340_FROM`, engine review of 22.11.2026): `INSERT REPORT`, `DELETE REPORT`,
   // `READ REPORT` and their `TEXTPOOL`/`DYNPRO` forms handle program source and texts, not a database table: the
@@ -2286,6 +2288,8 @@ function buildAbapEvidenceRead(
     macroUsesNamed: engineReads3021Apply(engine),
     // From 3.3.0 (`ENGINE_READS_330_FROM`): the statements cut as above, and the dynamic calls the source closes.
     multiLineTemplates: reads330,
+    // From 3.4.0: the dynamic targets read as the table dependencies above read them.
+    scopedConstants,
     ...(resolvedCalls ? { resolvedCalls } : {}),
   });
   // From 3.0.17 (`STATED_REQUIREMENTS_FROM`): what the owner states in the

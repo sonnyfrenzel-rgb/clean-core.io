@@ -2,6 +2,7 @@ import { tokenize, type TokenizeOptions } from './declaration-parser';
 import { createLiteralScanner, maskNonCode } from './statement-reader';
 import { databaseWriteIn, isDatasetDeletion, isEntityManipulation, isInternalTableOperation, writesDatabaseOnly } from './open-sql-discrimination';
 import { readConstantDeclarations } from './business-rules';
+import { containerAt, type Container } from './block-structure';
 
 /**
  * Which tables a program depends on, and how — read once, for both engines.
@@ -389,6 +390,24 @@ interface Context {
   adbc: boolean;
   /** What is left of `MACRO_EXPANSION_BUDGET` for this source. */
   budget: { left: number };
+  /** From engine 3.4.0 (`scopedConstants`): a constant names a dynamic target only in the scope it is declared in. */
+  scopedConstants: boolean;
+}
+
+/**
+ * The options of `readTableDependencies`: `tokenize`'s, plus the 3.4.0 reading below.
+ */
+export interface TableDependencyOptions extends TokenizeOptions {
+  /**
+   * From engine 3.4.0 (`ENGINE_READS_340_FROM`, B1 of the engine review of 22.11.2026): a constant closes a dynamic
+   * target (`FROM (lc_tab)`, R07) only where ABAP lets the statement see it. A `CONSTANTS` inside a `FORM`, a method
+   * or a function module is local to it; one declared anywhere else (the program's global part, an event block, a
+   * class definition) is seen everywhere except in a routine that declares the name itself — its own constant, a
+   * `DATA`/`STATICS`, an inline `DATA( )`, or a `FORM` parameter. Before, the constant was looked up by name in the
+   * whole source: `CONSTANTS lv_other … VALUE 'VBAK'` in one `FORM` made `DELETE FROM (lv_other)` in another a
+   * CRITICAL write to VBAK. Off, the whole-source lookup of the engines before.
+   */
+  scopedConstants?: boolean;
 }
 
 /**
@@ -409,7 +428,7 @@ interface Context {
  */
 const MACRO_EXPANSION_BUDGET = 2000;
 
-function buildContext(source: string, options: TokenizeOptions): Context {
+function buildContext(source: string, options: TableDependencyOptions): Context {
   const statements = tokenize(source, options);
   const code = statements.map((s) => codeOnly(s.text));
 
@@ -504,6 +523,7 @@ function buildContext(source: string, options: TokenizeOptions): Context {
     inMacroBody,
     adbc: code.some((c) => /\bCL_SQL_(?:STATEMENT|CONNECTION)\b/i.test(c)),
     budget: { left: MACRO_EXPANSION_BUDGET },
+    scopedConstants: options.scopedConstants === true,
   };
 }
 
@@ -516,13 +536,71 @@ interface Resolution {
   origin: UnresolvedTarget['origin'];
 }
 
-function resolveValue(expression: string, ctx: Context): Resolution {
+/** Only these containers hold local declarations; an event block or a dialog module declares globally. */
+const LOCAL_SCOPE_KINDS = new Set<Container['kind']>(['form', 'method', 'function']);
+
+/** The routine whose local declarations a line sees, or null for the global part. */
+function localScopeAt(ctx: Context, line: number): Container | null {
+  const container = containerAt(ctx.constants.containers, line);
+  return container && LOCAL_SCOPE_KINDS.has(container.kind) ? container : null;
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Does this routine declare `name` itself, as anything but a constant — `DATA`, `STATICS`, an inline `DATA( )`, or
+ * a parameter on its `FORM` line? Then a global constant of that name is hidden in it.
+ */
+function declaresLocally(ctx: Context, scope: Container, name: string): boolean {
+  const word = escapeRegExp(name);
+  const inline = new RegExp(`\\bDATA\\(\\s*${word}\\s*\\)`, 'i');
+  const parameter = new RegExp(`\\b(?:USING|CHANGING|TABLES)\\b.*?(?:^|[\\s(])(?:VALUE\\(\\s*)?${word}(?=$|[\\s,.)])`, 'i');
+  for (let i = 0; i < ctx.statements.length; i++) {
+    const line = ctx.statements[i].line;
+    if (line < scope.lineStart) continue;
+    if (line > scope.lineEnd) break;
+    const bare = ctx.code[i].trim();
+    const declaration = /^(?:DATA|STATICS)\b\s*:?\s*([\s\S]*)$/i.exec(bare);
+    if (declaration) {
+      for (const part of declaration[1].split(',')) {
+        if (/^(?:BEGIN|END)\s+OF\b/i.test(part.trim())) continue;
+        if (/^([\w/]+)/.exec(part.trim())?.[1]?.toUpperCase() === name) return true;
+      }
+    }
+    if (inline.test(bare)) return true;
+    if (/^FORM\b/i.test(bare) && parameter.test(bare)) return true;
+  }
+  return false;
+}
+
+/**
+ * The constants of `name` the statement at `line` sees (3.4.0, `scopedConstants`): its routine's own, or else the
+ * global ones unless the routine declares the name itself.
+ */
+function visibleConstants(ctx: Context, name: string, line: number) {
+  const all = ctx.constants.declared.filter((c) => c.name === name);
+  const scope = localScopeAt(ctx, line);
+  if (scope) {
+    const own = all.filter((c) => localScopeAt(ctx, c.lineStart) === scope);
+    if (own.length > 0) return own;
+    if (declaresLocally(ctx, scope, name)) return [];
+  }
+  return all.filter((c) => localScopeAt(ctx, c.lineStart) === null);
+}
+
+function resolveValue(expression: string, ctx: Context, line?: number): Resolution {
   const text = expression.trim();
   const literal = literalText(text);
   if (literal !== null) return { closed: true, values: [literal], origin: 'expression' };
 
   const name = text.toUpperCase();
-  if (/^[\w/]+$/.test(text)) {
+  if (/^[\w/]+$/.test(text) && ctx.scopedConstants && line !== undefined) {
+    const visible = visibleConstants(ctx, name, line);
+    if (visible.length === 1) return { closed: true, values: [visible[0].value], origin: 'variable' };
+    if (visible.length > 1) return { closed: false, values: visible.map((c) => c.value), origin: 'variable' };
+  } else if (/^[\w/]+$/.test(text)) {
     if (ctx.constants.byName.has(name)) {
       const constant = ctx.constants.byName.get(name);
       if (constant) return { closed: true, values: [constant.value], origin: 'variable' };
@@ -602,7 +680,7 @@ class Sink {
 
   /** A dynamic target: a table when the source closes it, a statement plus possible targets when it does not. */
   target(at: Anchor, expression: string, access: DependencyAccess, route: DependencyRoute): void {
-    const resolution = resolveValue(expression, this.ctx);
+    const resolution = resolveValue(expression, this.ctx, at.line);
     const names = [...new Set(resolution.values.map(nameIn).filter((n): n is string => n !== null))];
     if (resolution.closed && names.length > 0) {
       for (const name of names) this.table(at, name, access, route === 'open-sql' ? 'dynamic-sql' : route);
@@ -892,7 +970,7 @@ function readStatement(text: string, at: Anchor, sink: Sink, ctx: Context, depth
   const assign = /^ASSIGN\s*\(/i.exec(bare);
   if (assign) {
     const inner = parenthesised(text, text.length - text.trimStart().length + assign[0].length - 1);
-    const resolution = inner ? resolveValue(inner, ctx) : null;
+    const resolution = inner ? resolveValue(inner, ctx, at.line) : null;
     if (resolution?.closed) {
       for (const value of resolution.values) {
         const global = /^\(([\w/]+)\)([\w/]+)-[\w/]/.exec(value.trim().toUpperCase());
@@ -933,7 +1011,7 @@ function readStatement(text: string, at: Anchor, sink: Sink, ctx: Context, depth
 }
 
 function typeTarget(expression: string, at: Anchor, sink: Sink, ctx: Context): void {
-  const resolution = resolveValue(expression, ctx);
+  const resolution = resolveValue(expression, ctx, at.line);
   const names = resolution.values.map(nameIn).filter((n): n is string => n !== null);
   // A type the program declares itself is no repository dependency (CC-019).
   if (resolution.closed && names.every((n) => ctx.localTypes.has(n))) return;
@@ -1028,7 +1106,7 @@ function isRepositoryStructureName(name: string, ctx: Context): boolean {
  * with the caller's own `tokenize(source, options)` — the evidence engine passes
  * `multiLineTemplates` from 3.3.0 (`ENGINE_READS_330_FROM`).
  */
-export function readTableDependencies(source: string, options: TokenizeOptions = {}): TableDependencyReport {
+export function readTableDependencies(source: string, options: TableDependencyOptions = {}): TableDependencyReport {
   const ctx = buildContext(source, options);
   const sink = new Sink(ctx);
 
