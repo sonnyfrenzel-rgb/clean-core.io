@@ -15,7 +15,8 @@ import { engineReads310Apply } from './engine-reads-310-gate';
 import { engineReads320Apply } from './engine-reads-320-gate';
 import { APP_VERSION } from '../version';
 import { SkeletonGraph, type Exit, type SkeletonReadings } from './skeleton/graph';
-import { anchorOf, bodyRange, snippet, tokenIndexOf } from './skeleton/anchors';
+import { anchorOf, bodyRange, programName, snippet, tokenIndexOf } from './skeleton/anchors';
+import { buildLanes } from './skeleton/lanes';
 import { attachLuwStates } from './skeleton/luw';
 import { notDrawn } from './skeleton/not-drawn';
 import {
@@ -364,7 +365,7 @@ export interface SkeletonLane {
 }
 
 /** Above this many lanes no further evidence opens one (2.16, "with an upper limit"). */
-export const MAX_LANES = 12;
+export { MAX_LANES } from './skeleton/lanes';
 
 export interface FoldedForm {
   name: string;
@@ -1402,7 +1403,7 @@ class SkeletonBuilder {
     this.noteUnreachableSteps();
     // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`
     // is the pass that can still drop one.
-    const lanes = this.buildLanes();
+    const lanes = buildLanes(this.graph, { statements: this.statements, evidence: this.evidence });
     // Roadmap 2.12, after every pass that can still drop a node.
     const luw = attachLuwStates(this.graph, {
       statements: this.statements, structure: this.structure, control: this.control, calls: this.calls,
@@ -2282,7 +2283,7 @@ class SkeletonBuilder {
     if (!/^CALL\s+FUNCTION\s+'REUSE_ALV_[\w]*'/i.test(text)) return;
     const program = /\bI_CALLBACK_PROGRAM\s*=\s*('[^']*'|[\w/-]+)/i.exec(text);
     if (!program) return;
-    if (!namesThisProgram(program[1], this.statements, this.programName()?.name ?? null, statement)) return;
+    if (!namesThisProgram(program[1], this.statements, programName(this.statements)?.name ?? null, statement)) return;
     for (const m of text.matchAll(/\b(I_CALLBACK_(?!PROGRAM\b)[\w]+)\s*=\s*'([\w/]+)'/gi)) {
       const key = m[2].toUpperCase();
       if (this.formBlocks.has(key)) this.pushCallback(key, m[2], statement, `ALV ${m[1].toUpperCase()}`);
@@ -5286,103 +5287,6 @@ class SkeletonBuilder {
       this.recordEvidence('foreign-system', destination.toUpperCase(),
         anchorOf(statement, tokenIndexOf(statement, /^DESTINATION$/i) + 1), statement);
     }
-  }
-
-  /**
-   * The lanes — roadmap 2.16 (§16 V3).
-   *
-   * Two rules and no third:
-   *
-   * 1. **One lane for the run.** Every flow node of this program is executed by
-   *    the same actor: the run. There is exactly one run per start, and the code
-   *    proves no handover inside a program — so a second lane for the program's
-   *    own steps would be a sentence the source does not contain. What the
-   *    evidence decides is not *how many* such lanes there are but **what this
-   *    one is called**: the first `human` or `system` token in source order,
-   *    which is the first statement in the run that says who is at the keyboard
-   *    or that nobody is. With no such token the lane takes the program's own
-   *    name from `REPORT`/`PROGRAM`, which is still a token out of the source.
-   * 2. **One lane per distinct `AUTHORITY-CHECK` object.** That is the only
-   *    place ABAP names an actor *outside* the program, and §5.8 calls it
-   *    exactly that — *"reviewer (outside the program)"*. Two checks on
-   *    `V_VBAK_VKO` are one actor and therefore one lane; the lane holds no flow
-   *    node, because the checker runs none of them.
-   *
-   * Measured on the 1.000-line example: four kinds of evidence (L197/L205
-   * authority, L510 update task, L616 ALV, L402 destination) and **2 lanes** —
-   * the destination is a pool, the two authority checks are one object, and the
-   * run is one lane whatever else it does. `CALL SCREEN 9000` at L670 never
-   * arrives here at all: no entry point reaches `legacy_call_screen_example`, so
-   * the walk never passes the statement.
-   *
-   * `MAX_LANES` is the upper bound 2.16 asks for. Evidence past it opens no
-   * lane and stays visible in `laneEvidence`.
-   */
-  private buildLanes(): SkeletonLane[] {
-    if (!this.graph.nodes.length) return [];
-    const lanes: SkeletonLane[] = [];
-
-    const runEvidence = this.evidence
-      .filter((e) => e.kind === 'human' || e.kind === 'system')
-      .sort((a, b) => a.anchor.statementIndex - b.anchor.statementIndex);
-    const named = runEvidence[0];
-    const program = this.programName();
-    const entry = this.graph.regions.find((r) => r.kind === 'entry' && r.anchor);
-    const anchor = named?.anchor ?? program?.anchor ?? entry?.anchor ?? this.firstAnchor();
-    if (!anchor) return [];
-
-    // Roadmap 3.0.7 (MM case review): the run lane is named for
-    // the role its evidence proves — "User" where a person is at the keyboard,
-    // "System" where nobody is — and not after the token that proved it. A lane
-    // called REUSE_ALV_GRID_DISPLAY named a function module as the actor. The
-    // token stays in `evidence`, with its line; "User" and "System" are the two
-    // roles BPMN itself knows, never a job title (§8 forbids those).
-    lanes.push({
-      id: 'lane-1',
-      kind: named ? (named.kind === 'human' ? 'human' : 'system') : 'program',
-      name: named ? (named.kind === 'human' ? 'User' : 'System') : program?.name ?? '',
-      ...(named || program ? {} : {
-        unnamedReason:
-          'The source names no dialogue, no background task and no program name, so nothing in it says who runs these steps.',
-      }),
-      anchor,
-      evidence: runEvidence,
-      nodeIds: this.graph.nodes.map((n) => n.id),
-      status: 'reconstructed',
-    });
-
-    const byObject = new Map<string, LaneEvidence[]>();
-    for (const e of this.evidence) {
-      if (e.kind !== 'authority') continue;
-      byObject.set(e.token, [...(byObject.get(e.token) ?? []), e]);
-    }
-    for (const [token, evidence] of byObject) {
-      if (lanes.length >= MAX_LANES) break;
-      lanes.push({
-        id: `lane-${lanes.length + 1}`,
-        kind: 'authority',
-        name: token,
-        anchor: evidence[0].anchor,
-        evidence,
-        nodeIds: [],
-        status: 'reconstructed',
-      });
-    }
-    return lanes;
-  }
-
-  /** `REPORT zlegacy_order_fulfillment_audit …` — a token out of the source, upper-cased. */
-  private programName(): { name: string; anchor: NodeAnchor } | null {
-    for (const statement of this.statements) {
-      if (statement.keyword !== 'REPORT' && statement.keyword !== 'PROGRAM') continue;
-      const name = /^(?:REPORT|PROGRAM)\s+([\w/]+)/i.exec(statement.text)?.[1];
-      if (name) return { name: name.toUpperCase(), anchor: anchorOf(statement, 1) };
-    }
-    return null;
-  }
-
-  private firstAnchor(): NodeAnchor | null {
-    return this.graph.nodes.find((n) => n.anchor)?.anchor ?? null;
   }
 
   /* ---------------- roadmap 2.15 ---------------- */

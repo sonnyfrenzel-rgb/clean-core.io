@@ -10,6 +10,7 @@ import type { SkeletonGraph } from './graph';
  * Reads: nodes, regions, the lane evidence the walk recorded (`recordEvidence`), the statements (`REPORT`/`PROGRAM`
  * for the run lane's name). Returns the lanes; changes nothing in the graph. No reading gate.
  */
+
 /** Above this many lanes no further evidence opens one (2.16, "with an upper limit"). */
 export const MAX_LANES = 12;
 
