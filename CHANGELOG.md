@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   patch, SEC-2026-1002 for the next rules deploy (`docs/ROADMAP.md` §12).
 - QA full review of v3.2.0: the one high finding refuted; the QA review of 72ff92919908 recorded.
 
+### Engine 4.0 strand (inert)
+Built beside the shipping engine and wired into nothing: no run, signature, audit pack, page or route reads it (ADR-125).
+
+- Engine 4.0, first step: an own lexer (L0) and statement layer (L1) in `lib/engine4/`, with a table of 237 statement kinds, chain expansion, macros and native SQL as kinds, and `Unknown` isolated to one statement. A shadow comparison against the shipping statement reader over the starter examples and the benchmark learn halves aligns 99.85 % of statements; every difference is explained in `docs/design/engine4.md`.
+- Engine 4.0, L2: a block layer (`lib/engine4/blocks.ts`) nests the statements into routines, classes, event blocks and control blocks with their branches, in linear time. It recovers from damage in one place: unclosed blocks are flagged and end where they were ended, an event block ends at the next event or routine, and a lost inner closer is located by indentation. On the clean corpus it matches the shipping block reader on all 2,729 blocks, 1,221 containers and every enclosing chain. On 962 deliberately damaged files it flags the block that lost its closer in 961 cases (shipping reader: 907), and it raises 2 false unterminated reports (shipping reader: 35). Alongside it: aggregate-only `SELECT`s are no longer loop candidates, a `DEFINE` ends a macro body that lost its `END-OF-DEFINITION`, and an unquoted decimal gets a warning.
+
 ### Under investigation
 - An owner report of 16.11.2026: after the footer link "Tenant Security" on the landing page the product shell
   can look half signed in. Not reproduced yet for a signed-out visitor (production) or a signed-in account
