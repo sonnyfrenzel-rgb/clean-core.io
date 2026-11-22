@@ -8,7 +8,7 @@ import { readDecisionTable } from './decision-table';
 import { readReferenceTypes, resolveMethodTarget } from './method-resolution';
 import { candidatesForCall, readClassHierarchy, type ClassHierarchy } from './class-hierarchy';
 import { buildProcessFacts, type ProcessFacts } from './process-facts';
-import { readLuwStates, type LuwEvent, type UpdateRegistration } from './luw-states';
+import { type LuwEvent, type UpdateRegistration } from './luw-states';
 import { localDataObjectsOf } from './table-dependencies';
 import { readBatchInputFrom, type BatchInputCall } from './batch-input';
 import { engineReads310Apply } from './engine-reads-310-gate';
@@ -16,6 +16,7 @@ import { engineReads320Apply } from './engine-reads-320-gate';
 import { APP_VERSION } from '../version';
 import { SkeletonGraph, type Exit, type SkeletonReadings } from './skeleton/graph';
 import { anchorOf, bodyRange, snippet, tokenIndexOf } from './skeleton/anchors';
+import { attachLuwStates } from './skeleton/luw';
 import {
   hasOnlyTechnicalConditions,
   isTechnicalGateway,
@@ -1402,7 +1403,9 @@ class SkeletonBuilder {
     // is the pass that can still drop one.
     const lanes = this.buildLanes();
     // Roadmap 2.12, after every pass that can still drop a node.
-    const luw = this.attachLuwStates();
+    const luw = attachLuwStates(this.graph, {
+      statements: this.statements, structure: this.structure, control: this.control, calls: this.calls,
+    });
 
     return {
       nodes: this.graph.nodes,
@@ -1426,36 +1429,6 @@ class SkeletonBuilder {
       notes: this.graph.notes,
       luw,
     };
-  }
-
-  /**
-   * Roadmap 2.12. The states come from `luw-states.ts`, read off the same
-   * statements; here they are tied to the node a registration was drawn as, and
-   * the node says its state itself (`detail.effectState`), so a view that shows
-   * only the node still cannot show a registration as a finished step.
-   */
-  private attachLuwStates(): SkeletonLuw {
-    const model = readLuwStates({
-      statements: this.statements,
-      structure: this.structure,
-      control: this.control,
-      calls: this.calls,
-    });
-    const registrations = model.registrations.map((registration) => {
-      const node = this.graph.nodes.find((n) => n.anchor?.statementIndex === registration.statementIndex
-        && n.kind !== 'error-boundary');
-      if (node) {
-        node.detail = {
-          ...(node.detail ?? {}),
-          effectState: registration.state,
-          effectOutcomes: [...new Set(registration.outcomes.map((o) => o.state))],
-          ...(registration.unresolved ? { effectEnd: registration.unresolved.state } : {}),
-          updateMode: registration.updateMode.value,
-        };
-      }
-      return { ...registration, nodeId: node?.id ?? null };
-    });
-    return { registrations, events: model.events };
   }
 
   /* ---------------- what the source declares ---------------- */
