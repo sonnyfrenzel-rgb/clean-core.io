@@ -144,7 +144,7 @@ function Track({ marks }: { marks: TrackMark[] }) {
   );
 }
 
-function AnalyseLine({ tile, lens }: { tile: ProgramTile; lens: WorkspaceLens }) {
+function AnalyseLine({ tile }: { tile: ProgramTile }) {
   const a = tile.analyse;
   const status =
     a.kind === 'signed' ? (
@@ -317,7 +317,7 @@ function ProgramTileCard({ tile, lens, actions }: { tile: ProgramTile; lens: Wor
       <MapThumb thumb={tile.thumb} objectName={tile.objectName ?? tile.title} steps={tile.steps} className="mx-4 mt-1 h-[96px] min-[601px]:h-[118px]" />
       <Facts tile={tile} lens={lens} />
       <div className="mt-3 border-t border-cc-line">
-        <AnalyseLine tile={tile} lens={lens} />
+        <AnalyseLine tile={tile} />
         <RedesignLine tile={tile} />
       </div>
     </article>
