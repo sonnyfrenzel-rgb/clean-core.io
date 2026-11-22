@@ -155,6 +155,6 @@ if (require.main === module) {
     const extra = Object.keys(digests).filter((k) => !(k in expected));
     console.log(`compared ${Object.keys(expected).length}, moved ${moved.length}, new ${extra.length} (${seconds} s)`);
     for (const k of moved.slice(0, 30)) console.log(`  moved ${k}`);
-    if (moved.length || extra.length) process.exit(1);
+    if (moved.length || extra.length) process.exitCode = 1;
   }
 }
