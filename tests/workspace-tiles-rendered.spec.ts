@@ -302,4 +302,21 @@ test.describe('a returning account: next step, counts, tiles', () => {
     await expect(page.locator('[data-ws-start-panel] [data-home-way]')).toHaveCount(2);
     await shot(page, 'returning-1440-start-open');
   });
+
+  test('at 390 the switch is hidden on the tiles, and a remembered list keeps its way back', async ({ page }) => {
+    test.setTimeout(300_000);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await signInViaLanding(page, RET_EMAIL, PASSWORD);
+    await page.evaluate(() => window.localStorage.setItem('cc.workspace.mode', 'tiles'));
+    await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-program-tile]').first()).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-mode="list"]')).toBeHidden();
+    // The mode is remembered per browser: a list chosen in a wider window is what a narrow one opens on.
+    await page.evaluate(() => window.localStorage.setItem('cc.workspace.mode', 'list'));
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-workspace-list]')).toBeVisible({ timeout: 120_000 });
+    await page.locator('[data-mode="tiles"]').click();
+    await expect(page.locator('[data-program-tile]').first()).toBeVisible({ timeout: 30_000 });
+    await expect(page.locator('[data-mode="list"]')).toBeHidden();
+  });
 });

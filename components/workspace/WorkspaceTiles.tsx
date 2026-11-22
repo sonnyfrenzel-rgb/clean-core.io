@@ -240,8 +240,8 @@ function Facts({ tile, lens }: { tile: ProgramTile; lens: WorkspaceLens }) {
         (lens === key ? 'bg-cc-surface-muted shadow-[inset_0_-2px_0_var(--cc-ink)]' : '')
       }
     >
-      <div className="truncate text-[15px] leading-[1.3] font-bold text-cc-ink tabular-nums">{value}</div>
-      <div className="truncate text-[12px] font-medium text-cc-ink-muted">{label}</div>
+      <div className="text-[15px] leading-[1.3] font-bold break-words text-cc-ink tabular-nums">{value}</div>
+      <div className="text-[12px] leading-[1.3] font-medium break-words text-cc-ink-muted">{label}</div>
     </div>
   );
   const d = tile.decision;
@@ -381,7 +381,7 @@ function CountTile({
       >
       <span className="text-[12px] leading-[1.3] font-semibold text-cc-ink-muted min-[601px]:truncate">{label}</span>
       <span className="text-[22px] leading-[1.15] font-extrabold tracking-[-0.02em] text-cc-ink tabular-nums">{value}</span>
-      <span className="truncate text-[12px] font-medium text-cc-ink-muted max-[600px]:hidden">{note}</span>
+      <span className="text-[12px] leading-[1.3] font-medium break-words text-cc-ink-muted max-[600px]:hidden">{note}</span>
       <span aria-hidden={true} className="mt-2 flex h-1 gap-px max-[600px]:hidden">
         {Array.from({ length: segments }, (_, i) => (
           <i
@@ -702,7 +702,9 @@ export default function WorkspaceTiles({
                 { value: 'management', label: wt('ws.lens.management') },
               ]}
             />
-            <span className="max-[600px]:hidden">
+            {/* Hidden on a phone, where the tiles are the view — except while the list is on: the mode is
+                remembered per browser, and a list chosen in a wider window needs its way back here too. */}
+            <span className={mode === 'list' ? undefined : 'max-[600px]:hidden'} data-ws-mode-switch="">
               <Segmented<WorkspaceMode>
                 label={wt('ws.showAs')}
                 value={mode}
