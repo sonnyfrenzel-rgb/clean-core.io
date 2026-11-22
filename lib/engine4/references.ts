@@ -254,10 +254,20 @@ function nameAt(u: readonly Unit[], i: number): { unit: Unit; variable: string |
   return null;
 }
 
+/** EML statements: every `x~y` in them names a RAP entity. */
+const EML_KINDS = new Set(['ModifyEntities', 'ReadEntities', 'CommitEntities', 'RollbackEntities']);
+/** Declarations in which a `FOR` opens a RAP derived type or handler signature. */
+const RAP_DECLARATION_KINDS = new Set(['Methods', 'ClassMethods', 'Data', 'ClassData', 'Types', 'Statics', 'FieldSymbols']);
+
 /** References every statement can carry: TYPE …, `=>`, `~`, NEW/CAST/CONV x( ). */
 function generalReferences(s: Statement, u: readonly Unit[], emit: Emit): void {
   const sql = SQL_KINDS.has(s.kind);
+  // RAP (3.4.0): in EML and in a declaration after `FOR` (`METHODS m FOR DETERMINE … IMPORTING keys FOR order~m`,
+  // `TYPES t TYPE TABLE FOR ACTION IMPORT zi_order~approve`), `x~y` is an entity and its action, not an interface.
+  const entity = EML_KINDS.has(s.kind);
+  let forSeen = false;
   for (let i = 0; i < u.length; i++) {
+    if (u[i].up === 'FOR' && u[i].kind === 'name' && RAP_DECLARATION_KINDS.has(s.kind)) forSeen = true;
     const x = u[i];
     if (x.up === 'TYPE' && x.kind === 'name' && s.kind !== 'Describe' && s.kind !== 'Message' && s.kind !== 'CreateObject' && s.kind !== 'RaiseException') {
       let k = i + 1;
@@ -273,7 +283,7 @@ function generalReferences(s: Statement, u: readonly Unit[], emit: Emit): void {
       }
     }
     if (x.up === '=>' && i > 0 && u[i - 1].kind === 'name' && !x.token.spaceBefore) emit('classOrInterface', u[i - 1], 'staticAccess');
-    if (x.up === '~' && !sql && i > 0 && u[i - 1].kind === 'name' && !x.token.spaceBefore && u[i - 2]?.up !== '~') {
+    if (x.up === '~' && !sql && !entity && !forSeen && i > 0 && u[i - 1].kind === 'name' && !x.token.spaceBefore && u[i - 2]?.up !== '~') {
       emit('interface', u[i - 1], 'interfaceAccess');
     }
     const typed = EXPRESSION_TYPED.get(x.up);

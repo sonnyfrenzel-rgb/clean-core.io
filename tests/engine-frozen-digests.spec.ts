@@ -2,14 +2,16 @@ import { test, expect } from '@playwright/test';
 import { checkFrozen, frozenFiles } from '../scripts/engine/frozen-digests';
 
 /**
- * Frozen digests per release (roadmap 3.5.0 item 2; engine review §4.2 C):
- * every `tests/fixtures/engine-v*-frozen.json` of format 2 holds what one
+ * Frozen digests per release (roadmap 3.4.0 item (4), was 3.5.0 item 2; engine review §4.2 C):
+ * every `tests/fixtures/engine-v*-frozen.json` of format 2 or 3 holds what one
  * release's engine answered (evidence and route, both editions) for the
  * starter examples, the benchmark learn halves (never the holdout) and the
  * probes. The engine of today, called with that release's version, must answer
  * the same byte for byte: a change that leaks past its gate, or a refactor that
  * is not neutral (parse once), moves a digest. Captured with
- * `scripts/engine/frozen-digests.ts capture`, never regenerated. The v3.0.11 and
+ * `scripts/engine/frozen-digests.ts capture` in the release workflow
+ * (`.github/workflows/engine-release-capture.yml`), never regenerated. Format 3 (from
+ * 3.4.0) adds the process skeleton, the business statements and the engine digest. The v3.0.11 and
  * v3.0.12 files (which also cover the holdout) stay with
  * `engine-version-rebuild.spec.ts`. Server-free.
  */

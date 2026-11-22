@@ -1375,6 +1375,13 @@ of them is built.
     D, with its lines, the DDIC types only in the IT view grouped by level; (b) everything only in the IT view as
     a reference list with levels, no new findings; (c) findings for everything. **Default proposed: (a), behind an
     engine gate (it changes signed findings).**
+    **Decided 22.11.2026: (a); built for 3.4.0** (`lib/abap/sap-class-references.ts`, gate `ENGINE_READS_340_FROM`,
+    ADR-141 draft). Static references only: the engine review of 22.11.2026 showed the `constant`/`value`/`assigned`/
+    `onlyValue` resolutions to be unsound across routines, loops and scopes, so no reading may consume them until L4
+    has scopes and data flow. A RAP entity alias (`FOR order~set_status`, EML) is no longer an interface reference.
 19. **`engineDigest` in the signed run** (Phase 0, new). It changes what a run stores and signs. **Default
     proposed: on the model card beside `engineVersion`, computed at build time; "unreleased build" when it
     matches no frozen release.**
+    **Decided 22.11.2026; built for 3.4.0**: `scripts/engine/engine-digest.cjs` (the modules the three engine entry
+    points reach, type-only imports, JSON data and `lib/version.ts` left out), `lib/engine-digest.ts`,
+    `lib/engine-releases.json`; captured per release by `.github/workflows/engine-release-capture.yml`.

@@ -3,6 +3,7 @@ import { logger, errMessage } from '@/lib/logger';
 import crypto from 'crypto';
 import { mfaRefusal, verifyRequestAuth, getAdminDb, assertAccountActive, QuotaError, reserveRunQuota, refundRunQuota, assertMfaSatisfied, type RunQuotaResult } from '@/lib/firebase-admin';
 import { APP_VERSION } from '@/lib/version';
+import { ENGINE_DIGEST } from '@/lib/engine-digest';
 import { recommendationOfRoute } from '@/lib/project-commands';
 import { getCatalogSnapshotRef, getMergedCatalogVersion } from '@/lib/abap/catalog-service';
 import { buildAbapEvidence } from '@/lib/abap/evidence-model';
@@ -697,6 +698,10 @@ export async function POST(req: NextRequest) {
         provider,
         modelId,
         engineVersion: APP_VERSION,
+        // Roadmap 3.4.0 item (3): which engine source computed the evidence, beside its version label. Inside the
+        // signed payload. Absent where the build computed none (never a guessed value); a run signed before 3.4.0
+        // has none and verifies as it was sealed.
+        ...(ENGINE_DIGEST ? { engineDigest: ENGINE_DIGEST } : {}),
         byokUsed,
       },
       /** Roadmap 1.2 — inside the signature, so a run says for itself what it is. */
@@ -985,6 +990,8 @@ export async function POST(req: NextRequest) {
                 model: modelId,
                 modelParticipation,
                 engineVersion: APP_VERSION,
+                // Roadmap 3.4.0 item (3): mirrors the signed run's `model.engineDigest`.
+                ...(ENGINE_DIGEST ? { engineDigest: ENGINE_DIGEST } : {}),
                 catalogVersion,
                 byokUsed,
                 analysisTimestamp: new Date().toISOString(),
