@@ -6,7 +6,8 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
 import { wt } from '@/lib/workspace-messages';
-import { GATE_CLASS_LABELS, STANDARD_TOUCH_LIMITS, anchorText, type StandardTouch, type TouchAnchor } from '@/lib/standard-touch';
+import { GATE_CLASS_LABELS, STANDARD_TOUCH_LIMITS, type StandardTouch, type TouchAnchor } from '@/lib/standard-touch';
+import { lineAnchorText } from '@/lib/analyze-it';
 
 /**
  * *Where this program touches SAP standard* — stage 1 of the fit-to-standard
@@ -26,7 +27,7 @@ export default function StandardTouchCard({ touch, children }: { touch: Standard
   const lines = (anchors: TouchAnchor[]) =>
     anchors.slice(0, 8).map((a) => (
       <CcAnchor key={`${a.lineStart}-${a.lineEnd ?? ''}`} tone="unlinked">
-        {anchorText(a)}
+        {lineAnchorText(a.lineStart, a.lineEnd)}
       </CcAnchor>
     ));
   const more = (anchors: TouchAnchor[]) => (anchors.length > 8 ? <span className="text-[12px] font-medium text-cc-ink-muted">+{anchors.length - 8}</span> : null);

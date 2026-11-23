@@ -1076,7 +1076,7 @@ export default function LandingModals() {
                   disabled={isSubmitting || (!!confirmPassword && password !== confirmPassword) || !agreedGDPR || !agreedTerms}
                   aria-describedby={!agreedGDPR || !agreedTerms ? 'register-consent-hint' : undefined}
                 >
-                  {isSubmitting ? 'Registering...' : 'Register'} <ArrowRight size={16} aria-hidden={true} />
+                  {isSubmitting ? 'Setting up your workspace...' : 'Create my workspace'} <ArrowRight size={16} aria-hidden={true} />
                 </CcButton>
                 {/* The same reason the Google button gives, for the same gate (UX-079). */}
                 {(!agreedGDPR || !agreedTerms) && (

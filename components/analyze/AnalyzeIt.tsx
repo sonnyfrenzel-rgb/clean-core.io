@@ -35,6 +35,7 @@ import {
   mainSequence,
 } from '@/lib/analyze-it';
 import { PAGE_ANCHOR_LABELS } from '@/lib/page-anchors';
+import { PUBLIC_EDITION } from '@/lib/sap-naming';
 import { scoreBand, type ScoreBreakdown } from '@/lib/clean-core-score';
 import { scoreRuleFor } from '@/lib/score-rule';
 import { editionName, otherEditionFigure, scoreHeroModel, type Edition, type HeroFinding, type HeroGap } from '@/lib/score-hero';
@@ -534,7 +535,7 @@ export default function AnalyzeIt({
               </FoldedPart>
             ) : null}
             {hasSource && publicCloudFit ? (
-              <FoldedPart title="Public Cloud fit" data-analyze-it-public-cloud-fit="">
+              <FoldedPart title={`Fit for ${PUBLIC_EDITION}`} data-analyze-it-public-cloud-fit="">
                 {publicCloudFit}
               </FoldedPart>
             ) : null}

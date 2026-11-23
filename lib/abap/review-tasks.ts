@@ -370,7 +370,12 @@ function usageTask(usage: UsageReport | null): Draft | null {
   if (days >= RETIREMENT_WINDOW_DAYS) return null;
 
   const declared = usage.window ?? null;
-  const zeros = usage.records.filter((record) => record.callCount === 0).map((record) => record.objectName);
+  // A stored import can be older than its type or hand-edited: no records list, a record without its name, no
+  // import date. Each is skipped or said as missing, never read as if it were there.
+  const zeros = (Array.isArray(usage.records) ? usage.records : [])
+    .filter((record) => typeof record === 'object' && record !== null && record.callCount === 0 && typeof record.objectName === 'string')
+    .map((record) => record.objectName);
+  const importedOn = typeof usage.importedAt === 'string' && usage.importedAt.length >= 10 ? usage.importedAt.slice(0, 10) : null;
   const source = (usage.source ?? 'manual').toUpperCase();
 
   const anchors: ReviewTaskAnchor[] = [
@@ -378,7 +383,7 @@ function usageTask(usage: UsageReport | null): Draft | null {
       kind: 'import',
       label: declared
         ? `${source} import, ${declared.from} to ${declared.to} (${declared.days} days)`
-        : `${source} import of ${usage.importedAt.slice(0, 10)}, no window declared`,
+        : `${source} import${importedOn ? ` of ${importedOn}` : ''}, no window declared`,
       lineStart: null,
       lineEnd: null,
     },

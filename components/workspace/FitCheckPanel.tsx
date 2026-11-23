@@ -12,7 +12,8 @@ import { saveAs } from '@/lib/fileSaver';
 import { useProcessStates, publishProcessStates } from '@/hooks/useProcessStates';
 import { confirmProcessStates, confirmOutcomeSentence } from '@/lib/process-states-client';
 import { signedSourceOf } from '@/lib/signed-source';
-import { DEPARTURE_LABELS, STANDARD_TOUCH_LIMITS, anchorText, type StandardTouch } from '@/lib/standard-touch';
+import { DEPARTURE_LABELS, STANDARD_TOUCH_LIMITS, type StandardTouch } from '@/lib/standard-touch';
+import { lineAnchorText } from '@/lib/analyze-it';
 import {
   FIT_CHECK_ANSWERS,
   FIT_CHECK_LABELS,
@@ -207,7 +208,7 @@ export default function FitCheckPanel({
                 <span>{d.label}</span>
                 {d.anchors.slice(0, 8).map((a) => (
                   <CcAnchor key={a.lineStart} tone="unlinked">
-                    {anchorText(a)}
+                    {lineAnchorText(a.lineStart, a.lineEnd)}
                   </CcAnchor>
                 ))}
               </li>

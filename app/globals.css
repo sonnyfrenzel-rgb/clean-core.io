@@ -619,6 +619,21 @@
 }
 
 /* -------------------------------------------------------------
+ * Nothing scrolls in under the sticky bars — WCAG 2.4.11
+ *
+ * A page with "On this page" (`components/PageAnchorBar.tsx`) keeps two sticky
+ * strips at its top: the shell bar (56 px) and the anchor bar under it (48 px).
+ * Where the bar stands above the answer card (Design), a control in the card
+ * that the browser scrolls or focuses into view could stop inside those 104 px,
+ * "in view" for the browser and covered for the reader (Confirm target was).
+ * The scroll padding takes the strips out of the area the browser scrolls a
+ * focused or targeted element into.
+ * ------------------------------------------------------------- */
+html:has([data-page-anchors]) {
+  scroll-padding-top: 6.5rem;
+}
+
+/* -------------------------------------------------------------
  * Reduced motion, for the whole app — DESIGN.md §1.7, §5.4 (D.3)
  *
  * A reader who asked the system for less motion gets it everywhere, not only

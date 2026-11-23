@@ -1748,6 +1748,9 @@ function AnalyzeScorePage() {
           </div>
         ) : (
           <div className="space-y-8 max-w-5xl">
+            {/* A record stored before signed runs (a worklist, an inventory) and never analysed since: what it does not
+                hold is named here, as IT's open questions name it for every analysed project (ADR-081). */}
+            <RecordGaps recorded={recordGaps(project)} className="" />
             {/* The drop area takes a dragged file; the button in it is the way
                 in for everyone else — a keyboard never reached the clickable
                 area this used to be (D.10b). */}

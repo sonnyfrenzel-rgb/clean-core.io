@@ -123,7 +123,7 @@ export default function ItTouches({
       ) : (
         <>
           {/* The same rows as a picture — the overview; the table under it stays the whole answer. */}
-          <ItDependencyGraph objects={objects} onOpen={open} />
+          <ItDependencyGraph objects={objects} onOpen={open} level={3} />
           <div data-it-objects-table="" tabIndex={-1} className="mt-3 scroll-mt-28">
             <CcTable
               caption={`What the code touches: ${deps.length} ${deps.length === 1 ? 'object' : 'objects'}`}

@@ -132,13 +132,18 @@ export default function CommandSearch({ projectId, project, reading }: CommandSe
     [close, router],
   );
 
-  /** `Ctrl+K` / `⌘K` from anywhere on the page — never inside a text field. */
+  /**
+   * `Ctrl+K` / `⌘K` from anywhere on the page — never inside a text field. Where the process map's own step search is
+   * on the page, the shortcut belongs to it (every step in at most three actions); the project search is then the
+   * shell's search button.
+   */
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key.toLowerCase() !== 'k' || !(event.metaKey || event.ctrlKey)) return;
       const target = event.target as HTMLElement | null;
       const tag = target?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
+      if (document.querySelector('[data-process-search-input]')) return;
       event.preventDefault();
       setOpen(true);
     };

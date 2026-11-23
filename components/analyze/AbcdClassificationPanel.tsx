@@ -57,8 +57,14 @@ export default function AbcdClassificationPanel({
   deployment?: string;
   release?: string;
 }) {
-  const couplings = dataCoupling || [];
-  const inventory = codeInventory || [];
+  // A stored list can be hand-edited or older than its type: a `null` entry, or one without its name, is skipped
+  // rather than read (`lib/it-objects.ts` takes the same position), so an old record still draws.
+  const couplings = (Array.isArray(dataCoupling) ? dataCoupling : []).filter(
+    (c): c is DataCouplingEntry => typeof c === 'object' && c !== null && typeof c.tableName === 'string' && c.tableName.trim() !== '',
+  );
+  const inventory = (Array.isArray(codeInventory) ? codeInventory : []).filter(
+    (o): o is CodeInventoryItem => typeof o === 'object' && o !== null && typeof o.objectName === 'string' && o.objectName.trim() !== '',
+  );
   const [sapGrades, setSapGrades] = useState<Record<string, GradedObject>>({});
   const [lookupSnapshot, setLookupSnapshot] = useState<{ registryKey: string; sourceSha256: string } | null>(null);
   const [lookupCoverage, setLookupCoverage] = useState<{ state: string; sentence: string } | null>(null);
@@ -74,7 +80,7 @@ export default function AbcdClassificationPanel({
     ...inventory.map((o) => ({
       name: o.objectName,
       use: null,
-      sub: `${o.type}${o.module ? ' · ' + o.module : ''}`,
+      sub: [o.type, o.module].filter(Boolean).join(' · '),
       grade: gradeFromInventory(o),
     })),
   ];

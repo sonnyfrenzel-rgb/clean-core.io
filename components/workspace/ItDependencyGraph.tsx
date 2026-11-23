@@ -72,11 +72,15 @@ export function objectKindWord(kind: string): string {
 export default function ItDependencyGraph({
   objects,
   onOpen,
+  level = 4,
 }: {
   objects: ItObjects;
   /** Go to a table row; `null` goes to the table itself. */
   onOpen: (rowKey: string | null) => void;
+  /** The title's heading level: 4 under a card's `h3`, 3 directly under a section's `h2` (no level skipped). */
+  level?: 3 | 4;
 }) {
+  const Title = level === 3 ? 'h3' : 'h4';
   const graph = useMemo(() => dependencyGraph(objects), [objects]);
   const layout = useMemo(() => layoutDependencyGraph(graph), [graph]);
   /** The node or edge under the pointer or the focus — its edges are drawn in ink. */
@@ -108,9 +112,9 @@ export default function ItDependencyGraph({
       className="m-0 mt-3 border-y border-cc-line py-3"
     >
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h4 id="it-graph-title" className="m-0 text-[13px] font-bold text-cc-ink">
+        <Title id="it-graph-title" className="m-0 text-[13px] font-bold text-cc-ink">
           {wt('itv.graphTitle')}
-        </h4>
+        </Title>
         <span data-it-graph-shown="" className="text-[12px] font-medium text-cc-ink-muted">
           {itvGraphShown(graph.objects.length, graph.total.objects, graph.total.rows - graph.hidden.rows, graph.total.rows)}
         </span>
