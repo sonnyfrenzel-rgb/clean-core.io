@@ -96,7 +96,15 @@ The new UX along the accepted mock-ups, every proposal of the UX review of 22.11
   - Delivery's Tests part says who stands behind the result on record (imported from your system, or your
     self-declaration).
   - Documentation: the RACI matrix with six role columns fits at 1440 px without scrolling sideways.
-  - Design: the "On this page" bar stands above the answer it names first, as in the mockup.
+  - Design: the "On this page" bar stands above the answer it names first, as in the mockup; on every page with
+    that bar, a control brought into view or focused no longer lands under the bar.
+  - Analyze IT no longer fails on an old project whose stored usage import or code list is incomplete, and an old
+    project with no run names what its record does not hold above the upload.
+  - Line anchors read "line 8" in the standard-touch and fit cards too; the Public-Cloud-Fit part uses the current
+    edition name; the dependency graph's heading follows its section's level.
+  - On a page with the process map, Ctrl+K goes to the map's step search; the project search is the search button
+    in the bar.
+  - Sign-up with e-mail: the button reads "Create my workspace", the label the sign-up notice names.
 
 ### Fixed
 
