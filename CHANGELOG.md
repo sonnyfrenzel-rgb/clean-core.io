@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Accepting or previewing an invitation to read a project or a portfolio selection now needs the second factor, as
+  every other signed-in route does: a first-factor token of an account with MFA could read the invitation and turn it
+  into read access (QA full review of v3.4.0; also prepared as a hotfix for `main` on `hotfix/3.4.1`).
+
 ### 3.5.0, the Christmas release (built on `integrate/3.5.0`, 23.11.2026)
 
 The new UX along the accepted mock-ups, every proposal of the UX review of 22.11.2026 taken up (owner, 23.11.2026).
