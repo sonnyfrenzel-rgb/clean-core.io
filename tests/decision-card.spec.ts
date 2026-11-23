@@ -536,13 +536,10 @@ test.describe('8.4 card — source guards', () => {
     expect(card).not.toMatch(/\b(role|view)\s*:\s*'(management|business|it)'/i);
   });
 
-  test('the card is mounted in the Management view of the workspace only', () => {
-    const shell = fs.readFileSync(path.join(ROOT, 'components/workspace/WorkspaceShell.tsx'), 'utf8');
-    // Handed to the Management answers only, as the hero of the decision
-    // panel and never inside a fold (owner 03.10.2026) — and nowhere else.
-    expect(shell).toMatch(/view === 'management' \? \([\s\S]{0,400}?<ManagementAnswers[\s\S]{0,800}?decision=\{[\s\S]{0,600}?<DecisionCard/);
-    expect(shell).not.toMatch(/<ManagementFold\s+id="options"/);
-    expect(shell.match(/<DecisionCard\b/g)).toHaveLength(1);
+  test('the card is not mounted in Analyze\'s IT view: the decision is Management\'s (AB-10)', () => {
+    // The workspace shell that mounted it dissolved with 3.5.0 (AB-11); Analyze's Management view takes it (AB-10).
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/WorkspaceShell.tsx'))).toBe(false);
+    expect(fs.readFileSync(path.join(ROOT, 'components/analyze/AnalyzeIt.tsx'), 'utf8')).not.toContain('<DecisionCard');
   });
 });
 

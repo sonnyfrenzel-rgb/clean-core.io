@@ -123,7 +123,7 @@ test.describe('A10 — one automatic step on opening a project while names are p
     const page = read('components/workspace/OwnCodeImport.tsx');
     expect(page).toContain('<AutoStepsNotice model={model} />');
     expect(page.indexOf('<AutoStepsNotice')).toBeLessThan(page.indexOf('data-own-code-drop'));
-    for (const rel of ['components/workspace/WorkspaceShell.tsx', 'app/(app)/project/[projectId]/page.tsx']) {
+    for (const rel of ['components/analyze/AnalyzeIt.tsx', 'app/(app)/project/[projectId]/page.tsx']) {
       expect(read(rel), rel).not.toContain('AutoStepsNotice');
     }
     const notice = read('components/AutoStepsNotice.tsx');

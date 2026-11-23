@@ -11,7 +11,6 @@ import { findingsOf } from '../lib/it-findings-build';
 import '../lib/abap/catalog-snapshots';
 import { notDetermined } from '../lib/workspace-model';
 import { itOpening, itState, usesSummary } from '../lib/it-state';
-import { availableCoachMarks } from '../lib/coach-marks';
 import type { Project } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
 import { itvUsesCoverage } from '../lib/messages/workspace-it';
@@ -134,27 +133,6 @@ test.describe('what the code uses, derived on the server', () => {
     // Unsigned gives the same answer, said to be unsigned first.
     expect(itOpening('unsigned', built, 5).title).toBe(clean.title);
     expect(itOpening('unsigned', built, 5).reason).toMatch(/^No signed run yet/);
-  });
-
-  test('in IT the tour starts at "Next step", then the figure in the answer; Business reads its own page', () => {
-    // IT draws no process since ADR-086, so "Select the decision point" is
-    // not offered there — it stands in Business, at the map.
-    const it = availableCoachMarks({
-      hasDecision: true,
-      hasNextStep: true,
-      order: ['next-step', 'not-determined'],
-      only: ['next-step', 'not-determined'],
-    });
-    expect(it.map((m) => m.id)).toEqual(['next-step', 'not-determined']);
-    expect(availableCoachMarks({ hasDecision: true, hasNextStep: true }).map((m) => m.id)).toEqual([
-      'next-step',
-      'decision',
-      'not-determined',
-    ]);
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell).toMatch(/const IT_COACH_ORDER: readonly CoachMarkId\[\] = \['next-step', 'not-determined'\];/);
-    expect(shell).toMatch(/order: view === 'it' \? IT_COACH_ORDER : undefined/);
-    expect(shell).toMatch(/view === 'it' \? IT_COACH_ORDER : undefined,\s*\}\);/);
   });
 });
 

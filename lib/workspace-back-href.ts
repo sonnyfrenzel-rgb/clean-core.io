@@ -4,6 +4,7 @@ import { nav, navViewLabel } from '@/lib/messages/navigation';
 import { BUSINESS_LAYER_ELSEWHERE, BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { IT_LAYER_ELSEWHERE, IT_SECTION_IDS } from '@/lib/it-sections';
 import { MANAGEMENT_IDS, MANAGEMENT_LAYER_ELSEWHERE } from '@/lib/management-sections';
+import { workspaceRedirectFrom, workspaceRedirectPlace } from '@/lib/workspace-redirect';
 // A cycle with `lib/choice-addresses.ts` (it builds on `stageHref`): both sides
 // use the other only inside functions, never at module evaluation.
 import { isOriginKey, originBackHref, originBackLabel, originOf, type OriginKey } from '@/lib/choice-addresses';
@@ -15,6 +16,11 @@ const LAYER_ID = /^[A-Za-z][\w-]{0,63}$/;
  * one place: the view and the layer come from the stage's own address and are
  * checked against what the workspace understands — a view in the URL is a
  * perspective, never a grant (ADR-018), and an unknown one is simply dropped.
+ *
+ * Since the workspace page dissolved (3.5.0, AB-11) the place it names is in
+ * Analyze: the old address is built as before and sent through the one
+ * redirect table (`lib/workspace-redirect.ts`), so the way back lands where a
+ * bookmark of it would — without the extra hop.
  */
 export function workspaceBackHref({
   projectId,
@@ -24,7 +30,13 @@ export function workspaceBackHref({
   /** The stage's `location.search`, e.g. `?view=it&from=it-answers-heading`. */
   search: string;
 }): string {
-  return backTo(`/project/${encodeURIComponent(projectId)}`, search);
+  const old = backTo('', search);
+  const at = old.indexOf('#');
+  return workspaceRedirectFrom(
+    `/project/${encodeURIComponent(projectId)}`,
+    at < 0 ? old : old.slice(0, at),
+    at < 0 ? '' : old.slice(at),
+  );
 }
 
 /**
@@ -140,9 +152,10 @@ export function myWorkspaceHref(): string {
  *
  *   - **My workspace** (the list of all projects) by default: a project opens in Analyze (ADR-109), so a tool reached
  *     from there, or from a link without a workspace place, goes back to the list;
- *   - **the place in the project's workspace** the tool was opened from, while that workspace still has views of its
- *     own (IT and Management until AB-11/AB-12): the address carries `view=it|management`, a layer or a return point,
- *     and the way back names it — `‹ IT view, Objects & dependencies · Emergency purchase approval`;
+ *   - **Analyze, in the view the tool was opened from** — the project's workspace page dissolved into Analyze's views
+ *     (AB-11): the address carries `view=it|management`, a layer or a return point, and the way back names the view —
+ *     `‹ Analyze, IT view · Emergency purchase approval` — landing on the place the address names
+ *     (`lib/workspace-redirect.ts`);
  *   - **the demo's workspace** on a demo tool, by the same rule.
  *
  * A choice's way back (`?origin=`) stays `ChoiceBackLink`, one level deep. Pure.
@@ -158,7 +171,7 @@ export function familyBackLink({
   demo?: boolean;
   /** The caller knows it is the project's entry (Analyze, Business): always My workspace. */
   toMyWorkspace?: boolean;
-}): { kind: 'none' } | { kind: 'link'; href: string; place: string; to: 'my-workspace' | 'workspace' | 'demo' } {
+}): { kind: 'none' } | { kind: 'link'; href: string; place: string; to: 'my-workspace' | 'analyze' | 'demo' } {
   const back = stageBackLink({ projectId, search, demo });
   if (back.kind === 'none') return back;
   const params = new URLSearchParams(search);
@@ -170,7 +183,8 @@ export function familyBackLink({
       : { kind: 'link', href: demoWorkspaceBackHref(''), place: nav('nav.demoWorkspace'), to: 'demo' };
   }
   if (toMyWorkspace || !carriesPlace) return { kind: 'link', href: myWorkspaceHref(), place: nav('nav.myWorkspace'), to: 'my-workspace' };
-  return { kind: 'link', href: back.href, place: stageBackPlace(search) ?? nav('nav.myWorkspace'), to: 'workspace' };
+  // The project's workspace page dissolved (AB-11): the place is a view of Analyze — "Analyze, IT view".
+  return { kind: 'link', href: back.href, place: workspaceRedirectPlace(back.href), to: 'analyze' };
 }
 
 /** The way back to the place that asked for a choice made on this stage — one level deep. */

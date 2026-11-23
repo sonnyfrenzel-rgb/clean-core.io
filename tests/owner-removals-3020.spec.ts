@@ -74,10 +74,10 @@ test('the model has no fit-proposal answer shape', () => {
 test('no route, component folder or Business-view card of the module is left', () => {
   expect(fs.existsSync(path.join(ROOT, 'app', 'api', 'projects', '[projectId]', 'fit-to-standard'))).toBe(false);
   expect(fs.existsSync(path.join(ROOT, 'components', 'fit'))).toBe(false);
-  const shell = read('components/workspace/WorkspaceShell.tsx');
+  const it = read('components/analyze/AnalyzeIt.tsx');
   const process = read('components/workspace/WorkspaceProcess.tsx');
   const design = read('app/(app)/project/[projectId]/design/page.tsx');
-  for (const text of [shell, process, design]) expect(text).not.toMatch(/fit-to-standard|FitToStandard|FitMap/);
+  for (const text of [it, process, design]) expect(text).not.toMatch(/fit-to-standard|FitToStandard|FitMap/);
 });
 
 test('the process-states read has no history mode', () => {

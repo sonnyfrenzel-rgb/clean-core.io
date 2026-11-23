@@ -13,7 +13,6 @@ import { buildReadingExports } from '../lib/bpmn/export';
 import { buildProcessMapModel } from '../lib/process-map';
 import { applyNaming, namingContextOf, NAMING_FORMAT_VERSION } from '../lib/process-naming';
 import { nextOpenPoint } from '../lib/next-step';
-import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
 import type { ProcessStateView, StateEntry } from '../lib/process-states';
 import type { Project } from '../lib/types';
 import { adminGetDoc, adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
@@ -252,10 +251,8 @@ test.describe('the Business view on screen', () => {
    * (`coach-mark-placement.spec.ts`); here the layout is measured without it.
    */
   async function withoutTips(page: Page) {
-    await page.addInitScript(
-      ([key, ids]) => window.localStorage.setItem(key as string, JSON.stringify(ids)),
-      [COACH_MARK_STORAGE_KEY, [...COACH_MARK_IDS]] as const,
-    );
+    // The coach marks retired with the workspace page (3.5.0, AB-11): nothing to keep out of the way.
+    void page;
   }
 
   /**

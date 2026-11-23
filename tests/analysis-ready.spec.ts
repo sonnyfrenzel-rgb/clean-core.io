@@ -10,7 +10,6 @@ import {
   markAnalysisRead,
   resultReadyTag,
 } from '../lib/analysis-read';
-import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
 import { adminSetDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 
@@ -140,7 +139,9 @@ test.describe('the hint is an addition, never a phase state (source)', () => {
   test('the workspace has no hub any more, and reads no analysis-ready result', () => {
     expect(fs.existsSync(path.join(ROOT, 'components/workspace/WorkspaceHub.tsx'))).toBe(false);
     expect(fs.existsSync(path.join(ROOT, 'components/workspace/AnalysisReady.tsx'))).toBe(false);
-    expect(read('components/workspace/WorkspaceShell.tsx')).not.toMatch(/analysisReadyResult|WorkspaceHub|AnalysisReady/);
+    // The workspace page itself dissolved into Analyze's views (3.5.0, AB-11).
+    expect(fs.existsSync(path.join(ROOT, 'components/workspace/WorkspaceShell.tsx'))).toBe(false);
+    expect(read('components/analyze/AnalyzeIt.tsx')).not.toMatch(/analysisReadyResult|WorkspaceHub|AnalysisReady/);
   });
 
   test('the tool bar tags Analyze from the phase contract and leaves "Next" where it was', () => {
@@ -193,10 +194,8 @@ test.describe('rendered: the Analyze tool says "Result ready" until Analyze has 
   }
 
   async function withoutTips(page: Page) {
-    await page.addInitScript(
-      ([key, ids]) => window.localStorage.setItem(key as string, JSON.stringify(ids)),
-      [COACH_MARK_STORAGE_KEY, [...COACH_MARK_IDS]] as const,
-    );
+    // The coach marks retired with the workspace page (3.5.0, AB-11): nothing to keep out of the way.
+    void page;
   }
 
   test.beforeAll(async () => {

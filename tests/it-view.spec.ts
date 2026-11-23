@@ -351,18 +351,13 @@ test.describe('Objects & dependencies, Run & trust, the IT sections (ADR-086)', 
   });
 });
 
-test.describe('the IT order in the shell, as the source writes it (the page is measured below)', () => {
-  test('IT shows only its own answer: no layers, no first look, no "Ask this case" (ADR-086)', () => {
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    // No block of the shell stands before IT's answer: since v3.1.0 the shell has no order of blocks at all
-    // (the Business view is Analyze's, AB-2), and nothing renders a layer bar or the first look.
-    expect(shell).not.toMatch(/IT_HEAD|IT_TAIL|BUSINESS_ORDER|<WorkspaceLayerBar|<FirstLook\b/);
-    expect(shell.indexOf('<ItAnswers')).toBeGreaterThan(0);
-    // The reading the search, the print sheet and the counts use is computed
-    // here, in IT and Management, without rendering the first look.
-    expect(shell).toMatch(/const reading = useSourceReading\(/);
-    // "Ask this case" stands under IT's answer, nowhere else.
-    expect(shell).toContain("{view === 'it' ? askThisCase : null}");
+test.describe('the IT order, as the source writes it (the page is measured below)', () => {
+  test('IT shows only its own answer: no layers, no first look, no "Ask this case" (ADR-086, AB-9)', () => {
+    // The workspace's IT view is Analyze's IT page since 3.5.0 (AB-9, AB-11).
+    const it = read('components/analyze/AnalyzeIt.tsx');
+    expect(it).not.toMatch(/IT_HEAD|IT_TAIL|BUSINESS_ORDER|<WorkspaceLayerBar|<FirstLook\b|AskThisCase/);
+    // The reading the rule register and the main sequence use is computed there, without the first look.
+    expect(it).toMatch(/const reading = useSourceReading\(/);
     // The demo twin follows: no layer bar and no map in its IT view.
     const demo = read('components/demo/DemoWorkspaceShell.tsx');
     const itBlock = demo.slice(demo.indexOf("{view === 'it' ? ("), demo.indexOf("{view === 'management' ? ("));

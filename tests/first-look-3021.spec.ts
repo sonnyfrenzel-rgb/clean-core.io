@@ -280,21 +280,12 @@ test.describe('the readings of the 3.0.21 gate on the page', () => {
 });
 
 test.describe('"Ask this case" leaves the Business view (owner decision 22.10.2026, DESIGN.md §5.3)', () => {
-  const shell = read('components/workspace/WorkspaceShell.tsx');
-
-  test('Business has no "Ask this case"; IT renders it under its own answer', () => {
-    // Business is Analyze's page since v3.1.0 (AB-2, ADR-109): no "Ask this case" there either.
+  test('neither Business nor IT renders it, and no coach mark is left anywhere (3.5.0, AB-11, plan P7)', () => {
+    // Business is Analyze's page since v3.1.0 (AB-2, ADR-109); IT is Analyze's one page since 3.5.0 (AB-9): the
+    // decision points are read on the map and in the walk-through.
     expect(read('components/analyze/AnalyzeBusiness.tsx')).not.toContain('AskThisCase');
-    expect(shell).not.toContain('BUSINESS_ORDER');
-    expect(shell).toMatch(/view === 'it' \? askThisCase : null/);
-  });
-
-  test('the decision tip pointed at the Business map; with the map in Analyze it is offered in no view of the workspace', () => {
-    // Analyze, Business has no coach marks (plan P7: the invitation bar and the tour lead); IT and
-    // Management offer only their own tips, and neither list names the decision point.
-    expect(shell).toContain("const IT_COACH_ORDER: readonly CoachMarkId[] = ['next-step', 'not-determined'];");
-    expect(shell).toContain("const MANAGEMENT_COACH_MARKS: readonly CoachMarkId[] = ['next-step'];");
-    expect(shell).toContain("only: view === 'management' ? MANAGEMENT_COACH_MARKS : view === 'it' ? IT_COACH_ORDER : undefined,");
+    expect(read('components/analyze/AnalyzeIt.tsx')).not.toContain('AskThisCase');
     expect(read('components/analyze/AnalyzeBusiness.tsx')).not.toMatch(/useCoachMarks|CoachMarkNote/);
+    expect(read('components/analyze/AnalyzeIt.tsx')).not.toMatch(/useCoachMarks|CoachMarkNote/);
   });
 });

@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { adminSetDoc } from './helpers/admin-seed';
-import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
 
 /**
  * Owner, 10.10.2026: in the IT view of Z_MM_PO_APPROVAL a click on "Business"
@@ -126,12 +125,6 @@ async function waitForView(page: Page) {
   await page.waitForTimeout(1500);
 }
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(
-    ([key, ids]) => window.localStorage.setItem(key as string, JSON.stringify(ids)),
-    [COACH_MARK_STORAGE_KEY, [...COACH_MARK_IDS]] as const,
-  );
-});
 
 test('from IT, with and without each fragment: Business, Management and IT open at their top and stay', async ({ page }) => {
   test.setTimeout(900_000);

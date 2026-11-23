@@ -90,8 +90,7 @@ test('every way back to the list says "My workspace"', () => {
     );
   }
   expect(code('components/BackLink.tsx')).toContain("nav('nav.backToMyWorkspace')");
-  const shell = code('components/workspace/WorkspaceShell.tsx');
-  expect(shell).toMatch(/href="\/dashboard"[\s\S]{0,200}?data-workspace-back=""[\s\S]{0,300}?wt\('nav\.backToMyWorkspace'\)[\s\S]{0,200}?wt\('nav\.allProjects'\)/);
+  // The workspace page's own way back went with the page (3.5.0, AB-11): every tool's header says it (`StageHeader`).
   expect(code('app/(app)/layout.tsx')).toContain("nav('nav.myWorkspace')");
 });
 

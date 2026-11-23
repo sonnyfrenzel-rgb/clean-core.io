@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { adminSetDoc } from './helpers/admin-seed';
-import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
 import { choiceHref, originBackHref, originBackLabel } from '../lib/choice-addresses';
 
 /**
@@ -60,15 +59,13 @@ test.beforeAll(async () => {
 });
 
 test.beforeEach(async ({ page }) => {
-  // No coach mark over the places; and every `cc:reveal` the follow sends is kept.
+  // Every `cc:reveal` the follow sends is kept.
   await page.addInitScript(
-    ([key, ids]) => {
-      window.localStorage.setItem(key as string, JSON.stringify(ids));
+    () => {
       const w = window as unknown as { __reveals: string[] };
       w.__reveals = [];
       window.addEventListener('cc:reveal', (e) => w.__reveals.push(String((e as CustomEvent<{ id: string }>).detail?.id)));
     },
-    [COACH_MARK_STORAGE_KEY, [...COACH_MARK_IDS]] as const,
   );
 });
 

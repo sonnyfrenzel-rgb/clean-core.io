@@ -276,13 +276,15 @@ test.describe('what went in exchange (source guards)', () => {
     expect(kinds.find((k) => k.key === 'local-function-call')).toMatchObject({ count: 2, anchors: ['L10', 'L60'] });
   });
 
-  test('the workspace shows one list, and the line everywhere else', () => {
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell.match(/<OpenQuestions\b/g) ?? []).toHaveLength(1);
+  test('Analyze, IT shows the one list, and the line everywhere else', () => {
+    // The workspace page dissolved with 3.5.0 (AB-11): the list stands in Analyze's IT side column, `#not-determined`.
+    const it = read('components/analyze/AnalyzeIt.tsx');
+    expect(it.match(/<OpenQuestions\b/g) ?? []).toHaveLength(1);
+    expect(it).toContain('id={ANALYZE_IT_IDS.notDetermined}');
     // StandardFitTable.tsx went with the IT Standard fit table (owner decision 22.10.2026). The First insights' line
     // left with them in 3.2.0 (AB-6); Analyze's IT page keeps the line.
     expect(fs.existsSync(path.join(ROOT, 'components/workspace/FirstLook.tsx'))).toBe(false);
-    expect(read('app/(app)/project/[projectId]/analyze/page.tsx')).toContain('<OpenQuestionsLine');
+    expect(read('app/(app)/project/[projectId]/analyze/page.tsx')).not.toContain('<OpenQuestionsLine');
     expect(read('components/workspace/ItAnswers.tsx')).toContain('openQuestionsLine(');
   });
 });

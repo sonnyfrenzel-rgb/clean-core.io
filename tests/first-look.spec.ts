@@ -17,7 +17,6 @@ import {
   type FirstLookFigure,
 } from '../lib/first-look';
 import { preAnsweredQuestion } from '../lib/ask-this-case';
-import { availableCoachMarks, COACH_MARKS, nextCoachMark } from '../lib/coach-marks';
 import { applyNaming } from '../lib/process-naming';
 import {
   describeStarterExampleCost,
@@ -286,52 +285,8 @@ test.describe('the question that is already answered', () => {
   });
 });
 
-test.describe('the three coach marks', () => {
-  test('are the three of DESIGN.md §6.2, in its order', () => {
-    expect(COACH_MARKS.map((m) => m.title)).toEqual([
-      'Select the decision point',
-      'This is what we could not determine',
-      'Your next step',
-    ]);
-  });
-
-  test('a mark with nothing to point at is not offered', () => {
-    const withDecision = availableCoachMarks({ hasDecision: true, hasNextStep: true });
-    // The tour's order, not §6.2's listing: next step first (owner, 04.10.2026).
-    expect(withDecision.map((m) => m.id)).toEqual(['next-step', 'decision', 'not-determined']);
-
-    const without = availableCoachMarks({ hasDecision: false, hasNextStep: false });
-    expect(without.map((m) => m.id)).toEqual(['not-determined']);
-  });
-
-  test('one at a time, and gone once dismissed', () => {
-    const available = availableCoachMarks({ hasDecision: true, hasNextStep: true });
-    expect(nextCoachMark(available, [])?.id).toBe('next-step');
-    expect(nextCoachMark(available, ['next-step'])?.id).toBe('decision');
-    expect(nextCoachMark(available, ['decision', 'not-determined', 'next-step'])).toBeNull();
-  });
-
-  test('nothing about them touches the account (ADR-036)', () => {
-    for (const rel of [
-      'lib/coach-marks.ts',
-      'hooks/useCoachMarks.ts',
-      'components/workspace/CoachMarks.tsx',
-    ]) {
-      // Comments out: these three files explain *why* the account is not
-      // involved, and naming `firestore.rules` in that explanation is the point.
-      const src = withoutComments(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
-      for (const forbidden of ['firestore', 'getDb(', 'setDoc', 'updateDoc', '/api/']) {
-        expect(src, `${rel} writes coach-mark state somewhere other than the browser`).not.toContain(
-          forbidden,
-        );
-      }
-    }
-    // And the one place the state does live is still the browser's.
-    expect(withoutComments(fs.readFileSync(path.join(ROOT, 'lib/coach-marks.ts'), 'utf8'))).toContain(
-      'localStorage',
-    );
-  });
-});
+// The three coach marks retired with the workspace page (3.5.0, AB-11, plan P7): Analyze's walk-through and its
+// invitation do their job, and `coach-mark-placement` went with them.
 
 test.describe('the quota line is the one the product already has', () => {
   test('both wordings come from lib/run-cost.ts and are not written twice', () => {
@@ -504,35 +459,6 @@ test.describe('the first look on screen', () => {
     // And every branch is there, with a line behind it.
     await expect(page.locator('[data-ask-code-branch]').first()).toBeVisible();
     await expect(card.locator('[data-cc-anchor]').first()).toBeVisible();
-  });
-
-  // The coach marks stand in the workspace's IT view only since AB-2 (ADR-109):
-  // Analyze, Business has none (plan P7, the invitation bar and the tour lead).
-  // IT offers two of the three, "Your next step" and "Not determined"
-  // (`IT_COACH_ORDER`); "Select the decision point" pointed at the Business map.
-  test('the coach marks of the IT view appear one at a time and go away for good', async ({ page }) => {
-    test.setTimeout(240 * 1000);
-    await signIn(page, ADMIN);
-    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 60000 });
-
-    const mark = page.locator('[data-coach-mark]');
-    await expect(mark).toHaveCount(1, { timeout: 60000 });
-    await expect(mark).toHaveAttribute('data-coach-mark', 'next-step');
-
-    await page.click('[data-coach-mark-dismiss="next-step"]');
-    await expect(mark).toHaveAttribute('data-coach-mark', 'not-determined');
-    await page.click('[data-coach-mark-dismiss="not-determined"]');
-    await expect(mark).toHaveCount(0);
-
-    // Gone across a reload, because the browser remembers — and nothing else does.
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-coach-mark]')).toHaveCount(0);
-
-    // "Show tips again" brings them back (§6.2).
-    await page.click('[data-coach-marks-reset]');
-    await expect(page.locator('[data-coach-mark]')).toHaveCount(1);
   });
 
   // A project with nothing staged: Analyze, Business shows the upload and

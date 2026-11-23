@@ -15,7 +15,6 @@ import { adminMergeDoc, adminSetDoc } from './admin-seed';
 import { AUTO_STEPS_NOTICE_FIELD, AUTO_STEPS_NOTICE_WORDING, AUTO_STEPS_NOTICE_WORDING_FIELD } from '../../lib/auto-steps-notice';
 import { seedStageProject, signInThroughForm, type SeededProject } from './seed-project';
 import { examplePath } from './starter-example-files';
-import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../../lib/coach-marks';
 import { layoutClean, layoutLine, measureLayout, type LayoutReport } from './overlap';
 import { countFirstScreen, type FirstScreenCount } from './first-screen-count';
 
@@ -100,10 +99,8 @@ export async function measureStates(
   seeded: SeededProject & { po: string },
   viewports: readonly (readonly [string, number, number])[],
 ): Promise<LayoutMeasurement[]> {
-  await page.addInitScript(
-    ([key, ids]) => window.localStorage.setItem(key as string, JSON.stringify(ids)),
-    [COACH_MARK_STORAGE_KEY, [...COACH_MARK_IDS]] as const,
-  );
+  // The coach marks retired with the workspace page (3.5.0, AB-11): nothing to keep out of the way.
+  void page;
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   await signInThroughForm(page, seeded);

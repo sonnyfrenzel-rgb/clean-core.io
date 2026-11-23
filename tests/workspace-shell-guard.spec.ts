@@ -445,8 +445,8 @@ test.describe('there is no IT focus (ADR-058, owner 02.10.2026)', () => {
     const root = path.join(__dirname, '..');
     const pageSrc = fs.readFileSync(path.join(root, 'app', '(app)', 'project', '[projectId]', 'page.tsx'), 'utf8');
     expect(pageSrc, 'the workspace page still reads ?focus=').not.toMatch(/get\(\s*'focus'\s*\)/);
-    const shellSrc = fs.readFileSync(path.join(root, 'components', 'workspace', 'WorkspaceShell.tsx'), 'utf8');
-    expect(shellSrc).not.toMatch(/data-workspace-it-focus|onFocusChange|page\.focus/);
+    // The shell is gone (3.5.0, AB-11): the page is the redirect, and the redirect drops `focus`.
+    expect(fs.existsSync(path.join(root, 'components', 'workspace', 'WorkspaceShell.tsx'))).toBe(false);
     const messages = fs.readFileSync(path.join(root, 'lib', 'messages', 'workspace-shell.ts'), 'utf8');
     expect(messages).not.toContain("'page.focus'");
     expect(VIEW_ABOUT.it, '"About this view" still promises a Focus').not.toMatch(/\bFocus\b/);

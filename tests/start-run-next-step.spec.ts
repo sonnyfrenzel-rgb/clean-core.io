@@ -34,9 +34,7 @@ test('Analyze, Business offers nothing that could start a second run while the s
   // The endings link, they never start a run.
   const endings = read('components/analyze/AnalyzeEndings.tsx');
   expect(endings).not.toMatch(/startRun|useStartRun|runs\/create|onClick/);
-  // The workspace starts no run, so it has nothing to mark.
-  const shell = read('components/workspace/WorkspaceShell.tsx');
-  expect(shell).not.toMatch(/startRun|useStartRun/);
+  // The workspace page is a redirect since 3.5.0 (AB-11): it starts no run, so it has nothing to mark.
   expect(read('app/(app)/project/[projectId]/page.tsx')).not.toMatch(/useStartRun/);
 });
 
