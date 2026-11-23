@@ -86,6 +86,8 @@ test.describe('the Business view of a real project (Analyze, Business; mockup st
       name: 'Emergency purchase approval',
       legacyCode: SOURCE,
       inputFingerprint: fingerprint,
+      // As runs/create writes it: the project's audit summary names the signed file, and the header reads it there.
+      auditMetadata: { inputFingerprint: fingerprint },
       s4Deployment: 'private',
     });
     await adminMergeDoc(`projects/${signed}/runs`, account.runId, { inputFingerprint: fingerprint, legacyCode: SOURCE });
@@ -183,7 +185,7 @@ test.describe('the Business view of a real project (Analyze, Business; mockup st
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
     await page.goto(`/project/${signed}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(new RegExp(`/project/${signed}/analyze\?view=it$`), { timeout: 60_000 });
+    await expect(page).toHaveURL(new RegExp(`/project/${signed}/analyze\\?view=it$`), { timeout: 60_000 });
     await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 90_000 });
     await expect(page.locator('[data-stage-tool]').first()).toContainText('Analyze');
     await expect(page.locator('[data-stage-program]').first()).toHaveText(FILE.replace(/\.abap$/, ''), { timeout: 60_000 });

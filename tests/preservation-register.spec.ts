@@ -1147,15 +1147,18 @@ test.describe('the reference cases, seeded and opened', () => {
         }
         for (const name of [entry.opensWith ?? []].flat()) {
           // A report section is an ARIA tab since D.10b (CcTabs); the other
-          // stages open their part with a button. Either role, the same name.
+          // stages open their part with a button, and Delivery's package parts
+          // (3.5.0) with the row of a <details>, its <summary>. The same name.
           const opener = new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
           const control = page
             .getByRole('tab', { name: opener })
             .or(page.getByRole('button', { name: opener }))
+            .or(page.locator('summary').filter({ hasText: opener }))
             .first();
           // A disclosure an earlier entry of the same stage already opened
           // stays open: a second click would close it again.
           if ((await control.getAttribute('aria-expanded')) === 'true') continue;
+          if (await control.evaluate((el) => el.tagName === 'SUMMARY' && (el.parentElement as HTMLDetailsElement | null)?.open === true)) continue;
           await control.click();
         }
         await expect(

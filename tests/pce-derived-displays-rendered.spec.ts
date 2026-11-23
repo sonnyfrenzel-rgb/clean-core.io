@@ -4,14 +4,13 @@ import { adminMergeDoc } from './helpers/admin-seed';
 import { catalogSnapshotRefFor } from '../lib/abap/catalog-snapshots';
 import { gradeSapObjectUse } from '../lib/abap/catalog-service';
 import { buildAbapEvidence } from '../lib/abap/evidence-model';
-import { publicCloudFitLookupObjects } from '../lib/abap/public-cloud-fit-resolver';
 import { accessUseOfKind, findingRows } from '../lib/findings-view';
 import { transformationFigures } from '../lib/transformation-view';
 import type { CloudReadinessGrade } from '../lib/abap/abcd-classification';
 
 /**
  * Owner decision 30.09.2026, on screen: **Analyze, Transformation and the
- * workspace's Public-Cloud-Fit card show the findings and levels of the core
+ * workspace's Public-Cloud-Fit card (since 3.5.0: Analyze's Management level mix) show the findings and levels of the core
  * result** — the evidence the signed run computes with the catalog snapshot of
  * the project's target profile and the file name it signed.
  *
@@ -74,7 +73,25 @@ function levelBlocks(findings: typeof core.findings): string[] {
   return (['A', 'B', 'C', 'D'] as const).map((g) => `${g}${dist.get(g) ?? 0}`);
 }
 
-const fitObjects = (findings: typeof core.findings) => publicCloudFitLookupObjects(findings).map((o) => o.name).sort();
+/**
+ * The Level A–D mix of Analyze's Management view (`managementLevelMix`, lib/analyze-management.ts): each SAP object
+ * once per level, as the four marks read ("A 0", "B 0", ...). Since 3.5.0 the workspace's Public-Cloud-Fit card is
+ * gone from real projects (the workspace page is); this mix is the Management reader's reading of the levels.
+ */
+function managementMix(findings: typeof core.findings): string[] {
+  const mix = { A: 0, B: 0, C: 0, D: 0 };
+  const seen = new Set<string>();
+  for (const row of findingRows(findings)) {
+    if (!row.finding.objectName) continue;
+    const name = row.finding.objectName.trim().toUpperCase();
+    const g = gradeSapObjectUse(name, accessUseOfKind(row.finding.kind), coreKey).grade;
+    if (g !== 'A' && g !== 'B' && g !== 'C' && g !== 'D') continue;
+    if (seen.has(`${name}|${g}`)) continue;
+    seen.add(`${name}|${g}`);
+    mix[g] += 1;
+  }
+  return (['A', 'B', 'C', 'D'] as const).map((g) => `${g} ${mix[g]}`);
+}
 
 test.describe('a PCE project shows the core result on Analyze, Transformation and the fit card', () => {
   test.describe.configure({ mode: 'serial' });
@@ -85,7 +102,7 @@ test.describe('a PCE project shows the core result on Analyze, Transformation an
     expect(browserBuilt.findings.some((f) => f.objectName === PCE_ONLY), 'not listed in Public: a finding').toBe(true);
     expect(levelBlocks(browserBuilt.findings)).not.toEqual(levelBlocks(core.findings));
     expect(transformationFigures(browserBuilt.findings).findings).not.toBe(transformationFigures(core.findings).findings);
-    expect(fitObjects(browserBuilt.findings)).not.toEqual(fitObjects(core.findings));
+    expect(managementMix(browserBuilt.findings)).not.toEqual(managementMix(core.findings));
   });
 
   let acct: SeededProject;
@@ -138,17 +155,17 @@ test.describe('a PCE project shows the core result on Analyze, Transformation an
     await expect(page.locator('[data-transformation-object-page]')).not.toContainText(PCE_ONLY);
   });
 
-  test('Public-Cloud-Fit card: it sorts the objects of the core findings', async ({ page }) => {
+  test('Management: the Level A–D mix counts the objects of the core findings', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1600 });
     await signInThroughForm(page, acct);
-    await page.goto(`/project/${acct.projectId}?view=management`);
+    await page.goto(`/project/${acct.projectId}/analyze?view=management`);
 
-    const card = page.locator('[data-public-cloud-fit-panel]');
-    await expect(card).toHaveAttribute('data-public-cloud-fit-panel', 'ready', { timeout: 60000 });
-    const shown = await card
-      .locator('[data-public-cloud-fit-object]')
-      .evaluateAll((els) => els.map((e) => e.getAttribute('data-public-cloud-fit-object') ?? ''));
-    expect(shown.sort()).toEqual(fitObjects(core.findings));
+    const mix = page.locator('[data-management-levels]');
+    await expect(mix).toBeVisible({ timeout: 60000 });
+    const shown = await mix.locator('[data-cc-level-trigger]').evaluateAll((els) => els.map((e) => (e.textContent ?? '').replace(/\s+/g, ' ').trim()));
+    // The mark reads "C 1"; its accessible text adds what the level means.
+    const marks = shown.map((t) => /^[A-D] \d+/.exec(t)?.[0] ?? t);
+    expect(marks).toEqual(managementMix(core.findings));
   });
 });

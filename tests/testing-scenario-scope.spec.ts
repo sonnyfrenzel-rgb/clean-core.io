@@ -401,7 +401,9 @@ test.describe('the scenarios on the page', () => {
     const rows = section.locator('[data-scenario-row]');
     await rows.nth(0).locator('[data-scenario-toggle]').click();
     const first = rows.nth(0).locator('[data-scenario-details]');
-    await expect(first.locator('[data-scenario-last-run]')).toContainText('Demonstrated · mock');
+    // Since 3.5.0 the family chip says it (UX review L2): a mock pass is a simulation against mocks, never signed.
+    await expect(first.locator('[data-scenario-last-run] [data-family-chip="simulation"]')).toContainText('mocks');
+    await expect(first.locator('[data-scenario-last-run] [data-family-chip="signed"]')).toHaveCount(0);
     await expect(first.locator('[data-scenario-last-run]')).toContainText('Passed in the Node.js test runner');
     await expect(first.locator('[data-scenario-test]')).toContainText("test('TC_01:");
     await rows.nth(1).locator('[data-scenario-toggle]').click();

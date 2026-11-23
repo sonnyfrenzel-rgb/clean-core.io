@@ -177,7 +177,11 @@ test.describe('delivery page — QA full review of v2.20.0', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${SOURCE_CHANGED}/delivery`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stale-notice]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-delivery-deck-blocked]')).toBeVisible();
+    // Since 3.5.0 each part of the package is a row that opens; the deck's state line says it, the body says why.
+    const slides = page.locator('li[data-package-part="slides"]');
+    await expect(slides.locator('summary')).toContainText('Not available');
+    await slides.locator('summary').click();
+    await expect(slides.locator('[data-delivery-deck-blocked]')).toBeVisible();
     await expect(page.locator('#presentation-preview')).toHaveCount(0);
   });
 

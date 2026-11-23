@@ -348,6 +348,10 @@ test.describe('one place', () => {
     before('components/tco/EconomicsObjectPage.tsx', /<PageAnchorBar\b/, 'id="economics-range"');
     before('components/documentation/DocumentationOnePage.tsx', /<PageAnchorBar\b/, 'chapter="process"');
     before('components/workspace/ItAnswers.tsx', /<ItAnchorBar\b/, 'id={IT_SECTION_IDS.findings}');
+    // Design names its answer card as the first section (G12, the mock-up `design-next-mockup.html`): there the bar
+    // stands above the answer, so it never stands below a section it names.
+    before(PAGE('design'), /<PageAnchorBar\b/, 'id="design-answer"');
+    before('components/demo/DemoDesign.tsx', /<PageAnchorBar\b/, 'id="design-answer"');
 
     // The bar is never wrapped in a section's own container: on Testing and
     // Delivery it is a direct child of the frame.

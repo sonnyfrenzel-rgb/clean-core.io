@@ -127,9 +127,9 @@ test('analyze: an open "Why?" is not covered by the shell bar', async ({ page })
     await detail.click();
     await expect(detail).toHaveAttribute('aria-expanded', 'true', { timeout: 2000 });
   }).toPass({ timeout: 30_000 });
-  const constructs = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]', { hasText: 'Language constructs the engine resolved' }).first();
-  if ((await constructs.getAttribute('aria-expanded')) !== 'true') await constructs.click();
-  await page.locator('button[data-cc-why]').first().click();
+  // The constructs are a titled part (an h3) of the technical detail, open with it.
+  await expect(page.locator('#analyze-technical-detail').getByRole('heading', { level: 3, name: 'Language constructs the engine resolved' })).toBeVisible();
+  await page.locator('#analyze-technical-detail button[data-cc-why]').first().click();
   await expect(page.locator('[data-cc-why-popover]')).toBeVisible();
   // Opens downward: its "?" ends up under the shell bar.
   await expectOverBar(page, '[data-cc-why-popover]', SHELL_BAR);

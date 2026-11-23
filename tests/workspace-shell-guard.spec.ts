@@ -692,10 +692,15 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     const green = await page.locator('[data-stage-header] *').evaluateAll((els) =>
       els
         .filter((el) => (el as HTMLElement).offsetParent !== null)
+        // The legend at the end of the tool row is the key to the marks ("Done", "Started", "Out of date"), drawn
+        // the same on every project; it claims nothing about this one.
+        .filter((el) => !el.closest('[data-tools-legend]'))
         .filter((el) => getComputedStyle(el).color === 'rgb(4, 120, 87)')
         .map((el) => el.outerHTML.slice(0, 80)),
     );
     expect(green, 'something in the header of an empty project is painted as proven').toEqual([]);
+    // The key itself stands, so the check above is about the project and not about a row without a legend.
+    await expect(page.locator('[data-stage-header] [data-tools-legend] [data-tools-legend-entry="done"]')).toBeVisible();
   });
 
   test('a project with a signed run says so — and only what the run proves is "Signed"', async ({ page }) => {
@@ -710,7 +715,8 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     await page.goto(`/project/${FULL_ID}?view=it#evidence`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/analyze\?view=it#it-trust$/, { timeout: 90000 });
     await expect(page.locator('#it-trust [data-it-trust="signed"]')).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-it-trust-run]')).toContainText(RUN_ID);
+    // The card names the run by its short id, as a short commit hash (lib/it-sections.ts runTrust).
+    await expect(page.locator('[data-it-trust-run]')).toHaveText(new RegExp(`^${RUN_ID.slice(0, 8)}\\b`));
 
     // Analyze is used: its tool carries the check. The design the account signed off on itself is a
     // self-declaration; nowhere on Analyze is it called signed.

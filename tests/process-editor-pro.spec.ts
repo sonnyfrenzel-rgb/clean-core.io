@@ -47,8 +47,12 @@ const RUN_ID = `editor-pro-run-${STAMP}`;
 let idToken = '';
 
 /** The plain reading the page draws — what the editor opens and compares against. */
+/**
+ * The Ist as the page and the server draw it for the seeded project: since 3.5.0 a reading is drawn for the run's
+ * engine (`lib/bpmn/export.ts`), and the seeded run records none, so it is drawn for `null`.
+ */
 function istXml(): string {
-  return buildReadingExports(SOURCE, { processName: PROCESS_NAME, sourceFileName: FILE_NAME }).bpmn.xml;
+  return buildReadingExports(SOURCE, { processName: PROCESS_NAME, sourceFileName: FILE_NAME, exporterVersion: null }).bpmn.xml;
 }
 
 async function storedRevision(request: APIRequestContext, n: number): Promise<ProcessRevisionRecord | null> {
@@ -183,20 +187,23 @@ test.describe('the professional BPMN editor', () => {
     await page.keyboard.press('Control+z');
     await expect.poll(async () => page.locator('[data-draft-row]').count(), { timeout: 30000 }).toBe(rows);
 
-    // The toolbar is there and named.
-    for (const hook of ['data-editor-tidy', 'data-editor-compare', 'data-editor-import', 'data-editor-fit', 'data-editor-fullscreen-toggle']) {
+    // The toolbar is there and named. On Analyze the editor is full screen's (AB-5): the way out of full screen is the
+    // full-screen bar's, not the editor's own.
+    for (const hook of ['data-editor-tidy', 'data-editor-compare', 'data-editor-import', 'data-editor-fit', 'data-map-fullscreen-toggle']) {
       await expect(page.locator(`[${hook}]`)).toBeVisible();
     }
+    await expect(page.locator('[data-editor-fullscreen-toggle]')).toHaveCount(0);
     await expect(page.locator('[data-editor-minimap]')).toBeVisible();
   });
 
   test('properties: the plain name is edited, the technical name stays, the type changes and the anchor survives into the revision', async ({ page, request }) => {
     test.setTimeout(300 * 1000);
     await page.setViewportSize({ width: 1600, height: 1100 });
+    // The Ist is on record before the editor opens on it, as it was when Documentation opened first.
+    const ist = await storedRevisionAfterBaseline(request);
     await signInViaLanding(page, EMAIL, PASSWORD);
     await openEditor(page);
     const task = anchoredTask();
-    const ist = await storedRevisionAfterBaseline(request);
 
     await page.locator(`[data-draft-row="${task.id}"]`).click();
     const panel = page.locator(`[data-editor-properties="${task.id}"]`);
@@ -220,10 +227,13 @@ test.describe('the professional BPMN editor', () => {
     await expect(page.locator(`[data-draft-row="${task.id}"]`)).toHaveAttribute('data-drawn', 'false');
     await expect(page.locator(`[data-editor-properties="${task.id}"] [data-editor-provenance]`)).toContainText(`L${task.lineStart}`);
 
-    // Technical names: the list speaks the token, the name is unchanged.
-    await page.locator('[data-process-technical-toggle]').click();
+    // Technical names: the list speaks the token, the name is unchanged. On Analyze the editor is full screen's (AB-5),
+    // so the switch is the full-screen bar's while editing.
+    const technical = page.locator('[data-map-fullscreen-technical]');
+    await technical.click();
+    await expect(technical).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator(`[data-draft-row="${task.id}"]`)).toContainText(task.technicalName);
-    await page.locator('[data-process-technical-toggle]').click();
+    await technical.click();
 
     await page.locator('[data-editor-save]').click();
     await expect(page.locator('[data-editor-saved]')).toContainText(/Saved as revision (\d+)\./, { timeout: 30000 });
@@ -278,9 +288,9 @@ test.describe('the professional BPMN editor', () => {
   test('a Signavio-style file imports as the next revision, with a summary first and anchors only from the Ist', async ({ page, request }) => {
     test.setTimeout(300 * 1000);
     await page.setViewportSize({ width: 1600, height: 1100 });
+    const ist = await storedRevisionAfterBaseline(request);
     await signInViaLanding(page, EMAIL, PASSWORD);
     await openEditor(page);
-    const ist = await storedRevisionAfterBaseline(request);
 
     // As a tool that rewrites ids and drops our extensions hands the export back,
     // plus one task drawn there that claims lines 1–5 for itself.
@@ -383,18 +393,35 @@ test.describe('the professional BPMN editor', () => {
     await page.locator('[data-process-map]').waitFor({ timeout: 90000 });
     const width = () => page.evaluate(() => document.documentElement.scrollWidth);
     const before = await width();
+    // On Analyze *Edit model* opens full screen (AB-5); on a phone its *Edit* switch is disabled with the sentence why
+    // (P3), and full screen shows the map to read.
     await page.locator('[data-process-edit-toggle]').click();
-    await expect(page.locator('[data-process-editor-phone]')).toBeVisible();
+    const frame = page.locator('[data-process-map] [data-map-canvas-frame]').first();
+    await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
     await expect(page.locator('[data-process-editor]')).toHaveCount(0);
-    // The reading view stays under the notice: the outline is still there to read.
-    await expect(page.locator('[data-tree-node]').first()).toBeVisible();
+    await page.locator('[data-map-fullscreen-tools]').click();
+    const edit = page.locator('[data-map-fullscreen-edit]');
+    await expect(edit).toHaveAttribute('data-map-fullscreen-edit', 'blocked');
+    await expect(edit).toContainText('Editing needs a larger screen');
+    await expect(edit.locator('[data-map-fullscreen-edit-switch]')).toBeDisabled();
+    // The reading view stays: the map is there to read.
+    await expect(frame.locator('[data-map-node]').first()).toBeVisible();
     // The notice adds no width of its own to the page.
     expect(await width()).toBeLessThanOrEqual(before);
   });
 });
 
-/** Revision 1 — asked for once the stage has had the chance to write it. */
+/**
+ * Revision 1, the reconstruction. Documentation wrote it on opening; Analyze, where the editor is since 3.5.0, writes it
+ * only when it is needed (the first save, a rule, a step answered). So it is asked for the way both do
+ * (`ensureProcessBaseline`: a POST without a model, safe on every call), before anything is edited.
+ */
 async function storedRevisionAfterBaseline(request: APIRequestContext): Promise<ProcessRevisionRecord> {
+  const ensured = await request.post(`/api/projects/${PROJECT_ID}/process-revisions`, {
+    headers: { Authorization: `Bearer ${idToken}` },
+    data: {},
+  });
+  expect(ensured.ok(), `the baseline was refused: ${ensured.status()}`).toBe(true);
   let record: ProcessRevisionRecord | null = null;
   await expect.poll(async () => {
     record = await storedRevision(request, 1);

@@ -423,8 +423,8 @@ test.describe('the IT view on a real project, in a browser', () => {
     const detail = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]').first();
     await detail.click();
     await expect(detail).toHaveAttribute('aria-expanded', 'true');
-    const rail = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]', { hasText: 'Target, route contract and signed run' }).first();
-    if ((await rail.getAttribute('aria-expanded')) !== 'true') await rail.click();
+    // Inside it the rail is a titled part (an h3), open with the section.
+    await expect(page.locator('#analyze-technical-detail').getByRole('heading', { level: 3, name: 'Target, route contract and signed run' })).toBeVisible();
     await expect(page.locator('[data-it-profile-catalog]')).toContainText('SAP Cloud ERP Private', { timeout: 60000 });
   });
 

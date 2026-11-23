@@ -157,8 +157,12 @@ test.describe('the stage, rendered', () => {
     const next = page.locator('[data-route-next] a');
     await expect(next).toHaveText(/Decide in Re-design/);
     await expect(next).toHaveAttribute('href', new RegExp(`/project/${acct.projectId}/redesign#decide$`));
-    // Two cards in the side column, not three.
-    await expect(page.locator('aside[aria-label="Route and what is open"] > section')).toHaveCount(2);
+    // The side column (3.5.0, IT view): the route and what is open, each once, and the route only there.
+    const side = page.locator('aside[data-analyze-it-side]');
+    await expect(side).toHaveCount(1);
+    await expect(side.locator(':scope > #analyze-route')).toHaveCount(1);
+    await expect(side.locator(':scope > #not-determined')).toHaveCount(1);
+    await expect(page.locator('[data-route-why]')).toHaveCount(1);
 
     // The two optional imports: one "Add evidence" menu (ADR-093, owner decision
     // Q5), each item opening its upload in a dialog.
@@ -179,6 +183,12 @@ test.describe('the stage, rendered', () => {
 
     // Business value and the action plan: on Economics, folded, marked as the model's.
     await page.goto(`/project/${acct.projectId}/tco`, { waitUntil: 'domcontentloaded' });
+    // Since 3.5.0 (ADR-128) it stands in Economics' fold "The model's view", closed, marked as the model's.
+    const modelFold = page.locator('[data-economics-model]');
+    await expect(modelFold).toHaveAttribute('data-economics-fold', 'closed', { timeout: 90000 });
+    await expect(modelFold.locator('[data-economics-fold-toggle]')).toContainText('business value and action plan');
+    await modelFold.locator('[data-economics-fold-toggle]').click();
+    await expect(modelFold).toHaveAttribute('data-economics-fold', 'open');
     const plan = page.locator('[data-business-value-plan]');
     await expect(plan).toHaveCount(1, { timeout: 90000 });
     await expect(plan).toHaveAttribute('id', 'economics-business-value');

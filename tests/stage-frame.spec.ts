@@ -184,7 +184,9 @@ test.describe('a stage as a tool, rendered', () => {
         'href',
         `/project/${acct.projectId}/${other}?view=business&from=workspace-tools&layer=evidence`,
       );
-      // One project, one reading: every stage shows the same marks.
+      // One project, one reading: every stage shows the same marks. The bar stands before the project is read (every
+      // phase empty); wait for the reading — the seeded project's analysis is done.
+      await expect(bar.locator('a[data-workspace-tool="analyze"]')).toHaveAttribute('data-phase-state', 'done', { timeout: 60000 });
       const reading = await tools.evaluateAll((els) =>
         els.map((el) =>
           [
@@ -242,8 +244,10 @@ test.describe('a stage as a tool, rendered', () => {
     await expect(page.locator('nav[aria-label="Workflow phases"]')).toHaveCount(0);
     await expect(page.locator('[aria-label^="Workflow progress"], [data-rail-phase]')).toHaveCount(0);
     await expect(page.locator('body')).not.toContainText(/Proceed to |Continue to /);
-    // And the footer leads back to the workspace, like the header.
-    await expect(page.locator('[data-stage-footer] a')).toHaveAttribute('href', `/project/${acct.projectId}`);
+    // And the footer leads back where the header does: the family's one way back, My workspace here (ADR-140).
+    await expect(page.locator('[data-stage-footer] a')).toHaveAttribute('href', '/dashboard');
+    await expect(page.locator('[data-stage-footer] a')).toHaveAttribute('data-stage-back', 'my-workspace');
+    await expect(page.locator('[data-stage-header] [data-stage-back]')).toHaveAttribute('data-stage-back', 'my-workspace');
   });
 
   test('the demo stages carry the same bar instead of the stepper', async ({ page }) => {

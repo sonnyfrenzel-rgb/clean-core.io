@@ -8,7 +8,7 @@ import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
 import { DOC_STAGE_ORDER } from '../lib/documentation-progress';
-import { businessLayerFor, engineDocumentationOf, fixtureSource, FIXTURE_FILE } from './helpers/business-layer-fixture';
+import { businessLayerFor, engineDocumentationOf, fixtureSource, FIXTURE_FILE, UNKNOWN_STEP_ID } from './helpers/business-layer-fixture';
 
 /**
  * Roadmap 3.0.13 — the Documentation tool says what it is doing and how long
@@ -195,7 +195,9 @@ test.describe('the Documentation tool says what it is doing', () => {
     expect(businessTimes.size, `the elapsed time did not move: ${[...businessTimes].join(', ')}`).toBeGreaterThan(2);
 
     await expect(card).toHaveCount(0);
-    expect(JSON.parse(await storedLayer(SLOW)).sop_details).toHaveLength(LAYER.sop_details.length);
+    // Every step of the process is stored; the fixture's row for a step the process does not have is not kept.
+    const storedIds = (JSON.parse(await storedLayer(SLOW)).sop_details as Array<{ stepId: string }>).map((r) => r.stepId);
+    expect(storedIds).toEqual(LAYER.sop_details.map((r) => r.stepId).filter((id) => id !== UNKNOWN_STEP_ID));
     await expect(page.locator('[data-business-sop]')).toBeAttached({ timeout: 60000 });
     expect(bodies).toHaveLength(1);
     expect(bodies[0].stage).toBe('documentation');

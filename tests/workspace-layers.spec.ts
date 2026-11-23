@@ -520,8 +520,11 @@ test.describe('the layers on the screen', () => {
     await radio('IT').focus();
     await page.keyboard.press('ArrowRight');
     await expect(page).toHaveURL(/[?&]view=management\b/, { timeout: 30000 });
+    // Management is a page of its own: its switch is a new element, and the focus is handed on to it once it stands.
+    await expect(page.locator('[data-stage-view-switch="management"]')).toBeVisible({ timeout: 60000 });
     await expect(radio('Management')).toBeFocused();
     await page.keyboard.press('ArrowLeft');
+    await expect(page.locator('[data-stage-view-switch="it"]')).toBeVisible({ timeout: 60000 });
     await expect(radio('IT')).toBeFocused();
   });
 });

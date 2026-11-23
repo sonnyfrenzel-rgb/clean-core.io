@@ -209,7 +209,19 @@ test.describe('the IT view after a signed run of Z_SALES_ORDER_CREATOR', () => {
     expect(await page.locator('#not-determined [data-not-determined-item]').count()).toBeLessThanOrEqual(engine);
 
     // (3) Evidence with content draws no dashed empty box on the IT page.
-    await expect(page.locator('[data-analyze-it] [data-cc-empty-state]')).toHaveCount(0);
+    await expect
+      .poll(() =>
+        page
+          .locator('[data-analyze-it] [data-cc-empty-state]')
+          // What the page shows: the folds (Model summary, Technical detail) say "Not generated" or what a detector did
+          // not match only when a reader opens them, and say it as an absence on purpose (UX review Q4).
+          .evaluateAll((els) =>
+            els
+              .filter((el) => (el as HTMLElement).checkVisibility())
+              .map((el) => `${el.textContent?.trim().slice(0, 60)} in #${el.closest('[id]')?.id ?? '?'}`),
+          ),
+      )
+      .toEqual([]);
 
     // (4) The explanation starts at the top. The coach marks retired with the workspace page (3.5.0, AB-11); what
     // carries it now is the answer card above everything and each section's first sentence, visible without a click.

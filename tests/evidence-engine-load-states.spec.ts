@@ -20,9 +20,10 @@ import { seedStageProject, signInThroughForm, type SeededProject } from './helpe
  *   - Transformation keeps its opening state the same way, and on a failed read
  *     says so (`[data-transformation-evidence-failed]`) and draws no facets
  *     counted from no findings — only the source and the package beside it.
- *   - The Public-Cloud-Fit card in the workspace shows `loading` while the
- *     answer is on its way and `error` when it failed — never `empty`, the card
- *     for a project with no source, because this project has one.
+ *   - The Public-Cloud-Fit card (in the workspace until 3.5.0, in Analyze's IT
+ *     page since) settles in no state while the answer is on its way and shows
+ *     `error` when it failed — never `empty`, the card for a project with no
+ *     source, because this project has one.
  *
  * The source-level guards cannot see any of that: the states exist only while
  * a request is pending or after it failed. So these specs hold that request, or
@@ -234,20 +235,19 @@ test.describe('the project evidence, read from the server', () => {
     await expect(page.getByRole('dialog', { name: 'All code side by side' }).locator('#tf-side')).toBeVisible();
   });
 
-  test('the workspace Public-Cloud-Fit card waits for the evidence, then sorts it', async ({ page }) => {
+  // The card the workspace's Management view held stands in Analyze's IT page since 3.5.0, in *Technical detail*
+  // (`#public-cloud-fit` opens it). It takes the findings the page already read; only when that read failed does it
+  // ask the server itself, and say so.
+  test('the Public-Cloud-Fit card waits for the evidence, then sorts it', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1600 });
     await signInThroughForm(page, acct);
 
     const gate = await gateEvidence(page, 'hold');
-    await page.goto(`/project/${acct.projectId}?view=management`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'management', {
-      timeout: 60000,
-    });
+    await page.goto(`/project/${acct.projectId}/analyze?view=it#public-cloud-fit`, { waitUntil: 'domcontentloaded' });
     await gate.requested;
 
-    const card = page.locator('[data-public-cloud-fit-panel]');
-    await expect(card).toHaveAttribute('data-public-cloud-fit-panel', 'loading', { timeout: 60000 });
+    // While the evidence is held, the card has not settled in any state, "no source" included.
     await staysAbsent(
       page,
       '[data-public-cloud-fit-panel="ready"], [data-public-cloud-fit-panel="empty"], [data-public-cloud-fit-panel="error"]',
@@ -256,23 +256,26 @@ test.describe('the project evidence, read from the server', () => {
     );
 
     gate.release();
+    const card = page.locator('[data-public-cloud-fit-panel]');
     await expect(card).toHaveAttribute('data-public-cloud-fit-panel', 'ready', { timeout: 60000 });
+    // The address opened the fold that holds it.
+    await expect(card).toBeVisible();
   });
 
-  test('the workspace Public-Cloud-Fit card reports a failed read as an error, not as no source', async ({ page }) => {
+  test('a failed read is reported as an error, and no Public-Cloud-Fit card says no source', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1600 });
     await signInThroughForm(page, acct);
 
     const gate = await gateEvidence(page, 'abort');
-    await page.goto(`/project/${acct.projectId}?view=management`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'management', {
-      timeout: 60000,
-    });
+    await page.goto(`/project/${acct.projectId}/analyze?view=it#public-cloud-fit`, { waitUntil: 'domcontentloaded' });
     await gate.requested;
 
-    const card = page.locator('[data-public-cloud-fit-panel]');
-    await expect(card).toHaveAttribute('data-public-cloud-fit-panel', 'error', { timeout: 60000 });
+    // On Analyze a failed read draws no report at all, the card included: the page says the evidence could not be
+    // read, and no card claims "no source" or a sort it has no findings for.
+    const failed = page.locator('[data-analyze-evidence-failed]');
+    await expect(failed).toBeVisible({ timeout: 60000 });
+    await expect(failed).toContainText('The evidence for this code could not be read');
     await expect(page.locator('[data-public-cloud-fit-panel="empty"]')).toHaveCount(0);
     await expect(page.locator('[data-public-cloud-fit-panel="ready"]')).toHaveCount(0);
   });

@@ -218,7 +218,14 @@ test.describe('a real project', () => {
     test.setTimeout(300_000);
     const modelCalls: string[] = [];
     page.on('request', (r) => {
-      if (/\/api\/gemini/.test(r.url())) modelCalls.push(r.url());
+      if (/\/api\/gemini/.test(r.url())) {
+        const body = (() => { try { return r.postDataJSON() as { stage?: string; prompt?: string; trigger?: string } | null; } catch { return null; } })();
+        // The two steps that run by themselves for an owner (3.0.20; `lib/auto-steps.ts`) are not the requirements'
+        // reading: the plain wording of the business questions Design shows, and the business names of the map.
+        if (body?.trigger === 'automatic' && (body.stage === 'statements' || body.stage === 'naming')) return;
+        // The stage and the start of the prompt name which part of the page asked, should one ever ask.
+        modelCalls.push(`${r.url()} ${body?.stage ?? ''} ${String(body?.prompt ?? '').slice(0, 160)}`);
+      }
     });
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);

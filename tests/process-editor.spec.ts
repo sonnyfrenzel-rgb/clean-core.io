@@ -72,12 +72,18 @@ function exampleModel(source = exampleSource()): ProcessMapModel {
  * The model as the page builds it (`hooks/useProcessMap.ts`): plain reading plus
  * the technical file. What the reading canvas draws is counted against this.
  */
+/**
+ * The map as the page draws it for the seeded project. Since 3.5.0 a reading is drawn for the run's engine
+ * (`lib/bpmn/export.ts`, `engineVersionOfProject`); the seeded run records none, so the page draws it for `null`, the
+ * engine before versions were recorded, and so does this.
+ */
 function readingModel(source = exampleSource()): ProcessMapModel {
   const { bpmn, technical } = buildReadingExports(source, {
     processName: PROCESS_NAME,
     sourceFileName: FILE_NAME,
+    exporterVersion: null,
   });
-  const named = applyNaming(namingContextOf(source), null, 'no-key');
+  const named = applyNaming(namingContextOf(source, { engineVersion: null }), null, 'no-key');
   return buildProcessMapModel({ bpmn, technical, named, fileName: FILE_NAME });
 }
 
@@ -339,6 +345,8 @@ const EMAIL = `processeditor-${STAMP}@cleancore-test.io`;
 const PASSWORD = 'ProcessEditor123!';
 const PROJECT_ID = `process-editor-${STAMP}`;
 const RUN_ID = `process-editor-run-${STAMP}`;
+/** The owner's token, for the one record the spec asks the server for itself. */
+let idToken = '';
 
 async function signIn(page: Page) {
   await signInViaLanding(page, EMAIL, PASSWORD);
@@ -375,6 +383,7 @@ test.describe('the editor of roadmap 3.1', () => {
 
     const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD);
     const uid = cred.user.uid;
+    idToken = await cred.user.getIdToken();
     const source = exampleSource();
 
     await adminSetDoc('users', uid, {
@@ -554,15 +563,19 @@ test.describe('the editor of roadmap 3.1', () => {
       .toBe(rows + 1);
   });
 
-  test('editing leaves the reconstructed Ist exactly as it was', async ({ page }) => {
+  test('editing leaves the reconstructed Ist exactly as it was', async ({ page, request }) => {
     test.setTimeout(300 * 1000);
+    // The stored quote ("Measured and kept … on <date>") is measured by Documentation on opening; Analyze, where the
+    // map and its editor are since 3.5.0, only reads it (opening a project writes nothing). So it is measured here the
+    // way Documentation asks for it, and the line over the map carries it before and after editing.
+    const measured = await request.post(`/api/projects/${PROJECT_ID}/process-map`, { headers: { Authorization: `Bearer ${idToken}` } });
+    expect(measured.ok(), `the quote was not measured: ${measured.status()}`).toBe(true);
     await page.setViewportSize({ width: 1600, height: 1100 });
     await signIn(page);
     await openMap(page);
 
     const model = readingModel();
-    // The stored quote ("Measured and kept … on <date>") arrives after the map:
-    // read the line once it has settled, or the comparison below races it.
+    // The stored quote arrives after the map: read the line once it has settled, or the comparison below races it.
     await expect(page.locator('[data-process-map-traceability]')).toContainText('Measured and kept', { timeout: 60000 });
     const traceability = await page.locator('[data-process-map-traceability]').innerText();
     const rowsBefore = await page.locator('[data-tree-node]').count();
@@ -581,8 +594,10 @@ test.describe('the editor of roadmap 3.1', () => {
 
     // Back to reading. Phase 3's acceptance: *"the as-is revision is unchanged
     // after editing"* — so the sentence over the map, the outline
-    // and the number of shapes are the numbers of the reconstruction.
-    await page.locator('[data-process-edit-toggle]').click();
+    // and the number of shapes are the numbers of the reconstruction. On Analyze editing is full screen's (AB-5):
+    // leaving full screen is the way back to the reading map.
+    await page.locator('[data-map-fullscreen-toggle]').click();
+    await expect(page.locator('[data-process-editor]')).toHaveCount(0);
     await page.locator('[data-process-map-canvas]').waitFor({ timeout: 60000 });
     await expect(page.locator('[data-process-map-traceability]')).toHaveText(traceability);
     expect(await page.locator('[data-tree-node]').count()).toBe(rowsBefore);

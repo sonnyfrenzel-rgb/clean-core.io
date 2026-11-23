@@ -419,19 +419,16 @@ test.describe('the Business view on screen', () => {
     expect(visible).not.toMatch(ABAP_TOKENS);
     expect(visible).not.toContain('Linked to the code');
 
-    // "Ask this case" left the Business view (owner decision 22.10.2026, DESIGN.md §5.3) and stands in IT:
-    // plain on top, the code under "Show the code".
-    await expect(page.locator('[data-analyze-business] [data-ask-this-case]')).toHaveCount(0);
-    await page.goto(`/project/${ids.po}?view=it`, { waitUntil: 'domcontentloaded' });
-    const ask = page.locator('[data-ask-this-case="answered"]');
-    await expect(ask).toBeVisible({ timeout: 90_000 });
-    await expect(ask).toHaveAttribute('data-ask-wording', 'plain');
-    const question = (await ask.locator('[data-ask-question]').innerText()).trim();
-    expect(question).not.toMatch(ABAP_TOKENS);
-    await expect(ask.locator('[data-ask-plain] [data-cc-anchor]').first()).toBeVisible();
-    await expect(ask.locator('[data-ask-code-question]')).toBeHidden();
-    await ask.getByRole('button', { name: /Show the code/ }).click();
-    await expect(ask.locator('[data-ask-code-question]')).toHaveText(ABAP_TOKENS);
+    // Every sentence's line opens the code beside the map, on request only: the code panel is not on top before it.
+    await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
+    await steps.first().locator('[data-cc-anchor]').first().click();
+    await expect(page.locator('[data-analyze-code-panel]')).toBeVisible({ timeout: 30_000 });
+
+    // "Ask this case" is retired (owner decisions AB-9, AB-11): it comes back in neither view.
+    await expect(page.locator('[data-ask-this-case]')).toHaveCount(0);
+    await page.goto(`/project/${ids.po}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analysis-answer]')).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('[data-ask-this-case]')).toHaveCount(0);
   });
 
   test('Business has no section and no bar; an old section address lands where it lives now (ADR-096, AB-2)', async ({ page }) => {

@@ -94,7 +94,7 @@ test.describe('historical project forms, opened in the workspace', () => {
 
       // Business first: the workspace sends it to Analyze, which must open on every form and write nothing.
       await page.goto(`/project/${id}?view=business`, { waitUntil: 'domcontentloaded' });
-      await page.waitForURL(new RegExp(`/project/${id}/analyze(\\?|#|$)`), { timeout: 60000 });
+      await page.waitForURL(new RegExp(`/project/${id}/analyze(\\?|#|$)`), { timeout: 60000, waitUntil: 'commit' });
       const hasSource = typeof form.project.legacyCode === 'string' && form.project.legacyCode.trim() !== '';
       if (hasSource) {
         await expect(page.locator('[data-analyze-business="ready"]'), `${key} did not open in business`).toBeVisible({ timeout: 60000 });
@@ -109,7 +109,7 @@ test.describe('historical project forms, opened in the workspace', () => {
       // IT and Management are Analyze's views since 3.5.0 (AB-9, AB-10): the old workspace address opens them there.
       for (const view of ['it', 'management']) {
         await page.goto(`/project/${id}?view=${view}`, { waitUntil: 'domcontentloaded' });
-        await page.waitForURL(new RegExp(`/project/${id}/analyze\\?view=${view}`), { timeout: 60000 });
+        await page.waitForURL(new RegExp(`/project/${id}/analyze\\?view=${view}`), { timeout: 60000, waitUntil: 'commit' });
         await expect(page.locator('[data-stage-view-switch]'), `${key} did not open in ${view}`).toHaveAttribute('data-stage-view-switch', view, {
           timeout: 60000,
         });

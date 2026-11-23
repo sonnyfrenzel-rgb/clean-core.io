@@ -113,10 +113,17 @@ test.describe('rendered', () => {
 
     await revealEconomicsField(page, '[data-economics-take-over-all]');
     await page.locator('[data-economics-take-over-all]').first().click();
-    // Keep's upgrade deferral is the reader's figure as well (no proposal, no default): still no amount without it.
+    // Keep's upgrade deferral is the reader's figure as well (no proposal, no default): Keep has no amount without it,
+    // so the page has no answer and no difference to keeping. The options whose figures are all in are priced in their
+    // own row (ADR-128 (2)); Keep's row says Not determined.
     await expect(answer).toContainText('the effort of one option');
     await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'needs-figures');
-    await expect(page.locator('[data-cost-option-total]')).toHaveCount(0);
+    await expect(answer).not.toContainText(/Keeping it costs/);
+    // In "Options compared" (the effort cards further down say the same of their option).
+    const notDetermined = () => page.locator('[data-cost-totals] [data-cost-option-not-determined]').evaluateAll((els) => els.map((e) => e.getAttribute('data-cost-option-not-determined')));
+    await expect.poll(notDetermined).toEqual(['do-nothing']);
+    await expect(page.locator('[data-cost-option-total="do-nothing"]')).toHaveCount(0);
+    await expect(page.locator('[data-cost-option-difference]').filter({ hasText: /\d/ })).toHaveCount(0);
     await fillEconomics(page, '[data-cost-field="do-nothing-upgrade-delay"]', '2');
     await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'priced', { timeout: 15000 });
     await expect(answer).toContainText(/Keeping it costs (about )?CHF/);

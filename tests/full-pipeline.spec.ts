@@ -347,7 +347,11 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // Confirm target architecture sign-off
     console.log('Confirming target architecture sign-off...');
     // "Confirm target" asks first, in a small box whose own button confirms
-    // the recommendation (owner 02.10.2026).
+    // the recommendation (owner 02.10.2026). Since 3.5.0 it is the Management view's one primary action, behind
+    // its checklist (ADR-130 (1), G8).
+    await viewRadio('Management').click();
+    await expect(page.locator('[data-design-view="management"] [data-design-checklist]')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-design-confirm]')).toBeEnabled({ timeout: 120_000 });
     await page.locator('[data-design-confirm]').click();
     const lockBtn = page.locator('[data-cc-message-box] button:has-text("Confirm target")');
     await lockBtn.scrollIntoViewIfNeeded();
@@ -360,8 +364,8 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     
     await lockBtn.click();
     console.log('Lock button clicked, waiting for confirmation...');
-    // A confirmation closes the dialog; the panel answers with the confirmed target.
-    await page.waitForSelector('[data-design-answer="confirmed"]', { timeout: 30000 });
+    // A confirmation closes the box; the answer card says the target is confirmed.
+    await expect(page.locator('#design-answer [data-answer]')).toHaveText('The target is confirmed.', { timeout: 60000 });
     console.log('Architecture confirmed.');
 
     // --- STAGE 3: TRANSFORMATION ---

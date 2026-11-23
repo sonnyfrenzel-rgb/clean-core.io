@@ -99,10 +99,11 @@ function exampleModel(source = exampleSource()): ProcessMapModel {
  * report events as one flow, and the technical file beside it. What the page
  * draws is compared against this; the structure of the file against the above.
  */
-function readingModel(source = exampleSource()): ProcessMapModel {
+function readingModel(source = exampleSource(), engine?: string | null): ProcessMapModel {
   const { bpmn, technical } = buildReadingExports(source, {
     processName: PROCESS_NAME,
     sourceFileName: FILE_NAME,
+    ...(engine === undefined ? {} : { exporterVersion: engine }),
   });
   const named = applyNaming(namingContextOf(source), null, 'no-key');
   return buildProcessMapModel({ bpmn, technical, named, fileName: FILE_NAME });
@@ -606,6 +607,11 @@ const EMAIL = `processnav-${STAMP}@cleancore-test.io`;
 const PASSWORD = 'ProcessNav123!';
 const PROJECT_ID = `process-nav-${STAMP}`;
 const RUN_ID = `process-nav-run-${STAMP}`;
+/**
+ * The engine the page draws the map for: the seeded run records none, so it is read with the engine before
+ * versioning (`engineVersionOfProject`, since 3.5.0 for the map as well), not with today's.
+ */
+const PAGE_ENGINE = engineVersionOfProject({ activeRunId: RUN_ID });
 
 /**
  * A called object that the map really does place on a step — roadmap 6.3.
@@ -650,7 +656,7 @@ async function openMap(page: Page) {
   // report events as one flow, so the overview has its own count).
   await expect
     .poll(async () => page.locator('[data-tree-node]').count(), { timeout: 60000 })
-    .toBe(buildNavigation(readingModel()).roots.length);
+    .toBe(buildNavigation(readingModel(undefined, PAGE_ENGINE)).roots.length);
 }
 
 /** The level on show, as the path line names it (`null` at the top). */
@@ -768,7 +774,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await openMap(page);
 
     const source = exampleSource();
-    const model = readingModel(source);
+    const model = readingModel(source, PAGE_ENGINE);
     const nav = buildNavigation(model);
     const rules = rulesByNode(source, model);
 
@@ -795,7 +801,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await signIn(page);
     await openMap(page);
 
-    const model = readingModel();
+    const model = readingModel(undefined, PAGE_ENGINE);
     const nav = buildNavigation(model);
     const counts: Array<{ outline: string; id: string; mouse: number; keyboard: number }> = [];
 
@@ -899,7 +905,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await signIn(page);
     await openMap(page);
 
-    const model = readingModel();
+    const model = readingModel(undefined, PAGE_ENGINE);
     const nav = buildNavigation(model);
 
     const read = async () => ({
@@ -937,7 +943,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await openMap(page);
 
     const source = exampleSource();
-    const model = readingModel(source);
+    const model = readingModel(source, PAGE_ENGINE);
     const nav = buildNavigation(model);
     const overlays = buildOverlays(model, nav, rulesByNode(source, model));
     const hardCoded = overlays[0];
@@ -988,7 +994,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await openMap(page);
 
     const source = exampleSource();
-    const model = readingModel(source);
+    const model = readingModel(source, PAGE_ENGINE);
     const nav = buildNavigation(model);
     const calls = readCallGraph(source);
     // The overlay shows what the project's run signed (`useProcessOverlays`, `engineVersionOfProject`): the seeded
@@ -1046,7 +1052,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await signIn(page);
     await openMap(page);
 
-    const model = readingModel();
+    const model = readingModel(undefined, PAGE_ENGINE);
     const nav = buildNavigation(model);
 
     // A level whose main path is a *part* of it. On the top level of a report
@@ -1087,7 +1093,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     await openMap(page);
 
     const source = exampleSource();
-    const model = readingModel(source);
+    const model = readingModel(source, PAGE_ENGINE);
     const nav = buildNavigation(model);
     const switches = readRunSwitches(source, model);
     const declared = new Map(switches.map((entry) => [entry.name, entry.defaultOn ?? true]));

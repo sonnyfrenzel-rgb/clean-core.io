@@ -209,9 +209,15 @@ test.describe('the stage, answer first (ADR-128)', () => {
     return page.locator('[data-economics]').evaluate((root, pattern) => {
       const re = new RegExp(pattern, 'g');
       // Folded parts are in the page (hidden), so textContent checks what is one action deeper too.
-      const text = (root as HTMLElement).innerText + ' ' + (root.textContent ?? '');
+      // One text node at a time: `textContent` runs adjacent table cells together ("2.5" and "01" read as "2.501").
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      const nodes: string[] = [];
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n.textContent ?? '');
+      const text = (root as HTMLElement).innerText + ' ' + nodes.join(' ');
       const values = Array.from(root.querySelectorAll('input')).map((i) => (i as HTMLInputElement).value);
-      return [...(text.match(re) ?? []), ...values.filter((v) => new RegExp(pattern).test(v))];
+      // Each hit with the words around it, so a failure says where the float stands.
+      const hits = [...text.matchAll(re)].map((m) => `${m[0]} in "${text.slice(Math.max(0, (m.index ?? 0) - 60), (m.index ?? 0) + 40)}"`);
+      return [...hits, ...values.filter((v) => new RegExp(pattern).test(v)).map((v) => `${v} in an input`)];
     }, RAW_FLOAT.source);
   }
 

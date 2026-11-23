@@ -722,6 +722,10 @@ test.describe('the panel a reader actually meets', () => {
       firstName: 'Review', lastName: 'Tasks', email: RENDER_EMAIL, tier: 'pilot', status: 'approved',
       activatedAt: new Date(), transformationsUsed: 0, transformationsLimit: 5,
       termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
+      // Since 3.5.0 the IT page carries the rule register, whose plain wording of the rules is an automatic model step
+      // of its own (`statements`, scope "rules"; hooks/usePlainWording.ts). It is switched off here so that any call
+      // left is the panel's: every other stage stays as the account has it.
+      modelStages: { statements: false },
     });
     // A finished run with no narrative renders the evidence-only report - the
     // branch that carries the table panels and, since 7.5, the check tasks.
@@ -754,7 +758,7 @@ test.describe('the panel a reader actually meets', () => {
       try {
         stage = String((route.request().postDataJSON() as { stage?: unknown } | null)?.stage ?? '?');
       } catch { /* not JSON */ }
-      modelCalls.push(`${route.request().url()} (stage ${stage})`);
+      modelCalls.push(`${route.request().url()} (stage ${stage}, from ${new URL(page.url()).pathname}${new URL(page.url()).search})`);
       await route.abort();
     });
 

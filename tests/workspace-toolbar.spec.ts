@@ -342,9 +342,10 @@ test.describe('the toolbar, rendered', () => {
         );
       }
       // O8 (plan AB-4, ADR-060 amended): this project is analysis-only and no later tool was opened in this browser
-      // yet, so no tool wears the "Next" tag; the line under the bar still says what Design does.
+      // yet, so no tool wears the "Next" tag; Design still says what it does, in its description (checked above).
+      // The family's tool row has no hint line under it (ADR-140, UX review 22.11.2026, Q9): one row, nothing more.
       await expect(bar.locator('a[data-workspace-tool-next]'), `${view}: a Next tag for an analysis-only reader`).toHaveCount(0);
-      await expect(bar.locator('[data-tools-hint="bar"]')).toContainText(PHASE_PURPOSE.design);
+      await expect(bar.locator('[data-tools-hint]'), `${view}: a hint line under the family's tool row`).toHaveCount(0);
 
       // The legend says what the marks mean, in text, beside "Tools".
       const legend = bar.locator('[data-tools-legend="bar"]');
@@ -358,11 +359,36 @@ test.describe('the toolbar, rendered', () => {
       for (const name of names) expect(name, `${view}: a tool claims proof`).not.toMatch(/prove|proof|verif/i);
     }
 
-    // The check is green — the success token, not a near-green — and the words say why.
+    // The words say why the check stands.
     const analyze = page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]');
     await expect(analyze).toHaveAccessibleName(named('Analyze', 'tools.mark.done'));
     await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="tco"]')).toHaveAccessibleName('Economics');
-    const [tick, legendTick, success] = await analyze.evaluate((el) => {
+    // A tool with nothing on record says nothing extra.
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]')).toHaveAccessibleName('Design');
+
+    // Keyboard: real links, reached by Tab, with the visible focus ring.
+    await analyze.focus();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Shift+Tab');
+    await expect(analyze).toBeFocused();
+    const ring = await analyze.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { style: s.outlineStyle, width: parseFloat(s.outlineWidth) };
+    });
+    expect(ring.style).toBe('solid');
+    expect(ring.width).toBeGreaterThanOrEqual(2);
+
+    // O8: once a tool after Analyze was opened in this browser (Design here), exactly one tool is next again —
+    // Economics, the phase contract's next tool since ADR-128 (5).
+    await page.goto(`/project/${ANALYZED}/design`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]')).toBeVisible({ timeout: 60000 });
+
+    // The check is green — the success token, not a near-green. Read where Analyze is not the open tool: the open
+    // tool is filled in ink (ADR-140) and draws its mark in the tint that reads on ink.
+    const analyzeElsewhere = page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]');
+    await expect(analyzeElsewhere).toHaveAttribute('data-phase-state', 'done', { timeout: 60000 });
+    await expect(analyzeElsewhere).not.toHaveAttribute('aria-current', 'page');
+    const [tick, legendTick, success] = await analyzeElsewhere.evaluate((el) => {
       const toRgb = (value: string) => {
         const probe = document.createElement('span');
         probe.style.color = value;
@@ -381,29 +407,14 @@ test.describe('the toolbar, rendered', () => {
     expect(tick).toBe(success);
     expect(tick).toBe('rgb(4, 120, 87)');
     expect(legendTick, 'the legend shows another check than the bar').toBe(tick);
-    // A tool with nothing on record says nothing extra.
-    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]')).toHaveAccessibleName('Design');
 
-    // Keyboard: real links, reached by Tab, with the visible focus ring.
-    await analyze.focus();
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Shift+Tab');
-    await expect(analyze).toBeFocused();
-    const ring = await analyze.evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { style: s.outlineStyle, width: parseFloat(s.outlineWidth) };
-    });
-    expect(ring.style).toBe('solid');
-    expect(ring.width).toBeGreaterThanOrEqual(2);
-
-    // O8: once a tool after Analyze was opened in this browser, exactly one tool is next again — Design.
-    await page.goto(`/project/${ANALYZED}/design`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]')).toBeVisible({ timeout: 60000 });
     await open(page, ANALYZED, 'it');
     const bar = page.locator('[data-stage-tools="open"]');
     await expect(bar.locator('a[data-workspace-tool-next]'), 'not exactly one tool is next').toHaveCount(1);
-    await expect(bar.locator('a[data-workspace-tool-next]')).toHaveAttribute('data-workspace-tool', 'design');
-    await expect(bar.locator('a[data-workspace-tool="design"] [data-workspace-tool-next-tag]')).toBeVisible();
+    // The next tool is the phase contract's, in the tool order: Economics after Analyze (ADR-128 (5)).
+    expect(nextPhaseKey(steps)).toBe('tco');
+    await expect(bar.locator('a[data-workspace-tool-next]')).toHaveAttribute('data-workspace-tool', 'tco');
+    await expect(bar.locator('a[data-workspace-tool="tco"] [data-workspace-tool-next-tag]')).toBeVisible();
   });
 
   test('a stale Analyze: no check, the amber dot, "out of date" in words; a started Design wears the half circle, not a check', async ({ page }) => {

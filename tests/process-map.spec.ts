@@ -317,12 +317,15 @@ test.describe('the map on the page, without a mouse', () => {
 
     const { model } = fixtureModel();
 
-    // --- the legend names all three, with the counts the file gives -------
-    for (const value of LEGEND_VALUES) {
+    // --- the legend, as the Business view counts it (owner, 03.10.2026) ---
+    // Confirmed is the steps a business answer stands on (none yet on this project), Reconstructed the rest of what
+    // the file counts; Proven is left out, as nothing a business reader does here can move it.
+    const fileTotal = model.legend.reduce((sum, entry) => sum + entry.count, 0);
+    for (const value of LEGEND_VALUES.filter((v) => v !== 'proven')) {
       await expect(page.locator(`[data-legend-entry="${value}"]`)).toBeVisible();
-      const expected = model.legend.find((entry) => entry.value === value)?.count ?? 0;
-      await expect(page.locator(`[data-legend-count="${value}"]`)).toHaveText(String(expected));
+      await expect(page.locator(`[data-legend-count="${value}"]`)).toHaveText(String(value === 'reconstructed' ? fileTotal : 0));
     }
+    await expect(page.locator('[data-legend-entry="proven"]')).toHaveCount(0);
     await expect(page.locator('[data-legend-count="unanchored"]'))
       .toHaveText(String(model.traceability.unanchored));
     await expect(page.locator('[data-process-map-traceability]'))
@@ -384,12 +387,14 @@ test.describe('the map on the page, without a mouse', () => {
     expect(await stops(), 'moving the focus left two tab stops behind').toBe(1);
 
     await page.keyboard.press('Enter');
-    const card = page.locator(`[data-process-code-card="${second}"]`);
-    await card.waitFor({ timeout: 15000 });
-
+    // On Analyze, Business the code of the chosen step stands in the panel beside the map (mockup state 7), not in a
+    // card inside it; a step without a line anchor has no code to show, and the panel stays closed.
+    const card = page.locator('[data-analyze-code-panel]');
     const element = model.elements.find((e) => e.id === second);
     expect(element, `${second} is not an element of the model`).toBeTruthy();
     if (element?.anchor) {
+      await card.waitFor({ timeout: 15000 });
+      // The panel names the step in the page's wording (plain names); which step it is shows in its marked lines.
       const marked = await card.locator('[data-cc-code-line="highlighted"]').allInnerTexts();
       const expected: number[] = [];
       for (let n = element.anchor.lineStart; n <= element.anchor.lineEnd; n += 1) expected.push(n);
@@ -401,7 +406,7 @@ test.describe('the map on the page, without a mouse', () => {
         expect(text.replace(/\s+/g, ' ')).toContain(sourceLines[number - 1].trim().replace(/\s+/g, ' '));
       }
     } else {
-      await expect(card.locator('[data-process-code-card-unanchored]')).toContainText(UNANCHORED);
+      await expect(card).toHaveCount(0);
     }
 
     // --- Escape closes it and gives the focus back to the node ------------
@@ -427,7 +432,17 @@ test.describe('the map on the page, without a mouse', () => {
     const inList = await page.evaluate(() => document.activeElement?.getAttribute('data-step-node'));
     expect(inList, 'ArrowDown did not move inside the step list').toBe(topPlane[1]);
     await page.keyboard.press('Enter');
-    await page.locator(`[data-process-code-card="${topPlane[1]}"]`).waitFor({ timeout: 15000 });
+    const listed = model.elements.find((e) => e.id === topPlane[1]);
+    if (listed?.anchor) {
+      const lines: string[] = [];
+      for (let n = listed.anchor.lineStart; n <= listed.anchor.lineEnd; n += 1) lines.push(String(n));
+      const marks = page.locator('[data-analyze-code-panel] [data-cc-code-line="highlighted"]');
+      await expect(marks).toHaveCount(lines.length, { timeout: 15000 });
+      const shown = await marks.allInnerTexts();
+      lines.forEach((n, i) => expect(shown[i], `the marked line is not line ${n}`).toContain(n));
+    } else {
+      await expect(page.locator('[data-analyze-code-panel]')).toHaveCount(0);
+    }
   });
 
   test('the traceability quote is measured by the server and kept with the model', async ({ page, request }) => {

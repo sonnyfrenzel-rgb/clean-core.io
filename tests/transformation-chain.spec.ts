@@ -97,10 +97,12 @@ const inputs = (over: Partial<ChainInputs> = {}): ChainInputs => ({
   evidence: {
     state: 'ready',
     findings: [
-      { sapReplacement: { objectName: 'I_PURCHASEORDERAPI01', confidence: 'Catalog Match' } },
-      { sapReplacement: { objectName: 'i_purchaseorderapi01' } },
-      { sapReplacement: { objectName: 'API_PURCHASEREQ_PROCESS_SRV' } },
-      {},
+      { kind: 'standard-table-read', objectName: 'EKKO', sapReplacement: { objectName: 'I_PURCHASEORDERAPI01', confidence: 'Catalog Match' } },
+      { kind: 'standard-table-read', objectName: 'EKPO', sapReplacement: { objectName: 'i_purchaseorderapi01' } },
+      { kind: 'standard-table-write', objectName: 'EBAN', sapReplacement: { objectName: 'API_PURCHASEREQ_PROCESS_SRV' } },
+      // The same finding at a second place in the code: one finding, not two.
+      { kind: 'standard-table-write', objectName: 'EBAN', sapReplacement: { objectName: 'API_PURCHASEREQ_PROCESS_SRV' } },
+      { kind: 'classic-list', title: 'Classic list output' },
     ],
   },
   rules: { state: 'ready', register: register([row('BR-001', 'keep', 3), row('BR-002', 'drop', 3), row('BR-003', null), row('BR-004', 'clarify')]) },
@@ -126,7 +128,8 @@ test.describe('the chain', () => {
   test('every slot says the facts of this project, each with its level', () => {
     const by = (k: string) => chainSlots(inputs()).find((s) => s.key === k)!;
     expect(by('first-insights').facts.map((f) => [f.text, f.provenance])).toEqual([['What it is for: Approves purchase orders above the limit.', 'reconstructed']]);
-    // Analyze: the signed score with the findings, then the distinct successors (case folded) from SAP's catalog.
+    // Analyze: the signed score with the distinct findings (a second place of one finding is not a second finding), then the
+    // distinct successors (case folded) from SAP's catalog.
     expect(by('analyze').facts.map((f) => [f.text, f.provenance])).toEqual([
       ['Clean Core Score 62 · 4 findings', 'reconstructed'],
       ['2 released SAP successors for the objects it uses', 'imported'],

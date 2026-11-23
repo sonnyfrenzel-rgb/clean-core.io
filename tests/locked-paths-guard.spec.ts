@@ -180,7 +180,9 @@ test.describe('the lock holds when used', () => {
     // The run is offered — a saved suite opens selected — and what it sends is
     // a run against mocks, whatever the stored environment says. The route
     // still refuses 'live' (the test above); the page no longer asks for it.
-    const run = page.locator('[data-testing-results]').getByRole('button', { name: /^Run the \d+ scenarios? against SAP mocks$/ });
+    // The request test above has already run the suite on mocks through the route, so with the whole file the run is
+    // on record and the button says "Run again"; run on its own, this test sees the first run's label.
+    const run = page.locator('[data-testing-results]').getByRole('button', { name: /^(Run the 1 scenario against SAP mocks|Run again)$/ });
     await expect(run).toBeEnabled({ timeout: 30000 });
     const answered = page.waitForResponse((r) => r.url().includes('/api/run-tests') && r.request().method() === 'POST', { timeout: 120000 });
     await run.click();

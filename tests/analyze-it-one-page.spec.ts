@@ -156,8 +156,10 @@ test.describe('the page, rendered', () => {
     await expect(page.locator('#analyze-touch')).toBeVisible();
     // No internal id and one line-anchor notation.
     await expect(page.locator('body')).not.toContainText(/\bCC-\d{3}\b|\bnd-\d+-\d+\b/);
-    const anchors = await page.locator('main [data-cc-anchor]').allInnerTexts();
-    expect(anchors.filter((t) => /^L\d/.test(t.trim()))).toEqual([]);
+    const anchors = await page
+      .locator('main [data-cc-anchor]')
+      .evaluateAll((els) => els.map((el) => `${(el as HTMLElement).innerText.trim()} in #${el.closest('[id]')?.id ?? '?'}`));
+    expect(anchors.filter((t) => /^L\d/.test(t))).toEqual([]);
 
     // L3: the page, folds closed, stays within about three screens at 1440.
     const height = await page.evaluate(() => document.documentElement.scrollHeight);

@@ -257,17 +257,19 @@ test.describe('levels in full screen and inline — desktop', () => {
     await signIn(page, acct);
     await openWorkspaceMap(page, acct);
 
-    // The editor: its own levels, the same path and way up, in full screen.
+    // The editor: its own levels, the same path and way up, in full screen. On Analyze *Edit model* opens full screen
+    // with the editor in it (AB-5): the editor is full screen's, and the bar's *Leave full screen* is the way out.
+    const frame = page.locator('[data-workspace-process] [data-map-canvas-frame]').first();
     await page.locator('[data-process-edit-toggle]').click();
     const editor = page.locator('[data-process-editor]');
     await expect.poll(async () => editor.locator('[data-process-editor-canvas] .djs-shape').count(), { timeout: 60_000 }).toBeGreaterThan(5);
-    await editor.locator('[data-editor-fullscreen-toggle]').click();
-    await expect(editor).toHaveAttribute('data-editor-fullscreen', 'true');
+    await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
+    await expect(frame).toHaveAttribute('data-map-fullscreen-editing', 'true');
     const editorSub = await subProcessOnLevel(editor.locator('[data-process-editor-canvas]'));
     await editor.locator(`.djs-overlays[data-container-id="${editorSub}"] .bjs-drilldown`).click();
     const editorPath = editor.locator('[data-process-path] [aria-current="true"]');
     await expect(editorPath).toHaveAttribute('data-process-crumb', editorSub);
-    await expectOnScreen(page, editor.locator('[data-process-up]'), 'the editor\'s way up in full screen');
+    await expectOnScreen(page, editor.locator('[data-process-up]'), "the editor's way up in full screen");
     await editor.locator('[data-process-up]').click();
     await expect(editor.locator('[data-process-path]')).toHaveCount(0);
     await editor.locator(`.djs-overlays[data-container-id="${editorSub}"] .bjs-drilldown`).click();
@@ -276,9 +278,11 @@ test.describe('levels in full screen and inline — desktop', () => {
     await expect(editor.locator('[data-process-path]')).toHaveCount(0);
     await editor.locator(`.djs-overlays[data-container-id="${editorSub}"] .bjs-drilldown`).click();
     await expect(editorPath).toHaveAttribute('data-process-crumb', editorSub);
-    await editor.locator('[data-editor-fullscreen-toggle]').click();
-    await expect(editor).toHaveAttribute('data-editor-fullscreen', 'false');
-    await expect(editorPath).toHaveAttribute('data-process-crumb', editorSub);
+    // Every level change stayed in full screen; leaving it ends editing on Analyze.
+    await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
+    await page.locator('[data-map-fullscreen-toggle]').click();
+    await expect(frame).toHaveAttribute('data-map-fullscreen', 'false');
+    await expect(editor).toHaveCount(0);
   });
 
   test('the map takes the width: the code only when a step is chosen, beside the map; the outline folds and is remembered', async ({ page }) => {

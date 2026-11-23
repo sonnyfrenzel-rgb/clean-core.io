@@ -318,7 +318,9 @@ test.describe('the stage bar and the workspace bar say the same thing about the 
     // gone; the phase marks every account reads are the tools bar's — the one
     // under every stage header and the one in the workspace. Those are the two
     // surfaces compared here, the way the stepper and the rail were before.
-    type Mark = { colour: string; tone: string | null; tick: boolean; name?: string };
+    // `current`: the tool of the open page. The family's tool row fills it in ink (ADR-140), so its mark is drawn in
+    // the light tint that reads on ink; its shape and meaning stay those of every other page.
+    type Mark = { colour: string; tone: string | null; tick: boolean; name?: string; current: boolean };
     const seen: Record<string, { stage: Mark; workspace: Mark }[]> = {};
 
     const killTransitions = () =>
@@ -342,10 +344,13 @@ test.describe('the stage bar and the workspace bar say the same thing about the 
             tone: el.getAttribute('data-workspace-tool-mark-meaning'),
             name: (el.textContent || '').trim(),
             tick: kind === 'check',
+            current: el.getAttribute('aria-current') === 'page',
           };
         }),
       );
-      return Object.fromEntries(rows.map((r) => [r.key, { colour: r.colour, tone: r.tone, tick: r.tick, name: r.name }]));
+      return Object.fromEntries(
+        rows.map((r) => [r.key, { colour: r.colour, tone: r.tone, tick: r.tick, name: r.name, current: r.current }]),
+      );
     };
 
     // The reference every stage page is held to. The workspace page and its own bar dissolved into Analyze in 3.5.0
@@ -381,6 +386,8 @@ test.describe('the stage bar and the workspace bar say the same thing about the 
     for (const [key, rows] of Object.entries(seen)) {
       rows.forEach((row, i) => {
         for (const field of ['colour', 'tick', 'tone'] as const) {
+          // Colour is compared between two marks on the same ground: the open page's own tool stands on ink on one bar.
+          if (field === 'colour' && row.stage.current !== row.workspace.current) continue;
           if (row.stage[field] !== row.workspace[field]) {
             disagreements.push(
               `${STAGES[i]} page · ${key}: stage bar ${field} ${row.stage[field]} vs workspace bar ${row.workspace[field]}`,
@@ -392,19 +399,39 @@ test.describe('the stage bar and the workspace bar say the same thing about the 
     expect(disagreements, `the stage bar and the workspace bar disagree:\n${disagreements.join('\n')}`).toEqual([]);
 
     // 2. Position is not evidence: the same phase looks the same from all seven
-    //    pages — being the current tool (ink, aria-current) paints no mark.
+    //    pages — being the current tool (ink, aria-current) paints no mark of its own.
+    //    On the six pages where a tool is not the open one its mark has one colour; on its own page it stands on ink
+    //    and keeps its shape and meaning, in the one on-ink tint every current tool with that mark shares.
     const moved: string[] = [];
     for (const [key, rows] of Object.entries(seen)) {
-      const distinct = [...new Set(rows.map((r) => r.stage.colour))];
+      const distinct = [...new Set(rows.filter((r) => !r.stage.current).map((r) => r.stage.colour))];
       if (distinct.length !== 1) moved.push(`${key} changes colour with the open page: ${distinct.join('  /  ')}`);
+      const own = rows.filter((r) => r.stage.current);
+      if (own.length !== 1) moved.push(`${key}: the bar marks ${own.length} pages as its own, not one`);
+      for (const r of own) {
+        const elsewhere = rows.find((x) => !x.stage.current)!.stage;
+        if (r.stage.tick !== elsewhere.tick || r.stage.tone !== elsewhere.tone) {
+          moved.push(`${key}: on its own page the mark says ${r.stage.tone}, elsewhere ${elsewhere.tone}`);
+        }
+      }
     }
+    const onInk = (tick: boolean) => [
+      ...new Set(
+        Object.values(seen)
+          .flat()
+          .filter((r) => r.stage.current && r.stage.tick === tick && r.stage.tone !== 'none')
+          .map((r) => r.stage.colour),
+      ),
+    ];
+    if (onInk(true).length > 1) moved.push(`the open tool's check comes in ${onInk(true).length} colours: ${onInk(true).join('  /  ')}`);
     expect(moved, `colour follows the reader instead of the evidence:\n${moved.join('\n')}`).toEqual([]);
 
     // 3. The bar says "used", never "proven" (ADR-060 amended 02.10.2026):
     //    a signed run and a generated draft carry the same mark there, in one
     //    colour, and nothing on either bar claims proof. Proof strength is the
     //    status line's and the chips' to say — checked above, from the contract.
-    const first = (key: string) => seen[key][0].stage;
+    // The first page on which the tool is not the open one: its mark on the common ground.
+    const first = (key: string) => seen[key].find((r) => !r.stage.current)!.stage;
     // Economics' `partial` is the signed run as its baseline, not an estimate
     // anybody made, so it carries no mark — on both bars. Since the owner's
     // second amendment of 03.10.2026 ("a check must mean done", ADR-060) the

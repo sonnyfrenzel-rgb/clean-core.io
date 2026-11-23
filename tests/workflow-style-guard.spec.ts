@@ -182,7 +182,8 @@ test.describe('every stage renders its title identically', () => {
         )
         .toBe(true);
 
-      // An icon, where a stage has one, stands neutral: no surface, 20 px, --cc-ink-muted.
+      // An icon, where a stage has one, stands neutral: no surface, --cc-ink-muted. Since 3.5.0 it is the eyebrow's
+      // mark before "Tool · …", 16 px (DESIGN.md §2.12, the family frame), no longer a 20 px header icon.
       const icon = page.locator('[data-stage-icon]');
       if (await icon.count()) {
         const look = await icon.first().evaluate((el) => {
@@ -194,7 +195,7 @@ test.describe('every stage renders its title identically', () => {
           };
         });
         if (look.background !== 'rgba(0, 0, 0, 0)') offSpec.push(`${stage}: the icon sits on a surface (${look.background})`);
-        if (look.width !== '20px') offSpec.push(`${stage}: the icon is ${look.width} wide, §2.3 wants 20px`);
+        if (look.width !== '16px') offSpec.push(`${stage}: the icon is ${look.width} wide, §2.12 wants 16px`);
         if (look.color !== 'rgb(75, 85, 99)') offSpec.push(`${stage}: the icon is ${look.color}, §2.3 wants --cc-ink-muted`);
       }
     }

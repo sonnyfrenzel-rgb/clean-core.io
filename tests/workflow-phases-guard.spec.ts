@@ -331,7 +331,7 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
     await expect(row).not.toContainText('100%');
 
     // The tools bar, on a stage page (it replaced the stepper, roadmap 3.0.1) —
-    // and Economics is the sixth tool. A test draft is started, never done:
+    // and Economics is the second tool, after Analyze (ADR-128). A test draft is started, never done:
     // `partial` in the phase state; the bar marks it "started", a half circle,
     // never the check (ADR-060 as amended 03.10.2026: a check means done).
     await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
@@ -339,7 +339,7 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
     await bar.waitFor({ timeout: 30000 });
     const tools = bar.locator('a[data-workspace-tool]');
     await expect(tools).toHaveCount(7);
-    await expect(tools.nth(5)).toHaveAttribute('data-workspace-tool', 'tco');
+    await expect(tools.nth(1)).toHaveAttribute('data-workspace-tool', 'tco');
     const toolTesting = bar.locator('a[data-workspace-tool="testing"]');
     // The bar stands before the project is read (every phase empty); wait for the reading.
     await expect(toolTesting).toHaveAttribute('data-phase-state', 'partial', { timeout: 60000 });

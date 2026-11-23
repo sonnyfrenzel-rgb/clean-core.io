@@ -402,7 +402,7 @@ test.describe('the IT view on a real project', () => {
     await signInThroughForm(page, acct);
     // The old workspace address lands on the IT page (AB-11).
     await page.goto(`/project/${acct.projectId}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(new RegExp(`/project/${acct.projectId}/analyze\?view=it$`), { timeout: 60000 });
+    await expect(page).toHaveURL(new RegExp(`/project/${acct.projectId}/analyze\\?view=it$`), { timeout: 60000 });
     const answer = page.locator('[data-analysis-answer] [data-answer-card]');
     await expect(answer, 'the IT answers never arrived').toBeVisible({ timeout: 90000 });
 
@@ -435,8 +435,8 @@ test.describe('the IT view on a real project', () => {
     const detail = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]').first();
     await detail.click();
     await expect(detail).toHaveAttribute('aria-expanded', 'true');
-    const rail = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]', { hasText: 'Target, route contract and signed run' }).first();
-    if ((await rail.getAttribute('aria-expanded')) !== 'true') await rail.click();
+    // Inside it the rail is a titled part (an h3), open with the section.
+    await expect(page.locator('#analyze-technical-detail').getByRole('heading', { level: 3, name: 'Target, route contract and signed run' })).toBeVisible();
     await expect(page.locator('[data-it-profile-catalog]')).toContainText('SAP Cloud ERP Private', { timeout: 60000 });
     await expect(page.locator('[data-it-routes] li').first()).toBeVisible();
     await expect(page.locator('[data-it-imports]')).toBeVisible();

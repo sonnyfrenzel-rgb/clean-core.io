@@ -43,16 +43,40 @@ const WINDOWS = [
   { name: '1440x900 at 125 %', width: 1152, height: 720 },
 ] as const;
 
-async function openEditor(page: Page) {
+/** Analyze, Business, with its map drawn; nothing is edited yet. */
+async function openAnalyze(page: Page) {
   // The map and its editor are Analyze, Business since 3.5.0 (Documentation shows Figure 1, read-only, ADR-127).
   await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
   await page.locator('[data-process-map]').waitFor({ timeout: 90000 });
   await page.locator('[data-process-map-canvas]').waitFor({ timeout: 90000 });
+}
+
+/** The map's frame: on Analyze it is what goes full screen, and the editor is drawn inside it (AB-5). */
+const frameOf = (page: Page) => page.locator('[data-process-map] [data-map-canvas-frame]').first();
+
+/**
+ * *Edit model* on Analyze opens full screen with the editor in it (AB-5, 3.2.0): the editor is full screen's, so
+ * entering and leaving full screen are the page's *Edit model* and the bar's *Leave full screen*.
+ */
+async function startEditing(page: Page) {
   await page.locator('[data-process-edit-toggle]').click();
   await page.locator('[data-process-editor]').waitFor({ timeout: 60000 });
   await expect
     .poll(async () => page.locator('[data-process-editor-canvas] .djs-shape').count(), { timeout: 60000 })
     .toBeGreaterThan(5);
+  await expect(frameOf(page)).toHaveAttribute('data-map-fullscreen', 'true');
+  await expect(frameOf(page)).toHaveAttribute('data-map-fullscreen-editing', 'true');
+}
+
+/** Whether the browser holds the map's frame in element full screen (the overlay fallback holds nothing). */
+const browserFullScreen = (page: Page) =>
+  page.evaluate(() => Boolean(document.fullscreenElement?.matches('[data-map-canvas-frame]')));
+
+async function leaveFullScreen(page: Page) {
+  await page.locator('[data-map-fullscreen-toggle]').click();
+  await expect(frameOf(page)).toHaveAttribute('data-map-fullscreen', 'false');
+  // The browser has handed the window back before the next size is set: a window in full screen cannot be resized.
+  await expect.poll(() => page.evaluate(() => document.fullscreenElement === null)).toBe(true);
 }
 
 /** Every footer action, the toolbar and a usable canvas are inside the window. */
@@ -60,7 +84,7 @@ async function expectAllOnScreen(page: Page, label: string) {
   const size = page.viewportSize()!;
   const save = page.locator('[data-editor-save]');
   await expect(save, label).toBeVisible();
-  for (const selector of ['[data-editor-save]', '[data-editor-discard]', '[data-editor-fullscreen-toggle]', '[data-editor-export="bpmn"]', '[data-editor-import]', '[data-editor-compare]']) {
+  for (const selector of ['[data-editor-save]', '[data-editor-discard]', '[data-map-fullscreen-toggle]', '[data-editor-export="bpmn"]', '[data-editor-import]', '[data-editor-compare]']) {
     const box = await page.locator(selector).boundingBox();
     expect(box, `${label}: ${selector} has a box`).toBeTruthy();
     expect(box!.y, `${label}: ${selector} top`).toBeGreaterThanOrEqual(0);
@@ -133,17 +157,15 @@ test.describe('the BPMN editor in full screen', () => {
     test.setTimeout(300 * 1000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
-    await openEditor(page);
-    const root = page.locator('[data-process-editor]');
+    await openAnalyze(page);
 
+    // The size is set before full screen each time: a browser window in full screen cannot be resized.
     for (const size of WINDOWS) {
       await page.setViewportSize({ width: size.width, height: size.height });
-      await page.locator('[data-editor-fullscreen-toggle]').click();
-      await expect(root).toHaveAttribute('data-editor-fullscreen', 'true');
-      await expect(root).toHaveAttribute('data-editor-fullscreen-mode', 'browser');
+      await startEditing(page);
+      expect(await browserFullScreen(page), `${size.name}: browser full screen`).toBe(true);
       await expectAllOnScreen(page, size.name);
-      await page.locator('[data-editor-fullscreen-toggle]').click();
-      await expect(root).toHaveAttribute('data-editor-fullscreen', 'false');
+      await leaveFullScreen(page);
     }
   });
 
@@ -165,30 +187,27 @@ test.describe('the BPMN editor in full screen', () => {
     });
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
-    await openEditor(page);
-    const root = page.locator('[data-process-editor]');
+    await openAnalyze(page);
 
     // A laptop: 1366x768 screen less the browser's tab strip, address bar and taskbar.
     for (const size of [...WINDOWS, { name: 'laptop 1366x768 with browser bars', width: 1366, height: 657 }]) {
       await page.setViewportSize({ width: size.width, height: size.height });
-      await page.locator('[data-editor-fullscreen-toggle]').click();
-      await expect(root).toHaveAttribute('data-editor-fullscreen-mode', 'overlay');
+      await startEditing(page);
+      expect(await browserFullScreen(page), `${size.name}: the window fallback, not browser full screen`).toBe(false);
       await expectAllOnScreen(page, `${size.name} (window)`);
-      // It covers the page: the app's own header is not on top of the toolbar.
-      const toolbarFree = await page.locator('[data-editor-fullscreen-toggle]').evaluate((el) => {
+      // It covers the page: the app's own header is not on top of the bar.
+      const toolbarFree = await page.locator('[data-map-fullscreen-toggle]').evaluate((el) => {
         const r = el.getBoundingClientRect();
         const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
         return !!top && (top === el || el.contains(top));
       });
-      expect(toolbarFree, `${size.name}: the toggle is reachable`).toBe(true);
-      await page.locator('[data-editor-fullscreen-toggle]').click();
-      await expect(root).toHaveAttribute('data-editor-fullscreen', 'false');
+      expect(toolbarFree, `${size.name}: the way out is reachable`).toBe(true);
+      await leaveFullScreen(page);
     }
 
-    await page.locator('[data-editor-fullscreen-toggle]').click();
-    await expect(root).toHaveAttribute('data-editor-fullscreen', 'true');
-    await page.locator('[data-editor-fullscreen-toggle]').focus();
+    await startEditing(page);
+    await page.locator('[data-map-fullscreen-toggle]').focus();
     await page.keyboard.press('Escape');
-    await expect(root).toHaveAttribute('data-editor-fullscreen', 'false');
+    await expect(frameOf(page)).toHaveAttribute('data-map-fullscreen', 'false');
   });
 });

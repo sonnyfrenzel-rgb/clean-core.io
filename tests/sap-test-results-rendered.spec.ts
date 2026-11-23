@@ -143,13 +143,19 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     await openDelivery(page, importId);
     const link = page.locator('[data-chain-link="tests"]');
     await expect(link).toHaveAttribute('data-chain-state', 'on-record');
-    await expect(link.locator('[data-provenance="imported"]')).toContainText('from your system');
-    // The tests link shows Delivery's integrity line, not the bare chain value:
-    // the title says where the result came from, the line says it did not run here.
-    await expect(link.locator('[data-delivery-testing]')).toHaveText('2 of 2 scenarios passed — ABAP Unit, imported from your SAP system');
-    await expect(link).toContainText('Not run here — the result was imported from your SAP system');
-    await expect(link).not.toContainText('without a result');
-    await expect(link).not.toContainText(/proven|verified/i);
+    // Since 3.5.0 the chain is plain words (UX review Q6), and the Tests part of the package carries the chip and the
+    // integrity line: its state says where the result came from, its body says it did not run here.
+    await expect(link).toHaveText(/^Tests: on record — 2 of 2 scenarios passed in your SAP system/);
+    const part = page.locator('li[data-package-part="tests"]');
+    await expect(part.locator('[data-family-chip="engine"]')).toContainText('imported from your system');
+    await expect(part.locator('[data-delivery-testing]')).toHaveText('2 of 2 scenarios passed — ABAP Unit, imported from your SAP system');
+    await part.locator('summary').click();
+    await expect(part).toContainText('Not run here — the result was imported from your SAP system');
+    for (const where of [link, part]) {
+      await expect(where).not.toContainText('without a result');
+      await expect(where).not.toContainText(/proven|verified/i);
+    }
+    await expect(part.locator('[data-family-chip="signed"]')).toHaveCount(0);
     await expect(page.locator('[data-still-needed-item="tests"]')).toHaveCount(0);
   });
 
@@ -183,11 +189,13 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     await openDelivery(page, confirmId);
     const link = page.locator('[data-chain-link="tests"]');
     await expect(link).toHaveAttribute('data-chain-state', 'on-record');
-    await expect(link.locator('[data-provenance="confirmed"]')).toContainText('self-declaration');
     await expect(link).toContainText('S4D / 100');
-    await expect(link.locator('[data-delivery-testing]')).toContainText('confirmed by you');
-    await expect(link).toContainText('Not run here — your statement that it ran in your SAP system (S4D / 100, 2026-10-02)');
-    await expect(link).not.toContainText(/proven|verified/i);
+    const part = page.locator('li[data-package-part="tests"]');
+    await expect(part.locator('[data-family-chip="yours"]')).toContainText('self-declaration');
+    await expect(part.locator('[data-delivery-testing]')).toContainText('confirmed by you');
+    await part.locator('summary').click();
+    await expect(part).toContainText('Not run here — your statement that it ran in your SAP system (S4D / 100, 2026-10-02)');
+    for (const where of [link, part]) await expect(where).not.toContainText(/proven|verified/i);
     await expect(page.locator('[data-still-needed-item="tests"]')).toHaveCount(0);
   });
 

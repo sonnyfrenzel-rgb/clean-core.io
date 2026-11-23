@@ -18,6 +18,7 @@ import {
 import { sha256Hex, artefactDigest, type TrackedArtefact } from '../lib/artefact-digest';
 import { STATUS_FACETS, workspaceStatusLine, workspaceTools, type WorkspaceStatus } from '../lib/workspace-model';
 import { nextOpenPoint } from '../lib/next-step';
+import { nextTagShown } from '../lib/analyze-progress';
 import type { Project } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
 
@@ -537,22 +538,29 @@ test.describe('the reference cases, opened in the workspace', () => {
       // and the state of every phase is the tool row's, each tool marked and its mark said in words (the "Why?" of
       // the status line), at its route.
       await page.goto(`/project/${projectId}?view=it`, { waitUntil: 'domcontentloaded' });
-      await expect(page).toHaveURL(new RegExp(`/project/${projectId}/analyze\?view=it`), { timeout: 60000 });
+      await expect(page).toHaveURL(new RegExp(`/project/${projectId}/analyze\\?view=it`), { timeout: 60000 });
       const bar = page.locator('[data-stage-tools="open"]');
       await bar.waitFor({ timeout: 60000 });
 
       for (const stage of register.stages) {
         const tool = bar.locator(`a[data-workspace-tool="${stage.key}"]`);
         await expect(tool, `${rc.id}: the ${stage.key} tool`).toHaveAttribute('data-phase-state', rc.expect.phaseStates[stage.key as PhaseKey]);
-        await expect(tool, `${rc.id}: the ${stage.key} tool's address`).toHaveAttribute('href', new RegExp(`/project/${projectId}/${stage.route.split('/').pop()}(\?|$)`));
+        await expect(tool, `${rc.id}: the ${stage.key} tool's address`).toHaveAttribute('href', new RegExp(`/project/${projectId}/${stage.route.split('/').pop()}(\\?|$)`));
         expect((await tool.getAttribute('data-workspace-tool-mark-meaning')) ?? '', `${rc.id}: ${stage.key} says its state in words`).not.toBe('');
       }
 
       if (rc.workspace.nextStep) {
-        await expect(bar.locator('a[data-workspace-tool-next]'), `${rc.id}: the next tool`).toHaveAttribute(
-          'data-workspace-tool',
-          rc.workspace.nextStep,
-        );
+        // A fresh browser that has only analysed sees no "Next" tag until a later tool was opened once (plan AB-4,
+        // `nextTagShown`); every other case names the register's next tool.
+        const tools = register.stages.map((st) => ({ key: st.key, state: rc.expect.phaseStates[st.key as PhaseKey] }));
+        if (nextTagShown(tools, rc.workspace.nextStep, false)) {
+          await expect(bar.locator('a[data-workspace-tool-next]'), `${rc.id}: the next tool`).toHaveAttribute(
+            'data-workspace-tool',
+            rc.workspace.nextStep,
+          );
+        } else {
+          await expect(bar.locator('a[data-workspace-tool-next]'), `${rc.id}: no Next tag for an analysis-only reader`).toHaveCount(0);
+        }
       }
     }
   });

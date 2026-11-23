@@ -47,7 +47,9 @@ test.describe('the view switch of a tool', () => {
     expect(sw).toContain('<CcSegmentedControl');
     expect(sw, 'on a phone the segments share the row').toContain('stretch');
     expect(sw).toContain('cc-no-print');
-    expect(sw).toContain('onChange={switchStageView}');
+    // The change goes through switchStageView; the wrapper only hands the focus on to the next view's switch.
+    expect(sw).toContain('onChange={onChange}');
+    expect(sw).toContain('switchStageView(next);');
   });
 
   test('a view is a view only: the switch writes the address and nothing else', () => {

@@ -43,6 +43,13 @@ export interface LayoutCheckOptions {
   focus?: { frame: string; targets: string } | null;
   /** Pixels two boxes may share before they count as overlapping. */
   tolerance?: number;
+  /**
+   * Pannable surfaces (the process map's canvas): content they cut at their edge is panned to, as in a scroll box, and
+   * counts as `scrollCut`; content passing under the surface's own overlays (its controls, the bpmn.io mark) is not an
+   * overlap. Analyze's inline map opens at the readable floor from the level's top (UX review 22.11.2026, Q1), so a
+   * level taller than the canvas is cut at the bottom on purpose.
+   */
+  pan?: string;
 }
 
 export interface LayoutReport {
@@ -63,6 +70,7 @@ export const PRODUCT_LAYOUT: Required<Omit<LayoutCheckOptions, 'sameSlot'>> & { 
   within: [],
   focus: { frame: '[data-layout-frame]', targets: '[data-layout-focus]' },
   tolerance: 2,
+  pan: '[data-process-map-canvas] .djs-container',
 };
 
 /**
@@ -73,6 +81,7 @@ export function layoutCheck(options: LayoutCheckOptions): LayoutReport {
   const ITEMS = options.items ?? '';
   const IGNORE = options.ignore ?? '';
   const TOL = options.tolerance ?? 2;
+  const PAN = options.pan ?? '';
   const vw = document.documentElement.clientWidth;
   type Box = { l: number; t: number; r: number; b: number };
 
@@ -127,7 +136,7 @@ export function layoutCheck(options: LayoutCheckOptions): LayoutReport {
         hidden = true;
         break;
       }
-      if (a.scroll) scrollCut++;
+      if (a.scroll || (PAN && a.n.closest(PAN))) scrollCut++;
       else clipped.push(`${describe(e)} clipped by ${describe(a.n).slice(0, 40)}`);
       box = visible;
     }
@@ -158,6 +167,12 @@ export function layoutCheck(options: LayoutCheckOptions): LayoutReport {
       const h = Math.min(A.box.b, B.box.b) - Math.max(A.box.t, B.box.t);
       if (w <= TOL || h <= TOL) continue;
       if (sameSlot(A.e, B.e)) continue;
+      // Panned content under the surface's own overlay: exactly one of the two lies in the surface's content.
+      if (PAN && Boolean(A.e.closest(PAN)) !== Boolean(B.e.closest(PAN))) {
+        const surface = (A.e.closest(PAN) ?? B.e.closest(PAN))!;
+        const other = A.e.closest(PAN) ? B.e : A.e;
+        if (surface.parentElement && surface.parentElement.contains(other)) continue;
+      }
       overlaps.push(`${describe(A.e)} × ${describe(B.e)} (${Math.round(w)}×${Math.round(h)})`);
     }
   }

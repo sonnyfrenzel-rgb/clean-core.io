@@ -14,12 +14,8 @@ import {
   type Box,
 } from '../lib/it-dependency-graph';
 import { itvGraphEdgeLabel, itvGraphMore, itvGraphShown } from '../lib/messages/workspace-it';
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { adminSetDoc } from './helpers/admin-seed';
-import firebaseConfig from '../firebase-config.json';
-import { TERMS_VERSION } from '../lib/constants';
-import { signInViaLanding } from './helpers/sign-in';
+import { adminMergeDoc } from './helpers/admin-seed';
+import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 
 /**
  * The IT view's dependency graph (roadmap after 3.0.7, item 3) — the rows of
@@ -274,14 +270,15 @@ test.describe('source guards', () => {
   });
 
   test('the IT view draws the graph from the same objects as the table, above it, and the table can be sent to a row', () => {
-    const answers = read('components/workspace/ItAnswers.tsx');
-    const card = answers.slice(answers.indexOf('function ObjectsCard('));
+    // Since 3.5.0 the IT view is Analyze's (AB-9): "What it touches in SAP" carries the objects and the graph.
+    const card = read('components/analyze/ItTouches.tsx');
+    expect(read('components/analyze/AnalyzeIt.tsx')).toContain('<ItTouches objects={objects}');
     expect(card).toContain('<ItDependencyGraph objects={objects} onOpen={open} />');
     expect(card.indexOf('<ItDependencyGraph')).toBeLessThan(card.indexOf('<CcTable'));
     expect(card).toContain('reveal={jump}');
-    expect(card).toContain('rows={objects.rows.map(');
+    expect(card).toContain('rows={deps.map(');
     // The graph's words for a use and a kind are the table's.
-    expect(answers).toContain('objectUseWord(r.use, r.batchInput)');
+    expect(card).toContain('objectUseWord(r.use, r.batchInput)');
     expect(read('lib/messages/workspace-it.ts')).toContain("'itv.graphToTable'");
   });
 
@@ -309,43 +306,33 @@ test.describe('source guards', () => {
  */
 test.describe('the graph on the screen sends the reader to the table row', () => {
   test.describe.configure({ mode: 'serial' });
-  const STAMP = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const EMAIL = `it-graph-${STAMP}@cleancore-test.io`;
-  const PASSWORD = `spec-${process.pid}-${Math.random().toString(36).slice(2)}-Aa1!`;
-  const PROJECT_ID = `it-graph-${STAMP}`;
+  // Analyze draws its IT page for a project with a signed run (3.5.0, AB-9); one without a run opens the upload.
+  let acct: SeededProject;
 
   test.beforeAll(async () => {
     test.setTimeout(180 * 1000);
-    const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    try {
-      connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-    } catch { /* already connected */ }
-    const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD);
-    await adminSetDoc('users', cred.user.uid, {
-      firstName: 'Graph', lastName: 'Reader', email: EMAIL, tier: 'pilot', status: 'approved',
-      activatedAt: new Date(), transformationsUsed: 0, transformationsLimit: 5,
-      termsVersionAccepted: TERMS_VERSION, mfaEnabled: false, createdAt: new Date(),
-    });
+    acct = await seedStageProject({ prefix: 'it-graph', admin: false, acceptTerms: true, rich: true });
     // Z_MM_PO_APPROVAL: more objects than the graph draws, so it is capped
     // (held server-free above) and more rows than the table shows at first.
-    await adminSetDoc('projects', PROJECT_ID, {
-      name: 'Dependency graph fixture', userId: cred.user.uid, createdAt: new Date(), status: 'created',
-      legacyCode: read('public/starter-examples/Z_MM_PO_APPROVAL.abap'),
-    });
+    const source = read('public/starter-examples/Z_MM_PO_APPROVAL.abap').replace(/\r\n/g, '\n');
+    await adminMergeDoc('projects', acct.projectId, { name: 'Dependency graph fixture', legacyCode: source });
+    await adminMergeDoc(`projects/${acct.projectId}/runs`, acct.runId, { legacyCode: source });
   });
 
   test('Enter on a node and on an edge label reveals the row and focuses it; the capped link reaches the table', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await signInViaLanding(page, EMAIL, PASSWORD);
-    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await signInThroughForm(page, acct);
+    await page.goto(`/project/${acct.projectId}?view=it`, { waitUntil: 'domcontentloaded' });
+    // The IT page draws once the run's evidence has been read (Analyze keeps its loading state until then).
+    await expect(page.locator('[data-analysis-answer] [data-answer-card]'), 'the IT answers never arrived').toBeVisible({ timeout: 90000 });
 
     const graph = page.locator('[data-it-graph]');
     await expect(graph, 'the dependency graph never rendered').toBeVisible({ timeout: 60000 });
     await expect(graph).toHaveAttribute('data-it-graph-capped', 'yes');
     const table = page.locator('[data-it-objects-table]');
-    await expect(table.locator('[data-cc-table-limit="5"]')).toHaveCount(1);
+    // The table shows its first ten rows (ItTouches) and opens past them when the graph sends the reader there.
+    await expect(table.locator('[data-cc-table-limit="10"]')).toHaveCount(1);
     const rowOf = (key: string) => table.locator(`[data-cc-table-row="${key}"]`);
 
     /** The first control of `selector` whose row the table does not display yet. */
@@ -361,7 +348,7 @@ test.describe('the graph on the screen sends the reader to the table row', () =>
 
     // An edge label first, while the table still shows only its first five rows.
     const edgeRow = await pickHidden('[data-it-graph-edge]');
-    expect(edgeRow, 'no edge label points past the first five rows of the table').not.toBeNull();
+    expect(edgeRow, 'no edge label points past the first rows of the table').not.toBeNull();
     await expect(rowOf(edgeRow!)).toBeHidden();
     const edge = graph.locator(`[data-it-graph-edge][data-it-graph-row="${edgeRow}"]`).first();
     await edge.focus();
@@ -396,8 +383,10 @@ test.describe('the graph on the screen sends the reader to the table row', () =>
   test('on a fresh page, Enter on a node whose row is past the first five reveals that row too', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await signInViaLanding(page, EMAIL, PASSWORD);
-    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await signInThroughForm(page, acct);
+    await page.goto(`/project/${acct.projectId}?view=it`, { waitUntil: 'domcontentloaded' });
+    // The IT page draws once the run's evidence has been read (Analyze keeps its loading state until then).
+    await expect(page.locator('[data-analysis-answer] [data-answer-card]'), 'the IT answers never arrived').toBeVisible({ timeout: 90000 });
     const graph = page.locator('[data-it-graph]');
     await expect(graph).toBeVisible({ timeout: 60000 });
     const table = page.locator('[data-it-objects-table]');
@@ -409,7 +398,7 @@ test.describe('the graph on the screen sends the reader to the table row', () =>
     for (const key of keys) {
       if ((await rowOf(key).count()) === 1 && !(await rowOf(key).isVisible())) { hidden = key; break; }
     }
-    expect(hidden, 'no graph node points past the first five rows of the table').not.toBeNull();
+    expect(hidden, 'no graph node points past the first rows of the table').not.toBeNull();
     const node = graph.locator(`[data-it-graph-node][data-it-graph-row="${hidden}"]`).first();
     await node.focus();
     await page.keyboard.press('Enter');

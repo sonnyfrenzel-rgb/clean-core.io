@@ -369,7 +369,7 @@ test('Delivery lists the specification among the artefacts — what it holds, ne
   const line = card.locator('[data-delivery-spec]');
   await expect(line).toBeVisible({ timeout: 30_000 });
   await expect(line).toContainText(/Requirements specification: \d+ requirements \(\d+ functional, \d+ non-functional\), \d+ open decisions?\./);
-  await expect(line).toContainText('Not part of the signed audit pack.');
+  await expect(line).toContainText('Not part of the signed audit pack, and not in the ZIP.');
   // Never as proven: neither the old chip nor the family's "Signed".
   await expect(card.locator('[data-provenance="proven"], [data-family-chip="signed"]')).toHaveCount(0);
   await card.scrollIntoViewIfNeeded();

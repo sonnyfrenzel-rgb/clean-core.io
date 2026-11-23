@@ -126,8 +126,21 @@ export async function expectScoreHeroAddsUp(
   const bandLine = answer.locator(`[data-analyze-score-band="${band.key}"]`);
   await expect(bandLine).toContainText(band.label);
   await expect(bandLine).toContainText(`band ${band.from}–${band.to}`);
-  await expect(answer.locator(`[data-score-band="${band.key}"][data-score-band-current="true"]`)).toBeVisible();
-  await expect(answer.locator('[data-score-band-current="true"]')).toHaveCount(1);
+  // Since 3.5.0 the IT answer card draws the compact scale without the row of band names: the marker on the scale
+  // is what says which band the figure stands in, so it must sit inside that band's segment and no other.
+  const scale = answer.locator('[data-score-scale]').first();
+  await expect(scale).toBeVisible();
+  const marker = await scale.locator('[data-score-marker]').boundingBox();
+  expect(marker, 'the scale has no marker').not.toBeNull();
+  const markerX = marker!.x + marker!.width / 2;
+  const segments = scale.locator('[data-score-segment]');
+  const inside: string[] = [];
+  for (let i = 0; i < (await segments.count()); i++) {
+    const seg = segments.nth(i);
+    const box = await seg.boundingBox();
+    if (box && markerX >= box.x - 1 && markerX <= box.x + box.width + 1) inside.push((await seg.getAttribute('data-score-segment')) ?? '');
+  }
+  expect(inside, 'the marker does not stand in the band of the score').toEqual([band.key]);
 
   // The edition rule and the other edition's figure, computed and never signed.
   const rule = answer.locator(`[data-score-edition="${expected.edition}"]`);
