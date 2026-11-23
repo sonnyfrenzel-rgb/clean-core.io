@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 3.5.0, the Christmas release (built on `integrate/3.5.0`, 23.11.2026)
+
+The new UX along the accepted mock-ups, every proposal of the UX review of 22.11.2026 taken up (owner, 23.11.2026).
+
+- **One frame for every tool.** Each tool opens under the program's business name with the tool above it, one back link
+  to My workspace, one row of tools at every width ("2 of 7" with each tool's state on a phone), one "On this page" bar,
+  an answer card with four figures, six provenance chips instead of many, and "Invite to view" for the owner.
+- **Tool order Analyze → Economics → Design → Transformation → Documentation → Testing → Delivery** everywhere.
+- **Analyze, Management** is a page of its own: "Keep, rebuild or retire?", the analysis' indication (an indication, not
+  a decision), distance to clean core with the Level A–D mix, cost from Economics only, risk if nothing changes and what
+  we need from you; one button, "Re-design this program".
+- **Re-design** (`/project/<id>/redesign`): the six tools after Analyze in order, the program decision as step 2 after
+  Economics has priced the options, one button for the next step. Every way on from Analyze leads here instead of
+  jumping into a single tool (owner, 23.11.2026).
+- **Analyze, IT** is one page, code first: the score and what moves it, the findings that matter most beside their code,
+  everything the program touches in SAP, risks for a change and the open technical questions. The workspace page is
+  gone: every old project address, bookmark and mail link lands on the matching place in Analyze.
+- **Economics** answers first (keeping, the cheapest change, the lowest overall, each with its condition), assumptions
+  as chips edited in place, a range chart with keeping as the reference, "How firm is the answer?" in plain words; one
+  cost model, the demonstration forecast (payback, ROI) is gone.
+- **Design** shows a different page for Business (today's steps marked by your answers), IT (the canvas full width,
+  every object with its level and released successor) and Management ("Is the design ready to sign off?").
+- **Transformation** answers "What became of the program?", one flow finding → target → object, the code in a drawer
+  with every line marked engine or model, one checks table; generating runs inside the page.
+- **Documentation** is one page in the order of the Word file, Analyze's process map as Figure 1 on screen and in every
+  export, no inputs and no view switch.
+- **Testing** answers "Is this program tested?" and always says where the result ran; results by business rule and one
+  "Not proven" list replace the charts. **Delivery** answers "Can this program be handed over?" with one table of what is
+  proven and what is not; a pack reads "Sealed", never "Handed over", and nothing unconfirmed reads as confirmed.
+- **My workspace**: "Continue where you left off" with the map miniature and "In short"; a list on a phone.
+  **Profile settings**: one name, sections for profile, sign-in security, AI model, your SAP test system, mail, ending
+  the account. One wording for free analysis runs and one size limit (up to 256 KB of ABAP source).
+- **Start page and demo**: seven sections, about eight screens on a laptop instead of 21; the first button opens the
+  public demo at `/demo` with no account; no old product pictures.
+- **Engine 3.5.0** (gated; runs signed before keep what they signed): `PERFORM … ON COMMIT` drawn where the commit runs
+  it, `LEAVE PROGRAM` a normal end, `CALL SCREEN` names its modules, `sy-tabix` no return code, `WAIT UNTIL` joins only
+  what it waits for, ALV event rows filled after the call no callback, method parameters read in their own interface
+  or superclass; an unstamped run reads as the oldest engine everywhere; customer texts give up after 4 s.
+
 ### Changed
 
 - The charts under the map count FORM and method names apart: a FORM named like a method finds its `PERFORM`
