@@ -44,7 +44,7 @@ import type { Project } from '@/lib/types';
  *     sentence (`managementInShort`), what needs a decision, the analysis' *indication* worded "an indication, not a
  *     decision" (plan N1), and **one primary action, "Re-design this program"** → `/project/[id]/redesign`. Four
  *     facets: distance to clean core with the Level A–D mix (UI only, never in the signed pack), cost (Economics'
- *     stored figures read as stored, else "Not priced yet, step 1 of Re-design"; Analyze computes no amount), risk if
+ *     stored figures read as stored, else "Step 1 of Re-design", with the one "Not priced yet" line under the options; Analyze computes no amount), risk if
  *     nothing changes, what we need from you.
  *   - **"On this page"**: Options · Risk · What we need from you · Still open.
  *   - **The four options** without a tool link; the cost is said once for all four when nothing is priced.
@@ -184,8 +184,10 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
         : {
             id: 'cost',
             label: 'Cost',
-            value: 'Not priced yet',
-            note: 'Step 1 of Re-design. Analyze computes no amount.',
+            // Said once on the page, under the options (UX review Q7): the facet names the step that prices it.
+            value: 'Step 1',
+            unit: 'of Re-design',
+            note: 'Economics prices the options with your figures. Analyze computes no amount.',
             href: `#${MANAGEMENT_PAGE_IDS.options}`,
           },
     {
