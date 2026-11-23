@@ -267,7 +267,7 @@ test.describe('a project reopened far along its way', () => {
     await page.waitForURL(new RegExp(`/project/${projectId}/design(\\?|$)`), { timeout: 90_000 });
   });
 
-  test('on a phone the stage header carries a "Tools" menu in the first screen — 390', async ({ browser }) => {
+  test('on a phone the stage header carries the tool strip, "1 of 7", in the first screen — 390', async ({ browser }) => {
     test.setTimeout(300_000);
     // A phone, not a narrow desktop window: the 44 px target is the coarse
     // pointer's (CcButton's pointer-coarse:min-h-11), as on business-view-clarity.
@@ -278,23 +278,19 @@ test.describe('a project reopened far along its way', () => {
     await page.goto(`/project/${projectId}?view=business`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90_000 });
 
-    await expect(page.locator('[data-stage-toolbar] [data-stage-tools="open"]'), 'the open bar on a phone').toBeHidden();
-    const button = page.locator('[data-stage-toolbar] [data-stage-tools="menu"] button[aria-expanded]');
-    await expect(button).toBeVisible({ timeout: 60_000 });
-    const box = await button.boundingBox();
-    expect((box?.y ?? 0) + (box?.height ?? 0), 'the Tools button ends above the fold').toBeLessThanOrEqual(844);
+    // The family's tool strip (ADR-140, UX review L5): the same row as on a desktop, "1 of 7" where "Tools" stands,
+    // every tool with its mark, no menu.
+    const strip = page.locator('[data-stage-toolbar] [data-stage-tools="open"]');
+    await expect(strip).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-stage-toolbar] [data-stage-tools="menu"]')).toHaveCount(0);
+    await expect(strip.locator('[data-stage-tools-position]')).toContainText('1 of 7');
+    await expect(strip.locator('a[data-workspace-tool]')).toHaveCount(7);
+    const current = strip.locator('a[aria-current="page"]');
+    const box = await current.boundingBox();
+    expect((box?.y ?? 0) + (box?.height ?? 0), 'the tool strip ends above the fold').toBeLessThanOrEqual(844);
     expect(box?.height ?? 0, 'a 44 px target').toBeGreaterThanOrEqual(44);
-
-    // Keyboard: Enter opens the panel, the seven tools are in it, Escape closes
-    // it and hands the focus back to the button.
-    await button.focus();
-    await page.keyboard.press('Enter');
-    const panel = page.locator('[data-stage-toolbar] [data-workspace-tools-panel]');
-    await expect(panel).toBeVisible();
-    await expect(panel.locator('a[data-workspace-tool]')).toHaveCount(7);
-    await page.keyboard.press('Escape');
-    await expect(panel).toHaveCount(0);
-    await expect(button).toBeFocused();
+    // No sideways scroll of the page: the strip scrolls inside itself.
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);
     await context.close();
   });
 });
