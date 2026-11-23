@@ -251,7 +251,10 @@ test.describe('on screen', () => {
     await signInThroughForm(page, acct);
     await page.goto(`/project/${acct.projectId}/delivery`, { waitUntil: 'domcontentloaded' });
     const chain = page.locator('[data-pack-chain]');
-    await expect(chain).toBeVisible({ timeout: 90_000 });
+    // The chain stands in the fold "The chain, link by link" under the proof table (UX review Q6, L3): open it first.
+    await expect(chain).toBeAttached({ timeout: 90_000 });
+    await page.locator('[data-chain-detail] [data-cc-disclosure-trigger]').first().click();
+    await expect(chain).toBeVisible({ timeout: 30_000 });
     await expect(page.locator('[data-confirmations]')).toContainText('Nobody has confirmed anything');
     await shoot(page, 'delivery-chain', page.locator('[data-signature-covers]'));
     await shoot(page, 'delivery-top');

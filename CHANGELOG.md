@@ -67,6 +67,22 @@ The new UX along the accepted mock-ups, every proposal of the UX review of 22.11
 ### Fixed
 
 - An engine reading gated for 3.5.0 (`ENGINE_READS_350_FROM`); runs signed before keep what they signed (SEC-2026-1005).
+- Found while bringing the rendered suite onto 3.5.0:
+  - Re-design and Analyze (Business view) show which revision of the process they are on, and a notice when
+    another tab moved it; a decision is never dropped silently.
+  - Analyze's Management view opens the steering one-pager again, old links to it keep working, and its
+    Level A–D marks explain themselves on hover, keyboard focus and tap.
+  - Re-design says when a step's model is switched off for your account; Design, Economics and Transformation
+    send the decision to Re-design.
+  - "Ask this case" is back in Analyze's IT view; usage and ATC data can be added before the first run; open
+    questions and "In short" use the one line notation ("line 42").
+  - The process map fits a phone again for runs without an engine stamp; no tool page is wider than a 360 px
+    phone; a view switch starts the new view at its top; the demo's way back no longer leads to itself.
+  - Design's sign-off dialog closes on confirm, and a stored route setting that disagrees with the code is named.
+  - Economics keeps every proposal on "Take over all", and a choice's link opens the assumptions editor.
+  - Delivery: an Economics not yet priced no longer holds back the audit pack seal (ADR-022).
+  - Testing: a result imported from your SAP system reads "imported", never as an engine reading.
+  - The whitepaper PDF is rebuilt from the current page.
 
 ### Fixed
 

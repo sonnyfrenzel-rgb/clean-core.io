@@ -10,22 +10,32 @@ import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 
 /**
  * A sign-off on a project analysed the way a reader analyses one — a real
- * signed run of `Z_MM_PO_APPROVAL` through `/api/runs/create`, not a seeded
- * run document — shows as confirmed once it lands, and still after a reload.
+ * signed run through `/api/runs/create`, not a seeded run document — shows as
+ * confirmed once it lands, and still after a reload.
+ *
+ * Since 3.5.0 "Confirm target" is the Management view's one primary action,
+ * behind the checklist (ADR-130 (1), G8): the business questions answered and
+ * the design current. The IT view shows the state. A design written for an
+ * earlier run is no longer signed off over: the checklist names it out of date.
+ *
+ * `Z_SALES_ORDER_CREATOR` asks the business no question, so a design on
+ * record makes the checklist ready; `Z_MM_PO_APPROVAL` asks ten.
  */
 
-const SOURCE = fs.readFileSync(path.resolve(__dirname, '..', 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8');
+const EXAMPLE = 'Z_SALES_ORDER_CREATOR.txt';
+const SOURCE = fs.readFileSync(path.resolve(__dirname, '..', 'public', 'starter-examples', EXAMPLE), 'utf8');
+const CONFIRMED = 'The target is confirmed.';
 
 const DESIGN_JSON = JSON.stringify({
-  projectName: 'Emergency purchase approval',
+  projectName: 'Sales order creation',
   architectureOverview: {
-    approachDescription: 'Side-by-side CAP service that reads purchase requisitions through released APIs.',
-    nodeFramework: 'SAP CAP (Cloud Application Programming model)',
-    runtimePlatform: 'SAP BTP (Business Technology Platform)',
+    approachDescription: 'In-app RAP object that creates sales orders through the released API.',
+    nodeFramework: 'SAP RAP (RESTful Application Programming)',
+    runtimePlatform: 'SAP S/4HANA Core (Developer Extensibility)',
   },
-  nodeAppBlueprint: { projectStructure: [{ path: 'srv/service.cds', purpose: 'Service' }], apiEndpoints: [] },
+  nodeAppBlueprint: { projectStructure: [{ path: 'zr_sales_order.bdef', purpose: 'Behavior definition' }], apiEndpoints: [] },
   cloudServices: [],
-  dataSync: { patternName: 'Released API calls', description: 'Synchronous calls through the destination service.' },
+  dataSync: { patternName: 'Transactional DB Access', description: 'One LUW.' },
   securityHardening: [],
   roadmap: [],
 });
@@ -34,7 +44,7 @@ async function analysedProject(request: import('@playwright/test').APIRequestCon
   const seeded = await seedStageProject({ prefix: 'dsignoff-real', acceptTerms: true });
   // A project as the new-project dialog leaves it: source staged, never analysed.
   await adminSetDoc('projects', seeded.projectId, {
-    name: 'Z_MM_PO_APPROVAL', userId: seeded.uid, createdAt: new Date(), status: 'uploaded',
+    name: 'Z_SALES_ORDER_CREATOR', userId: seeded.uid, createdAt: new Date(), status: 'uploaded',
     legacyCode: SOURCE, s4Deployment: deployments[0],
   });
   const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
@@ -44,7 +54,7 @@ async function analysedProject(request: import('@playwright/test').APIRequestCon
   for (const [i, s4Deployment] of deployments.entries()) {
     const res = await request.post('/api/runs/create', {
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      data: { projectId: seeded.projectId, legacyCode: SOURCE, s4Deployment, analysis: '{}', uploadedFileName: 'Z_MM_PO_APPROVAL.abap' },
+      data: { projectId: seeded.projectId, legacyCode: SOURCE, s4Deployment, analysis: '{}', uploadedFileName: EXAMPLE },
       timeout: 180_000,
     });
     expect(res.status(), await res.text()).toBe(200);
@@ -54,70 +64,45 @@ async function analysedProject(request: import('@playwright/test').APIRequestCon
   return seeded;
 }
 
-async function confirmAndCheck(page: import('@playwright/test').Page, seeded: { projectId: string; email: string; password: string }) {
-  await signInThroughForm(page, seeded);
-  await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
-  await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
-
-  // "Confirm target" asks first (owner 02.10.2026); its own button confirms.
-  await page.locator('[data-design-confirm]').click();
-  await page.locator('[data-cc-message-box] button:has-text("Confirm target")').click();
-  await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible({ timeout: 60_000 });
-  await expect(page.locator('[data-design-kpi="Sign-off"]')).toContainText('Confirmed');
-  expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect).toBe(true);
-
-  await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
-  await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible({ timeout: 60_000 });
-  await expect(page.locator('[data-design-kpi="Sign-off"]')).toContainText('Confirmed');
+async function openManagement(page: import('@playwright/test').Page, projectId: string) {
+  await page.goto(`/project/${projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-design-view="management"] [data-design-checklist]')).toBeVisible({ timeout: 120_000 });
 }
 
-test('a sign-off given after the analysis moved on shows as confirmed, while the older design document is named as older', async ({ page, request }) => {
+test('an analysis that moved on after the design: Confirm target waits, and the older design document is named as older', async ({ page, request }) => {
   test.setTimeout(480_000);
   // Analysed, designed, then analysed again under another target: the design
-  // document was written for the earlier run, the sign-off is given now.
+  // document was written for the earlier run.
   const seeded = await analysedProject(request, ['private', 'public']);
-  await confirmAndCheck(page, seeded);
-  // The design document is still named as written for the earlier run — that
-  // is the document's state, not the sign-off's.
-  await expect(page.getByText(/This design was generated for a previous/)).toBeVisible();
+  await signInThroughForm(page, seeded);
+  await openManagement(page, seeded.projectId);
+  const checklist = page.locator('[data-design-checklist]');
+  await expect(checklist.locator('li').filter({ hasText: 'Design written' })).toContainText('Out of date: write it again', { timeout: 120_000 });
+  await expect(page.locator('[data-design-confirm]')).toBeDisabled();
+  await expect(page.locator('#design-confirm-note')).toHaveText('Possible once every check below is done.');
+  expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect ?? false).toBe(false);
+  // The design document is still named as written for the earlier run.
+  await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
+  await expect(page.getByText(/This design was generated for a previous/)).toBeVisible({ timeout: 120_000 });
 });
 
-test('after Confirm & Lock on a real run, the Design page says confirmed — and after a reload', async ({ page, request }) => {
+test('after Confirm target on a real run, the Design page says confirmed — and after a reload', async ({ page, request }) => {
   test.setTimeout(420_000);
-  const seeded = await seedStageProject({ prefix: 'dsignoff-real', acceptTerms: true });
-  // A project as the new-project dialog leaves it: source staged, never analysed.
-  await adminSetDoc('projects', seeded.projectId, {
-    name: 'Z_MM_PO_APPROVAL', userId: seeded.uid, createdAt: new Date(), status: 'uploaded',
-    legacyCode: SOURCE, s4Deployment: 'private',
-  });
-  const app = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
-  const auth = connectAuthToEmulator(getAuth(app));
-  const cred = await signInWithEmailAndPassword(auth, seeded.email, seeded.password);
-  const token = await cred.user.getIdToken(true);
-  const res = await request.post('/api/runs/create', {
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    data: { projectId: seeded.projectId, legacyCode: SOURCE, s4Deployment: 'private', analysis: '{}', uploadedFileName: 'Z_MM_PO_APPROVAL.abap' },
-    timeout: 180_000,
-  });
-  expect(res.status(), await res.text()).toBe(200);
-  await adminMergeDoc('projects', seeded.projectId, { solutionDesign: DESIGN_JSON });
-
+  const seeded = await analysedProject(request, ['private']);
   await signInThroughForm(page, seeded);
-  await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
-  await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
+  await openManagement(page, seeded.projectId);
+  await expect(page.locator('[data-design-confirm]')).toBeEnabled({ timeout: 120_000 });
 
   // "Confirm target" asks first (owner 02.10.2026); its own button confirms.
   await page.locator('[data-design-confirm]').click();
   await page.locator('[data-cc-message-box] button:has-text("Confirm target")').click();
-  await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible({ timeout: 60_000 });
-  await expect(page.locator('[data-design-kpi="Sign-off"]')).toContainText('Confirmed');
+  await expect(page.locator('#design-answer [data-answer]')).toHaveText(CONFIRMED, { timeout: 60_000 });
+  await expect(page.locator('[data-design-confirm]')).toHaveText(/Change target/);
   expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect).toBe(true);
 
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
-  await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible({ timeout: 60_000 });
-  await expect(page.locator('[data-design-kpi="Sign-off"]')).toContainText('Confirmed');
+  await expect(page.locator('#design-answer [data-answer]')).toHaveText(CONFIRMED, { timeout: 120_000 });
+  // The IT view shows the state (G8).
+  await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#design-answer [data-answer-condition]')).toContainText('The target is confirmed (Management view).', { timeout: 120_000 });
 });

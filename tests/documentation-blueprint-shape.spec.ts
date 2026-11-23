@@ -192,8 +192,10 @@ test.describe('the documentation is read from the code, and a legacy blueprint i
     await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
 
     // Owner 03.10.2026: opening the stage writes the document — no click.
+    // ADR-127: the engine's element-by-element reading is the appendix's complete trace, folded, so it is in the
+    // page (attached) once written; the document itself is what the reader sees.
     const view = page.locator('[data-engine-documentation]');
-    await expect(view).toBeVisible({ timeout: 90000 });
+    await expect(view).toBeAttached({ timeout: 90000 });
     await expect(page.locator('[data-process-document]')).toBeVisible();
     // Section 9 is the project's one list of open questions (ADR-081); the
     // engine's questions about the requirements stand in appendix A.4.

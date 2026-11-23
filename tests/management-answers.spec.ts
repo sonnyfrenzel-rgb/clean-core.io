@@ -371,34 +371,28 @@ test.describe('a project with no runs, in the Management view', () => {
     });
   });
 
+  // Since ADR-143 Analyze's Management view is a page of its own for a project with a signed run; without one it
+  // shows Analyze's start path, and Re-design, the way on, says why nothing can be decided yet.
   test('it shows no score, no history and the reason for both', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    await page.goto(`/project/${BARE_ID}?view=management`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${BARE_ID}/analyze?view=management`, { waitUntil: 'domcontentloaded' });
 
-    const view = page.locator('[data-management-view=""]');
-    await expect(view, 'the Management answers never arrived').toBeVisible({ timeout: 60000 });
-
-    await expect(page.locator('[data-management-headline]')).toContainText('No signed run');
-
-    // The score and its history stand in one place since ADR-087 — the
-    // readiness trend on the first screen (the four detailed answers that
-    // repeated them are gone). A sentence and its reason, never a number, never
-    // an empty chart.
-    const trend = page.locator('#management-readiness [data-overview-card="readiness"]');
-    await expect(trend.locator('h3')).toHaveText('No Clean Core Score: nothing has been analysed under a signature yet', {
-      timeout: 60000,
-    });
-    await expect(trend.locator('[data-provenance]').first()).toHaveAttribute('data-provenance', 'not-determined');
-    await expect(trend.locator('[data-overview-trend]')).toHaveCount(0);
-    await expect(trend).toContainText('No signed run, so there is no Clean Core Score');
-    // Its coverage is printed beside it — the promise 3.0.10 has to be able to
-    // draw, and the one it cannot add afterwards.
-    await expect(trend.locator('[data-overview-coverage]')).not.toBeEmpty();
-    // The detailed answers are not rendered at all any more.
-    await expect(page.locator('[data-management-figure], [data-management-answer]')).toHaveCount(0);
+    // The start path, not a page of figures: no score, no history, no facet.
+    const main = page.locator('main');
+    await expect(main.getByRole('button', { name: /Start Analysis/ }), 'the start path never arrived').toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-analyze-management="ready"]')).toHaveCount(0);
+    await expect(page.locator('[data-facet="distance"], [data-overview-trend], [data-management-figure], [data-management-answer]')).toHaveCount(0);
+    await expect(main).not.toContainText(/Clean Core Score\s*\d/);
 
     // And no portfolio: this screen compares this project with nothing.
-    await expect(view).not.toContainText(/portfolio|other projects|average of/i);
+    await expect(main).not.toContainText(/portfolio|other projects|average of/i);
+
+    // The reason, said where the way on is: nothing is signed, so the analysis comes first.
+    await page.goto(`/project/${BARE_ID}/redesign`, { waitUntil: 'domcontentloaded' });
+    const answer = page.locator('#redesign-answer');
+    await expect(answer).toContainText('Re-design builds on a signed analysis run, and there is none yet.', { timeout: 90000 });
+    await expect(page.locator('[data-redesign-next]')).toHaveText('Run the analysis first');
+    await expect(page.locator('[data-redesign-step="analyze"] [data-redesign-step-words]')).toHaveText('Not signed yet');
   });
 });

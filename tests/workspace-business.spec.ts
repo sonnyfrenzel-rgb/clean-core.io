@@ -176,27 +176,29 @@ test.describe('the Business view of a real project (Analyze, Business; mockup st
   });
 
   test('the workspace head: eyebrow from the record, read access, Export of the signed BPMN, Invite', async ({ page }) => {
-    // The head of the workspace stands in IT and Management since v3.1.0 (Business is Analyze's, AB-2).
+    // The workspace head retired with 3.5.0 (AB-11): the old IT address lands on Analyze, whose family header names
+    // the program from the record (ADR-140) and carries "Invite to view" (UX review L7); the signed BPMN is handed
+    // over as a file in Delivery's package ("Process as BPMN 2.0").
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, account);
     await page.goto(`/project/${signed}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
-    await expect(page.locator('[data-workspace-eyebrow]')).toHaveText(
-      `Project · ${FILE.replace(/\.abap$/, '')} · SAP Cloud ERP Private`.toUpperCase(),
-      { ignoreCase: true },
-    );
-    await expect(page.locator('[data-workspace-read-access="0"]')).toContainText('Read access: only you', { timeout: 60_000 });
-    await page.locator('[data-workspace-export]').click();
-    await expect(page.locator('[data-workspace-export-bpmn]')).toBeVisible();
-    const download = page.waitForEvent('download');
-    await page.locator('[data-workspace-export-bpmn]').click();
-    expect((await download).suggestedFilename()).toMatch(/\.bpmn$/);
-    await page.keyboard.press('Escape');
+    await expect(page).toHaveURL(new RegExp(`/project/${signed}/analyze\?view=it$`), { timeout: 60_000 });
+    await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('[data-stage-tool]').first()).toContainText('Analyze');
+    await expect(page.locator('[data-stage-program]').first()).toHaveText(FILE.replace(/\.abap$/, ''), { timeout: 60_000 });
     // Invite opens the dialog that says what it gives away.
-    await page.locator('[data-workspace-invite]').click();
+    await page.locator('[data-family-invite]').first().click();
     await expect(page.getByRole('dialog')).toContainText(/source code/i);
     await page.keyboard.press('Escape');
+    // The signed BPMN, as a file.
+    await page.goto(`/project/${signed}/delivery`, { waitUntil: 'domcontentloaded' });
+    const bpmn = page.locator('li[data-package-part="bpmn"]');
+    await expect(bpmn).toBeVisible({ timeout: 120_000 });
+    await bpmn.locator('summary').click();
+    const download = page.waitForEvent('download');
+    await bpmn.locator('[data-handover-bpmn]').click();
+    expect((await download).suggestedFilename()).toMatch(/\.bpmn$/);
   });
 
   test('a source that moved after signing draws no map, and says why', async ({ page }) => {
@@ -206,12 +208,13 @@ test.describe('the Business view of a real project (Analyze, Business; mockup st
     await open(page, moved);
     await expect(page.locator('[data-analyze-map] [data-workspace-process="absent"][data-absence="changed"]')).toBeVisible({ timeout: 60_000 });
     await expect(page.locator('[data-process-map]')).toHaveCount(0);
-    // And Export (the workspace's, IT since v3.1.0) does not offer a BPMN file of bytes nobody signed.
-    await page.goto(`/project/${moved}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
-    await page.locator('[data-workspace-export]').click();
-    await expect(page.locator('[data-workspace-export-bpmn]')).toHaveCount(0);
-    await expect(page.locator('[data-workspace-export-bpmn-absent]')).toBeVisible();
+    // And the handover (Delivery's package since 3.5.0) does not offer a BPMN file of bytes nobody signed, and says why.
+    await page.goto(`/project/${moved}/delivery`, { waitUntil: 'domcontentloaded' });
+    const bpmn = page.locator('li[data-package-part="bpmn"]');
+    await expect(bpmn).toBeVisible({ timeout: 120_000 });
+    await bpmn.locator('summary').click();
+    await expect(bpmn.locator('[data-handover-bpmn]')).toHaveCount(0);
+    await expect(bpmn).toContainText('Not available: the source on this project no longer matches the one the signed run read');
   });
 
   test('an empty project: no map, and the upload path in its place (P4)', async ({ page }) => {
@@ -225,10 +228,11 @@ test.describe('the Business view of a real project (Analyze, Business; mockup st
     await expect(page.locator('[data-analyze-business="ready"]')).toHaveCount(0);
     await expect(page.locator('[data-process-map]')).toHaveCount(0);
     await expect(page.locator('[data-first-look], [data-around-the-map]')).toHaveCount(0);
-    // The workspace still says what is open: Analyze is the next step, the open questions say "no source".
+    // The tool row still says what is open: Analyze is the next step (the workspace's Next step card retired with 3.5.0).
     await page.goto(`/project/${empty}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
-    await expect(page.locator('[data-next-step-state="open"]').first()).toHaveAttribute('data-next-step-key', 'analyze');
+    const bar = page.locator('[data-stage-tools="open"]');
+    await expect(bar).toBeVisible({ timeout: 90_000 });
+    await expect(bar.locator('a[data-workspace-tool-next]')).toHaveAttribute('data-workspace-tool', 'analyze');
   });
 
   test('on a phone the map opens as the map, at 40 % or more, with full screen — and nothing scrolls sideways (ADR-072)', async ({ browser }) => {

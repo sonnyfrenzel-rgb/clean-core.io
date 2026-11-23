@@ -749,7 +749,12 @@ test.describe('the panel a reader actually meets', () => {
 
     const modelCalls: string[] = [];
     await page.route('**/api/gemini**', async (route) => {
-      modelCalls.push(route.request().url());
+      // The stage the call was made under, so a failure names who asked.
+      let stage = '?';
+      try {
+        stage = String((route.request().postDataJSON() as { stage?: unknown } | null)?.stage ?? '?');
+      } catch { /* not JSON */ }
+      modelCalls.push(`${route.request().url()} (stage ${stage})`);
       await route.abort();
     });
 

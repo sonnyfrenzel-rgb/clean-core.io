@@ -293,9 +293,13 @@ test.describe('ADR-079 rendered — choosing an option in Management', () => {
     });
   });
 
+  /**
+   * The four options are chosen on Re-design since ADR-143 (owner request 23.11.2026): its step 2, "Decide", reuses
+   * `DecisionOptions` unchanged; Analyze's Management view shows the decision read-only and leads there.
+   */
   async function open(page: Page) {
     await signInViaLanding(page, OWNER, PASSWORD);
-    await page.goto(`/project/${ID}?view=management`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${ID}/redesign`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-decision-options]')).toBeVisible({ timeout: 90000 });
   }
 
@@ -303,7 +307,11 @@ test.describe('ADR-079 rendered — choosing an option in Management', () => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await open(page);
-    await expect(page.locator('[data-executive-question]')).toHaveText('Keep, rebuild, move to SAP standard or retire Z_DECISION_OPTIONS?');
+    // The question heads the step the cards stand in: "Decide", with its purpose under it.
+    const step = page.locator(`#decide[data-redesign-step="decide"]`);
+    await expect(step.locator('h3').first()).toHaveText('Decide');
+    await expect(step).toContainText('Keep, rebuild, move to SAP standard or retire.');
+    await expect(step.locator('[data-decision-options]')).toHaveCount(1);
     const cards = page.locator('[data-decision-option]');
     await expect(cards).toHaveCount(4);
     expect(await cards.evaluateAll((els) => els.map((el) => el.getAttribute('data-decision-option')))).toEqual(['keep', 'rebuild', 'standard', 'retire']);
@@ -319,21 +327,28 @@ test.describe('ADR-079 rendered — choosing an option in Management', () => {
     await box.getByRole('button', { name: 'Choose this option' }).click();
 
     await expect(page.locator('[data-decision-option="keep"][data-option-chosen]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-decision-answer]')).toContainText('Keep is chosen');
-    await expect(page.locator('[data-decision-who]')).toContainText(OWNER);
+    await expect(page.locator('[data-facet="decision"]')).toContainText('Keep');
     // Said once (ADR-087): the card under the answer has no headline of its
     // own; its Option row names the choice as the account's.
     await expect(page.locator('[data-decision-card] [data-decision-headline]')).toHaveCount(0);
     await expect(page.locator('[data-decision-card] [data-decision-pillar="option"]')).toContainText('Keep, as chosen by your account.');
     // One way to the amounts, under the four cards.
     await expect(page.locator('[data-options-compare-economics]')).toHaveCount(1);
+
+    // Analyze's Management view shows it read-only: the answer names the option, and who chose it.
+    await page.goto(`/project/${ID}/analyze?view=management`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-indication] [data-decision-answer]')).toContainText('Keep is chosen', { timeout: 60000 });
+    await expect(page.locator('[data-analyze-indication] [data-decision-who]')).toContainText(OWNER);
+    await expect(page.locator('[data-decision-option]')).toHaveCount(0);
   });
 
   test('a level chip in Management explains itself on keyboard focus', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
-    await open(page);
-    const trigger = page.locator('#standard-fit [data-cc-level-trigger]').first();
+    await signInViaLanding(page, OWNER, PASSWORD);
+    // The Level A–D mix on the "Distance to clean core" facet of Analyze's Management view (ADR-143 (3)).
+    await page.goto(`/project/${ID}/analyze?view=management`, { waitUntil: 'domcontentloaded' });
+    const trigger = page.locator('[data-management-levels] [data-cc-level-trigger]').first();
     await expect(trigger).toBeVisible({ timeout: 60000 });
     // A real keyboard move: the panel opens on `:focus-visible`, which a
     // programmatic focus after a mouse interaction does not set.

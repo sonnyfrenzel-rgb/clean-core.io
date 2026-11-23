@@ -72,8 +72,9 @@ test('the seeded side-by-side project is side-by-side by the engine as well', ()
   expect(isSideBySideRoute(SIDE_BY_SIDE_ROUTE)).toBe(true);
 });
 
+/** The IT view (ADR-130): the route in the answer card, the canvas and the alternatives beside it. */
 async function openDesign(page: Page, projectId: string) {
-  await page.goto(`/project/${projectId}/design`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
   // The contract has been read once the alternatives are listed.
   await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
@@ -92,17 +93,15 @@ test.describe('on screen', () => {
     await signInThroughForm(page, seeded);
     await openDesign(page, seeded.projectId);
 
-    const card = page.locator('[data-design-answer]');
-    await expect(card).toHaveAttribute('data-design-answer', 'recommended');
-    await expect(card).toHaveAttribute('data-design-answer-code', 'rap');
-    await expect(page.locator('#design-answer')).toHaveText(RAP);
+    // The answer card names the contract's route; the chosen alternative and the canvas agree with it.
+    const answer = page.locator('#design-answer [data-answer]');
+    await expect(answer).toHaveText(`${RAP}.`);
     await expect(page.locator('[data-design-alternative][data-verdict="chosen"]')).toHaveAttribute('data-design-alternative', 'in-app-rap');
-    await expect(page.locator('[data-design-kpi="Route"]')).toContainText('In-app · RAP');
     const note = page.locator('[data-design-stored-route="setting"]');
     await expect(note).toBeVisible();
     await expect(note).toContainText(`Your route setting is ${CAP}`);
-    // Nothing in the card calls side-by-side the recommendation.
-    await expect(card.locator('#design-answer')).not.toContainText('Side-by-Side');
+    // Nothing in the answer calls side-by-side the recommendation.
+    await expect(answer).not.toContainText('Side-by-Side');
   });
 
   test('a run that recorded another route is named as the run’s, with the way to bring it up to date', async ({ page }) => {
@@ -113,7 +112,7 @@ test.describe('on screen', () => {
     await signInThroughForm(page, seeded);
     await openDesign(page, seeded.projectId);
 
-    await expect(page.locator('#design-answer')).toHaveText(RAP);
+    await expect(page.locator('#design-answer [data-answer]')).toHaveText(`${RAP}.`);
     const note = page.locator('[data-design-stored-route="run"]');
     await expect(note).toContainText(`The analysis run on record recommended ${CAP}`);
     await expect(note).toContainText('run the analysis again');
@@ -126,8 +125,9 @@ test.describe('on screen', () => {
     await signInThroughForm(page, seeded);
     await openDesign(page, seeded.projectId);
 
-    await expect(page.locator('#design-answer')).toHaveText(CAP);
-    await expect(page.locator('[data-design-kpi="Route"]')).toContainText('Side-by-side · CAP');
+    await expect(page.locator('#design-answer [data-answer]')).toHaveText(`${CAP}.`);
+    // The canvas draws the same route (its description, read by a screen reader).
+    await expect(page.locator('svg[data-architecture-canvas] desc')).toContainText('A side-by-side CAP service');
     await expect(page.locator('[data-design-alternative][data-verdict="chosen"]')).toHaveAttribute('data-design-alternative', 'side-by-side-cap');
     await expect(page.locator('[data-design-stored-route]')).toHaveCount(0);
   });

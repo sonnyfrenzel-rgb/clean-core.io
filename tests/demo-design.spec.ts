@@ -52,9 +52,8 @@ const MODEL_SECTIONS = [
   'Non-functional requirements',
 ];
 
-const REAL_OPEN = 'a self-declaration of your account, not an organisational mandate';
+const REAL_NOTE = 'A self-declaration of your account, bound to the run you read.';
 const REAL_DIALOG_LEAD = 'A self-declaration by the signed-in account, bound to the run this page shows';
-const REAL_CONFIRMED = 'A self-declaration by the signed-in account, not an organisational mandate.';
 
 async function openStage(page: Page, stage: string) {
   await page.goto(`/demo/${stage}`, { waitUntil: 'domcontentloaded' });
@@ -236,12 +235,13 @@ test.describe('the demo wording stays in the demo', () => {
     await adminMergeDoc('projects', seeded.projectId, { solutionDesign: DESIGN_JSON });
 
     await signInThroughForm(page, seeded);
-    await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
+    // Since 3.5.0 Confirm target is the Management view's action (ADR-130 (1), G8); the note under it says what it is.
+    await page.goto(`/project/${seeded.projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-design-confirm]')).toBeEnabled({ timeout: 120_000 });
 
-    const signOff = page.locator('#architect-sign-off');
-    await expect(signOff).toContainText(REAL_OPEN);
-    await expect(signOff).not.toContainText('In the demo');
+    const note = page.locator('#design-confirm-note');
+    await expect(note).toContainText(REAL_NOTE);
+    await expect(note).not.toContainText('In the demo');
 
     // The question first (owner 02.10.2026), in the real wording.
     await page.locator('[data-design-confirm]').click();
@@ -254,8 +254,8 @@ test.describe('the demo wording stays in the demo', () => {
     await expect(dialog).not.toContainText('In the demo');
     await dialog.locator('button:has-text("Confirm & Lock Architecture")').click();
 
-    await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible({ timeout: 60_000 });
-    await expect(page.locator('[data-design-answer]')).toContainText(REAL_CONFIRMED);
-    await expect(signOff).toContainText('Confirmed — a self-declaration of your account, not an organisational mandate.');
+    await expect(page.locator('#design-answer [data-answer]')).toHaveText('The target is confirmed.', { timeout: 60_000 });
+    await expect(note).toContainText(REAL_NOTE);
+    await expect(page.locator('[data-design-view]')).not.toContainText('In the demo');
   });
 });

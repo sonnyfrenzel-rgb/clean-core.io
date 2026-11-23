@@ -135,8 +135,9 @@ test.describe('a stored analysis with amounts in its prose', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
 
     await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
-    // The Confluence page is an item of the one Export menu since ADR-093 (11.10.2026).
-    await page.locator('[data-analyze-export-menu]').click({ timeout: 60000 });
+    // The Confluence page is an item of the one Export menu since ADR-093 (11.10.2026); since ADR-140 (A11) the IT
+    // page draws that menu twice, in the answer card and at the end of the anchor bar: the first is the answer card's.
+    await page.locator('[data-analyze-export-menu]').first().click({ timeout: 60000 });
     const exportButton = page.getByRole('button', { name: /Export Confluence/ });
     await expect(exportButton).toBeVisible({ timeout: 60000 });
     // Closed again, so the page is read as shown; it is opened once more for the download below.
@@ -149,7 +150,7 @@ test.describe('a stored analysis with amounts in its prose', () => {
     // Not vacuous: the prose is on the page, with its amount replaced.
     expect(text).toContain(NO_AMOUNT);
 
-    await page.locator('[data-analyze-export-menu]').click();
+    await page.locator('[data-analyze-export-menu]').first().click();
     const [download] = await Promise.all([page.waitForEvent('download'), exportButton.click()]);
     const html = fs.readFileSync(await download.path(), 'utf8');
     expect(html).toContain('Business Analysis Report');
@@ -163,6 +164,9 @@ test.describe('a stored analysis with amounts in its prose', () => {
     await page.goto(`/project/${PROJECT_ID}/tco`, { waitUntil: 'domcontentloaded' });
     const plan = page.locator('[data-business-value-plan="model"]');
     await expect(plan).toHaveCount(1, { timeout: 60000 });
+    // Since ADR-126 the model's view is a fold of the Economics page, closed when the page opens: open it first.
+    await page.locator('#economics-model [data-economics-fold-toggle]').click();
+    await expect(page.locator('#economics-model')).toHaveAttribute('data-economics-fold', 'open');
     await plan.locator('[data-cc-disclosure-trigger]').first().click();
     await expect(plan.locator('[data-action-plan-origin="model"]')).toBeVisible();
     const text = await plan.innerText();

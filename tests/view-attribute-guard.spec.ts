@@ -420,7 +420,7 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     });
   });
 
-  test('three views, two layers and a reload leave the project and the account untouched', async ({ page }) => {
+  test('three views and a reload leave the project and the account untouched', async ({ page }) => {
     test.setTimeout(300 * 1000);
 
     const writes: string[] = [];
@@ -446,10 +446,12 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
 
     await signInViaLanding(page, EMAIL_UI, PASSWORD_UI);
 
-    // Since v3.1.0 a project opens in Analyze, Business (ADR-109) and the workspace holds IT and Management: the walk
-    // starts in Management, goes to IT, and ends on Business, which is Analyze's page.
+    // Since 3.5.0 the three views are Analyze's (AB-9, AB-10, AB-11), switched in its header: the walk starts in
+    // Management (the old workspace address opens it there), goes to IT, back to Management, and ends on Business.
+    // The project has no signed run, so IT and Management show Analyze's start path; the switch is what is measured.
     await page.goto(`/project/${PROJECT_UI}?view=management`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'management', { timeout: 60000 });
+    await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', 'management', { timeout: 60000 });
+    await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60000 });
 
     // Everything before this line — signing in, loading the project — is
     // allowed to write; the measurement starts here.
@@ -457,39 +459,18 @@ test.describe('a view switch moves nothing (roadmap 6.1, §Phase 6 "Fertig, wenn
     writes.length = 0;
 
     const view = (name: string) =>
-      page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: name });
+      page.locator('[data-stage-view-switch] [data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: name });
 
     await view('IT').click();
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it', {
-      timeout: 30000,
-    });
-    // IT's own anchor bar (ADR-086) jumps within the page and holds the place
-    // in the address only — it writes nothing either.
-    await expect(page.locator('[data-it-view=""]')).toBeVisible({ timeout: 90000 });
-    const itAnchor = page.locator('[data-it-anchor]').first();
-    await expect(itAnchor).toBeVisible({ timeout: 30000 });
-    await itAnchor.click();
-    await expect(page).toHaveURL(/[?&]view=it#(it-[a-z-]+|not-determined)$/, { timeout: 15000 });
+    await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', 'it', { timeout: 30000 });
+    await expect(page).toHaveURL(new RegExp(`/project/${PROJECT_UI}/analyze\\?view=it$`), { timeout: 30000 });
 
     await view('Management').click();
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
-      'data-workspace-shell',
-      'management',
-      { timeout: 30000 },
-    );
-
-    // Management has no layers (ADR-087). Its one fold, Evidence, is
-    // interface state that is not even remembered in this browser any more —
-    // opening it writes nothing anywhere.
-    await page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first().click();
-    await expect(
-      page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first(),
-    ).toHaveAttribute('aria-expanded', 'true', { timeout: 15000 });
+    await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', 'management', { timeout: 30000 });
     await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
 
     await view('Business').click();
-    // Business is Analyze's page since v3.1.0 (ADR-109): the switch lands there, at its top, with no layer and no bar
-    // (ADR-096, ADR-080 — the map is the page).
+    // Business: at its top, with no layer and no bar (ADR-096, ADR-080 — the map is the page).
     await expect(page).toHaveURL(new RegExp(`/project/${PROJECT_UI}/analyze\\?view=business`), { timeout: 30000 });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
     expect(new URL(page.url()).hash).toBe('');

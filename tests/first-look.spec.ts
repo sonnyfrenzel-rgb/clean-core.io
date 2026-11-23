@@ -428,8 +428,15 @@ test.describe('the first look on screen', () => {
   }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    // "Ask this case" stands in the IT view since 22.10.2026 (owner decision; DESIGN.md §5.3).
+    // "Ask this case" stands in the IT view since 22.10.2026 (owner decision; DESIGN.md §5.3) — Analyze's IT page
+    // since 3.5.0 (AB-9), which reads a signed run: the project's first visit signs the engine's reading (ADR-072).
+    await page.goto(`/project/${PROJECT_ID}/analyze?first=1`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]')).toHaveAttribute('data-phase-state', 'done', {
+      timeout: 90000,
+    });
     await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90000 });
 
     const card = page.locator('[data-ask-this-case]');
     await expect(card).toBeVisible({ timeout: 60000 });

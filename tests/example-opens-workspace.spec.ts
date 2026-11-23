@@ -143,13 +143,15 @@ test.describe('an example opens Analyze, Business, with the map and the first lo
     await expectWorkspaceWithFirstLook(page);
   });
 
-  test('from the landing page\'s "Open an example", signed in', async ({ page }) => {
+  test('from the landing page\'s start into the product, signed in', async ({ page }) => {
     test.setTimeout(360 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     const email = await communityAccount('example-landing');
     await signInViaLanding(page, email, PASSWORD);
     await goto(page, '/');
-    const open = page.getByRole('link', { name: 'Open an example' }).first();
+    // The landing's start into the product since 3.5.0 (UX review Q10, an honest button): it leads to My workspace,
+    // where the examples stand.
+    const open = page.getByRole('link', { name: 'Analyze your own code, free account' }).first();
     await expect(open).toHaveAttribute('href', '/dashboard', { timeout: 60000 });
     await open.click();
     await page.waitForURL(/\/dashboard/, { timeout: 90000 });

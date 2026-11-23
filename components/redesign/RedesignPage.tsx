@@ -12,8 +12,10 @@ import ProjectNoAccess from '@/components/ProjectNoAccess';
 import DecisionOptions from '@/components/workspace/DecisionOptions';
 import DecisionCard from '@/components/workspace/DecisionCard';
 import { useProgramDecision } from '@/hooks/useProgramDecision';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { useProcessStates } from '@/hooks/useProcessStates';
 import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
+import WorkspaceRevisionStand from '@/components/workspace/RevisionStand';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { pricedOptions } from '@/lib/economics-record';
@@ -66,7 +68,9 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
   const stand = useWorkspaceRevision(projectId);
   const program = useProgramDecision(project, projectId, revision);
   const steps = useMemo(() => workflowSteps(project), [project]);
-  const model = useMemo(() => redesignModel(steps, program.state), [steps, program.state]);
+  // The account's own model switches: a step a switched-off model would write says so (as the "Next step" rule did).
+  const { profile } = useUserProfile();
+  const model = useMemo(() => redesignModel(steps, program.state, profile), [steps, program.state, profile]);
   const hasRun = Boolean(project?.activeRunId);
   const rules = useProcessStates(projectId, hasRun && projectId !== '');
   const rulesNow = useMemo(() => rulesStatus(rules.outcome, null), [rules.outcome]);
@@ -146,7 +150,14 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
 
   return (
     <StageFrame stage="redesign" data-redesign="ready">
-      <StageHeader tools={{ steps }} project={project} place="redesign">
+      <StageHeader
+        tools={{ steps }}
+        project={project}
+        place="redesign"
+        // The Stand this page was drawn from, and the notice when it has moved (CR-15): the decision step writes, and
+        // a write the Stand holds back must say so rather than do nothing.
+        eyebrow={<WorkspaceRevisionStand held={stand.held} seen={stand.seen} moved={stand.moved} onKeep={stand.keep} onRefresh={stand.refresh} />}
+      >
         Build its clean core successor from the same evidence: priced, decided, designed, built, documented, tested and delivered.
       </StageHeader>
 

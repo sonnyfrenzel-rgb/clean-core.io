@@ -165,6 +165,8 @@ test.describe('one way back (ADR-140)', () => {
       place: 'Demo workspace',
       to: 'demo',
     });
+    // The demo's entry (its Analyze, Business) goes to the list as well: its demo workspace leads back to itself.
+    expect(familyBackLink({ projectId: '', search: '', demo: true, toMyWorkspace: true })).toMatchObject({ href: '/dashboard', to: 'my-workspace' });
     expect(familyBackLink({ projectId: '', search: '' })).toEqual({ kind: 'none' });
   });
 

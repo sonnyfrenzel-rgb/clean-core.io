@@ -249,34 +249,13 @@ test.describe('levels in full screen and inline — desktop', () => {
     expect(await levelOf(frame), 'leaving full screen restored an earlier level').toBe('top');
   });
 
-  test('the Documentation map keeps the level in the address in full screen; the editor walks its own levels there', async ({ page }) => {
+  // The Documentation map kept its level in the address (`#map=…`); that map and its address retired with
+  // Documentation v2 (ADR-127, DOC-N0/N2: Figure 1, read-only). Analyze's map walks its levels in full screen (the
+  // test above); what is left to hold here is the editor's own levels in full screen, on the page that edits now.
+  test('the editor walks its own levels in full screen, on the page that edits the map', async ({ page }) => {
     test.setTimeout(300_000);
     await signIn(page, acct);
-    await page.goto(`/project/${acct.projectId}/documentation`, { waitUntil: 'domcontentloaded' });
-    const frame = page.locator('[data-map-canvas-frame]').first();
-    await expect.poll(async () => frame.locator('[data-map-node]').count(), { timeout: 120_000 }).toBeGreaterThan(5);
-    await page.waitForTimeout(800);
-    const sub = await subProcessOnLevel(frame);
-    const toggle = frame.locator('[data-map-fullscreen-toggle]');
-
-    await toggle.click();
-    await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
-    await frame.locator(`[data-map-node="${sub}"]`).click();
-    await expect.poll(() => levelOf(frame)).toBe(sub);
-    await expect(frame).toHaveAttribute('data-map-fullscreen', 'true');
-    await expect.poll(() => page.evaluate(() => location.hash)).toContain(`map=${sub}`);
-    await expectPathAt(frame, sub);
-    await frame.locator('[data-process-up]').click();
-    await expect.poll(() => levelOf(frame)).toBe('top');
-    await frame.locator(`.djs-overlays[data-container-id="${sub}"] .bjs-drilldown`).click();
-    await expect.poll(() => levelOf(frame)).toBe(sub);
-    await toggle.click();
-    await expect(frame).toHaveAttribute('data-map-fullscreen', 'false');
-    await page.waitForTimeout(400);
-    expect(await levelOf(frame)).toBe(sub);
-    expect(await page.evaluate(() => location.hash)).toContain(`map=${sub}`);
-    await frame.locator('[data-process-up]').click();
-    await expect.poll(() => levelOf(frame)).toBe('top');
+    await openWorkspaceMap(page, acct);
 
     // The editor: its own levels, the same path and way up, in full screen.
     await page.locator('[data-process-edit-toggle]').click();
@@ -399,7 +378,8 @@ test.describe('levels in full screen and inline — desktop', () => {
   test('Design full screen: a box opens its evidence inside full screen; Escape closes it first, then full screen', async ({ page }) => {
     test.setTimeout(300_000);
     await signIn(page, acct);
-    await page.goto(`/project/${acct.projectId}/design`, { waitUntil: 'domcontentloaded' });
+    // The architecture canvas is Design's IT view since 3.5.0 (ADR-130: three views from the program decision).
+    await page.goto(`/project/${acct.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('svg[data-architecture-canvas]')).toBeVisible({ timeout: 120_000 });
     const card = page.locator('[data-canvas-card]');
     await card.locator('[data-canvas-fullscreen-toggle]').click();

@@ -74,9 +74,14 @@ test.describe('Management: the decision first, prominent and plain', () => {
     });
   });
 
+  /**
+   * Since ADR-143 (owner request 23.11.2026) the decision is taken on Re-design, its step 2, where the decision card
+   * (ADR-092) stands unchanged; Analyze's Management view puts the decision first as its answer card and shows it
+   * read-only.
+   */
   async function open(page: Page) {
     await signInViaLanding(page, OWNER, PASSWORD);
-    await page.goto(`/project/${ID}?view=management`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${ID}/redesign`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-decision-card][data-decision-status]')).toBeVisible({ timeout: 90000 });
   }
 
@@ -88,23 +93,11 @@ test.describe('Management: the decision first, prominent and plain', () => {
     const cards = page.locator('[data-decision-card]');
     await expect(cards).toHaveCount(1);
     const card = cards.first();
-    // The hero of the panel, and not inside any fold.
-    await expect(page.locator('[data-executive-decision] [data-decision-card]')).toHaveCount(1);
+    // In the decision step of Re-design, and not inside any fold.
+    await expect(page.locator('#decide [data-redesign-record] [data-decision-card]')).toHaveCount(1);
     expect(await card.evaluate((el) => Boolean(el.closest('[data-management-fold], [data-cc-disclosure]')))).toBe(false);
-    // First: the panel is the first thing of the Management answers, and the
-    // decision stands above every fold.
-    const firstCard = await page
-      .locator('[data-management-view=""]')
-      .evaluate((root) => root.querySelector('[data-management-executive] > *')?.hasAttribute('data-executive-decision') ?? false);
-    expect(firstCard, 'the decision is not the first card').toBe(true);
-    const cardBox = (await card.boundingBox())!;
-    for (const fold of await page.locator('[data-management-fold]').all()) {
-      expect((await fold.boundingBox())!.y).toBeGreaterThan(cardBox.y);
-    }
 
-    // The answer names the option once, at the top of the card (ADR-087); the
-    // record row keeps its status, and no second headline repeats the answer.
-    await expect(page.locator('[data-executive-decision] [data-decision-answer]')).not.toBeEmpty();
+    // The record row keeps its status, and no headline repeats the answer (ADR-087).
     await expect(card.locator('[data-decision-headline], [data-decision-why]')).toHaveCount(0);
     await expect(card.locator('[data-decision-record] [data-decision-state] [data-cc-object-status]').first()).toBeVisible();
     // Who confirmed is said once, beside the answer — never a second line in the card.
@@ -125,13 +118,29 @@ test.describe('Management: the decision first, prominent and plain', () => {
     // fact); the self-declaration stays.
     await expect(card.locator('[data-decision-technical] [data-decision-binding="run"] [data-provenance]')).toHaveCount(1);
     await expect(card.locator('[data-decision-self-declaration]')).toContainText('self-declaration');
+
+    // First in Management: the answer card asks the decision's question, directly under the header, and its one
+    // primary action leads to Re-design. Nothing is decided there (no second card).
+    await page.goto(`/project/${ID}/analyze?view=management`, { waitUntil: 'domcontentloaded' });
+    const answer = page.locator('#management-answer');
+    await expect(answer).toContainText('Keep, rebuild or retire: what does this program need?', { timeout: 90000 });
+    const top = (await answer.boundingBox())!;
+    const sections = page.locator('[data-analyze-management="ready"] section[id]:not(#management-answer section)');
+    expect(await sections.count()).toBeGreaterThan(0);
+    for (const section of await sections.all()) {
+      const id = await section.getAttribute('id');
+      if (id === 'management-answer') continue;
+      expect((await section.boundingBox())!.y, `#${id} stands above the decision`).toBeGreaterThan(top.y);
+    }
+    await expect(page.locator('[data-analyze-management-redesign]')).toHaveAttribute('href', `/project/${ID}/redesign`);
+    await expect(page.locator('[data-decision-card]')).toHaveCount(0);
   });
 
   test('no visible text names a source file of this product, not even the technical fold', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await open(page);
-    const shell = page.locator('[data-workspace-shell="management"]');
+    const shell = page.locator('[data-redesign="ready"]');
     expect(await shell.innerText()).not.toMatch(SOURCE_PATH);
 
     const technical = page.locator('[data-decision-technical] [data-cc-disclosure-trigger]');
@@ -140,6 +149,14 @@ test.describe('Management: the decision first, prominent and plain', () => {
     const text = await shell.innerText();
     expect(text).not.toMatch(SOURCE_PATH);
     expect(text).not.toContain('`');
+
+    // Analyze's Management view, read the same way.
+    await page.goto(`/project/${ID}/analyze?view=management`, { waitUntil: 'domcontentloaded' });
+    const management = page.locator('[data-analyze-management="ready"]');
+    await expect(management).toBeVisible({ timeout: 90000 });
+    const mtext = await management.innerText();
+    expect(mtext).not.toMatch(SOURCE_PATH);
+    expect(mtext).not.toContain('`');
   });
 
   test('on a phone at 390 px the card stacks and nothing scrolls sideways', async ({ browser }) => {
@@ -148,21 +165,21 @@ test.describe('Management: the decision first, prominent and plain', () => {
     const page = await context.newPage();
     await open(page);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    expect(overflow, 'Management scrolls sideways at 390 px').toBeLessThanOrEqual(0);
+    expect(overflow, 'Re-design scrolls sideways at 390 px').toBeLessThanOrEqual(0);
     // The foundations are one list: one column, rows under each other.
     const xs = await page.locator('[data-decision-pillar]').evaluateAll((els) =>
       [...new Set(els.map((el) => Math.round(el.getBoundingClientRect().x)))],
     );
     expect(xs.length).toBe(1);
-    // The decision stands above fit to standard.
-    const [d, f] = await Promise.all([
-      page.locator('[data-executive-decision]').boundingBox(),
-      page.locator('#standard-fit').boundingBox(),
-    ]);
-    expect(f!.y).toBeGreaterThan(d!.y + d!.height - 1);
     // Explanations open by tap.
     await page.locator('button[data-info-popover="decision-reversible"]').tap();
     await expect(page.locator('[data-info-popover-panel="decision-reversible"]')).toBeVisible();
+
+    // Analyze's Management view on the same phone.
+    await page.goto(`/project/${ID}/analyze?view=management`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-management="ready"]')).toBeVisible({ timeout: 90000 });
+    const overflowM = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflowM, 'Management scrolls sideways at 390 px').toBeLessThanOrEqual(0);
     await context.close();
   });
 });

@@ -115,8 +115,12 @@ test.describe('on screen', () => {
     await expect(page.locator('[data-design-write-gate]')).toHaveAttribute('data-design-write-gate', 'ready', { timeout: 120_000 });
     expect(prompts, 'no model call on opening').toHaveLength(0);
     await page.locator('[data-design-generate]').click();
+    // Written under the business questions (ADR-130); the document is read in the IT view.
+    await expect(page.locator('[data-design-written]')).toBeVisible({ timeout: 120_000 });
+    await expect.poll(() => prompts.length, { message: 'one design call and one for its proposals' }).toBe(2);
+    await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-design-section="overview"]')).toBeVisible({ timeout: 120_000 });
-    expect(prompts, 'one design call and one for its proposals').toHaveLength(2);
+    expect(prompts, 'reading it writes nothing').toHaveLength(2);
 
     const prompt = prompts[0];
     expect(prompt).toContain('Engine Evidence');

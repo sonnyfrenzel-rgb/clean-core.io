@@ -149,15 +149,19 @@ test.describe('a stage as a tool, rendered', () => {
         waitUntil: 'domcontentloaded',
       });
       await page.waitForSelector('[data-stage-title]', { timeout: 60000 });
-      const back = page.locator('[data-stage-back]');
+      // The header's way back (the footer draws the same one at the end of the page, `StageFooter`). The separator
+      // is a padded "·" without spaces of its own, so the text reads "My workspace·<program>".
+      const back = page.locator('[data-stage-header] [data-stage-back]');
       if (st === 'analyze') {
         // ADR-109's one exception: Analyze in the Business view is where a project opens; its way back is My workspace.
-        await expect(back, `${st}: the way back`).toHaveText(/^My workspace\s·\s.+/, { timeout: 30000 });
+        await expect(back, `${st}: the way back`).toHaveText(/^My workspace\s*·\s*\S.*/, { timeout: 30000 });
         await expect(back).toHaveAttribute('href', '/dashboard');
       } else {
-        // The family's one way back (ADR-140): the workspace's place the address carries, then the program.
-        await expect(back, `${st}: the way back`).toHaveText(/^Business view, Evidence & controls\s·\s.+/, { timeout: 30000 });
-        await expect(back).toHaveAttribute('href', `/project/${acct.projectId}?view=business#evidence`);
+        // The family's one way back (ADR-140): the place the address carries, then the program. The workspace page
+        // dissolved into Analyze (AB-11), and the old Evidence layer lives in IT's Run & trust now
+        // (`lib/workspace-redirect.ts`), so the way back is Analyze, IT view, at that place.
+        await expect(back, `${st}: the way back`).toHaveText(/^Analyze, IT view\s*·\s*\S.*/, { timeout: 30000 });
+        await expect(back).toHaveAttribute('href', `/project/${acct.projectId}/analyze?view=it#it-trust`);
       }
       await expect(page.locator('[data-stage-tool]'), `${st}: the tool eyebrow`).toContainText('Tool ·');
       await expect(page.locator('nav[aria-label="Workflow phases"]'), `${st}: the old stepper`).toHaveCount(0);
@@ -213,8 +217,8 @@ test.describe('a stage as a tool, rendered', () => {
     await page.waitForURL(`**/project/${acct.projectId}/analyze?view=business&from=workspace-tools&layer=evidence`, { timeout: 60000 });
     await expect(page.locator('[data-stage-header="analyze"]')).toBeVisible({ timeout: 60000 });
     // ADR-109 (2): Analyze in Business is the project's entry; its way back is My workspace, as in the loop above.
-    await expect(page.locator('[data-stage-back]')).toHaveText(/^My workspace\s·\s.+/, { timeout: 30000 });
-    await expect(page.locator('[data-stage-back]')).toHaveAttribute('href', '/dashboard');
+    await expect(page.locator('[data-stage-header] [data-stage-back]')).toHaveText(/^My workspace\s*·\s*\S.*/, { timeout: 30000 });
+    await expect(page.locator('[data-stage-header] [data-stage-back]')).toHaveAttribute('href', '/dashboard');
     await expect(page.locator('[data-stage-tools="open"] a[aria-current="page"]')).toHaveAttribute('data-workspace-tool', 'analyze');
   });
 
@@ -347,7 +351,7 @@ test.describe('one frame for every stage, rendered', () => {
       return {
         frame: box(document.querySelector('[data-stage-frame]')),
         header: box(document.querySelector('[data-stage-header]')),
-        back: box(document.querySelector('[data-stage-back]')),
+        back: box(document.querySelector('[data-stage-header] [data-stage-back]')),
         bar: box(document.querySelector('[data-stage-toolbar]')),
         title: box(document.querySelector('[data-stage-title]')?.parentElement),
       };
@@ -370,7 +374,7 @@ test.describe('one frame for every stage, rendered', () => {
       await page.goto(p.url, { waitUntil: 'domcontentloaded' });
       await page.waitForSelector('[data-stage-title]', { timeout: 60000 });
       if (p.demo) await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
-      else await expect(page.locator('[data-stage-back]'), `${p.name}: the way back`).toBeVisible({ timeout: 90000 });
+      else await expect(page.locator('[data-stage-header] [data-stage-back]'), `${p.name}: the way back`).toBeVisible({ timeout: 90000 });
       // The page settled: the tools bar drawn and, in the product, the project read
       // (the eyebrow names it) — a stage still loading has a header of its own.
       await expect(page.locator('[data-stage-toolbar]'), `${p.name}: the tools bar`).toBeVisible({ timeout: 90000 });

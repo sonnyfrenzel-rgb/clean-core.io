@@ -10,6 +10,7 @@ import CcStateText from '@/components/cc/StateText';
 import { getAuth } from '@/lib/firebase';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { itAtcComparison, itvPackExported, itvRunLine, wt } from '@/lib/workspace-messages';
+import { redesignHref } from '@/lib/redesign';
 import { IT_SECTION_IDS, type RunTrust } from '@/lib/it-sections';
 import { routesNamed, type CatalogProfile } from '@/lib/it-view';
 import type { ItFindingsSource } from '@/lib/it-findings';
@@ -459,7 +460,9 @@ function ContractBody({
       </div>
       <div className="mt-3">
         <CcLinkButton
-          href={`/project/${encodeURIComponent(projectId)}?view=management#decision-card`}
+          // The program decision is Re-design's step since ADR-143: the link goes there directly, not through the
+          // dissolved workspace page's redirect.
+          href={redesignHref(projectId, 'decide')}
           variant="secondary"
           data-it-review-contract=""
         >

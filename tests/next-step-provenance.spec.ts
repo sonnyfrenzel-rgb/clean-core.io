@@ -300,47 +300,52 @@ test.describe('the card, as the reader sees it', () => {
     });
   });
 
-  test('an open point arrives with its reason, its "why this one", and a Reconstructed chip', async ({ page }) => {
+  // The "Next step" card is gone with the workspace page (AB-11); Re-design (ADR-143) is the way on and says the
+  // next step there: one action, the reason under it, and the steps in the one order, each state read from the
+  // project, so the reader sees why that step is next. No model wrote any of it, so no AI-generated chip.
+  const redesign = async (page: Page, id: string) => {
+    await page.goto(`/project/${id}/redesign`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-redesign="ready"]', { timeout: 60000 });
+  };
+
+  test('an open point arrives with its reason and its "why this one", never as a model sentence', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    // The card stands in the workspace's IT view: Analyze, Business has no Next step card since AB-4 (ADR-118,
-    // BusinessNextStep removed in d845b283; the tool bar says what is next there).
-    await page.goto(`/project/${OPEN_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await redesign(page, OPEN_ID);
 
-    const card = page.locator('[data-next-step]');
-    await expect(card.locator('[data-next-step-state="open"]')).toHaveAttribute('data-next-step-key', 'design');
+    // A signed run and nothing after it: Economics, step 1 of Re-design, is next.
+    const next = page.locator('[data-redesign-next]');
+    await expect(next).toHaveAttribute('data-redesign-next', 'tco');
+    await expect(page.locator('#redesign-answer [data-answer-next]')).toContainText('Step 1 of 7.');
 
-    const selection = card.locator('[data-next-step-selection]');
-    await expect(selection).toBeVisible();
-    const text = (await selection.textContent())?.trim() ?? '';
-    // Analyze is the one phase before Design, and it is on record.
-    expect(text).toContain('The one phase before it, Analyze, is on record');
-    expect(text).toContain('Design');
+    // Why this one: the one step before it, Analyze, is on record, and the row it names is the first not done.
+    await expect(page.locator('[data-redesign-step="analyze"]')).toHaveAttribute('data-redesign-step-state', 'done');
+    const rows = page.locator('[data-redesign-steps] > li');
+    const states = await rows.evaluateAll((els) =>
+      els.map((el) => ({ key: el.getAttribute('data-redesign-step'), state: el.getAttribute('data-redesign-step-state'), next: el.hasAttribute('data-redesign-step-next') })),
+    );
+    const at = states.findIndex((r) => r.next);
+    expect(states[at]?.key).toBe('tco');
+    expect(states.slice(0, at).every((r) => r.state === 'done'), 'a step before the next one is not on record').toBe(true);
+    const text = await page.locator('[data-redesign="ready"]').innerText();
     expect(text, 'the reader is shown a share instead of a fact').not.toMatch(/\d\s*%/);
 
-    const chip = card.locator('[data-provenance]');
-    await expect(chip).toHaveAttribute('data-provenance', 'reconstructed');
-    await expect(chip.locator('[data-cc-provenance-label]')).toHaveText('Reconstructed');
-    await expect(chip).toHaveAttribute('data-cc-form', 'outline');
+    // Read from the record, never claimed as a model's sentence.
+    await expect(page.locator('#redesign-answer [data-family-chip="ai"]')).toHaveCount(0);
   });
 
-  test('a finished project: the card says nothing is open, and still says where that comes from', async ({ page }) => {
+  test('a project whose tools are on record: nothing is offered as done that is not, and it says where that comes from', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    // The card stands in the workspace's IT view: Analyze, Business has no Next step card since AB-4 (ADR-118,
-    // BusinessNextStep removed in d845b283; the tool bar says what is next there).
-    await page.goto(`/project/${DONE_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await redesign(page, DONE_ID);
 
-    const card = page.locator('[data-next-step]');
-    const none = card.locator('[data-next-step-state="none"]');
-    await expect(none).toBeVisible();
-    await expect(none).toHaveText(NOTHING_OPEN);
-    await expect(card.locator('[data-provenance]')).toHaveAttribute('data-provenance', 'reconstructed');
-    // Nothing to open, so nothing to press, and no selection sentence about a
-    // phase that does not exist.
-    await expect(card.locator('a[data-cc-button]')).toHaveCount(0);
-    await expect(card.locator('[data-next-step-selection]')).toHaveCount(0);
+    // The tools this fixture finished read "Done", each from the record; the answer names what is still open,
+    // and it is the one action on the card, never a model's suggestion.
+    for (const key of ['design', 'transformation', 'documentation', 'testing']) {
+      await expect(page.locator(`[data-redesign-step="${key}"]`), key).toHaveAttribute('data-redesign-step-state', 'done');
+    }
+    await expect(page.locator('#redesign-answer [data-cc-button="primary"]')).toHaveCount(1);
+    await expect(page.locator('#redesign-answer [data-family-chip="ai"]')).toHaveCount(0);
+    await expect(page.locator('#redesign-steps')).toContainText('Each state is read from the project');
   });
 });

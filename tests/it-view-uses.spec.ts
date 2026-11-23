@@ -174,62 +174,49 @@ test.describe('the IT view after a signed run of Z_SALES_ORDER_CREATOR', () => {
     });
   });
 
+  // Since 3.5.0 (AB-9, ADR-140) the IT view is Analyze's IT page; the old workspace address lands there.
   async function openIt(page: Page): Promise<void> {
     await signInViaLanding(page, ADMIN, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-it-view=""]'), 'the IT answers never arrived').toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-analysis-answer] [data-answer-card]'), 'the IT answers never arrived').toBeVisible({ timeout: 90000 });
   }
+
+  /** The row of "What it touches in SAP" that names an object. */
+  const touchRow = (page: Page, name: string) => page.locator('#analyze-touch [data-cc-table] tbody tr', { hasText: name }).first();
 
   test('calls with anchors and levels, one Not determined, no empty box, the tour at the top', async ({ page }) => {
     test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 900 });
     await openIt(page);
-    const view = page.locator('[data-it-view=""]');
-    await expect(view).toHaveAttribute('data-it-state', 'clean');
-    // The headline does not say "no findings" on its own beside a program that calls SAP.
-    await expect(page.locator('[data-it-headline]')).not.toHaveText('No findings in the staged source');
-    await expect(page.locator('[data-it-headline]')).toContainText('3 calls');
+    // The answer does not say "no findings" on its own beside a program that calls SAP.
+    await expect(page.locator('[data-answer-card] [data-answer]')).not.toHaveText('No findings in the staged source');
+    await expect(page.locator('#analyze-touch')).toHaveAttribute('data-analyze-touch', '3', { timeout: 60000 });
 
-    // (1) The called BAPIs, each with its line anchor and its level.
+    // (1) The called BAPIs, each with its line anchor (one notation, UX review Q11) and its level.
     for (const name of BAPIS) {
-      await expect(page.locator(`[data-it-use="${name}"]`)).toBeVisible();
-      await expect(page.locator(`[data-it-use-lines="${name}"]`)).toContainText(/L\d+/);
-      await expect(page.locator(`[data-it-use-level="${name}"] [data-cc-identifier="clean-core-level"]`)).toHaveCount(1);
+      const row = touchRow(page, name);
+      await expect(row).toBeVisible();
+      await expect(row.locator('[data-cc-anchor]').first()).toContainText(/^line \d+/);
+      await expect(row.locator('[data-cc-identifier="clean-core-level"]')).toHaveCount(1);
     }
-    await expect(
-      page.locator('[data-it-use-level="BAPI_SALESORDER_CREATEFROMDAT2"] [data-cc-identifier="clean-core-level"]'),
-    ).toHaveAttribute('data-cc-value', 'B');
-    await expect(page.locator('[data-it-figure="uses"] [data-figure-value]')).toHaveText('3');
+    await expect(touchRow(page, 'BAPI_SALESORDER_CREATEFROMDAT2').locator('[data-cc-identifier="clean-core-level"]')).toHaveAttribute('data-cc-value', 'B');
 
-    // (2) The open questions are one number (ADR-081): the figure says what the
-    // list counts, and the list keeps every line the engine stepped over that
-    // anyone can answer, one click deeper in its group.
+    // (2) The open questions are one list (ADR-081), in IT's side column, and it keeps no more lines than the engine
+    // stepped over.
     const engine = notDetermined({ legacyCode: SALES_ORDER } as Project).count;
     const list = page.locator('#not-determined [data-open-questions]');
     await expect(list).toBeVisible({ timeout: 30000 });
-    const open = await list.getAttribute('data-open-questions');
-    await expect(page.locator('[data-it-figure="not-determined"] [data-figure-value]')).toHaveText(String(open));
     expect(await page.locator('#not-determined [data-not-determined-item]').count()).toBeLessThanOrEqual(engine);
 
-    // (3) Evidence with content draws no dashed empty box in the IT view.
-    await expect(view.locator('[data-cc-empty-state]')).toHaveCount(0);
+    // (3) Evidence with content draws no dashed empty box on the IT page.
+    await expect(page.locator('[data-analyze-it] [data-cc-empty-state]')).toHaveCount(0);
 
-    // (4) The explanation starts at the top: the first tip of the tour stands at
-    // "Next step" under the answer, the second at the Not determined figure in
-    // it — never at the foot of the page.
-    const mark = page.locator('[data-coach-mark]').first();
-    await expect(mark).toBeVisible({ timeout: 30000 });
-    await expect(mark).toHaveAttribute('data-coach-mark', 'next-step');
-    await page.click('[data-coach-mark-dismiss="next-step"]');
-    await expect(mark).toHaveAttribute('data-coach-mark', 'not-determined');
-    const markBox = await mark.boundingBox();
-    const answerBox = await page.locator('[data-it-answer]').boundingBox();
-    const usesBox = await page.locator('#it-objects').boundingBox();
-    expect(markBox && answerBox && usesBox).toBeTruthy();
-    // Above the first section under the answer — where the reader is.
-    expect(markBox!.y).toBeLessThan(usesBox!.y + usesBox!.height);
-    expect(markBox!.y).toBeGreaterThanOrEqual(answerBox!.y);
-    // Every section says what it is in its first sentence, visible without a click.
-    await expect(page.locator('[data-it-lead="objects"]')).toBeVisible();
+    // (4) The explanation starts at the top. The coach marks retired with the workspace page (3.5.0, AB-11); what
+    // carries it now is the answer card above everything and each section's first sentence, visible without a click.
+    const answerBox = await page.locator('[data-answer-card]').boundingBox();
+    const usesBox = await page.locator('#analyze-touch').boundingBox();
+    expect(answerBox && usesBox && answerBox.y < usesBox.y).toBe(true);
+    await expect(page.locator('#analyze-touch')).toContainText('Every object with the statement that touches it.');
     await expect(page.locator('#not-determined [data-open-questions-line]')).toBeVisible();
   });
 
@@ -237,7 +224,7 @@ test.describe('the IT view after a signed run of Z_SALES_ORDER_CREATOR', () => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 390, height: 844 });
     await openIt(page);
-    await expect(page.locator('[data-it-use="BAPI_SALESORDER_CREATEFROMDAT2"]').first()).toBeVisible();
+    await expect(touchRow(page, 'BAPI_SALESORDER_CREATEFROMDAT2')).toBeVisible({ timeout: 60000 });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
   });

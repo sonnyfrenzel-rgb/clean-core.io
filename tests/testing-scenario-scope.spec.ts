@@ -349,7 +349,7 @@ test.describe('the scenarios on the page', () => {
       const details = row.locator('[data-scenario-details]');
       await expect(details).toBeVisible();
       // AI-generated stays visible on the details.
-      await expect(details.locator('[data-provenance="proposed"]').first()).toBeVisible();
+      await expect(details.locator('[data-family-chip="ai"]').first()).toBeVisible();
       for (const field of scenarioFields(tc)) {
         const shown = details.locator(`[data-scenario-field="${field.key}"]`);
         await expect(shown, `${tc.id} ${field.key}`).toHaveCount(1);

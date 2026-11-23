@@ -28,7 +28,7 @@ test('at 1440 no target label reaches the generated-files column', async ({ page
   test.setTimeout(240_000);
   await page.setViewportSize({ width: 1440, height: 1000 });
   await openDemoFlow(page);
-  const svg = page.locator('[data-transformation-flow] svg');
+  const svg = page.locator('[data-transformation-flow] svg[role="img"]');
   await expect(svg).toBeVisible();
   // The demo's longest target label since its batch input names ME21N and is graded on it
   // (eea16c2f) — no kind of the demo goes to the project route any more.

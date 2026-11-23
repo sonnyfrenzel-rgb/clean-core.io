@@ -204,8 +204,9 @@ test.describe('the analysis export is a document, not a program', () => {
     await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('#analysis-report', { timeout: 60000 });
 
-    // An item of the one Export menu since ADR-093 (11.10.2026).
-    await page.locator('[data-analyze-export-menu]').click({ timeout: 60000 });
+    // An item of the one Export menu since ADR-093 (11.10.2026), drawn in the answer card and at the anchor bar's end
+    // since ADR-140 (A11): the first is the answer card's.
+    await page.locator('[data-analyze-export-menu]').first().click({ timeout: 60000 });
     const [download] = await Promise.all([
       page.waitForEvent('download', { timeout: 60000 }),
       page.getByRole('button', { name: 'Export Confluence' }).click(),

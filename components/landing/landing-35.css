@@ -198,7 +198,7 @@
   .lp35 .route b { font-size: 14.5px; }
   .lp35 .route p { margin: 3px 0 0; font-size: 13.5px; color: var(--cc-ink-muted); }
   .lp35 .route.ind { border: 2px solid var(--cc-brand); }
-  .lp35 .route .tag { float: right; font-size: 10.5px; font-weight: 800; line-height: 1; text-transform: uppercase; letter-spacing: 0.05em; color: var(--cc-brand-strong); background: var(--cc-brand-surface); border-radius: 4px; padding: 4px 6px; margin-left: 8px; }
+  .lp35 .route .tag { float: right; font-size: 11px; font-weight: 800; line-height: 1; text-transform: uppercase; letter-spacing: 0.05em; color: var(--cc-brand-strong); background: var(--cc-brand-surface); border-radius: 4px; padding: 4px 6px; margin-left: 8px; }
 
   /* decide: the buckets */
   .lp35 .buckets { display: grid; gap: 10px; grid-template-columns: 1fr; margin-top: 4px; }

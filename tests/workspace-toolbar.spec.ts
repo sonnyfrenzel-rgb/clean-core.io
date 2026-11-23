@@ -267,7 +267,10 @@ test.describe('the toolbar, rendered', () => {
   // whose seven tools are the stage header's bar (`tests/stage-frame.spec.ts`).
   async function open(page: Page, projectId: string, view: 'it' | 'management'): Promise<void> {
     await page.goto(`/project/${projectId}?view=${view}`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator(`[data-workspace-shell="${view}"]`)).toBeVisible({ timeout: 60000 });
+    // The workspace page dissolved into Analyze in 3.5.0 (AB-11): the old address opens Analyze in the view, and the
+    // tool row is the one in its header (the same `ToolBar`, `data-stage-tools`).
+    await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', view, { timeout: 60000 });
+    await expect(page.locator('[data-stage-tools="open"]')).toBeVisible({ timeout: 60000 });
   }
 
   /** Each tool's state and mark as the page shows them. */
@@ -298,9 +301,9 @@ test.describe('the toolbar, rendered', () => {
 
     for (const view of ['it', 'management'] as const) {
       await open(page, ANALYZED, view);
-      const bar = page.locator('[data-workspace-tools="open"]');
+      const bar = page.locator('[data-stage-tools="open"]');
       await expect(bar, `${view}: the open bar`).toBeVisible();
-      await expect(page.locator('[data-workspace-tools="menu"]'), `${view}: a menu beside the open bar`).toBeHidden();
+      await expect(page.locator('[data-stage-tools="menu"]'), `${view}: a menu beside the open bar`).toBeHidden();
       const links = bar.locator('a[data-workspace-tool]');
       await expect(links).toHaveCount(7);
       for (let i = 0; i < 7; i++) await expect(links.nth(i), `${view}: tool ${i + 1} is not visible`).toBeVisible();
@@ -311,7 +314,7 @@ test.describe('the toolbar, rendered', () => {
       // Nothing was opened to see them.
       await expect(page.locator('[data-workspace-tools-panel]')).toHaveCount(0);
 
-      const marks = await shown(page, '[data-workspace-tools="open"]');
+      const marks = await shown(page, '[data-stage-tools="open"]');
       expect(marks.map((m) => [m.key, m.state, m.meaning, m.kind])).toEqual(
         steps.map((s) => [s.key, s.state, toolMark(s).meaning, toolMark(s).kind]),
       );
@@ -356,9 +359,9 @@ test.describe('the toolbar, rendered', () => {
     }
 
     // The check is green — the success token, not a near-green — and the words say why.
-    const analyze = page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]');
+    const analyze = page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]');
     await expect(analyze).toHaveAccessibleName(named('Analyze', 'tools.mark.done'));
-    await expect(page.locator('[data-workspace-tools="open"] a[data-workspace-tool="tco"]')).toHaveAccessibleName('Economics');
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="tco"]')).toHaveAccessibleName('Economics');
     const [tick, legendTick, success] = await analyze.evaluate((el) => {
       const toRgb = (value: string) => {
         const probe = document.createElement('span');
@@ -379,7 +382,7 @@ test.describe('the toolbar, rendered', () => {
     expect(tick).toBe('rgb(4, 120, 87)');
     expect(legendTick, 'the legend shows another check than the bar').toBe(tick);
     // A tool with nothing on record says nothing extra.
-    await expect(page.locator('[data-workspace-tools="open"] a[data-workspace-tool="design"]')).toHaveAccessibleName('Design');
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]')).toHaveAccessibleName('Design');
 
     // Keyboard: real links, reached by Tab, with the visible focus ring.
     await analyze.focus();
@@ -397,7 +400,7 @@ test.describe('the toolbar, rendered', () => {
     await page.goto(`/project/${ANALYZED}/design`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]')).toBeVisible({ timeout: 60000 });
     await open(page, ANALYZED, 'it');
-    const bar = page.locator('[data-workspace-tools="open"]');
+    const bar = page.locator('[data-stage-tools="open"]');
     await expect(bar.locator('a[data-workspace-tool-next]'), 'not exactly one tool is next').toHaveCount(1);
     await expect(bar.locator('a[data-workspace-tool-next]')).toHaveAttribute('data-workspace-tool', 'design');
     await expect(bar.locator('a[data-workspace-tool="design"] [data-workspace-tool-next-tag]')).toBeVisible();
@@ -412,7 +415,7 @@ test.describe('the toolbar, rendered', () => {
     expect(steps.find((s) => s.key === 'analyze')?.state, 'the fixture is not stale').toBe('stale');
 
     await open(page, STALE, 'management');
-    const marks = await shown(page, '[data-workspace-tools="open"]');
+    const marks = await shown(page, '[data-stage-tools="open"]');
     expect(marks.map((m) => [m.key, m.state, m.meaning, m.kind])).toEqual(
       steps.map((s) => [s.key, s.state, toolMark(s).meaning, toolMark(s).kind]),
     );
@@ -422,7 +425,7 @@ test.describe('the toolbar, rendered', () => {
     // The dot explains itself in words — the description, not a hover tooltip.
     for (const m of marks.filter((x) => x.dots > 0)) {
       await expect(
-        page.locator(`[data-workspace-tools="open"] a[data-workspace-tool="${m.key}"]`),
+        page.locator(`[data-stage-tools="open"] a[data-workspace-tool="${m.key}"]`),
         `${m.key}: the dot explains itself`,
       ).toHaveAccessibleDescription(/Out of date — inputs changed since/);
     }
@@ -435,14 +438,14 @@ test.describe('the toolbar, rendered', () => {
     expect(marks.find((m) => m.key === 'design')?.checks, 'a design awaiting its sign-off carries a check').toBe(0);
     expect(marks.find((m) => m.key === 'design')?.halves, 'Design is started').toBe(1);
 
-    const analyze = page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]');
+    const analyze = page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]');
     await expect(analyze.locator('[data-workspace-tool-mark="dot"]')).toHaveCount(1);
     await expect(analyze).toHaveAccessibleName(named('Analyze', 'tools.mark.stale'));
-    await expect(page.locator('[data-workspace-tools="open"] a[data-workspace-tool="design"]')).toHaveAccessibleName(
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]')).toHaveAccessibleName(
       named('Design', 'tools.mark.started'),
     );
     // The half circle is the information ink, never the success green.
-    const [half, information, success] = await page.locator('[data-workspace-tools="open"] a[data-workspace-tool="design"]').evaluate((el) => {
+    const [half, information, success] = await page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]').evaluate((el) => {
       const toRgb = (value: string) => {
         const probe = document.createElement('span');
         probe.style.color = value;
@@ -476,12 +479,12 @@ test.describe('the toolbar, rendered', () => {
     await signInThroughForm(page, acct);
     for (const view of ['management', 'it'] as const) {
       await open(page, ANALYZED, view);
-      await expect(page.locator('[data-workspace-tools="open"]'), `${view}: the open bar on a phone`).toBeHidden();
-      await expect(page.locator('[data-workspace-tools="menu"]')).toBeVisible();
+      await expect(page.locator('[data-stage-tools="open"]'), `${view}: the open bar on a phone`).toBeHidden();
+      await expect(page.locator('[data-stage-tools="menu"]')).toBeVisible();
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow, `${view}: the page scrolls sideways at 390 px`).toBeLessThanOrEqual(0);
     }
-    await page.locator('[data-workspace-tools="menu"] button[aria-expanded]').click();
+    await page.locator('[data-stage-tools="menu"] button[aria-expanded]').click();
     const panel = page.locator('[data-workspace-tools-panel]');
     await expect(panel.locator('a[data-workspace-tool]')).toHaveCount(7);
     // The legend first, before the first tool, in text.
@@ -516,7 +519,7 @@ test.describe('the toolbar, rendered', () => {
     const page = await context.newPage();
     await signInThroughForm(page, acct);
     await open(page, ANALYZED, 'management');
-    const bar = page.locator('[data-workspace-tools="open"]');
+    const bar = page.locator('[data-stage-tools="open"]');
     await expect(bar.locator('button[data-info-popover^="tool-"]'), 'a per-tool "i" is back').toHaveCount(0);
     const guide = bar.locator('button[data-info-popover="tools-guide"]');
     await expect(guide).toBeVisible();
@@ -543,7 +546,7 @@ test.describe('the toolbar, rendered', () => {
     await page.setViewportSize({ width: 900, height: 1000 });
     await signInThroughForm(page, acct);
     await open(page, ANALYZED, 'management');
-    await expect(page.locator('[data-workspace-tools="open"]')).toBeHidden();
-    await expect(page.locator('[data-workspace-tools="menu"]')).toBeVisible();
+    await expect(page.locator('[data-stage-tools="open"]')).toBeHidden();
+    await expect(page.locator('[data-stage-tools="menu"]')).toBeVisible();
   });
 });

@@ -409,6 +409,8 @@ test.describe('phone: no page wider than the screen', () => {
       { path: `/project/${pid}?view=management` },
       { path: `/project/${pid}?view=it` },
       ...STAGES.map((s) => ({ path: `/project/${pid}/${s}`, ready: '[data-stage-title]' })),
+      // Re-design, the way on from Analyze into the tools (ADR-143).
+      { path: `/project/${pid}/redesign`, ready: '[data-stage-title]' },
       { path: `/project/${legacyProjectId}/documentation`, ready: '[data-stage-title]' },
       { path: '/settings' },
       { path: '/verify-pack' },
@@ -469,7 +471,8 @@ test.describe('phone: every map moves under a finger', () => {
     await signIn(page);
     const cdp = await (context as BrowserContext).newCDPSession(page);
     await page.setViewportSize({ width: 844, height: 390 });
-    await page.goto('/demo/design', { waitUntil: 'domcontentloaded' });
+    // The drawing is the IT view's since Design shows three views (ADR-130); Business shows today's steps.
+    await page.goto('/demo/design?view=it', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
     const probe = designProbe(page);
     await expect(probe.surface).toBeVisible({ timeout: 60000 });

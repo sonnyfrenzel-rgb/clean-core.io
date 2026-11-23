@@ -629,9 +629,20 @@ async function signIn(page: Page) {
   await signInViaLanding(page, EMAIL, PASSWORD);
 }
 
+/**
+ * The map of the project: Analyze, Business since 3.5.0 — Documentation shows Figure 1 there, read-only (ADR-127),
+ * and the map with its outline, search, overlays and editor is Analyze's (ADR-109). The outline column starts folded
+ * on that page; it is opened, as a reader opens it, before anything is counted.
+ */
 async function openMap(page: Page) {
-  await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
-  await page.locator('[data-process-map]').waitFor({ timeout: 90000 });
+  await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+  await page.locator('[data-analyze-business="ready"] [data-process-map]').waitFor({ timeout: 90000 });
+  const layout = page.locator('[data-workspace-process] [data-process-map-layout]').first();
+  await layout.waitFor({ timeout: 90000 });
+  if ((await layout.getAttribute('data-outline')) !== 'open') {
+    await page.locator('[data-workspace-process] [data-process-outline-toggle]').first().click();
+    await expect(layout).toHaveAttribute('data-outline', 'open');
+  }
   await page.locator('[data-process-outline-tree]').waitFor({ timeout: 90000 });
   // The outline is built from the model; the rules that feed the problem lines
   // arrive one dynamic import later.
@@ -641,6 +652,19 @@ async function openMap(page: Page) {
     .poll(async () => page.locator('[data-tree-node]').count(), { timeout: 60000 })
     .toBe(buildNavigation(readingModel()).roots.length);
 }
+
+/** The level on show, as the path line names it (`null` at the top). */
+async function currentPlane(page: Page): Promise<string | null> {
+  const crumb = await page
+    .locator('[data-process-map] [data-process-path] [aria-current="true"]')
+    .first()
+    .getAttribute('data-process-crumb', { timeout: 2000 })
+    .catch(() => null);
+  return crumb && crumb !== 'top' ? crumb : null;
+}
+
+/** A step's code, open: the panel beside the map on Analyze, Business (mockup state 7). */
+const codePanel = (page: Page) => page.locator('[data-analyze-code-panel]');
 
 /**
  * Back to the state the view opens in — every phase collapsed, nothing selected,
@@ -652,17 +676,16 @@ async function openMap(page: Page) {
  * zero and pass.
  */
 async function resetView(page: Page) {
-  // The address first: the level on show is always reachable in the tree, so a
-  // phase cannot be collapsed while the view stands inside it.
-  await page.evaluate(() => {
-    (document.activeElement as HTMLElement | null)?.blur();
-    window.history.replaceState(null, '', window.location.pathname);
-    // The hook reads the address off the URL; replacing it silently would leave
-    // React holding the old selection and the code card open.
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
-  });
-  await expect(page.locator('[data-process-code-card]'),
-    'the view did not go back to nothing selected').toHaveCount(0);
+  // Nothing selected first: the code panel closes. Then the top level: the level on show is always reachable in the
+  // tree, so a phase cannot be collapsed while the view stands inside it. Since 3.5.0 the selection and the level live
+  // on the page, not in the address (the Documentation map's address retired with ADR-127).
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  if ((await codePanel(page).count()) > 0) await page.locator('[data-analyze-code-close]').click();
+  await expect(codePanel(page), 'the view did not go back to nothing selected').toHaveCount(0);
+  for (let i = 0; i < 20 && (await page.locator('[data-process-map] [data-process-up]').count()) > 0; i++) {
+    await page.locator('[data-process-map] [data-process-up]').first().click();
+  }
+  await expect(page.locator('[data-process-map] [data-process-up]'), 'the view did not go back to the top level').toHaveCount(0);
 
   // Deepest first: collapsing a phase takes its children's rows with it, so a
   // twisty read before the click would be gone by the time it is used.
@@ -779,7 +802,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     for (const id of nav.order) {
       const entry = nav.entries.get(id);
       if (!entry) continue;
-      const card = page.locator(`[data-process-code-card="${id}"]`);
+      const card = codePanel(page);
 
       /* ---- with the mouse, from the overview ---- */
       await resetView(page);
@@ -794,9 +817,8 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
       await page.locator(`[data-tree-node="${id}"]`).click();
       mouse += 1;
 
-      await expect(card, `${entry.outline}: the code card did not open with the mouse`).toHaveCount(1);
-      const afterMouse = await page.evaluate(() => window.location.hash);
-      expect(afterMouse, `${entry.outline}: the address does not name the step`).toContain(`node=${id}`);
+      await expect(card, `${entry.outline}: the code did not open with the mouse`).toHaveCount(1);
+      await expect(page.locator(`[data-tree-node="${id}"]`), `${entry.outline}: the row is not the chosen one`).toHaveAttribute('aria-selected', 'true');
       // `levelOf`, not `entry.plane`: §5.9 item 1 says a collapsed sub-process
       // **opens** as its own level, so selecting one lands inside it. Until
       // 2.17 (b) the only sub-processes were routines on the top plane, whose
@@ -805,7 +827,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
       // visible. The product has one rule for it and this is that rule.
       const level = levelOf(nav, id);
       if (level) {
-        expect(afterMouse, `${entry.outline}: the address does not name the level`).toContain(`map=${level}`);
+        expect(await currentPlane(page), `${entry.outline}: the level of the step is not open`).toBe(level);
       }
 
       /* ---- with the keyboard, from a page whose focus is on nothing ---- */
@@ -825,13 +847,11 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
       await page.keyboard.press('Enter');
       keyboard += 1;
 
-      await expect(card, `${entry.outline}: the code card did not open with the keyboard`).toHaveCount(1);
+      await expect(card, `${entry.outline}: the code did not open with the keyboard`).toHaveCount(1);
+      await expect(page.locator(`[data-tree-node="${id}"]`), `${entry.outline}: the hit is not the chosen row`).toHaveAttribute('aria-selected', 'true');
       // §5.9 item 9 — the search opens the level of the hit.
-      const afterKeys = await page.evaluate(() => window.location.hash);
-      expect(afterKeys, `${entry.outline}: the address does not name the step`).toContain(`node=${id}`);
       if (level) {
-        expect(afterKeys, `${entry.outline}: the search did not open the level of the hit`)
-          .toContain(`map=${level}`);
+        expect(await currentPlane(page), `${entry.outline}: the search did not open the level of the hit`).toBe(level);
       }
 
       counts.push({ outline: entry.outline, id, mouse, keyboard });
@@ -868,49 +888,10 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     expect(worstKeyboard).toBeLessThanOrEqual(3);
   });
 
-  test('the level and the selection are in the URL, and Back does the expected thing', async ({ page }) => {
-    test.setTimeout(300 * 1000);
-    await page.setViewportSize({ width: 1600, height: 1100 });
-    await signIn(page);
-
-    const model = readingModel();
-    const nav = buildNavigation(model);
-    const deep = nav.order.find((id) => (nav.entries.get(id)?.ancestors.length ?? 0) > 0) as string;
-    const plane = nav.entries.get(deep)?.plane as string;
-    const outline = nav.entries.get(deep)?.outline;
-
-    // A shared link opens exactly there.
-    await page.goto(
-      `/project/${PROJECT_ID}/documentation${formatMapAddress({ plane, node: deep })}`,
-      { waitUntil: 'domcontentloaded' },
-    );
-    await page.locator('[data-process-outline-tree]').waitFor({ timeout: 90000 });
-    await expect(page.locator(`[data-process-code-card="${deep}"]`), 'the link did not select the step')
-      .toHaveCount(1);
-    await expect(page.locator(`[data-process-crumb="${plane}"][aria-current="true"]`),
-      'the link did not open the level of the step').toHaveCount(1);
-    await expect(page.locator(`[data-tree-node="${deep}"]`), 'the row is not on screen')
-      .toHaveAttribute('data-outline', outline ?? '');
-
-    // A second step, then Back.
-    const other = nav.roots[1];
-    await page.locator(`[data-tree-node="${other}"]`).click();
-    await expect.poll(async () => page.evaluate(() => window.location.hash))
-      .toContain(`node=${encodeURIComponent(other)}`);
-
-    await page.goBack();
-    await expect.poll(
-      async () => page.evaluate(() => window.location.hash),
-      { message: 'Back did not return to the step the link opened' },
-    ).toContain(`node=${encodeURIComponent(deep)}`);
-    await expect(page.locator(`[data-process-code-card="${deep}"]`)).toHaveCount(1);
-
-    await page.goForward();
-    await expect.poll(
-      async () => page.evaluate(() => window.location.hash),
-      { message: 'Forward did not go back to the second step' },
-    ).toContain(`node=${encodeURIComponent(other)}`);
-  });
+  // "The level and the selection are in the URL, and Back does the expected thing" is gone: the address of a level
+  // and a step was the Documentation map's (`hooks/useProcessMapAddress.ts`), retired with Documentation v2 (ADR-127,
+  // DOC-N0/N2), where Figure 1 is read-only. Analyze's map keeps the level and the selection on the page; its links
+  // into the code are line anchors (`#L42`, `tests/analyze-business-first.spec.ts`).
 
   test('the arrangement is the same after a reload, and the mini map is the outline', async ({ page }) => {
     test.setTimeout(300 * 1000);
@@ -985,7 +966,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     // every element of that level (§5.9 item 8 — an overlay marks, it does not
     // change the process).
     await page.getByRole('radio', { name: 'Steps' }).click();
-    const plane = await page.evaluate(() => new URLSearchParams(window.location.hash.slice(1)).get('map'));
+    const plane = await currentPlane(page);
     const expected = (nav.planes.get(plane) ?? nav.planes.get(null) ?? []).length;
     await expect(page.locator('[data-process-step-list] [data-step-node]')).toHaveCount(expected);
   });
@@ -1054,7 +1035,7 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
 
     /* ---- and the process itself is untouched by any of them ---- */
     await page.getByRole('radio', { name: 'Steps' }).click();
-    const plane = await page.evaluate(() => new URLSearchParams(window.location.hash.slice(1)).get('map'));
+    const plane = await currentPlane(page);
     const expected = (nav.planes.get(plane) ?? nav.planes.get(null) ?? []).length;
     await expect(page.locator('[data-process-step-list] [data-step-node]')).toHaveCount(expected);
   });

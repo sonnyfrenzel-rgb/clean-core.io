@@ -2,14 +2,21 @@ import { layerFromHash } from './workspace-model';
 import { BUSINESS_MAP_ID } from './business-layers';
 import { IT_SECTION_IDS } from './it-sections';
 import { MANAGEMENT_IDS } from './management-sections';
+import { ANALYZE_IT_DETAIL_PLACES, ANALYZE_IT_IDS } from './analyze-it';
+import { MANAGEMENT_PAGE_IDS } from './analyze-management';
 
 /**
  * Places that belong to one view: IT's own sections (ADR-086), Management's
- * (ADR-087), the Business map and rules card.
+ * (ADR-087), the Business map and rules card — and, since the three views are
+ * Analyze's (3.5.0, AB-9, AB-10), the sections of Analyze's IT and Management
+ * pages.
  */
 const VIEW_PLACES: ReadonlySet<string> = new Set([
   ...Object.values(IT_SECTION_IDS),
   ...Object.values(MANAGEMENT_IDS),
+  ...Object.values(ANALYZE_IT_IDS),
+  ...ANALYZE_IT_DETAIL_PLACES,
+  ...Object.values(MANAGEMENT_PAGE_IDS),
   BUSINESS_MAP_ID,
   'business-rules',
 ]);

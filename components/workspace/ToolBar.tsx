@@ -562,6 +562,8 @@ function FamilyToolStrip({
           // The current tool filled in ink, as the family draws it; its marks in the light tints that read on ink.
           '[&_a[aria-current=page]]:border-cc-ink [&_a[aria-current=page]]:bg-cc-ink [&_a[aria-current=page]]:text-cc-on-dark',
           '[&_a[aria-current=page]_[data-workspace-tool-mark=check]]:text-cc-success-border [&_a[aria-current=page]_[data-workspace-tool-mark=half]]:text-cc-information-border',
+          // The "Next" tag on the current tool reads on ink too (it was ink on ink).
+          '[&_a[aria-current=page]_[data-workspace-tool-next-tag]]:border-cc-on-dark [&_a[aria-current=page]_[data-workspace-tool-next-tag]]:text-cc-on-dark',
           fade,
         )}
       >

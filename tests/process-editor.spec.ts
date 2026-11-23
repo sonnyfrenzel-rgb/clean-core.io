@@ -345,7 +345,8 @@ async function signIn(page: Page) {
 }
 
 async function openMap(page: Page) {
-  await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+  // The map and its editor are Analyze, Business since 3.5.0 (Documentation shows Figure 1, read-only, ADR-127).
+  await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
   await page.locator('[data-process-map]').waitFor({ timeout: 90000 });
   await page.locator('[data-process-map-canvas]').waitFor({ timeout: 90000 });
 }

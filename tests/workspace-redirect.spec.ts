@@ -92,6 +92,8 @@ const TABLE: ReadonlyArray<readonly [string, string, string]> = [
   ['', `#${WORKSPACE_RETURN.headTools}`, '/project/p1/analyze'],
   ['?view=it', `#${WORKSPACE_RETURN.nextStep}`, '/project/p1/analyze?view=it'],
   ['?view=management', '#workspace-access', '/project/p1/analyze?view=management'],
+  ['?view=management', '#steering-one-pager', '/project/p1/analyze?view=management#steering-one-pager'],
+  ['?view=it', '#steering-one-pager', '/project/p1/analyze?view=management#steering-one-pager'],
 ];
 
 test.describe('the mapping table', () => {

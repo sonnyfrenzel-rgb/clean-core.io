@@ -310,7 +310,8 @@ test.describe('the map on the page, without a mouse', () => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signIn(page);
 
-    await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+    // The map and its editor are Analyze, Business since 3.5.0 (Documentation shows Figure 1, read-only, ADR-127).
+    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     const map = page.locator('[data-process-map]');
     await map.waitFor({ timeout: 60000 });
 
@@ -439,7 +440,8 @@ test.describe('the map on the page, without a mouse', () => {
     expect(before.status(), await before.text()).toBe(200);
 
     await signIn(page);
-    await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+    // The map and its editor are Analyze, Business since 3.5.0 (Documentation shows Figure 1, read-only, ADR-127).
+    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     await page.locator('[data-process-map]').waitFor({ timeout: 60000 });
 
     await expect.poll(

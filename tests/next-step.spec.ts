@@ -295,68 +295,69 @@ test.describe('the "Next step" card, rendered', () => {
     });
   });
 
+  // The "Next step" card stood in the workspace's IT and Management views; the workspace page is gone (AB-11) and
+  // the way on from Analyze is Re-design since ADR-143 (owner request 23.11.2026): one primary action, the next
+  // step, with its reason under it, and every step's state read from the project.
+  const redesign = async (page: Page, id: string) => {
+    await page.goto(`/project/${id}/redesign`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-redesign="ready"]', { timeout: 60000 });
+  };
+
   test('an empty project: the card names Analyze and its real reason, not only the title', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    // A project with no source opens Analyze on its upload page since v3.1.0 (ADR-109, P4): the card of the empty
-    // project stands in the workspace's IT and Management views.
-    await page.goto(`/project/${EMPTY_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await redesign(page, EMPTY_ID);
 
-    const card = page.locator('[data-next-step]');
-    // A card in IT and Management, a bar in Business (mockup s1): a heading either way.
-    await expect(card.getByRole('heading', { name: 'Next step', exact: true })).toBeVisible();
-    await expect(card.locator('[data-next-step-state="open"]')).toBeVisible();
+    const next = page.locator('[data-redesign-next]');
+    await expect(next).toHaveAttribute('data-redesign-next', 'analyze');
+    await expect(next).toHaveText('Run the analysis first');
+    await expect(next).toHaveAttribute('href', `/project/${EMPTY_ID}/analyze`);
 
-    const reason = (await card.locator('[data-next-step-reason]').textContent())?.trim() ?? '';
+    // The reason under the action is more than the title repeated.
+    const reason = ((await page.locator('#redesign-answer [data-answer-next] p').first().textContent()) ?? '').trim();
     expect(reason.length, 'the reason is more than the title repeated').toBeGreaterThan(10);
-    expect(reason).not.toBe('Next step');
-    expect(reason.toLowerCase()).toMatch(/no source staged/);
-
-    // The view and the card travel into the stage, for "Back to workspace" (block D, D.29).
-    await expect(card.locator('a[data-cc-button]')).toHaveAttribute('href', `/project/${EMPTY_ID}/analyze?view=it&from=next-step`);
-    await expect(page.locator('#next-step[data-next-step]')).toHaveCount(1);
+    expect(reason).toBe('Every step of Re-design stands on a signed analysis run.');
+    await expect(page.locator('#redesign-answer')).toContainText('there is none yet');
+    // Nothing past the analysis is offered as the next step.
+    await expect(page.locator('[data-redesign-step-next]')).toHaveCount(0);
   });
 
   test('a phase blocked by the account\'s own switch: the reason names the switch', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    // Analyze, Business has no "Next step" since 3.2.0 (plan AB-4): the two endings replaced it there. The card
-    // stands in the workspace's IT and Management views.
+    // Analyze, Business has no "Next step" since 3.2.0 (plan AB-4): the two endings replaced it there.
     await page.goto(`/project/${BLOCKED_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 });
     await expect(page.locator('[data-next-step]')).toHaveCount(0);
-    await page.goto(`/project/${BLOCKED_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await redesign(page, BLOCKED_ID);
 
-    const card = page.locator('[data-next-step]');
-    const open = card.locator('[data-next-step-state="open"]');
-    await expect(open).toBeVisible();
-    await expect(open).toHaveAttribute('data-next-step-key', 'design');
-
-    const reason = (await card.locator('[data-next-step-reason]').textContent())?.trim() ?? '';
-    expect(reason.toLowerCase()).toMatch(/switched off/);
-
-    // The button still opens the stage — a navigation cannot fail the way a
-    // generation call would, so it is offered regardless of the switch.
-    await expect(card.locator('a[data-cc-button]')).toHaveAttribute('href', `/project/${BLOCKED_ID}/design?view=it&from=next-step`);
+    // Design has nothing of its own, and this account switched its model off: the step says so.
+    const design = page.locator('[data-redesign-step="design"]');
+    await expect(design).toHaveAttribute('data-redesign-step-state', 'open');
+    await expect(design.locator('[data-redesign-step-blocked]')).toHaveText(/switched off/);
+    // The step still opens the tool — a navigation cannot fail the way a generation call would.
+    await expect(design.locator('a').first()).toHaveAttribute('href', `/project/${BLOCKED_ID}/design`);
+    // A step the account's switch does not touch says nothing of the kind.
+    await expect(page.locator('[data-redesign-step="tco"] [data-redesign-step-blocked]')).toHaveCount(0);
   });
 
-  test('a finished project: the card says plainly that nothing is open', async ({ page }) => {
+  test('a project whose tools are on record: each reads Done, and the one action names what is still open', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    // In the workspace's IT view (AB-4: Analyze, Business has no "Next step").
-    await page.goto(`/project/${DONE_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    await redesign(page, DONE_ID);
 
-    const card = page.locator('[data-next-step]');
-    // A card in IT and Management, a bar in Business (mockup s1): a heading either way.
-    await expect(card.getByRole('heading', { name: 'Next step', exact: true })).toBeVisible();
-    const none = card.locator('[data-next-step-state="none"]');
-    await expect(none).toBeVisible();
-    const text = (await none.textContent())?.trim() ?? '';
-    expect(text.toLowerCase()).toMatch(/nothing is open/);
-    // No button to press when there is nothing to open.
-    await expect(card.locator('a[data-cc-button]')).toHaveCount(0);
+    // Every tool this fixture finished reads "Done"; what Re-design still asks for is said by name, never by a
+    // second card: the options are priced and decided before the tools (ADR-143).
+    for (const key of ['design', 'transformation', 'documentation', 'testing']) {
+      await expect(page.locator(`[data-redesign-step="${key}"]`), key).toHaveAttribute('data-redesign-step-state', 'done');
+      await expect(page.locator(`[data-redesign-step="${key}"] [data-redesign-step-words]`), key).toHaveText('Done');
+    }
+    await expect(page.locator('[data-redesign-step="analyze"]')).toHaveAttribute('data-redesign-step-state', 'done');
+    // One primary action, the first open step in the one order, and the row it names is marked as the next.
+    const next = page.locator('[data-redesign-next]');
+    await expect(next).toHaveCount(1);
+    const key = await next.getAttribute('data-redesign-next');
+    await expect(page.locator(`[data-redesign-step="${key}"]`)).toHaveAttribute('data-redesign-step-next', '');
+    await expect(page.locator(`[data-redesign-step="${key}"]`)).not.toHaveAttribute('data-redesign-step-state', 'done');
   });
 });

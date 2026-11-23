@@ -60,7 +60,8 @@ async function storedRevision(request: APIRequestContext, n: number): Promise<Pr
 }
 
 async function openEditor(page: Page) {
-  await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+  // The map and its editor are Analyze, Business since 3.5.0 (Documentation shows Figure 1, read-only, ADR-127).
+  await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
   await page.locator('[data-process-map]').waitFor({ timeout: 90000 });
   await page.locator('[data-process-map-canvas]').waitFor({ timeout: 90000 });
   await page.locator('[data-process-edit-toggle]').click();
@@ -377,7 +378,8 @@ test.describe('the professional BPMN editor', () => {
     test.setTimeout(300 * 1000);
     await page.setViewportSize({ width: 390, height: 844 });
     await signInViaLanding(page, EMAIL, PASSWORD);
-    await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+    // The map and its editor are Analyze, Business since 3.5.0 (Documentation shows Figure 1, read-only, ADR-127).
+    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
     await page.locator('[data-process-map]').waitFor({ timeout: 90000 });
     const width = () => page.evaluate(() => document.documentElement.scrollWidth);
     const before = await width();

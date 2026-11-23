@@ -280,10 +280,13 @@ test.describe('the Business view on screen', () => {
     await confirmAllRules(ids.confirmed);
   });
 
-  /** The IT view at the rule register — where the full register and its answering screen live since 21.10.2026. */
+  /**
+   * The IT view at the rule register — where the full register and its answering screen live since 21.10.2026; the
+   * IT view is Analyze's IT page since 3.5.0 (AB-9), and the old address lands there with the register open.
+   */
   async function openRegister(page: Page, id: string) {
     await page.goto(`/project/${id}?view=it#business-rules`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
+    await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90_000 });
     await expect(page.locator('#business-rules[data-it-rules] [data-rules-editor="view"]')).toBeVisible({ timeout: 90_000 });
   }
 

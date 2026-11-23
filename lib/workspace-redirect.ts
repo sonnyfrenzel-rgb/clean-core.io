@@ -27,6 +27,7 @@ import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { ANALYZE_IT_IDS } from '@/lib/analyze-it';
 import { MANAGEMENT_PAGE_IDS } from '@/lib/analyze-management';
 import { REDESIGN_DECIDE_ID, REDESIGN_SEGMENT } from '@/lib/redesign';
+import { STEERING_ANCHOR } from '@/lib/steering-open';
 
 /** The program decision: Re-design's decision step since ADR-143 (Analyze, Management shows it read-only). */
 const DECIDE: WorkspacePlaceHome = { kind: 'tool', path: 'redesign', hash: REDESIGN_DECIDE_ID };
@@ -82,6 +83,8 @@ export const WORKSPACE_PLACES: Readonly<Record<string, WorkspacePlaceHome>> = Ob
   // The readiness trend is gone with the old Management view: its page opens at the answer.
   'management-readiness': A('management'),
   'management-elsewhere': A('management'),
+  // The steering one-pager opens on arrival in Analyze's Management view (roadmap 8.6, `lib/steering-open.ts`).
+  [STEERING_ANCHOR]: A('management', STEERING_ANCHOR),
   // The workspace's own chrome: the tool row and the status fold are the tool header's now, read access is
   // "Invite to view" in that header (UX review L7).
   'workspace-tools': A('same'),

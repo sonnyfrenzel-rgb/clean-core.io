@@ -5,6 +5,7 @@ import { ChevronRight, Pencil, Printer } from 'lucide-react';
 import AnswerCard, { type FacetProps } from '@/components/family/AnswerCard';
 import FamilyChip from '@/components/family/FamilyChip';
 import PageAnchorBar from '@/components/PageAnchorBar';
+import { useRevealOnHash } from '@/hooks/useRevealOnHash';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import { cn } from '@/lib/utils';
@@ -111,6 +112,12 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
   } = props;
   const ids = PAGE_ANCHOR_IDS.economics;
   const [editOpen, setEditOpen] = useState(false);
+  // A choice's address (`#economics-assumptions`, `lib/choice-addresses.ts`) lands on the editor open, so the place
+  // that asked can be answered here; an editable page only.
+  useRevealOnHash(
+    (id) => editable && id === 'economics-assumptions',
+    () => setEditOpen(true),
+  );
   const [editingOptions, setEditingOptions] = useState<ReadonlySet<string>>(() => new Set());
   const [folds, setFolds] = useState<{ effort: boolean; how: boolean; model: boolean }>({ effort: false, how: false, model: false });
 
@@ -144,8 +151,11 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
       (empty ?? box?.querySelector<HTMLInputElement>('input'))?.focus();
     }, 0);
   };
+  // One patch for every option: a caller that patches from the value it was handed (the demo) would otherwise keep
+  // only the last option of a loop of single patches.
   const takeOverAll = () => {
-    for (const o of pending) onPatchOption(o.id, takeOverPatch(o, proposals));
+    const open = new Set(pending.map((o) => o.id));
+    onPatch({ options: a.options.map((o) => (open.has(o.id) ? { ...o, ...takeOverPatch(o, proposals) } : o)) });
   };
   const openFold = (key: 'effort' | 'how' | 'model') => setFolds((f) => ({ ...f, [key]: true }));
 
@@ -201,7 +211,8 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
     ans.state === 'first-visit' && editable ? (
       <div data-economics-paths="" className="mt-2 grid gap-3 md:grid-cols-2">
         <div className="rounded-cc-card border border-cc-line px-4 py-3">
-          <h3 className="m-0 cc-text-h3 text-cc-ink">I have my figures</h3>
+          {/* h2: the answer card above it carries no heading, so an h3 here skipped a level (DESIGN.md heading order). */}
+          <h2 className="m-0 cc-text-h3 text-cc-ink">I have my figures</h2>
           <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
             Five fields, here in the answer.
             {loc !== null

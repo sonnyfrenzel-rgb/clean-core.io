@@ -416,16 +416,14 @@ test.describe('the layers on the screen', () => {
     expect(new URL(page.url()).hash).toBe('#standard');
   });
 
+  // Since 3.5.0 the workspace page is gone (AB-11): every old layer address goes where its content lives now
+  // (`lib/workspace-redirect.ts`). The evidence the Business layer showed is IT's Run & trust, in Analyze.
   test('the evidence the Business layer showed stands in IT, with the run it rests on', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    // The old address keeps opening the project — on its map, the fragment dropped (`lib/analyze-entry.ts`).
     await page.goto(`/project/${RUN_ID}?view=business#evidence`, { waitUntil: 'domcontentloaded' });
-    await page.waitForURL(new RegExp(`/project/${RUN_ID}/analyze\\?view=business$`), { timeout: 60000 });
-    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+    await expect(page).toHaveURL(new RegExp(`/project/${RUN_ID}/analyze\\?view=it#it-trust$`), { timeout: 90000 });
     // The content: IT's Run & trust, proven by the signed run.
-    await page.goto(`/project/${RUN_ID}?view=it#evidence`, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/\?view=it#it-trust$/, { timeout: 90000 });
     await expect(page.locator('#it-trust [data-it-trust="signed"]')).toBeVisible({ timeout: 90000 });
     await expect(page.locator('[data-it-trust-run]')).toContainText('run-4b8c');
   });
@@ -433,34 +431,27 @@ test.describe('the layers on the screen', () => {
   test('Management has no layers: an old layer address lands where the content lives now (ADR-087)', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    // Changes → the decision card with its timeline, in Management itself.
+    // Changes → the program decision, Re-design's decision step since ADR-143.
     await page.goto(`/project/${RUN_ID}?view=management#changes`, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/\?view=management#decision-card$/, { timeout: 90000 });
-    await expect(page.locator('#decision-card')).toBeVisible({ timeout: 90000 });
-    // No layer bar, no layer section, no "Process" or "Costs" fold.
+    await expect(page).toHaveURL(new RegExp(`/project/${RUN_ID}/redesign(\\?[^#]*)?#decide$`), { timeout: 90000 });
+    await expect(page.locator('#decide')).toBeVisible({ timeout: 90000 });
+    // Analyze's Management view: no layer bar, no layer section, no "Process" or "Costs" fold.
+    await page.goto(`/project/${RUN_ID}/analyze?view=management`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-management="ready"]')).toBeVisible({ timeout: 90000 });
     await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(0);
     await expect(page.locator('[data-management-fold="process"], [data-management-fold="costs"]')).toHaveCount(0);
 
-    // Architecture → IT's Objects & dependencies, the routine with its line range.
+    // Architecture → IT's "What it touches in SAP", with the program's own parts and their lines.
     await page.goto(`/project/${RUN_ID}?view=management#architecture`, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/\?view=it#it-objects$/, { timeout: 90000 });
-    const routine = page.locator('#it-objects [data-it-object="CHECK_VENDOR"]');
-    await expect(routine).toBeVisible({ timeout: 90000 });
-    // `has` is matched inside the row, so it names the cell alone: with the
-    // section's id in front (`#it-objects …`) it matched no row at all, since
-    // that id stands above the row, not in it (CI 38051799180).
-    await expect(
-      page.locator('#it-objects tr', { has: page.locator('[data-it-object="CHECK_VENDOR"]') }).locator('[data-cc-anchor]'),
-    // The anchor's text is the visible range and then its screen-reader name
-    // ("CHECK_VENDOR, source line 225"), CI 38057847305.
-    ).toHaveText(/^L225–L234(?!\d)/);
+    await expect(page).toHaveURL(/\/analyze\?view=it#analyze-touch$/, { timeout: 90000 });
+    await expect(page.locator('#analyze-touch')).toBeVisible({ timeout: 90000 });
 
-    // Evidence → IT's Run & trust; Need → the Business map, in Analyze since v3.1.0 (AB-2).
+    // Evidence → IT's Run & trust; Need → the Business map.
     await page.goto(`/project/${RUN_ID}?view=management#evidence`, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/\?view=it#it-trust$/, { timeout: 90000 });
+    await expect(page).toHaveURL(/\/analyze\?view=it#it-trust$/, { timeout: 90000 });
     await page.goto(`/project/${RUN_ID}?view=management#need`, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/\/analyze\?view=business#process-map$/, { timeout: 90000 });
+    await expect(page).toHaveURL(/\/analyze(\?view=business)?#process-map$/, { timeout: 90000 });
   });
 
   test('IT has its own sections: an old layer address lands where the content lives now (ADR-086)', async ({ page }) => {
@@ -468,33 +459,23 @@ test.describe('the layers on the screen', () => {
     await signIn(page, ADMIN);
     // Evidence → IT's Run & trust card, with the signed run.
     await page.goto(`/project/${RUN_ID}?view=it#evidence`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-it-view=""]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90000 });
     await expect(page).toHaveURL(/\?view=it#it-trust$/, { timeout: 30000 });
     await expect(page.locator('#it-trust [data-it-trust="signed"]')).toBeVisible();
     await expect(page.locator('[data-it-trust-run]')).toContainText('run-4b8c');
-    // No layer bar and no layer section in IT — and no "empty" anchor.
+    // No layer bar and no layer section in IT — and no "empty" anchor in its "On this page" bar.
     await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
     await expect(page.locator('[data-workspace-layer-section]')).toHaveCount(0);
-    await expect(page.locator('[data-it-anchors]')).not.toContainText(/\bempty\b/);
+    await expect(page.locator('[data-page-anchors]')).not.toContainText(/\bempty\b/);
 
-    // Architecture → Objects & dependencies, the routine with its line range.
+    // Architecture → "What it touches in SAP".
     await page.goto(`/project/${RUN_ID}?view=it#architecture`, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/\?view=it#it-objects$/, { timeout: 90000 });
-    const routine = page.locator('#it-objects [data-it-object="CHECK_VENDOR"]');
-    await expect(routine).toBeVisible({ timeout: 90000 });
-    // `has` is matched inside the row, so it names the cell alone: with the
-    // section's id in front (`#it-objects …`) it matched no row at all, since
-    // that id stands above the row, not in it (CI 38051799180).
-    await expect(
-      page.locator('#it-objects tr', { has: page.locator('[data-it-object="CHECK_VENDOR"]') }).locator('[data-cc-anchor]'),
-    // The anchor's text is the visible range and then its screen-reader name
-    // ("CHECK_VENDOR, source line 225"), CI 38057847305.
-    ).toHaveText(/^L225–L234(?!\d)/);
-    await expect(page.locator('[data-it-objects-count]')).toContainText('1 own object');
+    await expect(page).toHaveURL(/\?view=it#analyze-touch$/, { timeout: 90000 });
+    await expect(page.locator('#analyze-touch')).toBeVisible({ timeout: 90000 });
 
-    // Changes → Management's decision; costs → the Economics tool.
+    // Changes → the decision, Re-design's step (ADR-143); costs → the Economics tool.
     await page.goto(`/project/${RUN_ID}?view=it#changes`, { waitUntil: 'domcontentloaded' });
-    await expect(page).toHaveURL(/\?view=management#decision-card$/, { timeout: 90000 });
+    await expect(page).toHaveURL(/\/redesign(\?[^#]*)?#decide$/, { timeout: 90000 });
     await page.goto(`/project/${RUN_ID}?view=it#costs`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/\/tco\?view=it/, { timeout: 90000 });
   });
@@ -502,10 +483,11 @@ test.describe('the layers on the screen', () => {
   test('a view switch starts the new view at its top, and carries no place of the old view (ADR-018; owner 10.10.2026)', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    // From a place in IT (Business is Analyze's page since v3.1.0, with its own switch in the stage header).
+    // From a place in IT; the three views are Analyze's since 3.5.0, switched in its header.
     await page.goto(`/project/${RUN_ID}?view=it#evidence`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL(/[?&]view=it#it-trust$/, { timeout: 60000 });
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-stage-view-switch="it"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('nav[data-workspace-layers]')).toHaveCount(0);
 
     // A plain view switch starts the new view at its top and carries no
@@ -532,7 +514,7 @@ test.describe('the layers on the screen', () => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
     await page.goto(`/project/${RUN_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-stage-view-switch="it"]')).toBeVisible({ timeout: 60000 });
     const radio = (name: string) =>
       page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: name });
     await radio('IT').focus();

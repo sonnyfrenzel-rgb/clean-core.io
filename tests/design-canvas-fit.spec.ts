@@ -40,7 +40,12 @@ async function canvasLabelSizes(page: Page): Promise<{ max: number; min: number 
   });
 }
 
-async function expectFits(page: Page, width: number, height: number, name: string) {
+/**
+ * `confirm`: the panel beside the canvas carries Confirm target (the demo). On a project the IT view's panel holds
+ * the evidence at its fixed 340 px, and Confirm target is the Management view's one action (ADR-130 (1), G8) —
+ * `expectConfirmFits` measures it there.
+ */
+async function expectFits(page: Page, width: number, height: number, name: string, { confirm: withConfirm = true, panelMin = 360 } = {}) {
   await page.setViewportSize({ width, height });
   if (width < 720) {
     // The phone form reflows as HTML instead of shrinking the drawing.
@@ -63,7 +68,7 @@ async function expectFits(page: Page, width: number, height: number, name: strin
   }
 
   const confirm = page.locator('[data-design-confirm]');
-  if (width >= 1100) {
+  if (withConfirm && width >= 1100) {
     // Beside the canvas, the panel's actions stay on screen whenever the stage
     // is: with the stage's top at the viewport's top, Confirm target is inside
     // the viewport however tall the canvas grows.
@@ -72,7 +77,27 @@ async function expectFits(page: Page, width: number, height: number, name: strin
     expect.soft(atTop!.y, `Confirm target below the fold at ${width} px`).toBeGreaterThanOrEqual(0);
     expect.soft(atTop!.y + atTop!.height, `Confirm target below the fold at ${width} px`).toBeLessThanOrEqual(height);
   }
-  // Reached, nothing covers it.
+  if (withConfirm) await expectReachable(page, width, height);
+
+  if (width >= 1100) {
+    // The panel sits beside the canvas at its fixed width, not squeezed.
+    const panel = await page.locator('[data-design-panel]').boundingBox();
+    expect.soft(panel!.width).toBeGreaterThanOrEqual(panelMin);
+  }
+
+  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  expect.soft(overflow, `sideways scroll at ${width} px`).toBeLessThanOrEqual(0);
+
+  if (SHOTS) {
+    if (width >= 720) await page.evaluate(() => window.scrollTo(0, 0));
+    else await page.locator('[data-design-canvas-stage]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
+    await page.screenshot({ path: path.join(SHOTS, `designfit-${name}-${width}.png`) });
+  }
+}
+
+/** Confirm target is reached and nothing covers it. */
+async function expectReachable(page: Page, width: number, height: number) {
+  const confirm = page.locator('[data-design-confirm]');
   await confirm.scrollIntoViewIfNeeded();
   const box = await confirm.boundingBox();
   expect(box, 'Confirm target is laid out').not.toBeNull();
@@ -84,20 +109,16 @@ async function expectFits(page: Page, width: number, height: number, name: strin
     return hit === el || el.contains(hit);
   });
   expect.soft(onTop, 'nothing covers Confirm target').toBe(true);
+}
 
-  if (width >= 1100) {
-    // The panel sits beside the canvas at its fixed width, not squeezed.
-    const panel = await page.locator('[data-design-panel]').boundingBox();
-    expect.soft(panel!.width).toBeGreaterThanOrEqual(360);
-  }
-
-  const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  expect.soft(overflow, `sideways scroll at ${width} px`).toBeLessThanOrEqual(0);
-
-  if (SHOTS) {
-    if (width >= 720) await page.evaluate(() => window.scrollTo(0, 0));
-    else await page.locator('[data-design-canvas-stage]').evaluate((el) => el.scrollIntoView({ block: 'start' }));
-    await page.screenshot({ path: path.join(SHOTS, `designfit-${name}-${width}.png`) });
+/** Confirm target, in the Management view's answer card (ADR-130 (1), G8), at every width. */
+async function expectConfirmFits(page: Page) {
+  for (const [w, h] of WIDTHS) {
+    await page.setViewportSize({ width: w, height: h });
+    await page.waitForTimeout(300);
+    await expectReachable(page, w, h);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect.soft(overflow, `sideways scroll at ${w} px (Management)`).toBeLessThanOrEqual(0);
   }
 }
 
@@ -121,13 +142,22 @@ test.describe('the Design stage keeps its proportions', () => {
     await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
-    for (const [w, h] of WIDTHS) await expectFits(page, w, h, 'project');
+    for (const [w, h] of WIDTHS) await expectFits(page, w, h, 'project', { confirm: false, panelMin: 340 });
+
+    await page.goto(`/project/${seeded.projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-design-view="management"] [data-design-confirm]')).toBeVisible({ timeout: 120_000 });
+    await expectConfirmFits(page);
   });
 
   test('the demo, which draws the same stage', async ({ page }) => {
     test.setTimeout(180_000);
     await page.goto('/demo/design?view=it', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60_000 });
-    for (const [w, h] of WIDTHS) await expectFits(page, w, h, 'demo');
+    for (const [w, h] of WIDTHS) await expectFits(page, w, h, 'demo', { confirm: false, panelMin: 340 });
+
+    await page.goto('/demo/design?view=management', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60_000 });
+    await expect(page.locator('[data-design-confirm]')).toBeVisible({ timeout: 60_000 });
+    await expectConfirmFits(page);
   });
 });

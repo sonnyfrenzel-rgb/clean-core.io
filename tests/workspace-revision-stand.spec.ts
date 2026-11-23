@@ -313,10 +313,10 @@ test.describe('the workspace on the screen', () => {
   test('says which Stand it is showing, beside the name of the case (CR-15)', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    // The Stand badge stands in the workspace's header, which holds IT and Management since v3.1.0; Business is
-    // Analyze's page (ADR-109), where the Stand guards a save of the map without a badge of its own.
-    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    // The workspace page dissolved in 3.5.0 (AB-11): the Stand badge stands in the header of the two pages that write
+    // against the Stand — Analyze in the Business view (the map) and Re-design (the program decision).
+    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
 
     const badge = page.locator('[data-workspace-revision]');
     await expect(badge, 'the workspace never says which revision it is showing').toBeVisible({
@@ -329,6 +329,12 @@ test.describe('the workspace on the screen', () => {
 
     // Nothing has moved, so there is no notice. A banner on every load would be
     // the notice nobody reads.
+    await expect(page.locator('[data-workspace-revision-banner]')).toHaveCount(0);
+
+    // Re-design, the same.
+    await page.goto(`/project/${PROJECT_ID}/redesign`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-workspace-revision]')).toHaveText('No revision yet', { timeout: 30000 });
     await expect(page.locator('[data-workspace-revision-banner]')).toHaveCount(0);
   });
 
@@ -366,8 +372,9 @@ test.describe('the workspace on the screen', () => {
     await adminSetDoc(revisions, '1', revision(1));
 
     await signIn(page, ADMIN);
-    await page.goto(`/project/${MOVED_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    // Re-design, whose decision step writes against the Stand.
+    await page.goto(`/project/${MOVED_ID}/redesign`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 90000 });
     const badge = page.locator('[data-workspace-revision]');
     const banner = page.locator('[data-workspace-revision-banner]');
     await expect(badge).toHaveAttribute('data-workspace-revision', '1', { timeout: 30000 });
@@ -400,7 +407,7 @@ test.describe('the workspace on the screen', () => {
     await focusUntilNotice();
     await expect(banner).toContainText('Revision 3');
     await banner.locator('[data-workspace-revision-refresh]').click();
-    await expect(page.locator('[data-workspace-shell]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 90000 });
     await expect(badge, 'refresh did not load the newer revision').toHaveAttribute('data-workspace-revision', '3', {
       timeout: 30000,
     });

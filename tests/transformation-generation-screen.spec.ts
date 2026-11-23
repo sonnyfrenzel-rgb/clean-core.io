@@ -187,12 +187,13 @@ for (const width of [1280, 390] as const) {
       await expect(page.locator('[data-generate-now]')).toHaveText('Generate draft (sends code to Google)');
       // Nothing on record weighs SAP standard: a warning above the tips, never a gate (owner, 12.10.2026).
       const warning = page.locator('[data-decision-warning="standard-fit-open"]');
-      // Since 22.10.2026 it leads to the decision in Management (owner decision).
+      // Since 22.10.2026 it leads to the decision (owner decision); since 23.11.2026 the decision is
+      // the "Decide" step of Re-design, not a card in the Management view.
       await expect(warning).toContainText('SAP standard has not been weighed against a rebuild yet');
       await expect(warning.locator('[data-cc-message-strip="warning"]')).toBeVisible();
       await expect(warning.locator('[data-decision-warning-link]')).toHaveAttribute(
         'href',
-        new RegExp(`/project/${account.projectId}\\?view=management&origin=transformation\\.tips#decision-card$`),
+        new RegExp(`/project/${account.projectId}/redesign\\?view=management&origin=transformation\\.tips#decide$`),
       );
       await expect(page.locator('[data-generate-cost]')).toHaveText('No analysis run used · up to 48 model calls on the community key for this generation');
       // The chain: the phases before Transformation, never Economics.
@@ -235,7 +236,7 @@ test('a decision on record against a rebuild is said above the tips; Generate no
   await expect(warning).toContainText('The decision on record is to retire this program — generating a rebuild goes against it.');
   await expect(warning.locator('[data-decision-warning-link]')).toHaveAttribute(
     'href',
-    new RegExp(`/project/${account.projectId}\\?view=management&origin=transformation\\.tips#decision-card$`),
+    new RegExp(`/project/${account.projectId}/redesign\\?view=management&origin=transformation\\.tips#decide$`),
   );
   await expect(page.locator('[data-generate-now]')).toBeEnabled();
   await page.waitForTimeout(2000);

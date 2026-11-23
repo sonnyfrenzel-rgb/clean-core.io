@@ -348,15 +348,18 @@ test.describe('the stage bar and the workspace bar say the same thing about the 
       return Object.fromEntries(rows.map((r) => [r.key, { colour: r.colour, tone: r.tone, tick: r.tick, name: r.name }]));
     };
 
-    // The workspace's own bar, once: the reference every stage page is held to.
+    // The reference every stage page is held to. The workspace page and its own bar dissolved into Analyze in 3.5.0
+    // (AB-11): the reference is the bar of the project's entry, Analyze in the IT view, as an old workspace address
+    // opens it.
     await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-tools="open"] a[data-workspace-tool="testing"]')).toHaveAttribute(
+    await expect(page).toHaveURL(new RegExp(`/project/${PROJECT_ID}/analyze\\?view=it`), { timeout: 60000 });
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="testing"]')).toHaveAttribute(
       'data-phase-state',
       'done',
       { timeout: 60000 },
     );
     await killTransitions();
-    const workspaceMarks = await readMarks('[data-workspace-tools="open"]');
+    const workspaceMarks = await readMarks('[data-stage-tools="open"]');
 
     for (const stage of STAGES) {
       await page.goto(`/project/${PROJECT_ID}/${stage}`, { waitUntil: 'domcontentloaded' });

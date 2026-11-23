@@ -114,9 +114,14 @@ async function answerModel(
   });
 }
 
-async function openDesign(page: Page, projectId: string) {
-  await page.goto(`/project/${projectId}/design`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
+/**
+ * Design in one of its three views (ADR-130): the design is written under the business questions in the
+ * Business view, the default one; the document, the canvas and the requirements card stand in the IT view.
+ */
+async function openDesign(page: Page, projectId: string, view: 'business' | 'it' = 'business') {
+  await page.goto(`/project/${projectId}/design?view=${view}`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator(`[data-design-view="${view}"]`)).toBeVisible({ timeout: 120_000 });
+  if (view === 'it') await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
 }
 
 /** The owner's click: enabled once the questions are read — the example asks the business none. */
@@ -172,15 +177,16 @@ test.describe('opening Design', () => {
     await expect(writing.locator('[data-design-writing-seconds]')).toContainText('120 s at most');
     await expect(writing.locator('[data-design-writing-cost]')).toHaveText(DESIGN_WRITE_COST);
 
-    await expect(page.locator('[data-design-overview]')).toBeVisible({ timeout: 120_000 });
-    await expect(page.locator('[data-design-overview]')).toContainText('Sales order creation');
+    // Written: the Business view says so where the action stood; the document is read in the IT view (ADR-130).
+    await expect(page.locator('[data-design-written]')).toBeVisible({ timeout: 120_000 });
     expect(log.design, 'one design call').toBe(1);
-    expect(log.proposals, 'one call for the non-functional proposals').toBe(1);
+    await expect.poll(() => log.proposals, { message: 'one call for the non-functional proposals' }).toBe(1);
     const stored = await adminGetDoc('projects', seeded.projectId);
     expect(String(stored?.solutionDesign)).toContain('Sales order creation');
 
     // Current and on record: opening it again writes nothing.
-    await openDesign(page, seeded.projectId);
+    await openDesign(page, seeded.projectId, 'it');
+    await expect(page.locator('[data-design-overview]')).toContainText('Sales order creation', { timeout: 120_000 });
     await expect(page.locator('[data-design-overview]')).toBeVisible({ timeout: 120_000 });
     await page.waitForTimeout(3_000);
     expect(log).toEqual({ design: 1, proposals: 1 });
@@ -194,7 +200,7 @@ test.describe('opening Design', () => {
     await answerModel(page, log);
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, seeded.email, PASSWORD);
-    await openDesign(page, seeded.projectId);
+    await openDesign(page, seeded.projectId, 'it');
     // ADR-078 (04.10.2026): one card instead of the two lists, with what it
     // costs and where it stands, and one way into the workspace.
     const card = page.locator('[data-spec-card]');
@@ -218,7 +224,8 @@ test.describe('opening Design', () => {
     await expect(off).toBeVisible({ timeout: 120_000 });
     await expect(off).toContainText('Turn the design stage back on in Settings to generate it.');
     await expect(off.locator('a[data-design-settings-link]')).toHaveAttribute('href', '/settings');
-    // The engine's parts stand without a model.
+    // The engine's parts stand without a model: the IT view's canvas, alternatives and requirements card.
+    await openDesign(page, seeded.projectId, 'it');
     await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-spec-card]')).toBeVisible({ timeout: 60_000 });
     await page.waitForTimeout(2_000);
@@ -260,8 +267,10 @@ test.describe('opening Design', () => {
     await expect(retry).toHaveText(/Try again/);
     failing = false;
     await retry.click();
-    await expect(page.locator('[data-design-overview]')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-design-written]')).toBeVisible({ timeout: 120_000 });
     expect(log.design).toBe(2);
+    await openDesign(page, seeded.projectId, 'it');
+    await expect(page.locator('[data-design-overview]')).toBeVisible({ timeout: 120_000 });
   });
 
   test('a tab opened while another writes it waits for that one, and both show it after one call', async ({ context }) => {
@@ -278,7 +287,10 @@ test.describe('opening Design', () => {
     const second = await context.newPage();
     await second.setViewportSize({ width: 1440, height: 900 });
     await second.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
-    for (const p of [first, second]) await expect(p.locator('[data-design-overview]')).toBeVisible({ timeout: 180_000 });
+    for (const p of [first, second]) await expect(p.locator('[data-design-written]')).toBeVisible({ timeout: 180_000 });
     expect(log.design, 'one design call for two tabs').toBe(1);
+    await openDesign(second, seeded.projectId, 'it');
+    await expect(second.locator('[data-design-overview]')).toBeVisible({ timeout: 120_000 });
+    expect(log.design, 'reading it in the IT view writes nothing').toBe(1);
   });
 });

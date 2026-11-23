@@ -323,13 +323,19 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // are read (owner decision 22.10.2026); with questions open, the secondary
     // action writes it and names them as open. Its document opens on the group
     // "What we build", which holds the blueprint.
+    // Since Design shows three views (ADR-130) the design is written in the Business view, under the business
+    // questions, and read in the IT view, whose canvas holds the document and "Confirm target".
+    const viewRadio = (name: string) => page.locator('[data-stage-view-switch] [role="radio"]', { hasText: name });
+    await viewRadio('Business').click({ timeout: 60000 });
     const gate = page.locator('[data-design-write-gate]');
     await expect(gate).toHaveAttribute('data-design-write-gate', /^(ready|open)$/, { timeout: 120_000 });
     if ((await gate.getAttribute('data-design-write-gate')) === 'open') await page.locator('[data-design-generate-without]').click();
     else await page.locator('[data-design-generate]').click();
     // Design and its NFR proposals are two model calls in sequence, saved in one
     // write (eb8987e0): wait as long as the product itself waits, not 45 s.
-    await expect(page.locator('[data-design-section="blueprint"]')).toBeVisible({ timeout: DESIGN_GENERATION_CEILING_MS + 15_000 });
+    await expect(page.locator('[data-design-written]')).toBeVisible({ timeout: DESIGN_GENERATION_CEILING_MS + 15_000 });
+    await viewRadio('IT').click();
+    await expect(page.locator('[data-design-section="blueprint"]')).toBeVisible({ timeout: 60_000 });
     await page.locator('[data-design-section="blueprint"]').click();
     await page.waitForSelector('text=Target Project Blueprint', { timeout: 45000 });
     

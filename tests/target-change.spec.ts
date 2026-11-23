@@ -208,7 +208,9 @@ test.describe('changing the target in the IT view', () => {
     expect(before.starterExamplesUsed?.[EXAMPLE.name], 'the first run was the free one').toBe(true);
 
     await signInViaLanding(page, email, PASSWORD);
-    await goto(page, `/project/${projectId}?view=it`);
+    // Since 3.5.0 the target profile with Change target is in Analyze's IT view, under Technical detail;
+    // its own address opens the fold (AnalyzeIt, ANALYZE_IT_DETAIL_PLACES).
+    await goto(page, `/project/${projectId}/analyze?view=it#it-target-profile`);
     const open = page.locator('[data-target-change-open]');
     await expect(open, 'the owner is offered the change').toBeVisible({ timeout: 90000 });
     await expect(page.locator('[data-it-profile]')).toContainText('SAP Cloud ERP Private');
@@ -257,11 +259,11 @@ test.describe('changing the target in the IT view', () => {
     const after = (await db().collection('users').doc(uid).get()).data()!;
     expect(after.transformationsUsed ?? 0, 'the change spent no analysis run').toBe(before.transformationsUsed ?? 0);
 
-    // Management reads the new target.
-    await goto(page, `/project/${projectId}?view=management`);
-    // The distance to SAP standard is read on the target edition (its title
-    // names it); the second bucket card that used to say it went (ADR-087).
-    await expect(page.locator('#standard-fit[data-standard-fit="ready"] h3')).toContainText('Public Edition', { timeout: 90000 });
+    // Analyze's Management view no longer shows the distance to SAP standard per edition (ADR-143 (3)): the
+    // target is read where it is changed, and after a reload it still names the new one.
+    await goto(page, `/project/${projectId}/analyze?view=it#it-target-profile`);
+    await expect(page.locator('[data-it-profile]')).toContainText('Public Edition', { timeout: 90000 });
+    await expect(page.locator('[data-it-profile]')).not.toContainText('SAP Cloud ERP Private');
   });
 
   test('on a phone the dialog fits and cancel changes nothing', async ({ page, request }) => {
@@ -271,7 +273,9 @@ test.describe('changing the target in the IT view', () => {
     const runBefore = (await db().collection('projects').doc(projectId).get()).data()!.activeRunId;
 
     await signInViaLanding(page, email, PASSWORD);
-    await goto(page, `/project/${projectId}?view=it`);
+    // Since 3.5.0 the target profile with Change target is in Analyze's IT view, under Technical detail;
+    // its own address opens the fold (AnalyzeIt, ANALYZE_IT_DETAIL_PLACES).
+    await goto(page, `/project/${projectId}/analyze?view=it#it-target-profile`);
     await page.locator('[data-target-change-open]').click({ timeout: 90000 });
     await page.locator('[data-target-edition-option="public"]').click();
     await page.locator('[data-target-change-next]').click();

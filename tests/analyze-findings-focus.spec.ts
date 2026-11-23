@@ -40,8 +40,9 @@ test('focus first, groups by kind, progressive disclosure, calm titles', async (
 
   // The pictures carry their figures as text. The severity mix is drawn once,
   // as the Findings facet's bar — the side column's donut said it again and
-  // went on 10.10.2026 (DESIGN.md §2.11).
-  await expect(page.locator('[data-analysis-answer] [data-severity-bar]')).toHaveAttribute('aria-label', /By severity: \d+ critical/);
+  // went on 10.10.2026 (DESIGN.md §2.11). Since 3.5.0 the facet is the family answer card's (ADR-140), and it says the
+  // mix in words, the figures as text.
+  await expect(page.locator('[data-analysis-answer] [data-facet="findings"]')).toContainText(/Critical \d+/);
   await expect(list.locator('[data-severity-bar]')).toHaveCount(0);
 
   // Groups: critical/high open, the others closed.

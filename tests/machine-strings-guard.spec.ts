@@ -160,12 +160,11 @@ test.describe('machine strings — rendered', () => {
     const routes: { url: string; ready: string }[] = [
       { url: '/dashboard', ready: 'h1' },
       { url: '/settings', ready: 'h1' },
-      // Business is Analyze's page since v3.1.0 (AB-2, ADR-109); IT and Management stay on the workspace.
+      // Analyze in its three views (the workspace page redirects there since 3.5.0, AB-11), and Re-design, the way on (ADR-143).
       { url: `/project/${acct.projectId}/analyze?view=business`, ready: '[data-analyze-business="ready"] h1' },
-      ...(['it', 'management'] as const).map((v) => ({
-        url: `/project/${acct.projectId}?view=${v}`,
-        ready: `[data-workspace-shell="${v}"] h1`,
-      })),
+      { url: `/project/${acct.projectId}/analyze?view=it`, ready: '[data-analyze-it] [data-answer-card]' },
+      { url: `/project/${acct.projectId}/analyze?view=management`, ready: '[data-analyze-management="ready"] [data-answer-card]' },
+      { url: `/project/${acct.projectId}/redesign`, ready: '[data-redesign="ready"] [data-answer-card]' },
       ...STAGES.map((s) => ({ url: `/project/${acct.projectId}/${s}`, ready: '[data-stage-title]' })),
       // The demo opens like a project since v3.1.0 (O10): its Business view is `/demo/analyze`.
       { url: '/demo/analyze', ready: '[data-analyze-business="ready"][data-demo-ready="true"] h1' },
@@ -182,7 +181,7 @@ test.describe('machine strings — rendered', () => {
       await open(page, r.url, r.ready);
       if (r.url.includes('?view=')) await page.locator(FIRST_LOOK_DONE).first().waitFor({ timeout: 60_000 }).catch(() => undefined);
       // Management reads its decision from a route; the audit found the keys in exactly that answer.
-      if (r.url.includes('project/') && r.url.endsWith('view=management')) {
+      if (r.url.includes('project/') && (r.url.endsWith('view=management') || r.url.endsWith('/redesign'))) {
         await page.locator('[data-decision-card], [data-decision-status]').first().waitFor({ timeout: 60_000 }).catch(() => undefined);
         await page.waitForFunction(pageSettled, 1500, { polling: 200, timeout: 60_000 }).catch(() => undefined);
       }

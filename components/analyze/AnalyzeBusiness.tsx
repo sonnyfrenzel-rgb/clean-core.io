@@ -25,6 +25,7 @@ import { useIsOwner } from '@/components/workspace/BusinessRulesEditor';
 import { useStartRun } from '@/hooks/useStartRun';
 import { useAroundTheMap } from '@/hooks/useAroundTheMap';
 import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
+import WorkspaceRevisionStand from '@/components/workspace/RevisionStand';
 import { useAnalyzeProgress } from '@/hooks/useAnalyzeProgress';
 import { analyzeStage, softGateShown, whatNextShown } from '@/lib/analyze-progress';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
@@ -409,6 +410,8 @@ export default function AnalyzeBusiness({
         toolsCompact
         onTool={onTool}
         toolsAfter={gateNote}
+        // The Stand the map is drawn from, and the notice when another tab has moved it (CR-15).
+        eyebrow={<WorkspaceRevisionStand held={stand.held} seen={stand.seen} moved={stand.moved} onKeep={stand.keep} onRefresh={stand.refresh} />}
       >
         {wt('abiz.lead')}
       </StageHeader>

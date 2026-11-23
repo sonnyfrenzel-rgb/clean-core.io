@@ -17,10 +17,9 @@ import { adminSetDoc } from './helpers/admin-seed';
  * then IT — each at the top, with no fragment; Management with a layer chosen
  * opens Business; and a deliberate deep link from IT still keeps its place.
  *
- * Since v3.1.0 Business is Analyze's page (plan AB-2, ADR-109): the switch to
- * Business leaves the workspace for `/project/<id>/analyze?view=business`, and
- * must land there, at its top, without the old fragment, and stay — the same
- * promise in its new place. The walk back to the workspace is by its address.
+ * Since 3.5.0 all three views are Analyze's (AB-9, AB-10, AB-11) and the switch
+ * is its header's (`switchStageView`, which drops a place of one view and starts
+ * the new view at its top): the same promise in its new place.
  */
 
 const BASE = process.env.TEST_BASE_URL || 'http://localhost:3000';
@@ -53,16 +52,19 @@ test.beforeAll(async () => {
 });
 
 const radio = (page: Page, name: string) =>
-  page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: name });
-const shell = (page: Page) => page.locator('[data-workspace-shell]');
+  page.locator('[data-stage-view-switch] [data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: name });
+/** The view Analyze shows: its header's switch says it (`components/StageViewSwitch.tsx`). */
+const shown = (page: Page) => page.locator('[data-stage-view-switch]');
+const KEY = { Business: 'business', IT: 'it', Management: 'management' } as const;
 
 /**
  * Switches by the view control from a scrolled position and holds that the
- * new view opened, at its top, with no fragment — and is still there after a
- * second and a half, sampled every frame, so a redirect that bounces the reader
- * back is seen whenever it lands rather than raced.
+ * new view opened, at its top, with no fragment, on Analyze — and is still
+ * there after a second and a half, sampled every frame, so a redirect that
+ * bounces the reader back is seen whenever it lands rather than raced.
  */
-async function switchTo(page: Page, name: 'Business' | 'IT' | 'Management', key: string) {
+async function switchTo(page: Page, name: keyof typeof KEY) {
+  const key = KEY[name];
   // Scrolled as a reader scrolls — a wheel also ends a deep link's follow,
   // which a programmatic scroll would be pulled back by.
   await page.mouse.move(700, 500);
@@ -79,53 +81,32 @@ async function switchTo(page: Page, name: 'Business' | 'IT' | 'Management', key:
     }
   });
   await radio(page, name).evaluate((el) => (el as HTMLElement).click());
-  await expect(shell(page)).toHaveAttribute('data-workspace-shell', key, { timeout: 30_000 });
+  await expect(shown(page)).toHaveAttribute('data-stage-view-switch', key, { timeout: 30_000 });
   const seen = await page.evaluate(async () => {
     const out = new Set<string>();
     const t0 = performance.now();
     while (performance.now() - t0 < 1500) {
       await new Promise((r) => requestAnimationFrame(r));
-      out.add(`${document.querySelector('[data-workspace-shell]')?.getAttribute('data-workspace-shell')}|${new URL(location.href).searchParams.get('view')}|${location.hash}`);
+      out.add(
+        `${location.pathname.endsWith('/analyze')}|${document.querySelector('[data-stage-view-switch]')?.getAttribute('data-stage-view-switch')}|${new URL(location.href).searchParams.get('view')}|${location.hash}`,
+      );
     }
     return [...out];
   });
-  expect(seen, `${name}: the view did not hold, or kept a fragment`).toEqual([`${key}|${key}|`]);
+  expect(seen, `${name}: the view did not hold, left Analyze, or kept a fragment`).toEqual([`true|${key}|${key}|`]);
   await expect.poll(() => page.evaluate(() => window.scrollY), { message: `${name} did not open at its top` }).toBe(0);
 }
 
-/** The switch to Business: Analyze, Business, at its top, no fragment, and it stays there (AB-2). */
-async function switchToBusiness(page: Page) {
-  await page.mouse.move(700, 500);
-  await page.mouse.wheel(0, 4000);
-  await page.waitForTimeout(500);
-  await radio(page, 'Business').evaluate((el) => (el as HTMLElement).click());
-  await page.waitForURL(new RegExp(`/project/${projectId}/analyze\\?view=business$`), { timeout: 60_000 });
-  await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90_000 });
-  const seen = await page.evaluate(async () => {
-    const out = new Set<string>();
-    const t0 = performance.now();
-    while (performance.now() - t0 < 1500) {
-      await new Promise((r) => requestAnimationFrame(r));
-      out.add(`${location.pathname.endsWith('/analyze')}|${new URL(location.href).searchParams.get('view')}|${location.hash}`);
-    }
-    return [...out];
-  });
-  expect(seen, 'Business: the view did not hold, or kept a fragment').toEqual(['true|business|']);
-  await expect.poll(() => page.evaluate(() => window.scrollY), { message: 'Business did not open at its top' }).toBe(0);
-}
-
-/** Back into the workspace, in IT, by its address — the stage header's switch on Analyze stays on Analyze. */
-async function backToWorkspace(page: Page) {
-  await page.goto(`/project/${projectId}?view=it`, { waitUntil: 'domcontentloaded' });
-  await waitForView(page);
-}
-
-async function waitForView(page: Page) {
-  await expect(shell(page)).toBeVisible({ timeout: 90_000 });
+async function waitForIt(page: Page) {
+  await expect(shown(page)).toHaveAttribute('data-stage-view-switch', 'it', { timeout: 90_000 });
+  await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90_000 });
   await page.waitForTimeout(1500);
 }
 
-
+// Since 3.5.0 the workspace page is gone (AB-11): an old address `/project/<id>?view=it#…` opens Analyze in the view
+// and at the place its content lives now (`lib/workspace-redirect.ts`), and the three views are Analyze's, switched
+// by its header. The promise is the same: from any of those places, each view opens at its top, without the old
+// fragment, and stays.
 test('from IT, with and without each fragment: Business, Management and IT open at their top and stay', async ({ page }) => {
   test.setTimeout(900_000);
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -133,49 +114,41 @@ test('from IT, with and without each fragment: Business, Management and IT open 
   for (const hash of ['', '#it-findings', '#it-objects', '#architecture', '#evidence', '#need']) {
     await page.goto(`/project/${projectId}?view=it${hash}`, { waitUntil: 'domcontentloaded' });
     if (hash === '#need') {
-      // `#need` in IT is an old layer address: it lands in Business on the map —
-      // Analyze's page since v3.1.0 — so the walk starts back in IT from there.
-      await expect(page).toHaveURL(/\/analyze\?view=business#process-map$/, { timeout: 60_000 });
-      await backToWorkspace(page);
+      // `#need` in IT is an old layer address: it lands in Business on the map, so the walk starts from there.
+      await expect(page).toHaveURL(/\/analyze(\?view=business)?#process-map$/, { timeout: 60_000 });
+      await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90_000 });
+      await page.waitForTimeout(1500);
+      await switchTo(page, 'IT');
     } else {
-      await waitForView(page);
+      await waitForIt(page);
     }
-    await expect(page.locator('[data-it-view][data-it-state]')).toBeVisible({ timeout: 90_000 });
-    await switchToBusiness(page);
-    await backToWorkspace(page);
-    await switchTo(page, 'Management', 'management');
-    await switchToBusiness(page);
-    await backToWorkspace(page);
-    await switchTo(page, 'Management', 'management');
-    await switchTo(page, 'IT', 'it');
+    await switchTo(page, 'Business');
+    await switchTo(page, 'IT');
+    await switchTo(page, 'Management');
+    await switchTo(page, 'Business');
+    await switchTo(page, 'Management');
+    await switchTo(page, 'IT');
   }
 });
 
-test('Management with a layer IT owns opens Business, and a deep link out of IT keeps its place', async ({ page }) => {
+test('an old Management layer address lands where its content lives, Business opens from there, and a deep link keeps its place', async ({ page }) => {
   test.setTimeout(600_000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await signInThroughForm(page, account);
-  for (const layer of ['architecture', 'changes', 'costs']) {
-    await page.goto(`/project/${projectId}?view=management#${layer}`, { waitUntil: 'domcontentloaded' });
-    await waitForView(page);
-    // Management has no layers since ADR-087: the old layer address sends the
-    // reader on (to IT, or to a place in Management). That redirect has its
-    // own spec (workspace-layers); here it is only let settle, so the switch
-    // below is not clicked while it is still in flight. From wherever it
-    // landed, Business opens.
-    await expect
-      .poll(() => page.evaluate(() => window.location.hash), { timeout: 20_000 })
-      .not.toBe(`#${layer}`)
-      .catch(() => {});
-    await page.waitForTimeout(1000);
-    await switchToBusiness(page);
-  }
+  // Management has no layers since ADR-087: `#architecture` is IT's Objects & dependencies, in Analyze.
+  await page.goto(`/project/${projectId}?view=management#architecture`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/analyze\?view=it#[\w-]+$/, { timeout: 60_000 });
+  await waitForIt(page);
+  await switchTo(page, 'Business');
+  // The decision and the costs are tools now: Re-design's decision step and Economics (ADR-143).
+  await page.goto(`/project/${projectId}?view=management#changes`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/redesign(\?[^#]*)?#decide$/, { timeout: 60_000 });
+  await page.goto(`/project/${projectId}?view=management#costs`, { waitUntil: 'domcontentloaded' });
+  await expect(page).toHaveURL(/\/tco(\?|$)/, { timeout: 60_000 });
 
-  // A deliberate deep link into another view keeps its target (ADR-086).
-  await page.goto(`/project/${projectId}?view=it`, { waitUntil: 'domcontentloaded' });
-  await waitForView(page);
-  const out = page.locator('[data-it-elsewhere-link]').filter({ hasText: /Management/ }).first();
-  await expect(out).toBeVisible({ timeout: 90_000 });
-  await out.click();
-  await expect(page).toHaveURL(/[?&]view=management#[\w-]+$/, { timeout: 30_000 });
+  // A deliberate deep link into a view keeps its target (ADR-086): Management's risk section.
+  await page.goto(`/project/${projectId}/analyze?view=management#mgmt-risk`, { waitUntil: 'domcontentloaded' });
+  await expect(shown(page)).toHaveAttribute('data-stage-view-switch', 'management', { timeout: 90_000 });
+  await page.waitForTimeout(1500);
+  await expect(page).toHaveURL(/[?&]view=management#mgmt-risk$/);
 });

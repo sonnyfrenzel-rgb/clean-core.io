@@ -5,7 +5,7 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcSkeleton from '@/components/cc/Skeleton';
 import CcTable from '@/components/cc/Table';
-import { CcCleanCoreLevel } from '@/components/cc/Identifier';
+import { CcCleanCoreLevelExplained } from '@/components/cc/LevelExplained';
 import FamilyChip from '@/components/family/FamilyChip';
 import ObjectSection from '@/components/analyze/ObjectSection';
 import { objectKindWord, objectUseWord } from '@/components/workspace/ItDependencyGraph';
@@ -108,7 +108,14 @@ export default function ItTouches({
                 <span className="cc-text-meta text-cc-ink-muted">—</span>
               ),
               lines: chips(r.lines),
-              level: r.level ? <CcCleanCoreLevel value={r.level} /> : <span className="cc-text-meta text-cc-ink-muted">—</span>,
+              // Each level explains itself on hover, tap or focus, as the workspace's IT view did (roadmap 3.0.6).
+              level: r.level ? (
+                <span className="block" data-it-use-level={r.object}>
+                  <CcCleanCoreLevelExplained value={r.level} />
+                </span>
+              ) : (
+                <span className="cc-text-meta text-cc-ink-muted">—</span>
+              ),
             },
           }))}
           limit={10}

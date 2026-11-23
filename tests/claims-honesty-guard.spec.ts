@@ -26,12 +26,13 @@ import { test, expect, Page } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
 import firebaseConfig from '../firebase-config.json';
 import { getCloudServiceDetails } from '../components/design/CloudServiceIntegrations';
 import { signInViaLanding } from './helpers/sign-in';
+import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { TERMS_VERSION } from '../lib/constants';
 import { buildAnalysisExportHtml } from '../lib/analysis-export';
 import type { Project } from '../lib/types';
@@ -150,6 +151,8 @@ test.describe('a signed-in account reading its own project', () => {
     await page.goto(`/project/${RAP}/transformation`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-track-lead]', { timeout: 60000 });
     await expect(page.locator('[data-track-lead]')).toHaveText('Legacy ABAP to ABAP Cloud (RAP) Conversion');
+    // The code panes stand in the "All code side by side" drawer since ADR-129 (4): open it, then read the pane.
+    await page.locator('[data-open-all-code]').click({ timeout: 60000 });
     await expect(page.locator('[data-track-pane]')).toHaveText('Modernized Target (ABAP Cloud/RAP)');
     // The whole stage, not just the lead: the promise stood in three places and
     // correcting one of them is not the fix.
@@ -159,20 +162,32 @@ test.describe('a signed-in account reading its own project', () => {
     await page.goto(`/project/${BTP}/transformation`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-track-lead]', { timeout: 60000 });
     await expect(page.locator('[data-track-lead]')).toHaveText('Legacy ABAP to Modern Node.js (TypeScript) Conversion');
+    await page.locator('[data-open-all-code]').click({ timeout: 60000 });
     await expect(page.locator('[data-track-pane]')).toHaveText('Modernized Target (Node.js/TS)');
   });
 
   test('UX-038 · no control offers to switch code that never changes', async ({ page }) => {
     await page.goto(`/project/${BTP}/transformation`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-track-lead]', { timeout: 60000 });
-    // The toggle lived in the compliance drawer, so the drawer is opened first:
-    // asserting against a closed drawer would pass on an empty DOM.
-    await page.click('text=View Grounding Audit');
-    await page.waitForSelector('text=Your checklist', { timeout: 30000 });
+    // The toggle lived in the compliance drawer beside the code. Since ADR-129 (4) the code stands in the "All code side
+    // by side" drawer, so that drawer is opened first: asserting against a closed drawer would pass on an empty DOM.
+    // The grounding audit opens only from the checks table's "hand" row, which this fixture has none of, so its source
+    // is read instead (below).
+    await page.locator('[data-open-all-code]').click({ timeout: 60000 });
+    await expect(page.locator('[data-track-pane]')).toBeVisible({ timeout: 30000 });
     const text = await page.locator('body').innerText();
-    for (const gone of ['Quirk Remediation Mode', 'Strict Legacy Mode', 'Clean Core Refactored']) {
+    const GONE = ['Quirk Remediation Mode', 'Strict Legacy Mode', 'Clean Core Refactored'];
+    for (const gone of GONE) {
       expect(text, `${gone} came back`).not.toContain(gone);
     }
+    // The stage and its parts, the audit dialog included.
+    const sources = [
+      'app/(app)/project/[projectId]/transformation/page.tsx',
+      ...fs.readdirSync(path.join(ROOT, 'components/transformation')).filter((f) => f.endsWith('.tsx')).map((f) => `components/transformation/${f}`),
+    ];
+    // Comments are left out: the page explains in one why the toggle went.
+    const code = (rel: string) => read(rel).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    for (const rel of sources) for (const gone of GONE) expect(code(rel), `${gone} came back in ${rel}`).not.toContain(gone);
   });
 
   test('UX-040 · no static insight card claims to describe this code', async ({ page }) => {
@@ -191,11 +206,13 @@ test.describe('a signed-in account reading its own project', () => {
 
   test('UX-027 · generated code is reported, not celebrated', async ({ page }) => {
     await page.goto(`/project/${BTP}/delivery`, { waitUntil: 'domcontentloaded' });
-    // The nine links sit one level deeper, behind "Link by link" (proposal A).
-    await page.locator('[data-chain-detail] [data-cc-disclosure-trigger]').click({ timeout: 60000 });
-    await page.waitForSelector('[data-integrity-icon]', { timeout: 60000 });
-    const icon = page.locator('[data-integrity-icon="present"]');
-    await expect(icon).toHaveCount(1);
+    // Since ADR-132 each line stands in its part of "In the package", folded: open the code part and the
+    // documentation part, then read the lines a reader sees.
+    const part = (id: string) => page.locator(`[data-package-part="${id}"]:visible`).first();
+    await part('code').locator('summary').click({ timeout: 60000 });
+    await part('documentation').locator('summary').click();
+    const icon = page.locator('[data-integrity-icon="present"]:visible');
+    await expect(icon).toHaveCount(1, { timeout: 60000 });
     // Computed colour, not a class name: the point is what a reader sees beside
     // "not compiled or tested". Green is what a passed check earns. Tailwind v4
     // reports `oklch(...)`, so the browser resolves it to sRGB for us rather
@@ -214,22 +231,43 @@ test.describe('a signed-in account reading its own project', () => {
       readsAsSuccess(paint),
       `the unverified-code row is drawn in ${paint.colour}, which reads as success`,
     ).toBe(false);
-    // The same reading for the other rows that only say "present": a coverage
-    // figure the generator estimated and a blueprint nobody verified were still
-    // drawn in the green of a passed check beside the neutral code row (UX
-    // review of b88c77b, fc15ffd1018a). One vocabulary for the whole list.
-    for (const kind of ['estimate', 'blueprint'] as const) {
-      const row = page.locator(`[data-integrity-icon="${kind}"]`);
-      await expect(row, `the ${kind} row is not on the page`).toHaveCount(1);
-      const p = await row.evaluate(rgb);
-      expect(readsAsSuccess(p), `the ${kind} row is drawn in ${p.colour}, which reads as success`).toBe(false);
-    }
+    // The same reading for the other rows that only say "present": a blueprint nobody verified was still drawn in
+    // the green of a passed check beside the neutral code row (UX review of b88c77b, fc15ffd1018a). One vocabulary
+    // for the whole list. The coverage figure the generator estimated is not shown on Delivery at all since ADR-132:
+    // the estimate (73 % in this fixture) must not come back as a figure.
+    const blueprint = page.locator('[data-integrity-icon="blueprint"]:visible');
+    await expect(blueprint, 'the blueprint row is not on the page').toHaveCount(1);
+    const p = await blueprint.evaluate(rgb);
+    expect(readsAsSuccess(p), `the blueprint row is drawn in ${p.colour}, which reads as success`).toBe(false);
+    expect(await page.locator('main').innerText(), 'the estimated coverage is shown as a figure').not.toMatch(/73\s*%/);
     // The sentence that states the limit stays where it was.
     await expect(page.locator('text=not compiled or tested').first()).toBeVisible();
   });
 
-  test('UX-029 · the export says what it is, and the caveat is not on hover', async ({ page }) => {
-    await page.goto(`/project/${BTP}/documentation`, { waitUntil: 'domcontentloaded' });
+  test('UX-029 · the export says what it is, and the caveat is not on hover', async ({ browser, request }) => {
+    test.setTimeout(420 * 1000);
+    // Since ADR-127 the exports stand beside the answer of the one Documentation page, which is drawn from the process
+    // record of a verified signed run. The seeded run above is a stand-in the server cannot verify, so this test
+    // analyses the same source through the real run route, on an account of its own (a run is counted against the
+    // account, and UX-084 below reads a fresh one), and reads that project's page.
+    const own = await seedStageProject({ prefix: 'claims-doc', acceptTerms: true });
+    const DOC = own.projectId;
+    await adminSetDoc('projects', DOC, {
+      name: 'Claims honesty documentation', userId: own.uid, createdAt: new Date(), status: 'uploaded',
+      legacyCode: CLAIMS_SOURCE, s4Deployment: 'public',
+    });
+    const cred = await signInWithEmailAndPassword(emulatorAuth(), own.email, own.password);
+    const token = await cred.user.getIdToken(true);
+    const res = await request.post('/api/runs/create', {
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      data: { projectId: DOC, legacyCode: CLAIMS_SOURCE, s4Deployment: 'public', analysis: '{}', uploadedFileName: 'z_claims.abap' },
+      timeout: 240_000,
+    });
+    expect(res.status(), await res.text()).toBe(200);
+    const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+    const page = await context.newPage();
+    await signInThroughForm(page, own);
+    await page.goto(`/project/${DOC}/documentation`, { waitUntil: 'domcontentloaded' });
     // ADR-127 (1): every way out stands beside the answer, the caveat under the buttons — never on hover.
     await page.waitForSelector('[data-export-caveat]', { timeout: 60000 });
     const caveat = page.locator('[data-export-caveat]');
@@ -243,6 +281,7 @@ test.describe('a signed-in account reading its own project', () => {
     for (const gone of ['BPMN-Compatible', 'SAP Build-Compatible']) {
       expect(text, `${gone} came back`).not.toContain(gone);
     }
+    await context.close();
   });
 
   test('UX-059 · the board does not offer to publish anything', async ({ page }) => {

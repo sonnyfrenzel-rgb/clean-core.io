@@ -15,6 +15,7 @@
 
 import { DECISION_OPTION_LABELS, type DecisionOption } from './decision-options';
 import { inToolOrder, type PhaseKey, type PhaseState, type RailStep } from './workflow-steps';
+import { modelAbsenceReason, modelStageEnabled, type ModelStage, type ModelStageSubject } from './model-stages';
 
 /** The route segment under `/project/{id}/`. */
 export const REDESIGN_SEGMENT = 'redesign';
@@ -64,6 +65,11 @@ export interface RedesignStep {
   stateWords: string;
   /** The tool's route segment; `null` for the decision, which stands on this page. */
   path: string | null;
+  /**
+   * Set when the step has nothing on record and the model that writes it is switched off for this account
+   * (`lib/model-stages.ts`): the sentence that says so. Opening the tool still works; generating there cannot.
+   */
+  blocked?: string;
 }
 
 export interface RedesignNext {
@@ -101,6 +107,14 @@ export const REDESIGN_PURPOSE: Readonly<Record<RedesignStepKey, string>> = Objec
 const BUILD_STEPS: readonly PhaseKey[] = ['transformation', 'documentation', 'testing', 'delivery'];
 
 const DECIDE_LABEL = 'Decide';
+
+/** The tools whose own artefact only a model writes today (the same four as the "Next step" rule, `lib/next-step.ts`). */
+const MODEL_STAGE_OF: Partial<Record<PhaseKey, ModelStage>> = {
+  design: 'design',
+  transformation: 'transformation',
+  documentation: 'documentation',
+  testing: 'testing',
+};
 
 function phaseStateWords(state: PhaseState, key: PhaseKey): { state: RedesignStepState; words: string } {
   if (state === 'done') return { state: 'done', words: 'Done' };
@@ -144,7 +158,12 @@ function actionOf(step: RedesignStep, first: boolean): string {
  * The Re-design page's model: the six tools in `PHASES` order with the decision after Economics, each state from the
  * record, and the next step. `steps` is `workflowSteps(project)`; `decision` comes from the decision record.
  */
-export function redesignModel(steps: readonly RailStep[], decision: RedesignDecision): RedesignModel {
+export function redesignModel(
+  steps: readonly RailStep[],
+  decision: RedesignDecision,
+  /** The signed-in account's own switches (`modelStages`); absent reads every stage as on, never an invented block. */
+  account?: ModelStageSubject | null,
+): RedesignModel {
   const analyze = steps.find((s) => s.key === 'analyze');
   const analysed = analyze?.state === 'done';
   const ordered = inToolOrder(steps.filter((s) => s.key !== 'analyze'));
@@ -158,6 +177,11 @@ export function redesignModel(steps: readonly RailStep[], decision: RedesignDeci
     const read = notNeeded
       ? { state: 'not-needed' as const, words: `Not needed, decided: ${DECISION_OPTION_LABELS[decision.option as DecisionOption]}` }
       : phaseStateWords(phase.state, phase.key);
+    const stage = MODEL_STAGE_OF[phase.key];
+    const blocked =
+      stage !== undefined && !notNeeded && phase.state === 'empty' && !modelStageEnabled(account ?? null, stage)
+        ? modelAbsenceReason('stage-off', stage)
+        : undefined;
     out.push({
       key: phase.key as Exclude<PhaseKey, 'analyze'>,
       n: (n += 1),
@@ -166,6 +190,7 @@ export function redesignModel(steps: readonly RailStep[], decision: RedesignDeci
       state: read.state,
       stateWords: read.words,
       path: phase.path,
+      ...(blocked ? { blocked } : {}),
     });
     if (phase.key === 'tco') {
       const d = decisionWords(decision);
@@ -193,7 +218,7 @@ export function redesignModel(steps: readonly RailStep[], decision: RedesignDeci
             ? 'Step 1 of 7. Not counted against your runs.'
             : open.key === 'decide'
               ? 'Step 2 of 7. Recorded by your signed-in account.'
-              : `Step ${open.n} of 7.`,
+              : `Step ${open.n} of 7.${open.blocked ? ` ${open.blocked}` : ''}`,
       };
     }
   }

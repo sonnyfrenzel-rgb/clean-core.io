@@ -9,6 +9,7 @@ import firebaseConfig from '../firebase-config.json';
 import { sha256Hex } from '../lib/artefact-digest';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
+import { APP_VERSION } from '../lib/version';
 import { buildBpmnExportFromSource } from '../lib/bpmn/export';
 import { applyNaming, namingContextOf } from '../lib/process-naming';
 import { buildProcessMapModel } from '../lib/process-map';
@@ -193,6 +194,9 @@ test.describe('the signed-in Documentation stage', () => {
       generatedCode: 'export const ok = true;\n',
       documentation: JSON.stringify(doc),
       activeRunId: RUN_ID,
+      // The stored documentation is this engine's reading; the run says so. An unstamped run reads as the oldest
+      // engine (the map, the description and every export, 3cc113215), which reads this example differently.
+      analyzerVersion: APP_VERSION,
       inputFingerprint: fingerprint,
     });
     await adminSetDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, {

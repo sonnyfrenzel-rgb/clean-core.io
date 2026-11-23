@@ -37,6 +37,13 @@ export default function DesignConfirmTarget({
 }) {
   const [askOpen, setAskOpen] = useState(false);
   const [signOffOpen, setSignOffOpen] = useState(false);
+  // A successful confirmation closes the full sign-off (owner decision 01.10.2026); a withdrawal keeps it open on
+  // the form, where the next decision is made. As the canvas's panel did before ADR-130 moved the action here.
+  const [lockedBefore, setLockedBefore] = useState(locked);
+  if (lockedBefore !== locked) {
+    setLockedBefore(locked);
+    if (locked) setSignOffOpen(false);
+  }
   const [confirming, setConfirming] = useState(false);
   const [refusal, setRefusal] = useState<string | null>(null);
   const busy = useRef(false);

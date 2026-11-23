@@ -269,10 +269,12 @@ test.describe('D.31 on paper', () => {
 
     await signInViaLanding(page as Page, email, password, { pauseMs: 3500 });
     await page.goto(`/project/${id}/tco`, { waitUntil: 'domcontentloaded' });
+    // The way back stands in the header and, since 3.5.0, once more in the tool's footer: neither prints.
     const back = page.locator('[data-stage-back]');
-    await expect(back, 'the stage has no way back on screen — the print check would prove nothing').toBeVisible({ timeout: 60000 });
+    await expect(back.first(), 'the stage has no way back on screen — the print check would prove nothing').toBeVisible({ timeout: 60000 });
+    await expect(back).toHaveCount(2);
     await page.emulateMedia({ media: 'print' });
-    await expect(back, '"Back to workspace" prints').toBeHidden();
+    for (const one of await back.all()) await expect(one, '"Back to workspace" prints').toBeHidden();
     await expect(page.locator('[data-stage-title]')).toBeVisible();
   });
 });

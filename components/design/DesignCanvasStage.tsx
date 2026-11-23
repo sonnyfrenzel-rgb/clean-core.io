@@ -1243,6 +1243,13 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
             ) : (
               <div className="flex min-w-0 flex-col gap-4">
                 <p className="m-0 cc-text-cell text-cc-ink-muted">Click a box to see its evidence.</p>
+                {/* A stored route that disagrees with the contract is named as what it is, here as on the
+                    decision tab: the answer above names the contract's route (one story). */}
+                {storedNote ? (
+                  <p data-design-stored-route={answer.storedDiffers?.source} className="m-0 cc-text-cell text-cc-ink-muted">
+                    {storedNote}
+                  </p>
+                ) : null}
                 {glance}
               </div>
             )}

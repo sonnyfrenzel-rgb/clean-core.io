@@ -44,6 +44,24 @@ const core = buildAbapEvidence(SOURCE, FILE, 'private', coreKey);
 /** What the three displays computed in the browser until 02.10.2026. */
 const browserBuilt = buildAbapEvidence(SOURCE, 'main.abap', 'private');
 
+/**
+ * The note of the IT answer's "Clean core levels" facet (`components/analyze/AnalyzeIt.tsx`): the levels other than
+ * the worst with their counts, the unknown ones, then the catalog.
+ */
+function levelFacetNote(findings: typeof core.findings): string {
+  const dist = new Map<CloudReadinessGrade, number>();
+  for (const row of findingRows(findings)) {
+    if (!row.finding.objectName) continue;
+    const g = gradeSapObjectUse(row.finding.objectName.trim().toUpperCase(), accessUseOfKind(row.finding.kind), coreKey).grade;
+    dist.set(g, (dist.get(g) ?? 0) + 1);
+  }
+  const n = (g: CloudReadinessGrade) => dist.get(g) ?? 0;
+  const worst = (['D', 'C', 'B', 'A'] as const).find((g) => n(g) > 0) ?? null;
+  const graded = n('A') + n('B') + n('C') + n('D');
+  const others = (['C', 'B', 'A'] as const).filter((g) => g !== worst && n(g) > 0).map((g) => `${n(g)} ${g}`).join(' · ');
+  return `${others || `${graded} graded`}${n('Unknown') ? ` · ${n('Unknown')} unknown` : ''} · from SAP's catalog`;
+}
+
 /** Findings per clean core level, as the Analyze level bar draws them: `C 1`. */
 function levelBlocks(findings: typeof core.findings): string[] {
   const dist = new Map<CloudReadinessGrade, number>();
@@ -97,11 +115,11 @@ test.describe('a PCE project shows the core result on Analyze, Transformation an
       .toEqual(kinds);
     // The object the PCE list releases is no finding here.
     await expect(findings).not.toContainText(PCE_ONLY);
-    // The level bar counts the core findings at the core levels.
-    await expect(page.locator('[data-level-bar]')).toBeVisible({ timeout: 60000 });
-    await expect
-      .poll(async () => page.locator('[data-level-block]').allTextContents())
-      .toEqual(levelBlocks(core.findings));
+    // The IT answer's level facet (ADR-140; the level bar of the old hero is gone) counts the core findings at
+    // the core levels: the worst level's count, then the others and the unknown ones.
+    const facet = page.locator('[data-facet="levels"]');
+    await expect(facet).toContainText(levelFacetNote(core.findings), { timeout: 60000 });
+    await expect(facet).not.toContainText(levelFacetNote(browserBuilt.findings));
   });
 
   test('Transformation: the facets count the core findings', async ({ page }) => {
@@ -113,8 +131,9 @@ test.describe('a PCE project shows the core result on Analyze, Transformation an
     const figures = transformationFigures(core.findings);
     const places = page.locator('[data-transformation-places]');
     await expect(places).toHaveAttribute('data-transformation-places', String(figures.places), { timeout: 60000 });
-    await expect(page.locator('[data-transformation-facet="Plan from the engine"]')).toContainText(
-      `of ${figures.findings} findings with a target option`,
+    // The answer card's "Released target" facet counts the same findings (3.5.0, ADR-129 (2)).
+    await expect(page.locator('[data-facet="released"]')).toContainText(
+      `of ${figures.findings} ${figures.findings === 1 ? 'finding' : 'findings'}`,
     );
     await expect(page.locator('[data-transformation-object-page]')).not.toContainText(PCE_ONLY);
   });

@@ -154,16 +154,22 @@ test.describe('delivery page — QA full review of v2.20.0', () => {
     await page.goto(`/project/${STALE_TESTS}/delivery`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stale-notice]')).toBeVisible({ timeout: 60000 });
 
-    // The nine links sit one level deeper, behind "Link by link" (proposal A).
+    // The nine links sit one level deeper, behind "The chain, link by link" (proposal A). Since 3.5.0 (ADR-132)
+    // the page prints no coverage estimate at all; the stale suite's link says it was made for a previous source.
     await page.locator('[data-chain-detail] [data-cc-disclosure-trigger]').click();
-    await expect(page.locator('[data-coverage-stale]')).toBeVisible();
-    await expect(page.locator('[data-coverage-provenance]')).toHaveCount(0);
+    const tests = page.locator('[data-chain-link="tests"]');
+    await expect(tests).toBeVisible();
+    await expect(tests).toHaveAttribute('data-chain-state', 'stale');
+    await expect(tests).toContainText('made for a previous source');
+    await expect(page.locator('body')).not.toContainText(/estimated coverage/i);
 
     await expect(page.locator('button[data-stage-output="businessDocumentation"]')).toBeDisabled();
 
-    const header = page.locator('button', { hasText: 'Audit pack contents' });
-    await expect(header).toContainText('Blocked');
-    await expect(header).not.toContainText('Ready');
+    // The pack's badge is the audit pack section's state line (ADR-132): blocked, never ready or sealed.
+    const pack = page.locator('[data-audit-pack-state]');
+    await expect(pack).toContainText('Blocked');
+    await expect(pack).not.toContainText(/Ready|Sealed/);
+    await expect(pack.locator('[data-family-chip="signed"]')).toHaveCount(0);
   });
 
   test('ea7d41305986 · a source that is not the analysed one gets no stakeholder deck', async ({ page }) => {
