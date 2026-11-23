@@ -508,7 +508,13 @@ function FamilyToolStrip({
         ref={rowRef}
         data-stage-tools-row=""
         className={cn(
-          'flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto overscroll-x-contain py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&_a]:whitespace-nowrap max-sm:[&_a]:min-h-11 [&>*]:shrink-0',
+          // `relative`: the links' `sr-only` descriptions (position: absolute) stay inside the scrolling row instead of
+          // widening the page on a phone.
+          'relative flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto overscroll-x-contain py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0',
+          '[&_a]:whitespace-nowrap [&_a]:py-1 max-sm:[&_a]:min-h-11',
+          // The current tool filled in ink, as the family draws it; its marks in the light tints that read on ink.
+          '[&_a[aria-current=page]]:border-cc-ink [&_a[aria-current=page]]:bg-cc-ink [&_a[aria-current=page]]:text-cc-on-dark',
+          '[&_a[aria-current=page]_[data-workspace-tool-mark=check]]:text-cc-success-border [&_a[aria-current=page]_[data-workspace-tool-mark=half]]:text-cc-information-border',
           fade,
         )}
       >

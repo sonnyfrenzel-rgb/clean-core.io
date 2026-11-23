@@ -178,7 +178,7 @@ export default function StageHeader({
                 <span data-stage-back-lead="">{way.place}</span>
                 {family?.title ? (
                   <span data-stage-back-place="" className="inline-flex min-w-0 font-medium">
-                    <span aria-hidden="true">{' · '}</span>
+                    <span aria-hidden="true" className="pr-1">·</span>
                     <span data-stage-back-project="" className="inline-block max-w-[20rem] truncate align-bottom">
                       {family.title}
                     </span>
@@ -187,10 +187,11 @@ export default function StageHeader({
               </Link>
             )}
           </div>
-          <div data-stage-head-end="" className="flex flex-wrap items-center gap-2 max-[720px]:w-full">
+          <div data-stage-head-end="" className={`flex flex-wrap items-center gap-2 ${mode === 'switch' ? 'max-[720px]:w-full' : ''}`}>
             {mode === 'switch' ? <StageViewSwitch search={search} /> : null}
             {mode === 'one-page' ? (
-              <p data-one-page-note="" className="m-0 inline-flex min-h-8 items-center gap-2 cc-text-cell text-cc-ink-muted">
+              // On a phone the note steps back: the header's chrome stays short (UX review 22.11.2026, finding 10).
+              <p data-one-page-note="" className="m-0 inline-flex min-h-8 items-center gap-2 cc-text-cell text-cc-ink-muted max-sm:hidden">
                 <Users size={16} aria-hidden={true} className="shrink-0" />
                 {ONE_PAGE_NOTE}
               </p>
