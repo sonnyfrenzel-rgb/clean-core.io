@@ -494,6 +494,18 @@ options priced, business rules confirmed, delivery package); then *The steps of 
 decision as step 2 between Economics and Design (the four options and the decision record, reused), every state read
 from the project. Every "go on" link of Analyze leads here, never into a single tool; the business-question link stays
 direct.
+**Transformation in the frame** (ADR-129, `docs/roadmap/transformation-next-mockup.html`): one page for every reader
+(`view="one-page"`). The answer card asks *What became of <program>?* and answers per state (nothing yet, writing,
+written, not ready, demo); facets *Target* (aims at level A, never "is"), *Released target* (a successor or the project
+route; the rest is open, `releasedTargets`), *Code written*, *Checks*. The next step: Generate while nothing is written
+or the package is not ready, else *Continue in Documentation* (the next tool). *On this page*: Findings · Open ·
+Package · Checks · Trace. Sections: one flow finding → target → object (the object from `traceability.json`), *Still
+open* as one numbered list with one action each, the package by object with its functions and a **Code drawer** (old
+ABAP beside the new function, every line marked engine or model in the gutter), one **Checks** table (check, who ran
+it, check passed / check failed / not run here; the personal checklist a row, never counted), the trace folded. Side
+column: Status of the code, Built on, Not carried over and why. Strips only for what stops the page (prerequisites,
+stale, refused contract, error, unsaved draft); while the code is written the generation screen stands first in the
+main column of the same page. All code side by side is a side drawer (`CcDialog` side + wide, 1040 px).
 
 **Widths** (ADR-140 W1, UX review Q9): the shell bar and the slim one-line footer stand at 1536 px on every page; the
 content of a tool at 1536 px, of a list or reading page at 1280 px, the gutter 16 / 24 / 32 px. A tool's frame starts 16

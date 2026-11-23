@@ -25,6 +25,7 @@ import { groupConstructs } from './open-questions';
 import type { CoverageReport } from './abap/coverage';
 import type { EvidenceFinding } from './abap/evidence-model';
 import { calmTitle, findingRows, kindLabel } from './findings-view';
+import type { FilledBy, Trace } from './transformation/types';
 import { BTP } from './sap-naming';
 import { countSourceLines } from '@/lib/source-lines';
 
@@ -158,6 +159,44 @@ export function transformationFigures(occurrences: readonly EvidenceFinding[]): 
     unplanned: findings.filter((f) => (f.targetOptions ?? []).length === 0).length,
     successorNamed: named.length,
     successorDistinct: new Set(named.map((f) => f.sapReplacement!.objectName)).size,
+  };
+}
+
+/**
+ * Released targets, counted (ADR-129 (2), mock-up T3): a finding has a *released* target when SAP's catalog names a
+ * released successor for its object, or when it is a construct without an object the project route handles itself
+ * (RAP's save sequence, RAP's authorization). A custom table whose new home nobody decided, an SAP object without a
+ * released successor and a construct whose options do not include the project route are *open* — never "planned",
+ * whatever target options the engine lists for their kind. "19 of 19 planned" counted options; this counts targets.
+ */
+export interface ReleasedTargets {
+  /** Findings, one per pattern and object. */
+  findings: number;
+  /** `successor` + `route`. */
+  released: number;
+  successor: number;
+  route: number;
+  /** `findings - released`: wait for a decision. */
+  open: number;
+  noSuccessor: number;
+  custom: number;
+  routeOther: number;
+}
+
+export function releasedTargets(occurrences: readonly EvidenceFinding[], track: ProjectTrack): ReleasedTargets {
+  const count: Record<TargetKind, number> = { successor: 0, route: 0, 'no-successor': 0, custom: 0, 'route-other': 0 };
+  const findings = findingUnits(occurrences);
+  for (const f of findings) count[findingTarget(f, track).kind] += 1;
+  const released = count.successor + count.route;
+  return {
+    findings: findings.length,
+    released,
+    successor: count.successor,
+    route: count.route,
+    open: findings.length - released,
+    noSuccessor: count['no-successor'],
+    custom: count.custom,
+    routeOther: count['route-other'],
   };
 }
 
@@ -471,15 +510,28 @@ const ABAP_FILE = /\.(abap|xml|asddls|asbdef|asdcls|assrvd|assrvb)$/i;
  * `zcl_x.clas.xml` are one class); files at the root are the package's own
  * documents. Order: code, then data model, then tests, then the rest.
  */
+/**
+ * The object a file of the package belongs to — the key `packageGroups` groups by. ABAP files are one object under
+ * several names (`.clas.abap`, `.clas.xml`); a Node package's files are modules, and their folder is the unit; files
+ * at the root are the package's own documents.
+ */
+/** The name a group key is shown under: `ZCL_X`, `srv/units/`, or "Package documents". */
+export function groupName(key: string): string {
+  if (key === '(root)') return 'Package documents';
+  return key.endsWith('/') ? key : key.slice(key.lastIndexOf('/') + 1).toUpperCase();
+}
+
+export function packageGroupKey(path: string): string {
+  const slash = path.lastIndexOf('/');
+  const base = path.slice(slash + 1);
+  return slash < 0 ? '(root)' : ABAP_FILE.test(base) ? `${path.slice(0, slash + 1)}${base.split('.')[0]}` : path.slice(0, slash + 1);
+}
+
 export function packageGroups(files: readonly GeneratedFile[]): PackageGroup[] {
   const engineLed = files.some((f) => FILL_MARK.test(f.content ?? ''));
   const byKey = new Map<string, { files: GeneratedFile[] }>();
   for (const f of files) {
-    const slash = f.path.lastIndexOf('/');
-    const base = f.path.slice(slash + 1);
-    // ABAP files are one object under several names (`.clas.abap`, `.clas.xml`);
-    // a Node package's files are modules, and their folder is the unit.
-    const key = slash < 0 ? '(root)' : ABAP_FILE.test(base) ? `${f.path.slice(0, slash + 1)}${base.split('.')[0]}` : f.path.slice(0, slash + 1);
+    const key = packageGroupKey(f.path);
     const g = byKey.get(key) ?? { files: [] };
     g.files.push(f);
     byKey.set(key, g);
@@ -491,7 +543,7 @@ export function packageGroups(files: readonly GeneratedFile[]): PackageGroup[] {
     const root = key === '(root)';
     out.push({
       key,
-      name: root ? 'Package documents' : key.endsWith('/') ? key : key.slice(key.lastIndexOf('/') + 1).toUpperCase(),
+      name: groupName(key),
       kind: root ? 'README, status and trace' : key.endsWith('/') ? 'Folder' : main.role,
       type: root ? 'other' : main.type,
       files: cards,
@@ -535,6 +587,374 @@ export function codeGeneratedStep(input: {
   if (!input.generated) return { done: false, text: 'Code generated', note: input.emptyNote };
   if (input.phase && input.phase.state !== 'done') return { done: false, text: input.phase.badge, note: `${input.packageNote}. ${input.phase.detail}` };
   return { done: true, text: 'Code generated', note: input.packageNote };
+}
+
+/* ------------------------------------------- the trace: finding → function → object */
+
+/** Where in the new code a finding now is: the function of the package whose ABAP lines hold one of its places. */
+export interface FindingWhere {
+  /** The object's name as `packageGroups` shows it (`ZCL_POAPPR_LOGIC`, `srv/units/`). */
+  object: string;
+  /** Its group key (`packageGroupKey`). */
+  objectKey: string;
+  /** The function's name in the package. */
+  fn: string;
+  unitId: string | null;
+  file: string;
+}
+
+const span = (r: { lineStart: number; lineEnd: number }) => r.lineEnd - r.lineStart;
+
+/**
+ * For every finding (one per pattern and object, keyed by the id of the occurrence that stands for it), the function
+ * of the package that carries it — read from the package's own `traceability.json`, where the engine wrote each
+ * function's ABAP lines (ADR-101), not from a text search. The narrowest function whose lines hold a place of the
+ * finding wins, so the main path that spans the whole program never shadows the routine that holds the line. `null`
+ * where no function's lines hold any of its places: the finding is not in the package.
+ */
+export function findingWhere(occurrences: readonly EvidenceFinding[], trace: Trace | null): Map<string, FindingWhere | null> {
+  const out = new Map<string, FindingWhere | null>();
+  for (const row of findingRows(occurrences)) {
+    let best: { fn: Trace['functions'][number]; width: number } | null = null;
+    if (trace) {
+      for (const line of row.lines) {
+        for (const fn of trace.functions) {
+          for (const r of fn.abap) {
+            if (line < r.lineStart || line > r.lineEnd) continue;
+            if (!best || span(r) < best.width) best = { fn, width: span(r) };
+          }
+        }
+      }
+    }
+    if (!best) {
+      out.set(row.finding.id, null);
+      continue;
+    }
+    const key = packageGroupKey(best.fn.file);
+    out.set(row.finding.id, { object: groupName(key), objectKey: key, fn: best.fn.name, unitId: best.fn.unitId, file: best.fn.file });
+  }
+  return out;
+}
+
+export interface FlowObjectNode {
+  /** The group key, or `out` for "not in the package". */
+  key: string;
+  label: string;
+  sub: string;
+  count: number;
+}
+
+export interface ObjectFlow {
+  objects: FlowObjectNode[];
+  links: Array<{ from: TargetKind; to: string; count: number }>;
+}
+
+/**
+ * The flow's third column (ADR-129 (4), mock-up T5): target → the object of the package that now carries each
+ * finding, from the trace. Objects by count, "Not in the package" last. Null without a trace — a package from one
+ * model call, from before 3.0.12, or none: nothing records which object answers which finding, so no band is drawn.
+ */
+export function objectFlow(occurrences: readonly EvidenceFinding[], track: ProjectTrack, trace: Trace | null, files: readonly GeneratedFile[]): ObjectFlow | null {
+  if (!trace) return null;
+  const where = findingWhere(occurrences, trace);
+  const kinds = new Map(packageGroups(files).map((g) => [g.key, g.kind]));
+  const counts = new Map<string, number>();
+  const linkCount = new Map<string, number>();
+  for (const f of findingUnits(occurrences)) {
+    const to = where.get(f.id)?.objectKey ?? 'out';
+    const from = findingTarget(f, track).kind;
+    counts.set(to, (counts.get(to) ?? 0) + 1);
+    linkCount.set(`${from}\u0000${to}`, (linkCount.get(`${from}\u0000${to}`) ?? 0) + 1);
+  }
+  const objects: FlowObjectNode[] = [...counts]
+    .filter(([key]) => key !== 'out')
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .map(([key, count]) => {
+      const fns = new Set(trace.functions.filter((fn) => packageGroupKey(fn.file) === key).map((fn) => fn.name)).size;
+      return { key, label: groupName(key), sub: `${kinds.get(key) ?? 'Object'} · ${fns} ${fns === 1 ? 'function' : 'functions'}`, count };
+    });
+  const out = counts.get('out');
+  if (out) objects.push({ key: 'out', label: 'Not in the package', sub: 'no function of the package carries it', count: out });
+  const links: ObjectFlow['links'] = [];
+  for (const t of TARGET_ORDER) {
+    for (const o of objects) {
+      const count = linkCount.get(`${t}\u0000${o.key}`) ?? 0;
+      if (count > 0) links.push({ from: t, to: o.key, count });
+    }
+  }
+  return { objects, links };
+}
+
+/** One finding of the trace table ("Finding by finding", ADR-129 (4), mock-up T9). */
+export interface TraceRow {
+  id: string;
+  severity: EvidenceFinding['severity'];
+  title: string;
+  object: string | null;
+  /** Every place in the old code, sorted. */
+  lines: number[];
+  target: FindingTarget;
+  /** Released (a successor or the route) or open. */
+  open: boolean;
+  where: FindingWhere | null;
+}
+
+export function traceRows(occurrences: readonly EvidenceFinding[], track: ProjectTrack, trace: Trace | null): TraceRow[] {
+  const where = findingWhere(occurrences, trace);
+  return findingRows(occurrences).map((r) => {
+    const target = findingTarget(r.finding, track);
+    return {
+      id: r.finding.id,
+      severity: r.finding.severity,
+      title: calmTitle(r.finding.title),
+      object: r.finding.objectName ?? null,
+      lines: r.lines.length > 0 ? r.lines : [r.finding.lineStart],
+      target,
+      open: target.kind !== 'successor' && target.kind !== 'route',
+      where: where.get(r.finding.id) ?? null,
+    };
+  });
+}
+
+/* ------------------------------------------------------------- still open */
+
+/** Where an open item is decided. */
+export type OpenItemAction = 'design' | 'analyze' | 'business';
+
+/** One line of "Still open" (ADR-129 (4), mock-up T6): what is open, why, and the one place that decides it. */
+export interface OpenItem {
+  key: string;
+  title: string;
+  detail: string;
+  lines: number[];
+  action: OpenItemAction;
+  actionLabel: string;
+  /** Where the action leads, in words: "Design · Custom persistence". */
+  place: string;
+}
+
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+/**
+ * "Still open" as one list: custom tables without a home, calls without a released successor, output that becomes a
+ * Fiori app, findings whose options leave the project route, constructs the engine did not assess, rules without a
+ * decision. The same items the project's open questions name (ADR-081: `groupConstructs` keys the constructs), filtered
+ * to what touches this code. Pure, and empty when nothing is open.
+ */
+export function openItems(
+  occurrences: readonly EvidenceFinding[],
+  coverage: CoverageReport | null,
+  track: ProjectTrack,
+  openRules: readonly string[] | null,
+): OpenItem[] {
+  const findings = findingUnits(occurrences);
+  const out: OpenItem[] = [];
+  const custom = Array.from(new Set(findings.filter((f) => isCustomObject(f.objectName)).map((f) => f.objectName!.trim())));
+  if (custom.length > 0) {
+    out.push({
+      key: 'custom',
+      title: custom.length === 1 ? '1 custom table has no new home' : `${custom.length} custom tables have no new home`,
+      detail: `${joinShort(custom, 5)}. Decide whether ${custom.length === 1 ? 'it moves' : 'they move'} into the business object, ${custom.length === 1 ? 'stays' : 'stay'}, or ${custom.length === 1 ? 'becomes' : 'become'} configuration; until then the code reads and writes ${custom.length === 1 ? 'it' : 'them'} as the original does.`,
+      lines: Array.from(new Set(findings.filter((f) => isCustomObject(f.objectName)).map((f) => f.lineStart))).sort((a, b) => a - b).slice(0, 4),
+      action: 'design',
+      actionLabel: 'Decide in Design',
+      place: 'Design · Custom persistence',
+    });
+  }
+  const none = findings.filter((f) => f.objectName && !f.sapReplacement?.objectName && !isCustomObject(f.objectName));
+  const ui = none.filter((f) => UI_OUTPUT.test(f.objectName!));
+  const calls = none.filter((f) => !UI_OUTPUT.test(f.objectName!));
+  if (calls.length > 0) {
+    const names = Array.from(new Set(calls.map((f) => f.objectName!)));
+    out.push({
+      key: 'no-successor',
+      title: names.length === 1 ? '1 call has no released successor' : `${names.length} calls have no released successor`,
+      detail: `${joinShort(names, 5)}. SAP's catalog names none, so there is nothing released to call; decide what replaces ${names.length === 1 ? 'it' : 'each one'}.`,
+      lines: Array.from(new Set(calls.map((f) => f.lineStart))).sort((a, b) => a - b).slice(0, 4),
+      action: 'design',
+      actionLabel: 'Decide in Design',
+      place: 'Design · Calls without successor',
+    });
+  }
+  if (ui.length > 0) {
+    const names = Array.from(new Set(ui.map((f) => f.objectName!)));
+    out.push({
+      key: 'ui-output',
+      title: 'The list and file output become a Fiori app',
+      detail: `${joinShort(names, 4)} ${names.length === 1 ? 'has' : 'have'} no function module to call instead. In the target ${names.length === 1 ? 'it becomes' : 'they become'} part of a Fiori app, which is not part of the generated package.`,
+      lines: Array.from(new Set(ui.map((f) => f.lineStart))).sort((a, b) => a - b).slice(0, 4),
+      action: 'design',
+      actionLabel: 'See the app in Design',
+      place: 'Design · User interface',
+    });
+  }
+  const other = findings.filter((f) => findingTarget(f, track).kind === 'route-other');
+  if (other.length > 0) {
+    out.push({
+      key: 'route-other',
+      title: `${plural(other.length, 'finding')} ${other.length === 1 ? 'points' : 'point'} outside the project route`,
+      detail: `Their options do not include ${TRACK_LABEL[track]}. Confirm the route or choose another one in Design.`,
+      lines: Array.from(new Set(other.map((f) => f.lineStart))).sort((a, b) => a - b).slice(0, 4),
+      action: 'design',
+      actionLabel: 'Check the route in Design',
+      place: 'Design · Route',
+    });
+  }
+  const unassessed = coverage?.unassessed ?? [];
+  if (unassessed.length > 0) {
+    const kinds = groupConstructs(unassessed.map((u) => ({ label: u.label, why: u.why, anchor: `L${u.line}`, gap: u.gap })));
+    out.push({
+      key: 'unassessed',
+      title: kinds.length === 1 ? '1 construct was not assessed' : `${kinds.length} constructs were not assessed`,
+      detail: `${kinds.map((k) => k.label).join(', ')}. The engine could not read what ${kinds.length === 1 ? 'it does' : 'they do'}, so the code carries ${kinds.length === 1 ? 'it' : 'them'} as the original has ${kinds.length === 1 ? 'it' : 'them'}.`,
+      lines: kinds.map((k) => Number(k.anchors[0].slice(1))),
+      action: 'analyze',
+      actionLabel: 'See them in Analyze',
+      place: 'Analyze · Not determined',
+    });
+  }
+  const rules = Array.from(new Set(openRules ?? []));
+  if (rules.length > 0) {
+    out.push({
+      key: 'rules',
+      title: rules.length === 1 ? '1 rule has no decision' : `${rules.length} rules have no decision`,
+      detail: `${joinShort(rules, 5)}. Implemented as the original has ${rules.length === 1 ? 'it' : 'them'} and marked open.`,
+      lines: [],
+      action: 'business',
+      actionLabel: 'Decide the rules',
+      place: 'Business view · Rules',
+    });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------- the package's functions */
+
+/** One function of the package, as the package section lists it under its object (mock-up T7). */
+export interface PackageFunction {
+  name: string;
+  unitId: string | null;
+  /** The routine's words ("Validate the policy"), or empty for an engine-written function without a unit. */
+  title: string;
+  file: string;
+  /** Who wrote the body: the engine alone, or a model (`fill`). */
+  owner: 'engine' | 'fill';
+  /** `L60–L75, L80` — the original's lines, or empty where it has none. */
+  abap: string;
+  rules: string[];
+  /** For a fill: who filled it — `model`, a repair round, `empty` or `not-filled`. */
+  filledBy: FilledBy | null;
+  note: string | null;
+}
+
+/** The functions of the trace by the object (`packageGroupKey`) their file belongs to, in the trace's order. */
+export function functionsByObject(trace: Trace | null): Map<string, PackageFunction[]> {
+  const out = new Map<string, PackageFunction[]>();
+  if (!trace) return out;
+  const units = new Map(trace.units.map((u) => [u.unitId, u]));
+  for (const fn of trace.functions) {
+    const unit = fn.unitId ? units.get(fn.unitId) : undefined;
+    const key = packageGroupKey(fn.file);
+    const list = out.get(key) ?? [];
+    list.push({
+      name: fn.name,
+      unitId: fn.unitId,
+      title: unit?.title ?? '',
+      file: fn.file,
+      owner: fn.owner,
+      abap: fn.abap.map((a) => (a.lineStart === a.lineEnd ? `L${a.lineStart}` : `L${a.lineStart}–L${a.lineEnd}`)).join(', '),
+      rules: unit ? unit.rules.map((r) => r.id) : fn.rules,
+      filledBy: unit?.filledBy ?? null,
+      note: unit?.note ?? null,
+    });
+    out.set(key, list);
+  }
+  return out;
+}
+
+/* ----------------------------------------------------------- the code drawer */
+
+/** One line of the new code, marked with who wrote it (ADR-129 (4): every line marked engine or model). */
+export interface AuthoredLine {
+  number: number;
+  text: string;
+  author: 'engine' | 'model';
+}
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+const BLOCK_END = /^\s*(ENDMETHOD|ENDFORM|ENDFUNCTION)\s*\.|^\}\s*;?\s*$|^ {2}\}\s*;?\s*$/i;
+
+/**
+ * The lines of one function of a generated file, each marked with its author. A model's body stands between the
+ * engine's markers `@cc-fill BEGIN <unit>` and `@cc-fill END <unit>`; every other line — the header comment, the
+ * signature, the guards, the markers — is the engine's. Read from the file as stored: nothing is reformatted. In a
+ * package from one model call (no markers anywhere) every line is the model's. Null when the function is not found.
+ */
+export function functionLines(content: string, fn: { name: string; unitId: string | null }, wholeModel = false): AuthoredLine[] | null {
+  const lines = content.split('\n');
+  const begin = fn.unitId ? lines.findIndex((l) => new RegExp(`@cc-fill BEGIN ${escapeRe(fn.unitId!)}\\b`).test(l)) : -1;
+  const header = new RegExp(`(^|[^A-Za-z0-9_])(METHOD|FORM|FUNCTION|function)\\s+${escapeRe(fn.name)}\\b|(^|\\s)(async\\s+)?${escapeRe(fn.name)}\\s*\\(|(const|let)\\s+${escapeRe(fn.name)}\\s*=`, 'i');
+  let start = -1;
+  if (begin >= 0) {
+    for (let i = begin; i >= Math.max(0, begin - 60); i -= 1) {
+      if (header.test(lines[i])) {
+        start = i;
+        break;
+      }
+    }
+    if (start < 0) start = begin;
+  } else {
+    start = lines.findIndex((l) => header.test(l));
+    if (start < 0) return null;
+  }
+  // The header comment above the signature belongs to the function.
+  while (start > 0 && /^\s*("!|\*|\/\*\*|\/\/|")/.test(lines[start - 1])) start -= 1;
+  const endMark = begin >= 0 ? lines.findIndex((l, i) => i > begin && new RegExp(`@cc-fill END ${escapeRe(fn.unitId!)}\\b`).test(l)) : -1;
+  // The function ends at the first block end after its body (or after its header, for the engine's own functions).
+  const scanFrom = endMark >= 0 ? endMark : begin >= 0 ? begin : start;
+  let end = Math.min(lines.length - 1, scanFrom + 1);
+  for (let i = scanFrom + 1; i < Math.min(lines.length, scanFrom + 400); i += 1) {
+    if (BLOCK_END.test(lines[i])) {
+      end = i;
+      break;
+    }
+  }
+  const out: AuthoredLine[] = [];
+  for (let i = start; i <= end; i += 1) {
+    const inBody = begin >= 0 && i > begin && (endMark < 0 || i < endMark);
+    out.push({ number: i + 1, text: lines[i].replace(/\s+$/, ''), author: wholeModel || inBody ? 'model' : 'engine' });
+  }
+  return out;
+}
+
+/** Every line of a file with its author — for a file opened whole. */
+export function authoredFile(content: string, wholeModel = false): AuthoredLine[] {
+  const lines = content.split('\n');
+  const out: AuthoredLine[] = [];
+  let inside: string | null = null;
+  lines.forEach((text, i) => {
+    // The markers are the engine's; the lines between them the model's.
+    if (inside !== null && new RegExp(`@cc-fill END ${escapeRe(inside)}\\b`).test(text)) inside = null;
+    out.push({ number: i + 1, text: text.replace(/\s+$/, ''), author: wholeModel || inside !== null ? 'model' : 'engine' });
+    const begin = /@cc-fill BEGIN (\S+)/.exec(text);
+    if (begin) inside = begin[1];
+  });
+  return out;
+}
+
+/** The original's lines for a function's ranges, with their real numbers; a gap between two ranges is one `null`. */
+export function sourceExcerpt(source: string, ranges: ReadonlyArray<{ lineStart: number; lineEnd: number }>, max = 400): Array<{ number: number; text: string } | null> {
+  const lines = source.split('\n');
+  const out: Array<{ number: number; text: string } | null> = [];
+  const sorted = [...ranges].sort((a, b) => a.lineStart - b.lineStart);
+  for (const [i, r] of sorted.entries()) {
+    if (i > 0) out.push(null);
+    for (let n = Math.max(1, r.lineStart); n <= Math.min(lines.length, r.lineEnd); n += 1) {
+      out.push({ number: n, text: lines[n - 1].replace(/\s+$/, '') });
+      if (out.length >= max) return out;
+    }
+  }
+  return out;
 }
 
 export { calmTitle };

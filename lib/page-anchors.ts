@@ -58,10 +58,10 @@ export const PAGE_ANCHOR_IDS = {
   },
   transformation: {
     flow: 'tf-flow',
+    open: 'tf-open',
     package: 'tf-package',
-    changes: 'tf-changes',
-    plan: 'tf-plan',
-    side: 'tf-side',
+    checks: 'tf-checks',
+    trace: 'tf-trace',
   },
   testing: {
     write: 'testing-write',
@@ -138,30 +138,35 @@ export function analyzeAnchors(content: {
 
 /* ----------------------------------------------------------- Transformation */
 
+/**
+ * Transformation (ADR-129, mock-up T10): Findings · Open · Package · Checks · Trace — the page's five sections in their
+ * order. Open counts in amber (it asks the reader for something), and so does a failed check; the package counts its
+ * objects once one is stored. The code is in a drawer, not a section, and has no anchor.
+ */
 export function transformationAnchors(content: {
-  /** Files in the stored package; null where no model can have run (the demo). */
-  files: number | null;
   findings: number;
-  /** Kinds in the plan — 0 hides the anchor. */
-  kinds: number;
-  /** Extra sections the page adds under the two columns: [id, label]. */
-  extra?: ReadonlyArray<readonly [string, string]>;
+  /** Items of "Still open"; 0 says "none". */
+  open: number;
+  /** Objects of the stored package; null where none is stored (nothing yet, being written, the demo). */
+  objects: number | null;
+  /** Checks that failed on the stored package. */
+  checksFailed: number;
 }): PageAnchor[] {
   const ids = PAGE_ANCHOR_IDS.transformation;
-  const out: PageAnchor[] = [
-    { key: 'flow', target: ids.flow, label: 'Code to package', title: 'From your code to the generated package' },
+  return [
+    { key: 'flow', target: ids.flow, label: 'Findings', count: content.findings > 0 ? n(content.findings) : 'none', title: 'Where each finding went' },
+    { key: 'open', target: ids.open, label: 'Open', count: content.open > 0 ? n(content.open) : 'none', title: 'What is still open', ...(content.open > 0 ? { tone: 'open' as const } : {}) },
+    { key: 'package', target: ids.package, label: 'Package', count: content.objects ? n(content.objects) : null, title: 'The generated package, by object' },
     {
-      key: 'package',
-      target: ids.package,
-      label: 'Generated package',
-      count: content.files === null ? null : content.files > 0 ? n(content.files) : 'none',
-      title: 'The files the model wrote',
+      key: 'checks',
+      target: ids.checks,
+      label: 'Checks',
+      count: content.checksFailed > 0 ? `${content.checksFailed} failed` : null,
+      title: 'Every check, who ran it, and its outcome',
+      ...(content.checksFailed > 0 ? { tone: 'open' as const } : {}),
     },
-    { key: 'changes', target: ids.changes, label: 'Finding to change', count: content.findings > 0 ? n(content.findings) : 'none', title: 'Each finding, its target and the generated code' },
+    { key: 'trace', target: ids.trace, label: 'Trace', count: content.findings > 0 ? n(content.findings) : null, title: 'Finding by finding, old lines to new code' },
   ];
-  if (content.kinds > 0) out.push({ key: 'plan', target: ids.plan, label: 'Plan by kind', count: n(content.kinds), title: 'One line per kind of finding' });
-  for (const [id, label] of content.extra ?? []) out.push({ key: id, target: id, label });
-  return out;
 }
 
 /* ------------------------------------------------------------------ Testing */

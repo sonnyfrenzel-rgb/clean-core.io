@@ -42,23 +42,17 @@ test('the seeded project counts findings as Analyze does and names the places in
   const tool = page.locator('[data-transformation-object-page]');
   await expect(tool).toBeVisible({ timeout: 120_000 });
 
-  const plan = tool.locator('[data-transformation-facet="Plan from the engine"]');
-  await expect(plan).toContainText(`of ${findings} findings with a target option`);
-  await expect(plan).toContainText(`${places} places in the code`);
-  await expect(tool.locator('[data-transformation-facet="Released successors"]')).toContainText(`of ${findings} named`);
+  // ADR-129 (T3): the answer counts released targets of the findings, never the places.
+  await expect(tool.locator('[data-facet="released"]')).toContainText(`of ${findings} findings`);
+  await expect(tool.locator('[data-facet="released"] [data-transformation-places]')).toHaveAttribute('data-transformation-places', String(places));
   await expect(tool.locator('[data-transformation-flow] svg')).toContainText(`YOUR CODE · ${findings} FINDINGS`);
   await expect(tool.locator('[data-code-status]')).toContainText(`${findings} findings at ${places} places in the code`);
   // The anchor bar's count chip (PageAnchorBar, ADR-091) — the number alone, no parentheses.
-  await expect(tool.locator('a[href="#tf-changes"] [data-tf-anchor-count]')).toHaveText(String(findings));
+  await expect(tool.locator('a[href="#tf-flow"] [data-tf-anchor-count]')).toHaveText(String(findings));
   await expect(tool).not.toContainText(`${places} findings`);
-  // The repeated read is one change with its three places, not three changes.
-  const showAll = tool.getByRole('button', { name: /Show all \d+ changes/ });
-  if (await showAll.count()) {
-    await expect(showAll).toHaveText(`Show all ${findings} changes`);
-    await showAll.click();
-  }
-  await expect(tool.locator('[data-change-row]')).toHaveCount(findings);
-  await expect(tool.locator('[data-change-places="3"]')).toHaveCount(1);
+  // The repeated read is one finding with its three places, not three rows (the trace, ADR-129 T9).
+  await tool.locator('#tf-trace > summary').click();
+  await expect(tool.locator('[data-trace-row]')).toHaveCount(findings);
 });
 
 test('the demo counts its distinct findings wherever it counts findings, never its places in the code',async ({ page }) => {

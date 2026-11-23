@@ -18,7 +18,7 @@ import CodeHighlighter from '@/components/CodeHighlighter';
 import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
 import CcToast from '@/components/cc/Toast';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcCheckbox from '@/components/cc/Checkbox';
 import CcSkeleton from '@/components/cc/Skeleton';
@@ -74,7 +74,9 @@ import { isKeyUserDecision, keyUserEvidenceBlock, keyUserModeOf, keyUserPlanRang
 // snapshot the signed run reads; neither the engine nor a catalog is
 // downloaded by this page (owner decision 30.09.2026).
 import { EVIDENCE_UNREAD, useProjectEvidence } from '@/hooks/useProjectEvidence';
-import { workflowSteps, generationBlockers, generationPrerequisites, previousBasis, codeStaleWords } from '@/lib/workflow-steps';
+import { PHASES, workflowSteps, generationBlockers, generationPrerequisites, previousBasis, codeStaleWords } from '@/lib/workflow-steps';
+import { checksTable, readinessFailures } from '@/lib/transformation/checks-table';
+import { familyTitleOf } from '@/lib/family-title';
 import { isAbapCloudTrack, trackCopy } from '@/lib/transformation-track';
 // Roadmap 8.3 — the generation follows the architecture contract, not a field
 // on the project document. See `lib/generation-direction.ts` for what it
@@ -325,6 +327,8 @@ export default function TransformationPage() {
   const { profile } = useUserProfile();
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  /** The drawer with all the code side by side with the original (ADR-129 (4)). */
+  const [allCodeOpen, setAllCodeOpen] = useState(false);
   const closeDrawer = useCallback(() => setDrawerOpen(false), []);
   const closeCopyToast = useCallback(() => setShowCopyDialog(false), []);
   // Roadmap 3.0.4: the audit is a modal dialog — focus moves in, Tab stays
@@ -1936,33 +1940,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
       : null;
   const fillsRemaining = fillsEstimate ? remainingWords(fillsEstimate) : null;
 
-  if (generating) return (
-    <StageFrame stage="transformation">
-      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} project={project}>
-        <span data-track-loading>{project ? track.loading : 'Opening the project…'}</span>
-      </StageHeader>
-      {/* The generation, while it runs (roadmap 3.0.12). It was a progress
-          bar whose model step was an estimate, and a log whose rows were
-          written before anything they named had happened; it is what the
-          generation builds on, read as it goes, and the stages that run. */}
-      <GenerationChain
-        program={project?.name}
-        slots={currentSlots}
-        lit={chainLit}
-        stages={generationStages(stageLog, genPath)}
-        startedAt={runStartedAt}
-        now={now}
-        phaseKey={generationPhase?.key ?? 'none'}
-        units={board}
-        // Withheld while the package is stored: that write cannot be cancelled.
-        onCancel={generationPhase?.key === 'storing' ? undefined : cancelGeneration}
-        cancelling={cancelling}
-        remaining={fillsRemaining}
-      />
-    </StageFrame>
-  );
-
-  if (busy && !transformedCode) return (
+  if (busy && !transformedCode && !generating) return (
     <StageFrame stage="transformation">
       <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} project={project}>
         {/* Before the project has loaded its track is unknown, and the
@@ -2081,7 +2059,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
                 used to sit over an empty pane and say a model had produced it.
                 D.15: the words come from the provenance list now ("Model
                 proposal", §4), with the pen, not a sparkle (§3.1). */}
-            {files.length > 0 && <CcProvenanceChip value="proposed" />}
+            {files.length > 0 && <FamilyChip value="proposed" />}
           </div>
           {/* Roadmap 3.0.12, step E (design §12.1): a step's anchor — its ABAP
               lines, its rules with the owner's decision, and who wrote what:
@@ -2094,13 +2072,13 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               {u.rules.map((r) => (
                 <CcTag key={r.id}>{`${r.id} · ${r.decision}`}</CcTag>
               ))}
-              <CcProvenanceChip value="reconstructed" note="signature and guards" />
+              <FamilyChip value="reconstructed" note="signature and guards" />
               {u.filledBy === 'not-filled' ? (
-                <CcProvenanceChip value="not-determined" note={u.note ? `not written — ${u.note}` : 'not written'} />
+                <FamilyChip value="not-determined" note={u.note ? `not written — ${u.note}` : 'not written'} />
               ) : u.filledBy === 'empty' ? (
-                <CcProvenanceChip value="not-determined" note={u.note ? `left empty by the model — ${u.note}` : 'left empty by the model'} />
+                <FamilyChip value="not-determined" note={u.note ? `left empty by the model — ${u.note}` : 'left empty by the model'} />
               ) : u.filledBy === 'engine' ? null : (
-                <CcProvenanceChip value="proposed" note={u.filledBy === 'model' ? 'body' : `body, ${u.filledBy === 'model-repair-1' ? 'repair round 1' : u.filledBy === 'model-repair-3' ? 'repair round 3' : 'repair round 2'}`} />
+                <FamilyChip value="proposed" note={u.filledBy === 'model' ? 'body' : `body, ${u.filledBy === 'model-repair-1' ? 'repair round 1' : u.filledBy === 'model-repair-3' ? 'repair round 3' : 'repair round 2'}`} />
               )}
             </div>
           ))}
@@ -2230,42 +2208,57 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         />
   ) : null;
 
+  /**
+   * ADR-129 (4): the checks as one table — the server's abaplint or type check, the browser's report of guards,
+   * lints, formats, cases and probes, the deterministic checks of the package on screen, and the personal checklist.
+   * Hard-coded values and code lints used to be strips above the answer; they are rows here, their lists under it.
+   */
+  const transformationPhase = phases.find((p) => p.key === 'transformation') ?? null;
+  const checks = checksTable({
+    state: generating ? 'running' : hasPackage ? 'stored' : 'none',
+    abap: isAbapCloud,
+    record: storedRecord,
+    lints: codeLintFindings.length,
+    lintLine: lintCountLine(codeLintFindings),
+    literals: literalFindings.length,
+    handTotal: signOffFindings.length,
+    handOpen: openSignOffs,
+  });
+  const { hard: hardFailures } = readinessFailures(checks);
+  const codeNotReady = hasPackage && !generating && (hardFailures.length > 0 || transformationPhase?.state === 'partial');
+  /** The next tool in the tool order (owner, 23.11.2026): Transformation, then Documentation. */
+  const nextTool = PHASES[PHASES.findIndex((p) => p.key === 'transformation') + 1] ?? null;
+  const generatePrimary = !hasPackage || codeNotReady;
+  const generateButton = (
+    <CcButton
+      variant={generatePrimary ? 'primary' : 'ghost'}
+      icon={<RefreshCw size={16} aria-hidden="true" />}
+      busy={busy}
+      // Disabled only while something is missing, and then the reason
+      // stands as text above the answer (`data-generation-prerequisites`)
+      // or in the stale notice — never in a hover title alone. An
+      // enabled click always starts the generation, which ends in the
+      // code, a contract refusal or the error strip.
+      onClick={startGeneration}
+      disabled={!canStart}
+      aria-describedby={!canGenerate && isOwner && (prerequisites.length > 0 || modelOff) ? 'tf-generate-why' : undefined}
+      data-generate-code=""
+    >
+      {/* Names the provider (legal review 06.11.2026): long, so it wraps on a phone. */}
+      <span className="min-w-0 text-left leading-snug whitespace-normal">{generateLabel}</span>
+    </CcButton>
+  );
+  /** The trace's open rules, for "Still open". */
+  const openRules = packageTrace?.openRules ?? null;
+
   return (
     <StageFrame stage="transformation">
-      {/* The quota used to be stated a third time here, as "Free
-          Transformations: 4 / 5". The header carries it once. Proposal A
-          (owner decision 01.10.2026): the title row carries the stage's two
-          actions, the facets below it carry the answer. */}
+      {/* ADR-129 (1): one page for every reader — no view switch; the note stands in its place. The next step is the
+          answer's, not the header's: the header carries no action. */}
       <StageHeader tools={{ steps: phases, current: 'transformation' }}
         stage="transformation"
         project={project}
-        actions={
-          <>
-            <CcButton
-              icon={<RefreshCw size={16} aria-hidden="true" />}
-              busy={busy}
-              // Disabled only while something is missing, and then the reason
-              // stands as text under the header (`data-generation-prerequisites`)
-              // or in the stale notice — never in a hover title alone. An
-              // enabled click always starts the generation, which ends in the
-              // code, a contract refusal or the error strip.
-              onClick={startGeneration}
-              disabled={!canStart}
-              aria-describedby={!canGenerate && isOwner && (prerequisites.length > 0 || modelOff) ? 'tf-generate-why' : undefined}
-              data-generate-code=""
-            >
-              {/* Names the provider (legal review 06.11.2026): long, so it wraps on a phone. */}
-              <span className="min-w-0 text-left leading-snug whitespace-normal">{generateLabel}</span>
-            </CcButton>
-            {/* Only where there is code to copy (UX review 22.11.2026, Q4): before the first generation the
-                button copied an empty string and announced it. */}
-            {transformedCode.trim() ? (
-              <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={handleCopy}>
-                Copy Code
-              </CcButton>
-            ) : null}
-          </>
-        }
+        view="one-page"
       >
         {/* The track decides the words (roadmap 0.2, UX-037): the in-app
             track generates RAP artefacts, and the lead used to promise
@@ -2295,11 +2288,14 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
       {/* An invited reader is told once, by the project frame's reader strip (roadmap 3.0.21 (13)). */}
 
+      {/* ADR-129 (3): strips only for what stops the page — why the code cannot be generated now, a stale input, a
+          refused contract, an error, an unsaved draft. A check's result is said by the answer and the Checks table. */}
+
       {/* Why the code cannot be generated now, each reason with the one
           action that resolves it (owner report 03.10.2026). On the
           page, not in a title: a phone has no hover. A stale input is said by
           the notice below, which names the stage to regenerate. */}
-      {project && isOwner && (prerequisites.length > 0 || modelOff) && (
+      {project && isOwner && !generating && (prerequisites.length > 0 || modelOff) && (
         <div id="tf-generate-why" data-generation-prerequisites="" className="mb-6">
           <CcMessageStrip
             state="information"
@@ -2327,14 +2323,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         </div>
       )}
 
-      <StaleNotice title={blockers.length === 0 && codeWords ? codeWords.title : `Built for ${previousBasis(project)}`} reasons={staleNotes} />
-
-      {/* Roadmap 3.0.12 — what would raise the quality of the code, before the
-          run; never blocking, one line when nothing is open. The world before
-          the run: with a package on record it moves, folded, below the result
-          (dev acceptance 14.10.2026 — after the run the result comes first). */}
-      {showTips && !hasPackage ? tipsPanel : null}
-
+      {!generating ? <StaleNotice title={blockers.length === 0 && codeWords ? codeWords.title : `Built for ${previousBasis(project)}`} reasons={staleNotes} /> : null}
 
       <CcToast open={showCopyDialog} onDismiss={closeCopyToast}>
         Code copied to clipboard
@@ -2403,82 +2392,95 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
         </div>
       )}
 
-      {literalFindings.length > 0 && (
-        <div className="mb-6" data-hard-coded-literals={literalFindings.length}>
-          <CcMessageStrip state="warning" headline="Hard-coded values in the business logic">
-            <span className="block">
-              A fixed document or partner number was found in the business logic; check whether it should be looked up per item. Regenerate, or correct it before the tests are written.
-            </span>
-            <ul className="m-0 mt-2 flex list-disc flex-col gap-1 pl-5">
-              {literalFindings.slice(0, 8).map((f) => (
-                <li key={`${f.file}:${f.line}:${f.literal}`} data-hard-coded-literal={f.literal} className="[overflow-wrap:anywhere]">
-                  <span className="font-cc-mono text-[12px]">{f.file}:{f.line}</span> — <span className="font-cc-mono text-[12px]">{f.context}</span>
-                  {f.demoValue ? ' — a document number of the code’s own demo data' : ''}
-                </li>
-              ))}
-            </ul>
-          </CcMessageStrip>
-        </div>
-      )}
-
-      {codeLintFindings.length > 0 && (
-        <div className="mb-6" data-code-checks={codeLintFindings.length}>
-          <CcMessageStrip state="warning" headline={`Code checks: ${lintCountLine(codeLintFindings)}`}>
-            <span className="block">
-              Deterministic checks of the generated code found patterns the reviews of earlier packages flagged. Regenerate, or correct them before the tests are written; the delivery package lists every one in STATUS.md.
-            </span>
-            <ul className="m-0 mt-2 flex list-disc flex-col gap-1 pl-5">
-              {codeLintFindings.slice(0, 8).map((f) => (
-                <li key={`${f.id}:${f.file}:${f.line}`} data-code-check={f.id} className="[overflow-wrap:anywhere]">
-                  <span className="font-cc-mono text-[12px]">{f.severity} · {f.file}:{f.line}</span> — {f.message}
-                </li>
-              ))}
-            </ul>
-            {codeLintFindings.length > 8 && (
-              <span className="mt-2 block">{codeLintFindings.length - 8} more in the delivery package’s STATUS.md.</span>
-            )}
-          </CcMessageStrip>
-        </div>
-      )}
-
-      {/* The stage's answer, before the code (ADR-050): the facets, the status
-          line and the sections of proposal A, every figure counted from the
-          engine's findings or the stored package. */}
-      {/* Without the engine's findings every facet below would count none —
-          "0 findings" for a program that has them. The strip says the read
-          failed, and only the source and the package beside it are drawn. */}
-      {/* Roadmap 3.0.12, step E (design §15.4, §18): what the stored package
-          was built on, from its binding, above the unchanged result view. */}
-      {files.length > 0 && !unsavedDraft && typeof project?.generatedCode === 'string' && project.generatedCode ? (
-        <BuiltOnCard record={storedRecord} generatedAt={storedBinding?.generatedAt ?? null} currentSlots={currentSlots} />
-      ) : null}
-
       {/* Roadmap 3.0.19: a program that splits — the key-user parts as steps, code for the rest only. */}
       {keyUserList && keyUserMode === 'split' ? <KeyUserSteps list={keyUserList} mode="split" view="steps" /> : null}
 
+      {/* Without the engine's findings every facet would count none — "0 findings" for a program that has them. The
+          strip says the read failed, and only the code beside the source is offered. */}
       {evidenceFailed ? (
         <div className="mb-6 flex flex-col gap-6" data-transformation-evidence-failed="">
-          <CcMessageStrip state="error" announce>
+          <CcMessageStrip
+            state="error"
+            announce
+            actions={files.length > 0 ? (
+              <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={() => setAllCodeOpen(true)}>
+                All code side by side
+              </CcButton>
+            ) : undefined}
+          >
             The evidence for this code could not be read, so its findings and the plan built from them are not shown.
             Reload the page to try again.
             {evidenceFailed !== EVIDENCE_UNREAD ? ` ${evidenceFailed}` : null}
           </CcMessageStrip>
-          {sideBySide}
         </div>
       ) : (
-      <div data-transformation-answer={unsavedDraft ? 'unsaved-draft' : files.length > 0 ? 'generated' : 'none'}>
+      <div data-transformation-answer={generating ? 'generating' : unsavedDraft ? 'unsaved-draft' : files.length > 0 ? 'generated' : 'none'}>
         <TransformationObjectPage
           findings={evidence?.findings ?? []}
           coverage={evidence?.coverage ?? null}
           track={isAbapCloud ? 'in-app' : 'side-by-side'}
           codeKind={isAbapCloud ? 'ABAP Cloud (RAP)' : 'Node.js (TypeScript)'}
           files={files}
+          program={familyTitleOf(project)?.programId ?? project?.name ?? null}
+          legacySource={legacySource}
           openSignOffs={openSignOffs}
           onOpenAudit={() => setDrawerOpen(true)}
+          checks={checks}
+          openRules={openRules}
+          hrefOf={(action) =>
+            action === 'business'
+              ? `/project/${encodeURIComponent(String(projectId))}/analyze?view=business`
+              : `/project/${encodeURIComponent(String(projectId))}/${action}`
+          }
+          generation={generating ? { written: board?.written ?? null, total: board?.total ?? null, remaining: fillsRemaining } : null}
+          action={
+            generating ? null : hasPackage && !codeNotReady && nextTool ? (
+              <CcLinkButton variant="primary" href={`/project/${encodeURIComponent(String(projectId))}/${nextTool.key}`} icon={<ArrowRight size={16} aria-hidden="true" />}>
+                Continue in {nextTool.label}
+              </CcLinkButton>
+            ) : (
+              generateButton
+            )
+          }
+          actionNote={
+            generating
+              ? 'Cancel the run below while it runs. Nothing is stored until the last check ran; cancelling stores nothing.'
+              : hasPackage && !codeNotReady
+                ? 'The next tool in the order. Generate again here whenever the design or the rules change.'
+                : codeNotReady
+                  ? 'The stored package is replaced only when the new one is stored.'
+                  : null
+          }
+          moreActions={!generating && hasPackage && !codeNotReady ? generateButton : null}
+          running={
+            generating ? (
+              // The generation runs inside the page (ADR-129 (5)): the answer says how far it is, and the generation's
+              // screen — what it builds on, the stages that run, the functions — stands first in the main column.
+              <GenerationChain
+                program={project?.name}
+                slots={currentSlots}
+                lit={chainLit}
+                stages={generationStages(stageLog, genPath)}
+                startedAt={runStartedAt}
+                now={now}
+                phaseKey={generationPhase?.key ?? 'none'}
+                units={board}
+                // Withheld while the package is stored: that write cannot be cancelled.
+                onCancel={generationPhase?.key === 'storing' ? undefined : cancelGeneration}
+                cancelling={cancelling}
+                remaining={fillsRemaining}
+              />
+            ) : (
+              // Roadmap 3.0.12 — what would raise the quality of the code, before the run; never blocking, one line
+              // when nothing is open. With a package on record it moves, folded, below the result (dev acceptance
+              // 14.10.2026 — after the run the result comes first).
+              <>{showTips && !hasPackage ? tipsPanel : null}</>
+            )
+          }
           packageActions={
-            <CcLinkButton href="#tf-side" icon={<Code2 size={16} aria-hidden="true" />}>
-              Side by side with ABAP
-            </CcLinkButton>
+            <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={() => setAllCodeOpen(true)} data-open-all-code="">
+              All code side by side
+            </CcButton>
           }
           emptyPackage={
             <div className="rounded-cc-row border border-dashed border-cc-line bg-cc-surface p-4">
@@ -2488,23 +2490,91 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               </p>
             </div>
           }
-          extraAnchors={[['tf-side', 'Side by side']]}
+          checkDetails={
+            <>
+              {literalFindings.length > 0 && (
+                <div className="mt-3" data-hard-coded-literals={literalFindings.length}>
+                  <p className="m-0 cc-text-cell font-semibold text-cc-ink">Hard-coded values in the business logic</p>
+                  <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+                    A fixed document or partner number was found in the business logic; check whether it should be looked up per item. Regenerate, or correct it before the tests are written.
+                  </p>
+                  <ul className="m-0 mt-2 flex list-disc flex-col gap-1 pl-5 cc-text-cell">
+                    {literalFindings.slice(0, 8).map((f) => (
+                      <li key={`${f.file}:${f.line}:${f.literal}`} data-hard-coded-literal={f.literal} className="[overflow-wrap:anywhere]">
+                        <span className="font-cc-mono text-[12px]">{f.file}:{f.line}</span> · <span className="font-cc-mono text-[12px]">{f.context}</span>
+                        {f.demoValue ? ' · a document number of the code’s own demo data' : ''}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {codeLintFindings.length > 0 && (
+                <div className="mt-3" data-code-checks={codeLintFindings.length}>
+                  <p className="m-0 cc-text-cell font-semibold text-cc-ink">Code lints: {lintCountLine(codeLintFindings)}</p>
+                  <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+                    Deterministic checks of the generated code found patterns the reviews of earlier packages flagged. Regenerate, or correct them before the tests are written; the delivery package lists every one in STATUS.md.
+                  </p>
+                  <ul className="m-0 mt-2 flex list-disc flex-col gap-1 pl-5 cc-text-cell">
+                    {codeLintFindings.slice(0, 8).map((f) => (
+                      <li key={`${f.id}:${f.file}:${f.line}`} data-code-check={f.id} className="[overflow-wrap:anywhere]">
+                        <span className="font-cc-mono text-[12px]">{f.severity} · {f.file}:{f.line}</span> · {f.message}
+                      </li>
+                    ))}
+                  </ul>
+                  {codeLintFindings.length > 8 && (
+                    <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted">{codeLintFindings.length - 8} more in the delivery package’s STATUS.md.</p>
+                  )}
+                </div>
+              )}
+            </>
+          }
+          builtOn={
+            // Roadmap 3.0.12, step E (design §15.4, §18): what the stored package was built on, from its binding.
+            files.length > 0 && !unsavedDraft && !generating && typeof project?.generatedCode === 'string' && project.generatedCode ? (
+              <BuiltOnCard record={storedRecord} generatedAt={storedBinding?.generatedAt ?? null} currentSlots={currentSlots} />
+            ) : null
+          }
           codePhase={phases.find((p) => p.key === 'transformation') ?? null}
-          after={sideBySide}
+          after={
+            showTips && hasPackage && !generating ? (
+              <details className="group rounded-cc-card border border-cc-line bg-cc-surface shadow-cc" data-generate-again="">
+                <summary className="flex min-w-0 cursor-pointer list-none flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3 cc-text-h3 text-cc-ink [&::-webkit-details-marker]:hidden">
+                  <ChevronRight size={16} aria-hidden={true} className="shrink-0 transition-transform group-open:rotate-90" />
+                  Generate again
+                  <span className="min-w-0 basis-full cc-text-meta font-medium text-cc-ink-muted sm:basis-auto">what a new run would use, what could still raise its quality, its plan and limits</span>
+                </summary>
+                <div className="border-t border-cc-line p-4">{tipsPanel}</div>
+              </details>
+            ) : null
+          }
         />
       </div>
       )}
 
-      {showTips && hasPackage ? (
-        <details className="group mt-6 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc" data-generate-again="">
-          <summary className="flex min-w-0 cursor-pointer list-none flex-wrap items-center gap-x-2 gap-y-1 px-4 py-3 cc-text-h3 text-cc-ink [&::-webkit-details-marker]:hidden">
-            <ChevronRight size={16} aria-hidden={true} className="shrink-0 transition-transform group-open:rotate-90" />
-            Generate again
-            <span className="min-w-0 basis-full cc-text-meta font-medium text-cc-ink-muted sm:basis-auto">what a new run would use, what could still raise its quality, its plan and limits</span>
-          </summary>
-          <div className="border-t border-cc-line p-4">{tipsPanel}</div>
-        </details>
-      ) : null}
+      {/* All the code, side by side with the original (roadmap 3.0.14 (6)): no longer a section at the foot of the
+          page (ADR-129 (4)) but a drawer, opened from the package or beside the error that hides the findings. */}
+      <CcDialog
+        open={allCodeOpen}
+        onClose={() => setAllCodeOpen(false)}
+        title="All code side by side"
+        placement="side"
+        size="wide"
+        data-all-code=""
+        actions={
+          <>
+            {/* Only where there is code to copy (UX review 22.11.2026, Q4): before the first generation the
+                button copied an empty string and announced it. */}
+            {transformedCode.trim() ? (
+              <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={handleCopy}>
+                Copy this file
+              </CcButton>
+            ) : null}
+            <CcButton onClick={() => setAllCodeOpen(false)}>Close</CcButton>
+          </>
+        }
+      >
+        {sideBySide}
+      </CcDialog>
 
       {/* The grounding audit. It was a dark drawer from the right edge; it is
           a light `CcDialog` now (§1.1: the only dark surface that carries

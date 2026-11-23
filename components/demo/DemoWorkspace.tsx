@@ -8,6 +8,7 @@ import StageFrame from '@/components/StageFrame';
 import DemoTesting from '@/components/demo/DemoTesting';
 import DemoAnalyze from '@/components/demo/DemoAnalyze';
 import CcButton from '@/components/cc/Button';
+import CcLinkButton from '@/components/cc/LinkButton';
 import CcAnchor from '@/components/cc/Anchor';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcTable from '@/components/cc/Table';
@@ -31,6 +32,7 @@ import {
   DEMO_INVITATION,
   DEMO_QUOTA_NOTICE,
   DEMO_RESET_LABEL,
+  DEMO_SOURCE_FILE,
   DEMO_STORAGE_KEY,
   DEMO_STRIP_NOTICE,
   DEMO_TAG,
@@ -302,7 +304,15 @@ function Transformation({ demo }: { demo: DemoProject }) {
         track={track}
         codeKind={track === 'side-by-side' ? 'Node.js (TypeScript)' : 'ABAP Cloud (RAP)'}
         files={null}
+        program={DEMO_SOURCE_FILE.replace(/\.abap$/i, '')}
         openSignOffs={null}
+        hrefOf={(action) => (action === 'business' ? '/demo/analyze?view=business' : `/demo/${action}`)}
+        action={
+          <CcLinkButton variant="primary" href="/dashboard" icon={<ArrowRight size={16} aria-hidden={true} />}>
+            Upload your own program
+          </CcLinkButton>
+        }
+        actionNote="Free. Your code stays in your project."
       />
     </div>
   );

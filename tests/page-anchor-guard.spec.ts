@@ -76,8 +76,8 @@ const RENDERERS: Record<keyof typeof PAGE_ANCHOR_IDS, { real: string[]; demo: st
   transformation: {
     real: ['components/transformation/TransformationObjectPage.tsx', PAGE('transformation')],
     demo: ['components/transformation/TransformationObjectPage.tsx'],
-    // The side-by-side viewer is a project's (`extraAnchors`); the demo has none.
-    demoIds: ['flow', 'package', 'changes', 'plan'],
+    // The code is in a drawer, not a section (ADR-129); the demo draws all five sections.
+    demoIds: ['flow', 'open', 'package', 'checks', 'trace'],
   },
   testing: {
     real: [PAGE('testing')],
@@ -231,15 +231,19 @@ test.describe('only ids that render', () => {
     expect(full.some((a) => a.label === 'Clean Core Score')).toBe(false);
     expect(Object.values(PAGE_ANCHOR_IDS.analyze)).not.toContain('analyze-score');
 
-    // Transformation — the demo's package has no count; an empty plan has no anchor.
-    const demoTf = transformationAnchors({ files: null, findings: 12, kinds: 0 });
+    // Transformation (ADR-129, mock-up T10) — Findings · Open · Package · Checks · Trace, always all five; the package
+    // counts its objects only once one is stored, Open and a failed check count in amber.
+    const demoTf = transformationAnchors({ findings: 12, open: 3, objects: null, checksFailed: 0 });
     check('transformation', demoTf);
+    expect(demoTf.map((a) => a.label)).toEqual(['Findings', 'Open', 'Package', 'Checks', 'Trace']);
     expect(demoTf.find((a) => a.key === 'package')!.count).toBeNull();
-    expect(demoTf.some((a) => a.key === 'plan')).toBe(false);
-    const tf = transformationAnchors({ files: 0, findings: 12, kinds: 4, extra: [['tf-side', 'Side by side']] });
+    expect(demoTf.find((a) => a.key === 'open')!.tone).toBe('open');
+    const tf = transformationAnchors({ findings: 12, open: 0, objects: 9, checksFailed: 1 });
     check('transformation', tf);
-    expect(tf.find((a) => a.key === 'package')!.count).toBe('none');
-    expect(tf.at(-1)!.target).toBe('tf-side');
+    expect(tf.find((a) => a.key === 'package')!.count).toBe('9');
+    expect(tf.find((a) => a.key === 'open')!.count).toBe('none');
+    expect(tf.find((a) => a.key === 'open')!.tone).toBeUndefined();
+    expect(tf.find((a) => a.key === 'checks')).toMatchObject({ count: '1 failed', tone: 'open' });
 
     // Testing — scenarios only once written, the SAP result only on its route.
     const empty = testingAnchors({ scenarios: 0, handChecks: null, sapResult: false });
