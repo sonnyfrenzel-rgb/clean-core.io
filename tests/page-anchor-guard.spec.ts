@@ -87,7 +87,8 @@ const RENDERERS: Record<keyof typeof PAGE_ANCHOR_IDS, { real: string[]; demo: st
   testing: {
     real: [PAGE('testing')],
     demo: ['components/demo/DemoTesting.tsx'],
-    demoIds: ['write', 'run', 'hand'],
+    // ADR-131 (S12): the demo runs nothing, so it has no "Where it ran" and no developer depth.
+    demoIds: ['tested', 'open', 'acceptance', 'hand'],
   },
   economics: {
     real: ['components/tco/EconomicsObjectPage.tsx', PAGE('tco')],
@@ -98,7 +99,7 @@ const RENDERERS: Record<keyof typeof PAGE_ANCHOR_IDS, { real: string[]; demo: st
   delivery: {
     real: [PAGE('delivery'), 'components/delivery/DeliveryObjectPage.tsx'],
     demo: ['components/delivery/DemoDelivery.tsx', 'components/delivery/DeliveryObjectPage.tsx'],
-    demoIds: ['chain', 'needed', 'artefacts', 'pack'],
+    demoIds: ['open', 'package', 'proof', 'pack'],
   },
   design: {
     real: [PAGE('design'), 'components/design/DesignCanvasStage.tsx'],
@@ -265,13 +266,6 @@ test.describe('only ids that render', () => {
     expect(tf.find((a) => a.key === 'open')!.tone).toBeUndefined();
     expect(tf.find((a) => a.key === 'checks')).toMatchObject({ count: '1 failed', tone: 'open' });
 
-    // Testing — scenarios only once written, the SAP result only on its route.
-    const empty = testingAnchors({ scenarios: 0, handChecks: null, sapResult: false });
-    check('testing', empty);
-    expect(empty.map((a) => a.key)).toEqual(['write', 'run', 'hand']);
-    const abap = testingAnchors({ scenarios: 8, handChecks: 0, sapResult: true });
-    check('testing', abap);
-
     // Design (ADR-130, G12) — each view and case names its own sections, at most six, never a 0.
     for (const view of ['business', 'it', 'management'] as const) {
       for (const c of ['none', 'rebuild', 'standard', 'retire', 'keep'] as const) {
@@ -282,17 +276,32 @@ test.describe('only ids that render', () => {
       }
     }
     expect(designAnchors('business', 'rebuild', { open: 2, objects: 19, steps: 13 }).find((a) => a.key === 'questions')).toMatchObject({ count: '2', tone: 'open' });
-    expect(abap.map((a) => [a.key, a.count ?? null])).toEqual([
-      ['write', null], ['run', null], ['sap-result', null], ['hand', 'none'], ['scenarios', '8'],
-    ]);
 
-    // Delivery — "none" still needed is the answer; the slides only with a deck.
-    const d = deliveryAnchors({ stillNeeded: 0, artefacts: 6, pack: 'Available', slides: false });
+    // Testing (ADR-131, S14) — What was tested · Where it ran · Not proven (amber) · Acceptance checks · For developers.
+    const testingDemo = testingAnchors({ rules: 12, ran: false, notProven: 1, acceptance: 0, developers: false });
+    check('testing', testingDemo);
+    expect(testingDemo.map((a) => a.key)).toEqual(['tested', 'open']);
+    const testingFull = testingAnchors({ rules: 12, ran: true, notProven: 4, acceptance: 11, developers: true });
+    check('testing', testingFull);
+    expect(testingFull.map((a) => [a.key, a.count ?? null, a.tone ?? null])).toEqual([
+      ['tested', '12', null], ['ran', null, null], ['open', '4', 'open'], ['acceptance', '11', null], ['developers', null, null],
+    ]);
+    expect(testingAnchors({ rules: null, ran: true, notProven: 0, acceptance: null, developers: true }).find((a) => a.key === 'open')!.count).toBeNull();
+
+    // Delivery (ADR-132 L13) — Before go-live carries an amber count only while something blocks; the demo has no
+    // import and no timeline, and its package no count.
+    const d = deliveryAnchors({ blocking: 0, parts: 6, events: 4 });
     check('delivery', d);
     expect(d.map((a) => [a.key, a.count ?? null])).toEqual([
-      ['chain', null], ['needed', 'none'], ['artefacts', '6'], ['pack', 'available'],
+      ['open', null], ['package', '6'], ['proof', null], ['pack', null], ['import', null], ['timeline', '4'],
     ]);
-    check('delivery', deliveryAnchors({ stillNeeded: 3, artefacts: 6, pack: null, slides: true }));
+    const blocked = deliveryAnchors({ blocking: 3, parts: 0, packNote: 'blocked', events: 0 });
+    check('delivery', blocked);
+    expect(blocked.find((a) => a.key === 'open')).toMatchObject({ count: '3', tone: 'open' });
+    expect(blocked.find((a) => a.key === 'package')!.count).toBe('none');
+    const demo = deliveryAnchors({ blocking: 5, parts: null, events: null });
+    check('delivery', demo);
+    expect(demo.map((a) => a.key)).toEqual(['open', 'package', 'proof', 'pack']);
 
     // Economics — the model's view only where the analysis wrote one (ADR-128, mock-up E6).
     const econ = economicsAnchors({ model: true });
@@ -331,10 +340,11 @@ test.describe('one place', () => {
     expect(body).not.toMatch(/AnchorBar\b/);
 
     before('components/transformation/TransformationObjectPage.tsx', /<PageAnchorBar\b/, 'id="tf-flow"');
-    before(PAGE('testing'), /<PageAnchorBar\b/, 'id="testing-write"');
-    before('components/demo/DemoTesting.tsx', /<PageAnchorBar\b/, 'id="testing-write"');
-    before(PAGE('delivery'), /<PageAnchorBar\b/, 'id="evidence-chain"');
-    before('components/delivery/DemoDelivery.tsx', /<PageAnchorBar\b/, 'id="evidence-chain"');
+    before(PAGE('testing'), /<PageAnchorBar\b/, 'id="testing-tested"');
+    before('components/demo/DemoTesting.tsx', /<PageAnchorBar\b/, 'id="testing-tested"');
+    before(PAGE('delivery'), /<PageAnchorBar\b/, 'id="before-go-live"');
+    before('components/delivery/DemoDelivery.tsx', /<PageAnchorBar\b/, 'id="before-go-live"');
+    before(PAGE('documentation'), /<DocumentChapterBar\b/, 'data-documentation-description');
     // Economics: under the answer card, before the range chart (ADR-128).
     before('components/tco/EconomicsObjectPage.tsx', /<AnswerCard\b/, '<PageAnchorBar');
     before('components/tco/EconomicsObjectPage.tsx', /<PageAnchorBar\b/, 'id="economics-range"');

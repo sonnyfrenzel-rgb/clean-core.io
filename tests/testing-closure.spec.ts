@@ -387,7 +387,9 @@ test.describe('closed without a passing run: done, never proven', () => {
     expect(handoverStillNeeded(c as never, chain, state).map((n) => n.key)).not.toContain('tests');
     const next = handoverNextStep(c as never, phases, [], chain, 'p1');
     expect(next.headline).not.toBe('Run the test suite');
-    expect(next.reason).toContain('testing was closed without a passing run (not verified)');
+    // The fixture has no cost scenario, so the tool order of ADR-128 (Delivery L9) asks for Economics first;
+    // the closure does not hold the handover back.
+    expect(next.headline).toBe('Price the options in Economics');
     const quality = handoverFacets(c as never, phases, chain, state).find((f) => f.key === 'quality')!;
     expect(quality.value).toBe('Not verified');
     expect(confirmationsOf(c as never).some((x) => x.what.startsWith('Closed testing without a passing run — not verified'))).toBe(true);

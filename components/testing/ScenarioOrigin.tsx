@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcCodeSurface from '@/components/cc/CodeSurface';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import CcStateText from '@/components/cc/StateText';
 import { cn } from '@/lib/utils';
 import {
@@ -180,7 +180,7 @@ export function OriginDetails({
             ) : null}
             {check.matches.length > 0 ? (
               <span data-origin-matches="" className="flex flex-wrap items-center gap-2">
-                <CcProvenanceChip value="reconstructed" />
+                <FamilyChip value="reconstructed" />
                 {check.matches.slice(0, 6).map((m) => (
                   <span key={`${m.kind}-${m.id}`} data-origin-match={m.id} className="inline-flex items-center gap-1">
                     <span className="font-cc-mono text-[12px] font-semibold text-cc-ink">{m.id}</span>

@@ -270,6 +270,8 @@ async function seedOrigin(prefix: string): Promise<{ account: SeededProject; pro
 async function openTesting(page: Page, projectId: string) {
   await page.goto(`/project/${projectId}/testing`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-testing-flow]')).toBeVisible({ timeout: 90000 });
+  // Every scenario, one row each, stands in "For developers", folded (ADR-131 S8).
+  await page.locator('#testing-developers [data-cc-disclosure-trigger]').click();
 }
 
 async function noSidewaysScroll(page: Page, what: string) {

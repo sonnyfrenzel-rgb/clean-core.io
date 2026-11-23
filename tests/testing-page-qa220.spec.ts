@@ -46,57 +46,19 @@ test.describe('testing page — QA full review of fc787674705f', () => {
     expect(pred).toContain("generationBlockers(project, 'testing').length > 0");
     expect(pred).toContain("=== 'stale'");
     // And the button says so instead of accepting the click.
-    expect(rendered()).toMatch(/disabled=\{isRunning[^\n]*\|\| testRunBlocked\(project\)\}/);
+    expect(page()).toMatch(/const runDisabled = isRunning[^\n]*\|\| testRunBlocked\(project\);/);
+    expect(rendered()).toContain('disabled={runDisabled}');
   });
 
-  test('a saved credential is reported as saved — no optional write can fail it (983d23ce4dad)', () => {
-    // The finding: an environment-preference write after the vault save failed
-    // into the save's catch and reported a saved connection as a failed one.
-    // Since 02.10.2026 that preference is gone with the tenant tab it
-    // remembered, so the vault's answer is the last thing that can fail.
-    const save = handler('saveS4Config');
-    const vault = save.indexOf("fetch('/api/s4-credentials'");
-    const cleared = save.indexOf("setS4Password('')");
-    expect(vault).toBeGreaterThan(-1);
-    expect(cleared).toBeGreaterThan(vault);
-    const afterClear = save.slice(cleared, save.indexOf('} catch (err'));
-    expect(afterClear, 'a write follows the vault save again').not.toMatch(/await |setDoc\(/);
-    expect(save).not.toContain('s4Environment');
-  });
-
-  test('a failed tenant-access request is reported, and the route writes the request (b1458e593475, 04ad2108af07)', () => {
-    const req = handler('handleRequestAccess');
-    expect(req).toMatch(/const res = await fetch\('\/api\/request-tenant-access'/);
-    expect(req).toContain('if (!res.ok)');
-    expect(req).toContain('setAccessRequestError(');
-    // The request document is the route's to write, before it mails the
-    // administrator (QA 04ad2108af07): a client write after the route had
-    // answered could fail and leave the mailed links with nothing to act on.
-    expect(req, 'the page writes the request document again').not.toContain('tenant_access_requests');
-    expect(req).not.toMatch(/setDoc\(/);
-    expect(rendered()).toMatch(/\{accessRequestError && \(/);
-    expect(rendered()).toContain('data-access-request-error');
-  });
-
-  test('the setup guide says save, then test (229511ee85db)', () => {
-    const r = rendered();
-    const save = r.indexOf('Save the Connection</p>');
-    const tst = r.indexOf('Test the Connection</p>');
-    expect(save).toBeGreaterThan(-1);
-    expect(tst).toBeGreaterThan(-1);
-    expect(save, 'the guide tells the reader to test before there is anything saved').toBeLessThan(tst);
-  });
-
-  test('the OData metadata read uses the saved tenant, never the editable form (f0332e0eefbf)', () => {
-    // The finding was on the catalog handler, which logged the form's URL while
-    // querying the saved one. The catalog mode is gone since 3.0.21 (it read
-    // records of the gateway catalog; tests/s4-metadata-only-guard.spec.ts), so
-    // the same question is asked of the one handler that remains.
-    expect(page(), 'the service catalog is queried again').not.toContain('handleFetchODataCatalog');
-    const meta = handler('handleFetchServiceMetadata');
-    expect(meta).toContain('useStoredCredentials: true');
-    expect(meta).toContain('servicePath: path');
-    expect(meta, 'the log names the editable form URL').not.toContain('${s4Url}');
+  test('the tenant setup left Testing for Settings (ADR-131 (5); was 983d23ce4dad, b1458e593475, 229511ee85db, f0332e0eefbf)', () => {
+    // The saved credential, the access request, the setup guide and the metadata read were findings on the tenant
+    // form that stood inside Testing. That form is "Your SAP test system" in Settings now (ST-N3); Testing keeps one
+    // line with the link, and writes, requests and reads nothing of the tenant itself.
+    const s = page();
+    for (const gone of ["'/api/s4-credentials'", "'/api/request-tenant-access'", "'/api/fetch-odata-metadata'", "'/api/test-s4-odata-read'", 'saveS4Config', 'handleRequestAccess', 'handleFetchServiceMetadata']) {
+      expect(s, `Testing still holds ${gone}`).not.toContain(gone);
+    }
+    expect(rendered()).toContain('/settings#sap-test-system');
   });
 
   test('the ABAP path does not claim compilation or ADT execution (b372006ca6ad)', () => {
@@ -116,22 +78,16 @@ test.describe('testing page — QA full review of fc787674705f', () => {
     expect(guard).toBeLessThan(gen.indexOf('generateTestCases()'));
     expect(gen.slice(guard, gen.indexOf('generateTestCases()'))).toMatch(/setGenError\([\s\S]*?\);\s*return;/);
     const r = rendered();
-    const btn = r.slice(r.lastIndexOf('<CcButton', r.indexOf("'Regenerate Suite'")), r.indexOf("'Regenerate Suite'"));
+    const btn = r.slice(r.lastIndexOf('<CcButton', r.indexOf("'Write the scenarios again'")), r.indexOf("'Write the scenarios again'"));
     expect(btn).toContain("disabled={isGenerating || !modelAvailability.enabled('testing')");
     expect(r).toContain('data-regenerate-unavailable');
   });
 
-  test('a 0 % coverage estimate is shown, not N/A (c77988061654)', () => {
-    const r = rendered();
-    expect(r, 'truthiness turns 0 into N/A').not.toMatch(/coverageEstimate\?\.percentage \?/);
-    expect(r).toContain("typeof project?.coverageEstimate?.percentage === 'number'");
-  });
-
-  test('a stale suite\'s coverage estimate says it was made for a previous source (763f13273cb3)', () => {
-    const r = rendered();
-    const card = r.slice(r.indexOf('<CcCard title="Coverage estimate"'), r.indexOf('How it was estimated'));
-    expect(card).toContain("workflowSteps(project).find((p) => p.key === 'testing')?.state === 'stale'");
-    expect(card).toContain('data-coverage-stale');
+  test("the model's coverage estimate is not on the page (ADR-131 S10; was c77988061654, 763f13273cb3)", () => {
+    // The estimate was the largest figure on the side, beside a measured rule coverage hidden in step 2. The counted
+    // rule coverage is the second facet of the answer now; the estimate stays on the project, unshown.
+    expect(rendered()).not.toContain('coverageEstimate');
+    expect(rendered()).not.toContain('Coverage estimate');
   });
 });
 

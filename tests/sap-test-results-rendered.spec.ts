@@ -34,6 +34,12 @@ async function openTesting(page: Page, projectId: string) {
   await expect(page.locator('[data-testing-flow]')).toBeVisible({ timeout: 90000 });
 }
 
+/** The scenario rows stand in "For developers", folded (ADR-131 S8): open it to read them. */
+async function openDevelopers(page: Page) {
+  const trigger = page.locator('#testing-developers [data-cc-disclosure-trigger]');
+  if ((await trigger.getAttribute('aria-expanded')) !== 'true') await trigger.click();
+}
+
 async function openDelivery(page: Page, projectId: string) {
   await page.goto(`/project/${projectId}/delivery`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-chain-link="tests"]')).toBeAttached({ timeout: 90000 });
@@ -95,30 +101,30 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     await expect(card).toBeVisible();
     await expect(card.getByRole('button', { name: 'Upload the ABAP Unit result (JUnit XML)' })).toBeVisible();
     await expect(card.getByRole('button', { name: 'Confirm without a file' })).toBeVisible();
-    // Step 2 stays a step that cannot run here, with no button of its own.
-    const runStep = page.locator('[data-testing-step="run"]');
-    await expect(runStep).toHaveAttribute('data-step-state', 'unavailable');
-    // No run is offered. The ADR-094 closure ("Close testing — not verified") may stand here: on a
-    // route where nothing runs, an impossible run is exactly what it concludes.
-    await expect(runStep.locator('button:not([data-testing-close]):not([data-testing-reopen])')).toHaveCount(0);
+    // "Where it ran" marks your SAP system as the place, and offers no run here (ADR-131 S3, S5). The ADR-094
+    // closure ("Close testing — not verified") may stand there: on a route where nothing runs, an impossible run is
+    // exactly what it concludes.
+    const ran = page.locator('[data-testing-ran]');
+    await expect(ran.locator('[data-test-place="your-system"][data-test-place-active]')).toBeVisible();
+    await expect(ran.locator('[data-testing-results]')).toHaveCount(0);
 
     const answered = page.waitForResponse((r) => r.url().includes('/test-results') && r.request().method() === 'POST');
     await card.locator('[data-sap-result-file]').setInputFiles({ name: 'aunit-result.xml', mimeType: 'application/xml', buffer: Buffer.from(JUNIT) });
     expect((await answered).status()).toBe(200);
 
     // The rows.
+    await openDevelopers(page);
     for (const s of SCENARIOS) {
       const row = page.locator(`[data-scenario-row][data-scenario-id="${s.id}"]`);
       await expect(row.locator('[data-scenario-outside="passed"]')).toBeVisible({ timeout: 30000 });
-      await expect(row.locator('[data-scenario-outside="passed"] [data-provenance="imported"]')).toContainText('Imported');
+      await expect(row.locator('[data-scenario-outside="passed"] [data-family-chip="engine"]')).toContainText('imported');
       await expect(row.locator('[data-scenario-outside="passed"]')).toContainText('passed');
     }
-    // Nothing anywhere calls it proven.
-    await expect(page.locator('[data-testing-flow] [data-provenance="proven"]')).toHaveCount(0);
-    // Step 2 shows the result from outside instead of "Not run here".
-    await expect(runStep).toHaveAttribute('data-step-state', 'done');
-    await expect(runStep).toContainText('No failure in your SAP system');
-    await expect(runStep.locator('[data-testing-run-outside="imported"]')).toBeVisible();
+    // Nothing anywhere calls it signed.
+    await expect(page.locator('[data-testing-flow] [data-family-chip="signed"]')).toHaveCount(0);
+    // The answer and "Where it ran" say where it passed (ADR-131 S2, S3).
+    await expect(page.locator('[data-testing-answer="passed"]')).toContainText('Passed in your SAP system');
+    await expect(ran.locator('[data-test-place="your-system"]')).toContainText('2 of 2 scenarios passed');
 
     // The method that is not a scenario is listed — its markup as text, inert.
     const unmatched = card.locator('[data-sap-result-unmatched]');
@@ -166,7 +172,8 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
 
     const current = card.locator('[data-sap-result-current="confirmed"]');
     await expect(current).toBeVisible({ timeout: 30000 });
-    await expect(current.locator('[data-provenance="confirmed"]')).toContainText('by you · self-declaration');
+    await expect(current.locator('[data-family-chip="yours"]')).toContainText('by you · self-declaration');
+    await openDevelopers(page);
     await expect(current).toHaveAttribute('data-sap-result-verifies', 'yes');
     await expect(page.locator(`[data-scenario-row][data-scenario-id="TC_01"] [data-scenario-outside="confirmed-passed"]`)).toBeVisible();
     // A phone: nothing scrolls sideways.
@@ -212,6 +219,7 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     await card.locator('[data-sap-result-file]').setInputFiles({ name: 'aunit-result.xml', mimeType: 'application/xml', buffer: Buffer.from(JUNIT) });
     expect((await answered).status()).toBe(200);
     const row = page.locator('[data-scenario-row][data-scenario-id="TC_01"] [data-scenario-outside="passed"]');
+    await openDevelopers(page);
     await expect(row).toBeVisible({ timeout: 30000 });
 
     // One failed GET, then the server: the second attempt brings the rows back.
@@ -224,6 +232,7 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
       return route.continue();
     });
     await openTesting(page, readId);
+    await openDevelopers(page);
     await expect(row).toBeVisible({ timeout: 30000 });
     await expect(page.locator('[data-sap-result-read-failed]')).toHaveCount(0);
     expect(gets).toBe(2);
@@ -240,6 +249,7 @@ test.describe('the result from your SAP system, on the ABAP Cloud route', () => 
     expect(gets).toBe(3);
     await expect(row).toHaveCount(0);
     await failed.getByRole('button', { name: 'Retry' }).click();
+    await openDevelopers(page);
     await expect(row).toBeVisible({ timeout: 30000 });
     await expect(failed).toHaveCount(0);
     expect(gets).toBe(4);

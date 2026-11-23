@@ -820,11 +820,13 @@ export function handoverNextStep(
     };
   }
   const phase = (k: PhaseKey) => phases.find((p) => p.key === k)!;
-  const order: PhaseKey[] = ['design', 'transformation', 'documentation', 'testing'];
+  // The tool order of ADR-128 (Delivery L9): Economics prices the options before Design works from the decision.
+  const order: PhaseKey[] = ['tco', 'design', 'transformation', 'documentation', 'testing'];
   const missing = order.map(phase).find((p) => !p.done);
   if (missing) {
     // What has to happen, in words; the button names where.
     const WHAT: Partial<Record<PhaseKey, string>> = {
+      tco: 'Price the options in Economics',
       design: missing.state === 'empty' ? 'Draft the target design' : 'Confirm the target architecture',
       transformation: 'Generate the target code',
       documentation: 'Document the process',
@@ -1136,7 +1138,8 @@ export function handoverFacets(
   const handover: HandoverFacet = blocked
     ? { key: 'handover', label: 'Handover', value: 'Blocked', sub: `${plural(state.blockers.length, 'artefact')} built for ${blockedBasis}`, provenance: 'stale', basis: 'Artefacts whose digests no longer match the source under analysis.' }
     : state.exportedAt
-      ? { key: 'handover', label: 'Handover', value: 'Handed over', sub: 'Audit pack sealed and downloaded', provenance: 'proven', basis: 'The server sealed and handed out an audit pack for this project. Acceptance by operations happens outside this product; delivery is not acceptance.' }
+      ? // ADR-132 L4: a download is not a handover. The page says the pack is sealed; the handover is the reader's.
+        { key: 'handover', label: 'Handover', value: 'Sealed', sub: 'Audit pack sealed · the handover happens in your system', provenance: 'proven', basis: 'The server sealed an audit pack for this project. Handover and acceptance by operations happen outside this product; delivery is not acceptance.' }
       : delivery.done
         ? { key: 'handover', label: 'Handover', value: 'Ready to hand over', sub: `${plural(needed, 'thing')} still open`, provenance: 'reconstructed', basis: 'The delivery phase of the phase contract: code, documentation and tests are on record.' }
         : { key: 'handover', label: 'Handover', value: 'Not handed over', sub: `${plural(needed, 'thing')} a handover still needs`, provenance: 'reconstructed', basis: 'Counted from the evidence chain below — every open link, unconfirmed decision and unsealed pack.' };

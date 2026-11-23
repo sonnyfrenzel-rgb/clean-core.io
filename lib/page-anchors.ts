@@ -68,11 +68,17 @@ export const PAGE_ANCHOR_IDS = {
     trace: 'tf-trace',
   },
   testing: {
+    // The five sections of ADR-131 (S14), in page order …
+    tested: 'testing-tested',
+    ran: 'testing-ran',
+    open: 'testing-open',
+    acceptance: 'testing-acceptance',
+    developers: 'testing-developers',
+    // … and the places inside them the choice addresses and Delivery link to (`lib/choice-addresses.ts`).
     write: 'testing-write',
     run: 'testing-verified',
     sapResult: 'testing-sap-result',
     hand: 'testing-hand',
-    scenarios: 'testing-scenarios',
   },
   economics: {
     range: 'economics-range',
@@ -83,11 +89,12 @@ export const PAGE_ANCHOR_IDS = {
     model: 'economics-model',
   },
   delivery: {
-    chain: 'evidence-chain',
-    needed: 'still-needed',
-    artefacts: 'artefacts',
+    open: 'before-go-live',
+    package: 'in-the-package',
+    proof: 'proof',
     pack: 'audit-pack',
-    slides: 'presentation-preview',
+    import: 'import-into-sap',
+    timeline: 'timeline',
   },
   /**
    * Design (ADR-130, G12): each view and decision case names its own sections (`designAnchors` in
@@ -185,27 +192,34 @@ export function transformationAnchors(content: {
 /* ------------------------------------------------------------------ Testing */
 
 export function testingAnchors(content: {
-  /** Scenarios written — "Scenarios" is drawn only once there are any. */
-  scenarios: number;
-  /** Hand checks listed under step 3; null where no source was read. */
-  handChecks: number | null;
-  /** The ABAP Cloud route's "Record the result from your SAP system" is drawn. */
-  sapResult: boolean;
+  /** Business rules the page lists under "What was tested"; null while none are read. */
+  rules: number | null;
+  /** "Where it ran" is drawn (not in the demo). */
+  ran: boolean;
+  /** Points of the *Not proven* list — amber, an open count. */
+  notProven: number;
+  /** Rules with acceptance checks; 0 or null hides the anchor. */
+  acceptance: number | null;
+  /** "For developers" is drawn (not in the demo). */
+  developers: boolean;
 }): PageAnchor[] {
   const ids = PAGE_ANCHOR_IDS.testing;
   const out: PageAnchor[] = [
-    { key: 'write', target: ids.write, label: 'Write', title: 'Step 1 — write the scenarios' },
-    { key: 'run', target: ids.run, label: 'Run', title: 'Step 2 — run them' },
+    { key: 'tested', target: ids.tested, label: 'What was tested', count: content.rules && content.rules > 0 ? n(content.rules) : null, title: 'Every business rule with the scenarios that test it' },
   ];
-  if (content.sapResult) out.push({ key: 'sap-result', target: ids.sapResult, label: 'Your SAP result', title: 'The result from your own SAP system' });
+  if (content.ran) out.push({ key: 'ran', target: ids.ran, label: 'Where it ran', title: 'Here against SAP mocks, or in your SAP system' });
   out.push({
-    key: 'hand',
-    target: ids.hand,
-    label: 'Check by hand',
-    count: content.handChecks === null ? null : content.handChecks > 0 ? n(content.handChecks) : 'none',
-    title: 'Step 3 — what no generated test covers',
+    key: 'open',
+    target: ids.open,
+    label: 'Not proven',
+    count: content.notProven > 0 ? n(content.notProven) : null,
+    tone: content.notProven > 0 ? 'open' : undefined,
+    title: 'What no result on this page proves',
   });
-  if (content.scenarios > 0) out.push({ key: 'scenarios', target: ids.scenarios, label: 'Scenarios', count: n(content.scenarios), title: 'Every scenario, one row each' });
+  if (content.acceptance && content.acceptance > 0) {
+    out.push({ key: 'acceptance', target: ids.acceptance, label: 'Acceptance checks', count: n(content.acceptance), title: 'How a business tester checks each rule, without ABAP' });
+  }
+  if (content.developers) out.push({ key: 'developers', target: ids.developers, label: 'For developers', title: 'Test code, run output and the checks of the suite' });
   return out;
 }
 
@@ -233,22 +247,39 @@ export function economicsAnchors(content: {
 
 /* ----------------------------------------------------------------- Delivery */
 
+/**
+ * Delivery (ADR-132 L13, the mock-up of 15.11.2026): Before go-live (an amber count while something blocks the
+ * handover) · Package · Proof · Audit pack · Import · Timeline. The demo has no import and no timeline: nothing leaves
+ * a demo and nothing is recorded in one (L12).
+ */
 export function deliveryAnchors(content: {
-  stillNeeded: number;
-  artefacts: number;
-  /** The audit pack's state word ("Available", "Not available"); null hides the anchor. */
-  pack: string | null;
-  /** The stakeholder slides are drawn. */
-  slides: boolean;
+  /** What blocks the handover — the amber count; 0 draws none. */
+  blocking: number;
+  /** Parts of the package that exist (of six); null in the demo, which makes none. */
+  parts: number | null;
+  /** The audit pack's state when it needs attention ("check failed", "blocked"); null otherwise. */
+  packNote?: string | null;
+  /** Dated events in the timeline; null hides Import and Timeline (the demo). */
+  events: number | null;
 }): PageAnchor[] {
   const ids = PAGE_ANCHOR_IDS.delivery;
   const out: PageAnchor[] = [
-    { key: 'chain', target: ids.chain, label: 'Evidence chain', title: 'Requirement → decision → receipt → artefact' },
-    { key: 'needed', target: ids.needed, label: 'Still needed', count: content.stillNeeded > 0 ? n(content.stillNeeded) : 'none', title: 'What a real handover still needs' },
-    { key: 'artefacts', target: ids.artefacts, label: 'Artefacts', count: content.artefacts > 0 ? n(content.artefacts) : null, title: 'What leaves with the package — not signed' },
+    {
+      key: 'open',
+      target: ids.open,
+      label: 'Before go-live',
+      count: content.blocking > 0 ? n(content.blocking) : null,
+      tone: content.blocking > 0 ? 'open' : undefined,
+      title: 'What blocks the handover, what travels open, what stays yours',
+    },
+    { key: 'package', target: ids.package, label: 'Package', count: content.parts === null ? null : content.parts > 0 ? n(content.parts) : 'none', title: 'The six parts of the package — not signed' },
+    { key: 'proof', target: ids.proof, label: 'Proof', title: 'What is proven, and what is not' },
+    { key: 'pack', target: ids.pack, label: 'Audit pack', count: content.packNote ?? null, tone: content.packNote ? 'open' : undefined, title: 'The one file the server signs' },
   ];
-  if (content.pack !== null) out.push({ key: 'pack', target: ids.pack, label: 'Audit pack', count: content.pack.toLowerCase(), title: 'The one artefact the server signs' });
-  if (content.slides) out.push({ key: 'slides', target: ids.slides, label: 'Stakeholder slides', title: 'The deck built from the signed run' });
+  if (content.events !== null) {
+    out.push({ key: 'import', target: ids.import, label: 'Import', title: 'Import into SAP with abapGit' });
+    out.push({ key: 'timeline', target: ids.timeline, label: 'Timeline', count: content.events > 0 ? n(content.events) : null, title: 'Who did what, when' });
+  }
   return out;
 }
 

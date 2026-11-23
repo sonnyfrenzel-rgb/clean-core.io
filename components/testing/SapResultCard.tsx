@@ -8,7 +8,7 @@ import CcDateText from '@/components/cc/DateText';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcField from '@/components/cc/Field';
 import CcMessageStrip from '@/components/cc/MessageStrip';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import CcTextarea from '@/components/cc/Textarea';
 import {
   MAX_NOTE_CHARS,
@@ -136,7 +136,7 @@ export default function SapResultCard({ projectId, canRecord, reading, record, o
       {current ? (
         <div data-sap-result-current={current.summary.kind} data-sap-result-verifies={current.verifies ? 'yes' : 'no'} className="flex min-w-0 flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
           <p className="m-0 flex flex-wrap items-center gap-2 cc-text-cell font-semibold text-cc-ink">
-            <CcProvenanceChip value={current.summary.kind} note={outsideChipNote(current.summary.kind)} />
+            <FamilyChip value={current.summary.kind} note={outsideChipNote(current.summary.kind)} />
             <span>{outsideCountsLine(current.summary)}</span>
           </p>
           {current.verifies ? (
@@ -273,7 +273,7 @@ export default function SapResultCard({ projectId, canRecord, reading, record, o
             <form id={formId} data-sap-result-confirm-form="" onSubmit={onConfirm} className="flex min-w-0 flex-col gap-3 rounded-cc-row border border-cc-line p-3">
               <p className="m-0 cc-text-cell text-cc-ink">
                 You state that you ran the test class in your SAP system, and what came back. It is recorded with your account and the time as{' '}
-                <CcProvenanceChip value="confirmed" note={outsideChipNote('confirmed')} /> — never as proven.
+                <FamilyChip value="confirmed" note={outsideChipNote('confirmed')} /> — never as proven.
               </p>
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <CcField label="Tests passed" required>

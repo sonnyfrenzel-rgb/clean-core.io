@@ -98,7 +98,7 @@ test.describe('0019c1b57d65, rendered — the Testing page labels a session verd
     await signInThroughForm(page, account);
     await page.goto(`/project/${account.projectId}/testing`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-testing-flow]')).toBeVisible({ timeout: 90000 });
-    await page.locator('[data-testing-step="run"]').getByRole('button', { name: 'Run tests against mocks' }).click();
+    await page.locator('[data-testing-results]').getByRole('button', { name: /against SAP mocks$/ }).click();
     const row = page.locator('[data-scenario-id="TC_ENG_01"]');
     await expect(row.locator('[data-scenario-verdict="pass"]')).toBeVisible({ timeout: 60000 });
     return row.locator('[data-scenario-assessment]');

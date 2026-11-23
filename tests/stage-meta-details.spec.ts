@@ -17,9 +17,7 @@ const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
 /** Where each stage draws its line, and the hook the line keeps. */
 const LINES = {
-  testing: '[data-testing-meta]',
   tco: '[data-workspace-meta]',
-  delivery: '[data-delivery-meta]',
 } as const;
 
 /** Closed, then open by mouse, closed again, then open and closed by keyboard. */
@@ -55,8 +53,6 @@ async function expectBehindDetails(page: Page, scope: string, line: string, cont
 test.describe('the stage meta line is behind "Details"', () => {
   test('every stage meta line goes through StageMetaDetails', () => {
     for (const rel of [
-      'components/testing/TestingHeader.tsx',
-      'components/delivery/DeliveryObjectPage.tsx',
       'app/(app)/project/[projectId]/tco/page.tsx',
     ]) {
       expect(read(rel), `${rel} draws a meta line outside StageMetaDetails`).toContain('<StageMetaDetails');
@@ -82,10 +78,12 @@ test.describe('the stage meta line is behind "Details"', () => {
 
   test('on the demo stages', async ({ page }) => {
     test.setTimeout(5 * 60_000);
+    // Delivery has no meta line since ADR-132 (its facts stand open in the side column, "Built on"), and Testing none
+    // since ADR-131: the program's technical name is under the title, the answer says what the tests rest on.
     for (const stage of ['testing', 'delivery'] as const) {
       await page.goto(`/demo/${stage}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90_000 });
-      await expectBehindDetails(page, `[data-testid="demo-stage-${stage}"]`, LINES[stage], /lines/);
+      await expect(page.locator(`[data-testid="demo-stage-${stage}"] [data-stage-meta-toggle]`)).toHaveCount(0);
     }
     // Analyze: in the score hero, open, and the demo says it was never signed (ADR-093).
     // The score hero is the demo's Analyze in IT since v3.1.0 (its Business view is the map page, AB-2, O10).
@@ -115,7 +113,7 @@ test.describe('the stage meta line is behind "Details"', () => {
     await expect(page.locator('[data-analysis-meta]')).toBeVisible({ timeout: 90_000 });
     await expect(page.locator('[data-analysis-meta]')).toContainText('v2.20.0');
     await expect(page.locator('[data-analysis-answer] [data-stage-meta-toggle]')).toHaveCount(0);
-    for (const stage of ['testing', 'tco', 'delivery'] as const) {
+    for (const stage of ['tco'] as const) {
       await page.goto(`/project/${acct.projectId}/${stage}`, { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 120_000 });
       // Economics reads the signed run's manifest (`metaLine`), which this seed

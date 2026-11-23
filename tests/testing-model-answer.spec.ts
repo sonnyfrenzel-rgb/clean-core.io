@@ -57,7 +57,9 @@ async function stubModel(page: Page, answers: Array<{ status: number; body: unkn
 async function regenerate(page: Page, account: SeededProject) {
   await signInThroughForm(page, account);
   await page.goto(`/project/${account.projectId}/testing`, { waitUntil: 'domcontentloaded' });
-  const button = page.getByRole('button', { name: /^Regenerate Suite$/ });
+  // The suite's own actions stand in "For developers", folded (ADR-131 S8).
+  await page.locator('#testing-developers [data-cc-disclosure-trigger]').click();
+  const button = page.getByRole('button', { name: /^Write the scenarios again$/ });
   await expect(button).toBeEnabled({ timeout: 90_000 });
   await button.click();
   await confirmReplace(page);
@@ -141,7 +143,7 @@ test('invalid JSON twice is reported as prose; a content-filter block is not ret
     status: 502,
     body: { error: 'The model provider blocked this answer (model-incomplete).', code: 'model-incomplete', reason: 'filtered' },
   }]);
-  await page.getByRole('button', { name: /^Regenerate Suite$/ }).click();
+  await page.getByRole('button', { name: /^Write the scenarios again$/ }).click();
   await confirmReplace(page);
   await expect(strip).toContainText('blocked this answer', { timeout: 60_000 });
   expect(filtered.n).toBe(1);

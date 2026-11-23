@@ -128,6 +128,7 @@ const NEW_RUN = new Set([
   'lib/demo-release.ts#figuresOf', // the demo's figures, measured on what this engine builds
   'lib/demo-workspace.ts#buildDemoWorkspace',
   'components/demo/DemoDesign.tsx#DemoDesign',
+  'components/demo/DemoTesting.tsx#DemoTesting', // 3.5.0 (ADR-131 S12): the demo's rules and acceptance checks, by this engine
   'scripts/diagnose-design-pipeline.ts#main', // a diagnostic over this engine
   // 3.0.18 (`extractDataCoupling`): each reads a source no run has signed yet.
   'app/(app)/project/[projectId]/analyze/page.tsx#handleAnalyze', // the analysis being made

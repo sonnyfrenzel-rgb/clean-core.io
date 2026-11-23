@@ -414,7 +414,7 @@ async function sealAndVerify(a: Api, projectId: string, baseURL: string, outDir:
 async function openDelivery(page: Page, account: Account, projectId: string) {
   await signInThroughForm(page, account);
   await page.goto(`/project/${projectId}/delivery`);
-  await expect(page.locator('[data-delivery-status-item="decision"]')).toBeVisible({ timeout: 90_000 });
+  await expect(page.locator('[data-handover-step="decision"]')).toBeVisible({ timeout: 90_000 });
 }
 
 /* ------------------------------------------------------------ model fixtures */
@@ -649,10 +649,12 @@ test.describe('G4 path 1 — standard adoption (CC-001: KNA1 list → SAP standa
   test('delivery page: the rendered handover shows the sign-off and the confirmed decision', async ({ page }) => {
     test.setTimeout(240_000);
     await openDelivery(page, owner, projectId);
-    await expect(page.locator('[data-delivery-status-item="decision"]')).toContainText('confirmed');
-    await expect(page.locator('[data-delivery-status-item="decision"]')).not.toContainText('not confirmed');
+    // ADR-132: the side column's status and the proof table say it; neither reads "confirmed" before it is.
+    await expect(page.locator('[data-handover-step="decision"]')).toHaveAttribute('data-handover-step-mark', 'done');
+    await expect(page.locator('[data-handover-step="decision"]')).toContainText('Confirmed');
+    await expect(page.locator('[data-proof-row="decision"]')).toHaveAttribute('data-proof-status', 'not-signed');
     await expect(page.locator('[data-still-needed-item="decision"]')).toHaveCount(0);
-    await expect(page.locator('[data-delivery-status-item="run"]')).toContainText('signed');
+    await expect(page.locator('[data-proof-row="findings"]')).toHaveAttribute('data-proof-status', 'signed');
   });
 
   test('probe: after the source changes, the Retire sign-off is not current and a new decision on it is refused', async ({ request }) => {
@@ -848,12 +850,12 @@ test.describe('G4 path 2 — targeted extension (CC-031: side-by-side CAP, sandb
   test('delivery page: the receipt reads "Demonstrated · mock", the decision confirmed', async ({ page }) => {
     test.setTimeout(240_000);
     await openDelivery(page, owner, projectId);
-    const receipt = page.locator('[data-chain-group="receipt"]');
-    await expect(receipt).toHaveAttribute('data-chain-group-provenance', 'demonstrated-mock');
-    await expect(receipt).toContainText('Demonstrated · mock');
+    // ADR-132: the Tests facet says where the run happened — against mocks, a simulation — never a proof.
+    const receipt = page.locator('[data-facet="tests"]');
+    await expect(receipt).toContainText('Ran against mocks');
+    await expect(receipt.locator('[data-family-chip="simulation"]')).toHaveCount(1);
     await expect(receipt).not.toContainText('Proven');
-    await expect(page.locator('[data-delivery-status-item="receipts"]')).toContainText('sandbox test run');
-    await expect(page.locator('[data-delivery-status-item="decision"]')).toContainText('confirmed');
+    await expect(page.locator('[data-handover-step="decision"]')).toContainText('Confirmed');
   });
 
   test('probe: a decision confirmed on an older run is history after a new run — confirming again is revision 2', async ({ request, baseURL }, testInfo) => {
@@ -1110,8 +1112,8 @@ test.describe('G4 path 3 — retirement (CC-047: measured zero over 13 months, R
   test('delivery page: the retirement is signed off and the decision is shown as confirmed', async ({ page }) => {
     test.setTimeout(240_000);
     await openDelivery(page, owner, projectId);
-    await expect(page.locator('[data-delivery-status-item="decision"]')).toContainText('confirmed');
-    await expect(page.locator('[data-delivery-status-item="decision"]')).not.toContainText('not confirmed');
+    await expect(page.locator('[data-handover-step="decision"]')).toHaveAttribute('data-handover-step-mark', 'done');
+    await expect(page.locator('[data-handover-step="decision"]')).toContainText('Confirmed');
     await expect(page.locator('[data-still-needed-item="decision"]')).toHaveCount(0);
   });
 });
@@ -1190,8 +1192,8 @@ test.describe('G4 path 4 — undecidable (CC-021: the deciding logic is in an IN
     test.info().annotations.push({ type: 'design-on-undecidable', description: (await answer.innerText()).replace(/\s+/g, ' ') });
 
     await page.goto(`/project/${projectId}/delivery`);
-    await expect(page.locator('[data-delivery-status-item="decision"]')).toContainText('draft, not confirmed', { timeout: 90_000 });
-    await expect(page.locator('[data-chain-group="decision"]')).not.toHaveAttribute('data-chain-group-provenance', 'confirmed');
+    await expect(page.locator('[data-handover-step="decision"]')).toContainText('not confirmed', { timeout: 90_000 });
+    await expect(page.locator('[data-proof-row="decision"]')).toHaveAttribute('data-proof-status', 'not-yet');
     await expect(page.locator('[data-still-needed-item="decision"]')).toBeVisible();
   });
 });

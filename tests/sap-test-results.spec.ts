@@ -327,7 +327,9 @@ test.describe('the phase and the handover', () => {
     const chain = buildHandoverChain(hp, steps);
     const needed = handoverStillNeeded(hp, chain, { blockers: [], exportedAt: null });
     expect(needed.find((n) => n.key === 'tests')?.text).toContain('Passing tests from your SAP system');
-    expect(handoverNextStep(hp, steps, [], chain, 'p-abap').headline).toBe('Run the test suite');
+    // The fixture has no cost scenario: in the tool order of ADR-128 (Delivery L9) Economics comes first; the
+    // failing import still holds the handover through the still-needed list above.
+    expect(handoverNextStep(hp, steps, [], chain, 'p-abap').headline).toBe('Price the options in Economics');
   });
 
   test('a failure in a method that is not one of the scenarios still blocks', () => {

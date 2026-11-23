@@ -160,7 +160,7 @@ test.describe('the Testing tool as one guided flow', () => {
     });
   });
 
-  test('an empty project opens on step 1: one action, at the top, and no counters of nothing', async ({ page }) => {
+  test('an empty project opens on the answer: one action beside it, and no run before there is anything to run', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await testingModelAvailable(page);
     await signInThroughForm(page, account);
@@ -168,30 +168,23 @@ test.describe('the Testing tool as one guided flow', () => {
       await page.setViewportSize({ width, height });
       await openTesting(page, emptyId);
 
-      // What the tool does, in one sentence — and on this route it really runs.
+      // What the tool does, in one sentence, and where every result runs (ADR-131).
       const lead = page.locator('[data-testing-lead]');
-      await expect(lead).toContainText('runs them in an isolated runner against SAP mocks');
+      await expect(lead).toContainText('isolated runner against SAP mocks');
       await expect(lead).not.toContainText(/simulat/i);
 
-      const write = page.locator('[data-testing-step="write"]');
-      await expect(write).toHaveAttribute('data-step-state', 'next');
-      const generate = write.getByRole('button', { name: 'Generate scenarios' });
+      // The answer first (S2): not tested, and the one next step beside it.
+      await expect(page.locator('[data-testing-answer="not-started"]')).toContainText('Not tested yet');
+      const generate = page.locator('[data-answer-card]').getByRole('button', { name: 'Write the scenarios' });
       await expect(generate).toBeVisible();
       await expect(generate).toHaveAttribute('data-cc-button', 'primary');
-      // The first primary action of the tool, and above the fold.
-      await expect(page.locator('[data-testing-flow] [data-cc-button="primary"]').first()).toHaveText('Generate scenarios');
       const box = (await generate.boundingBox())!;
       expect(box.y + box.height, `${width}px: the first action is below the fold`).toBeLessThanOrEqual(height);
+      await expect(page.locator('[data-facet="open"]')).toContainText('Everything');
 
-      // No tiles, no pipeline of zeros, no run button before there is anything to run.
-      await expect(page.locator('[data-testing-facet]')).toHaveCount(0);
+      // No pipeline of zeros, no run button before there is anything to run.
       await expect(page.locator('[data-test-pipeline]')).toHaveCount(0);
-      const runStep = page.locator('[data-testing-step="run"]');
-      await expect(runStep).toHaveAttribute('data-step-state', 'waiting');
-      // No run is offered. The ADR-094 closure ("Close testing — not verified") may stand here: on a
-      // route where nothing runs, an impossible run is exactly what it concludes.
-      await expect(runStep.locator('button:not([data-testing-close]):not([data-testing-reopen])')).toHaveCount(0);
-      await expect(runStep).toContainText('After step 1');
+      await expect(page.getByRole('button', { name: /against SAP mocks$/ })).toHaveCount(0);
 
       // No nested navigation: no tab list, no environment switch.
       await expect(page.getByRole('tablist')).toHaveCount(0);
@@ -206,44 +199,30 @@ test.describe('the Testing tool as one guided flow', () => {
     }
   });
 
-  test('with scenarios the run step is enabled, the tiles arrive, and the tenant is a section, not a mode', async ({ page }) => {
+  test('with scenarios the answer offers the run, the facets count them, and the tenant is a place in Settings', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await testingModelAvailable(page);
     await signInThroughForm(page, account);
     await openTesting(page, account.projectId);
 
-    // The tiles, from the case list and the record: three written, no run —
+    // The facets, from the case list and the record: three written, not run —
     // whatever the stored "Passed" strings say.
-    const status = page.locator('[data-testing-status]');
-    await expect(status).toHaveAttribute('data-testing-status', 'none');
-    await expect(status.locator('[data-testing-facet="scenarios"]')).toContainText('3written');
-    await expect(status.locator('[data-testing-facet="last-run"]')).toContainText('No run on record yet');
-    await expect(status.locator('[data-testing-facet="tenant-tests"]')).toContainText('Locked');
+    await expect(page.locator('[data-testing-answer="written"]')).toContainText('Not tested yet');
+    await expect(page.locator('[data-facet="scenarios"]')).toContainText('3 written');
+    await expect(page.locator('[data-facet="result"]')).toContainText('Not run');
     await expect(page.locator('[data-scenario-verdict="not-run"]')).toHaveCount(3);
 
-    await expect(page.locator('[data-testing-step="write"]')).toHaveAttribute('data-step-state', 'done');
-    const runStep = page.locator('[data-testing-step="run"]');
-    await expect(runStep).toHaveAttribute('data-step-state', 'next');
-    const run = runStep.getByRole('button', { name: 'Run tests against mocks' });
+    const run = page.locator('[data-answer-card]').getByRole('button', { name: 'Run the 3 scenarios against SAP mocks' });
     await expect(run).toBeEnabled();
-    await expect(runStep).toContainText('isolated runner against SAP mocks');
+    await expect(page.locator('[data-testing-ran] [data-test-place="here"][data-test-place-active]')).toBeVisible();
     // Still no counters: nothing has run.
     await expect(page.locator('[data-test-pipeline]')).toHaveCount(0);
-    // "What this tab does" is gone with the tabs.
-    await expect(page.getByText('What this tab does')).toHaveCount(0);
 
-    // The tenant: folded, opened from the side card, the lock said once inside it.
-    const tenant = page.locator('[data-testing-panel="live"]');
-    await expect(tenant).toBeHidden();
-    await page.locator('aside').getByRole('button', { name: 'Request access' }).click();
-    await expect(tenant).toBeVisible();
+    // The tenant: one of the three places, locked, its connection check in Settings (ADR-131 S9).
+    await expect(page.locator('[data-test-place="tenant"]')).toContainText('Locked');
     await expect(page.locator('[data-live-test-lock]')).toHaveCount(1);
-    await expect(page.getByText('Tests against a tenant are locked')).toHaveCount(1);
-    await expect(page.locator('[data-live-test-lock]')).toContainText('Bring your own tenant (BYOT)');
-    await expect(page.locator('[data-byot-step="open"]').first()).toContainText('Access requested');
-    await expect(page.locator('[data-live-test-hint]')).toContainText('3 scenarios run in step 2, against mocks');
-    // Opening it switched nothing off.
-    await expect(run).toBeEnabled();
+    await expect(page.locator('[data-live-test-lock] a')).toHaveAttribute('href', '/settings#sap-test-system');
+    await expect(page.locator('[data-testing-panel="live"]')).toHaveCount(0);
   });
 
   test('Run asks /api/run-tests, against mocks, and a refusal is said on the page', async ({ page }) => {
@@ -259,7 +238,7 @@ test.describe('the Testing tool as one guided flow', () => {
     await openTesting(page, account.projectId);
 
     const sent = page.waitForRequest((r) => r.url().includes('/api/run-tests') && r.method() === 'POST');
-    await page.locator('[data-testing-step="run"]').getByRole('button', { name: 'Run tests against mocks' }).click();
+    await page.locator('[data-answer-card]').getByRole('button', { name: 'Run the 3 scenarios against SAP mocks' }).click();
     const body = (await sent).postDataJSON();
     expect(body.projectId).toBe(account.projectId);
     expect(body.selectedTestIds).toEqual(['t1', 't2', 't3']);
@@ -273,20 +252,21 @@ test.describe('the Testing tool as one guided flow', () => {
     await expect(page.locator('[data-test-pipeline]')).toHaveCount(0);
   });
 
-  test('a run through the real path comes back with verdicts', async ({ page }) => {
+  test('a run through the real path comes back with verdicts, and the answer says where it ran', async ({ page }) => {
     test.setTimeout(300 * 1000);
     await testingModelAvailable(page);
     await signInThroughForm(page, account);
     await openTesting(page, runnableId);
 
     const response = page.waitForResponse((r) => r.url().includes('/api/run-tests') && r.request().method() === 'POST', { timeout: 240000 });
-    await page.locator('[data-testing-step="run"]').getByRole('button', { name: 'Run tests against mocks' }).click();
+    await page.locator('[data-answer-card]').getByRole('button', { name: 'Run the 1 scenario against SAP mocks' }).click();
     expect((await response).status(), 'the run was refused').toBe(200);
 
     await expect(page.locator('[data-scenario-verdict="pass"]')).toHaveCount(1, { timeout: 60000 });
     await expect(page.locator('[data-test-pipeline]')).toBeVisible();
     await expect(page.locator('[data-test-run-error]')).toHaveCount(0);
-    await expect(page.locator('[data-testing-step="run"]')).toHaveAttribute('data-step-state', 'done');
+    await expect(page.locator('[data-testing-answer="passed"]')).toContainText('Passed against SAP mocks');
+    await expect(page.locator('[data-facet="result"]')).toContainText('Not in your SAP system');
   });
 
   test('an ABAP Cloud project offers no run, and says why before the click', async ({ page }) => {
@@ -299,25 +279,21 @@ test.describe('the Testing tool as one guided flow', () => {
     await signInThroughForm(page, account);
     await openTesting(page, abapId);
 
-    const lead = page.locator('[data-testing-lead]');
-    await expect(lead).toContainText('Nothing is compiled or executed in SAP ADT here');
-    await expect(lead).not.toContainText(/simulat/i);
-
-    const runStep = page.locator('[data-testing-step="run"]');
-    await expect(runStep).toHaveAttribute('data-step-state', 'unavailable');
-    await expect(runStep).toContainText('Not run here');
-    await expect(runStep.locator('[data-testing-run-unavailable]')).toContainText(ABAP_UNIT_NOT_RUNNABLE);
-    // No run is offered. The ADR-094 closure ("Close testing — not verified") may stand here: on a
-    // route where nothing runs, an impossible run is exactly what it concludes.
-    await expect(runStep.locator('button:not([data-testing-close]):not([data-testing-reopen])')).toHaveCount(0);
-    await expect(page.getByRole('button', { name: /Run .*against mocks/ })).toHaveCount(0);
+    const ran = page.locator('[data-testing-ran]');
+    await expect(ran).toContainText('Nothing is compiled or executed in SAP ADT here');
+    await expect(ran).not.toContainText(/simulat/i);
+    await expect(ran.locator('[data-test-place="your-system"][data-test-place-active]')).toBeVisible();
+    await expect(ran.locator('[data-test-place="here"]')).toContainText('Not for this route');
+    // No run is offered; the next step is to record the result from your system.
+    await expect(page.getByRole('button', { name: /against SAP mocks$/ })).toHaveCount(0);
+    await expect(page.locator('[data-answer-card]').getByRole('link', { name: 'Record the result from your system' })).toBeVisible();
     // No result appears from nowhere either.
     await expect(page.locator('[data-scenario-verdict="none"]')).toHaveCount(0);
     expect(runRequests).toEqual([]);
   });
 });
 
-test.describe('a saved connection is a summary, not a form', () => {
+test.describe("a saved connection is not Testing's to show", () => {
   let account: SeededProject;
 
   test.beforeAll(async () => {
@@ -335,43 +311,17 @@ test.describe('a saved connection is a summary, not a form', () => {
     await adminMergeDoc('projects', account.projectId, { s4Environment: 'live' });
   });
 
-  test('the section opens where the reader was, the run still runs, and Edit opens the form', async ({ page }) => {
+  test('a project an earlier build left on the tenant tab opens on the answer, and the run is still against mocks', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signInThroughForm(page, account);
     await openTesting(page, account.projectId);
 
-    const panel = page.locator('[data-testing-panel="live"]');
-    await expect(panel.getByRole('heading', { name: 'Saved connection' })).toBeVisible({ timeout: 30000 });
-    await expect(panel.locator('[data-saved-connection]')).toContainText('https://my000000-api.s4hana.cloud.sap');
-    await expect(panel.locator('[data-saved-connection]')).toContainText('never shown again');
-    // Every step of the BYOT way is on record for this account.
-    await expect(page.locator('[data-byot-step="done"]')).toHaveCount(3);
-    await expect(page.locator('[data-byot-step="open"]')).toHaveCount(0);
-    // Not checked in this session — and no date or result is made up for it.
-    await expect(panel).toContainText('Not checked in this session');
-    await expect(panel.locator('[data-last-check]')).toContainText('No check in this session yet');
-    // One primary action on the connection card.
-    await expect(panel.locator('[data-cc-button="primary"]')).toHaveCount(1);
-    await expect(panel.getByRole('button', { name: 'Check connection' })).toBeVisible();
-    // The guide is folded because a connection is saved, and still in the page.
-    await expect(panel.locator('[data-setup-guide]')).toContainText('Collapsed because a connection is saved.');
-
-    // The stored 'live' is not a mode: the run of the one scenario is offered and enabled.
-    await expect(page.locator('[data-testing-step="run"]').getByRole('button', { name: 'Run tests against mocks' })).toBeEnabled();
-
-    await panel.getByRole('button', { name: 'Edit' }).click();
-    await expect(panel.getByRole('heading', { name: 'Change the saved connection' })).toBeVisible();
-    await expect(panel.getByRole('button', { name: 'Save connection' })).toBeVisible();
-    await panel.getByRole('button', { name: 'Cancel' }).click();
-    await expect(panel.getByRole('heading', { name: 'Saved connection' })).toBeVisible();
-
-    // Delete asks first; cancelling leaves the connection where it was.
-    await panel.getByRole('button', { name: 'Delete connection' }).click();
-    const box = page.getByRole('dialog', { name: 'Delete the saved connection?' });
-    await expect(box).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(box).toBeHidden();
-    await expect(panel.getByRole('heading', { name: 'Saved connection' })).toBeVisible();
+    // The connection lives in Settings (ADR-131 (5)); Testing shows no form and no saved URL.
+    await expect(page.locator('[data-answer-card]')).toBeVisible({ timeout: 30000 });
+    await expect(page.getByText('https://my000000-api.s4hana.cloud.sap')).toHaveCount(0);
+    await expect(page.locator('[data-live-test-lock] a')).toHaveAttribute('href', '/settings#sap-test-system');
+    // The stored 'live' is not a mode: the run of the scenarios is offered and enabled.
+    await expect(page.locator('[data-testing-results]').getByRole('button', { name: /against SAP mocks$/ })).toBeEnabled();
   });
 });
 

@@ -84,7 +84,7 @@ test.describe('D.31 in the source', () => {
     const acc = code('components/CollapsibleAccordion.tsx');
     expect(acc).toMatch(/badgeSeverity\?: 'neutral' \| 'warning' \| 'error'/);
     for (const rel of [
-      'app/(app)/project/[projectId]/delivery/page.tsx',
+      // Delivery's pack contents left the accordion with ADR-132: the 13 files fold under Audit pack (CcDisclosure).
       'components/analyze/AbcdClassificationPanel.tsx',
       // CodeInventoryTable, DataCouplingTable and ModuleHeatmap left with
       // ADR-093 (11.10.2026): the IT view's Objects & dependencies says them.

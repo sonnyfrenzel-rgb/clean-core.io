@@ -106,7 +106,7 @@ test.describe('Q6 — the pack chain says the status of this project', () => {
 
   test('the page draws the rows, not the coverage kinds', () => {
     const src = read('app/(app)/project/[projectId]/delivery/page.tsx');
-    const chain = src.slice(src.indexOf('data-pack-chain=""'), src.indexOf('The server signs with HMAC-SHA256'));
+    const chain = src.slice(src.indexOf('data-pack-chain=""'), src.indexOf('</CcDisclosure>', src.indexOf('data-pack-chain=""')));
     expect(chain).toContain('packChainRows(hp, packChain)');
     expect(chain).not.toContain("s.coverage === 'attested'");
   });
@@ -258,7 +258,10 @@ test.describe('on screen', () => {
     const decision = chain.locator('li', { hasText: 'Decision' });
     await expect(decision).toHaveCount(1);
     await expect(decision).not.toContainText('Confirmed');
-    await expect(page.locator('[data-delivery-facet]', { hasText: 'Audit pack' }).first()).toContainText('Not sealed yet');
+    await expect(page.locator('[data-facet="audit-pack"]')).toContainText('Not sealed yet');
+    // The proof table never reads the decision as confirmed on a project nobody confirmed (UX-138).
+    await expect(page.locator('[data-proof-row="decision"]')).toHaveAttribute('data-proof-status', 'not-yet');
+    await expect(page.locator('[data-proof-row="target"]')).toHaveAttribute('data-proof-status', 'not-yet');
   });
 
   test('Transformation: no Copy Code without code', async ({ page }) => {

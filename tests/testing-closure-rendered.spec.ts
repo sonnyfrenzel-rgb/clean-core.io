@@ -5,6 +5,7 @@ import { build } from 'esbuild';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { Project } from '../lib/types';
+import { testingAnswer } from '../lib/testing-answer';
 import { testRunSubject } from '../lib/test-receipt';
 import { nextTestRunFailure, type TestingClosure } from '../lib/testing-closure';
 import { testingClosureBasis } from '../lib/workflow-steps';
@@ -22,10 +23,8 @@ const ROOT = path.resolve(__dirname, '..');
 const OUT = path.resolve(ROOT, 'tmp', 'testing-closure-rendered', String(process.pid));
 
 type Card = (props: { projectId: string; project: Project; isOwner: boolean; onChanged: (f: Partial<Project>) => void }) => React.ReactElement;
-type Header = (props: Record<string, unknown>) => React.ReactElement;
 type Pipeline = (props: { written: number; run: LastRun }) => React.ReactElement;
 let ClosureCard: Card;
-let TestingHeader: Header;
 let TestPipeline: Pipeline;
 
 async function load<T>(rel: string, name: string): Promise<T> {
@@ -47,7 +46,6 @@ test.beforeAll(async () => {
   test.setTimeout(120 * 1000);
   fs.mkdirSync(OUT, { recursive: true });
   ClosureCard = await load<Card>('components/testing/TestingClosureCard.tsx', 'TestingClosureCard');
-  TestingHeader = await load<Header>('components/testing/TestingHeader.tsx', 'TestingHeader');
   TestPipeline = await load<Pipeline>('components/testing/TestPipeline.tsx', 'TestPipeline');
 });
 
@@ -126,8 +124,9 @@ test('closed: the card says who closed it, when and why, "not verified", and the
   expect(t).toContain('Closed without a passing run by owner@example.com on 11 Oct 2026: the runner failed here — the last run on 11 Oct 2026 gave no result');
   expect(t).toContain('“Repairs did not compile”');
   expect(t).toContain('Nothing here verified the code');
-  expect(html).toContain('data-provenance="confirmed"');
-  expect(html).not.toContain('data-provenance="proven"');
+  // The family's chip for the account's own statement (ADR-131, UX review L2): "Yours", never "Signed".
+  expect(html).toContain('data-family-chip="yours"');
+  expect(html).not.toContain('data-family-chip="signed"');
   expect(t).toContain('Reopen testing');
   // An invited reader sees the same statement and no button.
   const reader = text(card(closed(failed()), false));
@@ -147,27 +146,20 @@ test('nothing failed: no closure is offered; a reader is told the owner can clos
   expect(reader).not.toContain('Close testing — not verified');
 });
 
-test('the run tile and the pipeline say "Failed" with its cause, never "No run on record"', () => {
+test('the answer and the pipeline say the run gave no result, with its cause, never "No run on record"', () => {
   const p = failed();
   const run = lastRun(p, null);
   expect(run.kind).toBe('failed');
-  const header = renderToStaticMarkup(
-    React.createElement(TestingHeader, {
-      scenarios: { count: 10, rejected: false, emptyReason: '' },
-      run,
-      blocked: false,
-      isAbapCloud: false,
-      handChecks: { count: null, lines: [] },
-      tenantLocked: true,
-      status: [],
-    }),
-  );
-  expect(header).toContain('data-testing-status="failed"');
-  const ht = text(header);
-  expect(ht).toContain('Failed');
-  expect(ht).toContain('no result (3 attempts in a row)');
-  expect(ht).toContain('did not compile in the runner: test.ts:162:27');
-  expect(ht).not.toContain('No run on record yet');
+  // The answer of the Testing page (ADR-131) reads the same record.
+  const answer = testingAnswer({
+    program: 'Z_AGING', abap: false, cases: 10, engineCases: 0, coverage: null, run,
+    outside: { state: 'none' }, closed: false, generating: false, notProven: 1,
+  });
+  expect(answer.state).toBe('no-result');
+  expect(answer.answer).toContain('the last run gave no result');
+  expect(answer.answer).toContain('did not compile in the runner: test.ts:162:27');
+  expect(answer.facets.find((f) => f.id === 'result')!.value).toBe('No result');
+  expect(answer.answer).not.toContain('No run on record yet');
   const pipeline = text(renderToStaticMarkup(React.createElement(TestPipeline, { written: 10, run })));
   expect(pipeline).toContain('failed — no result');
 });

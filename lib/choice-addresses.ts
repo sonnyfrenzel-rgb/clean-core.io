@@ -163,7 +163,7 @@ export const CHOICES: Readonly<Record<StaticChoiceKey, ChoiceAddress>> = Object.
   'testing.hand': c(TOOL('testing'), 'testing-hand', 'nav.choice.testingHand', PHASE_LABEL('testing')),
   // C17, C18 — there is no release command, and none is added (owner decision).
   'delivery.audit-pack': c(TOOL('delivery'), 'audit-pack', 'nav.choice.deliveryAuditPack', PHASE_LABEL('delivery')),
-  'delivery.still-needed': c(TOOL('delivery'), 'still-needed', 'nav.choice.deliveryStillNeeded', PHASE_LABEL('delivery')),
+  'delivery.still-needed': c(TOOL('delivery'), 'before-go-live', 'nav.choice.deliveryStillNeeded', PHASE_LABEL('delivery')),
   // C19 — a query, not an anchor: Analyze opens the matching input.
   'analyze.add-usage': c(TOOL('analyze'), null, 'nav.choice.analyzeAddUsage', PHASE_LABEL('analyze'), { query: { add: 'usage' } }),
   'analyze.add-atc': c(TOOL('analyze'), null, 'nav.choice.analyzeAddAtc', PHASE_LABEL('analyze'), { query: { add: 'atc' } }),
@@ -298,7 +298,7 @@ export const ORIGINS: Readonly<Record<OriginKey, OriginAddress>> = Object.freeze
   // The workspace's own controls stand in every view; the way back keeps the reader's.
   'workspace.tools': o({ kind: 'workspace' }, 'workspace-tools', 'nav.place.tools'),
   'workspace.status': o({ kind: 'workspace' }, 'workspace-status', 'nav.place.projectStatus'),
-  'delivery.still-needed': o(TOOL('delivery'), 'still-needed', 'nav.place.stillNeeded'),
+  'delivery.still-needed': o(TOOL('delivery'), 'before-go-live', 'nav.place.stillNeeded'),
   'delivery.next': o(TOOL('delivery'), 'delivery-next', 'nav.place.nextStep'),
   'analyze.open-questions': o(TOOL('analyze'), 'analyze-open-questions', 'nav.place.openQuestions'),
   'analyze.decide': o(TOOL('analyze'), 'analyze-decide', 'nav.place.whatToDecide'),

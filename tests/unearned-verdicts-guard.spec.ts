@@ -111,7 +111,12 @@ test.describe('delivery reports artefacts rather than assuming them', () => {
     // page; the old "Incomplete" branch is that facet's "Not handed over".
     // Readiness still has to be earned: only `delivery.done` may say it, and
     // every other path says the handover has not happened.
-    expect(jsx).toContain('handoverFacets(');
+    // ADR-132: the answer of `lib/delivery-view.ts` — Yes only on an empty still-needed list; a download is
+    // never "Handed over" (L4).
+    expect(jsx).toContain('handoverAnswer(hp, facts)');
+    const view = rendered('lib/delivery-view.ts');
+    expect(view).toMatch(/if \(facts\.stillNeeded\.length === 0\) \{\s*return \{\s*verdict: 'yes'/);
+    expect(view).not.toMatch(/'Handed over'/);
     const facets = rendered('lib/handover.ts');
     expect(facets).not.toContain('Ready for Deployment');
     expect(facets).toMatch(/:\s*delivery\.done\s*\?\s*\{[\s\S]{0,400}?'Ready to hand over'[\s\S]{0,400}?\}\s*:\s*\{[\s\S]{0,100}?value: 'Not handed over'/);
@@ -178,8 +183,10 @@ test.describe('missing values are not replaced by the best available answer', ()
 
   test('an empty test run is not a pass rate', () => {
     const src = read('app/(app)/project/[projectId]/testing/page.tsx');
-    // `0 / 0` reached the dashboard as NaN% and a broken chart.
-    expect(src).toMatch(/if \(total === 0\) return null;/);
+    // `0 / 0` reached the dashboard as NaN% and a broken chart. Since ADR-131 the page draws no pass rate and no
+    // chart at all: a run is counted passed · failed · without a result (`countsLine`), and nothing is divided.
+    expect(src).not.toMatch(/passRate|TestingPieChart|TestingBarChart/);
+    expect(src).toContain('countsLine(run.counts)');
   });
 });
 
