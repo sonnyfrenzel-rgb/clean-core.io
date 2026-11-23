@@ -146,21 +146,21 @@ test.describe('the demo Transformation renders the Object Page', () => {
     await expect(tool.locator('[data-transformation-flow]')).toBeVisible();
     // One count under one word: findings are the 25 Analyze lists; the 31 are places in the code.
     const { distinctFindings, findings: places } = DEMO_RELEASE.figures;
-    const plan = tool.locator('[data-transformation-facet="Plan from the engine"]');
-    await expect(plan).toContainText(`of ${distinctFindings} findings with a target option`);
-    await expect(plan).toContainText(`${places} places in the code`);
-    await expect(tool.locator('[data-transformation-facet="Released successors"]')).toContainText(`of ${distinctFindings} named`);
+    // ADR-129 (T3): the answer counts released targets, not target options.
+    const released = tool.locator('[data-facet="released"]');
+    await expect(released).toContainText(`of ${distinctFindings} findings`);
+    await expect(tool.locator('[data-answer]')).toContainText('The demo stops where the model begins');
     await expect(tool.locator('[data-transformation-flow] svg')).toContainText(`YOUR CODE · ${distinctFindings} FINDINGS`);
     await expect(tool.locator('[data-code-status]')).toContainText(`${distinctFindings} findings at ${places} places in the code`);
     // The anchor bar's count chip (PageAnchorBar, ADR-091) — the number alone, no parentheses.
-    await expect(tool.locator('a[href="#tf-changes"] [data-tf-anchor-count]')).toHaveText(String(distinctFindings));
+    await expect(tool.locator('a[href="#tf-flow"] [data-tf-anchor-count]')).toHaveText(String(distinctFindings));
     await expect(tool).not.toContainText(`${places} findings`);
     await expect(tool.locator('[data-demo-package]')).toContainText('The demo stops where the model begins');
     // No generated file is shown in a demo.
     await expect(tool.locator('[data-package-file]')).toHaveCount(0);
-    // The first changes show different targets, among them a released successor.
+    // The trace, folded: every finding with its own target, among them a released successor (ADR-129, T9).
+    await tool.locator('#tf-trace > summary').click();
     await expect(tool.locator('[data-finding-target="successor"]').first()).toBeVisible();
-    await tool.getByRole('button', { name: /Show all \d+ changes/ }).click();
     const kinds = await tool.locator('[data-finding-target]').evaluateAll((els) => els.map((e) => e.getAttribute('data-finding-target')));
     expect(new Set(kinds).size).toBeGreaterThan(1);
   });

@@ -148,8 +148,10 @@ async function scrollTo(pane: Locator, line: number) {
 async function open(page: Page, account: SeededProject) {
   await signInThroughForm(page, account);
   await page.goto(`/project/${account.projectId}/transformation`);
-  await expect(page.locator('#tf-side')).toBeAttached({ timeout: 120_000 });
-  await page.locator('#tf-side').scrollIntoViewIfNeeded();
+  // ADR-129: all the code side by side is a drawer, opened from the package.
+  await expect(page.locator('[data-open-all-code]')).toBeVisible({ timeout: 120_000 });
+  await page.locator('[data-open-all-code]').click();
+  await expect(page.locator('#tf-side')).toBeAttached({ timeout: 30_000 });
   await expect(targetPane(page).locator('[data-cc-code-line]').first()).toBeAttached({ timeout: 30_000 });
 }
 

@@ -133,9 +133,15 @@ for (const width of [1280, 390] as const) {
 
     const built = page.locator('[data-built-on="engine-led"]');
     await expect(built).toBeVisible({ timeout: 30_000 });
-    await expect(built.locator('[data-engine-checks]')).toContainText('functions written');
+    // ADR-129 (T4): the checks are one table on the page, not a sentence inside "Built on".
+    const checks = page.locator('[data-checks-table]');
+    await expect(checks.locator('[data-check-row="written"]')).toBeVisible();
+    await expect(page.locator('[data-checks-table]')).toContainText('written');
+    // The whole code is a drawer, opened from the package (T7).
+    await page.locator('[data-open-all-code]').click();
     await expect(page.locator('[data-file-tree="trace"] [data-file-group="steps"]')).toBeVisible();
     await expect(page.locator('[data-unit-anchor]').first()).toContainText(/L\d+/);
+    await page.keyboard.press('Escape');
     await noSideScroll(page);
     await shot(page, `done-${width}`);
     await shot(page, `done-${width}-full`, true);
@@ -161,15 +167,15 @@ for (const width of [1280, 390] as const) {
       expect(['engine-code', 'fills']).toContain(c.scope);
       expect((c.passed ?? -1) + (c.failed ?? 0) + (c.notRun ?? -1)).toBe(c.total);
     }
-    await expect(built.locator('[data-engine-checks]')).not.toContainText(/\d+ run, \d+ failed/);
+    await expect(checks).not.toContainText(/\d+ run, \d+ failed/);
     const cases = runnerChecks.filter((c) => c.kind === 'cases' && c.total > 0);
     if (cases.length > 0) {
       for (const c of cases) expect(c.notRunReason ?? '').not.toContain('no valid base value known');
       expect(cases.find((c) => c.scope === 'engine-code')?.passed ?? 0).toBeGreaterThan(0);
-      await expect(built.locator('[data-engine-checks]')).not.toContainText('no valid base value known for P_BANFN');
+      await expect(checks).not.toContainText('no valid base value known for P_BANFN');
     }
     if (runnerChecks.some((c) => c.kind === 'probes' && c.scope === 'engine-code' && c.total > 0)) {
-      await expect(built.locator('[data-engine-checks]')).toContainText("of the engine's decimal, CSV and run-store code");
+      await expect(checks).toContainText("of the engine's decimal, CSV and run-store code");
     }
     expect((b.basis ?? []).length).toBe(6);
     console.log(`[step E] stored: ${b.engine!.written}/${b.engine!.units} written, ${b.engine!.callsUsed} model calls, checks ${JSON.stringify(b.engine!.checks)}, not run ${JSON.stringify(b.engine!.notRun)}, elapsedMs ${b.elapsedMs}`);
@@ -213,9 +219,11 @@ test('a function the model declines stays a stub: the generation is partial, wit
   await page.setViewportSize({ width: 1280, height: 900 });
   await openAndGenerate(page, account);
   await expect(page.locator('[data-transformation-answer="generated"]')).toBeAttached({ timeout: 360_000 });
-  const strip = page.locator('[data-built-on="engine-led"] [data-not-written]');
-  await expect(strip).toBeVisible({ timeout: 30_000 });
-  await expect(strip).toContainText('the model declined');
+  // ADR-129 (T4): a function left empty is a failed row of Checks, and the answer says the code is not ready.
+  const row = page.locator('[data-checks-table] tr', { has: page.locator('[data-check-row="written"]') });
+  await expect(row).toBeVisible({ timeout: 30_000 });
+  await expect(row.locator('[data-check-row="written"]')).toHaveAttribute('data-check-outcome', 'failed');
+  await expect(page.locator('[data-answer]')).toContainText('not ready');
   const stored = (await adminGetDoc('projects', account.projectId)) as Stored;
   expect(stored.generationBinding!.engine!.status).toBe('partial');
   expect(stored.generationBinding!.engine!.notWritten.length).toBe(1);
