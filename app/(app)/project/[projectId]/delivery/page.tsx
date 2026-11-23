@@ -639,6 +639,16 @@ export default function DeliveryPage() {
   // `lib/delivery-view.ts` (ADR-132). Nothing here decides what is signed; it describes what is on record.
   const hp = project as HandoverProject;
   const chain = buildHandoverChain(hp, phases);
+  // Who stands behind the tests on record, as the family chip of the Tests part: the chain link's provenance, with its
+  // note ("imported from your system", "by you · self-declaration"). Nothing on record, or out of date: no chip.
+  const testsLink = chain.find((l) => l.key === 'tests');
+  const testsChip =
+    testsLink && testsLink.state === 'on-record' ? (
+      <FamilyChip
+        value={testsLink.provenance}
+        note={testsLink.provenance === 'imported' ? ['imported', testsLink.provenanceNote].filter(Boolean).join(' ') : testsLink.provenanceNote ?? undefined}
+      />
+    ) : null;
   const target = signedOffTarget(hp);
   const confirmations = confirmationsOf(hp);
   const timeline = handoverTimeline(hp);
@@ -882,6 +892,7 @@ export default function DeliveryPage() {
                 name="Tests"
                 sub={isAbapCloud ? 'ABAP Unit cases from the original' : 'Test suite for the sandbox'}
                 present={parts.tests}
+                chips={testsChip}
                 state={<span data-delivery-testing="" data-stage-output={testCaseCount > 0 ? 'testCases' : undefined}>{deliveryTestingTitle(project, isAbapCloud)}</span>}
               >
                 <IntegrityLine
@@ -1074,7 +1085,7 @@ export default function DeliveryPage() {
                 state={analysisStale ? 'Not available' : deck ? 'A preview here' : 'Not available'}
               >
                 {analysisStale ? (
-                  <p data-delivery-deck-blocked="" className="m-0 cc-text-cell text-cc-ink-muted">Not available — the analysis is from a previous source. Run it again in Analyze.</p>
+                  <p data-delivery-deck-blocked="" className="m-0 cc-text-cell text-cc-ink-muted">Not available: the analysis is from a previous source. Run it again in Analyze.</p>
                 ) : deck ? (
                   <>
                     <p className="m-0 cc-text-cell text-cc-ink-muted">

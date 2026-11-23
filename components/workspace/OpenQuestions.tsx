@@ -136,18 +136,7 @@ export default function OpenQuestions({
             {questions.limits}
           </p>
         ) : null}
-        {recorded.length > 0 ? (
-          <div data-not-determined-record-list="" className="mt-3">
-            <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('notDetermined.recordTitle')}</p>
-            <ul className="m-0 mt-1 list-none space-y-1 p-0">
-              {recorded.map((gap) => (
-                <li key={gap.form} data-not-determined-record={gap.form} className="text-[12px] leading-snug font-medium text-cc-ink-muted">
-                  <span className="font-semibold text-cc-ink">{gap.label}</span> — {gap.why}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
+        <RecordGaps recorded={recorded} />
       </CcCard>
     </section>
   );
@@ -379,5 +368,26 @@ function Group({
         </div>
       ) : null}
     </li>
+  );
+}
+
+/**
+ * What the project's record does not hold, by the form it was written in (`recordGaps`, `lib/legacy-project.ts`) —
+ * under the open questions, and on Analyze's IT page of a project analysed before signed runs, which has no list of
+ * open questions of its own.
+ */
+export function RecordGaps({ recorded, className = 'mt-3' }: { recorded: readonly RecordGap[]; className?: string }) {
+  if (recorded.length === 0) return null;
+  return (
+    <div data-not-determined-record-list="" className={className}>
+      <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('notDetermined.recordTitle')}</p>
+      <ul className="m-0 mt-1 list-none space-y-1 p-0">
+        {recorded.map((gap) => (
+          <li key={gap.form} data-not-determined-record={gap.form} className="text-[12px] leading-snug font-medium text-cc-ink-muted">
+            <span className="font-semibold text-cc-ink">{gap.label}</span> — {gap.why}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }

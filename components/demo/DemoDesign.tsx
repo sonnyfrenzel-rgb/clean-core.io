@@ -222,6 +222,9 @@ export default function DemoDesign({
 
   return (
     <div data-testid="demo-design" data-design-view={view}>
+      {/* The bar names the answer as its first section (G12), so it stands above it, as on the project's page. */}
+      <PageAnchorBar anchors={anchors} label={PAGE_ANCHOR_LABELS.design} name="design-anchor" plural="design-anchors" />
+
       <AnswerCard
         id="design-answer"
         question={card.question}
@@ -246,8 +249,6 @@ export default function DemoDesign({
         actionNote={view === 'management' ? (confirmed ? SIGN_OFF_WORDING.confirmed : SIGN_OFF_WORDING.open) : undefined}
         facets={card.facets}
       />
-
-      <PageAnchorBar anchors={anchors} label={PAGE_ANCHOR_LABELS.design} name="design-anchor" plural="design-anchors" className="mt-6" />
 
       {view === 'business' ? (
         <DesignSection id="design-board" title="Today’s process" lead="As Analyze reads it. Nothing is marked: the demo answers no business question.">

@@ -92,7 +92,10 @@ export const GENERATION_MAX_MODEL_CALLS = LEASE_MAX_CALLS;
 export type ChainEvidence =
   | { state: 'loading' }
   | { state: 'failed'; reason: string }
-  | { state: 'ready'; findings: ReadonlyArray<{ sapReplacement?: { objectName?: string; confidence?: string } | null }> };
+  | {
+      state: 'ready';
+      findings: ReadonlyArray<{ kind?: string; objectName?: string; title?: string; sapReplacement?: { objectName?: string; confidence?: string } | null }>;
+    };
 
 /** The rule register, or that it is still being read. */
 export type ChainRules = { state: 'loading' } | { state: 'ready'; register: RuleRegister };
@@ -227,6 +230,14 @@ export function successorCount(findings: ReadonlyArray<{ sapReplacement?: { obje
   return names.size;
 }
 
+/**
+ * Findings as Analyze and the rest of Transformation count them: one per pattern and object (`findingRows`,
+ * lib/findings-view.ts, same key), never one per place in the code.
+ */
+export function distinctFindingCount(findings: ReadonlyArray<{ kind?: string; objectName?: string; title?: string }>): number {
+  return new Set(findings.map((f) => `${f.kind}::${f.objectName || f.title}`)).size;
+}
+
 /** The SHA-256 of the source the active run signed, or null. */
 export function signedSha(project: Project | null): string | null {
   return (
@@ -339,7 +350,7 @@ function analyzeSlot(inputs: ChainInputs): ChainSlot {
   }
   const successors = successorCount(ev.findings);
   const facts = [
-    fact('score', `${score} · ${plural(ev.findings.length, 'finding')}`, 'reconstructed', PROMPT_READS.analysis),
+    fact('score', `${score} · ${plural(distinctFindingCount(ev.findings), 'finding')}`, 'reconstructed', PROMPT_READS.analysis),
     fact('successors', `${plural(successors, 'released SAP successor')} for the objects it uses`, 'imported', PROMPT_READS.successors),
   ];
   const s = staleness(project);

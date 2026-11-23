@@ -1019,6 +1019,16 @@ export default function ProcessMap({
         editBlocked={fsEditBlocked}
         onEditingChange={fsEditingChange}
         onWalk={onWalk && !tourPanel ? walkInFullScreen : null}
+        editingTools={modelProp.technicalXml ? (
+          <CcButton
+            data-map-fullscreen-technical=""
+            aria-pressed={technical}
+            icon={<Code2 size={16} aria-hidden={true} />}
+            onClick={() => setTechnical((was) => !was)}
+          >
+            {wt('map.technicalNames')}
+          </CcButton>
+        ) : null}
       />
     ),
     rail: (

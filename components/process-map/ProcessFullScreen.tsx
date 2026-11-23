@@ -59,6 +59,11 @@ export interface FullScreenBarProps {
   /** Disabled with this sentence (a phone, an invited reader); null when *Edit* can be switched. */
   editBlocked: string | null;
   onEditingChange: (on: boolean) => void;
+  /**
+   * While editing: what the page's own row offers and the editor's does not — the *Technical names* switch, which the
+   * page keeps behind full screen, so editing could not reach it.
+   */
+  editingTools?: React.ReactNode;
   /** *Walk me through it* — absent where the page has no tour, or while it runs. */
   onWalk?: (() => void) | null;
 }
@@ -81,6 +86,7 @@ function WideFullScreenBar({
   editBlocked,
   onEditingChange,
   onWalk,
+  editingTools = null,
 }: FullScreenBarProps) {
   const gap = <span aria-hidden={true} className="hidden h-6 border-l border-cc-line sm:inline" />;
   return (
@@ -121,6 +127,7 @@ function WideFullScreenBar({
             </div>
           </>
         )}
+        {editing && editingTools ? <div className="flex flex-wrap items-center gap-2">{editingTools}</div> : null}
         {gap}
         <div data-map-fullscreen-edit={editBlocked ? 'blocked' : editing ? 'on' : 'off'} className="min-w-0">
           <CcSwitch

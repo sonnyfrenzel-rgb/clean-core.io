@@ -265,7 +265,9 @@ export default function StageHeader({
             </div>
           )}
 
-          <h1 data-stage-title className="m-0 mt-1 cc-text-title text-cc-ink text-balance">
+          {/* A program name without spaces ("Z_SALES_ORDER_CREATOR" until it has a business name) breaks inside itself
+              rather than widening a phone's page. */}
+          <h1 data-stage-title className="m-0 mt-1 cc-text-title text-cc-ink text-balance [overflow-wrap:anywhere]">
             {heading}
           </h1>
           {programId ? (

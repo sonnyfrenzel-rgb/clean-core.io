@@ -1358,17 +1358,18 @@
           {
             "field": "testCases",
             "locator": "[data-stage-output=\"testCases\"]",
+            "opensWith": "For developers",
             "text": "{count:project.testCases} scenario",
-            "why": "the scope summary above the case list: how many scenarios, and where each can be tested"
+            "why": "the scope summary above the case list: how many scenarios, and where each can be tested (in the folded For developers section since 3.5.0, ADR-131 S8)"
           },
           {
             "field": "testSuite",
             "locator": "[data-stage-output=\"testSuite\"]",
             "opensWith": [
-              "Run output and module code",
-              "View Module Code"
+              "For developers",
+              "Show the test"
             ],
-            "why": "the generated suite, behind the terminal toggle inside the folded run output (testing rebuilt as one guided flow, owner 02.10.2026)"
+            "why": "the generated suite, behind the code toggle inside the folded For developers section (ADR-131 S8)"
           }
         ],
         "onlyAfterARun": [
@@ -1527,28 +1528,26 @@
           {
             "field": "generatedCode",
             "locator": "[data-stage-output=\"generatedCode\"]",
-            "opensWith": "Link by link",
-            "why": "the first line of the integrity report; its wording depends on the route, so only its presence is asserted"
+            "opensWith": "A TypeScript package",
+            "why": "the integrity line of the package's Code part, which opens by its row (named by the reference case's CAP route since 3.5.0); its wording depends on the route, so only its presence is asserted"
           },
           {
             "field": "testCases",
             "locator": "[data-stage-output=\"testCases\"]",
             "text": "Test draft: {count:project.testCases}",
-            "opensWith": "Link by link",
-            "why": "the testing line of the integrity report"
+            "why": "the state of the package's Tests part, on its row (3.5.0)"
           },
           {
             "field": "documentation",
             "locator": "[data-stage-output=\"documentation\"]",
             "text": "Process blueprint, earlier form",
-            "opensWith": "Link by link",
+            "opensWith": "The process description, the business documentation",
             "why": "the blueprint line of the integrity report. The reference case seeds a blueprint of the L1-L4 form the old generator wrote; since roadmap 3.0.5 the delivery report names that form as earlier and a document read from the code as 'Process documentation, read from the code'"
           },
           {
             "field": "auditMetadata",
             "locator": "[data-stage-output=\"auditMetadata\"]",
-            "opensWith": "Audit pack contents",
-            "why": "the input fingerprint inside the audit-pack accordion"
+            "why": "the input fingerprint in the Audit pack section (open since 3.5.0, ADR-132)"
           },
           {
             "field": "businessDocumentation",

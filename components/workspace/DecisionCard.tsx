@@ -554,7 +554,7 @@ function Foundation({
           <a
             href={placeHref(projectId, p.place)}
             data-decision-pillar-action=""
-            className="text-[12px] font-semibold whitespace-nowrap text-cc-ink underline underline-offset-2"
+            className="text-[12px] font-semibold whitespace-nowrap text-cc-ink underline underline-offset-2 max-sm:whitespace-normal"
           >
             {p.place.action ?? placeLabel(p.place)}
           </a>
@@ -616,7 +616,7 @@ function ConditionLine({ point: pt, projectId }: { point: DecisionPoint; project
             <a
               href={placeHref(projectId, pt.place)}
               data-decision-condition-link={pt.place.hash ?? ''}
-              className="text-[12px] font-semibold whitespace-nowrap text-cc-ink underline underline-offset-2"
+              className="text-[12px] font-semibold whitespace-nowrap text-cc-ink underline underline-offset-2 max-sm:whitespace-normal"
             >
               {pt.place.action ?? decisionResolveIn(placeLabel(pt.place))}
             </a>

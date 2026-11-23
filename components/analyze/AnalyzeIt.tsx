@@ -74,7 +74,9 @@ import type { Project } from '@/lib/types';
  * It carries what the workspace's IT view held (AB-11): the objects and dependencies (`#it-objects` → *What it
  * touches in SAP*), the open questions (`#not-determined`), and — in *Technical detail*, opened by their addresses —
  * the target profile with *Change target* (`#it-target-profile`), the route contract (`#it-route`), the signed run
- * (`#it-trust`), where it touches SAP standard (`#standard`), the rule register (`#business-rules`) and the DDIC types.
+ * (`#it-trust`), where it touches SAP standard (`#standard`), the Public-Cloud-Fit card with its four buckets
+ * (`#public-cloud-fit`, the workspace's Management view held it), the rule register (`#business-rules`) and the DDIC
+ * types.
  *
  * Nothing here is a model's but the folded summary, which says so; nothing is stored, and the view is never written
  * anywhere (ADR-018).
@@ -123,6 +125,7 @@ export default function AnalyzeIt({
   addEvidence,
   exportMenu,
   missingObjects,
+  publicCloudFit,
 }: {
   projectId: string;
   project: Project;
@@ -156,6 +159,8 @@ export default function AnalyzeIt({
   exportMenu: React.ReactNode;
   /** Objects the code refers to that were not supplied. */
   missingObjects: number;
+  /** The Public-Cloud-Fit card (`PublicCloudFitPanel`, ADR-033): the four buckets, in *Technical detail*. */
+  publicCloudFit?: React.ReactNode;
 }) {
   // A link to a place on this page (`#not-determined`, `#it-trust`) waits for it and brings it into view (ADR-085).
   useFollowHash();
@@ -526,6 +531,11 @@ export default function AnalyzeIt({
                     {touch ? <FitCheckPanel projectId={projectId} project={project} touch={touch} rows={itSource.rows} demo={false} /> : null}
                   </StandardTouchCard>
                 </div>
+              </FoldedPart>
+            ) : null}
+            {hasSource && publicCloudFit ? (
+              <FoldedPart title="Public Cloud fit" data-analyze-it-public-cloud-fit="">
+                {publicCloudFit}
               </FoldedPart>
             ) : null}
             {itSource?.ddicTypes && itSource.ddicTypes.length > 0 ? (

@@ -1797,6 +1797,14 @@ ${DESIGN_ANSWER_REMINDER}`;
         </div>
       ) : (
         <div data-design-view={view} data-design-case={dcase} className="mb-12">
+          {/* The bar names the answer as its first section (G12), so it stands above it, as the mock-up draws it. */}
+          <PageAnchorBar
+            anchors={anchors}
+            label={PAGE_ANCHOR_LABELS.design}
+            name="design-anchor"
+            plural="design-anchors"
+          />
+
           <AnswerCard
             id="design-answer"
             question={card.question}
@@ -1807,14 +1815,6 @@ ${DESIGN_ANSWER_REMINDER}`;
             actionNote={card.actionNote}
             moreActions={card.moreActions}
             facets={card.facets}
-          />
-
-          <PageAnchorBar
-            anchors={anchors}
-            label={PAGE_ANCHOR_LABELS.design}
-            name="design-anchor"
-            plural="design-anchors"
-            className="mt-6"
           />
 
           {guardRail}

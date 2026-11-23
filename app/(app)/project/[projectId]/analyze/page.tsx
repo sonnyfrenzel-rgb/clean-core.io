@@ -115,6 +115,9 @@ function programFactsOrNull(code: string, engineVersion: string | null) {
 }
 import { openSourceLine } from '@/components/analyze/EvidenceFindingsTable';
 import AnalyzeIt from '@/components/analyze/AnalyzeIt';
+import PublicCloudFitPanel from '@/components/workspace/PublicCloudFitPanel';
+import { RecordGaps } from '@/components/workspace/OpenQuestions';
+import { recordGaps } from '@/lib/legacy-project';
 import { countFindings, groupEvidenceFindings } from '@/components/analyze/analysis-answer';
 import RouteCard from '@/components/analyze/RouteCard';
 import StaleNotice from '@/components/StaleNotice';
@@ -1433,6 +1436,8 @@ function AnalyzeScorePage() {
         addEvidence={addEvidenceMenu}
         exportMenu={exportMenu}
         missingObjects={missingDeps.length}
+        // The findings the page already read, so the card asks the server once more only when that read failed.
+        publicCloudFit={<PublicCloudFitPanel project={project} findings={evidenceReport ? evidenceFindings : undefined} />}
       />
     ) : null;
 
@@ -1617,6 +1622,8 @@ function AnalyzeScorePage() {
           routeChosenByReader={false}
           {...heroProps()}
         />
+        {/* What this record does not hold, as IT's open questions say it for every other project (ADR-081). */}
+        <RecordGaps recorded={recordGaps(project)} className="" />
         <div
           className="cc-prose"
           dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(withoutUnapprovedMoney(project.analysis)) }}

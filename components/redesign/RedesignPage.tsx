@@ -14,7 +14,9 @@ import DecisionCard from '@/components/workspace/DecisionCard';
 import { useProgramDecision } from '@/hooks/useProgramDecision';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { useProcessStates } from '@/hooks/useProcessStates';
+import { useNeedProcessLine } from '@/hooks/useNeedProcessLine';
 import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
+import { useFollowHash } from '@/hooks/useFollowHash';
 import WorkspaceRevisionStand from '@/components/workspace/RevisionStand';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { workflowSteps } from '@/lib/workflow-steps';
@@ -42,6 +44,9 @@ import type { Project } from '@/lib/types';
 export default function RedesignPage({ projectId }: { projectId: string }) {
   const [project, setProject] = useState<Project | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'failed'>('loading');
+  // `#decide` (Analyze's way into the decision) arrives before the step exists: the page reads the project first, so
+  // the browser's own jump finds nothing. The follow waits for the place and brings it into view.
+  useFollowHash();
 
   useEffect(() => {
     if (!projectId) return;
@@ -74,6 +79,8 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
   const hasRun = Boolean(project?.activeRunId);
   const rules = useProcessStates(projectId, hasRun && projectId !== '');
   const rulesNow = useMemo(() => rulesStatus(rules.outcome, null), [rules.outcome]);
+  // The decision's Need row says the process the map counts, in one line (ADR-087).
+  const processLine = useNeedProcessLine(project, rules.outcome);
   const costScenario = useMemo(() => (project?._economics ? pricedOptions(project._economics) : null), [project]);
 
   if (state === 'missing') return <ProjectNoAccess />;
@@ -203,6 +210,7 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
                     onChanged={onDecisionChanged}
                     costScenario={costScenario}
                     revision={revision}
+                    process={processLine}
                   />
                 </div>
               ) : null

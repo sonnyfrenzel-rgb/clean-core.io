@@ -36,6 +36,7 @@ export const ANALYZE_IT_DETAIL_PLACES: readonly string[] = Object.freeze([
   'it-route',
   'it-trust',
   'standard',
+  'public-cloud-fit',
   'business-rules',
   'it-types',
 ]);

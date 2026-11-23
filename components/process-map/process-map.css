@@ -333,8 +333,10 @@
   background: var(--cc-page);
 }
 
-/* On a phone the frame gives its edge to the map: half the padding, the safe areas kept (3.2.0, ADR-119). */
-@media (max-width: 600px) {
+/* On a phone the frame gives its edge to the map: half the padding, the safe areas kept (3.2.0, ADR-119). A short
+ * window does the same (a 1366x768 laptop at 125 % zoom is 614 CSS pixels high): there the editor's toolbar, palette
+ * and footer stand above and below the canvas in full screen, and every pixel of edge is canvas height. */
+@media (max-width: 600px), (max-height: 700px) {
   .cc-editor-fullscreen {
     padding: max(0.5rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
       max(0.5rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));

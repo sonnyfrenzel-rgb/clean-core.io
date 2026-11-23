@@ -73,7 +73,9 @@ export default function ProcessHints({ hints, on, onOnChange, onJump }: ProcessH
           data-hints-popover=""
           role="group"
           aria-label={wt('mapHints.popoverLabel')}
-          className="w-full rounded-cc-card border border-cc-line bg-cc-surface p-2"
+          // Scrolls in its own box: a long list (twenty-odd hints on a real program) pushed the editor's canvas row to
+          // nothing in full screen, where only the canvas gives way, and covered the element list beside it.
+          className="max-h-[min(16rem,30vh)] w-full overflow-y-auto rounded-cc-card border border-cc-line bg-cc-surface p-2"
         >
           {shown.length === 0 ? (
             <p data-hints-empty className="text-[12px] font-medium text-cc-ink-muted">

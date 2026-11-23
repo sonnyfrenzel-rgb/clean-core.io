@@ -347,11 +347,13 @@ function RaciSection({ steps, action, editedLine, emptyLead }: { steps: SopStep[
                     }),
                   ),
                   check: (
-                    <span className="inline-flex flex-col gap-1">
+                    // The gap words wrap inside the column (a state text keeps to one line elsewhere): six role columns
+                    // and the check must fit chapter 6's half of the page without a sideways scroll.
+                    <span className="inline-flex min-w-0 flex-col gap-1 [&_[data-cc-state-text]]:whitespace-normal">
                       <GapWords gaps={step.gaps} />
                       {/* An Accountable whose role is not a column is named here — never hidden. */}
                       {step.hiddenAccountable.length ? (
-                        <span data-raci-hidden-accountable="" className="inline-flex items-center gap-1 cc-text-meta text-cc-ink">
+                        <span data-raci-hidden-accountable="" className="inline-flex flex-wrap items-center gap-1 cc-text-meta text-cc-ink">
                           <RaciChip letter="A" /> {step.hiddenAccountable.join(', ')}
                         </span>
                       ) : null}
