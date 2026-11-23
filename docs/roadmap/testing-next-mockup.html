@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Testing, next · mock-up</title>
+<style>
+/* =====================================================================
+   Mock-up, not product code (15.11.2026). The Testing tool as one object
+   page for every reader: what was tested, against what, with what result,
+   where it ran, what is not proven and what to do next — first; the
+   scenarios by business rule, the run record, the test code and the run
+   output underneath, quietly.
+   Shared parts copied verbatim from transformation-next-mockup.html (app
+   bar, back link, tool bar, tool header, "One page for every reader",
+   the "On this page" bar of tmp/ANCHOR-BAR-SPEC.md, chips, cards, drawers).
+   MEASURED (source at 9cff84dc): every critique of today's tool, with
+   file:line, in "Today, critiqued"; the route rules (lib/test-runnability.ts),
+   the phase words (lib/workflow-steps.ts:985–1110), the result import
+   (ADR-075), the closure (ADR-094), rule tracing (ADR-095/100).
+   ILLUSTRATIVE (no test was written or run for this picture): the 22
+   scenarios, the rule ids (as in the Transformation mock-up), every result,
+   date, system id, file name and hash, the mutation probe, and the test
+   code. Demo projects write and run nothing.
+   ===================================================================== */
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;--cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;--chart-4:#9333ea;
+  --code-bg:#030712;--code-ink:#e5e7eb;--code-muted:#9ca3af;--code-kw:#c4b5fd;--code-lit:#fcd34d;--code-name:#93c5fd;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --t-succ:#6366f1;--t-route:#9333ea;--t-none:#d97706;--t-custom:#9ca3af;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+p{margin:0}h1,h2,h3,h4{margin:0}
+button,input,select{font-family:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+code{font-family:var(--mono);font-size:12px}
+
+/* ---------- doc chrome (not product) ---------- */
+.mock{position:sticky;top:0;z-index:300;background:#1f1147;color:#fff;font-size:12px;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}
+.mock button.on{background:#e9e5ff;color:#1f1147}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap;letter-spacing:0;text-transform:none}
+body.nopins .pin{display:none}
+
+/* ---------- shell bar ---------- */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:16px;letter-spacing:-.02em;line-height:1.15}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* ---------- StageFrame + StageHeader ---------- */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vsnote{font-size:13px;font-weight:500;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px}
+.tools{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tools .k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tool .od{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .legend{margin-left:auto;font-size:12px;font-weight:500;color:var(--cc-ink-muted);display:flex;gap:12px}
+.tools .toolmenu{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px}
+
+/* ---------- cc components ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;text-decoration:none;text-align:center}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink)}
+.btn.danger{background:#fff;border-color:var(--cc-error);color:var(--cc-error)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:4px 10px;font-size:12px}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff}
+.pv svg.i{width:12px;height:12px}
+.pv.ai{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed}
+.pv.eng{color:var(--cc-information);border-color:var(--cc-information)}
+.pv.imp{color:var(--seq-4);border-color:var(--seq-2);background:#f5f7ff}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral)}
+.pv.err{color:var(--cc-error);border-color:var(--cc-error);background:var(--cc-error-bg)}
+.pv.stale{color:var(--cc-warning);border-color:var(--cc-warning-mark);background:var(--cc-warning-bg)}
+.lvl{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:5px;font-size:12px;font-weight:800;border:1px solid var(--cc-information);color:var(--cc-information);background:var(--cc-information-bg)}
+.lvl.nd{border-color:var(--cc-neutral-border);color:var(--cc-neutral);background:var(--cc-neutral-bg);font-weight:700;padding:0 5px}
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.muted{color:var(--cc-ink-muted)}
+.sm{font-size:13px}.xs{font-size:12px}
+.k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.h2{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.h3{font-size:14px;font-weight:700}
+.anc{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--cc-information);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;background:none;border:0;padding:0;cursor:pointer}
+.sev{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;white-space:nowrap}
+.sev i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.sev.crit i{background:#b91c1c}.sev.high i{background:#ea580c}.sev.med i{background:#d97706}.sev.low i{background:#9ca3af}.sev.info i{background:#60a5fa}
+
+/* ---------- strip (only for what stops the page) ---------- */
+.strip{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:10px 14px;border-radius:8px;border:1px solid;font-size:13px;line-height:1.5;font-weight:500}
+.strip.err{background:var(--cc-error-bg);border-color:var(--cc-error-border);color:var(--cc-ink)}
+.strip.err svg{color:var(--cc-error)}
+.strip.inf{background:var(--cc-information-bg);border-color:var(--cc-information-border)}
+.strip.inf svg{color:var(--cc-information)}
+.strip b{font-weight:700}
+
+/* ---------- object page header: answer + facets ---------- */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start}
+.ans .q{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ans .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ans .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ans .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:250px;max-width:290px}
+.ans .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;line-height:1.45}
+.facets{display:grid;grid-template-columns:1.25fr 1.25fr 1fr 1fr;border-top:1px solid var(--cc-line);margin:16px -22px 0}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2}
+.facet .v.word{font-size:18px;letter-spacing:-.01em}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .v.nd{font-size:16px;font-weight:700;color:var(--cc-neutral)}
+.facet .v.bad{color:var(--cc-error)}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+.facet .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.sbar{display:flex;height:8px;gap:2px;border-radius:999px;overflow:hidden;margin-top:8px;background:var(--cc-line)}
+.sbar span{display:block;height:100%}
+.legend-s{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+.legend-s i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:0}
+.prog{height:8px;border-radius:999px;background:var(--cc-line);margin-top:8px;overflow:hidden}
+.prog span{display:block;height:100%;background:var(--seq-3);border-radius:999px}
+.prog.str span{background:repeating-linear-gradient(135deg,var(--seq-3) 0 6px,var(--seq-2) 6px 12px)}
+
+/* ---------- "On this page" — the shared PageAnchorBar (tmp/ANCHOR-BAR-SPEC.md) ---------- */
+.pab{position:sticky;top:30px;z-index:50;display:flex;align-items:center;gap:12px;height:48px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 2px 4px rgb(11 28 48 / .06);margin:24px -32px 0;padding:0 32px}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted)}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+.pab-c{font-size:12px;font-weight:600;line-height:18px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:var(--cc-ink)}
+.pab-c.o{background:#fef3c7}
+
+/* ---------- body: main + side ---------- */
+.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;margin-top:24px;align-items:start}
+.main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.side{display:flex;flex-direction:column;gap:12px;position:sticky;top:94px}
+.sec-h{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+
+/* ---------- testing: results by business rule ---------- */
+.legend-r{display:flex;flex-wrap:wrap;gap:6px 16px;margin-top:12px;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+.rules{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.rules>li{border:1px solid var(--cc-line);border-radius:8px}
+.rules>li.bad{border-color:var(--cc-error-border);box-shadow:inset 3px 0 0 var(--cc-error)}
+.rules>li.gap{border-style:dashed}
+.rules summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:72px minmax(0,1fr) 170px 190px 18px;gap:4px 14px;align-items:center;padding:10px 12px}
+.rules summary::-webkit-details-marker{display:none}
+.rules .rid2{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--cc-ink)}
+.rules .rt{font-size:14px;font-weight:600;line-height:1.4;min-width:0}
+.rules .rt .sub{display:block;font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:1px}
+.rules .cnt{font-size:12px;font-weight:500;color:var(--cc-ink-muted);line-height:1.45}
+.rules .cnt b{color:var(--cc-ink);font-weight:700}
+.rules .rr{display:flex;flex-direction:column;align-items:flex-start;gap:3px}
+.rules .chev{color:var(--cc-ink-muted);transition:transform .15s}
+.rules details[open] .chev{transform:rotate(90deg)}
+.dec{display:inline-flex;align-items:center;font-size:11px;font-weight:600;line-height:16px;padding:0 6px;border-radius:4px;border:1px solid var(--cc-line);background:var(--cc-surface-muted);color:var(--cc-ink);margin-left:6px;vertical-align:1px;white-space:nowrap}
+.dec.chg{border-color:var(--cc-information-border);background:var(--cc-information-bg);color:var(--cc-information)}
+.dec.opn{border-color:var(--cc-warning-border);background:var(--cc-warning-bg);color:var(--cc-warning)}
+.cases{border-top:1px solid var(--cc-line);padding:2px 12px 8px}
+.case{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr) 150px minmax(0,1.1fr) auto;gap:4px 14px;align-items:start;padding:9px 0;border-bottom:1px solid var(--cc-line);font-size:13px;line-height:1.45}
+.case:last-child{border-bottom:0}
+.case .cn{font-weight:600;min-width:0}
+.case .cn>code{display:block;font-size:11.5px;font-weight:500;color:var(--cc-ink-muted);word-break:break-all;margin-top:1px}
+.case .ex{min-width:0;color:var(--cc-ink)}
+.case .ex>span{display:block;font-size:12px;color:var(--cc-ink-muted);margin-top:2px}
+.case .mn{font-size:12px;color:var(--cc-ink-muted);min-width:0}
+.case .mn b{color:var(--cc-ink);font-weight:600}
+.case.hd{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted);padding:8px 0 6px}
+.res.mean{font-weight:600}
+.res.warn{color:var(--cc-warning)}.res.warn i{background:var(--cc-warning-mark)}
+
+/* where it ran */
+.places{list-style:none;margin:12px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.place{border:1px solid var(--cc-line);border-radius:8px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.place.on{border-color:var(--cc-ink);box-shadow:inset 0 0 0 1px var(--cc-ink)}
+.place.off{background:var(--cc-surface-muted)}
+.place .ph2{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700}
+.place .ph2 svg{color:var(--cc-ink-muted)}
+.place p{font-size:13px;line-height:1.5}
+.place .st2{font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px}
+.rec{margin-top:14px;border-top:1px solid var(--cc-line);padding-top:12px}
+.rec dl{display:grid;grid-template-columns:170px minmax(0,1fr);gap:6px 16px;margin:8px 0 0;font-size:13px;line-height:1.5}
+.rec dt{color:var(--cc-ink-muted);font-weight:500}
+.rec dd{margin:0;min-width:0;word-break:break-word}
+.rec .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.howto{list-style:none;margin:10px 0 0;padding:0;counter-reset:h;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.howto li{counter-increment:h;border:1px dashed var(--cc-field-border);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.45;min-width:0}
+.howto li::before{content:counter(h);display:inline-flex;width:20px;height:20px;border-radius:999px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;margin-bottom:6px}
+.howto li b{display:block;font-weight:700}
+.howto li span{color:var(--cc-ink-muted);font-size:12px}
+.probe{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+.probe>div{border:1px solid var(--cc-line);border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.5;min-width:0}
+.probe .pv2{font-size:20px;font-weight:800;letter-spacing:-.02em;margin:2px 0}
+.probe .pv2 small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+
+/* open list reuses .olist from Transformation */
+.olist{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column}
+.olist li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--cc-line)}
+.olist li:first-child{border-top:0;padding-top:4px}
+.olist .no{width:24px;height:24px;border-radius:999px;background:#fef3c7;color:var(--cc-warning);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.olist .tt{font-size:14px;font-weight:700;line-height:1.4;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.olist .dd{font-size:13px;color:var(--cc-ink-muted);line-height:1.5;margin-top:2px}
+.olist .dd b{color:var(--cc-ink);font-weight:600}
+.olist .act{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.olist .act .xs{white-space:nowrap}
+
+/* acceptance checks */
+.acc{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+.acc th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--cc-line)}
+.acc td{padding:10px;border-bottom:1px solid var(--cc-line);vertical-align:top;line-height:1.5}
+.acc td:first-child{white-space:nowrap}
+.acc td .s{display:block;font-size:12px;color:var(--cc-ink-muted)}
+.acc .yes,.acc .no2{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;margin-bottom:2px}
+.acc .no2{color:var(--cc-ink-muted)}
+.more{margin-top:10px}
+
+/* developer fold */
+.devgrid{display:flex;flex-direction:column;gap:14px}
+.devrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;border:1px solid var(--cc-line);border-radius:8px;padding:10px 12px}
+.devrow .dl{min-width:0}
+.devrow .dl b{font-weight:700;display:block}
+.devrow .dl span{font-size:12px;color:var(--cc-ink-muted)}
+.devrow .r{display:flex;gap:8px;flex-wrap:wrap}
+pre.con{margin:0;background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:12px 14px;font-family:var(--mono);font-size:12px;line-height:1.6;overflow-x:auto;white-space:pre}
+pre.con .ok{color:#86efac}pre.con .bad{color:#fca5a5}pre.con .dim{color:var(--code-muted)}
+.pv.mock{color:var(--seq-4);border-color:var(--seq-3);background:#eef2ff}
+/* checks */
+.chk{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+.chk th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--cc-line)}
+.chk td{padding:10px;border-bottom:1px solid var(--cc-line);vertical-align:top;line-height:1.5}
+.chk td:first-child{font-weight:600}
+.chk td .s{display:block;font-size:12px;color:var(--cc-ink-muted);font-weight:500}
+.res{display:inline-flex;align-items:center;gap:6px;font-weight:700;white-space:nowrap}
+.res i{width:10px;height:10px;border-radius:999px;display:inline-block;flex:none}
+.res.pass i{background:var(--seq-3)}
+.res.fail{color:var(--cc-error)}.res.fail i{background:var(--cc-error)}
+.res.nr{color:var(--cc-neutral)}.res.nr i{background:#fff;border:2px solid var(--cc-neutral)}
+.res.run i{background:var(--seq-2);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.foot-note{font-size:12px;color:var(--cc-ink-muted);line-height:1.5;margin-top:10px}
+/* trace fold */
+details.fold{border:1px solid var(--cc-line);border-radius:12px;background:#fff;box-shadow:var(--cc-shadow)}
+details.fold>summary{list-style:none;cursor:pointer;padding:14px 20px;display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;flex-wrap:wrap}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary .chev{transition:transform .15s;color:var(--cc-ink-muted)}
+details.fold[open]>summary .chev{transform:rotate(90deg)}
+details.fold>summary .r{margin-left:auto;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+details.fold .fb{padding:0 20px 16px;font-size:13px;line-height:1.55}
+/* side */
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.steps{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.steps li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;font-size:13px;line-height:1.45}
+.steps .b{width:20px;height:20px;border-radius:999px;border:1px solid var(--cc-line);background:#fff;color:var(--cc-ink-muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.steps .b.done{background:var(--cc-success);border-color:var(--cc-success);color:#fff}
+.steps .b.fail{background:var(--cc-error);border-color:var(--cc-error);color:#fff}
+.steps .b.run{border-color:var(--seq-3);color:var(--seq-3)}
+.steps li span.s{display:block;color:var(--cc-ink-muted);font-size:12px}
+.src{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+.src li{display:flex;flex-direction:column;gap:2px;font-size:13px}
+.src li .r1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.src li .r1 b{font-weight:700}
+.src li .r2{font-size:12px;color:var(--cc-ink-muted);line-height:1.45}
+.ng{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.5}
+.ng li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:8px}
+.ng li svg{color:var(--cc-ink-muted);margin-top:3px}
+
+/* code drawer */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(1040px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55}
+.drawer.narrow{width:min(780px,100vw)}
+.drawer header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2;flex-wrap:wrap}
+.drawer header h2{font-size:16px;font-weight:800}
+.drawer header .x{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer ul,.drawer ol{padding-left:20px;margin:6px 0}
+.drawer li{margin:4px 0}
+.drawer table{border-collapse:collapse;width:100%;margin:6px 0;font-size:12px}
+.drawer th,.drawer td{border:1px solid var(--cc-line);padding:6px 8px;text-align:left;vertical-align:top}
+.drawer th{background:var(--cc-surface-muted)}
+.drawer code{background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px}
+.recbox{background:var(--cc-brand-surface);border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px}
+.trail{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;font-weight:600;color:var(--cc-ink-muted);margin-bottom:12px}
+.trail .st{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--cc-line);border-radius:8px;padding:4px 8px;background:var(--cc-surface-muted);color:var(--cc-ink)}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.pane-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;font-weight:600;color:var(--cc-ink-muted);margin-bottom:6px}
+pre.code{margin:0;background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:10px 0;font-family:var(--mono);font-size:12px;line-height:1.6;overflow-x:auto}
+pre.code .ln{display:block;padding:0 12px 0 0;white-space:pre}
+pre.code .ln b{display:inline-block;width:44px;text-align:right;padding-right:12px;color:var(--code-muted);font-weight:400;user-select:none}
+pre.code .ln.ai{background:rgb(217 119 6 / .14);box-shadow:inset 3px 0 0 #f59e0b}
+pre.code .ln.eng{box-shadow:inset 3px 0 0 #60a5fa}
+pre.code .ln.err{background:rgb(185 28 28 / .35);box-shadow:inset 3px 0 0 #f87171}
+pre.code .kw{color:var(--code-kw)}pre.code .lit{color:var(--code-lit)}pre.code .cm{color:var(--code-muted)}pre.code .nm{color:var(--code-name)}
+.keyrow{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--cc-ink-muted);margin-top:8px}
+.keyrow i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+
+/* ---------- small screens ---------- */
+@media (max-width:1100px){
+  .body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  .facets{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .facet:nth-child(2){border-right:0}
+  .facet:nth-child(-n+2){border-bottom:1px solid var(--cc-line)}
+  .rules summary{grid-template-columns:64px minmax(0,1fr) 130px 170px 18px}
+  .case{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 140px auto}
+  .case .mn{grid-column:1 / -1}
+  .case.hd .mn{display:none}
+  .howto{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:860px){
+  .places{grid-template-columns:minmax(0,1fr)}
+  .rules summary{grid-template-columns:minmax(0,1fr) auto 18px}
+  .rules .rid2{grid-column:1;grid-row:1}
+  .rules .rt{grid-column:1 / -1;grid-row:2}
+  .rules .cnt{grid-column:1;grid-row:3}
+  .rules .rr{grid-column:2 / -1;grid-row:3;align-items:flex-end}
+  .rules .chev{grid-column:3;grid-row:1;justify-self:end}
+  .case.hd{display:none}
+  .case{grid-template-columns:minmax(0,1fr) auto}
+  .case .cn{grid-column:1;grid-row:1}
+  .case .rs{grid-column:2;grid-row:1}
+  .case .ex{grid-column:1 / -1;grid-row:2}
+  .case .mn{grid-column:1 / -1;grid-row:3}
+  .case .cd{grid-column:1 / -1;grid-row:4}
+}
+@media (max-width:720px){
+  .mock{position:static}
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .tools .tool,.tools .legend,.tools .k{display:none}
+  .tools .toolmenu{display:inline-flex}
+  .tools .t12{order:2}
+  .ophead{padding:14px 16px 0}
+  .ans{grid-template-columns:minmax(0,1fr)}
+  .ans .a{font-size:17px}
+  .ans .next{min-width:0;max-width:none}
+  .facets{margin:14px -16px 0}
+  .facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .facet .v.word{font-size:16px}
+  .olist li{grid-template-columns:24px minmax(0,1fr)}
+  .olist .act{grid-column:2;align-items:flex-start}
+  .pad{padding:14px 16px}
+  details.fold>summary{padding:12px 16px}
+  details.fold .fb{padding:0 16px 14px}
+  .cmp{grid-template-columns:minmax(0,1fr)}
+  .howto{grid-template-columns:minmax(0,1fr)}
+  .probe{grid-template-columns:minmax(0,1fr)}
+  .rec dl{grid-template-columns:minmax(0,1fr);gap:0}
+  .rec dd{margin-bottom:8px}
+  .acc thead{display:none}
+  .acc tr{display:grid;grid-template-columns:minmax(0,1fr);border-bottom:1px solid var(--cc-line);padding:10px 0}
+  .acc td{border:0;padding:2px 0}
+  .acc td:first-child{white-space:normal}
+}
+@media (max-width:639px){
+  .pab{top:0;margin:24px -16px 0;padding:0 0 0 16px}
+  [id^="s-"]{scroll-margin-top:64px}
+  .pab-l{display:none}
+  .pab-items{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);padding-right:24px}
+}
+
+/* =====================================================================
+   ONE FAMILY (15.11.2026) — this block is byte-identical in the six tool
+   mock-ups (Economics, Design, Transformation, Documentation, Testing,
+   Delivery) and comes last, so the shared parts look and behave the same
+   in every tool. Change it in all six or in none.
+   Responsive rules, the same everywhere:
+   - mock-up bar sticky only above 1100 px; its real height is measured
+     into --mock-h, so nothing ever slides under it;
+   - tool bar: one row at every width; when it does not fit, the legend
+     steps back (each mark keeps its words as a tooltip) and the row
+     scrolls sideways with a right-edge fade, the current tool in view;
+   - "On this page": the spec (tmp/ANCHOR-BAR-SPEC.md), sticky below the
+     mock-up bar, 24 px above and below, anchors land 16 px under it;
+     hidden when the page has only one section (owner, 15.11.2026);
+   - side column below the main column from 1100 px down;
+   - 24 px between cards and sections; card padding 16/20, phone 14/16;
+   - tables never widen the page: on a phone a list table stacks into one
+     block per row (row title first, every other cell with its column
+     name); a wider table scrolls inside its own card;
+   - button labels wrap balanced (no single orphaned word), numbers and
+     chips never break.
+   ===================================================================== */
+@font-face{font-family:Inter;src:url(../../app/fonts/inter-latin-variable.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --mk-bar:#1f1147;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --mock-h:0px;
+}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+body{overflow-x:clip}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+h2[tabindex="-1"]:focus,h3[tabindex="-1"]:focus,summary[tabindex="-1"]:focus{outline:none}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+
+/* mock-up chrome (not product) */
+.mock{position:sticky;top:0;z-index:300;background:var(--mk-bar);color:#fff;font-size:12px;line-height:1.4;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap}
+.mock button.on{background:#e9e5ff;color:var(--mk-bar)}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.mock .d{flex-basis:100%;color:#cfc8f3;font-weight:500}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap;letter-spacing:0;text-transform:none}
+.mtag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;white-space:nowrap;letter-spacing:0;text-transform:none}
+body.nopins .pin{display:none}
+
+/* app bar */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none;color:inherit}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.15}
+.logo .lg svg{width:18px;height:18px}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* frame, back link, note / view switch, tool bar, tool header */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;min-height:32px}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vsnote{font-size:13px;font-weight:500;line-height:1.4;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:0 12px;font-size:13px;font-weight:600;line-height:26px;min-height:26px;color:var(--cc-ink-muted);border-radius:6px;white-space:nowrap}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.tools{display:flex;align-items:center;gap:8px;margin-top:8px;padding:2px 0;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+.tools::-webkit-scrollbar{display:none}
+.tools>*{flex:none}
+/* sideways rows (tool bar, "On this page"): a fade on each edge where more items wait */
+.tools.ovf:not(.end),.pab-items.ovf:not(.end){-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
+.tools.ovf.end:not(.start),.pab-items.ovf.end:not(.start){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px);mask-image:linear-gradient(90deg,transparent,#000 48px)}
+.tools.ovf:not(.start):not(.end),.pab-items.ovf:not(.start):not(.end){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent)}
+.tools .k{display:inline;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tools .tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tools .tool:focus-visible{outline-offset:-2px}
+.tools .tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tool .od{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .t12{order:0}
+.tools .legend{display:flex;margin-left:auto;padding-left:16px;font-size:12px;font-weight:500;color:var(--cc-ink-muted);gap:12px;white-space:nowrap}
+.tools .legend span{display:inline-flex;align-items:center;gap:4px}
+.tools .legend i{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .legend svg.half,.tool svg.half{width:10px;height:10px;color:var(--cc-information);flex:none}
+.tools .toolmenu,.tools .toolsmenu{display:none}
+.tools.nolegend .legend{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh .eyebrow{display:flex;align-items:center;gap:6px}
+.sh .eyebrow svg.i{width:14px;height:14px}
+.sh .pid{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px;overflow-wrap:anywhere}
+.sh .pid+.lead{margin-top:6px}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;line-height:1.5;color:var(--cc-ink-muted);margin-top:2px}
+
+/* buttons, links, chips */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;text-decoration:none;text-align:center;white-space:normal;text-wrap:balance;font-family:inherit;cursor:pointer}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:4px 10px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff;letter-spacing:0;text-transform:none}
+.pv svg.i{width:12px;height:12px}
+.pv.ai,.pv.sim,.pv.prop{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed;background:#fff}
+.pv.eng,.pv.rec{color:var(--cc-information);border-color:var(--cc-information);background:#fff}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral);background:#fff}
+
+/* cards and sections */
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.h2{font-size:16px;font-weight:700;line-height:1.35;display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
+.sec-h{display:flex;align-items:flex-start;gap:8px 12px;flex-wrap:wrap}
+.sec-h>div:first-child{flex:1 1 320px;min-width:0}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+details.fold>summary{flex-wrap:wrap}
+
+/* the answer card: question, answer, why, next step, facets */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ophead>.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start;margin:0}
+.ophead .q{font-size:12px;font-weight:600;line-height:1.5;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:0;letter-spacing:0;text-transform:none}
+.ophead .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ophead .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ophead .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:250px;max-width:290px;width:290px}
+.ophead .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;line-height:1.45}
+.facets{display:grid;border-top:1px solid var(--cc-line);margin:16px -22px 0}
+:where(.facets){grid-template-columns:repeat(4,minmax(0,1fr))}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0}
+button.facet{font:inherit;color:inherit;text-align:left;background:none;border:0;border-right:1px solid var(--cc-line);cursor:pointer;display:block;width:100%}
+button.facet:hover{background:var(--cc-surface-muted)}
+button.facet:last-child{border-right:0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2;font-variant-numeric:tabular-nums}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+
+/* "On this page" — the one bar (tmp/ANCHOR-BAR-SPEC.md) */
+.pab{position:sticky;top:var(--mock-h);z-index:50;display:flex;align-items:center;gap:12px;height:48px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 2px 4px rgb(11 28 48 / .06);margin:24px -32px 24px;padding:0 32px}
+.pab+*{margin-top:0}
+.pab.single{display:none}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted);margin:0;white-space:nowrap}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap;flex:none}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+.pab-c{font-size:12px;font-weight:600;line-height:18px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:var(--cc-ink);border:0;box-shadow:none}
+.pab-c.o{background:#fef3c7}
+.pab-act{margin-left:auto;flex:none}
+[id^="s-"],[data-sec],.chap{scroll-margin-top:calc(var(--mock-h) + 64px)}
+.frame>.pab.single+*,.frame>.pab.single+.body{margin-top:24px}
+
+/* object page body: main column + side column */
+.frame>.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;margin-top:0;align-items:start}
+.main{display:flex;flex-direction:column;gap:24px;min-width:0}
+.side{display:flex;flex-direction:column;gap:24px;position:sticky;top:calc(var(--mock-h) + 64px)}
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* owner / today drawers */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(780px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55;color:var(--cc-ink)}
+.drawer.wide{width:min(1040px,100vw)}
+.drawer[hidden]{display:none}
+.drawer header{position:sticky;top:0;background:#fff;color:var(--cc-ink);border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2;flex-wrap:wrap}
+.drawer header h2{font-size:16px;font-weight:800;line-height:1.3;min-width:0}
+.drawer header .x{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer .db>h3:first-child{margin-top:0}
+.drawer code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+
+/* tables on a phone (rule: stack; data-label filled by the family script) */
+@media (max-width:720px){
+  table.tbl-stack{min-width:0!important;width:100%}
+  table.tbl-stack thead,table.tbl-stack tr:first-child:has(>th){display:none}
+  table.tbl-stack,table.tbl-stack tbody{display:block}
+  table.tbl-stack tr{display:block;padding:10px 0;border-bottom:1px solid var(--cc-line)}
+  table.tbl-stack tr:last-child{border-bottom:0}
+  table.tbl-stack td{display:flex;gap:10px;border:0!important;padding:2px 0!important;text-align:left!important;background:none!important}
+  table.tbl-stack td:first-child{font-weight:600}
+  table.tbl-stack td[data-label]:not(:first-child)::before{content:attr(data-label);flex:0 0 38%;font-size:12px;font-weight:600;color:var(--cc-ink-muted);font-family:var(--sans);white-space:normal}
+}
+
+/* ---------- the same breakpoints in every tool ---------- */
+@media (max-width:1100px){
+  .mock{position:static}
+  .frame>.body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  :where(.facets){grid-template-columns:repeat(2,minmax(0,1fr))}
+  :where(.facets>.facet:nth-child(2n)){border-right:0}
+  :where(.facets>.facet:nth-child(-n+2)){border-bottom:1px solid var(--cc-line)}
+}
+@media (max-width:900px){
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .next{width:auto;min-width:0;max-width:420px}
+}
+@media (max-width:720px){
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .ophead{padding:14px 16px 0}
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .a{font-size:17px}
+  .ophead .next{min-width:0;max-width:none;width:auto}
+  .facets{margin:14px -16px 0}
+  .facet,button.facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .pad{padding:14px 16px}
+  .drawer header{padding:12px 16px}
+  .drawer .db{padding:14px 16px 28px}
+}
+@media (max-width:639px){
+  .pab{margin:24px -16px 24px;padding:0 0 0 16px}
+  .pab-l,.pab-act{display:none}
+  .pab-items{padding-right:24px}
+}
+</style>
+</head>
+<body>
+
+<div class="mock" role="region" aria-label="Mock-up controls">
+  <b>State</b>
+  <button type="button" data-state="none">Not started</button>
+  <button type="button" data-state="drafts">Written, not run</button>
+  <button type="button" data-state="passed" class="on">Ran and passed</button>
+  <button type="button" data-state="failed">Ran with failures</button>
+  <button type="button" data-state="demo">Demo project</button>
+  <b>Route</b>
+  <button type="button" data-route="abap" class="on">ABAP Cloud · runs in your system</button>
+  <button type="button" data-route="cap">CAP · runs here on mocks</button>
+  <span class="sp">
+    <button type="button" id="pins">Decision pins: on</button>
+    <button type="button" data-open="p-today">Today, critiqued</button>
+    <button type="button" data-open="p-owner">For the owner</button>
+  </span>
+</div>
+
+<header class="shell">
+  <a class="logo" href="#" aria-label="Clean-Core.io, My workspace">
+    <span class="lg"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span>
+    <span><span class="n">Clean-Core<em>.io</em></span><span class="s">Free Community Edition</span></span>
+  </a>
+  <nav class="path" aria-label="Breadcrumb"><span>My workspace</span><span>›</span><span id="crumb">Emergency purchase approval</span><span>›</span><span class="cur">Testing</span></nav>
+  <div class="shell-r">
+    <button class="ib" type="button" aria-label="Help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+    <span class="av" aria-label="Account menu">MW</span>
+  </div>
+</header>
+
+<main class="frame">
+  <div class="headrow">
+    <a class="back" href="#"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg><span id="backtxt">My workspace · Emergency purchase approval</span></a>
+    <div class="vs">
+      <span class="vsnote" role="note"><svg class="i s" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.85"/></svg>One page for every reader — business, IT and management<span class="pin">S1</span></span>
+    </div>
+  </div>
+  <nav class="tools" aria-label="Tools">
+    <span class="k">Tools</span>
+    <a class="tool" href="#"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Analyze</a>
+    <a class="tool" href="#"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Economics</a>
+    <a class="tool" href="#"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Design</a>
+    <a class="tool" href="#" id="tool-tf"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Transformation</a>
+    <a class="tool" href="#" id="tool-doc"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Documentation</a>
+    <a class="tool cur" href="#" aria-current="page"><svg class="i s ck" id="toolck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="od" id="toolod" hidden></span>Testing</a>
+    <a class="tool" href="#">Delivery</a>
+    <span class="pin t12">S15</span>
+    <span class="legend"><span><svg class="i s" viewBox="0 0 24 24" style="color:var(--cc-success)"><path d="M20 6 9 17l-5-5"/></svg>done</span><span><svg class="half" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 1.25 A4.75 4.75 0 0 0 6 10.75 Z" fill="currentColor"/></svg>started</span><span><i class="od"></i>out of date</span></span>
+    <button class="btn ghost toolmenu" type="button">Tools · Testing<svg class="i s" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+  </nav>
+
+  <div class="sh">
+    <div class="eyebrow"><svg class="i" viewBox="0 0 24 24"><path d="M9 2v6L4 18a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3L15 8V2M8 2h8M7 14h10"/></svg><span>Tool · Testing</span></div>
+    <h1 data-stage-title>Emergency purchase approval</h1>
+    <p class="pid" id="eyename">Z_MM_PO_APPROVAL</p>
+    <p class="lead">Tests the new code against what the original does — and every result says where it ran: in Clean-Core.io's isolated runner against SAP mocks, or in your own SAP system.</p>
+  </div>
+
+  <div id="strip"></div>
+
+  <!-- ===== object page header: the answer, then the facets ===== -->
+  <section class="card ophead" aria-labelledby="ans-q" id="ophead">
+    <div class="ans">
+      <div>
+        <p class="q" id="ans-q"><span id="qtext">Is Z_MM_PO_APPROVAL tested?</span> <span id="qchip"></span><span class="pin">S2</span></p>
+        <p class="a" id="answer"></p>
+        <p class="why" id="why"></p>
+      </div>
+      <div class="next" id="nextbox"></div>
+    </div>
+    <div class="facets" id="facets"></div>
+  </section>
+
+  <!-- ===== "On this page" ===== -->
+  <nav class="pab" aria-label="On this page" id="anchors">
+    <span class="pab-l">On this page</span>
+    <div class="pab-items" id="pabitems"></div>
+  </nav>
+
+  <div class="body">
+    <div class="main">
+      <!-- S4: what was tested, by business rule -->
+      <section class="card pad" id="s-tested" aria-labelledby="s-tested-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-tested-h">What was tested<span class="pin">S4</span></h2>
+            <p class="sec-lead" id="tested-lead"></p>
+          </div>
+          <div class="r" id="tested-r"></div>
+        </div>
+        <div class="legend-r" id="tested-legend"></div>
+        <ul class="rules" id="rules"></ul>
+      </section>
+
+      <!-- S5: where it ran -->
+      <section class="card pad" id="s-ran" aria-labelledby="s-ran-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-ran-h">Where it ran<span class="pin">S3</span><span class="pin">S5</span></h2>
+            <p class="sec-lead" id="ran-lead"></p>
+          </div>
+        </div>
+        <ul class="places" id="places"></ul>
+        <div id="ranbody"></div>
+      </section>
+
+      <!-- S6: not proven -->
+      <section class="card pad" id="s-open" aria-labelledby="s-open-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-open-h">Not proven<span class="pin">S6</span></h2>
+            <p class="sec-lead" id="open-lead"></p>
+          </div>
+        </div>
+        <ol class="olist" id="olist"></ol>
+      </section>
+
+      <!-- S7: acceptance checks -->
+      <section class="card pad" id="s-accept" aria-labelledby="s-accept-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-accept-h">Acceptance checks for a business tester<span class="pin">S7</span></h2>
+            <p class="sec-lead">How someone in the business department checks each rule in your test system, without ABAP: one case where the rule applies, and its counter-check where it must not. Read from the code by the engine. A check is a question, not a result — nothing here has run it.</p>
+          </div>
+          <div class="r"><span class="pv eng" title="Read from the signed source by Clean-Core.io's deterministic engine. No model."><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4"/></svg>From the engine</span></div>
+        </div>
+        <div style="overflow-x:auto"><table class="acc" id="acc"></table></div>
+        <button class="lnk more" type="button" id="accmore">Show all 12 rules</button>
+      </section>
+
+      <!-- S8: developers -->
+      <details class="fold" id="s-dev">
+        <summary><svg class="i chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>For developers<span class="pin">S8</span><span class="r" id="dev-r"></span></summary>
+        <div class="fb"><div class="devgrid" id="devbody"></div></div>
+      </details>
+    </div>
+
+    <aside class="side" aria-label="Status and limits">
+      <section class="card sc" aria-labelledby="st-h">
+        <h3 id="st-h">Status of testing</h3>
+        <ol class="steps" id="steps"></ol>
+      </section>
+      <section class="card sc" aria-labelledby="bo-h">
+        <h3 id="bo-h">Built on</h3>
+        <ul class="src" id="builton"></ul>
+      </section>
+      <section class="card sc" aria-labelledby="wh-h">
+        <h3 id="wh-h">Where tests can run<span class="pin">S9</span></h3>
+        <ul class="src" id="where"></ul>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- ===== code drawer ===== -->
+<aside class="drawer wide" id="p-code" hidden role="dialog" aria-labelledby="code-h">
+  <header><h2 id="code-h">E07</h2><span id="code-chips"></span><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db" id="code-body"></div>
+</aside>
+
+<!-- ===== today, critiqued ===== -->
+<aside class="drawer narrow" id="p-today" hidden role="dialog" aria-labelledby="today-h">
+  <header><h2 id="today-h">Testing today, critiqued</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <p class="muted">Read from source at <code>9cff84dc</code> (branch dev). Today's tool could not be opened here (no server, no emulators), so nothing below is a screenshot; every point is read from the code. <code>app/(app)/project/[projectId]/testing/page.tsx</code> is 2,864 lines; the ten components in <code>components/testing/</code> and the <code>lib/testing-*.ts</code> modules add about 7,300.</p>
+
+    <h3>What is wrong today</h3>
+    <ul>
+      <li><b>No answer.</b> The page opens on the tool's lead (route-dependent, <code>page.tsx:1351–1363</code>), a meta line (<code>1365</code>) and four tiles — Scenarios · Last run · Check by hand · Tenant tests (<code>components/testing/TestingHeader.tsx:228–315</code>) — with a status line of three more labels (Suite · Runner · Tenant, <code>329</code>; values at <code>page.tsx:1393–1404</code>). No sentence says whether the program is tested, against what, where, or what to do next. On an empty project even the tiles are gone (<code>hasTestingRecord</code>, <code>page.tsx:1376</code>).</li>
+      <li><b>Steps as a page structure.</b> The body is a numbered flow — 1 Write the scenarios (<code>1446</code>), 2 Run them against mocks (<code>1585</code>), the SAP result (<code>1848</code>), 3 Check by hand (<code>1882</code>, state always "open"), then Scenarios (<code>1933</code>), the console (<code>1975</code>) and the tenant (<code>2033</code>). The bar repeats the steps: "Write · Run · Your SAP result · Check by hand · Scenarios" (<code>lib/page-anchors.ts:150–165</code>). A manager has to read the procedure to find the result.</li>
+      <li><b>Step 2 carries everything.</b> Inside one card: the route notice, the ABAP Unit evidence, two failure strips, the pipeline counters (<code>1695</code>), the evidence card with coverage, invariant and mutation probe (<code>1708</code>), the closure card (<code>1726</code>), "Results" (<code>1736</code>), a stub warning (<code>1744</code>), "AI Test Analysis" (<code>1758</code>) and a "Run report — Automation report for …" with a pie chart and a "Results by category" bar chart (<code>1773–1838</code>). The verdict is in the middle of the tool, not at the top.</li>
+      <li><b>Scenarios are listed by number, not by rule.</b> The list (<code>ScenarioList.tsx</code>) shows rows with a verdict; the rule a scenario tests is inside each row's details, and the rule coverage ("n of m rules") is inside the evidence card in step 2. A business reader cannot see which rules are tested without opening rows.</li>
+      <li><b>A model's guess is the biggest figure on the side.</b> "Coverage estimate" shows the testing model's percentage in title size (<code>page.tsx:2817–2840</code>), labelled "not a measured coverage" in small print — beside the measured rule coverage that sits hidden in step 2.</li>
+      <li><b>737 lines of tenant administration inside a test tool.</b> "Tenant connection — check only" (<code>page.tsx:2033–2769</code>): BYOT request, saved connection, four auth methods, setup guide, OData metadata read, the last check — plus a side card (<code>2779–2812</code>). None of it tests the program; running tests on a tenant is locked (<code>LIVE_TEST_EXECUTION</code>).</li>
+      <li><b>The bar is not the shared one.</b> <code>PageAnchorBar</code> with <code>className="mb-3"</code> (<code>page.tsx:1420</code>): 12 px to the first section, the spec says 24; labels are steps, not what a reader looks for.</li>
+      <li><b>Word drift.</b> "Regenerate Suite" (<code>1471</code>), "View Module Code" / "View ABAP Unit Class" (<code>1997</code>) in title case on a sentence-case product; "AI Test Analysis" as an h3.</li>
+      <li><b>The demo is three "Not in the demo" cards.</b> <code>components/demo/DemoTesting.tsx:64–92</code>: steps 1 and 2 say only what is missing; the engine's real counter-checks (rule by rule) are not shown in the demo at all.</li>
+    </ul>
+
+    <h3>What is good and is kept</h3>
+    <ul>
+      <li>The route rule: nothing here runs ABAP Unit (<code>lib/test-runnability.ts</code>), said before any click.</li>
+      <li>The result from your SAP system — JUnit XML import or a confirmation, server-written, bound to run, code, class and scenario list (ADR-075). Never green, never "proven".</li>
+      <li>Rule tracing and the honest per-case words — <i>unchanged</i>, <i>passed · expectation not verified</i>, <i>failed · rule marked to change</i>, <i>defect</i> (ADR-095, ADR-100); the origin check (ADR-071); the mutation probe and the shared-selection check on the sandbox route.</li>
+      <li>A failed or impossible run is on record; testing can be closed without a pass, "not verified" (ADR-094).</li>
+      <li>The hand checks (constructs the engine did not judge) and the counter-checks for the business — both from the engine.</li>
+      <li>The testing phase words in <code>lib/workflow-steps.ts:985–1110</code> (Not started · Test draft · Passed · mock · Imported · passed · Failures · your system · Run failed · Closed · not verified) — the answer reuses them.</li>
+    </ul>
+
+    <h3>Today vs. mock-up</h3>
+    <table>
+      <tr><th>Today</th><th>Mock-up</th></tr>
+      <tr><td>Business · IT · Management switch on the header; the page reads no view (no <code>view</code> in <code>testing/page.tsx</code>)</td><td>No switch; "One page for every reader" (S1)</td></tr>
+      <tr><td>Lead + meta line + four tiles + status line; no sentence</td><td>"Is &lt;program&gt; tested?" — answer, next step, four facets: Scenarios · Business rules with a case · Result (with where) · Not proven (S2)</td></tr>
+      <tr><td>"Passed" in places without the place; a pie and a bar chart</td><td>Every result names where it ran; charts gone; three places side by side (S3, S5)</td></tr>
+      <tr><td>Scenario list by number; coverage hidden in step 2</td><td>Scenarios under their business rule, failures open first, each case saying who set its expectation and what a failure means (S4)</td></tr>
+      <tr><td>Check by hand as step 3, "only in your SAP system" inside it</td><td>"Not proven" — one numbered list, one action each (S6)</td></tr>
+      <tr><td>Counter-checks at the end of step 3; none in the demo</td><td>"Acceptance checks for a business tester", own section, also in the demo (S7, S12)</td></tr>
+      <tr><td>Console, module code, evidence card spread over the page</td><td>"For developers", folded: test code, run output, origin and class checks, probe (S8)</td></tr>
+      <tr><td>737 lines of tenant setup at the end</td><td>In Settings; one line in the side column (S9)</td></tr>
+      <tr><td>Model's coverage % as the big side figure</td><td>Rule coverage, counted (S10)</td></tr>
+      <tr><td>Bar: Write · Run · Your SAP result · Check by hand · Scenarios</td><td>Shared bar: What was tested · Where it ran · Not proven · Acceptance checks · For developers (S14)</td></tr>
+    </table>
+  </div>
+</aside>
+
+<!-- ===== for the owner ===== -->
+<aside class="drawer narrow" id="p-owner" hidden role="dialog" aria-labelledby="owner-h">
+  <header><h2 id="owner-h">For the owner — decisions S1–S16</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <div class="recbox"><b>Recommendation:</b> build S2–S13 and S16 as one Testing step before the 3.5 release, on one page for every reader (S1). The page opens with the answer — tested or not, against which rules, with what result, <b>where it ran</b>, what is not proven and the one next step — readable by a business person, a manager and a developer. Everything a developer needs stays on the page, folded. No engine change, no new stored field, no rules change.</div>
+    <ol style="margin-top:12px">
+      <li><b>S1 One page for every reader.</b> Testing has no Business, IT or Management variant and shows no view switch; "One page for every reader — business, IT and management" stands in its place (ADR-126 (1), as on Economics, Documentation and Transformation). Why not Design's rule (ADR-126 (2)): the three readers ask the same question — is it tested, where, what is missing — and differ only in depth; today's page reads no view at all, so the switch changes nothing. A business tester's part (acceptance checks) and a developer's part (code, output) are sections of one page, not views. <i>Recommended; needs your word for Testing.</i></li>
+      <li><b>S2 The answer first.</b> The question "Is &lt;program&gt; tested?", one or two sentences per state (not started · written, not run · ran and passed · ran with failures · run gave no result · closed, not verified · demo), the next step beside it, and four facets: <i>Scenarios</i> (who wrote them), <i>Business rules with a case</i>, <i>Result</i> (always with where), <i>Not proven</i>. The sentences come from the phase words of <code>lib/workflow-steps.ts</code>, so Testing, the tool bar and Delivery say the same. Recommended.</li>
+      <li><b>S3 Every result says where it ran.</b> Three places, named the same everywhere: <i>here — Clean-Core.io's isolated runner against SAP mocks</i>; <i>your SAP system</i> (imported or confirmed, ADR-075); <i>your tenant from here — locked</i>. "Tested" and "passed" never appear without the place; a pass against mocks reads "not proof in your system". The pie chart, the "Results by category" bar chart and the "Automation report" go. Recommended.</li>
+      <li><b>S4 Results by business rule.</b> The 12 rules of the signed analysis in their plain sentence with their decision (keep · change · open), the cases under each; a rule without a case is shown as such; failing rules first and open. Each case says who set the expected result — <i>Engine, from the original</i> or <i>AI, not verified</i> — and what a failure means in ADR-095/100's words (defect · rule marked to change · assertion written by the model). Recommended.</li>
+      <li><b>S5 "Where it ran" — one section.</b> The three places side by side with the active one marked, the run record under them (file, SHA-256, system, account, time — or the sandbox receipt), and the actions: on the ABAP Cloud route <i>Upload the ABAP Unit result</i> and <i>Confirm without a file</i> with a four-step how-to; on the CAP route <i>Run against SAP mocks</i>. Replaces steps 2 and "Record the result from your SAP system". Recommended.</li>
+      <li><b>S6 "Not proven" — one list.</b> Rules without a case, the places no generated test covers (today's "Check by hand"), expectations only the model stated, what only your system can show (the testing model's list, AI chip), and on the CAP route "not run in your SAP system at all". One action each; amber count in the bar. Recommended.</li>
+      <li><b>S7 Acceptance checks for a business tester.</b> Today's counter-checks (<code>CounterChecks.tsx</code>, from the engine) get their own section with a plain table — rule, try this, expect, prepare — five shown, the rest on a click. Nothing records them (no stored field). Recommended; recording a key-user acceptance as on the key-user route is a later option.</li>
+      <li><b>S8 For developers, folded.</b> The test class (ABAP Unit) or suite (node:test) with Download for ADT and Export Excel, the run output, the origin check (ADR-071), the class check (<code>lib/testing-abap-unit.ts</code>), and on the sandbox route the mutation probe, the shared-selection check and the stubbed packages. A case's <i>Code</i> opens a drawer: the original's lines beside the test method. Recommended.</li>
+      <li><b>S9 The tenant connection moves to Settings.</b> The 737 lines of BYOT setup and checks (<code>page.tsx:2033–2769</code>) become "Your SAP test system" in Settings; Testing keeps one line, "Tests on your tenant from here: locked", with the link. Recommended; alternative: keep it as a fold at the end of Testing.</li>
+      <li><b>S10 The model's coverage estimate leaves the side column.</b> Replaced by the counted rule coverage (facet 2). Recommended; alternative: keep it inside "For developers" with its AI chip.</li>
+      <li><b>S11 Closing without a passing run stays</b> (ADR-094), offered beside the failures in the answer's next step; the reasons and "Closed · not verified" unchanged. Recommended.</li>
+      <li><b>S12 The demo tests nothing and says so in the answer</b>, then shows what is real: the engine's 12 rules, the acceptance checks and the places no test would cover. One action: upload your own program. Recommended.</li>
+      <li><b>S13 Key-user decision on the same page.</b> When the decision is key-user extensibility, "What was tested" lists the step list's acceptance checks and their recorded results; the rest of the page is the same. Replaces the separate early return at <code>page.tsx:1301–1333</code>. Recommended.</li>
+      <li><b>S14 The shared "On this page" bar — decided</b> (ADR-126 (3)): What was tested · Where it ran · Not proven (amber) · Acceptance checks · For developers. Amends ADR-091's Testing list.</li>
+      <li><b>S15 Tool bar order — decided</b> (ADR-128 (5)): Analyze → Economics → Design → Transformation → Documentation → Testing → Delivery.</li>
+      <li><b>S16 Writing the scenarios in the same page.</b> While the model writes, the answer reads "Writing the scenarios — 5 of 8 rules done" with Cancel as the next step, as Transformation does (T11); today's progress box under the button goes. Recommended.</li>
+    </ol>
+
+    <h3>What it costs to build</h3>
+    <table>
+      <tr><th>Item</th><th>Answer</th></tr>
+      <tr><td>Files</td><td><code>app/(app)/project/[projectId]/testing/page.tsx</code> (rebuilt around answer, five sections and side column; the key-user return and the tenant section leave); new <code>components/testing/TestingAnswer.tsx</code> (answer + facets per state), <code>RuleResults.tsx</code> (rules with cases), <code>WhereItRan.tsx</code> (places, record, actions — takes over <code>SapResultCard</code>), <code>NotProven.tsx</code>, <code>AcceptanceChecks.tsx</code> (from <code>CounterChecks</code>), <code>ForDevelopers.tsx</code> (code, output, <code>TestEvidenceCard</code> content), <code>TestCodeDrawer.tsx</code>; <code>ScenarioList.tsx</code> and <code>TestingHeader.tsx</code> replaced; <code>HandChecks.tsx</code> into NotProven; the charts go; <code>lib/testing-summary.ts</code> (answer sentences, rule grouping — pure); <code>lib/page-anchors.ts</code>; <code>components/demo/DemoTesting.tsx</code>; for S9 the tenant UI moves to <code>app/(app)/settings/</code> with a new <code>components/settings/TestSystemConnection.tsx</code>. Shared with the other tools: <code>StageHeader</code>'s one-view note, <code>PageAnchorBar</code>. DESIGN.md and ADR-091 amended; one new ADR for S1–S16.</td></tr>
+      <tr><td>Engine change</td><td>No. Rules, rule traces, engine cases, hand checks and counter-checks exist.</td></tr>
+      <tr><td>Stored field</td><td>No. Everything shown is on record: <code>testCases</code> (with <code>ruleTrace</code>, <code>derivedFromCheck</code>), <code>testRunReceipt</code> (incl. <code>mutation</code>, <code>engine.viaContract</code>), <code>testRunFailure</code>, <code>testingClosure</code>, <code>outsideTestResult</code> + <code>test_results/current</code>, <code>manualTestingRequirements</code>.</td></tr>
+      <tr><td>Rules change</td><td>No. The tenant connection keeps its profile fields and vault when it moves to Settings.</td></tr>
+      <tr><td>Specs</td><td>Testing rendered specs (sections and anchors renamed: <code>testing-evidence-rendered</code>, <code>testing-scenario-origin</code>, the closure and SAP-result specs), the page-anchors spec, the view-switch spec (no switch on Testing), the tenant/BYOT specs (new place), the demo spec; <code>workflow-style-guard</code> unchanged (title from <code>StageHeader</code>).</td></tr>
+    </table>
+    <h3>Measured vs. illustrative in this picture</h3>
+    <p>Measured from source: every point in "Today, critiqued", the route rule, the phase words, the closure reasons, the result-import fields, the case words of ADR-095/100, the four places the engine did not assess in the starter example (L173, L363, L386, L542 — as in the Transformation mock-up). Illustrative: the 22 scenarios and their split, the rule ids and decisions (taken over from the Transformation mock-up), every result, date, system id, file name and hash, the mutation probe, the console and the test code — no test was written or run for this mock-up.</p>
+  </div>
+</aside>
+
+<script>
+/* ---------------- icons (as Transformation) ---------------- */
+const IC={
+  info:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+  err:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>',
+  eng:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4"/></svg>',
+  ai:'<svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  you:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>',
+  imp:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+  up:'<svg class="i" viewBox="0 0 24 24"><path d="M12 21V9M7 14l5-5 5 5M5 3h14"/></svg>',
+  chev:'<svg class="i chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>',
+  code:'<svg class="i" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>',
+  test:'<svg class="i" viewBox="0 0 24 24"><path d="M9 2v6L4 18a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3L15 8V2M8 2h8M7 14h10"/></svg>',
+  srv:'<svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7 8h.01M7 17h.01"/></svg>',
+  lock:'<svg class="i" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  dash:'<svg class="i s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/></svg>',
+  help:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+  check:'<svg class="i s" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+  x:'<svg class="i s" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  dl:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+  arr:'<svg class="i s" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  play:'<svg class="i" viewBox="0 0 24 24"><path d="m6 4 14 8-14 8z"/></svg>',
+};
+const CH={
+  eng:(n='Engine')=>`<span class="pv eng" title="Written by Clean-Core.io's deterministic engine.">${IC.eng}${n}</span>`,
+  ai:(n='AI-generated')=>`<span class="pv ai" title="Written by a language model (Google Gemini). A draft: not proven.">${IC.ai}${n}</span>`,
+  imp:(n='Imported · from your system')=>`<span class="pv imp" title="A result your SAP system wrote, imported as an ABAP Unit result file. Not run here.">${IC.imp}${n}</span>`,
+  mock:(n='Ran here · SAP mocks')=>`<span class="pv mock" title="Ran in Clean-Core.io's isolated runner against SAP mocks — not in your SAP system.">${IC.test}${n}</span>`,
+  you:(n='Your decision')=>`<span class="pv you">${IC.you}${n}</span>`,
+  nd:(n='Not determined')=>`<span class="pv nd">${IC.help}${n}</span>`,
+  err:(n)=>`<span class="pv err">${IC.x}${n}</span>`,
+};
+const A=(l)=>`<button type="button" class="anc" title="Open the old code at line ${l}">L${l}</button>`;
+const R={
+  pass:'<span class="res pass"><i></i>Passed</span>',
+  fail:'<span class="res fail"><i></i>Failed</span>',
+  warn:'<span class="res warn"><i></i>Failed</span>',
+  nr:'<span class="res nr"><i></i>Not run</span>',
+  none:'<span class="res nr"><i></i>No case</span>',
+};
+
+/* ---------------- the rules (as the Transformation mock-up: 12 rules, 9 keep · 1 change · 2 open) ---------------- */
+const RULES=[
+  ['BR-002','Only the requisition\'s purchasing group may approve','keep','103–122'],
+  ['BR-003','The material must be present','keep','77–98'],
+  ['BR-004','A blocked requisition is not approved','keep','77–98'],
+  ['BR-005','The vendor must exist and not be on the block list','keep','151–167, 219–228'],
+  ['BR-006','The price may be at most 5 % above the info record','keep','303–319'],
+  ['BR-007','Priority 1 makes a requisition an emergency','keep','71–73'],
+  ['BR-008','The department head approves; without one, the manager','keep','401–435'],
+  ['BR-009','The material must not be blocked in the plant','keep','271–280'],
+  ['BR-010','The cost centre or order must be valid','keep','191–214'],
+  ['BR-011','The amount must be within the release limit','open','285–298'],
+  ['BR-012','Emergencies up to 50,000 EUR go to the department head, others to the manager','change','324–340'],
+  ['BR-013','The requester is told the outcome','open','379–395'],
+];
+/* id, rule, scenario, given → expected, by, abap method, cap test */
+const CASES=[
+  ['E01','BR-002','Purchasing group not authorised','User outside group 010 → refused, message 012','eng','e01_group_not_authorised'],
+  ['M06','BR-002','Authorised group may approve','User in group 010 → allowed','ai','m06_group_authorised'],
+  ['E02','BR-003','Material missing','No material number → refused','eng','e02_material_missing'],
+  ['E03','BR-004','Requisition blocked','Blocking indicator set → refused','eng','e03_requisition_blocked'],
+  ['E04','BR-005','Vendor on the block list','Vendor 100245 in ZMM_VEND_BLOCK → refused','eng','e04_vendor_blocked'],
+  ['E05','BR-005','Vendor does not exist','Unknown vendor → refused','eng','e05_vendor_unknown'],
+  ['E06','BR-006','Price 4.9 % above','Info record 100.00, price 104.90 EUR → goes on','eng','e06_price_within_tol'],
+  ['E07','BR-006','Price 5.1 % above','Info record 100.00, price 105.10 EUR → held for the buyer','eng','e07_price_above_tol'],
+  ['E08','BR-006','No reference price','Info record without price → check skipped','eng','e08_no_reference_price'],
+  ['M04','BR-006','Price in a foreign currency','104.00 USD, converted before the tolerance → goes on','ai','m04_price_foreign_curr'],
+  ['E14','BR-007','Priority 1','Priority 1 → marked as emergency','eng','e14_priority_emergency'],
+  ['M01','BR-008','Department head approves','Cost centre 4711 has a head → request to the head','ai','m01_dept_head_asked'],
+  ['M02','BR-008','No department head','Cost centre without head → request to the manager','ai','m02_manager_fallback'],
+  ['E09','BR-009','Material blocked in the plant','Plant 1000, status 01 → refused','eng','e09_material_blocked'],
+  ['E10','BR-010','Cost centre not valid','Cost centre closed → refused','eng','e10_cost_centre_invalid'],
+  ['M03','BR-010','Order instead of cost centre','Valid internal order → goes on','ai','m03_order_valid'],
+  ['E11','BR-011','Amount at the release limit','Limit 25,000, amount 25,000.00 → approved, as the original','eng','e11_amount_at_limit'],
+  ['M05','BR-011','Amount above the release limit','Limit 25,000, amount 25,000.01 → held','ai','m05_amount_above_limit'],
+  ['E12','BR-012','Emergency at 50,000 EUR','Emergency, 50,000.00 → department head','eng','e12_emergency_at_50k'],
+  ['E13','BR-012','Emergency above 50,000 EUR','Emergency, 50,000.01 → manager','eng','e13_emergency_above_50k'],
+  ['M08','BR-012','Normal requisition of 80,000 EUR','No emergency, 80,000.00 → manager','ai','m08_normal_to_manager'],
+  ['M07','BR-005','Approved end to end','Known vendor, price in tolerance, valid cost centre → approved','ai','m07_approved_end_to_end'],
+];
+const FAILS={
+  E07:['fail','<b>Defect.</b> The new code approves at 5.1 %; the original holds the requisition for the buyer. Expected [X], actual [ ].'],
+  E13:['warn','<b>Rule marked to change.</b> BR-012 is to change (Design: the limit moves to 25,000 EUR). Whether this failure is that change or a defect is not determined.'],
+  M04:['fail','<b>Assertion written by the model.</b> It converts at the day\'s rate; the original converts at the requisition date. Review the assertion before calling it a defect.'],
+};
+
+/* ---------------- states ---------------- */
+let S='passed',RT='abap',ACC_ALL=false;
+const hasCases=()=>S==='drafts'||S==='passed'||S==='failed';
+const ran=()=>S==='passed'||S==='failed';
+const place=()=>RT==='abap'?'in your SAP system':'in Clean-Core.io\'s isolated runner against SAP mocks';
+
+function resultOf(c){
+  if(!ran())return [R.nr,c[4]==='eng'?'Expected result from the original, set by the engine.':'Expected result stated by the model from the original — not verified.'];
+  if(S==='failed'&&FAILS[c[0]]){const f=FAILS[c[0]];return [R[f[0]],RT==='cap'?f[1].replace('Expected [X], actual [ ].','Expected true, received false.'):f[1]]}
+  return [R.pass,c[4]==='eng'?'<b>Same as the original</b> — expected result set by the engine from the original\'s checks.':'<b>Expectation not verified</b> — the model stated it from the original.'];
+}
+
+function render(){
+  const name=S==='demo'?'Z_MM_PO_APPROVAL (demo)':'Z_MM_PO_APPROVAL';
+  document.getElementById('crumb').textContent='Emergency purchase approval'+(/\(demo\)$/.test(name)?' (demo)':'');
+  document.getElementById('eyename').textContent=name;
+  document.getElementById('qtext').textContent=`Is ${S==='demo'?'Z_MM_PO_APPROVAL':name} tested?`;
+  document.getElementById('backtxt').textContent=S==='demo'?'Demo workspace · Emergency purchase approval':'My workspace · Emergency purchase approval';
+  document.getElementById('toolck').style.display=S==='passed'?'':'none';
+  document.getElementById('toolod').hidden=S!=='failed';
+  ['tool-tf','tool-doc'].forEach(id=>{const ck=document.querySelector('#'+id+' .ck');ck.style.display=S==='demo'?'none':''});
+  document.getElementById('strip').innerHTML='';
+
+  /* ---------- the answer ---------- */
+  const q=document.getElementById('qchip'),a=document.getElementById('answer'),w=document.getElementById('why'),n=document.getElementById('nextbox');
+  const abap=RT==='abap';
+  if(S==='none'){
+    q.innerHTML=CH.nd('Not tested');
+    a.innerHTML=`Not tested yet. No scenario is written and nothing has run — here or in your SAP system.`;
+    w.innerHTML=abap?`The package's test class already holds 14 cases the engine derived from the original's checks. Writing the scenarios adds cases for the rules they do not reach and lists all of them by business rule. They then run in your own SAP system — nothing here runs ABAP Unit.`:`The package already holds 14 cases the engine derived from the original's checks. Writing the scenarios adds cases for the rules they do not reach; then they run here, in Clean-Core.io's isolated runner against SAP mocks.`;
+    n.innerHTML=`<span class="k">Next step</span><button class="btn primary lg" type="button">Write the scenarios</button><button class="btn ghost" type="button" data-jump="s-tested">See the 12 rules</button><span class="sub">Calls Google Gemini through Clean-Core.io for the rules the engine's cases miss.</span>`;
+  }else if(S==='drafts'){
+    q.innerHTML=CH.ai('Scenarios: draft, not run');
+    a.innerHTML=abap?`Not tested yet: 22 scenarios are written for 11 of 12 business rules, and none has run. They run in your SAP system — run the test class there and bring the result back.`:`Not tested yet: 22 scenarios are written for 11 of 12 business rules, and none has run. Run them here against SAP mocks — that tests the logic, not your SAP system.`;
+    w.innerHTML=`14 were derived by the engine from the original's checks; 8 were written by Google Gemini, and their expected results are the model's statement. BR-013 — telling the requester — has no case.`;
+    n.innerHTML=abap?`<span class="k">Next step</span><button class="btn primary lg" type="button">${IC.dl}Download the test class for ADT</button><button class="btn ghost" type="button" data-jump="s-ran">Record the result from your system</button><span class="sub">Copy it into the local test classes of ZCL_POAPPR_LOGIC and run ABAP Unit in your development system.</span>`
+      :`<span class="k">Next step</span><button class="btn primary lg" type="button">${IC.play}Run the 22 scenarios against SAP mocks</button><span class="sub">In Clean-Core.io's isolated runner, about a minute. No model call.</span>`;
+  }else if(S==='passed'){
+    q.innerHTML=abap?CH.imp():CH.mock();
+    a.innerHTML=abap?`Passed in your SAP system: all 22 scenarios ran in QS4, client 100, on 14 Nov 2026, imported from the ABAP Unit result file. They cover 11 of 12 business rules.`:`Passed against SAP mocks: all 22 scenarios and the shared-selection check ran in Clean-Core.io's isolated runner on 15 Nov 2026 — not in your SAP system. They cover 11 of 12 business rules.`;
+    w.innerHTML=abap?`Not proven: BR-013 has no case, 4 places in the code are covered by no test, and 8 expected results are the model's statement. The run is your system's report; Clean-Core.io did not run it.`:`The suite caught 5 of 6 deliberate defects. Not proven: how the code behaves in your SAP system, BR-013 (no case), 4 places no test covers, and 8 expected results the model stated.`;
+    n.innerHTML=`<span class="k">Next step</span><a class="btn primary lg" href="#">Go to Delivery ${IC.arr}</a><button class="btn ghost" type="button" data-jump="s-open">See what is not proven</button><span class="sub">${abap?'Delivery says "Imported · passed — in your SAP system, not run here".':'Delivery says "Passed · mock" — not proof in your system.'}</span>`;
+  }else if(S==='failed'){
+    q.innerHTML=(abap?CH.imp():CH.mock())+' '+CH.err('3 failed');
+    a.innerHTML=`3 of 22 scenarios failed ${abap?'in your SAP system (QS4, client 100, 14 Nov 2026)':'against SAP mocks (15 Nov 2026)'}. One is a defect: at 5.1 % above the info record the new code approves where the original holds the requisition for the buyer.`;
+    w.innerHTML=`The other two need a look before anyone calls them defects: one tests a rule marked to change (BR-012), one checks an expectation only the model stated (foreign currency). 19 passed.`;
+    n.innerHTML=`<span class="k">Next step</span><button class="btn primary lg" type="button" data-jump="s-tested">Review the 3 failures</button><a class="btn ghost" href="#">Generate check_price again in Transformation</a><button class="lnk" type="button" style="align-self:flex-start">Close testing without a passing run<span class="pin">S11</span></button><span class="sub">Closing records your reason; testing then reads "Closed · not verified", never passed.</span>`;
+  }else{
+    q.innerHTML=CH.nd('Not tested · demo');
+    a.innerHTML=`The demo tests nothing: it writes no scenario and runs none. What it shows is real — the engine's 12 business rules, the checks a business tester can run for each, and the 4 places no generated test would cover.`;
+    w.innerHTML=`In your own project the engine and a model write the scenarios, and they run against SAP mocks or in your SAP system. A made-up result would be the one thing this page may never show.`;
+    n.innerHTML=`<span class="k">Next step</span><a class="btn primary lg" href="#">Upload your own program</a><span class="sub">Free. Your code stays in your project.</span>`;
+  }
+
+  /* ---------- facets ---------- */
+  const f=(t,v,nn,chips='',cls='')=>`<div class="facet"><div class="t">${t}</div><div class="v ${cls}">${v}</div>${nn?`<div class="n">${nn}</div>`:''}${chips?`<div class="chips">${chips}</div>`:''}</div>`;
+  const cov=`<div class="prog" role="img" aria-label="11 of 12 business rules have a case"><span style="width:91.7%"></span></div>`;
+  let f1,f2,f3,f4;
+  if(S==='demo'){
+    f1=f('Scenarios','None in a demo','The demo makes no model call.','','nd');
+    f2=f('Business rules','12 <small>read from the code</small>','By the engine. The demo writes no case for them.',CH.eng('From the engine'));
+    f3=f('Result','None in a demo','Nothing ran — there is nothing to run.','','nd');
+    f4=f('Not proven','4 <small>places</small>','No generated test would cover them: L173, L363, L386, L542.');
+  }else if(S==='none'){
+    f1=f('Scenarios','Not written yet','The package\'s test class holds 14 engine cases; none has run.','','nd');
+    f2=f('Business rules with a case','10 <small>of 12</small>','By the 14 engine cases in the package. BR-008 and BR-013 have none yet.');
+    f3=f('Result','Nothing to run','','','nd');
+    f4=f('Not proven','Everything','Nothing has run anywhere. 4 places no test would cover are known already.');
+  }else{
+    f1=f('Scenarios','22 <small>written</small>','14 derived by the engine from the original\'s checks · 8 written by the model',CH.eng('14 Engine')+CH.ai('8 AI-generated'));
+    f2=f('Business rules with a case','11 <small>of 12</small>',`${cov.replace('class="prog"','class="prog" style="margin-top:4px"')}<span style="display:block;margin-top:6px">No case: BR-013 — the requester is told the outcome.</span>`);
+    if(S==='drafts')f3=f('Result','Not run',abap?'Nothing here runs ABAP Unit. Run it in your SAP system and bring the result back.':'Run them here, against SAP mocks — one click.','','nd');
+    else if(S==='passed')f3=f('Result',`22 <small>passed · 0 failed</small>`,abap?'In your SAP system, QS4 / 100, 14 Nov 2026':'Here, against SAP mocks, 15 Nov 2026 — not in your SAP system',abap?CH.imp():CH.mock());
+    else f3=f('Result',`3 <small>failed · 19 passed</small>`,abap?'In your SAP system, QS4 / 100, 14 Nov 2026':'Here, against SAP mocks, 15 Nov 2026 — not in your SAP system',abap?CH.imp():CH.mock(),'bad');
+    f4=f('Not proven',`${OPEN().length} <small>points</small>`,'1 rule without a case · 4 places no test covers · 8 model-stated expectations · what only your system shows');
+  }
+  document.getElementById('facets').innerHTML=f1+f2+f3+f4;
+
+  /* ---------- anchor bar ---------- */
+  document.getElementById('pabitems').innerHTML=[
+    ['s-tested','Rules',S==='failed'?'<span class="pab-c o" title="3 failed">3</span>':'<span class="pab-c" title="12 rules">12</span>'],
+    ['s-ran','Runs',''],
+    ['s-open','Not proven',`<span class="pab-c o">${OPEN().length}</span>`],
+    ['s-accept','Acceptance','<span class="pab-c">12</span>'],
+    ['s-dev','Developers',''],
+  ].map(([id,t,c],i)=>`<a href="#${id}"${i===0?' aria-current="true"':''}>${t}${c}</a>`).join('');
+  bindAnchors();
+
+  renderTested();renderRan();renderOpen();renderAcc();renderDev();renderSide();
+}
+
+/* ---------------- what was tested ---------------- */
+function renderTested(){
+  const lead=document.getElementById('tested-lead'),leg=document.getElementById('tested-legend'),r=document.getElementById('tested-r');
+  r.innerHTML=hasCases()?CH.eng('14 Engine')+CH.ai('8 AI-generated'):S==='demo'?'':CH.eng('Rules from the engine');
+  if(S==='demo')lead.textContent='The 12 business rules the engine read from the code. In your own project each gets its scenarios here, with the result and where it ran.';
+  else if(S==='none')lead.textContent='The 12 business rules of the signed analysis, in the order of the code. Each gets at least one scenario; a rule without one stays visible here.';
+  else lead.innerHTML=`Each business rule with the scenarios that test it. ${ran()?`Results ${place()}${S==='failed'?'; failing rules first and open':''}.`:'None has run yet.'} Open a rule for its scenarios — what is given, what the original does, and who set that expectation.`;
+  leg.innerHTML=hasCases()?`<span>${R.pass.replace('Passed','Passed')}</span><span>${R.fail}</span><span>${R.warn.replace('Failed','Failed · rule marked to change')}</span><span>${R.nr}</span><span>${R.none.replace('No case','No case for the rule')}</span>`:'';
+  let rules=RULES.map(rl=>{const cs=CASES.filter(c=>c[1]===rl[0]);return {rl,cs,fails:S==='failed'?cs.filter(c=>FAILS[c[0]]).length:0}});
+  if(S==='failed')rules.sort((x,y)=>(y.fails>0)-(x.fails>0));
+  const decW={keep:'<span class="dec">keep</span>',change:'<span class="dec chg">change</span>',open:'<span class="dec opn">open</span>'};
+  document.getElementById('rules').innerHTML=rules.map(({rl,cs,fails})=>{
+    const ne=cs.filter(c=>c[4]==='eng').length,na=cs.length-ne;
+    let cnt,rr;
+    if(!hasCases()){cnt=S==='demo'?'<span>no scenario in a demo</span>':`<span>${['BR-002','BR-003','BR-004','BR-005','BR-006','BR-007','BR-009','BR-010','BR-011','BR-012'].includes(rl[0])?'engine case in the package':'no case yet'}</span>`;rr=R.none.replace('No case',S==='demo'?'Not in the demo':'Not written')}
+    else if(!cs.length){cnt='<b>0</b> scenarios';rr=R.none}
+    else{
+      cnt=`<b>${cs.length} scenario${cs.length>1?'s':''}</b><br>${[ne?ne+' engine':'',na?na+' AI':''].filter(Boolean).join(' · ')}`;
+      if(!ran())rr=R.nr.replace('Not run',`${cs.length} not run`);
+      else{const p=cs.length-fails;rr=(fails?(S==='failed'&&cs.some(c=>FAILS[c[0]]&&FAILS[c[0]][0]==='fail')?R.fail:R.warn).replace('Failed',`${fails} failed`):'')+(p?R.pass.replace('Passed',`${p} passed`):'')}
+    }
+    const body=cs.length&&hasCases()?`<div class="cases"><div class="case hd"><span>Scenario</span><span>Given → expected</span><span>Result</span><span class="mn">What it means</span><span></span></div>${cs.map(c=>{const [res,mean]=resultOf(c);return `<div class="case"><span class="cn">${c[0]} · ${c[2]}<code>${RT==='abap'?'ltc_poappr→'+c[5]:'test/poappr.test.js › '+c[0]}</code></span><span class="ex">${c[3]}<span>${c[4]==='eng'?CH.eng('Expected: engine'):CH.ai('Expected: model')}</span></span><span class="rs">${res}</span><span class="mn">${mean}</span><span class="cd"><button class="btn ghost sm" type="button" data-code="${c[0]}">${IC.code}Code</button></span></div>`}).join('')}</div>`
+      :`<div class="cases"><p class="sm muted" style="padding:10px 0">${S==='demo'?'The demo writes no scenarios — it calls no model. The acceptance checks below are the engine\'s, and real.':!hasCases()?'Listed here once the scenarios are written.':'<b style="color:var(--cc-ink)">No scenario tests this rule.</b> The testing model was given it and wrote none. <button class="lnk" type="button">Ask for a case</button>'}</p></div>`;
+    const cls=fails?'bad':(hasCases()&&!cs.length?'gap':'');
+    return `<li class="${cls}"><details${fails?' open':''}><summary><span class="rid2">${rl[0]}</span><span class="rt">${rl[1]}${decW[rl[2]]}<span class="sub">Original: L${rl[3]}</span></span><span class="cnt">${cnt}</span><span class="rr">${rr}</span>${IC.chev}</summary>${body}</details></li>`}).join('');
+  document.querySelectorAll('#rules [data-code]').forEach(x=>x.onclick=()=>openCode(x.dataset.code));
+}
+
+/* ---------------- where it ran ---------------- */
+function renderRan(){
+  const lead=document.getElementById('ran-lead'),pl=document.getElementById('places'),b=document.getElementById('ranbody');
+  const abap=RT==='abap';
+  lead.textContent=abap?'Three places a test can run. On this route — ABAP Cloud, in-app — the scenarios are an ABAP Unit class, and only an ABAP system runs one: yours.':'Three places a test can run. On this route — CAP on SAP BTP — the scenarios are a node:test suite, and Clean-Core.io\'s isolated runner can run it against SAP mocks.';
+  const st=(on)=>{
+    if(S==='demo')return '<span class="st2 muted">Not in the demo</span>';
+    if(!on)return '';
+    if(S==='passed')return `<span class="st2">${R.pass.replace('Passed','22 passed')}</span>`;
+    if(S==='failed')return `<span class="st2">${R.fail.replace('Failed','3 failed · 19 passed')}</span>`;
+    return `<span class="st2">${R.nr.replace('Not run','Nothing recorded yet')}</span>`;
+  };
+  pl.innerHTML=[
+    [!abap,'here',`${IC.test}Here — isolated runner`,abap?'Runs JavaScript and TypeScript against SAP mocks. It cannot run an ABAP Unit class, so nothing of this route runs here.':'Runs the suite against SAP mocks, in a sandbox with no network. A pass says the logic does what the test expects — not that it works in your system.',abap?'<span class="st2 muted">Not for this route</span>':st(true)],
+    [abap,'sys',`${IC.srv}Your SAP system`,abap?'Where ABAP Unit runs: your development or test system. You bring the result back — the result file, or your confirmation.':'Not run there. To test against your system, take the suite into your own CAP project and run it there.',abap?st(true):'<span class="st2 muted">Not run there</span>'],
+    [false,'ten',`${IC.lock}Your tenant, from here`,'Locked: running tests on a connected tenant opens only when the isolated live runner has passed its review. The connection check is in Settings.','<span class="st2 muted">Locked</span>'],
+  ].map(([on,k,h,p,s])=>`<li class="place ${on?'on':''} ${k==='ten'||(abap&&k==='here')||(!abap&&k==='sys')?'off':''}"><span class="ph2">${h}</span><p>${p}</p>${s}</li>`).join('');
+  if(S==='demo'){b.innerHTML='';return}
+  if(abap){
+    if(ran()){
+      b.innerHTML=`<div class="rec"><p class="h3" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">The result on record ${CH.imp()}</p><dl>
+        <dt>Imported</dt><dd>14 Nov 2026, 16:20, by M. Weber</dd>
+        <dt>File</dt><dd><code>ztc_poappr_aunit.xml</code> · JUnit XML · SHA-256 <code>3f9a…c21e</code> — the file itself is not kept</dd>
+        <dt>System</dt><dd>QS4, client 100 · run on 14 Nov 2026</dd>
+        <dt>Matched</dt><dd>22 test methods to 22 scenarios · 0 methods that are not one of the scenarios · 0 scenarios with no result in the file</dd>
+        <dt>Valid for</dt><dd>this signed analysis, this package (15 Nov 2026, 09:41), this test class and these 22 scenarios. If any of them changes, the result counts for nothing and is asked again.</dd>
+      </dl><div class="acts"><button class="btn ghost sm" type="button">${IC.up}Upload a newer result</button><button class="btn ghost sm" type="button">Confirm without a file</button></div></div>`;
+    }else{
+      b.innerHTML=`<div class="rec"><p class="h3">${S==='none'?'Once the scenarios are written':'Run it in your system, then record the result'}</p>
+        <ol class="howto"><li><b>Download for ADT</b><span>The test class with all 22 scenarios.</span></li><li><b>Paste into the class</b><span>The local test classes of ZCL_POAPPR_LOGIC in ADT.</span></li><li><b>Run ABAP Unit</b><span>Ctrl+Shift+F10 in your development system.</span></li><li><b>Bring the result back</b><span>Export the result as JUnit XML and upload it — or confirm the counts.</span></li></ol>
+        <div class="acts"><button class="btn secondary" type="button"${S==='none'?' disabled':''}>${IC.up}Upload the ABAP Unit result (JUnit XML)</button><button class="btn ghost" type="button"${S==='none'?' disabled':''}>Confirm without a file</button></div>
+        <p class="foot-note">An upload is read on the server: test methods are matched to scenarios, the file name, its SHA-256, the time and your account are recorded — never the file. A confirmation records passed, failed, the system, the date and your account: a self-declaration.</p></div>`;
+    }
+  }else{
+    if(ran()){
+      b.innerHTML=`<div class="rec"><p class="h3" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">The run on record ${CH.mock()}</p><dl>
+        <dt>Ran</dt><dd>15 Nov 2026, 10:02, started by M. Weber · 41 s · node:test in the isolated runner, no network</dd>
+        <dt>Against</dt><dd>SAP mocks for API_PURCHASEREQUISITION_SRV and API_BUSINESS_PARTNER; <code>@sap-cloud-sdk/http-client</code> replaced by an empty proxy so the code could load</dd>
+        <dt>Cases</dt><dd>22 scenarios + 1 shared-selection check (list, totals and export give the same population) — ${S==='failed'?'19 passed, 3 failed':'23 passed'}</dd>
+        <dt>Receipt</dt><dd>written by Clean-Core.io's server, bound to this analysis, package, suite and case list</dd>
+      </dl>
+      <div class="probe"><div><span class="k">Would the suite notice a defect?</span>${S==='failed'?'<p class="pv2" style="font-size:16px;color:var(--cc-neutral)">Not probed</p><p class="muted">The probe runs after a passing run of the whole suite — it asks whether the tests would notice a deliberate defect.</p>':'<p class="pv2">5 <small>of 6 deliberate defects caught</small></p><p class="muted">Not caught: a flipped comparison in <code>check_limit</code> — no case tests the amount just below the limit.</p>'}</div><div><span class="k">The same selection everywhere</span><p class="pv2">${S==='failed'?'Passed':'Passed'}</p><p class="muted">List, totals and export of one selection gave the same 14 requisitions and 182,400.00 EUR.</p></div></div>
+      <div class="acts"><button class="btn ghost sm" type="button">${IC.play}Run again</button><button class="btn ghost sm" type="button">Run 3 failed only</button></div></div>`;
+    }else{
+      b.innerHTML=`<div class="rec"><p class="h3">${S==='none'?'Once the scenarios are written':'Not run yet'}</p><p class="sm muted" style="margin-top:6px">One click runs all scenarios in the isolated runner against SAP mocks and records the run on the server. A run that gives no result is recorded too, with its cause.</p><div class="acts"><button class="btn primary" type="button"${S==='none'?' disabled':''}>${IC.play}Run against SAP mocks</button></div></div>`;
+    }
+  }
+}
+
+/* ---------------- not proven ---------------- */
+function OPEN(){
+  const it=[];
+  if(S==='demo'){
+    it.push(['4 places no generated test would cover','A local function-module call '+A(173)+', an include whose source is missing (z_mm_po_notify) '+A(363)+', a dynamic call '+A(386)+', classic list output '+A(542)+'. The engine did not judge them, so no scenario can be derived for them.','Check by hand','From the engine','eng']);
+    return it;
+  }
+  if(hasCases())it.push(['BR-013 has no case','<b>The requester is told the outcome</b> — an open rule; the testing model was given it and wrote no scenario.','Ask for a case','What was tested']);
+  it.push(['4 places no generated test covers','A local function-module call '+A(173)+', an include whose source is missing (z_mm_po_notify) '+A(363)+', a dynamic call '+A(386)+', classic list output '+A(542)+'. The engine did not judge them.','Check by hand','From the engine','eng']);
+  if(hasCases())it.push(['8 expected results only the model stated','For the 8 AI scenarios the model wrote what the original does; nobody checked it against the code. A pass there means the code did what the test expects.','Review the 8 assertions','For developers']);
+  it.push(['What only your SAP system can show','Real authorizations for purchasing group 010 with your roles · the manager read from HR data (PA0105) through a port with no implementation · the price conversion with your exchange rates.','See in Delivery','Named by the testing model','ai']);
+  if(RT==='cap'&&S!=='none')it.push(['Nothing ran in your SAP system','A pass here is against SAP mocks. Your system, its data and its released APIs are not part of the run.','How to run it there','Delivery · Handover']);
+  return it;
+}
+function renderOpen(){
+  document.getElementById('open-lead').textContent=S==='demo'?'What no generated test would cover in this program — read from the code by the engine.':'What no result on this page proves, even when every scenario passed. Each point says what to do; none of them blocks the handover.';
+  document.getElementById('olist').innerHTML=OPEN().map((x,i)=>`<li><span class="no">${i+1}</span><div><p class="tt">${x[0]}${x[4]==='eng'?CH.eng('From the engine'):x[4]==='ai'?CH.ai():''}</p><p class="dd">${x[1]}</p></div><div class="act"><a class="btn ghost sm" href="#">${x[2]} ${IC.arr}</a><span class="xs muted">${x[3]}</span></div></li>`).join('');
+}
+
+/* ---------------- acceptance checks ---------------- */
+const ACC=[
+  ['BR-006','A requisition 5.1 % above the info record price','Held for the buyer','4.9 % above','Goes on to approval','An info record for the material and vendor'],
+  ['BR-005','A vendor on the block list ZMM_VEND_BLOCK','Refused, with the block message','A vendor not on the list','Goes on','One entry in the block list'],
+  ['BR-012','An emergency requisition of 50,000 EUR','Sent to the department head','An emergency of 50,000.01 EUR','Sent to the manager','A cost centre with a department head'],
+  ['BR-009','A material blocked in plant 1000','Refused','The same material, not blocked','Goes on','A plant-specific material status'],
+  ['BR-002','A user outside the requisition\'s purchasing group','May not approve','A user in the group','May approve','Two test users'],
+  ['BR-003','A requisition without a material','Refused','With a material','Goes on','—'],
+  ['BR-004','A blocked requisition','Refused','Not blocked','Goes on','—'],
+  ['BR-007','Priority 1','Marked as emergency','Priority 2','Normal requisition','—'],
+  ['BR-008','A cost centre with a department head','Request to the head','Without a head','Request to the manager','HR data for the manager'],
+  ['BR-010','A closed cost centre','Refused','An open cost centre','Goes on','—'],
+  ['BR-011','An amount above the release limit','Held','At the limit','Approved','The release strategy (T16FS)'],
+  ['BR-013','Any approval or refusal','The requester is told','—','—','Notification set-up (ZMM_NOTIFY_CFG)'],
+];
+function renderAcc(){
+  const rows=ACC_ALL?ACC:ACC.slice(0,5);
+  document.getElementById('acc').innerHTML=`<thead><tr><th>Rule</th><th>Where it applies</th><th>Counter-check: where it must not</th><th>Prepare</th></tr></thead><tbody>${rows.map(r=>`<tr><td><span class="rid2 mono" style="font-weight:700">${r[0]}</span><span class="s">${A(Number(RULES.find(x=>x[0]===r[0])[3].split(/[–,]/)[0]))}</span></td><td><span class="yes">${IC.check}${r[1]}</span><span class="s">expect: ${r[2]}</span></td><td><span class="no2">${IC.x}${r[3]}</span><span class="s">expect: ${r[4]}</span></td><td>${r[5]}</td></tr>`).join('')}</tbody>`;
+  const m=document.getElementById('accmore');m.textContent=ACC_ALL?'Show the first 5':'Show all 12 rules';
+}
+
+/* ---------------- developers ---------------- */
+function renderDev(){
+  const abap=RT==='abap',b=document.getElementById('devbody');
+  document.getElementById('dev-r').textContent=S==='demo'?'nothing to show in a demo':abap?'test class · run output · checks of the class':'test suite · run output · probe · stubs';
+  if(S==='demo'){b.innerHTML='<p class="sm muted">The demo has no test code and no run output.</p>';return}
+  if(S==='none'){b.innerHTML=`<div class="devrow"><span class="dl"><b>${abap?'ZTC_POAPPR — ABAP Unit test class in the package':'test/poappr.test.js — engine cases in the package'}</b><span>14 cases the engine derived from the original · not run</span></span><span class="r"><button class="btn ghost sm" type="button" data-code="E07">${IC.code}View</button></span></div>`;bindCode();return}
+  const out=abap?(S==='passed'?`<span class="dim">ABAP Unit · QS4 / 100 · 14.11.2026 16:02 · from ztc_poappr_aunit.xml</span>
+<span class="ok">✓</span> LTC_POAPPR  22 methods   22 passed   0 failed   0 skipped
+<span class="dim">  runtime 0.84 s · risk level HARMLESS · duration SHORT</span>`:S==='failed'?`<span class="dim">ABAP Unit · QS4 / 100 · 14.11.2026 16:02 · from ztc_poappr_aunit.xml</span>
+<span class="bad">✗</span> LTC_POAPPR  22 methods   19 passed   3 failed   0 skipped
+<span class="bad">  E07_PRICE_ABOVE_TOL      Critical Assertion Error: Expected [X] Actual [ ]</span>
+<span class="bad">  E13_EMERGENCY_ABOVE_50K  Critical Assertion Error: Expected [MANAGER] Actual [DEPT_HEAD]</span>
+<span class="bad">  M04_PRICE_FOREIGN_CURR   Critical Assertion Error: Expected [104.00] Actual [103.17]</span>`:`<span class="dim">Nothing runs here. ABAP Unit runs in your SAP system: paste the class into ADT and run it there (Ctrl+Shift+F10).</span>`)
+    :(ran()?`<span class="dim">isolated-runner ~ node --test · 15.11.2026 10:02 · 41 s</span>
+<span class="dim">stubbed: @sap-cloud-sdk/http-client (empty proxy)</span>
+${S==='failed'?`<span class="ok">✔</span> 19 passing
+<span class="bad">✖ E07 price 5.1 % above → held  — expected true, received false</span>
+<span class="bad">✖ E13 emergency 50,000.01 → manager  — expected 'MANAGER', received 'DEPT_HEAD'</span>
+<span class="bad">✖ M04 price in USD  — expected 104, received 103.17</span>
+<span class="ok">✔</span> TC_INV_01 same selection in list, totals and export`:`<span class="ok">✔</span> 22 passing
+<span class="ok">✔</span> TC_INV_01 same selection in list, totals and export
+<span class="dim">mutation probe: 5 of 6 caught · survivor: comparison flipped in check_limit</span>`}`:`<span class="dim">No run yet. Start a run against SAP mocks; its output appears here.</span>`);
+  b.innerHTML=`<div class="devrow"><span class="dl"><b>${abap?'ZTC_POAPPR — ABAP Unit, local test class LTC_POAPPR':'test/poappr.test.js — node:test suite'}</b><span>22 test methods · 402 lines · 14 by the engine, 8 by the model</span></span><span class="r"><button class="btn ghost sm" type="button" data-code="E07">${IC.code}View the code</button><button class="btn ghost sm" type="button">${IC.dl}${abap?'Download for ADT':'Download the suite'}</button><button class="btn ghost sm" type="button">Export Excel</button></span></div>
+  <div class="devrow"><span class="dl"><b>Where each scenario comes from</b><span>22 of 22 anchored to the original: 14 to an engine rule on its lines, 8 by the lines the model named and the engine checked · 0 mismatches</span></span>${CH.eng('Checked by the engine')}</div>
+  ${abap?`<div class="devrow"><span class="dl"><b>Is each method a test?</b><span>22 of 22 call the code under test · 0 skip · every called method is declared in the package · every name fits in 30 characters</span></span>${CH.eng('Checked by the engine')}</div>`:`<div class="devrow"><span class="dl"><b>Engine cases through the call contract</b><span>14 of 14 judged by Clean-Core.io's runtime, not by a model-written assertion — a pass reads "same as the original"</span></span>${CH.eng('Engine')}</div>`}
+  <div><p class="h3" style="margin-bottom:6px">Run output</p><pre class="con">${out}</pre></div>`;
+  bindCode();
+}
+function bindCode(){document.querySelectorAll('#devbody [data-code]').forEach(x=>x.onclick=()=>openCode(x.dataset.code))}
+
+/* ---------------- side ---------------- */
+function renderSide(){
+  const abap=RT==='abap';
+  const b=(c,t)=>`<span class="b ${c}">${t}</span>`;
+  let steps;
+  if(S==='demo')steps=[[b('',1),'Scenarios written','not in a demo'],[b('',2),'Run','not in a demo'],[b('',3),'Result recorded','not in a demo']];
+  else if(S==='none')steps=[[b('',1),'Scenarios written','not yet — 14 engine cases are in the package'],[b('',2),abap?'Run in your SAP system':'Run against SAP mocks','after step 1'],[b('',3),'Result recorded','—'],[b('',4),'Handed over','Delivery']];
+  else if(S==='drafts')steps=[[b('done',IC.check),'Scenarios written','22 · 14 engine, 8 model'],[b('',2),abap?'Run in your SAP system':'Run against SAP mocks',abap?'nothing here runs ABAP Unit':'one click, about a minute'],[b('',3),'Result recorded',abap?'upload or confirm':'by the server, with the run'],[b('',4),'Handed over','Delivery']];
+  else if(S==='passed')steps=[[b('done',IC.check),'Scenarios written','22 · 14 engine, 8 model'],[b('done',IC.check),abap?'Ran in your SAP system':'Ran against SAP mocks',abap?'QS4 / 100 · 14 Nov 2026':'15 Nov 2026 · not your system'],[b('done',IC.check),'Result recorded',abap?'imported by M. Weber, 14 Nov 16:20':'receipt by the server'],[b('',4),'Handed over','next: Delivery']];
+  else steps=[[b('done',IC.check),'Scenarios written','22 · 14 engine, 8 model'],[b('fail',IC.x),abap?'Ran in your SAP system':'Ran against SAP mocks','3 failed · 19 passed'],[b('',3),'Fix or close','generate again, or close testing with a reason'],[b('',4),'Handed over','Delivery']];
+  document.getElementById('steps').innerHTML=steps.map(s=>`<li>${s[0]}<span>${s[1]}<span class="s">${s[2]}</span></span></li>`).join('');
+  const rows=[
+    ['Signed analysis of 14 Nov 2026','Clean Core Score 40 · 12 business rules',CH.eng('Signed run')],
+    ['12 business rules','9 keep · 1 change · 2 open',CH.you('Partly decided')],
+  ];
+  if(S!=='demo')rows.push([abap?'Package of 15 Nov 2026, 09:41':'Package of 15 Nov 2026, 09:41',abap?'ABAP Cloud · RAP · 22 functions':'CAP on SAP BTP · Node.js',CH.ai('Google Gemini')]);
+  if(hasCases())rows.push(['Scenarios of 15 Nov 2026, 10:12','14 from the engine, 8 by the testing model',CH.ai('Google Gemini')]);
+  document.getElementById('builton').innerHTML=rows.map(x=>`<li><span class="r1"><b>${x[0]}</b>${x[2]}</span><span class="r2">${x[1]}</span></li>`).join('');
+  document.getElementById('where').innerHTML=[
+    ['Here','Clean-Core.io\'s isolated runner, SAP mocks — JavaScript and TypeScript only (CAP route)'],
+    ['Your SAP system','ABAP Unit, and anything that needs your data — you bring the result'],
+    ['Your tenant, from here','Locked. The connection check is in <a class="lnk xs" href="#">Settings · Your SAP test system</a>'],
+  ].map(x=>`<li><span class="r1"><b>${x[0]}</b></span><span class="r2">${x[1]}</span></li>`).join('');
+}
+
+/* ---------------- code drawer ---------------- */
+const OLD_PRICE=[[303,'FORM check_price.'],[304,'  DATA: lv_price   TYPE bapicurext,'],[305,'        lv_ref     TYPE bapicurext,'],[306,'        lv_dev_pct TYPE p LENGTH 7 DECIMALS 2.'],[307,''],[308,'  CHECK gv_ref_price > 0.'],[309,'  lv_price = gs_eban-preis / gs_eban-peinh.'],[310,'  lv_ref   = gv_ref_price.'],[311,'  lv_dev_pct = ( lv_price - lv_ref )'],[312,'             * 100 / lv_ref.'],[313,''],[314,'  "Tolerance agreed with purchasing'],[315,'  IF lv_dev_pct > 5.'],[316,'    PERFORM hold_for_buyer.'],[317,'    RETURN.'],[318,'  ENDIF.'],[319,'ENDFORM.']];
+const TEST_ABAP=[
+  ['eng','  "! E07 · Rule BR-006 (keep) · ABAP L303–L319'],
+  ['eng','  "! Expected from the original: 5.1 % > 5 → hold for the buyer'],
+  ['eng','  METHOD e07_price_above_tol.'],
+  ['eng','    DATA(ls_result) = mo_cut->check_price('],
+  ['eng','      is_req = VALUE #( price = \'105.10\' price_unit = 1 )'],
+  ['eng','      is_ctx = VALUE #( ref_price = \'100.00\' ) ).'],
+  ['eng','    cl_abap_unit_assert=>assert_equals('],
+  ['eng','      act = ls_result-hold_for_buyer'],
+  ['eng','      exp = abap_true'],
+  ['eng','      msg = \'BR-006: 5.1 % above the info record holds\' ).'],
+  ['eng','  ENDMETHOD.'],
+];
+const TEST_JS=[
+  ['eng','// E07 · Rule BR-006 (keep) · ABAP L303–L319'],
+  ['eng','// Expected from the original: 5.1 % > 5 → hold for the buyer'],
+  ['eng','test(\'E07 price 5.1 % above → held\', async () => {'],
+  ['eng','  const r = await contract.validate({'],
+  ['eng','    req: { price: 105.10, priceUnit: 1 },'],
+  ['eng','    ctx: { refPrice: 100.00 } });'],
+  ['eng','  assert.equal(r.holdForBuyer, true);'],
+  ['eng','});'],
+];
+function hl(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/("![^\n]*|^\s*"[^\n]*|^\s*\/\/[^\n]*|^\*.*)$/,'<span class="cm">$1</span>')
+  .replace(/\b(FORM|ENDFORM|DATA|TYPE|LENGTH|DECIMALS|CHECK|IF|ENDIF|PERFORM|RETURN|METHOD|ENDMETHOD|VALUE|const|await|async|test)\b(?![^<]*<\/span>)/g,'<span class="kw">$1</span>')
+  .replace(/('[^']*'|\b\d+(?:\.\d+)?\b)(?![^<]*<\/span>)/g,'<span class="lit">$1</span>')}
+function openCode(id){
+  const c=CASES.find(x=>x[0]===id)||CASES[7];
+  const abap=RT==='abap';
+  const isE07=c[0]==='E07';
+  const failed=S==='failed'&&FAILS[c[0]];
+  document.getElementById('code-h').textContent=`${c[0]} · ${c[2]}`;
+  const [res]=hasCases()?resultOf(c):[R.nr];
+  document.getElementById('code-chips').innerHTML=(c[4]==='eng'?CH.eng('Written by the engine'):CH.ai('Written by the model'))+' '+res;
+  const lines=isE07?(abap?TEST_ABAP:TEST_JS):[['eng',abap?`  METHOD ${c[5]}.`:`test('${c[0]} ${c[2]}', async () => {`],[c[4],abap?'    "! …':'  // …'],['eng',abap?'  ENDMETHOD.':'});']];
+  document.getElementById('code-body').innerHTML=`
+    <div class="trail"><span class="st">Rule <span class="rid">${c[1]}</span></span>${IC.arr}<span class="st">Scenario · ${c[2]}</span>${IC.arr}<span class="st mono">${abap?'ltc_poappr→'+c[5]:'test/poappr.test.js'}</span>${IC.arr}<span class="st mono">ZCL_POAPPR_LOGIC=&gt;check_price</span></div>
+    ${failed?`<div class="strip err" style="margin:0 0 12px">${IC.err}<span>${resultOf(c)[1]}</span></div>`:''}
+    <div class="cmp">
+      <div><div class="pane-h">What the original does · Z_MM_PO_APPROVAL · L303–L319</div><pre class="code">${OLD_PRICE.map(([n,t])=>`<span class="ln"><b>${n}</b>${hl(t)}</span>`).join('')}</pre></div>
+      <div><div class="pane-h">The test · ${abap?'ABAP Unit':'node:test'} ${c[4]==='eng'?CH.eng('Engine'):CH.ai()}</div><pre class="code">${lines.map(([w,t],i)=>`<span class="ln ${w==='ai'?'ai':'eng'}"><b>${i+1}</b>${hl(t)}</span>`).join('')}</pre>
+      <div class="keyrow"><span><i style="box-shadow:inset 3px 0 0 #60a5fa;background:#030712"></i>written by the engine</span><span><i style="box-shadow:inset 3px 0 0 #f59e0b;background:rgb(217 119 6 / .3)"></i>written by the model</span></div></div>
+    </div>
+    <p class="foot-note">${abap?'Not compiled or run here: ABAP Unit runs in your SAP system.':'Runs in Clean-Core.io\'s isolated runner against SAP mocks.'} The expected value comes from the original's lines on the left${c[4]==='eng'?', derived by the engine':', as the model stated it — not verified'}.</p>`;
+  document.getElementById('p-code').hidden=false;scrim.classList.add('on');
+}
+
+/* ---------------- chrome ---------------- */
+const scrim=document.getElementById('scrim');
+function closeAll(){document.querySelectorAll('.drawer').forEach(d=>d.hidden=true);scrim.classList.remove('on')}
+scrim.onclick=closeAll;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
+document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{document.getElementById(b.dataset.open).hidden=false;scrim.classList.add('on')});
+document.querySelectorAll('[data-state]').forEach(b=>b.addEventListener('click',()=>{S=b.dataset.state;document.querySelectorAll('[data-state]').forEach(x=>x.classList.toggle('on',x===b));render()}));
+document.querySelectorAll('[data-route]').forEach(b=>b.addEventListener('click',()=>{RT=b.dataset.route;document.querySelectorAll('[data-route]').forEach(x=>x.classList.toggle('on',x===b));render()}));
+document.getElementById('accmore').onclick=()=>{ACC_ALL=!ACC_ALL;renderAcc()};
+document.getElementById('pins').onclick=e=>{const off=document.body.classList.toggle('nopins');e.target.textContent='Decision pins: '+(off?'off':'on')};
+document.addEventListener('click',e=>{const j=e.target.closest('[data-jump]');if(j){e.preventDefault();const t=document.getElementById(j.dataset.jump);t&&t.scrollIntoView({block:'start'})}});
+/* "On this page": scroll with offset, focus the heading, follow the scroll position */
+let anchors=[];
+function markAnchor(cur){anchors.forEach(a=>{if(a===cur)a.setAttribute('aria-current','true');else a.removeAttribute('aria-current')});cur.scrollIntoView({block:'nearest',inline:'nearest'})}
+function bindAnchors(){anchors=[...document.querySelectorAll('#anchors .pab-items a')];
+  anchors.forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(!t)return;if(t.tagName==='DETAILS')t.open=true;
+    t.scrollIntoView({block:'start'});const h=t.tagName==='DETAILS'?t.querySelector('summary'):t.querySelector('h2');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}markAnchor(a)}))}
+addEventListener('scroll',()=>{if(!anchors.length)return;let cur=anchors[0];anchors.forEach(a=>{const t=document.querySelector(a.getAttribute('href'));if(t&&t.getBoundingClientRect().top<200)cur=a});if(cur.getAttribute('aria-current')!=='true')markAnchor(cur)},{passive:true});
+/* deep links for screenshots: ?state=failed&route=cap&open=p-owner&code=E07&dev=1 */
+const q=new URLSearchParams(location.search);
+if(q.get('state')){S=q.get('state');document.querySelectorAll('[data-state]').forEach(x=>x.classList.toggle('on',x.dataset.state===S))}
+if(q.get('route')){RT=q.get('route');document.querySelectorAll('[data-route]').forEach(x=>x.classList.toggle('on',x.dataset.route===RT))}
+render();
+if(q.get('open')){const d=document.getElementById(q.get('open'));if(d){d.hidden=false;scrim.classList.add('on')}}
+if(q.get('code'))openCode(q.get('code'));
+if(q.get('dev'))document.getElementById('s-dev').open=true;
+if(q.get('nopins'))document.body.classList.add('nopins');
+</script>
+<script>
+/* ONE FAMILY (15.11.2026) — byte-identical in the six tool mock-ups.
+   Measures the sticky mock-up bar into --mock-h (0 when it is not sticky),
+   hides "On this page" when a page has one section, keeps the tool bar
+   and the section bar to one row (fade while more
+   items wait to the right, the current tool in view) and labels the cells of stacking tables. */
+(function(){
+  var root=document.documentElement, raf=0;
+  function mockH(){var m=document.querySelector('.mock');var on=m&&getComputedStyle(m).position==='sticky'&&getComputedStyle(m).display!=='none';root.style.setProperty('--mock-h',(on?m.offsetHeight:0)+'px');}
+  function edges(el){el.classList.toggle('start',el.scrollLeft<=1);el.classList.toggle('end',el.scrollLeft+el.clientWidth>=el.scrollWidth-2);}
+  function fade(el){var ovf=el.scrollWidth>el.clientWidth+1;el.classList.toggle('ovf',ovf);edges(el);
+    if(!el.dataset.wired){el.dataset.wired='1';el.addEventListener('scroll',function(){edges(el);},{passive:true});}return ovf;}
+  function tools(first){document.querySelectorAll('.tools').forEach(function(t){
+    if(!t.dataset.wired)first=true;
+    t.querySelectorAll('.tool .ck').forEach(function(x){x.setAttribute('aria-label','done');if(!x.querySelector('title'))x.insertAdjacentHTML('afterbegin','<title>done</title>');});
+    t.querySelectorAll('.tool .od').forEach(function(x){x.title='out of date';});
+    t.classList.remove('nolegend');if(t.scrollWidth>t.clientWidth+1&&t.querySelector('.legend'))t.classList.add('nolegend');
+    var ovf=fade(t);
+    if(first&&ovf){var c=t.querySelector('.tool.cur');if(c){var l=c.offsetLeft-t.offsetLeft,r=l+c.offsetWidth;if(r>t.clientWidth-48){t.scrollLeft=r-t.clientWidth+64;edges(t);}}}
+  });document.querySelectorAll('.pab-items').forEach(fade);
+    document.querySelectorAll('.pab').forEach(function(p){p.classList.toggle('single',p.querySelectorAll('.pab-items a').length<2);});}
+  function labels(){document.querySelectorAll('table.tbl-stack').forEach(function(tb){var hr=tb.querySelector('thead tr')||tb.querySelector('tr');if(!hr||!hr.querySelector('th'))return;var hs=[].map.call(hr.children,function(h){return h.textContent.trim();});tb.querySelectorAll('tr').forEach(function(tr){if(tr===hr)return;[].forEach.call(tr.children,function(td,i){if(hs[i]&&td.tagName==='TD'&&!td.hasAttribute('data-label'))td.setAttribute('data-label',hs[i]);});});});}
+  function all(first){mockH();tools(first);labels();}
+  function soon(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;all(false);});}
+  addEventListener('resize',soon);
+  addEventListener('load',function(){all(true);});
+  if(window.ResizeObserver){var m=document.querySelector('.mock');if(m)new ResizeObserver(soon).observe(m);}
+  new MutationObserver(soon).observe(document.body,{childList:true,subtree:true});
+  all(true);
+})();
+</script>
+</body>
+</html>

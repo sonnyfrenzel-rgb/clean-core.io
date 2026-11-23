@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Delivery, next · mock-up</title>
+<style>
+/* =====================================================================
+   Mock-up, not product code (15.11.2026). The Delivery tool as one object
+   page for every reader: can the program be handed over, what is in the
+   package, what is proven and what is not, what is still open before
+   go-live, what to do next — first; the files, fingerprints, signatures,
+   the check of a pack and the abapGit import underneath, quietly.
+   Look: copied from docs/roadmap/transformation-next-mockup.html (tokens,
+   app bar, tool bar, StageHeader, object page header, the shared
+   PageAnchorBar of tmp/ANCHOR-BAR-SPEC.md, chips, side column, drawers).
+   MEASURED (source at 9cff84dc): the 13 files of the audit pack, 11 signed,
+   1 sealed as your word, 1 manifest (lib/handover.ts:534-547); what the
+   signature covers and does not (SIGNED_COVERS / NOT_SIGNED, :551-569);
+   the four chain links and their verdicts (lib/evidence-chain.ts:28-36);
+   the user-attested fields (lib/audit-pack.ts:916-930: target and sign-off,
+   testing closure - no program decision, no test result); the phase badges
+   of lib/workflow-steps.ts:1208-1252; the verifier's outcomes
+   (lib/audit-pack-verify.ts, lib/delivery-package-verify.ts,
+   scripts/verify-pack.mjs exit codes 0/1/2). Program facts as the sibling
+   mock-ups measured them on Z_MM_PO_APPROVAL (19 findings, 10 with a
+   released target, Score 40, Rebuild on in-app ABAP Cloud).
+   ILLUSTRATIVE: dates, run id, hashes, key id, file names inside the
+   package, the timeline. Demo projects deliver nothing.
+   ===================================================================== */
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;--cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;--chart-4:#9333ea;
+  --code-bg:#030712;--code-ink:#e5e7eb;--code-muted:#9ca3af;--code-kw:#c4b5fd;--code-lit:#fcd34d;--code-name:#93c5fd;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --t-succ:#6366f1;--t-route:#9333ea;--t-none:#d97706;--t-custom:#9ca3af;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+p{margin:0}h1,h2,h3,h4{margin:0}
+button,input,select{font-family:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+code{font-family:var(--mono);font-size:12px}
+
+/* ---------- doc chrome (not product) ---------- */
+.mock{position:sticky;top:0;z-index:300;background:#1f1147;color:#fff;font-size:12px;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}
+.mock button.on{background:#e9e5ff;color:#1f1147}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap;letter-spacing:0;text-transform:none}
+body.nopins .pin{display:none}
+
+/* ---------- shell bar ---------- */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:16px;letter-spacing:-.02em;line-height:1.15}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* ---------- StageFrame + StageHeader ---------- */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vsnote{font-size:13px;font-weight:500;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px}
+.tools{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tools .k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tool .od{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .legend{margin-left:auto;font-size:12px;font-weight:500;color:var(--cc-ink-muted);display:flex;gap:12px}
+.tools .toolmenu{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px}
+
+/* ---------- cc components ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;text-decoration:none;text-align:center}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink)}
+.btn.danger{background:#fff;border-color:var(--cc-error);color:var(--cc-error)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:4px 10px;font-size:12px}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff}
+.pv svg.i{width:12px;height:12px}
+.pv.ai{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed}
+.pv.eng{color:var(--cc-information);border-color:var(--cc-information)}
+.pv.imp{color:var(--seq-4);border-color:var(--seq-2);background:#f5f7ff}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral)}
+.pv.err{color:var(--cc-error);border-color:var(--cc-error);background:var(--cc-error-bg)}
+.pv.stale{color:var(--cc-warning);border-color:var(--cc-warning-mark);background:var(--cc-warning-bg)}
+.lvl{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:5px;font-size:12px;font-weight:800;border:1px solid var(--cc-information);color:var(--cc-information);background:var(--cc-information-bg)}
+.lvl.nd{border-color:var(--cc-neutral-border);color:var(--cc-neutral);background:var(--cc-neutral-bg);font-weight:700;padding:0 5px}
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.muted{color:var(--cc-ink-muted)}
+.sm{font-size:13px}.xs{font-size:12px}
+.k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.h2{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.h3{font-size:14px;font-weight:700}
+.anc{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--cc-information);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;background:none;border:0;padding:0;cursor:pointer}
+.sev{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;white-space:nowrap}
+.sev i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.sev.crit i{background:#b91c1c}.sev.high i{background:#ea580c}.sev.med i{background:#d97706}.sev.low i{background:#9ca3af}.sev.info i{background:#60a5fa}
+
+/* ---------- strip (only for what stops the page) ---------- */
+.strip{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:10px 14px;border-radius:8px;border:1px solid;font-size:13px;line-height:1.5;font-weight:500}
+.strip.err{background:var(--cc-error-bg);border-color:var(--cc-error-border);color:var(--cc-ink)}
+.strip.err svg{color:var(--cc-error)}
+.strip.inf{background:var(--cc-information-bg);border-color:var(--cc-information-border)}
+.strip.inf svg{color:var(--cc-information)}
+.strip b{font-weight:700}
+
+/* ---------- object page header: answer + facets ---------- */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start}
+.ans .q{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ans .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ans .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ans .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:250px;max-width:290px}
+.ans .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;line-height:1.45}
+.facets{display:grid;grid-template-columns:1.25fr 1.25fr 1fr 1fr;border-top:1px solid var(--cc-line);margin:16px -22px 0}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2}
+.facet .v.word{font-size:18px;letter-spacing:-.01em}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .v.nd{font-size:16px;font-weight:700;color:var(--cc-neutral)}
+.facet .v.bad{color:var(--cc-error)}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+.facet .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.sbar{display:flex;height:8px;gap:2px;border-radius:999px;overflow:hidden;margin-top:8px;background:var(--cc-line)}
+.sbar span{display:block;height:100%}
+.legend-s{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+.legend-s i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:0}
+.prog{height:8px;border-radius:999px;background:var(--cc-line);margin-top:8px;overflow:hidden}
+.prog span{display:block;height:100%;background:var(--seq-3);border-radius:999px}
+.prog.str span{background:repeating-linear-gradient(135deg,var(--seq-3) 0 6px,var(--seq-2) 6px 12px)}
+
+/* ---------- "On this page" — the shared PageAnchorBar (tmp/ANCHOR-BAR-SPEC.md) ---------- */
+.pab{position:sticky;top:30px;z-index:50;display:flex;align-items:center;gap:12px;height:48px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 2px 4px rgb(11 28 48 / .06);margin:24px -32px 0;padding:0 32px}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted)}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+.pab-c{font-size:12px;font-weight:600;line-height:18px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:var(--cc-ink)}
+.pab-c.o{background:#fef3c7}
+
+/* ---------- body: main + side ---------- */
+.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;margin-top:24px;align-items:start}
+.main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.side{display:flex;flex-direction:column;gap:12px;position:sticky;top:94px}
+.sec-h{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+/* open items */
+.olist{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column}
+.olist li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--cc-line)}
+.olist li:first-child{border-top:0;padding-top:4px}
+.olist .no{width:24px;height:24px;border-radius:999px;background:#fef3c7;color:var(--cc-warning);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.olist .tt{font-size:14px;font-weight:700;line-height:1.4}
+.olist .dd{font-size:13px;color:var(--cc-ink-muted);line-height:1.5;margin-top:2px}
+.olist .dd b{color:var(--cc-ink);font-weight:600}
+.olist .act{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.olist .act .xs{white-space:nowrap}
+
+/* package */
+.pkg{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.pkg>li{border:1px solid var(--cc-line);border-radius:8px}
+.pkg summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:36px minmax(0,1fr) auto 18px;gap:4px 12px;align-items:center;padding:8px 12px}
+.pkg summary::-webkit-details-marker{display:none}
+.pkg .ico{width:36px;height:36px;border-radius:8px;border:1px solid var(--cc-line);display:flex;align-items:center;justify-content:center;color:var(--cc-ink-muted);background:var(--cc-surface-muted)}
+.pkg .ico.code{color:var(--cc-information);background:var(--cc-information-bg);border-color:var(--cc-information-border)}
+.pkg .ico.model{color:var(--seq-4);border-color:var(--seq-2);background:#f5f7ff}
+.pkg .nm{font-family:var(--mono);font-size:13px;font-weight:700;word-break:break-all}
+.pkg .ds{display:block;font-size:12px;color:var(--cc-ink-muted);font-weight:500;margin-top:1px}
+.pkg .who{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pkg .chev{color:var(--cc-ink-muted);transition:transform .15s}
+.pkg details[open] .chev{transform:rotate(90deg)}
+.fns{border-top:1px solid var(--cc-line);padding:4px 12px 8px}
+.fn{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto auto;gap:4px 12px;align-items:center;padding:7px 0;border-bottom:1px solid var(--cc-line);font-size:13px}
+.fn:last-child{border-bottom:0}
+.fn .f{font-family:var(--mono);font-size:12.5px;font-weight:600;min-width:0;word-break:break-all}
+.fn .f span{display:block;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--cc-ink-muted);word-break:normal}
+.fn .src{font-size:12px;color:var(--cc-ink-muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.fn .rid{font-family:var(--mono);font-size:11px;font-weight:600;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px;color:var(--cc-ink)}
+.files{list-style:none;margin:0;padding:6px 0 0;font-size:12px}
+.files li{display:flex;justify-content:space-between;gap:12px;padding:3px 0;color:var(--cc-ink-muted)}
+.files li code{color:var(--cc-ink);word-break:break-all}
+
+/* checks */
+.chk{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+.chk th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--cc-line)}
+.chk td{padding:10px;border-bottom:1px solid var(--cc-line);vertical-align:top;line-height:1.5}
+.chk td:first-child{font-weight:600}
+.chk td .s{display:block;font-size:12px;color:var(--cc-ink-muted);font-weight:500}
+.res{display:inline-flex;align-items:center;gap:6px;font-weight:700;white-space:nowrap}
+.res i{width:10px;height:10px;border-radius:999px;display:inline-block;flex:none}
+.res.pass i{background:var(--seq-3)}
+.res.fail{color:var(--cc-error)}.res.fail i{background:var(--cc-error)}
+.res.nr{color:var(--cc-neutral)}.res.nr i{background:#fff;border:2px solid var(--cc-neutral)}
+.res.run i{background:var(--seq-2);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.foot-note{font-size:12px;color:var(--cc-ink-muted);line-height:1.5;margin-top:10px}
+/* trace fold */
+details.fold{border:1px solid var(--cc-line);border-radius:12px;background:#fff;box-shadow:var(--cc-shadow)}
+details.fold>summary{list-style:none;cursor:pointer;padding:14px 20px;display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;flex-wrap:wrap}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary .chev{transition:transform .15s;color:var(--cc-ink-muted)}
+details.fold[open]>summary .chev{transform:rotate(90deg)}
+details.fold>summary .r{margin-left:auto;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+details.fold .fb{padding:0 20px 16px;font-size:13px;line-height:1.55}
+.tr{width:100%;border-collapse:collapse;font-size:12.5px}
+.tr th{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:left;padding:8px;border-bottom:1px solid var(--cc-line);white-space:nowrap}
+.tr td{padding:8px;border-bottom:1px solid var(--cc-line);vertical-align:top;line-height:1.45}
+.tr td.obj{font-family:var(--mono);font-size:12px;font-weight:600}
+.tr td .s{display:block;color:var(--cc-ink-muted);font-size:12px}
+.tr tr.open td:first-child{box-shadow:inset 3px 0 0 var(--cc-warning-mark)}
+
+/* side */
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.steps{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.steps li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;font-size:13px;line-height:1.45}
+.steps .b{width:20px;height:20px;border-radius:999px;border:1px solid var(--cc-line);background:#fff;color:var(--cc-ink-muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.steps .b.done{background:var(--cc-success);border-color:var(--cc-success);color:#fff}
+.steps .b.fail{background:var(--cc-error);border-color:var(--cc-error);color:#fff}
+.steps .b.run{border-color:var(--seq-3);color:var(--seq-3)}
+.steps li span.s{display:block;color:var(--cc-ink-muted);font-size:12px}
+.src{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+.src li{display:flex;flex-direction:column;gap:2px;font-size:13px}
+.src li .r1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.src li .r1 b{font-weight:700}
+.src li .r2{font-size:12px;color:var(--cc-ink-muted);line-height:1.45}
+.ng{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.5}
+.ng li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:8px}
+.ng li svg{color:var(--cc-ink-muted);margin-top:3px}
+
+/* code drawer */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(1040px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55}
+.drawer.narrow{width:min(780px,100vw)}
+.drawer header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2;flex-wrap:wrap}
+.drawer header h2{font-size:16px;font-weight:800}
+.drawer header .x{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer ul,.drawer ol{padding-left:20px;margin:6px 0}
+.drawer li{margin:4px 0}
+.drawer table{border-collapse:collapse;width:100%;margin:6px 0;font-size:12px}
+.drawer th,.drawer td{border:1px solid var(--cc-line);padding:6px 8px;text-align:left;vertical-align:top}
+.drawer th{background:var(--cc-surface-muted)}
+.drawer code{background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px}
+.recbox{background:var(--cc-brand-surface);border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px}
+.trail{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;font-weight:600;color:var(--cc-ink-muted);margin-bottom:12px}
+.trail .st{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--cc-line);border-radius:8px;padding:4px 8px;background:var(--cc-surface-muted);color:var(--cc-ink)}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.pane-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;font-weight:600;color:var(--cc-ink-muted);margin-bottom:6px}
+pre.code{margin:0;background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:10px 0;font-family:var(--mono);font-size:12px;line-height:1.6;overflow-x:auto}
+pre.code .ln{display:block;padding:0 12px 0 0;white-space:pre}
+pre.code .ln b{display:inline-block;width:44px;text-align:right;padding-right:12px;color:var(--code-muted);font-weight:400;user-select:none}
+pre.code .ln.ai{background:rgb(217 119 6 / .14);box-shadow:inset 3px 0 0 #f59e0b}
+pre.code .ln.eng{box-shadow:inset 3px 0 0 #60a5fa}
+pre.code .ln.err{background:rgb(185 28 28 / .35);box-shadow:inset 3px 0 0 #f87171}
+pre.code .kw{color:var(--code-kw)}pre.code .lit{color:var(--code-lit)}pre.code .cm{color:var(--code-muted)}pre.code .nm{color:var(--code-name)}
+.keyrow{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--cc-ink-muted);margin-top:8px}
+.keyrow i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+
+/* ---------- Delivery: signed / sealed / not signed ---------- */
+.pv.sig{color:var(--cc-success);border-color:var(--cc-success);background:var(--cc-success-bg)}
+.pv.att{color:var(--cc-information);border-color:var(--cc-information-border);background:#fff}
+.pv.ns{color:var(--cc-neutral);border-color:var(--cc-neutral-border);background:var(--cc-neutral-bg)}
+.pv.nev{color:var(--cc-ink);border-color:var(--cc-ink);background:#fff}
+.grp{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin-top:16px;font-size:13px;font-weight:700}
+.grp .xs{font-weight:500;color:var(--cc-ink-muted)}
+.grp:first-child{margin-top:12px}
+.olist .no.n{background:var(--cc-neutral-bg);color:var(--cc-neutral);border:1px solid var(--cc-neutral-border)}
+.olist .no.ok{background:var(--cc-success-bg);color:var(--cc-success)}
+.none-line{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600;padding:8px 0 4px}
+.none-line svg{color:var(--cc-success)}
+.yours{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:10px 12px;border:1px dashed var(--cc-field-border);border-radius:8px;font-size:13px;line-height:1.5;color:var(--cc-ink-muted)}
+.yours svg{flex:none;margin-top:2px}
+.yours b{color:var(--cc-ink);font-weight:600}
+
+/* package rows (the .pkg list of Transformation, other content) */
+.pkg .st{font-size:12px;font-weight:600;white-space:nowrap}
+.pkgb{border-top:1px solid var(--cc-line);padding:10px 12px 12px;font-size:13px;line-height:1.55}
+.pkgb .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.hash{font-family:var(--mono);font-size:11.5px;color:var(--cc-ink-muted);white-space:nowrap}
+.files li .w{display:flex;flex-direction:column;min-width:0}
+.files li .w span{font-size:12px;color:var(--cc-ink-muted)}
+.pkg-foot{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid var(--cc-line)}
+.pkg-foot .xs{flex:1 1 280px}
+
+/* "What is proven" table */
+.pf{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+.pf th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--cc-line)}
+.pf td{padding:10px;border-bottom:1px solid var(--cc-line);vertical-align:top;line-height:1.5}
+.pf td:first-child{font-weight:600;width:28%}
+.pf td:last-child{width:1%;white-space:nowrap}
+.pf td .s{display:block;font-size:12px;color:var(--cc-ink-muted);font-weight:500}
+.pf code{font-size:11.5px;color:var(--cc-ink-muted)}
+.pf tr.grp-row td{padding:14px 10px 6px;border-bottom:0;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.rule3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+.rule3>div{border:1px solid var(--cc-line);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5}
+.rule3 .xs{display:block;margin-top:4px;color:var(--cc-ink-muted)}
+
+/* audit pack */
+.seal{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 24px;align-items:start;margin-top:12px;padding:14px 16px;border:1px solid var(--cc-line);border-radius:8px;background:var(--cc-surface-muted)}
+.seal .big{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.seal dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;margin:10px 0 0;font-size:13px}
+.seal dt{font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.seal dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.seal .acts{display:flex;flex-direction:column;gap:8px;align-items:stretch;min-width:220px}
+.cols2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:16px}
+.drop{border:1.5px dashed var(--cc-field-border);border-radius:8px;padding:14px;text-align:center;font-size:13px;line-height:1.5;color:var(--cc-ink-muted);background:#fff}
+.drop b{color:var(--cc-ink)}
+.drop .btn{margin-top:8px}
+.vr{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.vr>li{border:1px solid var(--cc-line);border-radius:8px;padding:10px 12px;font-size:13px;line-height:1.5}
+.vr>li.bad{border-color:var(--cc-error-border);background:var(--cc-error-bg)}
+.vr>li.good{border-color:#a7f3d0;background:var(--cc-success-bg)}
+.vr .vh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-weight:700}
+.vr ul{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:3px;font-size:12.5px}
+.vr ul li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:6px}
+.vr ul li svg{margin-top:2px}
+.vr .ok svg{color:var(--cc-success)}
+.vr .no svg{color:var(--cc-error)}
+.vr code{overflow-wrap:anywhere}
+pre.cmd{margin:8px 0 0;background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.howto{font-size:13px;line-height:1.55}
+.howto p+p{margin-top:8px}
+.ifl{list-style:none;margin:8px 0 0;padding:0;font-size:12.5px}
+.ifl li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:5px 0;border-bottom:1px solid var(--cc-line)}
+.ifl li:last-child{border-bottom:0}
+.ifl code{color:var(--cc-ink);font-weight:600;overflow-wrap:anywhere}
+.ifl .s{grid-column:1 / -1;color:var(--cc-ink-muted);font-size:12px}
+
+/* import steps, timeline */
+.isteps{list-style:none;margin:10px 0 0;padding:0;counter-reset:s;display:flex;flex-direction:column;gap:10px}
+.isteps li{display:grid;grid-template-columns:24px minmax(0,1fr);gap:10px;counter-increment:s}
+.isteps li::before{content:counter(s);width:22px;height:22px;border-radius:999px;border:1px solid var(--cc-line);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--cc-ink-muted);background:#fff}
+.isteps li span{display:block;color:var(--cc-ink-muted);font-size:12.5px}
+.tl{list-style:none;margin:6px 0 0;padding:0}
+.tl li{display:grid;grid-template-columns:132px minmax(0,1fr);gap:12px;padding:7px 0;border-bottom:1px solid var(--cc-line);font-size:13px;line-height:1.5}
+.tl li:last-child{border-bottom:0}
+.tl .d{font-size:12px;color:var(--cc-ink-muted);font-variant-numeric:tabular-nums}
+.tl .who{display:block;font-size:12px;color:var(--cc-ink-muted)}
+
+/* side */
+.never{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.5}
+.never li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:8px}
+.never li svg{color:var(--cc-ink-muted);margin-top:3px}
+
+/* slides drawer */
+.slides{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.slide{border:1px solid var(--cc-line);border-radius:8px;aspect-ratio:16/9;padding:12px 14px;display:flex;flex-direction:column;gap:6px;background:#fff;overflow:hidden}
+.slide .sn{font-size:11px;font-weight:600;color:var(--cc-ink-muted)}
+.slide .stt{font-size:14px;font-weight:800;line-height:1.3}
+.slide .sx{font-size:12px;color:var(--cc-ink-muted);line-height:1.45}
+.slide .sv{font-size:26px;font-weight:800;margin-top:auto}
+
+/* ---------- small screens ---------- */
+@media (max-width:1100px){
+  .body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  .facets{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .facet:nth-child(2){border-right:0}
+  .facet:nth-child(-n+2){border-bottom:1px solid var(--cc-line)}
+  .rule3{grid-template-columns:minmax(0,1fr)}
+  .mock{position:static}
+  .pab{top:0}
+  [id^="s-"]{scroll-margin-top:64px}
+  .side{top:auto}
+}
+@media (max-width:860px){
+  .cols2{grid-template-columns:minmax(0,1fr)}
+  .seal{grid-template-columns:minmax(0,1fr)}
+  .seal .acts{min-width:0}
+}
+@media (max-width:720px){
+  .mock{position:static}
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .tools .tool,.tools .legend,.tools .k{display:none}
+  .tools .toolmenu{display:inline-flex}
+  .tools .t12{order:2}
+  .ophead{padding:14px 16px 0}
+  .ans{grid-template-columns:minmax(0,1fr)}
+  .ans .a{font-size:17px}
+  .ans .next{min-width:0;max-width:none}
+  .facets{margin:14px -16px 0}
+  .facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .facet .v.word{font-size:16px}
+  .olist li{grid-template-columns:24px minmax(0,1fr)}
+  .olist .act{grid-column:2;align-items:flex-start}
+  .pkg summary{grid-template-columns:36px minmax(0,1fr) 18px}
+  .pkg .who{grid-column:2;grid-row:2;justify-content:flex-start}
+  .pkg .chev{grid-column:3;grid-row:1}
+  .pf thead{display:none}
+  .pf tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;border-bottom:1px solid var(--cc-line);padding:10px 0}
+  .pf td{border:0;padding:0;width:auto!important}
+  .pf td:nth-child(2){grid-column:1 / -1;grid-row:2}
+  .pf tr.grp-row{border-bottom:0;padding:12px 0 0}
+  .pf tr.grp-row td{padding:0}
+  .tl li{grid-template-columns:minmax(0,1fr)}
+  .slides{grid-template-columns:minmax(0,1fr)}
+  .pad{padding:14px 16px}
+  details.fold>summary{padding:12px 16px}
+  details.fold .fb{padding:0 16px 14px}
+}
+@media (max-width:639px){
+  .pab{top:0;margin:24px -16px 0;padding:0 0 0 16px}
+  [id^="s-"]{scroll-margin-top:64px}
+  .pab-l{display:none}
+  .pab-items{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);padding-right:24px}
+}
+
+/* =====================================================================
+   ONE FAMILY (15.11.2026) — this block is byte-identical in the six tool
+   mock-ups (Economics, Design, Transformation, Documentation, Testing,
+   Delivery) and comes last, so the shared parts look and behave the same
+   in every tool. Change it in all six or in none.
+   Responsive rules, the same everywhere:
+   - mock-up bar sticky only above 1100 px; its real height is measured
+     into --mock-h, so nothing ever slides under it;
+   - tool bar: one row at every width; when it does not fit, the legend
+     steps back (each mark keeps its words as a tooltip) and the row
+     scrolls sideways with a right-edge fade, the current tool in view;
+   - "On this page": the spec (tmp/ANCHOR-BAR-SPEC.md), sticky below the
+     mock-up bar, 24 px above and below, anchors land 16 px under it;
+     hidden when the page has only one section (owner, 15.11.2026);
+   - side column below the main column from 1100 px down;
+   - 24 px between cards and sections; card padding 16/20, phone 14/16;
+   - tables never widen the page: on a phone a list table stacks into one
+     block per row (row title first, every other cell with its column
+     name); a wider table scrolls inside its own card;
+   - button labels wrap balanced (no single orphaned word), numbers and
+     chips never break.
+   ===================================================================== */
+@font-face{font-family:Inter;src:url(../../app/fonts/inter-latin-variable.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --mk-bar:#1f1147;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --mock-h:0px;
+}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+body{overflow-x:clip}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+h2[tabindex="-1"]:focus,h3[tabindex="-1"]:focus,summary[tabindex="-1"]:focus{outline:none}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+
+/* mock-up chrome (not product) */
+.mock{position:sticky;top:0;z-index:300;background:var(--mk-bar);color:#fff;font-size:12px;line-height:1.4;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap}
+.mock button.on{background:#e9e5ff;color:var(--mk-bar)}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.mock .d{flex-basis:100%;color:#cfc8f3;font-weight:500}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap;letter-spacing:0;text-transform:none}
+.mtag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;white-space:nowrap;letter-spacing:0;text-transform:none}
+body.nopins .pin{display:none}
+
+/* app bar */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none;color:inherit}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.15}
+.logo .lg svg{width:18px;height:18px}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* frame, back link, note / view switch, tool bar, tool header */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;min-height:32px}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vsnote{font-size:13px;font-weight:500;line-height:1.4;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:0 12px;font-size:13px;font-weight:600;line-height:26px;min-height:26px;color:var(--cc-ink-muted);border-radius:6px;white-space:nowrap}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.tools{display:flex;align-items:center;gap:8px;margin-top:8px;padding:2px 0;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+.tools::-webkit-scrollbar{display:none}
+.tools>*{flex:none}
+/* sideways rows (tool bar, "On this page"): a fade on each edge where more items wait */
+.tools.ovf:not(.end),.pab-items.ovf:not(.end){-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
+.tools.ovf.end:not(.start),.pab-items.ovf.end:not(.start){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px);mask-image:linear-gradient(90deg,transparent,#000 48px)}
+.tools.ovf:not(.start):not(.end),.pab-items.ovf:not(.start):not(.end){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent)}
+.tools .k{display:inline;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tools .tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tools .tool:focus-visible{outline-offset:-2px}
+.tools .tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tool .od{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .t12{order:0}
+.tools .legend{display:flex;margin-left:auto;padding-left:16px;font-size:12px;font-weight:500;color:var(--cc-ink-muted);gap:12px;white-space:nowrap}
+.tools .legend span{display:inline-flex;align-items:center;gap:4px}
+.tools .legend i{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .legend svg.half,.tool svg.half{width:10px;height:10px;color:var(--cc-information);flex:none}
+.tools .toolmenu,.tools .toolsmenu{display:none}
+.tools.nolegend .legend{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh .eyebrow{display:flex;align-items:center;gap:6px}
+.sh .eyebrow svg.i{width:14px;height:14px}
+.sh .pid{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px;overflow-wrap:anywhere}
+.sh .pid+.lead{margin-top:6px}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;line-height:1.5;color:var(--cc-ink-muted);margin-top:2px}
+
+/* buttons, links, chips */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;text-decoration:none;text-align:center;white-space:normal;text-wrap:balance;font-family:inherit;cursor:pointer}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:4px 10px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff;letter-spacing:0;text-transform:none}
+.pv svg.i{width:12px;height:12px}
+.pv.ai,.pv.sim,.pv.prop{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed;background:#fff}
+.pv.eng,.pv.rec{color:var(--cc-information);border-color:var(--cc-information);background:#fff}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral);background:#fff}
+
+/* cards and sections */
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.h2{font-size:16px;font-weight:700;line-height:1.35;display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
+.sec-h{display:flex;align-items:flex-start;gap:8px 12px;flex-wrap:wrap}
+.sec-h>div:first-child{flex:1 1 320px;min-width:0}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+details.fold>summary{flex-wrap:wrap}
+
+/* the answer card: question, answer, why, next step, facets */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ophead>.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start;margin:0}
+.ophead .q{font-size:12px;font-weight:600;line-height:1.5;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:0;letter-spacing:0;text-transform:none}
+.ophead .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ophead .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ophead .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:250px;max-width:290px;width:290px}
+.ophead .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;line-height:1.45}
+.facets{display:grid;border-top:1px solid var(--cc-line);margin:16px -22px 0}
+:where(.facets){grid-template-columns:repeat(4,minmax(0,1fr))}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0}
+button.facet{font:inherit;color:inherit;text-align:left;background:none;border:0;border-right:1px solid var(--cc-line);cursor:pointer;display:block;width:100%}
+button.facet:hover{background:var(--cc-surface-muted)}
+button.facet:last-child{border-right:0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2;font-variant-numeric:tabular-nums}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+
+/* "On this page" — the one bar (tmp/ANCHOR-BAR-SPEC.md) */
+.pab{position:sticky;top:var(--mock-h);z-index:50;display:flex;align-items:center;gap:12px;height:48px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 2px 4px rgb(11 28 48 / .06);margin:24px -32px 24px;padding:0 32px}
+.pab+*{margin-top:0}
+.pab.single{display:none}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted);margin:0;white-space:nowrap}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap;flex:none}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+.pab-c{font-size:12px;font-weight:600;line-height:18px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:var(--cc-ink);border:0;box-shadow:none}
+.pab-c.o{background:#fef3c7}
+.pab-act{margin-left:auto;flex:none}
+[id^="s-"],[data-sec],.chap{scroll-margin-top:calc(var(--mock-h) + 64px)}
+.frame>.pab.single+*,.frame>.pab.single+.body{margin-top:24px}
+
+/* object page body: main column + side column */
+.frame>.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;margin-top:0;align-items:start}
+.main{display:flex;flex-direction:column;gap:24px;min-width:0}
+.side{display:flex;flex-direction:column;gap:24px;position:sticky;top:calc(var(--mock-h) + 64px)}
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* owner / today drawers */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(780px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55;color:var(--cc-ink)}
+.drawer.wide{width:min(1040px,100vw)}
+.drawer[hidden]{display:none}
+.drawer header{position:sticky;top:0;background:#fff;color:var(--cc-ink);border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2;flex-wrap:wrap}
+.drawer header h2{font-size:16px;font-weight:800;line-height:1.3;min-width:0}
+.drawer header .x{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer .db>h3:first-child{margin-top:0}
+.drawer code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+
+/* tables on a phone (rule: stack; data-label filled by the family script) */
+@media (max-width:720px){
+  table.tbl-stack{min-width:0!important;width:100%}
+  table.tbl-stack thead,table.tbl-stack tr:first-child:has(>th){display:none}
+  table.tbl-stack,table.tbl-stack tbody{display:block}
+  table.tbl-stack tr{display:block;padding:10px 0;border-bottom:1px solid var(--cc-line)}
+  table.tbl-stack tr:last-child{border-bottom:0}
+  table.tbl-stack td{display:flex;gap:10px;border:0!important;padding:2px 0!important;text-align:left!important;background:none!important}
+  table.tbl-stack td:first-child{font-weight:600}
+  table.tbl-stack td[data-label]:not(:first-child)::before{content:attr(data-label);flex:0 0 38%;font-size:12px;font-weight:600;color:var(--cc-ink-muted);font-family:var(--sans);white-space:normal}
+}
+
+/* ---------- the same breakpoints in every tool ---------- */
+@media (max-width:1100px){
+  .mock{position:static}
+  .frame>.body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  :where(.facets){grid-template-columns:repeat(2,minmax(0,1fr))}
+  :where(.facets>.facet:nth-child(2n)){border-right:0}
+  :where(.facets>.facet:nth-child(-n+2)){border-bottom:1px solid var(--cc-line)}
+}
+@media (max-width:900px){
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .next{width:auto;min-width:0;max-width:420px}
+}
+@media (max-width:720px){
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .ophead{padding:14px 16px 0}
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .a{font-size:17px}
+  .ophead .next{min-width:0;max-width:none;width:auto}
+  .facets{margin:14px -16px 0}
+  .facet,button.facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .pad{padding:14px 16px}
+  .drawer header{padding:12px 16px}
+  .drawer .db{padding:14px 16px 28px}
+}
+@media (max-width:639px){
+  .pab{margin:24px -16px 24px;padding:0 0 0 16px}
+  .pab-l,.pab-act{display:none}
+  .pab-items{padding-right:24px}
+}
+</style>
+</head>
+<body>
+
+<div class="mock" role="region" aria-label="Mock-up controls">
+  <b>State</b>
+  <button type="button" data-state="none">Nothing ready</button>
+  <button type="button" data-state="partial" class="on">Partly ready, open items</button>
+  <button type="button" data-state="ready">Ready and signed</button>
+  <button type="button" data-state="failed">A check failed</button>
+  <button type="button" data-state="demo">Demo project</button>
+  <span class="sp">
+    <button type="button" id="pins">Decision pins: on</button>
+    <button type="button" data-open="p-today">Today, critiqued</button>
+    <button type="button" data-open="p-owner">For the owner</button>
+  </span>
+</div>
+
+<header class="shell">
+  <a class="logo" href="#" aria-label="Clean-Core.io, My workspace">
+    <span class="lg"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span>
+    <span><span class="n">Clean-Core<em>.io</em></span><span class="s">Free Community Edition</span></span>
+  </a>
+  <nav class="path" aria-label="Breadcrumb"><span>My workspace</span><span>›</span><span id="crumb">Emergency purchase approval</span><span>›</span><span class="cur">Delivery</span></nav>
+  <div class="shell-r">
+    <button class="ib" type="button" aria-label="Help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+    <span class="av" aria-label="Account menu">MW</span>
+  </div>
+</header>
+
+<main class="frame">
+  <div class="headrow">
+    <a class="back" href="#"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg><span id="backtxt">My workspace · Emergency purchase approval</span></a>
+    <div class="vs">
+      <span class="vsnote" role="note"><svg class="i s" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.85"/></svg>One page for every reader — business, IT and management<span class="pin">L1</span></span>
+    </div>
+  </div>
+  <nav class="tools" aria-label="Tools">
+    <span class="k">Tools</span>
+    <a class="tool" href="#" id="t-analyze"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Analyze</a>
+    <a class="tool" href="#" id="t-economics"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Economics</a>
+    <a class="tool" href="#" id="t-design"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Design</a>
+    <a class="tool" href="#" id="t-transformation"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Transformation</a>
+    <a class="tool" href="#" id="t-documentation"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Documentation</a>
+    <a class="tool" href="#" id="t-testing"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="od" hidden></span>Testing</a>
+    <a class="tool cur" href="#" aria-current="page" id="t-delivery"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="od" hidden></span>Delivery</a>
+    <span class="pin t12">L9</span>
+    <span class="legend"><span><svg class="i s" viewBox="0 0 24 24" style="color:var(--cc-success)"><path d="M20 6 9 17l-5-5"/></svg>done</span><span><svg class="half" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 1.25 A4.75 4.75 0 0 0 6 10.75 Z" fill="currentColor"/></svg>started</span><span><i class="od"></i>out of date</span></span>
+    <button class="btn ghost toolmenu" type="button">Tools · Delivery<svg class="i s" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+  </nav>
+
+  <div class="sh">
+    <div class="eyebrow"><svg class="i" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg><span>Tool · Delivery</span></div>
+    <h1 data-stage-title>Emergency purchase approval</h1>
+    <p class="pid" id="eyename">Z_MM_PO_APPROVAL</p>
+    <p class="lead">What leaves with the program — the package, its proof, and what is still open before go-live. Signed, sealed and not signed are said apart.</p>
+  </div>
+
+  <div id="strip"></div>
+
+  <!-- ===== object page header: the answer, then the facets ===== -->
+  <section class="card ophead" aria-labelledby="ans-q" id="ophead">
+    <div class="ans">
+      <div>
+        <p class="q" id="ans-q"><span id="qtext">Can Z_MM_PO_APPROVAL be handed over?</span> <span id="qchip"></span><span class="pin">L2</span></p>
+        <p class="a" id="answer"></p>
+        <p class="why" id="why"></p>
+      </div>
+      <div class="next" id="nextbox"></div>
+    </div>
+    <div class="facets" id="facets"></div>
+  </section>
+
+  <!-- ===== "On this page" ===== -->
+  <nav class="pab" aria-label="On this page" id="anchors">
+    <span class="pab-l">On this page</span>
+    <div class="pab-items" id="pabitems"></div>
+  </nav>
+
+  <div class="body">
+    <div class="main">
+      <!-- S1: before go-live -->
+      <section class="card pad" id="s-open" aria-labelledby="s-open-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-open-h">Before go-live<span class="pin">L5</span></h2>
+            <p class="sec-lead" id="open-lead"></p>
+          </div>
+        </div>
+        <div id="openbody"></div>
+      </section>
+
+      <!-- S2: the package -->
+      <section class="card pad" id="s-package" aria-labelledby="s-package-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-package-h">In the package<span class="pin">L6</span></h2>
+            <p class="sec-lead" id="pkg-lead"></p>
+          </div>
+        </div>
+        <div id="pkgbody"></div>
+      </section>
+
+      <!-- S3: what is proven -->
+      <section class="card pad" id="s-proof" aria-labelledby="s-proof-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-proof-h">What is proven, and what is not<span class="pin">L3</span></h2>
+            <p class="sec-lead">The server signs what it computed itself. What a person declared is sealed as their word — it cannot be changed unnoticed, but nobody vouches for it. What a model wrote or a browser could change is not signed, and says so.</p>
+          </div>
+        </div>
+        <div id="proofbody"></div>
+      </section>
+
+      <!-- S4: audit pack -->
+      <section class="card pad" id="s-pack" aria-labelledby="s-pack-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-pack-h">Audit pack<span class="pin">L7</span></h2>
+            <p class="sec-lead">The one file the server signs: the analysis, its source fingerprint and your sealed statements. Anyone can check it — with or without an account.</p>
+          </div>
+        </div>
+        <div id="packbody"></div>
+      </section>
+
+      <!-- S5: import -->
+      <details class="fold" id="s-import">
+        <summary><svg class="i chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>Import into SAP<span class="pin">L8</span><span class="r">abapGit · for developers</span></summary>
+        <div class="fb" id="importbody"></div>
+      </details>
+
+      <!-- S6: timeline -->
+      <details class="fold" id="s-time">
+        <summary><svg class="i chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>Timeline<span class="r" id="time-r"></span></summary>
+        <div class="fb" id="timebody"></div>
+      </details>
+    </div>
+
+    <aside class="side" aria-label="Status and limits">
+      <section class="card sc" aria-labelledby="st-h">
+        <h3 id="st-h">Status of the handover</h3>
+        <ol class="steps" id="steps"></ol>
+      </section>
+      <section class="card sc" aria-labelledby="bo-h">
+        <h3 id="bo-h">Built on</h3>
+        <ul class="src" id="builton"></ul>
+      </section>
+      <section class="card sc" aria-labelledby="nv-h">
+        <h3 id="nv-h">Never in the signed pack<span class="pin">L10</span></h3>
+        <ul class="never" id="never"></ul>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- ===== slides drawer ===== -->
+<aside class="drawer narrow" id="p-slides" hidden role="dialog" aria-labelledby="slides-h">
+  <header><h2 id="slides-h">Stakeholder slides</h2><span class="pv eng"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4"/></svg>From the signed run</span><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <p class="muted" style="margin-bottom:12px">Seven slides built from the signed run and the engine's findings. No model wrote them, and they carry no savings figure. Not signed. Download as PowerPoint or PDF.</p>
+    <div class="slides" id="slidegrid"></div>
+  </div>
+</aside>
+
+<!-- ===== today, critiqued ===== -->
+<aside class="drawer narrow" id="p-today" hidden role="dialog" aria-labelledby="today-h">
+  <header><h2 id="today-h">Delivery today, critiqued</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <p class="muted">Read from source at <code>9cff84dc</code> (branch dev). Today's tool could not be opened here (no server, no emulators), so nothing below is a screenshot; every point cites the line it was read from. <code>delivery/page.tsx</code> means <code>app/(app)/project/[projectId]/delivery/page.tsx</code> (1,541 lines).</p>
+
+    <h3>What is wrong today</h3>
+    <ul>
+      <li><b>The view switch changes nothing.</b> <code>StageHeader</code> draws Business · IT · Management on every tool (<code>components/StageHeader.tsx:54–57</code>); <code>delivery/page.tsx</code> never reads the view — it only links <i>to</i> <code>?view=management</code> (<code>:680</code>, <code>:1193</code>). The same page for everyone, under a header that promises three.</li>
+      <li><b>No answer, and the next step comes after the anchor bar.</b> The first screen is the lead, a metaline behind "Details" (<code>DeliveryObjectPage.tsx:39–58</code>), four facets — Handover · Audit pack · Design target · Quality — and a status line in four dots, "Run · Decision · Receipts · Engine" (<code>delivery/page.tsx:723–726</code>, <code>lib/handover.ts:1126–1155</code>). The one sentence that says what to do, <i>Next step · rule-based</i>, stands below the stale notice and the anchor bar, inside the main column (<code>delivery/page.tsx:742</code>). No sentence says whether the program can be handed over.</li>
+      <li><b>"Handed over" means "downloaded".</b> The Handover facet reads <b>Handed over</b> as soon as the audit pack was sealed and downloaded (<code>lib/handover.ts:1065</code>), with a <i>proven</i> chip. A download is not a handover, and its own basis text says so ("delivery is not acceptance").</li>
+      <li><b>Two chains with the same four names, and different verdicts.</b> The "Evidence chain" card draws Requirement → Decision → Receipt → Delivery artefact from the nine project links (<code>delivery/page.tsx:773–958</code>, <code>lib/handover.ts:834–842</code>); the side column draws "The pack's own chain" with the same four names from the signed fields (<code>delivery/page.tsx:1369–1383</code>, <code>lib/evidence-chain.ts:28–36</code>). The first can say "on record" where the second says "not determined" — for the same link.</li>
+      <li><b>Signed vs. not signed is spread over four places.</b> The Artefacts header says "review material — not signed" (<code>:969</code>), each artefact card repeats it in its own words (<code>:978</code>, <code>:1044</code>, <code>:1155</code>), the side column has "What a signature covers" with three lists (<code>:1356–1388</code>), and the pack's contents sit in an accordion (<code>:1334–1352</code>). Nowhere does one table say, statement by statement, what stands behind it.</li>
+      <li><b>The audit pack sits in the side column, but the anchor bar points to it.</b> <code>id="audit-pack"</code> is inside <code>&lt;aside&gt;</code> (<code>:1217–1221</code>); on a phone the side column stacks under the main column, so the bar's fourth item jumps past everything. The bar's items are Evidence chain · Still needed · Artefacts · Audit pack · Stakeholder slides (<code>lib/page-anchors.ts:169–186</code>), drawn in the old style.</li>
+      <li><b>Six download buttons of equal weight.</b> Bundle, Markdown, Developer guide, BPMN, audit pack and the next step's own pack button (<code>:983</code>, <code>:1100</code>, <code>:1129</code>, <code>:1163</code>, <code>:1282</code>, <code>:757</code>) — and a bundle without the BPMN, the specification or the slides.</li>
+      <li><b>Checking a pack happens elsewhere, in other words.</b> Verification is a separate page, <code>/verify-pack</code> (<code>:1328</code>), whose verdicts are Title Case — "Authenticity &amp; Integrity Verified", "Verification Failed" (<code>lib/audit-pack-verify.ts:580–593</code>). The delivery package can be checked against the pack (<code>lib/delivery-package-verify.ts</code>, <code>scripts/verify-pack.mjs --package</code>), but Delivery never says so.</li>
+      <li><b>The next step ignores the new tool order.</b> <code>handoverNextStep</code> walks design → transformation → documentation → testing (<code>lib/handover.ts:749</code>) and puts the cost scenario <i>after</i> the seal (<code>:802–806</code>). Since ADR-128 Economics comes before Design and Design works from its decision.</li>
+      <li><b>The slides are a full-width section under everything</b> (<code>:1434–1441</code>), reached from a card's "View slides" button that scrolls the page (<code>:1073</code>).</li>
+      <li><b>The program decision and the test result are not in the pack — and the page does not say it.</b> <code>07-user-attested.md</code> carries the target, the sign-off and a testing closure only (<code>lib/audit-pack.ts:916–930</code>); the status line nevertheless lists "Decision · confirmed" and "Receipts" next to "Run · signed" as if they were one kind of fact.</li>
+    </ul>
+
+    <h3>What is good and is kept</h3>
+    <ul>
+      <li>The honest boundary itself: <code>SIGNED_COVERS</code> and <code>NOT_SIGNED</code> (<code>lib/handover.ts:551–569</code>), the evidence chain that refuses to let "covers" mean everything (<code>lib/evidence-chain.ts</code>), and "A confirmation is the signed-in account's self-declaration, not an organisational mandate" (<code>:1408</code>).</li>
+      <li>One story between the next step and the open list (<code>lib/handover.ts:709–719</code>) and the phase badges of <code>lib/workflow-steps.ts</code> ("Ready · imported tests", "Ready · tests not verified").</li>
+      <li>The seal notices (sealed now, sealed earlier, not recorded, unconfirmed — <code>:1300–1320</code>), the refused bundle with its paths (<code>:1003–1025</code>), the stale block on artefacts built for a previous source.</li>
+      <li>The demo: no download, no pack — "the capability is absent rather than disabled" (<code>DemoDelivery.tsx:163–170</code>, <code>tests/demo-project.spec.ts</code>).</li>
+    </ul>
+
+    <h3>Today vs. mock-up</h3>
+    <table>
+      <tr><th>Today</th><th>Mock-up</th></tr>
+      <tr><td>Business · IT · Management switch that changes nothing</td><td>No switch; "One page for every reader" (L1)</td></tr>
+      <tr><td>Four facets, a four-dot status line, the next step below the bar</td><td>"Can it be handed over?" — yes / not yet / stop, in one or two sentences, the next step beside it; facets On record · The package · Tests · Audit pack (L2)</td></tr>
+      <tr><td>"Handed over" after a download</td><td>"Sealed on …"; handover and go-live are named as yours (L4)</td></tr>
+      <tr><td>Evidence chain + the pack's own chain + What a signature covers</td><td>One table, "What is proven, and what is not", statement by statement (L3)</td></tr>
+      <tr><td>Still needed (one list, no grouping)</td><td>"Before go-live": before handover · travels open, named · yours in your system (L5)</td></tr>
+      <tr><td>Six artefact cards, six buttons</td><td>Six parts of one package, author chips, files with fingerprints on a click; one package ZIP (L6)</td></tr>
+      <tr><td>Audit pack in the side column; checking on another page</td><td>Audit pack in the main column with the check of a pack and a package on the page (L7)</td></tr>
+      <tr><td>—</td><td>"Import into SAP" with the abapGit steps, folded (L8)</td></tr>
+      <tr><td>Slides as a section at the foot</td><td>Slides as a part of the package, previewed in a drawer (L6)</td></tr>
+    </table>
+  </div>
+</aside>
+
+<!-- ===== for the owner ===== -->
+<aside class="drawer narrow" id="p-owner" hidden role="dialog" aria-labelledby="owner-h">
+  <header><h2 id="owner-h">For the owner — decisions L1–L13</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <div class="recbox"><b>Recommendation:</b> build L1–L10 and L12–L13 as one Delivery step before the 3.5 release, on one page for every reader. The page opens with whether the program can be handed over, in one or two sentences, and the one next step; four facets say what is on record, what the package holds, whether the tests ran and whether the audit pack is sealed. What is signed and what is not is said once, in a table. Fingerprints, signatures, the check of a pack and the abapGit import stay on the page, quietly. No engine change, no new stored field, no rules change. L11 (the program decision and the test result into the sealed file) is a pack-format change — recommended, as its own later step.</div>
+    <ol style="margin-top:12px">
+      <li><b>L1 One page for every reader — recommended</b>, following ADR-126 (1), decided for Economics, Documentation and Transformation. Delivery's three readers need the same facts at different depth, not different content: the business reader asks "can it go?", the manager "what is proven and what is open?", the developer "which files, which fingerprints, how do I import it?". Depth folds; nothing differs by view. So no switch, the quiet note in its place, the view kept in the address. Alternative (the Design rule, ADR-126 (2)) only if you want a Management variant that shows nothing but the answer and the proof table — not recommended: it would be the same page with sections hidden.</li>
+      <li><b>L2 The answer first.</b> "Can &lt;program&gt; be handed over?" — <i>Yes</i>, <i>Not yet</i> or <i>Stop</i>, one or two sentences naming what is missing, and the next step on the right. Four facets: <i>On record</i> (the nine links of the chain, as a bar), <i>The package</i> (six parts, who wrote them), <i>Tests</i> (where they ran), <i>Audit pack</i> (sealed or not, checked or not). The status line and the metaline go; their facts move to "Built on". Recommended.</li>
+      <li><b>L3 One table: "What is proven, and what is not".</b> Statement by statement — findings, source, recommendation, model participation, limits, target and sign-off, program decision, test result, package, grade, AI text — with what stands behind it and one of four words: <i>Signed by the server</i>, <i>Sealed — your word</i>, <i>Not signed</i>, <i>Never signed</i>. Replaces the Evidence chain boxes, "The pack's own chain" and "What a signature covers"; the nine links stay one click deeper in the side column. Recommended.</li>
+      <li><b>L4 No "Handed over".</b> The Handover facet's <i>Handed over</i> (<code>lib/handover.ts:1065</code>) goes. The page says <i>Ready</i> and <i>Sealed on …</i>; handover, acceptance, transport and go-live are named as the reader's, outside the product. Recommended.</li>
+      <li><b>L5 "Before go-live" in three groups.</b> <i>Before handover</i> (what <code>handoverStillNeeded</code> lists — it blocks, amber count in the bar), <i>Travels open, named</i> (calls without a released successor, custom tables without a home, rules without a decision — they do not block, STATUS.md names them), and <i>Yours, in your system</i> (activation, transport, go-live). One action each. Recommended.</li>
+      <li><b>L6 The package as six parts.</b> Code for abapGit, tests, documentation, process as BPMN, requirements specification, stakeholder slides — each with its author chips (engine, AI-generated, your answers), its state and its files with SHA-256 on a click; one <i>Download the package</i> ZIP with all six plus STATUS.md and the manifest (today the bundle has no BPMN, specification or slides). The slides preview in a drawer. Recommended.</li>
+      <li><b>L7 The audit pack in the main column, and the check on the page.</b> Seal state, signatures, the 13 files folded, and <i>Check a pack or package</i>: the verifier of <code>/verify-pack</code> and <code>lib/delivery-package-verify.ts</code>, run in this browser on a file the reader drops; verdicts in sentence case. <code>/verify-pack</code> stays for readers without an account; the offline command is shown. Recommended.</li>
+      <li><b>L8 "Import into SAP", folded.</b> The abapGit steps the package's README already carries, said once on the page, for developers. Recommended.</li>
+      <li><b>L9 The next step follows the tool order — decided order, recommended rule.</b> The order Analyze → Economics → Design → Transformation → Documentation → Testing → Delivery is decided (ADR-128 (5)). <code>handoverNextStep</code> (<code>lib/handover.ts:749</code>) walks it too: Economics before Design, no longer "after the seal". Recommended.</li>
+      <li><b>L10 The grade is named, never signed.</b> The target line says "aims at clean core level A"; the side column "Never in the signed pack" lists the Level A–D grade, AI-written text, generated files, the views and the cost figures. Recommended.</li>
+      <li><b>L11 Program decision and test result into the sealed file — later, own step.</b> Today neither is in the pack (<code>lib/audit-pack.ts:916–930</code>). Adding both to <code>07-user-attested.md</code> as your word (the decision with its date and account; the imported result file's digest) lets an auditor see them sealed. A pack-format version: <code>lib/audit-pack-build.ts</code>, <code>-canonical.ts</code>, both verifiers. Recommended, not in this step; until then the table says "on the project, not in the pack".</li>
+      <li><b>L12 Demo: nothing leaves — kept.</b> No download, no pack, no check, absent rather than disabled (<code>tests/demo-project.spec.ts</code>); the page says what a real handover would hold. Recommended.</li>
+      <li><b>L13 The shared "On this page" bar — decided</b> (ADR-126 (3), <code>tmp/ANCHOR-BAR-SPEC.md</code>): Before go-live (amber count) · In the package · What is proven · Audit pack · Import into SAP · Timeline. Amends ADR-091's Delivery list.</li>
+    </ol>
+
+    <h3>What it costs to build</h3>
+    <table>
+      <tr><th>Item</th><th>Answer</th></tr>
+      <tr><td>Files</td><td><code>app/(app)/project/[projectId]/delivery/page.tsx</code> (rebuilt around answer, open list, package, proof table, pack; the slides section and the side-column pack go); <code>components/delivery/DeliveryObjectPage.tsx</code> (new <code>DeliveryAnswer</code>, <code>BeforeGoLive</code>, <code>PackageParts</code>, <code>ProofTable</code>, <code>PackCheck</code>, <code>ImportSteps</code>; <code>DeliveryChainBoxes</code> and <code>DeliveryStatusLine</code> retire); <code>components/delivery/DemoDelivery.tsx</code>; <code>lib/handover.ts</code> (pure: <code>handoverAnswer</code>, <code>proofRows</code>, open items in three groups, the facet without "Handed over", the next-step order); <code>lib/delivery-package.ts</code> (BPMN, specification and slides into the bundle); <code>lib/page-anchors.ts</code>; <code>components/StageHeader.tsx</code> (the shared <code>oneView</code> note); <code>/verify-pack</code> verdict words. DESIGN.md and ADR-091 amended; one new ADR.</td></tr>
+      <tr><td>Engine change</td><td>No.</td></tr>
+      <tr><td>Stored field</td><td>No. Seal date, decision, test receipts, digests and the chain are on the project and the run already.</td></tr>
+      <tr><td>Rules change</td><td>No.</td></tr>
+      <tr><td>Pack format</td><td>No for L1–L10, L12, L13. L11 alone changes the sealed file and both verifiers — a separate step.</td></tr>
+      <tr><td>Specs</td><td>The Delivery rendered specs (sections, anchors, words), the page-anchors spec, the view-switch spec, the demo's no-pack guard (unchanged), <code>handover</code> unit specs; <code>workflow-style-guard</code> unchanged (title from <code>StageHeader</code>).</td></tr>
+    </table>
+    <h3>Measured vs. illustrative in this picture</h3>
+    <p>Measured from source: the 13 pack files and their kinds, what the signature covers and does not, the four chain links and their verdicts, the user-attested fields, the phase badges, the verifier's outcomes and exit codes, the abapGit file names of the generated package. From the sibling mock-ups (measured there on <code>Z_MM_PO_APPROVAL</code>): 19 findings, 10 with a released target, 4 calls and 5 custom tables open, 11 objects, 31 files, 14 ABAP Unit cases, Score 40, Rebuild. Illustrative: dates, the run id, every hash and key id, the timeline, the slide contents.</p>
+  </div>
+</aside>
+
+<script>
+/* ---------------- icons ---------------- */
+const IC={
+  info:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+  err:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>',
+  eng:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4"/></svg>',
+  ai:'<svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  you:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>',
+  imp:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+  chev:'<svg class="i chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>',
+  code:'<svg class="i" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>',
+  box:'<svg class="i" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>',
+  file:'<svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+  test:'<svg class="i" viewBox="0 0 24 24"><path d="M9 2v6L4 18a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3L15 8V2M8 2h8M7 14h10"/></svg>',
+  flow:'<svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M6 9v3a3 3 0 0 0 3 3h6"/></svg>',
+  list:'<svg class="i" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+  slides:'<svg class="i" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+  lock:'<svg class="i" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  seal:'<svg class="i" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>',
+  dash:'<svg class="i s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/></svg>',
+  help:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+  check:'<svg class="i s" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+  x:'<svg class="i s" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  dl:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+  arr:'<svg class="i s" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  home:'<svg class="i" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
+};
+const CH={
+  eng:(n='Engine')=>`<span class="pv eng" title="Written by Clean-Core.io's deterministic engine. No model.">${IC.eng}${n}</span>`,
+  ai:(n='AI-generated')=>`<span class="pv ai" title="Written by a language model (Google Gemini). A draft: not proven.">${IC.ai}${n}</span>`,
+  you:(n='Your statement')=>`<span class="pv you" title="The signed-in account's self-declaration, not an organisational mandate.">${IC.you}${n}</span>`,
+  nd:(n='Not determined')=>`<span class="pv nd">${IC.help}${n}</span>`,
+  err:(n)=>`<span class="pv err">${IC.x}${n}</span>`,
+  sig:(n='Signed by the server')=>`<span class="pv sig" title="A file the server generated from the signed run; HMAC-SHA256 and Ed25519 cover its bytes.">${IC.lock}${n}</span>`,
+  att:(n='Sealed — your word')=>`<span class="pv att" title="Your own statement. Its bytes are bound by the signature, so it cannot be changed unnoticed; nobody vouches for what it says.">${IC.you}${n}</span>`,
+  ns:(n='Not signed')=>`<span class="pv ns">${IC.dash}${n}</span>`,
+  nev:(n='Never signed')=>`<span class="pv nev" title="Kept out of the signed pack on purpose.">${IC.x}${n}</span>`,
+};
+const P='Z_MM_PO_APPROVAL';
+
+/* ---------------- states ---------------- */
+let S='partial';
+const ST={none:1,partial:1,ready:1,failed:1,demo:1};
+const isDemo=()=>S==='demo';
+const full=()=>S==='ready'||S==='failed';
+const has=()=>S==='partial'||full();
+
+/* the nine links of the chain (lib/handover.ts HANDOVER_LINKS), on record per state */
+const LINKS=['Source code','Signed analysis run','Analysis','Cost simulation','Design and sign-off','Transformation draft','Documentation','Tests','Decision'];
+const ONREC={none:[1,1,1,1,0,0,0,0,0],partial:[1,1,1,1,1,1,1,0,0],ready:[1,1,1,1,1,1,1,1,1],failed:[1,1,1,1,1,1,1,1,1],demo:[0,0,0,0,0,0,0,0,0]};
+
+function render(){
+  const name=isDemo()?P+' (demo)':P;
+  document.getElementById('crumb').textContent='Emergency purchase approval'+(/\(demo\)$/.test(name)?' (demo)':'');
+  document.getElementById('eyename').textContent=name;
+  document.getElementById('backtxt').textContent=isDemo()?'Demo workspace · Emergency purchase approval':'My workspace · Emergency purchase approval';
+  /* tool bar ticks — read from lib/workflow-steps.ts in the product */
+  const used={none:['analyze','economics'],partial:['analyze','economics','design','transformation','documentation'],ready:['analyze','economics','design','transformation','documentation','testing','delivery'],failed:['analyze','economics','design','transformation','documentation','testing'],demo:['analyze','economics','design']}[S];
+  ['analyze','economics','design','transformation','documentation','testing','delivery'].forEach(k=>{const t=document.getElementById('t-'+k);t.querySelector('.ck').style.display=used.includes(k)?'':'none';const od=t.querySelector('.od');if(od)od.hidden=!((k==='testing'&&S==='partial')||(k==='delivery'&&S==='failed'))});
+  document.getElementById('strip').innerHTML='';
+
+  /* ---------- the answer ---------- */
+  const q=document.getElementById('qchip'),a=document.getElementById('answer'),w=document.getElementById('why'),n=document.getElementById('nextbox');
+  if(S==='partial'){
+    q.innerHTML='';
+    a.innerHTML=`Not yet. The package is complete as a review version — code, tests and documentation — but its 14 tests have not run in your SAP system, the decision to rebuild is not confirmed, and the audit pack is not sealed.`;
+    w.innerHTML=`The analysis behind it is signed by the server. The code is an AI-written draft on the engine's frame (abaplint finds no error); like the tests and the documentation it is not signed. 4 calls without a released successor travel open, named in the package.`;
+    n.innerHTML=`<span class="k">Next step</span><a class="btn primary lg" href="#">Run the tests in your SAP system ${IC.arr}</a><a class="btn ghost" href="#" data-jump="s-package">${IC.dl}Download the review version</a><span class="sub">Run ZTC_POAPPR with ABAP Unit in your system and import its result in Testing. A result from your system outranks anything run here.</span>`;
+  }else if(S==='ready'){
+    q.innerHTML=CH.sig('Analysis signed')+' '+CH.ai('Code: AI-written draft');
+    a.innerHTML=`Yes. ${P} can be handed over as a RAP business object in ABAP Cloud: code, documentation and 14 passing tests are on record, the decision to rebuild is confirmed, and the audit pack is sealed.`;
+    w.innerHTML=`What the server signed is the analysis — findings, source fingerprint, the engine's recommendation. The package itself is not signed: its manifest names the signed run, so anyone can check it belongs to it. Activation, transport and go-live happen in your system.`;
+    n.innerHTML=`<span class="k">Next step</span><button class="btn primary lg" type="button">${IC.dl}Download the package</button><button class="btn ghost" type="button">${IC.dl}Download the audit pack</button><span class="sub">Two ZIP files: the package for whoever imports it, the audit pack for whoever checks it. Neither calls a model.</span>`;
+  }else if(S==='failed'){
+    q.innerHTML=CH.err('Check failed');
+    a.innerHTML=`Stop — do not hand over the copy you checked. Its package no longer matches its own manifest: one file, <code>zcl_poappr_logic.clas.abap</code>, was changed after the package was built.`;
+    w.innerHTML=`The audit pack in the same check is authentic — both signatures verified, all 13 files match — and names the same run. Whoever changed the file may have had a reason, but the changed file is no longer what was checked. The package stored on this project is unchanged.`;
+    n.innerHTML=`<span class="k">Next step</span><button class="btn primary lg" type="button">${IC.dl}Download a fresh package</button><button class="btn ghost" type="button" data-jump="s-pack">See what differs</button><span class="sub">Then check it again before you hand it over — on this page or offline.</span>`;
+  }else if(S==='none'){
+    q.innerHTML='';
+    a.innerHTML=`Not yet — there is nothing to hand over. Only the analysis exists, and it is signed; there is no code, no test and no documentation yet.`;
+    w.innerHTML=`Rebuild was priced in Economics (revision 2). The target has to be confirmed in Design before Transformation can write code; Documentation and Testing follow.`;
+    n.innerHTML=`<span class="k">Next step</span><a class="btn primary lg" href="#">Confirm the target in Design ${IC.arr}</a><span class="sub">Design works from the decision priced in Economics. This page fills as the tools before it are done.</span>`;
+  }else{
+    q.innerHTML='';
+    a.innerHTML=`A demo hands nothing over. It is never signed and writes no code, so there is no package and no audit pack — this page shows what a real handover of ${P} would hold.`;
+    w.innerHTML=`A pack is sealed against a signed run and carries the account that made it; a demo has neither. So nothing here can be downloaded, and no button pretends it could.`;
+    n.innerHTML=`<span class="k">Next step</span><a class="btn primary lg" href="#">Analyse your own program</a><span class="sub">Free. Your code stays in your project.</span>`;
+  }
+
+  /* ---------- facets ---------- */
+  const on=ONREC[S],onN=on.reduce((x,y)=>x+y,0);
+  const bar=`<div class="sbar" role="img" aria-label="${onN} of 9 links on record">${on.map((v,i)=>`<span title="${LINKS[i]}: ${v?'on record':'open'}" style="flex:1;background:${v?'var(--seq-3)':'var(--cc-line)'}"></span>`).join('')}</div>`;
+  let f1,f2,f3,f4;
+  if(isDemo()){
+    f1=`<div class="facet"><div class="t">On record</div><div class="v nd">None in a demo</div><div class="n">A demo records nothing that a handover could rest on.</div></div>`;
+    f2=`<div class="facet"><div class="t">The package</div><div class="v nd">None in a demo</div><div class="n">The demo makes no model call and writes no code.</div></div>`;
+    f3=`<div class="facet"><div class="t">Tests</div><div class="v nd">None in a demo</div><div class="n">Nothing in a demo runs.</div></div>`;
+    f4=`<div class="facet"><div class="t">Audit pack</div><div class="v nd">No pack leaves a demo</div><div class="n">Sealed only against a signed run — a demo has none.</div></div>`;
+  }else{
+    f1=`<div class="facet"><div class="t">On record</div><div class="v">${onN} <small>of 9 links</small></div>${bar}<div class="n">${onN===9?'Source, analysis, cost, design, code, documentation, tests and decision.':'Open: '+LINKS.filter((l,i)=>!on[i]).join(', ').toLowerCase()+'.'}</div></div>`;
+    f2=has()
+      ?`<div class="facet"><div class="t">The package</div><div class="v">6 <small>parts · 31 code files</small></div><div class="n">Code, tests, documentation, process, specification, slides. Not signed — every file fingerprinted.</div><div class="chips">${CH.eng('Frame, tests')}${CH.ai('Bodies, text')}</div></div>`
+      :`<div class="facet"><div class="t">The package</div><div class="v">2 <small>of 6 parts</small></div><div class="n">The process as BPMN and the slides, both read from the signed run. Code, tests and documentation do not exist yet.</div></div>`;
+    f3=full()
+      ?`<div class="facet"><div class="t">Tests</div><div class="v">14 <small>of 14 passed</small></div><div class="n">In your SAP system — an imported ABAP Unit result file, run there, not here.</div><div class="chips"><span class="pv imp">${IC.imp}Imported from your system</span></div></div>`
+      :S==='partial'
+        ?`<div class="facet"><div class="t">Tests</div><div class="v nd">Written, not run</div><div class="n">14 ABAP Unit cases from the original, expected values by the engine. They run in your system.</div></div>`
+        :`<div class="facet"><div class="t">Tests</div><div class="v nd">Not yet</div><div class="n">Written in Testing once the code exists.</div></div>`;
+    f4=S==='ready'
+      ?`<div class="facet"><div class="t">Audit pack</div><div class="v word">Sealed</div><div class="n">15 Nov 2026, 14:32 · HMAC-SHA256 and Ed25519 · checked here 14:35.</div></div>`
+      :S==='failed'
+        ?`<div class="facet"><div class="t">Audit pack</div><div class="v word">Sealed <small>· package check failed</small></div><div class="n">The pack is authentic; the package checked with it differs in 1 of 31 files.</div><div class="chips">${CH.err('1 file changed')}</div></div>`
+        :`<div class="facet"><div class="t">Audit pack</div><div class="v nd">Not sealed</div><div class="n">${S==='partial'?'Available now — the first download seals it. Last step before handover.':'Available — it would carry the analysis only.'}</div></div>`;
+  }
+  document.getElementById('facets').innerHTML=f1+f2+f3+f4;
+
+  /* ---------- anchor bar ---------- */
+  const must=MUST[S].length;
+  document.getElementById('pabitems').innerHTML=[
+    ['s-open','Before go-live',must?`<span class="pab-c o">${must}</span>`:''],
+    ['s-package','Package',isDemo()?'':`<span class="pab-c">${has()?6:2}</span>`],
+    ['s-proof','Proof',''],
+    ['s-pack','Audit pack',S==='failed'?'<span class="pab-c o">check failed</span>':''],
+    ['s-import','Import',''],
+    ['s-time','Timeline',isDemo()?'':`<span class="pab-c">${TL[S].length}</span>`],
+  ].map(([id,t,c],i)=>`<a href="#${id}"${i===0?' aria-current="true"':''}>${t}${c}</a>`).join('');
+  bindAnchors();
+
+  renderOpen();renderPkg();renderProof();renderPack();renderImport();renderTime();renderSide();
+}
+
+/* ---------------- before go-live ---------------- */
+const NAMED=[
+  ['4 calls have no released successor','PA0105, T16FS, ME21N and GUI_UPLOAD — marked open in the code and named in STATUS.md. They keep the program from clean core level A, not from the handover.','Open Transformation'],
+  ['5 custom tables have no new home','ZMM_PO_APPR, ZMM_PO_ATTACH, ZMM_VEND_BLOCK and 2 more — where they live after the move is decided in Design.','Open Design'],
+  ['2 business rules wait for a decision','BR-011 (release limit) and BR-013 (tell the requester) — in docs/rule-register.md of the package.','Open the Business view'],
+];
+const MUST={
+  none:[
+    ['Confirm the target in Design','Rebuild on in-app ABAP Cloud is priced; the target is drafted, not confirmed.','Open Design'],
+    ['Write the code','Transformation writes the frame (engine) and the function bodies (model).','Open Transformation'],
+    ['Document the process','Documentation writes the Word file from the map.','Open Documentation'],
+    ['Write and run the tests','Testing writes ABAP Unit cases; they run in your system.','Open Testing'],
+    ['Confirm the decision','The program decision is your account\'s statement, taken in the Management view.','Open the Management view'],
+  ],
+  partial:[
+    ['Run the 14 tests in your SAP system','Run ZTC_POAPPR with ABAP Unit and import the result file in Testing — or close testing with a reason, which the package then says.','Open Testing'],
+    ['Confirm the decision to rebuild','Proposed and priced (Economics revision 2), not confirmed. The confirmation is your account\'s statement.','Open the Management view'],
+    ['Download the audit pack — this seals it','The server seals it against the signed run as you download it. Last, so it carries your final target sign-off.','<button class="btn ghost sm" type="button" data-jump="s-pack">Go to Audit pack</button>'],
+  ],
+  ready:[],
+  failed:[
+    ['Do not hand over the copy you checked','zcl_poappr_logic.clas.abap differs from the package\'s manifest. Download a fresh package and check it again.','<button class="btn ghost sm" type="button" data-jump="s-pack">See the check</button>'],
+  ],
+  demo:[],
+};
+function item(i,[t,d,act],cls){const btn=act.startsWith('<')?act:`<a class="btn ghost sm" href="#">${act}</a>`;return `<li><span class="no ${cls}">${i}</span><div><p class="tt">${t}</p><p class="dd">${d}</p></div><div class="act">${btn}</div></li>`}
+function renderOpen(){
+  const lead=document.getElementById('open-lead'),b=document.getElementById('openbody');
+  if(isDemo()){lead.textContent='In a real project this list says what blocks the handover, what travels open but named, and what stays yours.';b.innerHTML=`<div class="yours">${IC.info}<span>The demo's own open points are in Analyze. <b>Nothing here can be handed over.</b></span></div>`;return}
+  const m=MUST[S];
+  lead.textContent=m.length?`${m.length===1?'One thing blocks':m.length+' things block'} the handover. What travels open is named in the package and does not block it.`:'Nothing blocks the handover. What travels open is named in the package.';
+  let h=`<p class="grp">Before handover <span class="xs">${m.length?'blocks it':'nothing open'}</span></p>`;
+  h+=m.length?`<ol class="olist">${m.map((x,i)=>item(i+1,x,'')).join('')}</ol>`:`<p class="none-line">${IC.check}Every link of the chain has a record${S==='ready'?', and the audit pack is sealed':''}.</p>`;
+  if(S!=='none'){h+=`<p class="grp">Travels open, named <span class="xs">does not block the handover</span></p><ol class="olist">${NAMED.map((x,i)=>item(m.length+i+1,x,'n')).join('')}</ol>`}
+  h+=`<div class="yours">${IC.home}<span><b>Yours, in your system:</b> activation, transport through your landscape, acceptance by operations and go-live. This page cannot see them and never says they happened.</span></div>`;
+  b.innerHTML=h;
+}
+
+/* ---------------- the package ---------------- */
+const PARTS=[
+  {id:'code',ico:'code',cls:'code',name:'Code for abapGit',sub:'Package ZPOAPPR · 11 objects · 31 files · ABAP Cloud, RAP',
+   who:()=>CH.eng('Frame')+CH.ai('Bodies'),
+   ok:()=>has(),st:()=>has()?'abaplint: no error · not activated':'Not yet',
+   body:()=>`The engine wrote the frame of every object; a model (Google Gemini) wrote the bodies of 22 functions between the engine's markers. Every file a model touched says so in its header. Not compiled or activated in an SAP system.`,
+   files:[['src/zcl_poappr_logic.clas.abap','logic class · 14 functions','3be0a91c'],['src/zbp_poappr_r.clas.abap','behavior pool · 8 functions','c41f0e27'],['src/zpoappr_r.bdef.asbdef','behavior definition','8d2a6b10'],['src/zpoappr_r.ddls.asddls','root view entity','f07c33e9'],['src/zif_poappr_ports.intf.abap','port interface, no implementation','19b6d4a2'],['.abapgit.xml','repository settings','5e8f2c71'],['STATUS.md','what is implemented, a stub, proposed or missing','a2c9e604'],['manifest.json','every file, its SHA-256, who wrote it, the signed run','—']],more:'and 23 more'},
+  {id:'tests',ico:'test',cls:'',name:'Tests',sub:'ABAP Unit class ZTC_POAPPR · 14 cases from the original',
+   who:()=>CH.eng('Cases and expected values'),
+   ok:()=>has(),st:()=>full()?'14 of 14 passed in your system':has()?'Written, not run':'Not yet',
+   body:()=>full()?`Run in your SAP system on 15 Nov 2026 and imported as an ABAP Unit result file. A result from your system outranks any run here; it is on the project, not in the signed pack.`:`The cases come from the original's branches; the engine wrote the expected values. They run in your system, not here.`,
+   files:[['src/ztc_poappr.clas.abap','test class · 14 methods','6f1d8e33'],['src/ztc_poappr.clas.testclasses.abap','local test doubles','0b77c5aa']]},
+  {id:'docs',ico:'file',cls:'model',name:'Documentation',sub:'Word file in seven chapters, the process map as Figure 1 · developer guide',
+   who:()=>CH.ai('Business text')+CH.eng('Map, guide'),
+   ok:()=>has(),st:()=>has()?'Written 14 Nov 2026':'Not yet',
+   body:()=>`The business text is the model's proposal, marked as such in the file; the map, the step count and the developer guide are read from the code. Edited and exported in Documentation.`,
+   files:[['docs/Z_MM_PO_APPROVAL.docx','business documentation','e93a0b58'],['docs/developer-guide.md','rules for the route, SAP tables used','27c4f1d9'],['docs/rule-register.md','every business rule, its decision and evidence','b18e6a40']]},
+  {id:'bpmn',ico:'flow',cls:'',name:'Process as BPMN 2.0',sub:'Reconstructed from the code the signed run read · opens in SAP Signavio',
+   who:()=>CH.eng('From the code'),
+   ok:()=>!isDemo(),st:()=>'Every element with its lines',
+   body:()=>`The same steps, names and four phases as Analyze's map, each element with its line anchors. Exchanged as a file — no Signavio connection.`,
+   files:[['process/z_mm_po_approval.bpmn','BPMN 2.0 XML','4c0de7f2']]},
+  {id:'spec',ico:'list',cls:'',name:'Requirements specification',sub:'Drafted from the code, with your answers from Design',
+   who:()=>CH.eng('From the code')+CH.you('Your answers'),
+   ok:()=>has(),st:()=>has()?'6 of 6 business questions answered':'Not yet',
+   body:()=>`What an implementer builds from: functional requirements read from the code, non-functional ones where the code grounds them, the rest as questions answered in Design.`,
+   files:[['docs/requirements.md','specification','91a5d3c6']]},
+  {id:'slides',ico:'slides',cls:'',name:'Stakeholder slides',sub:'7 slides from the signed run · no model, no savings figure',
+   who:()=>CH.eng('From the signed run'),
+   ok:()=>!isDemo(),st:()=>'7 slides',
+   body:()=>`Built from the signed run and the engine's findings. For a steering meeting: the program, its score, what changes, what is open.`,
+   files:[['slides/z_mm_po_approval.pptx','PowerPoint','d7e2b904']],preview:true},
+];
+function renderPkg(){
+  const lead=document.getElementById('pkg-lead'),b=document.getElementById('pkgbody');
+  if(isDemo()){
+    lead.textContent='What a real package holds — none of it exists in a demo.';
+    b.innerHTML=`<ul class="pkg">${PARTS.map(p=>`<li><details><summary><span class="ico ${p.cls}">${IC[p.ico]}</span><span><span class="nm" style="font-family:var(--sans)">${p.name}</span><span class="ds">${p.sub}</span></span><span class="who">${CH.nd('None in a demo')}</span>${IC.chev}</summary><div class="pkgb">${p.body()}</div></details></li>`).join('')}</ul>`;
+    return;
+  }
+  lead.innerHTML=has()?`Six parts, one ZIP. None of it is signed — each file carries its SHA-256 in the manifest, and the manifest names the signed run, so a reader can check the package belongs to it. Who wrote each part is marked.`:`Two of six parts exist, both read from the signed run. The rest is made by the tools before this one.`;
+  b.innerHTML=`<ul class="pkg">${PARTS.map((p,i)=>{const ok=p.ok();return `<li><details${i===0&&S==='failed'?' open':''}><summary><span class="ico ${p.cls}">${IC[p.ico]}</span><span><span class="nm" style="font-family:var(--sans)">${p.name}</span><span class="ds">${p.sub}</span></span><span class="who">${ok?p.who()+' '+CH.ns():''}<span class="st${ok?'':' muted'}">${p.st()}</span></span>${IC.chev}</summary>
+    <div class="pkgb"><p>${ok?p.body():'Not made yet.'}</p>${ok?`<ul class="files">${p.files.map(([f,d,h])=>{const bad=S==='failed'&&f==='src/zcl_poappr_logic.clas.abap';return `<li><span class="w"><code>${f}</code><span>${d}</span></span><span class="hash"${bad?' style="color:var(--cc-error);font-weight:600"':''}>${h==='—'?'lists the others':'SHA-256 '+h+'…'}${bad?' · changed':''}</span></li>`}).join('')}${p.more?`<li><span class="w"><span>${p.more} — all in manifest.json</span></span></li>`:''}</ul>
+    <div class="acts"><button class="btn ghost sm" type="button">${IC.dl}Download ${p.id==='code'?'for abapGit':p.id==='docs'?'Word':p.id==='bpmn'?'.bpmn':p.id==='slides'?'.pptx':'only this part'}</button>${p.preview?'<button class="btn ghost sm" type="button" data-open="p-slides">Preview the slides</button>':''}${p.id==='docs'?'<a class="btn ghost sm" href="#">Open in Documentation</a>':''}</div>`:''}</div></details></li>`}).join('')}</ul>
+    ${has()?`<div class="pkg-foot"><button class="btn secondary" type="button">${IC.dl}Download the package</button><span class="xs muted">One ZIP: the six parts, STATUS.md (what is implemented, a stub, proposed or missing) and manifest.json. Built in your browser, no model call. ${S==='partial'?'A review version: the tests have not run.':''}</span></div>`:''}`;
+}
+
+/* ---------------- what is proven ---------------- */
+function renderProof(){
+  const b=document.getElementById('proofbody');
+  const dec=full()?'Rebuild — confirmed in the Management view by M. Weber, 15 Nov 2026':S==='partial'?'Rebuild — proposed and priced, not confirmed':'Not confirmed';
+  const tst=full()?'14 of 14 passed in your SAP system — the imported result file':S==='partial'?'Not run':'No tests yet';
+  const tgt=S==='none'?'Drafted, not confirmed':'In-app, ABAP Cloud — confirmed by M. Weber, 13 Nov 2026';
+  const rows=[
+    ['g','Signed by the server'],
+    ['The findings of the analysis','19 findings at 22 places, with their lines','03-findings.csv','sig'],
+    ['The source it read','SHA-256 fingerprint of Z_MM_PO_APPROVAL, 552 lines, and every other input','01-input-fingerprint.json · 08-input-manifest.json','sig'],
+    ['The engine\'s recommendation','Rebuild on in-app ABAP Cloud — a recommendation, not a decision','02-decision-record.json · 06-architecture-decision-record.md','sig'],
+    ['Whether a model took part','Google Gemini wrote the narrative; the server\'s receipt of the call','04-model-card.md','sig'],
+    ['What the engine cannot see','Includes not uploaded, dynamic calls, 4 construct kinds not assessed','05-known-limitations.md','sig'],
+    ['g','Your word'],
+    ['The target and its sign-off',tgt,'07-user-attested.md',S==='none'?'nd':'att'],
+    ['The decision to rebuild',dec+'. On the project, not in the pack (L11).','',full()?'ns':'nd'],
+    ['The test result',tst+'. On the project, not in the pack (L11).','',full()?'ns':'nd'],
+    ['g','Not signed'],
+    ['The package','Code, tests, documentation, process, specification, slides. Its manifest names the signed run and the source fingerprint — checkable, never "from the signed run".','manifest.json of the package',has()?'ns':'nd'],
+    ['AI-written text','The 22 function bodies and the business text — marked AI-generated in every file that holds them','',has()?'ns':'nd'],
+    ['The clean core level','"Aims at level A" — the Level A–D grade is never part of the signed pack','','nev'],
+    ['Cost figures and the views','Economics\' amounts; Business, IT and Management views','','nev'],
+  ];
+  const pill=k=>k==='sig'?CH.sig():k==='att'?CH.att():k==='ns'?CH.ns():k==='nev'?CH.nev():CH.nd('Not yet');
+  if(isDemo()){
+    b.innerHTML=`<table class="pf"><thead><tr><th>Statement</th><th>What it rests on</th><th>Status</th></tr></thead><tbody>${rows.filter(r=>r[0]!=='g').map(r=>`<tr><td>${r[0]}</td><td><span class="s">In a real project: ${r[1].replace(/<[^>]+>/g,'')}</span></td><td>${CH.nd('Nothing in a demo')}</td></tr>`).join('')}</tbody></table>`;return;
+  }
+  b.innerHTML=`<table class="pf"><thead><tr><th>Statement</th><th>What it rests on</th><th>Status</th></tr></thead><tbody>${rows.map(r=>r[0]==='g'?`<tr class="grp-row"><td colspan="3">${r[1]}</td></tr>`:`<tr><td>${r[0]}</td><td>${r[1]}${r[2]?`<span class="s"><code>${r[2]}</code></span>`:''}</td><td>${pill(r[3])}</td></tr>`).join('')}</tbody></table>
+  <details class="fold" style="margin-top:14px;box-shadow:none"><summary style="font-size:14px;padding:10px 14px">${IC.chev}The nine links of the chain<span class="r">${ONREC[S].reduce((x,y)=>x+y,0)} of 9 on record · for auditors</span></summary><div class="fb" style="padding:0 14px 12px"><ul class="ifl">${LINKS.map((l,i)=>`<li><span>${l}</span><span>${ONREC[S][i]?'<span class="res pass"><i></i>on record</span>':'<span class="res nr"><i></i>open</span>'}</span></li>`).join('')}</ul><p class="foot-note">Requirement → Decision → Receipt → Delivery artefact, as <code>09-evidence-chain.json</code> carries it: requirement not determined (no business requirement is in a signed run), decision sealed as your word, receipt signed where the model's participation is attested, delivery artefact not determined (the code is writable from the browser, so no pack carries it).</p></div></details>`;
+}
+
+/* ---------------- audit pack ---------------- */
+const PACKFILES=[['00-executive-summary.md','Executive summary','signed'],['00-executive-summary.doc','Executive summary, as a Word document','signed'],['00-provenance.md','Where each statement in the pack comes from','signed'],['01-input-fingerprint.json','Fingerprint of the source the run read','signed'],['02-decision-record.json','The engine\'s recommendation — not a decision','signed'],['03-findings.csv','The findings of the signed run','signed'],['04-model-card.md','Whether and how a language model took part','signed'],['05-known-limitations.md','What the engine cannot see','signed'],['06-architecture-decision-record.md','Architecture record of the engine\'s recommendation','signed'],['08-input-manifest.json','What the run was computed from','signed'],['09-evidence-chain.json','The pack\'s evidence chain and what each link does not cover','signed'],['07-user-attested.md','Your own statements: target choice and sign-off','attested'],['manifest.json','Digests of every file and the signature','manifest']];
+function renderPack(){
+  const b=document.getElementById('packbody');
+  if(isDemo()){b.innerHTML=`<div class="yours">${IC.info}<span><b>No pack leaves a demo.</b> A pack is sealed against a signed run and carries the account that made it; a demo has neither, so a pack out of it would look like evidence and not be. There is no download and no check here — absent, not disabled.</span></div>`;return}
+  const sealed=full();
+  const head=sealed
+    ?`<div class="seal"><div><p class="big">${IC.seal}Sealed on 15 Nov 2026, 14:32 ${CH.sig('Signed by the server')}</p>
+      <dl><dt>Run</dt><dd class="mono">run 7f3a…c21 · the active run</dd><dt>Signatures</dt><dd>HMAC-SHA256 · Ed25519, key <span class="mono" style="white-space:nowrap">cc-sign-2026-09</span> (published at /.well-known)</dd><dt>Files</dt><dd>13 — 11 signed, 1 your statements sealed, 1 manifest</dd><dt>By</dt><dd>M. Weber — the account that downloaded it</dd></dl></div>
+      <div class="acts"><button class="btn ghost" type="button">${IC.dl}Download it again</button><span class="xs muted">The same signed record; a new download adds no new seal.</span></div></div>`
+    :`<div class="seal"><div><p class="big">${IC.dash}Not sealed yet ${CH.nd('Not sealed')}</p>
+      <dl><dt>Run</dt><dd class="mono">run 7f3a…c21 · signed 12 Nov 2026</dd><dt>Would carry</dt><dd>13 files — 11 signed, 1 your statements sealed, 1 manifest${S==='none'?'; your target sign-off is not there yet':''}</dd></dl></div>
+      <div class="acts"><button class="btn ${S==='partial'?'secondary':'ghost'}" type="button">${IC.dl}Download and seal</button><span class="xs muted">The first download seals this run. No model is called.</span></div></div>`;
+  let check;
+  if(S==='failed'){
+    check=`<p class="h3">Last check · 15 Nov 2026, 16:05 · in this browser</p><ul class="vr">
+      <li class="good"><p class="vh">${IC.check}Audit pack: verified</p><ul class="ok"><li>${IC.check}<span>13 of 13 files match the manifest</span></li><li>${IC.check}<span>HMAC-SHA256 confirmed by the server · Ed25519 verified against the published key</span></li></ul></li>
+      <li class="bad"><p class="vh">${IC.x}Package: verification failed</p><ul><li class="ok">${IC.check}<span>Names the pack's run and its source fingerprint</span></li><li class="ok">${IC.check}<span>Every AI-written file carries its statement</span></li><li class="no">${IC.x}<span>30 of 31 files match. <code>src/zcl_poappr_logic.clas.abap</code> — manifest 3be0a91c…, found 77a1d0f2…</span></li></ul></li>
+    </ul><div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" type="button">${IC.dl}Download a fresh package</button><button class="btn ghost" type="button">Check another file</button></div>`;
+  }else if(S==='ready'){
+    check=`<p class="h3">Last check · 15 Nov 2026, 14:35 · in this browser</p><ul class="vr"><li class="good"><p class="vh">${IC.check}Audit pack and package: verified</p><ul class="ok"><li>${IC.check}<span>Pack: 13 of 13 files match · HMAC-SHA256 and Ed25519 verified</span></li><li>${IC.check}<span>Package: 31 of 31 files match its manifest · names the pack's run and source · AI statements present</span></li></ul></li></ul>
+      <p class="foot-note">"Verified" for the package means it is consistent with its own manifest and names the signed run — not that its files come from the signed run. The pack does not sign them.</p>
+      <div class="drop" style="margin-top:10px"><b>Check a pack or a package you received</b><br>Drop one or both ZIP files here. Checked in this browser; only the HMAC is asked of the server.<br><button class="btn ghost sm" type="button">Choose files</button></div>`;
+  }else{
+    check=`<div class="drop"><b>Check a pack or a package you received</b><br>Drop one or both ZIP files here. Checked in this browser; only the HMAC is asked of the server.<br><button class="btn ghost sm" type="button">Choose files</button></div>`;
+  }
+  b.innerHTML=head+`<div class="cols2"><div>${check}</div>
+    <div class="howto"><p class="h3">Anyone can check — no account needed</p><p class="muted">On the web: <a class="lnk" href="#">Verify an audit pack</a>. Offline, with the published key:</p>
+      <pre class="cmd">node scripts/verify-pack.mjs pack.zip --package package.zip</pre>
+      <p class="muted xs">Exit 0 verified · 1 verification failed · 2 could not check — "could not tell" is never "forged".</p>
+      <details class="fold" style="margin-top:12px;box-shadow:none"><summary style="font-size:14px;padding:10px 14px">${IC.chev}The 13 files<span class="r">11 signed · 1 sealed · 1 manifest</span></summary><div class="fb" style="padding:0 14px 12px"><ul class="ifl">${PACKFILES.map(([f,w,k])=>`<li><code>${f}</code><span>${k==='signed'?CH.sig('Signed'):k==='attested'?CH.att('Sealed — your word'):'<span class="xs muted">carries the signature</span>'}</span><span class="s">${w}</span></li>`).join('')}</ul></div></details>
+    </div></div>`;
+}
+
+/* ---------------- import ---------------- */
+function renderImport(){
+  const b=document.getElementById('importbody');
+  if(isDemo()){b.innerHTML='<p class="muted">A demo has no package to import.</p>';return}
+  b.innerHTML=`<p class="muted">The steps the package's README carries, once on the page. Everything here happens in your system; this page records none of it.</p>
+  <ol class="isteps">
+    <li><div><b>Check the package first</b><span>On this page or offline (Audit pack, above). A changed file is no longer what was checked.</span></div></li>
+    <li><div><b>Import with abapGit</b><span>In your development system: abapGit → New offline repository → package <span class="mono">ZPOAPPR</span> → import the ZIP's <span class="mono">src/</span>. The repository settings are in <span class="mono">.abapgit.xml</span>.</span></div></li>
+    <li><div><b>Activate</b><span>abapGit activates the 11 objects together. A function left open is marked <span class="mono">@cc-fill</span> and raises an exception until it is written.</span></div></li>
+    <li><div><b>Run the tests</b><span>ABAP Unit on <span class="mono">ZTC_POAPPR</span>; import the result file in Testing.</span></div></li>
+    <li><div><b>Transport</b><span>Through your own landscape and its approvals — quality, then production.</span></div></li>
+  </ol>
+  <p class="foot-note">Target: SAP Cloud ERP Private, ABAP Cloud language version (assumed in Design, not bound by the run). Needs ADT and abapGit in your system.</p>`;
+}
+
+/* ---------------- timeline ---------------- */
+const TL={
+  none:[['12 Nov 2026, 09:14','Analysis run signed by the server','M. Weber'],['13 Nov 2026, 11:02','Economics: options priced, revision 2','M. Weber']],
+  partial:[['12 Nov 2026, 09:14','Analysis run signed by the server','M. Weber'],['13 Nov 2026, 11:02','Economics: options priced, revision 2','M. Weber'],['13 Nov 2026, 15:40','Design: target confirmed — in-app ABAP Cloud','M. Weber'],['14 Nov 2026, 10:21','Transformation: code written — frame by the engine, bodies by Google Gemini','M. Weber'],['14 Nov 2026, 16:08','Documentation written','M. Weber']],
+};
+TL.ready=TL.partial.concat([['15 Nov 2026, 10:47','Testing: ABAP Unit result imported — 14 of 14 passed in your system','M. Weber'],['15 Nov 2026, 13:55','Decision confirmed: Rebuild','M. Weber'],['15 Nov 2026, 14:32','Audit pack sealed and downloaded','M. Weber']]);
+TL.failed=TL.ready.concat([['15 Nov 2026, 16:05','Check in this browser: package differs in 1 file','M. Weber']]);
+TL.demo=[];
+function renderTime(){
+  const t=TL[S];
+  document.getElementById('time-r').textContent=isDemo()?'nothing in a demo':`${t.length} events · who did what, when`;
+  document.getElementById('timebody').innerHTML=isDemo()?'<p class="muted">A demo records nothing.</p>':`<ol class="tl">${t.slice().reverse().map(([d,e,who])=>`<li><span class="d">${d}</span><span>${e}<span class="who">${who} — a self-declaration of the signed-in account, not a mandate</span></span></li>`).join('')}</ol>`;
+}
+
+/* ---------------- side ---------------- */
+function renderSide(){
+  const steps={
+    none:[['done','Analysis','Signed run, 12 Nov'],['done','Economics','Rebuild priced, revision 2'],['','Design','Target drafted, not confirmed'],['','Code','Not written'],['','Documentation','Not written'],['','Tests','Not written'],['','Decision','Not confirmed'],['','Audit pack','Not sealed']],
+    partial:[['done','Analysis','Signed run, 12 Nov'],['done','Economics','Rebuild priced, revision 2'],['done','Design','Target confirmed — your statement'],['done','Code','AI-written draft on the engine\'s frame'],['done','Documentation','Written 14 Nov'],['run','Tests','14 written, not run'],['','Decision','Not confirmed'],['','Audit pack','Not sealed']],
+    ready:[['done','Analysis','Signed run, 12 Nov'],['done','Economics','Rebuild priced, revision 2'],['done','Design','Target confirmed — your statement'],['done','Code','AI-written draft on the engine\'s frame'],['done','Documentation','Written 14 Nov'],['done','Tests','14 of 14 passed in your system'],['done','Decision','Rebuild confirmed — your statement'],['done','Audit pack','Sealed 15 Nov, 14:32']],
+  };
+  steps.failed=steps.ready.slice(0,7).concat([['fail','Audit pack','Sealed · the checked package differs']]);
+  const st=document.getElementById('steps');
+  if(isDemo()){st.innerHTML=`<li><span class="b">–</span><span>Nothing is recorded in a demo<span class="s">Analyze, Economics and Design show the engine's view of the example.</span></span></li>`}
+  else st.innerHTML=steps[S].map(([c,t,s],i)=>`<li><span class="b ${c}">${c==='done'?'✓':c==='fail'?'!':i+1}</span><span>${t}<span class="s">${s}</span></span></li>`).join('')+`<li><span class="b">${IC.home.replace('class="i"','class="i s"')}</span><span>Activated and live<span class="s">In your system — not seen here</span></span></li>`;
+  document.getElementById('builton').innerHTML=isDemo()
+    ?`<li><span class="r1"><b>The demo example</b></span><span class="r2">Z_MM_PO_APPROVAL, 552 lines — the engine's run, not signed</span></li>`
+    :[['Signed run','run 7f3a…c21 · 12 Nov 2026',CH.sig('Signed')],['Source','Z_MM_PO_APPROVAL · 552 lines · SHA-256 9f2c41e0…',''],['Engine and catalog','engine 3.5.0 · SAP catalog of 9 Nov 2026',CH.eng()],['Model','Google Gemini · platform key — narrative and function bodies',CH.ai('Model')],['Target','Rebuild · in-app ABAP Cloud · aims at clean core level A',S==='none'?CH.nd('Not confirmed'):CH.you()]].map(([t,s,c])=>`<li><span class="r1"><b>${t}</b>${c}</span><span class="r2">${s}</span></li>`).join('');
+  document.getElementById('never').innerHTML=[['The clean core level (A–D)','shown as "aims at", never signed'],['Text a model wrote','function bodies, business text'],['Generated files','code, tests, documentation, slides'],['Cost figures','Economics\' amounts and assumptions'],['Business, IT, Management','views only, never stored']].map(([t,s])=>`<li>${IC.x}<span><b style="font-weight:600">${t}</b> — ${s}</span></li>`).join('');
+}
+
+/* ---------------- slides ---------------- */
+document.getElementById('slidegrid').innerHTML=[
+  ['1','Z_MM_PO_APPROVAL — purchase order approval','What the program does, in one sentence, and who uses it.',''],
+  ['2','Clean Core Score','From the signed run. Level D: one direct write to EBAN.','40'],
+  ['3','What it touches','19 findings at 22 places; 8 with a released SAP successor.','19'],
+  ['4','The recommendation','Rebuild as a RAP business object, in-app ABAP Cloud — the engine\'s recommendation, not a decision.',''],
+  ['5','What stays open','4 calls without a released successor, 5 custom tables without a home.','9'],
+  ['6','What the engine cannot see','Includes not uploaded, dynamic calls.',''],
+  ['7','Next step','Decide; the decision is taken in the Management view.',''],
+].map(([n,t,x,v])=>`<div class="slide"><span class="sn">Slide ${n} of 7</span><span class="stt">${t}</span><span class="sx">${x}</span>${v?`<span class="sv">${v}</span>`:''}</div>`).join('');
+
+/* ---------------- chrome ---------------- */
+const scrim=document.getElementById('scrim');
+function closeAll(){document.querySelectorAll('.drawer').forEach(d=>d.hidden=true);scrim.classList.remove('on')}
+scrim.onclick=closeAll;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
+document.addEventListener('click',e=>{const o=e.target.closest('[data-open]');if(o){e.preventDefault();document.getElementById(o.dataset.open).hidden=false;scrim.classList.add('on')}});
+document.querySelectorAll('[data-state]').forEach(b=>b.addEventListener('click',()=>{S=b.dataset.state;document.querySelectorAll('[data-state]').forEach(x=>x.classList.toggle('on',x===b));render()}));
+document.getElementById('pins').onclick=e=>{const off=document.body.classList.toggle('nopins');e.target.textContent='Decision pins: '+(off?'off':'on')};
+document.addEventListener('click',e=>{const j=e.target.closest('[data-jump]');if(j){e.preventDefault();const t=document.getElementById(j.dataset.jump);if(t){if(t.tagName==='DETAILS')t.open=true;t.scrollIntoView({block:'start'})}}});
+/* "On this page": scroll with offset, focus the heading, follow the scroll position */
+let anchors=[];
+function markAnchor(cur){anchors.forEach(a=>{if(a===cur)a.setAttribute('aria-current','true');else a.removeAttribute('aria-current')});cur.scrollIntoView({block:'nearest',inline:'nearest'})}
+function bindAnchors(){anchors=[...document.querySelectorAll('#anchors .pab-items a')];
+  anchors.forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(!t)return;if(t.tagName==='DETAILS')t.open=true;
+    t.scrollIntoView({block:'start'});const h=t.tagName==='DETAILS'?t.querySelector('summary'):t.querySelector('h2');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}markAnchor(a)}))}
+addEventListener('scroll',()=>{if(!anchors.length)return;let cur=anchors[0];anchors.forEach(a=>{const t=document.querySelector(a.getAttribute('href'));if(t&&t.getBoundingClientRect().top<200)cur=a});if(cur.getAttribute('aria-current')!=='true')markAnchor(cur)},{passive:true});
+/* deep links for screenshots: ?state=ready&open=p-owner&import=1 */
+const qs=new URLSearchParams(location.search);
+if(qs.get('state')&&ST[qs.get('state')]){S=qs.get('state');document.querySelectorAll('[data-state]').forEach(x=>x.classList.toggle('on',x.dataset.state===S))}
+render();
+if(qs.get('open')){const d=document.getElementById(qs.get('open'));if(d){d.hidden=false;scrim.classList.add('on')}}
+if(qs.get('import'))document.getElementById('s-import').open=true;
+if(qs.get('nopins'))document.body.classList.add('nopins');
+</script>
+<script>
+/* ONE FAMILY (15.11.2026) — byte-identical in the six tool mock-ups.
+   Measures the sticky mock-up bar into --mock-h (0 when it is not sticky),
+   hides "On this page" when a page has one section, keeps the tool bar
+   and the section bar to one row (fade while more
+   items wait to the right, the current tool in view) and labels the cells of stacking tables. */
+(function(){
+  var root=document.documentElement, raf=0;
+  function mockH(){var m=document.querySelector('.mock');var on=m&&getComputedStyle(m).position==='sticky'&&getComputedStyle(m).display!=='none';root.style.setProperty('--mock-h',(on?m.offsetHeight:0)+'px');}
+  function edges(el){el.classList.toggle('start',el.scrollLeft<=1);el.classList.toggle('end',el.scrollLeft+el.clientWidth>=el.scrollWidth-2);}
+  function fade(el){var ovf=el.scrollWidth>el.clientWidth+1;el.classList.toggle('ovf',ovf);edges(el);
+    if(!el.dataset.wired){el.dataset.wired='1';el.addEventListener('scroll',function(){edges(el);},{passive:true});}return ovf;}
+  function tools(first){document.querySelectorAll('.tools').forEach(function(t){
+    if(!t.dataset.wired)first=true;
+    t.querySelectorAll('.tool .ck').forEach(function(x){x.setAttribute('aria-label','done');if(!x.querySelector('title'))x.insertAdjacentHTML('afterbegin','<title>done</title>');});
+    t.querySelectorAll('.tool .od').forEach(function(x){x.title='out of date';});
+    t.classList.remove('nolegend');if(t.scrollWidth>t.clientWidth+1&&t.querySelector('.legend'))t.classList.add('nolegend');
+    var ovf=fade(t);
+    if(first&&ovf){var c=t.querySelector('.tool.cur');if(c){var l=c.offsetLeft-t.offsetLeft,r=l+c.offsetWidth;if(r>t.clientWidth-48){t.scrollLeft=r-t.clientWidth+64;edges(t);}}}
+  });document.querySelectorAll('.pab-items').forEach(fade);
+    document.querySelectorAll('.pab').forEach(function(p){p.classList.toggle('single',p.querySelectorAll('.pab-items a').length<2);});}
+  function labels(){document.querySelectorAll('table.tbl-stack').forEach(function(tb){var hr=tb.querySelector('thead tr')||tb.querySelector('tr');if(!hr||!hr.querySelector('th'))return;var hs=[].map.call(hr.children,function(h){return h.textContent.trim();});tb.querySelectorAll('tr').forEach(function(tr){if(tr===hr)return;[].forEach.call(tr.children,function(td,i){if(hs[i]&&td.tagName==='TD'&&!td.hasAttribute('data-label'))td.setAttribute('data-label',hs[i]);});});});}
+  function all(first){mockH();tools(first);labels();}
+  function soon(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;all(false);});}
+  addEventListener('resize',soon);
+  addEventListener('load',function(){all(true);});
+  if(window.ResizeObserver){var m=document.querySelector('.mock');if(m)new ResizeObserver(soon).observe(m);}
+  new MutationObserver(soon).observe(document.body,{childList:true,subtree:true});
+  all(true);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Documentation · mock-up v2</title>
+<style>
+/* =====================================================================
+   Mock-up, not product code. The Documentation tool, second version
+   (15.11.2026), measured against the later accepted mock-ups: Analyze on
+   the map v4 (ADR-109, -116, -117, -118, -119) and My workspace tiles
+   (ADR-123). It keeps what ADR-107 got right (answer first, quiet
+   evidence, export as the one action, no inputs, views as density) and
+   changes what falls short: the screen is the document itself, one page
+   in the export's order; the process is Analyze's map, its names and its
+   four phases; the answer carries the few numbers that matter.
+   Look: app/globals.css tokens, StageHeader, ToolBar, StageViewSwitch,
+   PageAnchorBar, process-map.css (read-only), cc chips.
+   Content: the shipped demo Z_MM_PO_APPROVAL (synthetic, 552 lines), with
+   the names and texts of the Analyze v4 mock-up.
+   ===================================================================== */
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-deep:#006b2c;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --cc-code-bg:#030712;--cc-code-ink:#e5e7eb;--cc-code-muted:#9ca3af;--cc-code-keyword:#c4b5fd;--cc-code-literal:#fcd34d;--cc-code-name:#93c5fd;
+  --cc-cat-1:#1e3a8a;--cc-cat-2:#0f766e;--cc-cat-3:#7c3aed;
+  --cc-radius-card:12px;--cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --mk-bar:#1f1147;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+p{margin:0}h1,h2,h3,h4{margin:0}ul,ol{margin:0;padding:0;list-style:none}
+button{font-family:inherit;cursor:pointer;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+
+/* ---------- mock-up chrome (not product) ---------- */
+.mock{position:sticky;top:0;z-index:200;background:var(--mk-bar);color:#fff;font-size:12px;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin-right:6px}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}
+.mock button.on{background:#e9e5ff;color:var(--mk-bar)}
+.mock .d{flex-basis:100%;color:#cfc8f3;font-weight:500;padding-top:2px}
+body.embed .mock,body.embed .fab{display:none}
+.mtag{display:inline-flex;font-size:11px;font-weight:600;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 5px;white-space:nowrap}
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:240;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(720px,100vw);background:#fff;z-index:250;box-shadow:var(--cc-shadow-dialog);display:flex;flex-direction:column}
+.drawer[hidden]{display:none}
+.drawer header{display:flex;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--cc-line);background:var(--mk-bar);color:#fff}
+.drawer header h2{font-size:16px;font-weight:800}
+.drawer .body{overflow:auto;padding:16px 20px 40px;font-size:13px;line-height:1.55}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer h3:first-child{margin-top:0}
+.drawer p + p{margin-top:6px}
+.drawer ul.b{list-style:disc;padding-left:18px}
+.drawer ul.b li{margin:3px 0}
+.drawer code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px}
+.drawer table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.drawer th,.drawer td{text-align:left;vertical-align:top;padding:6px 8px;border-bottom:1px solid var(--cc-line)}
+.drawer th{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--cc-ink-muted);text-transform:uppercase}
+.drawer .rec{font-weight:700;color:var(--cc-brand-strong)}
+.tag{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:0 7px;border:1px solid}
+.tag.keep{color:var(--cc-success);border-color:var(--cc-success-border);background:var(--cc-success-bg)}
+.tag.amend{color:var(--cc-information);border-color:var(--cc-information-border);background:var(--cc-information-bg)}
+.tag.sup{color:var(--cc-warning);border-color:var(--cc-warning-border);background:var(--cc-warning-bg)}
+
+/* ---------- shell bar ---------- */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:16px;letter-spacing:-.02em;line-height:1.15}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* ---------- frame, header, tools ---------- */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 40px}
+.headrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.vnote{display:inline-flex;gap:6px;align-items:center;font-size:12.5px;font-weight:500;color:var(--cc-ink-muted);min-height:36px}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:4px 12px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);border-radius:6px;min-height:28px}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.tools{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tools .k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tools .toolsmenu{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:4px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:13px;color:var(--cc-ink-muted);margin-top:2px}
+
+/* ---------- cc components ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.1;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;white-space:nowrap;text-decoration:none}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink-muted)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:5px 10px;font-size:12px}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.lnk.q{font-weight:500;color:var(--cc-ink-muted)}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff;text-transform:none;letter-spacing:0}
+.pv svg.i{width:12px;height:12px}
+.pv.rec{color:var(--cc-information);border-color:var(--cc-information)}
+.pv.ai{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral)}
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.muted{color:var(--cc-ink-muted)}
+.sm{font-size:13px}
+.xs{font-size:12px}
+.k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.h2{font-size:15px;font-weight:700}
+.anc{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:500;color:var(--cc-ink-muted);text-decoration:underline;text-decoration-color:var(--cc-line);text-underline-offset:2px;white-space:nowrap;cursor:pointer;margin-left:2px}
+.anc:hover{color:var(--cc-information)}
+.br{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--cc-ink-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 5px;line-height:17px;white-space:nowrap;vertical-align:1px;background:var(--cc-surface-muted)}
+.tech{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap}
+.ev{display:inline}
+
+/* ---------- the answer (hero) ---------- */
+.hero{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:0;margin-top:16px;overflow:hidden}
+.hero .ans{padding:20px 24px}
+.hero h2{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:6px}
+.hero .prog{font-family:var(--mono);font-size:12px;color:var(--cc-ink-muted);margin-top:4px}
+.hero .say{font-size:17px;line-height:1.55;font-weight:500;margin-top:10px;max-width:760px;letter-spacing:-.005em}
+.facts3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:16px 0 0;border-top:1px solid var(--cc-line)}
+.facts3 div{padding:10px 16px 0 0}
+.facts3 div + div{padding-left:16px;border-left:1px solid var(--cc-line)}
+.facts3 dt{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.facts3 dd{margin:3px 0 0;font-size:13px;line-height:1.45}
+.facts3 .dec dt{color:var(--cc-warning)}
+.ready{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.45;color:var(--cc-ink)}
+.ready svg{color:var(--cc-success);margin-top:2px}
+.hero .start{font-size:13px;color:var(--cc-ink-muted);margin-top:10px;line-height:1.5}
+.hero .start b{color:var(--cc-ink);font-weight:600}
+.hero .src{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:16px;font-size:12px;color:var(--cc-ink-muted)}
+.xp{border-left:1px solid var(--cc-line);background:var(--cc-surface-muted);padding:20px 22px;display:flex;flex-direction:column;gap:10px}
+.xp .p{font-size:12.5px;color:var(--cc-ink-muted);line-height:1.5}
+.xp .primary{width:100%}
+.fmts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.fmt{display:flex;gap:8px;align-items:center;text-align:left;background:#fff;border:1px solid var(--cc-line);border-radius:8px;padding:7px 10px;font-size:13px;font-weight:600;min-height:36px}
+.fmt:hover{border-color:var(--cc-brand-strong);background:var(--cc-brand-surface)}
+.fmt small{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.fmt svg{color:var(--cc-ink-muted)}
+.yours{font-size:12px;color:var(--cc-ink-muted);line-height:1.5;border:1px dashed var(--cc-field-border);border-radius:8px;padding:8px 10px;background:#fff}
+.yours b{color:var(--cc-ink)}
+.done{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;font-weight:600;color:var(--cc-success);line-height:1.45}
+.done svg{margin-top:2px}
+
+/* ---------- count tiles (the few numbers) ---------- */
+.counts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:12px}
+.ct{display:block;text-align:left;padding:14px 16px 12px;border:1px solid var(--cc-line);background:#fff;border-radius:12px;box-shadow:var(--cc-shadow)}
+.ct:hover{border-color:var(--cc-field-border)}
+.ct .l{font-size:13px;font-weight:600;color:var(--cc-ink)}
+.ct .v{font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.1;margin-top:6px}
+.ct .v small{font-size:14px;font-weight:600;color:var(--cc-ink-muted);margin-left:4px;letter-spacing:0}
+.ct .d{font-size:12.5px;color:var(--cc-ink-muted);margin-top:4px;line-height:1.4;min-height:34px}
+.ct .bar{display:flex;gap:4px;margin-top:10px}
+.ct .bar i{flex:1;height:4px;border-radius:2px;background:var(--cc-line)}
+.ct .bar i.on{background:var(--cc-ink)}
+.ct .bar i.w{background:var(--cc-warning-mark)}
+.ct .f{display:flex;gap:6px;align-items:center;margin-top:8px;font-size:11px;color:var(--cc-ink-muted)}
+.countsrc{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--cc-ink-muted)}
+
+/* ---------- on this page (anchor bar) ---------- */
+/* "On this page" — the one bar for every tool (tmp/ANCHOR-BAR-SPEC.md, owner 15.11.2026); copied verbatim, only the items differ */
+
+/* ---------- chapters ---------- */
+.chap{margin-top:24px}
+.chap h2:focus{outline:none}
+.chap > .hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:16px 20px 0}
+.chap > .hd .no{font-size:12px;font-weight:700;color:var(--cc-ink-muted);font-variant-numeric:tabular-nums}
+.chap > .hd h2{font-size:16px;font-weight:700;line-height:1.35}
+.chap > .hd .r{margin-left:auto;display:flex;gap:12px;align-items:center}
+.chap .lede{padding:4px 20px 0;font-size:13px;font-weight:500;line-height:1.5;color:var(--cc-ink-muted);max-width:900px}
+.chap .lede b{color:var(--cc-ink);font-weight:600}
+.chap .in{padding:12px 20px 18px}
+.chap .foot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 20px 14px;border-top:1px solid var(--cc-line);font-size:12px;color:var(--cc-ink-muted)}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;align-items:stretch}
+.row3 > .chap{display:flex;flex-direction:column}
+.row3 > .chap .in{flex:1}
+.row2{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:24px;align-items:start}
+
+/* ---------- figure 1: the map, read-only (process-map.css) ---------- */
+.fig{margin:4px 20px 0;border:1px solid var(--cc-line);border-radius:10px;background:#fff;overflow:hidden}
+.fig svg.map{display:block;width:100%;height:auto}
+.figcap{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 20px 0;font-size:12px;color:var(--cc-ink-muted)}
+.figcap b{color:var(--cc-ink);font-weight:600}
+.band rect{fill:var(--cc-surface-muted);stroke:var(--cc-line)}
+.band text{fill:var(--cc-ink-muted);font:600 11px var(--sans);letter-spacing:.08em}
+.el{cursor:default}
+.el.step{cursor:pointer}
+.el .sh{fill:var(--cc-surface);stroke:var(--cc-ink);stroke-width:2}
+.el.end .sh{stroke-width:4}
+.el text{fill:var(--cc-ink);font-family:var(--sans);font-size:12px}
+.el text.anc{fill:var(--cc-ink-muted);font-family:var(--mono);font-size:11px;text-decoration:none}
+.el .mk{stroke:var(--cc-ink);stroke-width:2;fill:none}
+.el .pen{fill:none;stroke:var(--cc-warning);stroke-width:1.6}
+.el .badge rect{fill:#fff;stroke:var(--cc-neutral-border)}
+.el .badge text{fill:var(--cc-neutral);font-size:11px;font-weight:600}
+.el.step:hover .sh{fill:var(--cc-information-bg)}
+.el.here .sh{stroke-width:3;fill:var(--cc-information-bg)}
+.el.here text{font-weight:600}
+.el .no{fill:var(--cc-ink)}
+.el .not{fill:#fff;font-size:10px;font-weight:700}
+.fl path{fill:none;stroke:var(--cc-ink);stroke-width:1.5}
+.fl text{fill:var(--cc-ink);font-size:12px;font-family:var(--sans)}
+.figphone{display:none}
+.inl{display:none}
+.inl .stepd{margin:6px 0 10px}
+
+/* ---------- phases + steps ---------- */
+.phases{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin:14px 20px 0;border:1px solid var(--cc-line);border-radius:10px;overflow:hidden}
+.ph{padding:12px 14px 12px;border-left:1px solid var(--cc-line);min-width:0}
+.ph:first-child{border-left:0}
+.ph .pt{display:flex;gap:8px;align-items:baseline}
+.ph .pt .k{letter-spacing:.06em}
+.ph h3{font-size:14px;font-weight:700;margin-top:2px}
+.ph .pp{font-size:12.5px;line-height:1.5;color:var(--cc-ink-muted);margin-top:4px}
+.ph ol{margin-top:8px;display:flex;flex-direction:column;gap:2px}
+.st{width:100%;display:flex;gap:8px;align-items:flex-start;text-align:left;background:none;border:0;border-radius:8px;padding:5px 6px;font-size:13px;font-weight:500;line-height:1.35}
+.st:hover{background:var(--cc-surface-muted)}
+.st.on{background:var(--cc-information-bg);font-weight:700}
+.st .n{display:inline-flex;width:20px;height:20px;border-radius:999px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:700;align-items:center;justify-content:center;flex:none}
+.st .t{flex:1;min-width:0}
+.st .t .tech{display:none}
+body.v-it .st .t .tech{display:block;margin-top:1px}
+.st .a{font-family:var(--mono);font-size:11px;color:var(--cc-ink-muted);white-space:nowrap;padding-top:2px}
+.st.ev0{color:var(--cc-ink-muted)}
+.st.ev0 .n{background:#fff;border:1.5px solid var(--cc-ink);color:var(--cc-ink)}
+.gate{display:flex;gap:6px;align-items:center;font-size:11.5px;font-weight:600;color:var(--cc-ink-muted);padding:1px 6px 3px 34px}
+.gate i{width:8px;height:8px;border:1.5px solid var(--cc-ink-muted);transform:rotate(45deg);display:block;flex:none}
+
+/* ---------- one step, opened ---------- */
+.stepd{margin:14px 20px 0;border:1px solid var(--cc-ink);border-radius:10px;padding:16px 18px;background:#fff}
+.stepd .top{display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap}
+.stepd .pos{font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.stepd h3{font-size:18px;font-weight:800;letter-spacing:-.01em;line-height:1.3;margin-top:2px}
+.stepd .pn{margin-left:auto;display:flex;gap:6px;align-items:center}
+.stepd .one{font-size:15px;line-height:1.55;font-weight:500;margin-top:8px;max-width:820px}
+.facts{margin-top:12px;border-top:1px solid var(--cc-line);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
+.fr{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px;padding:9px 0;border-bottom:1px solid var(--cc-line);align-items:start}
+.fr .fk{font-size:12px;font-weight:600;color:var(--cc-ink-muted);padding-top:1px;display:flex;gap:6px;align-items:center}
+.fr ul{display:flex;flex-direction:column;gap:4px}
+.fr li{font-size:13px;line-height:1.45}
+.fr .none{font-size:13px;color:var(--cc-ink-muted)}
+.objs{display:flex;flex-wrap:wrap;gap:6px}
+.obj{display:inline-flex;gap:6px;align-items:center;font-size:12px;font-weight:600;border:1px solid var(--cc-line);border-radius:6px;padding:2px 8px;background:#fff}
+.obj.w{border-color:var(--cc-ink)}
+.obj .tech{font-size:10px}
+details.fold{margin-top:12px;border:1px solid var(--cc-line);border-radius:10px;background:#fff}
+details.fold > summary{list-style:none;cursor:pointer;padding:9px 14px;display:flex;gap:8px;align-items:center;font-size:13px;font-weight:600}
+details.fold > summary::-webkit-details-marker{display:none}
+details.fold > summary .chev{transition:transform .15s;color:var(--cc-ink-muted)}
+details.fold[open] > summary .chev{transform:rotate(90deg)}
+details.fold > summary .r{margin-left:auto;font-weight:500;color:var(--cc-ink-muted);font-size:12px}
+details.fold .fin{padding:0 14px 12px}
+.code{background:var(--cc-code-bg);color:var(--cc-code-ink);font-family:var(--mono);font-size:12px;border-radius:8px;padding:6px 0;line-height:1.6;overflow-x:auto}
+.code .l{display:flex;white-space:pre}
+.code .l .no{width:40px;text-align:right;color:var(--cc-code-muted);padding-right:10px;flex:none}
+.code .l .tx{padding-right:12px}
+.code .l.hl{background:rgb(59 130 246 / .22);box-shadow:inset 3px 0 0 var(--cc-code-name)}
+.code .kw{color:var(--cc-code-keyword)}.code .lit{color:var(--cc-code-literal)}.code .cm{color:var(--cc-code-muted)}
+.strip{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--cc-information-border);background:var(--cc-information-bg);border-radius:8px;padding:9px 12px;font-size:13px;font-weight:500;line-height:1.5;margin-top:12px}
+.strip svg{color:var(--cc-information);margin-top:2px}
+
+/* ---------- lists in chapters 2–7 ---------- */
+.rules li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:6px 0;border-bottom:1px solid var(--cc-line);font-size:13px;line-height:1.45}
+.rules li:last-child{border-bottom:0}
+.rules .g{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted);padding:10px 0 2px;border-bottom:0;display:block}
+.rules .g:first-child{padding-top:0}
+.rules .e{white-space:nowrap;display:flex;gap:2px;align-items:flex-start}
+.rules li.more{display:none}
+.rules.all li.more{display:grid}
+.bars li{display:grid;grid-template-columns:minmax(0,1fr) 110px 24px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--cc-line)}
+.bars li:last-child{border-bottom:0}
+.bars .t{font-size:13px;font-weight:600;line-height:1.3}
+.bars .t small{display:block;font-size:12px;font-weight:400;color:var(--cc-ink-muted)}
+.bars .b{height:10px;border-radius:2px;background:var(--cc-cat-1)}
+.bars .n{font-size:13px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.sub{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted);margin-top:14px}
+.plain li{display:flex;gap:8px;align-items:flex-start;padding:5px 0;font-size:13px;line-height:1.45}
+.plain li svg{margin-top:2px;color:var(--cc-ink-muted)}
+.chg li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:7px 0;border-bottom:1px solid var(--cc-line);font-size:13px;line-height:1.4}
+.chg li b{font-weight:600}
+.chg li small{display:block;color:var(--cc-ink-muted);font-size:12px}
+.chg li .w{font-size:12px;font-weight:600;color:var(--cc-ink)}
+.sys{display:flex;gap:8px;flex-wrap:wrap}
+.systab{width:100%;border-collapse:collapse;font-size:13px}
+.systab th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--cc-ink-muted);padding:6px 8px;border-bottom:1px solid var(--cc-line);text-transform:uppercase}
+.systab td{padding:6px 8px;border-bottom:1px solid var(--cc-line);vertical-align:top}
+.who li{display:flex;gap:10px;align-items:baseline;padding:5px 0;font-size:13px;line-height:1.45;border-bottom:1px solid var(--cc-line)}
+.who li:last-child{border-bottom:0}
+.who b{font-weight:700;white-space:nowrap}
+.raci{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}
+.raci th{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--cc-ink-muted);text-align:center;padding:6px 4px;border-bottom:1px solid var(--cc-line);white-space:nowrap}
+.raci th:first-child{text-align:left}
+.raci td{padding:6px 4px;border-bottom:1px solid var(--cc-line);text-align:center}
+.raci td:first-child{text-align:left;font-weight:500}
+.raci td:first-child small{display:block;font-size:11.5px;color:var(--cc-ink-muted);font-weight:400}
+.L{display:inline-flex;width:22px;height:22px;border-radius:5px;align-items:center;justify-content:center;font-size:11px;font-weight:800}
+.L.R{background:var(--cc-cat-1);color:#fff}
+.L.A{background:var(--cc-cat-3);color:#fff}
+.L.C{border:1.5px solid var(--cc-cat-2);color:var(--cc-cat-2)}
+.L.I{border:1.5px dashed var(--cc-ink-muted);color:var(--cc-ink-muted)}
+.legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--cc-ink-muted);align-items:center}
+.legend span{display:inline-flex;gap:5px;align-items:center}
+.legend .L{width:18px;height:18px;font-size:10px}
+.chk li{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-bottom:1px solid var(--cc-line);font-size:13px;line-height:1.45}
+.chk li:last-child{border-bottom:0}
+.chk li > svg{margin-top:2px;color:var(--cc-success)}
+.chk li.warn > svg{color:var(--cc-warning-mark)}
+.qs li{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--cc-line);font-size:13.5px;line-height:1.5}
+.qs li:last-child{border-bottom:0}
+.qs .qn{display:inline-flex;width:22px;height:22px;border-radius:999px;border:1.5px solid var(--cc-ink);font-size:11px;font-weight:700;align-items:center;justify-content:center;flex:none}
+.qs .it .qn{border-style:dashed}
+.qs .who2{font-size:11px;font-weight:700;border-radius:999px;padding:0 7px;border:1px solid var(--cc-line);background:var(--cc-surface-muted);margin-left:4px;white-space:nowrap}
+.limits{margin-top:10px;font-size:12px;color:var(--cc-ink-muted);display:flex;gap:6px;align-items:flex-start}
+
+/* ---------- appendix ---------- */
+.apx details.fold{margin-top:6px}
+.apx .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}
+
+/* ---------- end ---------- */
+.end{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;margin-top:24px}
+.end .card{padding:16px 20px}
+.end h3{font-size:14px;font-weight:700}
+.end p{font-size:13px;color:var(--cc-ink-muted);line-height:1.5;margin-top:4px}
+.end .acts{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+
+/* ---------- management ---------- */
+.m3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px;margin-top:24px}
+.m3 .card{padding:16px 20px}
+.m3 h3{font-size:15px;font-weight:700;margin-bottom:8px}
+.mlist li{padding:7px 0;border-bottom:1px solid var(--cc-line);font-size:13.5px;line-height:1.45}
+.mlist li:last-child{border-bottom:0}
+.mlist b{font-weight:700}
+.toc li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:8px;padding:8px 0;border-bottom:1px solid var(--cc-line);font-size:13.5px;align-items:baseline}
+.toc li:last-child{border-bottom:0}
+.toc .no{font-weight:700;color:var(--cc-ink-muted)}
+.toc .c{font-size:12px;color:var(--cc-ink-muted);white-space:nowrap}
+
+/* ---------- building / empty ---------- */
+.status{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;background:#fff;border:1px solid var(--cc-line);border-radius:8px;padding:9px 14px;margin-top:16px;font-size:13px;font-weight:500}
+.status .bar{flex:0 0 140px;height:4px;background:var(--cc-line);border-radius:2px;overflow:hidden}
+.status .bar i{display:block;height:100%;background:var(--cc-ink)}
+.status .s2{color:var(--cc-ink-muted);font-size:12px}
+.status .dotx{width:8px;height:8px;border-radius:999px;background:var(--cc-information);flex:none;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.wait{display:block;height:12px;border-radius:6px;background:linear-gradient(90deg,#eef0f3,#f6f7f9,#eef0f3)}
+.empty{max-width:720px;margin:28px 0 0;padding:28px}
+.empty h2{font-size:18px;font-weight:800}
+.empty p{font-size:14px;line-height:1.55;color:var(--cc-ink-muted);margin-top:6px}
+.empty ul{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.empty li{display:flex;gap:8px;font-size:13px;align-items:flex-start}
+.empty li svg{color:var(--cc-ink-muted);margin-top:2px}
+.empty .acts{margin-top:18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+
+/* ---------- breakpoints ---------- */
+@media (max-width:1279px){
+  .hero{grid-template-columns:minmax(0,1fr) 320px}
+  .row3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .row3 > .chap:last-child{grid-column:1 / -1}
+  .phases{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ph:nth-child(3){border-left:0}
+  .ph:nth-child(n+3){border-top:1px solid var(--cc-line)}
+}
+@media (max-width:1023px){
+  .hero{grid-template-columns:minmax(0,1fr)}
+  .xp{border-left:0;border-top:1px solid var(--cc-line)}
+  .counts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .facts3{grid-template-columns:minmax(0,1fr)}
+  .facts3 div + div{padding-left:0;border-left:0}
+  .vnote{min-height:0}
+  .row2,.m3,.end{grid-template-columns:minmax(0,1fr)}
+  .facts{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:767px){
+  .shell{padding:0 16px;gap:12px}
+  .shell .path span:not(.cur),.shell .path svg{display:none}
+  .logo .s{display:none}
+  .shell-r .ib.hide-s{display:none}
+  .frame{padding:12px 16px 32px}
+  .tools .tool,.tools .k{display:none}
+  .tools .toolsmenu{display:inline-flex}
+  .vs{margin-left:auto}
+  .headrow .back .w{display:none}
+  .hero .ans{padding:16px}
+  .hero h2{font-size:19px}
+  .hero .say{font-size:14px}
+  .xp{padding:16px}
+  .counts{gap:8px}
+  .ct{padding:12px}
+  .ct .v{font-size:24px}
+  .ct .d{min-height:0}
+  .row3{grid-template-columns:minmax(0,1fr)}
+  .fig,.figcap.wide{display:none}
+  .figphone{display:flex;gap:8px;align-items:flex-start;margin:8px 16px 0;font-size:12.5px;color:var(--cc-ink-muted);line-height:1.45}
+  .phases{grid-template-columns:minmax(0,1fr);margin:12px 16px 0}
+  .ph{border-left:0;border-top:1px solid var(--cc-line)}
+  .ph:first-child{border-top:0}
+  .chap > .hd,.chap .lede,.chap .in,.chap .foot{padding-left:16px;padding-right:16px}
+  .stepd{margin:12px 16px 0;padding:14px}
+  .inl{display:block}
+  .bot{display:none}
+  .stepd .pn .w{display:none}
+  .fr{grid-template-columns:minmax(0,1fr);gap:2px}
+  .bars li{grid-template-columns:minmax(0,1fr) 60px 20px}
+  .apx .grid{grid-template-columns:minmax(0,1fr)}
+  .hide-s{display:none}
+}
+@media (max-width:639px){
+}
+@media (prefers-reduced-motion: reduce){ .status .dotx{animation:none} }
+
+
+/* ---------- Documentation inside the family (15.11.2026) ---------- */
+.ophead .xp{border:0;background:none;padding:0}
+.ophead .xp .btn.lg{width:100%}
+.ophead .prog{font-family:var(--mono);font-size:12px;color:var(--cc-ink-muted);margin-top:4px}
+.ophead .src{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--cc-ink-muted)}
+.ophead .facts3{margin-top:14px}
+.ophead .countsrc{margin:0 -22px;padding:8px 22px 10px;border-top:1px solid var(--cc-line)}
+.facet .chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;font-size:11px;color:var(--cc-ink-muted)}
+@media (max-width:720px){.ophead .countsrc{margin:0 -16px;padding:8px 16px 10px}}
+/* =====================================================================
+   ONE FAMILY (15.11.2026) — this block is byte-identical in the six tool
+   mock-ups (Economics, Design, Transformation, Documentation, Testing,
+   Delivery) and comes last, so the shared parts look and behave the same
+   in every tool. Change it in all six or in none.
+   Responsive rules, the same everywhere:
+   - mock-up bar sticky only above 1100 px; its real height is measured
+     into --mock-h, so nothing ever slides under it;
+   - tool bar: one row at every width; when it does not fit, the legend
+     steps back (each mark keeps its words as a tooltip) and the row
+     scrolls sideways with a right-edge fade, the current tool in view;
+   - "On this page": the spec (tmp/ANCHOR-BAR-SPEC.md), sticky below the
+     mock-up bar, 24 px above and below, anchors land 16 px under it;
+     hidden when the page has only one section (owner, 15.11.2026);
+   - side column below the main column from 1100 px down;
+   - 24 px between cards and sections; card padding 16/20, phone 14/16;
+   - tables never widen the page: on a phone a list table stacks into one
+     block per row (row title first, every other cell with its column
+     name); a wider table scrolls inside its own card;
+   - button labels wrap balanced (no single orphaned word), numbers and
+     chips never break.
+   ===================================================================== */
+@font-face{font-family:Inter;src:url(../../app/fonts/inter-latin-variable.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --mk-bar:#1f1147;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --mock-h:0px;
+}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+body{overflow-x:clip}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+h2[tabindex="-1"]:focus,h3[tabindex="-1"]:focus,summary[tabindex="-1"]:focus{outline:none}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+
+/* mock-up chrome (not product) */
+.mock{position:sticky;top:0;z-index:300;background:var(--mk-bar);color:#fff;font-size:12px;line-height:1.4;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap}
+.mock button.on{background:#e9e5ff;color:var(--mk-bar)}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.mock .d{flex-basis:100%;color:#cfc8f3;font-weight:500}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap;letter-spacing:0;text-transform:none}
+.mtag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;white-space:nowrap;letter-spacing:0;text-transform:none}
+body.nopins .pin{display:none}
+
+/* app bar */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none;color:inherit}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.15}
+.logo .lg svg{width:18px;height:18px}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* frame, back link, note / view switch, tool bar, tool header */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;min-height:32px}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vsnote{font-size:13px;font-weight:500;line-height:1.4;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:0 12px;font-size:13px;font-weight:600;line-height:26px;min-height:26px;color:var(--cc-ink-muted);border-radius:6px;white-space:nowrap}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.tools{display:flex;align-items:center;gap:8px;margin-top:8px;padding:2px 0;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+.tools::-webkit-scrollbar{display:none}
+.tools>*{flex:none}
+/* sideways rows (tool bar, "On this page"): a fade on each edge where more items wait */
+.tools.ovf:not(.end),.pab-items.ovf:not(.end){-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
+.tools.ovf.end:not(.start),.pab-items.ovf.end:not(.start){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px);mask-image:linear-gradient(90deg,transparent,#000 48px)}
+.tools.ovf:not(.start):not(.end),.pab-items.ovf:not(.start):not(.end){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent)}
+.tools .k{display:inline;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tools .tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tools .tool:focus-visible{outline-offset:-2px}
+.tools .tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tool .od{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .t12{order:0}
+.tools .legend{display:flex;margin-left:auto;padding-left:16px;font-size:12px;font-weight:500;color:var(--cc-ink-muted);gap:12px;white-space:nowrap}
+.tools .legend span{display:inline-flex;align-items:center;gap:4px}
+.tools .legend i{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .legend svg.half,.tool svg.half{width:10px;height:10px;color:var(--cc-information);flex:none}
+.tools .toolmenu,.tools .toolsmenu{display:none}
+.tools.nolegend .legend{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh .eyebrow{display:flex;align-items:center;gap:6px}
+.sh .eyebrow svg.i{width:14px;height:14px}
+.sh .pid{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px;overflow-wrap:anywhere}
+.sh .pid+.lead{margin-top:6px}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;line-height:1.5;color:var(--cc-ink-muted);margin-top:2px}
+
+/* buttons, links, chips */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;text-decoration:none;text-align:center;white-space:normal;text-wrap:balance;font-family:inherit;cursor:pointer}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:4px 10px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff;letter-spacing:0;text-transform:none}
+.pv svg.i{width:12px;height:12px}
+.pv.ai,.pv.sim,.pv.prop{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed;background:#fff}
+.pv.eng,.pv.rec{color:var(--cc-information);border-color:var(--cc-information);background:#fff}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral);background:#fff}
+
+/* cards and sections */
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.h2{font-size:16px;font-weight:700;line-height:1.35;display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
+.sec-h{display:flex;align-items:flex-start;gap:8px 12px;flex-wrap:wrap}
+.sec-h>div:first-child{flex:1 1 320px;min-width:0}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+details.fold>summary{flex-wrap:wrap}
+
+/* the answer card: question, answer, why, next step, facets */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ophead>.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start;margin:0}
+.ophead .q{font-size:12px;font-weight:600;line-height:1.5;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:0;letter-spacing:0;text-transform:none}
+.ophead .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ophead .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ophead .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:250px;max-width:290px;width:290px}
+.ophead .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;line-height:1.45}
+.facets{display:grid;border-top:1px solid var(--cc-line);margin:16px -22px 0}
+:where(.facets){grid-template-columns:repeat(4,minmax(0,1fr))}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0}
+button.facet{font:inherit;color:inherit;text-align:left;background:none;border:0;border-right:1px solid var(--cc-line);cursor:pointer;display:block;width:100%}
+button.facet:hover{background:var(--cc-surface-muted)}
+button.facet:last-child{border-right:0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2;font-variant-numeric:tabular-nums}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+
+/* "On this page" — the one bar (tmp/ANCHOR-BAR-SPEC.md) */
+.pab{position:sticky;top:var(--mock-h);z-index:50;display:flex;align-items:center;gap:12px;height:48px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 2px 4px rgb(11 28 48 / .06);margin:24px -32px 24px;padding:0 32px}
+.pab+*{margin-top:0}
+.pab.single{display:none}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted);margin:0;white-space:nowrap}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap;flex:none}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+.pab-c{font-size:12px;font-weight:600;line-height:18px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:var(--cc-ink);border:0;box-shadow:none}
+.pab-c.o{background:#fef3c7}
+.pab-act{margin-left:auto;flex:none}
+[id^="s-"],[data-sec],.chap{scroll-margin-top:calc(var(--mock-h) + 64px)}
+.frame>.pab.single+*,.frame>.pab.single+.body{margin-top:24px}
+
+/* object page body: main column + side column */
+.frame>.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;margin-top:0;align-items:start}
+.main{display:flex;flex-direction:column;gap:24px;min-width:0}
+.side{display:flex;flex-direction:column;gap:24px;position:sticky;top:calc(var(--mock-h) + 64px)}
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* owner / today drawers */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(780px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55;color:var(--cc-ink)}
+.drawer.wide{width:min(1040px,100vw)}
+.drawer[hidden]{display:none}
+.drawer header{position:sticky;top:0;background:#fff;color:var(--cc-ink);border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2;flex-wrap:wrap}
+.drawer header h2{font-size:16px;font-weight:800;line-height:1.3;min-width:0}
+.drawer header .x{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer .db>h3:first-child{margin-top:0}
+.drawer code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+
+/* tables on a phone (rule: stack; data-label filled by the family script) */
+@media (max-width:720px){
+  table.tbl-stack{min-width:0!important;width:100%}
+  table.tbl-stack thead,table.tbl-stack tr:first-child:has(>th){display:none}
+  table.tbl-stack,table.tbl-stack tbody{display:block}
+  table.tbl-stack tr{display:block;padding:10px 0;border-bottom:1px solid var(--cc-line)}
+  table.tbl-stack tr:last-child{border-bottom:0}
+  table.tbl-stack td{display:flex;gap:10px;border:0!important;padding:2px 0!important;text-align:left!important;background:none!important}
+  table.tbl-stack td:first-child{font-weight:600}
+  table.tbl-stack td[data-label]:not(:first-child)::before{content:attr(data-label);flex:0 0 38%;font-size:12px;font-weight:600;color:var(--cc-ink-muted);font-family:var(--sans);white-space:normal}
+}
+
+/* ---------- the same breakpoints in every tool ---------- */
+@media (max-width:1100px){
+  .mock{position:static}
+  .frame>.body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  :where(.facets){grid-template-columns:repeat(2,minmax(0,1fr))}
+  :where(.facets>.facet:nth-child(2n)){border-right:0}
+  :where(.facets>.facet:nth-child(-n+2)){border-bottom:1px solid var(--cc-line)}
+}
+@media (max-width:900px){
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .next{width:auto;min-width:0;max-width:420px}
+}
+@media (max-width:720px){
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .ophead{padding:14px 16px 0}
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .a{font-size:17px}
+  .ophead .next{min-width:0;max-width:none;width:auto}
+  .facets{margin:14px -16px 0}
+  .facet,button.facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .pad{padding:14px 16px}
+  .drawer header{padding:12px 16px}
+  .drawer .db{padding:14px 16px 28px}
+}
+@media (max-width:639px){
+  .pab{margin:24px -16px 24px;padding:0 0 0 16px}
+  .pab-l,.pab-act{display:none}
+  .pab-items{padding-right:24px}
+}
+</style>
+</head>
+<body>
+<div class="mock" id="mock" role="region" aria-label="Mock-up controls"></div>
+<div id="app"></div>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- ======================= panel: today ======================= -->
+<aside class="drawer" id="p-today" aria-labelledby="p-today-h" tabindex="-1" hidden>
+  <header><h2 id="p-today-h">Today's Documentation, measured from the code</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <p>No screenshot of today's app was possible for this mock-up (no dev server, by brief); everything below is read from the source of this branch. The page height is the measurement recorded in ADR-107 (demo, 1440 px, 12.11.2026).</p>
+    <h3>What the page renders today, top to bottom</h3>
+    <table>
+      <tr><th>#</th><th>Block</th><th>Where</th></tr>
+      <tr><td>1</td><td>Stage header with the <b>Export</b> menu (Word, Print/PDF, Confluence, Markdown, BPMN) and two caveat lines</td><td><code>documentation/page.tsx:1628–1662</code>, items <code>:1236–1258</code></td></tr>
+      <tr><td>2</td><td>Progress card while the document is read</td><td><code>:1358</code>, <code>:1663</code></td></tr>
+      <tr><td>3</td><td>"Process description" heading, a sentence about itself, <b>Read again from the code</b></td><td><code>:1707–1731</code></td></tr>
+      <tr><td>4</td><td>Chapter bar (anchor bar of the document)</td><td><code>:1734–1736</code></td></tr>
+      <tr><td>5</td><td>The process description: at a glance, the seven sections (<code>PROCESS_DOCUMENT_SECTIONS</code>, <code>lib/process-document.ts:64–72</code>) — the whole document, open</td><td><code>:1423</code>, <code>components/documentation/ProcessDocumentView.tsx</code> (59.6 kB)</td></tr>
+      <tr><td>6</td><td>Model proposals card: SOP, RACI <b>with the RACI editor</b> for the owner, statement proposals</td><td><code>:1478–1490</code>, <code>:1584–1610</code>, save <code>:681–693</code></td></tr>
+      <tr><td>7</td><td>"Explore the process": the BPMN map, <b>editable</b> for the owner, with the handbook chapter beside it</td><td><code>:1851–1921</code>, <code>canEdit={isOwner}</code> <code>:1903</code></td></tr>
+      <tr><td>8</td><td>Revisions of this process</td><td><code>:1923–1936</code></td></tr>
+      <tr><td>9</td><td>Level D register</td><td><code>:1940–1948</code></td></tr>
+      <tr><td>10</td><td>Technical trace (appendix)</td><td><code>:1953</code></td></tr>
+    </table>
+    <h3>Measured</h3>
+    <ul class="b">
+      <li><b>About 11,700 px</b> of page at 1440 px on the demo (ADR-107's measurement); the steps are drawn six times (glance, chapter 1, SOP, RACI rows, map, handbook) and the step count appears twice on one screen.</li>
+      <li><b>Three ways to edit</b> on a tool the owner defined as "a help, never a documentation system" (10.10.2026): the RACI editor (item 6), the map editor (item 7) and "Read again" (item 3, which is a regeneration, not an input — it may stay in details).</li>
+      <li><b>The exported picture is not the map.</b> Word/Confluence/print carry <code>processOverviewSvg</code> (<code>lib/documentation-export.ts:274</code>, <code>lib/process-overview-svg.ts</code>): a one-column redraw of the main path, 640 px wide. The reader sees the BPMN map on the page and a different picture in the file.</li>
+      <li><b>The steps themselves already come from the map</b>: the builder takes "the main path is the top level of the map", names applied where saved (<code>lib/process-document-build.ts:85</code>, <code>:421</code>). The mismatch between Documentation and Analyze is in the presentation, not in the engine.</li>
+      <li><code>components/DocumentSection.tsx</code> (61 lines, icons for "transformation strategy", "cloud service" …) has <b>no importer</b> anywhere in <code>app/</code>, <code>components/</code> or <code>lib/</code> — a renderer of the pre-3.0.5 model blueprint. It is dead and can be deleted with the rebuild.</li>
+    </ul>
+  </div>
+</aside>
+
+<!-- ======================= panel: ADR-107 ======================= -->
+<aside class="drawer" id="p-adr" aria-labelledby="p-adr-h" tabindex="-1" hidden>
+  <header><h2 id="p-adr-h">ADR-107's mock-up against the newer standard</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <p><code>documentation-next-mockup.html</code> was accepted on 12.11.2026, the same day as Analyze on the map. Two days later My workspace tiles (ADR-123) and the Analyze v4 states that ADR-116 to -119 record set a sharper bar. Measured with the same headless browser at 1440 px, without mock-up chrome: overview 1,035 px, a step page 900 px, plus four more tabs.</p>
+    <h3>What it already gets right — kept here unchanged</h3>
+    <ul class="b">
+      <li><b>No inputs</b>, the RACI read-only, sign-off left to the company (ADR-107 (6), (5)).</li>
+      <li><b>Answer first</b>: the process in two sentences with start and end (ADR-107 (1)).</li>
+      <li><b>The step page</b>: one sentence, then <i>Decides · Stops when · Reads · Changes · Who</i>, code on a click (ADR-107 (3), (4)). It is the best block of that mock-up and stays as it is.</li>
+      <li><b>Evidence is quiet</b>, "Not determined" is first class; <b>Export is the one primary action</b> with <i>What goes in</i> and <i>Left to your own standard</i>.</li>
+      <li><b>Controls in the code</b> (now beside the rules they repeat, chapter 2); revisions and the Level D register folded into the appendix; no engine change, no stored field, no rules change.</li>
+    </ul>
+    <h3>Where it falls short of the newer standard</h3>
+    <table>
+      <tr><th>#</th><th>Standard (source)</th><th>ADR-107's mock-up</th></tr>
+      <tr><td>S1</td><td><b>Same steps, same names as Analyze</b> (owner rule for this tool; Analyze v4 map and its four phases "It starts · First it checks · Then it gets approval · Then it orders", ADR-116 (2))</td><td>Its own 11 steps with its own names ("Attach a file, if given", "Decide who approves, create the order"), drawn as tiles — a third picture of the process next to Analyze's map and step list. Line chips point at routine bodies (<code>L103–121</code>) where the map shows the call line (<code>line 42</code>).</td></tr>
+      <tr><td>S2</td><td><b>The picture leads</b> (Analyze v4 opens on the map; workspace tiles show the map thumbnail; ADR-068 "the business layer first, as a picture")</td><td>"The BPMN map is not drawn here." The reader never sees the figure the Word file carries.</td></tr>
+      <tr><td>S3</td><td><b>The answer carries the few numbers that matter</b>, each with its source (Analyze Management KPI tiles; workspace "At a glance")</td><td>No number in the answer; a checklist of what is covered instead. The Management tiles say words ("Read in full", "Word · Confluence · BPMN").</td></tr>
+      <tr><td>S4</td><td><b>One page, everything at once</b> (Analyze v4: "IT and Management: one page each"; ADR-109 no layer bar; ADR-091 one "On this page" bar)</td><td>Tools bar + view switch + five tabs + "You are here" + depth meter: five navigation devices on one screen; 4/5 of the document sits behind tabs, and the screen's order (Overview, Process, Roles, Questions, Evidence) is not the export's order.</td></tr>
+      <tr><td>S5</td><td><b>The same questions in the same words</b> as Analyze's "Questions to settle with the business" (ADR-116)</td><td>Six "actions" ("Add the includes", "Confirm the rules …") — a second list with other wording and other counts.</td></tr>
+      <tr><td>S6</td><td><b>Roles from the code</b> (Analyze "Who is involved", Reconstructed)</td><td>RACI columns invented by the model ("Purch. manager", a "Buyer" responsible for the checks) — only the letters should be a proposal.</td></tr>
+      <tr><td>S7</td><td><b>Nothing covers anything</b> (Analyze v4 rule)</td><td>Export opens as a panel pushed over the overview, with a close button.</td></tr>
+      <tr><td>S8</td><td><b>One page for every reader</b> — owner decision 15.11.2026: “nur eine Sicht für alle — auch bei Documentation, dafür noch schicker und für alle tauglicher”</td><td>ADR-107 (7) “views change density, not truth”: an IT page and a three-tile Management page. <b>Superseded for Documentation</b>: one page, and no view switch on this tool — a quiet note “One page for every reader” in its place.</td></tr>
+    </table>
+  </div>
+</aside>
+
+<!-- ======================= panel: owner ======================= -->
+<aside class="drawer" id="p-owner" aria-labelledby="p-owner-h" tabindex="-1" hidden>
+  <header><h2 id="p-owner-h">For the owner</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <h3>In one sentence</h3>
+    <p>Documentation becomes <b>the document itself, one page for every reader, in the order of the Word file</b>: an answer a manager can stop at (what it does, where it starts and ends, what needs a decision, four numbers, ready to hand over) with the export beside it; then Analyze's map as Figure 1 with Analyze's four phases and step names, the chapters and the appendix. What a developer needs — technical names, the code, every table and call, IT's own questions — is there on a click. Nothing to fill in.</p>
+
+    <h3>Decisions</h3>
+    <ol class="b" style="list-style:decimal">
+      <li><b>D1 One page in the export's order.</b> The five tabs, "You are here" and the depth meter go; the one "On this page" bar comes back, built exactly to the shared spec of 15.11.2026 (the same bar on every tool, <code>PageAnchorBar</code>): six items in page order — How it works, Rules, When it stops, What it changes, Who does what, Open questions 6 — and Export as its one right-end action. The chapter numbers in the headings show where the reader is; the "You are reading …" label of v2 is gone. <span class="rec">Recommended: yes.</span> Alternative: keep ADR-107's tabs and only apply D2–D7.</li>
+      <li><b>D2 Analyze's steps, names and phases.</b> 13 steps of the map grouped in Analyze's four phases, numbered once; ADR-107's 11 tiles go. The step page of ADR-107 stays, opened in place. <span class="rec">Recommended: yes.</span></li>
+      <li><b>D3 Figure 1 is Analyze's map, read-only</b> — on the page and in Word/Confluence/PDF; <code>processOverviewSvg</code> retires (Markdown keeps a text outline). No editing here: the map editor stays in Analyze. <span class="rec">Recommended: yes.</span> Alternative: keep the one-column overview in the files and show the map only on screen (cheaper, but the reader gets a different picture).</li>
+      <li><b>D4 Export beside the answer</b>, the formats visible without opening anything, Word first; sticky in the bar. <span class="rec">Recommended: yes.</span></li>
+      <li><b>D5 Four numbers in the answer</b>: steps, ways a case ends, business rules, open questions — the counts Analyze shows, each with its source. <span class="rec">Recommended: yes.</span></li>
+      <li><b>D6 RACI stays read-only</b> (ADR-107 (6) over the 10.10 rule "editable by the owner"; the later decision holds). New: the rows are the four roles read from the code, the columns the five parts of the process; only the letters are the model's proposal, and A is left to the company's standard. An edit already on record is still shown. <span class="rec">Recommended: yes.</span></li>
+      <li><b>D7 One list of questions</b>: Analyze's six business questions, same wording and numbers; IT's four in the IT view; answered in the project's one list. <span class="rec">Recommended: yes.</span></li>
+      <li><b>D8 One view for every reader — decided by the owner, 15.11.2026</b> (“nur eine Sicht für alle — auch bei Documentation”). No IT or Management variant, and <b>no view switch on this tool</b> (owner, same day: “wenn es der gleiche view ist müssen wir den umschalter auch nicht anzeigen, das verwirrt nur”): where the other tools show Business · IT · Management, Documentation shows only the quiet note “One page for every reader”, on desktop and phone. The view chosen elsewhere is kept and applies again on the next tool. Management is served by the first screen (answer, “Needs a decision”, four numbers, “Ready to hand over”); IT by technical names on hover and in the step page, the code on a click, chapter 5’s full table and IT’s four questions as folds. <span class="rec">Decided.</span></li>
+      <li><b>D9 One step count everywhere.</b> The workspace tile mock-up says "94 steps" for this program, Analyze v4 has 29 elements and 13 tasks on the top level. One function, used by the tile, Analyze and Documentation, must decide before the build. <span class="rec">Recommended: tasks on the map's top level, sub-process steps counted in the appendix.</span></li>
+      <li><b>D10 Delete <code>components/DocumentSection.tsx</code></b> (no importer) with DOC-N6. <span class="rec">Recommended: yes.</span></li>
+    </ol>
+
+    <h3>ADR-107, item by item: amends three items, supersedes three, keeps the rest</h3>
+    <table>
+      <tr><th>ADR-107</th><th>This mock-up</th><th></th></tr>
+      <tr><td>(1) Answer first, coverage list, status line → provenance chip</td><td>Kept; the coverage list becomes four numbers (D5); the status line stays for the building state.</td><td><span class="tag amend">amends</span></td></tr>
+      <tr><td>(2) Five tabs, <i>You are here</i>, depth indicator</td><td>One page, the shared "On this page" bar (D1).</td><td><span class="tag sup">supersedes</span></td></tr>
+      <tr><td>(3) Tiles; step list and step page; map not drawn; chapters 1–5 only under Evidence</td><td>Tiles go; step page kept; the map is Figure 1 (D2, D3); chapters on the page in the export's order.</td><td><span class="tag sup">supersedes</span> tiles, map rule · <span class="tag keep">keeps</span> step page</td></tr>
+      <tr><td>(4) Evidence quiet: chips, code on a click; Not determined as a checklist by action</td><td>Chips and code on a click kept; the checklist becomes Analyze's numbered questions (D7).</td><td><span class="tag amend">amends</span></td></tr>
+      <tr><td>(5) Export the one primary action; formats, <i>What goes in</i>, <i>Left to your own standard</i>; "Read again" in details</td><td>All kept; the panel moves beside the answer and does not cover the page (D4).</td><td><span class="tag amend">amends</span></td></tr>
+      <tr><td>(6) No inputs, RACI read-only</td><td>Kept; the roles come from the code (D6).</td><td><span class="tag keep">keeps</span></td></tr>
+      <tr><td>(7) Views change density, not truth; IT denser, Management three tiles; revisions and Level D under Evidence</td><td>One page for every reader (owner, 15.11.2026, D8); revisions and Level D stay folded, now in the appendix.</td><td><span class="tag sup">supersedes</span> for Documentation</td></tr>
+      <tr><td>No engine change, no stored field, no rules change</td><td>Unchanged.</td><td><span class="tag keep">keeps</span></td></tr>
+    </table>
+    <p style="margin-top:8px">So: a new ADR that <b>amends ADR-107</b> (items 1, 4, 5), <b>supersedes</b> its items 2, 3 and 7 (tabs; tiles and "map not drawn"; the views — the last by the owner's decision of 15.11.2026) and keeps 6. DOC-N0–N6 keep their slot in 3.5.0; DOC-N1, -N2 and -N4 change content and DOC-N5 (the IT and Management views) becomes "hide the switch, show the note" — smaller.</p>
+
+    <h3>Today vs. this mock-up</h3>
+    <table id="heights">
+      <tr><th></th><th>Today</th><th>ADR-107 mock-up</th><th>This mock-up</th></tr>
+      <tr><td>Page height, Business, 1440 px (without mock-up chrome)</td><td>≈ 11,700 px</td><td>1,035 px overview + 4 tabs (step page 900 px each)</td><td>3,916 px (−143 px against v2 with three views); a step opened +330 px</td></tr>
+      <tr><td>First screen (900 px) shows</td><td>header, export menu, the start of the description</td><td>answer, coverage list, 11 tiles</td><td>the answer for every reader (what it does, starts, ends, needs a decision), export with “Ready to hand over”, four numbers</td></tr>
+      <tr><td>Views</td><td>one page, view switch without effect</td><td>Business, IT (denser), Management (900 px)</td><td>one page for all; no switch, a note in its place</td></tr>
+      <tr><td>Page height, Business, 390 px</td><td>—</td><td>2,230 px overview + tabs</td><td>7,567 px (the whole document; figure replaced by a line)</td></tr>
+      <tr><td>Pictures of the process</td><td>6</td><td>2 (tiles, mini bar)</td><td>1 (the map) + the step list</td></tr>
+      <tr><td>Navigation devices</td><td>chapter bar</td><td>tabs, crumb, depth meter</td><td>the shared "On this page" bar, six items</td></tr>
+      <tr><td>Inputs</td><td>RACI editor, map editor</td><td>none</td><td>none</td></tr>
+    </table>
+
+    <h3>What it costs to build</h3>
+    <ul class="b">
+      <li><b>Files touched:</b> <code>app/(app)/project/[projectId]/documentation/page.tsx</code> (render part rewritten, the loaders stay); new <code>components/documentation/DocAnswer.tsx</code> (answer + export column), <code>DocCounts.tsx</code>, <code>DocProcessChapter.tsx</code> (figure, phases, step page); <code>PageAnchorBar</code> reused; <code>ProcessMap</code> used in a read-only figure mode (no controls, <code>canEdit</code> false, the technical name as the element's tooltip); text from <code>lib/around-the-map.ts</code> (phases, roles, questions) and counts from <code>lib/process-fact-charts.ts</code> — the same as Analyze; <code>lib/documentation-export.ts</code> and the Word builder take the map SVG as Figure 1 (D3); <code>lib/process-overview-svg.ts</code> retires.</li>
+      <li><b>Retire:</b> <code>HandbookStage</code> and the map editor on this page, <code>RaciEditor</code>, <code>DocumentChapterBar</code>, <code>BusinessGlance</code> on this page, <code>components/DocumentSection.tsx</code>; every view branch on this page; the stage header hides the view switch on this tool (a <code>StageHeader</code> option, Documentation only) and shows the note in its place — <code>?view=</code> is passed on unchanged to the next tool; the guards that pin today's page (<code>grep -rl</code> before the move, CLAUDE.md).</li>
+      <li><b>Engine change:</b> no (<code>lib/abap/</code> untouched). <b>Stored field:</b> no. <b>Rules change:</b> no (the RACI edit record is read, never written again).</li>
+      <li><b>Size:</b> a little smaller than DOC-N0–N6 as planned, because DOC-N5 (two more views) shrinks to one note; D3 (the map in Word) is the one new piece — the SVG has to be embedded as an image in the .docx and fit an A4 page in two parts.</li>
+    </ul>
+  </div>
+</aside>
+
+<script>
+const SRC = ["*&---------------------------------------------------------------------*", "*& Report  Z_MM_PO_APPROVAL", "*& Emergency purchase approval", "*&---------------------------------------------------------------------*", "*& Fictional but realistic MM example for Clean-Core.io:", "*& purchase requisition check, vendor block list, price tolerance", "*& against the purchasing info record, approval by department head", "*& or manager, purchase order via BAPI with batch-input fallback.", "*& Synthetic input only - not for productive SAP import.", "*&---------------------------------------------------------------------*", "REPORT z_mm_po_approval MESSAGE-ID zmm_po.", "", "TABLES: eban, eina, eine, lfa1, lfm1, t16fs, csks, zmm_vend_block, zmm_po_appr.", "", "TYPE-POOLS: abap.", "", "CONSTANTS: c_doc_type      TYPE esart VALUE 'NB',", "           c_release_group TYPE frggr VALUE 'ZE',", "           c_purch_org     TYPE ekorg VALUE '1000'.", "", "DATA: gs_eban       TYPE eban,", "      gs_lfa1       TYPE lfa1,", "      gv_amount     TYPE bapicurext,", "      gv_ref_price  TYPE bapicurext,", "      gv_emergency  TYPE abap_bool,", "      gv_skip_limit TYPE abap_bool,", "      gv_rejected   TYPE abap_bool,", "      gv_on_hold    TYPE abap_bool,", "      gv_approved   TYPE abap_bool,", "      gv_approver   TYPE xubname,", "      gv_ebeln      TYPE ebeln,", "      gv_message    TYPE char255,", "      gt_return     TYPE STANDARD TABLE OF bapiret2 WITH DEFAULT KEY.", "", "SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE text-001.", "PARAMETERS: p_banfn TYPE eban-banfn OBLIGATORY DEFAULT '0010000001',", "            p_bnfpo TYPE eban-bnfpo DEFAULT '00010',", "            p_file  TYPE string LOWER CASE,", "            p_test  AS CHECKBOX DEFAULT 'X'.", "SELECTION-SCREEN END OF BLOCK b01.", "START-OF-SELECTION.", "  PERFORM check_authority.", "  PERFORM read_requisition.", "  PERFORM check_requisition.", "  CHECK gv_rejected = abap_false.", "  PERFORM upload_attachment.", "  PERFORM read_vendor.", "  PERFORM check_vendor.", "  CHECK gv_rejected = abap_false.", "  PERFORM read_info_record.", "  PERFORM check_price.", "  CHECK gv_on_hold = abap_false.", "  PERFORM decide_approval.", "  PERFORM notify_requester.", "  PERFORM write_result_list.", "", "*&---------------------------------------------------------------------*", "*&      Form  READ_REQUISITION", "*&---------------------------------------------------------------------*", "FORM read_requisition.", "  SELECT SINGLE * FROM eban INTO gs_eban", "    WHERE banfn = p_banfn", "      AND bnfpo = p_bnfpo", "      AND loekz = space.", "  IF sy-subrc <> 0.", "    MESSAGE e001 WITH 'Purchase requisition not found' p_banfn.", "  ENDIF.", "  gv_amount = gs_eban-menge * gs_eban-preis / gs_eban-peinh.", "  IF gs_eban-waers <> 'EUR'.", "    PERFORM convert_to_eur USING gs_eban-waers CHANGING gv_amount.", "  ENDIF.", "  IF gs_eban-dispo = 'EMG' OR gs_eban-bednr CP 'EMERG*'.", "    gv_emergency = abap_true.", "  ENDIF.", "ENDFORM.", "", "FORM check_requisition.", "  IF gs_eban-matnr IS INITIAL.", "    PERFORM reject USING 'Material missing on the requisition'.", "    RETURN.", "  ENDIF.", "  IF gs_eban-frgkz = 'X'.", "    PERFORM reject USING 'Requisition is blocked for release'.", "    RETURN.", "  ENDIF.", "  PERFORM check_material_status.", "  IF gv_rejected = abap_true.", "    RETURN.", "  ENDIF.", "  PERFORM check_account_assignment.", "  IF gv_rejected = abap_true.", "    RETURN.", "  ENDIF.", "  \"Plant 1000 is the central warehouse", "  IF gs_eban-werks = '1000'.", "    gv_skip_limit = abap_true.", "  ENDIF.", "ENDFORM.", "", "*&---------------------------------------------------------------------*", "*&      Form  CHECK_AUTHORITY", "*&---------------------------------------------------------------------*", "FORM check_authority.", "  DATA lv_ekgrp TYPE eban-ekgrp.", "", "  SELECT SINGLE ekgrp FROM eban INTO lv_ekgrp", "    WHERE banfn = p_banfn", "      AND bnfpo = p_bnfpo.", "  IF sy-subrc <> 0.", "    MESSAGE e001 WITH 'Purchase requisition not found' p_banfn.", "  ENDIF.", "", "  \"Only the purchasing group of the requisition may approve", "  \"(emergency procurement, ticket MM-2211)", "", "  AUTHORITY-CHECK OBJECT 'M_BANF_EKG'", "    ID 'ACTVT' FIELD '02'", "    ID 'EKGRP' FIELD lv_ekgrp.", "  IF sy-subrc <> 0.", "    MESSAGE e002 WITH 'No authorization for purchasing group' lv_ekgrp.", "  ENDIF.", "ENDFORM.", "", "FORM upload_attachment.", "  DATA lt_bin TYPE STANDARD TABLE OF solix WITH DEFAULT KEY.", "  DATA lv_length TYPE i.", "", "  CHECK p_file IS NOT INITIAL.", "  CALL FUNCTION 'GUI_UPLOAD'", "    EXPORTING", "      filename   = p_file", "      filetype   = 'BIN'", "    IMPORTING", "      filelength = lv_length", "    TABLES", "      data_tab   = lt_bin", "    EXCEPTIONS", "      file_open_error = 1", "      file_read_error = 2", "      OTHERS          = 3.", "  IF sy-subrc <> 0.", "    MESSAGE w003 WITH 'Attachment could not be read:' p_file.", "  ELSE.", "    PERFORM store_attachment TABLES lt_bin USING lv_length.", "  ENDIF.", "ENDFORM.", "", "*&---------------------------------------------------------------------*", "*&      Form  READ_VENDOR", "*&---------------------------------------------------------------------*", "FORM read_vendor.", "  DATA ls_lfm1 TYPE lfm1.", "", "  SELECT SINGLE * FROM lfa1 INTO gs_lfa1", "    WHERE lifnr = gs_eban-flief.", "  IF sy-subrc <> 0.", "    PERFORM reject USING 'Fixed vendor missing on the requisition'.", "    RETURN.", "  ENDIF.", "", "  SELECT SINGLE * FROM lfm1 INTO ls_lfm1", "    WHERE lifnr = gs_eban-flief", "      AND ekorg = c_purch_org.", "  IF sy-subrc <> 0.", "    PERFORM reject USING 'Vendor not created for purchasing org 1000'.", "  ENDIF.", "ENDFORM.", "", "FORM convert_to_eur USING iv_waers TYPE waers", "                 CHANGING cv_amount TYPE bapicurext.", "  DATA lv_local TYPE bapicurext.", "", "  CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'", "    EXPORTING", "      date             = sy-datum", "      foreign_amount   = cv_amount", "      foreign_currency = iv_waers", "      local_currency   = 'EUR'", "    IMPORTING", "      local_amount     = lv_local", "    EXCEPTIONS", "      no_rate_found    = 1", "      OTHERS           = 2.", "  IF sy-subrc = 0.", "    cv_amount = lv_local.", "  ELSE.", "    MESSAGE w004 WITH 'No exchange rate for' iv_waers.", "  ENDIF.", "ENDFORM.", "", "FORM check_cost_center.", "  SELECT SINGLE * FROM csks", "    WHERE kokrs = '1000'", "      AND kostl = gs_eban-kostl", "      AND datbi >= sy-datum.", "  IF sy-subrc <> 0.", "    PERFORM reject USING 'Cost center not valid today'.", "  ENDIF.", "ENDFORM.", "", "FORM check_account_assignment.", "  CASE gs_eban-knttp.", "    WHEN 'K'.", "      PERFORM check_cost_center.", "    WHEN 'F'.", "      IF gs_eban-aufnr IS INITIAL.", "        PERFORM reject USING 'Internal order missing'.", "      ENDIF.", "    WHEN space.", "      \"Stock material - no account assignment needed", "    WHEN OTHERS.", "      PERFORM reject USING 'Account assignment category not allowed'.", "  ENDCASE.", "ENDFORM.", "", "*&---------------------------------------------------------------------*", "*&      Form  CHECK_VENDOR", "*&---------------------------------------------------------------------*", "FORM check_vendor.", "  DATA lv_lifnr TYPE lifnr.", "", "  SELECT SINGLE lifnr FROM zmm_vend_block INTO lv_lifnr", "    WHERE lifnr = gs_eban-flief", "      AND blocked = 'X'.", "  IF sy-subrc = 0.", "    PERFORM reject USING 'Vendor is on the block list'.", "  ENDIF.", "ENDFORM.", "", "FORM reject USING iv_reason TYPE clike.", "  gv_rejected = abap_true.", "  gv_message  = iv_reason.", "  MESSAGE s005 WITH 'Requisition rejected:' iv_reason.", "  PERFORM log_approval.", "ENDFORM.", "", "FORM hold_for_buyer.", "  gv_on_hold = abap_true.", "  gv_message = 'Price deviates from the info record - buyer review'.", "  UPDATE eban SET statu = 'H'", "    WHERE banfn = p_banfn", "      AND bnfpo = p_bnfpo.", "  COMMIT WORK.", "  PERFORM log_approval.", "ENDFORM.", "", "*&---------------------------------------------------------------------*", "*&      Form  READ_INFO_RECORD", "*&---------------------------------------------------------------------*", "FORM read_info_record.", "  DATA: ls_eina TYPE eina,", "        ls_eine TYPE eine.", "", "  SELECT SINGLE * FROM eina INTO ls_eina", "    WHERE matnr = gs_eban-matnr", "      AND lifnr = gs_eban-flief.", "  IF sy-subrc <> 0.", "    CLEAR gv_ref_price.", "    RETURN.", "  ENDIF.", "", "  SELECT SINGLE * FROM eine INTO ls_eine", "    WHERE infnr = ls_eina-infnr", "      AND ekorg = c_purch_org", "      AND werks = gs_eban-werks.", "  IF sy-subrc = 0 AND ls_eine-peinh > 0.", "    gv_ref_price = ls_eine-netpr / ls_eine-peinh.", "  ENDIF.", "ENDFORM.", "", "FORM check_material_status.", "  DATA lv_mmsta TYPE marc-mmsta.", "", "  SELECT SINGLE mmsta FROM marc INTO lv_mmsta", "    WHERE matnr = gs_eban-matnr", "      AND werks = gs_eban-werks.", "  IF lv_mmsta = '01' OR lv_mmsta = 'Z9'.", "    PERFORM reject USING 'Material is blocked for purchasing in this plant'.", "  ENDIF.", "ENDFORM.", "", "*&---------------------------------------------------------------------*", "*&      Form  CHECK_LIMIT", "*&---------------------------------------------------------------------*", "FORM check_limit USING iv_amount TYPE bapicurext.", "  DATA: ls_t16fs TYPE t16fs,", "        lv_ok    TYPE abap_bool.", "", "  SELECT SINGLE * FROM t16fs INTO ls_t16fs", "    WHERE frggr = c_release_group.", "  IF sy-subrc = 0.", "    lv_ok = cl_mm_internal=>check_limit( iv_amount   = iv_amount", "                                         is_strategy = ls_t16fs ).", "    IF lv_ok = abap_false.", "      gv_message = 'Amount above the release limit'.", "    ENDIF.", "  ENDIF.", "ENDFORM.", "", "*&---------------------------------------------------------------------*", "*&      Form  CHECK_PRICE", "*&---------------------------------------------------------------------*", "FORM check_price.", "  DATA: lv_price   TYPE bapicurext,", "        lv_ref     TYPE bapicurext,", "        lv_dev_pct TYPE p LENGTH 7 DECIMALS 2.", "", "  CHECK gv_ref_price > 0.", "  lv_price = gs_eban-preis / gs_eban-peinh.", "  lv_ref   = gv_ref_price.", "  lv_dev_pct = ( lv_price - lv_ref )", "             * 100 / lv_ref.", "", "  \"Tolerance agreed with purchasing", "  IF lv_dev_pct > 5.", "    PERFORM hold_for_buyer.", "    RETURN.", "  ENDIF.", "ENDFORM.", "", "*&---------------------------------------------------------------------*", "*&      Form  DECIDE_APPROVAL", "*&---------------------------------------------------------------------*", "FORM decide_approval.", "  IF gv_emergency = abap_true AND gv_amount <= '50000.00'.", "    PERFORM find_department_head CHANGING gv_approver.", "    PERFORM request_approval USING gv_approver 'DEPT_HEAD'.", "  ELSEIF gv_skip_limit = abap_false.", "    PERFORM check_limit USING gv_amount.", "    PERFORM find_manager CHANGING gv_approver.", "    PERFORM request_approval USING gv_approver 'MANAGER'.", "  ELSE.", "    gv_approved = abap_true.", "    gv_message  = 'Approved without limit check (central warehouse)'.", "  ENDIF.", "  IF gv_approved = abap_true.", "    PERFORM create_purchase_order.", "  ENDIF.", "  PERFORM log_approval.", "ENDFORM.", "", "FORM log_approval.", "  DATA ls_appr TYPE zmm_po_appr.", "", "  ls_appr-mandt    = sy-mandt.", "  ls_appr-banfn    = p_banfn.", "  ls_appr-bnfpo    = p_bnfpo.", "  ls_appr-approver = gv_approver.", "  ls_appr-amount   = gv_amount.", "  ls_appr-message  = gv_message.", "  ls_appr-erdat    = sy-datum.", "  ls_appr-erzet    = sy-uzeit.", "  INSERT zmm_po_appr FROM ls_appr.", "ENDFORM.", "", "FORM find_department_head CHANGING cv_approver TYPE xubname.", "  SELECT SINGLE uname FROM zmm_dept_head INTO cv_approver", "    WHERE kostl = gs_eban-kostl.", "  IF sy-subrc <> 0.", "    cv_approver = 'PURCH_LEAD'.", "  ENDIF.", "ENDFORM.", "INCLUDE z_mm_po_notify.", "", "FORM find_manager CHANGING cv_approver TYPE xubname.", "  DATA lv_pernr TYPE pernr_d.", "", "  SELECT SINGLE pernr FROM pa0105 INTO lv_pernr", "    WHERE usrid = gs_eban-afnam", "      AND subty = '0001'.", "  SELECT SINGLE usrid FROM pa0105 INTO cv_approver", "    WHERE pernr = lv_pernr", "      AND subty = '0001'.", "ENDFORM.", "", "*&---------------------------------------------------------------------*", "*&      Form  NOTIFY_REQUESTER", "*&---------------------------------------------------------------------*", "FORM notify_requester.", "  DATA: lv_fm_name TYPE rs38l_fnam,", "        lv_variant TYPE char10.", "", "  SELECT SINGLE fm_name FROM zmm_notify_cfg INTO lv_fm_name", "    WHERE werks = gs_eban-werks.", "  CHECK sy-subrc = 0.", "  CALL FUNCTION lv_fm_name", "    EXPORTING", "      iv_banfn   = p_banfn", "      iv_message = gv_message", "    EXCEPTIONS", "      OTHERS     = 1.", "  IF sy-subrc <> 0.", "    MESSAGE w007 WITH 'Notification failed for' p_banfn.", "  ENDIF.", "ENDFORM.", "INCLUDE z_mm_po_log.", "", "*&---------------------------------------------------------------------*", "*&      Form  REQUEST_APPROVAL", "*&---------------------------------------------------------------------*", "FORM request_approval USING iv_approver TYPE xubname", "                            iv_role     TYPE char10.", "  DATA: lv_objkey TYPE swo_typeid,", "        lt_cont   TYPE STANDARD TABLE OF swcont WITH DEFAULT KEY,", "        ls_cont   TYPE swcont.", "", "  IF p_test = abap_true.", "    gv_approved = abap_true.", "    gv_message  = 'Test mode: approval simulated'.", "    RETURN.", "  ENDIF.", "", "  CONCATENATE p_banfn p_bnfpo INTO lv_objkey.", "  ls_cont-element = 'APPROVER'.", "  ls_cont-value   = iv_approver.", "  APPEND ls_cont TO lt_cont.", "  ls_cont-element = 'ROLE'.", "  ls_cont-value   = iv_role.", "  APPEND ls_cont TO lt_cont.", "", "  CALL FUNCTION 'SAP_WAPI_CREATE_EVENT'", "    EXPORTING", "      object_type = 'BUS2105'", "      object_key  = lv_objkey", "      event       = 'ZAPPROVE'", "    TABLES", "      input_container = lt_cont.", "  COMMIT WORK.", "", "  \"Approval arrives asynchronously in the workflow; the report", "  \"treats the request as approved for emergency orders", "  IF iv_role = 'DEPT_HEAD'.", "    gv_approved = abap_true.", "  ENDIF.", "ENDFORM.", "", "*&---------------------------------------------------------------------*", "*&      Form  CREATE_PURCHASE_ORDER", "*&---------------------------------------------------------------------*", "FORM create_purchase_order.", "  DATA: ls_header  TYPE bapimepoheader,", "        ls_headerx TYPE bapimepoheaderx,", "        lt_item    TYPE STANDARD TABLE OF bapimepoitem WITH DEFAULT KEY,", "        lt_itemx   TYPE STANDARD TABLE OF bapimepoitemx WITH DEFAULT KEY,", "        ls_item    TYPE bapimepoitem,", "        ls_itemx   TYPE bapimepoitemx,", "        ls_return  TYPE bapiret2.", "", "  ls_header-doc_type   = c_doc_type.", "  ls_header-vendor     = gs_eban-flief.", "  ls_header-purch_org  = c_purch_org.", "  ls_header-pur_group  = gs_eban-ekgrp.", "  ls_header-comp_code  = '1000'.", "  ls_headerx-doc_type  = abap_true.", "  ls_headerx-vendor    = abap_true.", "  ls_headerx-purch_org = abap_true.", "  ls_headerx-pur_group = abap_true.", "  ls_headerx-comp_code = abap_true.", "", "  ls_item-po_item    = '00010'.", "  ls_item-material   = gs_eban-matnr.", "  ls_item-plant      = gs_eban-werks.", "  ls_item-quantity   = gs_eban-menge.", "  ls_item-preq_no    = p_banfn.", "  ls_item-preq_item  = p_bnfpo.", "  APPEND ls_item TO lt_item.", "  ls_itemx-po_item   = '00010'.", "  ls_itemx-material  = abap_true.", "  ls_itemx-plant     = abap_true.", "  ls_itemx-quantity  = abap_true.", "  ls_itemx-preq_no   = abap_true.", "  ls_itemx-preq_item = abap_true.", "  APPEND ls_itemx TO lt_itemx.", "", "  CALL FUNCTION 'BAPI_PO_CREATE1'", "    EXPORTING", "      poheader         = ls_header", "      poheaderx        = ls_headerx", "    IMPORTING", "      exppurchaseorder = gv_ebeln", "    TABLES", "      return           = gt_return", "      poitem           = lt_item", "      poitemx          = lt_itemx.", "", "  READ TABLE gt_return INTO ls_return WITH KEY type = 'E'.", "  IF sy-subrc = 0.", "    PERFORM create_po_batch_input.", "  ELSE.", "    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'", "      EXPORTING", "        wait = abap_true.", "    CONCATENATE 'Purchase order' gv_ebeln 'created' INTO gv_message", "      SEPARATED BY space.", "  ENDIF.", "ENDFORM.", "", "FORM create_po_batch_input.", "  DATA: lt_bdc  TYPE STANDARD TABLE OF bdcdata WITH DEFAULT KEY,", "        ls_bdc  TYPE bdcdata,", "        lt_msg  TYPE STANDARD TABLE OF bdcmsgcoll WITH DEFAULT KEY.", "", "  ls_bdc-program  = 'SAPLMEGUI'.", "  ls_bdc-dynpro   = '0014'.", "  ls_bdc-dynbegin = 'X'.", "  APPEND ls_bdc TO lt_bdc.", "  CLEAR ls_bdc.", "  ls_bdc-fnam = 'MEPO_TOPLINE-SUPERFIELD'.", "  ls_bdc-fval = gs_eban-flief.", "  APPEND ls_bdc TO lt_bdc.", "  ls_bdc-fnam = 'BDC_OKCODE'.", "  ls_bdc-fval = '=MESAVE'.", "  APPEND ls_bdc TO lt_bdc.", "", "  CALL TRANSACTION 'ME21N' USING lt_bdc", "    MODE 'N'", "    UPDATE 'S'", "    MESSAGES INTO lt_msg.", "  IF sy-subrc <> 0.", "    gv_message = 'Purchase order could not be created'.", "  ELSE.", "    gv_message = 'Purchase order created by batch input'.", "  ENDIF.", "ENDFORM.", "", "FORM store_attachment TABLES it_bin STRUCTURE solix", "                      USING iv_length TYPE i.", "  DATA lv_objkey TYPE swo_typeid.", "", "  CONCATENATE p_banfn p_bnfpo INTO lv_objkey.", "  INSERT zmm_po_attach FROM @( VALUE #( mandt  = sy-mandt", "                                        objkey = lv_objkey", "                                        length = iv_length", "                                        erdat  = sy-datum ) ).", "ENDFORM.", "", "*&---------------------------------------------------------------------*", "*&      Form  WRITE_RESULT_LIST", "*&---------------------------------------------------------------------*", "FORM write_result_list.", "  FORMAT COLOR COL_HEADING.", "  WRITE: / 'Emergency purchase approval', sy-datum, sy-uzeit.", "  FORMAT RESET.", "  ULINE.", "  WRITE: / 'Requisition:', p_banfn, p_bnfpo,", "         / 'Vendor:     ', gs_lfa1-lifnr, gs_lfa1-name1,", "         / 'Amount EUR: ', gv_amount,", "         / 'Approver:   ', gv_approver,", "         / 'Order:      ', gv_ebeln,", "         / 'Result:     ', gv_message.", "  ULINE.", "ENDFORM."];
+const P = {
+  check:'<path d="M20 6 9 17l-5-5"/>', left:'<path d="m15 18-6-6 6-6"/>', right:'<path d="m9 18 6-6-6-6"/>', down:'<path d="m6 9 6 6 6-6"/>',
+  pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>', rec:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  help:'<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+  info:'<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>', warn:'<path d="m21.7 18-8-14a2 2 0 0 0-3.4 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+  dl:'<path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/>', menu:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+  book:'<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>',
+  db:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+  edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>', code:'<path d="m16 18 6-6-6-6"/><path d="m8 6-6 6 6 6"/>',
+  file:'<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/>',
+  print:'<path d="M6 9V2h12v7"/><rect x="6" y="14" width="12" height="8"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>',
+  flow:'<rect x="3" y="3" width="6" height="6" rx="1"/><rect x="15" y="15" width="6" height="6" rx="1"/><path d="M6 9v3a3 3 0 0 0 3 3h6"/>',
+  md:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 15V9l3 3 3-3v6"/><path d="M17 9v6"/><path d="m15 13 2 2 2-2"/>',
+  conf:'<path d="M3 17c4-6 8-6 18-2"/><path d="M3 7c10 4 14 4 18-2"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/>',
+  circle:'<circle cx="12" cy="12" r="9"/>', q:'<circle cx="12" cy="12" r="9"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/>', back:'<path d="M19 12H5"/><path d="m12 19-7-7 7-7"/>',
+  reads:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>', ext:'<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  stop:'<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>', map:'<path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2Z"/><path d="M9 4v14M15 6v14"/>',
+};
+P.eng = '<circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4"/>'; P.nd = '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>';
+const ic = (n,c='') => `<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${P[n]}</svg>`;
+const chip = {
+  rec:(t='Reconstructed')=>`<span class="pv rec">${ic('eng')}${t}</span>`,
+  ai:(t='AI-generated')=>`<span class="pv ai">${ic('pen')}${t}</span>`,
+  nd:(t='Not determined')=>`<span class="pv nd">${ic('nd')}${t}</span>`,
+};
+const ILL = '<span class="mtag">mock-up: content illustrative</span>';
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+/* evidence: quiet, like the map's "line 42" */
+const A = (l) => `<span class="anc" title="Lines ${l} of Z_MM_PO_APPROVAL — opens the code (IT view)">line ${l}</span>`;
+const BR = (id) => `<span class="br" title="Business rule ${id}">${id}</span>`;
+const T = (t) => `<span class="ev"> <span class="tech">${t}</span></span>`;
+function hl(s){ let h=esc(s); if(/^\s*\*/.test(s)||/^\s*"/.test(s)) return `<span class="cm">${h}</span>`; h=h.replace(/('[^']*')/g,'<span class="lit">$1</span>'); return h.replace(/\b(FORM|ENDFORM|PERFORM|IF|ELSEIF|ELSE|ENDIF|SELECT|SINGLE|FROM|INTO|WHERE|AND|OR|UPDATE|SET|INSERT|CALL|FUNCTION|TRANSACTION|USING|CHECK|RETURN|DATA|TYPE|MESSAGE|WITH|COMMIT|WORK|AUTHORITY-CHECK|OBJECT|ID|FIELD|CASE|WHEN|ENDCASE|CLEAR)\b/g,'<span class="kw">$1</span>'); }
+function codeBlock(a,b){ let o=''; for(let i=a;i<=b;i++) o+=`<div class="l hl"><span class="no">${i}</span><span class="tx">${hl(SRC[i-1]||'')}</span></div>`; return `<div class="code" role="region" aria-label="Lines ${a} to ${b}">${o}</div>`; }
+
+/* ---------- the map: exactly Analyze v4's elements, names and lines ----------
+   [id, kind, x, y, name (as in Analyze), line, ai-named, engine name] */
+const E = [
+ ['S','s',50,150,'Someone starts it from the entry screen','41',0,null],
+ ['T1','t',175,150,'Check the person may approve','42',1,'Check authorization M_BANF_EKG'],
+ ['G0','g',300,150,'Allowed?','119',1,'Return code is 0?'],
+ ['E0','ee',300,282,'Stops: not allowed','120',1,'Message E002'],
+ ['T2','t',425,150,'Read the requisition','43',1,'Read EBAN'],
+ ['T3','t',590,150,'Check the requisition','44',1,'Perform check_requisition'],
+ ['G1','g',715,150,'Complete and valid?','45',1,'Rejected flag not set?'],
+ ['E1','ee',715,282,'Stops: rejected, with the reason','230',1,'Perform reject'],
+ ['T4','t',840,150,'Read and check the vendor','46–48',1,'Read LFA1, LFM1, block list'],
+ ['G2','g',965,150,'Vendor allowed?','49',1,'Rejected flag not set?'],
+ ['E2','ee',965,282,'Stops: vendor rejected','226',1,'Perform reject'],
+ ['T5','t',1090,150,'Compare the price with the agreed price','50–51',1,'Compare with EINE net price'],
+ ['G3','g',1215,150,'More than 5 % above?','315',1,'Deviation > 5?'],
+ ['W1','t',1215,282,'Put the requisition on hold','240–242',1,'Update EBAN status H'],
+ ['E3','ee',1345,282,'On hold for the buyer','239',1,'End after hold_for_buyer'],
+ ['LT','lt',1345,150,'On to the approval','52',0,null],
+ ['LC','lc',50,508,'From the checks','53',0,null],
+ ['G4','g',175,508,'Emergency, at most 50,000.00?','325',1,'Emergency and amount ≤ 50000?'],
+ ['T6a','t',320,410,'Ask the department head','326–327',1,'Read ZMM_DEPT_HEAD'],
+ ['T6b','t',320,508,'Check the limit, ask a manager','329–331',1,'Check limit via CL_MM_INTERNAL'],
+ ['T7','t',480,508,'Send the approval request','421–427',1,'Raise workflow event ZAPPROVE'],
+ ['G5','g',610,508,'Approved?','336',1,'Approved flag set?'],
+ ['E4','ee',610,622,'Ends without an order','340',1,'End decide_approval'],
+ ['W2','t',740,508,'Create the purchase order','475–484',1,'Call BAPI_PO_CREATE1'],
+ ['G6','g',870,508,'Order created?','487',0,'Return without error?'],
+ ['W3','t',870,622,'Batch input ME21N','515–518',0,'Batch input ME21N'],
+ ['T8','t',1020,508,'Record it and tell the requester','339, 54',1,'Insert ZMM_PO_APPR, notify'],
+ ['T9','t',1170,508,'Write list output','55',0,'Write list output'],
+ ['EN','e',1310,508,'Done','55',0,null],
+];
+const F = [
+ ['S','T1'],['T1','G0'],['G0','T2','Yes'],['G0','E0','No'],['T2','T3'],['T3','G1'],['G1','T4','Yes'],['G1','E1','No'],['T4','G2'],['G2','T5','Yes'],['G2','E2','No'],['T5','G3'],['G3','LT','No'],['G3','W1','Yes'],['W1','E3'],
+ ['LC','G4'],['G4','T6a','Yes'],['G4','T6b','No'],['T6a','T7'],['T6b','T7'],['T7','G5'],['G5','W2','Yes'],['G5','E4','No'],['W2','G6'],['G6','T8','Yes'],['G6','W3','No'],['W3','T8'],['T8','T9'],['T9','EN'],
+];
+const TW=136, TH=80, GS=25, ER=18, LH=15;
+const EL = Object.fromEntries(E.map(e=>[e[0],{id:e[0],k:e[1],x:e[2],y:e[3],name:e[4],line:e[5],ai:e[6],eng:e[7]||e[4]}]));
+const X0=-12, Y0=34, MAPW=1424, MAPH=676;
+function port(n,side){ const w = n.k==='t'?TW/2 : n.k==='g'?GS : ER; const h = n.k==='t'?TH/2 : n.k==='g'?GS : ER;
+  return side==='r'?[n.x+w,n.y]:side==='l'?[n.x-w,n.y]:side==='b'?[n.x,n.y+h]:[n.x,n.y-h]; }
+function route(a,b){ const A=EL[a],B=EL[b];
+  if (Math.abs(A.y-B.y)<2) return [port(A,'r'),port(B,'l')];
+  if (B.y>A.y && Math.abs(A.x-B.x)<2) return [port(A,'b'),port(B,'t')];
+  if (B.y>A.y){ const p=port(A,'b'),q=port(B,'l'); return [p,[p[0],q[1]],q]; }
+  if (B.y<A.y && A.k==='g'){ const p=port(A,'t'),q=port(B,'l'); return [p,[p[0],q[1]],q]; }
+  const p=port(A,'r'),q=port(B,'b'); return [p,[q[0],p[1]],q]; }
+function wrap(s,max){ const w=s.split(' '); const out=[]; let cur=''; for(const x of w){ if((cur+' '+x).trim().length>max && cur){out.push(cur);cur=x;} else cur=(cur+' '+x).trim(); } if(cur)out.push(cur); return out; }
+function nameTexts(n, name){
+  if (n.k==='t'){ const L=wrap(name,18); const last=n.y+TH/2-24; const y0=last-(L.length-1)*LH; return L.map((l,i)=>`<text x="${n.x}" y="${y0+i*LH}" text-anchor="middle">${esc(l)}</text>`).join(''); }
+  if (n.k==='g'){ const L=wrap(name,n.id==='G4'?15:20);
+    if (n.id==='G4') return L.map((l,i)=>`<text x="${n.x}" y="${n.y+GS+18+i*LH}" text-anchor="middle">${esc(l)}</text>`).join('');
+    return L.map((l,i)=>`<text x="${n.x}" y="${n.y-GS-10-(L.length-1-i)*LH}" text-anchor="middle">${esc(l)}</text>`).join(''); }
+  const L=wrap(name, n.k==='lc'?12:16); return L.map((l,i)=>`<text x="${n.x}" y="${n.y+ER+16+i*LH}" text-anchor="middle">${esc(l)}</text>`).join('');
+}
+function nlines(n,name){ return wrap(name, n.k==='t'?18 : n.k==='g'?(n.id==='G4'?15:20) : n.k==='lc'?12:16).length; }
+const PEN = (x,y)=>`<g class="pen" transform="translate(${x},${y}) scale(.5)"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></g>`;
+function elSvg(n){
+  let g='', anc='', mark='', pen='', num='';
+  const si = STEP_OF[n.id];
+  const nm = n.name;
+  if (n.k==='t'){
+    g=`<rect class="sh" x="${n.x-TW/2}" y="${n.y-TH/2}" width="${TW}" height="${TH}" rx="10"/>`;
+    anc=`<text class="anc" x="${n.x}" y="${n.y+TH/2-6}" text-anchor="middle">line ${n.line}</text>`;
+    if (n.ai) pen=PEN(n.x+TW/2-16,n.y-TH/2+3);
+    if (si!==undefined) num=`<circle class="no" cx="${n.x-TW/2+12}" cy="${n.y-TH/2+12}" r="9"/><text class="not" x="${n.x-TW/2+12}" y="${n.y-TH/2+15.5}" text-anchor="middle">${si+1}</text>`;
+  } else if (n.k==='g'){
+    g=`<path class="sh" d="M${n.x} ${n.y-GS} L${n.x+GS} ${n.y} L${n.x} ${n.y+GS} L${n.x-GS} ${n.y} Z"/><path class="mk" d="M${n.x-7} ${n.y-7} L${n.x+7} ${n.y+7} M${n.x+7} ${n.y-7} L${n.x-7} ${n.y+7}"/>`;
+    anc = n.id==='G4' ? `<text class="anc" x="${n.x}" y="${n.y+GS+20+nlines(n,nm)*LH}" text-anchor="middle">line ${n.line}</text>` : `<text class="anc" x="${n.x+8}" y="${n.y+GS+40}">line ${n.line}</text>`;
+  } else {
+    g=`<circle class="sh" cx="${n.x}" cy="${n.y}" r="${ER}"/>`;
+    if (n.k==='lt'||n.k==='lc') mark=`<path class="mk" d="M${n.x-8} ${n.y-4} h8 v-5 l8 9 -8 9 v-5 h-8 Z" style="${n.k==='lt'?'fill:var(--cc-ink)':''}"/>`;
+    anc=`<text class="anc" x="${n.x}" y="${n.y+ER+18+nlines(n,nm)*LH}" text-anchor="middle">line ${n.line}</text>`;
+    if (n.k==='ee') g+=`<g class="badge"><rect x="${n.x-28}" y="${n.y-ER-21}" width="56" height="16" rx="4"/><text x="${n.x}" y="${n.y-ER-9}" text-anchor="middle">early end</text></g>`;
+  }
+  if (n.id==='T8') g+=`<g class="badge"><rect x="${n.x-62}" y="${n.y-TH/2-21}" width="124" height="16" rx="4"/><text x="${n.x}" y="${n.y-TH/2-9}" text-anchor="middle">2 parts not in the upload</text></g>`;
+  const cls = `el ${(n.k==='e'||n.k==='ee')?'end':''} ${si!==undefined?'step':''} ${si!==undefined&&si===M.step&&M.open?'here':''}`;
+  const attrs = si!==undefined ? `data-step="${si}" role="button" tabindex="0" aria-label="Step ${si+1}: ${esc(n.name)}, line ${n.line}"` : `aria-label="${esc(n.name)}, line ${n.line}"`;
+  return `<g class="${cls}" ${attrs}><title>${esc(n.name)} · technical: ${esc(n.eng)} · line ${n.line}</title>${g}${mark}<g>${nameTexts(n,nm)}</g>${pen}${num}${anc}</g>`;
+}
+function flowSvg(f){ const pts=route(f[0],f[1]); const d='M'+pts.map(p=>p.join(' ')).join(' L');
+  const last=pts[pts.length-1], prev=pts[pts.length-2]; const ang=Math.atan2(last[1]-prev[1],last[0]-prev[0]);
+  const ax=(a)=>[last[0]-9*Math.cos(ang+a),last[1]-9*Math.sin(ang+a)]; const [p1,p2]=[ax(.4),ax(-.4)];
+  let lab=''; if(f[2]){ const p=pts[0], q=pts[1]; const horiz=Math.abs(p[1]-q[1])<2; const lx = horiz ? p[0]+12 : p[0]+6; const ly = horiz ? p[1]-7 : (q[1]>p[1] ? p[1]+17 : p[1]-8); lab=`<text x="${lx}" y="${ly}">${f[2]}</text>`; }
+  return `<g class="fl"><path d="${d}"/><path d="M${last.join(' ')} L${p1.join(' ')} L${p2.join(' ')} Z" style="fill:var(--cc-ink);stroke:none"/>${lab}</g>`; }
+function mapSvg(){
+  return `<svg class="map" role="img" aria-label="Figure 1: process map of Emergency purchase approval, 29 elements in 2 parts" viewBox="${X0} ${Y0} ${MAPW} ${MAPH}" preserveAspectRatio="xMinYMin meet">
+  <g class="band"><rect x="0" y="40" width="1400" height="322" rx="8"/><text x="14" y="60">PART 1 · CHECKING THE REQUISITION</text></g>
+  <g class="band"><rect x="0" y="374" width="1400" height="330" rx="8"/><text x="14" y="394">PART 2 · APPROVAL AND ORDER</text></g>
+  <g class="flows">${F.map(flowSvg).join('')}</g><g class="els">${E.map(e=>elSvg(EL[e[0]])).join('')}</g></svg>`;
+}
+
+/* ---------- the steps: the map's 13 tasks, in Analyze's four phases ---------- */
+const STEPS = [
+ {id:'T1', ph:1, a:103,b:121, one:'Checks that the person running it belongs to the purchasing group of the requisition.',
+  dec:[['Not in that purchasing group → the run stops','BR-001','116–120']], fail:[['“No authorization for purchasing group”','120']], reads:[['Purchase requisition','EBAN']], writes:[], gate:'Allowed? No → stops'},
+ {id:'T2', ph:1, a:60,b:75, one:'Reads the requisition item, works out its value in euros and notes whether it is an emergency.',
+  dec:[['Currency other than EUR → converted to EUR','BR-004','69–70'],['Planner “EMG” or need “EMERG…” → an emergency','BR-003','72–74']], fail:[['“Purchase requisition not found”','66']], reads:[['Purchase requisition','EBAN']], writes:[]},
+ {id:'T3', ph:1, a:77,b:98, one:'Rejects a requisition without material, blocked for release, with a blocked material or a wrong account assignment.',
+  dec:[['Material missing or blocked for release → rejected','','78–84'],['Material status 01 or Z9 → rejected','BR-002','277–278'],['Cost centre or internal order not valid → rejected','BR-008','188–203'],['Plant 1000 → no limit check later','BR-007','95–97']], fail:[['“Requisition rejected:” with the reason','233']], reads:[['Material plant data','MARC'],['Cost centre','CSKS']], writes:[], gate:'Complete and valid? No → stops'},
+ {id:'T4', ph:1, a:151,b:167, one:'Reads the fixed vendor and rejects it when it is missing, not set up for purchasing org 1000, or on the company’s own block list.',
+  dec:[['No fixed vendor → rejected','','157'],['Not set up for purchasing org 1000 → rejected','BR-005','165'],['On the block list → rejected','BR-006','222–226']], fail:[['“Vendor is on the block list”','226']], reads:[['Supplier','LFA1'],['Supplier purchasing data','LFM1'],['Vendor block list (own table)','ZMM_VEND_BLOCK']], writes:[], gate:'Vendor allowed? No → stops'},
+ {id:'T5', ph:1, a:303,b:319, one:'Reads the price agreed with the vendor and compares the requisition’s price with it.',
+  dec:[['No agreed price on record → the comparison is skipped','','257–259'],['More than 5 % above the agreed price → on hold','BR-009','315']], fail:[], reads:[['Purchasing info record','EINA'],['Info record purchasing data','EINE']], writes:[], gate:'More than 5 % above? Yes → on hold'},
+ {id:'W1', ph:1, a:237,b:245, one:'Sets the requisition to “on hold” for a buyer and ends the run. It writes straight into SAP’s requisition table.',
+  dec:[], fail:[], reads:[], writes:[['Purchase requisition (status “H”)','EBAN'],['Approval record (own table)','ZMM_PO_APPR']]},
+ {id:'T6a', ph:2, a:356,b:362, one:'For an emergency up to 50,000.00, finds the department head of the cost centre.',
+  dec:[['Emergency and at most 50,000.00 → this step','BR-010','325'],['No department head found → “PURCH_LEAD”','','359–361']], fail:[], reads:[['Department heads (own table)','ZMM_DEPT_HEAD']], writes:[]},
+ {id:'T6b', ph:2, a:282,b:297, one:'Otherwise checks the amount against the release limit and finds the requester’s manager in HR data.',
+  dec:[['Not an emergency, not plant 1000 → this step','BR-011','328–331'],['Above the release limit → said in the message; the run goes on','','293–295']], fail:[], reads:[['Release strategy','T16FS'],['HR communication data','PA0105']], writes:[]},
+ {id:'T7', ph:2, a:400,b:434, one:'Sends the approval request through SAP’s approval workflow.',
+  dec:[['Test run (ticked by default) → the approval is only simulated','BR-012','407–410'],['Department head → counts as approved as soon as it is sent','BR-010','432–433']], fail:[], reads:[], writes:[['Workflow event','SAP_WAPI_CREATE_EVENT']], gate:'Approved? No → ends without an order'},
+ {id:'W2', ph:3, a:475,b:490, one:'Creates the purchase order in SAP through the order interface.',
+  dec:[['The interface returns an error → the order screen is used instead','','486–488']], fail:[], reads:[], writes:[['Purchase order','BAPI_PO_CREATE1']], gate:'Order created? No → order screen'},
+ {id:'W3', ph:3, a:495,b:524, one:'If the interface fails, fills in SAP’s order screen instead.',
+  dec:[], fail:[['“Purchase order could not be created”','520']], reads:[], writes:[['Purchase order','ME21N']]},
+ {id:'T8', ph:3, a:342,b:353, one:'Writes the approval record and sends a notice through a module that an own table names per plant.',
+  dec:[['No set-up for the plant → no notice','','385']], fail:[['“Notification failed” — the run goes on','393']], reads:[['Notification set-up (own table)','ZMM_NOTIFY_CFG']], writes:[['Approval record (own table)','ZMM_PO_APPR']], missing:true},
+ {id:'T9', ph:3, a:540,b:552, one:'Lists requisition, vendor, amount, approver, order and result on screen.',
+  dec:[], fail:[], reads:[], writes:[]},
+];
+const GATE_ELSE = {T1:'otherwise on with step 2', T3:'otherwise on with step 4', T4:'otherwise on with step 5', T5:'otherwise on to the approval, step 7 or 8', T7:'approved: on with step 10', W2:'created: on with step 12'};
+const STEP_OF = Object.fromEntries(STEPS.map((s,i)=>[s.id,i]));
+const PHASES = [
+ {t:'It starts', p:'A person enters the requisition number on an entry screen; a file can be attached. “Test run” is ticked by default.', l:'36–39'},
+ {t:'First it checks', p:'Four checks in order: the person, the requisition, the vendor, the price. Each can stop the case; a price more than 5 % above goes on hold.', l:'42–51'},
+ {t:'Then it gets approval', p:'Emergencies up to 50,000.00 go to the department head, the rest to a manager. Plant 1000 needs no approver.', l:'325–335'},
+ {t:'Then it orders', p:'With approval it creates the purchase order, through the order screen if the interface fails, records it and tells the requester.', l:'475–518'},
+];
+const RULES = [
+ ['Checks', [
+  ['Only the requisition’s purchasing group may approve.','BR-001','116–120'],
+  ['A material with status 01 or Z9 is rejected.','BR-002','277–278'],
+  ['The vendor must be set up for purchasing org 1000.','BR-005','165'],
+  ['A vendor on the own block list is rejected.','BR-006','222–226'],
+  ['A cost centre must be valid today; an order needs its internal order.','BR-008','188–203'],
+ ]],
+ ['Limits', [
+  ['More than 5 % above the agreed price → on hold for a buyer.','BR-009','315'],
+  ['Emergencies up to 50,000.00 → the department head approves.','BR-010','325'],
+  ['Everything else → release limit, then a manager.','BR-011','328–331'],
+ ]],
+ ['How it decides', [
+  ['Planner “EMG” or need “EMERG…” makes it an emergency.','BR-003','72–74'],
+  ['Amounts in other currencies are converted to EUR.','BR-004','69–70'],
+ ]],
+ ['Exceptions', [
+  ['Plant 1000 (central warehouse) is approved without an approver.','BR-007','95–97'],
+  ['A test run, ticked by default, only simulates the approval.','BR-012','407–410'],
+ ]],
+];
+const ENDS = [
+ ['Purchase order created','directly, or through the order screen',2],
+ ['Stopped by a requisition check','material, release block, cost centre …',7],
+ ['Stopped by a vendor check','missing, other purchasing org, block list',3],
+ ['Stopped: no permission','or requisition not found',2],
+ ['On hold for a buyer','price more than 5 % above',1],
+ ['Ends without an order','not approved, or order screen failed',2],
+];
+const CHANGES = [
+ ['Purchase requisition','puts it on hold (status “H”)','240–242','EBAN'],
+ ['Purchase order','creates it','475–518','BAPI_PO_CREATE1 · ME21N'],
+ ['Approval record','its own table, one row per case','342–353','ZMM_PO_APPR'],
+ ['Attachment','its own table, the uploaded file','522–530','ZMM_PO_ATTACH'],
+];
+const WHO = [
+ ['The requester','enters the requisition and gets the result','54'],
+ ['The department head','approves emergencies up to 50,000.00','326–327'],
+ ['A manager','approves the rest, within the release limit; found in HR data','329–331'],
+ ['A buyer','checks requisitions on hold because of the price','239'],
+];
+const RACI = [ // rows: what · [Requester, Dept. head, Manager, Buyer]
+ ['Start the run','step —',['R','','','']],
+ ['The checks','steps 1–5',['I','','','']],
+ ['On hold for the price','step 6',['I','','','R']],
+ ['Approve an emergency','steps 7, 9',['I','R','',''] ],
+ ['Approve the rest','steps 8, 9',['I','','R','']],
+ ['Order and notice','steps 10–13',['I','','','']],
+];
+const QS = [
+ ['The department head’s approval counts as given when the request is sent. So the order is created before anyone approves. Is that intended?','432–434'],
+ ['A test run, ticked by default, still creates a real purchase order. Is that intended?','39, 407–411'],
+ ['Plant 1000 gets no approver at all. Should that stay?','95, 333'],
+ ['Is 5 % above the agreed price still the right limit for a hold?','315'],
+ ['Should emergencies up to 50,000.00 still need only the department head?','325'],
+ ['What do the two missing parts do: the message to the requester and the log?','363, 396'],
+];
+const QS_IT = [
+ ['Add the two includes that are not in the upload.','363, 396'],
+ ['Which module sends the notice? Its name is read from a table at run time.','383–386'],
+ ['How often does it run, by whom, for which plants? Add usage data.',''],
+ ['Which findings does SAP’s code check (ATC) report? Add the results.',''],
+];
+const RISKS = [
+ ['Orders before approval','emergency orders are created before anyone approves','432–433'],
+ ['Real orders from test runs','the test switch is on by default','39, 407–411'],
+ ['A hard-coded limit','changing the 5 % needs a developer','315'],
+];
+
+/* ---------------- state ---------------- */
+const STATES = [
+ ['open','1 · First screen','One page for every reader (owner, 15.11.2026); the header shows a quiet note where other tools have the view switch. The first screen is enough for a manager: what it does, what needs a decision, the four numbers, ready to hand over. Below, the document itself in the order of the Word file.'],
+ ['step','2 · A step opened','Click a step in the list or on the map: ADR-107’s step page opens in place, the step is marked on Figure 1. The technical name and the code are there on a click — for the developer, out of everyone else’s way.'],
+ ['done','3 · Exported','Word saved. The file has the same chapters in the same order as this page, Figure 1 included, and an empty, labelled place for owner, approval and version.'],
+ ['building','4 · Reading the code','First seconds: one status line; the answer and the numbers fill in place. No model, nothing sent.'],
+ ['empty','5 · No analysis yet','Nothing to document: one sentence, one action.'],
+];
+const VIEWS = [['business','Business'],['it','IT'],['management','Management']];
+const M = { s:'open', v:'business', step:4, open:false, rulesAll:false };
+function readHash(){ const h=new URLSearchParams(location.hash.slice(1)); if(h.get('s')) M.s=h.get('s'); if(h.get('step')) M.step=+h.get('step'); if(h.get('embed')) document.body.classList.add('embed'); M.open = M.s==='step'; if(h.get('panel')) setTimeout(()=>openPanel(h.get('panel')),0); }
+
+/* ---------------- shell + header ---------------- */
+function shell(){
+  return `<header class="shell">
+  <a class="logo" href="#" aria-label="Clean-Core.io, My workspace">
+    <span class="lg"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span>
+    <span><span class="n">Clean-Core<em>.io</em></span><span class="s">Free Community Edition</span></span>
+  </a>
+  <nav class="path" aria-label="Breadcrumb"><span>My workspace</span><span>›</span><span id="crumb">Emergency purchase approval</span><span>›</span><span class="cur">Documentation</span></nav>
+  <div class="shell-r">
+    <button class="ib" type="button" aria-label="Help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+    <span class="av" aria-label="Account menu">MW</span>
+  </div>
+</header>`;
+}
+function head(){
+  const ready = M.s!=='empty';
+  const tools = [['Analyze',1],['Economics',ready],['Design',ready],['Transformation',ready],['Documentation',0],['Testing',0],['Delivery',0]];  // owner 15.11.2026: Economics before Design
+  const lead = 'The process description of this program, read from its code — for the business, the manager and the developer alike, and ready for your own standard.';
+  const ck = '<svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>';
+  return `<div class="headrow">
+      <a class="back" href="#"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg><span id="backtxt">My workspace · Emergency purchase approval</span></a>
+      <div class="vs"><span class="vsnote" role="note"><svg class="i s" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.85"/></svg>One page for every reader — business, IT and management</span></div>
+    </div>
+    <nav class="tools" aria-label="Tools"><span class="k">Tools</span>${tools.map(([t,d])=>`<a class="tool${t==='Documentation'?' cur':''}" href="#"${t==='Documentation'?' aria-current="page"':''}>${d?ck:''}${t}</a>`).join('')}
+      <span class="legend"><span><svg class="i s" viewBox="0 0 24 24" style="color:var(--cc-success)"><path d="M20 6 9 17l-5-5"/></svg>done</span><span><svg class="half" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 1.25 A4.75 4.75 0 0 0 6 10.75 Z" fill="currentColor"/></svg>started</span><span><i class="od"></i>out of date</span></span></nav>
+    <div class="sh"><div class="eyebrow">${ic('book')}<span>Tool · Documentation</span></div>
+      <h1 data-stage-title>Emergency purchase approval</h1>
+      <p class="pid" id="eyename">Z_MM_PO_APPROVAL</p><p class="lead">${lead}</p></div>`;
+}
+
+/* ---------------- the answer + export ---------------- */
+const SUMMARY = 'It handles urgent purchases: it checks an emergency purchase requisition, gets it approved and creates the purchase order in SAP. If the price is more than 5 % above the agreed price, the requisition goes on hold for a buyer.';
+function exportCol(){
+  const fmts = [['conf','Confluence','a page to paste'],['md','Markdown','for a wiki or repo'],['print','Print / PDF','from the browser'],['flow','BPMN 2.0','for SAP Signavio']];
+  return `<div class="next xp" id="export" tabindex="-1">
+    <div class="ready">${ic('check')}<span><b>Ready to hand over</b> as a description of today’s program. The six open questions go into the file with it.</span></div>
+    <button class="btn primary lg" data-dl="Word">${ic('dl')}Export as Word (.docx)</button>
+    <div class="fmts">${fmts.map(([i,n,d])=>`<button class="fmt" data-dl="${n}">${ic(i)}<span>${n}<small>${d}</small></span></button>`).join('')}</div>
+    ${M.s==='done'?`<p class="done" role="status">${ic('check')}<span>Saved: Z_MM_PO_APPROVAL-process-description.docx<br><span style="font-weight:500;color:var(--cc-ink-muted)">The 7 chapters of this page, Figure 1, the appendix.</span></span></p>`:''}
+    <p class="yours">Every format is the complete document: this page’s 7 chapters in the same order, Figure 1 and the appendix. <b>Left to your own standard:</b> owner, approval, version — an empty, labelled place in the file.</p>
+  </div>`;
+}
+function hero(){
+  return `<section class="card ophead" aria-labelledby="ans-h" id="in-short">
+    <div class="ans">
+      <div>
+        <h2 class="q" id="ans-h">Emergency purchase approval · Process description · read from the code</h2>
+        <p class="a">${SUMMARY}</p>
+        <dl class="facts3">
+          <div><dt>Starts</dt><dd>A person runs it for one requisition from an entry screen ${A('41')}</dd></div>
+          <div><dt>Ends</dt><dd>A purchase order and a result list ${A('55')}, or one of five early ends</dd></div>
+          <div class="dec"><dt>Needs a decision</dt><dd>Orders are created before the department head approves ${A('432–433')}, and a test run creates real orders ${A('39')}</dd></div>
+        </dl>
+        <p class="src"><span class="tech" style="white-space:normal">Z_MM_PO_APPROVAL · 552 lines · signed run 7f3a… of 12 Nov 2026</span><span class="hide-s">·</span><span>Wording checked against the code, the same as in Analyze</span>${chip.rec()}</p>
+      </div>
+      ${exportCol()}
+    </div>
+    ${counts()}
+  </section>`;
+}
+function counts(){
+  const tiles = [
+    ['ch-1','Steps','13','in 4 phases · 7 decision points',[1,1,1,1],'Reconstructed'],
+    ['ch-3','Ways a case ends','17','2 end with a purchase order; 15 stop or hold',[1,0,0,0,0,0,0,0],'Reconstructed'],
+    ['ch-2','Business rules','12','3 values decide: 5 %, 50,000.00, release limit',[1,1,1,0],'Reconstructed'],
+    ['ch-7','Questions open','6','2 parts of the program are not in the upload',['w','w','w','w','w','w'],'Not determined'],
+  ];
+  return `<div class="facets" aria-label="What the description holds">${tiles.map(([to,l,v,d,bar,src])=>`<button class="facet" type="button" data-jump="${to}">
+      <span class="t">${l}</span><span class="v" style="display:block">${v}</span><span class="n" style="display:block">${d}</span>
+      <span class="chips">${src==='Not determined'?chip.nd('Not determined'):chip.rec('Reconstructed')}<span>chapter ${to.slice(3)}</span></span>
+    </button>`).join('')}</div>
+    <p class="countsrc xs muted">Counted from the signed run — the same counts Analyze shows. <span class="mtag">mock-up: figures as in the Analyze v4 mock-up</span></p>`;
+}
+
+/* ---------------- on this page ---------------- */
+/* at most six items, in page order, in a business reader's words; sections without their own item light the nearest one */
+const NAV = [['ch-1','Process'],['ch-2','Rules'],['ch-3','Early ends'],['ch-4','Changes'],['ch-6','Roles'],['ch-7','Questions',6]];
+const NAV_OF = {'in-short':null,'ch-1':'ch-1','ch-2':'ch-2','ch-3':'ch-3','ch-4':'ch-4','ch-5':'ch-4','ch-6':'ch-6','ch-7':'ch-7','apx':'ch-7'};
+function abar(){
+  return `<nav class="pab" aria-label="On this page" id="abar"><span class="pab-l">On this page</span>
+    <div class="pab-items">${NAV.map(([id,t,c])=>`<a href="#${id}" data-jump="${id}">${t}${c?`<span class="pab-c ${id==='ch-7'?'o':''}">${c}</span>`:''}</a>`).join('')}</div>
+    <button class="btn primary sm pab-act" type="button" data-jump="export">${ic('dl','s')}Export</button></nav>`;
+}
+
+/* ---------------- chapter 1: how it works ---------------- */
+function stepRow(i){
+  const s=STEPS[i], n=EL[s.id];
+  return `<li><button class="st ${M.open&&M.step===i?'on':''}" data-step="${i}" aria-expanded="${M.open&&M.step===i}"><span class="n">${i+1}</span><span class="t">${esc(n.name)}</span><span class="a">line ${n.line}</span></button>${s.gate?`<span class="gate"><i></i>${esc(s.gate)}</span>`:''}${M.open&&M.step===i?`<div class="inl">${stepPage('-i')}</div>`:''}</li>`;
+}
+function phases(){
+  return `<div class="phases">${PHASES.map((p,k)=>{
+    const idx = STEPS.map((s,i)=>[s,i]).filter(([s])=>s.ph===k).map(([,i])=>i);
+    const list = k===0 ? `<li><span class="st ev0"><span class="n">▸</span><span class="t">Someone starts it from the entry screen</span><span class="a">line 41</span></span></li>` : idx.map(stepRow).join('');
+    return `<div class="ph"><div class="pt"><span class="k">Phase ${k+1}</span></div><h3>${p.t}</h3><p class="pp">${p.p} ${A(p.l)}</p><ol>${list}</ol></div>`;
+  }).join('')}</div>`;
+}
+function objList(arr,w){ if(!arr.length) return `<span class="none">Nothing.</span>`; return `<span class="objs">${arr.map(([n,t])=>`<span class="obj ${w?'w':''}">${w?ic('edit','s'):ic('db','s')}${esc(n)}${T(t)}</span>`).join('')}</span>`; }
+function stepPage(sx=''){
+  if (!M.open) return '';
+  const s = STEPS[M.step], n = EL[s.id], it = false;
+  const decs = s.dec.length ? `<ul>${s.dec.map(([t,br,l])=>`<li>${esc(t)} ${br?BR(br):''}${A(l)}</li>`).join('')}</ul>` : `<span class="none">No decision in this step.</span>`;
+  const fails = s.fail.length ? `<ul>${s.fail.map(([t,l])=>`<li>${esc(t)} ${A(l)}</li>`).join('')}</ul>` : `<span class="none">No early end here.</span>`;
+  const max = it?17:11, shown = Math.min(s.b, s.a+max);
+  return `<article class="stepd" aria-labelledby="sp-h${sx}">
+    <div class="top"><div><div class="pos">Step ${M.step+1} of 13 · Phase ${s.ph+1}, ${PHASES[s.ph].t.toLowerCase()} · ${A(n.line)}</div><h3 id="sp-h${sx}">${esc(n.name)}</h3></div>
+      <div class="pn"><button class="btn ghost sm" data-step="${Math.max(0,M.step-1)}" ${M.step===0?'disabled':''} aria-label="Previous step">${ic('left')}</button><button class="btn ghost sm" data-step="${Math.min(12,M.step+1)}" ${M.step===12?'disabled':''} aria-label="Next step"><span class="w">Next</span>${ic('right')}</button><button class="btn ghost sm" data-close-step aria-label="Close the step">Close</button></div></div>
+    <p class="one">${esc(s.one)}</p>
+    <div class="facts">
+      <div class="fr"><span class="fk">◇ Decides</span>${decs}</div>
+      <div class="fr"><span class="fk">${ic('stop','s')}Stops when</span>${fails}</div>
+      <div class="fr"><span class="fk">${ic('reads','s')}Reads</span>${objList(s.reads,false)}</div>
+      <div class="fr"><span class="fk">${ic('edit','s')}Changes</span>${objList(s.writes,true)}</div>
+    </div>
+    ${s.missing?`<div class="strip">${ic('info')}<span>Two parts of this step are not in the upload: the notice and the log ${A('363')}${A('396')}. What they do is <b>not determined</b> — question 6.</span></div>`:''}
+    ${s.gate?`<div class="strip">${ic('info')}<span>After this step: <b>${esc(s.gate.split('?')[0])}?</b> ${esc(s.gate.split('?')[1].trim())}; ${GATE_ELSE[s.id]}.</span></div>`:''}
+    <details class="fold" ${it?'open':''}><summary>${ic('right','chev')}${ic('code','s')}For developers: the code<span class="r"><span class="tech">${esc(n.eng)}</span> · lines ${s.a}–${s.b}</span></summary><div class="fin">${codeBlock(s.a, shown)}${s.b>shown?`<p class="xs muted" style="margin-top:6px">${s.b-shown} more lines in the appendix and in Analyze.</p>`:''}</div></details>
+  </article>`;
+}
+function ch1(){
+  return `<section class="card chap" id="ch-1" aria-labelledby="ch1-h">
+    <div class="hd"><span class="no">1</span><h2 id="ch1-h">How the process works</h2>${chip.rec()}<span class="r"><a class="lnk q" href="#">${ic('map','s')}Open the map in Analyze</a></span></div>
+    <p class="lede">The same map as in Analyze and the same picture as in the Word file. <b>Select a step</b> — on the map or in the list — to read what it decides, reads and changes.</p>
+    <div class="fig">${mapSvg()}</div>
+    <p class="figcap wide"><b>Figure 1</b> · Emergency purchase approval · 29 elements in 2 parts · ${ic('pen','s')} names AI-generated in Analyze, checked against the code; 3 kept their technical name</p>
+    <p class="figphone">${ic('map','s')}<span>Figure 1, the process map, is in every export and in Analyze. On a phone the steps read as a list.</span></p>
+    ${phases()}
+    <div class="bot">${stepPage()}</div>
+    <div class="foot" style="margin-top:14px">${chip.nd()}<span>Who carries out each step is not provable from the code — see chapter 6.</span></div>
+  </section>`;
+}
+
+/* ---------------- chapters 2–4 ---------------- */
+function ch2(){
+  let k=0;
+  const lim = M.rulesAll ? 99 : 7;
+  const rows = RULES.map(([g,rs])=>`<li class="g ${k>=lim?'more':''}">${g} · ${rs.length}</li>`+rs.map(([t,br,l])=>{ k++; return `<li class="${k>lim?'more':''}"><span>${esc(t)}</span><span class="e">${BR(br)}${A(l)}</span></li>`; }).join('')).join('');
+  return `<section class="card chap" id="ch-2" aria-labelledby="ch2-h">
+    <div class="hd"><span class="no">2</span><h2 id="ch2-h">Business rules and decision points</h2></div>
+    <p class="lede">12 rules decide the outcome; three values matter most: <b>5 %</b>, <b>50,000.00</b> and the release limit.</p>
+    <div class="in"><ul class="rules ${M.rulesAll?'all':''}">${rows}</ul>
+      ${M.rulesAll?'':`<button class="lnk" style="margin-top:8px" data-rules>Show all 12 rules</button>`}
+      <p class="xs muted" style="margin-top:10px;line-height:1.5">${ic('shield','s')} Also enforced: every outcome is written to an approval record ${A('342–353')}.</p></div>
+    <div class="foot">${chip.rec()}<span>Read from the conditions</span>${ILL}</div>
+  </section>`;
+}
+function ch3(){
+  const max = Math.max(...ENDS.map(e=>e[2]));
+  return `<section class="card chap" id="ch-3" aria-labelledby="ch3-h">
+    <div class="hd"><span class="no">3</span><h2 id="ch3-h">When a case stops</h2></div>
+    <p class="lede"><b>2 of 17 ways</b> end with a purchase order. The other 15 stop with the program’s own message, or hold the case.</p>
+    <div class="in"><ul class="bars">${ENDS.map(([t,s,n])=>`<li><span class="t">${t}<small>${s}</small></span><span class="b" style="width:${Math.round(n/max*100)}%"></span><span class="n">${n}</span></li>`).join('')}</ul>
+      ${`<p class="sub">Problems that do not stop the run</p>
+      <ul class="plain"><li>${ic('warn','s')}<span>No exchange rate — the amount stays in its currency ${A('199')}</span></li><li>${ic('warn','s')}<span>The attachment cannot be read ${A('142')}</span></li><li>${ic('warn','s')}<span>The notice fails ${A('393')}</span></li></ul>`}</div>
+    <div class="foot">${chip.rec()}<span>Counted from the branches and messages</span>${ILL}</div>
+  </section>`;
+}
+function ch4(){
+  return `<section class="card chap" id="ch-4" aria-labelledby="ch4-h">
+    <div class="hd"><span class="no">4</span><h2 id="ch4-h">What it changes</h2></div>
+    <p class="lede">It changes <b>4 kinds of records</b> and only reads 8, including HR data.</p>
+    <div class="in"><ul class="chg">${CHANGES.map(([n,s,l,t])=>`<li><span><b>${n}</b><small>${s}${T(t)}</small></span><span class="w">changes ${A(l)}</span></li>`).join('')}</ul>
+      <p class="sm muted" style="margin-top:10px;line-height:1.5"><b style="color:var(--cc-ink)">Only reads:</b> vendor, agreed price, material in the plant, cost centre, release limits, HR data (to find the manager), department heads, notice settings.</p>
+      ${`<p class="strip" style="background:var(--cc-warning-bg);border-color:var(--cc-warning-border)">${ic('warn')}<span>Saved in three places, not in one step ${A('243')}${A('428')}${A('490')} — a failure in between leaves a half-done case.</span></p>`}</div>
+    <div class="foot">${chip.rec()}<span>From the program’s reads and writes</span></div>
+  </section>`;
+}
+
+/* ---------------- chapter 5: systems and data ---------------- */
+function ch5(){
+  const table = `<table class="systab tbl-stack"><thead><tr><th>Kind</th><th>Objects</th><th>Lines</th></tr></thead><tbody>
+    <tr><td>Reads (12)</td><td class="tech" style="white-space:normal">EBAN, LFA1, LFM1, EINA, EINE, MARC, CSKS, T16FS, PA0105, ZMM_VEND_BLOCK, ZMM_DEPT_HEAD, ZMM_NOTIFY_CFG</td><td>${A('60–386')}</td></tr>
+    <tr><td>Changes (3 tables)</td><td class="tech" style="white-space:normal">EBAN (UPDATE), ZMM_PO_APPR (INSERT), ZMM_PO_ATTACH (INSERT)</td><td>${A('240')}${A('352')}${A('527')}</td></tr>
+    <tr><td>Calls (7)</td><td class="tech" style="white-space:normal">BAPI_PO_CREATE1, BAPI_TRANSACTION_COMMIT, SAP_WAPI_CREATE_EVENT, CALL TRANSACTION ME21N, GUI_UPLOAD, CONVERT_TO_LOCAL_CURRENCY, dynamic module from ZMM_NOTIFY_CFG</td><td>${A('130–488')}</td></tr>
+    <tr><td>Commits (3)</td><td class="tech">COMMIT WORK ×2, BAPI_TRANSACTION_COMMIT</td><td>${A('243')}${A('428')}${A('490')}</td></tr>
+    <tr><td>Not in the upload (2)</td><td class="tech">INCLUDE z_mm_po_notify, INCLUDE z_mm_po_log</td><td>${A('363')}${A('396')}</td></tr></tbody></table>`;
+  return `<section class="card chap" id="ch-5" aria-labelledby="ch5-h">
+    <div class="hd"><span class="no">5</span><h2 id="ch5-h">Systems and data</h2>${chip.rec()}</div>
+    <p class="lede">Reads <b>12 tables</b>, 3 of them the company’s own; calls <b>7 interfaces</b>, among them SAP’s approval workflow and order screen; saves in <b>3 places</b>. Two parts of the program were not uploaded ${A('363')}${A('396')}.</p>
+    <div class="in" style="padding-top:4px"><details class="fold" style="margin-top:4px"><summary>${ic('right','chev')}${ic('db','s')}Every table, call and commit, by technical name<span class="r">24 objects</span></summary><div class="fin">${table}</div></details></div>
+  </section>`;
+}
+
+/* ---------------- chapters 6–7 ---------------- */
+function ch6(){
+  const cols = ['Starts','Checks','On hold','Approves','Orders'];
+  // per role: what the code shows (reconstructed), line; proposal letters per part (AI)
+  const rows = [
+    ['The requester','enters the requisition, gets the result','54',['R','I','I','I','I']],
+    ['The department head','approves emergencies up to 50,000.00','326–327',['','','','R','']],
+    ['A manager','approves the rest, within the release limit','329–331',['','','','R','']],
+    ['A buyer','checks requisitions on hold for the price','239',['','','R','','']],
+  ];
+  return `<section class="card chap" id="ch-6" aria-labelledby="ch6-h">
+    <div class="hd"><span class="no">6</span><h2 id="ch6-h">Who does what</h2></div>
+    <p class="lede">Four roles appear in the code ${chip.rec()}. Who does which part is a <b>proposal</b> ${chip.ai()} for the business to confirm; who answers for the whole process is not in the code ${chip.nd()}.</p>
+    <div class="in"><div style="overflow-x:auto"><table class="raci tbl-stack"><thead><tr><th>Role, from the code</th>${cols.map(r=>`<th>${r}</th>`).join('')}</tr></thead><tbody>
+      ${rows.map(([n,t,l,ls])=>`<tr><td><b>${n}</b><small>${t} ${A(l)}</small></td>${ls.map(x=>`<td>${x?`<span class="L ${x}" aria-label="${{R:'Does it',A:'Answers for it',C:'Is asked',I:'Is told'}[x]}">${x}</span>`:''}</td>`).join('')}</tr>`).join('')}
+      </tbody></table></div>
+      <div class="legend"><span><span class="L R">R</span>does it</span><span><span class="L I">I</span>is told</span><span>Accountable (A): left to your own standard</span></div>
+    </div>
+  </section>`;
+}
+function ch7(){
+  const bq = QS.map(([q,l],i)=>`<li><span class="qn">${i+1}</span><span>${esc(q)} ${A(l)}</span></li>`).join('');
+  const iq = QS_IT.map(([q,l],i)=>`<li class="it"><span class="qn">${String.fromCharCode(65+i)}</span><span>${esc(q)} ${l?A(l):''}</span></li>`).join('');
+  return `<section class="card chap" id="ch-7" aria-labelledby="ch7-h">
+    <div class="hd"><span class="no">7</span><h2 id="ch7-h">Open questions</h2>${chip.nd()}<span class="r"><a class="lnk q" href="#">Answer them in the project’s list ${ic('right','s')}</a></span></div>
+    <p class="lede">Six questions the code cannot answer, for the process owner — the same six, in the same words, as in Analyze.</p>
+    <div class="in">
+      <ul class="qs">${bq}</ul>
+      <details class="fold"><summary>${ic('right','chev')}${ic('code','s')}Four more for IT<span class="r">includes, call target, usage, ATC</span></summary><div class="fin"><ul class="qs">${iq}</ul></div></details>
+      <p class="limits">${ic('info','s')}<span>Limits of this reading: list output and code built at run time are not read. Everything else on this page is.</span></p>
+    </div>
+  </section>`;
+}
+
+/* ---------------- appendix ---------------- */
+function apx(){
+  const folds = [
+    ['Step details','13','Each step’s full reading: sub-steps, decision points with the condition as written, data.'],
+    ['Complete tables','5','Rules (12), exceptions (18), outputs, data read, integrations — every row.'],
+    ['The code’s own wording','24','Every shortened line beside the sentence the code reading wrote.'],
+    ['Element table','29','Every element of Figure 1 with its lines; sub-process elements below it.'],
+    ['Statements by routine','152','Every statement the engine read, once, grouped by routine.'],
+    ['Questions about the requirements','9','With their source ids and why the code cannot answer them.'],
+    ['Revisions of this process','1','What was kept, and what changed between two readings.'],
+    ['Level D register','2','Modifications and level D enhancements, with the guideline’s three questions.'],
+  ];
+  return `<section class="card chap apx" id="apx" aria-labelledby="apx-h">
+    <div class="hd"><span class="no">Appendix</span><h2 id="apx-h">Details and evidence</h2><span class="r xs muted">printed as the appendix of every file</span></div>
+    <p class="lede">Each sentence once, with its lines. Nothing here is new — the chapters above are made from it. ${ILL}</p>
+    <div class="in"><div class="grid">${folds.map(([t,c,d],i)=>`<details class="fold" ><summary>${ic('right','chev')}${t}<span class="r">${c}</span></summary><div class="fin sm muted">${d}</div></details>`).join('')}</div>
+      <details class="fold"><summary>${ic('right','chev')}Read again from the code<span class="r">no model call</span></summary><div class="fin sm muted">Only when the analysis has a newer signed run. The description is written again from it; nothing of yours is lost, because nothing here is yours.</div></details></div>
+  </section>`;
+}
+function ending(){
+  return `<div class="end">
+    <div class="card"><h3>That is the whole description.</h3><p>Seven chapters and the appendix — exactly what the file carries.</p><div class="acts"><button class="btn primary" data-dl="Word">${ic('dl')}Export as Word</button><button class="lnk q" data-jump="export">Other formats</button></div></div>
+    <div class="card"><h3>Next tool: Testing</h3><p>Prepares test cases that show the new version does the same job — from the same rules and early ends as chapters 2 and 3.</p><div class="acts"><a class="btn secondary" href="#">Open Testing ${ic('right','s')}</a></div></div>
+  </div>`;
+}
+
+/* ---------------- building / empty ---------------- */
+function building(){
+  return `<div class="status" role="status"><span class="dotx"></span><span>Reading the process from the code</span><span class="bar"><i style="width:55%"></i></span><span class="s2">0:01 · no model, nothing is sent</span></div>
+    <section class="card ophead"><div class="ans"><div><h2 class="q">Emergency purchase approval · Process description · read from the code</h2><p class="prog">Z_MM_PO_APPROVAL · 552 lines</p>
+      <div style="margin-top:14px;display:grid;gap:8px;max-width:760px"><span class="wait" style="width:92%"></span><span class="wait" style="width:70%"></span></div></div>
+      <div class="next xp"><h3 class="h3" style="font-size:14px;font-weight:700">Take it into your own standard</h3><p class="p">Export opens when the description is written.</p><button class="btn primary lg" disabled>${ic('dl')}Export as Word (.docx)</button></div></div>
+    <div class="facets">${['Steps','Ways a case ends','Business rules','Questions open'].map(l=>`<div class="facet"><span class="t">${l}</span><div style="margin-top:12px"><span class="wait" style="width:40%;height:22px"></span></div><div style="margin-top:10px"><span class="wait" style="width:80%"></span></div></div>`).join('')}</div></section>`;
+}
+function empty(){
+  return `<section class="card empty" aria-labelledby="em-h">
+    <h2 id="em-h">Nothing to document yet</h2>
+    <p>The description is read from exactly the code an analysis has signed. This project has no such run yet.</p>
+    <ul><li>${ic('check')}What the program does, in the steps and names of Analyze’s map</li><li>${ic('check')}Its rules, early ends and the data it changes, each with its lines</li><li>${ic('check')}A file for your own standard: Word, Confluence, Markdown, PDF, BPMN</li></ul>
+    <div class="acts"><a class="btn primary lg" href="#">Open Analyze${ic('right')}</a><span class="sm muted">No model call. It is written when you open this tool after the analysis.</span></div>
+  </section>`;
+}
+
+/* ---------------- render ---------------- */
+function body(){
+  if (M.s==='empty') return empty();
+  if (M.s==='building') return building();
+  return hero()+abar()+ch1()+`<div class="row3">${ch2()}${ch3()}${ch4()}</div>`+ch5()+`<div class="row2">${ch6()}${ch7()}</div>`+apx()+ending();
+}
+function mockbar(){
+  const st = STATES.find(x=>x[0]===M.s) || STATES[0];
+  return `<b>State</b>${STATES.map(([k,t])=>`<button type="button" class="${M.s===k?'on':''}" data-ms="${k}">${t}</button>`).join('')}<span class="sp"><button type="button" data-open="p-today">Today, measured</button><button type="button" data-open="p-adr">Against ADR-107</button><button type="button" data-open="p-owner">For the owner</button></span><span class="d">${st[2]}</span>`;
+}
+let io=null;
+function render(){
+  document.getElementById('mock').innerHTML = mockbar();
+  document.getElementById('app').innerHTML = shell()+`<main class="frame">${head()}${body()}</main>`;
+  const h = `s=${M.s}${M.open?'&step='+M.step:''}${document.body.classList.contains('embed')?'&embed=1':''}`;
+  history.replaceState(null,'','#'+h);
+  watch();
+}
+function watch(){
+  const bar = document.getElementById('abar'); if (!bar) return;
+  const mark = ()=>{
+    const lim = (parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--mock-h'))||0) + 120;
+    let id = null, best = -1e9; Object.keys(NAV_OF).forEach(k=>{ const el=document.getElementById(k); if (!el) return; const t=el.getBoundingClientRect().top; if (t <= lim && t > best + 1) { id = k; best = t; } });  // side-by-side cards: the first one wins
+    const cur = (id && NAV_OF[id]) || NAV[0][0];
+    bar.querySelectorAll('.pab-items a').forEach(a=>{ if (a.dataset.jump===cur) { if (a.getAttribute('aria-current')) return; a.setAttribute('aria-current','true'); const nav=a.parentElement; const l=a.offsetLeft-nav.offsetLeft, r=l+a.offsetWidth; if (l<nav.scrollLeft || r>nav.scrollLeft+nav.clientWidth) nav.scrollTo({left:Math.max(0,l-24),behavior:'smooth'}); } else a.removeAttribute('aria-current'); });
+  };
+  window.removeEventListener('scroll', window.__mark||(()=>{})); window.__mark = mark; window.addEventListener('scroll', mark, {passive:true}); mark();
+}
+function jump(id){ const el=document.getElementById(id); if(!el) return; el.scrollIntoView({block:'start'});
+  if (id==='export') { el.focus({preventScroll:true}); return; }
+  const h = el.querySelector('h2'); if (h) { h.setAttribute('tabindex','-1'); h.focus({preventScroll:true}); } }
+function openPanel(id){ document.querySelectorAll('.drawer').forEach(d=>d.hidden=d.id!==id); document.getElementById('scrim').classList.add('on'); const d=document.getElementById(id); if(d) d.focus(); }
+function closePanels(){ document.querySelectorAll('.drawer').forEach(d=>d.hidden=true); document.getElementById('scrim').classList.remove('on'); }
+document.addEventListener('click', e=>{
+  const p = e.target.closest('[data-open]'); if (p) return openPanel(p.dataset.open);
+  if (e.target.closest('[data-close]') || e.target.id==='scrim') return closePanels();
+  const t = e.target.closest('[data-ms],[data-step],[data-dl],[data-jump],[data-rules],[data-close-step]');
+  if (!t) return;
+  if (t.dataset.ms){ M.s=t.dataset.ms; M.open = M.s==='step'; render(); window.scrollTo(0,0); if(M.open) setTimeout(()=>jump('ch-1'),50); return; }
+  if (t.dataset.step!==undefined){ e.preventDefault(); const y=window.scrollY; M.step=+t.dataset.step; M.open=true; if(M.s==='open'||M.s==='done') M.s='step'; render(); window.scrollTo(0,y); return; }
+  if (t.hasAttribute('data-close-step')){ const y=window.scrollY; M.open=false; M.s='open'; render(); window.scrollTo(0,y); return; }
+  if (t.dataset.dl){ const y=window.scrollY; M.s='done'; M.open=false; render(); window.scrollTo(0,y); return; }
+  if (t.hasAttribute('data-rules')){ const y=window.scrollY; M.rulesAll=true; render(); window.scrollTo(0,y); return; }
+  if (t.dataset.jump){ e.preventDefault(); return jump(t.dataset.jump); }
+});
+document.addEventListener('keydown', e=>{
+  if (e.key==='Escape') closePanels();
+  const g = e.target.closest && e.target.closest('g.el.step');
+  if (g && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); g.dispatchEvent(new MouseEvent('click',{bubbles:true})); }
+});
+readHash(); render();
+</script>
+<script>
+/* ONE FAMILY (15.11.2026) — byte-identical in the six tool mock-ups.
+   Measures the sticky mock-up bar into --mock-h (0 when it is not sticky),
+   hides "On this page" when a page has one section, keeps the tool bar
+   and the section bar to one row (fade while more
+   items wait to the right, the current tool in view) and labels the cells of stacking tables. */
+(function(){
+  var root=document.documentElement, raf=0;
+  function mockH(){var m=document.querySelector('.mock');var on=m&&getComputedStyle(m).position==='sticky'&&getComputedStyle(m).display!=='none';root.style.setProperty('--mock-h',(on?m.offsetHeight:0)+'px');}
+  function edges(el){el.classList.toggle('start',el.scrollLeft<=1);el.classList.toggle('end',el.scrollLeft+el.clientWidth>=el.scrollWidth-2);}
+  function fade(el){var ovf=el.scrollWidth>el.clientWidth+1;el.classList.toggle('ovf',ovf);edges(el);
+    if(!el.dataset.wired){el.dataset.wired='1';el.addEventListener('scroll',function(){edges(el);},{passive:true});}return ovf;}
+  function tools(first){document.querySelectorAll('.tools').forEach(function(t){
+    if(!t.dataset.wired)first=true;
+    t.querySelectorAll('.tool .ck').forEach(function(x){x.setAttribute('aria-label','done');if(!x.querySelector('title'))x.insertAdjacentHTML('afterbegin','<title>done</title>');});
+    t.querySelectorAll('.tool .od').forEach(function(x){x.title='out of date';});
+    t.classList.remove('nolegend');if(t.scrollWidth>t.clientWidth+1&&t.querySelector('.legend'))t.classList.add('nolegend');
+    var ovf=fade(t);
+    if(first&&ovf){var c=t.querySelector('.tool.cur');if(c){var l=c.offsetLeft-t.offsetLeft,r=l+c.offsetWidth;if(r>t.clientWidth-48){t.scrollLeft=r-t.clientWidth+64;edges(t);}}}
+  });document.querySelectorAll('.pab-items').forEach(fade);
+    document.querySelectorAll('.pab').forEach(function(p){p.classList.toggle('single',p.querySelectorAll('.pab-items a').length<2);});}
+  function labels(){document.querySelectorAll('table.tbl-stack').forEach(function(tb){var hr=tb.querySelector('thead tr')||tb.querySelector('tr');if(!hr||!hr.querySelector('th'))return;var hs=[].map.call(hr.children,function(h){return h.textContent.trim();});tb.querySelectorAll('tr').forEach(function(tr){if(tr===hr)return;[].forEach.call(tr.children,function(td,i){if(hs[i]&&td.tagName==='TD'&&!td.hasAttribute('data-label'))td.setAttribute('data-label',hs[i]);});});});}
+  function all(first){mockH();tools(first);labels();}
+  function soon(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;all(false);});}
+  addEventListener('resize',soon);
+  addEventListener('load',function(){all(true);});
+  if(window.ResizeObserver){var m=document.querySelector('.mock');if(m)new ResizeObserver(soon).observe(m);}
+  new MutationObserver(soon).observe(document.body,{childList:true,subtree:true});
+  all(true);
+})();
+</script>
+</body>
+</html>

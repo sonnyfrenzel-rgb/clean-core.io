@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analyze · in the family</title>
+<style>
+/* =====================================================================
+   Mock-up, not product code. Analyze in the family shell (15.11.2026).
+   Owner, 15.11.2026: "alles muss aus einem Guss sein". Analyze, the first
+   tool, gets the shell the six other tool mock-ups share (the ONE FAMILY
+   block at the end of this <style>, byte-identical). Content unchanged in
+   substance:
+   - Business = today's Analyze in the Business view (3.1.0/3.2.0, after
+     docs/roadmap/analyze-business-first-mockup.html v4): what the program
+     does, the map, two charts, the text around the map, the endings.
+   - IT = today's score page (ADR-093) with the v4 IT additions (AB-9).
+   - Management = the v4 Management view (AB-10), without person-days:
+     Economics now comes second and prices the options (N1).
+   Content: the shipped demo Z_MM_PO_APPROVAL (synthetic, 552 lines; the
+   source below is that file). Engine figures from lib/demo-release.json
+   (score 40, 26 findings, In-App (ABAP Cloud), 7 constructs not
+   determined); levels as the Design mock-up computed them. Figures marked
+   "mock-up: figures illustrative" are not computed here.
+   ===================================================================== */
+*{box-sizing:border-box}
+p{margin:0}h1,h2,h3,h4{margin:0}ul,ol{margin:0;padding:0;list-style:none}
+button{font-family:inherit;cursor:pointer;color:inherit}
+a{color:inherit}
+.muted{color:var(--cc-ink-muted)}
+.xs{font-size:12px}.sm{font-size:13px}
+.k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.mono{font-family:var(--mono)}
+.anc{display:inline-flex;align-items:center;font-family:var(--mono);font-size:11px;font-weight:500;line-height:16px;color:var(--cc-ink-muted);border:1px solid var(--cc-line);background:#fff;border-radius:4px;padding:0 5px;white-space:nowrap;cursor:pointer;margin-left:4px;vertical-align:1px}
+.anc:hover{border-color:var(--cc-field-border);color:var(--cc-ink)}
+
+/* drawers (owner panel) — content styles */
+.drawer p+p{margin-top:6px}
+.drawer ul.b{list-style:disc;padding-left:18px}
+.drawer ul.b li{margin:3px 0}
+.drawer table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.drawer th,.drawer td{text-align:left;vertical-align:top;padding:6px 8px;border-bottom:1px solid var(--cc-line)}
+.drawer th{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--cc-ink-muted);text-transform:uppercase}
+.drawer .rec{font-weight:700;color:var(--cc-brand-strong)}
+.drawer .dec{display:block;border:1px solid var(--cc-line);border-radius:8px;padding:8px 10px;margin:6px 0}
+.drawer .dec>b:first-child{display:block}
+.drawer .dec .w{display:block;font-size:12px;color:var(--cc-ink-muted);margin-top:2px}
+
+/* soft gate strip */
+.strip{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--cc-information-border);border-left:4px solid var(--cc-information);background:var(--cc-information-bg);border-radius:8px;padding:10px 14px;font-size:13px;line-height:1.5;margin-top:14px}
+.strip b{font-weight:700}
+.strip .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;flex:none}
+@media (max-width:720px){.strip{flex-wrap:wrap}.strip .acts{flex:1 1 100%;margin-left:0}}
+
+/* the answer's right column: score and indication */
+.scorebox{border:1px solid var(--cc-line);border-radius:10px;padding:12px 14px;background:var(--cc-surface-muted)}
+.scorebox .fig{display:flex;align-items:baseline;gap:6px}
+.scorebox .fig b{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+.scorebox .fig span{font-size:14px;font-weight:600;color:var(--cc-ink-muted)}
+.scorebox .bandname{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;margin-top:6px}
+.scorebox .bandname i{width:10px;height:10px;border-radius:2px;background:var(--cc-error);display:inline-block}
+.band{position:relative;display:flex;height:8px;border-radius:999px;overflow:visible;margin-top:8px}
+.band span{display:block;height:100%}
+.band span:first-child{border-radius:999px 0 0 999px}.band span:last-child{border-radius:0 999px 999px 0}
+.band .mk{position:absolute;top:-4px;width:3px;height:16px;background:var(--cc-ink);border-radius:2px}
+.scorebox .ticks{position:relative;height:14px;font-size:11px;color:var(--cc-ink-muted);margin-top:4px;font-variant-numeric:tabular-nums}
+.indic{border:1px solid var(--cc-ink);border-radius:10px;padding:12px 14px;background:#fff}
+.indic .opt{font-size:16px;font-weight:800;line-height:1.3;margin-top:4px}
+.indic ul{margin-top:8px}
+.indic li{font-size:12.5px;line-height:1.45;padding:4px 0;border-top:1px solid var(--cc-line)}
+.indic .sub{font-size:12px;color:var(--cc-ink-muted);line-height:1.45;margin-top:6px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.btnrow .btn{flex:1 1 auto}
+.walked{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.sev{display:flex;height:6px;border-radius:999px;overflow:hidden;margin-top:6px;background:#f3f4f6;max-width:220px}
+.sev i{display:block;height:100%}
+
+/* the map */
+.wide>section{margin-bottom:24px}
+.maptools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.maptools .zm{font-size:12px;font-weight:600;color:var(--cc-ink-muted);min-width:40px;text-align:center;font-variant-numeric:tabular-nums}
+.mapgrid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:12px}
+.mapgrid.withcode{grid-template-columns:minmax(0,1fr) 380px}
+.mapwrap{overflow-x:auto;overscroll-behavior-x:contain;border:1px solid var(--cc-line);border-radius:8px;background:#fbfcff}
+.part{padding:10px 12px 4px}
+.part+.part{border-top:1px solid var(--cc-line)}
+.part .pl{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+svg.map{display:block;width:100%;min-width:1120px;height:auto;font-family:var(--sans)}
+svg.map .ed{fill:none;stroke:#4b5563;stroke-width:1.4}
+svg.map .el{font-size:11px;font-weight:600;fill:#374151}
+svg.map .nd{cursor:pointer}
+svg.map .nd rect{fill:#fff;stroke:#0b1c30;stroke-width:1.5}
+svg.map .nd circle{fill:#fff;stroke:#0b1c30;stroke-width:1.5}
+svg.map .nd circle.end{stroke-width:3}
+svg.map .nd path.gw{fill:#fff;stroke:#0b1c30;stroke-width:1.5}
+svg.map .nd .lb{font-size:11px;font-weight:500;fill:#0b1c30}
+svg.map .nd .ln{font-family:var(--mono);font-size:10px;fill:#4b5563}
+svg.map .nd:hover rect,svg.map .nd:hover path.gw,svg.map .nd:hover circle{stroke:var(--cc-focus)}
+svg.map .nd.sel rect,svg.map .nd.sel path.gw,svg.map .nd.sel circle{stroke:var(--cc-focus);stroke-width:3}
+svg.map .nd:focus-visible{outline:none}
+svg.map .nd:focus-visible rect,svg.map .nd:focus-visible path.gw,svg.map .nd:focus-visible circle{stroke:var(--cc-focus);stroke-width:3}
+svg.map .note{font-size:10.5px;fill:#92400e;font-weight:600}
+.mapfoot{display:flex;gap:6px 16px;flex-wrap:wrap;align-items:center;margin-top:10px;font-size:12px;color:var(--cc-ink-muted);font-weight:500}
+.status{display:flex;gap:8px;align-items:center;font-size:13px;font-weight:500;color:var(--cc-ink);margin-top:10px}
+.status i{width:8px;height:8px;border-radius:9px;background:var(--cc-success);display:inline-block}
+.steps{display:flex;flex-direction:column;gap:14px}
+.steps h3{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.steps ol{counter-reset:s;margin-top:6px}
+.steps li{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--cc-line);font-size:13.5px;font-weight:500;line-height:1.4}
+.steps li:first-child{border-top:0}
+.steps li .t{flex:none;font-size:11px;font-weight:700;border:1px solid var(--cc-line);border-radius:4px;padding:0 5px;color:var(--cc-ink-muted);margin-top:2px;min-width:68px;text-align:center}
+
+/* code */
+.codep{border:1px solid var(--cc-line);border-radius:8px;background:#fff;display:flex;flex-direction:column;min-width:0;align-self:start}
+.codep .hd{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--cc-line);flex-wrap:wrap}
+.codep .hd b{font-size:13px}
+.codep .ft{padding:8px 12px;font-size:12px;color:var(--cc-ink-muted)}
+.code{background:#0b1c30;color:#e2e8f0;border-radius:8px;font-family:var(--mono);font-size:12px;line-height:1.6;padding:8px 0;overflow-x:auto;margin:0}
+.codep .code{border-radius:0}
+.code .l{display:block;padding:0 12px;white-space:pre}
+.code .l i{display:inline-block;width:36px;color:#94a3b8;font-style:normal;user-select:none}
+.code .l.hl{background:#1e3a8a}
+
+/* charts and lists */
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px}
+.bars{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+.br{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(60px,1fr) 28px;gap:12px;align-items:center;font-size:13px;line-height:1.35;background:none;border:0;padding:0;text-align:left;width:100%}
+.br b{font-weight:600;display:block}
+.br small{display:block;font-size:12px;color:var(--cc-ink-muted)}
+.br .bar{height:10px;border-radius:3px;background:var(--seq-3)}
+.br .n{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.split{display:flex;height:12px;border-radius:3px;overflow:hidden;margin-top:12px}
+.split i{display:block;height:100%}
+.legend2{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--cc-ink-muted);margin-top:6px}
+.legend2 span{display:inline-flex;gap:5px;align-items:center}
+.legend2 i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.rows{margin-top:10px}
+.rows li{display:flex;gap:12px;justify-content:space-between;padding:8px 0;border-top:1px solid var(--cc-line);font-size:13px;line-height:1.4}
+.rows li:first-child{border-top:0}
+.rows li small{display:block;font-size:12px;color:var(--cc-ink-muted)}
+.rows li .r{flex:none;font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.foot{font-size:12px;color:var(--cc-ink-muted);margin-top:12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;line-height:1.5}
+.runs{margin-top:10px;counter-reset:r}
+.runs li{padding:12px 0;border-top:1px solid var(--cc-line);font-size:14px;line-height:1.55}
+.runs li:first-child{border-top:0;padding-top:4px}
+.runs li b{display:block;font-size:14px}
+.who li{padding:10px 0;border-top:1px solid var(--cc-line);font-size:14px;line-height:1.5}
+.who li:first-child{border-top:0;padding-top:4px}
+.ql{margin-top:8px}
+.qi{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--cc-line);font-size:14px;line-height:1.5;font-weight:500}
+.qi:first-child{border-top:0;padding-top:4px}
+.qi .n{width:24px;height:24px;border-radius:999px;background:var(--cc-warning-bg);color:var(--cc-warning);box-shadow:inset 0 0 0 1px var(--cc-warning-border);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.sl li{padding:8px 0;border-top:1px solid var(--cc-line);font-size:13px;line-height:1.5}
+.sl li:first-child{border-top:0}
+.sl li b{font-weight:600}
+.sc p{font-size:13px;line-height:1.5;margin-top:6px}
+.sc .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+
+/* IT */
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;border-radius:5px;font-size:12px;font-weight:800;padding:0 5px;border:1px solid;white-space:nowrap}
+.lv.A{color:#065f46;border-color:#6ee7b7;background:#ecfdf5}
+.lv.B{color:#1e3a8a;border-color:#93c5fd;background:#eff6ff}
+.lv.C{color:#92400e;border-color:#fcd34d;background:#fffbeb}
+.lv.D{color:#991b1b;border-color:#fca5a5;background:#fef2f2}
+.lv.U{color:#374151;border-color:#d1d5db;background:#f9fafb;font-weight:600}
+.sv{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;white-space:nowrap}
+.sv i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.find{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:16px;padding:14px 0;border-top:1px solid var(--cc-line)}
+.find:first-child{border-top:0;padding-top:4px}
+.find h3{font-size:14px;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.find p{font-size:13px;line-height:1.5;margin-top:4px;color:var(--cc-ink)}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--cc-line);background:var(--cc-surface-muted);white-space:nowrap}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--cc-line);vertical-align:top;line-height:1.4}
+.tbl tr:last-child td{border-bottom:0}
+.tbl td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl code{font-family:var(--mono);font-size:11.5px;background:#0b1c30;color:#e2e8f0;border-radius:4px;padding:1px 6px;white-space:nowrap}
+.tw{overflow-x:auto;margin-top:12px}
+.where{position:relative;margin-top:12px;padding:10px 0 4px}
+.where .ax{height:2px;background:var(--cc-line);position:relative;margin:14px 0 18px}
+.where .dt{position:absolute;top:-5px;width:12px;height:12px;border-radius:99px;transform:translateX(-50%);border:2px solid #fff}
+.where .tk{display:flex;justify-content:space-between;font-size:11px;color:var(--cc-ink-muted);font-variant-numeric:tabular-nums}
+details.fold{border:1px solid var(--cc-line);border-radius:12px;background:#fff;box-shadow:var(--cc-shadow)}
+details.fold>summary{cursor:pointer;padding:14px 20px;font-size:16px;font-weight:700;list-style:none;display:flex;gap:8px;align-items:center}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary .chev{transition:transform .15s}
+details.fold[open]>summary .chev{transform:rotate(90deg)}
+details.fold>summary .r{margin-left:auto;font-size:13px;font-weight:500;color:var(--cc-ink-muted)}
+details.fold .fb{padding:0 20px 16px;font-size:13px;line-height:1.55}
+details.fold .fb li{list-style:disc;margin-left:18px;margin-top:4px}
+.seqlist li{display:grid;grid-template-columns:76px minmax(0,1fr);gap:8px;padding:5px 0;border-top:1px solid var(--cc-line);font-size:12.5px;line-height:1.4}
+.seqlist li:first-child{border-top:0}
+.seqlist li .anc{margin:0;justify-content:center}
+.seqlist li code{font-family:var(--mono);font-size:11.5px}
+
+/* Management */
+.opts th:first-child,.opts td:first-child{width:150px}
+.opts td.ind{background:var(--cc-information-bg)}
+.opts td:last-child{white-space:nowrap}
+.card.pad>.sec-h+ul,.card.pad>.sec-h+ol{margin-top:12px}
+.ol li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--cc-line);font-size:14px;line-height:1.5}
+.ol li:first-child{border-top:0;padding-top:4px}
+.ol .n{width:24px;height:24px;border-radius:999px;background:var(--cc-ink);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.flow{display:flex;flex-direction:column;gap:0;margin-top:8px}
+.flow li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:8px;font-size:13px;line-height:1.45;padding:6px 0}
+.flow li i{width:10px;height:10px;border-radius:99px;border:2px solid var(--cc-ink-muted);margin-top:4px}
+.flow li.on i{background:var(--cc-ink);border-color:var(--cc-ink)}
+
+@media (max-width:1100px){.mapgrid.withcode{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:900px){.two{grid-template-columns:minmax(0,1fr)}.find{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:720px){
+  .br{grid-template-columns:minmax(0,1fr) 70px 24px}
+  .maptools .zoomgrp{display:none}
+  details.fold>summary{padding:12px 16px;font-size:15px}
+  details.fold .fb{padding:0 16px 14px}
+  .opts th:first-child,.opts td:first-child{width:auto}
+}
+/* =====================================================================
+   ONE FAMILY (15.11.2026) — this block is byte-identical in the six tool
+   mock-ups (Economics, Design, Transformation, Documentation, Testing,
+   Delivery) and comes last, so the shared parts look and behave the same
+   in every tool. Change it in all six or in none.
+   Responsive rules, the same everywhere:
+   - mock-up bar sticky only above 1100 px; its real height is measured
+     into --mock-h, so nothing ever slides under it;
+   - tool bar: one row at every width; when it does not fit, the legend
+     steps back (each mark keeps its words as a tooltip) and the row
+     scrolls sideways with a right-edge fade, the current tool in view;
+   - "On this page": the spec (tmp/ANCHOR-BAR-SPEC.md), sticky below the
+     mock-up bar, 24 px above and below, anchors land 16 px under it;
+     hidden when the page has only one section (owner, 15.11.2026);
+   - side column below the main column from 1100 px down;
+   - 24 px between cards and sections; card padding 16/20, phone 14/16;
+   - tables never widen the page: on a phone a list table stacks into one
+     block per row (row title first, every other cell with its column
+     name); a wider table scrolls inside its own card;
+   - button labels wrap balanced (no single orphaned word), numbers and
+     chips never break.
+   ===================================================================== */
+@font-face{font-family:Inter;src:url(../../app/fonts/inter-latin-variable.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --mk-bar:#1f1147;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --mock-h:0px;
+}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+body{overflow-x:clip}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+h2[tabindex="-1"]:focus,h3[tabindex="-1"]:focus,summary[tabindex="-1"]:focus{outline:none}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+
+/* mock-up chrome (not product) */
+.mock{position:sticky;top:0;z-index:300;background:var(--mk-bar);color:#fff;font-size:12px;line-height:1.4;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap}
+.mock button.on{background:#e9e5ff;color:var(--mk-bar)}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.mock .d{flex-basis:100%;color:#cfc8f3;font-weight:500}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap;letter-spacing:0;text-transform:none}
+.mtag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;white-space:nowrap;letter-spacing:0;text-transform:none}
+body.nopins .pin{display:none}
+
+/* app bar */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none;color:inherit}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.15}
+.logo .lg svg{width:18px;height:18px}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* frame, back link, note / view switch, tool bar, tool header */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;min-height:32px}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vsnote{font-size:13px;font-weight:500;line-height:1.4;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:0 12px;font-size:13px;font-weight:600;line-height:26px;min-height:26px;color:var(--cc-ink-muted);border-radius:6px;white-space:nowrap}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.tools{display:flex;align-items:center;gap:8px;margin-top:8px;padding:2px 0;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+.tools::-webkit-scrollbar{display:none}
+.tools>*{flex:none}
+/* sideways rows (tool bar, "On this page"): a fade on each edge where more items wait */
+.tools.ovf:not(.end),.pab-items.ovf:not(.end){-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
+.tools.ovf.end:not(.start),.pab-items.ovf.end:not(.start){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px);mask-image:linear-gradient(90deg,transparent,#000 48px)}
+.tools.ovf:not(.start):not(.end),.pab-items.ovf:not(.start):not(.end){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent)}
+.tools .k{display:inline;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tools .tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tools .tool:focus-visible{outline-offset:-2px}
+.tools .tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tool .od{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .t12{order:0}
+.tools .legend{display:flex;margin-left:auto;padding-left:16px;font-size:12px;font-weight:500;color:var(--cc-ink-muted);gap:12px;white-space:nowrap}
+.tools .legend span{display:inline-flex;align-items:center;gap:4px}
+.tools .legend i{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .legend svg.half,.tool svg.half{width:10px;height:10px;color:var(--cc-information);flex:none}
+.tools .toolmenu,.tools .toolsmenu{display:none}
+.tools.nolegend .legend{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh .eyebrow{display:flex;align-items:center;gap:6px}
+.sh .eyebrow svg.i{width:14px;height:14px}
+.sh .pid{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px;overflow-wrap:anywhere}
+.sh .pid+.lead{margin-top:6px}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;line-height:1.5;color:var(--cc-ink-muted);margin-top:2px}
+
+/* buttons, links, chips */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;text-decoration:none;text-align:center;white-space:normal;text-wrap:balance;font-family:inherit;cursor:pointer}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:4px 10px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff;letter-spacing:0;text-transform:none}
+.pv svg.i{width:12px;height:12px}
+.pv.ai,.pv.sim,.pv.prop{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed;background:#fff}
+.pv.eng,.pv.rec{color:var(--cc-information);border-color:var(--cc-information);background:#fff}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral);background:#fff}
+
+/* cards and sections */
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.h2{font-size:16px;font-weight:700;line-height:1.35;display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
+.sec-h{display:flex;align-items:flex-start;gap:8px 12px;flex-wrap:wrap}
+.sec-h>div:first-child{flex:1 1 320px;min-width:0}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+details.fold>summary{flex-wrap:wrap}
+
+/* the answer card: question, answer, why, next step, facets */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ophead>.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start;margin:0}
+.ophead .q{font-size:12px;font-weight:600;line-height:1.5;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:0;letter-spacing:0;text-transform:none}
+.ophead .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ophead .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ophead .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:250px;max-width:290px;width:290px}
+.ophead .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;line-height:1.45}
+.facets{display:grid;border-top:1px solid var(--cc-line);margin:16px -22px 0}
+:where(.facets){grid-template-columns:repeat(4,minmax(0,1fr))}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0}
+button.facet{font:inherit;color:inherit;text-align:left;background:none;border:0;border-right:1px solid var(--cc-line);cursor:pointer;display:block;width:100%}
+button.facet:hover{background:var(--cc-surface-muted)}
+button.facet:last-child{border-right:0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2;font-variant-numeric:tabular-nums}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+
+/* "On this page" — the one bar (tmp/ANCHOR-BAR-SPEC.md) */
+.pab{position:sticky;top:var(--mock-h);z-index:50;display:flex;align-items:center;gap:12px;height:48px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 2px 4px rgb(11 28 48 / .06);margin:24px -32px 24px;padding:0 32px}
+.pab+*{margin-top:0}
+.pab.single{display:none}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted);margin:0;white-space:nowrap}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap;flex:none}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+.pab-c{font-size:12px;font-weight:600;line-height:18px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:var(--cc-ink);border:0;box-shadow:none}
+.pab-c.o{background:#fef3c7}
+.pab-act{margin-left:auto;flex:none}
+[id^="s-"],[data-sec],.chap{scroll-margin-top:calc(var(--mock-h) + 64px)}
+.frame>.pab.single+*,.frame>.pab.single+.body{margin-top:24px}
+
+/* object page body: main column + side column */
+.frame>.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;margin-top:0;align-items:start}
+.main{display:flex;flex-direction:column;gap:24px;min-width:0}
+.side{display:flex;flex-direction:column;gap:24px;position:sticky;top:calc(var(--mock-h) + 64px)}
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* owner / today drawers */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(780px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55;color:var(--cc-ink)}
+.drawer.wide{width:min(1040px,100vw)}
+.drawer[hidden]{display:none}
+.drawer header{position:sticky;top:0;background:#fff;color:var(--cc-ink);border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2;flex-wrap:wrap}
+.drawer header h2{font-size:16px;font-weight:800;line-height:1.3;min-width:0}
+.drawer header .x{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer .db>h3:first-child{margin-top:0}
+.drawer code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+
+/* tables on a phone (rule: stack; data-label filled by the family script) */
+@media (max-width:720px){
+  table.tbl-stack{min-width:0!important;width:100%}
+  table.tbl-stack thead,table.tbl-stack tr:first-child:has(>th){display:none}
+  table.tbl-stack,table.tbl-stack tbody{display:block}
+  table.tbl-stack tr{display:block;padding:10px 0;border-bottom:1px solid var(--cc-line)}
+  table.tbl-stack tr:last-child{border-bottom:0}
+  table.tbl-stack td{display:flex;gap:10px;border:0!important;padding:2px 0!important;text-align:left!important;background:none!important}
+  table.tbl-stack td:first-child{font-weight:600}
+  table.tbl-stack td[data-label]:not(:first-child)::before{content:attr(data-label);flex:0 0 38%;font-size:12px;font-weight:600;color:var(--cc-ink-muted);font-family:var(--sans);white-space:normal}
+}
+
+/* ---------- the same breakpoints in every tool ---------- */
+@media (max-width:1100px){
+  .mock{position:static}
+  .frame>.body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  :where(.facets){grid-template-columns:repeat(2,minmax(0,1fr))}
+  :where(.facets>.facet:nth-child(2n)){border-right:0}
+  :where(.facets>.facet:nth-child(-n+2)){border-bottom:1px solid var(--cc-line)}
+}
+@media (max-width:900px){
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .next{width:auto;min-width:0;max-width:420px}
+}
+@media (max-width:720px){
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .ophead{padding:14px 16px 0}
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .a{font-size:17px}
+  .ophead .next{min-width:0;max-width:none;width:auto}
+  .facets{margin:14px -16px 0}
+  .facet,button.facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .pad{padding:14px 16px}
+  .drawer header{padding:12px 16px}
+  .drawer .db{padding:14px 16px 28px}
+}
+@media (max-width:639px){
+  .pab{margin:24px -16px 24px;padding:0 0 0 16px}
+  .pab-l,.pab-act{display:none}
+  .pab-items{padding-right:24px}
+}
+</style>
+</head>
+<body>
+<div class="mock" id="mock" role="region" aria-label="Mock-up controls">
+  <b>Walk-through</b>
+  <span id="mk-st"></span>
+  <span class="sp">
+    <button type="button" data-panel="p-today">Today, measured</button>
+    <button type="button" data-panel="p-owner">For the owner</button>
+  </span>
+</div>
+
+<header class="shell">
+  <a class="logo" href="#" aria-label="Clean-Core.io, My workspace">
+    <span class="lg"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span>
+    <span><span class="n">Clean-Core<em>.io</em></span><span class="s">Free Community Edition</span></span>
+  </a>
+  <nav class="path" aria-label="Breadcrumb"><span>My workspace</span><span>›</span><span id="crumb">Emergency purchase approval</span><span>›</span><span class="cur">Analyze</span></nav>
+  <div class="shell-r">
+    <button class="ib" type="button" aria-label="Help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+    <span class="av" aria-label="Account menu">MW</span>
+  </div>
+</header>
+
+<main class="frame">
+  <div class="headrow">
+    <a class="back" href="#"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg><span id="backtxt">My workspace · Emergency purchase approval</span></a>
+    <div class="vs">
+      <div class="seg" role="group" aria-label="View" id="viewseg">
+        <button data-v="business">Business</button><button data-v="it">IT</button><button data-v="management">Management</button>
+      </div>
+    </div>
+  </div>
+  <nav class="tools" aria-label="Tools">
+    <span class="k">Tools</span>
+    <a class="tool cur" href="#" aria-current="page"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Analyze</a>
+    <a class="tool" href="#" data-tool="Economics">Economics</a>
+    <a class="tool" href="#" data-tool="Design">Design</a>
+    <a class="tool" href="#" data-tool="Transformation">Transformation</a>
+    <a class="tool" href="#" data-tool="Documentation">Documentation</a>
+    <a class="tool" href="#" data-tool="Testing">Testing</a>
+    <a class="tool" href="#" data-tool="Delivery">Delivery</a>
+    <span class="legend"><span><svg class="i s" viewBox="0 0 24 24" style="color:var(--cc-success)"><path d="M20 6 9 17l-5-5"/></svg>done</span><span><svg class="half" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 1.25 A4.75 4.75 0 0 0 6 10.75 Z" fill="currentColor"/></svg>started</span><span><i class="od"></i>out of date</span></span>
+  </nav>
+  <div class="sh">
+    <div>
+      <div class="eyebrow"><svg class="i" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg><span>Tool · Analyze</span></div>
+      <h1 data-stage-title>Emergency purchase approval</h1>
+      <p class="pid" id="eyename">Z_MM_PO_APPROVAL</p>
+      <p class="lead" id="lead"></p>
+    </div>
+  </div>
+  <div id="headslot"></div>
+  <nav class="pab" aria-label="On this page"><span class="pab-l">On this page</span><div class="pab-items" id="pab"></div><span class="pab-act" id="pabact"></span></nav>
+  <div class="wide" id="wide"></div>
+  <div class="body">
+    <div class="main" id="mainc"></div>
+    <aside class="side" id="sidec" aria-label="Beside the page"></aside>
+  </div>
+</main>
+
+<div class="scrim" id="scrim"></div>
+
+<aside class="drawer" id="p-code" hidden aria-label="Code lines">
+<header><h2 id="codettl">Code</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+<div class="db"><div id="codebody"></div><p class="xs muted" style="margin-top:8px">Read-only. The source of the signed run.</p></div>
+</aside>
+
+<!-- ======================= TODAY, MEASURED ======================= -->
+<aside class="drawer" id="p-today" hidden aria-label="Today, measured">
+<header><h2>Today's Analyze, measured from the code</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+<div class="db">
+<p>No screenshot of today's app (no dev server, by the brief). Read from the source of branch <code>dev</code> (9cff84dc), file:line as of 15.11.2026.</p>
+<h3>What Analyze is today</h3>
+<table>
+<tr><th>View</th><th>What renders</th><th>Where</th></tr>
+<tr><td>Business</td><td><code>AnalyzeBusiness</code>: header with "My workspace" back link and the soft-gate hint; "What this program does" with the invitation (Walk me through it · I'll look around myself); the BPMN map with its code panel; usage records; two charts; the text around the map (How it runs, Why it exists, Who is involved, Questions to settle with the business); after the walk-through the two endings and "What you can do next". No "On this page" bar, no side column. Cards 16 px apart.</td><td><code>analyze/page.tsx:193–199</code>; <code>AnalyzeBusiness.tsx:387–520</code></td></tr>
+<tr><td>IT</td><td><code>AnalyzeScorePage</code>: "In short" card, the score hero (score, band, what moves it, four facets), the old anchor bar (5 items), findings with the route and "not determined" as a side column from 1280 px, folds "Model summary" and "Technical detail". Header actions: Process (BPMN), Add evidence, Export.</td><td><code>analyze/page.tsx:1360–1470</code>, <code>:1597–1640</code>; <code>AnalysisAnswer.tsx:121–171</code>; <code>EvidenceFindingsTable.tsx:364</code></td></tr>
+<tr><td>Management</td><td><b>The same page as IT.</b> The view is read only to pick Business; AB-10 (Management in Analyze) is planned for 3.5.0.</td><td><code>analyze/page.tsx:188–199</code>; plan <code>analyze-business-first-plan.md</code> §AB-10</td></tr>
+</table>
+<h3>What today gets right, and this mock-up keeps</h3>
+<ul class="b">
+<li>Business first: the map is the page, the code speaks on a click, every sentence has its line (ADR-109, ADR-116).</li>
+<li>The walk-through as an invitation, never a lock; the soft gate is one calm note (ADR-118).</li>
+<li>The score is a grade, not a compliance percentage; nothing from a model is in it; nothing is green (ADR-093).</li>
+<li>Model summary and technical detail stay folded and marked (owner decision 02.10.2026).</li>
+<li>The two charts, not three: "The rules it applies" waits for N6 (AB-8, later).</li>
+</ul>
+</div>
+</aside>
+
+<!-- ======================= OWNER PANEL ======================= -->
+<aside class="drawer wide" id="p-owner" hidden aria-label="For the owner">
+<header><h2>For the owner — Analyze in the family</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+<div class="db">
+<h3>In one sentence</h3>
+<p>Analyze gets the shell the six other tools share — app bar, back link, tool bar (Economics second), the view switch in Design's slot and size, tool header, one answer card with four facets, the one "On this page" bar, cards 24 px apart, a 340 px side column, the same drawers and breakpoints — and keeps what it says: <b>Business</b> reads the process on the map, <b>IT</b> reads the score and the findings with their code, <b>Management</b> reads what the program is for and what needs deciding.</p>
+
+<h3>The three views — what differs</h3>
+<table>
+<tr><th></th><th>Business</th><th>IT</th><th>Management</th></tr>
+<tr><td><b>Question</b></td><td>What does this program do?</td><td>How far is this code from clean core, and why?</td><td>What is it for, and what needs a decision?</td></tr>
+<tr><td><b>Answer card</b></td><td>The summary in two sentences; right: Walk me through it / I'll look around myself, after the walk-through the two endings</td><td>The score as a sentence; right: the score box (40 of 100, band) with Add evidence and Export</td><td>The purpose and the two business questions; right: the indication (not a decision)</td></tr>
+<tr><td><b>Facets</b></td><td>Ways a case ends · records it changes · roles · questions</td><td>Findings by severity · levels · route · not determined</td><td>Distance to clean core · records · roles · how often used</td></tr>
+<tr><td><b>"On this page"</b></td><td>The process · How a case can end · What it changes · How it runs · Who is involved · Questions 6</td><td>What moves the score · Look here first 3 · Findings by kind 26 · What it touches in SAP · Model summary · Technical detail</td><td>The four options · Risk if nothing changes · Next steps 3 · Still open 3</td></tr>
+<tr><td><b>Side column</b></td><td>Why it exists · Where this comes from · Not determined · (after the walk-through) What you can do next</td><td>Route · Not determined · The main sequence</td><td>Where the decision is made · Accountability</td></tr>
+<tr><td><b>Today</b></td><td>Same content, own layout</td><td>Today's score page</td><td>Today's score page (= IT)</td></tr>
+</table>
+
+<h3>Decisions — every difference between today and the family</h3>
+<p class="muted">File:line on <code>dev</code> 9cff84dc. "Family" = the ONE FAMILY block and the six tool mock-ups of 15.11.2026.</p>
+<span class="dec"><b>A1 · Tool order: Economics second.</b><span class="w">Today Analyze → Design → Transformation → Documentation → Testing → Economics → Delivery (<code>lib/workflow-steps.ts:185–191</code>). Family: Analyze → Economics → Design → … (Design G2, owner 15.11.2026).</span> <span class="rec">Recommended: yes — one list, every tool at once; not an Analyze change of its own.</span></span>
+<span class="dec"><b>A2 · Back link "My workspace · Z_MM_PO_APPROVAL" in every view.</b><span class="w">Today Business says "My workspace" (<code>AnalyzeBusiness.tsx:397</code> <code>backToMyWorkspace</code>); IT and Management say "Back to project workspace · name" (<code>StageHeader.tsx:192–204</code>, the score page passes no flag, <code>analyze/page.tsx:1597</code>). Family: one link, "My workspace · project".</span> <span class="rec">Recommended: yes — the workspace page dissolves in AB-11 anyway.</span></span>
+<span class="dec"><b>A3 · View switch: Design's slot and size.</b><span class="w">Today <code>StageViewSwitch</code> in the head row with <code>mb-3</code>, full width under 600 px (<code>StageViewSwitch.tsx:26</code>, <code>StageHeader.tsx:208</code>). Family: <code>.seg</code> right of the back link, 26 px buttons, full width under 720 px, no bottom margin.</span> <span class="rec">Recommended: yes (shared component, one change).</span></span>
+<span class="dec"><b>A4 · Management is its own page.</b><span class="w">Today IT and Management render the identical score page (<code>analyze/page.tsx:188–199</code>: only <code>view === 'business'</code> branches). ADR-126 (2) asks for significantly different content per view. This mock-up shows Management as v4 planned it (AB-10).</span> <span class="rec">Recommended: yes, build AB-10 straight into the family shell in 3.5.0 (already scheduled there).</span></span>
+<span class="dec"><b>A5 · Management without person-days.</b><span class="w">v4 (state 13) showed effort ranges per option "mock-up: figures illustrative"; plan N1 allows them only when Economics computes them. Economics now comes second and prices with the reader's own figures. Here each option row ends "Priced in Economics" with a link; no figure.</span> <span class="rec">Recommended: yes.</span> Alternative: show Economics' stored ranges once a revision exists (read as stored, ADR-092).</span>
+<span class="dec"><b>A6 · One answer card in every view.</b><span class="w">Today Business opens on "What this program does" — its own card, 15 px heading, 14 px text, the invitation right (<code>AroundTheMap.tsx:70–113</code>); IT opens on an "In short" card (<code>analyze/page.tsx:904–907</code>) and then the score hero with a 25rem score column (<code>AnalysisAnswer.tsx:127</code>). Family: <code>.ophead</code> — question, answer 18 px, why, next column 290 px, four facets.</span> <span class="rec">Recommended: yes. "In short" folds into the answer (IT: its sentence becomes the "why"; Management: it is the answer).</span></span>
+<span class="dec"><b>A7 · Facets: four, family breakpoints.</b><span class="w">Today the hero's <code>dl</code> is 2 columns, 4 from 1024 px (<code>AnalysisAnswer.tsx:171</code>); Business has no facets. Family: 4 above 1100 px, 2 below; facets jump to their section.</span> <span class="rec">Recommended: yes; Business gets four counts it already draws (ends, records, roles, questions) — no new fact.</span></span>
+<span class="dec"><b>A8 · "On this page" in all three views, the spec bar.</b><span class="w">Today Business has none (<code>AnalyzeBusiness.tsx:403–515</code>); IT draws the old bar — sticky <code>top-14</code> on the page colour with <code>py-2</code>, an 11 px uppercase label, a muted track, a ringed pill, <code>aria-current="location"</code> (<code>PageAnchorBar.tsx:131–155</code>), 5 items (<code>lib/page-anchors.ts:104–108</code>). Family: 48 px white strip, 13 px label, 15 px items, 3 px bar, <code>aria-current="true"</code>, items per view.</span> <span class="rec">Decided for every tool (ADR-126 (3)); here only the Analyze items: recommended as listed above.</span></span>
+<span class="dec"><b>A9 · The map stays full width, above the two columns.</b><span class="w">Today the map is the first block under the summary at full width (<code>AnalyzeBusiness.tsx:463–488</code>). The family has no full-width slot between the bar and main + side; in the main column the map would be ~1,010 px at 1440 and scroll.</span> <span class="rec">Recommended: one documented exception — a "wide" row under the bar for Analyze's map only.</span> Alternative: map in the main column, side column below it.</span>
+<span class="dec"><b>A10 · Side column from the first section.</b><span class="w">Today IT's route and "not determined" sit beside the findings only, 22.5rem, from 1280 px (<code>EvidenceFindingsTable.tsx:364</code>); Business has none. Family: 340 px, sticky, beside main from the first section, below main from 1100 px down.</span> <span class="rec">Recommended: yes. Business side: Why it exists, Where this comes from, Not determined, What you can do next.</span></span>
+<span class="dec"><b>A11 · No header actions.</b><span class="w">Today "Process (BPMN)", "Add evidence ▾" and "Export ▾" stand in the stage header (<code>analyze/page.tsx:1600–1640</code>). Family tools have none: the main action is in the answer's next column, an optional one at the bar's right end.</span> <span class="rec">Recommended: Add evidence + Export into IT's answer card; Export also at the bar's end; "Process (BPMN)" retires (the map is the Business page, ADR-080/109).</span></span>
+<span class="dec"><b>A12 · Endings and "What you can do next".</b><span class="w">Today the two endings stand compact in the summary and again in full under the text, then the "What next" card (<code>AnalyzeBusiness.tsx:416–431</code>, <code>:497–513</code>; <code>AnalyzeEndings.tsx:85</code>, <code>WhatNextCard.tsx:54</code>). Family: once, in the answer's next column; "What you can do next" as a side card ("Hide" kept).</span> <span class="rec">Recommended: yes — said once, not twice.</span></span>
+<span class="dec"><b>A13 · Soft-gate note as an info strip.</b><span class="w">Today a note row under the tool bar plus the "needs attention" hint (<code>AnalyzeBusiness.tsx:337–378</code>, <code>toolsAfter</code>). Family has no slot under the tool bar; Design puts its notices as a strip above the answer.</span> <span class="rec">Recommended: the same strip above the answer card (click Design, Economics … before the walk-through in this mock-up).</span></span>
+<span class="dec"><b>A14 · Search this project (⌘K).</b><span class="w">Today the shell bar shows a search button while Analyze Business is mounted (<code>AnalyzeBusiness.tsx:389</code>, <code>CommandSearch</code>). The family app bar has Help and the account only — this mock-up keeps the family bar byte-identical and leaves search out.</span> <span class="rec">Recommended: add "Search this project" to the app bar of all seven tools in one change (it searches the project, not the tool); until then Analyze keeps it.</span></span>
+<span class="dec"><b>A15 · Spacing and header rhythm.</b><span class="w">Today Business stacks its blocks 16 px apart (<code>AnalyzeBusiness.tsx:403</code> <code>gap-4</code>), the header has <code>mt-6 mb-8</code> (<code>StageHeader.tsx:175</code>). Family: 24 px between cards and sections, tool header 14 px under the tool bar, card padding 16/20 (phone 14/16).</span> <span class="rec">Recommended: yes.</span></span>
+<span class="dec"><b>A16 · A lead per view.</b><span class="w">Today one Business lead (<code>wt('abiz.lead')</code>) and the generic stage lead in IT/Management. Family (Design): the lead says what this view answers.</span> <span class="rec">Recommended: yes.</span></span>
+<span class="dec"><b>A17 · IT: "What moves the score" as the first section.</b><span class="w">Today the deduction table sits inside the hero (<code>AnalysisAnswer.tsx</code>, H5). The family answer card holds a sentence, not a table: the two largest deductions go into the "why", the table becomes the first section. The main sequence of v4 (AB-9) goes into the side column.</span> <span class="rec">Recommended: yes.</span></span>
+<span class="dec"><b>A18 · Folds in the family look.</b><span class="w">Today <code>FoldedSection</code> (Model summary, Technical detail). Family: <code>details.fold</code> cards 24 px apart, reachable from the bar.</span> <span class="rec">Recommended: yes, same component restyled.</span></span>
+<span class="dec"><b>A19 · Map on a phone: Steps first.</b><span class="w">Today the map scrolls; Map | Steps is in its tool row. Here under 720 px the map card opens on Steps (the same 25 elements as a list) and Map stays one click away.</span> <span class="rec">Recommended: yes.</span></span>
+<span class="dec"><b>A20 · Code panel stays beside the map.</b><span class="w">Unchanged (<code>WorkspaceProcess.tsx</code>, <code>codeOnClick</code>): a step clicked opens its lines beside the map inside the map card, below it under 1100 px — never in the side column.</span> <span class="rec">Recommended: keep.</span></span>
+
+<h3>Outside the tools — My workspace against the family's shared parts</h3>
+<p class="muted">Compared: <code>home-mockup-v2.html</code>, <code>workspace-two-products-mockup.html</code> (both accepted 14.11.2026), <code>demo-showcase-mockup.html</code> (decided 13.11.2026). Not rebuilt here. The colour tokens are identical in all four — every <code>--cc-*</code> value that exists in both matches.</p>
+<table>
+<tr><th>#</th><th>Part</th><th>Family (tools)</th><th>My workspace mock-ups</th><th>Recommendation</th></tr>
+<tr><td>W1</td><td>Content width</td><td><code>.frame</code> max 1536 px, padding 32 (phone 16)</td><td>home and two-products 1280 px; demo 1400 px; padding 32</td><td>Keep 1280 for lists of tiles (reading width); state it as the rule "tools 1536, lists 1280". Demo → 1280.</td></tr>
+<tr><td>W2</td><td>App bar</td><td>56 px, not sticky; logo + breadcrumb + Help + avatar 28 px</td><td>home: sticky, inner width 1280, main nav, run quota, Help, avatar 32 px (44 px touch rule); two-products: avatar 36, Help 36; demo: own bar without subline (Demo · recorded, Skip, Sign in)</td><td>One app bar component: same height, padding and avatar size (32 px, 44 px hit area on touch) everywhere; sticky everywhere or nowhere — recommend sticky (the tool bar row is not sticky either way). The demo keeps its own bar (outside the product).</td></tr>
+<tr><td>W3</td><td>Buttons</td><td>min-height 32 (lg 40), wrapping balanced, ghost = ink text</td><td>home: fixed <code>height:32</code>, no wrap; two-products: default 40 px, ghost = muted text; demo: 32, ghost muted</td><td>Family rule: min-height 32 / 40, ghost in ink (4.5:1 is met either way, but one ink). Fix in the shared <code>cc/Button</code>, not per page.</td></tr>
+<tr><td>W4</td><td>Chips</td><td><code>.pv</code> 12 px, 1/8/6 px padding, provenance by colour + border style</td><td>home <code>.pv</code> identical; two-products and demo <code>.chip</code> with 20 px line height and tinted background (<code>.chip.recon</code> filled blue)</td><td>One chip: the family <code>.pv</code> (white, border carries the meaning). Rename <code>.chip</code> in the mock-ups' build.</td></tr>
+<tr><td>W5</td><td>Cards</td><td>radius 12, line border, shadow token, padding 16/20 (phone 14/16), 24 px apart</td><td>home: radius token, page gap 20 px; two-products: tiles 16 px apart, tile head 16/18; demo: padding 14/16 built into <code>.card</code>, shadow hard-coded</td><td>24 px between sections everywhere; 16 px between tiles in a grid is fine (a grid, not a stack). Padding from the family.</td></tr>
+<tr><td>W6</td><td>Fonts</td><td>Inter variable 100–900 from <code>app/fonts</code>, body line-height default</td><td>home 300–900, two-products same file; demo loads no Inter (system font); both workspace mock-ups set body line-height 1.55</td><td>Demo must load Inter (it is a picture of the product). Line-height: set 1.55 on body in the family too, or drop it from home — recommend the family adopts 1.55 (DESIGN body text).</td></tr>
+<tr><td>W7</td><td>Headings</td><td>h1 22 px / 800</td><td>home 24 px; two-products 22; demo 22</td><td>22 px everywhere (the guard <code>workflow-style-guard</code> already measures it for tools).</td></tr>
+<tr><td>W8</td><td>Tokens</td><td>no radius tokens; <code>--cc-warning-line</code>, <code>--seq-*</code></td><td>home/two-products add <code>--cc-radius-card/-row</code>, <code>--cc-brand-deep</code> (hover); home lacks <code>--cc-warning-line</code>; demo lacks <code>--cc-shadow</code></td><td>One token set from <code>app/globals.css</code> in every mock-up; add the radius and hover tokens to the family block.</td></tr>
+<tr><td>W9</td><td>Breakpoints</td><td>1100 · 900 · 720 · 639</td><td>home 1279 · 1100 · 960 · 820 · 767 · 600; two-products one (1460); demo 1300 · 1100 · 900 · 760</td><td>Lists may need their own column steps (tiles 3 → 2 → 1), but the shell steps (app bar, padding, phone) at the family's 1100 / 720 / 639.</td></tr>
+<tr><td>W10</td><td>View switch</td><td><code>.seg</code>, 26 px buttons, 12 px padding</td><td><code>.seg</code> with 4/10 px padding (≈ 28 px)</td><td>Family size.</td></tr>
+<tr><td>W11</td><td>Drawers</td><td>white header, 780/1040 px</td><td>two-products: tinted header, 18 px title</td><td>Family drawer.</td></tr>
+</table>
+
+<h3>Today vs. this mock-up</h3>
+<table>
+<tr><th></th><th>Today</th><th>This mock-up</th></tr>
+<tr><td>Shell</td><td>Its own (StageHeader + per-view layout)</td><td>The family block, byte-identical (<code>tmp/family/same.py</code>)</td></tr>
+<tr><td>Views</td><td>Business own page; IT = Management</td><td>Three pages, one switch</td></tr>
+<tr><td>Answer</td><td>Business: summary card; IT: "In short" + score hero</td><td>One answer card per view, four facets</td></tr>
+<tr><td>On this page</td><td>Business none; IT old bar</td><td>The spec bar in every view</td></tr>
+<tr><td>Page height at 1440 px (no mock-up chrome)</td><td>not measurable (no app run)</td><td id="heights">measured on load</td></tr>
+</table>
+
+<h3>What it costs to build (3.5.0 alignment step)</h3>
+<table>
+<tr><th>Part</th><th>Files</th></tr>
+<tr><td>Shared (counted once with the other tools)</td><td><code>components/PageAnchorBar.tsx</code> (spec), <code>StageHeader.tsx</code> (back link, no actions), <code>StageViewSwitch.tsx</code> (size), <code>lib/workflow-steps.ts</code> (order), a shared answer-card component (<code>components/tool/ToolAnswer.tsx</code>, new if Economics has not built it)</td></tr>
+<tr><td>Business</td><td><code>AnalyzeBusiness.tsx</code> (answer card, bar, wide map row, main + side), <code>AroundTheMap.tsx</code> (sections as cards; <code>WhatThisProgramDoes</code> into the answer), <code>AnalyzeEndings.tsx</code>, <code>WhatNextCard.tsx</code> (side card), <code>ProcessFactCharts.tsx</code> (two section cards), <code>lib/page-anchors.ts</code> (Business items)</td></tr>
+<tr><td>IT</td><td><code>analyze/page.tsx</code> (score page → IT view, header actions out), <code>AnalysisAnswer.tsx</code> (into the answer card + "What moves the score" section), <code>EvidenceFindingsTable.tsx</code> (side column lifted to the page), <code>RouteCard.tsx</code>, <code>NotDeterminedSide.tsx</code> — overlaps AB-9</td></tr>
+<tr><td>Management</td><td>new <code>components/analyze/AnalyzeManagement.tsx</code> (purpose from <code>managementInShort</code>, options, risk, next steps, still open; the indication sentence N1, deterministic) — this is AB-10</td></tr>
+<tr><td>Guards</td><td>update <code>analyze-layout-guard</code>, <code>analyze-layout-guard-narrow</code>, <code>analyze-layout-mockup</code>, <code>analyze-answer-first</code>, <code>analyze-endings</code>, <code>page-anchor-guard</code>, <code>stage-view-switch</code>, <code>workflow-style-guard</code>; new <code>analyze-views-differ.spec.ts</code></td></tr>
+</table>
+<p><b>Engine change:</b> no. <b>Stored field:</b> no. <b>Rules change:</b> no. <b>Model call:</b> none new.</p>
+<p><b>Size:</b> Business ≈ S–M (layout only); IT ≈ M, mostly inside AB-9; Management ≈ M, it is AB-10; shared parts counted with the other tools. As an alignment step on top of AB-9/AB-10: about 3–4 working days including guards.</p>
+</div>
+</aside>
+
+<script>
+const SRC = ["*&---------------------------------------------------------------------*","*& Report  Z_MM_PO_APPROVAL","*& Emergency purchase approval","*&---------------------------------------------------------------------*","*& Fictional but realistic MM example for Clean-Core.io:","*& purchase requisition check, vendor block list, price tolerance","*& against the purchasing info record, approval by department head","*& or manager, purchase order via BAPI with batch-input fallback.","*& Synthetic input only - not for productive SAP import.","*&---------------------------------------------------------------------*","REPORT z_mm_po_approval MESSAGE-ID zmm_po.","","TABLES: eban, eina, eine, lfa1, lfm1, t16fs, csks, zmm_vend_block, zmm_po_appr.","","TYPE-POOLS: abap.","","CONSTANTS: c_doc_type      TYPE esart VALUE 'NB',","           c_release_group TYPE frggr VALUE 'ZE',","           c_purch_org     TYPE ekorg VALUE '1000'.","","DATA: gs_eban       TYPE eban,","      gs_lfa1       TYPE lfa1,","      gv_amount     TYPE bapicurext,","      gv_ref_price  TYPE bapicurext,","      gv_emergency  TYPE abap_bool,","      gv_skip_limit TYPE abap_bool,","      gv_rejected   TYPE abap_bool,","      gv_on_hold    TYPE abap_bool,","      gv_approved   TYPE abap_bool,","      gv_approver   TYPE xubname,","      gv_ebeln      TYPE ebeln,","      gv_message    TYPE char255,","      gt_return     TYPE STANDARD TABLE OF bapiret2 WITH DEFAULT KEY.","","SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE text-001.","PARAMETERS: p_banfn TYPE eban-banfn OBLIGATORY DEFAULT '0010000001',","            p_bnfpo TYPE eban-bnfpo DEFAULT '00010',","            p_file  TYPE string LOWER CASE,","            p_test  AS CHECKBOX DEFAULT 'X'.","SELECTION-SCREEN END OF BLOCK b01.","START-OF-SELECTION.","  PERFORM check_authority.","  PERFORM read_requisition.","  PERFORM check_requisition.","  CHECK gv_rejected = abap_false.","  PERFORM upload_attachment.","  PERFORM read_vendor.","  PERFORM check_vendor.","  CHECK gv_rejected = abap_false.","  PERFORM read_info_record.","  PERFORM check_price.","  CHECK gv_on_hold = abap_false.","  PERFORM decide_approval.","  PERFORM notify_requester.","  PERFORM write_result_list.","","*&---------------------------------------------------------------------*","*&      Form  READ_REQUISITION","*&---------------------------------------------------------------------*","FORM read_requisition.","  SELECT SINGLE * FROM eban INTO gs_eban","    WHERE banfn = p_banfn","      AND bnfpo = p_bnfpo","      AND loekz = space.","  IF sy-subrc <> 0.","    MESSAGE e001 WITH 'Purchase requisition not found' p_banfn.","  ENDIF.","  gv_amount = gs_eban-menge * gs_eban-preis / gs_eban-peinh.","  IF gs_eban-waers <> 'EUR'.","    PERFORM convert_to_eur USING gs_eban-waers CHANGING gv_amount.","  ENDIF.","  IF gs_eban-dispo = 'EMG' OR gs_eban-bednr CP 'EMERG*'.","    gv_emergency = abap_true.","  ENDIF.","ENDFORM.","","FORM check_requisition.","  IF gs_eban-matnr IS INITIAL.","    PERFORM reject USING 'Material missing on the requisition'.","    RETURN.","  ENDIF.","  IF gs_eban-frgkz = 'X'.","    PERFORM reject USING 'Requisition is blocked for release'.","    RETURN.","  ENDIF.","  PERFORM check_material_status.","  IF gv_rejected = abap_true.","    RETURN.","  ENDIF.","  PERFORM check_account_assignment.","  IF gv_rejected = abap_true.","    RETURN.","  ENDIF.","  \"Plant 1000 is the central warehouse","  IF gs_eban-werks = '1000'.","    gv_skip_limit = abap_true.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  CHECK_AUTHORITY","*&---------------------------------------------------------------------*","FORM check_authority.","  DATA lv_ekgrp TYPE eban-ekgrp.","","  SELECT SINGLE ekgrp FROM eban INTO lv_ekgrp","    WHERE banfn = p_banfn","      AND bnfpo = p_bnfpo.","  IF sy-subrc <> 0.","    MESSAGE e001 WITH 'Purchase requisition not found' p_banfn.","  ENDIF.","","  \"Only the purchasing group of the requisition may approve","  \"(emergency procurement, ticket MM-2211)","","  AUTHORITY-CHECK OBJECT 'M_BANF_EKG'","    ID 'ACTVT' FIELD '02'","    ID 'EKGRP' FIELD lv_ekgrp.","  IF sy-subrc <> 0.","    MESSAGE e002 WITH 'No authorization for purchasing group' lv_ekgrp.","  ENDIF.","ENDFORM.","","FORM upload_attachment.","  DATA lt_bin TYPE STANDARD TABLE OF solix WITH DEFAULT KEY.","  DATA lv_length TYPE i.","","  CHECK p_file IS NOT INITIAL.","  CALL FUNCTION 'GUI_UPLOAD'","    EXPORTING","      filename   = p_file","      filetype   = 'BIN'","    IMPORTING","      filelength = lv_length","    TABLES","      data_tab   = lt_bin","    EXCEPTIONS","      file_open_error = 1","      file_read_error = 2","      OTHERS          = 3.","  IF sy-subrc <> 0.","    MESSAGE w003 WITH 'Attachment could not be read:' p_file.","  ELSE.","    PERFORM store_attachment TABLES lt_bin USING lv_length.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  READ_VENDOR","*&---------------------------------------------------------------------*","FORM read_vendor.","  DATA ls_lfm1 TYPE lfm1.","","  SELECT SINGLE * FROM lfa1 INTO gs_lfa1","    WHERE lifnr = gs_eban-flief.","  IF sy-subrc <> 0.","    PERFORM reject USING 'Fixed vendor missing on the requisition'.","    RETURN.","  ENDIF.","","  SELECT SINGLE * FROM lfm1 INTO ls_lfm1","    WHERE lifnr = gs_eban-flief","      AND ekorg = c_purch_org.","  IF sy-subrc <> 0.","    PERFORM reject USING 'Vendor not created for purchasing org 1000'.","  ENDIF.","ENDFORM.","","FORM convert_to_eur USING iv_waers TYPE waers","                 CHANGING cv_amount TYPE bapicurext.","  DATA lv_local TYPE bapicurext.","","  CALL FUNCTION 'CONVERT_TO_LOCAL_CURRENCY'","    EXPORTING","      date             = sy-datum","      foreign_amount   = cv_amount","      foreign_currency = iv_waers","      local_currency   = 'EUR'","    IMPORTING","      local_amount     = lv_local","    EXCEPTIONS","      no_rate_found    = 1","      OTHERS           = 2.","  IF sy-subrc = 0.","    cv_amount = lv_local.","  ELSE.","    MESSAGE w004 WITH 'No exchange rate for' iv_waers.","  ENDIF.","ENDFORM.","","FORM check_cost_center.","  SELECT SINGLE * FROM csks","    WHERE kokrs = '1000'","      AND kostl = gs_eban-kostl","      AND datbi >= sy-datum.","  IF sy-subrc <> 0.","    PERFORM reject USING 'Cost center not valid today'.","  ENDIF.","ENDFORM.","","FORM check_account_assignment.","  CASE gs_eban-knttp.","    WHEN 'K'.","      PERFORM check_cost_center.","    WHEN 'F'.","      IF gs_eban-aufnr IS INITIAL.","        PERFORM reject USING 'Internal order missing'.","      ENDIF.","    WHEN space.","      \"Stock material - no account assignment needed","    WHEN OTHERS.","      PERFORM reject USING 'Account assignment category not allowed'.","  ENDCASE.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  CHECK_VENDOR","*&---------------------------------------------------------------------*","FORM check_vendor.","  DATA lv_lifnr TYPE lifnr.","","  SELECT SINGLE lifnr FROM zmm_vend_block INTO lv_lifnr","    WHERE lifnr = gs_eban-flief","      AND blocked = 'X'.","  IF sy-subrc = 0.","    PERFORM reject USING 'Vendor is on the block list'.","  ENDIF.","ENDFORM.","","FORM reject USING iv_reason TYPE clike.","  gv_rejected = abap_true.","  gv_message  = iv_reason.","  MESSAGE s005 WITH 'Requisition rejected:' iv_reason.","  PERFORM log_approval.","ENDFORM.","","FORM hold_for_buyer.","  gv_on_hold = abap_true.","  gv_message = 'Price deviates from the info record - buyer review'.","  UPDATE eban SET statu = 'H'","    WHERE banfn = p_banfn","      AND bnfpo = p_bnfpo.","  COMMIT WORK.","  PERFORM log_approval.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  READ_INFO_RECORD","*&---------------------------------------------------------------------*","FORM read_info_record.","  DATA: ls_eina TYPE eina,","        ls_eine TYPE eine.","","  SELECT SINGLE * FROM eina INTO ls_eina","    WHERE matnr = gs_eban-matnr","      AND lifnr = gs_eban-flief.","  IF sy-subrc <> 0.","    CLEAR gv_ref_price.","    RETURN.","  ENDIF.","","  SELECT SINGLE * FROM eine INTO ls_eine","    WHERE infnr = ls_eina-infnr","      AND ekorg = c_purch_org","      AND werks = gs_eban-werks.","  IF sy-subrc = 0 AND ls_eine-peinh > 0.","    gv_ref_price = ls_eine-netpr / ls_eine-peinh.","  ENDIF.","ENDFORM.","","FORM check_material_status.","  DATA lv_mmsta TYPE marc-mmsta.","","  SELECT SINGLE mmsta FROM marc INTO lv_mmsta","    WHERE matnr = gs_eban-matnr","      AND werks = gs_eban-werks.","  IF lv_mmsta = '01' OR lv_mmsta = 'Z9'.","    PERFORM reject USING 'Material is blocked for purchasing in this plant'.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  CHECK_LIMIT","*&---------------------------------------------------------------------*","FORM check_limit USING iv_amount TYPE bapicurext.","  DATA: ls_t16fs TYPE t16fs,","        lv_ok    TYPE abap_bool.","","  SELECT SINGLE * FROM t16fs INTO ls_t16fs","    WHERE frggr = c_release_group.","  IF sy-subrc = 0.","    lv_ok = cl_mm_internal=>check_limit( iv_amount   = iv_amount","                                         is_strategy = ls_t16fs ).","    IF lv_ok = abap_false.","      gv_message = 'Amount above the release limit'.","    ENDIF.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  CHECK_PRICE","*&---------------------------------------------------------------------*","FORM check_price.","  DATA: lv_price   TYPE bapicurext,","        lv_ref     TYPE bapicurext,","        lv_dev_pct TYPE p LENGTH 7 DECIMALS 2.","","  CHECK gv_ref_price > 0.","  lv_price = gs_eban-preis / gs_eban-peinh.","  lv_ref   = gv_ref_price.","  lv_dev_pct = ( lv_price - lv_ref )","             * 100 / lv_ref.","","  \"Tolerance agreed with purchasing","  IF lv_dev_pct > 5.","    PERFORM hold_for_buyer.","    RETURN.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  DECIDE_APPROVAL","*&---------------------------------------------------------------------*","FORM decide_approval.","  IF gv_emergency = abap_true AND gv_amount <= '50000.00'.","    PERFORM find_department_head CHANGING gv_approver.","    PERFORM request_approval USING gv_approver 'DEPT_HEAD'.","  ELSEIF gv_skip_limit = abap_false.","    PERFORM check_limit USING gv_amount.","    PERFORM find_manager CHANGING gv_approver.","    PERFORM request_approval USING gv_approver 'MANAGER'.","  ELSE.","    gv_approved = abap_true.","    gv_message  = 'Approved without limit check (central warehouse)'.","  ENDIF.","  IF gv_approved = abap_true.","    PERFORM create_purchase_order.","  ENDIF.","  PERFORM log_approval.","ENDFORM.","","FORM log_approval.","  DATA ls_appr TYPE zmm_po_appr.","","  ls_appr-mandt    = sy-mandt.","  ls_appr-banfn    = p_banfn.","  ls_appr-bnfpo    = p_bnfpo.","  ls_appr-approver = gv_approver.","  ls_appr-amount   = gv_amount.","  ls_appr-message  = gv_message.","  ls_appr-erdat    = sy-datum.","  ls_appr-erzet    = sy-uzeit.","  INSERT zmm_po_appr FROM ls_appr.","ENDFORM.","","FORM find_department_head CHANGING cv_approver TYPE xubname.","  SELECT SINGLE uname FROM zmm_dept_head INTO cv_approver","    WHERE kostl = gs_eban-kostl.","  IF sy-subrc <> 0.","    cv_approver = 'PURCH_LEAD'.","  ENDIF.","ENDFORM.","INCLUDE z_mm_po_notify.","","FORM find_manager CHANGING cv_approver TYPE xubname.","  DATA lv_pernr TYPE pernr_d.","","  SELECT SINGLE pernr FROM pa0105 INTO lv_pernr","    WHERE usrid = gs_eban-afnam","      AND subty = '0001'.","  SELECT SINGLE usrid FROM pa0105 INTO cv_approver","    WHERE pernr = lv_pernr","      AND subty = '0001'.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  NOTIFY_REQUESTER","*&---------------------------------------------------------------------*","FORM notify_requester.","  DATA: lv_fm_name TYPE rs38l_fnam,","        lv_variant TYPE char10.","","  SELECT SINGLE fm_name FROM zmm_notify_cfg INTO lv_fm_name","    WHERE werks = gs_eban-werks.","  CHECK sy-subrc = 0.","  CALL FUNCTION lv_fm_name","    EXPORTING","      iv_banfn   = p_banfn","      iv_message = gv_message","    EXCEPTIONS","      OTHERS     = 1.","  IF sy-subrc <> 0.","    MESSAGE w007 WITH 'Notification failed for' p_banfn.","  ENDIF.","ENDFORM.","INCLUDE z_mm_po_log.","","*&---------------------------------------------------------------------*","*&      Form  REQUEST_APPROVAL","*&---------------------------------------------------------------------*","FORM request_approval USING iv_approver TYPE xubname","                            iv_role     TYPE char10.","  DATA: lv_objkey TYPE swo_typeid,","        lt_cont   TYPE STANDARD TABLE OF swcont WITH DEFAULT KEY,","        ls_cont   TYPE swcont.","","  IF p_test = abap_true.","    gv_approved = abap_true.","    gv_message  = 'Test mode: approval simulated'.","    RETURN.","  ENDIF.","","  CONCATENATE p_banfn p_bnfpo INTO lv_objkey.","  ls_cont-element = 'APPROVER'.","  ls_cont-value   = iv_approver.","  APPEND ls_cont TO lt_cont.","  ls_cont-element = 'ROLE'.","  ls_cont-value   = iv_role.","  APPEND ls_cont TO lt_cont.","","  CALL FUNCTION 'SAP_WAPI_CREATE_EVENT'","    EXPORTING","      object_type = 'BUS2105'","      object_key  = lv_objkey","      event       = 'ZAPPROVE'","    TABLES","      input_container = lt_cont.","  COMMIT WORK.","","  \"Approval arrives asynchronously in the workflow; the report","  \"treats the request as approved for emergency orders","  IF iv_role = 'DEPT_HEAD'.","    gv_approved = abap_true.","  ENDIF.","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  CREATE_PURCHASE_ORDER","*&---------------------------------------------------------------------*","FORM create_purchase_order.","  DATA: ls_header  TYPE bapimepoheader,","        ls_headerx TYPE bapimepoheaderx,","        lt_item    TYPE STANDARD TABLE OF bapimepoitem WITH DEFAULT KEY,","        lt_itemx   TYPE STANDARD TABLE OF bapimepoitemx WITH DEFAULT KEY,","        ls_item    TYPE bapimepoitem,","        ls_itemx   TYPE bapimepoitemx,","        ls_return  TYPE bapiret2.","","  ls_header-doc_type   = c_doc_type.","  ls_header-vendor     = gs_eban-flief.","  ls_header-purch_org  = c_purch_org.","  ls_header-pur_group  = gs_eban-ekgrp.","  ls_header-comp_code  = '1000'.","  ls_headerx-doc_type  = abap_true.","  ls_headerx-vendor    = abap_true.","  ls_headerx-purch_org = abap_true.","  ls_headerx-pur_group = abap_true.","  ls_headerx-comp_code = abap_true.","","  ls_item-po_item    = '00010'.","  ls_item-material   = gs_eban-matnr.","  ls_item-plant      = gs_eban-werks.","  ls_item-quantity   = gs_eban-menge.","  ls_item-preq_no    = p_banfn.","  ls_item-preq_item  = p_bnfpo.","  APPEND ls_item TO lt_item.","  ls_itemx-po_item   = '00010'.","  ls_itemx-material  = abap_true.","  ls_itemx-plant     = abap_true.","  ls_itemx-quantity  = abap_true.","  ls_itemx-preq_no   = abap_true.","  ls_itemx-preq_item = abap_true.","  APPEND ls_itemx TO lt_itemx.","","  CALL FUNCTION 'BAPI_PO_CREATE1'","    EXPORTING","      poheader         = ls_header","      poheaderx        = ls_headerx","    IMPORTING","      exppurchaseorder = gv_ebeln","    TABLES","      return           = gt_return","      poitem           = lt_item","      poitemx          = lt_itemx.","","  READ TABLE gt_return INTO ls_return WITH KEY type = 'E'.","  IF sy-subrc = 0.","    PERFORM create_po_batch_input.","  ELSE.","    CALL FUNCTION 'BAPI_TRANSACTION_COMMIT'","      EXPORTING","        wait = abap_true.","    CONCATENATE 'Purchase order' gv_ebeln 'created' INTO gv_message","      SEPARATED BY space.","  ENDIF.","ENDFORM.","","FORM create_po_batch_input.","  DATA: lt_bdc  TYPE STANDARD TABLE OF bdcdata WITH DEFAULT KEY,","        ls_bdc  TYPE bdcdata,","        lt_msg  TYPE STANDARD TABLE OF bdcmsgcoll WITH DEFAULT KEY.","","  ls_bdc-program  = 'SAPLMEGUI'.","  ls_bdc-dynpro   = '0014'.","  ls_bdc-dynbegin = 'X'.","  APPEND ls_bdc TO lt_bdc.","  CLEAR ls_bdc.","  ls_bdc-fnam = 'MEPO_TOPLINE-SUPERFIELD'.","  ls_bdc-fval = gs_eban-flief.","  APPEND ls_bdc TO lt_bdc.","  ls_bdc-fnam = 'BDC_OKCODE'.","  ls_bdc-fval = '=MESAVE'.","  APPEND ls_bdc TO lt_bdc.","","  CALL TRANSACTION 'ME21N' USING lt_bdc","    MODE 'N'","    UPDATE 'S'","    MESSAGES INTO lt_msg.","  IF sy-subrc <> 0.","    gv_message = 'Purchase order could not be created'.","  ELSE.","    gv_message = 'Purchase order created by batch input'.","  ENDIF.","ENDFORM.","","FORM store_attachment TABLES it_bin STRUCTURE solix","                      USING iv_length TYPE i.","  DATA lv_objkey TYPE swo_typeid.","","  CONCATENATE p_banfn p_bnfpo INTO lv_objkey.","  INSERT zmm_po_attach FROM @( VALUE #( mandt  = sy-mandt","                                        objkey = lv_objkey","                                        length = iv_length","                                        erdat  = sy-datum ) ).","ENDFORM.","","*&---------------------------------------------------------------------*","*&      Form  WRITE_RESULT_LIST","*&---------------------------------------------------------------------*","FORM write_result_list.","  FORMAT COLOR COL_HEADING.","  WRITE: / 'Emergency purchase approval', sy-datum, sy-uzeit.","  FORMAT RESET.","  ULINE.","  WRITE: / 'Requisition:', p_banfn, p_bnfpo,","         / 'Vendor:     ', gs_lfa1-lifnr, gs_lfa1-name1,","         / 'Amount EUR: ', gv_amount,","         / 'Approver:   ', gv_approver,","         / 'Order:      ', gv_ebeln,","         / 'Result:     ', gv_message.","  ULINE.","ENDFORM."];
+</script>
+<script>
+/* ===================== helpers ===================== */
+const IC = {
+ rec:'<svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>',
+ ai:'<svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+ nd:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+ play:'<svg class="i" viewBox="0 0 24 24"><path d="m6 4 14 8-14 8Z"/></svg>',
+ arrow:'<svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>',
+ chev:'<svg class="i chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>',
+ max:'<svg class="i" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>',
+ dl:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>',
+ plus:'<svg class="i" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+ user:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+ cat:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+};
+const chip = {
+ rec:(t='Reconstructed')=>`<span class="pv rec">${IC.rec}${t}</span>`,
+ ai:(t='AI-generated')=>`<span class="pv ai">${IC.ai}${t}</span>`,
+ nd:(t='Not determined')=>`<span class="pv nd">${IC.nd}${t}</span>`,
+ cat:(t='From the SAP catalog')=>`<span class="pv eng">${IC.cat}${t}</span>`,
+};
+const ILL = '<span class="mtag">mock-up: figures illustrative</span>';
+/** a line anchor: "line 42" / "line 240–243"; opens the code */
+const L = (t) => `<button type="button" class="anc" data-lines="${t}" title="Open these lines">line ${t}</button>`;
+const LL = (arr) => arr.map(L).join('');
+function rangeOf(t){ const m=String(t).split(',')[0].trim().split(/[–-]/).map(Number); return [m[0], m[1]||m[0]]; }
+function code(a,b,hl){ const out=[]; for(let i=Math.max(1,a);i<=Math.min(SRC.length,b);i++){ const s=SRC[i-1].replace(/&/g,'&amp;').replace(/</g,'&lt;'); out.push(`<span class="l${hl&&i>=hl[0]&&i<=hl[1]?' hl':''}"><i>${i}</i>${s||' '}</span>`);} return `<pre class="code">${out.join('')}</pre>`; }
+function sec(id, title, lead, body, right=''){ return `<section class="card pad" id="${id}" aria-labelledby="${id}-h"><div class="sec-h"><div><h2 class="h2" id="${id}-h">${title}</h2>${lead?`<p class="sec-lead">${lead}</p>`:''}</div>${right?`<div class="r">${right}</div>`:''}</div>${body}</section>`; }
+function facets(arr){ return `<div class="facets">${arr.map(f=>`<button type="button" class="facet" data-jump="${f.j}"><span class="t">${f.t}</span><span class="v" style="display:block">${f.v}</span><span class="n" style="display:block">${f.n}</span></button>`).join('')}</div>`; }
+
+/* ===================== the map (Business) ===================== */
+/* engine names after the plain-language pass (v4, state 3); lines as in the source above */
+const PART1 = { title:'Part 1 · Checking the requisition', h:262, rows:[82,198], nodes:[
+ ['s1','s',0,0,'Someone starts it from the entry screen','41'],
+ ['t1','t',1,0,'Check the person may approve','42'],
+ ['g1','g',2,0,'Allowed?',''],
+ ['t2','t',3,0,'Read the requisition','43'],
+ ['t3','t',4,0,'Check the requisition','44'],
+ ['g2','g',5,0,'Complete and valid?',''],
+ ['t4','t',6,0,'Read and check the vendor','46–48'],
+ ['g3','g',7,0,'Vendor allowed?',''],
+ ['t5','t',8,0,'Compare the price with the agreed price','50–51'],
+ ['g4','g',9,0,'More than 5 % above?','315'],
+ ['l1','l',10,0,'On to the approval','52'],
+ ['x1','e',2,1,'Stops: not allowed','120'],
+ ['x2','e',5,1,'Stops: rejected, with the reason','230'],
+ ['x3','e',7,1,'Stops: vendor rejected','226'],
+ ['t6','t',9,1,'Put the requisition on hold','240–242'],
+ ['x4','e',10,1,'On hold for the buyer','239'],
+], edges:[['s1','t1'],['t1','g1'],['g1','t2','Yes'],['t2','t3'],['t3','g2'],['g2','t4','Yes'],['t4','g3'],['g3','t5','Yes'],['t5','g4'],['g4','l1','No'],['g1','x1','No'],['g2','x2','No'],['g3','x3','No'],['g4','t6','Yes'],['t6','x4']]};
+const PART2 = { title:'Part 2 · Approval and order', h:340, rows:[64,158,262], nodes:[
+ ['s2','l',0,1,'From the checks','53'],
+ ['g5','g',1,1,'Emergency, at most 50,000.00?','325'],
+ ['t7','t',2,0,'Ask the department head','326–327'],
+ ['t8','t',2,1,'Check the limit, ask a manager','329–331'],
+ ['t9','t',3,1,'Send the approval request','421–427'],
+ ['g6','g',4,1,'Approved?',''],
+ ['x5','e',4,2,'Ends without an order','340'],
+ ['t10','t',5,1,'Create the purchase order','475–484'],
+ ['g7','g',6,1,'Returned without error?','487'],
+ ['t11','t',6,2,'Batch input on ME21N','515–518'],
+ ['t12','t',7,1,'Record it and tell the requester','339, 54'],
+ ['t13','t',8,1,'Write the result list','55'],
+ ['x6','e',9,1,'Done','55'],
+], edges:[['s2','g5'],['g5','t7','Yes','vh'],['g5','t8','No'],['t7','t9',null,'hv'],['t8','t9'],['t9','g6'],['g6','t10','Yes'],['g6','x5','No'],['t10','g7'],['g7','t12','Yes'],['g7','t11','No'],['t11','t12',null,'hv'],['t12','t13'],['t13','x6']],
+ notes:[['t12','2 parts not in the upload']]};
+const CW=128, X0=60, TW=114, TH=58;
+function wrap(t,n){ const w=t.split(' '), out=[]; let cur=''; for(const x of w){ if((cur+' '+x).trim().length>n && cur){out.push(cur);cur=x;} else cur=(cur+' '+x).trim(); } if(cur) out.push(cur); return out; }
+function mapSvg(P){
+  const pos={}; P.nodes.forEach(n=>pos[n[0]]={k:n[1],x:X0+n[2]*CW,y:P.rows[n[3]],l:n[4],ln:n[5]});
+  const ext=(id,side)=>{ const p=pos[id]; const hw = p.k==='t'?TW/2 : p.k==='g'?18 : 15; const hh = p.k==='t'?TH/2 : p.k==='g'?18 : 15;
+    return side==='r'?[p.x+hw,p.y]:side==='l'?[p.x-hw,p.y]:side==='t'?[p.x,p.y-hh]:[p.x,p.y+hh]; };
+  let ed='';
+  for(const [a,b,lab,how] of P.edges){
+    const A=pos[a],B=pos[b]; let pts;
+    if (A.y===B.y) pts=[ext(a,'r'),ext(b,'l')];
+    else if (A.x===B.x) pts= B.y>A.y?[ext(a,'b'),ext(b,'t')]:[ext(a,'t'),ext(b,'b')];
+    else if (how==='vh'){ const s=ext(a,B.y<A.y?'t':'b'); pts=[s,[s[0],B.y],ext(b,'l')]; }
+    else { const s=ext(a,'r'); const e=ext(b,B.y>A.y?'t':'b'); pts=[s,[e[0],s[1]],e]; }
+    ed+=`<polyline class="ed" points="${pts.map(p=>p.join(',')).join(' ')}" marker-end="url(#ah)"/>`;
+    if(lab){ const p0=pts[0], p1=pts[1]; const horiz=p0[1]===p1[1]; ed+=`<text class="el" x="${p0[0]+6}" y="${horiz?p0[1]-6:(p1[1]>p0[1]?p0[1]+14:p0[1]-6)}">${lab}</text>`; }
+  }
+  let nd='';
+  for(const n of P.nodes){ const p=pos[n[0]]; const id=n[0]; const lines=n[5];
+    let shape='', label='';
+    if(p.k==='t'){ shape=`<rect x="${p.x-TW/2}" y="${p.y-TH/2}" width="${TW}" height="${TH}" rx="7"/>`; const w=wrap(p.l,16); const y0=p.y-(w.length*13+(lines?11:0))/2+10; label=w.map((t,i)=>`<text class="lb" x="${p.x}" y="${y0+i*13}" text-anchor="middle">${t}</text>`).join('')+(lines?`<text class="ln" x="${p.x}" y="${y0+w.length*13}" text-anchor="middle">line ${lines}</text>`:''); }
+    else { if(p.k==='g') shape=`<path class="gw" d="M${p.x} ${p.y-18} L${p.x+18} ${p.y} L${p.x} ${p.y+18} L${p.x-18} ${p.y} Z"/><path d="M${p.x-6} ${p.y-6} L${p.x+6} ${p.y+6} M${p.x+6} ${p.y-6} L${p.x-6} ${p.y+6}" stroke="#0b1c30" stroke-width="2"/>`;
+      else if(p.k==='s') shape=`<circle cx="${p.x}" cy="${p.y}" r="15"/>`;
+      else if(p.k==='l') shape=`<circle cx="${p.x}" cy="${p.y}" r="15"/><path d="M${p.x-6} ${p.y-3} h6 v-4 l6 7 -6 7 v-4 h-6 z" fill="#0b1c30"/>`;
+      else shape=`<circle class="end" cx="${p.x}" cy="${p.y}" r="14"/>`;
+      const above = p.k==='g' && P.nodes.some(m=>m[0]!==id && pos[m[0]].x===p.x && pos[m[0]].y>p.y);
+      const w=wrap(p.l,18); const base = above? p.y-24-(w.length-1)*12 - (lines?12:0) : p.y+30;
+      label=w.map((t,i)=>`<text class="lb" x="${p.x}" y="${base+i*12}" text-anchor="middle">${t}</text>`).join('')+(lines?`<text class="ln" x="${p.x}" y="${base+w.length*12}" text-anchor="middle">line ${lines}</text>`:''); }
+    nd+=`<g class="nd${S.sel===id?' sel':''}" data-node="${id}" data-lines="${lines}" tabindex="0" role="button" aria-label="${p.l}${lines?', line '+lines:''}">${shape}${label}</g>`;
+  }
+  const notes=(P.notes||[]).map(([id,t])=>{const p=pos[id];return `<text class="note" x="${p.x}" y="${p.y-TH/2-6}" text-anchor="middle">${t}</text>`;}).join('');
+  const W = X0+10*CW+60;
+  return `<svg class="map" viewBox="0 0 ${W} ${P.h}" role="img" aria-label="${P.title}"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#4b5563"/></marker></defs>${ed}${notes}${nd}</svg>`;
+}
+const STEPLIST = (P)=>`<div><h3>${P.title}</h3><ol>${P.nodes.map(n=>`<li><span class="t">${{s:'start',l:'continues',t:'step',g:'decision',e:'end'}[n[1]]}</span><span>${n[4]}${n[5]?L(n[5]):''}</span></li>`).join('')}</ol></div>`;
+
+/* ===================== Business content (v4 texts, as built in 3.2.0) ===================== */
+const ENDS = [['Purchase order created','directly, or through the order screen',2],['Stopped by a requisition check','material, release block, cost centre …',7],['Stopped by a vendor check','missing, other purchasing org, block list',3],['Stopped: no permission','or requisition not found',2],['On hold for a buyer','price more than 5 % above',1],['Ends without an order','not approved, or order screen failed',2]];
+const DATA = [['Purchase requisition','puts it on hold','240'],['Purchase order','creates it','475'],['Approval record','its own, one per case','353'],['Attachment','its own, the uploaded file','531']];
+const RUNS = [
+ ['It starts','A person enters the requisition number on an entry screen. “Test run” is ticked by default. In a test run the approval is only simulated.',['36–39','407–411']],
+ ['First it checks','It checks four things in order: may this person approve, is the requisition complete, is the vendor allowed, is the price close to the agreed price. Each check can stop the case with a message. If the price is more than 5 % above, the requisition goes on hold.',['42–51','315']],
+ ['Then it gets approval','Emergencies up to 50,000.00 go to the department head. Everything else goes to a manager, within the release limit. Plant 1000 needs no approver. The request goes out through SAP’s approval workflow. Without approval, the case ends.',['325–335','421–427']],
+ ['Then it orders','With approval, it creates the purchase order. If that fails, it tries again by filling in SAP’s order screen. Then it saves the approval, tells the requester and shows a result list.',['475–518','339']],
+];
+const WHO = [['The requester','enters the requisition and gets the result','54'],['The department head','approves emergencies up to 50,000.00','326–327'],['A manager','approves the rest, within the release limit. The program finds the manager in HR data','329–331'],['A buyer','checks requisitions on hold because of the price','239'],['Plant 1000 (central warehouse)','its requisitions are approved without an approver','95, 333']];
+const QS = [['The department head’s approval counts as given when the request is sent. So the order is created before anyone approves. Is that intended?','432–434'],['A test run, ticked by default, still creates a real purchase order. Is that intended?','39, 407–411'],['Plant 1000 gets no approver at all. Should that stay?','95, 333'],['Is 5 % above the agreed price still the right limit for a hold?','315'],['Should emergencies up to 50,000.00 still need only the department head?','325'],['What do the two missing parts do: the message to the requester and the log?','363, 396']];
+
+function business(){
+  const done = S.st==='done';
+  const next = done
+    ? `<p class="walked">You walked through all 9 steps <span aria-hidden="true">·</span> <button type="button" class="lnk" data-walk>Walk through again</button></p>
+       <a class="btn secondary" href="#" data-tool="Design">Re-design this program ${IC.arrow}</a>
+       <p class="sub">Decide on each business rule: keep, change or drop. Design drafts a new clean-core version. Nothing changes in SAP.</p>
+       <a class="btn ghost" href="#">Analyse another Z program ${IC.arrow}</a>`
+    : `<button type="button" class="btn primary lg" data-walk>${IC.play}Walk me through it</button>
+       <button type="button" class="btn secondary" data-look>I’ll look around myself</button>
+       <p class="sub">9 steps along the map, a few minutes. Nothing changes in SAP.</p>`;
+  const head = `<section class="card ophead" id="b-answer" aria-labelledby="b-q"><div class="ans"><div>
+    <p class="q" id="b-q">What does this program do? ${chip.ai('AI-generated, checked against the code')}</p>
+    <p class="a">It handles urgent purchases. Someone enters an emergency purchase requisition; the program checks it, gets it approved and creates the purchase order in SAP.</p>
+    <p class="why">If the price is more than 5 % above the agreed price, it puts the requisition on hold for a buyer instead. ${L('41–55')}</p>
+    </div><div class="next">${next}</div></div>
+    ${facets([
+      {j:'s-ends',t:'How a case can end',v:'17 <small>ways</small>',n:'2 end with a purchase order'},
+      {j:'s-changes',t:'What it changes',v:'4 <small>kinds of records</small>',n:'and only reads 8 more'},
+      {j:'s-who',t:'Who is involved',v:'4 <small>roles</small>',n:'plus plant 1000, approved without an approver'},
+      {j:'s-questions',t:'Questions for the business',v:'6 <small>open</small>',n:'for the process owner'}])}</section>`;
+  const anchors = [['s-map','Process'],['s-ends','Endings'],['s-changes','Changes'],['s-runs','Runs'],['s-who','People'],['s-questions','Questions',6,1]];
+  const P = S.mm==='steps' ? `<div class="steps">${STEPLIST(PART1)}${STEPLIST(PART2)}</div>` : `<div class="mapwrap"><div class="part"><p class="pl">${PART1.title}</p>${mapSvg(PART1)}</div><div class="part"><p class="pl">${PART2.title}</p>${mapSvg(PART2)}</div></div>`;
+  const cp = S.sel ? codePanel() : '';
+  const tools = `<div class="maptools"><div class="seg" role="group" aria-label="Map or steps"><button data-mm="map" class="${S.mm==='map'?'on':''}">Map</button><button data-mm="steps" class="${S.mm==='steps'?'on':''}">Steps</button></div><span class="zoomgrp" style="display:inline-flex;gap:6px;align-items:center"><button class="btn ghost sm" type="button">− Zoom out</button><span class="zm">100 %</span><button class="btn ghost sm" type="button">+ Zoom in</button><button class="btn ghost sm" type="button">Fit</button></span><button class="btn ghost sm" type="button">${IC.max}Full screen</button></div>`;
+  const wide = sec('s-map','The process','Reconstructed from the code: two parts, 25 elements. Click a step to see its lines.', `<div class="mapgrid${cp?' withcode':''}">${P}${cp}</div>
+     <p class="status"><i></i>Names are ready. 3 steps kept their technical name (no pen mark).</p>
+     <div class="mapfoot">${chip.ai('Names')}<span>checked against the code’s facts</span>${chip.rec()}<span>structure read from the code</span><span>Usage records: none imported</span></div>`, tools);
+  const ends = sec('s-ends','How a case can end','2 of 17 ways end with a purchase order. The other 15 stop or hold the case.', `<div class="bars">${ENDS.map(e=>`<div class="br"><span><b>${e[0]}</b><small>${e[1]}</small></span><span class="bar" style="width:${e[2]/7*100}%"></span><span class="n">${e[2]}</span></div>`).join('')}</div><p class="foot">Counted from the code’s branches and messages ${chip.rec()} ${ILL}</p>`);
+  const changes = sec('s-changes','What it changes, what it only reads','It changes 4 kinds of records and reads 8, including HR data.', `<div class="split"><i style="width:33%;background:var(--seq-3)"></i><i style="width:67%;background:var(--seq-1)"></i></div><div class="legend2"><span><i style="background:var(--seq-3)"></i>Changes 4</span><span><i style="background:var(--seq-1)"></i>Only reads 8</span></div><ul class="rows">${DATA.map(d=>`<li><span>${d[0]}<small>${d[1]}</small></span><span class="r">changes ${L(d[2])}</span></li>`).join('')}</ul><p class="foot">Only reads: vendor, agreed price, material in the plant, cost centre, release limits, HR data (to find the manager), department heads, notice settings. ${chip.rec()} ${ILL}</p>`);
+  const runs = sec('s-runs','How it runs', '', `<ol class="runs">${RUNS.map((r,i)=>`<li><b>${i+1}. ${r[0]}</b>${r[1]} ${LL(r[2])}</li>`).join('')}</ol>`, chip.ai());
+  const who = sec('s-who','Who is involved','This is what the code shows. Check who does it today.', `<ul class="who">${WHO.map(w=>`<li><b>${w[0]}</b>: ${w[1]}. ${L(w[2])}</li>`).join('')}</ul>`, chip.rec());
+  const qs = sec('s-questions','Questions to settle with the business','For the process owner. IT has its own questions in the IT view.', `<ol class="ql">${QS.map((q,i)=>`<li class="qi"><span class="n">${i+1}</span><span>${q[0]} ${L(q[1])}</span></li>`).join('')}</ol><p class="foot">Answer them in Design, rule by rule. <a class="lnk" href="#" data-tool="Design">Open Design’s questions</a></p>`);
+  const side = `<div class="card sc"><h3>Why it exists ${chip.ai()}</h3><p>From the code: urgent requisitions get approved and ordered in one run, without the normal purchasing steps. The code does not say this in words. Confirm it with the process owner.</p></div>
+    <div class="card sc"><h3>Where this comes from</h3><ul class="sl" style="margin-top:6px"><li><b>Signed run</b> of 14 Nov 2026, engine v3.2.0 — the map, the counts and every line.</li><li><b>Names in plain language</b>: 22 by the model, checked against the code; 3 kept their technical name.</li><li><b>Target</b>: SAP Cloud ERP Private, reference pattern from SAP’s published BPMN.</li></ul></div>
+    <div class="card sc"><h3>Not determined ${chip.nd('2')}</h3><ul class="sl" style="margin-top:6px"><li><b>Two parts not in the upload</b>: the message to the requester and the log. ${L('363, 396')}</li><li><b>How often it runs</b>: unknown until IT adds usage data.</li></ul></div>
+    ${done && !S.nextHidden ? `<div class="card sc" id="whatnext"><h3>What you can do next <button type="button" class="lnk" data-hidenext style="margin-left:auto;font-weight:500;color:var(--cc-ink-muted)">Hide</button></h3><ul class="sl" style="margin-top:6px"><li><button type="button" class="lnk" data-v="it">IT</button>: the code behind each step, the findings and the clean core level.</li><li><button type="button" class="lnk" data-v="management">Management</button>: what it is for, the risk and what to decide.</li><li><b>Economics</b> prices keep, rebuild, move to SAP standard and retire with your figures; <b>Design</b> takes each business rule in turn.</li></ul></div>` : ''}
+    ${done && S.nextHidden ? `<button type="button" class="lnk" data-shownext style="align-self:flex-start;color:var(--cc-ink-muted)">Show “What you can do next”</button>`:''}`;
+  return {head, anchors, wide, main: `<div class="two">${ends}${changes}</div>${runs}${who}${qs}`, side, act:''};
+}
+function codePanel(){
+  const all=[...PART1.nodes,...PART2.nodes]; const n=all.find(x=>x[0]===S.sel); if(!n) return '';
+  const [a,b]=rangeOf(n[5]||'41');
+  return `<div class="codep" role="region" aria-label="Code lines"><div class="hd"><b>${n[4]}</b><span class="xs muted">line ${n[5]}</span><button type="button" class="btn ghost sm" data-closecode style="margin-left:auto">Close</button></div>${code(a-3,b+4,[a,b])}<p class="ft">Z_MM_PO_APPROVAL.abap · read-only · <a class="lnk" href="#" data-v="it">Open in the IT view</a></p></div>`;
+}
+
+/* ===================== IT content (score page of 3.2.0 + v4 IT, AB-9) ===================== */
+const MOVES = [['Writes straight into an SAP standard table','EBAN (purchase requisitions)','240–243','−20'],['Runs a transaction by batch input','ME21N, create purchase order','515–518','−10'],['Calls an SAP class that is not released','CL_MM_INTERNAL','292–293','−5'],['Transfers a file through the SAP GUI','GUI_UPLOAD','129–132','−5'],['Reads SAP standard tables directly','LFA1, LFM1, EINA, EINE, MARC, CSKS, T16FS','154','−0'],['Could not be assessed','2 includes, 1 call named at run time — 20 points stand for them','363, 386, 396','−20']];
+const KINDS = [['Direct writes to SAP standard tables','EBAN','1','D','—','Critical'],['Batch input','ME21N','1','C','none named','High'],['Calls to classes or functions that are not released','CL_MM_INTERNAL, SAP_WAPI_CREATE_EVENT, BAPI_PO_CREATE1','3','B','2 of 3','High'],['GUI-bound file transfer','GUI_UPLOAD','1','B','attachment field','Medium'],['Direct reads of SAP standard tables','LFA1, LFM1, EINA, EINE, MARC, CSKS, T16FS, PA0105','9','C','6 of 9','Medium'],['Values written into the code','plant 1000, purch. org 1000, EUR, release group ZE, 5 %','6','—','—','Medium'],['Obsolete language','TABLES, TYPE-POOLS, FORM routines','4','—','—','Low'],['COMMIT WORK inside a routine','','1','—','—','Info']];
+const TOUCH = [['EBAN purchase requisitions','read, written directly','UPDATE eban SET statu = \'H\'','61, 240'],['LFA1, LFM1, EINA, EINE, MARC, CSKS, T16FS','read','SELECT SINGLE * FROM lfa1','154, 254, 274'],['PA0105 (HR communication data)','read','SELECT SINGLE pernr FROM pa0105','368'],['BAPI_PO_CREATE1, BAPI_TRANSACTION_COMMIT','called','CALL FUNCTION \'BAPI_PO_CREATE1\'','475, 490'],['ME21N','batch input','CALL TRANSACTION \'ME21N\'','515'],['SAP_WAPI_CREATE_EVENT (BUS2105, ZAPPROVE)','called','CALL FUNCTION \'SAP_WAPI_CREATE_EVENT\'','421'],['ZMM_PO_APPR, ZMM_PO_ATTACH','own tables, written','INSERT zmm_po_appr FROM ls_appr','353, 531'],['ZMM_VEND_BLOCK, ZMM_DEPT_HEAD, ZMM_NOTIFY_CFG','own tables, read','SELECT SINGLE lifnr FROM zmm_vend_block','222, 357, 383']];
+const SEVC = {Critical:'#991b1b',High:'#dc2626',Medium:'#d97706',Low:'#6b7280',Info:'#cbd5e1'};
+const sv = (s)=>`<span class="sv"><i style="background:${SEVC[s]}"></i>${s}</span>`;
+function it(){
+  const head = `<section class="card ophead" id="i-answer" aria-labelledby="i-q"><div class="ans"><div>
+    <p class="q" id="i-q">How far is this code from clean core? ${chip.rec('Reconstructed · fixed rules')}</p>
+    <p class="a">Far from clean core: 40 of 100. One direct write to an SAP table and a batch input carry most of the distance.</p>
+    <p class="why">The direct write to EBAN costs 20 points ${L('240–243')}, the batch input to ME21N 10 ${L('515–518')}; 20 points stand for what could not be assessed. In short: one report of 552 lines that approves emergency requisitions and creates the purchase order. ${ILL}</p>
+    </div><div class="next">
+      <div class="scorebox"><p class="k">Clean Core Score of the signed run</p><div class="fig" style="margin-top:4px"><b>40</b><span>of 100</span></div><p class="bandname"><i></i>Far from clean core <span class="xs muted" style="font-weight:500">· band 5–59</span></p>
+      <div class="band"><span style="width:5%;background:#7f1d1d"></span><span style="width:55%;background:#dc2626"></span><span style="width:20%;background:#d97706"></span><span style="width:10%;background:#6366f1"></span><span style="width:10%;background:#312e81"></span><i class="mk" style="left:40%"></i></div>
+      <div class="ticks">${[0,60,80,100].map(v=>`<span style="position:absolute;left:${v}%;transform:translateX(${v===0?0:v===100?-100:-50}%)">${v}</span>`).join('')}</div>
+      <p class="sub" style="margin-top:6px">A grade, not a compliance percentage. <button type="button" class="lnk" style="font-size:12px">How it is computed</button></p></div>
+      <div class="btnrow"><button class="btn ghost" type="button">${IC.plus}Add evidence</button><button class="btn ghost" type="button">${IC.dl}Export</button></div>
+    </div></div>
+    ${facets([
+      {j:'s-kinds',t:'Findings',v:'26 <small>of 8 kinds</small>',n:`Critical 1 · High 3 · Medium 17 · Low 4 · Info 1<span class="sev"><i style="width:4%;background:${SEVC.Critical}"></i><i style="width:11%;background:${SEVC.High}"></i><i style="width:65%;background:${SEVC.Medium}"></i><i style="width:15%;background:${SEVC.Low}"></i><i style="width:5%;background:${SEVC.Info}"></i></span>`},
+      {j:'s-touch',t:'Clean core levels',v:'1 <small>Level D</small>',n:'10 C · 5 B · 3 without a grade (own objects), from SAP’s catalog'},
+      {j:'s-route',t:'Recommended route',v:'In-App <small>ABAP Cloud</small>',n:'Reconstructed · fixed rules — decided in Management'},
+      {j:'s-nd',t:'Not determined',v:'7 <small>constructs</small>',n:'plus 2 includes not in the upload'}])}</section>`;
+  const anchors = [['s-moves','Score'],['s-focus','First look',3],['s-kinds','Findings',26],['s-touch','SAP objects'],['s-summary','Summary'],['s-detail','Detail']];
+  const moves = sec('s-moves','What moves the score','Every deduction, the largest first. A line chip opens the source.', `<div class="tw"><table class="tbl tbl-stack"><thead><tr><th>What the code does</th><th>Where</th><th style="text-align:right">Points</th></tr></thead><tbody>${MOVES.map(m=>`<tr><td><b>${m[0]}</b><br><span class="xs muted">${m[1]}</span></td><td>${m[2].split(', ').map(L).join('')}</td><td class="n"><b>${m[3]}</b></td></tr>`).join('')}<tr><td><b>Clean Core Score of the signed run</b></td><td></td><td class="n"><b>40</b></td></tr></tbody></table></div><p class="foot">${chip.rec('Reconstructed · fixed rules')} The score rule is the engine’s, not a model’s. ${ILL}</p>`);
+  const F = [['Direct write to SAP table EBAN','D','direct write','Sets the requisition status with UPDATE and commits in the routine. No SAP function for requisitions is used, so SAP’s checks and change documents are skipped.','240–243'],['Batch input to ME21N','C','batch input','The fallback fills SAP’s order screen field by field. If the screen changes, it breaks without an error. It cannot run in a cloud system.','515–518'],['Call to an SAP-internal class','C','not released','CL_MM_INTERNAL is not a released API; it may change with any upgrade.','292–293']];
+  const focus = sec('s-focus','Look here first','3 of 26 findings, picked by severity and kind — each next to its lines.', F.map(f=>{const [a,b]=rangeOf(f[4]);return `<div class="find"><div><h3><span class="lv ${f[1]}">${f[1]}</span>${f[0]}</h3><p>${f[3]}</p><p>${L(f[4])} <span class="xs muted">· ${f[2]}</span></p></div>${code(a,b,null)}</div>`;}).join(''), chip.rec('Reconstructed · by severity and kind'));
+  const dots = [[61,'C'],[106,'C'],[129,'B'],[154,'C'],[161,'C'],[192,'C'],[222,'U'],[240,'D'],[254,'C'],[262,'C'],[274,'C'],[289,'C'],[292,'B'],[353,'B'],[368,'C'],[383,'U'],[421,'B'],[475,'B'],[515,'C'],[531,'B']];
+  const LC = {D:'#dc2626',C:'#d97706',B:'#4f46e5',U:'#9ca3af'};
+  const kinds = sec('s-kinds','Findings by kind','26 findings of 8 kinds. Where in the program first, then every kind.', `<div class="where" aria-label="Where in the program"><p class="xs muted" style="font-weight:600">Where in the program · 552 lines</p><div class="ax">${dots.map(d=>`<span class="dt" title="line ${d[0]}" style="left:${d[0]/552*100}%;background:${LC[d[1]]}"></span>`).join('')}</div><div class="tk"><span>1</span><span>100</span><span>200</span><span>300</span><span>400</span><span>500</span><span>552</span></div></div>
+     <div class="tw"><table class="tbl tbl-stack"><thead><tr><th>Kind</th><th>Severity</th><th style="text-align:right">Findings</th><th>Level</th><th>Successor named</th></tr></thead><tbody>${KINDS.map(k=>`<tr><td><b>${k[0]}</b>${k[1]?`<br><span class="xs muted mono">${k[1]}</span>`:''}</td><td>${sv(k[5])}</td><td class="n">${k[2]}</td><td>${k[3]==='—'?'<span class="muted">—</span>':`<span class="lv ${k[3]}">${k[3]}</span>`}</td><td>${k[4]}</td></tr>`).join('')}</tbody></table></div><p class="foot"><button type="button" class="lnk">All 26 findings, as a table</button> ${ILL}</p>`, `<div class="seg" role="group" aria-label="Group by"><button class="on">Kind</button><button>Severity</button><button>Line</button></div>`);
+  const touch = sec('s-touch','What it touches in SAP','Every object with the statement that touches it.', `<div class="tw"><table class="tbl tbl-stack"><thead><tr><th>Object</th><th>How</th><th>Statement</th><th>Line</th></tr></thead><tbody>${TOUCH.map(t=>`<tr><td>${t[0]}</td><td>${t[1]}</td><td><code>${t[2]}</code></td><td>${t[3].split(', ').map(L).join('')}</td></tr>`).join('')}</tbody></table></div><p class="foot">The levels A–D per object are under Technical detail. ${chip.cat()}</p>`);
+  const summary = `<details class="fold" id="s-summary"><summary>${IC.chev}Model summary ${chip.ai('Model proposal')}<span class="r">outside the signature</span></summary><div class="fb"><p>What the analysis model wrote about this code, folded and marked as a proposal (owner decision 02.10.2026). Every sentence shows whether it points at a line. The SAP identifiers it names are checked against SAP data this product holds. Unchanged from today (<span class="mono">AnchoredNarrative</span>, <span class="mono">SapIdentifierChecks</span>).</p></div></details>`;
+  const detail = `<details class="fold" id="s-detail"><summary>${IC.chev}Technical detail<span class="r">constructs, levels A–D, imports</span></summary><div class="fb"><ul><li><b>Language constructs the engine resolved</b> — the coverage verdict and the checklist.</li><li><b>Clean core levels A–D per object</b> and compliance hints (no classification of anybody’s data).</li><li><b>Imported usage and ATC results</b> — compared with, never merged into, the engine’s findings.</li></ul></div></details>`;
+  const side = `<div class="card sc" id="s-route"><h3>Route · In-App (ABAP Cloud) ${chip.rec('fixed rules')}</h3><p>Developer extensibility in the same system: a RAP business object on released APIs. Drivers: the direct write to EBAN ${L('240')}, the batch input ${L('515')}.</p><details style="margin-top:8px"><summary class="lnk" style="cursor:pointer;font-size:13px">Why this route</summary><p class="xs muted">The decision path of the extensibility rules, with what it assumes. Unchanged from today.</p></details><div class="acts"><a class="btn ghost" href="#" data-v="management">Decide in Management</a></div></div>
+    <div class="card sc" id="s-nd"><h3>Not determined ${chip.nd('7 + 2')}</h3><ul class="sl" style="margin-top:6px"><li><b>Two includes</b> named but not uploaded: Z_MM_PO_NOTIFY, Z_MM_PO_LOG ${L('363')}${L('396')}</li><li><b>One function module</b> named at run time ${L('386')}</li><li><b>7 constructs</b> the engine read but did not assess, 4 kinds</li><li><b>Usage</b>: how often it runs is unknown</li></ul><div class="acts"><button class="btn ghost sm" type="button">${IC.plus}Add evidence</button></div></div>
+    <div class="card sc"><h3>The main sequence ${chip.rec()}</h3><p class="xs muted">One report, 552 lines. Everything runs from these lines.</p><ul class="seqlist" style="margin-top:6px">${[[42,'check_authority','permission for the purchasing group'],[43,'read_requisition','reads the requisition (EBAN)'],[44,'check_requisition','9 checks, may reject'],[46,'upload_attachment','file via the SAP GUI'],['47–48','read/check_vendor','LFA1, LFM1, block list'],['50–51','read_info_record, check_price','5 % tolerance, may hold'],[53,'decide_approval','approver, workflow, order'],[54,'notify_requester','dynamic call'],[55,'write_result_list','list output']].map(r=>`<li>${L(r[0])}<span><code>${r[1]}</code>: ${r[2]}</span></li>`).join('')}</ul></div>`;
+  return {head, anchors, wide:'', main: moves+focus+kinds+touch+summary+detail, side, act:`<button class="btn ghost sm" type="button">${IC.dl}Export findings</button>`};
+}
+
+/* ===================== Management content (v4 state 13, AB-10; no person-days) ===================== */
+function mgmt(){
+  const head = `<section class="card ophead" id="m-answer" aria-labelledby="m-q"><div class="ans"><div>
+    <p class="q" id="m-q">What is it for, and what needs a decision? ${chip.rec()}</p>
+    <p class="a">It approves emergency purchase requisitions and creates the purchase orders in one run, for purchasing organisation 1000.</p>
+    <p class="why"><b style="color:var(--cc-ink)">What needs a decision:</b> orders are created before the department head approves, and a test run creates real orders. Both are business questions — the process owner answers them in Design.</p>
+    </div><div class="next"><div class="indic"><p class="k">Indication from the analysis</p><p class="opt">Rebuild as a clean extension, In-App on ABAP Cloud</p><ul><li>Two parts are far from SAP standard: the direct change of requisitions and the automated order screen.</li><li>The rules are few: 3 limits, 2 approvers.</li></ul><p class="sub">An indication, not a decision. Economics prices the options with your figures; you decide in Management. ${ILL}</p></div>
+      <a class="btn secondary" href="#" data-tool="Economics">Price the options in Economics ${IC.arrow}</a></div></div>
+    ${facets([
+      {j:'s-opts',t:'Distance to clean core',v:'40 <small>of 100 · far</small>',n:'mostly from two parts of the code'},
+      {j:'s-risk',t:'Records it changes',v:'4 <small>kinds</small>',n:'requisitions, orders, and two of its own'},
+      {j:'s-next',t:'People involved',v:'4 <small>roles</small>',n:'plus one plant that needs no approver'},
+      {j:'s-open',t:'How often it is used',v:'Not known',n:`IT can add usage data ${chip.nd()}`}])}</section>`;
+  const anchors = [['s-opts','Options'],['s-risk','Risk'],['s-next','Next steps',3],['s-open','Open',3,1]];
+  const O = [['Keep','Leave it as it is, retest it with every upgrade','the direct change of requisitions or the order screen breaks after an upgrade'],['Rebuild','A clean extension on released APIs, In-App on ABAP Cloud','the business must confirm the rules first (6 questions)'],['Move to SAP standard','SAP’s release strategy and workflow for requisitions; the own rules go','whether the standard covers it is not measured — a fit-to-standard workshop decides'],['Retire','Switch it off; urgent purchases go the normal way','urgent purchases lose their fast path']];
+  const opts = sec('s-opts','The four options','What each one means for this program. Cost: Economics, with your figures — Analyze shows no amount.', `<div class="tw"><table class="tbl tbl-stack opts"><thead><tr><th>Option</th><th>What it means</th><th>Main risk</th><th>Cost</th></tr></thead><tbody>${O.map(o=>`<tr><td><b>${o[0]}</b>${o[0]==='Rebuild'?'<br><span class="xs muted">indicated</span>':''}</td><td${o[0]==='Rebuild'?' class="ind"':''}>${o[1]}</td><td${o[0]==='Rebuild'?' class="ind"':''}>${o[2]}</td><td${o[0]==='Rebuild'?' class="ind"':''}><a class="lnk" href="#" data-tool="Economics">Priced in Economics</a></td></tr>`).join('')}</tbody></table></div>`);
+  const risk = sec('s-risk','Risk if nothing changes','', `<ul class="who"><li><b>Orders without approval</b>: emergency orders are created before anyone approves. ${L('432–434')}</li><li><b>Real orders from test runs</b>: the test switch is on by default. ${L('39')}</li><li><b>Upgrade breakage</b>: two parts bypass SAP’s own functions. ${L('240')}${L('515')}</li></ul>`);
+  const nxt = sec('s-next','Next steps','', `<ol class="ol">${['Settle the 6 business questions with the process owner. They are in the Business view.','IT adds the two missing parts and the usage data.','Price the options in Economics, then decide keep, rebuild, move to SAP standard or retire.'].map((t,i)=>`<li><span class="n">${i+1}</span><span>${t}</span></li>`).join('')}</ol>`);
+  const open = sec('s-open','Still open','', `<ul class="who"><li><b>Usage</b>: unknown until IT adds usage data.</li><li><b>Two parts</b> not in the upload: the message and the log.</li><li><b>Who approves today</b>: the code shows roles, not people.</li></ul>`);
+  const side = `<div class="card sc"><h3>Where the decision is made</h3><ol class="flow"><li class="on"><i></i><span><b>Analyze</b> — what it does and how far it is from clean core</span></li><li><i></i><span><b>Economics</b> — the four options priced with your figures</span></li><li><i></i><span><b>Decision in Management</b> — keep, rebuild, move to SAP standard or retire</span></li><li><i></i><span><b>Design</b> — what the decided option means for this program</span></li></ol><p class="xs muted">Decision: <b style="color:var(--cc-ink)">not taken yet</b>.</p><div class="acts"><a class="btn ghost" href="#" data-tool="Economics">Open Economics</a></div></div>
+    <div class="card sc"><h3>Accountability</h3><p>A decision is recorded by the signed-in account — a self-declaration, not a mandate. The view you read it in is never stored.</p></div>`;
+  return {head, anchors, wide:'', main: opts+risk+nxt+open, side, act:`<button class="btn ghost sm" type="button">${IC.dl}Download as one page (PDF)</button>`};
+}
+
+/* ===================== state + render ===================== */
+const S = {v:'business', st:'ready', mm: innerWidth<720?'steps':'map', sel:null, gate:null, nextHidden:false};
+const LEADS = {business:'What this program does, read from its code — the process step by step, in plain words.', it:'How far this code is from clean core, why, and where in the code.', management:'What this program is for, what it risks, and what needs deciding.'};
+function readHash(){ const h=new URLSearchParams(location.hash.slice(1)); if(h.get('v')) S.v=h.get('v'); if(h.get('st')) S.st=h.get('st'); if(h.get('sel')) S.sel=h.get('sel'); if(h.get('mm')) S.mm=h.get('mm'); if(h.get('gate')) S.gate=h.get('gate'); return h; }
+function setHash(){ const h=new URLSearchParams(location.hash.slice(1)); h.set('v',S.v); h.set('st',S.st); history.replaceState(null,'','#'+h.toString()); }
+function render(){
+  document.querySelectorAll('#viewseg button').forEach(b=>{ const on=b.dataset.v===S.v; b.classList.toggle('on',on); b.setAttribute('aria-pressed',on); });
+  document.getElementById('mk-st').innerHTML = [['ready','Not yet (names ready)'],['done','Walked through']].map(s=>`<button type="button" data-st="${s[0]}" class="${S.st===s[0]?'on':''}">${s[1]}</button>`).join(' ');
+  const r = {business, it, management:mgmt}[S.v]();
+  const gate = S.gate && S.st!=='done' ? `<div class="strip" role="note" tabindex="-1" id="gate"><div><b>You have not walked through the process yet.</b> ${S.gate} works better once you know what the program does — the walk-through takes a few minutes. You can go on anyway; this note is said once.</div><div class="acts"><button class="btn secondary" type="button" data-walk>${IC.play}Walk me through it</button><a class="btn ghost" href="#" data-gatego>Go on to ${S.gate}</a></div></div>` : '';
+  document.getElementById('headslot').innerHTML = gate + r.head;
+  document.getElementById('wide').innerHTML = r.wide;
+  document.getElementById('mainc').innerHTML = r.main;
+  document.getElementById('sidec').innerHTML = r.side;
+  document.getElementById('lead').textContent = LEADS[S.v];
+  document.querySelectorAll('.tools .tool .od').forEach(x=>x.remove());
+  document.getElementById('pab').innerHTML = r.anchors.slice(0,6).map((a,i)=>`<a href="#${a[0]}" data-jump="${a[0]}" ${i===0?'aria-current="true"':''}>${a[1]}${a[2]!==undefined?`<span class="pab-c ${a[3]?'o':''}">${a[2]}</span>`:''}</a>`).join('');
+  document.getElementById('pabact').innerHTML = r.act;
+  setHash(); spy();
+}
+let lastJump=null;
+function barBottom(){ const b=document.querySelector('.pab'); return (parseFloat(getComputedStyle(b).top)||0)+48; }
+function spy(){
+  const links=[...document.querySelectorAll('#pab a')]; if(!links.length) return;
+  let cur=links[0];
+  for (const a of links){ const el=document.getElementById(a.dataset.jump); if (el && el.getBoundingClientRect().top < barBottom()+24) cur=a; }
+  if (innerHeight+scrollY >= document.documentElement.scrollHeight-2 && lastJump){ const j=links.find(a=>a.dataset.jump===lastJump); const el=j&&document.getElementById(lastJump); if(el && el.getBoundingClientRect().top < innerHeight) cur=j; }
+  links.forEach(a=>{ if(a===cur) a.setAttribute('aria-current','true'); else a.removeAttribute('aria-current'); });
+  const row=document.getElementById('pab'); if(cur && row.scrollWidth>row.clientWidth){ const l=cur.offsetLeft-row.offsetLeft; if(l<row.scrollLeft||l+cur.offsetWidth>row.scrollLeft+row.clientWidth) row.scrollLeft=Math.max(0,l-24); }
+}
+addEventListener('scroll', spy, {passive:true});
+function jump(id){ lastJump=id; const el=document.getElementById(id); if(!el) return; if(el.tagName==='DETAILS') el.open=true; scrollTo({top:el.getBoundingClientRect().top+scrollY-barBottom()-16}); const h=el.querySelector('h2,h3,summary'); if(h){ h.setAttribute('tabindex','-1'); h.focus({preventScroll:true}); } }
+function openLines(t){
+  const [a,b]=rangeOf(t);
+  if (S.v==='business'){
+    let best=null; for(const x of [...PART1.nodes,...PART2.nodes]){ if(!x[5]) continue; const d=Math.abs(rangeOf(x[5])[0]-a); if(!best||d<best[0]) best=[d,x]; }
+    if (best && best[0]<=3){ S.sel=best[1][0]; S.mm='map'; render(); jump('s-map'); return; }
+  }
+  document.getElementById('codettl').textContent='Z_MM_PO_APPROVAL.abap · line '+t;
+  document.getElementById('codebody').innerHTML=code(a-4,b+6,[a,b]);
+  openPanel('p-code');
+}
+document.addEventListener('click', e=>{
+  const g=e.target.closest('[data-node]'); if(g){ S.sel = S.sel===g.dataset.node?null:g.dataset.node; render(); return; }
+  const t=e.target.closest('button,a'); if(!t) return;
+  if (t.dataset.v){ e.preventDefault(); S.v=t.dataset.v; S.sel=null; render(); scrollTo(0,0); return; }
+  if (t.dataset.st){ S.st=t.dataset.st; S.gate=null; render(); return; }
+  if (t.dataset.mm){ S.mm=t.dataset.mm; render(); return; }
+  if (t.dataset.lines){ e.preventDefault(); openLines(t.dataset.lines); return; }
+  if (t.hasAttribute('data-closecode')){ S.sel=null; render(); return; }
+  if (t.hasAttribute('data-walk')){ S.st='done'; S.gate=null; render(); scrollTo(0,0); return; }
+  if (t.hasAttribute('data-look')){ jump('s-map'); return; }
+  if (t.hasAttribute('data-hidenext')){ S.nextHidden=true; render(); return; }
+  if (t.hasAttribute('data-shownext')){ S.nextHidden=false; render(); return; }
+  if (t.hasAttribute('data-gatego')){ e.preventDefault(); S.st='done'; S.gate=null; render(); return; }
+  if (t.dataset.tool){ e.preventDefault(); if(S.v==='business' && S.st!=='done'){ S.gate=t.dataset.tool; render(); scrollTo(0,0); const gn=document.getElementById('gate'); if(gn) gn.focus({preventScroll:true}); } return; }
+  if (t.dataset.jump){ e.preventDefault(); jump(t.dataset.jump); return; }
+  if (t.dataset.panel){ openPanel(t.dataset.panel); return; }
+  if (t.hasAttribute('data-close')){ closePanels(); return; }
+  if (t.getAttribute('href')==='#') e.preventDefault();
+});
+document.addEventListener('keydown', e=>{ const g=e.target.closest&&e.target.closest('[data-node]'); if(g && (e.key==='Enter'||e.key===' ')){ e.preventDefault(); S.sel=g.dataset.node; render(); } if(e.key==='Escape') closePanels(); });
+document.getElementById('scrim').onclick=closePanels;
+function openPanel(id){ closePanels(); document.getElementById(id).hidden=false; document.getElementById('scrim').classList.add('on'); const h=new URLSearchParams(location.hash.slice(1)); h.set('panel',id); history.replaceState(null,'','#'+h); }
+function closePanels(){ document.querySelectorAll('.drawer').forEach(d=>d.hidden=true); document.getElementById('scrim').classList.remove('on'); const h=new URLSearchParams(location.hash.slice(1)); h.delete('panel'); history.replaceState(null,'','#'+h); }
+const H = readHash(); render(); if (H.get('panel')) openPanel(H.get('panel'));
+/* page heights for the owner panel: measured here, without the mock-up bar */
+addEventListener('load',()=>{ const keep={...S}; const out=[]; for(const v of ['business','it','management']){ S.v=v; render(); out.push(v[0].toUpperCase()+v.slice(1)+' '+(document.documentElement.scrollHeight-document.getElementById('mock').offsetHeight).toLocaleString('en')+' px'); } Object.assign(S,keep); render(); document.getElementById('heights').textContent = out.join(' · ')+' at this window width ('+innerWidth+' px), state “'+(S.st==='done'?'walked through':'not yet')+'”.'; });
+</script>
+<script>
+/* ONE FAMILY (15.11.2026) — byte-identical in the six tool mock-ups.
+   Measures the sticky mock-up bar into --mock-h (0 when it is not sticky),
+   hides "On this page" when a page has one section, keeps the tool bar
+   and the section bar to one row (fade while more
+   items wait to the right, the current tool in view) and labels the cells of stacking tables. */
+(function(){
+  var root=document.documentElement, raf=0;
+  function mockH(){var m=document.querySelector('.mock');var on=m&&getComputedStyle(m).position==='sticky'&&getComputedStyle(m).display!=='none';root.style.setProperty('--mock-h',(on?m.offsetHeight:0)+'px');}
+  function edges(el){el.classList.toggle('start',el.scrollLeft<=1);el.classList.toggle('end',el.scrollLeft+el.clientWidth>=el.scrollWidth-2);}
+  function fade(el){var ovf=el.scrollWidth>el.clientWidth+1;el.classList.toggle('ovf',ovf);edges(el);
+    if(!el.dataset.wired){el.dataset.wired='1';el.addEventListener('scroll',function(){edges(el);},{passive:true});}return ovf;}
+  function tools(first){document.querySelectorAll('.tools').forEach(function(t){
+    if(!t.dataset.wired)first=true;
+    t.querySelectorAll('.tool .ck').forEach(function(x){x.setAttribute('aria-label','done');if(!x.querySelector('title'))x.insertAdjacentHTML('afterbegin','<title>done</title>');});
+    t.querySelectorAll('.tool .od').forEach(function(x){x.title='out of date';});
+    t.classList.remove('nolegend');if(t.scrollWidth>t.clientWidth+1&&t.querySelector('.legend'))t.classList.add('nolegend');
+    var ovf=fade(t);
+    if(first&&ovf){var c=t.querySelector('.tool.cur');if(c){var l=c.offsetLeft-t.offsetLeft,r=l+c.offsetWidth;if(r>t.clientWidth-48){t.scrollLeft=r-t.clientWidth+64;edges(t);}}}
+  });document.querySelectorAll('.pab-items').forEach(fade);
+    document.querySelectorAll('.pab').forEach(function(p){p.classList.toggle('single',p.querySelectorAll('.pab-items a').length<2);});}
+  function labels(){document.querySelectorAll('table.tbl-stack').forEach(function(tb){var hr=tb.querySelector('thead tr')||tb.querySelector('tr');if(!hr||!hr.querySelector('th'))return;var hs=[].map.call(hr.children,function(h){return h.textContent.trim();});tb.querySelectorAll('tr').forEach(function(tr){if(tr===hr)return;[].forEach.call(tr.children,function(td,i){if(hs[i]&&td.tagName==='TD'&&!td.hasAttribute('data-label'))td.setAttribute('data-label',hs[i]);});});});}
+  function all(first){mockH();tools(first);labels();}
+  function soon(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;all(false);});}
+  addEventListener('resize',soon);
+  addEventListener('load',function(){all(true);});
+  if(window.ResizeObserver){var m=document.querySelector('.mock');if(m)new ResizeObserver(soon).observe(m);}
+  new MutationObserver(soon).observe(document.body,{childList:true,subtree:true});
+  all(true);
+})();
+</script>
+</body>
+</html>

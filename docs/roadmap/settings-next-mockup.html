@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Settings, next · mock-up</title>
+<style>
+/* =====================================================================
+   Mock-up, not product code (15.11.2026). Profile settings as one page
+   of the family: the answer first (how the account is set up), the
+   "On this page" bar, section cards, a quiet side column, and the
+   destructive actions apart at the end.
+   Shared parts copied verbatim from the six tool mock-ups (app bar,
+   back link, page header, chips, cards, buttons, drawers, the ONE
+   FAMILY block and script). Settings is not a project tool: no tool bar,
+   no view note — the frame of today's page (back link to My workspace).
+   MEASURED (source at 9cff84dc / cac55f70): every critique with
+   file:line in "Today, critiqued"; every label, notice and legal text on
+   this page is today's wording unless a decision (P1…) says otherwise.
+   ILLUSTRATIVE: the account "M. Weber", the address, the system address,
+   user, times and the last four characters of a key.
+   ===================================================================== */
+.muted{color:var(--cc-ink-muted)}
+.sm{font-size:13px}.xs{font-size:12px}
+p{margin:0}
+h1,h2,h3,h4{margin:0}
+.sec-lead+.sec-lead{margin-top:6px}
+
+/* state word with its dot — "never colour alone" (settings/page.tsx:78) */
+.stw{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;line-height:18px;white-space:nowrap}
+.stw i{width:8px;height:8px;border-radius:9px;display:inline-block;flex:none}
+.stw.ok{color:var(--cc-success)}.stw.ok i{background:var(--cc-success)}
+.stw.warn{color:var(--cc-warning)}.stw.warn i{background:var(--cc-warning-mark)}
+.stw.err{color:var(--cc-error)}.stw.err i{background:var(--cc-error)}
+.stw.neu{color:var(--cc-neutral)}.stw.neu i{background:#9ca3af}
+.stw.inf{color:var(--cc-information)}.stw.inf i{background:var(--cc-information)}
+
+/* message strips */
+.strip{display:flex;gap:10px;align-items:flex-start;padding:10px 14px;border-radius:8px;border:1px solid;font-size:13px;line-height:1.5;font-weight:500}
+.strip>svg{margin-top:2px}
+.strip b{font-weight:700}
+.strip.inf{background:var(--cc-information-bg);border-color:var(--cc-information-border)}.strip.inf>svg{color:var(--cc-information)}
+.strip.warn{background:var(--cc-warning-bg);border-color:var(--cc-warning-border)}.strip.warn>svg{color:var(--cc-warning-mark)}
+.strip.err{background:var(--cc-error-bg);border-color:var(--cc-error-border)}.strip.err>svg{color:var(--cc-error)}
+.strip.ok{background:var(--cc-success-bg);border-color:var(--cc-success-border)}.strip.ok>svg{color:var(--cc-success)}
+
+/* blocks inside a card */
+.blk{padding-top:16px;margin-top:16px;border-top:1px solid var(--cc-line)}
+.blk-h{display:flex;align-items:flex-start;gap:8px 12px;flex-wrap:wrap}
+.blk-h>div:first-child{flex:1 1 280px;min-width:0}
+.h3{font-size:14px;font-weight:700;line-height:1.4;margin:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.help{font-size:13px;color:var(--cc-ink-muted);font-weight:500;line-height:1.5;margin-top:2px}
+.inset{border:1px solid var(--cc-line);background:var(--cc-surface-muted);border-radius:8px;padding:12px 14px;font-size:13px;line-height:1.55;color:var(--cc-ink-muted)}
+.inset b,.inset strong{color:var(--cc-ink)}
+.inset h4{margin:0 0 6px;font-size:13px;font-weight:700;color:var(--cc-ink)}
+.inset ul,.inset ol{margin:0;padding-left:18px}
+.inset li+li{margin-top:4px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.mt8{margin-top:8px!important}.mt12{margin-top:12px!important}.mt16{margin-top:16px!important}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.btn.danger{background:#fff;border-color:var(--cc-error);color:var(--cc-error)}
+.de{font-size:12px;font-weight:600;color:var(--cc-ink);margin-top:4px}
+code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+
+/* key–value lists */
+dl.kv{display:grid;grid-template-columns:180px minmax(0,1fr);gap:8px 16px;margin:0;font-size:13px;line-height:1.5}
+dl.kv dt{color:var(--cc-ink-muted);font-weight:600}
+dl.kv dd{margin:0;min-width:0;color:var(--cc-ink);font-weight:500;overflow-wrap:anywhere}
+dl.kv.cols{grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px}
+dl.kv.cols>div dt{margin-bottom:2px}
+dl.kv.cols>div dd{font-size:14px}
+
+/* fields */
+.fgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px}
+.fgrid .full{grid-column:1 / -1}
+.fld{min-width:0}
+.fld label,.fld .lab{display:block;font-size:13px;font-weight:600;margin-bottom:4px;color:var(--cc-ink)}
+.fld label .req{color:var(--cc-error);margin-left:2px}
+.fld input,.fld select,.fld textarea{box-sizing:border-box;width:100%;border:1px solid var(--cc-field-border);border-radius:8px;background:#fff;min-height:36px;padding:7px 10px;font:500 14px/1.4 var(--sans);color:var(--cc-ink)}
+.fld textarea{font-family:var(--mono);font-size:12px;line-height:1.5;resize:vertical}
+.fld textarea.prose{font-family:var(--sans);font-size:14px}
+.fld input.mono{font-family:var(--mono);letter-spacing:.04em}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:2px solid var(--cc-focus);outline-offset:1px}
+.fld .h{font-size:12px;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45;font-weight:500}
+.fld .pw{position:relative}
+.fld .pw input{padding-right:40px}
+.fld .pw button{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:30px;height:28px;border:0;background:none;color:var(--cc-ink-muted);border-radius:6px}
+
+/* radio choice */
+fieldset.rad{border:0;margin:0;padding:0;min-width:0}
+fieldset.rad legend{font-size:13px;font-weight:600;margin-bottom:6px;padding:0}
+.ropt{display:grid;grid-template-columns:20px minmax(0,1fr);gap:2px 8px;align-items:start;padding:10px 12px;border:1px solid var(--cc-line);border-radius:8px;background:#fff}
+.ropt+.ropt{margin-top:8px}
+.ropt input{margin:3px 0 0;width:16px;height:16px;accent-color:var(--cc-brand-strong)}
+.ropt b{font-size:14px;font-weight:600}
+.ropt span{grid-column:2;font-size:13px;color:var(--cc-ink-muted);line-height:1.45;font-weight:500}
+.ropt.off{background:var(--cc-surface-muted)}
+.ropt.off b{color:var(--cc-ink-muted)}
+
+/* checkbox */
+.cbx{display:grid;grid-template-columns:20px minmax(0,1fr);gap:2px 8px;align-items:start}
+.cbx input{margin:3px 0 0;width:16px;height:16px;accent-color:var(--cc-brand-strong)}
+.cbx b{font-size:14px;font-weight:600}
+.cbx span{grid-column:2;font-size:13px;color:var(--cc-ink-muted);line-height:1.45;font-weight:500}
+
+/* switch rows (as the Settings inset of economics-next-mockup.html) */
+.sw-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.sw-row{border:1px solid var(--cc-line);border-radius:8px;padding:12px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 16px;align-items:start;background:#fff}
+.sw-row.new{border-color:var(--cc-information);box-shadow:0 0 0 3px var(--cc-information-bg)}
+.sw-row.master{background:var(--cc-surface-muted)}
+.sw-row .t{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.sw-row p{grid-column:1;font-size:13px;color:var(--cc-ink-muted);line-height:1.5;font-weight:500}
+.sw-row p.by{font-size:12px}
+.sw-row .stw{grid-column:1}
+.sw{grid-row:1 / span 2;grid-column:2;width:40px;height:24px;border-radius:999px;background:var(--cc-brand-strong);position:relative;border:0;cursor:pointer;flex:none;margin-top:2px}
+.sw::after{content:"";position:absolute;top:3px;left:19px;width:18px;height:18px;border-radius:999px;background:#fff;transition:left .15s}
+.sw[aria-checked=false]{background:#6b7280}
+.sw[aria-checked=false]::after{left:3px}
+.sw[disabled]{opacity:.5;cursor:not-allowed}
+
+/* the way to a connection: three steps */
+.steps{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;font-weight:600;color:var(--cc-ink)}
+.steps span{display:inline-flex;align-items:center;gap:6px}
+.steps .done svg{color:var(--cc-success)}
+.steps .open{color:var(--cc-ink-muted)}
+
+/* the three checks of a connection check */
+.checks{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:6px 20px;font-size:13px;font-weight:600}
+.checks li{display:inline-flex;align-items:center;gap:6px}
+.checks .y svg{color:var(--cc-success)}
+.checks .n svg{color:var(--cc-error)}
+.checks .q{color:var(--cc-ink-muted)}
+
+/* folds */
+details.fold{border-top:1px solid var(--cc-line);margin-top:16px;padding-top:12px}
+details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;min-height:28px}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary .chev{transition:transform .15s;color:var(--cc-ink-muted)}
+details.fold[open]>summary .chev{transform:rotate(90deg)}
+details.fold>summary .xs{font-weight:500;color:var(--cc-ink-muted)}
+details.fold .fb{padding-top:10px}
+pre.log{margin:0;background:#0b1c30;color:#e5e7eb;border-radius:8px;padding:10px 12px;font-family:var(--mono);font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.svc{display:flex;flex-wrap:wrap;gap:6px}
+
+/* group sections (a heading over two cards) */
+.grp{display:flex;flex-direction:column;gap:16px;min-width:0}
+.grp-h .h2{font-size:18px}
+.grp.zone{margin-top:24px;padding-top:24px;border-top:2px solid var(--cc-line)}
+.grp .card .h2{font-size:16px}
+.card.dz{border-color:var(--cc-error-border)}
+.card.dz .h2 svg{color:var(--cc-error)}
+.endgrid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+
+/* facets as buttons: spans stack like the tools' divs */
+button.facet .t,button.facet .v,button.facet .n{display:block}
+button.facet .t{display:flex}
+button.facet:focus-visible{outline-offset:-2px}
+
+/* side column */
+.side .sc p{font-size:13px;line-height:1.5}
+.side .sc p.big{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.2;margin-top:6px;font-variant-numeric:tabular-nums}
+.side .sc p.big small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.side .links{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.side .links a{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px}
+.lnk.brand{color:var(--cc-brand-strong)}
+.bar{height:6px;border-radius:9px;background:var(--cc-line);margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--cc-brand-strong)}
+
+/* owner / today drawers */
+.drawer.narrow{width:min(820px,100vw)}
+.drawer ul,.drawer ol{padding-left:20px;margin:6px 0}
+.drawer li{margin:5px 0}
+.drawer table{border-collapse:collapse;width:100%;margin:6px 0;font-size:12px}
+.drawer th,.drawer td{border:1px solid var(--cc-line);padding:6px 8px;text-align:left;vertical-align:top}
+.drawer th{background:var(--cc-surface-muted)}
+.drawer .tblwrap{overflow-x:auto}
+.recbox{background:var(--cc-brand-surface);border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px}
+
+[hidden]{display:none!important}
+
+@media (max-width:1100px){
+  .facets>button.facet:nth-child(2n){border-right:0}
+  .facets>button.facet:nth-child(-n+2){border-bottom:1px solid var(--cc-line)}
+}
+@media (max-width:900px){
+  .endgrid{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:720px){
+  .two,.fgrid{grid-template-columns:minmax(0,1fr)}
+  dl.kv{grid-template-columns:minmax(0,1fr);gap:0}
+  dl.kv dd{margin-bottom:10px}
+  dl.kv.cols{grid-template-columns:minmax(0,1fr)}
+  .sw-row{padding:12px 14px;gap:2px 12px}
+  .grp-h .h2{font-size:17px}
+}
+@media (max-width:520px){
+  .btnrow>.btn{flex:1 1 100%}
+  .ophead .next .btn{width:100%}
+}
+
+/* =====================================================================
+   ONE FAMILY (15.11.2026) — this block is byte-identical in the six tool
+   mock-ups (Economics, Design, Transformation, Documentation, Testing,
+   Delivery) and comes last, so the shared parts look and behave the same
+   in every tool. Change it in all six or in none.
+   Responsive rules, the same everywhere:
+   - mock-up bar sticky only above 1100 px; its real height is measured
+     into --mock-h, so nothing ever slides under it;
+   - tool bar: one row at every width; when it does not fit, the legend
+     steps back (each mark keeps its words as a tooltip) and the row
+     scrolls sideways with a right-edge fade, the current tool in view;
+   - "On this page": the spec (tmp/ANCHOR-BAR-SPEC.md), sticky below the
+     mock-up bar, 24 px above and below, anchors land 16 px under it;
+     hidden when the page has only one section (owner, 15.11.2026);
+   - side column below the main column from 1100 px down;
+   - 24 px between cards and sections; card padding 16/20, phone 14/16;
+   - tables never widen the page: on a phone a list table stacks into one
+     block per row (row title first, every other cell with its column
+     name); a wider table scrolls inside its own card;
+   - button labels wrap balanced (no single orphaned word), numbers and
+     chips never break.
+   ===================================================================== */
+@font-face{font-family:Inter;src:url(../../app/fonts/inter-latin-variable.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --mk-bar:#1f1147;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --mock-h:0px;
+}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+body{overflow-x:clip}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+h2[tabindex="-1"]:focus,h3[tabindex="-1"]:focus,summary[tabindex="-1"]:focus{outline:none}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+
+/* mock-up chrome (not product) */
+.mock{position:sticky;top:0;z-index:300;background:var(--mk-bar);color:#fff;font-size:12px;line-height:1.4;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap}
+.mock button.on{background:#e9e5ff;color:var(--mk-bar)}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.mock .d{flex-basis:100%;color:#cfc8f3;font-weight:500}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap;letter-spacing:0;text-transform:none}
+.mtag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;white-space:nowrap;letter-spacing:0;text-transform:none}
+body.nopins .pin{display:none}
+
+/* app bar */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none;color:inherit}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.15}
+.logo .lg svg{width:18px;height:18px}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* frame, back link, note / view switch, tool bar, tool header */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;min-height:32px}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vsnote{font-size:13px;font-weight:500;line-height:1.4;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:0 12px;font-size:13px;font-weight:600;line-height:26px;min-height:26px;color:var(--cc-ink-muted);border-radius:6px;white-space:nowrap}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.tools{display:flex;align-items:center;gap:8px;margin-top:8px;padding:2px 0;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+.tools::-webkit-scrollbar{display:none}
+.tools>*{flex:none}
+/* sideways rows (tool bar, "On this page"): a fade on each edge where more items wait */
+.tools.ovf:not(.end),.pab-items.ovf:not(.end){-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
+.tools.ovf.end:not(.start),.pab-items.ovf.end:not(.start){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px);mask-image:linear-gradient(90deg,transparent,#000 48px)}
+.tools.ovf:not(.start):not(.end),.pab-items.ovf:not(.start):not(.end){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent)}
+.tools .k{display:inline;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tools .tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tools .tool:focus-visible{outline-offset:-2px}
+.tools .tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tool .od{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .t12{order:0}
+.tools .legend{display:flex;margin-left:auto;padding-left:16px;font-size:12px;font-weight:500;color:var(--cc-ink-muted);gap:12px;white-space:nowrap}
+.tools .legend span{display:inline-flex;align-items:center;gap:4px}
+.tools .legend i{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .legend svg.half,.tool svg.half{width:10px;height:10px;color:var(--cc-information);flex:none}
+.tools .toolmenu,.tools .toolsmenu{display:none}
+.tools.nolegend .legend{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh .eyebrow{display:flex;align-items:center;gap:6px}
+.sh .eyebrow svg.i{width:14px;height:14px}
+.sh .pid{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px;overflow-wrap:anywhere}
+.sh .pid+.lead{margin-top:6px}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;line-height:1.5;color:var(--cc-ink-muted);margin-top:2px}
+
+/* buttons, links, chips */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;text-decoration:none;text-align:center;white-space:normal;text-wrap:balance;font-family:inherit;cursor:pointer}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:4px 10px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff;letter-spacing:0;text-transform:none}
+.pv svg.i{width:12px;height:12px}
+.pv.ai,.pv.sim,.pv.prop{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed;background:#fff}
+.pv.eng,.pv.rec{color:var(--cc-information);border-color:var(--cc-information);background:#fff}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral);background:#fff}
+
+/* cards and sections */
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.h2{font-size:16px;font-weight:700;line-height:1.35;display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
+.sec-h{display:flex;align-items:flex-start;gap:8px 12px;flex-wrap:wrap}
+.sec-h>div:first-child{flex:1 1 320px;min-width:0}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+details.fold>summary{flex-wrap:wrap}
+
+/* the answer card: question, answer, why, next step, facets */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ophead>.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start;margin:0}
+.ophead .q{font-size:12px;font-weight:600;line-height:1.5;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:0;letter-spacing:0;text-transform:none}
+.ophead .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ophead .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ophead .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:250px;max-width:290px;width:290px}
+.ophead .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;line-height:1.45}
+.facets{display:grid;border-top:1px solid var(--cc-line);margin:16px -22px 0}
+:where(.facets){grid-template-columns:repeat(4,minmax(0,1fr))}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0}
+button.facet{font:inherit;color:inherit;text-align:left;background:none;border:0;border-right:1px solid var(--cc-line);cursor:pointer;display:block;width:100%}
+button.facet:hover{background:var(--cc-surface-muted)}
+button.facet:last-child{border-right:0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2;font-variant-numeric:tabular-nums}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+
+/* "On this page" — the one bar (tmp/ANCHOR-BAR-SPEC.md) */
+.pab{position:sticky;top:var(--mock-h);z-index:50;display:flex;align-items:center;gap:12px;height:48px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 2px 4px rgb(11 28 48 / .06);margin:24px -32px 24px;padding:0 32px}
+.pab+*{margin-top:0}
+.pab.single{display:none}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted);margin:0;white-space:nowrap}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap;flex:none}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+.pab-c{font-size:12px;font-weight:600;line-height:18px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:var(--cc-ink);border:0;box-shadow:none}
+.pab-c.o{background:#fef3c7}
+.pab-act{margin-left:auto;flex:none}
+[id^="s-"],[data-sec],.chap{scroll-margin-top:calc(var(--mock-h) + 64px)}
+.frame>.pab.single+*,.frame>.pab.single+.body{margin-top:24px}
+
+/* object page body: main column + side column */
+.frame>.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;margin-top:0;align-items:start}
+.main{display:flex;flex-direction:column;gap:24px;min-width:0}
+.side{display:flex;flex-direction:column;gap:24px;position:sticky;top:calc(var(--mock-h) + 64px)}
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* owner / today drawers */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(780px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55;color:var(--cc-ink)}
+.drawer.wide{width:min(1040px,100vw)}
+.drawer[hidden]{display:none}
+.drawer header{position:sticky;top:0;background:#fff;color:var(--cc-ink);border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2;flex-wrap:wrap}
+.drawer header h2{font-size:16px;font-weight:800;line-height:1.3;min-width:0}
+.drawer header .x{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer .db>h3:first-child{margin-top:0}
+.drawer code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+
+/* tables on a phone (rule: stack; data-label filled by the family script) */
+@media (max-width:720px){
+  table.tbl-stack{min-width:0!important;width:100%}
+  table.tbl-stack thead,table.tbl-stack tr:first-child:has(>th){display:none}
+  table.tbl-stack,table.tbl-stack tbody{display:block}
+  table.tbl-stack tr{display:block;padding:10px 0;border-bottom:1px solid var(--cc-line)}
+  table.tbl-stack tr:last-child{border-bottom:0}
+  table.tbl-stack td{display:flex;gap:10px;border:0!important;padding:2px 0!important;text-align:left!important;background:none!important}
+  table.tbl-stack td:first-child{font-weight:600}
+  table.tbl-stack td[data-label]:not(:first-child)::before{content:attr(data-label);flex:0 0 38%;font-size:12px;font-weight:600;color:var(--cc-ink-muted);font-family:var(--sans);white-space:normal}
+}
+
+/* ---------- the same breakpoints in every tool ---------- */
+@media (max-width:1100px){
+  .mock{position:static}
+  .frame>.body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  :where(.facets){grid-template-columns:repeat(2,minmax(0,1fr))}
+  :where(.facets>.facet:nth-child(2n)){border-right:0}
+  :where(.facets>.facet:nth-child(-n+2)){border-bottom:1px solid var(--cc-line)}
+}
+@media (max-width:900px){
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .next{width:auto;min-width:0;max-width:420px}
+}
+@media (max-width:720px){
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .ophead{padding:14px 16px 0}
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .a{font-size:17px}
+  .ophead .next{min-width:0;max-width:none;width:auto}
+  .facets{margin:14px -16px 0}
+  .facet,button.facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .pad{padding:14px 16px}
+  .drawer header{padding:12px 16px}
+  .drawer .db{padding:14px 16px 28px}
+}
+@media (max-width:639px){
+  .pab{margin:24px -16px 24px;padding:0 0 0 16px}
+  .pab-l,.pab-act{display:none}
+  .pab-items{padding-right:24px}
+}
+</style>
+</head>
+<body>
+
+<div class="mock" role="region" aria-label="Mock-up controls">
+  <b>AI steps</b>
+  <button type="button" data-ai="all" class="on">All on</button>
+  <button type="button" data-ai="part">Partly off</button>
+  <b>Own key</b>
+  <button type="button" data-key="none" class="on">Not set</button>
+  <button type="button" data-key="set">Set</button>
+  <b>SAP test system</b>
+  <button type="button" data-sap="noaccess">No access yet</button>
+  <button type="button" data-sap="review">Request in review</button>
+  <button type="button" data-sap="none" class="on">Not connected</button>
+  <button type="button" data-sap="ok">Connected</button>
+  <button type="button" data-sap="fail">Check failed</button>
+  <span class="sp">
+    <button type="button" id="pins">Decision pins: on</button>
+    <button type="button" data-open="p-today">Today, critiqued</button>
+    <button type="button" data-open="p-owner">For the owner</button>
+  </span>
+</div>
+
+<header class="shell">
+  <a class="logo" href="#" aria-label="Clean-Core.io, My workspace">
+    <span class="lg"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span>
+    <span><span class="n">Clean-Core<em>.io</em></span><span class="s">Free Community Edition</span></span>
+  </a>
+  <nav class="path" aria-label="Breadcrumb"><span>My workspace</span><span>›</span><span class="cur">Profile settings</span></nav>
+  <div class="shell-r">
+    <button class="ib" type="button" aria-label="Help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+    <span class="av" aria-label="Account menu">MW</span>
+  </div>
+</header>
+
+<main class="frame">
+  <div class="headrow">
+    <a class="back" href="#"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>Back to My workspace</a><span class="pin">P1</span>
+  </div>
+
+  <div class="sh">
+    <div class="eyebrow">Your account</div>
+    <h1><svg class="i" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>Profile settings<span class="pin">P2</span></h1>
+    <p class="lead">Your profile, sign-in security, the AI model and your SAP test system. Changes here apply to your account only.</p>
+  </div>
+
+  <!-- ===== the answer, then the facets ===== -->
+  <section class="card ophead" aria-labelledby="ans-q" id="ophead">
+    <div class="ans">
+      <div>
+        <p class="q" id="ans-q">How is your account set up?<span class="pin">P3</span></p>
+        <p class="a" id="answer"></p>
+        <p class="why" id="why"></p>
+      </div>
+      <div class="next" id="nextbox"></div>
+    </div>
+    <div class="facets" id="facets"></div>
+  </section>
+
+  <!-- ===== "On this page" ===== -->
+  <nav class="pab" aria-label="On this page" id="anchors">
+    <span class="pab-l">On this page</span>
+    <div class="pab-items" id="pabitems"></div>
+  </nav>
+
+  <div class="body">
+    <div class="main">
+
+      <!-- ===== profile ===== -->
+      <section class="card pad" id="s-profile" aria-labelledby="s-profile-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-profile-h">Your profile</h2>
+          </div>
+          <div class="r"><button class="btn ghost" type="button" id="editname"><svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Edit name</button></div>
+        </div>
+        <dl class="kv cols mt12" id="prof-view">
+          <div><dt>Name</dt><dd>M. Weber</dd></div>
+          <div><dt>E-mail address</dt><dd>m.weber@example.com</dd></div>
+        </dl>
+        <form class="mt12" id="prof-edit" hidden onsubmit="return false">
+          <div class="fgrid">
+            <div class="fld"><label for="fn">First name<span class="req">*</span></label><input id="fn" value="M." autocomplete="given-name" maxlength="100"></div>
+            <div class="fld"><label for="ln">Last name<span class="req">*</span></label><input id="ln" value="Weber" autocomplete="family-name" maxlength="100"></div>
+          </div>
+          <div class="btnrow mt16"><button class="btn primary" type="button" id="savename">Save name</button></div>
+        </form>
+      </section>
+
+      <!-- ===== sign-in security ===== -->
+      <section class="card pad" id="s-signin" aria-labelledby="s-signin-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-signin-h">Sign-in security</h2>
+            <p class="sec-lead">Ask for a code from an authenticator app at every sign-in, and change your password.</p>
+          </div>
+        </div>
+        <div class="blk">
+          <div class="blk-h">
+            <div>
+              <h3 class="h3">Two-factor authentication</h3>
+              <p class="help">After your password, the sign-in asks for a 6-digit code from the authenticator app on your phone. Your own model key and your SAP test system need it.</p>
+            </div>
+            <span class="stw ok"><i></i>On</span>
+          </div>
+          <div class="inset mt12">
+            <h4>If you lose the authenticator</h4>
+            There are no backup codes. Write to <a class="lnk brand" href="#">info@clean-core.io</a> from your account address; an administrator removes the factor after confirming with you, and you set it up again here.
+          </div>
+          <div class="btnrow mt12"><button class="btn ghost" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>Turn off two-factor authentication</button></div>
+        </div>
+        <div class="blk">
+          <div class="blk-h">
+            <div>
+              <h3 class="h3">Password<span class="pin">P10</span></h3>
+              <p class="help">You sign in with your e-mail address and a password.</p>
+            </div>
+            <div class="r"><button class="btn ghost" type="button" id="pwbtn" aria-expanded="false" aria-controls="pwform"><svg class="i" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></svg>Change password</button></div>
+          </div>
+          <form class="mt12" id="pwform" hidden onsubmit="return false">
+            <div class="fgrid">
+              <div class="fld"><label for="pw0">Current password<span class="req">*</span></label><div class="pw"><input id="pw0" type="password" placeholder="••••••••" autocomplete="current-password"><button type="button" aria-label="Show current password"><svg class="i" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div></div>
+              <div class="fld"><label for="pwc">Code from your authenticator app<span class="req">*</span></label><input id="pwc" class="mono" inputmode="numeric" maxlength="6" placeholder="123456" autocomplete="one-time-code"></div>
+              <div class="fld"><label for="pw1">New password<span class="req">*</span></label><div class="pw"><input id="pw1" type="password" placeholder="••••••••" autocomplete="new-password"><button type="button" aria-label="Show new password"><svg class="i" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></button></div><p class="h">At least 8 characters, upper- and lowercase letters, a number. A strength meter shows as you type.</p></div>
+              <div class="fld"><label for="pw2">Repeat the new password<span class="req">*</span></label><input id="pw2" type="password" placeholder="••••••••" autocomplete="new-password"></div>
+            </div>
+            <div class="btnrow mt16"><button class="btn primary" type="button" disabled>Change password</button><button class="btn ghost" type="button" id="pwcancel">Cancel</button></div>
+          </form>
+        </div>
+      </section>
+
+      <!-- ===== AI model: own key + AI steps ===== -->
+      <section class="grp" id="s-ai" aria-labelledby="s-ai-h">
+        <div class="grp-h">
+          <h2 class="h2" id="s-ai-h">AI model<span class="pin">P6</span></h2>
+          <p class="sec-lead">Which key pays for the AI steps, and which steps may call the model. The findings, the extensibility route and the Clean Core Score never use a model.</p>
+        </div>
+
+        <div class="card pad" id="own-key">
+          <div class="sec-h">
+            <div><h3 class="h2">Your own model key (BYOK)</h3></div>
+            <div class="r" id="key-meta"></div>
+          </div>
+          <div id="key-body"></div>
+        </div>
+
+        <div class="card pad" id="ai-steps">
+          <div class="sec-h">
+            <div>
+              <h3 class="h2">Where the AI model is used</h3>
+              <p class="sec-lead" id="ai-lead"></p>
+            </div>
+            <div class="r" id="ai-count"></div>
+          </div>
+          <ul class="sw-list mt12">
+            <li class="sw-row master"><span class="t">All automatic AI steps</span><button class="sw" type="button" role="switch" aria-checked="true" aria-label="All automatic AI steps" id="sw-main"></button><p>Off: the platform calls no AI model by itself, on any key, the platform key included, and the first run of a new project is signed without the model narrative. Steps you click, and the single switches below, stay as they are.</p></li>
+          </ul>
+          <ul class="sw-list mt12" id="stages"></ul>
+        </div>
+      </section>
+
+      <!-- ===== SAP test system ===== -->
+      <section class="card pad" id="s-sap" aria-labelledby="s-sap-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-sap-h">Your SAP test system<span class="pin">P8</span></h2>
+            <p class="sec-lead">Connect a non-productive SAP S/4HANA system — Cloud or on-premise — so Clean-Core.io can check that it answers. Testing uses it for the connection check, the OData metadata of a service and one read-only call; nothing writes to it.</p>
+          </div>
+          <div class="r" id="sap-meta"></div>
+        </div>
+        <div class="steps mt12" id="sap-steps" aria-label="The way to a connection"></div>
+        <div id="sap-body" class="mt16"></div>
+        <div class="strip inf mt16" id="sap-lock"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg><span><b>Running the generated tests on this system is locked.</b> It opens when the isolated live runner has passed its review — not by a permission. Until then tests run in Clean-Core.io's runner against SAP mocks, or in your own system with the result imported.<span class="pin">P12</span></span></div>
+      </section>
+
+      <!-- ===== mail and assistant ===== -->
+      <section class="card pad" id="s-prefs" aria-labelledby="s-prefs-h">
+        <div class="sec-h">
+          <div><h2 class="h2" id="s-prefs-h">Mail and assistant</h2></div>
+        </div>
+        <div class="blk" style="margin-top:12px">
+          <h3 class="h3">Community mail</h3>
+          <p class="help">Surveys about what to build next and the occasional community update. We send them only if you switch this on, and you can switch it off here or with the unsubscribe link in any of those mails. Mails about your own account — confirmations, invitations you send, security notices — are not affected. Details in the <a class="lnk brand" href="#">privacy policy</a>.</p>
+          <ul class="sw-list mt12">
+            <li class="sw-row"><span class="t">Send me surveys and community updates</span><button class="sw" type="button" role="switch" aria-checked="false" aria-label="Send me surveys and community updates" id="sw-mail"></button><p id="mail-help">Off unless you switch it on.</p></li>
+          </ul>
+        </div>
+        <div class="blk">
+          <h3 class="h3">Assistant button</h3>
+          <label class="cbx mt8"><input type="checkbox" id="cb-asst"><b>Show the floating assistant button on a computer screen too</b><span>The assistant is always in the header. On a phone the floating button is the way in and stays.</span></label>
+          <div class="btnrow mt12"><button class="btn primary" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>Save</button></div>
+        </div>
+      </section>
+
+      <!-- ===== ending the account: apart, at the end ===== -->
+      <section class="grp zone" id="s-end" aria-labelledby="s-end-h">
+        <div class="grp-h">
+          <h2 class="h2" id="s-end-h">End or delete your account<span class="pin">P11</span></h2>
+          <p class="sec-lead">Two separate ways out. Each opens its own form and asks you to confirm; neither can be undone.</p>
+        </div>
+        <div class="endgrid">
+          <div class="card pad" id="end-contract">
+            <h3 class="h2"><svg class="i" viewBox="0 0 24 24" style="color:var(--cc-brand-strong)"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>Withdraw from / end the contract</h3>
+            <p class="sec-lead">You can withdraw from or end the contract for the use of Clean-Core.io at any time. The button below opens the form: it shows your name, your account address and the contract, and you confirm with "Confirm withdrawal". We confirm receipt by e-mail at once; then your account is deleted and the contract ends. We offer this function voluntarily (Terms of Service, section 13).</p>
+            <p class="xs muted mt8" lang="de">Sie können den Vertrag über die Nutzung von Clean-Core.io jederzeit widerrufen oder beenden. Die Schaltfläche unten öffnet das Formular: Es zeigt Ihren Namen, Ihre Konto-Adresse und den Vertrag, und Sie bestätigen mit „Widerruf bestätigen“. Den Eingang bestätigen wir Ihnen sofort per E-Mail; danach wird Ihr Konto gelöscht, und der Vertrag endet. Diese Funktion bieten wir freiwillig an (Nutzungsbedingungen, Ziffer 13).</p>
+            <div class="mt12"><button class="btn secondary" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M14 2v6h6M9.5 12.5l5 5M14.5 12.5l-5 5"/></svg>Withdraw from / end the contract</button>
+            <p class="de" lang="de">Vertrag widerrufen / beenden</p></div>
+          </div>
+          <div class="card pad dz" id="danger-zone">
+            <h3 class="h2"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Danger Zone</h3>
+            <p class="sec-lead">Delete your account for good (GDPR Art. 17, right to erasure). This cannot be undone. Your sign-in and the live database entries — uploaded ABAP source files, solution designs, generated code and test cases — are deleted at once. The security audit record of administrative actions on your account and of the actions you took yourself is kept for 24 months from each action, with a keyed hash in place of your account identifier and no address of your account; copies in encrypted backups age out within 30 days; the privacy policy lists what else deletion does not reach.</p>
+            <div class="mt12"><button class="btn danger" type="button"><svg class="i" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>Delete my account</button></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- ===== side column ===== -->
+    <aside class="side" aria-label="Account facts">
+      <div class="card sc">
+        <h3>Analysis runs<span class="pin">P5</span></h3>
+        <p class="muted mt8" id="tier-label">Free Community Edition</p>
+        <p class="big" id="runs"></p>
+        <div class="bar" id="runbar"><i style="width:60%"></i></div>
+        <p class="muted mt8" id="tier-text"></p>
+      </div>
+      <div class="card sc">
+        <h3>Legal and privacy</h3>
+        <p class="muted mt8">Clean-Core.io is a free community edition, provided without warranty.</p>
+        <div class="links"><a href="#">Legal notice</a><a href="#">Privacy policy</a><a href="#">Terms of service</a></div>
+        <details class="fold" style="margin-top:12px">
+          <summary><svg class="i s chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>How the AI model is used</summary>
+          <div class="fb"><p class="muted xs" style="line-height:1.55">The findings, the route and the Clean Core Score come from a deterministic engine that reads your code; no model is involved in them. A language model (Google Gemini, or Anthropic Claude when your own key is a Claude key) writes only drafts on top of that evidence: the analysis narrative, business names for the process, the solution design, the code proposal, the documentation and the test suite. A draft can be wrong — code that does not compile, a statement the code does not support — so review a draft before you rely on it.</p></div>
+        </details>
+      </div>
+      <div class="card sc">
+        <h3>Questions about your account?</h3>
+        <p class="muted mt8">Write to <a class="lnk brand" href="#">info@clean-core.io</a>.</p>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- ===== today, critiqued ===== -->
+<aside class="drawer narrow" id="p-today" hidden role="dialog" aria-labelledby="today-h">
+  <header><h2 id="today-h">Profile settings today, critiqued</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <p class="muted">Read from source at <code>cac55f70</code> (branch <code>design/econ-doc-mockups</code>). Today's page could not be opened here (no server, no emulators), so nothing below is a screenshot and no pixel height of today's page is claimed; every point is read from the code. <code>app/(app)/settings/page.tsx</code> is 2,458 lines; it renders <code>ModelStagesCard</code>, <code>CommunityMailCard</code>, <code>components/settings/OwnKeyProviderChoice.tsx</code> and <code>OwnKeyTerms.tsx</code>. The tenant setup in <code>testing/page.tsx:2033–2769</code> was read as well, because ADR-131 moves it here.</p>
+
+    <h3>What is wrong today</h3>
+    <ul>
+      <li><b>No answer, no way through.</b> One 880 px column (<code>page.tsx:1272</code>) of eleven cards in a row — profile, analysis runs, sign-in security, own key, AI steps, assistant button, community mail, S/4HANA connection, legal, withdrawal, Danger Zone (<code>1292–2082</code>). Nothing says how the account is set up; there is no "On this page" bar, so the AI steps sit five cards down and the S/4HANA card eight.</li>
+      <li><b>Three names for one page.</b> The title says "Profile settings" (<code>page.tsx:1286</code>), the breadcrumb and the account menu "Settings &amp; Profile" (<code>app/(app)/layout.tsx:215, 426</code>). The privacy policy sends readers to "Profile Settings under the Danger Zone" (<code>lib/legal/texts/privacy.en.ts:131</code>).</li>
+      <li><b>Forms are always open.</b> The password form (<code>1454–1558</code>) and the own-key form (<code>1575–1691</code>) stand open even when nothing is to be changed; with a key saved, the reader meets the provider choice, the legal notice, an empty key field and three buttons before learning that a key is saved and tested.</li>
+      <li><b>Two tenant implementations that disagree.</b> Settings (<code>1744–1979</code>) and Testing (<code>testing/page.tsx:2033–2769</code>) each have their own form:
+        <ul>
+          <li>Settings has no summary of the saved connection and no "Delete connection"; Testing has both (<code>2083–2130</code>).</li>
+          <li>Settings checks the <i>form</i>, not the saved connection: its call (<code>1029–1043</code>) never sends <code>useStoredCredentials</code>, and the password is not loaded back (<code>673–681</code>) — so after a reload the check of a saved basic connection fails with "Username and password are required" unless the password is typed again. Testing checks the saved one (<code>536</code>).</li>
+          <li>Testing's save omits the OAuth token URL (<code>testing/page.tsx:448–458</code>); Settings sends it (<code>987</code>).</li>
+          <li>Two sets of sign-in method labels: "User name and password" … (<code>settings 1813–1816</code>) vs. "Basic Authentication (Username + Password)" … in title case (<code>testing 201–206</code>).</li>
+          <li>Settings' "How it works" says to check the connection "from the Testing stage" (<code>1913</code>) beside its own "Test the connection" button (<code>1888–1896</code>).</li>
+        </ul></li>
+      <li><b>One sign-in method cannot work.</b> The SAP Business Accelerator Hub sandbox needs an API key (<code>app/api/test-s4-connection/route.ts:409–417</code>, sent in the password field), but both forms hide every credential field for that method (<code>settings/page.tsx:1857</code>, <code>testing/page.tsx:2408</code>). The check always fails with "An API key is required for the SAP API Hub."</li>
+      <li><b>Green for a refused sign-in.</b> An HTTP 401 is reported with status <code>connected</code> (<code>lib/s4-connection-probe.ts:214–219</code>, "Authentication credentials were rejected"), and both pages colour a <code>connected</code> message as success (<code>settings 1880–1882</code>, <code>testing 2135–2139</code>). The probe already returns the three facts (<code>checked: reachable, signedIn, serviceFound</code>, <code>s4-connection-probe.ts:181</code>) — nobody shows them.</li>
+      <li><b>The AI steps' count is a fixed word list.</b> <code>COUNT_WORDS</code> knows 5, 6, 7 (<code>ModelStagesCard.tsx:22</code>); with Economics' step (ADR-128 (7)) there are eight, and the lead would print "8 stages". The lead also says how many stages <i>send</i>, whatever is switched off (<code>128</code>).</li>
+      <li><b>Dead code.</b> A support-ticket form's state and handler (<code>page.tsx:185–189, 716–742</code>) are never rendered.</li>
+      <li><b>Destructive actions in the flow.</b> Withdrawal and Danger Zone follow straight after "Legal and privacy" (<code>1985–2082</code>), styled like every other card; only an icon tells them apart.</li>
+      <li><b>Word drift.</b> "Danger Zone" in title case (<code>2056</code>), "S/4HANA" in the card title where a business reader says "SAP test system", "Test the key" beside "Test the connection" beside Testing's "Check connection".</li>
+    </ul>
+
+    <h3>What is good and is kept</h3>
+    <ul>
+      <li>Every function and every legal wording: name, two-factor set-up and removal with their dialogs, password change with the authenticator code, own key with the provider choice, the C3/C4 notices, the Additional Agreement for an Anthropic key, "Automatic steps on my key", the untested and switched-off notices; the AI steps with "All automatic AI steps" and "Last answered by"; community mail; the assistant button; the withdrawal form (Terms 13, bilingual) and the erasure (GDPR Art. 17) with their confirmations (<code>2087–2453</code>).</li>
+      <li>State words with a dot, never colour alone (<code>78–86</code>); the two-factor requirement said before the request, not as a 403 after it (<code>1684–1690, 1970–1973</code>).</li>
+      <li>The deep links <code>/settings#own-key</code>, <code>#sign-in-security</code>, <code>#end-contract</code> (<code>173–179, 257–265</code>) — kept as anchors inside the new sections.</li>
+      <li>No data export is offered, and none is invented here: the code comment at <code>1981–1984</code> records that a promised download was removed because it did not exist.</li>
+    </ul>
+
+    <h3>Today vs. mock-up</h3>
+    <div class="tblwrap"><table>
+      <tr><th>Today</th><th>Mock-up</th></tr>
+      <tr><td>Title, one-line lead, eleven cards</td><td>Eyebrow, icon, title, lead; "How is your account set up?" with two sentences, one next step and four facets (P3)</td></tr>
+      <tr><td>No bar</td><td>The shared "On this page" bar: Profile · Sign-in · AI model · SAP system · Preferences · Ending (P4)</td></tr>
+      <tr><td>One column, 880 px</td><td>Main column and a side column: analysis runs, legal and privacy, questions (P5)</td></tr>
+      <tr><td>Own key and AI steps as two unrelated cards</td><td>One "AI model" section; the key as a summary once saved (P6, P14)</td></tr>
+      <tr><td>Seven AI steps</td><td>Eight: "Economics: AI proposals for your assumptions", new, on by default (P7)</td></tr>
+      <tr><td>S/4HANA card here and 737 lines in Testing</td><td>"Your SAP test system", once, here: request, form, saved connection, check, more checks, log (P8, P9)</td></tr>
+      <tr><td>401 shown green</td><td>Three facts per check: reachable · sign-in · service (P13)</td></tr>
+      <tr><td>Password form always open</td><td>"Change password" opens it (P10)</td></tr>
+      <tr><td>Withdrawal and Danger Zone inside the flow</td><td>Apart at the end, two cards side by side, red only on deletion (P11)</td></tr>
+    </table></div>
+  </div>
+</aside>
+
+<!-- ===== for the owner ===== -->
+<aside class="drawer narrow" id="p-owner" hidden role="dialog" aria-labelledby="owner-h">
+  <header><h2 id="owner-h">For the owner — decisions P1–P16</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <div class="recbox"><b>Recommendation:</b> build P1–P16 as one Settings step before the 3.5 release, together with Testing's S9 (ADR-131), so the tenant setup leaves Testing and arrives here in the same release. The page keeps every function and every legal wording it has; it gains an answer, the shared bar, a side column, one SAP test system section that works for all four sign-in methods, and the Economics AI step. No engine change, no new stored field, no rules change.</div>
+    <ol style="margin-top:12px">
+      <li><b>P1 Today's frame, the family's header.</b> App bar, "Back to My workspace", no tool bar and no view note — Settings is not a project tool. The page header is the family's (eyebrow "Your account", icon, title, lead), the cards, chips, buttons and breakpoints are the ONE FAMILY block, byte-identical with the six tools. Recommended.</li>
+      <li><b>P2 One name: "Profile settings".</b> Title, breadcrumb and account menu say the same (today the menu and the crumb say "Settings &amp; Profile", <code>layout.tsx:215, 426</code>). "Profile settings" because the privacy policy and the mails point there. Recommended; alternative "Settings" everywhere, which needs the privacy policy and two mail texts changed (lawyer).</li>
+      <li><b>P3 The answer first.</b> "How is your account set up?" — sign-in, which key pays, which AI steps are off, the SAP test system — in two sentences, one next step (a failed check, else "Add your own model key" while there is none, else nothing), four facets that jump to their section. All read from the profile the page already loads. Recommended.</li>
+      <li><b>P4 The shared "On this page" bar</b> (<code>tmp/ANCHOR-BAR-SPEC.md</code>): Profile · Sign-in · AI model · SAP system · Preferences · Ending — short, parallel nouns; the only count is an amber "1" on SAP system while the last check failed (a number badge, never a phrase). The deep links <code>#own-key</code>, <code>#sign-in-security</code>, <code>#end-contract</code> stay. Recommended.</li>
+      <li><b>P5 A side column.</b> Analysis runs (today's quota card), Legal and privacy (the three links; the AI paragraph folded under "How the AI model is used", wording unchanged), Questions about your account. Below the main column from 1100 px down. Recommended; alternative: keep "Legal and privacy" as a card in the main column.</li>
+      <li><b>P6 "AI model" — one section, two cards.</b> The own key first (it decides who pays), the AI steps under it (which steps may call). Today they are adjacent but unrelated. Recommended.</li>
+      <li><b>P7 The new AI step for Economics</b> (ADR-128 (7), decided by the owner on 15.11.2026: "muss auch in Settings angezeigt werden"). "Economics: AI proposals for your assumptions" with its description, after Business sentences and before Solution design (the tool order of ADR-128 (5)), on by default like every stage. The lead says "Eight stages can send a prompt …; n are on"; <code>COUNT_WORDS</code> gains "Eight". The row is marked "New" for one release. Recommended.</li>
+      <li><b>P8 "Your SAP test system" moves here</b> (ADR-131 S9). One section in four states — not requested (how it works, protection, no-warranty, request form), request in review, access granted (the form), connected (saved connection, check, "More checks", log of the last check) — plus "check failed". It merges the two implementations: Testing's summary, delete, more checks and log; Settings' request form and protection text. Testing keeps one line with a link. Recommended.</li>
+      <li><b>P9 One connection form that works.</b> One set of sign-in method labels (Settings' sentence case); the token URL for OAuth 2.0 saved everywhere; an <b>API key field for the SAP Business Accelerator Hub sandbox</b> (missing in both forms, so that method can never pass today); "Save" first, then "Check the connection" against the saved connection (<code>useStoredCredentials</code>, as Testing does), so a check after a reload works without typing the password again. Recommended — the API key field is a defect fix and could go ahead in a 3.0.x hotfix.</li>
+      <li><b>P10 Password behind "Change password".</b> The form opens on the button; Google accounts keep "You sign in with Google". Recommended.</li>
+      <li><b>P11 Ending the account apart, at the end.</b> A divider and its own heading "End or delete your account", the withdrawal (secondary button, German label beneath) and the erasure (red border, the only red button on the page) side by side. Wording unchanged; the card keeps the name "Danger Zone" because the privacy policy (§5) and the welcome and tenant mails name it. Recommended; renaming it "Delete your account" waits for the next legal text revision.</li>
+      <li><b>P12 The lock said once.</b> "Running the generated tests on this system is locked" stands once, at the end of the SAP section, with why it opens (the runner's review, not a permission). Recommended.</li>
+      <li><b>P13 A check is three facts.</b> Reachable · sign-in accepted · service found, each with a mark, from the probe's <code>checked</code> object; "Connected" and green only when all three hold. A 401 reads "Check failed — the system answered, but refused the sign-in" (today green). The probe and its texts stay; only the colour rule changes in the page. Recommended.</li>
+      <li><b>P14 A saved key is a summary.</b> Provider, last four characters, test result, runs; "Automatic steps on my key"; "Test the key", "Replace the key" (opens today's form with its notices), "Remove the key". Before a key is saved the form is open, as today. Recommended.</li>
+      <li><b>P15 Nothing invented, dead code out.</b> No data export button (none exists; Art. 20 requests go to info@clean-core.io, as the privacy policy says); the unused support-ticket state and handler (<code>page.tsx:185–189, 716–742</code>) are removed in the build. Recommended.</li>
+      <li><b>P16 Forms on a phone.</b> One column of fields, labels above, buttons full width below 520 px, the key and connection lists stacked, the side column under the main column, the bar scrolling sideways with its fade. Recommended.</li>
+    </ol>
+
+    <h3>What it costs to build</h3>
+    <div class="tblwrap"><table>
+      <tr><th>Item</th><th>Answer</th></tr>
+      <tr><td>Files</td><td><code>app/(app)/settings/page.tsx</code> (rebuilt around answer, bar, sections and side column; dead ticket code out; tenant card out); new <code>components/settings/SettingsAnswer.tsx</code>, <code>components/settings/SapTestSystem.tsx</code> (from <code>settings 1744–1979</code> and <code>testing/page.tsx:2033–2769</code>, with its handlers <code>testing 440–720</code>), <code>components/settings/OwnKeySummary.tsx</code>; <code>components/ModelStagesCard.tsx</code> (lead, "Eight"); <code>app/(app)/layout.tsx</code> (crumb and menu name); <code>app/(app)/project/[projectId]/testing/page.tsx</code> (tenant section and side card out, one line in); <code>lib/page-anchors.ts</code> (settings items, if the bar reads it there). The Economics stage itself (<code>lib/model-stages.ts</code>, <code>lib/model-call-stages.ts</code>) is built with ADR-128 (ECO-N*), not here.</td></tr>
+      <tr><td>Engine change</td><td>No.</td></tr>
+      <tr><td>Stored field</td><td>No. Profile fields as today (<code>s4Meta</code>, <code>s4TenantAccessAllowed/Requested</code>, <code>byokConfigured</code>, <code>byokLast4</code>, <code>byokAutoSteps</code>, <code>modelStages</code>, <code>autoModelSteps</code>, <code>communityMail</code>, <code>desktopChatbotEnabled</code>); the vault <code>s4_credentials/{uid}</code>. The <code>economics</code> key lives in the existing <code>modelStages</code> map.</td></tr>
+      <tr><td>Rules change</td><td>No. <code>modelStages</code> is written by the Admin SDK only (<code>/api/model-stages</code>); the tenant fields and the vault keep their rules (<code>firestore.rules:135, 212–213, 608</code>).</td></tr>
+      <tr><td>Route change</td><td>None required. Optional with P13: none — the page reads <code>checked</code>, which the route already returns.</td></tr>
+      <tr><td>Specs</td><td>Settings rendered specs (sections, anchors, the own-key summary), <code>settings-mfa-copy</code>, the S/4 specs that name the page (<code>s4-mfa-enrolment-guard</code>, <code>s4-credentials-tokenurl</code>, <code>s4-legacy-config-guard</code>), the Testing tenant/BYOT specs (new place), the model-stages specs (eighth row). Run <code>grep -rl settings/page tests/</code> before pushing (CLAUDE.md).</td></tr>
+      <tr><td>Legal</td><td>No legal text changes. The Economics row's wording goes to the lawyer with ADR-128's AI wording, as already planned.</td></tr>
+    </table></div>
+
+    <h3>Measured vs. illustrative in this picture</h3>
+    <p>Measured from source: every label, help text, notice and legal paragraph (quoted from <code>settings/page.tsx</code>, <code>ModelStagesCard.tsx</code>, <code>CommunityMailCard.tsx</code>, <code>OwnKeyTerms.tsx</code>, <code>lib/byok-addendum.ts</code>, <code>lib/model-stages.ts</code>, <code>lib/legal/consent-texts.ts</code>), the probe messages (<code>lib/s4-connection-probe.ts</code>), the model ids (<code>lib/constants.ts:153, 168</code>), the eight common services (<code>testing/page.tsx:190–199</code>). Illustrative: the account M. Weber and its address, the system address and user (today's placeholders), the key's last four characters, every time and date, which stages show "Last answered by", and which two steps are off in "Partly off".</p>
+  </div>
+</aside>
+
+<script>
+/* ---------------- icons ---------------- */
+const IC={
+  info:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+  warn:'<svg class="i" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4M12 17h.01"/></svg>',
+  err:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>',
+  ok:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
+  check:'<svg class="i s" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+  x:'<svg class="i s" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  circ:'<svg class="i s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/></svg>',
+  dash:'<svg class="i s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/></svg>',
+  chev:'<svg class="i s chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>',
+  plug:'<svg class="i" viewBox="0 0 24 24"><path d="M12 22v-5M9 8V2M15 8V2M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/></svg>',
+  key:'<svg class="i" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m21 2-9.6 9.6M15.5 7.5l3 3L22 7l-3-3"/></svg>',
+  zap:'<svg class="i" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>',
+  save:'<svg class="i" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>',
+  trash:'<svg class="i" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  send:'<svg class="i" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>',
+  edit:'<svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  eye:'<svg class="i" viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+  db:'<svg class="i s" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5M3 12a9 3 0 0 0 18 0"/></svg>',
+  arr:'<svg class="i s" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+};
+const stw=(c,t)=>`<span class="stw ${c}"><i></i>${t}</span>`;
+const pin=p=>`<span class="pin">${p}</span>`;
+
+/* ---------------- state ---------------- */
+let ST={ai:'all',key:'none',sap:'none'};
+/* the AI steps: lib/model-stages.ts (labels, descriptions), in the tool order of ADR-128 (5); 'economics' is new (ADR-128 (7)) */
+const STAGES=[
+  ['analyze','Analysis narrative','The prose around the evidence: summary, gaps, standardisation fit. The findings, the route and the Clean Core Score are computed without a model and are unaffected.','gemini-3.8-flash'],
+  ['naming','Business names','Proposed business names for the steps and lanes of the process reconstructed from the code. The process, its technical names and every line anchor are computed without a model and stay as they are.','gemini-3.5-flash-lite'],
+  ['statements','Business sentences','A proposed business sentence for each step of the process, asked for with a button. The sentence reconstructed from the code stays beneath each one as the evidence, and a proposal the code contradicts is marked.',''],
+  ['economics','Economics: AI proposals for your assumptions','Proposed day rates, period, SAP release cadence, currency and effort per option, each with a reason and a range — asked for with a button. Only facts of the signed run are sent (lines, objects, findings, route), never the source code. Every amount and the comparison are computed without a model.',''],
+  ['design','Solution design blueprint','The target architecture blueprint, the non-functional requirements, and — asked for with a button — clearer wording for the functional requirements. The functional requirements themselves, their lines and priorities are read from the code without a model.','gemini-3.8-flash'],
+  ['transformation','Transformed code','The ABAP Cloud or CAP code proposal.',''],
+  ['documentation','Documentation and business blueprint','The technical documentation and the business blueprint.',''],
+  ['testing','Test suite','The proposed test cases and the test suite skeleton.',''],
+];
+let ON={};
+function resetAI(){STAGES.forEach(s=>ON[s[0]]=true);if(ST.ai==='part'){ON.statements=false;ON.economics=false}}
+let MAIN=true, MAIL=false;
+const onCount=()=>STAGES.filter(s=>ON[s[0]]).length;
+const offNames=()=>STAGES.filter(s=>!ON[s[0]]).map(s=>s[0]==='economics'?'Economics proposals':s[1]);
+const keyOwner=()=>ST.key==='set'?'your own key':'the platform key';
+
+/* ---------------- answer + facets ---------------- */
+function renderHead(){
+  const k=ST.key==='set', s=ST.sap, off=offNames();
+  let a='You sign in with your password and a code from your authenticator app. ';
+  a+=k?'The AI steps run on your own Google Gemini key, with no limit on analysis runs.':'The AI steps run on the platform key, with 3 of 5 free analysis runs left.';
+  let w=off.length?`${off.length===1?'One AI step is':(off.length===2?'Two AI steps are':off.length+' AI steps are')} off — ${off.join(' and ')}; ${off.length===1?'that stage says':'those stages say'} “not generated”. `:'Every AI step is on. ';
+  w+={noaccess:'A connection to your own SAP test system is not requested; Testing works without it, against SAP mocks.',
+      review:'Your request for an SAP test system connection is with an administrator — usually less than 24 hours.',
+      none:'Your SAP test system is not connected yet; Testing works without it, against SAP mocks.',
+      ok:'Your SAP test system answered the check today at 10:42: reachable, sign-in accepted, service found.',
+      fail:'Your SAP test system answered the last check, but did not accept the sign-in. Nothing was read.'}[s];
+  document.getElementById('answer').textContent=a;
+  document.getElementById('why').textContent=w;
+  let nx;
+  if(s==='fail')nx=`<button class="btn primary" type="button" data-jump="s-sap">${IC.edit}Correct the sign-in details</button><p class="sub">The system answered with HTTP 401: the user name or password was refused. Correct it, save, and check again.</p>`;
+  else if(!k)nx=`<button class="btn secondary" type="button" data-jump="own-key">${IC.key}Add your own model key</button><p class="sub">No limit on analysis runs; every model call runs on your contract with Google. Optional — the free runs stay as they are without it.</p>`;
+  else nx=`<p class="sub"><b style="color:var(--cc-ink)">Nothing waits for you here.</b> Change anything below; it applies to your account only.</p><a class="btn ghost" href="#">Back to My workspace</a>`;
+  document.getElementById('nextbox').innerHTML=nx;
+  const f=(id,t,v,n)=>`<button type="button" class="facet" data-jump="${id}"><span class="t">${t}</span><span class="v">${v}</span><span class="n">${n}</span></button>`;
+  const sapV={noaccess:['Not requested','Ask for access in the section below'],review:['In review','An administrator reviews the request'],none:['Not connected','Access granted · no connection saved'],ok:['Connected','Check passed today, 10:42 · this session'],fail:['Check failed','Sign-in refused (HTTP 401) · 10:42']}[s];
+  document.getElementById('facets').innerHTML=
+    f('s-signin','Sign-in','Two-factor on','Password and authenticator code')+
+    f('own-key','Model key',k?'Own key':'Platform key',k?'Google Gemini · tested · unlimited runs':'3 of 5 free analysis runs left')+
+    f('ai-steps','AI steps',`${onCount()} <small>of ${STAGES.length} on</small>`,off.length?'Off: '+off.join(', '):(MAIN?'Automatic steps on':'Automatic steps off'))+
+    f('s-sap','SAP test system',sapV[0],sapV[1]);
+  document.querySelector('#facets .facet:last-child .v').style.color=s==='fail'?'var(--cc-error)':'';
+}
+
+/* ---------------- own key ---------------- */
+function renderKey(){
+  const k=ST.key==='set';
+  document.getElementById('key-meta').innerHTML=k?stw('ok','Google Gemini key saved'):stw('neu','No key — platform key in use');
+  const lead='<p class="sec-lead">With your own model key, the limit of 5 free analysis runs no longer applies, and every model call of this account runs on your key and your contract with that provider. The key is stored encrypted on our server and used only there; it never reaches your browser again.</p>';
+  const form=`
+    <form class="stack mt16" id="keyform" onsubmit="return false">
+      <fieldset class="rad"><legend>Provider of your key</legend>
+        <label class="ropt"><input type="radio" name="prov" checked><b>Google Gemini${k?' (saved)':''}</b><span>A Google Gemini API key. Every stage runs on the Gemini model the platform uses.</span></label>
+        <label class="ropt off"><input type="radio" name="prov" disabled><b>Anthropic Claude</b><span>Not available yet. We will enable own Anthropic keys once the functions they require have passed acceptance; until then no Anthropic key can be stored, and the settings show the current status.</span></label>
+        <p class="help mt8">One own key per account: saving a key of the other provider replaces the saved one. With your own key, no step of this account uses the platform key — if your key is missing or refused, the step stops and says so.</p>
+      </fieldset>
+      <div class="inset"><b>Tier:</b> Use an own Gemini key from a Google Cloud project with an active Cloud Billing account (paid tier); only there does Google not use your requests for training, and limited logging serves only abuse detection and legally required disclosures. For users in the EEA, Switzerland and the UK, Google applies these rules under its terms (as of 28 April 2026) to the unpaid quota as well; outside those regions, without a billing account, Google’s free-tier terms apply (use for training, human review).</div>
+      <div class="fld"><label for="gk">Google Gemini API key</label><div class="pw"><input id="gk" class="mono" type="password" placeholder="${k?'••••••••••••a3F9':'AIzaSy...'}" autocomplete="off"><button type="button" aria-label="Show API key">${IC.eye}</button></div>${k?'<p class="h">A key is saved. Enter a new one to replace it.</p>':''}</div>
+      <div class="btnrow"><button class="btn secondary" type="button">${IC.zap}Test the key</button><button class="btn primary" type="button" disabled>Save the key</button>${k?'<button class="btn ghost" type="button" id="keycancel">Cancel</button>':''}</div>
+      <p class="help">${IC.check} Saving, testing or removing your own key needs two-factor authentication — it is on for this account.</p>
+    </form>`;
+  if(!k){document.getElementById('key-body').innerHTML=lead+form;return}
+  document.getElementById('key-body').innerHTML=lead+`
+    <dl class="kv mt16">
+      <dt>Provider</dt><dd>Google Gemini</dd>
+      <dt>Key</dt><dd><code>••••••••••••a3F9</code> · stored encrypted on the server · never shown again</dd>
+      <dt>Test</dt><dd>${stw('ok','Passed')} — the key counts as configured</dd>
+      <dt>Analysis runs</dt><dd>Unlimited (your own key)</dd>
+    </dl>${pin('P14')}
+    <ul class="sw-list mt16"><li class="sw-row"><span class="t">Automatic steps on my key</span><button class="sw" type="button" role="switch" aria-checked="false" aria-label="Automatic steps on my key"></button><p>We start some steps ourselves when a project is opened. On your Google Gemini key they run only if you switch this on here.</p></li></ul>
+    <div class="btnrow mt16"><button class="btn secondary" type="button">${IC.zap}Test the key</button><button class="btn ghost" type="button" id="keyrep">${IC.key}Replace the key</button><button class="btn ghost" type="button" style="color:var(--cc-error);border-color:var(--cc-error)">${IC.trash}Remove the key</button></div>
+    <div id="keyrepbox" hidden>${form}</div>`;
+  document.getElementById('keyrep').onclick=()=>{document.getElementById('keyrepbox').hidden=false;document.getElementById('keyrep').setAttribute('aria-expanded','true')};
+  const c=document.getElementById('keycancel');if(c)c.onclick=()=>{document.getElementById('keyrepbox').hidden=true};
+}
+
+/* ---------------- AI steps ---------------- */
+function renderAI(){
+  const n=onCount();
+  document.getElementById('ai-lead').innerHTML=`Eight stages can send a prompt to Google Gemini on ${keyOwner()}; ${n===8?'all eight are on':n+' are on'}. Switch any of them off and that stage says “not generated” instead of asking for a key. The Analyze stage’s evidence — the findings, the extensibility route and the Clean Core Score — is computed without a model, and the analysis run is signed either way.`;
+  document.getElementById('ai-count').innerHTML=n===8?stw('ok','8 of 8 on'):stw('neu',`${n} of 8 on`);
+  document.getElementById('stages').innerHTML=STAGES.map(([id,l,d,m])=>{const on=ON[id];const isNew=id==='economics';
+    const by=on&&m?`<p class="by">Last answered by Google Gemini · ${m} · ${keyOwner()}</p>`:'';
+    return `<li class="sw-row${isNew?' new':''}" data-stage="${id}"><span class="t">${l}${isNew?'<span class="mtag">New</span>'+pin('P7'):''}</span><button class="sw" type="button" role="switch" aria-checked="${on}" aria-label="${l}" data-sw="${id}"></button><p>${d}</p>${on?by:'<p class="by">'+stw('neu','Off — this stage shows “not generated”')+'</p>'}</li>`}).join('');
+  document.querySelectorAll('[data-sw]').forEach(b=>b.onclick=()=>{ON[b.dataset.sw]=!ON[b.dataset.sw];renderAI();renderHead();renderPab()});
+  const m=document.getElementById('sw-main');m.setAttribute('aria-checked',MAIN);m.onclick=()=>{MAIN=!MAIN;renderAI();renderHead()};
+}
+
+/* ---------------- SAP test system ---------------- */
+const METHODS={
+  basic:['User name and password','A communication user of your S/4HANA Cloud test system (communication arrangement).'],
+  oauth2:['OAuth 2.0 client credentials','When your communication arrangement provides OAuth 2.0 token endpoints.'],
+  sap_hub:['SAP Business Accelerator Hub sandbox key','No own system needed: SAP’s public sandbox APIs, with your API key.'],
+  btp_destination:['SAP Destination service (JSON)','For setups that route through SAP BTP with Cloud Connector or an internet proxy.'],
+};
+let METHOD='basic';
+function methodFields(){
+  const pwf=(id,l,h)=>`<div class="fld"><label for="${id}">${l}<span class="req">*</span></label><div class="pw"><input id="${id}" type="password" placeholder="••••••••••••••••" autocomplete="off"><button type="button" aria-label="Show ${l.toLowerCase()}">${IC.eye}</button></div><p class="h">${h}</p></div>`;
+  const tf=(id,l,ph,h,cls='')=>`<div class="fld ${cls}"><label for="${id}">${l}<span class="req">*</span></label><input id="${id}" placeholder="${ph}"><p class="h">${h}</p></div>`;
+  if(METHOD==='basic')return tf('su','User name','CC_INTEGRATOR','The communication user of your communication arrangement.')+pwf('sp','Password','The password set for that communication user.');
+  if(METHOD==='oauth2')return tf('stok','OAuth 2.0 token URL','https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token','The token endpoint of your SAP BTP subaccount, used for grant_type=client_credentials.','full')+tf('su','Client ID','sb-clone-xxxx...','Communication arrangement → OAuth 2.0 details → Client ID.')+pwf('sp','Client secret','Generated together with the client ID; shown only once by SAP.');
+  if(METHOD==='sap_hub')return `<div class="full">${pwf('sp','API key','api.sap.com → sign in → Show API Key (top right on any API page). Stored encrypted, like a password.')}<p class="xs muted">${pin('P9')} Today neither form has this field, so this method always fails with “An API key is required for the SAP API Hub.”</p></div>`;
+  return `<div class="fld full"><label for="sj">SAP Destination service (JSON)<span class="req">*</span></label><textarea id="sj" rows="7" placeholder='{\n  "Name": "S4_CLOUDSANDBOX",\n  "Type": "HTTP",\n  "URL": "https://my300120-api.s4hana.cloud.sap",\n  "Authentication": "OAuth2ClientCredentials",\n  "tokenServiceURL": "https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token",\n  "clientId": "sb-clone-xxxx...",\n  "clientSecret": "...",\n  "ProxyType": "Internet"\n}'></textarea><p class="h">Paste the export from SAP BTP cockpit → Connectivity → Destinations. Supports BasicAuthentication, OAuth2ClientCredentials and PrincipalPropagation; the system address is filled in from it.</p></div>`;
+}
+function connForm(editing){
+  return `<form onsubmit="return false" id="connform">
+    <div class="blk-h"><div><h3 class="h3">${editing?'Change the saved connection':'Connect a test system'}${pin('P9')}</h3><p class="help">Save first; the check then runs against the saved connection. Credentials are encrypted on the server and never shown again.</p></div>${editing?'<div class="r"><button class="btn ghost" type="button" id="connCancel">Cancel</button></div>':''}</div>
+    <div class="fgrid mt12">
+      <div class="fld"><label for="surl">System address (HTTPS)<span class="req">*</span></label><input id="surl" type="url" value="${editing?'https://my300120-api.s4hana.cloud.sap':''}" placeholder="${METHOD==='sap_hub'?'https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/':'https://my300120-api.s4hana.cloud.sap'}"><p class="h">Must start with https://. Production systems are refused.</p></div>
+      <div class="fld"><label for="smeth">Sign-in method<span class="req">*</span></label><select id="smeth">${Object.entries(METHODS).map(([v,[l]])=>`<option value="${v}"${v===METHOD?' selected':''}>${l}</option>`).join('')}</select><p class="h">${METHODS[METHOD][1]}</p></div>
+      ${methodFields()}
+    </div>
+    <div class="btnrow mt16"><button class="btn primary" type="button">${IC.save}Save the connection</button><button class="btn secondary" type="button" ${editing?'':'disabled title="Save first: the check uses the saved connection."'}>${IC.plug}Check the connection</button></div>
+    <p class="xs muted mt8">The check sends one request for the OData service description ($metadata, schema only) of API_BUSINESS_PARTNER. It checks that the system is reachable, that the sign-in is accepted and that the service exists and is authorised. It reads no record and calls no model.</p>
+    <details class="fold"${editing?'':' open'}><summary>${IC.chev}Where to find each value<span class="xs">four sign-in methods</span></summary><div class="fb"><div class="two">
+      <div class="inset"><h4>User name and password</h4>S/4HANA Cloud → Communication Management → Communication Arrangements → your arrangement → Inbound Communication → User Name. The system address looks like <code>https://myXXXXXX-api.s4hana.cloud.sap</code>.</div>
+      <div class="inset"><h4>OAuth 2.0 client credentials</h4>Communication Arrangements → OAuth 2.0 Details → Client ID and Client Secret (starts with <code>sb-clone-</code>); the token URL of your SAP BTP subaccount.</div>
+      <div class="inset"><h4>SAP Business Accelerator Hub sandbox</h4>No own system: the sandbox base URL and your API key from api.sap.com (Show API Key, top right on any API page).</div>
+      <div class="inset"><h4>SAP Destination service</h4>SAP BTP cockpit → Connectivity → Destinations → your destination → Export as JSON.</div>
+    </div><div class="btnrow mt12"><a class="btn ghost sm" href="#">Knowledge Hub</a><button class="btn ghost sm" type="button">Ask the assistant</button></div></div></details>
+  </form>`;
+}
+function savedConn(fail){
+  return `<div class="blk-h"><div><h3 class="h3">Saved connection</h3></div><div class="r">${fail?stw('err','Check failed · today 10:42'):stw('ok','Check passed · today 10:42')}</div></div>
+    <dl class="kv mt12">
+      <dt>System address</dt><dd><code>https://my300120-api.s4hana.cloud.sap</code></dd>
+      <dt>Sign-in method</dt><dd>User name and password · user <code>CC_INTEGRATOR</code></dd>
+      <dt>Password</dt><dd>Stored encrypted (AES-256-GCM) on the server · never shown again</dd>
+      <dt>What it may do</dt><dd>Check the connection · read the OData metadata of a service · one read-only call — nothing that writes</dd>
+    </dl>
+    <div class="mt16"><p class="xs muted" style="font-weight:600;margin-bottom:6px">Last check, this session${pin('P13')}</p>
+    <ul class="checks">${fail
+      ?`<li class="y">${IC.check}Reachable</li><li class="n">${IC.x}Sign-in refused</li><li class="q">${IC.dash}Service not confirmed</li>`
+      :`<li class="y">${IC.check}Reachable</li><li class="y">${IC.check}Sign-in accepted</li><li class="y">${IC.check}Service API_BUSINESS_PARTNER found</li>`}</ul></div>
+    <div class="strip ${fail?'err':'ok'} mt12">${fail?IC.err:IC.ok}<span>${fail
+      ?'<b>The system answered, but refused the sign-in.</b> Endpoint reachable (HTTP 401) via Basic Auth. Authentication credentials were rejected — verify your credentials. No record was read.'
+      :'<b>The system answers.</b> Reachable, signed in via Basic Auth, service API_BUSINESS_PARTNER found and authorised. Checked: the service description ($metadata, schema only) answered HTTP 200. No record was read.'}</span></div>
+    <div class="btnrow mt16">${fail
+      ?`<button class="btn primary" type="button" id="connEdit">${IC.edit}Correct the sign-in details</button><button class="btn secondary" type="button">${IC.plug}Check again</button>`
+      :`<button class="btn primary" type="button">${IC.plug}Check the connection</button><button class="btn ghost" type="button" id="connEdit">${IC.edit}Edit</button>`}
+      <button class="btn ghost" type="button" style="color:var(--cc-error);border-color:var(--cc-error)">${IC.trash}Delete the connection</button></div>
+    <p class="xs muted mt8">No model call · checks reachability, sign-in and the service · reads no record. Checks are not stored; a new session starts unchecked.</p>
+    <details class="fold"><summary>${IC.chev}More checks<span class="xs">OData metadata of a service and one read-only call</span></summary><div class="fb">${fail
+      ?'<p class="sm muted">These open once the connection check has passed in this session — they use the same saved connection.</p>'
+      :`<p class="sm muted">Reads the $metadata of one service you name — its schema, never a record.</p>
+      <div class="fgrid mt12"><div class="fld"><label for="svcn">Service name</label><input id="svcn" placeholder="e.g. API_BUSINESS_PARTNER"></div><div class="fld" style="align-self:end"><button class="btn secondary" type="button">${IC.db}Read $metadata</button></div></div>
+      <p class="xs muted mt12" style="font-weight:600">Common services</p>
+      <div class="svc mt8">${['Business Partner','Sales Order','Purchase Order','Product Master','Cost Center','Journal Entry','Material Document','GL Account'].map(s=>`<button class="btn ghost sm" type="button">${s}</button>`).join('')}</div>`}</div></details>
+    <details class="fold"><summary>${IC.chev}Log of the last check<span class="xs">this session only</span></summary><div class="fb"><pre class="log">${fail
+      ?'[10:42:07] Requesting the OData service description ($metadata) — no record is read\n[10:42:08] HTTP 401 via Basic Auth\n[10:42:08] Authentication credentials were rejected'
+      :'[10:42:07] Requesting the OData service description ($metadata) — no record is read\n[10:42:08] HTTP 200 via Basic Auth\n[10:42:08] Service API_BUSINESS_PARTNER found and authorised'}</pre></div></details>`;
+}
+let EDITING=false;
+function renderSap(){
+  const s=ST.sap;
+  const meta={noaccess:stw('neu','Not requested'),review:stw('warn','Request in review'),none:stw('inf','Access granted'),ok:stw('ok','Connected'),fail:stw('err','Check failed')}[s];
+  document.getElementById('sap-meta').innerHTML=meta;
+  const st=[['Access requested',s!=='noaccess'],['Reviewed by an admin',['none','ok','fail'].includes(s)],['Connection saved',['ok','fail'].includes(s)]];
+  document.getElementById('sap-steps').innerHTML=st.map(([l,d])=>`<span class="${d?'done':'open'}">${d?IC.check:IC.circ}${l}${d?'':' — not yet'}</span>`).join('');
+  const protect=`<div class="two">
+      <div class="inset"><h4>How it works</h4><ol><li><b>Request access</b> with the form below.</li><li><b>Provide an HTTPS address</b> of your S/4HANA sandbox or test system.</li><li><b>Enter the sign-in details</b> once access is granted.</li><li><b>Check the connection</b> here: the handshake, the OData metadata and one read-only call.</li></ol></div>
+      <div class="inset"><h4>How your system is protected</h4><ul><li><b>Encrypted when stored:</b> passwords and tokens travel over HTTPS to the server, which encrypts them with AES-256-GCM in a server-only store. They are never returned to the browser.</li><li><b>No production systems:</b> production interfaces (<code>*-api.s4hana.ondemand.com</code>) are refused.</li><li><b>Only the server calls your system:</b> your browser never talks to it.</li></ul></div></div>`;
+  let h='';
+  if(s==='noaccess')h=protect+`
+    <div class="strip warn mt12">${IC.warn}<span><b>No warranty.</b> This is the free Community Edition, provided without warranty, guarantee or liability. Never use productive ERP data or real passwords.</span></div>
+    <form class="mt16" onsubmit="return false"><div class="fld"><label for="mot">What do you want to use the connection for?<span class="req">*</span></label><textarea id="mot" class="prose" rows="3" maxlength="2000" placeholder="E.g., connecting our non-productive SAP S/4HANA Cloud Public Edition sandbox to validate OData interfaces..."></textarea><p class="h">An administrator reviews each request by hand, usually within 24 hours. The connection needs two-factor authentication — it is on for this account.</p></div>
+    <div class="btnrow mt12"><button class="btn primary" type="button">${IC.send}Request access</button></div></form>`;
+  else if(s==='review')h=`<div class="strip inf">${IC.info}<span><b>Request in review.</b> An administrator is reviewing your request for access. This usually takes less than 24 hours; you get an e-mail when it is decided.</span></div>
+    <details class="fold"><summary>${IC.chev}How it works and how your system is protected</summary><div class="fb">${protect}</div></details>`;
+  else if(s==='none'||EDITING)h=connForm(EDITING);
+  else h=savedConn(s==='fail');
+  document.getElementById('sap-body').innerHTML=h;
+  const sm=document.getElementById('smeth');if(sm)sm.onchange=()=>{METHOD=sm.value;renderSap()};
+  const ce=document.getElementById('connEdit');if(ce)ce.onclick=()=>{EDITING=true;renderSap()};
+  const cc=document.getElementById('connCancel');if(cc)cc.onclick=()=>{EDITING=false;renderSap()};
+}
+
+/* ---------------- side column ---------------- */
+function renderSide(){
+  const k=ST.key==='set';
+  document.getElementById('runs').innerHTML=k?'Unlimited <small>your own key</small>':'3 <small>of 5 runs left</small>';
+  document.getElementById('runbar').hidden=k;
+  document.getElementById('tier-label').textContent=k?'Free Community Edition, with your own Google Gemini key':'Free Community Edition';
+  document.getElementById('tier-text').innerHTML=k?'Your own Google Gemini key is in use, so there is no limit on analysis runs.':'Every feature, with 5 free analysis runs. <a class="lnk brand" href="#own-key" data-jump="own-key">Add your own model key</a> for unlimited runs.';
+}
+
+/* ---------------- "On this page" ---------------- */
+function renderPab(){
+  const s=ST.sap;
+  document.getElementById('pabitems').innerHTML=[
+    ['s-profile','Profile',''],
+    ['s-signin','Sign-in',''],
+    ['s-ai','AI model',''],
+    ['s-sap','SAP system',s==='fail'?'<span class="pab-c o" title="The last check failed">1</span>':''],
+    ['s-prefs','Preferences',''],
+    ['s-end','Ending',''],
+  ].map(([id,t,c],i)=>`<a href="#${id}">${t}${c}</a>`).join('');
+  bindAnchors();
+}
+
+function render(){resetAI();EDITING=false;renderHead();renderKey();renderAI();renderSap();renderSide();renderPab()}
+
+/* ---------------- chrome ---------------- */
+const scrim=document.getElementById('scrim');
+function closeAll(){document.querySelectorAll('.drawer').forEach(d=>d.hidden=true);scrim.classList.remove('on')}
+scrim.onclick=closeAll;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
+document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{document.getElementById(b.dataset.open).hidden=false;scrim.classList.add('on')});
+['ai','key','sap'].forEach(g=>document.querySelectorAll(`[data-${g}]`).forEach(b=>b.addEventListener('click',()=>{ST[g]=b.dataset[g];document.querySelectorAll(`[data-${g}]`).forEach(x=>x.classList.toggle('on',x===b));render()})));
+document.getElementById('pins').onclick=e=>{const off=document.body.classList.toggle('nopins');e.target.textContent='Decision pins: '+(off?'off':'on')};
+document.addEventListener('click',e=>{const j=e.target.closest('[data-jump]');if(j){e.preventDefault();const t=document.getElementById(j.dataset.jump);if(t){t.scrollIntoView({block:'start'});const h=t.querySelector('h2,h3');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}}}});
+document.getElementById('editname').onclick=()=>{const v=document.getElementById('prof-view'),f=document.getElementById('prof-edit'),b=document.getElementById('editname');const ed=f.hidden;f.hidden=!ed;v.hidden=ed;b.lastChild.textContent=ed?'Cancel':'Edit name'};
+document.getElementById('savename').onclick=()=>document.getElementById('editname').click();
+document.getElementById('pwbtn').onclick=()=>{const f=document.getElementById('pwform');f.hidden=!f.hidden;document.getElementById('pwbtn').setAttribute('aria-expanded',String(!f.hidden))};
+document.getElementById('pwcancel').onclick=()=>document.getElementById('pwbtn').click();
+document.getElementById('sw-mail').onclick=e=>{MAIL=!MAIL;e.currentTarget.setAttribute('aria-checked',MAIL);document.getElementById('mail-help').textContent=MAIL?'Switched on 15 November 2026 · Saved — on':'Switched off 15 November 2026 · Saved — off'};
+/* "On this page": scroll with offset, focus the heading, follow the scroll position */
+let anchors=[];
+function markAnchor(cur){anchors.forEach(a=>{if(a===cur)a.setAttribute('aria-current','true');else a.removeAttribute('aria-current')});cur.scrollIntoView({block:'nearest',inline:'nearest'})}
+function bindAnchors(){anchors=[...document.querySelectorAll('#anchors .pab-items a')];
+  anchors.forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(!t)return;
+    t.scrollIntoView({block:'start'});const h=t.querySelector('h2');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}markAnchor(a)}));
+  onScroll()}
+function onScroll(){if(!anchors.length)return;let cur=anchors[0];anchors.forEach(a=>{const t=document.querySelector(a.getAttribute('href'));if(t&&t.getBoundingClientRect().top<200)cur=a});
+  if((innerHeight+scrollY)>=document.documentElement.scrollHeight-2)cur=anchors[anchors.length-1];
+  if(cur.getAttribute('aria-current')!=='true')markAnchor(cur)}
+addEventListener('scroll',onScroll,{passive:true});
+/* deep links for screenshots: ?ai=part&key=set&sap=fail&open=p-owner&method=sap_hub */
+const q=new URLSearchParams(location.search);
+['ai','key','sap'].forEach(g=>{if(q.get(g)){ST[g]=q.get(g);document.querySelectorAll(`[data-${g}]`).forEach(x=>x.classList.toggle('on',x.dataset[g]===ST[g]))}});
+if(q.get('method'))METHOD=q.get('method');
+render();
+if(q.get('open')){const d=document.getElementById(q.get('open'));if(d){d.hidden=false;scrim.classList.add('on')}}
+if(q.get('nopins'))document.body.classList.add('nopins');
+</script>
+<script>
+/* ONE FAMILY (15.11.2026) — byte-identical in the six tool mock-ups.
+   Measures the sticky mock-up bar into --mock-h (0 when it is not sticky),
+   hides "On this page" when a page has one section, keeps the tool bar
+   and the section bar to one row (fade while more
+   items wait to the right, the current tool in view) and labels the cells of stacking tables. */
+(function(){
+  var root=document.documentElement, raf=0;
+  function mockH(){var m=document.querySelector('.mock');var on=m&&getComputedStyle(m).position==='sticky'&&getComputedStyle(m).display!=='none';root.style.setProperty('--mock-h',(on?m.offsetHeight:0)+'px');}
+  function edges(el){el.classList.toggle('start',el.scrollLeft<=1);el.classList.toggle('end',el.scrollLeft+el.clientWidth>=el.scrollWidth-2);}
+  function fade(el){var ovf=el.scrollWidth>el.clientWidth+1;el.classList.toggle('ovf',ovf);edges(el);
+    if(!el.dataset.wired){el.dataset.wired='1';el.addEventListener('scroll',function(){edges(el);},{passive:true});}return ovf;}
+  function tools(first){document.querySelectorAll('.tools').forEach(function(t){
+    if(!t.dataset.wired)first=true;
+    t.querySelectorAll('.tool .ck').forEach(function(x){x.setAttribute('aria-label','done');if(!x.querySelector('title'))x.insertAdjacentHTML('afterbegin','<title>done</title>');});
+    t.querySelectorAll('.tool .od').forEach(function(x){x.title='out of date';});
+    t.classList.remove('nolegend');if(t.scrollWidth>t.clientWidth+1&&t.querySelector('.legend'))t.classList.add('nolegend');
+    var ovf=fade(t);
+    if(first&&ovf){var c=t.querySelector('.tool.cur');if(c){var l=c.offsetLeft-t.offsetLeft,r=l+c.offsetWidth;if(r>t.clientWidth-48){t.scrollLeft=r-t.clientWidth+64;edges(t);}}}
+  });document.querySelectorAll('.pab-items').forEach(fade);
+    document.querySelectorAll('.pab').forEach(function(p){p.classList.toggle('single',p.querySelectorAll('.pab-items a').length<2);});}
+  function labels(){document.querySelectorAll('table.tbl-stack').forEach(function(tb){var hr=tb.querySelector('thead tr')||tb.querySelector('tr');if(!hr||!hr.querySelector('th'))return;var hs=[].map.call(hr.children,function(h){return h.textContent.trim();});tb.querySelectorAll('tr').forEach(function(tr){if(tr===hr)return;[].forEach.call(tr.children,function(td,i){if(hs[i]&&td.tagName==='TD'&&!td.hasAttribute('data-label'))td.setAttribute('data-label',hs[i]);});});});}
+  function all(first){mockH();tools(first);labels();}
+  function soon(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;all(false);});}
+  addEventListener('resize',soon);
+  addEventListener('load',function(){all(true);});
+  if(window.ResizeObserver){var m=document.querySelector('.mock');if(m)new ResizeObserver(soon).observe(m);}
+  new MutationObserver(soon).observe(document.body,{childList:true,subtree:true});
+  all(true);
+})();
+</script>
+</body>
+</html>

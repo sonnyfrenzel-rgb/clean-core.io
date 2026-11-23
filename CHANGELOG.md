@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - The UX review workflow runs on `main` only; started on any other ref, every job is skipped (SEC-35f5c34-01).
+- Roadmap: the eight "family" mock-ups accepted by the owner on 15.11.2026 are on `dev` with their decisions and
+  3.5.0 items (they had stayed on a side branch): Documentation v2 (ADR-127), Economics (ADR-128, Economics
+  before Design in the tool order — recorded, not built), Transformation (ADR-129), Design (ADR-130), Testing
+  (ADR-131), Delivery (ADR-132), Profile settings (ADR-139) and Analyze in the family (ADR-140), with one page for
+  every reader and one "On this page" bar on every tool (ADR-126); `docs/roadmap/*-next-mockup.html`,
+  `documentation-v2-mockup.html`, `analyze-family-mockup.html`; ROADMAP 3.5.0 items (6)–(6i). Documentation only.
 
 ## [v3.4.0] — 2026-11-23
 

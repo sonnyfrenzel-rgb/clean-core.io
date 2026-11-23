@@ -1,0 +1,1283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Economics, next · mock-up</title>
+<style>
+/* =====================================================================
+   Mock-up, not product code (15.11.2026). The Economics tool as an object
+   page: the answer and the few figures that matter first, the assumptions
+   beside the figures and editable in place, the days underneath.
+   Look: app/globals.css tokens, StageHeader, ToolBar, StageViewSwitch,
+   PageAnchorBar, CcProvenanceChip — visual language A (object page).
+   Content: Z_MM_PO_APPROVAL, the starter example (552 lines, Clean Core
+   Score 40, route In-App (ABAP Cloud): lib/demo-release.json, v3.0.23).
+   Arithmetic: the rules of lib/cost-assumptions.ts, ported to the script at
+   the end of this file — proposals from PROPOSED_DAYS_BY_KIND and
+   proposeMaintenanceBaseline, totals from optionCost, the verdict and its
+   four refusals from costComparison, tipping points by the same line method.
+   The day rates, horizon and cadence are a reader's figures, invented for
+   the picture and shown as "your figure" everywhere.
+   ===================================================================== */
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+p{margin:0}h1,h2,h3,h4{margin:0}
+button,input,select{font-family:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+
+/* ---------- doc chrome (not product) ---------- */
+.mock{position:sticky;top:0;z-index:300;background:#1f1147;color:#fff;font-size:12px;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}
+.mock button.on{background:#e9e5ff;color:#1f1147}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap}
+body.nopins .pin{display:none}
+
+/* ---------- shell bar ---------- */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:16px;letter-spacing:-.02em;line-height:1.15}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* ---------- StageFrame + StageHeader ---------- */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vs .lv{font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:4px 12px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);border-radius:6px;min-height:28px}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.tools{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tools .k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tools .legend{margin-left:auto;font-size:12px;font-weight:500;color:var(--cc-ink-muted);display:flex;gap:12px}
+.tools .toolmenu{display:none}
+.logo{text-decoration:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px}
+
+/* ---------- cc components ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.1;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;white-space:nowrap;text-decoration:none}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink-muted)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff}
+.pv svg.i{width:12px;height:12px}
+.pv.sim,.pv.ai{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed}
+.pv.rec{color:var(--cc-information);border-color:var(--cc-information)}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral)}
+.pv.prop{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed}
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.muted{color:var(--cc-ink-muted)}
+.sm{font-size:13px}.xs{font-size:12px}
+.k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.h2{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.h3{font-size:14px;font-weight:700}
+
+/* ---------- object page header: answer + facets ---------- */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start}
+.ans .q{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ans .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ans .a .fig{white-space:nowrap}
+.ans .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ans .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:240px}
+.ans .next .k{margin-bottom:-2px}
+.ans .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;max-width:260px}
+.facets{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.5fr);border-top:1px solid var(--cc-line);margin:16px -22px 0}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0;background:var(--cc-surface-muted);border-radius:0 0 12px 0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2}
+.facet .v.word{font-size:18px}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .o{font-size:13px;font-weight:700;margin-top:2px}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+.facet .v.nd{font-size:16px;font-weight:700;color:var(--cc-neutral)}
+.asm{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chipin{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--cc-information-border);background:#fff;border-radius:8px;padding:4px 8px;font-size:12px;font-weight:600;color:var(--cc-ink);min-height:28px}
+.chipin .l{color:var(--cc-ink-muted);font-weight:500}
+.chipin.miss{border-style:dashed;border-color:var(--cc-field-border);color:var(--cc-ink-muted)}
+.chipin svg{color:var(--cc-information)}
+.chipin:hover{border-color:var(--cc-information)}
+.edit{display:none;border-top:1px solid var(--cc-line);margin:0 -22px;padding:14px 22px 16px;background:var(--cc-information-bg);border-radius:0 0 12px 12px}
+.edit.open{display:block}
+.edit .grid{display:grid;grid-template-columns:120px repeat(4,minmax(0,1fr));gap:12px}
+.fld label{display:block;font-size:12px;font-weight:600;margin-bottom:4px}
+.fld .in{display:flex;align-items:center;border:1px solid var(--cc-field-border);border-radius:8px;background:#fff;height:34px;padding:0 8px;gap:6px}
+.fld .in input,.fld .in select{border:0;outline:0;font-size:14px;font-weight:600;width:100%;min-width:0;background:transparent;color:var(--cc-ink);font-variant-numeric:tabular-nums}
+.fld .in:focus-within{outline:2px solid var(--cc-focus);outline-offset:1px}
+.fld .in span{font-size:12px;color:var(--cc-ink-muted);white-space:nowrap}
+.fld .h{font-size:11px;color:var(--cc-ink-muted);margin-top:4px;line-height:1.4}
+.fld .cb{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;margin-top:6px}
+.edit .foot{display:flex;gap:12px;align-items:center;margin-top:10px;font-size:12px;color:var(--cc-ink-muted);flex-wrap:wrap}
+
+/* ---------- range chart ---------- */
+.chartcard{margin-top:0;margin-bottom:24px}
+.chart-h{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.rows{margin-top:14px;position:relative}
+.rrow{display:grid;grid-template-columns:240px minmax(0,1fr) 260px;gap:16px;align-items:center;min-height:40px;border-top:1px solid var(--cc-line)}
+.rrow:first-child{border-top:0}
+.rrow .nm{font-size:14px;font-weight:700;display:flex;flex-direction:column}
+.rrow .nm span{font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+.track{position:relative;height:22px}
+.track .bar{position:absolute;top:5px;height:12px;border-radius:6px;background:var(--seq-3)}
+.track .bar.pt{width:12px!important;margin-left:-6px;border-radius:999px;background:var(--seq-4)}
+.track .bar.cond{background:repeating-linear-gradient(135deg,var(--seq-2) 0 4px,#c7d2fe 4px 8px)}
+.track .ref{position:absolute;top:-6px;bottom:-6px;border-left:1.5px dashed var(--seq-4);opacity:.55}
+.rrow .val{font-size:14px;font-weight:700;text-align:right;white-space:nowrap}
+.rrow .val span{display:block;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+.axis{display:grid;grid-template-columns:240px minmax(0,1fr) 260px;gap:16px;margin-top:4px}
+.axis .ticks{position:relative;height:18px;border-top:1px solid var(--cc-line)}
+.axis .ticks span{position:absolute;top:3px;transform:translateX(-50%);font-size:11px;color:var(--cc-ink-muted);white-space:nowrap}
+.axis .ticks span:first-child{transform:none}
+.cap{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px;font-weight:500;color:var(--cc-ink-muted);align-items:center}
+.cap i{display:inline-block;width:18px;height:8px;border-radius:4px;background:var(--seq-3);vertical-align:middle;margin-right:4px}
+.cap i.pt{width:8px;background:var(--seq-4)}
+.cap i.cond{background:repeating-linear-gradient(135deg,var(--seq-2) 0 4px,#c7d2fe 4px 8px)}
+.cap i.ref{width:0;height:12px;border-left:1.5px dashed var(--seq-4);border-radius:0;background:none}
+.ndbox{border:1px dashed var(--cc-field-border);border-radius:8px;padding:14px 16px;margin-top:12px;background:var(--cc-surface-muted)}
+
+/* ---------- "On this page" — the shared PageAnchorBar (tmp/ANCHOR-BAR-SPEC.md) ---------- */
+.pab{position:sticky;top:30px;z-index:50;display:flex;align-items:center;gap:12px;height:48px;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 1px 3px rgb(11 28 48 / .06);margin:24px -32px 0;padding:0 32px}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted)}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+@media (max-width:639px){
+  .pab{top:0;margin:24px -16px 0;padding:0 0 0 16px}
+  [id^="s-"]{scroll-margin-top:64px}
+  .pab-l{display:none}
+  .rob tr:first-child{display:none}
+  .rob tr{display:grid;grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid var(--cc-line);padding:8px 0}
+  .rob tr td{border:0;padding:2px 0}
+  .rob tr td:nth-child(3){grid-column:1 / -1;padding-top:4px}
+  .pab-items{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);padding-right:24px}
+}
+
+/* ---------- body: main + side ---------- */
+.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;margin-top:16px;align-items:start}
+.main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.side{display:flex;flex-direction:column;gap:12px;position:sticky}
+.sec-h{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+
+/* options table */
+.otab{margin-top:12px;border-top:1px solid var(--cc-line)}
+.orow{display:grid;grid-template-columns:minmax(0,1.6fr) 1fr 1fr .9fr 1.1fr 1.1fr;gap:12px;padding:12px 0;border-bottom:1px solid var(--cc-line);align-items:baseline}
+.orow.hd{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted);padding:8px 0}
+.orow .o b{font-size:14px}
+.orow .o p{font-size:12px;color:var(--cc-ink-muted);margin-top:2px;line-height:1.45;font-weight:500}
+.orow .c{font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.orow .c small{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.orow .tot{font-size:14px;font-weight:800}
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.tag.low{background:var(--seq-1);color:var(--seq-4)}
+.tag.cond{background:var(--cc-warning-bg);color:var(--cc-warning);border:1px solid var(--cc-warning-border)}
+.chipin.ai{border-style:dashed;border-color:var(--cc-warning-line);background:var(--cc-warning-bg)}
+.chipin.ai svg{color:var(--cc-warning)}
+.chipin .aim{font-size:10px;font-weight:700;color:var(--cc-warning);border:1px dashed var(--cc-warning-line);border-radius:4px;padding:0 3px;line-height:14px}
+.chipwrap{display:inline-flex;align-items:center;gap:2px}
+.mini{font-size:11px;font-weight:600;color:var(--cc-warning);background:none;border:0;padding:2px 4px;text-decoration:underline;text-underline-offset:2px}
+.aiflag{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-warning);background:var(--cc-warning-bg);border:1px dashed var(--cc-warning-line);border-radius:8px;padding:3px 10px;margin-bottom:6px}
+.paths{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.pathc{border:1px solid var(--cc-line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.pathc.ai{border-style:dashed;border-color:var(--cc-warning-line);background:#fffdf7}
+.pathc h3{font-size:15px;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pathc p{font-size:13px;line-height:1.5;color:var(--cc-ink-muted);font-weight:500}
+.pathc .fine{font-size:12px}
+.offline{font-size:13px;color:var(--cc-ink-muted);font-weight:500;display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.aiwhy{font-size:11px;line-height:1.4;color:var(--cc-warning);margin-top:4px}
+.aiwhy button{font-size:11px}
+.fld .in.ai{border-style:dashed;border-color:var(--cc-warning-line);background:var(--cc-warning-bg)}
+.dt input.ai{border-style:dashed;border-color:var(--cc-warning-line);background:var(--cc-warning-bg)}
+.settings-inset{margin-top:24px}
+.sw-row{border:1px solid var(--cc-line);border-radius:8px;padding:12px 16px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;align-items:start}
+.sw-row.new{border-color:var(--cc-information);box-shadow:0 0 0 3px var(--cc-information-bg)}
+.sw-row b{font-size:14px}
+.sw-row p{grid-column:1;font-size:13px;color:var(--cc-ink-muted);line-height:1.5;font-weight:500}
+.sw{grid-row:1 / span 2;grid-column:2;width:40px;height:24px;border-radius:999px;background:var(--cc-brand-strong);position:relative;border:0}
+.sw::after{content:"";position:absolute;top:3px;left:19px;width:18px;height:18px;border-radius:999px;background:#fff;transition:left .15s}
+.sw[aria-checked=false]{background:#9ca3af}
+.sw[aria-checked=false]::after{left:3px}
+.condtx{color:var(--cc-warning);font-weight:600}
+.sec-h>div:first-child{flex:1 1 420px;min-width:0}
+.verdict{margin-top:12px;display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.5;font-weight:500;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:8px;padding:10px 12px}
+
+/* effort cards */
+.ecards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:12px}
+.ec{border:1px solid var(--cc-line);border-radius:12px;padding:12px 14px}
+.ec-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ec-h b{font-size:14px}
+.ec-h .pv{margin-left:auto}
+.dt{display:grid;grid-template-columns:minmax(0,1fr) 92px 92px;gap:6px 10px;margin-top:10px;align-items:center;font-size:13px}
+.dt .hd{font-size:11px;font-weight:600;color:var(--cc-ink-muted);text-transform:uppercase;letter-spacing:.06em}
+.dt .lb{font-weight:500;color:var(--cc-ink-muted)}
+.dt input{width:100%;height:30px;border:1px solid var(--cc-field-border);border-radius:6px;padding:0 6px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right;background:#fff}
+.dt input.prop{border-style:dashed;border-color:var(--cc-warning-line);color:var(--cc-warning);background:var(--cc-warning-bg)}
+.dt input:disabled{background:var(--cc-surface-muted);border-color:var(--cc-line);color:var(--cc-ink-muted)}
+.ec .note{font-size:12px;color:var(--cc-ink-muted);margin-top:8px;line-height:1.45}
+
+/* tipping */
+.tips{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.tips li{display:grid;grid-template-columns:200px minmax(0,1fr);gap:12px;font-size:13px;line-height:1.5;border-top:1px solid var(--cc-line);padding-top:8px}
+.tips li:first-child{border-top:0;padding-top:0}
+.tips li b{font-weight:700}
+.tips li .s{color:var(--cc-ink-muted);font-weight:500}
+.tips li.found .s{color:var(--cc-ink);font-weight:600}
+
+/* folds */
+details.fold{border:1px solid var(--cc-line);border-radius:12px;background:#fff;box-shadow:var(--cc-shadow)}
+details.fold>summary{list-style:none;cursor:pointer;padding:14px 20px;display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary .chev{transition:transform .15s;color:var(--cc-ink-muted)}
+details.fold[open]>summary .chev{transform:rotate(90deg)}
+details.fold>summary .r{margin-left:auto;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+details.fold .fb{padding:0 20px 16px;font-size:13px;line-height:1.55}
+table.ft{border-collapse:collapse;width:100%;font-size:12px;margin-top:8px}
+table.ft th,table.ft td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--cc-line);vertical-align:top}
+table.ft th{font-size:11px;color:var(--cc-ink-muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+table.ft td.n{text-align:right;font-variant-numeric:tabular-nums}
+
+/* side */
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px}
+.src{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.src li{display:flex;flex-direction:column;gap:3px;font-size:13px}
+.src li .r1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.src li .r1 b{font-weight:700}
+.src li .r2{font-size:12px;color:var(--cc-ink-muted);line-height:1.45}
+.grp{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-top:12px;padding-top:10px;border-top:1px solid var(--cc-line)}
+.grp:first-of-type{border-top:0;margin-top:8px;padding-top:0}
+.saved{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--cc-ink-muted);line-height:1.45}
+.saved .dot{width:8px;height:8px;border-radius:999px;background:var(--cc-ink-muted);margin-top:4px;flex:none}
+.linkrow{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:16px;font-size:13px;font-weight:600;color:var(--cc-ink-muted)}
+.linkrow a{color:var(--cc-ink)}
+
+/* views: density, not truth */
+.vsnote{font-size:13px;font-weight:500;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px;transition:color .3s}
+.seg.quiet button.on{background:var(--cc-surface-muted);color:var(--cc-ink);box-shadow:inset 0 0 0 1px var(--cc-line)}
+.rob{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+.rob th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--cc-line)}
+.rob td{padding:10px;border-bottom:1px solid var(--cc-line);vertical-align:top;line-height:1.5}
+.rob td:first-child{font-weight:600;white-space:nowrap}
+.rob td.yf{font-variant-numeric:tabular-nums;white-space:nowrap}
+.st{display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.st i{width:8px;height:8px;border-radius:999px;display:inline-block;flex:none}
+.st.firm i{background:var(--seq-3)}
+.st.edge i{background:#fff;border:2px solid var(--cc-warning-mark)}
+.robsum{display:flex;gap:12px;align-items:flex-start;margin-top:12px;padding:12px 14px;border-radius:8px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);font-size:14px;line-height:1.5;font-weight:500}
+.robsum b{font-weight:700}
+details.inner{margin-top:12px}
+details.inner>summary{cursor:pointer;font-size:12px;font-weight:600;color:var(--cc-ink-muted);text-decoration:underline;text-underline-offset:2px;list-style:none}
+details.inner>summary::-webkit-details-marker{display:none}
+
+/* ---------- drawers ---------- */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(760px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55}
+.drawer[hidden]{display:none}
+.drawer header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:1}
+.drawer header h2{font-size:16px;font-weight:800}
+.drawer header button{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer ul,.drawer ol{padding-left:20px;margin:6px 0}
+.drawer li{margin:4px 0}
+.drawer code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px}
+.drawer table{border-collapse:collapse;width:100%;margin:6px 0;font-size:12px}
+.drawer th,.drawer td{border:1px solid var(--cc-line);padding:6px 8px;text-align:left;vertical-align:top}
+.drawer th{background:var(--cc-surface-muted)}
+.recbox{background:var(--cc-brand-surface);border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px}
+.warnbox{background:var(--cc-warning-bg);border:1px solid var(--cc-warning-border);border-radius:8px;padding:10px 12px;margin-top:8px}
+
+/* ---------- small screens ---------- */
+@media (max-width:1100px){
+  .body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  .facets{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .facet:nth-child(2){border-right:0}
+  .facet:nth-child(-n+2){border-bottom:1px solid var(--cc-line)}
+  .facet:last-child{border-radius:0 0 12px 12px}
+  .edit .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:720px){
+  .paths{grid-template-columns:minmax(0,1fr)}
+  .mock{position:static}
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .rob td:first-child{white-space:normal}
+  .tools .tool,.tools .legend,.tools .k{display:none}
+  .tools .toolmenu{display:inline-flex}
+  .ophead{padding:14px 16px 0}
+  .ans{grid-template-columns:minmax(0,1fr)}
+  .ans .a{font-size:17px}
+  .ans .next{min-width:0}
+  .ans .next .sub{max-width:none}
+  .facets{grid-template-columns:repeat(2,minmax(0,1fr));margin:14px -16px 0}
+  .facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .facet:last-child{grid-column:1 / -1}
+  .facet:nth-child(3){border-right:0;border-bottom:1px solid var(--cc-line)}
+  .facet:nth-child(1){border-right:1px solid var(--cc-line)}
+  .edit{margin:0 -16px;padding:12px 16px}
+  .edit .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rrow{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;padding:8px 0}
+  .rrow .track{grid-column:1 / -1;grid-row:2}
+  .axis{grid-template-columns:minmax(0,1fr)}
+  .axis>div:first-child,.axis>div:last-child{display:none}
+  .orow.hd{display:none}
+  .orow{grid-template-columns:minmax(0,1fr) auto;gap:4px 12px}
+  .orow .c.col{display:none}
+  .orow .o{grid-column:1 / -1}
+  .ecards{grid-template-columns:minmax(0,1fr)}
+  .tips li{grid-template-columns:minmax(0,1fr)}
+  .pad{padding:14px 16px}
+  details.fold>summary{padding:12px 16px}
+  details.fold .fb{padding:0 16px 14px}
+}
+
+/* =====================================================================
+   ONE FAMILY (15.11.2026) — this block is byte-identical in the six tool
+   mock-ups (Economics, Design, Transformation, Documentation, Testing,
+   Delivery) and comes last, so the shared parts look and behave the same
+   in every tool. Change it in all six or in none.
+   Responsive rules, the same everywhere:
+   - mock-up bar sticky only above 1100 px; its real height is measured
+     into --mock-h, so nothing ever slides under it;
+   - tool bar: one row at every width; when it does not fit, the legend
+     steps back (each mark keeps its words as a tooltip) and the row
+     scrolls sideways with a right-edge fade, the current tool in view;
+   - "On this page": the spec (tmp/ANCHOR-BAR-SPEC.md), sticky below the
+     mock-up bar, 24 px above and below, anchors land 16 px under it;
+     hidden when the page has only one section (owner, 15.11.2026);
+   - side column below the main column from 1100 px down;
+   - 24 px between cards and sections; card padding 16/20, phone 14/16;
+   - tables never widen the page: on a phone a list table stacks into one
+     block per row (row title first, every other cell with its column
+     name); a wider table scrolls inside its own card;
+   - button labels wrap balanced (no single orphaned word), numbers and
+     chips never break.
+   ===================================================================== */
+@font-face{font-family:Inter;src:url(../../app/fonts/inter-latin-variable.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --mk-bar:#1f1147;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --mock-h:0px;
+}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+body{overflow-x:clip}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+h2[tabindex="-1"]:focus,h3[tabindex="-1"]:focus,summary[tabindex="-1"]:focus{outline:none}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+
+/* mock-up chrome (not product) */
+.mock{position:sticky;top:0;z-index:300;background:var(--mk-bar);color:#fff;font-size:12px;line-height:1.4;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap}
+.mock button.on{background:#e9e5ff;color:var(--mk-bar)}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.mock .d{flex-basis:100%;color:#cfc8f3;font-weight:500}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap;letter-spacing:0;text-transform:none}
+.mtag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;white-space:nowrap;letter-spacing:0;text-transform:none}
+body.nopins .pin{display:none}
+
+/* app bar */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none;color:inherit}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.15}
+.logo .lg svg{width:18px;height:18px}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* frame, back link, note / view switch, tool bar, tool header */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;min-height:32px}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vsnote{font-size:13px;font-weight:500;line-height:1.4;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:0 12px;font-size:13px;font-weight:600;line-height:26px;min-height:26px;color:var(--cc-ink-muted);border-radius:6px;white-space:nowrap}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.tools{display:flex;align-items:center;gap:8px;margin-top:8px;padding:2px 0;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+.tools::-webkit-scrollbar{display:none}
+.tools>*{flex:none}
+/* sideways rows (tool bar, "On this page"): a fade on each edge where more items wait */
+.tools.ovf:not(.end),.pab-items.ovf:not(.end){-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
+.tools.ovf.end:not(.start),.pab-items.ovf.end:not(.start){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px);mask-image:linear-gradient(90deg,transparent,#000 48px)}
+.tools.ovf:not(.start):not(.end),.pab-items.ovf:not(.start):not(.end){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent)}
+.tools .k{display:inline;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tools .tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tools .tool:focus-visible{outline-offset:-2px}
+.tools .tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tool .od{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .t12{order:0}
+.tools .legend{display:flex;margin-left:auto;padding-left:16px;font-size:12px;font-weight:500;color:var(--cc-ink-muted);gap:12px;white-space:nowrap}
+.tools .legend span{display:inline-flex;align-items:center;gap:4px}
+.tools .legend i{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .legend svg.half,.tool svg.half{width:10px;height:10px;color:var(--cc-information);flex:none}
+.tools .toolmenu,.tools .toolsmenu{display:none}
+.tools.nolegend .legend{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh .eyebrow{display:flex;align-items:center;gap:6px}
+.sh .eyebrow svg.i{width:14px;height:14px}
+.sh .pid{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px;overflow-wrap:anywhere}
+.sh .pid+.lead{margin-top:6px}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;line-height:1.5;color:var(--cc-ink-muted);margin-top:2px}
+
+/* buttons, links, chips */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;text-decoration:none;text-align:center;white-space:normal;text-wrap:balance;font-family:inherit;cursor:pointer}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:4px 10px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff;letter-spacing:0;text-transform:none}
+.pv svg.i{width:12px;height:12px}
+.pv.ai,.pv.sim,.pv.prop{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed;background:#fff}
+.pv.eng,.pv.rec{color:var(--cc-information);border-color:var(--cc-information);background:#fff}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral);background:#fff}
+
+/* cards and sections */
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.h2{font-size:16px;font-weight:700;line-height:1.35;display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
+.sec-h{display:flex;align-items:flex-start;gap:8px 12px;flex-wrap:wrap}
+.sec-h>div:first-child{flex:1 1 320px;min-width:0}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+details.fold>summary{flex-wrap:wrap}
+
+/* the answer card: question, answer, why, next step, facets */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ophead>.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start;margin:0}
+.ophead .q{font-size:12px;font-weight:600;line-height:1.5;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:0;letter-spacing:0;text-transform:none}
+.ophead .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ophead .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ophead .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:250px;max-width:290px;width:290px}
+.ophead .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;line-height:1.45}
+.facets{display:grid;border-top:1px solid var(--cc-line);margin:16px -22px 0}
+:where(.facets){grid-template-columns:repeat(4,minmax(0,1fr))}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0}
+button.facet{font:inherit;color:inherit;text-align:left;background:none;border:0;border-right:1px solid var(--cc-line);cursor:pointer;display:block;width:100%}
+button.facet:hover{background:var(--cc-surface-muted)}
+button.facet:last-child{border-right:0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2;font-variant-numeric:tabular-nums}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+
+/* "On this page" — the one bar (tmp/ANCHOR-BAR-SPEC.md) */
+.pab{position:sticky;top:var(--mock-h);z-index:50;display:flex;align-items:center;gap:12px;height:48px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 2px 4px rgb(11 28 48 / .06);margin:24px -32px 24px;padding:0 32px}
+.pab+*{margin-top:0}
+.pab.single{display:none}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted);margin:0;white-space:nowrap}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap;flex:none}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+.pab-c{font-size:12px;font-weight:600;line-height:18px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:var(--cc-ink);border:0;box-shadow:none}
+.pab-c.o{background:#fef3c7}
+.pab-act{margin-left:auto;flex:none}
+[id^="s-"],[data-sec],.chap{scroll-margin-top:calc(var(--mock-h) + 64px)}
+.frame>.pab.single+*,.frame>.pab.single+.body{margin-top:24px}
+
+/* object page body: main column + side column */
+.frame>.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;margin-top:0;align-items:start}
+.main{display:flex;flex-direction:column;gap:24px;min-width:0}
+.side{display:flex;flex-direction:column;gap:24px;position:sticky;top:calc(var(--mock-h) + 64px)}
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* owner / today drawers */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(780px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55;color:var(--cc-ink)}
+.drawer.wide{width:min(1040px,100vw)}
+.drawer[hidden]{display:none}
+.drawer header{position:sticky;top:0;background:#fff;color:var(--cc-ink);border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2;flex-wrap:wrap}
+.drawer header h2{font-size:16px;font-weight:800;line-height:1.3;min-width:0}
+.drawer header .x{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer .db>h3:first-child{margin-top:0}
+.drawer code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+
+/* tables on a phone (rule: stack; data-label filled by the family script) */
+@media (max-width:720px){
+  table.tbl-stack{min-width:0!important;width:100%}
+  table.tbl-stack thead,table.tbl-stack tr:first-child:has(>th){display:none}
+  table.tbl-stack,table.tbl-stack tbody{display:block}
+  table.tbl-stack tr{display:block;padding:10px 0;border-bottom:1px solid var(--cc-line)}
+  table.tbl-stack tr:last-child{border-bottom:0}
+  table.tbl-stack td{display:flex;gap:10px;border:0!important;padding:2px 0!important;text-align:left!important;background:none!important}
+  table.tbl-stack td:first-child{font-weight:600}
+  table.tbl-stack td[data-label]:not(:first-child)::before{content:attr(data-label);flex:0 0 38%;font-size:12px;font-weight:600;color:var(--cc-ink-muted);font-family:var(--sans);white-space:normal}
+}
+
+/* ---------- the same breakpoints in every tool ---------- */
+@media (max-width:1100px){
+  .mock{position:static}
+  .frame>.body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  :where(.facets){grid-template-columns:repeat(2,minmax(0,1fr))}
+  :where(.facets>.facet:nth-child(2n)){border-right:0}
+  :where(.facets>.facet:nth-child(-n+2)){border-bottom:1px solid var(--cc-line)}
+}
+@media (max-width:900px){
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .next{width:auto;min-width:0;max-width:420px}
+}
+@media (max-width:720px){
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .ophead{padding:14px 16px 0}
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .a{font-size:17px}
+  .ophead .next{min-width:0;max-width:none;width:auto}
+  .facets{margin:14px -16px 0}
+  .facet,button.facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .pad{padding:14px 16px}
+  .drawer header{padding:12px 16px}
+  .drawer .db{padding:14px 16px 28px}
+}
+@media (max-width:639px){
+  .pab{margin:24px -16px 24px;padding:0 0 0 16px}
+  .pab-l,.pab-act{display:none}
+  .pab-items{padding-right:24px}
+}
+</style>
+</head>
+<body class="v-business">
+
+<div class="mock" role="region" aria-label="Mock-up controls">
+  <b>State</b>
+  <button type="button" data-state="priced" class="on">Priced on your figures</button>
+  <button type="button" data-state="first">First visit, nothing stated</button>
+  <button type="button" data-state="ai">Priced on AI proposals</button>
+  <button type="button" data-state="overlap">No cheapest option</button>
+  <button type="button" data-state="aioff">AI step off in Settings</button>
+  <span class="sp">
+    <button type="button" id="pins">Decision pins: on</button>
+    <button type="button" data-open="p-today">Today, critiqued</button>
+    <button type="button" data-open="p-owner">For the owner</button>
+  </span>
+</div>
+
+<header class="shell">
+  <a class="logo" href="#" aria-label="Clean-Core.io, My workspace">
+    <span class="lg"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span>
+    <span><span class="n">Clean-Core<em>.io</em></span><span class="s">Free Community Edition</span></span>
+  </a>
+  <nav class="path" aria-label="Breadcrumb"><span>My workspace</span><span>›</span><span id="crumb">Emergency purchase approval</span><span>›</span><span class="cur">Economics</span></nav>
+  <div class="shell-r">
+    <button class="ib" type="button" aria-label="Help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+    <span class="av" aria-label="Account menu">MW</span>
+  </div>
+</header>
+
+<main class="frame">
+  <div class="headrow">
+    <a class="back" href="#"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg><span id="backtxt">My workspace · Emergency purchase approval</span></a>
+    <div class="vs">
+      <span class="vsnote" id="vsnote"><svg class="i s" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.85"/></svg>One page for every reader — business, IT and management<span class="pin">E7</span></span>
+    </div>
+  </div>
+  <nav class="tools" aria-label="Tools">
+    <span class="k">Tools</span>
+    <a class="tool" href="#"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Analyze</a>
+    <a class="tool cur" href="#" aria-current="page" id="toolmark"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Economics</a>
+    <a class="tool" href="#">Design</a>
+    <a class="tool" href="#">Transformation</a>
+    <a class="tool" href="#">Documentation</a>
+    <a class="tool" href="#">Testing</a>
+    <a class="tool" href="#">Delivery</a>
+    <span class="pin">E13</span>
+    <span class="legend"><span><svg class="i s" viewBox="0 0 24 24" style="color:var(--cc-success)"><path d="M20 6 9 17l-5-5"/></svg>done</span><span><svg class="half" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 1.25 A4.75 4.75 0 0 0 6 10.75 Z" fill="currentColor"/></svg>started</span><span><i class="od"></i>out of date</span></span>
+    <button class="btn ghost toolmenu" type="button">Tools · Economics<svg class="i s" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+  </nav>
+
+  <div class="sh">
+    <div class="eyebrow"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h2M14 10h2M8 14h2M14 14h2M8 18h2M14 18h2"/></svg><span>Tool · Economics</span></div>
+    <h1 data-stage-title>Emergency purchase approval</h1>
+    <p class="pid" id="eyename">Z_MM_PO_APPROVAL</p>
+    <p class="lead">What keeping, rebuilding, moving to SAP standard or retiring this program would cost — priced only from figures you state.</p>
+  </div>
+
+  <!-- ===== object page header: the answer, then the facets ===== -->
+  <section class="card ophead" aria-labelledby="ans-q" id="ophead">
+    <div class="ans">
+      <div>
+        <p class="q" id="ans-q"><span id="qtext">What would each choice cost over 5 years?</span> <span id="qsim" class="pv sim" title="Computed on assumptions you entered."><svg class="i" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h4"/></svg>Simulation</span><span class="pin">E1</span></p>
+        <p class="a" id="answer"></p>
+        <p class="why" id="why"></p>
+        <div id="paths"></div>
+      </div>
+      <div class="next" id="nextbox"></div>
+    </div>
+    <div class="facets" id="facets"></div>
+    <div class="edit" id="edit" aria-label="Your assumptions">
+      <div class="grid">
+        <div class="fld"><label for="f-cur">Currency</label><div class="in"><select id="f-cur"><option value="">Choose…</option><option>EUR</option><option>USD</option><option>CHF</option><option>GBP</option></select></div><p class="h">One for the whole page. No default.</p><p class="aiwhy" data-why="currency"></p></div>
+        <div class="fld"><label for="f-dev">Developer day</label><div class="in"><input id="f-dev" inputmode="numeric" placeholder="—"><span>/ day</span></div><p class="h">What a developer day costs you, all in.</p><p class="aiwhy" data-why="dev"></p></div>
+        <div class="fld"><label for="f-test">Key-user day</label><div class="in"><input id="f-test" inputmode="numeric" placeholder="—"><span>/ day</span></div><p class="h">Testing and key-user configuration.</p><p class="aiwhy" data-why="test"></p></div>
+        <div class="fld"><label for="f-years">Compare over</label><div class="in"><input id="f-years" inputmode="numeric" placeholder="—"><span>years</span></div><p class="h">No default.</p><p class="aiwhy" data-why="years"></p></div>
+        <div class="fld"><label for="f-cad">SAP releases a year</label><div class="in"><input id="f-cad" inputmode="numeric" placeholder="—"><span>a year</span></div><label class="cb"><input type="checkbox" id="f-cadok"> This is our cadence</label><p class="aiwhy" data-why="cad"></p></div>
+      </div>
+      <div class="foot"><span>Every figure on the page moves as you type. Saved with the project, never part of the signed run.</span><button type="button" class="lnk" id="closeedit">Done</button></div>
+    </div>
+  </section>
+
+  <!-- ===== "On this page" ===== -->
+  <nav class="pab" aria-label="On this page" id="anchors">
+    <span class="pab-l">On this page</span>
+    <div class="pab-items">
+      <a href="#s-range" aria-current="true">Cost range</a>
+      <a href="#s-options">Options</a>
+      <a href="#s-tips">How firm</a>
+      <a href="#s-effort">Effort</a>
+      <a href="#s-how">Method</a>
+      <a href="#s-model">Model's view</a>
+    </div>
+  </nav>
+
+  <!-- ===== range chart: the business picture ===== -->
+  <section class="card pad chartcard" aria-labelledby="chart-h" id="s-range">
+    <div class="chart-h">
+      <h2 class="h3" id="chart-h" style="font-size:16px">Cost of each choice over <span class="yrs">5 years</span>, as a range<span class="pin">E4</span></h2>
+      <span class="sm muted" id="chart-sub">The width of a bar is the uncertainty of the one-off effort. Keep has no one-off effort, so it is a point.</span>
+    </div>
+    <div id="chartbody"></div>
+  </section>
+
+  <div class="body">
+    <div class="main">
+      <!-- S1: options compared -->
+      <section class="card pad" id="s-options" aria-labelledby="s-options-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-options-h">Options compared <span class="pv sim"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h4"/></svg>Simulation</span></h2>
+            <p class="sec-lead">The four answers to the program decision, priced from one set of your figures. The days behind every amount are under "Effort in days" further down.</p>
+          </div>
+          <div class="r"><button type="button" class="btn ghost"><svg class="i" viewBox="0 0 24 24"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Print the comparison</button></div>
+        </div>
+        <div id="otab"></div>
+        <div id="verdict"></div>
+      </section>
+
+      <!-- S3: how firm the answer is -->
+      <section class="card pad" id="s-tips" aria-labelledby="s-tips-h">
+        <h2 class="h2" id="s-tips-h">How firm is the answer?</h2>
+        <p class="sec-lead">Your figures are estimates. This shows which of them could change the order of the options if they were wrong, and how wrong they would have to be.</p>
+        <div id="robsum"></div>
+        <table class="rob" id="rob"></table>
+        <details class="inner"><summary>Exact distances, as computed</summary><ul class="tips" id="tips"></ul>
+        <p class="xs muted" style="margin-top:10px">Each distance is solved from your figures, not sampled at a chosen spread. It says where the order flips, not how likely that is.</p></details>
+      </section>
+
+      <!-- S4: effort in days, one fold for every reader -->
+      <details class="fold" id="s-effort">
+        <summary><svg class="i chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>Effort in days<span class="r" id="effort-sum"></span></summary>
+        <div class="fb">
+          <div class="sec-h"><p class="sec-lead" style="margin-top:0">Proposed from the 552 lines with fixed factors per 1,000 lines that nothing measured. A proposal counts only once you take it over. Change any figure here and it becomes yours; every amount above moves with it.</p>
+          <div class="r"><button type="button" class="btn secondary" id="takeall" hidden>Take over all four proposals</button></div></div>
+          <div class="ecards" id="ecards"></div>
+        </div>
+      </details>
+
+      <!-- S4: how it is calculated -->
+      <details class="fold" id="s-how">
+        <summary><svg class="i chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>How it is calculated<span class="r">Factors, formula, what is not priced</span></summary>
+        <div class="fb">
+          <p><b>The cost of an option</b> = one-off effort (low and high) + effort per release × releases in the period + the yearly upkeep for Keep × years — every developer day at your developer day rate, every test and key-user day at your key-user day rate. Rounded only where it is shown.</p>
+          <p style="margin-top:8px"><b>Ranges stay ranges.</b> An option is the lowest only when its upper bound is below every other option's lower bound. In the header, amounts are rounded outward to two significant figures (the lower bound down, the upper bound up), so a rounded range is never narrower than the computed one; the table shows whole units.</p>
+          <p style="margin-top:8px"><b>The proposal</b> — days per 1,000 lines (<span class="mono">PROPOSED_DAYS_BY_KIND</span>), taken from 552 lines:</p>
+          <table class="ft tbl-stack">
+            <tr><th>Option</th><th>Once, developer</th><th>Once, test</th><th>Per release, developer</th><th>Per release, test</th></tr>
+            <tr><td>Keep</td><td class="n">0</td><td class="n">0</td><td class="n">2.5</td><td class="n">1.8</td></tr>
+            <tr><td>Rebuild</td><td class="n">2.0–5.0</td><td class="n">1.0–2.5</td><td class="n">2.5</td><td class="n">1.8</td></tr>
+            <tr><td>Move to SAP standard</td><td class="n">1.0–3.0</td><td class="n">1.0–2.5</td><td class="n">0</td><td class="n">1.0</td></tr>
+            <tr><td>Retire</td><td class="n">0.3–1.0</td><td class="n">0.5–1.0</td><td class="n">0</td><td class="n">0</td></tr>
+          </table>
+          <p style="margin-top:8px"><b>Rebuild and the route.</b> No design is needed to price Rebuild. The proposal is one factor set for Rebuild, whatever the route; the route beside it is the one the analysis proposes (<span class="mono">recommendedRoute</span> of the extensibility router), marked <i>Reconstructed</i> until Design signs one off. The router compares In-App and Side-by-side in words (feasibility, pros, cons), not in days, so nothing here can price one route against another.</p>
+          <p style="margin-top:8px"><b>AI proposals.</b> Where you ask for them, one model call proposes the inputs — each with a reason and a range — and nothing else. Every amount, the lowest option and the tipping points are computed by this page's code from those inputs, exactly as from your own. Until you take a proposal over, the page says "priced on AI-proposed assumptions".</p>
+          <p style="margin-top:8px"><b>Keep's upkeep</b>: 1.5 developer and 0.8 test days per 1,000 lines a year, raised ×1.6 for the Clean Core Score of 40 from the signed run (<span class="mono">1 + (100 − 40) / 100</span>): code further from clean core costs more to keep running.</p>
+          <p style="margin-top:8px"><b>Not priced:</b> what a deferred upgrade costs Keep (stated, not priced — nothing here knows it), licences and run cost of SAP standard or BTP, data migration and archiving unless you put them into the one-off effort, and whether SAP standard covers what the program does (functional fit is not measured).</p>
+          <p style="margin-top:8px"><b>Assumption revision</b> <span class="mono" id="rev">EUR@5y/2/y#4opt+c0a79c40fa90</span> — the technical name the decision records (ADR-092).</p>
+        </div>
+      </details>
+
+      <!-- S5: the model's view -->
+      <details class="fold" id="s-model">
+        <summary><svg class="i chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>The model's view: business value and action plan <span class="pv ai"><svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>AI-generated</span><span class="r">Prices nothing<span class="pin">E9</span></span></summary>
+        <div class="fb">
+          <p class="muted">Written by a language model at the analysis, unchecked. Every amount in it is masked; the costs on this page are yours, above. Unchanged from today (<span class="mono">components/tco/BusinessValuePlan.tsx</span>).</p>
+        </div>
+      </details>
+    </div>
+
+    <!-- ===== side column ===== -->
+    <aside class="side">
+      <div class="card sc" aria-labelledby="rest-h">
+        <h3 id="rest-h">What the figures rest on<span class="pin">E10</span></h3>
+        <ul class="src" id="restlist"></ul>
+      </div>
+      <div class="card sc" aria-labelledby="sv-h">
+        <h3 id="sv-h">Saved</h3>
+        <p class="saved" style="margin-top:6px"><span class="dot"></span><span id="savedtxt">Saved 14 Nov 2026, 16:02 — stored with the project as you change a figure. A scenario: never part of the signed run or the audit pack.</span></p>
+      </div>
+      <div class="card sc" aria-labelledby="dec-h">
+        <h3 id="dec-h">Where this goes</h3>
+        <ol class="sm" style="margin:8px 0 0;padding-left:18px;line-height:1.5"><li><b>The decision in Management</b> — Keep, Rebuild, Move to SAP standard or Retire. It shows these amounts with <i>Simulation</i> and records the figures it was priced on (ADR-092).</li><li style="margin-top:4px"><b>Next tool: Design</b> — for every option. Rebuild: the extension is designed. Move to SAP standard: which standard covers which step. Retire: what must be settled to switch it off. Keep: what blocks clean core, and the smallest measures. Design checks its plan against the range priced here and says "outside the priced range — re-price" when it leaves it; your figures do not change by themselves.</li></ol>
+        <p class="xs muted" style="margin-top:6px">Decision: <b style="color:var(--cc-ink)">not taken yet</b> · Key-user option: not offered — the signed run read no key-user part.</p>
+        <div style="margin-top:10px"><a class="btn ghost" href="#">Open the decision in Management</a></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="linkrow">Elsewhere: <a href="#">Process &amp; rules → Business</a> <a href="#">Objects &amp; dependencies → IT</a> <a href="#">Decision → Management</a></div>
+</main>
+
+<section class="frame settings-inset" id="settings-inset" aria-labelledby="set-h" hidden>
+  <p class="eyebrow">Mock-up inset · Settings → AI steps<span class="pin">E14</span></p>
+  <div class="card pad" style="margin-top:8px;max-width:860px">
+    <h2 class="h2" id="set-h">Where the AI model is used</h2>
+    <p class="sm muted" style="margin-top:6px;line-height:1.55">Eight stages send a prompt to Google Gemini on the platform key. Switch any of them off and that stage says “not generated” instead of asking for a key. The Analyze stage’s evidence — the findings, the extensibility route and the Clean Core Score — is computed without a model, and the analysis run is signed either way.</p>
+    <ul style="list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:10px">
+      <li class="sw-row"><b>Test suite</b><button class="sw" role="switch" aria-checked="true" aria-label="Test suite"></button><p>The proposed test cases and the test suite skeleton.</p></li>
+      <li class="sw-row new"><b>Economics: AI proposals for your assumptions</b><button class="sw" role="switch" aria-checked="true" id="sw-econ" aria-label="Economics: AI proposals for your assumptions"></button><p>Proposed day rates, period, SAP release cadence, currency and effort per option, each with a reason and a range — asked for with a button. Only facts of the signed run are sent (lines, objects, findings, route), never the source code. Every amount and the comparison are computed without a model. <span id="sw-econ-msg"></span></p></li>
+    </ul>
+    <p class="xs muted" style="margin-top:10px">Shown: the last existing row and the new one; the other rows (Analysis narrative … Documentation) are unchanged above them. New rows are on by default, like every stage (an account without a stored value reads “on”).</p>
+  </div>
+</section>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- ======================= panel: today ======================= -->
+<aside class="drawer" id="p-today" aria-labelledby="p-today-h" tabindex="-1" hidden>
+  <header><h2 id="p-today-h">Today's Economics, critiqued</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <p>Read from the code of v3.0.23 on <code>design/econ-doc-mockups</code>: <code>app/(app)/project/[projectId]/tco/page.tsx</code> (1,263 lines), <code>components/tco/OptionComparison.tsx</code>, <code>EconomicsSteps.tsx</code>, <code>EconomicsChecklist.tsx</code>, <code>lib/cost-assumptions.ts</code>, <code>lib/tco-model.ts</code>, <code>lib/economics-record.ts</code>. The app was not started (another run owns :3000), so no pixel height of today's page is claimed; the order below is the source order.</p>
+
+    <h3>What a Business or Management reader meets first</h3>
+    <ul>
+      <li><b>The answer stands last.</b> The verdict (<code>OptionVerdict</code>, "Lowest cost over the time horizon") renders in step 4 (<code>page.tsx:850–875</code>), after the step guide (<code>670–682</code>), step 1 "Your codebase" — a read-only card that says "nothing to do here" (<code>685–738</code>) — step 2's eight rate fields (<code>741–798</code>) and step 3's option cards (<code>801–847</code>). The first screen is a form.</li>
+      <li><b>The view switch changes nothing.</b> <code>StageHeader</code> carries Business · IT · Management (ADR-105); <code>tco/page.tsx</code> reads no view. A manager gets the developer-day fields.</li>
+      <li><b>Two money models on one page.</b> Above, the option comparison of <code>lib/cost-assumptions.ts</code> (your horizon, your cadence, ranges, refusals). Below it, "Savings from modernising" from <code>lib/tco-model.ts</code> (<code>page.tsx:877–1055</code>): annual net savings, payback months, Year-1 ROI and a five-year net-benefit chart (<code>1144–1161</code>), on a fixed target score of 95 (<code>tco-model.ts:67</code>), an 85 % test effect (<code>tco-model.ts:133</code>) and coefficients nothing measured. It brings its own one-time budget (<code>page.tsx:919–927</code>) beside Rebuild's one-off range, its own upgrade and feature-pack sliders (<code>930–953</code>) beside the release cadence (<code>785–796</code>), and a fixed five years beside the stated horizon: two costs of change, two cadences, two horizons. Payback and ROI are exactly the TCO promise that roadmap row 0.3 removed, kept alive under a warning strip.</li>
+      <li><b>The tool cannot be finished without the demonstration model.</b> <code>economicsProgress</code> sets step 4 done only when the forecast is shown wherever it is possible (<code>lib/economics-record.ts:515–516</code>): with every option priced, the tool stays unfinished until a one-time budget is typed into the demonstration model.</li>
+      <li><b>The verdict that does come is nearly always "Retire".</b> Retire's proposal is 0.3–1.0 developer days per 1,000 lines and no running effort (<code>cost-assumptions.ts:220</code>), so on proposals it wins every comparison. True, and of little use: nothing says what the cheapest option is among those that keep the program's function, which is the question a business owner asks after "do we still need it?".</li>
+      <li><b>False precision.</b> Totals in whole currency units (<code>cost-assumptions.ts:851</code>, "EUR 29,915") on factors the page itself says nothing measured.</li>
+      <li><b>Assumptions far from the figures they move.</b> Rates live in step 2; the totals in step 4; the tipping points (roadmap 7.12, a real strength) in a fold under the verdict (<code>OptionComparison.tsx:1094–1126</code>).</li>
+      <li><b>Words.</b> The glossary term "TCO" (<code>page.tsx:856</code>), "Print model estimate" (<code>864</code>), Title Case labels "Annual Net Savings · Scenario", "Payback Period", "Year 1 ROI" (<code>989, 1002, 1026</code>).</li>
+      <li><b>A factor oddity worth a decision (not drawn).</b> Rebuild's proposed effort per release equals Keep's (<code>PROPOSED_DAYS_BY_KIND.rebuild</code> is the legacy factor set, <code>cost-assumptions.ts:217</code> vs <code>221</code>): the proposal credits a clean rebuild only with Keep's yearly upkeep, never with cheaper releases.</li>
+      <li><b>No anchor bar</b>, by design (<code>DESIGN.md:363–364</code>, ADR-091: "a guided flow whose step guide is its navigation"). Right for a wizard; wrong once the page leads with an answer.</li>
+      <li><b>Note on the brief:</b> <code>tco/blueprint-schema.ts</code> does not exist — <code>blueprint-schema.ts</code> belongs to Documentation (<code>documentation/blueprint-schema.ts</code>); Economics imports nothing from it.</li>
+    </ul>
+
+    <h3>What is good and is kept, unchanged</h3>
+    <ul>
+      <li>No figure has a default; currency named once for the page (row 7.11); no model fills a field (ADR-035).</li>
+      <li>Proposals stay proposals until taken over; the four refusals (<code>assumptions-incomplete</code>, <code>option-incomplete</code>, <code>too-few-options</code>, <code>ranges-overlap</code>); ranges from the one-off effort; tipping points solved, not sampled (row 7.12).</li>
+      <li>Saving per section with its state, read-only for an invited reader, the stored-against-another-score warning, the cost basis the decision records (ADR-092), the print footer with every input.</li>
+    </ul>
+  </div>
+</aside>
+
+<!-- ======================= panel: owner ======================= -->
+<aside class="drawer" id="p-owner" aria-labelledby="p-owner-h" tabindex="-1" hidden>
+  <header><h2 id="p-owner-h">For the owner</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <div class="recbox"><b>Recommendation:</b> build E1–E6, E8 and E10 as one Economics step of the 3.5.1 tools release, on one page for every reader (E7, decided); take the demonstration forecast out (E2). The page leads with the economic answer in one or two sentences and four figures, every figure has its assumption beside it and editable in place, and the days stay complete underneath in one fold. No engine change, no new stored field, no rules change. E11 is a separate factor question.</div>
+
+    <h3>Measured on this mock-up (headless Chromium)</h3>
+    <ul>
+      <li>1440 × 900, priced: answer, the four facets and the whole range chart above the fold (the chart ends at 899 px); page height 2,434 px with the folds closed; 3,009 px priced on AI proposals.</li>
+      <li>390 × 844: the question, the answer and "Take it to the decision" in the first viewport; the facets follow (page 5,364 px). No horizontal scroll at either width.</li>
+    </ul>
+    <h3>Decisions</h3>
+    <ol>
+      <li><b>E1 The answer first.</b> The page opens on an object-page header: the question ("What would each choice cost over 5 years?"), one or two sentences of answer, the next step, and four facets — cost of keeping, the cheapest change that keeps the function, the lowest overall, and your assumptions. The four-step guide stays only as the <i>first visit</i> state (what is missing, one action). Recommended.</li>
+      <li><b>E2 The demonstration forecast leaves the page</b> — payback, Year-1 ROI, annual net savings, the five-year chart, its one-time budget and its upgrade and feature-pack sliders (<code>lib/tco-model.ts</code>). Its question, "what does changing save against keeping?", is answered by the column <i>Difference to keeping</i> from the same figures as everything else. The phase rule then reads the comparison only. Recommended: remove (row 0.3). Alternative: keep it behind a fold named "A demonstration model", outside the phase rule.</li>
+      <li><b>E3 A second answer line: the cheapest option that keeps what the program does</b> — the same comparison and the same refusals over Keep, Rebuild, Move to SAP standard (and the key-user option where offered), Retire left out. Move to SAP standard always carries "if the standard covers it — not measured" (3.0.21). Without it the answer is "Retire" for almost every program. Recommended.</li>
+      <li><b>E4 Rounding where the eye lands.</b> Header and chart: two significant figures, rounded outward (lower bound down, upper up), "about" on a point. Table and print: whole units as today. Recommended.</li>
+      <li><b>E5 Assumptions edited in place.</b> The five shared figures sit as chips in the header's last facet; a click opens them in the header (the same five fields, no defaults, the cadence still needs "This is our cadence"), and every figure on the page moves as you type. Step 2's card goes. Recommended.</li>
+      <li><b>E6 "On this page" bar on Economics</b> — the shared <code>PageAnchorBar</code>, built to the one spec every tool uses (owner, 15.11.2026: "muss auf allen Tools gleich sein und besser lesbar sein"): a 48 px white strip under the header, "On this page" in 13 px sentence case, items in 15 px full ink, the active one marked by a 3 px brand bar, no chips or pins inside; on a phone the label hides and the items scroll in one row. Items: Options compared · How firm the answer is · Effort in days · How it is calculated · The model's view. Amends ADR-091's exemption of Economics. Recommended.</li>
+      <li><b>E7 One page for every reader — decided</b> (Sonny, 15.11.2026: "nur eine Sicht für alle hier — dafür noch schicker und für alle tauglicher"). Economics has no Business, IT or Management variant, and so the workspace header shows no view switch on this tool (owner, 15.11.2026: "wenn es der gleiche view ist müssen wir den umschalter auch nicht anzeigen, das verwirrt nur"). In its place, at the same spot on desktop and phone, stands only a quiet note: "One page for every reader — business, IT and management". The view a reader came from is kept in the address, so the way back and the next tool open in it. The days per option, editable, sit in the fold "Effort in days", closed by default. "How firm is the answer?" says in plain words which of your figures could change the order; the exact distances sit in a detail below it.</li>
+      <li><b>E8 Words.</b> "TCO" leaves the page (the glossary link, the Title Case labels); "Print model estimate" becomes "Print the comparison"; the route <code>/tco</code> stays (UX-181 stays deferred). Recommended.</li>
+      <li><b>E9 The model's business value and action plan</b> stays as the last fold, AI-generated, prices nothing — unchanged. Alternative: move it to Analyze's Management view. Recommended: unchanged now.</li>
+      <li><b>E10 "What the figures rest on"</b> in the side column replaces step 1: read from the code (lines, score, route — each with its source), proposed by Clean-Core.io (the factors), your figures. "Model another size" moves here as an edit of the line count (today a slider that shows only when the forecast is possible, <code>page.tsx:718–737</code>). Recommended.</li>
+      <li><b>E11 Rebuild's running effort.</b> Today a rebuilt clean extension is proposed at Keep's per-release effort. Lower factors for Rebuild would change every proposal and is a factor decision, not a layout one. Recommended: decide separately, not in this step; the mock-up uses today's factors.</li>
+      <li><b>E13 Economics before Design — decided by the owner</b> (15.11.2026: "Economics sollte zukünftig vor Design kommen"). The order becomes Analyze → Economics → Design → Transformation → Documentation → Testing → Delivery, and the path reads Analyze → Economics → the decision in Management → Design. Design then works from the decision for <b>every</b> option (owner, 15.11.2026): Rebuild — design the extension; Move to SAP standard — which standard covers which step; Retire — what must be settled to switch it off; Keep — what blocks clean core and the minimal measures. Economics' range is the guard rail Design checks against: a plan outside it says "outside the priced range — re-price" and links back here (Design's side, not built in this step). What it changes:
+        <ul>
+          <li><b>Economics needs nothing from Design today, measured:</b> its phase reads the signed run and the stored figures only (<code>lib/workflow-steps.ts:1147–1179</code>); Rebuild's proposal is one factor set for every route (<code>PROPOSED_DAYS_BY_KIND.rebuild</code>); the only route Economics reads is <code>project.extensibilityRoute</code> for the AI-generated fold (<code>page.tsx:1173</code>). The mock-up shows the route the analysis proposes, marked <i>Reconstructed</i>, and says Design signs it off later. A range across routes is <b>not</b> offered: the router (<code>lib/abap/extensibility-router.ts</code>, <code>comparativeAnalysis</code>) compares the routes in words, not effort.</li>
+          <li><code>lib/workflow-steps.ts</code>: <code>PHASES</code> reorders (n 2 = Economics, 3 = Design …); <code>nextPhaseKey</code> today passes over Economics (<code>:249</code>) — recommended: it no longer does while no decision is recorded, so after Analyze the next step is Economics, then the decision, then Design; the stage numbers and labels every reader prints follow from <code>PHASES</code>.</li>
+          <li>Readers of the order: the tool bar and phone menu, the rail, My workspace rows and tiles, the dashboard, Delivery's phase list and README, the demo rail (<code>lib/demo-project.ts</code>), the landing stage timeline and how-to pages.</li>
+          <li>Guards that pin the order: <code>workflow-phases-guard</code>, <code>phase-honesty-guard</code>, <code>how-to-phases-guard</code>, <code>landing-stage-timeline</code>, <code>landing-process-guard</code>, <code>stage-frame</code>, <code>my-workspace-rows</code>, <code>next-step-provenance</code>, <code>demo-project</code>, <code>capture-screens</code> (run <code>grep -rl PHASES tests/</code> first).</li>
+          <li>Wording that assumes the old order: ADR-101 ("never Economics, which comes after Transformation") — the context pack still leaves Economics out, the reason changes; DESIGN.md's tool lists; the glossary and landing copy.</li>
+          <li>Optional, not drawn: when Design later signs off a different route than the one proposed, Economics says so beside Rebuild ("priced before Design chose Side-by-side — check your figures"); whether existing timestamps suffice for that, or a field is needed, is checked at build.</li>
+          <li>Cost: about 1.5–2 days on top of the Economics step (order, next-step rule, guards and copy). No engine change, no stored field, no rules change.</li>
+        </ul></li>
+      <li><b>E14 AI proposals for every assumption — decided by the owner</b> (15.11.2026: "Economics muss sich mit Proposals vollständig KI-basiert mit Annahmen ausfüllen lassen, falls der User keine Werte zur Hand hat"; "muss aber auch in Settings dann angezeigt werden"; ADR-128). On the first visit two equal paths, "I have my figures" and "Fill with AI proposals", and a "propose" on every empty assumption chip and field. One model call proposes every input the page needs: the currency (from the account's country where known, else asked), both day rates, the period, the SAP release cadence, and the effort days of every option you have not taken over (the model may refine the fixed factors from the signed run's facts: lines, objects, findings, route). Each value carries a one-line reason and a plausible range — never a bare number.
+        <ul>
+          <li><b>Honesty.</b> Every AI-proposed value carries the product's AI-generated marking (dashed amber, "AI proposal"), distinct from "your figure" and from Clean-Core.io's fixed proposal. While any is in use the answer and the chart say "Priced on AI-proposed assumptions", and the side column lists them under their own heading with model and date. "Take over" (one click, or all at once) or any edit turns a proposal into your figure. The model proposes inputs only; amounts, the lowest option and the tipping points stay this page's deterministic code. Nothing AI-proposed enters the signed run or the audit pack.</li>
+          <li><b>What it amends.</b> Row 7.11 "no default currency": a proposed currency is not a default — it is asked for, marked, and replaced by a typed one. ADR-035's cadence rule ("counts only once confirmed") — two readings: (a) an AI proposal counts only once taken over, or (b) it is priced at once and shown as an AI assumption. <b>Recommended: (b)</b>, because (a) would leave the user who has no figures with no answer, which is the case the owner wants solved; the decision's cost basis (ADR-092) then records how many inputs were AI-proposed, and Management shows "priced on AI-proposed assumptions" beside the amounts. The "No language model" line on this page holds only while no proposal is in use (drawn). The fixed per-1,000-lines proposal stays as the model-free fallback.</li>
+          <li><b>Settings — a new model step.</b> <code>lib/model-stages.ts</code>: <code>'economics'</code> joins <code>MODEL_STAGES</code> (after <code>analyze</code>/<code>naming</code>/<code>statements</code>, before <code>design</code>, in the new tool order), with label "Economics: AI proposals for your assumptions" and its description; <code>lib/model-call-stages.ts</code> gets its output cap. It is <b>on by default</b> like every stage: <code>modelStagesOf()</code> reads an absent key as on, and nothing in the code or the ADRs makes new stages start off. When it is off, "Fill with AI proposals" is replaced by "AI proposals are switched off in Settings" with a link, and the page works fully on your own figures (drawn: state "AI step off in Settings"). Server gate: <code>/api/gemini</code> refuses the stage when the account has it off, exactly like the other stages. <b>No firestore.rules change:</b> <code>modelStages</code> is written only by the Admin SDK through <code>POST /api/model-stages</code> and is not in <code>userClientUpdateKeys()</code> (<code>firestore.rules:157–161</code>); <code>/api/model-stages</code> accepts the key once it is in <code>MODEL_STAGES</code>.</li>
+          <li><b>Notice, quota, key.</b> A button-started step, like Business sentences, so the one-time notice on <i>automatic</i> AI steps does not cover it; the AI notice before the first model call (lawyer A10) does — the button says what is sent and to whom. Quota and own key (BYOK) as for the other model steps; "Last answered by …" in Settings as for the others.</li>
+          <li><b>What is stored.</b> No new top-level field: the economics record (<code>projects/{id}/cost_assumptions</code>) gains a provenance per input — <code>{ source: 'you' | 'ai', model?, at?, reason?, range? }</code> for currency, both rates, period and cadence, and per option for the effort (the option already has <code>effortSource</code>; it gains <code>'ai-proposal'</code>). Validation (<code>validateEconomicsPayload</code>) and the canonical form/fingerprint must include it, so a taken-over value and an AI value are different revisions.</li>
+          <li><b>Build cost:</b> about 3–4 days — the route call through <code>/api/gemini</code> with a prompt and a response schema that requires a value, a range and a reason per input (refusing bare numbers); the model-stage key, label and gate; the marking, chips, the two paths, "take over"; provenance in the record and the fingerprint; guards: <code>no-fabricated-figures</code> (the money-honesty rules for AI-proposed inputs), <code>ai-marking</code> / <code>ai-origin-marking-3021</code> / <code>provenance-ai-generated</code>, <code>economics-record</code>, <code>cost-assumptions</code>, the Settings model-stage specs.</li>
+          <li><b>For the owner:</b> a new AI step that proposes business figures may need the lawyer to see the AI and privacy wording (what is sent, the notice text, the Settings row) before it goes live.</li>
+        </ul></li>
+      <li><b>E12 Slot.</b> 3.5.1, as the Economics step of "The seven tools say less and lead more" (its items (1)–(2): answer line and Next step on every tool). Not in 3.5.0.</li>
+    </ol>
+
+    <h3>Today vs. this mock-up</h3>
+    <table>
+      <tr><th>Today</th><th>Mock-up</th></tr>
+      <tr><td>Guide + four step cards; the verdict in step 4</td><td>Answer, next step and four facets in the header; the chart under it (E1)</td></tr>
+      <tr><td>Two models: option comparison and a savings forecast with payback/ROI on a fixed target 95</td><td>One model; "Difference to keeping" per option from the same figures (E2)</td></tr>
+      <tr><td>"Lowest cost: Retire" and nothing else</td><td>Lowest overall, plus the cheapest that keeps the function, each with its condition (E3)</td></tr>
+      <tr><td>EUR 29,915 · EUR 4,785 – 6,530</td><td>about EUR 30,000 · EUR 4,700–6,600 in the header; whole units in the table (E4)</td></tr>
+      <tr><td>Rates in step 2, far from the totals</td><td>Assumption chips beside the figures, editable in the header (E5)</td></tr>
+      <tr><td>No anchor bar (guided flow)</td><td>"On this page" bar (E6)</td></tr>
+      <tr><td>Same page in all three views, without saying so — a manager meets the developer-day fields first</td><td>One page for every reader: no view switch on this tool, a quiet note in its place (E7, decided); the days in one closed fold</td></tr>
+      <tr><td>Tipping points in a fold under the verdict</td><td>"How firm is the answer?": each of your figures, its value, and in plain words what it would take to change the order; exact distances in a detail</td></tr>
+      <tr><td>Step 1 card "Your codebase", slider only with a forecast</td><td>Side column "What the figures rest on", line count editable (E10)</td></tr>
+      <tr><td>"TCO", "Print model estimate", Title Case figures</td><td>Plain words (E8)</td></tr>
+      <tr><td>No figures at hand = no answer; "no language model fills a figure"</td><td>"Fill with AI proposals": every input proposed with a reason and a range, marked until taken over; the comparison stays code; a switch in Settings (E14, decided)</td></tr>
+      <tr><td>Economics is tool 6, after Testing; "Route: In-App (ABAP Cloud) … signed off in Design"</td><td>Economics is tool 2, right after Analyze; the route is the analysis's proposal, marked as such; next: the decision, then Design (E13, decided)</td></tr>
+    </table>
+
+    <h3>What it costs to build</h3>
+    <table>
+      <tr><th>Question</th><th>Answer</th></tr>
+      <tr><td>Engine change</td><td>No. <code>lib/abap</code> untouched.</td></tr>
+      <tr><td>Stored field</td><td>No new field. The economics record keeps its shape; with E2 its forecast inputs (<code>inputs.upgradesPerYear</code>, <code>featurePacksPerYear</code>, <code>oneTimeBudget</code>) are still read and validated but no longer shown or written by the page.</td></tr>
+      <tr><td>Firestore rules</td><td>No change.</td></tr>
+      <tr><td>Signed run / audit pack</td><td>Untouched — the scenario never enters it.</td></tr>
+      <tr><td>Files</td><td><code>app/(app)/project/[projectId]/tco/page.tsx</code> (rebuilt around header, chart, sections); new <code>components/tco/EconomicsHeader.tsx</code>, <code>CostRangeChart.tsx</code>, <code>WhatTheFiguresRestOn.tsx</code>; <code>components/tco/OptionComparison.tsx</code> (verdict split into header and table, the effort cards kept for IT); <code>EconomicsSteps.tsx</code> (guide only for the first visit); <code>lib/cost-assumptions.ts</code> (<code>cheapestAmong(kinds)</code> for E3, pure); <code>lib/format.ts</code> (outward two-figure rounding for E4); <code>lib/page-anchors.ts</code> (E6); <code>lib/economics-record.ts</code> (phase rule without the forecast, E2); <code>components/tco/DemoEconomics.tsx</code> (the demo uses the forecast today — it would show the comparison in days); <code>lib/tco-model.ts</code> removed with E2. DESIGN.md §2.x and ADR-091 amended; a new ADR for E1–E7. One page, no per-view variants: no view-density code and no view specs; <code>components/StageHeader.tsx</code> gets a per-tool option to hide <code>StageViewSwitch</code> and show the note instead (Economics only), the view staying in the address (ADR-105 amended).</td></tr>
+      <tr><td>Specs</td><td>Adapt: <code>tco-page-rendered</code>, <code>tco-page-qa220</code>, <code>tco-cost-inputs-guard</code>, <code>economics-guidance</code>, <code>economics-checklist</code>, <code>economics-record</code>, <code>economics-persist</code>, <code>option-comparison-provenance</code>, <code>money-honesty-guard</code>, <code>workflow-style-guard</code>, <code>capture-screens</code>; remove <code>tco-model.spec.ts</code> with E2. New: header, rounding and plain-language robustness specs. Run <code>grep -rl tco-model tests/</code> before moving anything.</td></tr>
+      <tr><td>Effort</td><td>Header, chart, side column, folds: 2.5 days · E2 forecast removal incl. phase rule and demo: 1.5 days · E3 + E4 helpers with unit specs: 0.5 day · specs, captures, docs, ADR, CHANGELOG: 1.5 days · <b>total about 5.5–6.5 days</b>, plus 1.5–2 days for the new order (E13) and 3–4 days for AI proposals (E14).</td></tr>
+    </table>
+    <p class="warnbox">Mock-up limits: the day rates, horizon and cadence are invented for the picture and marked "your figure"; the days are today's proposals from 552 lines, taken over. The "No cheapest option" state uses a Retire one-off a reader typed (3–8 developer and 1–2 test days, e.g. for archiving). The arithmetic in this file follows <code>lib/cost-assumptions.ts</code>; it is a port, not the module.</p>
+  </div>
+</aside>
+
+<script>
+/* ============ the arithmetic: a port of lib/cost-assumptions.ts ============ */
+const LOC = 552, SCORE = 40;
+const FACT = {
+  'do-nothing': {odl:0,odh:0,otl:0,oth:0,prd:2.5,prt:1.8},
+  rebuild:      {odl:2.0,odh:5.0,otl:1.0,oth:2.5,prd:2.5,prt:1.8},
+  standard:     {odl:1.0,odh:3.0,otl:1.0,oth:2.5,prd:0,prt:1.0},
+  retire:       {odl:0.3,odh:1.0,otl:0.5,oth:1.0,prd:0,prt:0}
+};
+const MAINT = {d:1.5,t:0.8};
+function roundDays(v){const dg=Math.abs(v)>0&&Math.abs(v)<1?2:1;return Math.round(v*10**dg)/10**dg||0}
+function propose(kind,loc){const k=loc/1000,f=FACT[kind],d=x=>roundDays(k*x);
+  return {oneOff:{low:{d:d(f.odl),t:d(f.otl)},high:{d:d(f.odh),t:d(f.oth)}},per:{d:d(f.prd),t:d(f.prt)}}}
+function proposeBase(loc,score){const up=1+(100-score)/100,k=loc/1000;return {d:roundDays(k*MAINT.d*up),t:roundDays(k*MAINT.t*up)}}
+const META = {
+  'do-nothing':{label:'Keep',mean:'Stays as it is and is maintained. Nothing is built; what blocks the standard stays.',keeps:true},
+  rebuild:{label:'Rebuild',mean:'Rebuilt as a clean extension on released interfaces — on the route the analysis proposes, In-App (ABAP Cloud), until Design signs one off.',keeps:true},
+  standard:{label:'Move to SAP standard',mean:'SAP standard takes over; the program is switched off once it runs.',keeps:true,cond:'if the standard covers it — not measured'},
+  retire:{label:'Retire',mean:'Switched off without a replacement.',keeps:false,cond:'if nobody still needs it'}
+};
+function seedOptions(loc,source){return ['do-nothing','rebuild','standard','retire'].map(kind=>{const p=propose(kind,loc);
+  return {id:kind,kind,oneOff:p.oneOff,per:p.per,base:kind==='do-nothing'?proposeBase(loc,SCORE):null,source:source,delay:kind==='do-nothing'?0:null}})}
+
+/* AI proposals: invented for the picture, in the shape the step must return — value, range, reason */
+const AIP={currency:{v:'EUR',why:'Your account\'s country is Germany.'},
+  dev:{v:950,lo:750,hi:1200,why:'Typical all-in day rate of an external ABAP developer in Germany; internal staff is often lower.'},
+  test:{v:600,lo:450,hi:800,why:'A business key user at a full internal cost rate.'},
+  years:{v:5,lo:3,hi:7,why:'A usual planning period for an S/4HANA programme — long enough to see several upgrades.'},
+  cad:{v:2,lo:1,hi:2,why:'SAP Cloud ERP Private: a release upgrade every one to two years plus feature packs.'}};
+const AIE={'do-nothing':{oneOff:{low:{d:0,t:0},high:{d:0,t:0}},per:{d:1.5,t:1.0},base:{d:1.8,t:0.9},why:'26 findings, 1 critical, touching 28 objects: each upgrade needs adaptation and a retest.'},
+  rebuild:{oneOff:{low:{d:4,t:2},high:{d:9,t:4}},per:{d:0.8,t:0.6},why:'552 lines with 26 findings to replace by released APIs (In-App, ABAP Cloud); a clean extension needs less per release than today\'s code.'},
+  standard:{oneOff:{low:{d:2,t:2},high:{d:5,t:4}},per:{d:0,t:0.8},why:'9 standard candidates in the run: configuration and data migration once, a retest per release.'},
+  retire:{oneOff:{low:{d:1,t:1},high:{d:3,t:2}},per:{d:0,t:0},why:'Archiving or deleting the data of 20 tables, and the sign-off of whoever still uses it.'}};
+const AIMODEL='Gemini · 15 Nov 2026, 09:41';
+const youProv=()=>({currency:'you',dev:'you',test:'you',years:'you',cad:'you'});
+const STATES = {
+  priced:()=>({currency:'EUR',dev:1000,test:700,years:5,cad:2,cadOk:true,loc:LOC,opts:seedOptions(LOC,'taken'),prov:youProv(),aiOn:true}),
+  first:()=>({currency:'',dev:null,test:null,years:null,cad:null,cadOk:false,loc:LOC,opts:seedOptions(LOC,'proposal'),prov:{},aiOn:true}),
+  ai:()=>{const s=STATES.first();fillAI(s);return s},
+  aioff:()=>({...STATES.first(),aiOn:false}),
+  overlap:()=>{const s=STATES.priced();const r=s.opts.find(o=>o.id==='retire');r.oneOff={low:{d:3,t:1},high:{d:8,t:2}};r.source='stated';return s}
+};
+function fillAI(s,keys){(keys||['currency','dev','test','years','cad']).forEach(k=>{if(s.prov[k]==='you'&&s[k]!=null&&s[k]!=='')return;s[k]=AIP[k].v;s.prov[k]='ai';if(k==='cad')s.cadOk=true});
+  if(!keys)s.opts.forEach(o=>{if(o.source==='proposal'){const a=AIE[o.id];o.oneOff=JSON.parse(JSON.stringify(a.oneOff));o.per={...a.per};if(a.base)o.base={...a.base};o.source='ai'}})}
+const aiInUse=()=>Object.values(S.prov).includes('ai')||S.opts.some(o=>o.source==='ai');
+const aiCount=()=>Object.values(S.prov).filter(v=>v==='ai').length+S.opts.filter(o=>o.source==='ai').length;
+function takeOverAI(){Object.keys(S.prov).forEach(k=>{if(S.prov[k]==='ai')S.prov[k]='you'});S.opts.forEach(o=>{if(o.source==='ai')o.source='stated'});render()}
+let S = STATES.priced();
+
+const price=(e,a)=>e.d*a.dev+e.t*a.test;
+function shared(a){const miss=[];if(!a.currency)miss.push('the currency');if(a.dev==null)miss.push('a developer day rate');if(a.test==null)miss.push('a key-user day rate');
+  if(a.years==null)miss.push('the years to compare over');if(a.cad==null)miss.push('your release cadence');else if(!a.cadOk&&a.prov.cad!=='ai')miss.push('a confirmed release cadence');return miss}
+function cost(a,o){if(shared(a).length||o.source==='proposal')return null;
+  const rel=a.cad*a.years,one={low:price(o.oneOff.low,a),high:price(o.oneOff.high,a)},run=price(o.per,a)*rel,base=o.base?price(o.base,a)*a.years:0;
+  return {one,run,base,rel,total:{low:one.low+run+base,high:one.high+run+base}}}
+function compare(a,ids){const opts=a.opts.filter(o=>!ids||ids.includes(o.id));const costs=opts.map(o=>({o,c:cost(a,o)}));
+  if(costs.some(x=>!x.c))return {winner:null,code:shared(a).length?'assumptions-incomplete':'option-incomplete',costs};
+  if(costs.length<2)return {winner:null,code:'too-few-options',costs};
+  const s=[...costs].sort((x,y)=>x.c.total.low-y.c.total.low);
+  if(!(s[0].c.total.high<s[1].c.total.low))return {winner:null,code:'ranges-overlap',first:s[0],second:s[1],costs};
+  return {winner:s[0].o.id,first:s[0],second:s[1],costs}}
+/* tipping points: the line method of assumptionTippingPoints */
+const PROBES=[['dev','developer day rate'],['test','key-user day rate'],['cad','release cadence'],['years','period compared']];
+function tipping(a,winner,ids){return PROBES.map(([f,label])=>{
+  const at=m=>{const b={...a,[f]:a[f]*m};const r={};a.opts.filter(o=>!ids||ids.includes(o.id)).forEach(o=>{const c=cost(b,o);if(c)r[o.id]=c.total});return r};
+  const t1=at(1),t2=at(2);const line=(id,k)=>{const b=t2[id][k]-t1[id][k];return {a:t1[id][k]-b,b}};
+  const hi=line(winner,'high');let rise=Infinity,fall=0,mr=null,mf=null,enters=false;
+  Object.keys(t1).forEach(id=>{if(id===winner)return;const lo=line(id,'low');const c=hi.a-lo.a,d=hi.b-lo.b;
+    if(Math.abs(d)<=1e-9*Math.max(1,Math.abs(c),Math.abs(hi.a),Math.abs(lo.a)))return;enters=true;const root=-c/d;
+    if(d>0){if(root<rise){rise=root;mr=id}}else if(root>fall+1e-9){fall=root;mf=id}});
+  const rb=isFinite(rise)&&rise>1?rise-1:null,fb=fall>0&&fall<1?1-fall:null;const nm=id=>META[id].label;const W=nm(winner);const lead=ids?'stays the cheapest that keeps the function':'stays lowest';
+  let s;if(rb!==null&&fb!==null)s=`${W} ${lead} while the ${label} stays between ${pct(fb)} below and ${pct(rb)} above your figure.`;
+  else if(rb!==null)s=`${W} ${lead} until the ${label} rises by ${pct(rb)}, where it meets ${nm(mr)}.`;
+  else if(fb!==null)s=`${W} ${lead} until the ${label} falls by ${pct(fb)}, where it meets ${nm(mf)}.`;
+  else if(!enters)s=`No tipping point: the ${label} moves every option by the same amount.`;
+  else s=`No tipping point: ${W} ${lead} at any ${label}.`;
+  return {f,label,s,rb,fb,met:fb!==null?mf:mr,found:rb!==null||fb!==null}})}
+function pct(x){const p=x*100;return (p<10?+p.toFixed(2):p<100?+p.toFixed(1):Math.round(p)).toLocaleString('en-GB')+' %'}
+
+/* ============ formatting ============ */
+const nf=v=>Math.round(v).toLocaleString('en-GB');
+const money=v=>`${S.currency} ${nf(v)}`;
+function sig2(v,dir){if(v<=0)return 0;const p=10**(Math.floor(Math.log10(v))-1);return (dir<0?Math.floor(v/p):dir>0?Math.ceil(v/p):Math.round(v/p))*p}
+const rng=r=>r.low===r.high?`about ${S.currency} ${sig2(r.low,0).toLocaleString('en-GB')}`:`${S.currency} ${sig2(r.low,-1).toLocaleString('en-GB')}–${sig2(r.high,1).toLocaleString('en-GB')}`;
+const rngX=r=>r.low===r.high?money(r.low):`${money(r.low)} – ${nf(r.high)}`;
+const dd=v=>(Math.abs(v)>0&&Math.abs(v)<1?v.toFixed(2):(+v.toFixed(1)).toString());
+const yrs=()=>S.years?`${S.years} year${S.years===1?'':'s'}`:'your period';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEEPS=['do-nothing','rebuild','standard'];
+const ic={edit:'<svg class="i s" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  sim:'<span class="pv sim"><svg class="i" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h4"/></svg>Simulation</span>',
+  nd:'<span class="pv nd"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Not determined</span>',
+  you:'<span class="pv you"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Your figure</span>',
+  rec:'<span class="pv rec"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4"/></svg>Reconstructed</span>',
+  prop:'<span class="pv prop"><svg class="i" viewBox="0 0 24 24"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/></svg>Proposal</span>',
+  ai:'<span class="pv ai"><svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>AI proposal</span>',
+  proven:'<span class="pv" style="color:var(--cc-success);border-color:var(--cc-success);background:#ecfdf5"><svg class="i" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>Proven</span>'};
+
+/* ============ render ============ */
+
+function render(){
+  const all=compare(S),keep=compare(S,KEEPS),miss=shared(S),pending=S.opts.some(o=>o.source==='proposal');
+  const keepCost=cost(S,S.opts[0]);
+  document.querySelectorAll('.yrs').forEach(e=>e.textContent=yrs());
+  document.getElementById('qtext').textContent=`What would each choice cost over ${yrs()}?`;
+  const A=document.getElementById('answer'),W=document.getElementById('why'),N=document.getElementById('nextbox');
+  /* --- answer --- */
+  const P=document.getElementById('paths');P.innerHTML='';N.style.display='';
+  const firstVisit=miss.length>=5;
+  if(firstVisit){
+    A.innerHTML=`Not determined yet. The costs need five figures — the currency, two day rates, a period and your SAP release cadence — and the effort per option.`;
+    W.innerHTML=`Nothing has a default. Two ways to start:`;
+    N.innerHTML='';N.style.display='none';
+    P.innerHTML=`<div class="paths"><div class="pathc"><h3>I have my figures</h3><p>Five fields, here in the header. The effort per option is already proposed from the 552 lines by fixed factors; it counts once you take it over.</p><button class="btn secondary lg" type="button" id="p-own">State your figures</button></div>
+      ${S.aiOn?`<div class="pathc ai"><h3>Fill with AI proposals ${ic.ai}<span class="pin">E14</span></h3><p>One model call proposes every input — rates, period, release cadence, the currency from your account's country, and the effort per option from the signed run's facts — each with a reason and a range. Marked until you take it over; the comparison stays this page's own arithmetic.</p><button class="btn secondary lg" type="button" id="p-ai">Fill with AI proposals</button><p class="fine">Sends lines, objects, findings and the route of the signed run to Google Gemini — never the source code. One AI step, counted like the others; on your own key if you set one.</p></div>`
+      :`<div class="pathc"><h3>AI proposals</h3><p class="offline">${ic.nd} AI proposals are switched off in <a href="#" id="p-set">Settings</a>.</p><p>The page works fully on your own figures. Turn the step on in Settings → Where the AI model is used, if you want proposals.</p></div>`}</div>`;
+  } else if(miss.length||pending){
+    A.innerHTML=`Not determined yet. The costs need ${miss.length?listWords(miss)+' from you':'your go on the proposed effort'}${miss.length&&pending?', and your go on the effort proposed from the 552 lines':''}.`;
+    W.innerHTML=`Nothing has a default. ${S.aiOn?'Missing figures can also be proposed by AI — "propose" on each chip.':''}`;
+    N.innerHTML=`<span class="k">Next step</span><button class="btn primary lg" type="button" id="go">${miss.length?'State your figures':'Take over all four proposals'}</button>${miss.length&&pending?'<button class="btn secondary" type="button" id="go2">Take over all four proposals</button>':''}`;
+  } else {
+    const kc=keepCost.total;
+    let s=`Keeping it costs <span class="fig">${rng(kc)}</span> over ${yrs()}. `;
+    if(keep.winner){const c=keep.first.c.total,m=META[keep.winner];
+      s+= keep.winner==='do-nothing'?`No change that keeps what it does costs less. `:
+        `${keep.winner==='rebuild'?'Rebuilding it':'Moving it to SAP standard'} would cost <span class="fig">${rng(c)}</span>${m.cond?', if the standard covers it':''}. `;
+    } else s+=`Of the changes that keep what it does, none is clearly cheaper: ${overlapWords(keep)}. `;
+    if(all.winner==='retire'){s+=`Retiring it costs least, <span class="fig">${rng(all.first.c.total)}</span>, if nobody still needs it.`}
+    else if(!all.winner&&all.code==='ranges-overlap'){s+=`Retiring it, if nobody still needs it, may cost less or more than that: ${rng(all.first.o.id==='retire'?all.first.c.total:all.second.c.total)} — the two ranges overlap.`}
+    const ai=aiInUse();
+    A.innerHTML=(ai?`<span class="aiflag"><svg class="i s" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Priced on AI-proposed assumptions (${aiCount()})</span><br>`:'')+s;
+    W.innerHTML=ai?`An AI model proposed ${aiCount()} of the inputs, each with a reason and a range; the amounts are this page's arithmetic. Check them, then take them over or change them. Lowest cost is not the decision by itself; that is taken in Management.`
+      :`A simulation on your figures and on the effort proposed from the 552 lines. Lowest cost is not the decision by itself; that is taken in Management.`;
+    N.innerHTML=`<span class="k">Next step</span>${ai?`<button class="btn primary lg" type="button" id="go-take">Take over the AI proposals</button><a class="btn ghost" href="#">Take it to the decision</a>`:`<a class="btn primary lg" href="#">Take it to the decision</a><button class="btn ghost" type="button" id="go">Change your figures</button>`}<span class="sub">Then Design, for whichever option is decided.</span>`;
+  }
+  document.getElementById('qsim').hidden=!!(miss.length||pending);const go=document.getElementById('go');if(go)go.onclick=()=>{if(miss.length)openEdit();else takeAll()};
+  const go2=document.getElementById('go2');if(go2)go2.onclick=takeAll;
+  const gt=document.getElementById('go-take');if(gt)gt.onclick=takeOverAI;
+  const po=document.getElementById('p-own');if(po)po.onclick=openEdit;
+  const pa=document.getElementById('p-ai');if(pa)pa.onclick=()=>{pa.textContent='Proposing… (one model call)';pa.disabled=true;setTimeout(()=>{fillAI(S);ED.classList.remove('open');render()},700)};
+  const ps=document.getElementById('p-set');if(ps)ps.onclick=e=>{e.preventDefault();showSettings()};
+  /* --- facets --- */
+  const F=document.getElementById('facets');
+  const nd=(why)=>`<div class="v nd">Not determined</div><p class="n">${why}</p>`;
+  const ready=!miss.length&&!pending;
+  const f1=ready?`<div class="v num">${rng(keepCost.total).replace('about ','')}</div><p class="n">over ${yrs()} · ${S.cad*S.years} releases + yearly upkeep. A deferred upgrade is not priced.</p>`:nd(miss.length?'Needs your rates.':'Needs your go on the proposal.');
+  let f2;if(!ready)f2=nd('Needs the same figures.');
+  else if(keep.winner){const c=keep.first.c.total,k=keepCost.total;f2=`<div class="o">${META[keep.winner].label}${META[keep.winner].cond?'<span class="tag cond">condition</span>':''}</div><div class="v num">${rng(c)}</div><p class="n">${keep.winner==='do-nothing'?'':`${S.currency} ${sig2(k.low-c.high,-1).toLocaleString('en-GB')}–${sig2(k.high-c.low,1).toLocaleString('en-GB')} less than keeping. `}${META[keep.winner].cond?cap(META[keep.winner].cond)+'.':''}</p>`}
+  else f2=`<div class="v word">No cheapest one</div><p class="n">${overlapWords(keep)}.</p>`;
+  let f3;if(!ready)f3=nd('Needs the same figures.');
+  else if(all.winner){const c=all.first.c.total,firm=!tipping(S,all.winner).some(t=>t.found);f3=`<div class="o">${META[all.winner].label}${META[all.winner].cond?'<span class="tag cond">condition</span>':''}</div><div class="v num">${rng(c)}</div><p class="n">${META[all.winner].cond?cap(META[all.winner].cond)+'. ':''}${firm?'Holds at any day rate, period or cadence.':'Holds at any day rate; see “How firm is the answer?”.'}</p>`}
+  else f3=`<div class="v word">No cheapest option</div><p class="n">${overlapWords(all)} — which is cheaper depends on where the one-off effort lands.</p>`;
+  const chip=(k,l,val,ok,miss)=>{const isAI=S.prov[k]==='ai';const b=`<button type="button" class="chipin ${ok?'':'miss'} ${isAI?'ai':''}" data-edit title="${isAI?esc('AI proposal — '+AIP[k].why+(AIP[k].lo!=null?' Range '+AIP[k].lo+'–'+AIP[k].hi+'.':'')):''}">${isAI?'<span class="aim">AI</span>':''}${ok?`${l?`<span class="l">${l}</span> `:''}${val}`:miss} ${ic.edit}</button>`;
+    return !ok&&S.aiOn?`<span class="chipwrap">${b}<button type="button" class="mini" data-propose="${k}">propose</button></span>`:b};
+  const f4=`<div class="t">Your assumptions<span class="pin">E5</span></div><div class="asm">${chip('currency','',S.currency,!!S.currency,'Currency')}${chip('dev','Developer',S.dev!=null&&S.currency?money(S.dev):S.dev,S.dev!=null,'Developer day')}${chip('test','Key user',S.test!=null&&S.currency?money(S.test):S.test,S.test!=null,'Key-user day')}${chip('years','',yrs(),S.years!=null,'Period')}${chip('cad','',S.cad!=null?S.cad+' releases a year'+(S.cadOk||S.prov.cad==='ai'?'':' (confirm)'):'',S.cad!=null&&(S.cadOk||S.prov.cad==='ai'),'Releases a year')}</div><p class="n">${ready?(aiInUse()?'Dashed = AI proposal: click one to see why, take it over or change it.':'Your figures, saved 14 Nov 2026. Click one to change it; every figure moves.'):'Nothing has a default.'}</p>`;
+  F.innerHTML=`<div class="facet"><div class="t">Cost of keeping it</div>${f1}</div><div class="facet"><div class="t">Cheapest that keeps what it does<span class="pin">E3</span></div>${f2}</div><div class="facet"><div class="t">Lowest overall</div>${f3}</div><div class="facet">${f4}</div>`;
+  F.querySelectorAll('[data-edit]').forEach(b=>b.onclick=openEdit);
+  F.querySelectorAll('[data-propose]').forEach(b=>b.onclick=()=>{fillAI(S,[b.dataset.propose]);render()});
+  /* --- chart --- */
+  const C=document.getElementById('chartbody');
+  if(!ready){
+    C.innerHTML=`<div class="ndbox"><p class="sm"><b>No amounts yet — nothing has a default.</b> What is already known, in days, proposed from the 552 lines ${ic.prop}</p>
+      <div class="otab" style="border-top:0">${S.opts.map(o=>{const t=x=>x.d+x.t;return `<div class="orow" style="grid-template-columns:minmax(0,1.4fr) 1fr 1fr 1fr"><div class="o"><b>${META[o.id].label}</b></div><div class="c">${t(o.oneOff.low)===t(o.oneOff.high)&&t(o.oneOff.low)===0?'nothing once':dd(t(o.oneOff.low))+'–'+dd(t(o.oneOff.high))+' days once'}</div><div class="c">${t(o.per)?dd(t(o.per))+' days per release':'nothing per release'}</div><div class="c">${o.base?dd(o.base.d+o.base.t)+' days a year upkeep':''}</div></div>`}).join('')}</div></div>`;
+  } else {
+    const rows=S.opts.map(o=>({o,c:cost(S,o)}));
+    const max=Math.max(...rows.map(r=>r.c.total.high));const step=niceStep(max/4);const top=Math.ceil(max/step)*step;
+    const x=v=>(v/top*100).toFixed(2)+'%';const kx=x(keepCost.total.low);
+    C.innerHTML=`<div class="rows">${rows.map(({o,c})=>{const pt=c.total.low===c.total.high,cond=!!META[o.id].cond;
+      return `<div class="rrow"><div class="nm">${META[o.id].label}<span>${o.id==='do-nothing'?'no one-off effort':cond?cap(META[o.id].cond):'once + per release'}</span></div>
+      <div class="track"><span class="ref" style="left:${kx}" aria-hidden="true"></span><span class="bar ${pt?'pt':''} ${cond?'cond':''}" style="left:${x(c.total.low)};width:calc(${x(c.total.high)} - ${x(c.total.low)})"></span></div>
+      <div class="val num">${rng(c.total)}<span>${o.id==='do-nothing'?'the reference':diffWords(keepCost.total,c.total)}</span></div></div>`}).join('')}</div>
+      <div class="axis"><div></div><div class="ticks">${Array.from({length:Math.round(top/step)+1},(_,i)=>`<span style="left:${(i*step/top*100).toFixed(2)}%">${i===0?'0':S.currency+' '+(i*step>=1000?(i*step/1000).toLocaleString('en-GB')+'k':i*step)}</span>`).join('')}</div><div></div></div>
+      <p class="cap"><span><i></i>range from the low and high one-off effort</span><span><i class="pt"></i>a point: no one-off effort</span><span><i class="cond"></i>holds only under its condition</span><span><i class="ref"></i>cost of keeping</span><span>${ic.sim}</span>${aiInUse()?`<span>${ic.ai} priced on AI-proposed assumptions</span>`:''}</p>`;
+  }
+  /* --- options table --- */
+  const T=document.getElementById('otab');
+  const head=`<div class="orow hd"><div>Option</div><div class="col">Once</div><div class="col">Per release × ${ready?S.cad*S.years:'n'}</div><div class="col">Upkeep</div><div>Total, ${yrs()}</div><div class="col">Difference to keeping</div></div>`;
+  T.innerHTML=`<div class="otab">${head}${S.opts.map(o=>{const c=cost(S,o),m=META[o.id];
+    const lowTag=(all.winner===o.id?'<span class="tag low">lowest overall</span>':'')+(keep.winner===o.id&&all.winner!==o.id?'<span class="tag low">cheapest that keeps it</span>':'');
+    if(!c)return `<div class="orow"><div class="o"><b>${m.label}</b><p>${m.cond?'<span class="condtx">Only '+m.cond+'.</span> ':''}${m.mean}</p></div><div class="c col">—</div><div class="c col">—</div><div class="c col">—</div><div class="c">${ic.nd}</div><div class="c col">—</div></div>`;
+    const diff=o.id==='do-nothing'?'the reference':`${(keepCost.total.low-c.total.high)>=0?'':'+'}${diffWordsX(keepCost.total,c.total)}`;
+    return `<div class="orow"><div class="o"><b>${m.label}</b>${lowTag}<p>${m.cond?'<span class="condtx">Only '+m.cond+'.</span> ':''}${m.mean}${o.id==='do-nothing'?' Upgrade deferral: '+S.opts[0].delay+' releases, your figure — not priced.':''}</p></div>
+      <div class="c col">${c.one.low===c.one.high?(c.one.low?money(c.one.low):'none'):money(c.one.low)+' – '+nf(c.one.high)}</div><div class="c col">${c.run?money(c.run):'none'}</div><div class="c col">${o.base?money(c.base):'—'}</div>
+      <div class="c tot">${rngX(c.total)}</div><div class="c col">${diff}</div></div>`}).join('')}</div>`;
+  const V=document.getElementById('verdict');
+  if(!ready)V.innerHTML=`<div class="verdict">${ic.nd}<span>No cheapest option yet: ${miss.length?'the shared figures are missing ('+listWords(miss)+')':'every option rests on a proposal nobody took over'}. A comparison that leaves an option out compares what is left.</span></div>`;
+  else if(all.winner)V.innerHTML=`<div class="verdict"><span><b>${META[all.winner].label}</b> has the lowest cost: its upper bound is below every other option's lower bound, so where inside its one-off range the effort lands does not matter.${keep.winner&&keep.winner!==all.winner?` Among the options that keep the function, <b>${META[keep.winner].label}</b> by the same rule.`:''} Lowest cost is not the same as the best decision.</span></div>`;
+  else V.innerHTML=`<div class="verdict">${ic.nd}<span><b>No cheapest option.</b> ${overlapWords(all)}: the difference lies inside the one-off range, so which is cheaper is not established.${keep.winner?` Among the options that keep the function, <b>${META[keep.winner].label}</b> is cheapest by the same rule.`:''}</span></div>`;
+  /* --- effort cards (IT) --- */
+  const E=document.getElementById('ecards');
+  document.getElementById('takeall').hidden=!pending;
+  E.innerHTML=S.opts.map((o,i)=>{const m=META[o.id],p=o.source==='proposal',isAI=o.source==='ai',dis=o.id==='do-nothing';
+    const inp=(path,val,disabled)=>`<input class="${p?'prop':isAI?'ai':''}" data-o="${i}" data-p="${path}" value="${val}" ${disabled?'disabled':''} aria-label="${m.label} ${path}">`;
+    const chipS=p?ic.prop:isAI?ic.ai:o.source==='taken'?'<span class="pv you">Proposal taken over · yours</span>':ic.you;
+    return `<div class="ec"><div class="ec-h"><b>${m.label}</b>${chipS}</div>
+      <div class="dt"><span></span><span class="hd">Developer</span><span class="hd">Test / key user</span>
+      <span class="lb">Once, low</span>${inp('oneOff.low.d',o.oneOff.low.d,dis)}${inp('oneOff.low.t',o.oneOff.low.t,dis)}
+      <span class="lb">Once, high</span>${inp('oneOff.high.d',o.oneOff.high.d,dis)}${inp('oneOff.high.t',o.oneOff.high.t,dis)}
+      <span class="lb">Per release</span>${inp('per.d',o.per.d)}${inp('per.t',o.per.t)}
+      ${o.base?`<span class="lb">Upkeep a year</span>${inp('base.d',o.base.d)}${inp('base.t',o.base.t)}`:''}</div>
+      <p class="note">${o.id==='do-nothing'?'Keep builds nothing once. Upkeep proposed ×1.6 for the score of 40. Upgrade deferral: '+o.delay+' releases (your figure, not priced).':o.id==='standard'?'SAP maintains the code: only a retest per release. Licences and run cost are not priced.':o.id==='retire'?(o.source==='stated'?'Your figures — include archiving and the sign-off of whoever still uses it.':'Removing the code once; no running effort. Archiving is not in the proposal.'):'Rebuild\'s per-release proposal is Keep\'s (decision E11).'}</p>
+      ${isAI?`<p class="aiwhy">AI: ${AIE[o.id].why}</p>`:''}
+      ${p||isAI?`<button type="button" class="btn secondary" style="margin-top:8px" data-take="${i}">Take over the ${isAI?'AI ':''}proposal</button>`:''}</div>`}).join('');
+  E.querySelectorAll('input[data-p]').forEach(inp=>inp.oninput=()=>{const o=S.opts[+inp.dataset.o];const v=parseFloat(inp.value);if(!isFinite(v)||v<0)return;
+    const ps=inp.dataset.p.split('.');let t=o;for(let k=0;k<ps.length-1;k++)t=t[ps[k]];t[ps[ps.length-1]]=v;o.source='stated';renderSoft()});
+  E.querySelectorAll('[data-take]').forEach(b=>b.onclick=()=>{const o=S.opts[+b.dataset.take];o.source=o.source==='ai'?'stated':'taken';render()});
+  /* --- how firm (plain words) --- */
+  const RS=document.getElementById('robsum'),RB=document.getElementById('rob'),U=document.getElementById('tips');
+  if(!ready){RS.innerHTML=`<div class="robsum">${ic.nd}<span>Nothing to test yet: no option is priced.</span></div>`;RB.innerHTML='';U.innerHTML=''}
+  else{
+    const tAll=all.winner?tipping(S,all.winner):[],tKeep=keep.winner?tipping(S,keep.winner,KEEPS):[];
+    const list=[...tAll.map(t=>({...t,w:all.winner,ids:null})),...(keep.winner&&keep.winner!==all.winner?tKeep.map(t=>({...t,w:keep.winner,ids:KEEPS})):[])];
+    U.innerHTML=list.map(t=>`<li class="${t.found?'found':''}"><b>${META[t.w].label} · ${t.label}</b><span class="s">${t.s}</span></li>`).join('');
+    const yourFig={dev:money(S.dev)+' a day',test:money(S.test)+' a day',cad:S.cad+' a year',years:yrs()};
+    const name={dev:'Developer day',test:'Key-user day',cad:'SAP releases',years:'Period compared'};
+    const at=(f,m)=>{const v=S[f]*m;return f==='years'?(v<2?`${Math.max(1,Math.floor(v*12))} month${Math.floor(v*12)===1?'':'s'}`:`${+v.toFixed(1)} years`):f==='cad'?(v<1&&Math.round(1/v)>=2?`one release in ${Math.round(1/v)} years`:`${+v.toFixed(1)} a year`):money(v)};
+    const plain=t=>`${t.fb!=null?'Under '+at(t.f,1-t.fb):'Over '+at(t.f,1+t.rb)}, ${META[t.met].label} could cost as little as ${META[t.w].label}.`;
+    const rows=PROBES.map(([f])=>({f,mine:list.filter(t=>t.f===f&&t.found)}));
+    RB.innerHTML=`<tr><th>Your figure</th><th>Now</th><th>What it would take to change the order</th></tr>`+rows.map(r=>`<tr><td>${name[r.f]}</td><td class="yf">${yourFig[r.f]}</td><td>${r.mine.length?`<span class="st edge"><i></i>Only an extreme change</span><br><span class="muted">${r.mine.map(plain).join(' ')}</span>`:`<span class="st firm"><i></i>Nothing — the order holds at any value</span>`}</td></tr>`).join('');
+    const edge=rows.filter(r=>r.mine.length);
+    RS.innerHTML=!all.winner&&!keep.winner?`<div class="robsum">${ic.nd}<span>No option is clearly ahead, so there is nothing to tip. What decides it is where the one-off effort really lands.</span></div>`:
+      `<div class="robsum"><span><b>${edge.length?'Firm.':'Firm at any value.'}</b> ${edge.length?`${edge.some(r=>r.f==='dev'||r.f==='test')?'':'Neither day rate changes the order, however far it moves. '}Only ${edge.map(r=>({cad:'far fewer SAP releases',years:'a far shorter period',dev:'a very different developer day rate',test:'a very different key-user day rate'}[r.f])).join(' or ')} than yours would change it.`:'None of your four figures changes the order, however far it moves.'} What can change it is the effort itself, under "Effort in days".</span></div>`;
+  }
+  document.getElementById('effort-sum').textContent=pending?'Proposals waiting for your go':S.opts.some(o=>o.source==='ai')?'AI proposals — take them over or change them':'Taken over by you · yours to change';
+  /* --- side --- */
+  document.getElementById('restlist').innerHTML=`
+    <li class="grp">Read from the code</li>
+    <li><span class="r1"><b>552 lines</b>${ic.rec}<button class="lnk xs" type="button">Model another size</button></span><span class="r2">Z_MM_PO_APPROVAL.abap, counted at the signed run. The proposals scale with it.</span></li>
+    <li><span class="r1"><b>Clean Core Score 40</b>${ic.proven}</span><span class="r2">Signed run of 14 Nov 2026 — raises Keep's upkeep ×1.6.</span></li>
+    <li><span class="r1"><b>Route the analysis proposes: In-App (ABAP Cloud)</b>${ic.rec}<span class="pin">E13</span></span><span class="r2">Read by the extensibility router of the signed run — a proposal, not signed off; no design exists yet. Rebuild's effort does not depend on it: the proposal per 1,000 lines is the same for every route, so there is no range across routes to show. Design signs the route off later; if its plan leaves the priced range, it asks you to re-price.</span></li>
+    <li class="grp">Proposed by Clean-Core.io</li>
+    <li><span class="r1"><b>Effort factors per 1,000 lines</b>${pending?ic.prop:S.opts.every(o=>o.source==='ai')?'<span class="pv nd">not used here</span>':'<span class="pv you">taken over · yours</span>'}</span><span class="r2">Fixed, nothing measured them. ${pending?'Not counted until you take them over.':S.opts.every(o=>o.source==='ai')?'The AI proposal replaced them for this scenario; they are the model-free fallback.':'Taken over 14 Nov 2026.'}</span></li>
+    ${aiInUse()?`<li class="grp">AI proposals · ${AIMODEL}</li>
+    ${['currency','dev','test','years','cad'].filter(k=>S.prov[k]==='ai').map(k=>`<li><span class="r1"><b>${{currency:'Currency',dev:'Developer day',test:'Key-user day',years:'Period',cad:'SAP releases'}[k]}: ${k==='dev'||k==='test'?money(S[k]):k==='years'?yrs():k==='cad'?S.cad+' a year':S.currency}</b>${ic.ai}</span><span class="r2">${AIP[k].lo!=null?`Range ${k==='dev'||k==='test'?S.currency+' ':''}${AIP[k].lo}–${AIP[k].hi}. `:''}${AIP[k].why}</span></li>`).join('')}
+    ${S.opts.some(o=>o.source==='ai')?`<li><span class="r1"><b>Effort per option</b>${ic.ai}</span><span class="r2">${S.opts.filter(o=>o.source==='ai').map(o=>META[o.id].label).join(', ')} — refined from the run's facts; reasons under "Effort in days".</span></li>`:''}
+    <li><button type="button" class="btn secondary" id="side-take" style="align-self:flex-start">Take over all AI proposals</button></li>`:''}
+    <li class="grp">Your figures</li>
+    <li><span class="r1"><b>${(()=>{const mine=['currency','dev','test','years','cad'].filter(k=>S.prov[k]==='you');return mine.length?`${S.currency} · ${money(S.dev)} · ${money(S.test)} · ${yrs()} · ${S.cad}/year`:'None yet'})()}</b>${Object.values(S.prov).includes('you')?ic.you:ic.nd}</span><span class="r2">Currency, two day rates, period, release cadence. No default for any.</span></li>
+    ${aiInUse()?`<li class="grp">Computed by code</li><li><span class="r1"><b>The comparison</b></span><span class="r2">Every amount, the lowest option and the tipping points are this page's arithmetic. The model proposed inputs only.</span></li>`:`<li class="grp">Not used</li><li><span class="r1"><b>No language model</b></span><span class="r2">No amount and no day on this page comes from a model.${S.aiOn?'':' AI proposals are switched off in <a href="#" class="lnk xs" data-set>Settings</a>.'}</span></li>`}`;
+  const st=document.getElementById('side-take');if(st)st.onclick=takeOverAI;
+  document.querySelectorAll('[data-set]').forEach(a=>a.onclick=e=>{e.preventDefault();showSettings()});
+  document.getElementById('savedtxt').textContent=ready&&aiInUse()?'Saved 15 Nov 2026, 09:41 — each input with its source (your figure, or AI proposal with model and date). A scenario: never part of the signed run or the audit pack.':ready?'Saved 14 Nov 2026, 16:02 — stored with the project as you change a figure. A scenario: never part of the signed run or the audit pack.':'Nothing stored yet. Your figures are saved with the project as you enter them.';
+  document.getElementById('rev').textContent=revision();
+  document.getElementById('toolmark').querySelector('.ck').style.display=ready?'':'none';
+  syncEdit();
+}
+function renderSoft(){const ae=document.activeElement,id=ae&&ae.dataset?ae.dataset.o+'|'+ae.dataset.p:null;render();if(id){const n=document.querySelector(`input[data-o="${id.split('|')[0]}"][data-p="${id.split('|')[1]}"]`);if(n){n.focus();const l=n.value.length;n.setSelectionRange(l,l)}}}
+function revision(){return `${S.currency||'no-currency'}@${S.years??'no-horizon'}y/${S.cad??'no-cadence'}/y${S.cadOk?'':'?'}#4opt+c0a79c40fa90`}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
+function listWords(a){return a.length<2?a.join(''):a.slice(0,-1).join(', ')+' and '+a[a.length-1]}
+function overlapWords(r){if(!r.first)return 'not every option is priced';return `${META[r.first.o.id].label} (${rng(r.first.c.total)}) and ${META[r.second.o.id].label} (${rng(r.second.c.total)}) overlap`}
+function diffWords(k,c){const lo=k.low-c.high,hi=k.high-c.low;if(hi<=0)return `${S.currency} ${sig2(-hi,-1).toLocaleString('en-GB')}–${sig2(-lo,1).toLocaleString('en-GB')} more than keeping`;if(lo<0)return 'about as much as keeping';return `${S.currency} ${sig2(lo,-1).toLocaleString('en-GB')}–${sig2(hi,1).toLocaleString('en-GB')} less than keeping`}
+function diffWordsX(k,c){const lo=k.low-c.high,hi=k.high-c.low;if(lo<0&&hi>0)return `${money(lo)} – ${nf(hi)}`;return hi<=0?`${money(-hi)} – ${nf(-lo)} more`:`${money(lo)} – ${nf(hi)} less`}
+function niceStep(v){const p=10**Math.floor(Math.log10(v));const m=v/p;return (m<=1?1:m<=2?2:m<=5?5:10)*p}
+function takeAll(){S.opts.forEach(o=>{if(o.source==='proposal')o.source='taken'});render()}
+
+/* in-place assumptions */
+const ED=document.getElementById('edit');
+function openEdit(){ED.classList.add('open');syncEdit();setTimeout(()=>{const f=[...ED.querySelectorAll('select,input:not([type=checkbox])')].find(x=>!x.value)||ED.querySelector('select');f&&f.focus()},0)}
+document.getElementById('closeedit').onclick=()=>ED.classList.remove('open');
+function syncEdit(){const set=(id,v)=>{const e=document.getElementById(id);if(document.activeElement!==e)e.value=v??''};
+  set('f-cur',S.currency);set('f-dev',S.dev);set('f-test',S.test);set('f-years',S.years);set('f-cad',S.cad);document.getElementById('f-cadok').checked=S.cadOk;
+  document.querySelectorAll('[data-why]').forEach(p=>{const k=p.dataset.why,a=AIP[k];const box=p.parentElement.querySelector('.in');
+    if(S.prov[k]==='ai'){box.classList.add('ai');p.innerHTML=`AI proposal${a.lo!=null?` · range ${a.lo}–${a.hi}`:''}: ${esc(a.why)} <button type="button" class="mini" data-takeone="${k}">take over</button>`}
+    else{box.classList.remove('ai');p.innerHTML=S.aiOn?`<button type="button" class="mini" data-propose1="${k}">propose with AI</button>`:''}});
+  document.querySelectorAll('[data-takeone]').forEach(b=>b.onclick=()=>{S.prov[b.dataset.takeone]='you';render()});
+  document.querySelectorAll('[data-propose1]').forEach(b=>b.onclick=()=>{fillAI(S,[b.dataset.propose1]);render()})}
+const num=v=>{const n=parseFloat(String(v).replace(/,/g,''));return v===''||!isFinite(n)||n<0?null:n};
+document.getElementById('f-cur').onchange=e=>{S.currency=e.target.value;S.prov.currency='you';render()};
+[['f-dev','dev'],['f-test','test'],['f-years','years'],['f-cad','cad']].forEach(([id,k])=>document.getElementById(id).oninput=e=>{S[k]=num(e.target.value);S.prov[k]='you';if(k==='cad')S.cadOk=false;render()});
+document.getElementById('f-cadok').onchange=e=>{S.cadOk=e.target.checked;render()};
+document.getElementById('takeall').onclick=takeAll;
+
+/* Settings inset (mock-up): the new model step */
+function showSettings(){const i=document.getElementById('settings-inset');i.hidden=false;i.scrollIntoView({block:'start'})}
+document.getElementById('sw-econ').onclick=e=>{const on=e.currentTarget.getAttribute('aria-checked')!=='true';e.currentTarget.setAttribute('aria-checked',String(on));S.aiOn=on;document.getElementById('sw-econ-msg').textContent=on?'Saved — on':'Saved — off';render()};
+/* mock chrome: views, states, pins, drawers */
+document.querySelectorAll('[data-state]').forEach(b=>b.addEventListener('click',()=>{S=STATES[b.dataset.state]();document.querySelectorAll('[data-state]').forEach(x=>x.classList.toggle('on',x===b));ED.classList.remove('open');document.getElementById('settings-inset').hidden=b.dataset.state!=='aioff';document.getElementById('sw-econ').setAttribute('aria-checked',String(S.aiOn));render()}));
+document.getElementById('pins').onclick=e=>{const off=document.body.classList.toggle('nopins');e.target.textContent='Decision pins: '+(off?'off':'on')};
+const scrim=document.getElementById('scrim');
+document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{const d=document.getElementById(b.dataset.open);d.hidden=false;scrim.classList.add('on');d.focus()});
+function closeAll(){document.querySelectorAll('.drawer').forEach(d=>d.hidden=true);scrim.classList.remove('on')}
+scrim.onclick=closeAll;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
+/* "On this page": scroll with offset, focus the heading, follow the scroll position */
+const anchors=[...document.querySelectorAll('#anchors .pab-items a')];
+function markAnchor(cur){anchors.forEach(a=>{if(a===cur)a.setAttribute('aria-current','true');else a.removeAttribute('aria-current')});cur.scrollIntoView({block:'nearest',inline:'nearest'})}
+anchors.forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(!t)return;if(t.tagName==='DETAILS')t.open=true;
+  t.scrollIntoView({block:'start'});const h=t.tagName==='DETAILS'?t.querySelector('summary'):t.querySelector('h2');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}markAnchor(a)}));
+addEventListener('scroll',()=>{let cur=anchors[0];anchors.forEach(a=>{const t=document.querySelector(a.getAttribute('href'));if(t&&t.getBoundingClientRect().top<200)cur=a});if(cur.getAttribute('aria-current')!=='true')markAnchor(cur)},{passive:true});
+/* deep links for screenshots: ?view=it&state=first&open=p-owner */
+const q=new URLSearchParams(location.search);
+if(q.get('state')&&STATES[q.get('state')]){S=STATES[q.get('state')]();document.querySelectorAll('[data-state]').forEach(x=>x.classList.toggle('on',x.dataset.state===q.get('state')));document.getElementById('settings-inset').hidden=q.get('state')!=='aioff';document.getElementById('sw-econ').setAttribute('aria-checked',String(S.aiOn))}
+if(q.get('settings'))document.getElementById('settings-inset').hidden=false;
+render();
+if(q.get('open')){const d=document.getElementById(q.get('open'));if(d){d.hidden=false;scrim.classList.add('on')}}
+if(q.get('effort'))document.getElementById('s-effort').open=true;
+if(q.get('nopins'))document.body.classList.add('nopins');
+</script>
+<script>
+/* ONE FAMILY (15.11.2026) — byte-identical in the six tool mock-ups.
+   Measures the sticky mock-up bar into --mock-h (0 when it is not sticky),
+   hides "On this page" when a page has one section, keeps the tool bar
+   and the section bar to one row (fade while more
+   items wait to the right, the current tool in view) and labels the cells of stacking tables. */
+(function(){
+  var root=document.documentElement, raf=0;
+  function mockH(){var m=document.querySelector('.mock');var on=m&&getComputedStyle(m).position==='sticky'&&getComputedStyle(m).display!=='none';root.style.setProperty('--mock-h',(on?m.offsetHeight:0)+'px');}
+  function edges(el){el.classList.toggle('start',el.scrollLeft<=1);el.classList.toggle('end',el.scrollLeft+el.clientWidth>=el.scrollWidth-2);}
+  function fade(el){var ovf=el.scrollWidth>el.clientWidth+1;el.classList.toggle('ovf',ovf);edges(el);
+    if(!el.dataset.wired){el.dataset.wired='1';el.addEventListener('scroll',function(){edges(el);},{passive:true});}return ovf;}
+  function tools(first){document.querySelectorAll('.tools').forEach(function(t){
+    if(!t.dataset.wired)first=true;
+    t.querySelectorAll('.tool .ck').forEach(function(x){x.setAttribute('aria-label','done');if(!x.querySelector('title'))x.insertAdjacentHTML('afterbegin','<title>done</title>');});
+    t.querySelectorAll('.tool .od').forEach(function(x){x.title='out of date';});
+    t.classList.remove('nolegend');if(t.scrollWidth>t.clientWidth+1&&t.querySelector('.legend'))t.classList.add('nolegend');
+    var ovf=fade(t);
+    if(first&&ovf){var c=t.querySelector('.tool.cur');if(c){var l=c.offsetLeft-t.offsetLeft,r=l+c.offsetWidth;if(r>t.clientWidth-48){t.scrollLeft=r-t.clientWidth+64;edges(t);}}}
+  });document.querySelectorAll('.pab-items').forEach(fade);
+    document.querySelectorAll('.pab').forEach(function(p){p.classList.toggle('single',p.querySelectorAll('.pab-items a').length<2);});}
+  function labels(){document.querySelectorAll('table.tbl-stack').forEach(function(tb){var hr=tb.querySelector('thead tr')||tb.querySelector('tr');if(!hr||!hr.querySelector('th'))return;var hs=[].map.call(hr.children,function(h){return h.textContent.trim();});tb.querySelectorAll('tr').forEach(function(tr){if(tr===hr)return;[].forEach.call(tr.children,function(td,i){if(hs[i]&&td.tagName==='TD'&&!td.hasAttribute('data-label'))td.setAttribute('data-label',hs[i]);});});});}
+  function all(first){mockH();tools(first);labels();}
+  function soon(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;all(false);});}
+  addEventListener('resize',soon);
+  addEventListener('load',function(){all(true);});
+  if(window.ResizeObserver){var m=document.querySelector('.mock');if(m)new ResizeObserver(soon).observe(m);}
+  new MutationObserver(soon).observe(document.body,{childList:true,subtree:true});
+  all(true);
+})();
+</script>
+</body>
+</html>

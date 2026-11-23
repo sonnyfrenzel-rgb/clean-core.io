@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Design · next mock-up</title>
+<style>
+/* =====================================================================
+   Mock-up, not product code. The Design tool, next (15.11.2026).
+   Owner decisions of 15.11.2026 it is built on:
+   - Design keeps the Business | IT | Management switch, and each view
+     shows different content that answers that reader's question.
+   - Economics moves before Design; Design works from the program
+     decision taken in Management (keep / rebuild / move to SAP standard /
+     retire), read as stored (ADR-092), never recomputing an amount.
+   - One "On this page" bar for every tool (tmp/ANCHOR-BAR-SPEC.md).
+   Look: app/globals.css tokens, StageHeader, ToolBar, StageViewSwitch,
+   PageAnchorBar, cc chips. Content: the shipped demo Z_MM_PO_APPROVAL
+   (synthetic, 552 lines), with the names of the Analyze v4 mock-up.
+   Engine facts (route, findings, successors, levels, standard touch) were
+   computed from this branch's lib/ on the demo source; answers, decision
+   record and model-written text are illustrative and marked so.
+   ===================================================================== */
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f3f4f6;--cc-neutral-border:#d1d5db;
+  --cc-cat-1:#1e3a8a;--cc-cat-2:#0f766e;--cc-cat-3:#7c3aed;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --mk-bar:#1f1147;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+p{margin:0}h1,h2,h3,h4{margin:0}ul,ol{margin:0;padding:0;list-style:none}
+button{font-family:inherit;cursor:pointer;color:inherit}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+
+/* ---------- mock-up chrome (not product) ---------- */
+.mock{position:sticky;top:0;z-index:200;background:var(--mk-bar);color:#fff;font-size:12px;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin-right:4px}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}
+.mock button.on{background:#e9e5ff;color:var(--mk-bar)}
+body.embed .mock,body.embed .fab{display:none}
+.mtag{display:inline-flex;font-size:11px;font-weight:600;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 5px;white-space:nowrap;vertical-align:1px}
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:240;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(860px,100vw);background:#fff;z-index:250;box-shadow:var(--cc-shadow-dialog);display:flex;flex-direction:column}
+.drawer[hidden]{display:none}
+.drawer header{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--mk-bar);color:#fff}
+.drawer header h2{font-size:16px;font-weight:800}
+.drawer .body{overflow:auto;padding:16px 20px 48px;font-size:13px;line-height:1.55}
+.drawer h3{font-size:14px;font-weight:800;margin:20px 0 6px}
+.drawer h3:first-child{margin-top:0}
+.drawer p + p{margin-top:6px}
+.drawer ul.b{list-style:disc;padding-left:18px}
+.drawer ul.b li{margin:3px 0}
+.drawer code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px}
+.drawer table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px}
+.drawer th,.drawer td{text-align:left;vertical-align:top;padding:6px 8px;border-bottom:1px solid var(--cc-line)}
+.drawer th{font-size:11px;font-weight:700;letter-spacing:.04em;color:var(--cc-ink-muted);text-transform:uppercase}
+.drawer .rec{font-weight:700;color:var(--cc-brand-strong)}
+.drawer .dec{display:block;border:1px solid var(--cc-line);border-radius:8px;padding:8px 10px;margin:6px 0}
+.drawer .dec b{display:block}
+
+/* ---------- shell ---------- */
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:16px;letter-spacing:-.02em;line-height:1.15}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* ---------- frame, header, tools (as economics-next / transformation-next) ---------- */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:4px 12px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);border-radius:6px;min-height:28px}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.tools{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tools .k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh{margin-top:14px;display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px}
+.sh .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+
+/* ---------- "On this page" — tmp/ANCHOR-BAR-SPEC.md, verbatim for every tool ---------- */
+
+/* ---------- cc components ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.1;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;white-space:nowrap;text-decoration:none;background:#fff}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{border-color:var(--cc-field-border);color:var(--cc-ink-muted)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-information);text-decoration:none;background:none;border:0;padding:0;cursor:pointer}
+.lnk:hover{text-decoration:underline}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff}
+.pv.rec{color:var(--cc-information);border-color:var(--cc-information)}
+.pv.ai{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral)}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information-border);background:var(--cc-information-bg)}
+.pv.cat{color:var(--cc-cat-2);border-color:var(--cc-cat-2)}
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:20px 24px}
+.muted{color:var(--cc-ink-muted)}
+.xs{font-size:12px}.sm{font-size:13px}
+.k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.h2{font-size:17px;font-weight:700;letter-spacing:-.01em}
+.anc{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--cc-ink-muted);text-decoration:underline;text-decoration-color:var(--cc-line);text-underline-offset:2px;white-space:nowrap;margin-left:2px}
+.tech{font-family:var(--mono);font-size:12px;color:var(--cc-ink)}
+.sec{margin-top:24px}
+.sec > .hd{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.sec > .hd .sub{font-size:13px;color:var(--cc-ink-muted)}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:20px;align-items:start}
+.strip{display:flex;gap:10px;align-items:flex-start;border:1px solid;border-left-width:4px;border-radius:8px;padding:10px 14px;font-size:13px;line-height:1.5}
+.strip.info{background:var(--cc-information-bg);border-color:var(--cc-information-border);border-left-color:var(--cc-information)}
+.strip.warn{background:var(--cc-warning-bg);border-color:var(--cc-warning-border);border-left-color:var(--cc-warning-line)}
+.strip.err{background:var(--cc-error-bg);border-color:var(--cc-error-border);border-left-color:var(--cc-error)}
+.strip b{display:block;font-size:14px}
+.strip .acts{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap;flex:none}
+
+/* answer card */
+.answer{padding:22px 24px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px 32px}
+.answer .q{font-size:12px;font-weight:600;color:var(--cc-ink-muted)}
+.answer h2{font-size:22px;font-weight:800;letter-spacing:-.015em;line-height:1.3;margin-top:4px;max-width:62ch}
+.answer .say{font-size:15px;line-height:1.55;margin-top:8px;max-width:72ch}
+.answer .src{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.decbox{border:1px solid var(--cc-line);border-radius:10px;padding:12px 14px;min-width:250px;max-width:320px;align-self:start;background:var(--cc-surface-muted)}
+.decbox .opt{font-size:18px;font-weight:800;margin-top:2px}
+.decbox p{font-size:12.5px;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+.nums{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-top:1px solid var(--cc-line);padding-top:14px}
+.num{padding:0 16px;border-left:1px solid var(--cc-line)}
+.num:first-child{border-left:0;padding-left:0}
+.num .v{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.1}
+.num .v small{font-size:14px;font-weight:600;color:var(--cc-ink-muted)}
+.num .l{font-size:13px;font-weight:600;margin-top:2px}
+.num .s{font-size:12px;color:var(--cc-ink-muted);margin-top:2px}
+
+/* before / after flow */
+.flowlegend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--cc-ink-muted);margin:0 0 12px}
+.flowlegend span{display:inline-flex;gap:6px;align-items:center}
+.sw{width:14px;height:14px;border-radius:4px;border:2px solid}
+.phases{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.ph{background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:10px;padding:10px}
+.ph .pn{font-size:12px;font-weight:700;color:var(--cc-ink-muted);margin-bottom:8px;display:flex;justify-content:space-between}
+.st{position:relative;background:#fff;border:2px solid var(--cc-line);border-radius:8px;padding:8px 10px 8px 12px;margin-top:8px;font-size:13.5px;font-weight:600;line-height:1.3}
+.st:first-of-type{margin-top:0}
+.st .w{display:block;font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:3px;line-height:1.4}
+.st .w b{color:var(--cc-ink);font-weight:600}
+.st .t{display:inline-block;font-size:11px;font-weight:700;border-radius:4px;padding:0 5px;margin-bottom:3px;letter-spacing:.02em}
+.st.stays{border-color:var(--cc-line)}
+.st.changes{border-color:var(--cc-cat-1)}.st.changes .t{background:#e0e7ff;color:var(--cc-cat-1)}
+.st.goes{border-style:dashed;border-color:#9ca3af;background:#f9fafb;color:#6b7280}.st.goes .nm{text-decoration:line-through}.st.goes .t{background:#e5e7eb;color:#374151}
+.st.open{border-style:dashed;border-color:var(--cc-warning-line)}.st.open .t{background:var(--cc-warning-bg);color:var(--cc-warning)}
+.st.cand{border-color:var(--cc-cat-2)}.st.cand .t{background:#ccfbf1;color:var(--cc-cat-2)}
+.st.given{border-color:var(--cc-cat-3)}.st.given .t{background:#ede9fe;color:var(--cc-cat-3)}
+.st.gone{border-style:dotted;border-color:#9ca3af;color:#4b5563}.st.gone .t{background:#f3f4f6;color:#374151}
+.st.stop{border-color:var(--cc-error-border);background:#fff}.st.stop .t{background:var(--cc-error-bg);color:var(--cc-error)}
+.st .ln{position:absolute;top:7px;right:8px}
+.disc{font-size:12px;color:var(--cc-ink-muted);margin-top:10px}
+
+/* people */
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.pp{border:1px solid var(--cc-line);border-radius:10px;padding:12px 14px;background:#fff}
+.pp h4{font-size:14px;font-weight:700}
+.pp .row{display:grid;grid-template-columns:52px minmax(0,1fr);gap:6px;font-size:13px;line-height:1.45;margin-top:6px}
+.pp .row .k{font-size:10.5px;padding-top:2px}
+.pp.same{background:var(--cc-surface-muted)}
+
+/* lists */
+.ql{display:flex;flex-direction:column}
+.qi{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;padding:12px 0;border-top:1px solid var(--cc-line);align-items:start}
+.qi:first-child{border-top:0;padding-top:0}
+.qi .n{width:24px;height:24px;border-radius:999px;background:var(--cc-neutral-bg);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.qi .n.open{background:var(--cc-warning-bg);color:var(--cc-warning);box-shadow:inset 0 0 0 1px var(--cc-warning-border)}
+.qi .qq{font-size:14px;font-weight:600;line-height:1.45}
+.qi .aa{font-size:13px;margin-top:4px;line-height:1.45}
+.qi .aa b{font-weight:700}
+.qa{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.qa button{font-size:12.5px;font-weight:600;border:1px solid var(--cc-field-border);background:#fff;border-radius:999px;padding:4px 10px}
+.qa button.rec{border-color:var(--cc-information);box-shadow:inset 0 0 0 1px var(--cc-information)}
+
+/* tables */
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--cc-line);background:var(--cc-surface-muted);white-space:nowrap}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--cc-line);vertical-align:top;line-height:1.4}
+.tbl tr:last-child td{border-bottom:0}
+.tw{overflow-x:auto}
+.tw .tbl{min-width:760px}
+.lv{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:20px;border-radius:5px;font-size:12px;font-weight:800;padding:0 5px;border:1px solid}
+.lv.A{color:#065f46;border-color:#6ee7b7;background:#ecfdf5}
+.lv.B{color:#1e3a8a;border-color:#93c5fd;background:#eff6ff}
+.lv.C{color:#92400e;border-color:#fcd34d;background:#fffbeb}
+.lv.D{color:#991b1b;border-color:#fca5a5;background:#fef2f2}
+.lv.U{color:#374151;border-color:#d1d5db;background:#f9fafb;font-weight:600}
+.dist{display:flex;height:10px;border-radius:999px;overflow:hidden;margin-top:8px;background:#f3f4f6}
+.dist i{display:block}
+
+/* canvas (IT) */
+.canvas{position:relative;overflow:auto;background:
+  radial-gradient(circle,#e5e7eb 1px,transparent 1px) 0 0/18px 18px,#fbfcff;border-radius:12px 12px 0 0;border-bottom:1px solid var(--cc-line)}
+.canvas svg{display:block;min-width:980px;width:100%;height:auto}
+.cvbar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:1px solid var(--cc-line);flex-wrap:wrap}
+.cvbar h3{font-size:15px;font-weight:700}
+.cvlegend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 16px;font-size:12px;color:var(--cc-ink-muted)}
+
+/* management */
+.verdict{padding:24px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:24px}
+.verdict h2{font-size:24px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:4px}
+.verdict .say{font-size:15px;line-height:1.55;margin-top:8px}
+.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fact{border:1px solid var(--cc-line);border-radius:10px;padding:12px 14px;background:#fff}
+.fact .v{font-size:18px;font-weight:800;margin-top:4px;line-height:1.25}
+.fact .s{font-size:12px;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+.check{display:flex;flex-direction:column;gap:0}
+.ci{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;padding:10px 0;border-top:1px solid var(--cc-line);font-size:13.5px;line-height:1.45;align-items:start}
+.ci:first-child{border-top:0}
+.ci .m{width:20px;height:20px;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+.ci .m.ok{background:var(--cc-information-bg);color:var(--cc-information)}
+.ci .m.no{background:var(--cc-warning-bg);color:var(--cc-warning)}
+.ci .m.na{background:var(--cc-neutral-bg);color:var(--cc-neutral)}
+.ci .w{font-size:12px;color:var(--cc-ink-muted)}
+.opts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.oc{border:1px solid var(--cc-line);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.45;background:#fff}
+.oc b{display:block;font-size:13.5px}
+.oc.on{border:2px solid var(--cc-ink)}
+.oc .vv{display:block;font-size:11px;font-weight:700;margin-top:4px}
+.empty{border:1px dashed var(--cc-field-border);border-radius:12px;padding:28px 24px;text-align:center;background:#fff}
+.empty b{display:block;font-size:16px}
+.empty p{max-width:60ch;margin:6px auto 0;font-size:13px;color:var(--cc-ink-muted);line-height:1.5}
+.empty .acts{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+details.fold{border:1px solid var(--cc-line);border-radius:10px;background:#fff;margin-top:12px}
+details.fold summary{cursor:pointer;padding:12px 16px;font-size:14px;font-weight:600;list-style:none;display:flex;gap:8px;align-items:center}
+details.fold summary::before{content:"\25B8";color:var(--cc-ink-muted)}
+details.fold[open] summary::before{content:"\25BE"}
+details.fold .in{padding:0 16px 14px;font-size:13px;line-height:1.55}
+
+/* ---------- small screens ---------- */
+@media (max-width:1100px){.grid2{grid-template-columns:1fr}.verdict{grid-template-columns:1fr}.opts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:900px){.phases{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:639px){
+  .shell{padding:0 16px;gap:12px}.path{display:none}
+  .vs{margin-left:0;width:100%}.seg{width:100%}.seg button{flex:1}
+  .answer{grid-template-columns:1fr;padding:16px}
+  .answer h2{font-size:19px}
+  .decbox{max-width:none}
+  .nums{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:14px}
+  .num:nth-child(3){border-left:0;padding-left:0}
+  .phases{grid-template-columns:1fr}
+  .facts{grid-template-columns:1fr}
+  .opts{grid-template-columns:1fr}
+  .pad{padding:16px}
+  .verdict{padding:16px}
+  .verdict h2{font-size:20px}
+  .qi{grid-template-columns:28px minmax(0,1fr)}
+  .qi > :last-child:not(.n):not(div:nth-child(2)){grid-column:2}
+  .hide-s{display:none}
+}
+
+
+/* ---------- Design inside the family (15.11.2026): sections are cards with their heading inside ---------- */
+#mk-case,#mk-state{display:contents}
+section.sec>.sec-b{margin-top:12px}
+.sec-b>.card{border:0;box-shadow:none;border-radius:0;background:none}
+.sec-b>.card.pad{padding:0}
+.sec-b>.card>.pad{padding-left:0;padding-right:0}
+.sec-b>.card>.cvbar,.sec-b>.card>.cvlegend{padding-left:0;padding-right:0}
+.sec-b>.card>.canvas{border:1px solid var(--cc-line);border-radius:8px}
+#page>:first-child{margin-top:0}
+#headslot>.strip{margin-top:14px}
+#headslot>.strip+.ophead{margin-top:0}
+.ophead.verdict{display:block}
+@media (max-width:720px){.strip{flex-wrap:wrap}.strip .acts{flex:1 1 100%;margin-left:0}}
+.ophead .src{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.ophead .next .decbox{min-width:0;max-width:none}
+.ophead .next.facts{grid-template-columns:minmax(0,1fr)}
+/* =====================================================================
+   ONE FAMILY (15.11.2026) — this block is byte-identical in the six tool
+   mock-ups (Economics, Design, Transformation, Documentation, Testing,
+   Delivery) and comes last, so the shared parts look and behave the same
+   in every tool. Change it in all six or in none.
+   Responsive rules, the same everywhere:
+   - mock-up bar sticky only above 1100 px; its real height is measured
+     into --mock-h, so nothing ever slides under it;
+   - tool bar: one row at every width; when it does not fit, the legend
+     steps back (each mark keeps its words as a tooltip) and the row
+     scrolls sideways with a right-edge fade, the current tool in view;
+   - "On this page": the spec (tmp/ANCHOR-BAR-SPEC.md), sticky below the
+     mock-up bar, 24 px above and below, anchors land 16 px under it;
+     hidden when the page has only one section (owner, 15.11.2026);
+   - side column below the main column from 1100 px down;
+   - 24 px between cards and sections; card padding 16/20, phone 14/16;
+   - tables never widen the page: on a phone a list table stacks into one
+     block per row (row title first, every other cell with its column
+     name); a wider table scrolls inside its own card;
+   - button labels wrap balanced (no single orphaned word), numbers and
+     chips never break.
+   ===================================================================== */
+@font-face{font-family:Inter;src:url(../../app/fonts/inter-latin-variable.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --mk-bar:#1f1147;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --mock-h:0px;
+}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+body{overflow-x:clip}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+h2[tabindex="-1"]:focus,h3[tabindex="-1"]:focus,summary[tabindex="-1"]:focus{outline:none}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+
+/* mock-up chrome (not product) */
+.mock{position:sticky;top:0;z-index:300;background:var(--mk-bar);color:#fff;font-size:12px;line-height:1.4;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap}
+.mock button.on{background:#e9e5ff;color:var(--mk-bar)}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.mock .d{flex-basis:100%;color:#cfc8f3;font-weight:500}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap;letter-spacing:0;text-transform:none}
+.mtag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;white-space:nowrap;letter-spacing:0;text-transform:none}
+body.nopins .pin{display:none}
+
+/* app bar */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none;color:inherit}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.15}
+.logo .lg svg{width:18px;height:18px}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* frame, back link, note / view switch, tool bar, tool header */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;min-height:32px}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vsnote{font-size:13px;font-weight:500;line-height:1.4;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:0 12px;font-size:13px;font-weight:600;line-height:26px;min-height:26px;color:var(--cc-ink-muted);border-radius:6px;white-space:nowrap}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.tools{display:flex;align-items:center;gap:8px;margin-top:8px;padding:2px 0;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+.tools::-webkit-scrollbar{display:none}
+.tools>*{flex:none}
+/* sideways rows (tool bar, "On this page"): a fade on each edge where more items wait */
+.tools.ovf:not(.end),.pab-items.ovf:not(.end){-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
+.tools.ovf.end:not(.start),.pab-items.ovf.end:not(.start){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px);mask-image:linear-gradient(90deg,transparent,#000 48px)}
+.tools.ovf:not(.start):not(.end),.pab-items.ovf:not(.start):not(.end){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent)}
+.tools .k{display:inline;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tools .tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tools .tool:focus-visible{outline-offset:-2px}
+.tools .tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tool .od{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .t12{order:0}
+.tools .legend{display:flex;margin-left:auto;padding-left:16px;font-size:12px;font-weight:500;color:var(--cc-ink-muted);gap:12px;white-space:nowrap}
+.tools .legend span{display:inline-flex;align-items:center;gap:4px}
+.tools .legend i{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .legend svg.half,.tool svg.half{width:10px;height:10px;color:var(--cc-information);flex:none}
+.tools .toolmenu,.tools .toolsmenu{display:none}
+.tools.nolegend .legend{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh .eyebrow{display:flex;align-items:center;gap:6px}
+.sh .eyebrow svg.i{width:14px;height:14px}
+.sh .pid{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px;overflow-wrap:anywhere}
+.sh .pid+.lead{margin-top:6px}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;line-height:1.5;color:var(--cc-ink-muted);margin-top:2px}
+
+/* buttons, links, chips */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;text-decoration:none;text-align:center;white-space:normal;text-wrap:balance;font-family:inherit;cursor:pointer}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:4px 10px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff;letter-spacing:0;text-transform:none}
+.pv svg.i{width:12px;height:12px}
+.pv.ai,.pv.sim,.pv.prop{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed;background:#fff}
+.pv.eng,.pv.rec{color:var(--cc-information);border-color:var(--cc-information);background:#fff}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral);background:#fff}
+
+/* cards and sections */
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.h2{font-size:16px;font-weight:700;line-height:1.35;display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
+.sec-h{display:flex;align-items:flex-start;gap:8px 12px;flex-wrap:wrap}
+.sec-h>div:first-child{flex:1 1 320px;min-width:0}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+details.fold>summary{flex-wrap:wrap}
+
+/* the answer card: question, answer, why, next step, facets */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ophead>.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start;margin:0}
+.ophead .q{font-size:12px;font-weight:600;line-height:1.5;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:0;letter-spacing:0;text-transform:none}
+.ophead .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ophead .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ophead .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:250px;max-width:290px;width:290px}
+.ophead .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;line-height:1.45}
+.facets{display:grid;border-top:1px solid var(--cc-line);margin:16px -22px 0}
+:where(.facets){grid-template-columns:repeat(4,minmax(0,1fr))}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0}
+button.facet{font:inherit;color:inherit;text-align:left;background:none;border:0;border-right:1px solid var(--cc-line);cursor:pointer;display:block;width:100%}
+button.facet:hover{background:var(--cc-surface-muted)}
+button.facet:last-child{border-right:0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2;font-variant-numeric:tabular-nums}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+
+/* "On this page" — the one bar (tmp/ANCHOR-BAR-SPEC.md) */
+.pab{position:sticky;top:var(--mock-h);z-index:50;display:flex;align-items:center;gap:12px;height:48px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 2px 4px rgb(11 28 48 / .06);margin:24px -32px 24px;padding:0 32px}
+.pab+*{margin-top:0}
+.pab.single{display:none}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted);margin:0;white-space:nowrap}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap;flex:none}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+.pab-c{font-size:12px;font-weight:600;line-height:18px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:var(--cc-ink);border:0;box-shadow:none}
+.pab-c.o{background:#fef3c7}
+.pab-act{margin-left:auto;flex:none}
+[id^="s-"],[data-sec],.chap{scroll-margin-top:calc(var(--mock-h) + 64px)}
+.frame>.pab.single+*,.frame>.pab.single+.body{margin-top:24px}
+
+/* object page body: main column + side column */
+.frame>.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;margin-top:0;align-items:start}
+.main{display:flex;flex-direction:column;gap:24px;min-width:0}
+.side{display:flex;flex-direction:column;gap:24px;position:sticky;top:calc(var(--mock-h) + 64px)}
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* owner / today drawers */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(780px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55;color:var(--cc-ink)}
+.drawer.wide{width:min(1040px,100vw)}
+.drawer[hidden]{display:none}
+.drawer header{position:sticky;top:0;background:#fff;color:var(--cc-ink);border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2;flex-wrap:wrap}
+.drawer header h2{font-size:16px;font-weight:800;line-height:1.3;min-width:0}
+.drawer header .x{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer .db>h3:first-child{margin-top:0}
+.drawer code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+
+/* tables on a phone (rule: stack; data-label filled by the family script) */
+@media (max-width:720px){
+  table.tbl-stack{min-width:0!important;width:100%}
+  table.tbl-stack thead,table.tbl-stack tr:first-child:has(>th){display:none}
+  table.tbl-stack,table.tbl-stack tbody{display:block}
+  table.tbl-stack tr{display:block;padding:10px 0;border-bottom:1px solid var(--cc-line)}
+  table.tbl-stack tr:last-child{border-bottom:0}
+  table.tbl-stack td{display:flex;gap:10px;border:0!important;padding:2px 0!important;text-align:left!important;background:none!important}
+  table.tbl-stack td:first-child{font-weight:600}
+  table.tbl-stack td[data-label]:not(:first-child)::before{content:attr(data-label);flex:0 0 38%;font-size:12px;font-weight:600;color:var(--cc-ink-muted);font-family:var(--sans);white-space:normal}
+}
+
+/* ---------- the same breakpoints in every tool ---------- */
+@media (max-width:1100px){
+  .mock{position:static}
+  .frame>.body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  :where(.facets){grid-template-columns:repeat(2,minmax(0,1fr))}
+  :where(.facets>.facet:nth-child(2n)){border-right:0}
+  :where(.facets>.facet:nth-child(-n+2)){border-bottom:1px solid var(--cc-line)}
+}
+@media (max-width:900px){
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .next{width:auto;min-width:0;max-width:420px}
+}
+@media (max-width:720px){
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .ophead{padding:14px 16px 0}
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .a{font-size:17px}
+  .ophead .next{min-width:0;max-width:none;width:auto}
+  .facets{margin:14px -16px 0}
+  .facet,button.facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .pad{padding:14px 16px}
+  .drawer header{padding:12px 16px}
+  .drawer .db{padding:14px 16px 28px}
+}
+@media (max-width:639px){
+  .pab{margin:24px -16px 24px;padding:0 0 0 16px}
+  .pab-l,.pab-act{display:none}
+  .pab-items{padding-right:24px}
+}
+</style>
+</head>
+<body>
+<div class="mock" id="mock" role="region" aria-label="Mock-up controls">
+  <b>Decision</b>
+  <span id="mk-case"></span>
+  <b id="mk-state-l">State</b>
+  <span id="mk-state"></span>
+  <span class="sp">
+    <button type="button" data-panel="p-today">Today, measured</button>
+    <button type="button" data-panel="p-owner">For the owner</button>
+  </span>
+</div>
+
+<header class="shell">
+  <a class="logo" href="#" aria-label="Clean-Core.io, My workspace">
+    <span class="lg"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span>
+    <span><span class="n">Clean-Core<em>.io</em></span><span class="s">Free Community Edition</span></span>
+  </a>
+  <nav class="path" aria-label="Breadcrumb"><span>My workspace</span><span>›</span><span id="crumb">Emergency purchase approval</span><span>›</span><span class="cur">Design</span></nav>
+  <div class="shell-r">
+    <button class="ib" type="button" aria-label="Help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+    <span class="av" aria-label="Account menu">MW</span>
+  </div>
+</header>
+
+<main class="frame">
+  <div class="headrow">
+    <a class="back" href="#"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg><span id="backtxt">My workspace · Emergency purchase approval</span></a>
+    <div class="vs">
+      <div class="seg" role="group" aria-label="View" id="viewseg">
+        <button data-v="business">Business</button><button data-v="it">IT</button><button data-v="management">Management</button>
+      </div>
+    </div>
+  </div>
+  <nav class="tools" aria-label="Tools">
+    <span class="k">Tools</span>
+    <a class="tool" href="#"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Analyze</a>
+    <a class="tool" href="#" title="Economics now comes before Design (owner, 15.11.2026)"><span id="econck"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg></span>Economics</a>
+    <a class="tool cur" href="#" aria-current="page">Design</a>
+    <a class="tool" href="#">Transformation</a>
+    <a class="tool" href="#">Documentation</a>
+    <a class="tool" href="#">Testing</a>
+    <a class="tool" href="#">Delivery</a>
+    <span class="legend"><span><svg class="i s" viewBox="0 0 24 24" style="color:var(--cc-success)"><path d="M20 6 9 17l-5-5"/></svg>done</span><span><svg class="half" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 1.25 A4.75 4.75 0 0 0 6 10.75 Z" fill="currentColor"/></svg>started</span><span><i class="od"></i>out of date</span></span>
+  </nav>
+  <div class="sh">
+    <div>
+      <div class="eyebrow"><svg class="i" viewBox="0 0 24 24"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="m2 17 10 5 10-5"/><path d="m2 12 10 5 10-5"/></svg><span>Tool · Design</span></div>
+      <h1 data-stage-title>Emergency purchase approval</h1>
+      <p class="pid" id="eyename">Z_MM_PO_APPROVAL</p>
+      <p class="lead" id="lead"></p>
+    </div>
+    <div class="acts" id="hacts"></div>
+  </div>
+  <div id="headslot"></div>
+  <nav class="pab" aria-label="On this page"><span class="pab-l">On this page</span><div class="pab-items" id="pab"></div><span class="pab-act" id="pabact"></span></nav>
+  <div id="page"></div>
+</main>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- ======================= TODAY, MEASURED ======================= -->
+<aside class="drawer" id="p-today" hidden aria-label="Today, measured">
+<header><h2>Today's Design, measured from the code</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+<div class="db">
+<p>No screenshot of today's app (no dev server, by the brief). Everything is read from the source of branch <code>design/econ-doc-mockups</code>; file:line as of 15.11.2026.</p>
+<h3>What is wrong today</h3>
+<table>
+<tr><th>#</th><th>Finding</th><th>Where</th></tr>
+<tr><td>T1</td><td><b>The view switch does nothing on Design.</b> The shared header draws Business | IT | Management on every tool, but the Design page never reads <code>?view=</code>: there is no <code>stageViewOf</code> and no view branch in the page or in any of its 16 components. All three views render the identical page.</td><td><code>components/StageHeader.tsx:208</code>; <code>design/page.tsx</code> (0 hits for <code>stageViewOf</code>; the only reader is <code>analyze/page.tsx</code>)</td></tr>
+<tr><td>T2</td><td><b>A second switch</b>, Canvas | List, sits beside it in the header and is hidden under 720 px. A reader sees two segmented controls; the one that works is the technical one.</td><td><code>design/page.tsx:875</code>, <code>:1397–1405</code></td></tr>
+<tr><td>T3</td><td><b>The page is IT-shaped for everyone.</b> First block is the architecture canvas (S/4HANA core, released APIs, RAP object); the business questions are its side panel. A business reader's only content stands inside an IT drawing.</td><td><code>design/page.tsx:1450–1524</code>; <code>DesignCanvasStage.tsx:1203–1240</code></td></tr>
+<tr><td>T4</td><td><b>Contract and alternatives twice.</b> Side panel tabs Decision · Contract · Alternatives · Evidence, and below the canvas a drawer Document · Contract · Alternatives · Assumptions.</td><td><code>DesignCanvasStage.tsx:1219–1222</code>, <code>:1346–1349</code></td></tr>
+<tr><td>T5</td><td><b>The to-be process exists and is shown nowhere.</b> <code>buildTargetModel</code> and <code>compareIstSoll</code> (stays · changes deliberately · not in the target · open · added) are built and tested, with no importer in <code>app/</code> or <code>components/</code>. The business answers already land in <code>process-states</code> — the input it needs.</td><td><code>lib/process-target.ts:321</code>, <code>:522</code>, <code>:583–599</code></td></tr>
+<tr><td>T6</td><td><b>Design does not read the program decision.</b> It reads only the architecture sign-off (<code>approvedByArchitect</code>, <code>targetArchitecture</code>); <code>project.decision</code> (option, status, <code>costBasis</code>, ADR-092) is never imported. A program decided as Retire or Move to SAP standard still opens on a RAP canvas and offers "Generate the design".</td><td><code>design/page.tsx:946</code>, <code>:951</code>; no import of <code>lib/project-decision.ts</code> / <code>lib/decision-options.ts</code></td></tr>
+<tr><td>T7</td><td><b>No answer first.</b> The header lead is the same sentence in every state ("Where this code should run after the change, and the design that gets it there."); the answer sits in the side panel's Decision tab (<code>h2#design-answer</code>).</td><td><code>design/page.tsx:1437</code>; <code>DesignCanvasStage.tsx:719</code></td></tr>
+<tr><td>T8</td><td><b>The fit-to-standard design is a concept only.</b> <code>lib/standard-touch.ts</code> (areas, departures, gate) exists; <code>lib/fit-to-standard-design.ts</code> of the concept §4.3 does not.</td><td><code>docs/design/fit-to-standard-concept.md</code> §4</td></tr>
+</table>
+<h3>What today gets right, and this mock-up keeps</h3>
+<ul class="b">
+<li>The canvas first for IT (ADR-106, direction "B · Canvas first" of 01.10.2026) — now as the IT view.</li>
+<li>Questions before the proposal; the write gate "answer the N open business questions first" with "Write it without the open answers" (ADR-102) — now in the Business view, where the people who answer read.</li>
+<li>Engine first, model second: the route is the architecture contract's, successors are the catalog's, the document is <i>AI-generated</i>.</li>
+<li>The requirements workspace (ADR-078) — one entry, in the IT view.</li>
+</ul>
+</div>
+</aside>
+
+<!-- ======================= OWNER PANEL ======================= -->
+<aside class="drawer" id="p-owner" hidden aria-label="For the owner">
+<header><h2>For the owner</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+<div class="db">
+<h3>In one sentence</h3>
+<p>Design starts from the program decision taken in Management after Economics and shows what the decided option means for this program — and each view answers its own reader: <b>Business</b> sees the process after the change and what it means for the people, <b>IT</b> sees the target architecture object by object with its Level, <b>Management</b> sees on one screen whether the chosen option is ready to sign off and what is still open.</p>
+
+<h3>The three views — what differs, and why it earns its place (Rebuild)</h3>
+<table>
+<tr><th></th><th>Business</th><th>IT</th><th>Management</th></tr>
+<tr><td><b>Question</b></td><td>What will our process look like, and what changes for us?</td><td>What is built where, on which released objects, and what is still technically open?</td><td>Is the chosen option ready to sign off — and what is still in the way?</td></tr>
+<tr><td><b>First screen</b></td><td>Two sentences on the process after the change + 4 counts (steps that stay · change · go · are open)</td><td>The route from the contract + 4 counts (objects by Level, released successors, objects with none, technical questions)</td><td>The decision from Management, the target in one line, a checklist "before sign-off"</td></tr>
+<tr><td><b>Main picture</b></td><td>Before / after by Analyze's four phases, every step marked</td><td>The architecture canvas (today's, ADR-106)</td><td>None — four facts and one checklist</td></tr>
+<tr><td><b>Unique content</b></td><td>What changes for each role; the business questions with the answer buttons; "Generate the design"</td><td>Object table with Level A–D from the catalog; "what is built where"; blueprint (AI); interfaces and data; technical questions; contract and alternatives (once, not twice); requirements workspace</td><td>The four options with the chosen one; Economics guard rail; dependencies; "Confirm target"</td></tr>
+<tr><td><b>Words</b></td><td>Step names of Analyze, no object names</td><td>Object names, lines, catalog names</td><td>Option names, counts, no object names</td></tr>
+<tr><td><b>Why it earns its place</b></td><td>The answers come from these people; T5's to-be process is the thing they can check. Today they get a canvas they cannot read.</td><td>The canvas and the table are IT's work tool; today it is already this — it only stops being everyone's page.</td><td>The approver needs the gap between "decided" and "ready", not the drawing. Today the sign-off hides in a side-panel tab.</td></tr>
+</table>
+<p class="muted">What is shared on purpose: the header, the decision chip, the line anchors, and the facts themselves — a count is the same number in every view where it appears. Views change content, never truth; nothing about a view is stored.</p>
+
+<h3>Per decided option — what each view shows</h3>
+<table>
+<tr><th>Decision</th><th>Business</th><th>IT</th><th>Management</th></tr>
+<tr><td><b>Rebuild</b></td><td>Process after the change; people; questions</td><td>Canvas; objects with Level; built where; blueprint; tech questions</td><td>Ready to sign off? Guard rail; Confirm target</td></tr>
+<tr><td><b>Move to SAP standard</b></td><td>Every step marked: standard candidate · given up · open · goes with the program; "what you give up" in business words</td><td>SAP areas and departures (<code>standard-touch</code>), catalog candidates per object with confidence, data that has to move or go</td><td>What living with the standard gives up, how many gaps are open, the workshop still needed; confirm the fit-to-standard design (self-declaration)</td></tr>
+<tr><td><b>Retire</b></td><td>What stops for whom; where the work goes instead (question); what happens to requisitions on hold</td><td>Dependencies the analysis read (data written, config read, calls, start) beside what it could not read (callers, jobs, includes)</td><td>What must be settled before switch-off, who must say "we still need it"</td></tr>
+<tr><td><b>Keep</b></td><td>Nothing changes for you; the business questions still stand (keeping does not answer them)</td><td>What blocks clean core, by Level; the engine's minimal measures, each a later decision</td><td>What keeping leaves in place (score 40, 1 Level D); when to look again</td></tr>
+<tr><td><b>No decision yet</b></td><td colspan="3">Design works as today (designing a rebuild), says plainly the decision is missing, links to Economics and Management. Content per view as for Rebuild.</td></tr>
+</table>
+
+<h3>What Design reads from Economics and Management</h3>
+<ul class="b">
+<li><b>The decision record</b> (<code>project.decision</code>, <code>lib/project-decision.ts</code>): option, status (draft · confirmed · withdrawn · outdated with reasons), who confirmed it and when.</li>
+<li><b>Its cost basis</b> (<code>decision.costBasis</code>, ADR-092): the Economics revision it was priced on and which option was cheapest there. Design prints the sentence, never an amount (ADR-022), and links to Economics.</li>
+<li><b>The guard rail</b>: the decision binds the architecture contract's fingerprint (ADR-085). When the design's route departs from the bound contract (a declared deviation), or the decision is outdated, Design says "This design lies outside what Economics priced — re-price" with the link. Design computes no amount.</li>
+<li>Nothing is written back and no field is added.</li>
+</ul>
+
+<h3>Decisions</h3>
+<span class="dec"><b>G1 · The switch must change the content — decided by the owner, 15.11.2026.</b> Business, IT and Management each show their own sections, picture and first screen, as in the tables above. A view that only re-orders the same facts is not allowed. The view stays in the address only (ADR-105). <span class="rec">Decided.</span></span>
+<span class="dec"><b>G2 · Design works from the program decision — decided by the owner, 15.11.2026.</b> Economics moves before Design; Design reads the stored decision and shows the content of the decided option (Rebuild · Move to SAP standard · Retire · Keep), and without a decision works as today with a plain notice and links. No new stored field. <span class="rec">Decided.</span></span>
+<span class="dec"><b>G3 · Economics is a guard rail, not data.</b> Design shows the cost basis sentence and a re-price notice when the design departs from what was priced; it never shows or computes an amount. <span class="rec">Decided by the owner (15.11.2026); the trigger recommended: a declared route deviation or an outdated decision — both facts the record already carries.</span></span>
+<span class="dec"><b>G4 · Business view = the process after the change</b>, drawn from the answers on record through <code>buildTargetModel</code> / <code>compareIstSoll</code> (T5), in Analyze's four phases and step names. No model call; "A target model says what somebody holds to be necessary…" stays under it. <span class="rec">Recommended: yes.</span></span>
+<span class="dec"><b>G5 · "What changes for the people"</b> per role from Analyze's "Who is involved", only from answers on record; a role nothing changed for says "No change". <span class="rec">Recommended: yes.</span></span>
+<span class="dec"><b>G6 · The business questions live in the Business view only</b>, with "Generate the design" under them (ADR-102's gate unchanged). IT sees "Business questions · 6 of 6 answered" as a line; Management as a checklist row. <span class="rec">Recommended: yes.</span> Alternative: keep them also as IT's side panel (today) — repeats content across views.</span>
+<span class="dec"><b>G7 · IT view = today's canvas plus one object table</b> (every object used, its Level from the catalog, its successor and confidence, what the design does with it). The Canvas | List switch goes (T2); contract and alternatives are shown once (T4). <span class="rec">Recommended: yes.</span></span>
+<span class="dec"><b>G8 · The sign-off ("Confirm target") moves to the Management view</b> as its one primary action, behind the checklist; IT shows its state. Same command, same run binding. <span class="rec">Recommended: yes.</span> Alternative: keep it in IT (an architect's sign-off) — then Management only links there.</span>
+<span class="dec"><b>G9 · Move to SAP standard</b> renders the fit-to-standard design of the concept (§4, dispositions candidate · given up · open · goes with the program), from the engine and the catalog only; a model suggestion is <i>AI-generated, to verify</i>; never "covered" before the workshop. <span class="rec">Recommended: yes, as its own release step (real new work, see build cost).</span></span>
+<span class="dec"><b>G10 · Retire</b> shows the dependencies the analysis read beside the ones it could not read, with "Not determined" first class (callers, jobs). <span class="rec">Recommended: yes.</span></span>
+<span class="dec"><b>G11 · Keep</b> shows what blocks clean core and the engine's minimal measures, each "a change — needs a new decision"; nothing is generated. <span class="rec">Recommended: yes.</span></span>
+<span class="dec"><b>G12 · One "On this page" bar</b>, the shared spec (<code>tmp/ANCHOR-BAR-SPEC.md</code>), items per view and option, at most six. <span class="rec">Decided by the owner (15.11.2026).</span></span>
+
+<h3>Today vs. this mock-up</h3>
+<table>
+<tr><th></th><th>Today</th><th>This mock-up</th></tr>
+<tr><td>Views</td><td>Switch drawn, no effect (T1) + Canvas | List</td><td>Three different pages; one switch</td></tr>
+<tr><td>Program decision</td><td>Not read (T6)</td><td>Read; five cases; guard rail to Economics</td></tr>
+<tr><td>First screen, Business</td><td>Canvas + question panel</td><td>Answer in two sentences + 4 counts, then before/after</td></tr>
+<tr><td>First screen, Management</td><td>Same canvas</td><td>Decision, target, checklist, Confirm target</td></tr>
+<tr><td>To-be process</td><td>Built, unused (T5)</td><td>The Business view's picture</td></tr>
+<tr><td>Contract / alternatives</td><td>Twice (T4)</td><td>Once, IT</td></tr>
+<tr><td>Page height at 1440 px, Rebuild designed (without mock-up chrome)</td><td>not measurable (no app run); canvas ~600 px + drawer</td><td id="heights">Business 1,995 px · IT 3,346 px · Management 1,449 px (all at 1440 px, no mock-up chrome; first screen of each = the answer). At 390 px: 4,285 · 4,750 · 2,496 px.</td></tr>
+</table>
+
+<h3>What it costs to build</h3>
+<table>
+<tr><th>Part</th><th>Files</th></tr>
+<tr><td>View + decision branch</td><td><code>design/page.tsx</code> reads <code>stageViewOf</code> and the decision (<code>GET /api/projects/{id}/decision</code>, exists); drops the Canvas | List switch</td></tr>
+<tr><td>Business, Rebuild</td><td>new <code>components/design/DesignBusinessView.tsx</code> (answer, before/after, people); a pure mapper in <code>lib/</code> from a question's rules to map elements (by line anchors) feeding <code>buildTargetModel</code>; <code>RuleQuestions</code> moved here unchanged; roles from <code>lib/around-the-map.ts</code></td></tr>
+<tr><td>IT, Rebuild</td><td><code>DesignCanvasStage</code> slimmed (no question panel, drawer without repeated tabs); new <code>DesignObjectTable.tsx</code> from the findings and levels the page already loads</td></tr>
+<tr><td>Management</td><td>new <code>DesignManagementView.tsx</code>; <code>ArchitectSignOff</code> reused; guard rail from <code>decision.outdated</code> / contract deviation</td></tr>
+<tr><td>Move to SAP standard</td><td><b>real new work:</b> <code>lib/fit-to-standard-design.ts</code> (concept §4.3, pure), three views over it; reuses <code>standard-touch.ts</code>, <code>standard-coverage.ts</code>, <code>sap-reference-check.ts</code></td></tr>
+<tr><td>Retire</td><td><b>real new work:</b> <code>lib/retire-dependencies.ts</code> (pure, from findings: writes, config reads, calls, start; "not read" rows for callers and jobs) + view</td></tr>
+<tr><td>Keep</td><td>small: grouping by Level of what the page has; measures from the evidence's own recommendations</td></tr>
+<tr><td>Guards</td><td>update <code>design-canvas-first</code>, <code>design-questions-first</code>, <code>rule-baskets</code>, <code>stage-view-switch</code> specs; new <code>design-views.spec.ts</code> (three views differ in sections), <code>design-decision-cases.spec.ts</code>; the shared <code>PageAnchorBar</code></td></tr>
+</table>
+<p><b>Engine change:</b> no (<code>lib/abap/</code> untouched). <b>Stored field:</b> no (the decision and the answers are read as stored). <b>Rules change:</b> no. <b>Model call:</b> none new; the fit-to-standard suggestion step (concept §4.3 step 6) is optional and would be its own decision.</p>
+<p><b>Size:</b> Rebuild in three views ≈ one release step (M); Move to SAP standard ≈ M–L (the concept's derivation is new); Retire ≈ S–M; Keep ≈ S.</p>
+</div>
+</aside>
+
+<script>
+/* ===================== data (engine facts computed from this branch's lib/ on the demo) ===================== */
+const PHASES = ['It starts','First it checks','Then it gets approval','Then it orders'];
+const STEPS = [
+ {n:1,p:0,t:'Enter the requisition',l:'36–39'},
+ {n:2,p:1,t:'Check the person may approve',l:'116'},
+ {n:3,p:1,t:'Check the requisition',l:'77–98'},
+ {n:4,p:1,t:'Attach a file, if given',l:'129'},
+ {n:5,p:1,t:'Check the vendor',l:'222'},
+ {n:6,p:1,t:'Check the price',l:'315'},
+ {n:7,p:1,t:'Put it on hold for a buyer',l:'240'},
+ {n:8,p:2,t:'Approve plant 1000 without an approver',l:'95'},
+ {n:9,p:2,t:'Decide who approves',l:'325'},
+ {n:10,p:2,t:'Ask for approval',l:'421'},
+ {n:11,p:3,t:'Create the purchase order',l:'475'},
+ {n:12,p:3,t:'Try again through SAP’s order screen',l:'515'},
+ {n:13,p:3,t:'Save, tell the requester, show the result',l:'353, 379'},
+];
+/* Rebuild: the to-be from the answers on record (compareIstSoll verdicts) */
+const TOBE = {
+ 1:['changes','Changes','A test run no longer creates a real order.','Q2'],
+ 8:['goes','Not in the target','Plant 1000 requisitions are approved like any other.','Q3'],
+ 10:['changes','Changes','The order waits until the department head has really approved.','Q1'],
+ 12:['open','Open · IT','Cannot stay in a clean core. What happens when an order fails is IT’s question T2.',''],
+ 13:['open','Open','The message and the log were not uploaded (Q6: IT clarifies).','Q6'],
+};
+const QS = [
+ {q:'The department head’s approval counts as given when the request is sent. So the order is created before anyone approves. Is that intended?',l:'430–434',a:'change',txt:'No — the order is created only after the department head has approved.',rec:'change'},
+ {q:'A test run, ticked by default, still creates a real purchase order. Is that intended?',l:'39, 407–411',a:'change',txt:'No — a test run creates no order.',rec:'change'},
+ {q:'Plant 1000 gets no approver at all. Should that stay?',l:'95, 333',a:'drop',txt:'We don’t need it any more — plant 1000 is approved like any other plant.',rec:'keep'},
+ {q:'Is 5 % above the agreed price still the right limit for a hold?',l:'315',a:'keep',txt:'Yes, that’s right.',rec:'keep'},
+ {q:'Should emergencies up to 50,000.00 still need only the department head?',l:'325',a:'keep',txt:'Yes, that’s right.',rec:'keep'},
+ {q:'What do the two missing parts do: the message to the requester and the log?',l:'363, 396',a:'clarify',txt:'I don’t know — IT (owner of the includes) clarifies.',rec:'clarify'},
+];
+const AW = {keep:'Yes, that’s right',change:'No, it should be …',drop:'We don’t need it any more',clarify:'I don’t know / someone else'};
+/* objects: findings + levels of the demo (findingsOf, gradeSapObjectUse on pce-latest) */
+const OBJ = [
+ ['EBAN','write','240','D','API_PURCHASEREQUISITION_SRV','OData API','Verified','Status change through the released API (RAP action calls it)'],
+ ['EBAN','read','61, 106','C','API_PURCHASEREQUISITION_SRV','OData API','Verified','Read through the released API'],
+ ['LFA1','read','154','C','API_BUSINESS_PARTNER','OData API','Verified','Read through the released API'],
+ ['LFM1','read','161','C','I_SUPPLIERPURCHASINGORG','CDS view','Catalog match','Released CDS view — confirm the match'],
+ ['CSKS','read','192','C','I_CostCenter','CDS view','Verified','Released CDS view'],
+ ['EINA','read','254','C','I_PurchasingInfoRecord','CDS view','Verified','Released CDS view'],
+ ['EINE','read','262','C','I_PurchasingInfoRecord','CDS view','Verified','Released CDS view'],
+ ['MARC','read','274','C','I_ProductPlant','CDS view','Verified','Released CDS view'],
+ ['T16FS','read','289','C','','','','No successor named — wrapper + influence request'],
+ ['PA0105','read','368, 371','C','','','','No successor named — open (T4)'],
+ ['ME21N','batch input','515','C','','','','Goes: does not run in ABAP Cloud (T2)'],
+ ['BAPI_PO_CREATE1','call','475','B','','','','Classic API — released PO API or wrapper (T2)'],
+ ['SAP_WAPI_CREATE_EVENT','call','421','B','','','','Classic API — released workflow API or wrapper (T3)'],
+ ['GUI_UPLOAD','call','129','B','','','','File as an attachment field of the RAP object'],
+ ['ZMM_PO_APPR','write','353','B','','own table','','Persistence of the RAP business object'],
+ ['ZMM_PO_ATTACH','write','531','B','','own table','','Attachment (large object) of the RAP object'],
+ ['ZMM_VEND_BLOCK','read','222','U','','own table','','Key-user candidate: Custom Business Object'],
+ ['ZMM_DEPT_HEAD','read','357','U','','own table','','Key-user candidate: Custom Business Object'],
+ ['ZMM_NOTIFY_CFG','read','383','U','','own table','','Key-user candidate: Custom Business Object'],
+];
+const TECHQ = [
+ ['T1','The two includes Z_MM_PO_NOTIFY and Z_MM_PO_LOG were not uploaded. What they do is not determined.','363, 396','Upload them — a new analysis run'],
+ ['T2','BAPI_PO_CREATE1 and the batch-input retry on ME21N: the catalog names no successor. Which released API creates the order, and what happens when it fails?','475, 515',''],
+ ['T3','SAP_WAPI_CREATE_EVENT starts the approval: which released workflow API or wrapper replaces it?','421',''],
+ ['T4','The approver is found in HR data (PA0105) — no released successor named. Wrapper, or a different source for the manager?','368–371',''],
+];
+
+/* ===================== state ===================== */
+const S = {v:'business', c:'rebuild', s:'designed'};
+const CASES = [['none','No decision'],['rebuild','Rebuild'],['standard','Move to SAP standard'],['retire','Retire'],['keep','Keep']];
+const STATES = [['designed','Designed'],['empty','Nothing designed yet'],['blocked','Questions open'],['outside','Outside priced range']];
+function readHash(){
+  const h = new URLSearchParams(location.hash.slice(1));
+  if (h.get('v')) S.v = h.get('v'); if (h.get('c')) S.c = h.get('c'); if (h.get('s')) S.s = h.get('s');
+  document.body.classList.toggle('embed', h.get('embed')==='1');
+  return h;
+}
+function setHash(){ const h = new URLSearchParams(location.hash.slice(1)); h.set('v',S.v); h.set('c',S.c); h.set('s',S.s); history.replaceState(null,'','#'+h.toString()); }
+
+/* ===================== helpers ===================== */
+const L = (l) => `<span class="anc" title="Opens the code at these lines">line ${l}</span>`;
+const CI = {rec:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4"/></svg>', ai:'<svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>', nd:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>', you:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>', cat:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>'};
+const chip = {
+ rec:(t='Read from the code')=>`<span class="pv rec">${CI.rec}${t}</span>`,
+ ai:(t='AI-generated')=>`<span class="pv ai">${CI.ai}${t}</span>`,
+ nd:(t='Not determined')=>`<span class="pv nd">${CI.nd}${t}</span>`,
+ you:(t='Your answer')=>`<span class="pv you">${CI.you}${t}</span>`,
+ cat:(t='From the SAP catalog')=>`<span class="pv cat">${CI.cat}${t}</span>`,
+};
+const ILL = '<span class="mtag">mock-up: illustrative</span>';
+const lv = (g) => `<span class="lv ${g}" title="${g==='U'?'No grade in the catalog (own object)':'Level '+g+' from the SAP catalog'}">${g==='U'?'—':g}</span>`;
+function sec(id, title, sub, body, extra=''){ return `<section class="card pad sec" id="${id}" data-sec="${id}"><div class="sec-h"><div><h2 class="h2" tabindex="-1">${title}</h2>${sub?`<p class="sec-lead">${sub}</p>`:''}</div>${extra?`<div class="r">${extra}</div>`:''}</div><div class="sec-b">${body}</div></section>`; }
+function nums(arr){ return `<div class="facets">${arr.map(n=>`<div class="facet"><div class="t">${n[1].charAt(0).toUpperCase()+n[1].slice(1)}</div><div class="v">${n[0]}</div><div class="n">${n[2]}</div></div>`).join('')}</div>`; }
+
+function decisionBox(){
+  if (S.c==='none') return `<div class="decbox" style="background:var(--cc-warning-bg);border-color:var(--cc-warning-border)"><span class="k">Program decision</span><div class="opt">Not taken yet</div><p>Keep, rebuild, move to SAP standard or retire? Economics prices the options, Management decides. Design meanwhile designs a rebuild.</p><p><a class="lnk" href="#">Open Economics</a> · <a class="lnk" href="#">Decide in Management</a></p></div>`;
+  const opt = {rebuild:'Rebuild',standard:'Move to SAP standard',retire:'Retire',keep:'Keep'}[S.c];
+  const out = S.c==='rebuild' && S.s==='outside';
+  return `<div class="decbox"><span class="k">Program decision</span><div class="opt">${opt}</div><p>Confirmed in Management on 14 Nov 2026 by M. Weber — a self-declaration. ${ILL}</p><p>${out?'<b style="color:var(--cc-warning)">Out of date: the route changed after it was priced.</b>':'Priced on Economics revision 2 (13 Nov 2026), on which “'+opt+'” is the cheapest option.'}</p><p><a class="lnk" href="#">Economics</a> · <a class="lnk" href="#">Management</a></p></div>`;
+}
+
+/* ===================== the flow picture (Business) ===================== */
+function flow(mark, legend){
+  return `<div class="card pad"><div class="flowlegend">${legend}</div><div class="phases">${PHASES.map((ph,i)=>{
+    const st = STEPS.filter(s=>s.p===i);
+    return `<div class="ph"><div class="pn"><span>${i+1} · ${ph}</span><span>${st.length}</span></div>${st.map(s=>{const m=mark(s)||['stays','','',''];return `<div class="st ${m[0]}">${m[1]?`<span class="t">${m[1]}</span><br>`:''}<span class="nm">${s.t}</span>${m[2]?`<span class="w">${m[2]}</span>`:''}</div>`;}).join('')}</div>`;}).join('')}</div>
+  <p class="disc">A target model says what somebody holds to be necessary. It is not a statement about the code, it changes no run, and it is in no audit pack. Every step opens its lines in the code.</p></div>`;
+}
+const LG = {
+ rebuild:`<span><i class="sw" style="border-color:var(--cc-line)"></i>Stays</span><span><i class="sw" style="border-color:var(--cc-cat-1)"></i>Changes</span><span><i class="sw" style="border-color:#9ca3af;border-style:dashed"></i>Not in the target</span><span><i class="sw" style="border-color:var(--cc-warning-line);border-style:dashed"></i>Open</span>`,
+ standard:`<span><i class="sw" style="border-color:var(--cc-cat-2)"></i>Standard candidate — to verify</span><span><i class="sw" style="border-color:var(--cc-cat-3)"></i>Given up with the standard</span><span><i class="sw" style="border-color:var(--cc-warning-line);border-style:dashed"></i>Gap — open</span><span><i class="sw" style="border-color:#9ca3af;border-style:dotted"></i>Goes with the program</span>`,
+};
+
+/* ===================== BUSINESS ===================== */
+function bizRebuild(){
+  const st = S.s;
+  if (st==='empty') {
+    return {anchors:[['b-answer','The target'],['b-questions','Questions',6,1],['b-before','Today']],
+    html: `<section class="card ophead" id="b-answer" data-sec="b-answer"><div class="ans"><div><p class="q">What will the process look like after the change?</p><h2 class="a">Not designed yet. Six questions decide what changes — they are yours to answer.</h2><p class="why">The program is rebuilt. Before anyone designs it, the business says which of its rules still hold. Each answer goes straight into the design; nothing is decided for you.</p><div class="src">${chip.nd('Target not determined')}</div></div><div class="next">${decisionBox()}</div></div>${nums([['0<small> of 6</small>','questions answered','asked from the code'],['13','steps today','Analyze’s map'],['—','change','after your answers'],['—','go','after your answers']])}</section>`
+      + sec('b-questions','Questions for you','6 open · the two that change most first', qList(true))
+      + sec('b-before','Today’s process','as Analyze reads it — nothing marked yet', flow(()=>null, '<span>13 steps in four phases</span>'))};
+  }
+  const blocked = st==='blocked';
+  const answered = blocked ? 4 : 6;
+  const n = blocked ? {ch:0,go:1,op:4,stay:8} : {ch:2,go:1,op:2,stay:8};
+  const mark = (s)=>{ if (blocked && (s.n===1||s.n===10)) return ['open','Open','Waits for your answer ('+(s.n===1?'Q2':'Q1')+').','']; return TOBE[s.n]; };
+  const head = blocked
+    ? `<h2 class="a">The design waits for two answers — both change the target.</h2><p class="why">Whether the order waits for the department head, and whether a test run may still order, decide what the rebuilt process does. Answer them, or let the design be written without them.</p>`
+    : `<h2 class="a">Emergency purchases keep their four phases. Two things change for the people, one shortcut goes.</h2><p class="why">The order now waits until the department head has really approved, and a test run no longer orders. Plant 1000 gets an approver like every other plant. Everything else stays as people know it.</p>`;
+  const people = [
+   ['The requester','Enters the requisition; with “Test run” ticked, gets a real order.','Enters it the same way; a test run shows the result and orders nothing.','Q2'],
+   ['The department head','Is asked; the order is created before the answer.','Is asked; nothing is ordered until the approval arrives.','Q1'],
+   ['A manager','Approves the rest within the release limit.','No change.',''],
+   ['A buyer','Checks requisitions on hold (price more than 5 % above).','No change — 5 % stays.','Q4'],
+   ['Plant 1000 (central warehouse)','Its requisitions are approved without an approver.','Gets an approver like any other plant.','Q3'],
+  ];
+  return {anchors:[['b-answer','The process after the change'],['b-flow','Before and after'],['b-people','People'],['b-questions', blocked?'Questions':'Answers', blocked?2:6, blocked?1:0],['b-next','Next']],
+  html: `<section class="card ophead" id="b-answer" data-sec="b-answer"><div class="ans"><div><p class="q">What will the process look like after the change?</p>${head}<div class="src">${chip.you('From your answers')} ${blocked?'':chip.ai('Design written by a model')} <span class="xs muted">Steps and names as in Analyze.</span></div></div><div class="next">${decisionBox()}</div></div>${nums([[n.stay+'','steps stay','as people know them'],[n.ch+'','steps change','from your answers'],[n.go+'','step goes','from your answers'],[n.op+'','are open',blocked?'2 wait for you, 2 for IT':'for IT — not for you']])}</section>`
+   + (blocked?`<div class="strip warn sec"><div><b>Two answers change the target.</b>The design is written once they are answered — or now, without them; the open points then stay open in the design.</div><div class="acts"><a class="btn primary" href="#b-questions">Answer 2 questions</a><button class="btn ghost">Write it without them</button></div></div>`:'')
+   + sec('b-flow','Before and after','13 steps of today’s process, in Analyze’s four phases', flow(mark, LG.rebuild))
+   + sec('b-people','What changes for people','the roles Analyze read from the code', `<div class="people">${people.map(p=>{const same=p[2].startsWith('No change'); const pend = blocked && (p[3]==='Q1'||p[3]==='Q2'); return `<div class="pp ${same?'same':''}"><h4>${p[0]}</h4><div class="row"><span class="k">Today</span><span>${p[1]}</span></div><div class="row"><span class="k">After</span><span>${pend?'<span class="muted">Waits for your answer ('+p[3]+').</span>':p[2]}</span></div></div>`;}).join('')}</div>`)
+   + sec('b-questions', blocked?'Questions for you':'Your answers', blocked?'4 of 6 answered · the two open ones change the target':'6 of 6 answered · change any of them; the design then says it needs rewriting', qList(false, blocked))
+   + sec('b-next','What happens next','', `<div class="card pad sm" style="line-height:1.6">${blocked?'Once the two answers are in, the design is written from them (two model calls, not counted against your analysis runs). ':'The design is written from your answers. '}IT builds it from the technical design (IT view). Management confirms the target before the build starts. <a class="lnk" href="#" data-goto="management">See what Management still needs</a></div>`)};
+}
+function qList(allOpen, blocked){
+  return `<div class="card pad"><div class="ql">${QS.map((q,i)=>{
+    const open = allOpen || (blocked && i<2);
+    const ans = open ? `<div class="qa">${Object.keys(AW).map(k=>`<button class="${q.rec===k?'rec':''}">${AW[k]}</button>`).join('')}</div><div class="xs muted" style="margin-top:4px">${q.rec==='change'?'Recommended: <b>No, it should be …</b> — the code does this without saying so.':'Recommended: <b>Yes, that’s right</b> — the code is consistent here.'}</div>`
+      : `<div class="aa">${chip.you()} <b>${AW[q.a]}</b>${q.a==='keep'?'':' — '+q.txt.replace(/^.*? — /,'')}</div>`;
+    return `<div class="qi"><span class="n ${open?'open':''}">${i+1}</span><div><div class="qq">${q.q} ${L(q.l)}</div>${ans}</div><div>${open?'':`<button class="lnk">Change</button>`}</div></div>`;}).join('')}</div>
+   ${allOpen?`<div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center"><button class="btn primary" disabled>Generate the design</button><span class="xs muted">Answer the 6 open business questions first.</span><button class="btn ghost">Write it without the open answers</button></div>`:''}</div>`;
+}
+function bizStandard(){
+  const D = {1:['cand','Standard candidate','Requisitions through API_PURCHASEREQUISITION_SRV (catalog, to verify).'],2:['open','Gap — open','Who may approve: SAP roles or something else? Workshop.'],3:['cand','Standard candidate','Product and cost-center checks against released views (catalog).'],4:['open','Gap — open','Attachments: workshop.'],5:['given','Given up','Your own vendor block list (table ZMM_VEND_BLOCK).'],6:['given','Given up','The fixed 5 % price tolerance written in the program.'],7:['given','Given up','The program sets the “on hold” status itself.'],8:['given','Given up','Plant 1000 without an approver.'],9:['given','Given up','The fixed 50,000.00 limit for the department head.'],10:['open','Gap — open','Approval through SAP’s workflow — which standard approval applies is the workshop’s question.'],11:['open','Gap — open','Creating the order: no released successor named in the catalog.'],12:['gone','Goes with the program',''],13:['gone','Goes with the program','Result list; the message and the log were not read.']};
+  return {anchors:[['b-answer','Living with the standard'],['b-flow','Steps'],['b-giveup','Given up',5],['b-gaps','Open',4,1]],
+  html:`<section class="card ophead" id="b-answer" data-sec="b-answer"><div class="ans"><div><p class="q">What does moving to SAP standard mean for our process?</p><h2 class="a">Nothing is built. Five things the program does today are given up with the standard; four steps are still open for your fit-to-standard workshop.</h2><p class="why">SAP standard takes over what the program does, and the program is switched off once the standard runs. Whether the standard really does each step is decided in your workshop, not by the code.</p><div class="src">${chip.rec()} ${chip.cat()} <span class="xs muted">Clean-Core.io reads your code and SAP’s openly licensed data only.</span></div></div><div class="next">${decisionBox()}</div></div>${nums([['2','standard candidates','from the catalog — to verify'],['5','given up','what the program does that the standard does not'],['4','still open','for the workshop'],['2','go with the program','technical steps']])}</section>`
+  + sec('b-flow','Step by step','each of today’s 13 steps, as far as the code and the catalog can say', flow(s=>D[s.n], LG.standard))
+  + sec('b-giveup','What you give up','behaviour of the program the standard does not have — confirm each in the workshop', `<div class="card pad"><div class="ql">${[5,6,7,8,9].map((k,i)=>`<div class="qi"><span class="n">${i+1}</span><div><div class="qq">${D[k][2]} ${L(STEPS[k-1].l)}</div><div class="aa muted">Step “${STEPS[k-1].t}”. ${chip.rec()}</div></div><div><button class="lnk">Confirm</button></div></div>`).join('')}</div></div>`)
+  + sec('b-gaps','Still open','no cover identified yet — each travels into the decision as a condition', `<div class="card pad"><div class="ql">${[2,4,10,11].map((k,i)=>`<div class="qi"><span class="n open">${i+1}</span><div><div class="qq">${STEPS[k-1].t} ${L(STEPS[k-1].l)}</div><div class="aa">${D[k][2]}${k===10?` <span style="display:block;margin-top:4px">${chip.ai('Suggestion — to verify')} SAP’s flexible workflow for purchase requisitions may cover it. Not checked against SAP.</span>`:''}</div></div><div></div></div>`).join('')}</div></div>`)};
+}
+function bizRetire(){
+  const people = [['The requester','Can no longer use the emergency path. Where do urgent requisitions go instead?'],['The department head','Is no longer asked by this program.'],['A manager','Is no longer asked by this program.'],['A buyer','Requisitions already on hold for the price need a decision before switch-off.'],['Plant 1000 (central warehouse)','Loses its approval without an approver.']];
+  return {anchors:[['b-answer','What stops'],['b-flow','Steps'],['b-people','People',5],['b-questions','To settle',3,1]],
+  html:`<section class="card ophead" id="b-answer" data-sec="b-answer"><div class="ans"><div><p class="q">What does switching the program off mean for us?</p><h2 class="a">Emergency purchases lose their fast path. Five roles are affected; three things must be settled before it is switched off.</h2><p class="why">Nothing is built and nothing replaces the program. Whoever still needs what it does has to say so before it is switched off.</p><div class="src">${chip.rec('Roles read from the code')}</div></div><div class="next">${decisionBox()}</div></div>${nums([['13','steps stop','the whole process'],['5','roles affected','read from the code'],['3','to settle first','below'],['—','still needed?','nobody has said yet']])}</section>`
+  + sec('b-flow','Every step','all 13 stop with the program', flow(()=>['stop','Stops',''], ''))
+  + sec('b-people','Who is affected','ask each of them before the switch-off', `<div class="people">${people.map(p=>`<div class="pp"><h4>${p[0]}</h4><div class="row"><span class="k">After</span><span>${p[1]}</span></div><div class="row"><span class="k">Asked?</span><span>${chip.nd('Not yet')}</span></div></div>`).join('')}</div>`)
+  + sec('b-questions','To settle first','', `<div class="card pad"><div class="ql">${['Where do emergency purchases go once the program is off — the normal purchasing process?','What happens to requisitions the program put on hold (status “H”)?','Who still needs the approval records the program keeps (table ZMM_PO_APPR)?'].map((q,i)=>`<div class="qi"><span class="n open">${i+1}</span><div><div class="qq">${q}</div><div class="qa"><button>Answered</button><button>Someone else</button></div></div><div></div></div>`).join('')}</div></div>`)};
+}
+function bizKeep(){
+  return {anchors:[['b-answer','Nothing changes'],['b-questions','Questions',6]],
+  html:`<section class="card ophead" id="b-answer" data-sec="b-answer"><div class="ans"><div><p class="q">What changes for us if we keep it?</p><h2 class="a">Nothing changes for the people. The program keeps working as it does — including the two behaviours Analyze asked about.</h2><p class="why">Keeping the program builds nothing. It also answers none of the questions the code raised: the order is still created before the department head approves, and a test run still orders.</p><div class="src">${chip.rec()}</div></div><div class="next">${decisionBox()}</div></div>${nums([['13','steps stay','as today'],['0','change',''],['6','questions stand','keeping does not answer them'],['2','of them','change what the program does if answered “No”']])}</section>`
+  + sec('b-questions','Questions that stay','answering them may be a reason to decide again', `<div class="card pad"><div class="ql">${QS.map((q,i)=>`<div class="qi"><span class="n">${i+1}</span><div><div class="qq">${q.q} ${L(q.l)}</div></div><div></div></div>`).join('')}</div><p class="xs muted" style="margin-top:10px">Answered “No, it should be …”, a question means the program has to change — that is a new decision in Management, not a design.</p></div>`)};
+}
+
+/* ===================== IT ===================== */
+function canvasSvg(state){
+  const nd = state==='empty';
+  const box=(x,y,w,h,t,s,c,dash)=>`<g><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="8" fill="#fff" stroke="${c}" stroke-width="2" ${dash?'stroke-dasharray="5 4"':''}/><text x="${x+10}" y="${y+20}" font-size="13" font-weight="700" fill="#0b1c30">${t}</text>${s?`<text x="${x+10}" y="${y+37}" font-size="11" fill="#4b5563">${s}</text>`:''}</g>`;
+  const succ = [['API_PURCHASEREQUISITION_SRV','OData · EBAN r/w'],['API_BUSINESS_PARTNER','OData · LFA1'],['I_SupplierPurchasingOrg','CDS · LFM1 · catalog match'],['I_CostCenter','CDS · CSKS'],['I_PurchasingInfoRecord','CDS · EINA, EINE'],['I_ProductPlant','CDS · MARC']];
+  const none = [['BAPI_PO_CREATE1','call · line 475'],['SAP_WAPI_CREATE_EVENT','call · line 421'],['T16FS','read · line 289'],['PA0105','read · lines 368, 371']];
+  let g = `<svg viewBox="0 0 1180 520" role="img" aria-label="Target architecture"><rect x="20" y="20" width="1140" height="480" rx="14" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/><text x="36" y="44" font-size="12" font-weight="700" fill="#475569" letter-spacing=".06em">SAP CLOUD ERP PRIVATE · ASSUMED (TARGET NOT BOUND BY THE RUN)</text>`;
+  g += `<rect x="40" y="60" width="560" height="420" rx="12" fill="#f0fdf4" stroke="#15803d" stroke-width="2" stroke-dasharray="8 5"/><text x="56" y="82" font-size="12" font-weight="700" fill="#15803d" letter-spacing=".06em">CLEAN CORE BOUNDARY · RELEASED APIS (FROM THE CATALOG)</text>`;
+  succ.forEach((s,i)=>{ g+= box(56+(i%2)*270, 96+Math.floor(i/2)*58, 258, 46, s[0], s[1], '#0f766e'); });
+  g += `<text x="56" y="296" font-size="12" font-weight="700" fill="#92400e" letter-spacing=".06em">NO SUCCESSOR NAMED · WRAPPER + INFLUENCE REQUEST</text>`;
+  none.forEach((s,i)=>{ g+= box(56+(i%2)*270, 306+Math.floor(i/2)*58, 258, 46, s[0], s[1], '#b45309', true); });
+  g += `<text x="56" y="438" font-size="11" fill="#4b5563">Goes: batch input on ME21N (line 515) · COMMIT WORK ×2 (lines 243, 428) → RAP save sequence</text>`;
+  g += `<rect x="640" y="60" width="500" height="250" rx="12" fill="#fff" stroke="#1e3a8a" stroke-width="2"/><text x="656" y="84" font-size="12" font-weight="700" fill="#1e3a8a" letter-spacing=".06em">IN-APP · ABAP CLOUD / RAP (CUSTOMER NAMESPACE)</text>`;
+  if (nd) g += `<text x="656" y="120" font-size="13" fill="#4b5563">RAP business object — named once the design is written.</text><text x="656" y="140" font-size="12" fill="#4b5563">Route and objects come from the contract; the blueprint from the design.</text>`;
+  else g += box(656,100,468,46,'ZR_EmergencyPurchaseApproval','RAP root entity + behaviour · validations for the checks','#1e3a8a') + box(656,156,228,46,'Action “approve”','calls the released PR API','#1e3a8a') + box(896,156,228,46,'OData V4 UI service','service binding','#1e3a8a') + `<text x="656" y="226" font-size="11" fill="#92400e">✎ names: AI-generated, from the design document</text>`;
+  g += box(656,240,228,46,'ZMM_PO_APPR','own table · persistence','#64748b') + box(896,240,228,46,'ZMM_PO_ATTACH','own table · attachment','#64748b');
+  g += `<rect x="640" y="330" width="500" height="150" rx="12" fill="#fff" stroke="#7c3aed" stroke-width="2"/><text x="656" y="354" font-size="12" font-weight="700" fill="#7c3aed" letter-spacing=".06em">KEY USER · 3 OF 6 PARTS ARE CANDIDATES (ENGINE)</text>`;
+  g += box(656,370,148,46,'ZMM_VEND_BLOCK','Custom Bus. Object','#7c3aed') + box(814,370,148,46,'ZMM_DEPT_HEAD','Custom Bus. Object','#7c3aed') + box(972,370,152,46,'ZMM_NOTIFY_CFG','Custom Bus. Object','#7c3aed');
+  g += `<text x="656" y="446" font-size="11" fill="#4b5563">Configured in the system, no code — each with its limit.</text>`;
+  g += `<path d="M640 123 L600 123" stroke="#0f766e" stroke-width="2" marker-end="url(#a)"/><defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10z" fill="#0f766e"/></marker></defs></svg>`;
+  return g;
+}
+function lvDist(){
+  const c={D:1,C:10,B:5,U:3}; const col={D:'#f87171',C:'#fbbf24',B:'#60a5fa',U:'#d1d5db'};
+  return `<div class="dist">${Object.keys(c).map(k=>`<i style="width:${c[k]/19*100}%;background:${col[k]}"></i>`).join('')}</div>`;
+}
+function itRebuild(){
+  const st=S.s, nd = st==='empty';
+  const anchors=[['i-answer','Target'],['i-canvas','Architecture'],['i-objects','Objects',19],['i-build','Build'],['i-questions','Questions',4,1],['i-more','Contract']];
+  const route = st==='outside' ? 'Side-by-side on SAP BTP with CAP — a declared deviation from the contract' : 'On-stack ABAP Cloud with RAP — a RAP business object in the customer namespace';
+  let html = `<section class="card ophead" id="i-answer" data-sec="i-answer"><div class="ans"><div><p class="q">Where does it run, and on what?</p><h2 class="a">${route}.</h2><p class="why">${st==='outside'?'The contract recommends in-app RAP; the sign-off departs from it with a reason. The decision was priced on the contract’s route, so it is out of date until Economics prices the new one.':'Two writes to its own tables make it a RAP object on the stack; side-by-side on BTP (CAP) is rejected as a setting, key user on the evidence (26 findings exceed it). The one direct write to an SAP table (EBAN, line 240) goes through the released API.'}</p><div class="src">${chip.rec('Architecture contract, read from the code')} <span class="xs muted">Target: SAP Cloud ERP Private assumed — not bound by the run.</span></div></div><div class="next">${decisionBox()}</div></div>${nums([['1 · 10 · 5 · 3','D · C · B · no grade','Level of the 19 objects, SAP catalog'],['6','released successors','for 9 uses — catalog'],['4','with no successor','wrapper + influence request'],['4','technical questions','open, below']])}</section>`;
+  if (st==='outside') html += `<div class="strip warn sec"><div><b>This design lies outside what Economics priced — re-price.</b>The decision “Rebuild” was priced on the contract’s route (in-app RAP). The sign-off chose side-by-side CAP: another runtime, another lifecycle. Design shows no amount; Economics prices the new route.</div><div class="acts"><a class="btn secondary" href="#">Re-price in Economics</a></div></div>`;
+  html += sec('i-canvas','Architecture','canvas first, as today (ADR-106)', `<div class="card"><div class="cvbar"><h3>Target architecture</h3>${chip.rec()} <span style="margin-left:auto" class="xs muted">Zoom − 100 % + · Fit · Full screen</span></div><div class="canvas">${canvasSvg(st)}</div><div class="cvlegend"><span>Every box opens the lines of the code it stands for.</span><span>Business questions: ${nd?'0':st==='blocked'?'4':'6'} of 6 answered · <a class="lnk" href="#" data-goto="business">Business view</a></span></div></div>`);
+  html += sec('i-objects','Objects and Level','every object the code uses — Level and successor from the SAP catalog (pce-latest), never guessed', `<div class="card"><div class="tw"><table class="tbl tbl-stack"><thead><tr><th>Object</th><th>Use</th><th>Line</th><th>Level today</th><th>Released successor</th><th class="hide-s">Confidence</th><th>In the design</th></tr></thead><tbody>${OBJ.map(o=>`<tr><td class="tech">${o[0]}</td><td>${o[1]}</td><td>${L(o[2])}</td><td>${lv(o[3])}</td><td>${o[4]?`<span class="tech">${o[4]}</span><div class="xs muted">${o[5]}</div>`:`<span class="muted">${o[5]||'none named'}</span>`}</td><td class="hide-s">${o[6]||'—'}</td><td>${nd && !o[7].startsWith('Key')?'<span class="muted">Not designed yet</span>':o[7]}</td></tr>`).join('')}</tbody></table></div><div class="pad xs muted" style="padding-top:10px">${lvDist()}<div style="margin-top:6px">Level D 1 · C 10 · B 5 · no grade 3 (own objects). The Level is the catalog’s for the object as this code uses it; the design’s column says what it does with it.</div></div></div>`);
+  html += sec('i-build','What is built where','', nd ? `<div class="empty"><b>Not designed yet</b><p>The route, the objects and their successors stand without a model (above). The blueprint — what is built in which artifact — is written once the business questions are answered.</p><div class="acts"><a class="btn ghost" href="#" data-goto="business">Business questions · 0 of 6 answered</a></div></div>` :
+   `<div class="card"><div class="tw"><table class="tbl tbl-stack"><thead><tr><th>Part of the process</th><th>Today</th><th>Target</th><th>Extension type</th></tr></thead><tbody>
+   <tr><td>The checks (person, requisition, vendor, price)</td><td>FORMs ${L('103–319')}</td><td>Validations of the RAP object</td><td>Developer, in-app</td></tr>
+   <tr><td>Hold for a buyer</td><td>UPDATE EBAN ${L('240')}</td><td>Released requisition API</td><td>Developer, in-app</td></tr>
+   <tr><td>Approval request</td><td>SAP_WAPI_CREATE_EVENT ${L('421')}</td><td>Open — T3</td><td>${chip.nd()}</td></tr>
+   <tr><td>Create the order</td><td>BAPI + batch input ${L('475, 515')}</td><td>Open — T2</td><td>${chip.nd()}</td></tr>
+   <tr><td>Block list, department heads, notify settings</td><td>Own tables ${L('222, 357, 383')}</td><td>Custom Business Objects</td><td>Key user</td></tr>
+   <tr><td>Approval and attachment records</td><td>Own tables ${L('353, 531')}</td><td>Persistence of the RAP object</td><td>Developer, in-app</td></tr>
+   </tbody></table></div><div class="pad xs muted" style="padding-top:10px">${chip.ai()} The target column comes from the design document; the extension type from the engine’s key-user reading and the contract. ${st==='blocked'?'Written without answers to Q1 and Q2 — those points stay open in the design.':''}</div></div>`);
+  html += sec('i-questions','Technical questions','for IT — the business has its own in the Business view', `<div class="card pad"><div class="ql">${TECHQ.map(t=>`<div class="qi"><span class="n open">${t[0].slice(1)}</span><div><div class="qq">${t[1]} ${L(t[2])}</div>${t[3]?`<div class="aa muted">${t[3]}</div>`:''}</div><div><button class="lnk">Answer</button></div></div>`).join('')}</div></div>`);
+  html += sec('i-more','Contract and document','once — not in a side panel and again in a drawer', `<details class="fold"><summary>Architecture contract · 7 fields ${chip.rec()}</summary><div class="in">Runtime · Persistence · APIs · Preconditions · Bound inputs · Target context (not bound) · Rejected alternatives — each with its sentence and lines, as today’s Contract tab.</div></details><details class="fold"><summary>Alternatives · 4</summary><div class="in">In-app RAP — chosen. Key user — rejected on the evidence (26 findings). Side-by-side CAP — rejected as a setting. SAP standard — not determined here (Economics and Management weigh it).</div></details><details class="fold"><summary>Design document · ${nd?'not written':'9 of 9 sections'} ${nd?'':chip.ai()}</summary><div class="in">Architecture overview · Project blueprint · API endpoints · SAP standard API mapping · Cloud services · Data sync · Security · Roadmap · Non-functional requirements. Export HTML, Regenerate.</div></details><details class="fold"><summary>Requirements workspace · draft, 3 open decisions</summary><div class="in">FR and NFR read from the code (ADR-078). <a class="lnk" href="#">Open the requirements workspace</a></div></details>`);
+  return {anchors, html};
+}
+function itStandard(){
+  return {anchors:[['i-answer','Fit to standard'],['i-areas','SAP areas',3],['i-dep','Departures',2],['i-objects','Candidates',19],['i-data','Data',5]],
+  html:`<section class="card ophead" id="i-answer" data-sec="i-answer"><div class="ans"><div><p class="q">What does the standard path rest on, technically?</p><h2 class="a">Worth examining against SAP standard: it departs from standard in 2 places, mainly in the SAP area MM-PUR.</h2><p class="why">Gate class C — the program drives a standard transaction by batch input. Nothing is built; the program’s objects are compared with what the catalog names. Whether SAP standard does what it does is decided in the fit-to-standard workshop.</p><div class="src">${chip.rec('Read from the code')} ${chip.cat()}</div></div><div class="next">${decisionBox()}</div></div>${nums([['3','SAP areas','application components'],['2','departures','batch input, direct write'],['8 of 14','SAP object uses','with a catalog successor'],['5','own tables','their data moves or goes']])}</section>`
+  + sec('i-areas','SAP areas','from the SAP objects the program reads, writes or calls', `<div class="card"><table class="tbl tbl-stack"><thead><tr><th>Component</th><th>Objects</th></tr></thead><tbody><tr><td class="tech">MM-PUR</td><td class="tech">BAPI_PO_CREATE1 · EBAN · EINA · EINE</td></tr><tr><td class="tech">LO-MD</td><td class="tech">LFA1 · LFM1 · MARC</td></tr><tr><td class="tech">CO-OM</td><td class="tech">CSKS</td></tr></tbody></table></div>`)
+  + sec('i-dep','Departures from standard','', `<div class="card"><table class="tbl tbl-stack"><thead><tr><th>Departure</th><th>Object</th><th>Line</th></tr></thead><tbody><tr><td>Batch input on a standard transaction</td><td class="tech">ME21N</td><td>${L('515')}</td></tr><tr><td>Direct write to a standard table</td><td class="tech">EBAN</td><td>${L('240')}</td></tr></tbody></table></div>`)
+  + sec('i-objects','Candidates per object','E1 “candidate, to verify” — only from the catalog', `<div class="card"><div class="tw"><table class="tbl tbl-stack"><thead><tr><th>Object</th><th>Level</th><th>Catalog successor</th><th>Confidence</th></tr></thead><tbody>${OBJ.slice(0,14).map(o=>`<tr><td class="tech">${o[0]} <span class="xs muted">${o[1]}</span></td><td>${lv(o[3])}</td><td>${o[4]?`<span class="tech">${o[4]}</span>`:'<span class="muted">none named</span>'}</td><td>${o[6]||'—'}</td></tr>`).join('')}</tbody></table></div></div>`)
+  + sec('i-data','Data that moves or goes','the program’s own tables — not SAP standard either way', `<div class="card"><table class="tbl tbl-stack"><thead><tr><th>Table</th><th>Used</th><th>Question</th></tr></thead><tbody>${OBJ.slice(14).map(o=>`<tr><td class="tech">${o[0]}</td><td>${o[1]} ${L(o[2])}</td><td>${o[1]==='write'?'Keep the records (retention) or let them go?':'Becomes standard configuration, or is given up?'}</td></tr>`).join('')}</tbody></table></div>`)};
+}
+function itRetire(){
+  const read=[['Writes','EBAN status “H”',L('240'),'Requisitions on hold stay on hold'],['Writes','ZMM_PO_APPR, ZMM_PO_ATTACH',L('353, 531'),'Records — retention?'],['Reads','ZMM_VEND_BLOCK, ZMM_DEPT_HEAD, ZMM_NOTIFY_CFG',L('222, 357, 383'),'Maintained by someone — tell them'],['Calls','SAP_WAPI_CREATE_EVENT → event ZAPPROVE on BUS2105',L('421'),'A workflow listens to it'],['Calls','A function module named in ZMM_NOTIFY_CFG (dynamic)',L('386'),'Target not determined'],['Started by','A person, from the selection screen; authorization M_BANF_EKG',L('36–39, 116'),'Users with that authorization']];
+  const notread=[['Callers','Who calls or submits this report — only this program was uploaded.'],['Jobs','Whether it runs as a background job.'],['Includes','Z_MM_PO_NOTIFY and Z_MM_PO_LOG were not uploaded.'],['Transaction','Whether a transaction code starts it.']];
+  return {anchors:[['i-answer','Switch-off'],['i-read','Read',6],['i-notread','Not read',4,1]],
+  html:`<section class="card ophead" id="i-answer" data-sec="i-answer"><div class="ans"><div><p class="q">What hangs on this program?</p><h2 class="a">Six dependencies were read from the code; four could not be read and have to be checked in the system.</h2><p class="why">Nothing is built. Before the switch-off: the data it writes, the settings people maintain for it, the workflow it starts, and whoever runs or calls it.</p><div class="src">${chip.rec()} ${chip.nd('4 not determined')}</div></div><div class="next">${decisionBox()}</div></div>${nums([['6','dependencies read','from the code'],['4','not read','check in the system'],['3','own tables','with data'],['1','workflow event','ZAPPROVE']])}</section>`
+  + sec('i-read','What the analysis read','', `<div class="card"><div class="tw"><table class="tbl tbl-stack"><thead><tr><th>Kind</th><th>What</th><th>Line</th><th>Before switch-off</th></tr></thead><tbody>${read.map(r=>`<tr><td>${r[0]}</td><td class="tech">${r[1]}</td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table></div></div>`)
+  + sec('i-notread','Not read','“Not determined” — never “none”', `<div class="card pad"><div class="ql">${notread.map((r,i)=>`<div class="qi"><span class="n open">${i+1}</span><div><div class="qq">${r[0]}</div><div class="aa">${r[1]}</div></div><div>${chip.nd()}</div></div>`).join('')}</div></div>`)};
+}
+function itKeep(){
+  const block = OBJ.filter(o=>o[3]==='D'||o[3]==='C');
+  return {anchors:[['i-answer','What stays'],['i-block','Blockers',11],['i-measures','Measures',3]],
+  html:`<section class="card ophead" id="i-answer" data-sec="i-answer"><div class="ans"><div><p class="q">What does keeping leave in place?</p><h2 class="a">The program stays classic ABAP. One Level D use (a direct write to EBAN) and ten Level C uses stay.</h2><p class="why">Keep builds nothing. The engine names the smallest steps that would remove the worst of it — each one is a change, so a new decision.</p><div class="src">${chip.rec()} ${chip.cat()}</div></div><div class="next">${decisionBox()}</div></div>${nums([['40','Clean Core Score','signed run'],['1','Level D','EBAN write, line 240'],['10','Level C','reads and batch input'],['3','minimal measures','engine’s suggestions']])}</section>`
+  + sec('i-block','What blocks clean core','Level from the SAP catalog', `<div class="card"><div class="tw"><table class="tbl tbl-stack"><thead><tr><th>Object</th><th>Use</th><th>Line</th><th>Level</th><th>Released successor</th></tr></thead><tbody>${block.map(o=>`<tr><td class="tech">${o[0]}</td><td>${o[1]}</td><td>${L(o[2])}</td><td>${lv(o[3])}</td><td>${o[4]?`<span class="tech">${o[4]}</span>`:'<span class="muted">none named</span>'}</td></tr>`).join('')}</tbody></table></div></div>`)
+  + sec('i-measures','Minimal measures','from the engine’s own recommendations — each a later decision', `<div class="card pad"><div class="ql">${[['Write the “on hold” status through API_PURCHASEREQUISITION_SRV instead of UPDATE EBAN.','240','Removes the only Level D use.'],['Remove the two COMMIT WORK and let the caller own the transaction.','243, 428','Prepares any later move.'],['Replace the batch-input retry on ME21N with an error message to a buyer.','515','Removes a screen automation without stability contract.']].map((m,i)=>`<div class="qi"><span class="n">${i+1}</span><div><div class="qq">${m[0]} ${L(m[1])}</div><div class="aa muted">${m[2]}</div></div><div>${chip.rec('Engine suggestion')}</div></div>`).join('')}</div></div>`)};
+}
+
+/* ===================== MANAGEMENT ===================== */
+function mgRebuild(){
+  const st=S.s;
+  const rows = {
+    designed:[['ok','Business questions answered','6 of 6'],['ok','Design written','AI-generated, from the answers'],['no','Technical questions','4 open — none changes the route'],['na','Target edition bound by the run','SAP Cloud ERP Private assumed'],['no','Target confirmed','not yet — your step']],
+    empty:[['no','Business questions answered','0 of 6'],['no','Design written','waits for the answers'],['no','Technical questions','4 open'],['na','Target edition bound by the run','assumed'],['no','Target confirmed','not possible before a design']],
+    blocked:[['no','Business questions answered','4 of 6 — the two open ones change the target'],['ok','Design written','without the two answers'],['no','Technical questions','4 open'],['na','Target edition bound by the run','assumed'],['no','Target confirmed','not yet']],
+    outside:[['ok','Business questions answered','6 of 6'],['ok','Design written','for side-by-side CAP'],['no','Priced in Economics','no — the route changed after pricing'],['no','Decision','out of date: re-price, then confirm again'],['no','Target confirmed','waits for the re-price']],
+  }[st];
+  const ready = st==='designed';
+  const head = {designed:'Ready for your confirmation — four technical questions stay open, none of them changes the route.',empty:'Not ready: the business has not answered yet, so nothing is designed.',blocked:'Not ready: two business answers that change the target are missing.',outside:'Stop: the design no longer matches what was priced.'}[st];
+  const html = `<section class="card ophead verdict" id="m-answer" data-sec="m-answer"><div class="ans"><div><p class="q">Rebuild · is the design ready to sign off?</p><h2 class="a">${head}</h2><p class="why">${st==='outside'?'Rebuild was decided on the in-app route. The design now runs side-by-side on SAP BTP — another runtime with its own lifecycle and licence. Economics has to price it before the decision can stand.':'The program is rebuilt as a clean extension in SAP Cloud ERP Private: a RAP object on the stack, released interfaces where SAP names them, a wrapper where it names none. Three settings tables become key-user objects.'}</p>
+  <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">${st==='outside'?`<a class="btn primary" href="#">Re-price in Economics</a>`:`<button class="btn primary" ${ready?'':'disabled'}>Confirm target</button>`}<a class="btn ghost" href="#">Open the decision</a>${ready?'<span class="xs muted">A self-declaration of your account, bound to the run you read.</span>':''}</div></div>
+  <div class="next"><span class="k">Before sign-off</span><div class="check" style="margin-top:6px">${rows.map(r=>`<div class="ci"><span class="m ${r[0]}">${r[0]==='ok'?'✓':r[0]==='no'?'!':'–'}</span><div>${r[1]}<div class="w">${r[2]}</div></div><span></span></div>`).join('')}</div></div></div></section>`
+  + `<div class="sec facts" id="m-facts" data-sec="m-facts">
+     <div class="fact"><span class="k">Decision and cost</span><div class="v">Rebuild ${st==='outside'?'· out of date':'· confirmed'}</div><div class="s">${st==='outside'?'Priced on revision 2 for the in-app route. The route changed — re-price.':'Priced on Economics revision 2 (13 Nov 2026), on which “Rebuild” is the cheapest option. Amounts stay in Economics.'} <a class="lnk" href="#">Economics</a></div></div>
+     <div class="fact"><span class="k">Target</span><div class="v">${st==='outside'?'Side-by-side on SAP BTP':'In-app, ABAP Cloud'}</div><div class="s">SAP Cloud ERP Private — assumed, not bound by the run. ${st==='outside'?'Deviation from the contract, with a reason.':'The contract’s recommendation.'}</div></div>
+     <div class="fact"><span class="k">Fit to clean core</span><div class="v">8 of 14 SAP uses on a released path</div><div class="s">The other 6 behind a wrapper with an influence request to SAP. Today: score 40, one Level D use — which the design removes. ${chip.cat()}</div></div>
+     <div class="fact"><span class="k">Risk</span><div class="v">2 parts not read</div><div class="s">Two includes (the message and the log) were not uploaded; what they do is not determined. The approval behaviour changes on purpose (business answer).</div></div>
+   </div>`
+  + sec('m-deps','Dependencies','what has to happen around it', `<div class="card pad"><div class="check">${[['Upload the two missing includes','IT · a new analysis run'],['Three settings tables set up as key-user objects','Key user · in the system, no code'],['Transformation starts only after the target is confirmed','the next tool'],['Influence request to SAP for the 6 objects with no released successor','IT · optional, does not block']].map(d=>`<div class="ci"><span class="m na">–</span><div>${d[0]}<div class="w">${d[1]}</div></div><span></span></div>`).join('')}</div></div>`)
+  + sec('m-options','The four options','from Management — Design shows what the chosen one looks like', `<div class="opts">${[['Keep','Builds nothing; 1 Level D use stays.'],['Rebuild','This design.','on'],['Move to SAP standard','Not determined here — the workshop decides.'],['Retire','Nobody has said the emergency path is no longer needed.']].map(o=>`<div class="oc ${o[2]||''}"><b>${o[0]}</b>${o[1]}${o[2]?'<span class="vv">Decided</span>':''}</div>`).join('')}</div>`);
+  return {anchors:[['m-answer','Ready to sign off?'],['m-facts','Facts'],['m-deps','Dependencies',4],['m-options','Options']], html};
+}
+function mgStandard(){
+  return {anchors:[['m-answer','Ready to confirm?'],['m-facts','Facts'],['m-deps','Before switch-off',3]],
+  html:`<section class="card ophead verdict" id="m-answer" data-sec="m-answer"><div class="ans"><div><p class="q">Move to SAP standard · is the fit-to-standard design ready?</p><h2 class="a">Not yet: the fit-to-standard workshop has to settle four open steps and confirm five things you give up.</h2><p class="why">Nothing is built. The program is switched off once the standard runs. The code shows where it departs from standard — not whether the standard does the same; that is the workshop’s confirmation.</p><div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><button class="btn primary" disabled>Confirm the fit-to-standard design</button><a class="btn ghost" href="#">Open the decision</a></div><p class="xs muted" style="margin-top:6px">Confirmable with open gaps — each one becomes a condition of the decision (concept §9.7, recommended).</p></div>
+  <div class="next"><span class="k">Before confirmation</span><div class="check" style="margin-top:6px">${[['no','Workshop held','not recorded'],['no','What you give up','0 of 5 confirmed'],['no','Open steps','4 — approval, order creation, authorization, attachments'],['ok','Standard candidates','2, from the catalog — to verify']].map(r=>`<div class="ci"><span class="m ${r[0]}">${r[0]==='ok'?'✓':'!'}</span><div>${r[1]}<div class="w">${r[2]}</div></div><span></span></div>`).join('')}</div></div></div></section>`
+  + `<div class="sec facts" id="m-facts" data-sec="m-facts"><div class="fact"><span class="k">Decision and cost</span><div class="v">Move to SAP standard · confirmed</div><div class="s">Priced on Economics revision 2; carries “if the standard covers it — not measured”. <a class="lnk" href="#">Economics</a></div></div><div class="fact"><span class="k">Given up</span><div class="v">5 behaviours</div><div class="s">Own block list, 5 % tolerance, plant 1000 shortcut, 50,000.00 limit, own hold status.</div></div><div class="fact"><span class="k">SAP area</span><div class="v">Mainly MM-PUR</div><div class="s">Also LO-MD and CO-OM.</div></div><div class="fact"><span class="k">Risk</span><div class="v">4 open gaps</div><div class="s">Until the workshop, “standard covers it” is not established.</div></div></div>`
+  + sec('m-deps','Before switch-off','', `<div class="card pad"><div class="check">${[['The standard process runs for emergency purchases','Business · after the workshop'],['Decide what happens to the approval records','Business + IT'],['Switch the program off','IT · after the standard runs']].map(d=>`<div class="ci"><span class="m na">–</span><div>${d[0]}<div class="w">${d[1]}</div></div><span></span></div>`).join('')}</div></div>`)};
+}
+function mgRetire(){
+  return {anchors:[['m-answer','Ready to switch off?'],['m-deps','To settle',7]],
+  html:`<section class="card ophead verdict" id="m-answer" data-sec="m-answer"><div class="ans"><div><p class="q">Retire · can it be switched off?</p><h2 class="a">Not yet: seven things must be settled — three by the business, four checked in the system.</h2><p class="why">Nothing is built and nothing replaces it. Whoever still needs what it does has to say so first; nobody has been asked yet.</p><div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><a class="btn ghost" href="#">Open the decision</a></div></div>
+  <div class="next facts"><div class="fact"><span class="k">Decision and cost</span><div class="v">Retire · confirmed</div><div class="s">Priced on Economics revision 2. <a class="lnk" href="#">Economics</a></div></div><div class="fact"><span class="k">Affected</span><div class="v">5 roles</div><div class="s">Requester, department head, manager, buyer, plant 1000.</div></div></div></div></section>`
+  + sec('m-deps','To settle first','', `<div class="card pad"><div class="check">${[['Where emergency purchases go instead','Business'],['Requisitions on hold','Business'],['Approval records (retention)','Business + IT'],['Who calls or submits the report','IT · not read'],['Background jobs','IT · not read'],['The workflow listening to ZAPPROVE','IT'],['The two includes','IT · not uploaded']].map(d=>`<div class="ci"><span class="m no">!</span><div>${d[0]}<div class="w">${d[1]}</div></div><span></span></div>`).join('')}</div></div>`)};
+}
+function mgKeep(){
+  return {anchors:[['m-answer','What keeping means'],['m-again','Look again',3]],
+  html:`<section class="card ophead verdict" id="m-answer" data-sec="m-answer"><div class="ans"><div><p class="q">Keep · what does it leave in place?</p><h2 class="a">Nothing to design. The program stays as it is, with a Clean Core Score of 40 and one direct write to an SAP table.</h2><p class="why">Keeping costs upkeep every release (Economics). The two questions about the approval and the test run stay unanswered by this decision.</p><div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap"><a class="btn ghost" href="#">Open the decision</a><a class="btn ghost" href="#">Economics</a></div></div>
+  <div class="next facts"><div class="fact"><span class="k">Decision and cost</span><div class="v">Keep · confirmed</div><div class="s">Priced on Economics revision 2.</div></div><div class="fact"><span class="k">Stays</span><div class="v">1 Level D · 10 Level C</div><div class="s">${chip.cat()}</div></div></div></div></section>`
+  + sec('m-again','When to look again','', `<div class="card pad"><div class="check">${[['A business question is answered “No, it should be …”','the program would have to change'],['The two missing includes are uploaded','the reading changes'],['The target edition or release changes','a new analysis run']].map(d=>`<div class="ci"><span class="m na">–</span><div>${d[0]}<div class="w">${d[1]}</div></div><span></span></div>`).join('')}</div></div>`)};
+}
+
+/* ===================== render ===================== */
+const LEADS = {
+ business:'The process after the change, and what it means for the people who run it.',
+ it:'The target architecture: what is built where, on which released objects, and what is still open.',
+ management:'Whether the decided option is ready to sign off, and what is still in the way.'};
+function render(){
+  document.querySelectorAll('#viewseg button').forEach(b=>b.classList.toggle('on', b.dataset.v===S.v));
+  document.getElementById('mk-case').innerHTML = CASES.map(c=>`<button data-c="${c[0]}" class="${S.c===c[0]?'on':''}">${c[1]}</button>`).join(' ');
+  const showStates = S.c==='rebuild'||S.c==='none';
+  document.getElementById('mk-state-l').style.display = showStates?'':'none';
+  document.getElementById('mk-state').innerHTML = showStates ? STATES.filter(s=>S.c==='rebuild'||s[0]!=='outside').map(s=>`<button data-s="${s[0]}" class="${S.s===s[0]?'on':''}">${s[1]}</button>`).join(' ') : '';
+  if (S.c==='none' && S.s==='outside') S.s='designed';
+  const kase = S.c==='none' ? 'rebuild' : S.c;
+  const fn = {business:{rebuild:bizRebuild,standard:bizStandard,retire:bizRetire,keep:bizKeep},it:{rebuild:itRebuild,standard:itStandard,retire:itRetire,keep:itKeep},management:{rebuild:mgRebuild,standard:mgStandard,retire:mgRetire,keep:mgKeep}}[S.v][kase];
+  const r = fn();
+  let pre = '';
+  if (S.c==='none') pre = `<div class="strip warn" style="margin-bottom:24px"><div><b>No program decision yet.</b>Keep, rebuild, move to SAP standard or retire — Economics prices the options, Management decides. Until then Design works as before and designs a rebuild; it changes once a decision is recorded.</div><div class="acts"><a class="btn secondary" href="#">Open Economics</a><a class="btn ghost" href="#">Decide in Management</a></div></div>`;
+  const tmp = document.createElement('div'); tmp.innerHTML = pre + r.html;
+  const slot = document.getElementById('headslot'); slot.replaceChildren();
+  const ansCard = tmp.querySelector('.ophead');
+  while (ansCard && tmp.firstElementChild) { const el = tmp.firstElementChild; slot.appendChild(el); if (el === ansCard) break; }
+  document.getElementById('page').replaceChildren(...tmp.childNodes);
+  document.getElementById('lead').textContent = LEADS[S.v];
+  document.getElementById('econck').style.display = S.c==='none' ? 'none':'';
+  document.getElementById('pab').innerHTML = r.anchors.filter(a=>!/-answer$/.test(a[0])).slice(0,6).map((a,i)=>`<a href="#${a[0]}" data-jump="${a[0]}" ${i===0?'aria-current="true"':''}>${a[1]}${a[2]!==undefined?`<span class="pab-c ${a[3]?'o':''}">${a[2]}</span>`:''}</a>`).join('');
+  const act = S.v==='it' && kase==='rebuild' && S.s!=='empty' ? '<button class="btn ghost sm">Export HTML</button>' : '';
+  document.getElementById('pabact').innerHTML = act;
+  document.getElementById('hacts').innerHTML = S.v==='it' && kase==='rebuild' && S.s!=='empty' ? '<button class="btn ghost">Regenerate</button>' : '';
+  setHash(); spy();
+}
+let lastJump=null;
+function barBottom(){ const b=document.querySelector('.pab'); return (parseFloat(getComputedStyle(b).top)||0)+48; }
+function spy(){
+  const links=[...document.querySelectorAll('#pab a')]; if(!links.length) return;
+  let cur=links[0];
+  for (const a of links){ const el=document.getElementById(a.dataset.jump); if (el && el.getBoundingClientRect().top < barBottom()+24) cur=a; }
+  if (innerHeight+scrollY >= document.documentElement.scrollHeight-2 && lastJump){ const j=links.find(a=>a.dataset.jump===lastJump); const el=j&&document.getElementById(lastJump); if(el && el.getBoundingClientRect().top < innerHeight) cur=j; }
+  links.forEach(a=>a.toggleAttribute('aria-current', a===cur)); links.forEach(a=>{ if(a===cur) a.setAttribute('aria-current','true'); });
+}
+addEventListener('scroll', spy, {passive:true});
+document.addEventListener('click', e=>{
+  const t=e.target.closest('button,a'); if(!t) return;
+  if (t.dataset.v){ S.v=t.dataset.v; render(); return; }
+  if (t.dataset.goto){ e.preventDefault(); S.v=t.dataset.goto; render(); scrollTo(0,0); return; }
+  if (t.dataset.c){ S.c=t.dataset.c; if(S.c!=='rebuild'&&S.c!=='none') S.s='designed'; render(); return; }
+  if (t.dataset.s){ S.s=t.dataset.s; render(); return; }
+  if (t.dataset.jump){ e.preventDefault(); lastJump=t.dataset.jump; const el=document.getElementById(t.dataset.jump); if(el){ scrollTo({top:el.getBoundingClientRect().top+scrollY-barBottom()-16}); const h=el.querySelector('h2'); if(h){ h.setAttribute('tabindex','-1'); h.focus({preventScroll:true}); } } return; }
+  if (t.dataset.panel){ openPanel(t.dataset.panel); return; }
+  if (t.hasAttribute('data-close')){ closePanels(); return; }
+  if (t.getAttribute('href')==='#') e.preventDefault();
+});
+document.getElementById('scrim').onclick=closePanels;
+addEventListener('keydown', e=>{ if(e.key==='Escape') closePanels(); });
+function openPanel(id){ closePanels(); document.getElementById(id).hidden=false; document.getElementById('scrim').classList.add('on'); const h=new URLSearchParams(location.hash.slice(1)); h.set('panel',id); history.replaceState(null,'','#'+h); }
+function closePanels(){ document.querySelectorAll('.drawer').forEach(d=>d.hidden=true); document.getElementById('scrim').classList.remove('on'); const h=new URLSearchParams(location.hash.slice(1)); h.delete('panel'); history.replaceState(null,'','#'+h); }
+const H = readHash(); render(); if (H.get('panel')) openPanel(H.get('panel'));
+</script>
+<script>
+/* ONE FAMILY (15.11.2026) — byte-identical in the six tool mock-ups.
+   Measures the sticky mock-up bar into --mock-h (0 when it is not sticky),
+   hides "On this page" when a page has one section, keeps the tool bar
+   and the section bar to one row (fade while more
+   items wait to the right, the current tool in view) and labels the cells of stacking tables. */
+(function(){
+  var root=document.documentElement, raf=0;
+  function mockH(){var m=document.querySelector('.mock');var on=m&&getComputedStyle(m).position==='sticky'&&getComputedStyle(m).display!=='none';root.style.setProperty('--mock-h',(on?m.offsetHeight:0)+'px');}
+  function edges(el){el.classList.toggle('start',el.scrollLeft<=1);el.classList.toggle('end',el.scrollLeft+el.clientWidth>=el.scrollWidth-2);}
+  function fade(el){var ovf=el.scrollWidth>el.clientWidth+1;el.classList.toggle('ovf',ovf);edges(el);
+    if(!el.dataset.wired){el.dataset.wired='1';el.addEventListener('scroll',function(){edges(el);},{passive:true});}return ovf;}
+  function tools(first){document.querySelectorAll('.tools').forEach(function(t){
+    if(!t.dataset.wired)first=true;
+    t.querySelectorAll('.tool .ck').forEach(function(x){x.setAttribute('aria-label','done');if(!x.querySelector('title'))x.insertAdjacentHTML('afterbegin','<title>done</title>');});
+    t.querySelectorAll('.tool .od').forEach(function(x){x.title='out of date';});
+    t.classList.remove('nolegend');if(t.scrollWidth>t.clientWidth+1&&t.querySelector('.legend'))t.classList.add('nolegend');
+    var ovf=fade(t);
+    if(first&&ovf){var c=t.querySelector('.tool.cur');if(c){var l=c.offsetLeft-t.offsetLeft,r=l+c.offsetWidth;if(r>t.clientWidth-48){t.scrollLeft=r-t.clientWidth+64;edges(t);}}}
+  });document.querySelectorAll('.pab-items').forEach(fade);
+    document.querySelectorAll('.pab').forEach(function(p){p.classList.toggle('single',p.querySelectorAll('.pab-items a').length<2);});}
+  function labels(){document.querySelectorAll('table.tbl-stack').forEach(function(tb){var hr=tb.querySelector('thead tr')||tb.querySelector('tr');if(!hr||!hr.querySelector('th'))return;var hs=[].map.call(hr.children,function(h){return h.textContent.trim();});tb.querySelectorAll('tr').forEach(function(tr){if(tr===hr)return;[].forEach.call(tr.children,function(td,i){if(hs[i]&&td.tagName==='TD'&&!td.hasAttribute('data-label'))td.setAttribute('data-label',hs[i]);});});});}
+  function all(first){mockH();tools(first);labels();}
+  function soon(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;all(false);});}
+  addEventListener('resize',soon);
+  addEventListener('load',function(){all(true);});
+  if(window.ResizeObserver){var m=document.querySelector('.mock');if(m)new ResizeObserver(soon).observe(m);}
+  new MutationObserver(soon).observe(document.body,{childList:true,subtree:true});
+  all(true);
+})();
+</script>
+</body>
+</html>

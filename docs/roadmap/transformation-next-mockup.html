@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Transformation, next · mock-up</title>
+<style>
+/* =====================================================================
+   Mock-up, not product code (15.11.2026). The Transformation tool as one
+   object page for every reader: what the program became, into which target,
+   how sure, what is open and what to do next — first; the trace finding →
+   target → object, the package, the checks and the code underneath.
+   Look: app/globals.css tokens, StageHeader, ToolBar, PageAnchorBar (the
+   shared spec tmp/ANCHOR-BAR-SPEC.md), CcProvenanceChip — visual language
+   A (object page) with proposal B's flow, as chosen 01.10.2026.
+   MEASURED (lib/transformation-view.ts at 9cff84dc, run against
+   public/starter-examples/Z_MM_PO_APPROVAL.abap, route In-app ABAP Cloud):
+   19 findings at 22 places, 8 with a released successor (6 distinct, 7
+   "Verified", 1 "Catalog Match"), 4 without, 5 custom tables, 2 on the
+   project route; every target name, line and the "not generated" texts.
+   ILLUSTRATIVE (no generation was run for this picture): object and file
+   names, the 22 functions, rule ids and decisions, check results, dates,
+   timings, and the generated ABAP. Demo projects generate nothing.
+   ===================================================================== */
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;--cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;--chart-4:#9333ea;
+  --code-bg:#030712;--code-ink:#e5e7eb;--code-muted:#9ca3af;--code-kw:#c4b5fd;--code-lit:#fcd34d;--code-name:#93c5fd;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --t-succ:#6366f1;--t-route:#9333ea;--t-none:#d97706;--t-custom:#9ca3af;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+p{margin:0}h1,h2,h3,h4{margin:0}
+button,input,select{font-family:inherit}
+button{cursor:pointer}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+.num{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+code{font-family:var(--mono);font-size:12px}
+
+/* ---------- doc chrome (not product) ---------- */
+.mock{position:sticky;top:0;z-index:300;background:#1f1147;color:#fff;font-size:12px;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600}
+.mock button.on{background:#e9e5ff;color:#1f1147}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap;letter-spacing:0;text-transform:none}
+body.nopins .pin{display:none}
+
+/* ---------- shell bar ---------- */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:16px;letter-spacing:-.02em;line-height:1.15}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* ---------- StageFrame + StageHeader ---------- */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vsnote{font-size:13px;font-weight:500;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px}
+.tools{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
+.tools .k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tool .od{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .legend{margin-left:auto;font-size:12px;font-weight:500;color:var(--cc-ink-muted);display:flex;gap:12px}
+.tools .toolmenu{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px}
+
+/* ---------- cc components ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;text-decoration:none;text-align:center}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink)}
+.btn.danger{background:#fff;border-color:var(--cc-error);color:var(--cc-error)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:4px 10px;font-size:12px}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff}
+.pv svg.i{width:12px;height:12px}
+.pv.ai{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed}
+.pv.eng{color:var(--cc-information);border-color:var(--cc-information)}
+.pv.imp{color:var(--seq-4);border-color:var(--seq-2);background:#f5f7ff}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral)}
+.pv.err{color:var(--cc-error);border-color:var(--cc-error);background:var(--cc-error-bg)}
+.pv.stale{color:var(--cc-warning);border-color:var(--cc-warning-mark);background:var(--cc-warning-bg)}
+.lvl{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;border-radius:5px;font-size:12px;font-weight:800;border:1px solid var(--cc-information);color:var(--cc-information);background:var(--cc-information-bg)}
+.lvl.nd{border-color:var(--cc-neutral-border);color:var(--cc-neutral);background:var(--cc-neutral-bg);font-weight:700;padding:0 5px}
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.muted{color:var(--cc-ink-muted)}
+.sm{font-size:13px}.xs{font-size:12px}
+.k{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.h2{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.h3{font-size:14px;font-weight:700}
+.anc{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--cc-information);text-decoration:underline;text-underline-offset:2px;white-space:nowrap;background:none;border:0;padding:0;cursor:pointer}
+.sev{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;white-space:nowrap}
+.sev i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.sev.crit i{background:#b91c1c}.sev.high i{background:#ea580c}.sev.med i{background:#d97706}.sev.low i{background:#9ca3af}.sev.info i{background:#60a5fa}
+
+/* ---------- strip (only for what stops the page) ---------- */
+.strip{display:flex;gap:10px;align-items:flex-start;margin-top:14px;padding:10px 14px;border-radius:8px;border:1px solid;font-size:13px;line-height:1.5;font-weight:500}
+.strip.err{background:var(--cc-error-bg);border-color:var(--cc-error-border);color:var(--cc-ink)}
+.strip.err svg{color:var(--cc-error)}
+.strip.inf{background:var(--cc-information-bg);border-color:var(--cc-information-border)}
+.strip.inf svg{color:var(--cc-information)}
+.strip b{font-weight:700}
+
+/* ---------- object page header: answer + facets ---------- */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start}
+.ans .q{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ans .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ans .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ans .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:250px;max-width:290px}
+.ans .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;line-height:1.45}
+.facets{display:grid;grid-template-columns:1.25fr 1.25fr 1fr 1fr;border-top:1px solid var(--cc-line);margin:16px -22px 0}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2}
+.facet .v.word{font-size:18px;letter-spacing:-.01em}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .v.nd{font-size:16px;font-weight:700;color:var(--cc-neutral)}
+.facet .v.bad{color:var(--cc-error)}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+.facet .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.sbar{display:flex;height:8px;gap:2px;border-radius:999px;overflow:hidden;margin-top:8px;background:var(--cc-line)}
+.sbar span{display:block;height:100%}
+.legend-s{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+.legend-s i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:4px;vertical-align:0}
+.prog{height:8px;border-radius:999px;background:var(--cc-line);margin-top:8px;overflow:hidden}
+.prog span{display:block;height:100%;background:var(--seq-3);border-radius:999px}
+.prog.str span{background:repeating-linear-gradient(135deg,var(--seq-3) 0 6px,var(--seq-2) 6px 12px)}
+
+/* ---------- "On this page" — the shared PageAnchorBar (tmp/ANCHOR-BAR-SPEC.md) ---------- */
+.pab{position:sticky;top:30px;z-index:50;display:flex;align-items:center;gap:12px;height:48px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 2px 4px rgb(11 28 48 / .06);margin:24px -32px 0;padding:0 32px}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted)}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+.pab-c{font-size:12px;font-weight:600;line-height:18px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:var(--cc-ink)}
+.pab-c.o{background:#fef3c7}
+
+/* ---------- body: main + side ---------- */
+.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;margin-top:24px;align-items:start}
+.main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.side{display:flex;flex-direction:column;gap:12px;position:sticky;top:94px}
+.sec-h{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+
+/* flow */
+.flowsvg{width:100%;height:auto;display:block;margin-top:14px}
+.flowsvg text{font-family:var(--sans)}
+.flowsvg .nd-l{font-size:13px;font-weight:600;fill:var(--cc-ink)}
+.flowsvg .nd-s{font-size:11.5px;font-weight:500;fill:var(--cc-ink-muted)}
+.flowsvg .col-h{font-size:11px;font-weight:600;letter-spacing:.08em;fill:var(--cc-ink-muted)}
+.flowsvg .band{cursor:pointer;transition:fill-opacity .15s}
+.flowsvg .tn{cursor:pointer}
+.flowsvg .tn:focus-visible rect{stroke:var(--cc-focus);stroke-width:2}
+.flowlist{display:none}
+.flowpick{margin-top:12px;border-top:1px solid var(--cc-line);padding-top:12px}
+.flowpick .ph{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px;font-weight:700}
+.flowpick ul{list-style:none;margin:8px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px}
+.flowpick li{display:flex;align-items:baseline;gap:8px;font-size:13px;line-height:1.45;min-width:0}
+.flowpick li .w{min-width:0}
+.flowpick li .w b{font-weight:600}
+.flowpick li .w span{color:var(--cc-ink-muted)}
+.chiprow{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.tchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--cc-line);background:#fff;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--cc-ink);cursor:pointer}
+.tchip i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.tchip[aria-pressed="true"]{border-color:var(--cc-ink);box-shadow:inset 0 0 0 1px var(--cc-ink)}
+
+/* open items */
+.olist{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column}
+.olist li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:12px;align-items:start;padding:12px 0;border-top:1px solid var(--cc-line)}
+.olist li:first-child{border-top:0;padding-top:4px}
+.olist .no{width:24px;height:24px;border-radius:999px;background:#fef3c7;color:var(--cc-warning);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.olist .tt{font-size:14px;font-weight:700;line-height:1.4}
+.olist .dd{font-size:13px;color:var(--cc-ink-muted);line-height:1.5;margin-top:2px}
+.olist .dd b{color:var(--cc-ink);font-weight:600}
+.olist .act{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.olist .act .xs{white-space:nowrap}
+
+/* package */
+.pkg{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.pkg>li{border:1px solid var(--cc-line);border-radius:8px}
+.pkg summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:36px minmax(0,1fr) auto 18px;gap:4px 12px;align-items:center;padding:8px 12px}
+.pkg summary::-webkit-details-marker{display:none}
+.pkg .ico{width:36px;height:36px;border-radius:8px;border:1px solid var(--cc-line);display:flex;align-items:center;justify-content:center;color:var(--cc-ink-muted);background:var(--cc-surface-muted)}
+.pkg .ico.code{color:var(--cc-information);background:var(--cc-information-bg);border-color:var(--cc-information-border)}
+.pkg .ico.model{color:var(--seq-4);border-color:var(--seq-2);background:#f5f7ff}
+.pkg .nm{font-family:var(--mono);font-size:13px;font-weight:700;word-break:break-all}
+.pkg .ds{display:block;font-size:12px;color:var(--cc-ink-muted);font-weight:500;margin-top:1px}
+.pkg .who{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.pkg .chev{color:var(--cc-ink-muted);transition:transform .15s}
+.pkg details[open] .chev{transform:rotate(90deg)}
+.fns{border-top:1px solid var(--cc-line);padding:4px 12px 8px}
+.fn{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) auto auto;gap:4px 12px;align-items:center;padding:7px 0;border-bottom:1px solid var(--cc-line);font-size:13px}
+.fn:last-child{border-bottom:0}
+.fn .f{font-family:var(--mono);font-size:12.5px;font-weight:600;min-width:0;word-break:break-all}
+.fn .f span{display:block;font-family:var(--sans);font-size:12px;font-weight:500;color:var(--cc-ink-muted);word-break:normal}
+.fn .src{font-size:12px;color:var(--cc-ink-muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.fn .rid{font-family:var(--mono);font-size:11px;font-weight:600;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px;color:var(--cc-ink)}
+.files{list-style:none;margin:0;padding:6px 0 0;font-size:12px}
+.files li{display:flex;justify-content:space-between;gap:12px;padding:3px 0;color:var(--cc-ink-muted)}
+.files li code{color:var(--cc-ink);word-break:break-all}
+
+/* checks */
+.chk{width:100%;border-collapse:collapse;margin-top:12px;font-size:13px}
+.chk th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--cc-line)}
+.chk td{padding:10px;border-bottom:1px solid var(--cc-line);vertical-align:top;line-height:1.5}
+.chk td:first-child{font-weight:600}
+.chk td .s{display:block;font-size:12px;color:var(--cc-ink-muted);font-weight:500}
+.res{display:inline-flex;align-items:center;gap:6px;font-weight:700;white-space:nowrap}
+.res i{width:10px;height:10px;border-radius:999px;display:inline-block;flex:none}
+.res.pass i{background:var(--seq-3)}
+.res.fail{color:var(--cc-error)}.res.fail i{background:var(--cc-error)}
+.res.nr{color:var(--cc-neutral)}.res.nr i{background:#fff;border:2px solid var(--cc-neutral)}
+.res.run i{background:var(--seq-2);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.35}}
+.foot-note{font-size:12px;color:var(--cc-ink-muted);line-height:1.5;margin-top:10px}
+
+/* trace fold */
+details.fold{border:1px solid var(--cc-line);border-radius:12px;background:#fff;box-shadow:var(--cc-shadow)}
+details.fold>summary{list-style:none;cursor:pointer;padding:14px 20px;display:flex;align-items:center;gap:10px;font-size:16px;font-weight:700;flex-wrap:wrap}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary .chev{transition:transform .15s;color:var(--cc-ink-muted)}
+details.fold[open]>summary .chev{transform:rotate(90deg)}
+details.fold>summary .r{margin-left:auto;font-size:12px;font-weight:500;color:var(--cc-ink-muted)}
+details.fold .fb{padding:0 20px 16px;font-size:13px;line-height:1.55}
+.tr{width:100%;border-collapse:collapse;font-size:12.5px}
+.tr th{font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--cc-ink-muted);text-align:left;padding:8px;border-bottom:1px solid var(--cc-line);white-space:nowrap}
+.tr td{padding:8px;border-bottom:1px solid var(--cc-line);vertical-align:top;line-height:1.45}
+.tr td.obj{font-family:var(--mono);font-size:12px;font-weight:600}
+.tr td .s{display:block;color:var(--cc-ink-muted);font-size:12px}
+.tr tr.open td:first-child{box-shadow:inset 3px 0 0 var(--cc-warning-mark)}
+
+/* side */
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.steps{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.steps li{display:grid;grid-template-columns:22px minmax(0,1fr);gap:10px;font-size:13px;line-height:1.45}
+.steps .b{width:20px;height:20px;border-radius:999px;border:1px solid var(--cc-line);background:#fff;color:var(--cc-ink-muted);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.steps .b.done{background:var(--cc-success);border-color:var(--cc-success);color:#fff}
+.steps .b.fail{background:var(--cc-error);border-color:var(--cc-error);color:#fff}
+.steps .b.run{border-color:var(--seq-3);color:var(--seq-3)}
+.steps li span.s{display:block;color:var(--cc-ink-muted);font-size:12px}
+.src{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+.src li{display:flex;flex-direction:column;gap:2px;font-size:13px}
+.src li .r1{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.src li .r1 b{font-weight:700}
+.src li .r2{font-size:12px;color:var(--cc-ink-muted);line-height:1.45}
+.ng{list-style:none;margin:10px 0 0;padding:0;display:flex;flex-direction:column;gap:8px;font-size:13px;line-height:1.5}
+.ng li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:8px}
+.ng li svg{color:var(--cc-ink-muted);margin-top:3px}
+
+/* code drawer */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(1040px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55}
+.drawer.narrow{width:min(780px,100vw)}
+.drawer header{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2;flex-wrap:wrap}
+.drawer header h2{font-size:16px;font-weight:800}
+.drawer header .x{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer ul,.drawer ol{padding-left:20px;margin:6px 0}
+.drawer li{margin:4px 0}
+.drawer table{border-collapse:collapse;width:100%;margin:6px 0;font-size:12px}
+.drawer th,.drawer td{border:1px solid var(--cc-line);padding:6px 8px;text-align:left;vertical-align:top}
+.drawer th{background:var(--cc-surface-muted)}
+.drawer code{background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px}
+.recbox{background:var(--cc-brand-surface);border:1px solid #bbf7d0;border-radius:8px;padding:10px 12px}
+.trail{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:12px;font-weight:600;color:var(--cc-ink-muted);margin-bottom:12px}
+.trail .st{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--cc-line);border-radius:8px;padding:4px 8px;background:var(--cc-surface-muted);color:var(--cc-ink)}
+.cmp{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.pane-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;font-weight:600;color:var(--cc-ink-muted);margin-bottom:6px}
+pre.code{margin:0;background:var(--code-bg);color:var(--code-ink);border-radius:8px;padding:10px 0;font-family:var(--mono);font-size:12px;line-height:1.6;overflow-x:auto}
+pre.code .ln{display:block;padding:0 12px 0 0;white-space:pre}
+pre.code .ln b{display:inline-block;width:44px;text-align:right;padding-right:12px;color:var(--code-muted);font-weight:400;user-select:none}
+pre.code .ln.ai{background:rgb(217 119 6 / .14);box-shadow:inset 3px 0 0 #f59e0b}
+pre.code .ln.eng{box-shadow:inset 3px 0 0 #60a5fa}
+pre.code .ln.err{background:rgb(185 28 28 / .35);box-shadow:inset 3px 0 0 #f87171}
+pre.code .kw{color:var(--code-kw)}pre.code .lit{color:var(--code-lit)}pre.code .cm{color:var(--code-muted)}pre.code .nm{color:var(--code-name)}
+.keyrow{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--cc-ink-muted);margin-top:8px}
+.keyrow i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+
+/* ---------- small screens ---------- */
+@media (max-width:1100px){
+  .body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  .facets{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .facet:nth-child(2){border-right:0}
+  .facet:nth-child(-n+2){border-bottom:1px solid var(--cc-line)}
+}
+@media (max-width:720px){
+  .mock{position:static}
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .tools .tool,.tools .legend,.tools .k{display:none}
+  .tools .toolmenu{display:inline-flex}
+  .tools .t12{order:2}
+  .ophead{padding:14px 16px 0}
+  .ans{grid-template-columns:minmax(0,1fr)}
+  .ans .a{font-size:17px}
+  .ans .next{min-width:0;max-width:none}
+  .facets{margin:14px -16px 0}
+  .facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .facet .v.word{font-size:16px}
+  .flowsvg{display:none}
+  .flowlist{display:block;margin-top:12px}
+  .flowpick ul{grid-template-columns:minmax(0,1fr)}
+  .olist li{grid-template-columns:24px minmax(0,1fr)}
+  .olist .act{grid-column:2;align-items:flex-start}
+  .pkg summary{grid-template-columns:36px minmax(0,1fr) 18px}
+  .pkg .who{grid-column:2;grid-row:2;justify-content:flex-start}
+  .pkg .chev{grid-column:3;grid-row:1}
+  .fn{grid-template-columns:minmax(0,1fr) auto}
+  .fn .src{grid-column:1 / -1}
+  .chk thead{display:none}
+  .chk tr{display:grid;grid-template-columns:minmax(0,1fr) auto;border-bottom:1px solid var(--cc-line);padding:8px 0}
+  .chk td{border:0;padding:2px 0}
+  .chk td:nth-child(2){grid-column:1 / -1;grid-row:2;font-size:12px;color:var(--cc-ink-muted)}
+  .chk td:nth-child(4){grid-column:1 / -1}
+  .tr thead{display:none}
+  .tr tr{display:grid;grid-template-columns:minmax(0,1fr) auto;padding:8px 0;border-bottom:1px solid var(--cc-line)}
+  .tr td{border:0;padding:2px 0}
+  .tr td:nth-child(n+3){grid-column:1 / -1}
+  .pad{padding:14px 16px}
+  details.fold>summary{padding:12px 16px}
+  details.fold .fb{padding:0 16px 14px}
+  .cmp{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:639px){
+  .pab{top:0;margin:24px -16px 0;padding:0 0 0 16px}
+  [id^="s-"]{scroll-margin-top:64px}
+  .pab-l{display:none}
+  .pab-items{-webkit-mask-image:linear-gradient(90deg,#000 85%,transparent);mask-image:linear-gradient(90deg,#000 85%,transparent);padding-right:24px}
+}
+
+/* =====================================================================
+   ONE FAMILY (15.11.2026) — this block is byte-identical in the six tool
+   mock-ups (Economics, Design, Transformation, Documentation, Testing,
+   Delivery) and comes last, so the shared parts look and behave the same
+   in every tool. Change it in all six or in none.
+   Responsive rules, the same everywhere:
+   - mock-up bar sticky only above 1100 px; its real height is measured
+     into --mock-h, so nothing ever slides under it;
+   - tool bar: one row at every width; when it does not fit, the legend
+     steps back (each mark keeps its words as a tooltip) and the row
+     scrolls sideways with a right-edge fade, the current tool in view;
+   - "On this page": the spec (tmp/ANCHOR-BAR-SPEC.md), sticky below the
+     mock-up bar, 24 px above and below, anchors land 16 px under it;
+     hidden when the page has only one section (owner, 15.11.2026);
+   - side column below the main column from 1100 px down;
+   - 24 px between cards and sections; card padding 16/20, phone 14/16;
+   - tables never widen the page: on a phone a list table stacks into one
+     block per row (row title first, every other cell with its column
+     name); a wider table scrolls inside its own card;
+   - button labels wrap balanced (no single orphaned word), numbers and
+     chips never break.
+   ===================================================================== */
+@font-face{font-family:Inter;src:url(../../app/fonts/inter-latin-variable.woff2) format("woff2");font-weight:100 900;font-display:swap}
+:root{
+  --cc-page:#f8f9ff;--cc-surface:#fff;--cc-surface-muted:#f9fafb;--cc-ink:#0b1c30;--cc-ink-muted:#4b5563;--cc-line:#e5e7eb;--cc-field-border:#6b7280;
+  --cc-brand:#16a34a;--cc-brand-strong:#15803d;--cc-brand-surface:#f0fdf4;--cc-focus:#1d4ed8;
+  --cc-success:#047857;--cc-success-bg:#ecfdf5;--cc-success-border:#a7f3d0;
+  --cc-warning:#92400e;--cc-warning-bg:#fffbeb;--cc-warning-border:#fde68a;--cc-warning-line:#b45309;--cc-warning-mark:#d97706;
+  --cc-error:#b91c1c;--cc-error-bg:#fef2f2;--cc-error-border:#fecaca;
+  --cc-information:#1d4ed8;--cc-information-bg:#eff6ff;--cc-information-border:#bfdbfe;
+  --cc-neutral:#4b5563;--cc-neutral-bg:#f9fafb;--cc-neutral-border:#e5e7eb;
+  --seq-1:#e0e7ff;--seq-2:#a5b4fc;--seq-3:#6366f1;--seq-4:#3730a3;
+  --cc-shadow:0 1px 2px rgb(0 0 0 / .04);--cc-shadow-dialog:0 16px 48px rgb(11 28 48 / .18);
+  --mk-bar:#1f1147;
+  --sans:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --mock-h:0px;
+}
+html,body{margin:0;background:var(--cc-page);font-family:var(--sans);font-size:14px;color:var(--cc-ink);-webkit-font-smoothing:antialiased}
+body{overflow-x:clip}
+:focus-visible{outline:2px solid var(--cc-focus);outline-offset:2px}
+h2[tabindex="-1"]:focus,h3[tabindex="-1"]:focus,summary[tabindex="-1"]:focus{outline:none}
+svg.i{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none;vertical-align:middle}
+svg.i.s{width:12px;height:12px}
+
+/* mock-up chrome (not product) */
+.mock{position:sticky;top:0;z-index:300;background:var(--mk-bar);color:#fff;font-size:12px;line-height:1.4;padding:6px 16px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.mock b{font-weight:700;margin:0 4px 0 8px}
+.mock b:first-child{margin-left:0}
+.mock button{background:transparent;border:1px solid #6d5bb8;color:#e9e5ff;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:600;line-height:16px;white-space:nowrap}
+.mock button.on{background:#e9e5ff;color:var(--mk-bar)}
+.mock .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.mock .d{flex-basis:100%;color:#cfc8f3;font-weight:500}
+.pin{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px solid #c4b5fd;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;margin-left:6px;white-space:nowrap;letter-spacing:0;text-transform:none}
+.mtag{display:inline-flex;align-items:center;font-size:10px;font-weight:700;color:#5b21b6;background:#f5f3ff;border:1px dashed #a78bfa;border-radius:4px;padding:0 4px;line-height:15px;vertical-align:middle;white-space:nowrap;letter-spacing:0;text-transform:none}
+body.nopins .pin{display:none}
+
+/* app bar */
+.shell{height:56px;display:flex;align-items:center;gap:20px;padding:0 24px;background:var(--cc-surface);border-bottom:1px solid var(--cc-line)}
+.logo{display:flex;align-items:center;gap:9px;flex:none;text-decoration:none;color:inherit}
+.logo .lg{width:32px;height:32px;border-radius:8px;background:var(--cc-brand-surface);color:var(--cc-brand);display:flex;align-items:center;justify-content:center}
+.logo .n{display:block;font-weight:800;font-size:15px;letter-spacing:-.02em;line-height:1.15}
+.logo .lg svg{width:18px;height:18px}
+.logo .n em{font-style:normal;color:var(--cc-brand)}
+.logo .s{display:block;font-size:11px;font-weight:500;color:var(--cc-ink-muted)}
+.path{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--cc-ink-muted);white-space:nowrap;min-width:0;overflow:hidden}
+.path .cur{color:var(--cc-ink);font-weight:600}
+.shell-r{margin-left:auto;display:flex;align-items:center;gap:8px;flex:none}
+.ib{width:32px;height:32px;border-radius:8px;border:1px solid var(--cc-field-border);background:#fff;color:var(--cc-ink-muted);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.av{width:28px;height:28px;border-radius:8px;background:var(--cc-ink);color:#fff;font-size:11px;font-weight:600;display:inline-flex;align-items:center;justify-content:center}
+
+/* frame, back link, note / view switch, tool bar, tool header */
+.frame{max-width:1536px;margin:0 auto;padding:16px 32px 48px}
+.headrow{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap;min-height:32px}
+.back{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--cc-ink-muted);text-decoration:none}
+.vs{margin-left:auto;display:flex;align-items:center;gap:8px}
+.vsnote{font-size:13px;font-weight:500;line-height:1.4;min-height:32px;color:var(--cc-ink-muted);display:inline-flex;align-items:center;gap:6px}
+.seg{display:inline-flex;border:1px solid var(--cc-field-border);border-radius:8px;padding:2px;background:#fff}
+.seg button{border:0;background:transparent;padding:0 12px;font-size:13px;font-weight:600;line-height:26px;min-height:26px;color:var(--cc-ink-muted);border-radius:6px;white-space:nowrap}
+.seg button.on{background:var(--cc-ink);color:#fff}
+.tools{display:flex;align-items:center;gap:8px;margin-top:8px;padding:2px 0;flex-wrap:nowrap;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none}
+.tools::-webkit-scrollbar{display:none}
+.tools>*{flex:none}
+/* sideways rows (tool bar, "On this page"): a fade on each edge where more items wait */
+.tools.ovf:not(.end),.pab-items.ovf:not(.end){-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
+.tools.ovf.end:not(.start),.pab-items.ovf.end:not(.start){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px);mask-image:linear-gradient(90deg,transparent,#000 48px)}
+.tools.ovf:not(.start):not(.end),.pab-items.ovf:not(.start):not(.end){-webkit-mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent);mask-image:linear-gradient(90deg,transparent,#000 48px,#000 calc(100% - 48px),transparent)}
+.tools .k{display:inline;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted);margin-right:4px}
+.tools .tool{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;white-space:nowrap;color:var(--cc-ink);border:1px solid var(--cc-line);background:#fff;border-radius:8px;padding:5px 10px;min-height:32px;text-decoration:none}
+.tools .tool:focus-visible{outline-offset:-2px}
+.tools .tool.cur{background:var(--cc-ink);border-color:var(--cc-ink);color:#fff}
+.tool .ck{color:var(--cc-success)}
+.tool.cur .ck{color:#a7f3d0}
+.tool .od{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .t12{order:0}
+.tools .legend{display:flex;margin-left:auto;padding-left:16px;font-size:12px;font-weight:500;color:var(--cc-ink-muted);gap:12px;white-space:nowrap}
+.tools .legend span{display:inline-flex;align-items:center;gap:4px}
+.tools .legend i{width:7px;height:7px;border-radius:9px;background:var(--cc-warning-mark);display:inline-block}
+.tools .legend svg.half,.tool svg.half{width:10px;height:10px;color:var(--cc-information);flex:none}
+.tools .toolmenu,.tools .toolsmenu{display:none}
+.tools.nolegend .legend{display:none}
+.sh{margin-top:14px}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--cc-ink-muted)}
+.sh .eyebrow{display:flex;align-items:center;gap:6px}
+.sh .eyebrow svg.i{width:14px;height:14px}
+.sh .pid{font-family:var(--mono);font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:2px;overflow-wrap:anywhere}
+.sh .pid+.lead{margin-top:6px}
+.sh h1{font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.25;margin-top:2px;display:flex;align-items:center;gap:8px}
+.sh h1 svg{color:var(--cc-ink-muted);width:20px;height:20px}
+.sh .lead{font-size:14px;font-weight:500;line-height:1.5;color:var(--cc-ink-muted);margin-top:2px}
+
+/* buttons, links, chips */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;font-weight:600;line-height:1.2;border-radius:8px;padding:8px 12px;min-height:32px;border:1px solid transparent;text-decoration:none;text-align:center;white-space:normal;text-wrap:balance;font-family:inherit;cursor:pointer}
+.btn.primary{background:var(--cc-brand-strong);border-color:var(--cc-brand-strong);color:#fff}
+.btn.secondary{background:var(--cc-brand-surface);border-color:var(--cc-brand-strong);color:var(--cc-brand-strong)}
+.btn.ghost{background:#fff;border-color:var(--cc-field-border);color:var(--cc-ink)}
+.btn.lg{min-height:40px;font-size:14px;padding:10px 16px}
+.btn.sm{min-height:28px;padding:4px 10px;font-size:12px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.lnk{font-size:13px;font-weight:600;color:var(--cc-ink);text-decoration:underline;text-underline-offset:2px;background:none;border:0;padding:0;cursor:pointer;font-family:inherit}
+.pv{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;line-height:16px;padding:1px 8px 1px 6px;border-radius:999px;border:1px solid;white-space:nowrap;vertical-align:middle;background:#fff;letter-spacing:0;text-transform:none}
+.pv svg.i{width:12px;height:12px}
+.pv.ai,.pv.sim,.pv.prop{color:var(--cc-warning);border-color:var(--cc-warning-line);border-style:dashed;background:#fff}
+.pv.eng,.pv.rec{color:var(--cc-information);border-color:var(--cc-information);background:#fff}
+.pv.you{color:var(--cc-information);border-color:var(--cc-information);background:var(--cc-information-bg)}
+.pv.nd{color:var(--cc-neutral);border-color:var(--cc-neutral);background:#fff}
+
+/* cards and sections */
+.card{background:#fff;border:1px solid var(--cc-line);border-radius:12px;box-shadow:var(--cc-shadow);min-width:0}
+.pad{padding:16px 20px}
+.h2{font-size:16px;font-weight:700;line-height:1.35;display:flex;align-items:center;gap:8px;flex-wrap:wrap;letter-spacing:0}
+.sec-h{display:flex;align-items:flex-start;gap:8px 12px;flex-wrap:wrap}
+.sec-h>div:first-child{flex:1 1 320px;min-width:0}
+.sec-h .r{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sec-lead{font-size:13px;color:var(--cc-ink-muted);font-weight:500;margin-top:4px;line-height:1.5;max-width:860px}
+details.fold>summary{flex-wrap:wrap}
+
+/* the answer card: question, answer, why, next step, facets */
+.ophead{margin-top:14px;padding:18px 22px 0}
+.ophead>.ans{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px 32px;align-items:start;margin:0}
+.ophead .q{font-size:12px;font-weight:600;line-height:1.5;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;margin:0;letter-spacing:0;text-transform:none}
+.ophead .a{font-size:18px;line-height:1.45;font-weight:600;letter-spacing:-.01em;margin-top:6px;max-width:980px}
+.ophead .why{font-size:13px;line-height:1.55;color:var(--cc-ink-muted);font-weight:500;margin-top:6px;max-width:980px}
+.ophead .next{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:250px;max-width:290px;width:290px}
+.ophead .next .sub{font-size:12px;color:var(--cc-ink-muted);font-weight:500;line-height:1.45}
+.facets{display:grid;border-top:1px solid var(--cc-line);margin:16px -22px 0}
+:where(.facets){grid-template-columns:repeat(4,minmax(0,1fr))}
+.facet{padding:14px 22px 16px;border-right:1px solid var(--cc-line);min-width:0}
+.facet:last-child{border-right:0}
+button.facet{font:inherit;color:inherit;text-align:left;background:none;border:0;border-right:1px solid var(--cc-line);cursor:pointer;display:block;width:100%}
+button.facet:hover{background:var(--cc-surface-muted)}
+button.facet:last-child{border-right:0}
+.facet .t{font-size:12px;font-weight:600;color:var(--cc-ink-muted);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.facet .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px;line-height:1.2;font-variant-numeric:tabular-nums}
+.facet .v small{font-size:13px;font-weight:600;color:var(--cc-ink-muted);letter-spacing:0}
+.facet .n{font-size:12px;font-weight:500;color:var(--cc-ink-muted);margin-top:4px;line-height:1.45}
+
+/* "On this page" — the one bar (tmp/ANCHOR-BAR-SPEC.md) */
+.pab{position:sticky;top:var(--mock-h);z-index:50;display:flex;align-items:center;gap:12px;height:48px;box-sizing:border-box;background:#fff;border-bottom:1px solid var(--cc-line);box-shadow:0 2px 4px rgb(11 28 48 / .06);margin:24px -32px 24px;padding:0 32px}
+.pab+*{margin-top:0}
+.pab.single{display:none}
+.pab-l{flex:none;font-size:13px;font-weight:600;color:var(--cc-ink-muted);margin:0;white-space:nowrap}
+.pab-items{display:flex;gap:4px;height:100%;min-width:0;overflow-x:auto;scrollbar-width:none}
+.pab-items::-webkit-scrollbar{display:none}
+.pab-items a{position:relative;display:inline-flex;align-items:center;gap:6px;height:48px;padding:0 16px;font-size:15px;font-weight:500;color:var(--cc-ink);text-decoration:none;white-space:nowrap;flex:none}
+.pab-items a::after{content:"";position:absolute;left:16px;right:16px;bottom:0;height:3px;border-radius:2px 2px 0 0;background:var(--cc-brand-strong);opacity:0}
+.pab-items a:hover::after{opacity:.3}
+.pab-items a[aria-current="true"]{font-weight:600}
+.pab-items a[aria-current="true"]::after{opacity:1}
+.pab-items a:focus-visible{outline:2px solid var(--cc-focus);outline-offset:-2px;border-radius:4px}
+.pab-c{font-size:12px;font-weight:600;line-height:18px;padding:0 7px;border-radius:999px;background:#f3f4f6;color:var(--cc-ink);border:0;box-shadow:none}
+.pab-c.o{background:#fef3c7}
+.pab-act{margin-left:auto;flex:none}
+[id^="s-"],[data-sec],.chap{scroll-margin-top:calc(var(--mock-h) + 64px)}
+.frame>.pab.single+*,.frame>.pab.single+.body{margin-top:24px}
+
+/* object page body: main column + side column */
+.frame>.body{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;margin-top:0;align-items:start}
+.main{display:flex;flex-direction:column;gap:24px;min-width:0}
+.side{display:flex;flex-direction:column;gap:24px;position:sticky;top:calc(var(--mock-h) + 64px)}
+.sc{padding:14px 16px}
+.sc h3{font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* owner / today drawers */
+.scrim{position:fixed;inset:0;background:rgb(11 28 48 / .35);z-index:400;display:none}
+.scrim.on{display:block}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(780px,100vw);background:#fff;z-index:401;overflow:auto;box-shadow:-16px 0 48px rgb(11 28 48 / .18);font-size:13px;line-height:1.55;color:var(--cc-ink)}
+.drawer.wide{width:min(1040px,100vw)}
+.drawer[hidden]{display:none}
+.drawer header{position:sticky;top:0;background:#fff;color:var(--cc-ink);border-bottom:1px solid var(--cc-line);padding:14px 20px;display:flex;align-items:center;gap:12px;z-index:2;flex-wrap:wrap}
+.drawer header h2{font-size:16px;font-weight:800;line-height:1.3;min-width:0}
+.drawer header .x{margin-left:auto}
+.drawer .db{padding:16px 20px 32px}
+.drawer h3{font-size:14px;font-weight:800;margin:18px 0 6px}
+.drawer .db>h3:first-child{margin-top:0}
+.drawer code{font-family:var(--mono);font-size:12px;background:var(--cc-surface-muted);border:1px solid var(--cc-line);border-radius:4px;padding:0 4px;overflow-wrap:anywhere}
+
+/* tables on a phone (rule: stack; data-label filled by the family script) */
+@media (max-width:720px){
+  table.tbl-stack{min-width:0!important;width:100%}
+  table.tbl-stack thead,table.tbl-stack tr:first-child:has(>th){display:none}
+  table.tbl-stack,table.tbl-stack tbody{display:block}
+  table.tbl-stack tr{display:block;padding:10px 0;border-bottom:1px solid var(--cc-line)}
+  table.tbl-stack tr:last-child{border-bottom:0}
+  table.tbl-stack td{display:flex;gap:10px;border:0!important;padding:2px 0!important;text-align:left!important;background:none!important}
+  table.tbl-stack td:first-child{font-weight:600}
+  table.tbl-stack td[data-label]:not(:first-child)::before{content:attr(data-label);flex:0 0 38%;font-size:12px;font-weight:600;color:var(--cc-ink-muted);font-family:var(--sans);white-space:normal}
+}
+
+/* ---------- the same breakpoints in every tool ---------- */
+@media (max-width:1100px){
+  .mock{position:static}
+  .frame>.body{grid-template-columns:minmax(0,1fr)}
+  .side{position:static}
+  :where(.facets){grid-template-columns:repeat(2,minmax(0,1fr))}
+  :where(.facets>.facet:nth-child(2n)){border-right:0}
+  :where(.facets>.facet:nth-child(-n+2)){border-bottom:1px solid var(--cc-line)}
+}
+@media (max-width:900px){
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .next{width:auto;min-width:0;max-width:420px}
+}
+@media (max-width:720px){
+  .shell{padding:0 16px;gap:12px}
+  .path,.shell-r .ib{display:none}
+  .logo .s{display:none}
+  .frame{padding:12px 16px 40px}
+  .vs{width:100%;margin-left:0}
+  .vsnote{min-height:0;font-size:12px}
+  .ophead{padding:14px 16px 0}
+  .ophead>.ans{grid-template-columns:minmax(0,1fr)}
+  .ophead .a{font-size:17px}
+  .ophead .next{min-width:0;max-width:none;width:auto}
+  .facets{margin:14px -16px 0}
+  .facet,button.facet{padding:12px 16px}
+  .facet .v{font-size:20px}
+  .pad{padding:14px 16px}
+  .drawer header{padding:12px 16px}
+  .drawer .db{padding:14px 16px 28px}
+}
+@media (max-width:639px){
+  .pab{margin:24px -16px 24px;padding:0 0 0 16px}
+  .pab-l,.pab-act{display:none}
+  .pab-items{padding-right:24px}
+}
+</style>
+</head>
+<body>
+
+<div class="mock" role="region" aria-label="Mock-up controls">
+  <b>State</b>
+  <button type="button" data-state="done" class="on">Generated and checked</button>
+  <button type="button" data-state="running">Generating</button>
+  <button type="button" data-state="none">Nothing generated yet</button>
+  <button type="button" data-state="failed">A check failed</button>
+  <button type="button" data-state="demo">Demo project</button>
+  <span class="sp">
+    <button type="button" id="pins">Decision pins: on</button>
+    <button type="button" data-open="p-today">Today, critiqued</button>
+    <button type="button" data-open="p-owner">For the owner</button>
+  </span>
+</div>
+
+<header class="shell">
+  <a class="logo" href="#" aria-label="Clean-Core.io, My workspace">
+    <span class="lg"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span>
+    <span><span class="n">Clean-Core<em>.io</em></span><span class="s">Free Community Edition</span></span>
+  </a>
+  <nav class="path" aria-label="Breadcrumb"><span>My workspace</span><span>›</span><span id="crumb">Emergency purchase approval</span><span>›</span><span class="cur">Transformation</span></nav>
+  <div class="shell-r">
+    <button class="ib" type="button" aria-label="Help"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></button>
+    <span class="av" aria-label="Account menu">MW</span>
+  </div>
+</header>
+
+<main class="frame">
+  <div class="headrow">
+    <a class="back" href="#"><svg class="i" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg><span id="backtxt">My workspace · Emergency purchase approval</span></a>
+    <div class="vs">
+      <span class="vsnote" role="note"><svg class="i s" viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><path d="M16 3.13a4 4 0 0 1 0 7.75M21 21v-2a4 4 0 0 0-3-3.85"/></svg>One page for every reader — business, IT and management<span class="pin">T1</span></span>
+    </div>
+  </div>
+  <nav class="tools" aria-label="Tools">
+    <span class="k">Tools</span>
+    <a class="tool" href="#"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Analyze</a>
+    <a class="tool" href="#"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Economics</a>
+    <a class="tool" href="#"><svg class="i s ck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>Design</a>
+    <a class="tool cur" href="#" aria-current="page"><svg class="i s ck" id="toolck" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="od" id="toolod" hidden></span>Transformation</a>
+    <a class="tool" href="#">Documentation</a>
+    <a class="tool" href="#">Testing</a>
+    <a class="tool" href="#">Delivery</a>
+    <span class="pin t12">T12</span>
+    <span class="legend"><span><svg class="i s" viewBox="0 0 24 24" style="color:var(--cc-success)"><path d="M20 6 9 17l-5-5"/></svg>done</span><span><svg class="half" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="6" r="4.75" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6 1.25 A4.75 4.75 0 0 0 6 10.75 Z" fill="currentColor"/></svg>started</span><span><i class="od"></i>out of date</span></span>
+    <button class="btn ghost toolmenu" type="button">Tools · Transformation<svg class="i s" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>
+  </nav>
+
+  <div class="sh">
+    <div class="eyebrow"><svg class="i" viewBox="0 0 24 24"><path d="m18 16 4-4-4-4M6 8l-4 4 4 4M14.5 4l-5 16"/></svg><span>Tool · Transformation</span></div>
+    <h1 data-stage-title>Emergency purchase approval</h1>
+    <p class="pid" id="eyename">Z_MM_PO_APPROVAL</p>
+    <p class="lead">The program rewritten for its clean core target — the engine writes the frame, a model writes the function bodies, and every line says who wrote it.</p>
+  </div>
+
+  <div id="strip"></div>
+
+  <!-- ===== object page header: the answer, then the facets ===== -->
+  <section class="card ophead" aria-labelledby="ans-q" id="ophead">
+    <div class="ans">
+      <div>
+        <p class="q" id="ans-q"><span id="qtext">What became of Z_MM_PO_APPROVAL?</span> <span id="qchip"></span><span class="pin">T2</span></p>
+        <p class="a" id="answer"></p>
+        <p class="why" id="why"></p>
+      </div>
+      <div class="next" id="nextbox"></div>
+    </div>
+    <div class="facets" id="facets"></div>
+  </section>
+
+  <!-- ===== "On this page" ===== -->
+  <nav class="pab" aria-label="On this page" id="anchors">
+    <span class="pab-l">On this page</span>
+    <div class="pab-items" id="pabitems"></div>
+  </nav>
+
+  <div class="body">
+    <div class="main">
+      <!-- S1: the flow -->
+      <section class="card pad" id="s-flow" aria-labelledby="s-flow-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-flow-h">Where each finding went<span class="pin">T5</span></h2>
+            <p class="sec-lead">Left, what the old code does that does not fit a clean core; middle, its target; right, the object of the new package that now carries it. Band width = number of findings. Choose a target to see its findings.</p>
+          </div>
+          <div class="r"><span class="pv eng" title="Counted from the engine's findings and SAP's catalog. No model."><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4"/></svg>From the engine</span></div>
+        </div>
+        <svg class="flowsvg" id="flowsvg" viewBox="0 0 1000 430" role="img" aria-labelledby="s-flow-h"></svg>
+        <div class="flowlist" id="flowlist"></div>
+        <div class="flowpick" id="flowpick"></div>
+      </section>
+
+      <!-- S2: open -->
+      <section class="card pad" id="s-open" aria-labelledby="s-open-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-open-h">Still open<span class="pin">T6</span></h2>
+            <p class="sec-lead" id="open-lead"></p>
+          </div>
+        </div>
+        <ol class="olist" id="olist"></ol>
+      </section>
+
+      <!-- S3: package -->
+      <section class="card pad" id="s-package" aria-labelledby="s-package-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-package-h">The package<span class="pin">T7</span></h2>
+            <p class="sec-lead" id="pkg-lead"></p>
+          </div>
+          <div class="r" id="pkg-actions"></div>
+        </div>
+        <div id="pkgbody"></div>
+      </section>
+
+      <!-- S4: checks -->
+      <section class="card pad" id="s-checks" aria-labelledby="s-checks-h">
+        <div class="sec-h">
+          <div>
+            <h2 class="h2" id="s-checks-h">Checks<span class="pin">T8</span></h2>
+            <p class="sec-lead">Three outcomes, never two: passed, failed, or not run. Each row says who ran the check.</p>
+          </div>
+        </div>
+        <div id="checksbody"></div>
+      </section>
+
+      <!-- S5: trace -->
+      <details class="fold" id="s-trace">
+        <summary><svg class="i chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>Finding by finding<span class="pin">T9</span><span class="r">all 19 · old lines → target → new code · for developers</span></summary>
+        <div class="fb">
+          <p class="muted" style="margin-bottom:8px">One row per finding (pattern and object), with every place in the old code. "Where in the new code" comes from <code>traceability.json</code> of the package — the engine wrote each function's ABAP lines into it — not from a text search.</p>
+          <div style="overflow-x:auto"><table class="tr" id="trace"></table></div>
+        </div>
+      </details>
+    </div>
+
+    <aside class="side" aria-label="Status and limits">
+      <section class="card sc" aria-labelledby="st-h">
+        <h3 id="st-h">Status of the code<span class="pin">T3</span></h3>
+        <ol class="steps" id="steps"></ol>
+      </section>
+      <section class="card sc" aria-labelledby="bo-h">
+        <h3 id="bo-h">Built on</h3>
+        <ul class="src" id="builton"></ul>
+      </section>
+      <section class="card sc" aria-labelledby="ng-h">
+        <h3 id="ng-h">Not carried over, and why <span class="pv eng">From the engine</span></h3>
+        <ul class="ng" id="ng"></ul>
+      </section>
+    </aside>
+  </div>
+</main>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- ===== code drawer ===== -->
+<aside class="drawer wide" id="p-code" hidden role="dialog" aria-labelledby="code-h">
+  <header><h2 id="code-h">check_price</h2><span id="code-chips"></span><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db" id="code-body"></div>
+</aside>
+
+<!-- ===== today, critiqued ===== -->
+<aside class="drawer narrow" id="p-today" hidden role="dialog" aria-labelledby="today-h">
+  <header><h2 id="today-h">Transformation today, critiqued</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <p class="muted">Read from source at <code>9cff84dc</code> (branch dev). Today's tool could not be opened here (no server, no emulators), so nothing below is a screenshot; every figure is a count from the code or from <code>lib/transformation-view.ts</code> run against the starter example <code>Z_MM_PO_APPROVAL.abap</code> (552 lines, route In-app ABAP Cloud).</p>
+
+    <h3>What is wrong today</h3>
+    <ul>
+      <li><b>The view switch changes nothing.</b> <code>StageHeader</code> carries Business · IT · Management on every tool (<code>components/StageHeader.tsx:54–57</code>, <code>StageViewSwitch.tsx</code>). Transformation reads the view only to keep it in its links (<code>transformation/page.tsx:399</code>, <code>lib/transformation-chain.ts:118–119, 206–212</code>); <code>TransformationObjectPage.tsx</code> has no view at all. A manager and a developer get the same page while the header promises them different ones.</li>
+      <li><b>There is no answer, only figures.</b> The first screen is four facets with four different units — objects, findings with a target option, successors, unticked checklist items (<code>TransformationObjectPage.tsx:373–447</code>) — and a status line of five dot items (<code>449–474</code>). No sentence says what the program became, into which extension type, or what to do next. The target appears only as the word "ABAP Cloud (RAP)" in a facet's unit (<code>378</code>) and in the header lead.</li>
+      <li><b>"19 of 19 planned" though 9 have no target.</b> The facet "Plan from the engine" counts findings with any <code>targetOptions</code> (<code>lib/transformation-view.ts:157</code>). Every finding of the starter example has options, so it reads <b>19 of 19, "0 left out — every finding has a target option"</b> (<code>TransformationObjectPage.tsx:396–400</code>) — while 4 have no released successor and 5 are custom tables whose new home nobody decided (<code>transformationFlow</code>, measured). The facet sounds like "done" for a page that is half open.</li>
+      <li><b>Up to ten strips stand above the answer.</b> Prerequisites (<code>page.tsx:2299</code>), the stale notice (<code>2326</code>), the quality tips (<code>2332</code>), copy failed (<code>2340</code>), contract refusal (<code>2354</code>), error (<code>2363</code>), cancelled (<code>2380</code>), unsaved draft (<code>2388</code>), hard-coded values (<code>2403</code>), code checks (<code>2421</code>) — and then the "Built on" card (<code>2449</code>) with its own strips for not-written functions and abaplint (<code>BuiltOnCard.tsx:74–96</code>). The result of the checks is a warning strip <i>above</i> the facets, the abaplint verdict a strip inside a card; neither is counted anywhere in the header.</li>
+      <li><b>The checklist is a headline.</b> "Grounding audit — N not ticked yet" is one of the four facets (<code>TransformationObjectPage.tsx:432–446</code>), though it is a personal list kept in this browser only and not a step of the code's status (the side column says so itself, <code>663–665</code>).</li>
+      <li><b>Three sections tell the same story.</b> The flow "From your code to the generated package" (<code>486–492</code>), "From finding to change" with 3 rows and "Show all 19" (<code>577–600</code>, <code>FIRST_CHANGES = 3</code> at <code>331</code>) and "Plan by kind" (<code>602–638</code>) all count findings by kind and target; "Plan by kind" repeats the flow's left column.</li>
+      <li><b>The third box is a text search.</b> "Generated change" finds a file that merely names the object (<code>changeExcerpt</code>, <code>lib/transformation-view.ts:285–307</code>) and says so ("a place to look, not proof", <code>TransformationObjectPage.tsx:273</code>) — though since ADR-101 the package carries <code>traceability.json</code> with each function's ABAP lines, the exact answer.</li>
+      <li><b>The code is at the foot.</b> "Side by side with ABAP" is a full-width section under everything (<code>after</code>, <code>TransformationObjectPage.tsx:718</code>; <code>page.tsx:2021</code>), reached by a button in the package header; a function in the package cannot open its own code.</li>
+      <li><b>Technical words in the bar.</b> The anchors are "Code to package · Generated package · Finding to change · Plan by kind · Side by side" (<code>lib/page-anchors.ts:125–135</code>), drawn by the old bar style.</li>
+    </ul>
+
+    <h3>What is good and is kept</h3>
+    <ul>
+      <li>The honest per-finding target (<code>findingTarget</code>): a successor only where SAP's catalog names one, custom tables never guessed, the route only for constructs without an object.</li>
+      <li>"Not generated, and why" (<code>notGeneratedReasons</code>) — its texts are quoted unchanged in the side column.</li>
+      <li>Author per object (engine / bodies by the model), the 3.0.23 rule that "Code generated" is not ticked while the tool bar says "not activatable", and the check words of <code>lib/transformation/check-words.ts</code> (passed / failed / not run, who ran it).</li>
+      <li>The generation screen (<code>GenerationChain</code>) and the "Before the run" tips — kept, moved into the same header.</li>
+      <li>The demo writes no code: "The demo stops where the model begins."</li>
+    </ul>
+
+    <h3>Today vs. mock-up</h3>
+    <table>
+      <tr><th>Today</th><th>Mock-up</th></tr>
+      <tr><td>Business · IT · Management switch that changes nothing</td><td>No switch; "One page for every reader" in its place (T1, decided)</td></tr>
+      <tr><td>Four facets + five-dot status line, no sentence</td><td>Question, one-to-two-sentence answer, next step, four facets: Target · Released target · Code written · Checks (T2)</td></tr>
+      <tr><td>"19 of 19 planned, 0 left out"</td><td>"10 of 19 have a released target · 9 open" (T3)</td></tr>
+      <tr><td>Up to 10 strips above the answer</td><td>Only what stops the page stays a strip (error, refused contract, unsaved draft, stale); check results move into the Checks facet and section (T4)</td></tr>
+      <tr><td>Flow + "Finding to change" + "Plan by kind"</td><td>One flow, finding → target → object, with a picker and the findings on a click (T5)</td></tr>
+      <tr><td>Open points spread over a side card, strips and the flow</td><td>"Still open": one numbered list, one action each (T6)</td></tr>
+      <tr><td>Side by side at the foot</td><td>Code in a drawer from any function, object or trace row; engine lines and AI lines marked in the gutter (T7)</td></tr>
+      <tr><td>Grounding audit as a facet</td><td>A row of Checks: "Check by hand — this browser only" (T8)</td></tr>
+      <tr><td>Text-search "Generated change"</td><td>"Finding by finding" from <code>traceability.json</code>, folded (T9)</td></tr>
+      <tr><td>Old bar, technical labels</td><td>Shared "On this page" bar: Where findings went · Still open · The package · Checks · Finding by finding (T10)</td></tr>
+    </table>
+  </div>
+</aside>
+
+<!-- ===== for the owner ===== -->
+<aside class="drawer narrow" id="p-owner" hidden role="dialog" aria-labelledby="owner-h">
+  <header><h2 id="owner-h">For the owner — decisions T1–T13</h2><button class="btn ghost sm x" type="button" data-close>Close</button></header>
+  <div class="db">
+    <div class="recbox"><b>Recommendation:</b> build T2–T11 as one Transformation step of the tools release, on one page for every reader (T1, decided). The page opens with what the program became, its target, how much of it has a released target, whether the code is written and whether the checks passed — and the one next step. Everything a developer needs stays on the page, quietly: the flow on a click, the package with its functions, the checks with who ran them, the trace folded, the code in a drawer. No engine change, no new stored field, no rules change.</div>
+    <ol style="margin-top:12px">
+      <li><b>T1 One page for every reader — decided</b> (Sonny, 15.11.2026: one view for everyone, "dafür noch schicker und für alle tauglicher"; refined the same day: "das verwirrt nur"). Transformation has no Business, IT or Management variant, and the header shows <b>no view switch</b> on this tool — desktop and phone. In its place a quiet note: "One page for every reader — business, IT and management". The view stays in the address so the way back returns to the view the reader came from. Same rule as Economics (E7) and Documentation.</li>
+      <li><b>T2 The answer first.</b> Object page header: the question "What became of &lt;program&gt;?", one or two sentences, the next step on the right, and four facets — <i>Target</i> (extension type and level it aims at), <i>Released target</i> (findings with a released API or handled by RAP), <i>Code written</i> (functions, who wrote them), <i>Checks</i> (passed / failed / not run). Each state of the tool writes its own answer (generated, generating, nothing yet, a check failed, demo). Recommended.</li>
+      <li><b>T3 Count targets, not options.</b> "Released target" counts findings whose target is a released successor or the project route; custom tables and calls without a released successor are "open", never "planned". Replaces "Plan from the engine: 19 of 19". The side column's status gains "Checked here" (abaplint) and keeps "Activated" and "Tested" as not done here. Pure change in <code>lib/transformation-view.ts</code>. Recommended.</li>
+      <li><b>T4 Strips only for what stops the page.</b> Generation error, contract refusal, unsaved draft and the stale notice stay above the header (they change what the page means). Hard-coded values, code lints, not-written functions and the abaplint verdict become rows of Checks and are counted in the Checks facet; the answer names a failure in its first sentence. Recommended.</li>
+      <li><b>T5 One flow: finding → target → object.</b> The flow's third column names the objects of the package (logic class, behavior pool, port interface, "not in the package") from <code>traceability.json</code> instead of one "package" box; choosing a target lists its findings with their lines. "From finding to change" and "Plan by kind" go. On a phone the flow is a grouped list. Recommended.</li>
+      <li><b>T6 "Still open" — one list.</b> Custom tables without a home, calls without a released successor, output that becomes a Fiori app, constructs the engine did not assess, rules without a decision — each one line with one action (Design, Analyze, Business view). The same items as the project's open questions (ADR-081), filtered to what touches this code. Recommended.</li>
+      <li><b>T7 Package by object, code in a drawer.</b> Objects with author chips; open one for its functions (ABAP lines, rule ids, who wrote the body, status) and its files; "Code" opens a drawer with the old ABAP and the new function side by side, engine-written lines and AI-written lines marked in the gutter. "Side by side with ABAP" as a section at the foot goes. Recommended.</li>
+      <li><b>T8 Checks as one table.</b> abaplint (server), body guards, code lints, hard-coded values, abapGit formats (this browser), ABAP Unit and activation (not run here — your system), and "Check by hand" (the grounding audit, this browser only). The grounding audit leaves the facet row. Recommended.</li>
+      <li><b>T9 "Finding by finding" from the trace, folded.</b> All 19 findings with their places, target, how sure, level, and the function that now carries each — from <code>traceability.json</code>, not a text search. Closed by default. Recommended.</li>
+      <li><b>T10 The shared "On this page" bar</b> (<code>tmp/ANCHOR-BAR-SPEC.md</code>): Where findings went · Still open (amber count) · The package · Checks · Finding by finding. Amends ADR-091's Transformation list. Recommended.</li>
+      <li><b>T11 Generating in the same page.</b> While the code is written the header answers "Writing the code — 13 of 22 functions", the facets update, Cancel is the next step; the generation screen's "what it builds on" moves into the side column's "Built on". Recommended; alternative: keep today's full-screen <code>GenerationChain</code>.</li>
+      <li><b>T12 Tool bar order — decided</b> (Sonny, 15.11.2026): Analyze → Economics → Design → Transformation → Documentation → Testing → Delivery. Shown here; built in <code>lib/workflow-steps.ts</code> with the Economics step, not by this one.</li>
+      <li><b>T13 Level wording.</b> The Target facet says "aims at clean core level A" and counts how much of the code has a released target, never "the package is level A": a level belongs to objects SAP's classification names, and the 9 open findings are not graded until decided. Recommended.</li>
+    </ol>
+
+    <h3>What it costs to build</h3>
+    <table>
+      <tr><th>Item</th><th>Answer</th></tr>
+      <tr><td>Files</td><td><code>components/transformation/TransformationObjectPage.tsx</code> (rebuilt around header, flow, open list, package, checks, trace); new <code>TransformationHeader.tsx</code> (answer per state), <code>OpenItems.tsx</code>, <code>ChecksTable.tsx</code>, <code>CodeDrawer.tsx</code>; <code>TransformationFlow.tsx</code> (third column = objects); <code>app/(app)/project/[projectId]/transformation/page.tsx</code> (strips folded into Checks, side by side into the drawer, generation state into the header); <code>lib/transformation-view.ts</code> (<code>releasedTarget</code>, <code>openItems</code>, <code>traceRows</code> from <code>traceability.json</code>, pure); <code>lib/page-anchors.ts</code>; <code>components/StageHeader.tsx</code> + <code>StageViewSwitch.tsx</code> (a <code>oneView</code> prop: note instead of switch — shared with Economics and Documentation); <code>components/demo/DemoWorkspace.tsx</code> (demo state). <code>BuiltOnCard.tsx</code> slims to the side column. DESIGN.md and ADR-091 amended; one new ADR for T1–T11.</td></tr>
+      <tr><td>Engine change</td><td>No. Findings, targets, the scaffold and the checks are as they are.</td></tr>
+      <tr><td>Stored field</td><td>No. The checks, not-written units and activation are on the generation binding already; the trace is <code>traceability.json</code> in the stored package.</td></tr>
+      <tr><td>Rules change</td><td>No.</td></tr>
+      <tr><td>Specs</td><td>Transformation rendered specs (sections and anchors renamed), the page-anchors spec, the view-switch spec (no switch on one-view tools), <code>workflow-style-guard</code> unchanged (title from <code>StageHeader</code>).</td></tr>
+    </table>
+    <h3>Measured vs. illustrative in this picture</h3>
+    <p>Measured from the engine at <code>9cff84dc</code> on the starter example: 19 findings at 22 places; 8 with a released successor (6 distinct; 7 "Verified", LFM1 → I_SUPPLIERPURCHASINGORG "Catalog Match"); PA0105, T16FS, ME21N, GUI_UPLOAD without one; 5 custom tables; COMMIT WORK and AUTHORITY-CHECK on the route; every line number; the four "not carried over" texts. Illustrative: object and file names, the 22 functions and their split, rule ids and decisions, check results, dates and the generated ABAP — no generation ran for this mock-up.</p>
+  </div>
+</aside>
+
+<script>
+/* ---------------- icons ---------------- */
+const IC={
+  info:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>',
+  err:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/></svg>',
+  eng:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.2 4.2l2.8 2.8M17 17l2.8 2.8M1 12h4M19 12h4"/></svg>',
+  ai:'<svg class="i" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  you:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 12 0v1"/></svg>',
+  imp:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+  chev:'<svg class="i chev" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>',
+  code:'<svg class="i" viewBox="0 0 24 24"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>',
+  box:'<svg class="i" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></svg>',
+  db:'<svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg>',
+  file:'<svg class="i" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>',
+  plug:'<svg class="i" viewBox="0 0 24 24"><path d="M9 2v6M15 2v6M6 8h12v4a6 6 0 0 1-12 0zM12 18v4"/></svg>',
+  test:'<svg class="i" viewBox="0 0 24 24"><path d="M9 2v6L4 18a2 2 0 0 0 2 3h12a2 2 0 0 0 2-3L15 8V2M8 2h8M7 14h10"/></svg>',
+  dash:'<svg class="i s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/></svg>',
+  help:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>',
+  check:'<svg class="i s" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+  x:'<svg class="i s" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  dl:'<svg class="i" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>',
+  arr:'<svg class="i s" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+};
+const CH={
+  eng:(n='Engine')=>`<span class="pv eng" title="Written by Clean-Core.io's deterministic engine.">${IC.eng}${n}</span>`,
+  ai:(n='AI-generated')=>`<span class="pv ai" title="Written by a language model (Google Gemini). A draft: not proven.">${IC.ai}${n}</span>`,
+  imp:(n='From SAP\'s catalog')=>`<span class="pv imp" title="Named by SAP's catalog or Clean-Core.io's curated mapping.">${IC.imp}${n}</span>`,
+  you:(n='Your decision')=>`<span class="pv you">${IC.you}${n}</span>`,
+  nd:(n='Not determined')=>`<span class="pv nd">${IC.help}${n}</span>`,
+  err:(n)=>`<span class="pv err">${IC.x}${n}</span>`,
+  stale:(n)=>`<span class="pv stale">${n}</span>`,
+};
+const A=(l)=>`<button type="button" class="anc" title="Open the old code at line ${l}">L${l}</button>`;
+
+/* ---------------- measured: the engine's findings (lib/transformation-view.ts at 9cff84dc) ---------------- */
+const TG={
+  succ:{label:'Released SAP API or CDS view',sub:'6 objects · named by SAP\'s catalog',col:'var(--t-succ)'},
+  route:{label:'Handled by RAP itself',sub:'the project route · in-app ABAP Cloud',col:'var(--t-route)'},
+  none:{label:'No released successor',sub:'PA0105, T16FS, ME21N, GUI_UPLOAD',col:'var(--t-none)'},
+  custom:{label:'Custom table, new home not decided',sub:'5 of your own tables',col:'var(--t-custom)'},
+};
+const KINDS=[
+  ['w-std','Writes an SAP standard table',1,'Critical'],
+  ['r-std','Reads SAP standard tables',9,'High'],
+  ['w-cus','Writes custom tables',2,'High'],
+  ['bdc','Batch input to a transaction',1,'High'],
+  ['commit','Explicit transaction control',1,'Medium'],
+  ['gui','File upload through the SAP GUI',1,'Medium'],
+  ['r-cus','Reads custom tables',3,'Low'],
+  ['auth','Authorization check',1,'Info'],
+];
+const OBJ={
+  logic:{label:'ZCL_POAPPR_LOGIC',sub:'logic class · 14 functions'},
+  pool:{label:'ZBP_POAPPR_R',sub:'behavior pool · 8 functions'},
+  ports:{label:'ZIF_POAPPR_PORTS',sub:'port interface · no implementation'},
+  out:{label:'Not in the package',sub:'becomes part of a Fiori app'},
+};
+/* sev, what, object, lines, target kind, target, type, sure, kind, object in package, function */
+const F=[
+  ['Critical','Writes the requisition status','EBAN',[240],'succ','API_PURCHASEREQUISITION_SRV','OData API','Verified','w-std','pool','save_modified'],
+  ['High','Reads the purchase requisition','EBAN',[61,106],'succ','API_PURCHASEREQUISITION_SRV','OData API','Verified','r-std','logic','read_requisition'],
+  ['High','Reads the vendor','LFA1',[154],'succ','API_BUSINESS_PARTNER','OData API','Verified','r-std','logic','read_vendor'],
+  ['High','Reads the vendor\'s purchasing data','LFM1',[161],'succ','I_SUPPLIERPURCHASINGORG','CDS view','Catalog match','r-std','logic','read_vendor'],
+  ['High','Reads the cost centre','CSKS',[192],'succ','I_CostCenter','CDS view','Verified','r-std','logic','check_account_assignment'],
+  ['High','Reads the info record','EINA',[254],'succ','I_PurchasingInfoRecord','CDS view','Verified','r-std','logic','read_info_record'],
+  ['High','Reads the info record\'s conditions','EINE',[262],'succ','I_PurchasingInfoRecord','CDS view','Verified','r-std','logic','read_info_record'],
+  ['High','Reads the material status per plant','MARC',[274],'succ','I_ProductPlant','CDS view','Verified','r-std','logic','check_material_status'],
+  ['High','Reads the manager from HR data','PA0105',[368,371],'none','No released successor','','—','r-std','ports','find_manager'],
+  ['High','Reads the release strategy','T16FS',[289],'none','No released successor','','—','r-std','ports','release_limit'],
+  ['High','Writes the approval log','ZMM_PO_APPR',[353],'custom','Custom table','','—','w-cus','logic','log_approval'],
+  ['High','Writes the attachment record','ZMM_PO_ATTACH',[531],'custom','Custom table','','—','w-cus','logic','store_attachment'],
+  ['High','Creates the order by batch input','ME21N',[515],'none','No released successor','','—','bdc','ports','create_order_fallback'],
+  ['Medium','Commits the work itself','COMMIT WORK',[243,428],'route','RAP save sequence','','route','commit','pool','save_modified'],
+  ['Medium','Uploads a file from the PC','GUI_UPLOAD',[129],'none','No released successor','','—','gui','out','—'],
+  ['Low','Reads the vendor block list','ZMM_VEND_BLOCK',[222],'custom','Custom table','','—','r-cus','logic','check_vendor'],
+  ['Low','Reads the department head','ZMM_DEPT_HEAD',[357],'custom','Custom table','','—','r-cus','logic','find_department_head'],
+  ['Low','Reads the notification setup','ZMM_NOTIFY_CFG',[383],'custom','Custom table','','—','r-cus','logic','notify_requester'],
+  ['Info','Checks the purchasing group','AUTHORITY-CHECK',[116],'route','RAP authorization','','route','auth','pool','get_instance_authorizations'],
+];
+const NOT_CARRIED=[ /* notGeneratedReasons(), measured, quoted */
+  ['List and file output (GUI_UPLOAD) has no function module to call instead — in the target it becomes a Fiori app with its list and export, which is not part of the generated package.',[129]],
+  ['No released successor for T16FS, PA0105, ME21N — the catalog names none, so there is nothing released to call.',[289,368,371,515]],
+  ['Where the 5 custom tables live after the move is not determined here (ZMM_VEND_BLOCK, ZMM_PO_APPR, ZMM_DEPT_HEAD and 2 more).',[]],
+  ['4 construct kinds the engine did not assess: local function-module call, include whose source was not uploaded, dynamic call or field access, classic list output.',[173,363,386,542]],
+];
+
+/* ---------------- illustrative: the package ---------------- */
+/* id, function, plain, abap lines, rules, object */
+const UNITS=[
+  ['U01','approve','Runs the approval, step by step','41–55','BR-001','pool'],
+  ['U02','get_instance_authorizations','Only the requisition\'s purchasing group may approve','103–122','BR-002','pool'],
+  ['U03','val_requisition','Material present, requisition not blocked','77–98','BR-003 · BR-004','pool'],
+  ['U04','val_vendor','Vendor exists and is not on the block list','151–167, 219–228','BR-005','pool'],
+  ['U05','val_price','Price within 5 % of the info record','303–319','BR-006','pool'],
+  ['U06','det_emergency','Marks emergency requisitions','71–73','BR-007','pool'],
+  ['U07','save_modified','Writes the status and the log in one save','237–245, 342–354','—','pool'],
+  ['U08','request_approval','Asks the department head or manager','401–435','BR-008','pool'],
+  ['U09','read_requisition','Reads the requisition','60–75','—','logic'],
+  ['U10','convert_to_eur','Converts the amount to EUR','169–189','—','logic'],
+  ['U11','check_material_status','Material not blocked in the plant','271–280','BR-009','logic'],
+  ['U12','check_account_assignment','Cost centre or order valid','191–214','BR-010','logic'],
+  ['U13','read_vendor','Reads the vendor and its purchasing data','151–167','—','logic'],
+  ['U14','check_vendor','Vendor block list','219–228','BR-005','logic'],
+  ['U15','read_info_record','Reads the reference price','250–269','—','logic'],
+  ['U16','check_price','Price tolerance against the info record','303–319','BR-006','logic'],
+  ['U17','check_limit','Amount within the release limit','285–298','BR-011 (open)','logic'],
+  ['U18','decide_approval','Emergency up to 50,000 EUR → department head, else manager','324–340','BR-012 (change)','logic'],
+  ['U19','find_department_head','Department head of the cost centre','356–362','—','logic'],
+  ['U20','find_manager','Manager of the requester','365–374','—','logic'],
+  ['U21','notify_requester','Tells the requester','379–395','BR-013 (open)','logic'],
+  ['U22','create_purchase_order','Creates the purchase order','440–496','—','logic'],
+];
+const OBJECTS=[
+  ['ZPOAPPR_R','Root view entity (CDS)','model','eng',2,'Typed fields from the original\'s declarations'],
+  ['ZPOAPPR_C','Projection view (CDS)','model','eng',2,''],
+  ['ZPOAPPR_R','Behavior definition','model','eng',1,'5 validations, 1 determination, 1 action — one validation per carried guard'],
+  ['ZBP_POAPPR_R','Behavior pool','code','mix',4,'8 functions','pool'],
+  ['ZCL_POAPPR_LOGIC','Logic class','code','mix',3,'14 functions — the logic apart from the business object, so it can be unit-tested','logic'],
+  ['ZIF_POAPPR_PORTS','Port interface','code','eng',2,'3 ports, named after what they do; no implementation — yours to decide'],
+  ['ZPOAPPR_SRVD · _SRVB','Service definition and binding','model','eng',4,'OData V4 UI'],
+  ['ZTC_POAPPR','ABAP Unit test class','test','eng',3,'14 cases from the original, expected values from the engine; not run here'],
+  ['ZPOAPPR_REC','Table (abapGit XML)','model','eng',2,''],
+  ['ZPOAPPR','abapGit package','file','eng',1,'package.devc.xml'],
+  ['Package documents','README, STATUS.md, TRACE.md, traceability.json','file','eng',7,''],
+];
+
+/* ---------------- states ---------------- */
+let S='done';
+const ST={
+  done:{written:22,failedUnits:[],stub:[],checks:'pass'},
+  failed:{written:21,failedUnits:['U16','U17'],stub:['U20'],checks:'fail'},
+  running:{written:13,checks:'run'},
+  none:{written:0,checks:'none'},
+  demo:{written:null,checks:'demo'},
+};
+const isPkg=()=>S==='done'||S==='failed';
+
+function render(){
+  const s=ST[S];
+  /* strip — only for what stops the page */
+  /* T4: a failed check is said by the answer itself, not by a strip above it; strips stay for an error, a refused contract, an unsaved draft, a stale package. */
+  document.getElementById('strip').innerHTML='';
+  const name=S==='demo'?'Z_MM_PO_APPROVAL (demo)':'Z_MM_PO_APPROVAL';
+  document.getElementById('crumb').textContent='Emergency purchase approval'+(/\(demo\)$/.test(name)?' (demo)':'');
+  document.getElementById('eyename').textContent=name;
+  document.getElementById('backtxt').textContent=S==='demo'?'Demo workspace · Emergency purchase approval':'My workspace · Emergency purchase approval';
+  document.getElementById('toolck').style.display=S==='done'?'':'none';
+  document.getElementById('toolod').hidden=S!=='failed';
+
+  /* answer */
+  const q=document.getElementById('qchip'),a=document.getElementById('answer'),w=document.getElementById('why'),n=document.getElementById('nextbox');
+  const tgt='a RAP business object in ABAP Cloud — developer extensibility inside your S/4HANA system';
+  if(S==='done'){
+    q.innerHTML=CH.ai('Code: AI-generated draft');
+    a.innerHTML=`Z_MM_PO_APPROVAL is now ${tgt}. 10 of its 19 findings have a released target; 9 wait for your decision and are marked open in the code.`;
+    w.innerHTML=`The engine wrote the frame of 11 objects; a model (Google Gemini) wrote the bodies of 22 functions. abaplint finds no error. Nothing has been activated or tested in an SAP system — that happens in yours.`;
+    n.innerHTML=`<span class="k">Next step</span><a class="btn primary lg" href="#">Write the tests ${IC.arr}</a><a class="btn ghost" href="#">${IC.dl}Download for abapGit</a><span class="sub">Testing writes ABAP Unit scenarios from the original; they run in your own system.</span>`;
+  }else if(S==='failed'){
+    q.innerHTML=CH.ai('Code: AI-generated draft')+' '+CH.err('Not activatable');
+    a.innerHTML=`The code was written but cannot be activated yet: abaplint finds 3 syntax errors in 2 functions, and 1 function was left empty after two repair rounds.`;
+    w.innerHTML=`The target is unchanged — ${tgt}; 10 of 19 findings have a released target. Generating again sends only the failing functions back to the model, at most twice.`;
+    n.innerHTML=`<span class="k">Next step</span><button class="btn primary lg" type="button">Generate again</button><button class="btn ghost" type="button" data-jump="s-checks">See the 3 errors</button><span class="sub">Calls Google Gemini. Your earlier package is replaced only when the new one is stored.</span>`;
+  }else if(S==='running'){
+    q.innerHTML=`<span class="pv ai">${IC.ai}Writing</span>`;
+    a.innerHTML=`Writing the code: 13 of 22 functions done.`;
+    w.innerHTML=`The engine wrote the frame of all 11 objects first. The model now fills the function bodies, at most four at a time; each body is checked against the frame before it is kept. About 2 minutes left — an estimate from the calls so far.`;
+    n.innerHTML=`<span class="k">While it runs</span><button class="btn danger" type="button">Cancel the generation</button><span class="sub">Nothing is stored until the last check ran. Cancelling stores nothing.</span>`;
+  }else if(S==='none'){
+    q.innerHTML=CH.eng('Plan: from the engine');
+    a.innerHTML=`Nothing generated yet. The plan is ready: Z_MM_PO_APPROVAL becomes ${tgt}. 10 of its 19 findings have a released target; 9 need your decision — you can generate now, and they stay marked open.`;
+    w.innerHTML=`The engine will write the frame — business object, validations, test class, one function per routine. A model writes only the function bodies. Three things you can still do would raise the quality; none of them is required.`;
+    n.innerHTML=`<span class="k">Next step</span><button class="btn primary lg" type="button">Generate code with Google Gemini</button><button class="btn ghost" type="button">Before the run: 3 tips</button><span class="sub">Sends the source and the design to Google Gemini through Clean-Core.io.</span>`;
+  }else{
+    q.innerHTML=CH.eng('Plan: from the engine');
+    a.innerHTML=`The demo stops where the model begins. The plan is real: Z_MM_PO_APPROVAL would become ${tgt}; 10 of its 19 findings have a released target, 9 need a decision.`;
+    w.innerHTML=`In your own project a model writes the function bodies into the engine's frame. Writing a convincing one by hand is the one thing this product may never do, so the demo shows no code.`;
+    n.innerHTML=`<span class="k">Next step</span><a class="btn primary lg" href="#">Upload your own program</a><span class="sub">Free. Your code stays in your project.</span>`;
+  }
+
+  /* facets */
+  const bar=`<div class="sbar" role="img" aria-label="8 released API or CDS view, 2 handled by RAP, 4 no released successor, 5 custom tables"><span style="flex:8;background:var(--t-succ)"></span><span style="flex:2;background:var(--t-route)"></span><span style="flex:4;background:var(--t-none)"></span><span style="flex:5;background:var(--t-custom)"></span></div><div class="legend-s"><span><i style="background:var(--t-succ)"></i>8 released API</span><span><i style="background:var(--t-route)"></i>2 by RAP</span><span><i style="background:var(--t-none)"></i>4 none released</span><span><i style="background:var(--t-custom)"></i>5 custom</span></div>`;
+  const f1=`<div class="facet"><div class="t">Target<span class="pin">T13</span></div><div class="v word">ABAP Cloud · RAP</div><div class="n">Developer extensibility, in-app. Aims at clean core <span class="lvl">A</span> — reached only once every call is released.</div><div class="chips">${CH.you('Route signed off in Design')}</div></div>`;
+  const f2=`<div class="facet"><div class="t">Released target<span class="pin">T3</span></div><div class="v">10 <small>of 19 findings</small></div>${bar}</div>`;
+  let f3,f4;
+  if(S==='done'){
+    f3=`<div class="facet"><div class="t">Code written</div><div class="v">22 <small>of 22 functions</small></div><div class="n">Frame by the engine, bodies by the model · 11 objects, 31 files</div><div class="chips">${CH.eng('Frame')}${CH.ai('Bodies')}</div></div>`;
+    f4=`<div class="facet"><div class="t">Checks</div><div class="v">5 <small>passed · 0 failed</small></div><div class="n">2 not run here: activation and ABAP Unit happen in your SAP system.</div></div>`;
+  }else if(S==='failed'){
+    f3=`<div class="facet"><div class="t">Code written</div><div class="v">21 <small>of 22 functions</small></div><div class="n">1 left empty after two repair rounds (find_manager)</div><div class="chips">${CH.eng('Frame')}${CH.ai('Bodies')}</div></div>`;
+    f4=`<div class="facet"><div class="t">Checks</div><div class="v bad">1 <small>failed · 4 passed</small></div><div class="n">abaplint: 3 syntax errors in check_price and check_limit. 2 not run here.</div></div>`;
+  }else if(S==='running'){
+    f3=`<div class="facet"><div class="t">Code written</div><div class="v">13 <small>of 22 functions</small></div><div class="prog str"><span style="width:59%"></span></div><div class="n">Frame done (engine) · bodies in progress (model)</div></div>`;
+    f4=`<div class="facet"><div class="t">Checks</div><div class="v nd">Not run yet</div><div class="n">They run when the last function is written, before anything is stored.</div></div>`;
+  }else if(S==='none'){
+    f3=`<div class="facet"><div class="t">Code written</div><div class="v nd">Not yet</div><div class="n">22 functions planned in 11 objects, from the 24 routines of the original.</div></div>`;
+    f4=`<div class="facet"><div class="t">Checks</div><div class="v nd">Nothing to check</div><div class="n">abaplint, body guards, lints and file formats run on the generated code.</div></div>`;
+  }else{
+    f3=`<div class="facet"><div class="t">Code written</div><div class="v nd">None in a demo</div><div class="n">The demo makes no model call.</div></div>`;
+    f4=`<div class="facet"><div class="t">Checks</div><div class="v nd">None in a demo</div><div class="n">They check generated code, and a demo has none.</div></div>`;
+  }
+  document.getElementById('facets').innerHTML=f1+f2+f3+f4;
+
+  /* anchor bar */
+  document.getElementById('pabitems').innerHTML=[
+    ['s-flow','Findings',''],
+    ['s-open','Open','<span class="pab-c o">5</span>'],
+    ['s-package','Package',isPkg()?'<span class="pab-c">11</span>':''],
+    ['s-checks','Checks',S==='failed'?'<span class="pab-c o">1 failed</span>':''],
+    ['s-trace','Trace','<span class="pab-c">19</span>'],
+  ].map(([id,t,c],i)=>`<a href="#${id}"${i===0?' aria-current="true"':''}>${t}${c}</a>`).join('');
+  bindAnchors();
+
+  renderFlow();renderOpen();renderPkg();renderChecks();renderTrace();renderSide();
+}
+
+/* ---------------- flow ---------------- */
+let PICK='succ';
+function renderFlow(){
+  const svg=document.getElementById('flowsvg');
+  const W=1000,top=30,gap=8,unit=13.5;
+  const colX=[0,400,745],nodeW=12,LX=232;
+  const left=KINDS.map(([id,l,c])=>({id,l,c}));
+  const mid=['succ','route','none','custom'].map(k=>({id:k,l:TG[k].label,s:TG[k].sub,c:F.filter(f=>f[4]===k).length}));
+  const right=['logic','pool','ports','out'].map(k=>({id:k,l:OBJ[k].label,s:OBJ[k].sub,c:F.filter(f=>f[9]===k).length}));
+  const place=(arr,g)=>{let y=top;arr.forEach(n=>{n.y=y;n.h=n.c*unit;y+=n.h+g})};
+  place(left,gap);place(mid,30);place(right,30);
+  const H=Math.max(...[left,mid,right].map(a=>a[a.length-1].y+a[a.length-1].h))+(isPkg()?34:52);
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  const col=k=>TG[k].col;
+  let out=`<text class="col-h" x="0" y="14">WHAT THE OLD CODE DOES</text><text class="col-h" x="${colX[1]}" y="14">TARGET</text><text class="col-h" x="${colX[2]}" y="14">${isPkg()?'WHERE IT IS NOW':'WHERE IT WILL GO'}</text>`;
+  // links left->mid
+  const lo={},mi={},mo={},ro={};
+  left.forEach(n=>lo[n.id]=n.y);mid.forEach(n=>{mi[n.id]=n.y;mo[n.id]=n.y});right.forEach(n=>ro[n.id]=n.y);
+  const band=(x1,y1,x2,y2,h,c,k)=>{const cx=(x1+x2)/2;return `<path class="band" data-t="${k}" d="M${x1},${y1} C${cx},${y1} ${cx},${y2} ${x2},${y2} L${x2},${y2+h} C${cx},${y2+h} ${cx},${y1+h} ${x1},${y1+h} Z" fill="${c}" fill-opacity="${PICK&&PICK!==k?0.12:0.32}"/>`};
+  const lm={};F.forEach(f=>{const key=f[8]+'|'+f[4];lm[key]=(lm[key]||0)+1});
+  left.forEach(n=>['succ','route','none','custom'].forEach(t=>{const c=lm[n.id+'|'+t];if(!c)return;const h=c*unit;out+=band(LX+nodeW,lo[n.id],colX[1],mi[t],h,col(t),t);lo[n.id]+=h;mi[t]+=h}));
+  const mr={};F.forEach(f=>{const key=f[4]+'|'+f[9];mr[key]=(mr[key]||0)+1});
+  const future=!isPkg();
+  ['succ','route','none','custom'].forEach(t=>right.forEach(r=>{const c=mr[t+'|'+r.id];if(!c)return;const h=c*unit;out+=band(colX[1]+nodeW,mo[t],colX[2],ro[r.id],h,col(t),t).replace('class="band"',`class="band"${future?' stroke-dasharray="4 3" stroke="'+col(t)+'"':''}`);mo[t]+=h;ro[r.id]+=h}));
+  // nodes
+  left.forEach(n=>{out+=`<rect x="${LX}" y="${n.y}" width="${nodeW}" height="${n.h}" rx="2" fill="#334155"/><text class="nd-l" x="${LX-8}" y="${n.y+n.h/2+4}" text-anchor="end">${n.l}<tspan class="nd-s" dx="6">${n.c}</tspan></text>`});
+  mid.forEach(n=>{out+=`<g class="tn" tabindex="0" role="button" data-t="${n.id}" aria-label="${n.c} findings: ${n.l}"><rect x="${colX[1]}" y="${n.y}" width="${nodeW}" height="${n.h}" rx="2" fill="${col(n.id)}"/><rect x="${colX[1]+16}" y="${n.y-2}" width="300" height="${Math.max(n.h+4,36)}" fill="transparent"/><text class="nd-l" x="${colX[1]+20}" y="${n.y+14}">${n.c} · ${n.l}</text><text class="nd-s" x="${colX[1]+20}" y="${n.y+29}">${n.s}</text></g>`});
+  right.forEach(n=>{const op=future?' opacity=".55"':'';out+=`<rect x="${colX[2]}" y="${n.y}" width="${nodeW}" height="${n.h}" rx="2" fill="${n.id==='out'?'#d1d5db':'#334155'}"${op}/><text class="nd-l" x="${colX[2]+20}" y="${n.y+14}"${op} style="font-family:${n.id==='out'?'var(--sans)':'var(--mono)'};font-size:12.5px">${n.l}</text><text class="nd-s" x="${colX[2]+20}" y="${n.y+29}">${n.c} · ${n.s}</text>`});
+  if(future)out+=`<text class="nd-s" x="${colX[2]}" y="${H-2}">${S==='demo'?'Planned by the engine — the demo writes no code.':S==='running'?'Objects written by the engine; bodies still being filled.':'Planned by the engine — nothing written yet.'}</text>`;
+  svg.innerHTML=out;
+  svg.querySelectorAll('.tn,.band').forEach(g=>{const go=()=>{PICK=g.dataset.t;renderFlow()};g.addEventListener('click',go);g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();go()}})});
+  // phone list
+  document.getElementById('flowlist').innerHTML=`<div class="chiprow" role="group" aria-label="Targets">${mid.map(m=>`<button class="tchip" type="button" data-t="${m.id}" aria-pressed="${PICK===m.id}"><i style="background:${col(m.id)}"></i>${m.c} · ${m.l}</button>`).join('')}</div>`;
+  document.querySelectorAll('#flowlist .tchip').forEach(b=>b.onclick=()=>{PICK=b.dataset.t;renderFlow()});
+  // picked findings
+  const rows=F.filter(f=>f[4]===PICK);
+  const sureTxt=f=>f[4]==='succ'?`${f[5]} · ${f[6]}${f[7]==='Catalog match'?' · catalog match':''}`:f[4]==='route'?f[5]:f[4]==='custom'?'home not decided':'nothing released to call';
+  document.getElementById('flowpick').innerHTML=`<div class="ph"><i style="width:10px;height:10px;border-radius:2px;background:${col(PICK)};display:inline-block"></i>${rows.length} · ${TG[PICK].label}${PICK==='succ'?' '+CH.imp():''}${PICK==='none'||PICK==='custom'?' '+CH.nd('Open'):''}</div><ul>${rows.map(f=>`<li>${f[3].map(A).join(' ')}<span class="w"><b>${f[1]}</b> <span>(${f[2]}) → ${sureTxt(f)}</span></span></li>`).join('')}</ul>`;
+}
+
+/* ---------------- open ---------------- */
+function renderOpen(){
+  document.getElementById('open-lead').textContent=isPkg()
+    ?'What the code carries over as the original did, or not at all, until someone decides. Each is marked in the code and listed in STATUS.md.'
+    :'What a generation would carry over as the original did, or not at all, until someone decides. You can generate before deciding — these stay marked open.';
+  const it=[
+    ['5 custom tables have no new home','ZMM_PO_APPR, ZMM_PO_ATTACH, ZMM_VEND_BLOCK, ZMM_DEPT_HEAD, ZMM_NOTIFY_CFG. The code reads and writes them as before. <b>Decide</b> whether they move into the business object, stay, or become configuration.','Decide in Design','Design · Custom persistence'],
+    ['3 calls have no released successor','The manager from HR data (PA0105), the release strategy (T16FS), the batch-input fallback to ME21N. The code calls them through a port with no implementation.','Decide in Design','Design · Calls without successor'],
+    ['The file upload and the result list become a Fiori app','GUI_UPLOAD (L129) and the classic list (L540–552) are not part of this package.','See the app in Design','Design · User interface'],
+    ['4 constructs were not assessed','A local function-module call (L173), an include whose source is missing (z_mm_po_notify, L363), a dynamic call (L386), classic list output (L542).','Upload the include','Analyze · Not determined'],
+    ['2 rules have no decision','BR-011 release limit, BR-013 notification. Implemented as the original and marked open.','Decide the rules','Business view · Rules'],
+  ];
+  document.getElementById('olist').innerHTML=it.map((x,i)=>`<li><span class="no">${i+1}</span><div><p class="tt">${x[0]}</p><p class="dd">${x[1]}</p></div><div class="act"><a class="btn ghost sm" href="#">${x[2]} ${IC.arr}</a><span class="xs muted">${x[3]}</span></div></li>`).join('');
+}
+
+/* ---------------- package ---------------- */
+function renderPkg(){
+  const lead=document.getElementById('pkg-lead'),act=document.getElementById('pkg-actions'),b=document.getElementById('pkgbody');
+  if(S==='demo'){lead.textContent='In a real project the engine writes the frame and a model fills the function bodies.';act.innerHTML='';b.innerHTML=`<div class="strip inf" style="border-style:dashed">${IC.info}<span><b>The demo stops where the model begins.</b> The transformed code comes out of a model call against your source. Writing a convincing one by hand is the one thing this product may never do — what you see above is what the deterministic engine produced.</span></div>`;return}
+  if(S==='none'){lead.textContent='Planned by the engine: 11 objects, 22 functions — one per routine the original reaches, small helpers folded into their caller.';act.innerHTML='';
+    b.innerHTML=`<ul class="pkg">${OBJECTS.slice(0,9).map(o=>`<li><div style="display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:12px;align-items:center;padding:8px 12px"><span class="ico ${o[2]}">${o[2]==='model'?IC.db:o[2]==='test'?IC.test:o[2]==='file'?IC.file:IC.code}</span><span><span class="nm">${o[0]}</span><span class="ds">${o[1]}${o[5]?' · '+o[5]:''}</span></span><span class="xs muted">not written yet</span></div></li>`).join('')}</ul>`;return}
+  const s=ST[S];
+  lead.innerHTML=S==='running'?'The engine wrote every object\'s frame; the model is filling the function bodies.':'11 objects in 31 files, in abapGit\'s format for import into your system. Open an object for its functions and files; <b>Code</b> shows the old ABAP beside the new function.';
+  act.innerHTML=S==='running'?'':`<button class="btn ghost sm" type="button">${IC.dl}Download for abapGit</button><button class="btn ghost sm" type="button">Copy all code</button>`;
+  const fnRow=u=>{
+    const st=S==='running'?(Number(u[0].slice(1))<=13?'done':'wait'):s.stub.includes(u[0])?'stub':s.failedUnits.includes(u[0])?'fail':'done';
+    const who=st==='wait'?`<span class="xs muted">waiting</span>`:st==='stub'?CH.nd('Left empty'):CH.ai('Body');
+    const flag=st==='fail'?CH.err('abaplint error'):'';
+    return `<div class="fn"><span class="f">${u[1]}<span>${u[2]}</span></span><span class="src">ABAP L${u[3]}${u[4]!=='—'?` · <span class="rid">${u[4]}</span>`:''}</span><span>${who} ${flag}</span><span>${st==='wait'?'':`<button class="btn ghost sm" type="button" data-code="${u[0]}">${IC.code}Code</button>`}</span></div>`};
+  b.innerHTML=`<ul class="pkg">${OBJECTS.map((o,i)=>{
+    const fns=o[6]?UNITS.filter(u=>u[5]===o[6]):[];
+    const hasFail=fns.some(u=>S==='failed'&&(s.failedUnits.includes(u[0])||s.stub.includes(u[0])));
+    const who=o[3]==='mix'?CH.eng('Frame')+CH.ai('Bodies'):CH.eng('Engine');
+    return `<li><details><summary><span class="ico ${o[2]}">${o[2]==='model'?IC.db:o[2]==='test'?IC.test:o[2]==='file'?IC.file:IC.code}</span><span><span class="nm">${o[0]}</span><span class="ds">${o[1]}${o[5]?' · '+o[5]:''}</span></span><span class="who">${hasFail?CH.err('needs work'):''}${who}</span>${IC.chev}</summary><div class="fns">${fns.map(fnRow).join('')}<ul class="files">${fileList(o).map(f=>`<li><code>${f[0]}</code><span>${f[1]}</span></li>`).join('')}</ul></div></details></li>`}).join('')}</ul>`;
+  b.querySelectorAll('[data-code]').forEach(x=>x.onclick=()=>openCode(x.dataset.code));
+}
+function fileList(o){
+  const n=o[0].toLowerCase().replace(/ .*/,'');
+  const map={
+    'zpoappr_r':o[1].startsWith('Behavior')?[['src/zpoappr_r.bdef.asbdef','behavior definition · 64 lines'],['src/zpoappr_r.bdef.xml','abapGit metadata']]:[['src/zpoappr_r.ddls.asddls','CDS data definition · 41 lines'],['src/zpoappr_r.ddls.xml','abapGit metadata']],
+    'zpoappr_c':[['src/zpoappr_c.ddls.asddls','projection · 28 lines'],['src/zpoappr_c.ddls.xml','abapGit metadata']],
+    'zbp_poappr_r':[['src/zbp_poappr_r.clas.abap','class · 12 lines'],['src/zbp_poappr_r.clas.locals_imp.abap','local handler · 318 lines'],['src/zbp_poappr_r.clas.locals_def.abap','definitions · 46 lines'],['src/zbp_poappr_r.clas.xml','abapGit metadata']],
+    'zcl_poappr_logic':[['src/zcl_poappr_logic.clas.abap','class · 486 lines'],['src/zcl_poappr_logic.clas.testclasses.abap','—'],['src/zcl_poappr_logic.clas.xml','abapGit metadata']],
+    'zif_poappr_ports':[['src/zif_poappr_ports.intf.abap','interface · 31 lines'],['src/zif_poappr_ports.intf.xml','abapGit metadata']],
+    'zpoappr_srvd':[['src/zpoappr_srvd.srvd.srvdsrv','service definition'],['src/zpoappr_srvd.srvd.xml','abapGit metadata'],['src/zpoappr_srvb.srvb.xml','service binding'],['…','1 more']],
+    'ztc_poappr':[['src/ztc_poappr.clas.testclasses.abap','14 test methods · 402 lines'],['src/ztc_poappr.clas.abap','class'],['src/ztc_poappr.clas.xml','abapGit metadata']],
+    'zpoappr_rec':[['src/zpoappr_rec.tabl.xml','table'],['src/zpoappr_rec.tabl.xml — fields','12 fields']],
+    'zpoappr':[['src/package.devc.xml','package']],
+    'package':[['README.md',''],['STATUS.md','how the code was built'],['TRACE.md','function → ABAP lines → rules'],['traceability.json','the trace, for tools'],['abaplint.json','repeat the check'],['checks/abaplint.md',''],['.abapgit.xml','']],
+  };
+  return map[n]||[];
+}
+
+/* ---------------- checks ---------------- */
+function renderChecks(){
+  const b=document.getElementById('checksbody');
+  if(S==='demo'){b.innerHTML=`<p class="sm muted" style="margin-top:10px">None in a demo — the checks read generated code, and a demo has none.</p>`;return}
+  const R={pass:'<span class="res pass"><i></i>Passed</span>',fail:'<span class="res fail"><i></i>Failed</span>',nr:'<span class="res nr"><i></i>Not run here</span>',run:'<span class="res run"><i></i>Running</span>',wait:'<span class="res nr"><i></i>After the fills</span>',none:'<span class="res nr"><i></i>Nothing to check</span>'};
+  const st=k=>S==='none'?R.none:S==='running'?(k==='guard'?R.run:R.wait):R[k==='guard'?'pass':k];
+  const rows=[
+    ['abaplint — can it be activated?','Clean-Core.io\'s server, when the package was stored',S==='failed'?R.fail:st('pass'),S==='failed'?'<b>3 syntax errors</b> in 2 functions: check_price (2), check_limit (1). 0 parser errors. <button class="lnk" type="button" data-code="U16">Open check_price</button>':'0 parser and 0 syntax errors (abaplint 2.120.54, shipped config). 3 findings concern SAP objects the check cannot see (I_ProductPlant, I_PurchasingInfoRecord, I_CostCenter) and are not counted as errors. Not an activation: only your system activates.'],
+    ['Body guards','This browser, during the generation',S==='failed'?R.pass:st('guard'),S==='failed'?'21 bodies kept the engine\'s frame; 1 refused twice and left empty (find_manager).':'Every body kept the engine\'s frame: no signature, guard or marker changed.'],
+    ['Code lints','This browser',st('pass'),'0 findings of the patterns earlier reviews flagged.'],
+    ['Hard-coded values','This browser',st('pass'),'No fixed document or partner number in the business logic.'],
+    ['abapGit file formats','This browser',st('pass'),'31 files in abapGit\'s serializer structure. Not import-verified in an SAP system.'],
+    ['Activation','Your SAP system',R.nr,'Import the package with abapGit into a test system and activate it there.'],
+    ['ABAP Unit — 14 cases from the original','Your SAP system',R.nr,'Testing writes them with the expected results of the original; they run only in your system.'],
+    ['Check by hand','You — kept in this browser only',S==='none'?R.none:'<span class="res nr"><i></i>6 not ticked</span>','6 places the engine asks a person to look at. A personal checklist, not a sign-off. <button class="lnk" type="button">Open the list</button>'],
+  ];
+  b.innerHTML=`<table class="chk"><thead><tr><th>Check</th><th>Who ran it</th><th>Result</th><th>What it says</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td><span class="s" style="font-size:12.5px">${r[1]}</span></td><td>${r[2]}</td><td>${r[3]}</td></tr>`).join('')}</tbody></table>
+  <p class="foot-note">Every check except abaplint is the report of the browser that generated the package: Clean-Core.io's server stored it as sent and did not run those checks again. A check is "passed" only when it ran; nothing on this page says the code is tested or deployable.</p>`;
+  b.querySelectorAll('[data-code]').forEach(x=>x.onclick=()=>openCode(x.dataset.code));
+}
+
+/* ---------------- trace ---------------- */
+function renderTrace(){
+  const lvl=f=>f[4]==='succ'?'<span class="lvl">A</span>':f[4]==='route'?'<span class="lvl">A</span>':'<span class="lvl nd">—</span>';
+  const where=f=>f[9]==='out'?'<span class="muted">not in the package</span>':S==='demo'?'<span class="muted">none in a demo</span>':`${isPkg()?'':'<span class="muted">planned: </span>'}<span class="mono" style="font-size:12px">${OBJ[f[9]].label}</span><span class="s">${f[10]}</span>`;
+  document.getElementById('trace').innerHTML=`<thead><tr><th>Finding</th><th>Old code</th><th>Target</th><th>How sure</th><th>Level</th><th>Where in the new code</th></tr></thead><tbody>${F.map(f=>`<tr class="${f[4]==='none'||f[4]==='custom'?'open':''}"><td><span class="sev ${({Critical:'crit',High:'high',Medium:'med',Low:'low',Info:'info'})[f[0]]}"><i></i>${f[0]}</span> ${f[1]}<span class="s mono">${f[2]}</span></td><td>${f[3].map(A).join(' ')}</td><td class="obj">${f[5]}${f[6]?`<span class="s" style="font-family:var(--sans)">${f[6]}</span>`:''}</td><td>${f[4]==='succ'?(f[7]==='Verified'?'Verified by SAP\'s catalog':'Catalog match'):f[4]==='route'?'Project route':'<span class="muted">Not determined</span>'}</td><td>${lvl(f)}</td><td>${where(f)}</td></tr>`).join('')}</tbody>`;
+}
+
+/* ---------------- side ---------------- */
+function renderSide(){
+  const b=(c,t)=>`<span class="b ${c}">${t}</span>`;
+  let steps;
+  if(S==='done')steps=[[b('done',IC.check),'Plan by the engine','19 findings at 22 places'],[b('done',IC.check),'Code written','22 functions — frame by the engine, bodies by the model'],[b('done',IC.check),'Checked here','abaplint: no error; 5 checks passed'],[b('','4'),'Activated','only in your SAP system, after the abapGit import'],[b('','5'),'Tested','Testing writes ABAP Unit; it runs in your system']];
+  else if(S==='failed')steps=[[b('done',IC.check),'Plan by the engine','19 findings at 22 places'],[b('','2'),'Generated · partial','21 of 22 functions written; find_manager left empty'],[b('fail',IC.x),'Generated · not activatable','abaplint: 3 syntax errors — generate again before testing'],[b('','4'),'Activated','only in your SAP system'],[b('','5'),'Tested','Testing writes ABAP Unit; it runs in your system']];
+  else if(S==='running')steps=[[b('done',IC.check),'Plan by the engine','19 findings at 22 places'],[b('done',IC.check),'Frame written by the engine','11 objects'],[b('run','3'),'Bodies by the model','13 of 22 · about 2 min left'],[b('','4'),'Checked here','after the last function'],[b('','5'),'Activated and tested','only in your SAP system']];
+  else steps=[[b('done',IC.check),'Plan by the engine','19 findings at 22 places'],[b('','2'),'Code written',S==='demo'?'not in a demo':'not yet'],[b('','3'),'Checked here','—'],[b('','4'),'Activated and tested','only in your SAP system']];
+  document.getElementById('steps').innerHTML=steps.map(s=>`<li>${s[0]}<span>${s[1]}<span class="s">${s[2]}</span></span></li>`).join('');
+  const gen=isPkg()?'<li><span class="r1"><b>Generated 15 Nov 2026, 09:41</b>'+CH.ai('Google Gemini')+'</span><span class="r2">took 4:12 min · 31 model calls on the community key</span></li>':S==='running'?'<li><span class="r1"><b>Started 15 Nov 2026, 09:37</b></span><span class="r2">reads what is listed below, as it was at the start</span></li>':'';
+  document.getElementById('builton').innerHTML=gen+[
+    ['Signed analysis of 14 Nov 2026','Clean Core Score 40 · 19 findings',CH.eng('Signed run')],
+    ['Route: in-app ABAP Cloud','signed off in Design, 14 Nov 2026 — a self-declaration',CH.you()],
+    ['12 business rules read from the code','9 keep · 1 change · 2 open',S==='done'?CH.stale('1 changed since'):CH.you('Partly decided')],
+    ['Released successors','SAP catalog 2024.FPS02 + Cloudification Repository',CH.imp('SAP')],
+  ].map(x=>`<li><span class="r1"><b>${x[0]}</b>${x[2]}</span><span class="r2">${x[1]}</span></li>`).join('')+(S==='done'?'<li><span class="r2">A rule changed after this code was written (BR-012). The code still follows the old decision — <button class="lnk xs" type="button">generate again</button> to follow the new one.</span></li>':'');
+  document.getElementById('ng').innerHTML=NOT_CARRIED.map(x=>`<li><svg class="i s" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke-dasharray="3 3"/></svg><span>${x[0]} ${x[1].map(A).join(' ')}</span></li>`).join('');
+}
+
+/* ---------------- code drawer ---------------- */
+const OLD_PRICE=[[303,'FORM check_price.'],[304,'  DATA: lv_price   TYPE bapicurext,'],[305,'        lv_ref     TYPE bapicurext,'],[306,'        lv_dev_pct TYPE p LENGTH 7 DECIMALS 2.'],[307,''],[308,'  CHECK gv_ref_price > 0.'],[309,'  lv_price = gs_eban-preis / gs_eban-peinh.'],[310,'  lv_ref   = gv_ref_price.'],[311,'  lv_dev_pct = ( lv_price - lv_ref )'],[312,'             * 100 / lv_ref.'],[313,''],[314,'  "Tolerance agreed with purchasing'],[315,'  IF lv_dev_pct > 5.'],[316,'    PERFORM hold_for_buyer.'],[317,'    RETURN.'],[318,'  ENDIF.'],[319,'ENDFORM.']];
+const NEW_PRICE=[
+  ['eng','  "! Price within the tolerance of the purchasing info record.'],
+  ['eng','  "! ABAP: Z_MM_PO_APPROVAL L303–L319 (FORM CHECK_PRICE)'],
+  ['eng','  "! Rules: BR-006 (keep) · Guards: G-0315'],
+  ['eng','  METHOD check_price.'],
+  ['eng','    "! @cc-fill BEGIN U16 4be0a17c'],
+  ['ai','    CHECK is_ctx-ref_price > 0.'],
+  ['ai','    DATA(lv_price) = is_req-price / is_req-price_unit.'],
+  ['ai','    DATA(lv_dev_pct) = CONV decfloat34('],
+  ['ai','      ( lv_price - is_ctx-ref_price ) * 100 / is_ctx-ref_price ).'],
+  ['ai','    "Tolerance agreed with purchasing'],
+  ['ai','    IF lv_dev_pct > 5.'],
+  ['ai','      rs_result = VALUE #( hold_for_buyer = abap_true'],
+  ['ai','                           message = TEXT-006 ).'],
+  ['ai','      RETURN.'],
+  ['ai','    ENDIF.'],
+  ['eng','    "! @cc-fill END U16'],
+  ['eng','  ENDMETHOD.'],
+];
+function hl(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;')
+  .replace(/("![^\n]*|^\s*"[^\n]*|^\*.*)$/,'<span class="cm">$1</span>')
+  .replace(/\b(FORM|ENDFORM|DATA|TYPE|LENGTH|DECIMALS|CHECK|IF|ENDIF|PERFORM|RETURN|METHOD|ENDMETHOD|VALUE|CONV)\b(?![^<]*<\/span>)/g,'<span class="kw">$1</span>')
+  .replace(/('[^']*'|\b\d+\b)(?![^<]*<\/span>)/g,'<span class="lit">$1</span>')}
+function openCode(id){
+  const u=UNITS.find(x=>x[0]===id)||UNITS[15];
+  const isPrice=u[1]==='check_price';
+  const failed=S==='failed'&&(ST.failed.failedUnits.includes(u[0]));
+  const stub=S==='failed'&&ST.failed.stub.includes(u[0]);
+  document.getElementById('code-h').textContent=u[1];
+  document.getElementById('code-chips').innerHTML=(stub?CH.nd('Left empty'):CH.ai('Body'))+' '+CH.eng('Frame')+(failed?' '+CH.err('abaplint: syntax error'):'');
+  const oldL=isPrice?OLD_PRICE:[[Number(u[3].split(/[–,]/)[0]),'FORM '+u[1]+'.'],[0,'  …'],[0,'ENDFORM.']];
+  const newL=isPrice?NEW_PRICE:[['eng',`  "! ${u[2]}.`],['eng',`  "! ABAP: Z_MM_PO_APPROVAL L${u[3]}`],['eng',`  METHOD ${u[1]}.`],['eng',`    "! @cc-fill BEGIN ${u[0]}`],stub?['eng',`    RAISE EXCEPTION NEW zcx_poappr_not_filled( unit = '${u[0]}' ).`]:['ai','    …'],['eng',`    "! @cc-fill END ${u[0]}`],['eng','  ENDMETHOD.']];
+  const errLines=failed&&isPrice?[7,8]:[];
+  document.getElementById('code-body').innerHTML=`
+    <div class="trail"><span class="st">Finding · Price check against EINA/EINE ${A(254)} ${A(262)}</span>${IC.arr}<span class="st">Target · I_PurchasingInfoRecord ${CH.imp()}</span>${IC.arr}<span class="st mono">ZCL_POAPPR_LOGIC=&gt;${u[1]}</span>${IC.arr}<span class="st">Rule <span class="rid">${u[4]}</span></span></div>
+    ${failed?`<div class="strip err" style="margin:0 0 12px">${IC.err}<span><b>abaplint, line 8:</b> "DECFLOAT34" — the CONV expression's closing bracket is missing; <b>line 9:</b> statement not closed. Written by the model; generating again sends this function back.</span></div>`:''}
+    <div class="cmp">
+      <div><div class="pane-h">Old · Z_MM_PO_APPROVAL · ABAP · L${u[3]}</div><pre class="code">${oldL.map(([n,t])=>`<span class="ln"><b>${n||''}</b>${hl(t)}</span>`).join('')}</pre></div>
+      <div><div class="pane-h">New · ZCL_POAPPR_LOGIC · ABAP Cloud ${CH.ai('AI-generated draft')}</div><pre class="code">${newL.map(([w,t],i)=>`<span class="ln ${errLines.includes(i+1)?'err':w}"><b>${i+1}</b>${hl(t)}</span>`).join('')}</pre>
+      <div class="keyrow"><span><i style="box-shadow:inset 3px 0 0 #60a5fa;background:#030712"></i>written by the engine</span><span><i style="box-shadow:inset 3px 0 0 #f59e0b;background:rgb(217 119 6 / .3)"></i>written by the model</span>${failed?'<span><i style="background:rgb(185 28 28 / .5)"></i>abaplint error</span>':''}</div></div>
+    </div>
+    <p class="foot-note">Not compiled in an SAP system and not run here. The method header — ABAP lines, rule, guard — and the markers are the engine's; between the markers is the model's. ${isPrice?'Note: the original\'s packed decimal (p LENGTH 7 DECIMALS 2) became decfloat34 — check it by hand.':''}</p>`;
+  document.getElementById('p-code').hidden=false;scrim.classList.add('on');
+}
+
+/* ---------------- chrome ---------------- */
+const scrim=document.getElementById('scrim');
+function closeAll(){document.querySelectorAll('.drawer').forEach(d=>d.hidden=true);scrim.classList.remove('on')}
+scrim.onclick=closeAll;document.querySelectorAll('[data-close]').forEach(b=>b.onclick=closeAll);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
+document.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>{document.getElementById(b.dataset.open).hidden=false;scrim.classList.add('on')});
+document.querySelectorAll('[data-state]').forEach(b=>b.addEventListener('click',()=>{S=b.dataset.state;document.querySelectorAll('[data-state]').forEach(x=>x.classList.toggle('on',x===b));render()}));
+document.getElementById('pins').onclick=e=>{const off=document.body.classList.toggle('nopins');e.target.textContent='Decision pins: '+(off?'off':'on')};
+document.addEventListener('click',e=>{const j=e.target.closest('[data-jump]');if(j){e.preventDefault();const t=document.getElementById(j.dataset.jump);t&&t.scrollIntoView({block:'start'})}});
+/* "On this page": scroll with offset, focus the heading, follow the scroll position */
+let anchors=[];
+function markAnchor(cur){anchors.forEach(a=>{if(a===cur)a.setAttribute('aria-current','true');else a.removeAttribute('aria-current')});cur.scrollIntoView({block:'nearest',inline:'nearest'})}
+function bindAnchors(){anchors=[...document.querySelectorAll('#anchors .pab-items a')];
+  anchors.forEach(a=>a.addEventListener('click',e=>{e.preventDefault();const t=document.querySelector(a.getAttribute('href'));if(!t)return;if(t.tagName==='DETAILS')t.open=true;
+    t.scrollIntoView({block:'start'});const h=t.tagName==='DETAILS'?t.querySelector('summary'):t.querySelector('h2');if(h){h.setAttribute('tabindex','-1');h.focus({preventScroll:true})}markAnchor(a)}))}
+addEventListener('scroll',()=>{if(!anchors.length)return;let cur=anchors[0];anchors.forEach(a=>{const t=document.querySelector(a.getAttribute('href'));if(t&&t.getBoundingClientRect().top<200)cur=a});if(cur.getAttribute('aria-current')!=='true')markAnchor(cur)},{passive:true});
+/* deep links for screenshots: ?state=failed&open=p-owner&code=U16&trace=1 */
+const q=new URLSearchParams(location.search);
+if(q.get('state')&&ST[q.get('state')]){S=q.get('state');document.querySelectorAll('[data-state]').forEach(x=>x.classList.toggle('on',x.dataset.state===S))}
+render();
+if(q.get('open')){const d=document.getElementById(q.get('open'));if(d){d.hidden=false;scrim.classList.add('on')}}
+if(q.get('code'))openCode(q.get('code'));
+if(q.get('trace'))document.getElementById('s-trace').open=true;
+if(q.get('nopins'))document.body.classList.add('nopins');
+</script>
+<script>
+/* ONE FAMILY (15.11.2026) — byte-identical in the six tool mock-ups.
+   Measures the sticky mock-up bar into --mock-h (0 when it is not sticky),
+   hides "On this page" when a page has one section, keeps the tool bar
+   and the section bar to one row (fade while more
+   items wait to the right, the current tool in view) and labels the cells of stacking tables. */
+(function(){
+  var root=document.documentElement, raf=0;
+  function mockH(){var m=document.querySelector('.mock');var on=m&&getComputedStyle(m).position==='sticky'&&getComputedStyle(m).display!=='none';root.style.setProperty('--mock-h',(on?m.offsetHeight:0)+'px');}
+  function edges(el){el.classList.toggle('start',el.scrollLeft<=1);el.classList.toggle('end',el.scrollLeft+el.clientWidth>=el.scrollWidth-2);}
+  function fade(el){var ovf=el.scrollWidth>el.clientWidth+1;el.classList.toggle('ovf',ovf);edges(el);
+    if(!el.dataset.wired){el.dataset.wired='1';el.addEventListener('scroll',function(){edges(el);},{passive:true});}return ovf;}
+  function tools(first){document.querySelectorAll('.tools').forEach(function(t){
+    if(!t.dataset.wired)first=true;
+    t.querySelectorAll('.tool .ck').forEach(function(x){x.setAttribute('aria-label','done');if(!x.querySelector('title'))x.insertAdjacentHTML('afterbegin','<title>done</title>');});
+    t.querySelectorAll('.tool .od').forEach(function(x){x.title='out of date';});
+    t.classList.remove('nolegend');if(t.scrollWidth>t.clientWidth+1&&t.querySelector('.legend'))t.classList.add('nolegend');
+    var ovf=fade(t);
+    if(first&&ovf){var c=t.querySelector('.tool.cur');if(c){var l=c.offsetLeft-t.offsetLeft,r=l+c.offsetWidth;if(r>t.clientWidth-48){t.scrollLeft=r-t.clientWidth+64;edges(t);}}}
+  });document.querySelectorAll('.pab-items').forEach(fade);
+    document.querySelectorAll('.pab').forEach(function(p){p.classList.toggle('single',p.querySelectorAll('.pab-items a').length<2);});}
+  function labels(){document.querySelectorAll('table.tbl-stack').forEach(function(tb){var hr=tb.querySelector('thead tr')||tb.querySelector('tr');if(!hr||!hr.querySelector('th'))return;var hs=[].map.call(hr.children,function(h){return h.textContent.trim();});tb.querySelectorAll('tr').forEach(function(tr){if(tr===hr)return;[].forEach.call(tr.children,function(td,i){if(hs[i]&&td.tagName==='TD'&&!td.hasAttribute('data-label'))td.setAttribute('data-label',hs[i]);});});});}
+  function all(first){mockH();tools(first);labels();}
+  function soon(){if(raf)return;raf=requestAnimationFrame(function(){raf=0;all(false);});}
+  addEventListener('resize',soon);
+  addEventListener('load',function(){all(true);});
+  if(window.ResizeObserver){var m=document.querySelector('.mock');if(m)new ResizeObserver(soon).observe(m);}
+  new MutationObserver(soon).observe(document.body,{childList:true,subtree:true});
+  all(true);
+})();
+</script>
+</body>
+</html>
