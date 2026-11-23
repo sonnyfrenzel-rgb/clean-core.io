@@ -55,10 +55,10 @@ test.describe('every choice has one address', () => {
     'management.open-questions': `${BASE}/analyze?view=management&origin=it.next-step#mgmt-still-open`,
     'it.target': `${BASE}/analyze?view=it&origin=it.next-step#it-target-profile`,
     'it.standard-fit': `${BASE}/analyze?view=it&origin=it.next-step#standard`,
-    'economics.rates': `${BASE}/tco?view=it&origin=it.next-step#economics-step-rates`,
+    'economics.rates': `${BASE}/tco?view=it&origin=it.next-step#economics-assumptions`,
     'economics.cadence': `${BASE}/tco?view=it&origin=it.next-step#economics-cadence`,
-    'economics.effort': `${BASE}/tco?view=it&origin=it.next-step#economics-step-effort`,
-    'economics.result': `${BASE}/tco?view=it&origin=it.next-step#economics-step-result`,
+    'economics.effort': `${BASE}/tco?view=it&origin=it.next-step#economics-effort`,
+    'economics.result': `${BASE}/tco?view=it&origin=it.next-step#economics-answer`,
     'economics.compare': `${BASE}/tco?view=it&origin=it.next-step#economics-compare`,
     'testing.run': `${BASE}/testing?view=it&origin=it.next-step#testing-verified`,
     'testing.write': `${BASE}/testing?view=it&origin=it.next-step#testing-write`,
@@ -107,8 +107,8 @@ test.describe('every choice has one address', () => {
     expect(read('components/design/DesignCanvasStage.tsx')).toContain('id="architect-sign-off"');
     expect(read('components/workspace/DecisionOptions.tsx')).toContain('id="decision-options"');
     expect(read('components/workspace/BusinessRulesEditor.tsx')).toContain("BUSINESS_RULES_ID = 'business-rules'");
-    const tco = read('app/(app)/project/[projectId]/tco/page.tsx');
-    for (const id of ['economics-step-rates', 'economics-step-effort', 'economics-step-result', 'economics-compare']) {
+    const tco = read('components/tco/EconomicsObjectPage.tsx');
+    for (const id of ['economics-assumptions', 'economics-effort', 'economics-answer', 'economics-compare']) {
       expect(tco, id).toContain(id);
     }
     expect(read('components/requirements/SpecDocument.tsx')).toContain('id={`req-${r.id}`}');
@@ -117,14 +117,14 @@ test.describe('every choice has one address', () => {
 
   test('a tool keeps the reader\'s view; a view surface takes its own; without a view nothing is invented', () => {
     for (const view of ['business', 'it', 'management'] as const) {
-      expect(choiceHref({ base: BASE, choice: 'economics.rates', view })).toBe(`${BASE}/tco?view=${view}#economics-step-rates`);
+      expect(choiceHref({ base: BASE, choice: 'economics.rates', view })).toBe(`${BASE}/tco?view=${view}#economics-assumptions`);
       // The decision lives in Management, whichever view asked.
       expect(choiceHref({ base: BASE, choice: 'management.confirm', view })).toBe(`${BASE}/redesign?view=management#decide`);
     }
-    expect(choiceHref({ base: BASE, choice: 'economics.rates' })).toBe(`${BASE}/tco#economics-step-rates`);
-    expect(choiceHref({ base: BASE, choice: 'economics.rates', view: 'admin' })).toBe(`${BASE}/tco#economics-step-rates`);
+    expect(choiceHref({ base: BASE, choice: 'economics.rates' })).toBe(`${BASE}/tco#economics-assumptions`);
+    expect(choiceHref({ base: BASE, choice: 'economics.rates', view: 'admin' })).toBe(`${BASE}/tco#economics-assumptions`);
     expect(choiceHref({ base: BASE, choice: 'economics.rates', origin: 'delivery.next' })).toBe(
-      `${BASE}/tco?origin=delivery.next#economics-step-rates`,
+      `${BASE}/tco?origin=delivery.next#economics-assumptions`,
     );
   });
 
@@ -237,7 +237,7 @@ test.describe('the origin is a key of a closed list, or nothing', () => {
   test('a link never carries an origin that is not on the list', () => {
     for (const bad of ['//evil', 'https://evil.example', 'delivery.chain.payroll', '']) {
       const href = choiceHref({ base: BASE, choice: 'economics.rates', view: 'it', origin: bad as OriginKey });
-      expect(href, bad).toBe(`${BASE}/tco?view=it#economics-step-rates`);
+      expect(href, bad).toBe(`${BASE}/tco?view=it#economics-assumptions`);
       expect(stageHref({ base: BASE, path: 'tco', view: 'it', origin: bad as OriginKey }), bad).toBe(`${BASE}/tco?view=it`);
     }
   });

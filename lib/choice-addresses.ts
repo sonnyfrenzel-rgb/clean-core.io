@@ -151,10 +151,10 @@ export const CHOICES: Readonly<Record<StaticChoiceKey, ChoiceAddress>> = Object.
   // (owner decision 22.10.2026), at the address of ADR-096's Standard fit section.
   'it.standard-fit': c(VIEW('it'), 'standard', 'nav.choice.itStandardFit', VIEW_PLACE('it')),
   // C8–C13 — Economics' four steps and what is inside them.
-  'economics.rates': c(TOOL('tco'), 'economics-step-rates', 'nav.choice.economicsRates', PHASE_LABEL('tco')),
+  'economics.rates': c(TOOL('tco'), 'economics-assumptions', 'nav.choice.economicsRates', PHASE_LABEL('tco')),
   'economics.cadence': c(TOOL('tco'), 'economics-cadence', 'nav.choice.economicsCadence', PHASE_LABEL('tco')),
-  'economics.effort': c(TOOL('tco'), 'economics-step-effort', 'nav.choice.economicsEffort', PHASE_LABEL('tco')),
-  'economics.result': c(TOOL('tco'), 'economics-step-result', 'nav.choice.economicsResult', PHASE_LABEL('tco')),
+  'economics.effort': c(TOOL('tco'), 'economics-effort', 'nav.choice.economicsEffort', PHASE_LABEL('tco')),
+  'economics.result': c(TOOL('tco'), 'economics-answer', 'nav.choice.economicsResult', PHASE_LABEL('tco')),
   'economics.compare': c(TOOL('tco'), 'economics-compare', 'nav.choice.economicsCompare', PHASE_LABEL('tco')),
   // C14–C16
   'testing.run': c(TOOL('testing'), 'testing-verified', 'nav.choice.testingRun', PHASE_LABEL('testing')),

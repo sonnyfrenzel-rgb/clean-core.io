@@ -108,17 +108,17 @@ test('a choice’s address opens its place with the focus, and the way back retu
 
   // The choice's one address, with the origin it was asked from.
   const href = choiceHref({ base, choice: 'economics.rates', origin: 'it.target-profile', view: 'it' });
-  expect(href).toBe(`${base}/tco?view=it&origin=it.target-profile#economics-step-rates`);
+  expect(href).toBe(`${base}/tco?view=it&origin=it.target-profile#economics-assumptions`);
   await page.goto(href!, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-stage-header="tco"]')).toBeVisible({ timeout: 90_000 });
 
   // Revealed, brought into view, focused, marked as arrived.
-  const place = page.locator('#economics-step-rates');
+  const place = page.locator('#economics-assumptions');
   await expect(place).toHaveAttribute('data-arrived', '', { timeout: 30_000 });
-  expect(await reveals(page)).toContain('economics-step-rates');
-  await expectSettledInView(page, 'economics-step-rates');
+  expect(await reveals(page)).toContain('economics-assumptions');
+  await expectSettledInView(page, 'economics-assumptions');
   const focus = await page.evaluate(() => {
-    const target = document.getElementById('economics-step-rates');
+    const target = document.getElementById('economics-assumptions');
     const active = document.activeElement;
     return { inside: Boolean(target && active && target.contains(active)), self: active === target };
   });
