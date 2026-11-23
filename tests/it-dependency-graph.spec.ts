@@ -273,7 +273,8 @@ test.describe('source guards', () => {
     // Since 3.5.0 the IT view is Analyze's (AB-9): "What it touches in SAP" carries the objects and the graph.
     const card = read('components/analyze/ItTouches.tsx');
     expect(read('components/analyze/AnalyzeIt.tsx')).toContain('<ItTouches objects={objects}');
-    expect(card).toContain('<ItDependencyGraph objects={objects} onOpen={open} />');
+    // Directly under the section's h2, so the graph's title is an h3 (no heading level skipped).
+    expect(card).toContain('<ItDependencyGraph objects={objects} onOpen={open} level={3} />');
     expect(card.indexOf('<ItDependencyGraph')).toBeLessThan(card.indexOf('<CcTable'));
     expect(card).toContain('reveal={jump}');
     expect(card).toContain('rows={deps.map(');

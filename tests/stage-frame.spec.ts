@@ -313,7 +313,10 @@ test.describe('a stage as a tool, rendered', () => {
     await page.waitForURL(/\/demo\/tco\?view=it&from=workspace-tools/, { timeout: 60000 });
     const back = page.locator('[data-stage-back]');
     await expect(back).toHaveCount(1, { timeout: 60000 });
-    await expect(back).toHaveText(/^IT view, Tools\s·\s.+|^IT view\s·\s.+/);
+    // The "·" is drawn between two spans (its spacing is the flex gap and padding, not text) and is aria-hidden, so
+    // the text has no space around it; the name a screen reader says does have one between the place and the project.
+    await expect(back).toHaveText(/^IT view, Tools\s*·\s*.+|^IT view\s*·\s*.+/);
+    await expect(back).toHaveAccessibleName(/^IT view(, Tools)? \S.+/);
     await back.click();
     await page.waitForURL(/\/demo\/workspace\?view=it/, { timeout: 60000 });
     await expect(page.locator('[data-demo-workspace="it"]')).toBeAttached({ timeout: 90000 });

@@ -448,7 +448,11 @@ test.describe('the Business view on screen', () => {
     await page.goto(`/project/${ids.po}?view=business#standard`, { waitUntil: 'domcontentloaded' });
     await expect(page).toHaveURL((url) => url.searchParams.get('view') === 'it' && url.hash === '#standard', { timeout: 60_000 });
     await expect(page.locator('#standard[data-it-standard]')).toBeVisible({ timeout: 90_000 });
-    await expect(page.locator('[data-it-anchor="standard"]')).toBeVisible();
+    // Analyze IT's bar (3.5.0) has no entry of its own for Standard fit: the section stands in Technical detail,
+    // and that entry is the one the bar marks as the reader's place.
+    const detail = page.locator('[data-analyze-anchor="detail"]');
+    await expect(detail).toBeVisible();
+    await expect(detail).toHaveAttribute('data-analyze-anchor-state', 'on');
 
     // A link into a section Business no longer shows lands where it lives now.
     await page.goto(`/project/${ids.po}?view=business#costs`, { waitUntil: 'domcontentloaded' });

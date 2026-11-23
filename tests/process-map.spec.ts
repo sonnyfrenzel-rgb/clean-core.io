@@ -455,9 +455,10 @@ test.describe('the map on the page, without a mouse', () => {
     expect(before.status(), await before.text()).toBe(200);
 
     await signIn(page);
-    // The map and its editor are Analyze, Business since 3.5.0 (Documentation shows Figure 1, read-only, ADR-127).
-    await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
-    await page.locator('[data-process-map]').waitFor({ timeout: 60000 });
+    // Since 3.5.0 the map is Analyze, Business, which only reads the quote (opening a project writes nothing to it);
+    // the Documentation stage, which exports the map, asks the server to measure it on opening.
+    await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-stage-title]').first().waitFor({ timeout: 60000 });
 
     await expect.poll(
       async () => {
@@ -465,7 +466,7 @@ test.describe('the map on the page, without a mouse', () => {
         if (!res.ok()) return null;
         return ((await res.json()) as { record: { sourceSha256?: string } | null }).record?.sourceSha256 ?? null;
       },
-      { timeout: 90000, message: 'opening the map stored no quote for this source' },
+      { timeout: 90000, message: 'opening Documentation stored no quote for this source' },
     ).toBe(sha256Hex(FIXTURE));
 
     const res = await request.get(path, { headers });

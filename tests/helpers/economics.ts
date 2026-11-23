@@ -19,9 +19,11 @@ export async function revealEconomicsField(page: Page, selector: string) {
     return;
   }
   // A fold of the page ("Effort in days").
-  const fold = page.locator('[data-economics-fold="closed"]').filter({ has: page.locator(selector) });
-  if ((await fold.count()) > 0) {
-    await fold.first().locator('[data-economics-fold-toggle]').click();
+  const fold = page.locator('[data-economics-fold]').filter({ has: page.locator(selector) }).first();
+  if ((await fold.count()) > 0 && (await fold.getAttribute('data-economics-fold')) === 'closed') {
+    await fold.locator('[data-economics-fold-toggle]').first().click();
+    // Wait for the fold to say it is open, so the next step does not start from a closed one.
+    await expect(fold, 'the fold did not open').toHaveAttribute('data-economics-fold', 'open');
     if (await field.isVisible()) return;
   }
   // An option card's fields.

@@ -483,81 +483,85 @@ test.describe('the toolbar, rendered', () => {
     expect(legendDot).toBe(dot);
   });
 
-  test('a phone at 390: the menu, no sideways scroll, the legend on top and the check inside it', async ({ browser }) => {
+  test('a phone at 390: the tool strip in every view, "1 of 7", the marks in words, no sideways scroll', async ({ browser }) => {
     test.setTimeout(240 * 1000);
+    // The tools' family (ADR-140, UX review 22.11.2026, Q9, Q12, L5) replaced the phone menu: the same strip as on a
+    // desktop, at every width and in every view, "1 of 7" where "Tools" stands, every tool with its mark. What the
+    // menu said as text stays with each link: the mark in its accessible name, the purpose as its description.
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     const page = await context.newPage();
     await signInThroughForm(page, acct);
     for (const view of ['management', 'it'] as const) {
       await open(page, ANALYZED, view);
-      await expect(page.locator('[data-stage-tools="open"]'), `${view}: the open bar on a phone`).toBeHidden();
-      await expect(page.locator('[data-stage-tools="menu"]')).toBeVisible();
+      const strip = page.locator('[data-stage-tools="open"]');
+      await expect(strip, `${view}: no tool strip on a phone`).toBeVisible();
+      await expect(page.locator('[data-stage-tools="menu"]'), `${view}: a menu beside the strip`).toHaveCount(0);
+      await expect(strip.locator('[data-stage-tools-position]')).toBeVisible();
+      await expect(strip.locator('[data-stage-tools-position]')).toContainText('1 of 7');
+      await expect(strip.locator('a[data-workspace-tool]')).toHaveCount(7);
       const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(overflow, `${view}: the page scrolls sideways at 390 px`).toBeLessThanOrEqual(0);
     }
-    await page.locator('[data-stage-tools="menu"] button[aria-expanded]').click();
-    const panel = page.locator('[data-workspace-tools-panel]');
-    await expect(panel.locator('a[data-workspace-tool]')).toHaveCount(7);
-    // The legend first, before the first tool, in text.
-    const legend = panel.locator('[data-tools-legend="menu"]');
-    await expect(legend).toBeVisible();
-    await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.done']);
-    await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.started']);
-    await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.stale']);
-    expect(
-      await panel.evaluate((el) => el.firstElementChild?.getAttribute('data-tools-legend')),
-      'the legend is not at the top of the menu',
-    ).toBe('menu');
-    await expect(panel.locator('a[data-workspace-tool="analyze"]')).toHaveAccessibleName(named('Analyze', 'tools.mark.done'));
-    await expect(panel.locator('a[data-workspace-tool="analyze"] [data-workspace-tool-mark="check"]')).toBeVisible();
-    await expect(panel.locator('a[data-workspace-tool="design"]')).toHaveAccessibleName('Design');
-    // In the menu every tool says what it is for, as text — no hover needed.
-    await expect(panel.locator('[data-workspace-tool-purpose]')).toHaveCount(7);
-    await expect(panel.locator('[data-workspace-tool-item="design"] [data-workspace-tool-purpose]')).toContainText(PHASE_PURPOSE.design);
+    const strip = page.locator('[data-stage-tools="open"]');
+    // The mark is never colour alone: its meaning is in the name, the check stands visible on Analyze.
+    await expect(strip.locator('a[data-workspace-tool="analyze"]')).toHaveAccessibleName(named('Analyze', 'tools.mark.done'));
+    await expect(strip.locator('a[data-workspace-tool="analyze"] [data-workspace-tool-mark="check"]')).toBeVisible();
+    await expect(strip.locator('a[data-workspace-tool="design"]')).toHaveAccessibleName('Design');
+    // Every tool still says what it is for, as its description.
+    const designGuide = await strip.locator('a[data-workspace-tool="design"]').evaluate(
+      (el) => document.getElementById(el.getAttribute('aria-describedby') ?? '')?.textContent ?? '',
+    );
+    expect(designGuide).toContain(PHASE_PURPOSE.design);
     // O8 (plan AB-4): an analysis-only reader in a fresh browser sees no "Next" tag until a later tool was opened.
-    await expect(panel.locator('a[data-workspace-tool-next]')).toHaveCount(0);
-    await expect(panel.locator('[data-workspace-tool-next-tag]')).toHaveCount(0);
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    expect(overflow, 'the open menu pushes the page sideways').toBeLessThanOrEqual(0);
+    await expect(strip.locator('a[data-workspace-tool-next]')).toHaveCount(0);
+    await expect(strip.locator('[data-workspace-tool-next-tag]')).toHaveCount(0);
     await context.close();
   });
 
-  test('on a touch screen "What the tools do" opens every purpose on a tap, and a second tap closes it', async ({ browser }) => {
+  test('on a touch screen every tool is a 44 px target and carries its purpose, with no hover and no "i"', async ({ browser }) => {
     test.setTimeout(240 * 1000);
-    // A tablet in landscape: wide enough for the open bar, and no hover at all.
-    // One disclosure for the seven tools, no "i" after each (owner 04.10.2026).
+    // A tablet in landscape, no hover at all. The tools' family (ADR-140, UX review 22.11.2026, Q9, Q12) dropped the
+    // hint line and its "What the tools do" disclosure: what each tool is for is its link's description, which a
+    // screen reader says and nothing has to be tapped open for; no "i" after each (owner 04.10.2026).
     const context = await browser.newContext({ viewport: { width: 1180, height: 820 }, hasTouch: true, isMobile: true });
     const page = await context.newPage();
     await signInThroughForm(page, acct);
     await open(page, ANALYZED, 'management');
     const bar = page.locator('[data-stage-tools="open"]');
+    await expect(bar).toBeVisible();
     await expect(bar.locator('button[data-info-popover^="tool-"]'), 'a per-tool "i" is back').toHaveCount(0);
-    const guide = bar.locator('button[data-info-popover="tools-guide"]');
-    await expect(guide).toBeVisible();
-    await expect(guide).toHaveAccessibleName(/What the tools do/);
-    // The target grows to 44 px under a coarse pointer (DESIGN.md §2.9).
-    const box = await guide.boundingBox();
-    expect(box!.height).toBeGreaterThanOrEqual(44);
-    await guide.tap();
-    const panel = page.locator('[data-info-popover-panel="tools-guide"]');
-    await expect(panel).toBeVisible();
-    await expect(panel.locator('[data-tools-guide-entry]')).toHaveCount(7);
-    await expect(panel.locator('[data-tools-guide-entry="testing"]')).toContainText(PHASE_PURPOSE.testing);
+    const tools = bar.locator('a[data-workspace-tool]');
+    await expect(tools).toHaveCount(7);
+    const looks = await tools.evaluateAll((els) =>
+      els.map((el) => ({
+        key: el.getAttribute('data-workspace-tool') ?? '',
+        height: el.getBoundingClientRect().height,
+        guide: document.getElementById(el.getAttribute('aria-describedby') ?? '')?.textContent ?? '',
+      })),
+    );
+    for (const t of looks) {
+      // The target grows to 44 px under a coarse pointer (DESIGN.md §2.9, Q12).
+      expect(t.height, `${t.key}: a ${t.height} px target on a touch screen`).toBeGreaterThanOrEqual(44);
+    }
+    expect(looks.find((t) => t.key === 'testing')?.guide).toContain(PHASE_PURPOSE.testing);
     // O8 (ADR-118): an analysis-only reader in a fresh browser is recommended no later tool until one was opened.
-    await expect(panel.locator('[data-tools-guide-entry="design"]')).toContainText(PHASE_PURPOSE.design);
-    await expect(panel.locator('[data-tools-guide-entry="design"]')).not.toContainText(WORKSPACE_MESSAGES['toolGuide.recommended']);
-    await guide.tap();
-    await expect(panel).toHaveCount(0);
+    const design = looks.find((t) => t.key === 'design')?.guide ?? '';
+    expect(design).toContain(PHASE_PURPOSE.design);
+    expect(design).not.toContain(WORKSPACE_MESSAGES['toolGuide.recommended']);
     await context.close();
   });
 
-  test('between the breakpoints Management keeps the menu (M, 900 px)', async ({ page }) => {
-    // Business kept it too while it was the workspace's view (until v3.1.0, AB-2).
+  test('between the breakpoints Management carries the same tool strip, and no menu (M, 900 px)', async ({ page }) => {
+    // The menu between the breakpoints went with the tools' family (ADR-140, UX review 22.11.2026, Q9): one strip at
+    // every width, never two navigations at once.
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 900, height: 1000 });
     await signInThroughForm(page, acct);
     await open(page, ANALYZED, 'management');
-    await expect(page.locator('[data-stage-tools="open"]')).toBeHidden();
-    await expect(page.locator('[data-stage-tools="menu"]')).toBeVisible();
+    await expect(page.locator('[data-stage-tools="open"]')).toBeVisible();
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool]')).toHaveCount(7);
+    await expect(page.locator('[data-stage-tools="menu"]')).toHaveCount(0);
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+    expect(overflow, 'the page scrolls sideways at 900 px').toBeLessThanOrEqual(0);
   });
 });

@@ -112,7 +112,8 @@ test.describe('rendered', () => {
     await expect(page.locator('[data-cost-option-total]')).toHaveCount(0);
 
     await revealEconomicsField(page, '[data-economics-take-over-all]');
-    await page.locator('[data-economics-take-over-all]').first().click();
+    // The answer's own next action, as the reader meets it (the fold "Effort in days" offers the same button further down).
+    await page.locator('[data-answer-next] [data-economics-take-over-all]').first().click();
     // Keep's upgrade deferral is the reader's figure as well (no proposal, no default): Keep has no amount without it,
     // so the page has no answer and no difference to keeping. The options whose figures are all in are priced in their
     // own row (ADR-128 (2)); Keep's row says Not determined.

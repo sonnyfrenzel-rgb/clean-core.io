@@ -371,11 +371,12 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 3: TRANSFORMATION ---
     console.log('Navigating to Stage 3: Transformation...');
     await openTool(page, 'transformation');
-    await page.waitForSelector('button:has-text("Sync Scroll:")', { timeout: 45000 });
-    
-    // Verify proportional side-by-side scrolls toggles
-    await expect(page.locator('button:has-text("Sync Scroll:")')).toBeVisible({ timeout: 45000 });
-    console.log('Stage 3 Complete: Side-by-Side transformation scroll verification passed.');
+    // Since 3.5.0 (ADR-129 (4)) the code beside the original, with its Sync Scroll, is the drawer "All code side by
+    // side", offered with a generated package; this walk generates none. The stage opens on its answer: no code yet,
+    // and Generate code offered to the owner.
+    await expect(page.locator('[data-transformation-answer="none"]')).toBeAttached({ timeout: 45000 });
+    await expect(page.locator('[data-generate-code]')).toBeVisible({ timeout: 45000 });
+    console.log('Stage 3 Complete: Transformation opens on its answer, Generate code offered.');
 
     // The canonical order (roadmap §7.0, lib/workflow-steps.ts): Documentation is
     // phase 4, Testing 5, Economics 6. Transformation used to hand over to Testing

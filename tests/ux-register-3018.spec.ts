@@ -70,9 +70,10 @@ test('UX-053: the root error page is the workspace card, with details folded and
   expect(src).toContain('onClick={() => reset()}');
 });
 
-test('UX-079: a closed Register says why, like the Google button', () => {
+test('UX-079: a closed "Create my workspace" says why, like the Google button; its label is the one the notice names', () => {
   const src = code('components/LandingModals.tsx');
-  const at = src.indexOf("{isSubmitting ? 'Registering...' : 'Register'}");
+  const at = src.indexOf("{isSubmitting ? 'Setting up your workspace...' : 'Create my workspace'}");
+  expect(at, 'the e-mail form button carries the label the signup notice names (C1)').toBeGreaterThan(-1);
   const button = src.slice(src.lastIndexOf('<CcButton', at), at);
   expect(button).toContain("aria-describedby={!agreedGDPR || !agreedTerms ? 'register-consent-hint' : undefined}");
   expect(src).toMatch(/<p id="register-consent-hint"[^>]*>\s*Accept the data protection notice and the terms above to register\./);

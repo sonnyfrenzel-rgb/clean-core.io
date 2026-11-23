@@ -424,13 +424,16 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await signIn(page);
     await openWorkspace(page, 'it');
 
+    // The shell bar is there on screen, so "it does not print" below is not a check of nothing.
+    await expect(page.locator('header:has([data-shell-path])')).toHaveCount(1);
     await page.emulateMedia({ media: 'print' });
 
     // No tool or footer bars, no shell bar, no layer bar, no search. The
     // print sheet's own header (project, run, date — WorkspacePrintSheet,
     // mockup s10) is the page's heading on paper, not a bar.
     for (const selector of [
-      'header',
+      // The shell bar. A section's or the tool's own <header> (the family frame, 3.5.0) is its title: that prints.
+      'header:has([data-shell-path])',
       'footer',
       // The family's tool row, its view switch and the page's "On this page" bar are screen navigation (ADR-140).
       '[data-stage-tools]',
