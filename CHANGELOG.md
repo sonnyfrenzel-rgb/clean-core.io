@@ -83,6 +83,20 @@ The new UX along the accepted mock-ups, every proposal of the UX review of 22.11
   - Delivery: an Economics not yet priced no longer holds back the audit pack seal (ADR-022).
   - Testing: a result imported from your SAP system reads "imported", never as an engine reading.
   - The whitepaper PDF is rebuilt from the current page.
+  - Analyze IT draws the dependency graph again above "What it touches in SAP"; a node or line label jumps to its
+    row. The Public-Cloud-Fit card (four buckets) is back, under Technical detail.
+  - Switching views with the arrow keys keeps the keyboard focus on the view switch.
+  - Projects analysed before signed runs show again what their record does not hold.
+  - Re-design: the Need row says again what the process map counts; a link to the decision (`#decide`) scrolls to
+    it once the page has loaded; long action links wrap on a phone instead of widening the page.
+  - A program name without spaces wraps in the tool title instead of widening the page on a phone.
+  - Transformation counts findings, not the places in the code, in "What this generation will use".
+  - The BPMN editor in full screen keeps its canvas when the check hints are open, gives the canvas more height on
+    a short window, and lets you switch "Technical names" while editing on Analyze.
+  - Delivery's Tests part says who stands behind the result on record (imported from your system, or your
+    self-declaration).
+  - Documentation: the RACI matrix with six role columns fits at 1440 px without scrolling sideways.
+  - Design: the "On this page" bar stands above the answer it names first, as in the mockup.
 
 ### Fixed
 
