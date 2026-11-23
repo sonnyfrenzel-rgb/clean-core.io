@@ -106,7 +106,7 @@ export const DEMO_UNSIGNED_NOTICE =
 
 /** The demo costs nothing, because nothing about it reaches the server. */
 export const DEMO_QUOTA_NOTICE =
-  'Nothing here counts against your five free analyses: the demo is the same for every account, ' +
+  'Nothing here counts against your five free analysis runs: the demo is the same for every account, ' +
   'and what you change lives in this browser only.';
 
 /** The browser key the demo's own state lives under. Cleared by "Reset demo". */

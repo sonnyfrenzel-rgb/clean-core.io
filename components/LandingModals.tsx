@@ -768,7 +768,7 @@ export default function LandingModals() {
             </p>
 
             <div className="space-y-4">
-              <CcField label="Email Address" required>
+              <CcField label="E-mail address" required>
                 {(c) => (
                   <div className="relative">
                     <Mail size={16} aria-hidden={true} className={FIELD_ICON} />
@@ -839,7 +839,7 @@ export default function LandingModals() {
 
             <div className="space-y-4">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <CcField label="First Name" required>
+                <CcField label="First name" required>
                   {(c) => (
                     <input
                       id={c.id}
@@ -855,7 +855,7 @@ export default function LandingModals() {
                     />
                   )}
                 </CcField>
-                <CcField label="Last Name" required>
+                <CcField label="Last name" required>
                   {(c) => (
                     <input
                       id={c.id}
@@ -873,7 +873,7 @@ export default function LandingModals() {
                 </CcField>
               </div>
 
-              <CcField label="Email Address" required>
+              <CcField label="E-mail address" required>
                 {(c) => (
                   <div className="relative">
                     <Mail size={16} aria-hidden={true} className={FIELD_ICON} />
@@ -907,7 +907,6 @@ export default function LandingModals() {
                         autoComplete="new-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
                         className={cn(c.className, FIELD_WITH_ICON, 'pr-12')}
                       />
                       <PasswordToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />
@@ -944,7 +943,7 @@ export default function LandingModals() {
               {/* Match or mismatch is a check that actually ran, so it is a
                   value state on the field (§2.7) — icon and text, not a colour. */}
               <CcField
-                label="Confirm Password"
+                label="Confirm password"
                 required
                 valueState={confirmPassword ? (password !== confirmPassword ? 'error' : 'success') : undefined}
                 message={confirmPassword ? (password !== confirmPassword ? 'Passwords do not match' : 'Passwords match') : undefined}
@@ -962,7 +961,6 @@ export default function LandingModals() {
                       autoComplete="new-password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••"
                       className={cn(c.className, FIELD_WITH_ICON)}
                     />
                   </div>
@@ -978,7 +976,7 @@ export default function LandingModals() {
                 an empty string instead.
               */}
               <div>
-                <CcField label="Motivation / Use Case (Optional)">
+                <CcField label="Motivation or use case (optional)">
                   {(c) => (
                     <textarea
                       id={c.id}
@@ -1130,7 +1128,7 @@ export default function LandingModals() {
             </div>
 
             <div className="space-y-4">
-              <CcField label="Email Address" required>
+              <CcField label="E-mail address" required>
                 {(c) => (
                   <div className="relative">
                     <Mail size={16} aria-hidden={true} className={FIELD_ICON} />
@@ -1164,7 +1162,6 @@ export default function LandingModals() {
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
                         className={cn(c.className, FIELD_WITH_ICON, 'pr-12')}
                       />
                       <PasswordToggle shown={showPassword} onToggle={() => setShowPassword(!showPassword)} />

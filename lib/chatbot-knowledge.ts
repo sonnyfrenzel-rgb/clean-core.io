@@ -156,7 +156,7 @@ export const PLATFORM_NAVIGATION = `
 ### Dashboard (/dashboard)
 The central workspace showing all projects. Users can create new projects, view existing ones, and access global settings.
 - **Project Cards**: Each project shows its name, description, creation date, and progress across stages.
-- **Quick Actions**: Create new project, access Knowledge Hub, How-To guides, and Settings.
+- **Quick Actions**: Create new project, access Knowledge Hub, the how-to guide, and Profile settings.
 - **Navigation**: The sidebar provides access to all platform areas.
 
 ### Analysis Stage (/project/[id]/analyze)
@@ -231,7 +231,7 @@ Reference library for SAP Clean Core architecture and ${BTP} extensibility patte
 - **RAP vs CAP Comparison Table**: Decision framework for choosing the right extensibility paradigm
 - **Clean Core Alignment**: How findings map to SAP's Clean Core extensibility guidance. Clean-Core.io is not affiliated with or certified by SAP — it complements SAP's own tools (ADT, ATC, Readiness Check).
 
-### How-To Tutorials (/how-to)
+### How-to guide (/how-to)
 A walkthrough of the seven phases in the product's order (${HOW_TO_STEPS.map((s) => s.title).join(' → ')}), readable without an account.
 - **One slide per phase**: what the phase does, what it does not do, and the questions a reader has at that point — the text in the HOW-TO WALKTHROUGH section above, word for word
 - **A phase index** beside the deck, and arrow keys while the deck has focus; it can be shown fullscreen

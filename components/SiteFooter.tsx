@@ -40,7 +40,7 @@ export const SITE_FOOTER_COLUMNS: { heading: string; links: { href: string; labe
       { href: '/about', label: 'About' },
       { href: '/clean-core-explained', label: 'Clean Core Explained' },
       { href: '/first-run', label: 'Your First Run' },
-      { href: '/how-to', label: 'How-To Guide' },
+      { href: '/how-to', label: 'How-to guide' },
       { href: '/whitepaper', label: 'Whitepaper' },
       { href: '/reference-analysis', label: 'Reference Analysis' },
       // `/facts` had no internal link at all — only the sitemap knew it, and it

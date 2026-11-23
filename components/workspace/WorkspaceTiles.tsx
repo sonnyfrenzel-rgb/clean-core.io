@@ -505,7 +505,7 @@ function ContinueCard({
             {changed ? <span className="text-[12px] font-medium text-cc-ink-muted">{wsChangedOn(changed)}</span> : null}
           </div>
           <div className="min-w-0">
-            <h2 className="m-0 text-[20px] leading-tight font-bold text-cc-ink">
+            <h2 className="m-0 text-[15px] leading-snug font-bold text-cc-ink">
               <Link href={analysisHref(tile)} className="no-underline hover:underline" data-ws-continue-open="">
                 {tile.title}
               </Link>
@@ -543,7 +543,7 @@ function ContinueCard({
             </div>
           ) : null}
         </div>
-        <div className="flex min-w-0 flex-col gap-1.5">
+        <div className="flex min-w-0 flex-col gap-2">
           <MapThumb thumb={tile.thumb} objectName={tile.objectName ?? tile.title} steps={tile.steps} className="h-[132px] w-full min-[901px]:h-[150px]" />
           <span className="text-[12px] font-medium text-cc-ink-muted">{wsMapCaption(tile.steps)}</span>
         </div>

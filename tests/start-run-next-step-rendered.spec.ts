@@ -201,13 +201,13 @@ test.describe('a new project whose start run is held while the reader switches v
       await switchTo('IT', 'it');
       // The tool has read the project (source, no run) — any start it made on
       // arrival would be on its way; give it the time to reach the route.
-      await expect(page.getByRole('heading', { name: 'Source Code Ready' })).toBeVisible({ timeout: 60000 });
+      await expect(page.getByRole('heading', { name: 'Source code ready' })).toBeVisible({ timeout: 60000 });
       await expectStartClosed(page);
       await page.waitForTimeout(3000);
       expect(requests, 'IT started a second run while the first was held').toHaveLength(1);
 
       await switchTo('Management', 'management');
-      await expect(page.getByRole('heading', { name: 'Source Code Ready' })).toBeVisible({ timeout: 60000 });
+      await expect(page.getByRole('heading', { name: 'Source code ready' })).toBeVisible({ timeout: 60000 });
       await expectStartClosed(page);
       await page.waitForTimeout(3000);
       expect(requests, 'Management started a second run while the first was held').toHaveLength(1);

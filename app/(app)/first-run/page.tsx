@@ -257,14 +257,14 @@ export default function FirstRunPage() {
             <BookOpen size={16} className="text-cc-brand-strong" aria-hidden="true" /> Want the background first?
           </h2>
           <p className="text-sm text-cc-ink-muted leading-relaxed mb-5 flex-grow">
-            The How-To Guide walks through the same workflow narrated, with the reasoning behind each
+            The how-to guide walks through the same workflow narrated, with the reasoning behind each
             stage and what the Clean Core paradigm is actually asking of you.
           </p>
           <Link
             href="/how-to"
             className={`${publicButton('secondary', 'sm')} self-start`}
           >
-            Open the How-To Guide <ArrowRight size={14} aria-hidden="true" />
+            Open the how-to guide <ArrowRight size={14} aria-hidden="true" />
           </Link>
         </div>
       </div>

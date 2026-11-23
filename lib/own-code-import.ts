@@ -35,6 +35,7 @@ import { extractDataCoupling } from './abap/code-assessment';
 import { APP_VERSION } from './version';
 import { readStatements } from './abap/statement-reader';
 import { countSourceLines } from '@/lib/source-lines';
+import { ANALYSED_SOURCE_MAX_BYTES } from '@/lib/source-limit';
 import type { CustomerTexts } from './abap/customer-texts';
 import {
   INCLUDE_CLOSE_MARK,
@@ -47,8 +48,8 @@ import {
   type IncludeSourceRole,
 } from './abap/include-resolution';
 
-/** `MAX_ANALYSED_SOURCE_BYTES` in `app/api/runs/create/route.ts`. */
-export const OWN_CODE_MAX_SOURCE_BYTES = 256 * 1024;
+/** `MAX_ANALYSED_SOURCE_BYTES` in `app/api/runs/create/route.ts` (`lib/source-limit.ts`). */
+export const OWN_CODE_MAX_SOURCE_BYTES = ANALYSED_SOURCE_MAX_BYTES;
 
 /** One source file read in full. A program is far below this; a dump is not. */
 export const OWN_CODE_MAX_FILE_BYTES = 1024 * 1024;

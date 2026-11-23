@@ -42,7 +42,7 @@ export const OWN_CODE_MESSAGES = {
   'ownCode.notDeterminedLead': 'Named in the code, not uploaded — the analysis lists them as not read:',
   'ownCode.paidLegend': 'How this analysis is paid',
   'ownCode.payOwnKey': 'Runs on your own Gemini key',
-  'ownCode.payOwnKeyOn': 'No limit and not counted against the free runs. Change the key in',
+  'ownCode.payOwnKeyOn': 'No limit and not counted against the free analysis runs. Change the key in',
   'ownCode.payOwnKeyOffBefore': 'To run on your own Gemini key instead, with no limit, add it in',
   'ownCode.payOwnKeyOffLink': 'Settings',
   'ownCode.sameSource':
@@ -102,9 +102,17 @@ const KB = (bytes: number) => `${Math.ceil(bytes / 1024).toLocaleString('en')} K
 const MB = (bytes: number) => `${Math.round(bytes / (1024 * 1024)).toLocaleString('en')} MB`;
 const list = (names: readonly string[]) => names.join(', ');
 
+/**
+ * The one wording of the size limit wherever a program is added — the home page, the own-code import and Analyze
+ * (UX review 22.11.2026, Q5): "up to 256 KB of ABAP source". The limit is the server's (`lib/source-limit.ts`).
+ */
+export function sourceSizeLimit(limitBytes: number): string {
+  return `up to ${KB(limitBytes)} of ABAP source`;
+}
+
 /** The drop zone's second line — the limit is the server's, printed from the constant. */
 export function ownCodeDropLimit(limitBytes: number): string {
-  return `ABAP source files (.abap, .txt), their includes, or one ZIP with both · up to ${KB(limitBytes)} of source`;
+  return `ABAP source files (.abap, .txt), their includes, or one ZIP with both · ${sourceSizeLimit(limitBytes)}`;
 }
 
 export function ownCodeFilesAdded(n: number): string {

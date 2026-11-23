@@ -356,7 +356,8 @@ test.describe('(15) the sign-in dialog: a neutral title, a way on from "already 
 
   test('the sign-up fields are the ones they were — names, address, passwords, the optional motivation and both agreements', () => {
     const signup = src.slice(src.indexOf("authMode === 'signup' ? ("), src.indexOf('/* Sign In Screen (Default) */'));
-    for (const label of ['label="First Name" required', 'label="Last Name" required', 'label="Email Address" required', 'label="Motivation / Use Case (Optional)"']) {
+    // Sentence case since 3.5.0 (UX review 22.11.2026, Q11); the fields themselves are unchanged.
+    for (const label of ['label="First name" required', 'label="Last name" required', 'label="E-mail address" required', 'label="Motivation or use case (optional)"']) {
       expect(signup, label).toContain(label);
     }
     expect(signup.match(/<CcCheckbox/g)).toHaveLength(2);

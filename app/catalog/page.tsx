@@ -112,7 +112,7 @@ export default function CatalogIndexPage() {
       </div>
 
       <div className={`${CATALOG_CARD} p-6`}>
-        <h2 className="text-lg font-extrabold text-cc-ink mb-2">Analyze your own custom code</h2>
+        <h2 className="text-lg font-extrabold text-cc-ink mb-2">Analyze your own Z program</h2>
         <p className="text-sm text-cc-ink-muted leading-relaxed mb-4">
           This catalog answers the object-level question. To see how your actual ABAP maps against it —
           per object, with evidence — run a free analysis.

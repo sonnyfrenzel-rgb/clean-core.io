@@ -246,7 +246,7 @@ test.describe('the optional motivation field', () => {
 
   test('it is never required', () => {
     const s = read('components/LandingModals.tsx');
-    const field = s.slice(s.indexOf('Motivation / Use Case'));
+    const field = s.slice(s.indexOf('Motivation or use case'));
     const textarea = field.slice(field.indexOf('<textarea'), field.indexOf('</div>'));
     // Optional means optional: a `required` here would turn a helpful question
     // into a registration barrier, which is the opposite of the change that

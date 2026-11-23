@@ -205,7 +205,7 @@ export default function UserOnboarding() {
       >
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <CcField label="First Name" required>
+            <CcField label="First name" required>
               {(control) => (
                 <input
                   id={control.id}
@@ -221,7 +221,7 @@ export default function UserOnboarding() {
                 />
               )}
             </CcField>
-            <CcField label="Last Name" required>
+            <CcField label="Last name" required>
               {(control) => (
                 <input
                   id={control.id}
@@ -283,7 +283,7 @@ export default function UserOnboarding() {
           <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
             <h3 className="m-0 mb-1 cc-text-label text-cc-ink-muted">Free Community Edition</h3>
             <ul className="m-0 list-disc space-y-1 pl-5 cc-text-cell text-cc-ink">
-              <li>Up to 5 App Transformations for testing</li>
+              <li>5 free analysis runs; every tool after the analysis is included</li>
               <li>Community feedback &amp; collaboration</li>
               <li className="font-semibold">Active immediately — no approval step</li>
             </ul>
@@ -355,7 +355,7 @@ export default function UserOnboarding() {
             <li className="flex items-start gap-2">
               <Check size={16} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-ink-muted" />
               <div>
-                <strong className="font-semibold">5 free analyses</strong>: the seven-stage workflow on your own ABAP, or on a starter example — each example is free the first time you run it.
+                <strong className="font-semibold">5 free analysis runs</strong>: the seven-stage workflow on your own ABAP, or on a starter example — each example is free the first time you run it.
               </div>
             </li>
             <li className="flex items-start gap-2">

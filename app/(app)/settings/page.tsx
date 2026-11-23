@@ -1455,7 +1455,6 @@ export default function SettingsPage() {
                       value={currentPassword}
                       onChange={setCurrentPassword}
                       required
-                      placeholder="••••••••"
                       autoComplete="current-password"
                       reveal={{ shown: showCurrentPw, onToggle: () => setShowCurrentPw(!showCurrentPw), label: 'Show current password' }}
                     />
@@ -1481,7 +1480,6 @@ export default function SettingsPage() {
                           value={newPassword}
                           onChange={setNewPassword}
                           required
-                          placeholder="••••••••"
                           autoComplete="new-password"
                           reveal={{ shown: showNewPw, onToggle: () => setShowNewPw(!showNewPw), label: 'Show new password' }}
                         />
@@ -1519,7 +1517,6 @@ export default function SettingsPage() {
                         value={confirmNewPassword}
                         onChange={setConfirmNewPassword}
                         required
-                        placeholder="••••••••"
                         autoComplete="new-password"
                         valueState={confirmNewPassword ? (newPassword !== confirmNewPassword ? 'error' : 'success') : undefined}
                         message={
@@ -1831,7 +1828,6 @@ export default function SettingsPage() {
                           required
                           value={s4Password}
                           onChange={setS4Password}
-                          placeholder="••••••••••••••••"
                           reveal={{ shown: showS4Password, onToggle: () => setShowS4Password(!showS4Password), label: 'Show password' }}
                         />
                       </>
@@ -2338,7 +2334,6 @@ export default function SettingsPage() {
               required
               value={disablePassword}
               onChange={setDisablePassword}
-              placeholder="••••••••"
               autoComplete="current-password"
             />
           )}

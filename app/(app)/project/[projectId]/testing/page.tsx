@@ -2450,7 +2450,6 @@ export default function TestingSandboxPage() {
                                 aria-describedby={control.describedBy}
                                 value={s4Password}
                                 onChange={e => setS4Password(e.target.value)}
-                                placeholder="••••••••••••••••"
                                 className={cn(control.className, CC_CONTROL_HEIGHT.cozy, 'pr-10')}
                               />
                               <button

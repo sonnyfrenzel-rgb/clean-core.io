@@ -8,7 +8,8 @@ import type { UserProfile } from '@/hooks/useUserProfile';
 import { OWN_KEY_ACTION, OWN_KEY_HREF, quotaExhausted, quotaSpentSentence, COMMUNITY_QUOTA_FALLBACK } from '@/lib/run-quota-rule';
 import { leaveHomeStart } from '@/lib/home-start-handoff';
 import { DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
-import { homeDemoBody, wt } from '@/lib/workspace-messages';
+import { homeDemoBody, sourceSizeLimit, wt } from '@/lib/workspace-messages';
+import { ANALYSED_SOURCE_MAX_BYTES } from '@/lib/source-limit';
 import CcButton from '@/components/cc/Button';
 
 /**
@@ -171,7 +172,9 @@ export function OwnCodeWay({
               <span className="max-[600px]:hidden">{wt('home.dropWide')}</span>
               <span className="min-[601px]:hidden">{wt('home.dropTouch')}</span>
             </b>
-            <span className="text-[13px] font-medium text-cc-ink-muted max-[600px]:hidden">{wt('home.dropTypes')}</span>
+            <span className="text-[13px] font-medium text-cc-ink-muted max-[600px]:hidden">
+              {wt('home.dropTypes')} · {sourceSizeLimit(ANALYSED_SOURCE_MAX_BYTES)}
+            </span>
           </div>
         </div>
         {buttons}

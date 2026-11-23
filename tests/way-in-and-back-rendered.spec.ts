@@ -218,8 +218,8 @@ test('(15) "already registered" offers "Sign in instead" and "Reset password"', 
   await page.goto('/?auth=signup', { waitUntil: 'domcontentloaded' });
   const dialog = page.locator('[data-access-dialog="signup"]');
   await expect(dialog).toBeVisible({ timeout: 30000 });
-  await dialog.getByLabel('First Name').fill('Ada');
-  await dialog.getByLabel('Last Name').fill('Again');
+  await dialog.getByLabel('First name').fill('Ada');
+  await dialog.getByLabel('Last name').fill('Again');
   await dialog.locator('input[type="email"]').fill(OWNER);
   const passwords = dialog.locator('input[type="password"]');
   await passwords.nth(0).fill(PASSWORD);

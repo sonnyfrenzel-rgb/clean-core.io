@@ -605,7 +605,7 @@ export default function Dashboard() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <CcLinkButton href="/how-to" variant="ghost" icon={<BookOpen size={16} aria-hidden={true} />}>
-              How-to
+              How-to guide
             </CcLinkButton>
             {hasOwnProjects ? (
               <CcButton variant="primary" icon={<Plus size={16} aria-hidden={true} />} onClick={() => setShowUpload(true)}>

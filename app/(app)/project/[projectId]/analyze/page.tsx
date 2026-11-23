@@ -22,6 +22,8 @@ import CcToast from '@/components/cc/Toast';
 import CcLinkButton from '@/components/cc/LinkButton';
 import { workspaceProcessHref } from '@/lib/workspace-back-href';
 import { CcTag } from '@/components/cc/Tag';
+import { sourceSizeLimit, wt } from '@/lib/workspace-messages';
+import { ANALYSED_SOURCE_MAX_BYTES } from '@/lib/source-limit';
 import CcDialog from '@/components/cc/Dialog';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcDisclosure from '@/components/cc/Disclosure';
@@ -361,7 +363,9 @@ function AnalyzeScorePage() {
   };
 
   /** The limit the upload area has always advertised. */
-  const MAX_UPLOAD_BYTES = 1024 * 1024;
+  // The server's limit (`lib/source-limit.ts`), said in the one wording of Q5: a larger file is refused here, not
+  // after it was staged.
+  const MAX_UPLOAD_BYTES = ANALYSED_SOURCE_MAX_BYTES;
 
   /**
    * Which file selection is the latest. A slow read of an earlier file used to
@@ -388,7 +392,7 @@ function AnalyzeScorePage() {
     
     // Scan file metadata first
     if (!file.name.endsWith('.abap') && !file.name.endsWith('.txt')) {
-        rejectFile('Security Block: Unauthorized file type. Only standard ABAP source (.abap) or plain text (.txt) files are permitted.');
+        rejectFile('Only ABAP source as a .abap or .txt file can be added here.');
         return;
     }
 
@@ -396,7 +400,7 @@ function AnalyzeScorePage() {
     // the whole file into memory, rendered it into the textarea and the scanner,
     // and tried to put it in a model request.
     if (file.size > MAX_UPLOAD_BYTES) {
-        rejectFile(`That file is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 1 MB — analyse one object at a time, or paste the part you want assessed.`);
+        rejectFile(`That file is ${Math.ceil(file.size / 1024).toLocaleString('en')} KB. One analysis reads ${sourceSizeLimit(MAX_UPLOAD_BYTES)}: analyze one program at a time, or paste the part you want assessed.`);
         return;
     }
 
@@ -1779,8 +1783,8 @@ function AnalyzeScorePage() {
                   <div className="w-16 h-16 bg-cc-surface-muted border border-cc-line rounded-cc-card flex items-center justify-center mb-6">
                     <CheckCircle2 className="w-8 h-8 text-cc-ink" aria-hidden="true" />
                   </div>
-                  <h2 className="cc-text-h2 text-cc-ink mb-2">Source Code Ready</h2>
-                  <p className="cc-text-body text-cc-ink-muted mb-6">Your legacy asset has been successfully staged for analysis.</p>
+                  <h2 className="cc-text-h2 text-cc-ink mb-2">Source code ready</h2>
+                  <p className="cc-text-body text-cc-ink-muted mb-6">The program is staged for analysis.</p>
                   <CcButton variant="secondary" onClick={() => fileInputRef.current?.click()}>
                     Replace file
                   </CcButton>
@@ -1790,15 +1794,12 @@ function AnalyzeScorePage() {
                   <div className="w-16 h-16 bg-cc-surface-muted border border-cc-line rounded-cc-card flex items-center justify-center mb-6">
                     <UploadCloud className="w-8 h-8 text-cc-ink-muted" aria-hidden="true" />
                   </div>
-                  <h2 className="cc-text-h2 text-cc-ink mb-2">Upload Legacy Asset</h2>
-                  <p className="cc-text-body text-cc-ink-muted mb-6 max-w-md">Drag and drop your legacy code file here, or choose one. Supports .abap and .txt formats.</p>
+                  {/* Q5: the words of the one upload control (the home page's drop area, `HomeStartParts`). */}
+                  <h2 className="cc-text-h2 text-cc-ink mb-2">{wt('home.dropWide')}</h2>
+                  <p className="cc-text-body text-cc-ink-muted mb-6 max-w-md">ABAP source as .abap or .txt · {sourceSizeLimit(MAX_UPLOAD_BYTES)}</p>
                   <CcButton variant="secondary" icon={<UploadCloud size={16} aria-hidden="true" />} onClick={() => fileInputRef.current?.click()}>
-                    Choose a file
+                    {wt('home.chooseFile')}
                   </CcButton>
-                  <div className="flex items-center gap-2 mt-6">
-                    <CcTag>Evidence-Backed</CcTag>
-                    <CcTag>Max 1MB</CcTag>
-                  </div>
                 </>
               )}
             </div>

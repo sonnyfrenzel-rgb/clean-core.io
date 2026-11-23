@@ -64,7 +64,7 @@ export default function HowToPage() {
         <div className="max-w-4xl space-y-6">
           <div className="flex flex-wrap items-center gap-3">
             <div className="inline-flex items-center gap-2 bg-cc-brand-surface border border-cc-brand px-4 py-1 rounded-full text-xs font-bold text-cc-brand-strong tracking-wide uppercase">
-              <BookOpen size={14} aria-hidden="true" /> How-to Tutorials
+              <BookOpen size={14} aria-hidden="true" /> How-to guide
             </div>
             <div className="inline-flex items-center gap-2 bg-cc-surface-muted border border-cc-line px-4 py-1 rounded-full text-xs font-bold text-cc-ink-muted tracking-wide uppercase">
               Version {APP_VERSION} ({APP_RELEASE_DATE})
