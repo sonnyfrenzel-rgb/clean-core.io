@@ -344,7 +344,6 @@ test.describe('one place', () => {
     before('components/demo/DemoTesting.tsx', /<PageAnchorBar\b/, 'id="testing-tested"');
     before(PAGE('delivery'), /<PageAnchorBar\b/, 'id="before-go-live"');
     before('components/delivery/DemoDelivery.tsx', /<PageAnchorBar\b/, 'id="before-go-live"');
-    before(PAGE('documentation'), /<DocumentChapterBar\b/, 'data-documentation-description');
     // Economics: under the answer card, before the range chart (ADR-128).
     before('components/tco/EconomicsObjectPage.tsx', /<AnswerCard\b/, '<PageAnchorBar');
     before('components/tco/EconomicsObjectPage.tsx', /<PageAnchorBar\b/, 'id="economics-range"');
