@@ -3,7 +3,7 @@
 import React from 'react';
 import { AlertTriangle, Check, MoreHorizontal, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { formatElapsed } from '@/lib/generation-progress';
 import { phaseHeading, type ChainSlot, type GenerationCheck, type GenerationStage } from '@/lib/transformation-chain';
 import { tfAttempt, tfElapsed, tfTook, wt } from '@/lib/workspace-messages';
@@ -139,7 +139,7 @@ function SlotBody({ slot, mode, lit }: { slot: ChainSlot; mode: 'before' | 'run'
           {slot.facts.map((f) => (
             <li key={f.key} data-chain-fact={f.key} className="flex min-w-0 flex-wrap items-baseline gap-2">
               <span className="min-w-0 flex-[1_1_220px] font-medium text-cc-ink [overflow-wrap:anywhere]">{f.text}</span>
-              <CcProvenanceChip value={f.provenance} />
+              <FamilyChip value={f.provenance} />
               {!f.read ? (
                 <span data-chain-not-read="" className="w-full text-[12px] font-semibold text-cc-ink-muted">
                   {wt('transformation.notReadYet')}
@@ -205,7 +205,7 @@ function StageBody({ stage, now }: { stage: GenerationStage; now: number }) {
           {stage.facts.map((f) => (
             <li key={f} className="flex min-w-0 flex-wrap items-baseline gap-2">
               <span className="min-w-0 flex-[1_1_220px] font-medium text-cc-ink">{f}</span>
-              <CcProvenanceChip value={stage.provenance} />
+              <FamilyChip value={stage.provenance} />
             </li>
           ))}
         </ul>

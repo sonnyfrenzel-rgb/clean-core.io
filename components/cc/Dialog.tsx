@@ -92,7 +92,7 @@ interface CcDialogOwnProps {
   actions?: React.ReactNode;
   /** Makes body and footer a form; `event.preventDefault()` is already done. */
   onSubmit?: (event: React.FormEvent<HTMLFormElement>) => void;
-  /** `default` 32 rem for a form, `wide` 48 rem for a table or a longer explanation. */
+  /** `default` 32 rem for a form, `wide` 48 rem for a table or a longer explanation (docked to the side: 1040 px, for code). */
   size?: 'default' | 'wide';
   /**
    * `side` docks the dialog to the right edge at full height — the details of
@@ -188,7 +188,9 @@ export default function CcDialog(props: CcDialogProps) {
         data-cc-dialog-size={size}
         className={
           side
-            ? 'relative flex h-full max-h-full w-full min-w-0 max-w-lg flex-col border-l border-cc-line bg-cc-surface shadow-cc-dialog'
+            ? 'relative flex h-full max-h-full w-full min-w-0 flex-col border-l border-cc-line bg-cc-surface shadow-cc-dialog ' +
+              // A wide side drawer holds code side by side (Transformation's code drawer, ADR-129).
+              (size === 'wide' ? 'max-w-[1040px]' : 'max-w-lg')
             : 'relative flex max-h-[calc(100dvh-2rem)] w-full min-w-0 flex-col max-sm:max-h-full [@media(max-height:640px)]:max-h-full rounded-cc-card border border-cc-line bg-cc-surface shadow-cc-dialog ' +
               (size === 'wide' ? 'max-w-3xl' : 'max-w-lg')
         }
