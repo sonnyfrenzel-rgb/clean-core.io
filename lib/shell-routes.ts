@@ -72,6 +72,7 @@ export const SIGNED_IN_SHELL_ROUTES: readonly string[] = [
   '/project/[projectId]/design/requirements',
   '/project/[projectId]/documentation',
   '/project/[projectId]/tco',
+  '/project/[projectId]/redesign',
   '/project/[projectId]/testing',
   '/project/[projectId]/transformation',
   '/settings',
