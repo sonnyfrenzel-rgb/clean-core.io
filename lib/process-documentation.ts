@@ -55,7 +55,7 @@ export function commitWaitWords(andWait: boolean | null): string {
 
 /** What this document is. Printed at the top of every rendering. */
 export const PROCESS_DOCUMENTATION_DISCLAIMER =
-  'Read by the engine out of the whole source the signed run analysed. No language model wrote its process structure '
+  'Read by the engine out of the whole source the signed run analyzed. No language model wrote its process structure '
   + 'or its statements. Every statement names the lines it was read from, or says that it is not determined and why. '
   + 'The one exception is marked where it appears: business names and lanes from the naming stage are AI-generated.';
 

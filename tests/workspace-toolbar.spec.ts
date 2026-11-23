@@ -64,7 +64,7 @@ const manifestFor = (source: string) =>
 
 /** Analyze done by a signed run on this very source — nothing else on record. */
 const analyzedDoc = (uid: string): Record<string, unknown> => ({
-  name: 'Toolbar — analysed', userId: uid, createdAt: new Date(),
+  name: 'Toolbar — analyzed', userId: uid, createdAt: new Date(),
   legacyCode: SOURCE, s4Deployment: 'private', cleanCoreScore: 62,
   // A client-set status that claims the opposite: the bar must not read it.
   status: 'completed',

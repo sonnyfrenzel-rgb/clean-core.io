@@ -108,7 +108,7 @@ export function evidenceFacts(run: unknown): EvidenceFact[] {
   const findings = Array.isArray(r.evidenceReport) ? r.evidenceReport.length : undefined;
   return [
     { key: 'source', label: 'source fingerprint', value: shortHash(fp.sha256) },
-    { key: 'lines', label: 'lines analysed', value: safeValue(fp.lineCount) },
+    { key: 'lines', label: 'lines analyzed', value: safeValue(fp.lineCount) },
     { key: 'findings', label: 'findings', value: safeValue(findings) },
     { key: 'route', label: 'recommended route', value: safeValue(r.originalRecommendation) },
     { key: 'rules', label: 'rule version', value: safeValue(r.rulesetVersion) },

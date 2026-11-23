@@ -190,7 +190,7 @@ test.describe('the two endings (server-free render)', () => {
       expect(html).toMatch(/href="\/project\/p1\/design"/);
       expect(html).toMatch(/href="\/dashboard"/);
       expect(textOf(html)).toContain('Re-design this program');
-      expect(textOf(html)).toContain('Analyse another Z program');
+      expect(textOf(html)).toContain('Analyze another Z program');
     }
   });
 

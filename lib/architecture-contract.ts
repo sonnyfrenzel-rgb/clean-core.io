@@ -213,7 +213,7 @@ const LIMIT_SENTENCES: Record<ContractLimitCode, (subject: string | null) => str
   'inputs-not-bound': () =>
     'The run recorded no input manifest, so this contract cannot say what it was derived from. A contract that names inputs the run never had is the defect the manifest exists to prevent.',
   'inputs-differ': (s) =>
-    `The project's ${s || 'inputs'} no longer match what the run recorded, so this contract would be derived from inputs the run never analysed. Run the analysis again before anything is generated.`,
+    `The project's ${s || 'inputs'} no longer match what the run recorded, so this contract would be derived from inputs the run never analyzed. Run the analysis again before anything is generated.`,
   'catalog-not-edition-specific': (s) =>
     `The catalog that answered is the Public Cloud release list; this build ships no edition-specific snapshot, and the lookup takes no edition (\`lib/abap/catalog-service.ts\` names neither \`deployment\` nor \`edition\`). The ${s} target context is bound as an input, not corroborated by a catalog for that edition.`,
   'modification-unreset': (s) =>

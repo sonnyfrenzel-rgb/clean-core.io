@@ -1187,7 +1187,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
     ? phase('tco', {
         state: 'empty',
         badge: 'No baseline',
-        detail: 'The signed run could not be read — the options have no analysed program to be priced for.',
+        detail: 'The signed run could not be read — the options have no analyzed program to be priced for.',
       })
     : hasRun && econ && econProgress
     ? econProgress.complete
@@ -1211,7 +1211,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
     : phase('tco', {
         state: 'empty',
         badge: 'No baseline',
-        detail: 'No signed run — the options are priced for an analysed program.',
+        detail: 'No signed run — the options are priced for an analyzed program.',
       });
   // The figures were stored against a score the signed run no longer has.
   const econScoreMoved = Boolean(econ && econProgress && econ.basis.score !== score);
@@ -1331,7 +1331,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
 
   return inToolOrder([
     hasRun && s.sourceChanged
-      ? stale(analyze, 'The source on this project is not the one the signed run analysed — re-run the analysis.', 'Source changed')
+      ? stale(analyze, 'The source on this project is not the one the signed run analyzed — re-run the analysis.', 'Source changed')
       : hasRun && s.unverifiedInputs.length > 0
         ? stale(
             analyze,

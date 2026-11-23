@@ -91,13 +91,13 @@ function figure(figures: FirstLookFigure[], key: string): FirstLookFigure {
 }
 
 test.describe('every number comes from the run, or is a word', () => {
-  test('a project nobody has analysed has no finding count — not a zero', () => {
+  test('a project nobody has analyzed has no finding count — not a zero', () => {
     const stage = codeReadStage(projectWith({ legacyCode: BRANCHING }), readTables(BRANCHING));
 
     const findings = figure(stage.figures, 'findings');
     expect(findings.value, 'a finding count appeared without a run').toBeNull();
     expect(findings.origin).toBe('absent');
-    expect(findings.absentReason).toBe('not analysed');
+    expect(findings.absentReason).toBe('not analyzed');
     expect(stage.result).toContain('no finding count');
     expect(stage.result, 'the stage reported a measurement it does not have').not.toMatch(/\b0 findings\b/);
   });

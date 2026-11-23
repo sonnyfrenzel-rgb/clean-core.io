@@ -300,7 +300,7 @@ test.describe('the delivery package\'s Markdown files mark the naming and SOP mo
     expect(plain).not.toContain('Business names from the naming stage are AI-generated');
     expect(plain).toContain('Provenance: Reconstructed.');
     expect(plain).not.toContain('The one exception is marked where it appears');
-    expect(plain).toContain('> Read by the engine out of the whole source the signed run analysed.');
+    expect(plain).toContain('> Read by the engine out of the whole source the signed run analyzed.');
     const named = processDocumentationToMarkdown(namedDocumentation());
     expect(named).toContain('The one exception is marked where it appears: business names and lanes from the naming stage are AI-generated.');
     expect(named).toContain('Provenance: Reconstructed, unless a column says otherwise. Business names and lanes are AI-generated.');

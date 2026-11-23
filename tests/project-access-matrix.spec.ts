@@ -426,7 +426,7 @@ const CASES: RouteCase[] = [
   },
   {
     key: 'app/api/projects/[projectId]/evidence/route.ts#POST',
-    what: 'the evidence of a source about to be analysed — the first half of a run',
+    what: 'the evidence of a source about to be analyzed — the first half of a run',
     method: 'POST',
     path: (p) => `/api/projects/${p}/evidence`,
     // No ABAP construct: the owner is let through the gate and refused for the

@@ -203,10 +203,10 @@ test.describe('a row a business reader understands — lib/project-progress.ts (
     expect(workflowSteps(staged).filter((s) => s.state === 'stale')).toEqual([]);
   });
 
-  test('the legacy row says "not analysed" once and consistently — no count, out of date in words', () => {
+  test('the legacy row says "not analyzed" once and consistently — no count, out of date in words', () => {
     const p = projectProgress(legacy);
     expect(p.stage).toBe('not-analysed');
-    expect(p.sentence).toBe('Not analysed yet — earlier results on it are out of date.');
+    expect(p.sentence).toBe('Not analyzed yet — earlier results on it are out of date.');
     expect(p.sentence).not.toMatch(/steps? done/);
     expect(p.stepLabel).toBe('Step 1 of 7');
     expect(p.next).toEqual({ label: 'Run the analysis', path: 'analyze' });
@@ -231,7 +231,7 @@ test.describe('a row a business reader understands — lib/project-progress.ts (
   test('the sentence is plain words — never a bare "draft", never a count — and the next action says what it does', () => {
     const s = projectProgress(staged);
     expect(s.stage).toBe('not-analysed');
-    expect(s.sentence).toBe('Not analysed yet — the code is uploaded.');
+    expect(s.sentence).toBe('Not analyzed yet — the code is uploaded.');
     expect(s.sentence).not.toMatch(/\bdraft\b/i);
     expect(s.tone).toBe('waiting');
     expect(s.stepLabel).toBe('Step 1 of 7');
@@ -241,7 +241,7 @@ test.describe('a row a business reader understands — lib/project-progress.ts (
     expect(e.next?.label).toBe('Upload the code');
     const a = projectProgress(analysed);
     expect(a.stage).toBe('in-progress');
-    expect(a.sentence).toBe('Analysed — in progress.');
+    expect(a.sentence).toBe('Analyzed — in progress.');
     expect(a.tone).toBe('moving');
     // Analyze is done and the design is not confirmed: Design is step 3 in the tool order (after Economics, ADR-128 (5)).
     expect(a.stepLabel).toBe('Step 3 of 7');

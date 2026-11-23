@@ -46,7 +46,7 @@ export const OWN_CODE_MESSAGES = {
   'ownCode.payOwnKeyOffBefore': 'To run on your own Gemini key instead, with no limit, add it in',
   'ownCode.payOwnKeyOffLink': 'Settings',
   'ownCode.sameSource':
-    'If this exact source was analysed before, the button says “Free — this source was already analysed” instead.',
+    'If this exact source was analyzed before, the button says “Free — this source was already analyzed” instead.',
   'ownCode.whereModel': 'Where a model is called',
   'ownCode.namesTitle': 'Business names',
   'ownCode.namesBody': 'Names for steps and lanes, and the plain-language sentence. Shown as',
@@ -153,7 +153,7 @@ export function ownCodeIssueText(issue: OwnCodeIssue): string {
     case 'duplicate-same':
       return `Same source twice — the copy in ${issue.keptFrom} is used.`;
     case 'duplicate-different':
-      return `${issue.object} is also in ${issue.other}, with different text. Remove the copy you do not want analysed.`;
+      return `${issue.object} is also in ${issue.other}, with different text. Remove the copy you do not want analyzed.`;
     case 'zip-unreadable':
       return 'This ZIP could not be opened. Remove it, or upload the files on their own.';
     case 'zip-limit':
@@ -163,7 +163,7 @@ export function ownCodeIssueText(issue: OwnCodeIssue): string {
     case 'zip-skipped':
       return `Not read — not ABAP source: ${list(issue.names)}.`;
     case 'zip-abapgit-metadata':
-      return `abapGit description files not read (${issue.count}): they describe the objects, the .abap files hold the code that is analysed.`;
+      return `abapGit description files not read (${issue.count}): they describe the objects, the .abap files hold the code that is analyzed.`;
     case 'second-program':
       return `${issue.object} is a second program besides ${issue.main}. One project holds one program with its includes — remove one.`;
     case 'not-referenced':
@@ -185,7 +185,7 @@ export function ownCodeAttention(n: number): string {
 }
 
 export function ownCodeTooLarge(bytes: number, limit: number): string {
-  return `Together the files are ${KB(bytes)} of source; one analysis reads at most ${KB(limit)}. Analyse the program in parts.`;
+  return `Together the files are ${KB(bytes)} of source; one analysis reads at most ${KB(limit)}. Analyze the program in parts.`;
 }
 
 /**

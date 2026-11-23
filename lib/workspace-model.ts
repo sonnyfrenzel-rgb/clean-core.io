@@ -812,7 +812,7 @@ export function workspaceLayers(
               .filter(Boolean)
               .join(' · ')
           : null,
-      missing: 'Nothing has been analysed, so there are no objects and no dependencies to show.',
+      missing: 'Nothing has been analyzed, so there are no objects and no dependencies to show.',
       rows: architectureRows.slice(0, FIRST),
       total: architectureRows.length,
       provenance: architectureRows.length > 0 ? 'reconstructed' : 'not-determined',

@@ -56,6 +56,11 @@ The new UX along the accepted mock-ups, every proposal of the UX review of 22.11
 
 ### Changed
 
+- One spelling, "Analyze", wherever the product speaks English (owner, 23.11.2026): "Analyze another Z program",
+  "Not analyzed yet", "Analyzed", "analyze the object in parts" and every other user-visible "analyse",
+  "analysed" and "analysing" in pages, messages, API errors, mails, the whitepaper and `llms.txt`. Addresses,
+  ids and stored values are unchanged; the legal texts are untouched, and the engine's own wording in signed
+  results ("Not established for the analysed code") stays until an engine release gates it.
 - The charts under the map count FORM and method names apart: a FORM named like a method finds its `PERFORM`
   callers again, and only `PERFORM` calls a FORM (`lib/process-fact-charts.ts`, display only; QA d0f38d1a7bc7).
 - The UX review workflow runs on `main` only; started on any other ref, every job is skipped (SEC-35f5c34-01).

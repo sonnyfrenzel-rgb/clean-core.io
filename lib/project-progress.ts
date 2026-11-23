@@ -42,7 +42,7 @@ export type ProjectStage = 'not-started' | 'not-analysed' | 'in-progress' | 'all
 
 export const PROJECT_STAGE_LABEL: Record<ProjectStage, string> = {
   'not-started': 'Not started',
-  'not-analysed': 'Not analysed yet',
+  'not-analysed': 'Not analyzed yet',
   'in-progress': 'In progress',
   'all-done': 'All steps done',
   'handed-over': 'Handed over',
@@ -152,13 +152,13 @@ export function projectProgress(project: Project | null): ProjectProgress {
     // Results from before any signed analysis are on record: say so, in words,
     // instead of counting them as steps done.
     sentence = anyStaleStep
-      ? 'Not analysed yet — earlier results on it are out of date.'
-      : 'Not analysed yet — the code is uploaded.';
+      ? 'Not analyzed yet — earlier results on it are out of date.'
+      : 'Not analyzed yet — the code is uploaded.';
   } else {
     stage = 'in-progress';
     sentence = stale
-      ? `Analysed — some results no longer match ${codeMoved ? 'the code' : 'their inputs'}.`
-      : 'Analysed — in progress.';
+      ? `Analyzed — some results no longer match ${codeMoved ? 'the code' : 'their inputs'}.`
+      : 'Analyzed — in progress.';
   }
 
   const open = !next.done && stage !== 'handed-over' && stage !== 'all-done';

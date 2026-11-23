@@ -323,7 +323,7 @@ function findingFigure(project: Project | null): FirstLookFigure {
   if (hasRun && Array.isArray(project?.worklist)) {
     return { key: 'findings', label: 'findings', value: String(project.worklist.length), origin: 'run' };
   }
-  return { key: 'findings', label: 'findings', value: null, origin: 'absent', absentReason: 'not analysed' };
+  return { key: 'findings', label: 'findings', value: null, origin: 'absent', absentReason: 'not analyzed' };
 }
 
 /**
@@ -347,7 +347,7 @@ export function codeReadStage(project: Project | null, tables: ReadonlySet<strin
     result: !source.trim()
       ? 'No source has been staged, so nothing was read.'
       : findings.value === null
-        ? `${lines.value} lines read. No run has analysed this source, so there is no finding count.`
+        ? `${lines.value} lines read. No run has analyzed this source, so there is no finding count.`
         : `${lines.value} lines, ${plural(Number(findings.value), 'finding', 'findings')}.`,
     figures: source.trim()
       ? [lines, { key: 'tables', label: 'tables', value: String(tables.size), origin: 'engine' }, findings]

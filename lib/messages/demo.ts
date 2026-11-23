@@ -64,7 +64,7 @@ export const DEMO_WORKSPACE_MESSAGES = {
   'tour.goThere': 'Go there',
   'tour.restart': 'Restart tour',
   'tour.invitationLead':
-    'An example costs nothing and is analysed by the same engine as this demo. Your own code stays yours.',
+    'An example costs nothing and is analyzed by the same engine as this demo. Your own code stays yours.',
   'tour.end': 'End tour',
   'tour.continue': 'Continue tour',
   'tour.next': 'Next',

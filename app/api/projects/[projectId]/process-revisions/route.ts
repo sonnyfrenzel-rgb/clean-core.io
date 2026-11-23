@@ -338,7 +338,7 @@ async function verifiedRun(
   const unverified = NextResponse.json(
     {
       error:
-        'The analysis run this project points at could not be verified as the run that signed its source. Analyse the source again before a process is reconstructed from it.',
+        'The analysis run this project points at could not be verified as the run that signed its source. Analyze the source again before a process is reconstructed from it.',
       code: 'run-unverified',
     },
     { status: 409 },
@@ -438,7 +438,7 @@ async function ensureBaseline(
   if (run.sha256 !== sourceSha256) {
     return {
       refusal: NextResponse.json(
-        { error: 'The source changed since the run signed it. Analyse it again before the process is reconstructed.', code: 'source-moved' },
+        { error: 'The source changed since the run signed it. Analyze it again before the process is reconstructed.', code: 'source-moved' },
         { status: 409 },
       ),
     };

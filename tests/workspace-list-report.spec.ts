@@ -234,7 +234,7 @@ test.describe('with projects', () => {
 
   test.beforeAll(async () => {
     await adminSetDoc('projects', STAGED_ID, {
-      name: 'Staged, never analysed',
+      name: 'Staged, never analyzed',
       userId: adminUid,
       createdAt: new Date(),
       status: 'uploaded',
@@ -374,9 +374,9 @@ test.describe('with projects', () => {
     expect(await page.locator('#home-panel-mine [data-cc-table]').count()).toBe(0);
     // The status words of AB-14b (H-O3): not analysed, no step count and no step bar.
     await expect(card.locator('[data-home-status]')).toHaveAttribute('data-home-status', 'notrun');
-    await expect(card.locator('[data-home-status-title]')).toHaveText('Not analysed yet');
+    await expect(card.locator('[data-home-status-title]')).toHaveText('Not analyzed yet');
     await expect(card).not.toContainText(/\d of 6 steps done/);
-    expect(await card.locator('[data-home-redesign-bar]').count(), 'a step bar on a project nothing analysed').toBe(0);
+    expect(await card.locator('[data-home-redesign-bar]').count(), 'a step bar on a project nothing analyzed').toBe(0);
     // One next step: the run, through its dialog.
     await expect(card.locator('[data-home-next]')).toHaveCount(1);
     await expect(card.locator(`[data-home-run="${STAGED_ID}"]`)).toBeVisible();
@@ -398,7 +398,7 @@ test.describe('with projects', () => {
 
     // Status (AB-14b, H-O3): a status word and the line under it, never a bare "draft" — and nothing counted as done.
     await expect(row.locator('[data-home-status]')).toHaveAttribute('data-home-status', 'notrun');
-    await expect(row.locator('[data-home-status-title]')).toHaveText('Not analysed yet');
+    await expect(row.locator('[data-home-status-title]')).toHaveText('Not analyzed yet');
     await expect(row.locator('[data-home-status-detail]')).toHaveText('Code uploaded');
     expect(await row.locator('[data-cc-object-status]').count(), 'a bare status word is back').toBe(0);
     expect(await row.locator('[data-home-redesign-bar]').count(), 'the step bar is back').toBe(0);
@@ -434,7 +434,7 @@ test.describe('with projects', () => {
     // DESIGN.md §4.1: *stale* is provenance, not a status of its own — the row stays "Analysed", the line under it
     // says the code changed as a warning (never the error look), and the next step is the analysis again (AB-14b).
     await expect(row.locator('[data-home-status]')).toHaveAttribute('data-home-status', 'analysed');
-    await expect(row.locator('[data-home-status-title]')).toHaveText('Analysed');
+    await expect(row.locator('[data-home-status-title]')).toHaveText('Analyzed');
     await expect(row.locator('[data-home-status-detail]')).toHaveAttribute('data-home-status-detail', 'warn');
     await expect(row.locator('[data-home-status-detail]')).toHaveText('The code changed since');
     await expect(row.locator(`[data-home-run="${STALE_ID}"]`)).toHaveText('Run the analysis again');
@@ -449,7 +449,7 @@ test.describe('with projects', () => {
     await page.locator('[data-home-figures]').click();
   });
 
-  test('a project with no signed run reads "not analysed" throughout — no step count, no step bar', async ({ page }) => {
+  test('a project with no signed run reads "not analyzed" throughout — no step count, no step bar', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await openWorkspace(page);
 
@@ -458,7 +458,7 @@ test.describe('with projects', () => {
     // Design, code, documentation and a test draft on record, and no signed run: the status is read from the phase
     // contract, never from `project.status` ('completed' here), and nothing counts as done (AB-14b, H-O3).
     await expect(row.locator('[data-home-status]')).toHaveAttribute('data-home-status', 'notrun');
-    await expect(row.locator('[data-home-status-title]')).toHaveText('Not analysed yet');
+    await expect(row.locator('[data-home-status-title]')).toHaveText('Not analyzed yet');
     await expect(row.locator(`[data-home-run="${LEGACY_ID}"]`)).toBeVisible();
     await expect(row).not.toContainText(/\d of \d steps done/);
     await expect(row).not.toContainText('Re-design');
@@ -469,7 +469,7 @@ test.describe('with projects', () => {
     await page.locator('[data-home-filters]').getByLabel('Status').selectOption('notrun');
     expect(await rowTitles(page)).toContain('Made before the trust chain');
     for (const title of await page.locator('#home-panel-mine [data-home-status-title]').allInnerTexts()) {
-      expect(title.trim()).toBe('Not analysed yet');
+      expect(title.trim()).toBe('Not analyzed yet');
     }
   });
 

@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
         if (current !== analysed) {
           blockers.push({
             code: 'source-changed',
-            message: 'The source on this project is not the one the signed run analysed. Re-run the analysis.',
+            message: 'The source on this project is not the one the signed run analyzed. Re-run the analysis.',
           });
         }
       }

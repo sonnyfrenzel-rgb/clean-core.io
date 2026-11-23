@@ -172,7 +172,7 @@ test.describe('delivery page — QA full review of v2.20.0', () => {
     await expect(pack.locator('[data-family-chip="signed"]')).toHaveCount(0);
   });
 
-  test('ea7d41305986 · a source that is not the analysed one gets no stakeholder deck', async ({ page }) => {
+  test('ea7d41305986 · a source that is not the analyzed one gets no stakeholder deck', async ({ page }) => {
     test.setTimeout(120 * 1000);
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${SOURCE_CHANGED}/delivery`, { waitUntil: 'domcontentloaded' });

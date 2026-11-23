@@ -51,7 +51,7 @@ const signed = (id: string, extra: Record<string, unknown> = {}) =>
   } as Record<string, unknown>);
 
 test.describe('one tile per program, both products', () => {
-  test('a program nobody analysed: Analyse says so, Re-design waits for it, no figure is invented', () => {
+  test('a program nobody analyzed: Analyze says so, Re-design waits for it, no figure is invented', () => {
     const t = toProgramTile(project('a'));
     expect(t.analyse).toEqual({ kind: 'not-analysed' });
     expect(t.redesign).toEqual({ kind: 'waits' });
@@ -119,7 +119,7 @@ test.describe('one tile per program, both products', () => {
     expect(t.redesign).toEqual({ kind: 'not-needed', option: 'retire', confirmed: true });
   });
 
-  test('changed code: Analyse is out of date and Re-design waits', () => {
+  test('changed code: Analyze is out of date and Re-design waits', () => {
     const t = toProgramTile(signed('e', { legacyCode: `${SOURCE}WRITE 2.\n` }));
     expect(t.analyse).toEqual({ kind: 'stale' });
     expect(t.redesign).toEqual({ kind: 'waits' });
@@ -183,7 +183,7 @@ test.describe('one next step per program, one reason for attention (owner decisi
     expect(page).toContain('programNextLabel(programNextStep(tile))');
   });
 
-  test('attention is code changed or not analysed — never a program without code, never a signed one', () => {
+  test('attention is code changed or not analyzed — never a program without code, never a signed one', () => {
     expect(attentionOf(toProgramTile(project('a')))).toBe('not-analysed');
     expect(attentionOf(toProgramTile(signed('e', { legacyCode: `${SOURCE}WRITE 2.
 ` })))).toBe('code-changed');
@@ -205,7 +205,7 @@ test.describe('one next step per program, one reason for attention (owner decisi
   });
 });
 
-test('the Analyse card and the start tile say what is left in one wording (QA review e88165b56339)', () => {
+test('the Analyze card and the start tile say what is left in one wording (QA review e88165b56339)', () => {
   for (const left of ['3 of 5 runs left', '']) {
     expect(wsQuotaLine(left)).toBe(`${left} · the same code again is free`);
     expect(homeAnalyseCostLine(left)).toBe(wsQuotaLine(left));

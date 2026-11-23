@@ -489,7 +489,7 @@ function AnalyzeScorePage() {
     // only place that sees the final string.
     const scanBlock = scanCodeContent(codeToAnalyze);
     if (scanBlock) {
-        setError(`Security Block: ${scanBlock} Remove the flagged content before analysing.`);
+        setError(`Security Block: ${scanBlock} Remove the flagged content before analyzing.`);
         return;
     }
     if (!isLegacyCode(codeToAnalyze)) {
@@ -1011,7 +1011,7 @@ function AnalyzeScorePage() {
   const startBlockedReason: string | null = startInFlight
     ? 'The analysis is running. It was started in the Business view; this page shows its result once it is signed.'
     : stagedScanBlock
-    ? `Security Block: ${stagedScanBlock} Remove the flagged content before analysing.`
+    ? `Security Block: ${stagedScanBlock} Remove the flagged content before analyzing.`
     : !targetDeployment
       ? 'Select a target operating model (SAP S/4HANA Cloud Public Edition or SAP Cloud ERP Private) above to start.'
       : !acceptedTerms
@@ -1837,7 +1837,7 @@ function AnalyzeScorePage() {
                 {/* Visual Security Badge */}
                 {stagedScanBlock ? (
                   <CcMessageStrip state="error" headline="Malicious Payload Check failed:">
-                    {stagedScanBlock} Remove the flagged content before analysing.
+                    {stagedScanBlock} Remove the flagged content before analyzing.
                   </CcMessageStrip>
                 ) : (
                   <CcMessageStrip state="success" headline="Malicious Payload Check passed:">

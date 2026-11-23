@@ -434,7 +434,7 @@ export function readinessCard(trend: ScoreTrend): ReadinessCard {
       trend.state === 'unreadable'
         ? 'Clean Core Score history not determined: the runs could not be read'
         : trend.state === 'no-run'
-          ? 'No Clean Core Score: nothing has been analysed under a signature yet'
+          ? 'No Clean Core Score: nothing has been analyzed under a signature yet'
           : 'No Clean Core Score: the signed run records none';
   } else if (trend.state === 'trend') {
     const first = trend.points[0].score;

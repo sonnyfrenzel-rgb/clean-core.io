@@ -646,11 +646,11 @@ export default function DesignSystemGallery() {
                 key: 'staged',
                 cells: {
                   project: (
-                    <CcObjectIdentifier title="Staged, never analysed" identifier="P-0422" />
+                    <CcObjectIdentifier title="Staged, never analyzed" identifier="P-0422" />
                   ),
                   lines: '2,410',
                   findings: (
-                    <span className="text-[12px] font-medium text-cc-ink-muted">not analysed</span>
+                    <span className="text-[12px] font-medium text-cc-ink-muted">not analyzed</span>
                   ),
                   status: <CcObjectStatus value="draft" />,
                 },

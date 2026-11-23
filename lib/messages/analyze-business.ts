@@ -41,7 +41,7 @@ export const ANALYZE_BUSINESS_MESSAGES = {
   'abiz.redesignReader': 'The owner can re-design it.',
   'abiz.whatHappens': 'What happens:',
   'abiz.whatYouDo': 'What you do:',
-  'abiz.anotherTitle': 'Analyse another Z program',
+  'abiz.anotherTitle': 'Analyze another Z program',
   'abiz.anotherLead': 'Upload another program, or start from one of the examples.',
   'abiz.anotherShort': 'Upload one, or start from an example.',
   'abiz.anotherOpen': 'Choose a program',

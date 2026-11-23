@@ -84,7 +84,7 @@ export const CC_MESSAGES = {
   'workspace.demoLastChange': 'rebuilt on every visit',
   'workspace.emptyTitle': 'No projects yet',
   'workspace.emptyBody':
-    'A project is one piece of ABAP taken from not understood to a decision you can show someone. Nothing is analysed until you start a run.',
+    'A project is one piece of ABAP taken from not understood to a decision you can show someone. Nothing is analyzed until you start a run.',
   'workspace.noMatch': 'No projects match these filters',
   'workspace.noMatchReason': 'Every project you have is still here — the filters are hiding them.',
   'workspace.filterStatus': 'Status',
@@ -96,8 +96,8 @@ export const CC_MESSAGES = {
   'workspace.colLastChange': 'Last change',
   'workspace.colActions': 'Row actions',
   'workspace.notStaged': 'not staged',
-  'workspace.notAnalysed': 'not analysed',
-  'workspace.linesStaged': 'staged, not analysed',
+  'workspace.notAnalysed': 'not analyzed',
+  'workspace.linesStaged': 'staged, not analyzed',
   'workspace.noDate': 'no date recorded',
 } as const;
 

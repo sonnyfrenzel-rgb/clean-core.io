@@ -61,8 +61,8 @@ export interface HomeStatus {
 /** The status words, by kind — what the Status filter offers, in the order a project moves. */
 export const HOME_STATUS_LABEL: Readonly<Record<HomeStatusKind, string>> = Object.freeze({
   nocode: 'No code yet',
-  notrun: 'Not analysed yet',
-  analysed: 'Analysed',
+  notrun: 'Not analyzed yet',
+  analysed: 'Analyzed',
   redesign: 'Re-design under way',
   complete: 'Re-design done',
   handed: 'Handed over',

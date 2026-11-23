@@ -595,7 +595,7 @@ function decisionAnswer(project: Project | null, steps: readonly RailStep[]): Ma
   if (fingerprint?.sha256) {
     bindings.push({
       key: 'source',
-      label: 'The analysed source',
+      label: 'The analyzed source',
       detail:
         `${fingerprint.fileName ?? 'the staged source'}, ${fingerprint.lineCount ?? 0} lines, ` +
         `SHA-256 ${fingerprint.sha256.slice(0, 12)}…`,
@@ -609,7 +609,7 @@ function decisionAnswer(project: Project | null, steps: readonly RailStep[]): Ma
       key: 'no-run',
       label: 'No signed run',
       detail:
-        'Nothing has been analysed under a signature, so a decision would bind a result that is not on record.',
+        'Nothing has been analyzed under a signature, so a decision would bind a result that is not on record.',
       provenance: 'not-determined',
     });
   }
@@ -617,7 +617,7 @@ function decisionAnswer(project: Project | null, steps: readonly RailStep[]): Ma
     blocking.push({
       key: 'source-changed',
       label: 'The source moved after the run',
-      detail: 'The source on this project is not the one the signed run analysed.',
+      detail: 'The source on this project is not the one the signed run analyzed.',
       provenance: 'stale',
     });
   }
@@ -678,7 +678,7 @@ function decisionAnswer(project: Project | null, steps: readonly RailStep[]): Ma
     blocking.length === 0
       ? bindings.length === 0
         ? 'There is nothing here for a decision to bind yet.'
-        : 'A decision would bind the signed run and the source it analysed, and nothing stands in the way.'
+        : 'A decision would bind the signed run and the source it analyzed, and nothing stands in the way.'
       : `${blocking.length} ${blocking.length === 1 ? 'thing stands' : 'things stand'} in the way of a decision.`;
 
   return {
@@ -748,7 +748,7 @@ function scoreAnswer(project: Project | null, trend: ScoreTrend): ManagementAnsw
   const headline =
     value === null
       ? `No Clean Core Score: ${
-          hasRun ? (runUnread ? `${runUnread}.` : 'the signed run records none.') : 'nothing has been analysed under a signature yet.'
+          hasRun ? (runUnread ? `${runUnread}.` : 'the signed run records none.') : 'nothing has been analyzed under a signature yet.'
         }`
       : trend.state === 'trend'
         ? `Clean Core Score ${value} — ${trend.sentence}`

@@ -9,7 +9,7 @@ import PortfolioPage from '@/components/portfolio/PortfolioPage';
  */
 export const metadata: Metadata = {
   title: 'Portfolio | Clean-Core.io',
-  description: 'Analyse many ABAP programs in one batch and read them together: score bands, levels, buckets and what recurs.',
+  description: 'Analyze many ABAP programs in one batch and read them together: score bands, levels, buckets and what recurs.',
   robots: { index: false, follow: false },
 };
 

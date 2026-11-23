@@ -311,7 +311,7 @@ test.describe('server side', () => {
     expect(verifyRunIntegrity(runDoc, process.env.AUDIT_SIGNING_KEY!)).toEqual({ valid: true });
   });
 
-  test('re-analysing the same inputs keeps the revision', async ({ request }) => {
+  test('re-analyzing the same inputs keeps the revision', async ({ request }) => {
     const res = await request.post('/api/runs/create', {
       headers: { Authorization: `Bearer ${token}` },
       data: { projectId: PROJECT_ID, legacyCode: SOURCE, s4Deployment: 'public', analysis: '{}', uploadedFileName: 'z.abap' },

@@ -99,7 +99,7 @@ export function buildBoardDeck(input: {
   if (overallLevel === null) {
     recommendation = 'No verdict — no findings were detected, so coverage is not established';
     verdict = 'Not determined';
-    requiredActions = 'Establish coverage first: analyse the complete source, and check the delivery page for a detector error.';
+    requiredActions = 'Establish coverage first: analyze the complete source, and check the delivery page for a detector error.';
   } else if (overallLevel === 'not-supported') {
     recommendation = 'Redesign needed before release';
     verdict = 'Blocks release — at least one construct has no automatic path';
@@ -172,7 +172,7 @@ export function buildBoardDeck(input: {
     content: nothingEstablished
       ? [
           'No capability can be stated: the static analysis returned no findings, which is what a trivial program and a failed detector have in common.',
-          'Establish coverage — analyse the complete source, check the delivery page for a detector error — before this slide is used.',
+          'Establish coverage — analyze the complete source, check the delivery page for a detector error — before this slide is used.',
         ]
       : [
           // The constructs this source contains with a fully automatic path, then

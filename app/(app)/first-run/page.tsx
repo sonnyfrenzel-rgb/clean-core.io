@@ -71,7 +71,7 @@ const STEPS: Step[] = [
     action: 'Look at "Try an example"',
     detail:
       'A new account lands on a first view with the start built in: what the analysis gives you, the seven tools in one line, and two ways to begin. "Try an example" holds ready-made legacy reports. They are fictional, but written the way grown enterprise ABAP actually looks — and they are the same objects the analysis engine is regression-tested against.',
-    see: 'One recommended example, Z_MM_PO_APPROVAL, with the green "Start this example" button, and the other shipped examples as a list with their size. Beside them, "Analyse your own program" for when you have a file.',
+    see: 'One recommended example, Z_MM_PO_APPROVAL, with the green "Start this example" button, and the other shipped examples as a list with their size. Beside them, "Analyze your own program" for when you have a file.',
     note: 'This is the step that saves you the most time. Nothing has to be exported from an SAP system, and no customer code leaves anybody\'s estate.',
   },
   {
@@ -112,7 +112,7 @@ const STEPS: Step[] = [
     where: 'Stage 7 — Delivery',
     action: 'Download the package',
     detail:
-      'An abapGit-compatible ZIP with the generated sources and tests, plus the audit evidence pack — a signed record of what was analysed, by which engine and catalog version, and what it concluded. That signature is verifiable later, which is the point of it.',
+      'An abapGit-compatible ZIP with the generated sources and tests, plus the audit evidence pack — a signed record of what was analyzed, by which engine and catalog version, and what it concluded. That signature is verifiable later, which is the point of it.',
     see: 'Your download, and the project on the dashboard with the state of each phase, to return to at any time.',
   },
 ];

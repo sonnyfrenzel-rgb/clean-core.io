@@ -459,7 +459,7 @@ export default function UsageQuotaPanel() {
                     <span>
                       Only the analysis run in <code className="font-cc-mono">/api/runs/create</code> is counted, and
                       only once it has completed &mdash; an aborted or failed run gives the unit back.
-                      Re-analysing the same source is free, and each shipped starter example is free once per
+                      Re-analyzing the same source is free, and each shipped starter example is free once per
                       account; every further start of the same example is counted like any other analysis. The
                       &ldquo;Objects&rdquo; column shows how many distinct ABAP sources were actually billed.
                     </span>

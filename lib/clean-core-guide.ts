@@ -426,7 +426,7 @@ export const GUIDE_FAQ: { question: string; answer: string }[] = [
   {
     question: 'How do I know which of my objects are the problem?',
     answer:
-      'By analysing them against the Clean Core criteria — which interfaces they use, how they touch data, and whether the patterns they rely on exist in the cloud at all. That analysis is what Clean-Core.io automates, producing evidence per object rather than an overall impression.',
+      'By analyzing them against the Clean Core criteria — which interfaces they use, how they touch data, and whether the patterns they rely on exist in the cloud at all. That analysis is what Clean-Core.io automates, producing evidence per object rather than an overall impression.',
   },
   {
     question: 'Is Clean-Core.io free?',

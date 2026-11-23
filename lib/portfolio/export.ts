@@ -25,7 +25,7 @@ import {
 export const PROGRAM_COLUMNS = [
   'Program',
   'Project id',
-  'Analysed',
+  'Analyzed',
   'Score',
   'Score band',
   'Level A',

@@ -104,7 +104,7 @@ export async function GET(
       // Nothing staged is not an empty finding list: it is a project with no
       // source, and the caller is told that rather than shown a clean bill.
       return NextResponse.json(
-        { error: 'No source is staged on this project, so nothing was analysed.', code: 'no-source' },
+        { error: 'No source is staged on this project, so nothing was analyzed.', code: 'no-source' },
         { status: 409 },
       );
     }

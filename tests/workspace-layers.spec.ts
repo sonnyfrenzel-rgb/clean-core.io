@@ -371,7 +371,7 @@ test.describe('the layers on the screen', () => {
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
     await adminSetDoc('projects', BARE_ID, {
-      name: 'Nothing analysed yet', userId: cred.user.uid,
+      name: 'Nothing analyzed yet', userId: cred.user.uid,
       createdAt: new Date(), status: 'created',
       legacyCode: 'REPORT z_bare.\nWRITE 1.\n',
     });

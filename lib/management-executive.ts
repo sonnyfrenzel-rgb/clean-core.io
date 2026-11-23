@@ -248,7 +248,7 @@ function actionFor(key: string, label: string, src: ExecutiveSource): ExecutiveA
   if (key === 'view-no-run') {
     return src.mode === 'demo'
       ? {
-          label: 'Analyse your own code',
+          label: 'Analyze your own code',
           reason: 'A demo is never signed; a decision needs a signed run on your own source.',
           target: { kind: 'new-project' },
         }
@@ -327,7 +327,7 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
   if (!src.hasSource) {
     answer = 'Nothing to decide yet: no code has been staged for this project.';
     status = 'not-started';
-    next = { label: 'Run the analysis', reason: 'Stage the code and analyse it first.', target: { kind: 'stage', path: 'analyze' } };
+    next = { label: 'Run the analysis', reason: 'Stage the code and analyze it first.', target: { kind: 'stage', path: 'analyze' } };
   } else if (!src.hasRun) {
     answer =
       src.mode === 'demo'

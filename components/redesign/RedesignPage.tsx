@@ -234,7 +234,7 @@ function DecideStep({
   record: React.ReactNode;
 }) {
   if (!hasRun) {
-    return <p className="m-0 mt-2 cc-text-cell text-cc-ink">The decision opens once the program is analysed and the run is signed.</p>;
+    return <p className="m-0 mt-2 cc-text-cell text-cc-ink">The decision opens once the program is analyzed and the run is signed.</p>;
   }
   return (
     <div data-redesign-decide="" className="mt-3 flex flex-col gap-4">

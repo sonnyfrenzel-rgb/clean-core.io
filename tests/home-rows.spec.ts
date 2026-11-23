@@ -59,17 +59,17 @@ const analysed = (id: string, extra: Partial<Project> = {}, source = DEMO): P =>
   } as Partial<Project>);
 
 test.describe('the status words — lib/home-status.ts (H-O3)', () => {
-  test('no code, not analysed, analysed: the analysis alone is a complete result with nothing open', () => {
+  test('no code, not analyzed, analyzed: the analysis alone is a complete result with nothing open', () => {
     const none = homeStatus(base('a'));
     expect([none.kind, none.title, none.detail, none.tone]).toEqual(['nocode', 'No code yet', 'Upload the program to start', 'waiting']);
     expect(none.next).toMatchObject({ label: 'Upload the code', tool: 'Analyze', run: false });
 
     const staged = homeStatus(base('b', { legacyCode: 'REPORT z.' }));
-    expect([staged.kind, staged.title, staged.detail]).toEqual(['notrun', 'Not analysed yet', 'Code uploaded']);
+    expect([staged.kind, staged.title, staged.detail]).toEqual(['notrun', 'Not analyzed yet', 'Code uploaded']);
     expect(staged.next).toMatchObject({ label: 'Run the analysis', tool: 'Analyze', run: true });
 
     const done = homeStatus(analysed('c'));
-    expect([done.kind, done.title, done.detail, done.tone]).toEqual(['analysed', 'Analysed', 'Map, findings and score ready', 'moving']);
+    expect([done.kind, done.title, done.detail, done.tone]).toEqual(['analysed', 'Analyzed', 'Map, findings and score ready', 'moving']);
     // Re-design is never offered as a next step on the home page.
     expect(done.next).toBeNull();
     expect(done.attention).toBeNull();
@@ -78,7 +78,7 @@ test.describe('the status words — lib/home-status.ts (H-O3)', () => {
 
   test('the code changed since the analysis: "Run the analysis again", and a reason for attention', () => {
     const s = homeStatus(analysed('d', { legacyCode: `${DEMO}\n* changed` }));
-    expect([s.kind, s.title, s.detail, s.detailTone, s.tone]).toEqual(['analysed', 'Analysed', 'The code changed since', 'warn', 'outdated']);
+    expect([s.kind, s.title, s.detail, s.detailTone, s.tone]).toEqual(['analysed', 'Analyzed', 'The code changed since', 'warn', 'outdated']);
     expect(s.next).toMatchObject({ label: 'Run the analysis again', tool: 'Analyze', run: true });
     expect(s.attention).toBe('code-changed');
   });
@@ -131,7 +131,7 @@ test.describe('the status words — lib/home-status.ts (H-O3)', () => {
 
   test('the status filter names the words of the mockup, in the order a project moves', () => {
     expect(Object.values(HOME_STATUS_LABEL)).toEqual([
-      'No code yet', 'Not analysed yet', 'Analysed', 'Re-design under way', 'Re-design done', 'Handed over',
+      'No code yet', 'Not analyzed yet', 'Analyzed', 'Re-design under way', 'Re-design done', 'Handed over',
     ]);
   });
 });

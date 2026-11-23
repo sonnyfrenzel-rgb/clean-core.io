@@ -214,7 +214,7 @@ test.describe('the hints follow the tables the code reads', () => {
     expect(report.hints[0].tables[0].lines).toEqual([3, 10, 22]);
   });
 
-  test('a project with no analysed tables produces nothing to answer', () => {
+  test('a project with no analyzed tables produces nothing to answer', () => {
     expect(complianceReviewHints(examinedTablesFromCoupling([])).examined).toBe(0);
     expect(complianceReviewHints(null).hints).toEqual([]);
   });
@@ -444,7 +444,7 @@ test.describe('the panel a reader actually meets', () => {
     await expect(page.getByRole('heading', { level: 3, name: /Clean core levels A–D per object and compliance hints/ })).toBeVisible();
 
     const panel = page.locator('[data-compliance-hints]');
-    await expect(panel, 'three analysed tables produced no compliance hint at all').toBeVisible({
+    await expect(panel, 'three analyzed tables produced no compliance hint at all').toBeVisible({
       timeout: 30000,
     });
     await expect(panel.locator('[data-compliance-hints-title]')).toHaveText(COMPLIANCE_HINT_TITLE);

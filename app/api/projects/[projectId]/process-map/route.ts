@@ -257,7 +257,7 @@ export async function POST(
     }
     if (signed.sha256 !== sourceSha256) {
       return NextResponse.json(
-        { error: 'The source changed since the run signed it. Analyse it again before the map is measured.', code: 'source-moved' },
+        { error: 'The source changed since the run signed it. Analyze it again before the map is measured.', code: 'source-moved' },
         { status: 409 },
       );
     }

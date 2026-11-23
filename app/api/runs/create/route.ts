@@ -98,7 +98,7 @@ function parseRunBody(raw: string) {
 function bodyTooLarge(): NextResponse {
   return NextResponse.json(
     {
-      error: `The request is larger than ${MAX_RUN_BODY_BYTES / 1024} KB. One analysis run takes at most ${MAX_ANALYSED_SOURCE_BYTES / 1024} KB of source — analyse the object in parts.`,
+      error: `The request is larger than ${MAX_RUN_BODY_BYTES / 1024} KB. One analysis run takes at most ${MAX_ANALYSED_SOURCE_BYTES / 1024} KB of source — analyze the object in parts.`,
       code: 'body-too-large',
     },
     { status: 413 },
@@ -261,7 +261,7 @@ export async function POST(req: NextRequest) {
     if (sourceBytes > MAX_ANALYSED_SOURCE_BYTES) {
       return NextResponse.json(
         {
-          error: `That source is ${Math.round(sourceBytes / 1024)} KB. One analysis run takes at most ${MAX_ANALYSED_SOURCE_BYTES / 1024} KB — analyse the object in parts.`,
+          error: `That source is ${Math.round(sourceBytes / 1024)} KB. One analysis run takes at most ${MAX_ANALYSED_SOURCE_BYTES / 1024} KB — analyze the object in parts.`,
           code: 'source-too-large',
         },
         { status: 413 },
@@ -792,7 +792,7 @@ export async function POST(req: NextRequest) {
             `The record of this analysis would be ${kb(runSize.bytes)}, more than the ${kb(runSize.budget)} one analysis can hold. ` +
             `Nothing was saved, nothing was charged, and the previous analysis is untouched. ` +
             `The largest parts are ${runSize.largest.map((f) => `${f.field} (${kb(f.bytes)})`).join(', ')}. ` +
-            `To make room, split the program into smaller projects and analyse each one.`,
+            `To make room, split the program into smaller projects and analyze each one.`,
           code: PROJECT_TOO_LARGE_CODE,
           bytes: runSize.bytes,
           budget: runSize.budget,

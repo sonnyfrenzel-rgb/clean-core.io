@@ -97,7 +97,7 @@ const signedOff: Project = {
   },
 };
 
-const bare: Project = { name: 'Nothing analysed yet', legacyCode: 'REPORT z_bare.\nWRITE 1.\n' };
+const bare: Project = { name: 'Nothing analyzed yet', legacyCode: 'REPORT z_bare.\nWRITE 1.\n' };
 const empty: Project = { name: 'Nothing at all' };
 
 const figureOf = (view: ReturnType<typeof managementAnswers>, answer: string, key: string) => {
@@ -365,7 +365,7 @@ test.describe('a project with no runs, in the Management view', () => {
     });
     // Staged source, no run, and therefore no `runs` subcollection at all.
     await adminSetDoc('projects', BARE_ID, {
-      name: 'Nothing analysed yet', userId: cred.user.uid,
+      name: 'Nothing analyzed yet', userId: cred.user.uid,
       createdAt: new Date(), status: 'created',
       legacyCode: 'REPORT z_bare.\nWRITE 1.\n',
     });

@@ -112,7 +112,7 @@ test.describe('the contract', () => {
       { id: INPUT_IDS.source, dataClass: 'source-artefact', reason: 'not-readable' },
     ]);
     expect(handoverBlockers(p)).toEqual([
-      'the analysis (the analysed source cannot be shown to be what the signed run used)',
+      'the analysis (the analyzed source cannot be shown to be what the signed run used)',
     ]);
   });
 

@@ -222,12 +222,12 @@ export function revisionOutcomeSentence(outcome: SaveRevisionOutcome): string {
     case 'no-source':
       return 'This project has no source, so there is no process to keep a revision of.';
     case 'no-run':
-      return 'This project has no active analysis run. Analyse the source again, then save.';
+      return 'This project has no active analysis run. Analyze the source again, then save.';
     case 'run-unverified':
       return 'The analysis run this project points at could not be verified as the run that signed its source.'
-        + ' Nothing was saved — analyse the source again, then save.';
+        + ' Nothing was saved — analyze the source again, then save.';
     case 'source-moved':
-      return 'The source changed since the run signed it. Analyse it again before a revision is kept.';
+      return 'The source changed since the run signed it. Analyze it again before a revision is kept.';
     case 'format-version':
       return 'The first revision of this process was written in a shape this build cannot read, so nothing was saved.';
     case 'unreachable':

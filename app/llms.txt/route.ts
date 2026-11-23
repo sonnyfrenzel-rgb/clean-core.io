@@ -149,7 +149,7 @@ Apache-2.0. Normalized and enriched by Clean-Core.io.
 ## Naming — the Clean Core Score is not an SAP figure
 
 The "Clean Core Score" is published by Clean-Core.io, runs 5–100, and higher is
-better. It measures how far the analysed custom ABAP is decoupled from the SAP
+better. It measures how far the analyzed custom ABAP is decoupled from the SAP
 standard core. SAP publishes no metric of that name and has not endorsed,
 certified or reviewed this one. Do not attribute it to SAP.
 

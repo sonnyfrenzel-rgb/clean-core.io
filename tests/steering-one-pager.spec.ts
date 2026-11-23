@@ -389,9 +389,9 @@ test.describe('8.6 one-pager — not determined is said in place', () => {
     const page = steeringOnePager({
       mode: 'project',
       base: '/project/p-2',
-      program: 'Nothing analysed yet',
+      program: 'Nothing analyzed yet',
       date: '2026-10-03',
-      project: { name: 'Nothing analysed yet', legacyCode: 'REPORT z.\n' },
+      project: { name: 'Nothing analyzed yet', legacyCode: 'REPORT z.\n' },
       hasRun: false,
       history: null,
       open: null,
@@ -641,13 +641,13 @@ test.describe('8.6 rendered — the one-pager in the Management view', () => {
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
     await adminSetDoc('projects', PROJECT_ID, {
-      name: 'Nothing analysed yet', userId: cred.user.uid,
+      name: 'Nothing analyzed yet', userId: cred.user.uid,
       createdAt: new Date(), status: 'created',
       legacyCode: 'REPORT z_bare.\nWRITE 1.\n',
     });
     // A signed run on record: Analyze's Management view is its own page then, with the button beside it.
     await adminSetDoc('projects', RUN_PROJECT_ID, {
-      name: 'Analysed', userId: cred.user.uid,
+      name: 'Analyzed', userId: cred.user.uid,
       createdAt: new Date(), status: 'analyzed',
       legacyCode: 'REPORT z_steer.\nWRITE 1.\n', activeRunId: 'run-1', cleanCoreScore: 58,
     });

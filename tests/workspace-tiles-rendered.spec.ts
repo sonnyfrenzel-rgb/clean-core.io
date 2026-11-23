@@ -348,7 +348,7 @@ test.describe('a returning account: next step, counts, tiles', () => {
     const box = page.locator('[data-home-attention]');
     await expect(box.locator('[data-home-attention-row]')).toHaveCount(2);
     await expect(box.locator(`[data-home-attention-row="${programs[3].id}"]`)).toContainText('The code changed since the analysis');
-    await expect(box.locator(`[data-home-attention-row="${programs[4].id}"]`)).toContainText('Not analysed yet');
+    await expect(box.locator(`[data-home-attention-row="${programs[4].id}"]`)).toContainText('Not analyzed yet');
     const retired = page.locator(`#home-panel-mine [data-cc-table-row="${programs[2].id}"]`);
     await expect(retired.locator('[data-home-next]')).toContainText('Open the decision');
     await expect(retired.locator('[data-home-next]')).toContainText('Not needed — decided: Retire');

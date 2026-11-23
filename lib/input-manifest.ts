@@ -304,7 +304,7 @@ export function invalidatingInputs(unverified: ReadonlyArray<UnverifiedInput>): 
 export function inputLabel(id: string): string {
   switch (id) {
     case INPUT_IDS.source:
-      return 'the analysed source';
+      return 'the analyzed source';
     case INPUT_IDS.deployment:
       return 'the target deployment';
     case INPUT_IDS.catalog:

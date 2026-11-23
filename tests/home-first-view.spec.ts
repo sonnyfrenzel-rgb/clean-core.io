@@ -226,7 +226,7 @@ test.describe('a fresh account lands on the first view', () => {
     await expect(view.getByRole('heading', { level: 1 })).toHaveText('What do you want to do with your Z program?');
     await expect(view).toContainText('Welcome, Mara.');
     await expect(view.locator('[data-home-product]')).toHaveCount(2);
-    await expect(view.locator('#home-analyse-title')).toHaveText('Analyse it: understand what it does');
+    await expect(view.locator('#home-analyse-title')).toHaveText('Analyze it: understand what it does');
     await expect(view.locator('#home-redesign-title')).toHaveText('Re-design it: build its clean core successor');
 
     // Exactly one filled button on the page, and it is the recommended example's.

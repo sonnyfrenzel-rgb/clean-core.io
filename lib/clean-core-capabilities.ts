@@ -115,7 +115,7 @@ export const CAPABILITIES: Capability[] = [
     stage: 'Delivery',
     title: 'Handover and audit pack',
     output:
-      'The handover: the evidence chain, an abapGit-compatible package with sources and tests, who confirmed what, and an audit pack signed over the run with HMAC and Ed25519, recording what was analysed, by which engine and catalogue version, and what it concluded.',
+      'The handover: the evidence chain, an abapGit-compatible package with sources and tests, who confirmed what, and an audit pack signed over the run with HMAC and Ed25519, recording what was analyzed, by which engine and catalogue version, and what it concluded.',
     benefit:
       'The package goes into your own Eclipse ADT environment for compilation and verification, and anyone can check the audit pack offline — which is what lets a result hold up in a governance review.',
     effort: 'Included; the pack is signed by the server.',

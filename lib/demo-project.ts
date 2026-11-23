@@ -432,7 +432,7 @@ function demoProcess(source: string): DemoProject['documentation']['process'] {
     try {
       const built = buildProcessDocument({ source, map: full, engine, engineVersion: APP_VERSION });
       // The product's note names the signed run the source came from; a demo has none.
-      document = { ...built, note: built.note.replace('from the source the signed run analysed', 'from the example source — a demo is never signed') };
+      document = { ...built, note: built.note.replace('from the source the signed run analyzed', 'from the example source — a demo is never signed') };
     } catch {
       document = null;
     }

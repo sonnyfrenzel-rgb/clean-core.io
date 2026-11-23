@@ -51,7 +51,7 @@ const STATE_META: Record<AtcComparisonState, { label: string; short: string; exp
   'atc-only': {
     label: 'Only in the ATC import',
     short: 'ATC only',
-    explain: 'ATC reported a finding here; the engine’s evidence findings do not name this object. This is not the engine missing a real defect — the engine may have no detector for what ATC checked, or never analysed this object at all.',
+    explain: 'ATC reported a finding here; the engine’s evidence findings do not name this object. This is not the engine missing a real defect — the engine may have no detector for what ATC checked, or never analyzed this object at all.',
   },
   'engine-only': {
     label: 'Only in the engine’s findings',
@@ -358,7 +358,7 @@ const LINE_META: Record<AtcLineState, { short: string; explain: string }> = {
   },
   outside: {
     short: 'Not in this source',
-    explain: 'The object or include ATC checked is not part of the analysed source, or the line lies beyond it. Not compared.',
+    explain: 'The object or include ATC checked is not part of the analyzed source, or the line lies beyond it. Not compared.',
   },
   'no-line': {
     short: 'No line in the export',

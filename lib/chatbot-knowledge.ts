@@ -192,7 +192,7 @@ Test scenarios for the generated code, and the result that is on record for them
 - **Test Results Dashboard**: TAP-formatted logs with pass/fail status, execution time, and model-written explanations
 
 ### Documentation Stage (/project/[id]/documentation)
-Process documentation read out of the whole analysed source by the engine, with no model involved.
+Process documentation read out of the whole analyzed source by the engine, with no model involved.
 - **Process Documentation**: a process description written from the code when the stage opens - a one-page summary first (what it does, key figures, the rules and risks to know, the main path), then how the process works (how a run starts, the steps and who acts at each), decision points and rules, exceptions, what it changes, systems and data (data read, integrations, controls), open questions - with the element-by-element details and evidence as an appendix, every statement with its line numbers; owner, KPIs and duration are open questions because the code does not contain them
 - **Business Process Documentation**: BPMN 2.0 process diagrams as XML (import into SAP Signavio has not been verified yet)
 - **RACI Matrix** (model-written business layer, on request): responsibility assignment matrix
@@ -385,7 +385,7 @@ export const SECURITY_AND_PRIVACY = `
 export const SCORE_NAMING_AND_SAP_FIGURES = `
 ## THE CLEAN CORE SCORE AND SAP'S OWN FIGURES (never conflate these)
 
-**Our figure.** The **Clean Core Score** is published by Clean-Core.io, runs 5–100, and **higher is better**. It measures how far the analysed custom ABAP is decoupled from the SAP standard core, computed deterministically before any AI runs. It is a measure of code structure — no cost, saving or ROI figure is derived from it anywhere in the product.
+**Our figure.** The **Clean Core Score** is published by Clean-Core.io, runs 5–100, and **higher is better**. It measures how far the analyzed custom ABAP is decoupled from the SAP standard core, computed deterministically before any AI runs. It is a measure of code structure — no cost, saving or ROI figure is derived from it anywhere in the product.
 
 **What a score means** (${SCORE_BANDS_SOURCE}; a grade, not a compliance percentage, and not an SAP measure): ${scoreBandsProse()} How it is computed: ${scoreDeductionsProse()}
 

@@ -40,7 +40,7 @@ export const HOME_LIST_MESSAGES = {
   'homeList.noInvitations': 'No open invitations.',
   'homeList.nothingMeasured': 'Nothing measured yet',
   'homeList.attentionTitle': 'Needs your attention',
-  'homeList.attentionFoot': 'A project shows up here when its code changed since the analysis or it was not analysed yet.',
+  'homeList.attentionFoot': 'A project shows up here when its code changed since the analysis or it was not analyzed yet.',
   'homeList.doorDemoTitle': 'Demo',
   'homeList.doorDemoBody': 'A finished example to look around in. Nothing runs and nothing is saved.',
   'homeList.doorDemoAction': 'Open the demo',
@@ -50,7 +50,7 @@ export const HOME_LIST_MESSAGES = {
   'homeList.runTitle': 'Run the analysis?',
   'homeList.runAgainTitle': 'Run the analysis again?',
   'homeList.runConfirm': 'Run analysis',
-  'homeList.runNoSource': 'This project has no code to analyse. Open it and upload the program first.',
+  'homeList.runNoSource': 'This project has no code to analyze. Open it and upload the program first.',
   'homeList.listFailed': 'Your projects could not be read just now. Nothing is lost. Reload the page to try again.',
   'homeList.redesignBar': 'Re-design steps done',
 } as const;

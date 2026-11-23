@@ -36,7 +36,7 @@ export function signedForOrigin(project: Project | null): SignedForOrigin {
     default:
       return {
         signed: null,
-        reason: 'The source has changed since the signed run, so the origin of a scenario is not checked until the source is analysed again.',
+        reason: 'The source has changed since the signed run, so the origin of a scenario is not checked until the source is analyzed again.',
       };
   }
 }

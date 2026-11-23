@@ -253,7 +253,7 @@ export const INVITATION_SCOPE_SENTENCE =
 
 /** The other half of the same honesty: what an invitation does *not* hand over. */
 export const INVITATION_LIMITS_SENTENCE =
-  'Reading only. Analysing, confirming, signing and exporting stay with you, and you can withdraw the invitation at any time.';
+  'Reading only. Analyzing, confirming, signing and exporting stay with you, and you can withdraw the invitation at any time.';
 
 /**
  * The same two facts, addressed to the person who was invited.
@@ -275,7 +275,7 @@ export const INVITATION_SCOPE_SENTENCE_RECIPIENT =
 
 /** What an invitation does not give the person who accepts it. */
 export const INVITATION_LIMITS_SENTENCE_RECIPIENT =
-  'Reading only. Analysing, confirming, signing and exporting stay with the owner, and the owner can withdraw your access at any time.';
+  'Reading only. Analyzing, confirming, signing and exporting stay with the owner, and the owner can withdraw your access at any time.';
 
 /**
  * What the owner is told once the invitation has gone out.

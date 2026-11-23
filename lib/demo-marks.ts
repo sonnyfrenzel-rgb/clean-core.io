@@ -106,7 +106,7 @@ export const DEMO_INVITATION = 'Try an example or your own code';
  */
 export const DEMO_UNSIGNED_NOTICE =
   'A demo run is never signed. No signed run, no audit pack and no export comes out of this screen — ' +
-  'a signature says a named account analysed a named source, and none of that happened here.';
+  'a signature says a named account analyzed a named source, and none of that happened here.';
 
 /** The demo costs nothing, because nothing about it reaches the server. */
 export const DEMO_QUOTA_NOTICE =

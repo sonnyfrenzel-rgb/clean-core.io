@@ -86,7 +86,7 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
       {
         question: 'What does the signed run record?',
         answer:
-          'Which account analysed which source, when, with which engine and catalog version, and what the engine found. It records the analysis; it does not approve the recommendation.',
+          'Which account analyzed which source, when, with which engine and catalog version, and what the engine found. It records the analysis; it does not approve the recommendation.',
       },
     ],
   },
@@ -143,7 +143,7 @@ export const HOW_TO_PHASE_CONTENT: Readonly<Record<PhaseKey, PhaseHowTo>> = {
   },
   documentation: {
     summary:
-      'When you open Documentation, the process description is written from the whole analysed source — a one-page summary with key figures, the questions it answers, the rules and risks to know and what it covers, then how the process works (how a run starts, the steps and who acts at each), rules, exceptions, what it changes, systems and data, and open questions, with details and evidence as an appendix, every statement with its lines — and, where a model is available, a business layer with SOPs, a RACI matrix and control checkpoints is proposed once.',
+      'When you open Documentation, the process description is written from the whole analyzed source — a one-page summary with key figures, the questions it answers, the rules and risks to know and what it covers, then how the process works (how a run starts, the steps and who acts at each), rules, exceptions, what it changes, systems and data, and open questions, with details and evidence as an appendix, every statement with its lines — and, where a model is available, a business layer with SOPs, a RACI matrix and control checkpoints is proposed once.',
     details: [
       'The process can be exported as BPMN 2.0 XML, and the process description as Confluence HTML, Markdown or Word.',
       'An owner, the roles, performance indicators or durations are not in the source, so the documentation lists them as not determined instead of filling them in.',

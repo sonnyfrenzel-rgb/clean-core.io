@@ -217,8 +217,8 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'home.path.testing': 'Tests for the new version',
   'home.path.tco': 'Cost and effort, to decide',
   'home.path.delivery': 'A signed evidence package',
-  'home.analyse.mark': 'Analyse',
-  'home.analyse.title': 'Analyse it: understand what it does',
+  'home.analyse.mark': 'Analyze',
+  'home.analyse.title': 'Analyze it: understand what it does',
   'home.analyse.getsShort': 'Process map, rules, SAP objects and clean core score.',
   'home.analyse.cost': '1 analysis run per program',
   'home.redesign.mark': 'Re-design',
@@ -231,7 +231,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'home.redesign.toolsTitle': 'The six tools of Re-design',
   'home.redesign.startsLead': 'Re-design starts from an analysis',
   'home.redesign.startsRest': ', so the evidence is there first.',
-  'home.redesign.how1': 'Analyse the program: an example or your own code.',
+  'home.redesign.how1': 'Analyze the program: an example or your own code.',
   'home.redesign.how2': 'Re-design opens on its result; the six tools follow in order.',
   'home.redesign.example': 'Re-design an example end to end',
   'home.exampleTitle': 'Try an example',
@@ -247,15 +247,15 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'home.paste': 'Paste the code',
   'home.safe': 'Stored in the EU · only you and whom you invite · never sold.',
   'home.safeLink': 'What happens to your code?',
-  'home.ownNote': 'Nothing is analysed until you start.',
+  'home.ownNote': 'Nothing is analyzed until you start.',
   'home.portfolioLead': 'Many programs at once?',
   'home.sliceUnavailable': 'The picture of the map could not be drawn here. The demo shows the whole map.',
   'home.demoAsk': 'Prefer to look first?',
   'home.openDemo': 'Open the demo',
   // My workspace — a returning account's programs as tiles (ADR-123, mock-up direction A)
   'ws.tile.mapAfterRun': 'Map after the next run',
-  'ws.analyseAnother': 'Analyse another Z program',
-  'ws.analyseAnotherShort': 'Analyse a program',
+  'ws.analyseAnother': 'Analyze another Z program',
+  'ws.analyseAnotherShort': 'Analyze a program',
   'ws.redesignProgram': 'Re-design a program',
   'ws.startPanel': 'Start an analysis',
   'ws.continue': 'Continue where you left off',
@@ -274,18 +274,18 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'ws.lens.management': 'Management',
   'ws.kpi.all': 'Programs',
   'ws.kpi.allNote': 'in your workspace',
-  'ws.kpi.analysed': 'Analysed',
+  'ws.kpi.analysed': 'Analyzed',
   'ws.kpi.analysedNote': 'all current',
   'ws.kpi.redesign': 'In re-design',
   'ws.kpi.redesignNone': 'none under way',
   'ws.kpi.delivered': 'Signed deliveries',
   'ws.kpi.deliveredNone': 'none yet',
   'ws.kpi.attention': 'Needs attention',
-  'ws.kpi.attentionNote': 'code changed or not analysed',
+  'ws.kpi.attentionNote': 'code changed or not analyzed',
   'ws.kpi.attentionNone': 'nothing waiting',
   'ws.tile.more': 'More',
   'ws.tile.example': 'Example',
-  'ws.tile.analyse': 'Analyse',
+  'ws.tile.analyse': 'Analyze',
   'ws.tile.redesign': 'Re-design',
   'ws.fact.steps': 'Process map',
   'ws.fact.score': 'Clean core',
@@ -296,7 +296,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'ws.fact.pending': 'Pending',
   'ws.fact.noDecision': 'Not decided',
   'ws.an.stale': 'Code changed since the analysis',
-  'ws.an.notAnalysed': 'Not analysed yet',
+  'ws.an.notAnalysed': 'Not analyzed yet',
   'ws.an.noCode': 'No code uploaded yet',
   'ws.an.open': 'Open the analysis',
   'ws.an.rerun': 'Run the analysis again',
@@ -311,7 +311,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'ws.rd.nothingBuilt': 'Nothing is built',
   'ws.rd.openDecision': 'Open the decision',
   'ws.rd.openDelivery': 'Open the delivery',
-  'ws.newTile': 'Analyse another Z program',
+  'ws.newTile': 'Analyze another Z program',
   'ws.moreExamples': 'More examples',
   'ws.sharing': 'Sharing',
   'ws.portfolio': 'Many programs at once?',
@@ -446,7 +446,7 @@ export function wsWelcomeBack(firstName: string | null | undefined): string {
 
 /** "Analysed · signed 6 Nov" — the Analyse line of a tile with a signed run. */
 export function wsAnalysedOn(on: string | null): string {
-  return on ? `Analysed · signed ${on}` : 'Analysed · signed';
+  return on ? `Analyzed · signed ${on}` : 'Analyzed · signed';
 }
 
 /** "Design · step 1 of 6". */
@@ -479,7 +479,7 @@ export function wsNextTitle(title: string, kind: 'continue' | 'start-redesign' |
     case 'rerun':
       return `${title} — the code changed since the analysis`;
     default:
-      return `${title} — not analysed yet`;
+      return `${title} — not analyzed yet`;
   }
 }
 
@@ -514,7 +514,7 @@ export function wsMapCaption(steps: number | null): string {
 
 /** "Order fulfilment audit report — the code changed since the analysis." */
 export function wsAlsoWaiting(title: string, stale: boolean): string {
-  return stale ? `${title} — the code changed since the analysis.` : `${title} — not analysed yet.`;
+  return stale ? `${title} — the code changed since the analysis.` : `${title} — not analyzed yet.`;
 }
 
 /** "3 changed in the last 7 days". */
@@ -555,7 +555,7 @@ export function wsQuotaLine(runsLeft: string): string {
 
 /** Shown only from three programs on (W10). */
 export function wsKpiLabel(kind: 'all' | 'analysed' | 'redesign' | 'delivered' | 'attention', n: number): string {
-  const name = { all: 'Programs', analysed: 'Analysed', redesign: 'In re-design', delivered: 'Signed deliveries', attention: 'Needs attention' }[kind];
+  const name = { all: 'Programs', analysed: 'Analyzed', redesign: 'In re-design', delivered: 'Signed deliveries', attention: 'Needs attention' }[kind];
   return `${name}: ${n}`;
 }
 

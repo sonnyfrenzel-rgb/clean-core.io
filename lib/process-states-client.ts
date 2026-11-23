@@ -243,7 +243,7 @@ export function confirmOutcomeSentence(outcome: ConfirmOutcome): string {
     case 'no-source':
       return 'This project has no source, so there is no need to confirm.';
     case 'source-moved':
-      return 'The source changed since this process was reconstructed. Analyse it again before the need is confirmed.';
+      return 'The source changed since this process was reconstructed. Analyze it again before the need is confirmed.';
     case 'format-version':
       return 'This process was written in a shape this build cannot read, so nothing was confirmed.';
     case 'unreachable':

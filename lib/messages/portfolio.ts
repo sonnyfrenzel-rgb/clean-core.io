@@ -11,7 +11,7 @@
 export const PORTFOLIO_MESSAGES = {
   'portfolio.title': 'Portfolio',
   'portfolio.lead':
-    'Many programs at once: one upload becomes one project per program, each analysed and signed by the same engine as a single project. The overview below reads your projects together — it is a view, not a new result.',
+    'Many programs at once: one upload becomes one project per program, each analyzed and signed by the same engine as a single project. The overview below reads your projects together — it is a view, not a new result.',
   'portfolio.loading': 'Loading the portfolio…',
   'portfolio.entry': 'Portfolio',
   'portfolio.settingsLink': 'Open Settings',
@@ -42,7 +42,7 @@ export const PORTFOLIO_MESSAGES = {
     'The queue lives on the server. It advances while this page is open; close it and the batch waits, then goes on where it stopped when you come back.',
   'portfolio.cancel': 'Cancel the batch',
   'portfolio.cancelConfirm':
-    'Programs not started yet are not analysed and their source is dropped. Projects already made stay in My workspace.',
+    'Programs not started yet are not analyzed and their source is dropped. Projects already made stay in My workspace.',
   'portfolio.removeRecord': 'Remove this record',
   'portfolio.uploadIncomplete':
     'This upload stopped before all programs arrived. Remove the record and upload again; the projects already made stay in My workspace.',
@@ -79,14 +79,14 @@ export const PORTFOLIO_MESSAGES = {
   'portfolio.programs': 'programs',
   'portfolio.showPrograms': 'Show the programs',
   'portfolio.noneRecur': 'No SAP object is used by more than one program.',
-  'portfolio.noKinds': 'No finding in any analysed program.',
+  'portfolio.noKinds': 'No finding in any analyzed program.',
   'portfolio.nothingOpen': 'Nothing left undetermined that the overview can count.',
   'portfolio.colProgram': 'Program',
   'portfolio.colScore': 'Score',
   'portfolio.colBand': 'Band',
   'portfolio.colLevels': 'Levels A · B · C · D · unknown',
   'portfolio.colIncludes': 'Includes not read',
-  'portfolio.notAnalysed': 'not analysed',
+  'portfolio.notAnalysed': 'not analyzed',
   'portfolio.levelWord': 'Level',
   'portfolio.levelUnknown': 'Level unknown',
   'portfolio.viewTruncated': 'The overview reads at most 500 projects; the rest are not in these figures. Use named selections for larger sets.',
@@ -163,7 +163,7 @@ export const portfolioBatchMessages = {
   cancelledAlready: 'This batch was cancelled.',
   overAnnounced: 'The upload sent more programs than it announced.',
   oneAtATime: 'One batch runs at a time. Let the current batch finish, or cancel it, before starting another.',
-  cancelled: 'Cancelled before it was analysed.',
+  cancelled: 'Cancelled before it was analyzed.',
   projectGone: 'The project made for this program was deleted before its run.',
   stepFailed: 'The run could not be signed. Open the project and run Analyze there to see why.',
 } as const;
@@ -177,7 +177,7 @@ export function portfolioCoverage(f: {
   includesNotRead: number;
   missingProjects: number;
 }): string {
-  const parts = [`${f.analysed} of ${f.projects} program${f.projects === 1 ? '' : 's'} analysed`];
+  const parts = [`${f.analysed} of ${f.projects} program${f.projects === 1 ? '' : 's'} analyzed`];
   if (f.notAnalysed > 0) parts.push(`${f.notAnalysed} without a signed run`);
   if (f.includesNotRead > 0) parts.push(`${f.includesNotRead} with includes not read`);
   if (f.missingProjects > 0) parts.push(`${f.missingProjects} no longer there`);

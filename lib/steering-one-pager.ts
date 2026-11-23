@@ -559,7 +559,7 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
   /* -------------------------------------------------------- next steps */
   const steps: SteeringStep[] = [];
   if (src.mode === 'demo') {
-    steps.push({ key: 'own-code', owner: 'IT', text: 'Analyse your own code — a demo is never signed.', link: null });
+    steps.push({ key: 'own-code', owner: 'IT', text: 'Analyze your own code — a demo is never signed.', link: null });
   } else if (!src.hasRun) {
     steps.push({ key: 'run', owner: 'IT', text: 'Run the analysis — every figure here comes from a signed run.', link: to.analyze });
   }

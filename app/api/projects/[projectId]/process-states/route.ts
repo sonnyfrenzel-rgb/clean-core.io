@@ -403,7 +403,7 @@ async function open(db: AdminDb, gate: Extract<Gate, { ok: true }>): Promise<Ope
       ok: false,
       response: NextResponse.json(
         {
-          error: `This project's source is larger than the ${MAX_ANALYSED_SOURCE_BYTES / 1024} KB one request derives rules from. Analyse the object in parts.`,
+          error: `This project's source is larger than the ${MAX_ANALYSED_SOURCE_BYTES / 1024} KB one request derives rules from. Analyze the object in parts.`,
           code: 'source-too-large',
         },
         { status: 413 },
@@ -418,7 +418,7 @@ async function open(db: AdminDb, gate: Extract<Gate, { ok: true }>): Promise<Ope
       ok: false,
       response: NextResponse.json(
         {
-          error: 'The source changed since this process was reconstructed. Analyse it again before the need is confirmed.',
+          error: 'The source changed since this process was reconstructed. Analyze it again before the need is confirmed.',
           code: 'source-moved',
         },
         { status: 409 },

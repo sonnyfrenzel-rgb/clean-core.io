@@ -152,7 +152,7 @@ test('four columns, the new status words, and dates as "6 Nov 2026"', async ({ p
   expect(heads.map((h) => h.trim()).filter(Boolean)).toEqual(['Project', 'Status', 'Next step', 'Last change']);
   const titles = await page.locator('[data-home-status-title]').allInnerTexts();
   expect(titles.length).toBeGreaterThan(0);
-  for (const title of titles) expect(['No code yet', 'Not analysed yet', 'Analysed', 'Re-design under way', 'Re-design done', 'Handed over']).toContain(title.trim());
+  for (const title of titles) expect(['No code yet', 'Not analyzed yet', 'Analyzed', 'Re-design under way', 'Re-design done', 'Handed over']).toContain(title.trim());
   for (const date of await page.locator('[data-home-date]').allInnerTexts()) expect(date.trim()).toMatch(/^\d{1,2} [A-Z][a-z]{2} \d{4}$/);
   // Owner decision 22.11.2026: the Next step is the tile's own — an analysed project with nothing changed reads
   // "Re-design this program" here as on its tile, never "Nothing open". The newest ten (21–30) are staged or changed;
@@ -172,9 +172,9 @@ test('the filters run over every project; "Needs your attention" lists at most t
   await expect(card.locator('[data-home-attention-row]')).toHaveCount(3);
   // Owner decision 22.11.2026: the reason is the "Needs attention" tile's own — code changed, or not analysed yet.
   const reasons = (await card.locator('[data-home-attention-reason]').allInnerTexts()).map((r) => r.trim());
-  for (const reason of reasons) expect(['The code changed since the analysis', 'Not analysed yet']).toContain(reason);
+  for (const reason of reasons) expect(['The code changed since the analysis', 'Not analyzed yet']).toContain(reason);
   // The newest three: 30 (code changed), 29 and 28 (staged).
-  expect(reasons).toEqual(['The code changed since the analysis', 'Not analysed yet', 'Not analysed yet']);
+  expect(reasons).toEqual(['The code changed since the analysis', 'Not analyzed yet', 'Not analyzed yet']);
   // Twenty-five have a reason: the twenty staged projects, and the analysed 18, 21, 24, 27 and 30 whose code changed.
   await expect(card).toContainText('25');
   await card.locator('[data-home-attention-all]').click();

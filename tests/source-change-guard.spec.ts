@@ -219,7 +219,7 @@ test.describe('server side', () => {
     });
   });
 
-  test('re-analysing the same source records nothing', async ({ request }) => {
+  test('re-analyzing the same source records nothing', async ({ request }) => {
     expect((await run(request, SOURCE_A)).status()).toBe(200);
     expect((await run(request, SOURCE_A)).status()).toBe(200);
     const p = await readProject();

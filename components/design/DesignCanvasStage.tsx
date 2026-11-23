@@ -596,7 +596,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   const storedNote = !confirmed && answer.storedDiffers
     ? answer.storedDiffers.source === 'setting'
       ? `Your route setting is ${architectureOptionLabel(answer.storedDiffers.code) ?? answer.storedDiffers.code}. The analysis of this code recommends the route above.`
-      : `The analysis run on record recommended ${architectureOptionLabel(answer.storedDiffers.code) ?? answer.storedDiffers.code}. The code analysed now leads to the route above; run the analysis again to bring the record up to date.`
+      : `The analysis run on record recommended ${architectureOptionLabel(answer.storedDiffers.code) ?? answer.storedDiffers.code}. The code analyzed now leads to the route above; run the analysis again to bring the record up to date.`
     : null;
   const routeKpi = model?.route === 'in-app-rap' ? 'In-app · RAP' : model?.route === 'side-by-side-cap' ? 'Side-by-side · CAP' : 'Not determined';
   const fieldOf = (k: string) => contract?.fields.find((f) => f.key === k) ?? null;

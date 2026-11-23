@@ -86,7 +86,7 @@ test.describe('resolveIncludes: one pure call for a batch', () => {
   });
 });
 
-test.describe('the way back: every line of the analysed source to its file and line', () => {
+test.describe('the way back: every line of the analyzed source to its file and line', () => {
   const r = resolveIncludes({ 'z_demo_main.abap': MAIN, 'Z_DEMO_TOP.abap': TOP, 'Z_DEMO_F01.abap': F01 });
   const lines = r.source.split('\n');
   const lineOf = (text: string) => lines.indexOf(text) + 1;
@@ -108,7 +108,7 @@ test.describe('the way back: every line of the analysed source to its file and l
     expect(locateSourceLine(r.anchors, marker)).toMatchObject({ marker: true, line: 0, object: 'Z_DEMO_TOP' });
   });
 
-  test('the other direction: an include line to the analysed source', () => {
+  test('the other direction: an include line to the analyzed source', () => {
     expect(joinedLineOf(r.anchors, 'Z_DEMO_F01', 3)).toBe(lineOf('ENDFORM.'));
     expect(joinedLineOf(r.anchors, 'z_demo_top', 1)).toBe(lineOf('DATA gv_limit TYPE p DECIMALS 2.'));
     expect(joinedLineOf(r.anchors, 'Z_DEMO_MAIN', 4, 'Z_DEMO_MAIN')).toBe(lineOf('  PERFORM check_limit.'));
@@ -127,7 +127,7 @@ test.describe('the way back: every line of the analysed source to its file and l
     expect(readIncludeAnchors(broken).joined).toBe(false);
   });
 
-  test('a code card names the include and its line beside the analysed line', () => {
+  test('a code card names the include and its line beside the analyzed line', () => {
     const at = lineOf('ENDFORM.');
     expect(codeCardLabel('Z_DEMO_MAIN', { lineStart: at, lineEnd: at }, r.source)).toBe(
       `Z_DEMO_MAIN, line ${at} — include Z_DEMO_F01 (Z_DEMO_F01.abap), line 3`,

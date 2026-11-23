@@ -118,7 +118,7 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
       acct = await seedStageProject({ prefix: 'noerr', acceptTerms: true, rich: true });
       stagedId = `${acct.projectId}-staged`;
       await adminSetDoc('projects', stagedId, {
-        name: 'Staged, never analysed',
+        name: 'Staged, never analyzed',
         userId: acct.uid,
         createdAt: new Date(),
         status: 'uploaded',

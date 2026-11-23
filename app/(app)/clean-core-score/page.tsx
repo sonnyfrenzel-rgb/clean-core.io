@@ -115,7 +115,7 @@ const FIGURES = [
     who: 'Clean-Core.io (this site)',
     direction: 'Higher is better',
     scale: '5–100',
-    says: 'How far the analysed custom ABAP is decoupled from the SAP standard core.',
+    says: 'How far the analyzed custom ABAP is decoupled from the SAP standard core.',
     ours: true,
   },
   {

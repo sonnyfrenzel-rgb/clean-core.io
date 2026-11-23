@@ -295,7 +295,7 @@ test.describe('on screen (server-free render)', () => {
 
   test('on the page (3.2.0, AB-4) the end says the two endings instead of the one link to Design, and recaps nothing', async () => {
     const Inline = await load('components/workspace/ProcessTour.tsx', 'ProcessTourInline');
-    const endings = React.createElement('div', { 'data-x-endings': '' }, 'Re-design this program · Analyse another Z program');
+    const endings = React.createElement('div', { 'data-x-endings': '' }, 'Re-design this program · Analyze another Z program');
     const html = renderToStaticMarkup(
       React.createElement(Inline, { tour: PO.tour, model: PO.model, onClose: () => {}, initialStation: PO.tour.stations.length, designHref: '/d', endings }),
     );

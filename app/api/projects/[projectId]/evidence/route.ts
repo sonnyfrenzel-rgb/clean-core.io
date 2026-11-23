@@ -57,7 +57,7 @@ const BODY_LIMITS = { maxBytes: 3 * MAX_SOURCE_BYTES, timeoutMs: 10_000 };
 const tooLarge = () =>
   NextResponse.json(
     {
-      error: `This source is larger than the ${MAX_SOURCE_BYTES / 1024} KB one analysis run reads. Analyse the object in parts.`,
+      error: `This source is larger than the ${MAX_SOURCE_BYTES / 1024} KB one analysis run reads. Analyze the object in parts.`,
       code: 'too-large',
     },
     { status: 413 },
@@ -126,7 +126,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
       // Nothing staged is not an empty report: the caller is told so rather
       // than shown a clean bill.
       return NextResponse.json(
-        { error: 'No source is staged on this project, so nothing was analysed.', code: 'no-source' },
+        { error: 'No source is staged on this project, so nothing was analyzed.', code: 'no-source' },
         { status: 409 },
       );
     }
@@ -162,7 +162,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
 
     const source = body.source;
     if (typeof source !== 'string' || !source.trim()) {
-      return NextResponse.json({ error: 'No source was sent, so nothing was analysed.', code: 'no-source' }, { status: 400 });
+      return NextResponse.json({ error: 'No source was sent, so nothing was analyzed.', code: 'no-source' }, { status: 400 });
     }
     if (Buffer.byteLength(source, 'utf8') > MAX_SOURCE_BYTES) return tooLarge();
     // The run refuses text with no ABAP construct; so does its preview.

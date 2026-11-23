@@ -147,7 +147,7 @@ test.describe('own code: choose, check, start', () => {
     await expect(paid.locator('input')).toHaveCount(0);
     await expect(paid.locator('[data-own-code-paid-statement]')).toHaveText('Free. This run uses one of your 5 analyses; 3 left after it.');
     await expect(paid.locator('[data-own-code-settings]')).toHaveAttribute('href', '/settings');
-    await expect(page.locator('[data-own-code-same-source]')).toContainText('this source was already analysed');
+    await expect(page.locator('[data-own-code-same-source]')).toContainText('this source was already analyzed');
   });
 
   test('"Start analysis" writes one project with the joined source, and the workspace signs it', async ({ page }) => {
