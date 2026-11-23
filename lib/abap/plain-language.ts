@@ -2265,6 +2265,9 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
         return fit(eventName(node.label));
       }
       case 'end':
+        // Engine 3.5.0: `LEAVE PROGRAM` ends the whole run (`detail.leaveProgram`), the words an older engine gave its
+        // error end.
+        if (node.detail?.leaveProgram === true) return 'Program ends';
         return node.detail?.early === true ? 'Ends early' : 'Done';
       case 'end-error':
         return outcomeName(node, null, c);

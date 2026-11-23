@@ -72,6 +72,18 @@ export interface WalkState {
   earlyEnds: EarlyEnd[];
   /** ADR-054. The last statement index each region's walk covers — where its normal end takes over. */
   regionLast: Map<string, number>;
+  /**
+   * Engine 3.5.0: the `PERFORM … ON COMMIT` / `ON ROLLBACK` registrations the walk has passed and no `COMMIT WORK` /
+   * `ROLLBACK WORK` has run yet, in the order registered (`walkPerform`, `walkLuwEnd`).
+   */
+  pendingLuwForms: PendingLuwForm[];
+}
+
+/** Engine 3.5.0: a form registered to run when the logical unit of work ends (`PERFORM … ON COMMIT|ROLLBACK`). */
+export interface PendingLuwForm {
+  key: string;
+  statement: AbapStatement;
+  on: 'commit' | 'rollback';
 }
 
 /** A routine the runtime calls back, recorded where the walk passed the statement that names it. */
@@ -101,5 +113,6 @@ export function newWalkState(): WalkState {
     registrationFrozen: 0,
     earlyEnds: [],
     regionLast: new Map(),
+    pendingLuwForms: [],
   };
 }

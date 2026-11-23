@@ -109,11 +109,62 @@ export function recordAlvCallbacks(w: Walker, statement: AbapStatement): void {
     const target = /^(<?[\w/]+>?)(?:-[\w/-]+)?\s*\??=(?!=)/.exec(other.text)?.[1]?.toUpperCase()
       ?? assignmentTarget(other.text) ?? /^MODIFY\s+(?:TABLE\s+)?([\w/]+)/i.exec(other.text)?.[1]?.toUpperCase();
     if (!target || !rows.has(target)) continue;
+    // Engine 3.5.0: a row filled only after the call registers nothing for it.
+    if (w.readings.reads350 && filledAfterCall(w, other.index, statement.index)) continue;
     for (const m of other.text.matchAll(/(?:-|\s|\()FORM\s*=\s*'([\w/]+)'/gi)) {
       const key = m[1].toUpperCase();
       if (w.input.formBlocks.has(key)) pushCallback(w, key, m[1], statement, 'ALV IT_EVENTS');
     }
   }
+}
+
+/** The innermost `FORM`, `METHOD` or `MODULE` around statement `index`, or null at the level of an event block. */
+function routineAt(w: Walker, index: number): { openIndex: number; kind: string } | null {
+  const around = w.input.structure.enclosing[index] ?? [];
+  for (let i = around.length - 1; i >= 0; i--) {
+    const block = around[i];
+    if (block.kind === 'form' || block.kind === 'method' || block.kind === 'module') return block;
+  }
+  return null;
+}
+
+/**
+ * Engine 3.5.0 (`ENGINE_READS_350_FROM`): does the statement at `fill` provably run only **after** the ALV call at
+ * `call`? The event table is often filled in a `FORM` written below the call and performed before it, so source
+ * order alone says nothing. The fill is lifted to the routine the call stands in: a statement there is where it is;
+ * a statement in a `FORM` stands at every `PERFORM` of that form, followed up through the forms that perform it. Only
+ * when every position it lifts to lies in the call's routine and behind the call is the row filled after the call. A
+ * fill that cannot be lifted (a method, a form no `PERFORM` names, a chain deeper than eight) keeps counting, as it
+ * did before 3.5.0.
+ */
+function filledAfterCall(w: Walker, fill: number, call: number): boolean {
+  // Outside a routine the scope is the event block: ABAP runs event blocks by event, not in source order.
+  const scopeOf = (index: number, routine: { openIndex: number } | null): string => {
+    if (routine) return `routine:${routine.openIndex}`;
+    const line = w.input.statements[index]?.lineStart ?? -1;
+    const event = w.input.structure.containers.find((c) => c.kind === 'event' && c.lineStart <= line && line <= c.lineEnd);
+    return event ? `event:${event.lineStart}` : 'program';
+  };
+  const scope = scopeOf(call, routineAt(w, call));
+  const lift = (index: number, depth: number): number[] | null => {
+    const routine = routineAt(w, index);
+    if (scopeOf(index, routine) === scope) return [index];
+    if (!routine || routine.kind !== 'form' || depth > 8) return null;
+    const name = /^FORM\s+([\w/]+)/i.exec(w.input.statements[routine.openIndex]?.text ?? '')?.[1]?.toUpperCase();
+    if (!name) return null;
+    const sites = w.input.statements.filter((s) => s.keyword === 'PERFORM'
+      && /^PERFORM\s+([\w/]+)/i.exec(maskLiterals(s.text))?.[1]?.toUpperCase() === name);
+    if (!sites.length) return null;
+    const out: number[] = [];
+    for (const site of sites) {
+      const at = lift(site.index, depth + 1);
+      if (!at) return null;
+      out.push(...at);
+    }
+    return out;
+  };
+  const at = lift(fill, 0);
+  return at !== null && at.length > 0 && at.every((i) => i > call);
 }
 
 export function pushCallback(w: Walker, key: string, label: string, site: AbapStatement, trigger = 'ON END OF TASK'): void {

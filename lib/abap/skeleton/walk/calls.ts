@@ -38,6 +38,18 @@ export function walkPerform(w: Walker, statement: AbapStatement, ctx: WalkContex
   const target = call?.target;
   const local = target && !call?.program && w.input.formBlocks.has(target);
 
+  // Engine 3.5.0 (`ENGINE_READS_350_FROM`): `PERFORM f ON COMMIT` does not run `f` here. It registers `f` to run when
+  // the logical unit of work ends: at the next `COMMIT WORK` (`ON COMMIT`) or `ROLLBACK WORK` (`ON ROLLBACK`). The
+  // walk keeps the registration and draws the form where that statement stands (`walkLuwEnd`); a registration no
+  // walked `COMMIT WORK` or `ROLLBACK WORK` runs is a note (`notePendingLuwForms`). Before 3.5.0 the form was drawn
+  // here, as an immediate step before the writes that precede the commit.
+  const luw = w.readings.reads350 && local ? /\bON\s+(COMMIT|ROLLBACK)\b/i.exec(maskLiterals(statement.text)) : null;
+  if (luw && target) {
+    markReached(w, target);
+    w.state.pendingLuwForms.push({ key: target, statement, on: luw[1].toUpperCase() === 'COMMIT' ? 'commit' : 'rollback' });
+    return { exits: incoming };
+  }
+
   if (!local) {
     const node = w.graph.addNode('call-opaque',
       target ?? call?.text ?? 'PERFORM', anchorOf(statement, 1), ctx.region, ctx.container, {
@@ -351,4 +363,47 @@ export function macroEffectNode(
     return at('output', body.keyword, { statements: 1, target: isFileOutput(body) ? 'file' : 'list' });
   }
   return null;
+}
+
+/**
+ * Engine 3.5.0 (`ENGINE_READS_350_FROM`): `COMMIT WORK` / `ROLLBACK WORK` runs the forms registered `ON COMMIT` /
+ * `ON ROLLBACK` since the last end of the unit of work, in the order registered and each form once (the ABAP keyword
+ * documentation: a form registered more than once runs once). They are drawn here, one after the other, each as the
+ * call of its form would be, anchored at its `PERFORM` (rule 2) with `detail.runsAt` saying when it runs. Either
+ * statement ends the unit of work, so every registration is used up: a commit discards what was registered for a
+ * rollback, and the other way round. Null when the statement is neither.
+ */
+export function walkLuwEnd(w: Walker, statement: AbapStatement, ctx: WalkContext, incoming: Exit[]): Exit[] | null {
+  const end = /^(COMMIT|ROLLBACK)\s+WORK\b/i.exec(statement.text)?.[1]?.toUpperCase();
+  if (!end) return null;
+  const on = end === 'COMMIT' ? 'commit' : 'rollback';
+  const due = w.state.pendingLuwForms.filter((p) => p.on === on);
+  w.state.pendingLuwForms = [];
+  let live = incoming;
+  const ran = new Set<string>();
+  for (const pending of due) {
+    if (ran.has(pending.key)) continue;
+    ran.add(pending.key);
+    live = callRoutine(w, pending.key, pending.key, anchorOf(pending.statement, 1), ctx, live, {
+      runsAt: on,
+      registeredAtLine: pending.statement.lineStart,
+    });
+  }
+  return live;
+}
+
+/**
+ * Engine 3.5.0: the `PERFORM … ON COMMIT|ROLLBACK` registrations no walked `COMMIT WORK` / `ROLLBACK WORK` ran. The
+ * unit of work ends outside this source (the caller commits), so the form runs there; it is said as a note at the
+ * registration rather than drawn at a place the source does not show.
+ */
+export function notePendingLuwForms(w: Walker): void {
+  const seen = new Set<number>();
+  for (const pending of w.state.pendingLuwForms) {
+    if (seen.has(pending.statement.index)) continue;
+    seen.add(pending.statement.index);
+    w.graph.note('commit-boundary', pending.statement,
+      `FORM ${pending.key} is registered to run at the next ${pending.on === 'commit' ? 'COMMIT WORK' : 'ROLLBACK WORK'}, which this source does not write: it runs where the caller ends the unit of work.`);
+  }
+  w.state.pendingLuwForms = [];
 }
