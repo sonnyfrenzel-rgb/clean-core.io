@@ -719,10 +719,15 @@ export default function WorkspaceProcess({
         <CcEmptyState
           illustration={<FileCode2 size={28} aria-hidden={true} className="text-cc-ink-muted" />}
           title={wt('biz.mapAbsentTitle')}
+          // On Analyze itself "Open Analyze" only opened the page the reader was on (UX review 22.11.2026, Q4), and
+          // Analyze has no re-run of its own for a signed project: the sentence says what draws the map, no button
+          // pretends to do it.
           action={
-            <CcLinkButton href={analyzeHref} variant="ghost">
-              {wt('biz.openAnalyze')}
-            </CcLinkButton>
+            codeOnClick ? undefined : (
+              <CcLinkButton href={analyzeHref} variant="ghost">
+                {wt('biz.openAnalyze')}
+              </CcLinkButton>
+            )
           }
         >
           {reason}

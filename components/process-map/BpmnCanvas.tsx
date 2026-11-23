@@ -115,8 +115,12 @@ export interface BpmnCanvasProps {
    * start (the workspace). Defaults to `whole` with controls, `readable`
    * without. Every map carries the controls since owner 03.10.2026 ("get into
    * full screen, and back"); how the workspace map opens did not change.
+   * `whole-readable` — the whole level, but inline on a desktop-wide canvas
+   * never below the readable floor (`fitWhole`'s `readable`): Analyze,
+   * Business (UX review 22.11.2026, Q1). *Fit* and full screen still show the
+   * whole level.
    */
-  openFit?: 'whole' | 'readable';
+  openFit?: 'whole' | 'readable' | 'whole-readable';
   /**
    * The level path and the way up (`ProcessBreadcrumb`), drawn first in the
    * control row — inline and in full screen alike, since the row is inside
@@ -212,7 +216,7 @@ interface CanvasService extends ViewboxCanvas {
  * read on without full screen. Full screen takes the height its frame gives
  * (v3.1.0).
  */
-function showWhole(canvas: CanvasService, host: HTMLElement | null, inFullscreen: boolean): void {
+function showWhole(canvas: CanvasService, host: HTMLElement | null, inFullscreen: boolean, readable = false): void {
   // In full screen the frame gives the height (`flex-1` wins over a set height), and the grown height
   // stays: the page behind keeps its length, so leaving full screen returns to the same place.
   if (host && !inFullscreen && host.dataset.growToLevel === 'true') {
@@ -222,8 +226,12 @@ function showWhole(canvas: CanvasService, host: HTMLElement | null, inFullscreen
     if (height !== null) host.style.height = `${height}px`;
     if (grown || height !== null) canvas.resized();
   }
-  fitWhole(canvas);
+  // The readable floor is for the inline map's opening; full screen shows the whole level.
+  fitWhole(canvas, { readable: readable && !inFullscreen });
 }
+
+/** Whether a map opens on the whole level (`showWhole`) rather than at the readable start (`fitWithPadding`). */
+const opensWhole = (fit: 'whole' | 'readable' | 'whole-readable') => fit !== 'readable';
 
 interface OverlayAttrs {
   position: { top: number; left: number };
@@ -593,7 +601,7 @@ export default function BpmnCanvas({
           // the page is shown, after bpmn-js has placed it.
           requestAnimationFrame(() => {
             try {
-              if (filledRef.current || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
+              if (filledRef.current || opensWhole(fitOnOpenRef.current)) showWhole(canvas, hostRef.current, filledRef.current, fitOnOpenRef.current === 'whole-readable');
               else fitWithPadding(canvas);
             } catch {
               /* the viewer went in the meantime */
@@ -620,7 +628,7 @@ export default function BpmnCanvas({
         const asked = canvas.findRoot(`${planeRef.current}_plane`) ?? canvas.findRoot(planeRef.current);
         if (asked) canvas.setRootElement(asked);
       }
-      if (fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
+      if (opensWhole(fitOnOpenRef.current)) showWhole(canvas, hostRef.current, filledRef.current, fitOnOpenRef.current === 'whole-readable');
       else fitWithPadding(canvas);
 
       if (controlsRef.current) {
@@ -691,7 +699,7 @@ export default function BpmnCanvas({
     const current = canvas.getRootElement();
     if (current && (target as { id?: string }).id === current.id) return;
     canvas.setRootElement(target);
-    if (filledRef.current || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
+    if (filledRef.current || opensWhole(fitOnOpenRef.current)) showWhole(canvas, hostRef.current, filledRef.current, fitOnOpenRef.current === 'whole-readable');
     else fitWithPadding(canvas);
   }, [plane]);
 
@@ -721,7 +729,7 @@ export default function BpmnCanvas({
         const canvas = viewer.get('canvas');
         canvas.resized();
         if (showFollowed()) return;
-        if (filledRef.current || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filledRef.current);
+        if (filledRef.current || opensWhole(fitOnOpenRef.current)) showWhole(canvas, hostRef.current, filledRef.current, fitOnOpenRef.current === 'whole-readable');
         else fitWithPadding(canvas);
       } catch {
         /* a viewer still importing has nothing to measure */
@@ -741,7 +749,7 @@ export default function BpmnCanvas({
       canvas.resized();
       if (showFollowed()) return;
       // Full screen shows the whole level; back on the page, the level opens as it did.
-      if (filled || fitOnOpenRef.current === 'whole') showWhole(canvas, hostRef.current, filled);
+      if (filled || opensWhole(fitOnOpenRef.current)) showWhole(canvas, hostRef.current, filled, fitOnOpenRef.current === 'whole-readable');
       else fitWithPadding(canvas);
     } catch {
       /* a viewer still importing has nothing to measure */

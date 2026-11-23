@@ -2257,9 +2257,13 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
               {/* Names the provider (legal review 06.11.2026): long, so it wraps on a phone. */}
               <span className="min-w-0 text-left leading-snug whitespace-normal">{generateLabel}</span>
             </CcButton>
-            <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={handleCopy}>
-              Copy Code
-            </CcButton>
+            {/* Only where there is code to copy (UX review 22.11.2026, Q4): before the first generation the
+                button copied an empty string and announced it. */}
+            {transformedCode.trim() ? (
+              <CcButton icon={<Code2 size={16} aria-hidden="true" />} onClick={handleCopy}>
+                Copy Code
+              </CcButton>
+            ) : null}
           </>
         }
       >

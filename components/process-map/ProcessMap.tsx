@@ -1248,7 +1248,9 @@ export default function ProcessMap({
                  whole level is visible on open"). `canvasControls` is kept as
                  a prop for callers; every map carries the controls now. */
               controls
-              openFit="whole"
+              /* Analyze, Business: the whole level, but on a desktop never below the readable floor (UX review
+                 22.11.2026, Q1: it opened at 42 %). Fit and full screen still show the whole level. */
+              openFit={page ? 'whole-readable' : 'whole'}
               levelPath={page ? (
                 // Analyze, Business (mockup state 3): "Map | Steps" leads the canvas row.
                 <div className="flex flex-wrap items-center gap-2">
