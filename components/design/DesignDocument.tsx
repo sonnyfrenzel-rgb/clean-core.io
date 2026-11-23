@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ArrowDown, ArrowRight, Boxes, CalendarRange, ChevronDown, Plug, ShieldCheck } from 'lucide-react';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { CcTag } from '@/components/cc/Tag';
 import ProjectBlueprintExplorer from '@/components/design/ProjectBlueprintExplorer';
 import ApiEndpointsCatalog from '@/components/design/ApiEndpointsCatalog';
@@ -313,7 +313,7 @@ export default function DesignDocument({ design, routeReason, levels, findings, 
       >
         <div className="flex flex-wrap items-center gap-2">
           <h3 id="design-overview-title" className="m-0 cc-text-h2 text-cc-ink">{design.projectName}</h3>
-          <CcProvenanceChip value="proposed" />
+          <FamilyChip value="proposed" />
         </div>
         <div data-design-route="" className="flex min-w-0 flex-col gap-1">
           <span className="flex flex-wrap items-center gap-2">
@@ -412,7 +412,7 @@ export default function DesignDocument({ design, routeReason, levels, findings, 
             {isOpen ? (
               <div id={bodyId} className="flex min-w-0 flex-col gap-3 border-t border-cc-line px-4 py-4 sm:px-5">
                 <span>
-                  <CcProvenanceChip value="proposed" />
+                  <FamilyChip value="proposed" />
                 </span>
                 {body[g.key]}
               </div>

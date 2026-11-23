@@ -4,7 +4,7 @@ import { ArrowUpRight } from 'lucide-react';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import CcTable from '@/components/cc/Table';
 import { CcTag } from '@/components/cc/Tag';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { sapApiHubUrl } from '@/lib/export-safety';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import type { CleanCoreLevelValue } from '@/lib/clean-core-level';
@@ -71,7 +71,7 @@ export default function ApiBusinessHubMapping({ sapStandardApiMapping, levels = 
           <div className="flex flex-wrap items-center gap-2">
             <h4 className={embedded ? 'cc-text-h3 text-cc-ink' : 'cc-text-h2 text-cc-ink'}>SAP Business Accelerator Hub Integration</h4>
             {/* The mapping — which API, which ID, which address — is the model's. */}
-            {embedded ? null : <CcProvenanceChip value="proposed" />}
+            {embedded ? null : <FamilyChip value="proposed" />}
           </div>
           {/* External review F-03: the model's IDs were printed as SAP's. Each one is checked now. */}
           <p className="cc-text-cell text-cc-ink-muted mt-1">

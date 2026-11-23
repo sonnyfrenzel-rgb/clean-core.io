@@ -208,7 +208,9 @@ test.describe('the demo wording stays in the demo', () => {
     const end = page.indexOf(`\n${indent}/>`, start);
     expect(end, 'the end of the DesignCanvasStage element was not found').toBeGreaterThan(start);
     const call = page.slice(start, end);
-    expect(call).toMatch(/\bview=\{view\}/);
+    // ADR-130: the IT view's canvas; the Canvas | List switch is gone.
+    expect(call).toMatch(/\blayout="it"/);
+    expect(call).not.toMatch(/\bview=\{/);
     expect(call).not.toMatch(/signOffWording/);
   });
 

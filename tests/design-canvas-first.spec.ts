@@ -244,21 +244,20 @@ test.describe('2. the proposal waits for the questions', () => {
 });
 
 test.describe('3. the page', () => {
-  test('canvas first, the questions handed to it, the proposal gated, Skip on the placeholder; still written only on a click', () => {
+  test('ADR-130: the questions stand in the Business view, the canvas in IT; still written only on a click', () => {
     const page = read(PAGE);
     const ret = page.slice(page.lastIndexOf('  return (\n    <StageFrame'));
-    // No questions above the canvas any more.
+    // The panel is built once and mounted in every view, so its answers keep reaching the page.
     expect(ret.indexOf('<RuleQuestions')).toBe(-1);
     expect(page).toContain('const questionsPanel = <RuleQuestions project={project} projectId={projectId as string} onAnswers={setBusinessAnswers} />;');
+    expect(ret).toContain('id="design-questions"');
+    expect(ret).toContain('{questionsPanel}');
+    // The canvas is the IT view's: no question panel, no pending placeholder, no Canvas | List switch.
     const canvas = ret.slice(ret.indexOf('<DesignCanvasStage'));
-    for (const prop of ['questions={questionsPanel}', 'proposalShown={proposalShown}', 'pending={proposalPending}', 'questionsSummary={questionsSummary}', 'questionsOpenFirst={questionsOpenFirst}']) {
-      expect(canvas, prop).toContain(prop);
-    }
-    expect(page).toContain("const proposalShown = designProposalShown({ gate: writeGate, skipped, hasDesign: Boolean(design) });");
-    expect(page).toMatch(/onClick=\{skipQuestions\} data-design-skip-questions=""/);
-    // Skipping is a view of this tab: nothing reaches the project.
-    const skip = page.slice(page.indexOf('const skipQuestions'), page.indexOf('}, [skipKey]);'));
-    expect(skip).not.toMatch(/updateDoc|runTransaction|runProjectCommand|fetch\(/);
+    const call = canvas.slice(0, canvas.indexOf('\n              />'));
+    expect(call).toContain('layout="it"');
+    for (const prop of ['questions={', 'proposalShown={', 'pending={', 'view={']) expect(call, prop).not.toContain(prop);
+    expect(page).not.toMatch(/data-design-skip-questions|CcSegmentedControl|skipQuestions/);
     // ADR-102 stands: nothing starts a generation by itself.
     expect(page).not.toMatch(/generateDesign(?:Ref\.current)?\([^)]*'open'\)/);
   });

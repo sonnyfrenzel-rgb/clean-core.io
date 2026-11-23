@@ -77,6 +77,24 @@ export const PAGE_ANCHOR_IDS = {
     pack: 'audit-pack',
     slides: 'presentation-preview',
   },
+  /**
+   * Design (ADR-130, G12): each view and decision case names its own sections (`designAnchors` in
+   * `lib/design-views.ts`), in this order, at most six.
+   */
+  design: {
+    answer: 'design-answer',
+    board: 'design-board',
+    questions: 'design-questions',
+    next: 'design-next',
+    canvas: 'design-canvas',
+    contract: 'design-contract',
+    objects: 'design-objects',
+    dependencies: 'design-dependencies',
+    notRead: 'design-not-read',
+    requirements: 'design-requirements',
+    checklist: 'design-checklist',
+    options: 'design-options',
+  },
 } as const;
 
 /** The accessible name of each tool's bar — what a screen reader announces before the links. */
@@ -85,6 +103,7 @@ export const PAGE_ANCHOR_LABELS = {
   transformation: 'Sections of Transformation',
   testing: 'Sections of Testing',
   delivery: 'Sections of Delivery',
+  design: 'Sections of Design',
 } as const;
 
 const n = (count: number) => String(count);

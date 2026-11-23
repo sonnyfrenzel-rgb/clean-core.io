@@ -7,7 +7,7 @@ import CcButton from '@/components/cc/Button';
 import CcAnchor from '@/components/cc/Anchor';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcMessageStrip from '@/components/cc/MessageStrip';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import CcTextarea from '@/components/cc/Textarea';
 import CcLinkButton from '@/components/cc/LinkButton';
 import { CC_SEGMENTED_GROUP, ccSegmentClass } from '@/components/cc/SegmentedControl';
@@ -193,7 +193,7 @@ function QuestionCard({ state, explained, rules, owner, busy, onRecord, onCancel
         </p>
         {state.answer === 'unsure' && state.text ? (
           <span data-question-asked="" className="flex flex-wrap items-center gap-2">
-            <CcProvenanceChip value="not-determined" />
+            <FamilyChip value="not-determined" />
             <span className="text-[12px] font-semibold text-cc-ink">{wt('questions.answerUnsure')}</span>
             <span className="text-[12px] font-medium text-cc-ink">{state.text}</span>
           </span>
@@ -315,7 +315,7 @@ export function RuleQuestionsView({ explanation, entries, rules, owner, busy, er
 
   return (
     <div id={RULE_QUESTIONS_ID} data-rule-questions="" data-answered={flow.answered} data-total={flow.total} className="scroll-mt-24">
-      <CcCard title={wt('questions.title')} count={flow.total} meta={<CcProvenanceChip value="reconstructed" />}>
+      <CcCard title={wt('questions.title')} count={flow.total} meta={<FamilyChip value="reconstructed" />}>
         <div className="flex min-w-0 flex-col gap-3">
           <p className="m-0 max-w-3xl text-[13px] leading-snug font-medium text-cc-ink-muted">{owner ? wt('questions.lead') : wt('questions.leadReader')}</p>
           {!owner ? <p className="m-0 text-[12px] font-medium text-cc-ink-muted">{wt('questions.ownerOnly')}</p> : null}
@@ -420,7 +420,7 @@ export function RuleQuestionsView({ explanation, entries, rules, owner, busy, er
                         <Said sentence={s.question.statement} say={say} mark="statement" />
                         {s.question.customerText ? <span data-customer-text="" className="text-[11px] font-medium text-cc-ink-muted">{s.question.customerText}</span> : null}
                         <span className="flex flex-wrap items-center gap-2">
-                          <CcProvenanceChip value={s.answer === 'unsure' ? 'not-determined' : 'confirmed'} note={entries[s.question.ruleIds[0]]?.account.name} />
+                          <FamilyChip value={s.answer === 'unsure' ? 'not-determined' : 'confirmed'} note={entries[s.question.ruleIds[0]]?.account.name} />
                           <span className="text-[12px] font-semibold text-cc-ink">{s.answer ? wt(ANSWER_LABEL[s.answer]) : ''}</span>
                           {s.text && s.answer !== 'yes' ? <span className="text-[12px] font-medium text-cc-ink">{s.text}</span> : null}
                           {owner ? (

@@ -7,7 +7,7 @@ import SupportLevelMark from '@/components/analyze/SupportLevelMark';
 import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 
 /** A snippet as plain lines for the code surface — no highlighting is claimed. */
 function snippetLines(code: string): CcCodeLine[] {
@@ -126,7 +126,7 @@ export default function SecurityHardeningChecklist({ securityHardening, findings
           <div className="flex flex-wrap items-center gap-2">
             <h4 className={embedded ? 'cc-text-h3 text-cc-ink' : 'cc-text-h2 text-cc-ink'}>Security Hardening Checklist</h4>
             {/* The checklist items are the model's; the explanations behind "Explain" are ours. */}
-            {embedded ? null : <CcProvenanceChip value="proposed" />}
+            {embedded ? null : <FamilyChip value="proposed" />}
           </div>
           <p className="cc-text-cell text-cc-ink-muted mt-1">Concrete actions to secure the side-by-side Node.js application.</p>
         </div>

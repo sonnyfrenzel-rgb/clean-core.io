@@ -1,7 +1,7 @@
 'use client';
 
 import { Folder, FileCode } from 'lucide-react';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 
 interface StructureItem {
   path: string;
@@ -25,7 +25,7 @@ export default function ProjectBlueprintExplorer({ projectStructure, embedded = 
       <div className="mb-4">
         <div className="flex flex-wrap items-center gap-2">
           <h4 className={embedded ? 'cc-text-h3 text-cc-ink' : 'cc-text-h2 text-cc-ink'}>Target Project Blueprint</h4>
-          {embedded ? null : <CcProvenanceChip value="proposed" />}
+          {embedded ? null : <FamilyChip value="proposed" />}
         </div>
         <p className="cc-text-cell text-cc-ink-muted mt-1">{embedded ? 'The files of the target project, with what each is for.' : 'Recommended file structure for the side-by-side Node.js application.'}</p>
       </div>

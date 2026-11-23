@@ -351,15 +351,20 @@ own, a narrower block is left-aligned to the frame. The seven-circle stepper, it
 gone (ADR-061). A tool with more than one section carries the **"On this page" bar** (ADR-091, ADR-126 (3)),
 `PageAnchorBar`, the same on every tool (§2.12).
 
-**The Design tool reads canvas first** (ADR-106, amending ADR-102's order). The canvas is the page's picture, right
-under the header; the questions for the business stand beside it as its side panel from L (below it on S and M) — the
-questions that change the target on top ("N questions change the target"), the others folded ("+ M without impact on
-the target"). The proposal — the target drawn on the canvas, its KPIs, the decision with the recommended route and
-the alternatives, the document drawer with the option comparison — shows once every question has an answer (or none
-is asked), once the reader clicks *Skip questions*, or when a design is already on record. Until then the canvas holds
-one calm placeholder, "The target appears after the questions — or skip them", with *Skip questions* as its one
-secondary button. Afterwards the questions fold to one line in the side panel ("Business questions · n of m
-answered"), open while questions are still open. The design is still written only on the owner's click.
+**The Design tool shows a different page per view, from the program decision** (ADR-130, replacing ADR-106's canvas
+first; `docs/roadmap/design-next-mockup.html`). Every view opens on the family's answer card (the decided program
+option in its side column, four facets) and the one "On this page" bar; the view stays in the address only.
+*Business*: the process after the change — today's steps in Analyze's phases side by side, each marked by what the
+business answers on record do to it (stays · changes · not in the target · open; matched by the rules' lines, never by
+name), then the business questions with "Generate the design" under them (the write gate unchanged, ADR-102), then
+what happens next. *IT*: the architecture canvas full width with the evidence of the clicked box beside it, the
+contract, its alternatives and the design document **once** in the drawer under it, the object table (every object,
+its Level and released successor from the catalog), the requirements card. *Management*: "is the design ready to sign
+off?", the checklist before sign-off, *Confirm target* as the one primary action, the four options with the decided
+one. The Canvas | List switch is gone. Keep, Move to SAP standard and Retire show their own content (nothing is built;
+Retire names what the analysis read beside what it could not read). A declared route deviation or an out-of-date
+decision shows "outside what Economics priced. Re-price it."; Design shows no amount. The design is still written only
+on the owner's click.
 
 On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
 status" line; the anchor bar stays in place. **A

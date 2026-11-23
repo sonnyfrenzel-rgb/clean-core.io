@@ -39,7 +39,8 @@ test.beforeAll(async () => {
 });
 
 const render = (design: unknown) => renderToStaticMarkup(React.createElement(OptionComparison, { design }));
-const proposedChips = (html: string) => (html.match(/data-provenance="proposed"/g) ?? []).length;
+// The family's chip (UX review L2): a model's text reads "AI-generated".
+const proposedChips = (html: string) => (html.match(/data-family-chip="ai"/g) ?? []).length;
 
 const READY = {
   optionComparison: {

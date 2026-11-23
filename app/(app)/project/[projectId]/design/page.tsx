@@ -11,7 +11,7 @@ import { loadSapNameLists } from '@/lib/sap-identifiers';
 import { getAuth, getDb, handleFirestoreError, OperationType } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
-import { FileText, Download, RefreshCw, Eye, LayoutGrid, List } from 'lucide-react';
+import { FileText, Download, RefreshCw, Eye } from 'lucide-react';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { callGemini } from '@/lib/gemini';
 import { OPTION_COMPARISON_RULE, SAP_REFERENCE_PROMPT_RULES } from '@/lib/sap-reference-check';
@@ -24,26 +24,22 @@ import NotGenerated from '@/components/NotGenerated';
 import { saveAs } from '@/lib/fileSaver';
 import ArchitectSignOff, { architectureOptionLabel, type TargetArchitecture } from '@/components/ArchitectSignOff';
 import { isTargetArchitecture, recommendedArchitecture } from '@/lib/project-commands';
-import { signOffRecommendation, storedRouteOf } from '@/lib/design-recommendation';
+import { ARCHITECTURE_OF_ROUTE, signOffRecommendation, storedRouteOf } from '@/lib/design-recommendation';
 import { runProjectCommand } from '@/lib/project-command-client';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
 import { signedEngineVersionOf } from '@/lib/score-rule';
 import { withPreviewPolicy } from '@/lib/export-preview';
 
 import CcSkeleton from '@/components/cc/Skeleton';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import StageFooter from '@/components/StageFooter';
 import ReplaceStoredBox from '@/components/ReplaceStoredBox';
-import { designOpenQuestions, questionsPanelSummary, wt } from '@/lib/workspace-messages';
-import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
+import { designOpenQuestions, wt } from '@/lib/workspace-messages';
 import {
   ANSWERS_READING,
   businessAnswersDigest,
   businessAnswersMoved,
   businessAnswersPromptRule,
   businessAnswersSection,
-  designProposalShown,
   designWriteEnabled,
   designWriteGate,
   withBusinessAnswersBasis,
@@ -96,6 +92,43 @@ import {
 } from '@/lib/design-generation-lease';
 import DesignWritingState from '@/components/design/DesignWritingState';
 import DesignDocument, { isSideBySideDesign } from '@/components/design/DesignDocument';
+// ADR-130: the three views and the program decision (docs/roadmap/design-next-mockup.html).
+import AnswerCard, { type FacetProps } from '@/components/family/AnswerCard';
+import FamilyChip from '@/components/family/FamilyChip';
+import PageAnchorBar from '@/components/PageAnchorBar';
+import CcLinkButton from '@/components/cc/LinkButton';
+import OwnerOnlyNote from '@/components/OwnerOnlyNote';
+import DesignConfirmTarget from '@/components/design/DesignConfirmTarget';
+import EconomicsRangeSlot from '@/components/design/EconomicsRangeSlot';
+import {
+  DesignCard,
+  DesignChecklist,
+  DesignDecisionBox,
+  DesignDependencies,
+  DesignNotRead,
+  DesignObjectTable,
+  DesignOptions,
+  DesignSection,
+  DesignTargetBoardView,
+} from '@/components/design/DesignViewParts';
+import { useDesignDecision } from '@/hooks/useDesignDecision';
+import { useAroundTheMap } from '@/hooks/useAroundTheMap';
+import { stageViewOf, useLocationSearch } from '@/lib/location-search';
+import { PAGE_ANCHOR_LABELS } from '@/lib/page-anchors';
+import { DECISION_OPTION_MEANINGS } from '@/lib/decision-options';
+import { standardTouch } from '@/lib/standard-touch';
+import {
+  NO_DESIGN_DECISION,
+  OUTSIDE_PRICED_HEADLINE,
+  designAnchors,
+  designDecisionOf,
+  designDependencies,
+  designObjects,
+  designSignOffChecklist,
+  designTargetBoard,
+  outsidePricedRange,
+  type RuleLines,
+} from '@/lib/design-views';
 
 
 /**
@@ -292,27 +325,6 @@ export default function DesignPage() {
   useEffect(() => {
     businessAnswersRef.current = businessAnswers;
   }, [businessAnswers]);
-  /**
-   * "Skip questions" was clicked (owner decision 22.10.2026, ADR-106): the
-   * proposal shows without the answers. A view of this tab, nothing stored on
-   * the project — kept for the tab's session so a reload does not ask again.
-   */
-  const skipKey = `cc:design-skip-questions:${String(projectId)}`;
-  const [skipped, setSkipped] = useState<boolean>(() => {
-    try {
-      return typeof window !== 'undefined' && window.sessionStorage.getItem(skipKey) === '1';
-    } catch {
-      return false;
-    }
-  });
-  const skipQuestions = useCallback(() => {
-    setSkipped(true);
-    try {
-      window.sessionStorage.setItem(skipKey, '1');
-    } catch {
-      /* the choice holds for this page view */
-    }
-  }, [skipKey]);
 
   /**
    * The design on record now, read again — what a page adopts when another
@@ -872,7 +884,6 @@ ${DESIGN_ANSWER_REMINDER}`;
         : null,
     [designEvidence, deploymentModel, project],
   );
-  const [view, setView] = useState<'canvas' | 'list'>('canvas');
 
   /**
    * The source the active run signed, and nothing else, for the
@@ -893,6 +904,20 @@ ${DESIGN_ANSWER_REMINDER}`;
   }, [signedSource, designEvidence, keyUserReading]);
   /** What the design needs on record: a source and a signed run. The narrative is not among them. */
   const designPrerequisites = generationPrerequisites(project, 'design');
+
+  // ADR-130: the view is read from the address and never stored (ADR-105); the program decision is read as the
+  // decision route answers it and written nowhere; today's steps in Analyze's phases, read by the engine alone
+  // (no model call: `model: false`, and no rewording asked on a reader's or the owner's visit).
+  const search = useLocationSearch();
+  const view = stageViewOf(search);
+  const decisionRead = useDesignDecision(projectId as string, Boolean(project), evidenceVersion);
+  const around = useAroundTheMap({
+    project,
+    projectId: projectId as string,
+    owner: false,
+    model: false,
+    source: signedSource?.source ?? null,
+  });
 
   const requirementsMissing = !project?.activeRunId
     ? 'The requirements are read from the source of a signed analysis run. Run the analysis in stage 1 first.'
@@ -932,11 +957,6 @@ ${DESIGN_ANSWER_REMINDER}`;
   const onlyAnswersMoved = answersMoved && !stale.sourceChanged && !stale.design && !stale.signOff;
   // Step 1 is the questions: "Generate the design" waits until each has an answer.
   const writeGate = designWriteGate(businessAnswers);
-  // Owner decision 22.10.2026 (ADR-106, amending ADR-102's page order): the
-  // canvas first, the questions beside it, and the proposal — the target, the
-  // decision, the document with the option comparison — only once the
-  // questions are answered, skipped, or a design is already on record.
-  const proposalShown = designProposalShown({ gate: writeGate, skipped, hasDesign: Boolean(design) });
   // The sign-off is current when it was given for the code under review —
   // `stale.signOff` says when it was not (a source or profile change after it).
   // A design document older than the analysis is the document's state and is
@@ -1323,32 +1343,386 @@ ${DESIGN_ANSWER_REMINDER}`;
   // Owner decision 21.10.2026 — the new set-up of the business rules: the
   // questions a business sets, a few at a time, before Transformation. Owner
   // decision 22.10.2026 — the design is written on a click once they are
-  // answered (ADR-102), and they stand beside the canvas (ADR-106).
+  // answered (ADR-102, unchanged: owner decision L-06). Since ADR-130 they stand
+  // in the Business view, where the people who answer read; mounted in every
+  // view, so what is answered keeps reaching the page's counts and its gate.
   const questionsPanel = <RuleQuestions project={project} projectId={projectId as string} onAnswers={setBusinessAnswers} />;
-  const questionsSummary =
-    businessAnswers.state === 'ready' && businessAnswers.total > 0
-      ? questionsPanelSummary(businessAnswers.total - businessAnswers.open, businessAnswers.total)
-      : null;
-  // Once the proposal shows, the panel opens by itself while questions are
-  // open, or when the address names it (the Business view's open questions lead there).
-  const questionsOpenFirst =
-    (businessAnswers.state === 'ready' && businessAnswers.open > 0) ||
-    (typeof window !== 'undefined' && window.location.hash === `#${RULE_QUESTIONS_ID}`);
-  // What the canvas holds until then: calm, one sentence, one way past it.
-  const proposalPending = (
-    <div
-      data-design-pending-state={writeGate.kind}
-      className="flex min-h-80 flex-col items-center justify-center gap-3 rounded-cc-row border border-dashed border-cc-field-border bg-cc-surface px-4 py-8 text-center"
-    >
-      <p className="m-0 text-[15px] font-bold text-cc-ink">
-        {writeGate.kind === 'reading' ? wt('design.readingQuestions') : wt('design.targetAfterQuestions')}
+
+  /* ------------------------------------------------ ADR-130: the three views */
+  const pid = encodeURIComponent(projectId as string);
+  const base = `/project/${pid}`;
+  const economicsHref = `${base}/tco`;
+  const managementHref = `${base}?view=management`;
+  const viewHref = (v: 'business' | 'it' | 'management', hash = '') => `${base}/design?view=${v}${hash}`;
+
+  const decision = decisionRead.state === 'ready' ? designDecisionOf(decisionRead.answer) : NO_DESIGN_DECISION;
+  const dcase = decision.case;
+  const outside = outsidePricedRange(decision, Boolean(contractNow?.route.deviation));
+  const decisionBox = (
+    <DesignDecisionBox
+      decision={decision}
+      reading={decisionRead.state === 'loading'}
+      economicsHref={economicsHref}
+      managementHref={managementHref}
+      outside={outside}
+    />
+  );
+
+  // The lines each business rule stands on, so an answer marks the steps of those lines — never by name.
+  const ruleLines: RuleLines[] = (around.reading?.ruleSet.rules ?? []).map((r) => ({
+    id: r.id,
+    ranges: [
+      ...r.sentences.flatMap((x) => x.anchors),
+      ...r.processElements,
+      ...r.typeBasis.flatMap((t) => t.anchors),
+    ].map((a) => ({ lineStart: a.lineStart, lineEnd: a.lineEnd })),
+  }));
+  const board = designTargetBoard(around.text?.runs ?? [], ruleLines, businessAnswers);
+  const findingRows = designEvidence.state === 'ready' ? designEvidence.findings : [];
+  const objects = designObjects(findingRows);
+  const sapObjects = objects.rows.length - objects.byLevel.none;
+  const answersReady = businessAnswers.state === 'ready' ? businessAnswers : null;
+  const totalQ = answersReady?.total ?? 0;
+  const openQ = answersReady ? answersReady.open : null;
+  const answeredQ = answersReady ? answersReady.total - answersReady.open : 0;
+  const designWritten = Boolean(design) && !designStale;
+  const checklist = designSignOffChecklist({
+    answers: businessAnswers,
+    designWritten,
+    designStale: Boolean(design) && designStale,
+    targetLine,
+    targetBound,
+    outside,
+    confirmed: signOffCurrent,
+  });
+  const anchors = designAnchors(view, dcase, { open: openQ, objects: view === 'it' && dcase === 'keep' ? objects.byLevel.D + objects.byLevel.C : objects.rows.length, steps: board.steps });
+  const routeCode = contractNow ? ARCHITECTURE_OF_ROUTE[contractNow.route.chosen] : recommendation;
+  const routeLabel = architectureOptionLabel(routeCode) ?? routeCode;
+  const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+  const phaseCount = board.phases.length;
+
+  // The guard rail (G3): outside what Economics priced, said once, with the way to re-price. Never an amount.
+  const outsideStrip = outside ? (
+    <div className="mt-6" data-design-outside="">
+      <CcMessageStrip
+        state="warning"
+        headline={OUTSIDE_PRICED_HEADLINE}
+        actions={
+          <CcLinkButton href={economicsHref} variant="secondary">
+            Re-price in Economics
+          </CcLinkButton>
+        }
+      >
+        <EconomicsRangeSlot costLine={decision.costLine} economicsHref={null} />
+      </CcMessageStrip>
+    </div>
+  ) : null;
+
+  // Where the design is written: under the business questions (G6). Without a design the stage's
+  // reason or its one action ("Generate the design", the gate unchanged); with one, the line that says so.
+  const writeBlock = documentFallback ?? (
+    <div className="flex flex-col gap-3">
+      {writingState}
+      {designErrorStrip}
+      <p className="m-0 cc-text-cell text-cc-ink-muted" data-design-written="">
+        {designStale
+          ? 'The design on record was written before the answers or the analysis changed. Regenerate it from the header.'
+          : 'The design is written from your answers. IT reads it in the IT view; Management confirms the target.'}
       </p>
-      <p className="m-0 max-w-md text-[13px] font-medium text-cc-ink-muted">{wt('design.targetAfterQuestionsNote')}</p>
-      <CcButton variant="secondary" onClick={skipQuestions} data-design-skip-questions="">
-        {wt('design.skipQuestions')}
-      </CcButton>
     </div>
   );
+  // IT's document tab: the document, or where it is written — not a second "Generate" (G6).
+  const itDocumentFallback = design ? null : writingState ?? (
+    <p className="m-0 cc-text-body text-cc-ink-muted" data-design-it-unwritten="">
+      Not written yet. The design is written in the Business view once the business questions are answered.{' '}
+      <Link href={viewHref('business', '#design-questions')} className="font-semibold text-cc-information underline-offset-2 hover:underline">
+        Business questions
+      </Link>
+    </p>
+  );
+
+  /* ---------------- the answer card, per view and case ---------------- */
+  let card: { question: React.ReactNode; chips?: React.ReactNode; answer: React.ReactNode; condition?: React.ReactNode; action?: React.ReactNode; actionNote?: React.ReactNode; moreActions?: React.ReactNode; facets: FacetProps[] };
+  const engineChip = <FamilyChip kind="engine" />;
+  const levelFacet: FacetProps = {
+    id: 'levels',
+    label: 'Level D · C · B · none',
+    value: `${objects.byLevel.D} · ${objects.byLevel.C} · ${objects.byLevel.B} · ${objects.byLevel.none}`,
+    note: `of ${plural(objects.rows.length, 'object', 'objects')}, SAP catalog`,
+    href: '#design-objects',
+  };
+  const questionsFacet: FacetProps = {
+    id: 'questions',
+    label: 'Business questions',
+    value: answersReady ? `${answeredQ} of ${totalQ}` : '…',
+    note: openQ ? `${openQ} open` : 'answered',
+    href: view === 'business' ? '#design-questions' : viewHref('business', '#design-questions'),
+  };
+  const decisionFacet: FacetProps = {
+    id: 'decision',
+    label: 'Decision and cost',
+    value: decision.label ? `${decision.label}${outside ? ' · out of date' : decision.confirmed ? ' · confirmed' : ''}` : 'Not taken yet',
+    note: <EconomicsRangeSlot costLine={decision.costLine} economicsHref={economicsHref} />,
+  };
+
+  if (view === 'business') {
+    if (dcase === 'keep') {
+      card = {
+        question: 'What changes for us if we keep it?',
+        chips: engineChip,
+        answer: 'Nothing changes for the people. The program keeps working as it does.',
+        condition: 'Keeping builds nothing. It also answers none of the questions the code raised; a question answered “No, it should be …” is a reason to decide again.',
+        action: decisionBox,
+        facets: [
+          { id: 'stay', label: 'Steps stay', value: String(board.steps), note: 'as today' },
+          { id: 'change', label: 'Change', value: '0', note: 'nothing is built' },
+          { ...questionsFacet, label: 'Questions stand', value: String(totalQ), note: 'keeping does not answer them' },
+          { id: 'open', label: 'Still open', value: openQ === null ? '…' : String(openQ), note: 'without an answer' },
+        ],
+      };
+    } else if (dcase === 'retire') {
+      card = {
+        question: 'What does switching the program off mean for us?',
+        chips: engineChip,
+        answer: `All ${plural(board.steps, 'step', 'steps')} stop with the program. Whoever still needs what it does has to say so before it is switched off.`,
+        condition: DECISION_OPTION_MEANINGS.retire,
+        action: decisionBox,
+        facets: [
+          { id: 'stop', label: 'Steps stop', value: String(board.steps), note: 'the whole process', href: '#design-board' },
+          { id: 'roles', label: 'Roles read', value: String(around.text?.who.length ?? 0), note: 'from the code' },
+          { id: 'tables', label: 'Tables written', value: String(designDependencies(findingRows).read.filter((r) => r.kind === 'Writes').length), note: 'their data stays behind' },
+          { id: 'needed', label: 'Still needed?', value: 'Not determined', note: 'nobody has said yet' },
+        ],
+      };
+    } else if (dcase === 'standard') {
+      card = {
+        question: 'What does moving to SAP standard mean for our process?',
+        chips: engineChip,
+        answer: 'Nothing is built. SAP standard takes over what the program does, and the program is switched off once the standard runs.',
+        condition: 'Whether the standard really does each step is decided in your workshop on SAP standard, not by the code. The IT view shows where the program departs from the standard.',
+        action: decisionBox,
+        facets: [
+          { id: 'steps', label: 'Steps today', value: String(board.steps), note: 'Analyze’s map', href: '#design-board' },
+          { id: 'departures', label: 'Departures', value: String(standardTouch({ rows: findingRows, uses: [] }).departures.length), note: 'from the standard, IT view', href: viewHref('it') },
+          { id: 'successors', label: 'Released successors', value: `${objects.withSuccessor} of ${sapObjects}`, note: 'SAP objects, catalog' },
+          { id: 'own', label: 'Own tables and objects', value: String(objects.byLevel.none), note: 'their data moves or goes' },
+        ],
+      };
+    } else {
+      const answer = !answersReady
+        ? 'Reading the business questions from the code.'
+        : totalQ === 0
+          ? `The code asks the business nothing. The process keeps its ${plural(board.steps, 'step', 'steps')} as Analyze reads them.`
+          : openQ === totalQ
+            ? `Not designed yet. ${plural(totalQ, 'question decides', 'questions decide')} what changes, and they are yours to answer.`
+            : openQ
+              ? `The design waits for ${plural(openQ, 'answer', 'answers')}. ${plural(answeredQ, 'question is', 'questions are')} answered.`
+              : `The process keeps its ${plural(phaseCount, 'phase', 'phases')}. ${plural(board.counts.changes, 'step changes', 'steps change')}, ${plural(board.counts.goes, 'step goes', 'steps go')}, ${board.counts.stays} stay as people know them.`;
+      const condition = !answersReady
+        ? null
+        : openQ && openQ < totalQ
+          ? 'Answer them, or let the design be written without them; the open points then stay open in the design.'
+          : openQ
+            ? 'Before anyone designs it, the business says which of its rules still hold. Each answer goes into the design; nothing is decided for you.'
+            : board.counts.open > 0
+              ? `${plural(board.counts.open, 'step stays', 'steps stay')} open: an answer named someone else to decide. Steps and names as in Analyze.`
+              : 'Steps and names as in Analyze.';
+      card = {
+        question: 'What will the process look like after the change?',
+        chips: (
+          <>
+            {answeredQ > 0 ? <FamilyChip kind="yours" note="your answers" /> : <FamilyChip kind="engine" />}
+            {design ? <FamilyChip kind="ai" note="design" /> : null}
+          </>
+        ),
+        answer,
+        condition,
+        action: decisionBox,
+        facets: board.marked
+          ? [
+              { id: 'stay', label: 'Steps stay', value: String(board.counts.stays), note: 'as people know them', href: '#design-board' },
+              { id: 'change', label: 'Steps change', value: String(board.counts.changes), note: 'from your answers', href: '#design-board' },
+              { id: 'go', label: 'Steps go', value: String(board.counts.goes), note: 'from your answers', href: '#design-board' },
+              { id: 'open', label: 'Are open', value: String(board.counts.open), note: openQ ? `${openQ} wait for you` : 'for someone else', href: '#design-board' },
+            ]
+          : [
+              questionsFacet,
+              { id: 'steps', label: 'Steps today', value: String(board.steps), note: 'Analyze’s map', href: '#design-board' },
+              { id: 'change', label: 'Change', value: '—', note: 'after your answers' },
+              { id: 'go', label: 'Go', value: '—', note: 'after your answers' },
+            ],
+      };
+    }
+  } else if (view === 'it') {
+    if (dcase === 'retire') {
+      const deps = designDependencies(findingRows);
+      card = {
+        question: 'What hangs on this program?',
+        chips: (
+          <>
+            {engineChip}
+            <FamilyChip kind="not-determined" note={`${deps.notRead.length} not read`} />
+          </>
+        ),
+        answer: `${plural(deps.read.length, 'dependency was', 'dependencies were')} read from the code; ${deps.notRead.length} could not be read and have to be checked in the system.`,
+        condition: 'Nothing is built. Before the switch-off: the data it writes, what it calls, and whoever runs or calls it.',
+        action: decisionBox,
+        facets: [
+          { id: 'read', label: 'Dependencies read', value: String(deps.read.length), note: 'from the code', href: '#design-dependencies' },
+          { id: 'notread', label: 'Not read', value: String(deps.notRead.length), note: 'check in the system', href: '#design-not-read' },
+          { id: 'writes', label: 'Writes', value: String(deps.read.filter((r) => r.kind === 'Writes').length), note: 'tables with data' },
+          { id: 'calls', label: 'Calls', value: String(deps.read.filter((r) => r.kind === 'Calls').length), note: 'into other code' },
+        ],
+      };
+    } else if (dcase === 'keep') {
+      card = {
+        question: 'What does keeping leave in place?',
+        chips: engineChip,
+        answer: `The program stays classic ABAP. ${plural(objects.byLevel.D, 'Level D object', 'Level D objects')} and ${plural(objects.byLevel.C, 'Level C object', 'Level C objects')} stay.`,
+        condition: 'Keep builds nothing. Removing any of it is a change, and so a new decision in Management.',
+        action: decisionBox,
+        facets: [
+          { id: 'score', label: 'Clean Core Score', value: typeof project?.cleanCoreScore === 'number' ? String(project.cleanCoreScore) : '—', note: 'from the analysis run' },
+          { id: 'd', label: 'Level D', value: String(objects.byLevel.D), note: 'objects, SAP catalog', href: '#design-objects' },
+          { id: 'c', label: 'Level C', value: String(objects.byLevel.C), note: 'objects, SAP catalog', href: '#design-objects' },
+          { id: 'without', label: 'With no successor', value: String(objects.withoutSuccessor), note: 'none named in the catalog' },
+        ],
+      };
+    } else if (dcase === 'standard') {
+      const touch = standardTouch({ rows: findingRows, uses: [] });
+      card = {
+        question: 'What does the standard path rest on, technically?',
+        chips: engineChip,
+        answer: touch.departures.length
+          ? `The program departs from SAP standard in ${plural(touch.departures.length, 'way', 'ways')}: ${touch.departures.map((d) => d.label.toLowerCase()).join('; ')}.`
+          : 'The findings show no departure from SAP standard.',
+        condition: 'Nothing is built; the program’s objects are compared with what the catalog names. Whether SAP standard does what it does is decided in a workshop on SAP standard.',
+        action: decisionBox,
+        facets: [
+          { id: 'departures', label: 'Departures', value: String(touch.departures.length), note: 'from the findings' },
+          { id: 'successors', label: 'SAP objects', value: `${objects.withSuccessor} of ${sapObjects}`, note: 'with a catalog successor', href: '#design-objects' },
+          levelFacet,
+          { id: 'own', label: 'Own tables and objects', value: String(objects.byLevel.none), note: 'their data moves or goes' },
+        ],
+      };
+    } else {
+      const answer = designEvidence.state === 'loading'
+        ? 'Reading the architecture contract.'
+        : contractNow
+          ? `${routeLabel}${contractNow.route.deviation ? ', a declared deviation from the contract' : ''}.`
+          : designEvidence.state === 'absent'
+            ? designEvidence.reason
+            : designEvidence.contractSentence ?? 'The architecture contract could not be derived.';
+      card = {
+        question: 'Where does it run, and on what?',
+        chips: <FamilyChip kind="engine" note="architecture contract" />,
+        answer,
+        condition: (
+          <>
+            {contractNow ? `${sapNamesForDisplay(contractNow.summary)} ` : ''}Target: {targetLine}.
+            {signOffCurrent ? ' The target is confirmed (Management view).' : ' The target is confirmed in the Management view.'}
+          </>
+        ),
+        action: decisionBox,
+        facets: [
+          levelFacet,
+          { id: 'successors', label: 'Released successors', value: String(objects.withSuccessor), note: `of ${plural(sapObjects, 'SAP object', 'SAP objects')}, catalog`, href: '#design-objects' },
+          { id: 'without', label: 'With no successor', value: String(objects.withoutSuccessor), note: 'wrapper or influence request', href: '#design-objects' },
+          questionsFacet,
+        ],
+      };
+    }
+  } else {
+    const limits = contractNow ? contractNow.fields.reduce((n, f) => n + f.limits.length, 0) : 0;
+    const optionLabel = decision.label ?? 'No decision yet';
+    if (dcase === 'keep' || dcase === 'retire' || dcase === 'standard') {
+      const deps = dcase === 'retire' ? designDependencies(findingRows) : null;
+      card = {
+        question: `${optionLabel} · ${dcase === 'retire' ? 'can it be switched off?' : dcase === 'keep' ? 'what does it leave in place?' : 'is the design for the standard ready?'}`,
+        chips: <FamilyChip kind="yours" note="decision" />,
+        answer: dcase === 'retire'
+          ? `Not yet: ${plural((deps?.notRead.length ?? 0) + (deps?.read.filter((r) => r.kind === 'Writes').length ?? 0), 'thing has', 'things have')} to be settled first. Nobody has been asked yet.`
+          : dcase === 'keep'
+            ? `Nothing to design. The program stays as it is, with ${plural(objects.byLevel.D, 'Level D object', 'Level D objects')}.`
+            : 'Not yet: the workshop on SAP standard has to confirm what the standard covers and what is given up.',
+        condition: DECISION_OPTION_MEANINGS[dcase],
+        action: (
+          <CcLinkButton href={managementHref} variant="secondary">
+            Open the decision
+          </CcLinkButton>
+        ),
+        facets: [
+          decisionFacet,
+          dcase === 'retire'
+            ? { id: 'notread', label: 'Not read', value: String(deps?.notRead.length ?? 0), note: 'callers, jobs, transaction', href: viewHref('it', '#design-not-read') }
+            : { id: 'd', label: 'Level D · C', value: `${objects.byLevel.D} · ${objects.byLevel.C}`, note: 'objects, SAP catalog', href: viewHref('it', '#design-objects') },
+          { id: 'questions', ...questionsFacet, label: 'Business questions', note: dcase === 'keep' ? 'keeping does not answer them' : questionsFacet.note },
+          { id: 'risk', label: 'Not determined', value: String(limits), note: 'limits of the architecture contract' },
+        ],
+      };
+    } else {
+      const head = outside
+        ? 'Stop: the design no longer matches what was priced.'
+        : signOffCurrent
+          ? 'The target is confirmed.'
+          : checklist.ready
+            ? 'Ready for your confirmation.'
+            : openQ
+              ? `Not ready: ${plural(openQ, 'business answer is', 'business answers are')} missing.`
+              : !designWritten
+                ? 'Not ready: the design is not written yet.'
+                : 'Not ready yet.';
+      const canConfirm = canSignOff && isOwner && !outside && (checklist.ready || project?.approvedByArchitect === true);
+      card = {
+        question: `${optionLabel} · is the design ready to sign off?`,
+        chips: signOffCurrent ? <FamilyChip kind="yours" note="target" /> : engineChip,
+        answer: head,
+        condition: dcase === 'none'
+          ? `No program decision yet: Design designs a rebuild meanwhile, as ${routeLabel}.`
+          : `The program is rebuilt as a clean extension: ${routeLabel}. ${targetLine}.`,
+        action: outside ? (
+          <CcLinkButton href={economicsHref} variant="primary">
+            Re-price in Economics
+          </CcLinkButton>
+        ) : !isOwner && project ? (
+          <OwnerOnlyNote />
+        ) : (
+          <DesignConfirmTarget
+            label={architectureOptionLabel(recommendation) ?? recommendation}
+            onConfirm={() => lockArchitecture(recommendation, '')}
+            signOffPanel={signOffPanel}
+            locked={project?.approvedByArchitect === true}
+            disabled={!canConfirm}
+            describedBy="design-confirm-note"
+          />
+        ),
+        actionNote: outside ? null : (
+          <span id="design-confirm-note">
+            {canConfirm ? 'A self-declaration of your account, bound to the run you read.' : 'Possible once every check below is done.'}
+          </span>
+        ),
+        moreActions: (
+          <CcLinkButton href={managementHref} variant="ghost">
+            Open the decision
+          </CcLinkButton>
+        ),
+        facets: [
+          decisionFacet,
+          { id: 'target', label: 'Target', value: contractNow ? (contractNow.route.chosen === 'in-app-rap' ? 'In-app' : 'Side-by-side') : 'Not determined', note: targetLine },
+          { id: 'fit', label: 'Fit to clean core', value: `${objects.withSuccessor} of ${sapObjects}`, note: 'SAP objects on a released path, catalog', href: viewHref('it', '#design-objects') },
+          { id: 'risk', label: 'Not determined', value: String(limits), note: 'limits of the architecture contract', href: viewHref('it', '#design-contract') },
+        ],
+      };
+    }
+  }
+
+  const lead =
+    view === 'business'
+      ? 'What the process looks like after the change, and what you decide for it.'
+      : view === 'it'
+        ? 'Where it runs after the change, and on which released objects.'
+        : 'Whether the chosen option is ready to sign off, and what is still in the way.';
+  const questionsShown = view === 'business' && (dcase === 'none' || dcase === 'rebuild' || dcase === 'keep');
 
   return (
     <StageFrame stage="design" className="min-h-screen">
@@ -1390,157 +1764,252 @@ ${DESIGN_ANSWER_REMINDER}`;
 
       <StageHeader tools={{ steps: phases, current: 'design' }} project={project}
         stage="design"
-        eyebrow={design ? <CcProvenanceChip value="proposed" note="document" /> : null}
+        view="switch"
         actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="max-[719px]:hidden">
-              <CcSegmentedControl
-                label="View"
-                value={view}
-                onChange={setView}
-                segments={[
-                  { value: 'canvas', label: 'Canvas', icon: <LayoutGrid size={14} aria-hidden={true} /> },
-                  { value: 'list', label: 'List', icon: <List size={14} aria-hidden={true} /> },
-                ]}
-              />
-            </span>
-            {design ? (
-              <>
-                {/* Regenerate only where it can succeed and would describe the code
-                    under review: not with the stage off or keyless,
-                    and not from an analysis of a previous source.
-A design merely older than the analysis is
-                    what Regenerate is for. Exports stay closed on a stale design. */}
-                <CcButton
-                  variant="ghost"
-                  icon={<RefreshCw size={16} aria-hidden={true} />}
-                  busy={generating}
-                  disabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null || !designWriteEnabled(writeGate)}
-                  aria-describedby={writeGate.kind === 'ready' ? undefined : 'design-regenerate-reason'}
-                  data-design-regenerate=""
-                  onClick={askRegenerate}
-                >
-                  Regenerate
-                </CcButton>
-
-                <CcButton variant="ghost" icon={<Eye size={16} aria-hidden={true} />} disabled={designStale} data-design-export="view" onClick={() => exportToConfluence(true)}>
-                  View HTML
-                </CcButton>
-                <CcButton variant="ghost" icon={<Download size={16} aria-hidden={true} />} disabled={designStale} data-design-export="save" onClick={() => exportToConfluence(false)}>
-                  Export HTML
-                </CcButton>
-              </>
-            ) : null}
-          </div>
+          design ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Regenerate only where it can succeed and would describe the code
+                  under review: not with the stage off or keyless, and not from an
+                  analysis of a previous source. Exports stay closed on a stale design. */}
+              <CcButton
+                variant="ghost"
+                icon={<RefreshCw size={16} aria-hidden={true} />}
+                busy={generating}
+                disabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null || !designWriteEnabled(writeGate)}
+                aria-describedby={writeGate.kind === 'ready' ? undefined : 'design-regenerate-reason'}
+                data-design-regenerate=""
+                onClick={askRegenerate}
+              >
+                Regenerate
+              </CcButton>
+              <CcButton variant="ghost" icon={<Eye size={16} aria-hidden={true} />} disabled={designStale} data-design-export="view" onClick={() => exportToConfluence(true)}>
+                View HTML
+              </CcButton>
+              <CcButton variant="ghost" icon={<Download size={16} aria-hidden={true} />} disabled={designStale} data-design-export="save" onClick={() => exportToConfluence(false)}>
+                Export HTML
+              </CcButton>
+            </div>
+          ) : null
         }
       >
-        Where this code should run after the change, and the design that gets it there.
+        {lead}
       </StageHeader>
 
-      {/* The canvas is the page's picture; the questions stand beside it (below
-          it on a phone) and the proposal waits for them (ADR-106). */}
       {loadFailed ? (
         <div className="mb-12" data-design-load-failed="">
           <CcMessageStrip state="error" headline="Could not load the project." announce>
-            This is usually a permissions or connectivity issue — reload the page.
+            This is usually a permissions or connectivity issue. Reload the page.
           </CcMessageStrip>
         </div>
       ) : (
-        <div className="mb-12">
-          <DesignCanvasStage
-            evidence={designEvidence}
-            model={canvasModel}
-            targetLine={targetLine}
-            targetKpi={targetKpi}
-            confidence={typeof project?.recommendationConfidence === 'number' ? project.recommendationConfidence : null}
-            storedRoute={storedRoute}
-            confirmed={
-              signOffCurrent
-                ? {
-                    label: architectureOptionLabel(project?.targetArchitecture) ?? String(project?.targetArchitecture ?? ''),
-                    by: project?.approvedBy ?? null,
-                    at: project?.architectSignOffAt ? String(project.architectSignOffAt) : null,
-                  }
-                : null
-            }
-            stale={designStale || stale.signOff}
-            hasDocument={Boolean(design)}
-            canSignOff={canSignOff}
-            signOffPanel={signOffPanel}
-            // "Confirm target" asks first and then confirms the recommendation
-            // the panel would (owner 02.10.2026); another target goes through
-            // the panel.
-            confirmTarget={
-              canSignOff
-                ? {
-                    label: architectureOptionLabel(recommendation) ?? recommendation,
-                    onConfirm: () => lockArchitecture(recommendation, ''),
-                    chooseOther: true,
-                  }
-                : undefined
-            }
-            locked={project?.approvedByArchitect === true}
-            reader={Boolean(project) && !isOwner}
-            onRegenerate={askRegenerate}
-            regenerateDisabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null}
-            regenerating={generating}
-            legacyCode={project?.legacyCode || ''}
-            sections={docSections}
-            document={structuredDocument}
-            documentFallback={documentFallback}
-            documentNotice={
-              writingState || designErrorStrip ? (
-                <div className="flex flex-col gap-3">
-                  {writingState}
-                  {designErrorStrip}
-                </div>
-              ) : null
-            }
-            routingRationale={
-              caps.hasRoutingEvidence ? (
-                <SectionBoundary name="Routing Rationale">
-                  <RoutingRationale
-                    extensibilityRoute={project?.extensibilityRoute}
-                    cleanCoreScore={project?.cleanCoreScore}
-                    s4Deployment={project?.s4Deployment}
-                    findings={findings}
-                    // The SAP reference row names the signed-off target, else the
-                    // recommendation the card names (roadmap 3.0.9).
-                    targetArchitecture={
-                      signOffCurrent && isTargetArchitecture(project?.targetArchitecture)
-                        ? project.targetArchitecture
-                        : recommendation
-                    }
-                  />
-                </SectionBoundary>
-              ) : null
-            }
-            view={view}
-            questions={questionsPanel}
-            questionsSummary={questionsSummary}
-            questionsOpenFirst={questionsOpenFirst}
-            proposalShown={proposalShown}
-            pending={proposalPending}
+        <div data-design-view={view} data-design-case={dcase} className="mb-12">
+          <AnswerCard
+            id="design-answer"
+            question={card.question}
+            chips={card.chips}
+            answer={card.answer}
+            condition={card.condition}
+            action={card.action}
+            actionNote={card.actionNote}
+            moreActions={card.moreActions}
+            facets={card.facets}
           />
+
+          <PageAnchorBar
+            anchors={anchors}
+            label={PAGE_ANCHOR_LABELS.design}
+            name="design-anchor"
+            plural="design-anchors"
+            className="mt-6"
+          />
+
+          {outsideStrip}
+
+          {/* ---------------- Business ---------------- */}
+          {view === 'business' && dcase !== 'keep' ? (
+            <DesignSection
+              id="design-board"
+              title={dcase === 'retire' ? 'Every step' : dcase === 'standard' ? 'Step by step' : board.marked ? 'Before and after' : 'Today’s process'}
+              lead={
+                dcase === 'retire'
+                  ? `All ${board.steps} stop with the program.`
+                  : dcase === 'standard'
+                    ? 'Today’s steps, as Analyze reads them. Which of them the standard covers is the workshop’s question.'
+                    : board.marked
+                      ? `${plural(board.steps, 'step', 'steps')} of today’s process, in Analyze’s ${plural(phaseCount, 'phase', 'phases')}.`
+                      : 'As Analyze reads it. Nothing is marked until the business questions are answered.'
+              }
+            >
+              {around.state === 'reading' ? (
+                <DesignCard>
+                  <CcSkeleton shape="text" label="today’s steps" count={4} />
+                </DesignCard>
+              ) : around.state === 'failed' ? (
+                <DesignCard>
+                  <p className="m-0 cc-text-body text-cc-ink-muted">Today’s steps could not be read from the signed source.</p>
+                </DesignCard>
+              ) : (
+                <DesignTargetBoardView board={board} mode={dcase === 'retire' ? 'stop' : dcase === 'standard' ? 'today' : 'target'} />
+              )}
+            </DesignSection>
+          ) : null}
+
+          {/* ---------------- IT ---------------- */}
+          {view === 'it' && (dcase === 'none' || dcase === 'rebuild') ? (
+            <div id="design-canvas" className="mt-6 scroll-mt-32">
+              <DesignCanvasStage
+                layout="it"
+                evidence={designEvidence}
+                model={canvasModel}
+                targetLine={targetLine}
+                targetKpi={targetKpi}
+                confidence={typeof project?.recommendationConfidence === 'number' ? project.recommendationConfidence : null}
+                storedRoute={storedRoute}
+                confirmed={
+                  signOffCurrent
+                    ? {
+                        label: architectureOptionLabel(project?.targetArchitecture) ?? String(project?.targetArchitecture ?? ''),
+                        by: project?.approvedBy ?? null,
+                        at: project?.architectSignOffAt ? String(project.architectSignOffAt) : null,
+                      }
+                    : null
+                }
+                stale={designStale || stale.signOff}
+                hasDocument={Boolean(design)}
+                canSignOff={canSignOff}
+                signOffPanel={null}
+                locked={project?.approvedByArchitect === true}
+                reader={Boolean(project) && !isOwner}
+                onRegenerate={askRegenerate}
+                regenerateDisabled={!designAvailable || stale.sourceChanged || !isOwner || elsewhereSince !== null}
+                regenerating={generating}
+                legacyCode={project?.legacyCode || ''}
+                sections={docSections}
+                document={structuredDocument}
+                documentFallback={itDocumentFallback}
+                documentNotice={
+                  writingState || designErrorStrip ? (
+                    <div className="flex flex-col gap-3">
+                      {writingState}
+                      {designErrorStrip}
+                    </div>
+                  ) : null
+                }
+                routingRationale={
+                  caps.hasRoutingEvidence ? (
+                    <SectionBoundary name="Routing Rationale">
+                      <RoutingRationale
+                        extensibilityRoute={project?.extensibilityRoute}
+                        cleanCoreScore={project?.cleanCoreScore}
+                        s4Deployment={project?.s4Deployment}
+                        findings={findings}
+                        // The SAP reference row names the signed-off target, else the
+                        // recommendation the card names (roadmap 3.0.9).
+                        targetArchitecture={
+                          signOffCurrent && isTargetArchitecture(project?.targetArchitecture)
+                            ? project.targetArchitecture
+                            : recommendation
+                        }
+                      />
+                    </SectionBoundary>
+                  ) : null
+                }
+              />
+            </div>
+          ) : null}
+
+          {view === 'it' && dcase === 'retire' ? (
+            <>
+              <DesignSection id="design-dependencies" title="What the analysis read" lead="Before the switch-off, each of these needs an owner.">
+                <DesignDependencies read={designDependencies(findingRows).read} />
+              </DesignSection>
+              <DesignSection id="design-not-read" title="Not read" lead="Not determined, never “none”: check these in the system.">
+                <DesignNotRead rows={designDependencies(findingRows).notRead} />
+              </DesignSection>
+            </>
+          ) : null}
+
+          {view === 'it' && dcase !== 'retire' ? (
+            <DesignSection
+              id="design-objects"
+              title={dcase === 'keep' ? 'What blocks clean core' : dcase === 'standard' ? 'Candidates per object' : 'Objects and Level'}
+              lead="Every object the code uses. Level and successor from the SAP catalog, never guessed."
+            >
+              <DesignObjectTable
+                caption="Objects and their Level"
+                rows={dcase === 'keep' ? objects.rows.filter((r) => r.level === 'D' || r.level === 'C') : objects.rows}
+              />
+            </DesignSection>
+          ) : null}
+
+          {view === 'it' && (dcase === 'none' || dcase === 'rebuild') ? (
+            <div id="design-requirements" className="mt-6 scroll-mt-32">
+              {/* DSAG guideline review B2: classic concepts ABAP Cloud replaces, read from the source; not evidence. */}
+              {project?.legacyCode && conceptSuccessorsOf(project.legacyCode).length > 0 ? (
+                <div className="mb-6">
+                  <ConceptSuccessors source={project.legacyCode} place="design" />
+                </div>
+              ) : null}
+              <RequirementsEntryCard
+                href={`/project/${encodeURIComponent(projectId as string)}/design/requirements`}
+                state={specCardState}
+                reader={Boolean(project) && !isOwner}
+                blocked={signedSource ? null : requirementsMissing}
+                waitFor={generatingSince !== null ? 'The solution design is being written. The requirements workspace opens once it is done, so the run is not cut off.' : null}
+              />
+            </div>
+          ) : null}
+
+          {/* ---------------- Management ---------------- */}
+          {view === 'management' && (dcase === 'none' || dcase === 'rebuild') ? (
+            <DesignSection id="design-checklist" title="Before sign-off" lead="What stands between the decision and the confirmed target.">
+              <DesignChecklist rows={checklist.rows} />
+            </DesignSection>
+          ) : null}
+          {view === 'management' ? (
+            <DesignSection id="design-options" title="The four options" lead="From Management. Design shows what the chosen one looks like.">
+              <DesignOptions decided={dcase} />
+            </DesignSection>
+          ) : null}
+
+          {/* ---------------- the business questions (mounted in every view) ---------------- */}
+          <div hidden={!questionsShown} className={questionsShown ? undefined : 'hidden'}>
+            <DesignSection
+              id="design-questions"
+              title={dcase === 'keep' ? 'Questions that stay' : openQ ? 'Questions for you' : 'Your answers'}
+              lead={
+                !answersReady
+                  ? 'Reading the questions from the code.'
+                  : dcase === 'keep'
+                    ? 'Answering them may be a reason to decide again.'
+                    : `${answeredQ} of ${totalQ} answered${openQ ? '. The ones that change the target come first.' : '. Change any of them; the design then says it needs rewriting.'}`
+              }
+            >
+              {questionsPanel}
+              {view === 'business' && dcase !== 'keep' ? <div className="mt-4">{writeBlock}</div> : null}
+            </DesignSection>
+          </div>
+
+          {view === 'business' && (dcase === 'none' || dcase === 'rebuild') ? (
+            <DesignSection id="design-next" title="What happens next">
+              <DesignCard>
+                <p className="m-0 cc-text-body text-cc-ink">
+                  {design ? 'The design is written from your answers. ' : 'Once the answers are in, the design is written from them (two model calls, not counted against your analysis runs). '}
+                  IT builds it from the technical design.{' '}
+                  <Link href={viewHref('it')} className="font-semibold text-cc-information underline-offset-2 hover:underline">
+                    IT view
+                  </Link>
+                  . Management confirms the target before the build starts.{' '}
+                  <Link href={viewHref('management')} className="font-semibold text-cc-information underline-offset-2 hover:underline">
+                    See what Management still needs
+                  </Link>
+                  .
+                </p>
+              </DesignCard>
+            </DesignSection>
+          ) : null}
         </div>
       )}
-
-      {/* DSAG guideline review B2: classic concepts ABAP Cloud replaces, read from the source; not evidence. */}
-      {project?.legacyCode && conceptSuccessorsOf(project.legacyCode).length > 0 ? (
-        <div className="mb-12">
-          <ConceptSuccessors source={project.legacyCode} place="design" />
-        </div>
-      ) : null}
-
-      <div className="mb-12">
-        <RequirementsEntryCard
-          href={`/project/${encodeURIComponent(projectId as string)}/design/requirements`}
-          state={specCardState}
-          reader={Boolean(project) && !isOwner}
-          blocked={signedSource ? null : requirementsMissing}
-          waitFor={generatingSince !== null ? 'The solution design is being written. The requirements workspace opens once it is done, so the run is not cut off.' : null}
-        />
-      </div>
 
       <StageFooter />
     </StageFrame>

@@ -871,6 +871,8 @@
       ],
       "referenceCase": "RC-design-awaiting-sign-off",
       "rendered": {
+        "view": "it",
+        "viewWhy": "since 3.5.0 Design shows a different page per view (ADR-130): Business the process after the change and the business questions, IT the canvas with the contract and the design document in its drawer, Management the sign-off; the design report is on the IT page",
         "shows": [
           {
             "field": "solutionDesign",

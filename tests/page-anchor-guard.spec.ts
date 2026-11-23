@@ -14,6 +14,7 @@ import {
   type PageAnchor,
 } from '../lib/page-anchors';
 import { IT_ANCHORS } from '../lib/it-sections';
+import { designAnchors } from '../lib/design-views';
 import { PROCESS_DOCUMENT_SECTIONS } from '../lib/process-document';
 import { NAVIGATION_MESSAGES } from '../lib/messages/navigation';
 
@@ -56,6 +57,8 @@ const BAR_CALLERS = [
   'components/demo/DemoTesting.tsx',
   PAGE('delivery'),
   'components/delivery/DemoDelivery.tsx',
+  PAGE('design'), // ADR-130 (G12): Design's sections per view and decision case
+  'components/demo/DemoDesign.tsx',
   'components/workspace/ItAnswers.tsx', // the IT view (ADR-086)
   'app/(app)/settings/page.tsx', // Profile settings in the tools' family (ADR-139 (3))
 ];
@@ -84,6 +87,12 @@ const RENDERERS: Record<keyof typeof PAGE_ANCHOR_IDS, { real: string[]; demo: st
     real: [PAGE('delivery'), 'components/delivery/DeliveryObjectPage.tsx'],
     demo: ['components/delivery/DemoDelivery.tsx', 'components/delivery/DeliveryObjectPage.tsx'],
     demoIds: ['chain', 'needed', 'artefacts', 'pack'],
+  },
+  design: {
+    real: [PAGE('design'), 'components/design/DesignCanvasStage.tsx'],
+    demo: ['components/demo/DemoDesign.tsx', 'components/design/DesignCanvasStage.tsx'],
+    // The demo has no business answers and no requirements module of its own on the page.
+    demoIds: ['answer', 'board', 'canvas', 'contract', 'objects', 'checklist', 'options'],
   },
 };
 
@@ -114,12 +123,11 @@ test.describe('one bar', () => {
     for (const gone of ['components/testing/SectionAnchorBar.tsx']) expect(fs.existsSync(path.resolve(ROOT, gone)), gone).toBe(false);
     expect(code('components/delivery/DeliveryObjectPage.tsx')).not.toContain('DeliveryAnchorBar');
 
-    // ADR-091: Design is a canvas with its own tabs, Economics a guided flow
-    // whose step guide is its navigation; Management has none (ADR-087).
+    // ADR-091: Economics a guided flow whose step guide is its navigation;
+    // Management has none (ADR-087). Design has the one bar since ADR-130 (G12);
+    // its canvas component draws none of its own.
     for (const rel of [
-      PAGE('design'),
       'components/design/DesignCanvasStage.tsx',
-      'components/demo/DemoDesign.tsx',
       PAGE('tco'),
       'components/tco/DemoEconomics.tsx',
       'components/workspace/ManagementExecutive.tsx',
@@ -238,6 +246,17 @@ test.describe('only ids that render', () => {
     expect(empty.map((a) => a.key)).toEqual(['write', 'run', 'hand']);
     const abap = testingAnchors({ scenarios: 8, handChecks: 0, sapResult: true });
     check('testing', abap);
+
+    // Design (ADR-130, G12) — each view and case names its own sections, at most six, never a 0.
+    for (const view of ['business', 'it', 'management'] as const) {
+      for (const c of ['none', 'rebuild', 'standard', 'retire', 'keep'] as const) {
+        const list = designAnchors(view, c, { open: 0, objects: 0, steps: 13 });
+        check('design', list);
+        expect(list.length).toBeLessThanOrEqual(6);
+        expect(list[0].target).toBe('design-answer');
+      }
+    }
+    expect(designAnchors('business', 'rebuild', { open: 2, objects: 19, steps: 13 }).find((a) => a.key === 'questions')).toMatchObject({ count: '2', tone: 'open' });
     expect(abap.map((a) => [a.key, a.count ?? null])).toEqual([
       ['write', null], ['run', null], ['sap-result', null], ['hand', 'none'], ['scenarios', '8'],
     ]);
