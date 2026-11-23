@@ -14,6 +14,7 @@ import {
   type PageAnchor,
 } from '../lib/page-anchors';
 import { IT_ANCHORS } from '../lib/it-sections';
+import { analyzeItAnchors } from '../lib/analyze-it';
 import { PROCESS_DOCUMENT_SECTIONS } from '../lib/process-document';
 import { NAVIGATION_MESSAGES } from '../lib/messages/navigation';
 
@@ -49,7 +50,8 @@ const PAGE = (stage: string) => `app/(app)/project/[projectId]/${stage}/page.tsx
 
 /** Every file that renders a `PageAnchorBar`, and nothing else may. */
 const BAR_CALLERS = [
-  'components/analyze/EvidenceFindingsTable.tsx', // AnalyzeAnchorBar — Analyze and its demo
+  'components/analyze/EvidenceFindingsTable.tsx', // AnalyzeAnchorBar — Analyze's demo
+  'components/analyze/AnalyzeIt.tsx', // Analyze, IT — one page, code first (AB-9, ADR-140)
   'components/transformation/TransformationObjectPage.tsx', // Transformation and its demo
   'components/documentation/ProcessDocumentView.tsx', // DocumentChapterBar — Documentation and its demo
   PAGE('testing'),
@@ -63,7 +65,7 @@ const BAR_CALLERS = [
 /** Where each tool draws its sections — the real page and its demo twin. */
 const RENDERERS: Record<keyof typeof PAGE_ANCHOR_IDS, { real: string[]; demo: string[]; demoIds: string[] }> = {
   analyze: {
-    real: [PAGE('analyze'), 'components/analyze/EvidenceFindingsTable.tsx'],
+    real: [PAGE('analyze'), 'components/analyze/AnalyzeIt.tsx', 'components/analyze/ItTouches.tsx', 'components/analyze/EvidenceFindingsTable.tsx'],
     demo: ['components/demo/DemoAnalyze.tsx', 'components/analyze/EvidenceFindingsTable.tsx'],
     // The demo has no model summary, and so no anchor for it. No anchor for the
     // score: it is the hero above the bar, the page's top (ADR-093).
@@ -221,6 +223,15 @@ test.describe('only ids that render', () => {
     ]);
     expect(full.some((a) => a.label === 'Clean Core Score')).toBe(false);
     expect(Object.values(PAGE_ANCHOR_IDS.analyze)).not.toContain('analyze-score');
+    // Analyze, IT (AB-9, the family mock-up): Score, First look, Findings, SAP objects, Summary, Detail — six at most.
+    const it = analyzeItAnchors({ picks: 3, findings: 26, touches: 8, summary: true, score: true });
+    check('analyze', it);
+    expect(it.map((a) => [a.label, a.count ?? null])).toEqual([
+      ['Score', null], ['First look', '3'], ['Findings', '26'], ['SAP objects', '8'], ['Summary', null], ['Detail', null],
+    ]);
+    const itBare = analyzeItAnchors({ picks: 0, findings: 0, touches: null, summary: false, score: false });
+    check('analyze', itBare);
+    expect(itBare.map((a) => a.key)).toEqual(['kinds', 'touch', 'detail']);
 
     // Transformation — the demo's package has no count; an empty plan has no anchor.
     const demoTf = transformationAnchors({ files: null, findings: 12, kinds: 0 });
@@ -267,9 +278,14 @@ test.describe('one place', () => {
     // Analyze: the page draws it between the answer and the findings — in both
     // kinds of report — and the findings component no longer draws one inside
     // itself, where it stopped being sticky at the end of the list.
+    // Since 3.5.0 the IT page (`AnalyzeIt`, AB-9) draws the family's bar between the answer card and its first section;
+    // the page itself draws none.
     const analyze = code(PAGE('analyze'));
-    expect(analyze.match(/<AnalyzeAnchorBar\b/g)?.length).toBe(2);
-    expect(analyze.match(/<AnalysisAnswer\b[\s\S]*?\/>[\s{}]*<AnalyzeAnchorBar\b[\s\S]*?\/>[\s{}]*<EvidenceFindingsTable\b/g)?.length).toBe(2);
+    expect(analyze).not.toMatch(/<AnalyzeAnchorBar\b|<PageAnchorBar\b/);
+    expect(analyze.match(/<AnalyzeIt\b/g)?.length).toBe(1);
+    before('components/analyze/AnalyzeIt.tsx', /<PageAnchorBar\b/, 'id="analyze-moves"');
+    const itSrc = code('components/analyze/AnalyzeIt.tsx');
+    expect(itSrc.indexOf('<AnswerCard')).toBeLessThan(itSrc.indexOf('<PageAnchorBar'));
     expect(code('components/demo/DemoAnalyze.tsx')).toMatch(/<AnalysisAnswer\b[\s\S]*?\/>[\s{}]*<AnalyzeAnchorBar\b[\s\S]*?\/>[\s{}]*<EvidenceFindingsTable\b/);
     const table = code('components/analyze/EvidenceFindingsTable.tsx');
     const body = table.slice(table.indexOf('export default function EvidenceFindingsTable'));

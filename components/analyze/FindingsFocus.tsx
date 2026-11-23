@@ -6,12 +6,13 @@ import { cn } from '@/lib/utils';
 import { CcSeverity, CcCleanCoreLevel } from '@/components/cc/Identifier';
 import CcAnchor from '@/components/cc/Anchor';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { normaliseSeverity } from '@/lib/severity';
 import { tokenizeAbapLine } from '@/lib/process-map';
 import { calmTitle, type FocusPick } from '@/lib/findings-view';
 import { successorSource, successorSourceNote } from '@/lib/successor-source';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
+import { lineAnchorText } from '@/lib/analyze-it';
 
 /**
  * "Look here first" — the two or three findings that matter most, picked by
@@ -104,8 +105,7 @@ export default function FindingsFocus({
                 <CcAnchor
                   label={`Source line ${row.lines[0] ?? ef.lineStart}${onOpenLine ? ', open the source' : ''}`}
                   onOpen={onOpenLine ? () => onOpenLine(row.lines[0] ?? ef.lineStart) : undefined}
-                >{`L${row.lines[0] ?? ef.lineStart}`}</CcAnchor>
-                <span className="font-cc-mono cc-text-meta font-medium text-cc-ink-muted">{ef.id}</span>
+                >{lineAnchorText(row.lines[0] ?? ef.lineStart)}</CcAnchor>
               </div>
               <h3 className="m-0 cc-text-h3 text-cc-ink">
                 {row.lines.length > 1 ? `${row.lines.length}× ` : ''}
@@ -125,7 +125,7 @@ export default function FindingsFocus({
                     <span className="sr-only">Successor:</span>
                     <span className="font-cc-mono font-semibold text-cc-ink break-all">{ef.sapReplacement.objectName}</span>
                     {successorSource(ef.sapReplacement.confidence) !== 'unconfirmed' ? (
-                      <CcProvenanceChip value="imported" note={successorSourceNote(ef.sapReplacement.confidence)} />
+                      <FamilyChip value="imported" note={successorSourceNote(ef.sapReplacement.confidence)} />
                     ) : (
                       <span className="cc-text-meta text-cc-warning">{ef.sapReplacement.confidence ?? 'To be checked'}</span>
                     )}
@@ -140,7 +140,7 @@ export default function FindingsFocus({
                   <p className="m-0 flex flex-wrap items-center gap-1 cc-text-meta text-cc-ink-muted">
                     also{' '}
                     {more.slice(0, 4).map((l) => (
-                      <CcAnchor key={l} label={`Source line ${l}${onOpenLine ? ', open the source' : ''}`} onOpen={onOpenLine ? () => onOpenLine(l) : undefined}>{`L${l}`}</CcAnchor>
+                      <CcAnchor key={l} label={`Source line ${l}${onOpenLine ? ', open the source' : ''}`} onOpen={onOpenLine ? () => onOpenLine(l) : undefined}>{lineAnchorText(l)}</CcAnchor>
                     ))}
                     {more.length > 4 ? ` +${more.length - 4}` : ''}
                   </p>

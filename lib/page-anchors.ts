@@ -50,9 +50,12 @@ export const PAGE_ANCHOR_MAX = 6;
  */
 export const PAGE_ANCHOR_IDS = {
   analyze: {
+    // In the page's order. `moves` and `touch` are the IT page's (AB-9, `lib/analyze-it.ts`); the demo names the rest.
+    moves: 'analyze-moves',
     focus: 'analyze-focus',
     where: 'analyze-where',
     kinds: 'analyze-kinds',
+    touch: 'analyze-touch',
     summary: 'analyze-summary',
     detail: 'analyze-technical-detail',
   },

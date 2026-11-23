@@ -2,7 +2,7 @@
 
 import React from 'react';
 import CcDisclosure from '@/components/cc/Disclosure';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import ObjectSection from '@/components/analyze/ObjectSection';
 
 /** One thing the analysis could not determine: what, why, and the panel that holds its detail. */
@@ -52,7 +52,7 @@ export default function NotDeterminedSide({
       id="analysis-not-determined"
       data-analysis-not-determined={items.length}
       title="Not determined"
-      right={<CcProvenanceChip value="not-determined" />}
+      right={<FamilyChip value="not-determined" />}
     >
       {summary ? (
         <p className="m-0 cc-text-cell text-cc-ink" data-not-determined-summary={summary.places}>

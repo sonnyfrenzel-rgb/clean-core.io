@@ -6,7 +6,7 @@ import { HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import CcIconButton from '@/components/cc/IconButton';
 import CcAnchor from '@/components/cc/Anchor';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { NOT_DETERMINED_CHART, scoreBandChartColor } from '@/lib/chart-colors';
 import {
   SCORE_BANDS,
@@ -16,6 +16,7 @@ import {
   scoreBand,
   type ScoreBreakdown,
 } from '@/lib/clean-core-score';
+import { lineAnchorText } from '@/lib/analyze-it';
 import { editionName, type Edition, type HeroDeduction, type OtherEditionFigure, type ScoreHeroModel } from '@/lib/score-hero';
 
 /**
@@ -175,7 +176,7 @@ export function ScoreFigure({
 
       <div className="mt-4 grid gap-2 border-t border-cc-line pt-3" data-analysis-meta="">
         <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta font-medium text-cc-ink-muted">
-          <CcProvenanceChip value="reconstructed" note="fixed rules" />
+          <FamilyChip value="reconstructed" note="fixed rules" />
           no model involved
         </p>
         <p className="m-0 cc-text-meta font-medium text-cc-ink-muted break-words" data-score-run="">
@@ -231,7 +232,7 @@ export function ScoreFigure({
  * the same findings (owner decision Q1, 11.10.2026). The other figure is
  * computed, never signed, and says so.
  */
-function EditionRule({
+export function EditionRule({
   score,
   edition,
   freeWrites,
@@ -331,7 +332,7 @@ function LineChips({ lines, onOpenLine, shown = 2 }: { lines: readonly number[];
           tone="hot"
           label={`Source line ${l}${onOpenLine ? ', open the source' : ''}`}
           onOpen={onOpenLine ? () => onOpenLine(l) : undefined}
-        >{`L${l}`}</CcAnchor>
+        >{lineAnchorText(l)}</CcAnchor>
       ))}
       {lines.length > shown ? <span className="cc-text-meta text-cc-ink-muted">+{lines.length - shown}</span> : null}
     </span>
@@ -363,6 +364,7 @@ export function ScoreDeductions({
   onOpenLine,
   questionsHref,
   rerunHref,
+  bare = false,
 }: {
   score: number | null;
   breakdown: ScoreBreakdown | null;
@@ -376,6 +378,8 @@ export function ScoreDeductions({
   questionsHref: string | null;
   /** Where a new run starts. */
   rerunHref: string | null;
+  /** Inside a section that carries its own title (Analyze, IT: "What moves the score"): no heading of its own. */
+  bare?: boolean;
 }) {
   const [all, setAll] = useState(false);
   const addsUp = breakdown !== null && score !== null && model !== null && breakdown.score === score;
@@ -385,7 +389,7 @@ export function ScoreDeductions({
   return (
     <div className="min-w-0" data-score-breakdown={state}>
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h3 className="m-0 cc-text-h2 text-cc-ink">What moves it</h3>
+        {bare ? null : <h3 className="m-0 cc-text-h2 text-cc-ink">What moves it</h3>}
         {addsUp && model ? (
           <p className="m-0 ml-auto cc-text-meta font-medium text-cc-ink-muted" data-score-sum="">
             <span className="hidden sm:inline">
@@ -527,7 +531,7 @@ function DeductionTable({
             <span className="min-w-0">
               <span className="flex flex-wrap items-center gap-2">
                 <span className="cc-text-identifier text-cc-ink">Statements the engine could not assess</span>
-                <CcProvenanceChip value="not-determined" />
+                <FamilyChip value="not-determined" />
               </span>
               <span className="block cc-text-meta font-medium text-cc-ink-muted">
                 {plural(model.notAssessed.kinds, 'kind', 'kinds')}, {plural(model.notAssessed.places, 'place', 'places')}
