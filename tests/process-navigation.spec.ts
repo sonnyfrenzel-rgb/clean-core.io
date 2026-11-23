@@ -872,8 +872,10 @@ test.describe('every step of the 1.000-line example, in at most three actions', 
     // at a start event (022c9a3a) and three `ADD_LOG` calls are an arm's outcome
     // (3bbe6f27); the deepest element is still two levels down.
     expect(counts.length, 'not every element of the example was measured').toBe(model.elements.length);
-    expect(model.elements.length).toBe(91);
-    expect(counts.filter((count) => !isEvent(count.id)), 'the steps of the example').toHaveLength(53);
+    // The seeded run records no engine, so since 3.5.0 the page draws the map with the engine before versioning
+    // (PAGE_ENGINE): 82 elements and 50 steps. With today's engine the same file reads 91 and 53.
+    expect(model.elements.length).toBe(82);
+    expect(counts.filter((count) => !isEvent(count.id)), 'the steps of the example').toHaveLength(50);
     const worstMouse = Math.max(...counts.map((count) => count.mouse));
     const worstKeyboard = Math.max(...counts.map((count) => count.keyboard));
     const over = counts.filter((count) => count.mouse > 3 || count.keyboard > 3);

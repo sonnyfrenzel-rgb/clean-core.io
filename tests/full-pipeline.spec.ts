@@ -392,7 +392,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // Roadmap 3.0.5: the documentation is read out of the code by the engine;
     // since 03.10.2026 opening the stage writes it, without a click.
 
-    await expect(page.locator('[data-engine-documentation]')).toBeVisible({ timeout: 60000 });
+    // Since 3.5.0 the engine's reading stands in the document's appendix fold, closed until the reader opens it:
+    // it is written on opening (attached), not shown first.
+    await expect(page.locator('[data-engine-documentation]')).toBeAttached({ timeout: 60000 });
     console.log('Stage 4 Complete: process documentation read from the code.');
 
     // --- STAGE 5: TESTING SANDBOX ---
