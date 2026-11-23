@@ -80,7 +80,8 @@ test.describe('the stage, read', () => {
     expect(card).not.toMatch(/updateDoc|setDoc|data-route-switch/);
     // The decision is made in Re-design's decision step (ADR-143).
     expect(read(PAGE)).toContain("redesignHref(projectId, 'decide')");
-    expect(read(DEMO)).toContain('decideHref="/demo/workspace?view=management"');
+    // The demo has its own Re-design page (/demo/redesign) since 3.5.0.
+    expect(read(DEMO)).toContain("decideHref={demoRedesignHref('decide')}");
   });
 
   test('the side column has two cards: the route and what is not determined — no severity donut', () => {

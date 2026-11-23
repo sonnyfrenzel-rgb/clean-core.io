@@ -451,7 +451,8 @@ test.describe('the open gaps are still open — closing one has to update the re
     expect(header).toContain('familyBackLink({ projectId, search, demo, toMyWorkspace: backToMyWorkspace })');
     expect(header).toContain('backToMyWorkspace = false,');
     const setters = ['app', 'components', 'lib'].flatMap((dir) => grepTsx(dir, /(?<![.\w])backToMyWorkspace\b/))
-      .filter((f) => f !== 'components/StageHeader.tsx');
+      // The footer names the header's flag in its comment; Analyze hands it `toMyWorkspace` (StageFooter).
+      .filter((f) => f !== 'components/StageHeader.tsx' && f !== 'components/StageFooter.tsx');
     // Since 3.5.0 Analyze is the entry in every view (AB-11): its IT frame sets the flag too.
     expect(setters.sort()).toEqual(['app/(app)/project/[projectId]/analyze/page.tsx', 'components/analyze/AnalyzeBusiness.tsx', 'components/demo/DemoAnalyzeBusiness.tsx']);
   });
