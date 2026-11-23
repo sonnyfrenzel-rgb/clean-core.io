@@ -1,6 +1,16 @@
 {
   "note": "The engine digest (scripts/engine/engine-digest.mjs) of every released engine. Written by the release capture (scripts/engine/frozen-digests.ts capture) beside the frozen fixture of the release; never edited by hand. v3.2.0 was computed after the fact from the release merge on main (f54653cd, the same engine source as 6ee15d05, the commit its frozen fixture was captured at).",
   "releases": {
-    "v3.2.0": { "digest": "237f3208f642833706d7ca6647e620bacd5fa3e6c5f102f02158088f650e05a4", "commit": "f54653cd", "captured": "2026-11-22", "how": "after the fact" }
+    "v3.2.0": {
+      "digest": "237f3208f642833706d7ca6647e620bacd5fa3e6c5f102f02158088f650e05a4",
+      "commit": "f54653cd",
+      "captured": "2026-11-22",
+      "how": "after the fact"
+    },
+    "v3.4.0": {
+      "digest": "68de8688dda1e65c1a4e4e5760051d4f2dcf7e89a5497c805d7c8ef0302f4175",
+      "commit": "51f61c07",
+      "captured": "2026-11-23"
+    }
   }
 }
