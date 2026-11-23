@@ -1,8 +1,8 @@
 {
   "source": "https://github.com/SAP/architecture-center",
   "branch": "dev",
-  "commit": "7e0f9af938a89ee2cbf4aac12aa77d78bf644e22",
-  "syncedAt": "2026-11-09",
+  "commit": "2582312997c699ace710cc51f41a63e0bcb3ad35",
+  "syncedAt": "2026-11-23",
   "architectures": [
     {
       "id": "RA0001",
@@ -155,7 +155,7 @@
       "id": "RA0022",
       "slug": "5f90af",
       "title": "API Managed Integration with SAP Integration Suite",
-      "lastUpdate": "2026-10-26",
+      "lastUpdate": "2026-11-18",
       "archived": false
     },
     {
@@ -183,7 +183,7 @@
       "id": "RA0026",
       "slug": "0f87e5",
       "title": "Physical AI, Embodied AI & Robotics for SAP Business AI",
-      "lastUpdate": "2026-10-26",
+      "lastUpdate": "2026-11-18",
       "archived": false
     },
     {
@@ -239,7 +239,7 @@
       "id": "RA0039",
       "slug": "5hj89h",
       "title": "SAP Business AI Platform",
-      "lastUpdate": "2026-10-25",
+      "lastUpdate": "2026-11-16",
       "archived": false
     },
     {
