@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { parseSource } from '../lib/engine4/parsed-source';
+import { maskNonCode } from '../lib/abap/statement-reader';
 import { runParsedShadow, runParsedDamageShadow, runParsedEdgeShadow } from '../scripts/engine4/shadow-parsed';
 
 /**
@@ -54,6 +55,12 @@ test('masks are derived from the token kinds: contents blanked, delimiters kept,
   expect(p.maskedText(1)).toBe('DATA(t) = |     |');
   expect(p.maskNonCode()).toBe("WRITE '   ' && ` ` && |       |.         \nDATA(t) = |     |.");
   expect(p.maskComments()).toBe("WRITE 'a.b' && `c` && |x{ y }z|.         \nDATA(t) = |plain|.");
+});
+
+test('a literal with an astral character is masked to its full length, as the shipping mask does (QA 188cda29e6b5)', () => {
+  const src = "x = '\u{1F600}'.\ny = `\u{1F600}\u{1F600}`.\n";
+  expect(parseSource(src).maskNonCode()).toBe("x = '  '.\ny = `    `.\n");
+  expect(parseSource(src).maskNonCode()).toBe(maskNonCode(src));
 });
 
 test('the container index answers containerAt by lookup, a routine before its event block', () => {

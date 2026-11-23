@@ -38,6 +38,13 @@ test('the effect is refined per statement: internal table or database, a name th
   ]);
 });
 
+test('without a reference table a write statement is unknown, never a guessed database write (QA 1fa0b4ed2e9e)', () => {
+  const { statements } = read(['REPORT z.', 'DATA lt TYPE STANDARD TABLE OF mara.', 'INSERT INITIAL LINE INTO TABLE lt.', 'DELETE lt INDEX 1.'].join('\n'));
+  expect(statements.map((s) => effectOf(s))).toEqual(['structure', 'declaration', 'unknown', 'unknown']);
+  const l = ledger(statements, [ALL_BUT_UNKNOWN]);
+  expect([l.complete, l.byClass.dbWrite.total, l.byClass.unknown.unclaimed]).toEqual([false, 0, 2]);
+});
+
 test('complete means: every effect class claimed, no Unknown statement, no fallback', () => {
   const src = ['REPORT z.', 'DATA lv TYPE i.', 'lv = 1.', 'IF lv = 1.', '  WRITE lv.', 'ENDIF.'].join('\n');
   const { statements, table } = read(src);

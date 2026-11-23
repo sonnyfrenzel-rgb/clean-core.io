@@ -73,7 +73,12 @@ function isBlank(ch: string): boolean {
   return ch === ' ' || ch === '\t' || ch === '\r' || ch === '\f' || ch === '\v' || ch === ' ';
 }
 
-/** True when `i` is the end of a line: a line feed, a `\r\n`, or the end of the source. */
+/**
+ * True when `i` is the end of a line: a line feed, a `\r\n`, or the end of the source. A lone `\r` is not one, on
+ * purpose: the shipping readers split on `\n` only, and parse once must read a CR-only source as they do, or a run
+ * signed before 3.4.0 would not rebuild as it signed. From 3.4.0 `lib/abap/input-hygiene.ts` turns a lone `\r` into
+ * `\n` before any reader, the lexer included, sees the source.
+ */
 function atLineEnd(s: State, i: number): boolean {
   const ch = s.src[i];
   if (ch === undefined || ch === '\n') return true;

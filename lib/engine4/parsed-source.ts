@@ -181,7 +181,8 @@ function maskLiteralToken(t: Token, depth: number): string {
   if (depth > (t.kind === 'templateEnd' ? 1 : 0)) return blank;
   if (t.kind === 'textLiteral' || t.kind === 'stringLiteral') {
     const q = t.text[0];
-    return [...t.text].map((ch) => (ch === q ? ch : ' ')).join('');
+    // By UTF-16 code unit, as offsets count: by code point an astral character (`'😀'`) left the mask short.
+    return t.text.split('').map((ch) => (ch === q ? ch : ' ')).join('');
   }
   const closes = t.text.length >= 2 && t.text.endsWith('|') && !t.text.endsWith('\\|');
   if (t.kind === 'template') return closes ? `|${blank.slice(2)}|` : `|${blank.slice(1)}`;

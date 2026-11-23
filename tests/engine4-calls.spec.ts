@@ -107,3 +107,10 @@ test('shadow against today\'s call graph: PERFORM edges and unreachable FORMs ag
   expect(r.unreachableForms.agree).toBe(r.unreachableForms.old);
   expect(Object.keys(r.categories).filter((k) => k.endsWith(':unexplained'))).toEqual([]);
 });
+
+test('PERFORM (name) fixed to a FORM this source lacks is unresolved, so reachability is not certain (QA 365a3f83ed04)', () => {
+  const src = ['REPORT z.', "CONSTANTS lc_form TYPE string VALUE 'MISSING'.", 'START-OF-SELECTION.', '  PERFORM (lc_form).', 'FORM a.', 'ENDFORM.'].join('\n');
+  const g = graph(src);
+  expect(edgesAt(g, 4)).toEqual(['unresolved FORM MISSING']);
+  expect(g.certain).toBe(false);
+});

@@ -64,12 +64,13 @@ const DB_WRITE_KINDS = new Set<StatementKind>(['Insert', 'Update', 'Modify', 'De
  * The effect class of one statement: the kind's, refined by what L4 found on it. `INSERT`, `UPDATE`,
  * `MODIFY` and `DELETE` write the database only when the reference table names a database table there
  * (else they change an internal table: `compute`); a statement whose object name stays open
- * (`CALL FUNCTION lv` with no single value) is `dynamic`.
+ * (`CALL FUNCTION lv` with no single value) is `dynamic`. Without a reference table there is nothing to tell the
+ * two apart, so such a statement is `unknown` — no consumer can claim it — rather than a guessed `dbWrite`.
  */
 export function effectOf(s: Statement, refs?: ReadonlyMap<number, ReferenceTable['references']>): EffectClass {
   if (s.context === 'macro') return 'structure';
   const base = kindInfo(s.kind).effect;
-  if (!refs) return base;
+  if (!refs) return DB_WRITE_KINDS.has(s.kind) ? 'unknown' : base;
   const here = refs.get(s.index) ?? [];
   if (here.some((r) => r.resolution === 'dynamic')) return 'dynamic';
   if (DB_WRITE_KINDS.has(s.kind)) return here.some((r) => r.kind === 'table' && r.use === 'write') ? 'dbWrite' : 'compute';

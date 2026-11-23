@@ -239,6 +239,8 @@ export function callGraph(list: readonly Statement[], tree: BlockTree): CallGrap
         const names = a.name ? [a.name] : a.candidates ?? [];
         if (!a.name) push(s, 'perform', 'dynamic', null, `PERFORM (${u[2] ?? ''})`);
         for (const n of names) if (has.has(`FORM ${n}`)) push(s, 'perform', a.name ? 'static' : 'dynamic', `FORM ${n}`);
+        // A name the value reading fixes but this source does not define is as open as `PERFORM f` without a FORM f.
+        if (a.name && !has.has(`FORM ${a.name}`)) push(s, 'perform', 'unresolved', null, `FORM ${a.name}`);
       } else if (u.includes('PROGRAM') || (u[2] === '(' && !s.tokens[2]?.spaceBefore)) {
         push(s, 'perform', 'external', null, `PROGRAM ${u.includes('PROGRAM') ? u[u.indexOf('PROGRAM') + 1] : u[3]} FORM ${u[1]}`);
       } else if (has.has(`FORM ${u[1]}`)) push(s, 'perform', 'static', `FORM ${u[1]}`);
