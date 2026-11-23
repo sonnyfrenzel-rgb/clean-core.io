@@ -372,9 +372,9 @@ export function showcaseSteps(f: ShowcaseCopyFacts, c: ShowcaseCopyCounts): Show
 
 export const SHOWCASE_END = {
   title: {
-    all: 'Analyse your own Z program — free account',
+    all: 'Analyze your own Z program with a free account',
     business: 'Understand your own Z program',
-    it: 'Analyse your custom code',
+    it: 'Analyze your custom code',
     management: 'Get a decision basis for your custom code',
   } as Record<ShowcaseLens, string>,
   lead: {

@@ -80,7 +80,7 @@ test.describe('every step has an address that works without an account', () => {
   test('/demo#step=end opens the end, and a lens comes with the address', async ({ page }) => {
     await page.goto('/demo#step=end&lens=it', { waitUntil: 'load' });
     await expect(page.locator('[data-showcase]')).toHaveAttribute('data-showcase-step', 'end', { timeout: 60_000 });
-    await expect(page.locator('#showcase-end-title')).toHaveText('Analyse your custom code');
+    await expect(page.locator('#showcase-end-title')).toHaveText('Analyze your custom code');
     await expect(page.getByRole('radio', { name: 'IT' })).toHaveAttribute('aria-checked', 'true');
   });
 
