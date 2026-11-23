@@ -1,79 +1,30 @@
-import { test, expect, type Page } from './helpers/test';
+import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { adminMergeDoc } from './helpers/admin-seed';
 
 /**
- * A stage's provenance line — file · lines · catalog · engine, in monospace —
- * sits behind a "Details" button, collapsed until the reader asks for it
- * (owner 02.10.2026; DESIGN.md §2.11 "Metadata on demand"). One component,
- * `components/StageMetaDetails.tsx`, does it for every stage and every demo
- * stage; opened, the line is the one the stage handed in, unchanged.
+ * A tool's provenance — file · lines · catalog · engine — is said where it belongs, never as a monospace line behind
+ * a "Details" button. Analyze says it in the score hero, open (ADR-093); Testing (ADR-131), Delivery (ADR-132) and
+ * Economics (ADR-128, the family answer card and the assumption revision) carry no meta line at all since 3.5.0, so
+ * the "Details" toggle that hid one (`StageMetaDetails`, owner 02.10.2026) left with the last of them.
  */
 
 const ROOT = path.resolve(__dirname, '..');
 const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8');
 
-/** Where each stage draws its line, and the hook the line keeps. */
-const LINES = {
-  tco: '[data-workspace-meta]',
-} as const;
-
-/** Closed, then open by mouse, closed again, then open and closed by keyboard. */
-async function expectBehindDetails(page: Page, scope: string, line: string, content: string | RegExp) {
-  const toggle = page.locator(`${scope} [data-stage-meta-toggle]`);
-  await expect(toggle).toBeVisible({ timeout: 90_000 });
-  await expect(toggle).toHaveText(/Details/);
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.locator(line), `${line} is on screen before Details was pressed`).toHaveCount(0);
-
-  await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.locator(line)).toBeVisible();
-  await expect(page.locator(line)).toContainText(content);
-  // The button names what it opens.
-  const controls = await toggle.getAttribute('aria-controls');
-  expect(controls).toBeTruthy();
-  await expect(page.locator(`[id="${controls}"]`).locator(line)).toHaveCount(1);
-
-  await toggle.click();
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.locator(line)).toHaveCount(0);
-
-  await toggle.focus();
-  await page.keyboard.press('Enter');
-  await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.locator(line)).toContainText(content);
-  await page.keyboard.press('Space');
-  await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-  await expect(page.locator(line)).toHaveCount(0);
-}
-
-test.describe('the stage meta line is behind "Details"', () => {
-  test('every stage meta line goes through StageMetaDetails', () => {
-    for (const rel of [
-      'app/(app)/project/[projectId]/tco/page.tsx',
-    ]) {
-      expect(read(rel), `${rel} draws a meta line outside StageMetaDetails`).toContain('<StageMetaDetails');
-    }
-    // Analyze is the exception since ADR-093 (11.10.2026): its file · lines ·
-    // catalog · engine is the score's provenance, said once beside the figure
-    // it describes, in the hero — not behind a "Details" button.
-    expect(read('components/analyze/AnalysisAnswer.tsx')).not.toContain('<StageMetaDetails');
-    expect(read('components/analyze/CleanCoreScoreSection.tsx')).toContain('data-analysis-meta=""');
-    // The workspace's own line is not a stage's: it keeps its view rule (open in IT, §2.11).
+test.describe('no tool hides a meta line behind "Details"', () => {
+  test('no tool page draws a meta line, and the toggle is gone', () => {
+    expect(fs.existsSync(path.resolve(ROOT, 'components/StageMetaDetails.tsx')), 'the Details toggle came back').toBe(false);
     const stages = ['analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
     for (const s of stages) {
       const src = read(`app/(app)/project/[projectId]/${s}/page.tsx`);
-      const bare = (src.match(/<WorkspaceMetaLine\b/g) || []).length;
-      const wrapped = (src.match(/<StageMetaDetails>\s*<WorkspaceMetaLine\b/g) || []).length;
-      expect(wrapped, `${s} renders the workspace meta line without "Details"`).toBe(bare);
+      expect(src, `${s} draws a meta line again`).not.toMatch(/<WorkspaceMetaLine\b|<StageMetaDetails\b/);
     }
-    const c = read('components/StageMetaDetails.tsx');
-    expect(c).toContain('aria-expanded={open}');
-    expect(c).toContain("wt('page.details')");
-    expect(c).toContain('useState(false)');
+    // Analyze is the exception since ADR-093 (11.10.2026): its file · lines · catalog · engine is the score's
+    // provenance, said once beside the figure it describes, in the hero.
+    expect(read('components/analyze/CleanCoreScoreSection.tsx')).toContain('data-analysis-meta=""');
   });
 
   test('on the demo stages', async ({ page }) => {
@@ -113,15 +64,9 @@ test.describe('the stage meta line is behind "Details"', () => {
     await expect(page.locator('[data-analysis-meta]')).toBeVisible({ timeout: 90_000 });
     await expect(page.locator('[data-analysis-meta]')).toContainText('v2.20.0');
     await expect(page.locator('[data-analysis-answer] [data-stage-meta-toggle]')).toHaveCount(0);
-    for (const stage of ['tco'] as const) {
-      await page.goto(`/project/${acct.projectId}/${stage}`, { waitUntil: 'domcontentloaded' });
-      await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 120_000 });
-      // Economics reads the signed run's manifest (`metaLine`), which this seed
-      // does not write — its line says so ("not recorded"); the others read the
-      // project's audit metadata.
-      // 11: the seeded source ends in a newline, which ends its last line
-      // rather than starting a twelfth (UX-182, owner 03.10.2026).
-      await expectBehindDetails(page, 'body', LINES[stage], stage === 'tco' ? /lines\s*11/ : 'v2.20.0');
-    }
+    // Economics: no toggle and no meta line (ADR-128).
+    await page.goto(`/project/${acct.projectId}/tco`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-stage-meta-toggle]')).toHaveCount(0);
   });
 });

@@ -124,9 +124,20 @@ test('the Testing stage no longer asks for the service catalog', () => {
   const page = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'project', '[projectId]', 'testing', 'page.tsx'), 'utf8');
   expect(page).not.toContain('handleFetchODataCatalog');
   expect(page).not.toContain('Discover Services');
-  // Every call of the metadata route names a service.
-  const calls = [...page.matchAll(/fetch\('\/api\/fetch-odata-metadata'[\s\S]*?\}\)\s*\n\s*\}\);/g)].map((m) => m[0]);
-  expect(calls.length).toBeGreaterThan(0);
+  // Every call of the metadata route names a service, wherever it is made. Since ADR-131 (3.5.0) the Testing page
+  // has no service explorer and makes none; a caller that comes back must send `servicePath`.
+  const sources: string[] = [];
+  const walk = (dir: string) => {
+    for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${e.name}`;
+      if (e.isDirectory()) {
+        if (rel !== 'app/api') walk(rel);
+      } else if (/\.tsx?$/.test(e.name)) sources.push(fs.readFileSync(path.join(ROOT, rel), 'utf8'));
+    }
+  };
+  for (const dir of ['app', 'components', 'hooks', 'lib']) walk(dir);
+  expect(sources.length).toBeGreaterThan(500);
+  const calls = sources.flatMap((src) => [...src.matchAll(/fetch\('\/api\/fetch-odata-metadata'[\s\S]*?\}\)\s*\r?\n\s*\}\);/g)].map((m) => m[0]));
   for (const c of calls) expect(c, 'a call of the metadata route sends no service name').toContain('servicePath:');
 });
 

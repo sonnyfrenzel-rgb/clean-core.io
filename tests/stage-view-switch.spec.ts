@@ -85,7 +85,7 @@ test.describe('the view switch of a tool', () => {
       `import React from 'react';
 import { createRoot } from 'react-dom/client';
 import StageViewSwitch from '@/components/StageViewSwitch';
-import StageBackText from '@/components/StageBackText';
+import { familyBackLink } from '@/lib/workspace-back-href';
 import { useLocationSearch } from '@/lib/location-search';
 let renders = 0;
 function App() {
@@ -95,7 +95,7 @@ function App() {
   React.useEffect(() => { (window as unknown as { __mounts: number }).__mounts += 1; }, []);
   return (
     <div>
-      <p data-test-back=""><StageBackText projectName="Order limit check" search={search} /></p>
+      <p data-test-back="">{(() => { const way = familyBackLink({ projectId: 'p-1', search }); return way.kind === 'link' ? way.place : ''; })()}</p>
       <StageViewSwitch search={search} />
       <span data-test-renders={renders} />
     </div>
@@ -133,14 +133,14 @@ createRoot(document.getElementById('root')!).render(<App />);
     expect(errors).toEqual([]);
     await expect(group.getByRole('radio')).toHaveText(['Business', 'IT', 'Management']);
     await expect(group.getByRole('radio', { name: 'Business' })).toHaveAttribute('aria-checked', 'true');
-    await expect(page.locator('[data-test-back]')).toContainText('Business view');
+    await expect(page.locator('[data-test-back]')).toHaveText('Analyze');
 
     await group.getByRole('radio', { name: 'IT' }).click();
     await expect(group.getByRole('radio', { name: 'IT' })).toHaveAttribute('aria-checked', 'true');
     await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', 'it');
     expect(page.url()).toBe('http://views.test/project/p-1/design?view=it&from=workspace-tools#architect-sign-off');
     // The way back follows the view, and the tool was not mounted again.
-    await expect(page.locator('[data-test-back]')).toContainText('IT view');
+    await expect(page.locator('[data-test-back]')).toHaveText('Analyze, IT view');
     expect(await page.evaluate(() => (window as unknown as { __mounts: number }).__mounts)).toBe(1);
 
     await page.goBack();

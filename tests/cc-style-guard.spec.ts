@@ -245,17 +245,10 @@ function hardCodedText(rel: string, text: string): string[] {
 
 /** Surface files whose every visible word arrives as a prop or from a `lib/` list with its own guard. */
 const PROPS_ONLY_SURFACES: string[] = [
-  // The glossary popover: the term, its category and its definition are the glossary's (lib/glossary.ts).
-  'components/workspace/GlossaryText.tsx',
-  // The meta line: labels and values arrive as entries, "not recorded" is META_ABSENT in lib/workspace-model.ts.
-  'components/workspace/MetaLine.tsx',
   // The canvas: its name and its badges arrive as props from ProcessMap and BpmnEditor.
   'components/process-map/BpmnCanvas.tsx',
   // The guided tour's map: its one name arrives as a prop from ProcessTour (walkMapLabel).
   'components/process-map/TourCanvas.tsx',
-  // The Management answers: since ADR-087 a frame that reads the run history
-  // and hands everything to the overview; it writes no text of its own.
-  'components/workspace/ManagementAnswers.tsx',
 ];
 
 test.describe('the new surfaces speak from the catalogue too (D.29)', () => {

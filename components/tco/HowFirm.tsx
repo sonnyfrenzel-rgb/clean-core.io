@@ -28,7 +28,7 @@ export default function HowFirm({ firmness, priced }: { firmness: Firmness; pric
       ) : null}
       {firmness.rows.length > 0 ? (
         <div className="mt-3 overflow-x-auto">
-          <table className="w-full border-collapse" data-economics-firm-rows="">
+          <table className="doc-table w-full border-collapse" data-economics-firm-rows="">
             <thead className="border-b border-cc-line">
               <tr>
                 <th scope="col" className="px-3 py-2 text-left cc-text-meta font-semibold text-cc-ink-muted">Your figure</th>
@@ -40,8 +40,8 @@ export default function HowFirm({ firmness, priced }: { firmness: Firmness; pric
               {firmness.rows.map((r) => (
                 <tr key={r.field} data-economics-firm-row={r.field} data-economics-firm-edge={r.edge ? 'yes' : 'no'}>
                   <th scope="row" className="px-3 py-2 text-left align-top cc-text-cell font-semibold text-cc-ink">{r.name}</th>
-                  <td className="px-3 py-2 align-top cc-text-cell whitespace-nowrap text-cc-ink tabular-nums">{r.now}</td>
-                  <td className="px-3 py-2 align-top cc-text-cell text-cc-ink">
+                  <td data-label="Now" className="px-3 py-2 align-top cc-text-cell whitespace-nowrap text-cc-ink tabular-nums">{r.now}</td>
+                  <td data-label="What it would take to change the order" className="px-3 py-2 align-top cc-text-cell text-cc-ink">
                     {r.edge ? (
                       <>
                         <b className="font-semibold">Only an extreme change.</b>{' '}

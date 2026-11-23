@@ -802,17 +802,17 @@ export default function TestingSandboxPage() {
         result = 'not-run';
         meaning = 'Not run: nothing here runs ABAP Unit. Its result comes from your SAP system.';
       } else if (o.kind === 'confirmed') {
-        result = o.classPassed ? 'passed' : 'no-verdict';
+        result = o.classPassed ? 'held' : 'no-verdict';
         meaning = o.classPassed
           ? 'You confirmed the test class passed in your SAP system. A self-declaration.'
           : 'You confirmed failures in the test class; which case failed is not recorded.';
       } else {
-        result = o.outcome === 'passed' ? 'passed' : o.outcome === 'failed' ? 'failed' : 'no-verdict';
+        result = o.outcome === 'passed' ? 'held' : o.outcome === 'failed' ? 'failed' : 'no-verdict';
         meaning = o.message || (o.outcome === 'skipped' ? 'Skipped in your SAP system.' : o.outcome === 'none' ? 'No result for this case in the file.' : 'Ran in your SAP system, imported from the result file.');
       }
     } else {
       const verdict = verdictOf(tc);
-      result = verdict === 'Passed' ? 'passed' : verdict === 'Failed' ? 'failed' : verdict ? 'no-verdict' : 'not-run';
+      result = verdict === 'Passed' ? 'held' : verdict === 'Failed' ? 'failed' : verdict ? 'no-verdict' : 'not-run';
       meaning = assessmentOf(tc).sentence;
     }
     return {

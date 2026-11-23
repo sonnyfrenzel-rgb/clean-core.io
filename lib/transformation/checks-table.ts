@@ -197,7 +197,7 @@ export function checksTable(input: ChecksInput): ChecksTable {
 
   /* What only your own system can do. */
   if (input.abap) {
-    rows.push({ key: 'activation', check: 'Activation', who: 'Your SAP system', outcome: 'not-run', says: 'Import the package with abapGit into a test system and activate it there.' });
+    rows.push({ key: 'activation', check: 'Activation', who: 'Your SAP system', outcome: 'not-run', says: 'Bring the package into a test system with abapGit and activate it there.' });
     rows.push({ key: 'abap-unit', check: 'ABAP Unit', who: 'Your SAP system', outcome: 'not-run', says: 'Testing writes the cases with the expected results of the original; they run only in your system.' });
   } else {
     rows.push({ key: 'run', check: 'Start and run', who: 'Your environment', outcome: 'not-run', says: 'Testing runs the tests against mocks; the service itself starts only in your environment.' });

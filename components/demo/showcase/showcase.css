@@ -140,9 +140,10 @@
 
 /* IT */
 .cc-sc .hero{font-size:56px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
-.cc-sc .bd{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
-.cc-sc .bd td{padding:4px 0;border-top:1px solid var(--cc-line)}
-.cc-sc .bd td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.cc-sc .bd{width:100%;font-size:13px;margin:8px 0 0}
+.cc-sc .bd>div{display:flex;justify-content:space-between;gap:12px;padding:4px 0;border-top:1px solid var(--cc-line)}
+.cc-sc .bd dt{margin:0}
+.cc-sc .bd dd{margin:0;text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
 .cc-sc .sev{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 .cc-sc .sev span{font-size:12px;font-weight:600;border-radius:4px;padding:1px 8px;border:1px solid}
 .cc-sc .sev .e{color:var(--cc-error);background:var(--cc-error-bg);border-color:var(--cc-error)}

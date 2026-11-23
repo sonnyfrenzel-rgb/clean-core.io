@@ -1278,11 +1278,6 @@
             "why": "read once on load: a project an earlier build left on the tenant tab (live) opens the tenant section; the run is always against mocks"
           },
           {
-            "field": "s4Meta",
-            "from": "project",
-            "why": "non-secret connection metadata; the password is write-only"
-          },
-          {
             "field": "name",
             "from": "project",
             "why": "Excel export name"
@@ -1303,7 +1298,6 @@
         },
         "consumedByNextStage": [
           "testCases",
-          "coverageEstimate",
           "testRunReceipt"
         ],
         "note": "The page does not store the verdicts it shows and no client path writes one. POST /api/run-tests writes the verdicts it observed together with testRunReceipt, in one Admin-SDK write — what the server saw, the server records — bound to the active run and to the digests of generatedCode, testSuite and testCases (the case digest ignores status and message, so storing a verdict cannot freshen or retire a receipt). testRunReceipt is outside the client allowlist of firestore.rules, and since 3.0.21 so is testCases (until that rules text is deployed, a browser could still write it), which is why lib/workflow-steps.ts counts passes for `proven` from the receipt and reads client-written Passed strings as 'Self-reported'. Since roadmap 8.7 the auto-heal path writes nothing from the browser: the repair of the one file repairTarget() names becomes an immutable draft in projects/{id}/repairDrafts (Admin SDK, default deny), /api/run-tests with draftId executes exactly that draft and records its receipt on the draft, and POST /api/projects/{id}/repair-drafts adopts it by compare-and-swap - generatedCode or testSuite, the verdicts and a testRunReceipt naming the draft, in one transaction.",
@@ -1374,12 +1368,6 @@
               "View Module Code"
             ],
             "why": "the generated suite, behind the terminal toggle inside the folded run output (testing rebuilt as one guided flow, owner 02.10.2026)"
-          },
-          {
-            "field": "coverageEstimate",
-            "locator": "[data-stage-output=\"coverageEstimate\"]",
-            "text": "{project.coverageEstimate.percentage}%",
-            "why": "the Coverage estimate card (its title says what the figure is; the figure itself carries no suffix since the object-page rebuild), which is on screen without a run"
           }
         ],
         "onlyAfterARun": [
@@ -1392,6 +1380,10 @@
           {
             "field": "status",
             "why": "no stage renders status: lib/workflow-steps.ts derives every phase state from the artefacts and deliberately does not read it"
+          },
+          {
+            "field": "coverageEstimate",
+            "why": "since 3.5.0 neither Testing (ADR-131: whether the program is tested and where, rule by rule) nor Delivery (ADR-132) draws the estimate; it stays on record as the artefacts route writes it"
           }
         ],
         "notYetAnchored": []
@@ -1449,11 +1441,6 @@
             "from": "project",
             "via": "testEvidence",
             "why": "the verdict counts on screen, read through testEvidence(project)"
-          },
-          {
-            "field": "coverageEstimate",
-            "from": "project",
-            "why": "the coverage figure"
           },
           {
             "field": "documentation",
@@ -1529,7 +1516,6 @@
       "alsoDisplays": [
         "generatedCode",
         "testCases",
-        "coverageEstimate",
         "documentation",
         "businessDocumentation",
         "auditMetadata",
@@ -1562,12 +1548,6 @@
             "locator": "[data-stage-output=\"auditMetadata\"]",
             "opensWith": "Audit pack contents",
             "why": "the input fingerprint inside the audit-pack accordion"
-          },
-          {
-            "field": "coverageEstimate",
-            "locator": "[data-stage-output=\"coverageEstimate\"]",
-            "opensWith": "Link by link",
-            "why": "the coverage line of the integrity report; the reference case has no estimate, so what is asserted is that the line does not claim one"
           },
           {
             "field": "businessDocumentation",
@@ -2351,13 +2331,9 @@
           {
             "module": "components/workspace/StatusLine.tsx",
             "evidence": "{phase.detail}"
-          },
-          {
-            "module": "components/workspace/NextStepCard.tsx",
-            "evidence": ": point.reason}"
           }
         ],
-        "note": "Every phase detail in a \"Why?\"; the detail of the next open phase also on the Next step card."
+        "note": "Every phase detail in a \"Why?\"."
       },
       "generationBlockers": {
         "kind": "linked",
@@ -2365,13 +2341,9 @@
           {
             "module": "components/workspace/StatusLine.tsx",
             "evidence": "data-workspace-status-tool={phase.key}"
-          },
-          {
-            "module": "components/workspace/NextStepCard.tsx",
-            "evidence": "{point.action}"
           }
         ],
-        "note": "Enforced on the stage page, and the workspace generates nothing, so nothing here can launder a stale state. Where a blocker stands, the Next step card points at the stage the blocker sends the reader to."
+        "note": "Enforced on the stage page, and the workspace generates nothing, so nothing here can launder a stale state."
       },
       "handoverBlockers": {
         "kind": "shown",

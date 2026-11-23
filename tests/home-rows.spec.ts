@@ -233,12 +233,13 @@ test.describe('the rows — lib/home-rows.ts (H-O9: every project, lean)', () =>
     expect(card).toContain('ATTENTION_REASON_LABEL[reason]');
   });
 
-  test('the Next step column reads the tile\'s own next step (owner decision 22.11.2026)', () => {
-    // A signed program reads "Re-design this program" in both places, not "Nothing open" in the list.
-    expect(programNextLink(thirty[0].tile)).toEqual({ label: 'Re-design this program', tool: 'Design', path: 'design', run: false, note: null });
+  test('the Next step column reads the tile\'s own next step and goes through Re-design (owner decisions 22.11. and 23.11.2026)', () => {
+    // A signed program reads "Re-design this program" in both places, not "Nothing open" in the list, and leads to
+    // the Re-design page as the tile does, never straight into a tool.
+    expect(programNextLink(thirty[0].tile)).toEqual({ label: 'Re-design this program', tool: 'Re-design', path: 'redesign', run: false, note: null });
     // A retired one: "Open the decision", with the tile's "Not needed — decided: Retire" under it.
     const retired = toHomeRow(analysed('r1', { targetArchitecture: 'retire', approvedByArchitect: true } as Partial<Project>));
-    expect(programNextLink(retired.tile)).toEqual({ label: 'Open the decision', tool: 'Design', path: 'design', run: false, note: 'Not needed — decided: Retire' });
+    expect(programNextLink(retired.tile)).toEqual({ label: 'Open the decision', tool: 'Re-design', path: 'redesign#decide', run: false, note: 'Not needed — decided: Retire' });
     // Not analysed and changed code are runs, through the dialog.
     expect(programNextLink(thirty[1].tile)).toMatchObject({ label: 'Run the analysis', path: 'analyze', run: true });
     const changed = toHomeRow(analysed('c8', { legacyCode: `${DEMO}\n* c8` } as Partial<Project>));

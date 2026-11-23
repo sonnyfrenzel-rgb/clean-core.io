@@ -225,10 +225,7 @@ test.describe('a PCE project gets the same grade in the core result and each der
       // The Management overview and the demo panel share one derivation since the
       // executive rebuild; the lookup lives in that hook now.
       ['hooks/useFitByPlatform.ts', /useAbcdCatalogLookup\(lookupObjects, project \? catalogLookupTargetOf\(project\) : null\)/],
-      ['components/workspace/ManagementOverview.tsx', /useFitByPlatform\(findings, project,/],
       ['components/workspace/PublicCloudFitPanel.tsx', /useAbcdCatalogLookup\(lookupObjects, project \? catalogLookupTargetOf\(project\) : null\)/],
-      // The print sheet's level column — owner decision 01.10.2026.
-      ['components/workspace/WorkspacePrintSheet.tsx', /useAbcdCatalogLookup\(objects, project \? catalogLookupTargetOf\(project\) : null\)/],
       ['hooks/useProcessOverlays.ts', /useAbcdCatalogLookup\(objects, catalogTarget\)/],
       ['components/analyze/UsageRiskMatrix.tsx', /useAbcdCatalogLookup\(lookupObjects, target\)/],
       // Documentation draws no map since ADR-127 (Figure 1 is read-only, without levels): no lookup there.

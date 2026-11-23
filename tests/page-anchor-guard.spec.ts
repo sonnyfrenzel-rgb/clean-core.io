@@ -144,7 +144,6 @@ test.describe('one bar', () => {
       PAGE('tco'),
       'components/tco/DemoEconomics.tsx',
       'components/workspace/ManagementExecutive.tsx',
-      'components/workspace/ManagementAnswers.tsx',
     ]) {
       expect(code(rel), `${rel} carries an anchor bar`).not.toMatch(/AnchorBar\b|<DocumentChapterBar\b/);
     }

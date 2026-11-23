@@ -70,17 +70,18 @@ test('a stage names the project and the view it returns to', () => {
   expect(stageBackPlace('?view=management')).toBe('Management view');
 });
 
-test('the stage header and footer both draw the project label', () => {
+test('the stage header and footer both draw the family way back with the program title', () => {
   // The header draws the family's one way back (`familyBackLink`, ADR-140): the place, then the program's title.
   const header = code('components/StageHeader.tsx');
   expect(header).toContain('familyBackLink(');
   expect(header).toContain('data-stage-back-project=""');
   expect(header).toContain('useShellProjectName(');
-  // The footer keeps the project's workspace label.
+  // The footer draws the same family way back as the header: the place, then the program's title.
   const footer = code('components/StageFooter.tsx');
-  expect(footer).toContain('<StageBackText');
+  expect(footer).toContain('familyBackLink(');
+  expect(footer).toContain('data-stage-back-project=""');
   expect(footer).toContain('useShellProjectName(');
-  expect(read('components/StageBackText.tsx')).toContain('stageBackLabel(');
+  expect(footer).not.toContain('StageBackText');
 });
 
 test('every way back to the list says "My workspace"', () => {

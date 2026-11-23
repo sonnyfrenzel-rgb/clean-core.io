@@ -14,7 +14,7 @@ import { CC_BUTTON_BASE, CC_BUTTON_DENSITY_CLASSES, CC_BUTTON_VARIANT_CLASSES } 
  * Two forms of one link:
  *
  *   - **in the header** (the slot): where the page's own way back stands — the
- *     stage header puts it in place of "Back to project workspace" while the
+ *     stage header puts it in place of the family way back while the
  *     address carries an origin. It is the link, always there.
  *   - **a pill** at the bottom left, on a phone only, and only while the header
  *     link is out of view: a reader who scrolled down to the choice and made it
@@ -26,7 +26,7 @@ import { CC_BUTTON_BASE, CC_BUTTON_DENSITY_CLASSES, CC_BUTTON_VARIANT_CLASSES } 
  * stored; the origin is the address bar's, as the view and the layer are (ADR-018).
  */
 
-/** " · " with no-break spaces, as in `StageBackText`. */
+/** " · " with no-break spaces, so a flex item does not swallow them. */
 const SEP = ' · ';
 /** The pill's distance from the edges, and the room it keeps above a sticky bar. */
 const GAP = 16;

@@ -87,10 +87,11 @@ test.describe('(1) a project link signed out goes to sign-in and back; without a
     expect(frame).toContain('}, [signedIn, projectId, uid]);');
     expect(frame).toContain('access.projectId === projectId && access.uid === uid');
     expect(frame).toMatch(/if \(signedIn === true && uid === null\) \{\s*return <div data-project-gate="signed-out"/);
+    // The workspace page is a redirect into Analyze since 3.5.0 (AB-11): it reads nothing, so it has nothing to refuse;
+    // the frame above answers a missing project, and the page it lands on reads with the same frame around it.
     const page = read('app/(app)/project/[projectId]/page.tsx');
-    expect(page).toContain('if (profileLoading || (!enabled && !getAuth().currentUser)) {');
-    const missing = page.slice(page.indexOf("if (state === 'missing')"));
-    expect(missing.slice(0, missing.indexOf('}'))).toContain('return <ProjectNoAccess />;');
+    expect(page).toContain('workspaceRedirectHref(');
+    expect(page).not.toMatch(/await loadProjectAndHydrate|getDoc\(/);
     const noAccess = read('components/ProjectNoAccess.tsx');
     expect(noAccess).toContain('{NO_ACCESS_SENTENCE}');
     expect(noAccess).toContain('href="/dashboard"');
@@ -139,7 +140,8 @@ test.describe('(13) an invited reader sees one strip, on the workspace and on ev
     ]) {
       expect(read(rel), `${rel} still repeats the strip as a note`).not.toContain('<OwnerOnlyNote');
     }
-    for (const rel of ['components/process-map/ProcessMap.tsx', 'components/ArchitectSignOff.tsx', 'components/design/DesignCanvasStage.tsx', 'components/documentation/BusinessLayer.tsx']) {
+    // Documentation has no input of its own since 3.5.0 (Documentation v2), so its business layer has no owner-only control.
+    for (const rel of ['components/process-map/ProcessMap.tsx', 'components/ArchitectSignOff.tsx', 'components/design/DesignCanvasStage.tsx']) {
       expect(read(rel), `${rel} lost the note beside its control`).toContain('<OwnerOnlyNote');
     }
   });

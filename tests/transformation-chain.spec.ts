@@ -152,7 +152,7 @@ test.describe('the chain', () => {
     expect(by('requirements').warn?.fix.href).toBe('/project/p1/design/requirements?view=business&origin=transformation.tips#spec-s3');
     // No decision on record: said, with the place to record it.
     expect(by('decision-record')).toMatchObject({ state: 'missing', warn: { text: 'No decision recorded yet.' } });
-    expect(by('decision-record').warn?.fix.href).toBe('/project/p1?view=management&origin=transformation.tips#decision-options');
+    expect(by('decision-record').warn?.fix.href).toBe('/project/p1/redesign?view=management&origin=transformation.tips#decide');
   });
 
   test('says honestly what is loading, missing, unread or out of date', () => {
@@ -239,7 +239,7 @@ test.describe('the tips', () => {
     expect(nfr.title).toBe('Accept the proposed non-functional requirement');
     expect(nfr.link.href).toBe('/project/p1/design/requirements?view=business&origin=transformation.tips#spec-s4');
     expect(target.link.href).toBe('/project/p1/design?view=business&origin=transformation.tips#architect-sign-off');
-    expect(decision.link.href).toBe('/project/p1?view=management&origin=transformation.tips#decision-options');
+    expect(decision.link.href).toBe('/project/p1/redesign?view=management&origin=transformation.tips#decide');
   });
 
   test('no specification: one tip to start it — and nothing open is an empty list', () => {
@@ -384,7 +384,7 @@ test.describe('the decision warning above the tips (owner 12.10.2026: no rebuild
       option: 'retire',
       recordId: 'DEC-7',
       text: 'The decision on record is to retire this program — generating a rebuild goes against it.',
-      link: { label: 'Open the decision', href: '/project/p1?view=management&origin=transformation.tips#decision-card' },
+      link: { label: 'Open the decision', href: '/project/p1/redesign?view=management&origin=transformation.tips#decide' },
     });
     expect(warn(recorded('do-nothing · Keep as is'))).toMatchObject({ kind: 'against-decision', option: 'keep' });
     expect(warn(recorded('standard · Move to SAP standard'))).toMatchObject({ kind: 'against-decision', option: 'standard', text: 'The decision on record is to move to SAP standard — generating a rebuild goes against it.' });
@@ -399,7 +399,7 @@ test.describe('the decision warning above the tips (owner 12.10.2026: no rebuild
     const expected = {
       kind: 'standard-fit-open',
       text: 'SAP standard has not been weighed against a rebuild yet — decide Keep, Rebuild, Move to SAP standard or Retire first.',
-      link: { label: 'Decide in Management', href: '/project/p1?view=management&origin=transformation.tips#decision-card' },
+      link: { label: 'Decide in Management', href: '/project/p1/redesign?view=management&origin=transformation.tips#decide' },
     };
     expect(warn(undefined)).toEqual(expected);
     expect(warn(recorded(null))).toEqual(expected);

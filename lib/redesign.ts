@@ -19,6 +19,11 @@ import { inToolOrder, type PhaseKey, type PhaseState, type RailStep } from './wo
 /** The route segment under `/project/{id}/`. */
 export const REDESIGN_SEGMENT = 'redesign';
 
+/** The demo's Re-design page (`app/(app)/demo/redesign/page.tsx`), or `…#decide`. The demo has no project id. */
+export function demoRedesignHref(hash?: 'decide'): string {
+  return hash ? `/demo/${REDESIGN_SEGMENT}#decide` : `/demo/${REDESIGN_SEGMENT}`;
+}
+
 /** The decision step's element id on the Re-design page — `…/redesign#decide`. */
 export const REDESIGN_DECIDE_ID = 'decide';
 

@@ -217,16 +217,6 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     namedInPolicy: true,
   },
   {
-    key: 'cc:design-skip-questions:',
-    match: 'prefix',
-    area: 'session',
-    holds: '"1" per project',
-    purpose: 'after "Skip questions" in Design a reload in the same tab does not ask again',
-    lifetime: 'until the tab is closed',
-    writtenFor: 'signed-in',
-    namedInPolicy: true,
-  },
-  {
     key: 'cc_chunk_reload_at',
     match: 'exact',
     area: 'session',

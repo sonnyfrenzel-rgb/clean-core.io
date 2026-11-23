@@ -99,7 +99,8 @@ import PageAnchorBar from '@/components/PageAnchorBar';
 import CcLinkButton from '@/components/cc/LinkButton';
 import OwnerOnlyNote from '@/components/OwnerOnlyNote';
 import DesignConfirmTarget from '@/components/design/DesignConfirmTarget';
-import EconomicsRangeSlot from '@/components/design/EconomicsRangeSlot';
+import EconomicsGuardRail from '@/components/economics/EconomicsGuardRail';
+import { economicsGuardRail, type GuardRailProject } from '@/lib/economics-guard-rail';
 import {
   DesignCard,
   DesignChecklist,
@@ -119,7 +120,6 @@ import { DECISION_OPTION_MEANINGS } from '@/lib/decision-options';
 import { standardTouch } from '@/lib/standard-touch';
 import {
   NO_DESIGN_DECISION,
-  OUTSIDE_PRICED_HEADLINE,
   designAnchors,
   designDecisionOf,
   designDependencies,
@@ -1401,22 +1401,14 @@ ${DESIGN_ANSWER_REMINDER}`;
   const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const phaseCount = board.phases.length;
 
-  // The guard rail (G3): outside what Economics priced, said once, with the way to re-price. Never an amount.
-  const outsideStrip = outside ? (
-    <div className="mt-6" data-design-outside="">
-      <CcMessageStrip
-        state="warning"
-        headline={OUTSIDE_PRICED_HEADLINE}
-        actions={
-          <CcLinkButton href={economicsHref} variant="secondary">
-            Re-price in Economics
-          </CcLinkButton>
-        }
-      >
-        <EconomicsRangeSlot costLine={decision.costLine} economicsHref={null} />
-      </CcMessageStrip>
+  // The guard rail (G3, ECO-N5): Economics' priced range for the decided option, read through Economics' own read
+  // side (`lib/economics-guard-rail.ts`). Design computes no amount; `outside` is Design's own reading of its plan.
+  const rail = economicsGuardRail(project as GuardRailProject | null);
+  const guardRail = (
+    <div className="mt-6" data-design-outside={outside ? '' : undefined}>
+      <EconomicsGuardRail rail={rail} economicsHref={economicsHref} managementHref={managementHref} outside={outside} />
     </div>
-  ) : null;
+  );
 
   // Where the design is written: under the business questions (G6). Without a design the stage's
   // reason or its one action ("Generate the design", the gate unchanged); with one, the line that says so.
@@ -1462,7 +1454,7 @@ ${DESIGN_ANSWER_REMINDER}`;
     id: 'decision',
     label: 'Decision and cost',
     value: decision.label ? `${decision.label}${outside ? ' · out of date' : decision.confirmed ? ' · confirmed' : ''}` : 'Not taken yet',
-    note: <EconomicsRangeSlot costLine={decision.costLine} economicsHref={economicsHref} />,
+    note: rail.sentence,
   };
 
   if (view === 'business') {
@@ -1823,7 +1815,7 @@ ${DESIGN_ANSWER_REMINDER}`;
             className="mt-6"
           />
 
-          {outsideStrip}
+          {guardRail}
 
           {/* ---------------- Business ---------------- */}
           {view === 'business' && dcase !== 'keep' ? (

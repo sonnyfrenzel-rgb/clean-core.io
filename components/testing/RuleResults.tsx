@@ -15,7 +15,7 @@ import type { ElementState } from '@/lib/process-states';
  * Pure presentation: the page reads verdicts, assessments and results from the receipt, this session's run or the
  * result from your SAP system, and hands rows over. Nothing here decides a verdict.
  */
-export type CaseResult = 'passed' | 'failed' | 'not-run' | 'no-verdict';
+export type CaseResult = 'held' | 'failed' | 'not-run' | 'no-verdict';
 
 export interface RuleCaseRow {
   id: string;
@@ -46,15 +46,15 @@ const DECISION_WORD: Readonly<Record<ElementState, string>> = {
 };
 
 const RESULT_WORD: Readonly<Record<CaseResult, string>> = {
-  passed: 'Passed',
+  held: 'As expected',
   failed: 'Failed',
   'not-run': 'Not run',
-  'no-verdict': 'No verdict',
+  'no-verdict': 'Not determined',
 };
 
 function ResultWord({ result, children }: { result: CaseResult; children?: React.ReactNode }) {
   // No green for a test result (DESIGN.md §1.8): a pass is `information`, never "proven".
-  const state = result === 'passed' ? 'information' : result === 'failed' ? 'error' : 'neutral';
+  const state = result === 'held' ? 'information' : result === 'failed' ? 'error' : 'neutral';
   return (
     <CcStateText state={state} hollow={result === 'not-run' || result === 'no-verdict'}>
       {children ?? RESULT_WORD[result]}
@@ -64,12 +64,12 @@ function ResultWord({ result, children }: { result: CaseResult; children?: React
 
 function ruleSummary(row: RuleRow): { word: React.ReactNode; failed: number } {
   const failed = row.cases.filter((c) => c.result === 'failed').length;
-  const passed = row.cases.filter((c) => c.result === 'passed').length;
+  const passed = row.cases.filter((c) => c.result === 'held').length;
   const notRun = row.cases.length - failed - passed;
   if (row.cases.length === 0) return { word: <CcStateText state="warning" hollow>No case</CcStateText>, failed: 0 };
   const parts: React.ReactNode[] = [];
   if (failed > 0) parts.push(<ResultWord key="f" result="failed">{`${failed} failed`}</ResultWord>);
-  if (passed > 0) parts.push(<ResultWord key="p" result="passed">{`${passed} passed`}</ResultWord>);
+  if (passed > 0) parts.push(<ResultWord key="p" result="held">{`${passed} as expected`}</ResultWord>);
   if (notRun > 0) parts.push(<ResultWord key="n" result="not-run">{`${notRun} not run`}</ResultWord>);
   return { word: <span className="inline-flex flex-wrap gap-1">{parts}</span>, failed };
 }

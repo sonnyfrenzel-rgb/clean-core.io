@@ -226,9 +226,12 @@ test.describe('the record, STATUS.md and TRACE.md say who decided', () => {
     const serverOnly = { ...record, engine: { ...record.engine!, checks: [{ kind: 'abaplint', total: 3, failed: 0 }], notRun: [{ kind: 'abaplint-syntax', reason: 'not run here' }] } };
     expect(howBuiltLines({ ...serverOnly, contextDigest: null }).join('\n')).not.toContain(PAGE_REPORTED_NOTE);
 
-    // The Built-on card under the Transformation tool says the same.
+    // On the Transformation tool the checks stand in the page's one Checks table (mock-up T4), each row saying who ran
+    // it: the browser's reported checks say so, and only the server's rows name the server.
+    const table = readFileSync(path.join(__dirname, '..', 'lib', 'transformation', 'checks-table.ts'), 'utf8');
+    expect(table).toContain("const BROWSER_GEN = 'This browser, during the generation';");
+    expect(table).toMatch(/key: 'guards',[\s\S]{0,80}who: BROWSER_GEN/);
     const card = readFileSync(path.join(__dirname, '..', 'components', 'transformation', 'BuiltOnCard.tsx'), 'utf8');
-    expect(card).toContain("const pageNote = hasPageReportedChecks(e) ? ` ${PAGE_REPORTED_NOTE}` : '';");
-    expect(card).toMatch(/\$\{engineNote\}\$\{pageNote\}/);
+    expect(card, 'the Built-on card lists checks again beside the table').not.toContain('PAGE_REPORTED_NOTE');
   });
 });

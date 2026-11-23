@@ -394,8 +394,8 @@ test.describe('"Back to workspace" leads to the view and layer the stage was ope
     // copy of it, and neither reads the profile to make it.
     for (const rel of ['components/StageHeader.tsx', 'components/StageFooter.tsx']) {
       const src = fs.readFileSync(path.join(process.cwd(), rel), 'utf8');
-      // The header adds the demo's flag (its stages lead back to /demo/workspace).
-      expect(src, rel).toMatch(/const back = stageBackLink\(\{ projectId, search(, demo)? \}\);/);
+      // Both draw the family's one way back (ADR-140); the header adds the demo's flag.
+      expect(src, rel).toMatch(/familyBackLink\(\{ projectId, search(, demo)?, toMyWorkspace/);
       expect(src, rel).not.toContain('workspaceBackHref(');
       expect(src, `${rel} decides the way back by account`).not.toContain('useUserProfile');
       expect(src, `${rel} still knows a dashboard way back`).not.toContain("'/dashboard'");
@@ -425,8 +425,8 @@ test.describe('"Back to workspace" leads to the view and layer the stage was ope
     // The demo has no workspace to return to, and an unknown view is dropped.
     expect(stageHref({ base: '/demo', path: 'tco' })).toBe('/demo/tco');
     expect(stageHref({ base: '/project/p-1', path: 'tco', view: 'admin', from: WORKSPACE_RETURN.tools })).toBe('/project/p-1/tco');
-    // And the three components build their links through it, not by hand.
-    for (const rel of ['ToolBar', 'StatusLine', 'NextStepCard']) {
+    // And the two components build their links through it, not by hand.
+    for (const rel of ['ToolBar', 'StatusLine']) {
       const src = fs.readFileSync(path.join(process.cwd(), `components/workspace/${rel}.tsx`), 'utf8');
       expect(src, `${rel} builds its stage link by hand`).toMatch(/href=\{stageHref\(\{/);
     }

@@ -3,6 +3,7 @@ import { PHASE_KEYS, PHASES, staleness, workflowSteps, nextPhaseKey, toolOnRecor
 import { DECISION_OPTION_LABELS, optionOfArchitecture, type DecisionOption } from '@/lib/decision-options';
 import { wsContinue, wsDeliveredOn, wsNotNeeded, wt } from '@/lib/workspace-messages';
 import { ATTENTION_LABEL } from '@/lib/home-status';
+import { REDESIGN_DECIDE_ID, REDESIGN_LABEL, REDESIGN_SEGMENT } from '@/lib/redesign';
 import { countSourceLines } from '@/lib/source-lines';
 import { summaryOf } from '@/lib/project-summary';
 import { isoDate } from '@/lib/workspace-rows';
@@ -263,6 +264,13 @@ export function programNextLink(tile: Pick<ProgramTile, 'analyse' | 'redesign'>)
       : next.kind === 'open-delivery' && r.kind === 'delivered'
         ? wsDeliveredOn(r.on)
         : null;
+  // Owner decision 23.11.2026: the way on after Analyze leads through Re-design, as the tiles' does — never straight
+  // into a tool. Analyze's own steps and the signed delivery keep their tool.
+  const viaRedesign = next.kind === 'start-redesign' || next.kind === 'continue' || next.kind === 'open-decision';
+  if (viaRedesign) {
+    const path = next.kind === 'open-decision' ? `${REDESIGN_SEGMENT}#${REDESIGN_DECIDE_ID}` : REDESIGN_SEGMENT;
+    return { label: programNextLabel(next), tool: REDESIGN_LABEL, path, run: false, note };
+  }
   return { label: programNextLabel(next), tool: TOOL_LABEL[next.key], path: next.key, run: next.run, note };
 }
 

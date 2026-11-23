@@ -149,7 +149,7 @@ export interface BpmnExport {
 }
 
 /**
- * The engine a reading is drawn for (3.5.0, carried from the 3.1.0 QA review): the run's (`exporterVersion`); `null`, a
+ * The engine a reading is drawn for (since 3.5.0): the run's (`exporterVersion`); `null`, a
  * run signed before the engine stamp existed, reads as the oldest engine, as `engineVersionOfProject` says and every
  * gate reads it; absent, this release. Before, `null` fell back to this release, so the map and the file of an
  * unstamped run were drawn by an engine that never signed it.

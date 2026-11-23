@@ -163,7 +163,7 @@ export function createNonce(): string {
  * is cached and served to everyone.
  */
 const NONCE_ROUTES: readonly RegExp[] = [
-  /^\/project\/[^/]+(?:\/(?:analyze|delivery|design|documentation|tco|testing|transformation))?\/?$/,
+  /^\/project\/[^/]+(?:\/(?:analyze|delivery|design|documentation|redesign|tco|testing|transformation))?\/?$/,
   // The requirements workspace under Design (ADR-078, 04.10.2026).
   /^\/project\/[^/]+\/design\/requirements\/?$/,
   /^\/invitation\/[^/]+\/[^/]+\/?$/,

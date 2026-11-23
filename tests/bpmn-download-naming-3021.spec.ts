@@ -132,7 +132,6 @@ test.describe('BPMN download: model names marked from the stored receipt', () =>
     expect(handler).toMatch(/\bnaming\b/);
     // Workspace export, Delivery and the fit-check workshop file offer the technical file: no naming.
     for (const file of [
-      'components/workspace/HeadActions.tsx',
       'app/(app)/project/[projectId]/delivery/page.tsx',
       'components/workspace/FitCheckPanel.tsx',
     ]) {
@@ -140,7 +139,7 @@ test.describe('BPMN download: model names marked from the stored receipt', () =>
       expect(text, file).toContain('buildBpmnExportFromSource(');
       expect(text, file).not.toMatch(/fetchProcessNaming|\bnaming\b\s*[,}:]/);
     }
-    for (const file of ['components/workspace/HeadActions.tsx', 'app/(app)/project/[projectId]/delivery/page.tsx', 'components/workspace/FitCheckPanel.tsx', 'app/(app)/project/[projectId]/documentation/page.tsx']) {
+    for (const file of ['app/(app)/project/[projectId]/delivery/page.tsx', 'components/workspace/FitCheckPanel.tsx', 'app/(app)/project/[projectId]/documentation/page.tsx']) {
       expect(read(file), file).not.toMatch(/ai_provider|ai_model|aiNames/);
     }
   });

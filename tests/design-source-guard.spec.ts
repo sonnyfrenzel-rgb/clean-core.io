@@ -86,7 +86,7 @@ test.describe('design source guard (DESIGN.md, app-wide, zero)', () => {
     const probe = (rel: string, source: string) => countHits(scanFile(rel, source));
 
     // 10 px in a workspace component that is clean on disk.
-    const nextStep = 'components/workspace/NextStepCard.tsx';
+    const nextStep = 'components/workspace/ToolBar.tsx';
     const original = fs.readFileSync(path.join(REPO_ROOT, nextStep), 'utf8');
     expect(counts.get(nextStep)?.R1 ?? 0).toBe(0);
     const worse = original.replace(/className="/, 'className="text-[10px] ');
@@ -205,7 +205,7 @@ test.describe('design source guard (DESIGN.md, app-wide, zero)', () => {
     expect(isPublicFile('app/page.tsx')).toBe(true);
     expect(isPublicFile('app/datenschutz/de/page.tsx')).toBe(true);
     expect(isWorkspaceFile('app/(app)/project/[projectId]/analyze/page.tsx')).toBe(true);
-    expect(isWorkspaceFile('components/workspace/NextStepCard.tsx')).toBe(true);
+    expect(isWorkspaceFile('components/workspace/ToolBar.tsx')).toBe(true);
     expect(isWorkspaceFile('lib/export-style.ts')).toBe(false);
     const big = '<div className="rounded-3xl shadow-2xl">x</div>';
     expect(scanFile('app/page.tsx', big).map((h) => h.rule)).toEqual([]);

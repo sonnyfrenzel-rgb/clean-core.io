@@ -158,7 +158,7 @@ test('four columns, the new status words, and dates as "6 Nov 2026"', async ({ p
   // "Re-design this program" here as on its tile, never "Nothing open". The newest ten (21–30) are staged or changed;
   // the unchanged analysed ones (3–15) are behind "Show all".
   await page.locator('[data-workspace-show-all]').click();
-  await expect(page.locator('#home-panel-mine [data-home-next="design"]').first()).toContainText('Re-design this program');
+  await expect(page.locator('#home-panel-mine [data-home-next="redesign"]').first()).toContainText('Re-design this program');
   await expect(page.locator('#home-panel-mine [data-home-next="none"]')).toHaveCount(0);
   // 3.3.0: the head is the tiles' head in both modes — the next analysis starts from "Analyse another Z program".
   await expect(page.locator('[data-ws-analyse-another]')).toBeVisible();

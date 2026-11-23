@@ -64,7 +64,7 @@ function enforcedCsp(useEmulator) {
  */
 export const NONCE_ROUTE_SOURCES = [
   '/project/:projectId',
-  '/project/:projectId/:stage(analyze|delivery|design|documentation|tco|testing|transformation)',
+  '/project/:projectId/:stage(analyze|delivery|design|documentation|redesign|tco|testing|transformation)',
   '/project/:projectId/design/requirements',
   '/invitation/:projectId/:invitationId',
   '/auth/action',

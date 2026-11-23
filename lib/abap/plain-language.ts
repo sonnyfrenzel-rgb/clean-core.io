@@ -2630,7 +2630,7 @@ export interface PlainLabels {
   comment?(nodeId: string): AuthorComment | null;
   /**
    * The customer texts this node's label was built from, by their codes (`WERKS`, `ZZSTATUS = A`), recorded where the
-   * word was used (3.5.0, carried from the 3.1.0 QA review). A surface that marks a sentence built from labels credits
+   * word was used (since 3.5.0). A surface that marks a sentence built from labels credits
    * only these (`customerTextProvenance`, `used`), so a one-word customer text is not credited to a longer phrase the
    * engine took from elsewhere. Empty without customer texts or an older engine.
    */

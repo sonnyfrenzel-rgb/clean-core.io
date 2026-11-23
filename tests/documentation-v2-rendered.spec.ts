@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './helpers/test';
 
 /**
  * ADR-127 in a browser, on the public demo (`/demo/documentation`, no account): the one page in the order of the Word

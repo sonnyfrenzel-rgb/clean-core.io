@@ -148,7 +148,7 @@ agree with the contract.
 | `RC-transformation-generated-not-tested` | Transformation | "Generated — not compiled or tested"; Delivery drops to "Review only" |
 | `RC-documentation-blocked-by-stale-code` | Documentation | the blueprint refuses to describe code built for a previous source, and says so on screen |
 | `RC-testing-draft` | Testing | generated cases with no verdict are a draft in every view; Delivery says "tests not run" |
-| `RC-tco-model-estimate` | Economics | nothing priced yet (the id is historical; ADR-128 removed the model estimate) — never `done` |
+| `RC-tco-model-estimate` | Economics | nothing priced yet (the id is historical; ADR-128 removed the estimate the model wrote) — never `done` |
 | `RC-delivery-blocked-source-changed` | Delivery | the source moved: all seven phases `stale`, both downloads disabled |
 
 No reference case triggers a model call, so the whole set runs against the

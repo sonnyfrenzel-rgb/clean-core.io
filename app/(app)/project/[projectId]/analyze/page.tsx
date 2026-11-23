@@ -1970,7 +1970,7 @@ function AnalyzeScorePage() {
               strip above says the read failed; the report waits for it. */}
           {evidenceUnread ? null : renderAnalysisContent()}
 
-          <StageFooter />
+          <StageFooter toMyWorkspace />
         </div>
       )}
 

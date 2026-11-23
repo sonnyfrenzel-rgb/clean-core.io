@@ -40,6 +40,7 @@ export const PUBLIC_SHELL_ROUTES: readonly string[] = [
   '/demo/[stage]',
   '/demo/[stage]/requirements',
   '/demo/analyze',
+  '/demo/redesign',
   '/demo/workspace',
   '/first-run',
   '/how-it-works',

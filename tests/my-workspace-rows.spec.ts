@@ -243,8 +243,8 @@ test.describe('a row a business reader understands — lib/project-progress.ts (
     expect(a.stage).toBe('in-progress');
     expect(a.sentence).toBe('Analysed — in progress.');
     expect(a.tone).toBe('moving');
-    // Analyze is done and the design is not confirmed: step 2 is where it is.
-    expect(a.stepLabel).toBe('Step 2 of 7');
+    // Analyze is done and the design is not confirmed: Design is step 3 in the tool order (after Economics, ADR-128 (5)).
+    expect(a.stepLabel).toBe('Step 3 of 7');
     expect(a.next).toEqual({ label: 'Confirm the design', path: 'design' });
     for (const p of [s, e, a]) expect(p.sentence).not.toMatch(/of 7 steps/);
   });

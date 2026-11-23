@@ -122,7 +122,8 @@ test.describe('the way back names the view and the layer', () => {
       expect(fs.existsSync(path.resolve(ROOT, gone)), `${gone} came back`).toBe(false);
     }
     const footer = read('components/StageFooter.tsx');
-    expect(footer).toContain('export default function StageFooter() {');
+    expect(footer).toContain('export default function StageFooter(');
+    expect(footer, 'the footer draws its own way back instead of the family one').toContain('familyBackLink(');
     expect(footer, 'the footer offers a way forward again').not.toMatch(/proceedPath|proceedLabel|Proceed to|Continue to/);
     for (const st of STAGES) {
       const src = read(`app/(app)/project/[projectId]/${st}/page.tsx`);

@@ -23,8 +23,8 @@ import CcButton from '@/components/cc/Button';
 /** Where the own-code start lives today — the file goes there, preset (H-O11). */
 export const OWN_CODE_START_ROUTE = '/admin/new-project/upload';
 
-/** Where "What happens to your code?" leads: the landing's trust section. */
-export const CODE_SAFETY_HREF = '/#trust';
+/** Where "What happens to your code?" leads: the landing's section on evidence and your code (one section since 23.11.2026). */
+export const CODE_SAFETY_HREF = '/#evidence';
 
 const LINK =
   'inline-flex items-center gap-1 text-[13px] font-semibold whitespace-nowrap text-cc-ink underline decoration-cc-field-border underline-offset-[3px] hover:decoration-current focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cc-focus';

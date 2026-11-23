@@ -129,7 +129,7 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
   );
 
   const texts = engineReads310Apply(input.engineVersion === undefined ? APP_VERSION : input.engineVersion) && input.customerTexts ? input.customerTexts : null;
-  // 3.5.0 (carried from the 3.1.0 QA review): a step credits only the customer texts its plain name was built from,
+  // Since 3.5.0 a step credits only the customer texts its plain name was built from,
   // recorded where each word was used (`PlainLabels.customerUses`), not every text its words happen to contain.
   const labels = texts
     ? plainLabels(skeleton, source, { engineVersion: input.engineVersion === undefined ? APP_VERSION : input.engineVersion, customerTexts: texts })

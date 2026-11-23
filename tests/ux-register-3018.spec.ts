@@ -143,7 +143,8 @@ test('UX-136, UX-158: Invite on a dashboard row carries its name', () => {
 
 test('UX-155, UX-159: the workspace loading gate is visible, not only spoken', () => {
   const src = code('app/(app)/project/[projectId]/page.tsx');
-  expect(src.match(/<WorkspaceLoading \/>/g) ?? []).toHaveLength(2);
+  // One gate since 3.5.0: the page only redirects into Analyze (AB-11), and shows the gate while it does.
+  expect(src.match(/<WorkspaceLoading \/>/g) ?? []).toHaveLength(1);
   expect(src).toContain("import WorkspaceLoading from '@/components/workspace/WorkspaceLoading';");
   const gate = code('components/workspace/WorkspaceLoading.tsx');
   expect(gate).toContain('role="status"');

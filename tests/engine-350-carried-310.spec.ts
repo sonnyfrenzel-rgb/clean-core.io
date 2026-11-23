@@ -65,7 +65,6 @@ START-OF-SELECTION.
     expect(read('hooks/useAutoProcessNaming.ts')).not.toMatch(/engineVersion \? \{/);
     expect(read('lib/project-summary-server.ts')).toMatch(/exporterVersion: input\.engineVersion,/);
     for (const file of [
-      'components/workspace/HeadActions.tsx',
       'components/workspace/FitCheckPanel.tsx',
       'app/(app)/project/[projectId]/delivery/page.tsx',
       'app/(app)/project/[projectId]/documentation/page.tsx',

@@ -369,7 +369,9 @@ its Level and released successor from the catalog), the requirements card. *Mana
 off?", the checklist before sign-off, *Confirm target* as the one primary action, the four options with the decided
 one. The Canvas | List switch is gone. Keep, Move to SAP standard and Retire show their own content (nothing is built;
 Retire names what the analysis read beside what it could not read). A declared route deviation or an out-of-date
-decision shows "outside what Economics priced. Re-price it."; Design shows no amount. The design is still written only
+decision shows "Outside the priced range: re-price it in Economics." in Economics' own guard rail
+(`components/economics/EconomicsGuardRail.tsx`: the decision and the range Economics priced for it); Design shows no
+amount. The design is still written only
 on the owner's click.
 
 On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
