@@ -23,6 +23,7 @@ import { useAccountPage, useAuthWanted } from '@/hooks/useAuthWanted';
 import GlossaryChatbot from '@/components/GlossaryChatbot';
 import SapTrademarkNotice from '@/components/SapTrademarkNotice';
 import SiteFooter from '@/components/SiteFooter';
+import { LIST_WIDTH_CLASS, SHELL_WIDTH_CLASS, TOOL_WIDTH_CLASS } from '@/lib/family-frame';
 import { END_CONTRACT_FOOTER_CLASS, END_CONTRACT_HREF, END_CONTRACT_LABEL, END_CONTRACT_LABEL_DE } from '@/lib/contract-withdrawal';
 import { APP_VERSION } from '@/lib/version';
 import UserOnboarding from '@/components/UserOnboarding';
@@ -261,7 +262,9 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           assistant, Help and the account menu on the right. White surface and a
           1 px rule — no blur, no shadow, no green hover (ADR-007). */}
       <header className="cc-no-print sticky top-0 z-cc-sticky border-b border-cc-line bg-cc-surface">
-        <div className={cn('mx-auto flex h-14 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8', isWidePage ? 'max-w-screen-2xl' : 'max-w-7xl')}>
+        {/* One shell width on every page (ADR-140 W1, UX review Q9): the logo, the path and the account menu stand in
+            the same place on a list and on a tool; only the content below keeps the reading width of a list. */}
+        <div className={cn('mx-auto flex h-14 items-center gap-3 px-4 sm:gap-5 sm:px-6 lg:px-8', SHELL_WIDTH_CLASS)}>
           {/* Home means the dashboard for someone signed in and the landing page
               for everyone else. The same shell serves both, and a hard link to
               /dashboard was a dead end for a visitor who arrived on /knowledge
@@ -501,8 +504,10 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
       <TermsReacceptGate />
 
       <main id="main-content" tabIndex={-1} className={cn(
-          'flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-32',
-          isWidePage ? 'max-w-screen-2xl' : 'max-w-7xl',
+          'flex-1 w-full mx-auto px-4 sm:px-6 lg:px-8 pb-32',
+          // A tool opens with its frame 16 px under the shell bar, as the family mock-ups draw it; other pages keep 40.
+          isStagePage ? 'pt-4' : 'pt-10',
+          isWidePage ? TOOL_WIDTH_CLASS : LIST_WIDTH_CLASS,
         )}
       >
         {/* A tab left open across a deploy says so when it comes back into view, and waits for the reader's click (roadmap 3.0.21 (8)). */}
@@ -529,8 +534,9 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
           middle of a seven-stage flow. The legally required links stay, and the
           complete footer keeps its place on every other page. */}
       {isAppPage ? (
-        <footer className="cc-no-print border-t border-cc-line bg-cc-surface">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] font-medium text-cc-ink-muted">
+        // The slim footer (UX review Q9): one line at the shell's width, 12 px above and below.
+        <footer className="cc-no-print border-t border-cc-line bg-cc-surface" data-app-footer="slim">
+          <div className={cn('mx-auto flex flex-wrap items-center justify-center gap-x-5 gap-y-1 px-4 py-3 sm:px-6 lg:px-8 text-[12px] font-semibold text-cc-ink-muted', SHELL_WIDTH_CLASS)}>
             <Link href="/impressum" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Legal Notice</Link>
             <Link href="/datenschutz" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Privacy Policy</Link>
             <Link href="/terms" className="text-cc-ink-muted hover:text-cc-ink hover:underline">Terms</Link>

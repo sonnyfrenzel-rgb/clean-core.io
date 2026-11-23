@@ -133,6 +133,46 @@ export function myWorkspaceHref(): string {
   return '/dashboard';
 }
 
+/**
+ * The one way back of the tools' family (mock-ups of 15.11.2026, ADR-140: "one back link"): a chevron, where it leads,
+ * and the program — `‹ My workspace · Emergency purchase approval`. The same form on every tool; only the place
+ * differs, by one rule:
+ *
+ *   - **My workspace** (the list of all projects) by default: a project opens in Analyze (ADR-109), so a tool reached
+ *     from there, or from a link without a workspace place, goes back to the list;
+ *   - **the place in the project's workspace** the tool was opened from, while that workspace still has views of its
+ *     own (IT and Management until AB-11/AB-12): the address carries `view=it|management`, a layer or a return point,
+ *     and the way back names it — `‹ IT view, Objects & dependencies · Emergency purchase approval`;
+ *   - **the demo's workspace** on a demo tool, by the same rule.
+ *
+ * A choice's way back (`?origin=`) stays `ChoiceBackLink`, one level deep. Pure.
+ */
+export function familyBackLink({
+  projectId,
+  search,
+  demo = false,
+  toMyWorkspace = false,
+}: {
+  projectId: string;
+  search: string;
+  demo?: boolean;
+  /** The caller knows it is the project's entry (Analyze, Business): always My workspace. */
+  toMyWorkspace?: boolean;
+}): { kind: 'none' } | { kind: 'link'; href: string; place: string; to: 'my-workspace' | 'workspace' | 'demo' } {
+  const back = stageBackLink({ projectId, search, demo });
+  if (back.kind === 'none') return back;
+  const params = new URLSearchParams(search);
+  const view = params.get('view');
+  const carriesPlace = view === 'it' || view === 'management' || !!layerParam(params.get('layer')) || !!params.get('from');
+  if (demo) {
+    return carriesPlace && !toMyWorkspace
+      ? { kind: 'link', href: back.href, place: stageBackPlace(search) ?? nav('nav.demoWorkspace'), to: 'demo' }
+      : { kind: 'link', href: demoWorkspaceBackHref(''), place: nav('nav.demoWorkspace'), to: 'demo' };
+  }
+  if (toMyWorkspace || !carriesPlace) return { kind: 'link', href: myWorkspaceHref(), place: nav('nav.myWorkspace'), to: 'my-workspace' };
+  return { kind: 'link', href: back.href, place: stageBackPlace(search) ?? nav('nav.myWorkspace'), to: 'workspace' };
+}
+
 /** The way back to the place that asked for a choice made on this stage — one level deep. */
 export interface StageOriginLink {
   key: OriginKey;

@@ -398,7 +398,7 @@ export default function AnalyzeBusiness({
       <CommandSearch projectId={projectId} project={project} reading={reading} />
       <StageHeader
         tools={{ steps, current: 'analyze' }}
-        projectName={project?.name}
+        project={project}
         stage="analyze"
         backToMyWorkspace
         toolsNote={softGateShown(progress) ? wt('abiz.softGate') : null}

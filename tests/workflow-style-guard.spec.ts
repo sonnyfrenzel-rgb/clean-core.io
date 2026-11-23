@@ -68,12 +68,12 @@ test.describe('one stage header, defined once', () => {
     expect(code, 'StageHeader writes a size, weight or ink of its own').not.toMatch(
       /\bfont-black\b|\btext-(?:[2-9]xl|gray-\d+|slate-\d+)\b|\bbg-green-/,
     );
-    // The way back, above the title (§2.3).
-    expect(header).toContain('StageBackText');
-    expect(read('lib/messages/navigation.ts')).toContain("'nav.backToProjectWorkspace': 'Back to project workspace'");
+    // The way back, above the title (§2.3) — the family's one form (ADR-140, `familyBackLink`).
+    expect(header).toContain('familyBackLink(');
+    expect(read('lib/messages/navigation.ts')).toContain("'nav.myWorkspace': 'My workspace'");
     expect(code.indexOf('data-stage-back')).toBeGreaterThan(-1);
     expect(code.indexOf('data-stage-back')).toBeLessThan(code.indexOf('data-stage-title'));
-    // The view the tool is read in, with the switch, on the row of the way back (ADR-105).
+    // The view the tool is read in, with the switch where the views differ, on the row of the way back (ADR-105, ADR-126).
     expect(code.indexOf('<StageViewSwitch')).toBeGreaterThan(code.indexOf('data-stage-back'));
     expect(code.indexOf('<StageViewSwitch')).toBeLessThan(code.indexOf('data-stage-title'));
     const sw = read('components/StageViewSwitch.tsx').replace(/\/\*[\s\S]*?\*\//g, '');
@@ -95,7 +95,7 @@ test.describe('one stage header, defined once', () => {
     const src = read('app/(app)/project/[projectId]/documentation/page.tsx');
     expect(src).toContain('<StageHeader stage="documentation"');
     expect(src).not.toContain('Process Blueprint &amp; Mapping');
-    expect(read('lib/workflow-steps.ts')).toContain("{ n: 4, key: 'documentation', label: 'Documentation' }");
+    expect(read('lib/workflow-steps.ts')).toContain("{ n: 5, key: 'documentation', label: 'Documentation' }");
   });
 });
 
@@ -339,8 +339,11 @@ test.describe('the "On this page" bar stands in the same place on every tool', (
         const targets = Array.from(bar.querySelectorAll('a[href^="#"]')).map((a) => (a.getAttribute('href') || '').slice(1));
         const missing = targets.filter((id) => !document.getElementById(id));
         const tops = targets.map((id) => document.getElementById(id)?.getBoundingClientRect().top ?? Infinity);
+        // ADR-126 (3): the strip reaches over the frame's gutter; its content box is the frame.
+        const padL = parseFloat(s.paddingLeft) || 0;
+        const padR = parseFloat(s.paddingRight) || 0;
         return {
-          left: b.left, width: b.width, frameLeft: f.left, frameWidth: f.width,
+          left: b.left + padL, width: b.width - padL - padR, frameLeft: f.left, frameWidth: f.width, height: b.height,
           position: s.position, top: s.top, text: bar.textContent || '', missing, targets,
           aboveAll: tops.every((top) => top >= b.bottom - 1),
         };
@@ -348,6 +351,7 @@ test.describe('the "On this page" bar stands in the same place on every tool', (
       if (Math.abs(m.left - m.frameLeft) > 1) offSpec.push(`${stage}: the bar starts at x=${m.left}, the frame at ${m.frameLeft}`);
       if (Math.abs(m.width - m.frameWidth) > 1) offSpec.push(`${stage}: the bar is ${m.width} px wide, the frame ${m.frameWidth}`);
       if (m.position !== 'sticky' || m.top !== '56px') offSpec.push(`${stage}: the bar is ${m.position} at ${m.top}, wants sticky at 56px`);
+      if (Math.abs(m.height - 48) > 1) offSpec.push(`${stage}: the bar is ${m.height} px high, wants the 48 px strip of ADR-126 (3)`);
       if (!m.text.includes('On this page')) offSpec.push(`${stage}: the bar does not say "On this page"`);
       if (m.missing.length) offSpec.push(`${stage}: the bar names sections that are not on the page: ${m.missing.join(', ')}`);
       if (!m.aboveAll) offSpec.push(`${stage}: the bar stands below a section it names`);
@@ -396,12 +400,12 @@ test.describe('"Back to workspace" leads to the view and layer the stage was ope
       expect(src, `${rel} decides the way back by account`).not.toContain('useUserProfile');
       expect(src, `${rel} still knows a dashboard way back`).not.toContain("'/dashboard'");
     }
-    // The one way back to My workspace (ADR-109): Analyze in the Business view is the project's entry, so its
-    // way back is the list of all projects — decided by the page's own prop, never by the account.
+    // The family's one way back (ADR-140, `familyBackLink`): My workspace by default and for the project's entry
+    // (Analyze, Business — ADR-109, the page's own prop), the workspace's place while the address carries one;
+    // decided by the address and the page, never by the account.
     const header = fs.readFileSync(path.join(process.cwd(), 'components/StageHeader.tsx'), 'utf8');
-    // The demo's Analyze, Business is where the demo opens (v3.1.0, O10): its way back is My workspace too.
-    expect(header).toContain('const toMyWorkspace = backToMyWorkspace;');
-    expect(header).toContain('href={toMyWorkspace ? myWorkspaceHref() : back.href}');
+    expect(header).toContain('familyBackLink({ projectId, search, demo, toMyWorkspace: backToMyWorkspace })');
+    expect(header).toContain('href={way.href}');
     expect(fs.readFileSync(path.join(process.cwd(), 'components/StageFooter.tsx'), 'utf8')).not.toContain('myWorkspaceHref');
   });
 

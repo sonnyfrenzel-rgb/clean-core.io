@@ -3,49 +3,50 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { nav } from '@/lib/messages/navigation';
-import { currentAnchorKey, type AnchorRect, type PageAnchor } from '@/lib/page-anchors';
+import { currentAnchorKey, PAGE_ANCHOR_MAX, type AnchorRect, type PageAnchor } from '@/lib/page-anchors';
 
 export type { PageAnchor } from '@/lib/page-anchors';
 
 /**
- * The in-page anchor bar — first IT's (ADR-086), then the Documentation
- * stage's chapter bar (owner review 10.10.2026: "like the IT view's anchor
- * bar"), and since ADR-091 the one bar of every tool that has one: Analyze,
- * Transformation, Documentation, Testing and Delivery, and their demo twins.
- * One component so they cannot drift apart; which sections each names, by
- * which id, is `lib/page-anchors.ts` (IT: `lib/it-sections.ts`; Documentation:
+ * "On this page" — one bar on every tool (ADR-126 (3), owner 15.11.2026: "die bekannte 'On this page' muss auf allen
+ * Tools gleich sein und besser lesbar sein"; before it ADR-086 and ADR-091). One component so no tool can draw its
+ * own; which sections each names, by which id, is `lib/page-anchors.ts` (IT: `lib/it-sections.ts`; Documentation:
  * the outline's chapters).
  *
- * It took the look of the workspace's layer bar (retired with 3.1.0, AB-11) so the views
- * and the tools share one navigation strip: a delimited surface with its
- * eyebrow ("On this page", the same words on every page — the component says
- * it, a page cannot), a muted track, and the section the reader is in
- * raised with an ink ring and `aria-current="location"`. Links, not tabs: each
- * is a jump, so the WAI-ARIA tabs pattern of the layer bar does not apply.
- * Where the reader is follows the scroll — the section the reading line runs
- * through, the main column's where two do — and a click marks its target at
- * once. Sticky under the shell bar; on a phone the row scrolls sideways inside
- * its track and the page does not.
+ * The spec, as the family mock-ups draw it (sizes from `DESIGN.md` §1.2):
  *
- * Where it stands is the same on every tool (ADR-091): under the stage's header
- * and the page's answer (facets, status line), before the first section, at
- * the frame's full width — and in an element that runs to the foot of the
- * page, so it stays in view to the last section it names.
- * `tests/page-anchor-guard.spec.ts` holds the ids and the place.
+ *   - a **48 px sticky white strip** under the shell bar, a rule and a soft shadow under it, reaching to the edges of
+ *     the page's frame (its gutter included), 24 px above and below;
+ *   - the label **"On this page"** in sentence case, 13 px / 600, muted — the component says it, a page cannot;
+ *   - the items **15 px in full ink**, 500, the current one 600 with a **3 px bar** under it in the brand ink
+ *     (`aria-current="location"`); a hover shows the bar faintly;
+ *   - **at most six items** (`PAGE_ANCHOR_MAX`), in page order; a bar handed more names the first six;
+ *   - **counts as quiet badges**: grey, amber only for open questions (`tone: 'open'`);
+ *   - **one optional primary action** at the right end (`action`), hidden on a phone;
+ *   - on a phone the label steps back and the items are **one horizontal row** that scrolls sideways, with a fade on
+ *     the edge where more items wait;
+ *   - a click jumps to the section and **moves the focus to its heading**, so a keyboard or screen-reader user goes
+ *     on reading there;
+ *   - **hidden when the page has only one section** (owner, 15.11.2026).
  *
- * `name` keeps each bar's own data attributes (`data-it-anchor`,
- * `data-doc-chapter`, `data-analyze-anchor`…) for the specs and the
- * screenshots that find it by them; `data-page-anchors` is on every bar.
- * `onJump` lets a page scroll instead of navigating, where the fragment is
- * taken by something else (the Documentation stage keeps the map's level in
- * the address).
+ * Where the reader is follows the scroll — the section the reading line runs through, the main column's where two
+ * do — and a click marks its target at once. Where it stands is the same on every tool (ADR-091): under the header
+ * and the answer, before the first section, in an element that runs to the foot of the page, so it stays in view to
+ * the last section it names. `tests/page-anchor-guard.spec.ts` holds the ids and the place, and
+ * `tests/workflow-style-guard.spec.ts` the rendered place.
+ *
+ * `name` keeps each bar's own data attributes (`data-it-anchor`, `data-doc-chapter`, `data-analyze-anchor`…) for the
+ * specs and the screenshots that find it by them; `data-page-anchors` is on every bar. `onJump` lets a page scroll
+ * instead of navigating, where the fragment is taken by something else (the Documentation stage keeps the map's
+ * level in the address).
  */
 export default function PageAnchorBar({
-  anchors,
+  anchors: given,
   label,
   name,
   plural,
   onJump,
+  action,
   className,
 }: {
   anchors: readonly PageAnchor[];
@@ -55,8 +56,11 @@ export default function PageAnchorBar({
   name: string;
   plural: string;
   onJump?: (event: React.MouseEvent<HTMLAnchorElement>, anchor: PageAnchor) => void;
+  /** The one primary action at the right end of the bar (a `CcButton`/`CcLinkButton`). */
+  action?: React.ReactNode;
   className?: string;
 }) {
+  const anchors = given.slice(0, PAGE_ANCHOR_MAX);
   const [current, setCurrent] = useState<string | null>(null);
   /** A section the reader jumped to stays marked until they scroll away from where the jump landed. */
   const pinned = useRef<{ key: string; at: number; y: number | null } | null>(null);
@@ -125,73 +129,125 @@ export default function PageAnchorBar({
     };
   }, [keys]);
 
-  if (anchors.length === 0) return null;
+  // Sideways overflow of the item row: a fade on the edge where more items wait (a phone, a long bar).
+  const rowRef = useRef<HTMLUListElement>(null);
+  const [edges, setEdges] = useState<{ start: boolean; end: boolean }>({ start: false, end: false });
+  useEffect(() => {
+    const row = rowRef.current;
+    if (!row || typeof window === 'undefined') return;
+    const read = () => {
+      const more = row.scrollWidth - row.clientWidth > 1;
+      setEdges({ start: more && row.scrollLeft > 1, end: more && row.scrollLeft + row.clientWidth < row.scrollWidth - 1 });
+    };
+    read();
+    row.addEventListener('scroll', read, { passive: true });
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(read);
+    observer?.observe(row);
+    return () => {
+      row.removeEventListener('scroll', read);
+      observer?.disconnect();
+    };
+  }, [keys]);
+
+  // One section is not a page to navigate (owner, 15.11.2026): no bar.
+  if (anchors.length < 2) return null;
+  // The fade is a utility of `app/globals.css` (`cc-fade-*`): no colour or gradient literal in a component.
+  const fade = edges.start && edges.end ? 'cc-fade-both' : edges.end ? 'cc-fade-end' : edges.start ? 'cc-fade-start' : undefined;
   return (
     <nav
       aria-label={label}
       data-page-anchors=""
       {...{ [`data-${plural}`]: '' }}
-      className={cn('cc-no-print sticky top-14 z-cc-sticky bg-cc-page py-2', className)}
+      className={cn(
+        'cc-no-print sticky top-14 z-cc-sticky my-6 flex h-12 items-center gap-3 border-b border-cc-line bg-cc-surface',
+        // To the edges of the frame, gutter included: the main column's padding, given back as the bar's own.
+        '-mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 shadow-[var(--cc-shadow-strip)] max-sm:pr-0',
+        className,
+      )}
     >
-      <div className="flex min-w-0 items-center gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-1 shadow-cc">
-        <span
-          aria-hidden={true}
-          className="shrink-0 pl-2 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase max-sm:hidden"
-        >
-          {nav('nav.onThisPage')}
-        </span>
-        {/* `relative`: the track holds the links' `sr-only` tooltips
-            (position: absolute) inside its scroll; without it they escape to
-            the sticky bar and the page scrolls sideways on a phone. */}
-        <ul className="relative m-0 flex min-w-0 flex-1 list-none flex-nowrap gap-1 overflow-x-auto rounded-cc-row bg-cc-surface-muted p-1 [scrollbar-width:thin] sm:flex-wrap">
-          {anchors.map((a) => {
-            const on = a.key === current;
-            return (
-              <li key={a.key} className="shrink-0">
-                <a
-                  href={`#${a.target}`}
-                  title={a.title}
-                  {...{ [`data-${name}`]: a.key, [`data-${name}-state`]: on ? 'on' : 'off' }}
-                  aria-current={on ? 'location' : undefined}
-                  onClick={(event) => {
-                    pinned.current = { key: a.key, at: Date.now(), y: null };
-                    setCurrent(a.key);
-                    onJump?.(event, a);
-                  }}
-                  className={cn(
-                    'group inline-flex items-stretch rounded-cc-row text-[13px] whitespace-nowrap text-cc-ink no-underline pointer-coarse:min-h-11',
-                    'focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cc-focus',
-                    on ? 'font-bold' : 'font-semibold',
-                  )}
-                >
-                  {/* The raised surface sits on an inner span, as in the layer
-                      bar: the link keeps no surface of its own (§1.5). */}
+      <span aria-hidden={true} data-page-anchors-label="" className="shrink-0 cc-text-identifier whitespace-nowrap text-cc-ink-muted max-sm:hidden">
+        {nav('nav.onThisPage')}
+      </span>
+      {/* `relative`: the track holds the links' `sr-only` tooltips (position: absolute) inside its scroll; without it
+          they escape to the sticky bar and the page scrolls sideways on a phone. */}
+      <ul
+        ref={rowRef}
+        data-page-anchors-row=""
+        className={cn(
+          'relative m-0 flex h-full min-w-0 flex-1 list-none flex-nowrap gap-1 overflow-x-auto p-0 [scrollbar-width:none] max-sm:pr-6 [&::-webkit-scrollbar]:hidden',
+          fade,
+        )}
+      >
+        {anchors.map((a) => {
+          const on = a.key === current;
+          return (
+            <li key={a.key} className="flex h-full shrink-0">
+              <a
+                href={`#${a.target}`}
+                title={a.title}
+                {...{ [`data-${name}`]: a.key, [`data-${name}-state`]: on ? 'on' : 'off' }}
+                aria-current={on ? 'location' : undefined}
+                onClick={(event) => {
+                  pinned.current = { key: a.key, at: Date.now(), y: null };
+                  setCurrent(a.key);
+                  onJump?.(event, a);
+                  focusSectionHeading(a.target);
+                }}
+                className={cn(
+                  'group relative inline-flex h-12 items-center gap-2 px-4 text-[15px] leading-none whitespace-nowrap text-cc-ink no-underline',
+                  'focus-visible:rounded-cc-row focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-cc-focus',
+                  on ? 'font-semibold' : 'font-medium',
+                )}
+              >
+                <span>{a.label}</span>
+                {a.count ? (
                   <span
+                    {...{ [`data-${name}-count`]: '' }}
+                    data-tone={a.tone ?? 'quiet'}
                     className={cn(
-                      'inline-flex w-full items-center gap-2 rounded-cc-row px-3 py-1',
-                      on ? 'bg-cc-surface shadow-cc ring-1 ring-cc-ink' : 'group-hover:bg-cc-surface',
+                      'rounded-full px-2 cc-text-meta leading-[18px] text-cc-ink tabular-nums',
+                      a.tone === 'open' ? 'bg-cc-warning-bg' : 'bg-cc-surface-muted ring-1 ring-cc-line ring-inset',
                     )}
                   >
-                    <span>{a.label}</span>
-                    {a.count ? (
-                      <span
-                        {...{ [`data-${name}-count`]: '' }}
-                        className={cn(
-                          'rounded-full border px-2 text-[11px] leading-[18px] font-semibold tabular-nums',
-                          on ? 'border-cc-ink text-cc-ink' : 'border-cc-line bg-cc-surface text-cc-ink-muted',
-                        )}
-                      >
-                        {a.count}
-                      </span>
-                    ) : null}
-                    {a.title ? <span className="sr-only">{` — ${a.title}`}</span> : null}
+                    {a.count}
                   </span>
-                </a>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
+                ) : null}
+                {a.title ? <span className="sr-only">{` — ${a.title}`}</span> : null}
+                {/* The 3 px bar: full for the section being read, faint on hover. */}
+                <span
+                  aria-hidden={true}
+                  className={cn(
+                    'pointer-events-none absolute right-4 bottom-0 left-4 h-[3px] rounded-t-[2px] bg-cc-brand-strong',
+                    on ? 'opacity-100' : 'opacity-0 group-hover:opacity-30',
+                  )}
+                />
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+      {action ? (
+        <span data-page-anchors-action="" className="ml-auto shrink-0 max-sm:hidden">
+          {action}
+        </span>
+      ) : null}
     </nav>
   );
+}
+
+/**
+ * After a jump the focus goes to the section's heading (ADR-126 (3)), not only the scroll: a keyboard or screen-reader
+ * reader goes on reading there. The heading gets `tabindex="-1"` if it has none; `preventScroll`, because the jump
+ * already placed it.
+ */
+function focusSectionHeading(target: string) {
+  if (typeof window === 'undefined') return;
+  window.requestAnimationFrame(() => {
+    const section = document.getElementById(target);
+    if (!section) return;
+    const heading = (section.matches('h1,h2,h3,h4,summary') ? section : section.querySelector('h2, h3, h4, summary')) as HTMLElement | null;
+    const el = heading ?? section;
+    if (!el.hasAttribute('tabindex') && el.tagName !== 'SUMMARY') el.setAttribute('tabindex', '-1');
+    el.focus({ preventScroll: true });
+  });
 }

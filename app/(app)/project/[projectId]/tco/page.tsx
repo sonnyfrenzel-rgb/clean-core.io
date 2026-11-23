@@ -627,7 +627,7 @@ export default function TcoCalculatorPage() {
     // print rule (§7.1). The way back to the workspace does not print either;
     // `StageHeader` marks it `cc-no-print` for every stage.
     <StageFrame stage="tco" className="cc min-h-screen print:p-0" data-economics="">
-      <StageHeader tools={{ steps: phases, current: 'tco' }} projectName={project?.name} stage="tco" eyebrow={<CcProvenanceChip value="simulation" />}>
+      <StageHeader tools={{ steps: phases, current: 'tco' }} project={project} stage="tco" eyebrow={<CcProvenanceChip value="simulation" />}>
         What keeping, changing or retiring this code would cost — priced only from figures you state.
       </StageHeader>
 

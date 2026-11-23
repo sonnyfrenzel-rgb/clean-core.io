@@ -33,15 +33,16 @@ test.describe('the view switch of a tool', () => {
     expect(stageViewOf('?view=admin')).toBe('business');
   });
 
-  test('the shared header draws it beside the way back, for every tool with a way back', () => {
+  test('the shared header draws it beside the way back, on the tools whose views differ (ADR-126, ADR-140)', () => {
     const header = read('components/StageHeader.tsx');
-    expect(header).toContain('<StageViewSwitch search={search} />');
+    // The switch on Analyze and Design; the note "One page for every reader" on the others (lib/family-frame.ts).
+    expect(header).toContain("{mode === 'switch' ? <StageViewSwitch search={search} /> : null}");
+    expect(header).toContain("{mode === 'one-page' ? (");
     // In the row of the way back, which only a project or the demo has.
     const row = header.slice(header.indexOf('data-stage-head-row'), header.indexOf('<StageViewSwitch'));
-    // The way back names where it leads: the project's workspace, or — Analyze in
-    // the Business view only, the project's entry since ADR-109 — My workspace.
-    expect(row).toContain("data-stage-back={toMyWorkspace ? 'my-workspace' : 'workspace'}");
-    expect(header).toMatch(/back\.kind === 'link' && \(\s*(\/\/[^\n]*\n\s*)*<div data-stage-head-row/);
+    // The way back names where it leads (familyBackLink): My workspace, the workspace's place, or the demo workspace.
+    expect(row).toContain('data-stage-back={way.to}');
+    expect(header).toMatch(/back\.kind === 'link' && way\.kind === 'link' && \(\s*<div data-stage-head-row/);
     const sw = read('components/StageViewSwitch.tsx');
     expect(sw).toContain('<CcSegmentedControl');
     expect(sw, 'on a phone the segments share the row').toContain('stretch');

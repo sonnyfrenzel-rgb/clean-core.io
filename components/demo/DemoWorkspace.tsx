@@ -170,7 +170,8 @@ export default function DemoWorkspace({
       <StageHeader
         stage={stage}
         tools={{ steps: demo.rail, base: '/demo' }}
-        title={sub === 'requirements' ? `${demo.title} — Requirements specification` : `${demo.title} — ${current.label}`}
+        projectName={demo.title}
+        title={sub === 'requirements' ? 'Requirements specification' : undefined}
         eyebrow={
           <>
             <CcTag>{DEMO_TAG}</CcTag>

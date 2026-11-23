@@ -426,9 +426,9 @@ test.describe('a stage reached through a choice leads back to the place that ask
 
   test('the header draws the origin link in place of the workspace link, and the footer keeps the workspace', () => {
     const header = read('components/StageHeader.tsx');
-    expect(header).toMatch(/back\.kind === 'link' && back\.origin \? \(\s*(\/\/[^\n]*\n\s*)*<ChoiceBackLink href=\{back\.origin\.href\} label=\{back\.origin\.label\} stage \/>/);
-    // The workspace link — or, on Analyze in the Business view, the project's entry, My workspace (ADR-109).
-    expect(header).toContain("data-stage-back={toMyWorkspace ? 'my-workspace' : 'workspace'}");
+    expect(header).toMatch(/\{back\.origin \? \(\s*(\/\/[^\n]*\n\s*)*<ChoiceBackLink href=\{back\.origin\.href\} label=\{back\.origin\.label\} stage \/>/);
+    // Otherwise the family's one way back (ADR-140): My workspace, the workspace's place, or the demo workspace.
+    expect(header).toContain('data-stage-back={way.to}');
     const link = read('components/ChoiceBackLink.tsx');
     expect(link).toContain("data-stage-back={stage ? 'origin' : undefined}");
     expect(link, 'navigation prints').toMatch(/data-choice-back="header"[\s\S]*cc-no-print/);

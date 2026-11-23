@@ -122,7 +122,7 @@ export default function RequirementsPage() {
 
   return (
     <StageFrame stage="design" className="min-h-screen pb-24" data-spec-page="">
-      <StageHeader stage="design" title="Requirements specification" tools={{ steps: phases, current: 'design' }} projectName={project?.name} eyebrow={back}>
+      <StageHeader stage="design" title="Requirements specification" tools={{ steps: phases, current: 'design' }} project={project} eyebrow={back}>
         The functional and non-functional requirements of the new solution, as one document an external implementer can build from.
       </StageHeader>
       {loading ? (

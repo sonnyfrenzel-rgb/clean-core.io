@@ -57,18 +57,21 @@ export type CcDensity = 'compact' | 'cozy';
 export const CC_BUTTON_VARIANT_CLASSES: Record<CcButtonVariant, string> = {
   primary: 'bg-cc-brand-strong border-cc-brand-strong text-cc-on-dark hover:bg-cc-brand-deep hover:border-cc-brand-deep',
   secondary: 'bg-cc-brand-surface border-cc-brand-strong text-cc-brand-strong hover:bg-cc-brand-surface',
-  ghost: 'bg-cc-surface border-cc-field-border text-cc-ink-muted hover:bg-cc-surface-muted',
+  // ADR-140 W3: the ghost's label in ink, like every other button's (it met 4.5 : 1 either way; one ink).
+  ghost: 'bg-cc-surface border-cc-field-border text-cc-ink hover:bg-cc-surface-muted',
   dark: 'bg-cc-surface-dark border-cc-surface-dark text-cc-on-dark hover:bg-cc-ink',
 };
 
 export const CC_BUTTON_DENSITY_CLASSES: Record<CcDensity, string> = {
-  compact: 'min-h-[32px] px-3 text-[13px] pointer-coarse:min-h-11',
-  cozy: 'min-h-[40px] px-4 text-[14px] pointer-coarse:min-h-11',
+  compact: 'min-h-[32px] px-3 py-2 text-[13px] pointer-coarse:min-h-11',
+  cozy: 'min-h-[40px] px-4 py-2 text-[14px] pointer-coarse:min-h-11',
 };
 
 /** The shape both the button and the link wear, so neither can drift from it. */
+// ADR-140 W3: a long label wraps balanced inside its button (no single orphaned word) instead of pushing a phone page
+// wider than its screen; one line keeps the 32/40 px height, two lines grow it by the line.
 export const CC_BUTTON_BASE =
-  'relative inline-flex items-center justify-center gap-1 rounded-cc-row border font-semibold leading-none whitespace-nowrap';
+  'relative inline-flex items-center justify-center gap-1 rounded-cc-row border font-semibold leading-[1.2] text-center text-balance';
 
 const VARIANT_CLASSES = CC_BUTTON_VARIANT_CLASSES;
 const DENSITY_CLASSES = CC_BUTTON_DENSITY_CLASSES;

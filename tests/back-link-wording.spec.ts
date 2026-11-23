@@ -71,11 +71,15 @@ test('a stage names the project and the view it returns to', () => {
 });
 
 test('the stage header and footer both draw the project label', () => {
-  for (const rel of ['components/StageHeader.tsx', 'components/StageFooter.tsx']) {
-    const src = code(rel);
-    expect(src, rel).toContain('<StageBackText');
-    expect(src, rel).toContain('useShellProjectName(');
-  }
+  // The header draws the family's one way back (`familyBackLink`, ADR-140): the place, then the program's title.
+  const header = code('components/StageHeader.tsx');
+  expect(header).toContain('familyBackLink(');
+  expect(header).toContain('data-stage-back-project=""');
+  expect(header).toContain('useShellProjectName(');
+  // The footer keeps the project's workspace label.
+  const footer = code('components/StageFooter.tsx');
+  expect(footer).toContain('<StageBackText');
+  expect(footer).toContain('useShellProjectName(');
   expect(read('components/StageBackText.tsx')).toContain('stageBackLabel(');
 });
 
