@@ -5,9 +5,10 @@ import { Cloud } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcLinkButton from '@/components/cc/LinkButton';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import GlossaryTerm from '@/components/GlossaryTerm';
 import ObjectSection from '@/components/analyze/ObjectSection';
+import { lineAnchorText } from '@/lib/analyze-it';
 import { SapIdentifierChecks } from '@/components/SapIdentifierCheck';
 import type { RouteDriver, StatedRouteBasis } from '@/lib/abap/extensibility-router';
 import { BTP, SIDE_BY_SIDE_LABEL, isSideBySideRoute, routeLabel } from '@/lib/sap-naming';
@@ -106,11 +107,11 @@ export default function RouteCard({
       title="Extensibility route"
       data-route-card=""
       right={overridden
-        ? <CcProvenanceChip value="confirmed" note="your choice" />
+        ? <FamilyChip value="confirmed" note="your choice" />
         : route
-          ? <CcProvenanceChip value="reconstructed" note="fixed rules" />
+          ? <FamilyChip value="reconstructed" note="fixed rules" />
           // No route on record is not a reconstructed one.
-          : <CcProvenanceChip value="not-determined" />}
+          : <FamilyChip value="not-determined" />}
     >
       <div className="flex items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface-muted p-3">
         <span aria-hidden={true} className="grid h-10 w-10 shrink-0 place-items-center rounded-cc-card border border-cc-line bg-cc-surface text-cc-ink">
@@ -186,7 +187,7 @@ export default function RouteCard({
                   <CcAnchor
                     label={`Source line ${r.lineStart}${openLine ? ', open the source' : ''}`}
                     onOpen={openLine ? () => openLine(r.lineStart) : undefined}
-                  >{`L${r.lineStart}`}</CcAnchor>
+                  >{lineAnchorText(r.lineStart)}</CcAnchor>
                 </React.Fragment>
               ))}
               .
@@ -203,7 +204,7 @@ export default function RouteCard({
                   <CcAnchor
                     label={`Source line ${d.firstLine}${openLine ? ', open the source' : ''}`}
                     onOpen={openLine ? () => openLine(d.firstLine) : undefined}
-                  >{`L${d.firstLine}`}</CcAnchor>
+                  >{lineAnchorText(d.firstLine)}</CcAnchor>
                   {d.count > 1 ? <span className="cc-text-meta text-cc-ink-muted">{` +${d.count - 1}`}</span> : null}
                 </React.Fragment>
               ))}

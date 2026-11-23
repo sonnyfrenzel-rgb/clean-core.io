@@ -100,11 +100,7 @@ test('the plain wording asks once per project, scope and digest in the session, 
 });
 
 // f6d530d587c6: the process summary was counted again on every project snapshot.
-test('the workspace counts the process summary again only when its inputs change', () => {
-  const shell = read('components/workspace/WorkspaceShell.tsx');
-  const at = shell.indexOf("void import('@/lib/bpmn/reading-exports-client')");
-  expect(at).toBeGreaterThan(-1);
-  const deps = /\}, \[([^\]]*)\]\);/.exec(shell.slice(at))![1];
-  expect(deps.split(',').map((d) => d.trim())).toEqual(['summarySource', 'summaryFileName', 'summaryName', 'summaryEngine']);
-  expect(shell).toContain('const summaryEngine = JSON.stringify(engineStampOf(project));');
+// The workspace shell that counted it dissolved with 3.5.0 (AB-11); Analyze's IT page counts no process summary.
+test('nothing counts the process summary on every project snapshot any more', () => {
+  expect(read('components/analyze/AnalyzeIt.tsx')).not.toContain("void import('@/lib/bpmn/reading-exports-client')");
 });

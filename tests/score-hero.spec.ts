@@ -98,7 +98,11 @@ test.describe('the hero on the page', () => {
   test('the real page and the demo draw it from these modules, with the signed score by name', () => {
     const page = read('app/(app)/project/[projectId]/analyze/page.tsx');
     const demo = read('components/demo/DemoAnalyze.tsx');
-    expect(page.match(/<AnalysisAnswer\s+score=\{signedCleanCoreScore\}/g)?.length).toBe(3);
+    // Since 3.5.0 (AB-9) the IT page draws the score in its answer card (`AnalyzeIt`, with the same score-hero
+    // model); the hero stays for a project analysed before runs existed, and for the demo.
+    expect(page.match(/<AnalysisAnswer\s+score=\{signedCleanCoreScore\}/g)?.length).toBe(1);
+    expect(page.match(/score=\{signedCleanCoreScore\}/g)?.length).toBe(2);
+    expect(read('components/analyze/AnalyzeIt.tsx')).toContain("from '@/lib/score-hero'");
     expect(demo).toMatch(/<AnalysisAnswer\s+score=\{a\.cleanCoreScore\}\s+breakdown=\{a\.scoreBreakdown\}/);
     const answer = read('components/analyze/AnalysisAnswer.tsx');
     expect(answer).toContain("from '@/lib/score-hero'");
@@ -121,7 +125,8 @@ test.describe('the hero on the page', () => {
     for (const gone of ['CodeInventoryTable', 'ModuleHeatmap', 'ModuleTreemap', 'DataCouplingTable', 'WhyScorePanel']) {
       expect(fs.existsSync(path.join(ROOT, `components/analyze/${gone}.tsx`)), gone).toBe(false);
     }
-    expect(page).toContain('?view=it#it-objects');
+    // The objects stand on the IT page itself since 3.5.0 (AB-9): What it touches in SAP.
+    expect(page).toContain('href="#analyze-touch"');
     expect(read('components/demo/DemoAnalyze.tsx')).toContain('?view=it#it-objects');
   });
 

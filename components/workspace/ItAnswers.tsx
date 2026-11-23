@@ -40,7 +40,8 @@ import type { SemanticState } from '@/lib/provenance';
 import type { Project } from '@/lib/types';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import type { NotDetermined } from '@/lib/workspace-model';
-import type { CoachMarkId } from '@/lib/coach-marks';
+/** A place in this view a coach mark of the demo may stand at. */
+type CoachMarkId = 'not-determined' | 'next-step' | 'decision';
 import {
   CHAIN_LABELS,
   chainOf,
@@ -865,7 +866,7 @@ function ObjectsCard({ objects, catalogNote }: { objects: ItObjects; catalogNote
  * The DDIC types the code declares with, one folded group per clean core level, worst first (roadmap 3.4.0, owner
  * decision 22.11.2026). Display only: the groups come from the findings route and are never stored or signed.
  */
-function DdicTypesCard({ groups }: { groups: ItTypeGroup[] }) {
+export function DdicTypesCard({ groups }: { groups: ItTypeGroup[] }) {
   const total = groups.reduce((n, g) => n + g.types.length, 0);
   return (
     <div data-it-ddic-types="" className="scroll-mt-28">

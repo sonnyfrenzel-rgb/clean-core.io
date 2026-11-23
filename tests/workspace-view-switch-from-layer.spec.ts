@@ -1,6 +1,5 @@
 import { test, expect, type Page } from './helpers/test';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
-import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
 
 /**
  * QA review of 7fecaa0102eb (6ec03d013196): Business keeps its layers
@@ -22,12 +21,6 @@ test.beforeAll(async () => {
   account = await seedStageProject({ prefix: 'viewlayer', acceptTerms: true });
 });
 
-test.beforeEach(async ({ page }) => {
-  await page.addInitScript(
-    ([key, ids]) => window.localStorage.setItem(key as string, JSON.stringify(ids)),
-    [COACH_MARK_STORAGE_KEY, [...COACH_MARK_IDS]] as const,
-  );
-});
 
 // Since v3.1.0 Business has no layer and is Analyze's page (plan AB-2, ADR-109): an old Business layer
 // address opens Analyze, Business with the fragment dropped (`lib/analyze-entry.ts`), and the view switch

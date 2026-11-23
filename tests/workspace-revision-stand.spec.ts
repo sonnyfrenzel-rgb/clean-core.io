@@ -203,10 +203,9 @@ test.describe('what counts as a move (CR-15)', () => {
 /* --------------------------------------------- the wiring, read */
 
 test.describe('where the Stand is asked (CR-15)', () => {
-  test('the shell renders the badge and hands the notice its two exits', () => {
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell, 'the workspace does not ask for its Stand at all').toContain('useWorkspaceRevision');
-    expect(shell).toContain('<WorkspaceRevisionStand');
+  test('the badge and its notice keep their two exits', () => {
+    // The workspace shell that rendered the badge dissolved with 3.5.0 (AB-11); plan P5 puts the Stand into
+    // Analyze's header with the decision record (AB-10).
 
     const stand = read('components/workspace/RevisionStand.tsx');
     expect(stand).toContain('data-workspace-revision=');

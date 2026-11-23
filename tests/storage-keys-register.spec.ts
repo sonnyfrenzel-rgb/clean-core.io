@@ -38,7 +38,7 @@ test.describe('the code writes only registered keys', () => {
   test('the scan finds the writes it should (not vacuous)', () => {
     expect(sites.length).toBeGreaterThan(20);
     const files = new Set(sites.map((s) => s.file));
-    for (const f of ['lib/coach-marks.ts', 'lib/auth-hint.ts', 'components/workspace/BusinessRulesEditor.tsx', 'lib/stale-build.ts']) {
+    for (const f of ['lib/auth-hint.ts', 'components/workspace/BusinessRulesEditor.tsx', 'lib/stale-build.ts']) {
       expect(files.has(f), `${f} writes storage and the scan did not find it`).toBe(true);
     }
   });

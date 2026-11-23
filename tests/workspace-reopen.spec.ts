@@ -1,7 +1,6 @@
 import { expect, test, type Page } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
-import { COACH_MARK_IDS, COACH_MARK_STORAGE_KEY } from '../lib/coach-marks';
 import { adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 import { workflowSteps } from '../lib/workflow-steps';
@@ -52,10 +51,8 @@ async function idToken(email: string, password: string): Promise<string> {
 }
 
 async function withoutTips(page: Page) {
-  await page.addInitScript(
-    ([key, ids]) => window.localStorage.setItem(key as string, JSON.stringify(ids)),
-    [COACH_MARK_STORAGE_KEY, [...COACH_MARK_IDS]] as const,
-  );
+  // The coach marks retired with the workspace page (3.5.0, AB-11): nothing to keep out of the way.
+  void page;
 }
 
 interface ReopenWatch {

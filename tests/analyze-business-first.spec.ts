@@ -133,7 +133,8 @@ test.describe('the source: Business on Analyze is the map, not the score', () =>
     expect(read('components/StarterExamples.tsx')).toContain('router.push(`/project/${docRef.id}/analyze?first=1`);');
     expect(read('components/workspace/OwnCodeImport.tsx')).toContain('router.push(`/project/${docRef.id}/analyze?first=1`);');
     const workspace = read('app/(app)/project/[projectId]/page.tsx');
-    expect(workspace).toContain('analyzeEntryHref({');
+    // Since 3.5.0 (AB-11) every view and every old address goes to Analyze through one table.
+    expect(workspace).toContain('workspaceRedirectHref({');
     // The workspace starts no run of its own since v3.1.0: the start run is Analyze, Business's.
     expect(workspace).not.toMatch(/useStartRun|markFirstLookSeen|buildUp/);
   });

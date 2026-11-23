@@ -436,9 +436,8 @@ test.describe('(a) one sentence, at most six cards', () => {
     expect(component).toMatch(/'decision',[\s\S]*?\}, \[projectId, decisionRevision\]\);/);
     const answers = read('components/workspace/ManagementAnswers.tsx');
     expect(answers).toContain('decisionRevision={decisionRevision}');
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell).toMatch(/<ManagementAnswers[^>]*decisionRevision=\{decisionRevision\}/);
-    expect(shell).toMatch(/<DecisionCard[^>]*onChanged=\{onDecisionChanged\}/);
+    // The workspace shell that wired the two together dissolved with 3.5.0 (AB-11); Analyze's Management view (AB-10)
+    // mounts them, and its own spec holds the wiring.
     const card = read('components/workspace/DecisionCard.tsx');
     // Both successful commands tell the shell.
     expect(card.match(/setReload\(\(n\) => n \+ 1\);\s*onChanged\?\.\(\);/g)?.length).toBe(2);

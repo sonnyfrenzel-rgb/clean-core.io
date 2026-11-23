@@ -1521,7 +1521,7 @@ test.describe('fewer rounds for the same quality (Sonny, 15.09.2026)', () => {
     // marked RE-RAISED after refutation: the register remembers a refutation,
     // this scanner does not, so a suppression that lives only in the register
     // puts the same five criticals at the head of every release report.
-    for (const file of ['components/TermsReacceptGate.tsx', 'lib/coach-marks.ts', 'lib/first-look.ts', 'scripts/verify-pack.mjs', 'tests/preservation-register.spec.ts'])
+    for (const file of ['components/TermsReacceptGate.tsx', 'lib/first-look.ts', 'scripts/verify-pack.mjs', 'tests/preservation-register.spec.ts'])
       expect(redactSecrets(read(file)).hits, `${file} still reports a committed credential`).toEqual([]);
 
     // The shapes, named rather than only tested through those files, so this

@@ -276,10 +276,11 @@ test.describe('"Show tips again" in the help menu', () => {
     expect(item).toContain('showTipsAgain()');
     expect(item).toContain('Show tips again');
     const fn = read('lib/show-tips-again.ts');
-    expect(fn).toContain('clearDismissedMarks()');
+    // The coach marks retired with the workspace page (3.5.0, AB-11, plan P7): the entry brings back the demo tour.
+    expect(fn).not.toContain('clearDismissedMarks');
     expect(fn).toContain('clearTourProgress()');
-    // Both screens listen, so an open page shows the tips without a reload.
-    expect(read('hooks/useCoachMarks.ts')).toContain('SHOW_TIPS_EVENT');
+    // The tour listens, so an open page shows it again without a reload.
+    expect(fs.existsSync(path.join(ROOT, 'hooks/useCoachMarks.ts'))).toBe(false);
     expect(read('hooks/useDemoTour.ts')).toContain('SHOW_TIPS_EVENT');
   });
 });

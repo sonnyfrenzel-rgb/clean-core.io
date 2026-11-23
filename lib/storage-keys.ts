@@ -61,16 +61,6 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     namedInPolicy: true,
   },
   {
-    key: 'cc.workspace.coachMarks.dismissed',
-    match: 'exact',
-    area: 'local',
-    holds: 'the ids of the tips the reader dismissed',
-    purpose: 'a dismissed tip stays away',
-    lifetime: 'until "Show tips again" or cleared site data',
-    writtenFor: 'signed-in',
-    namedInPolicy: true,
-  },
-  {
     key: 'cc.workspace.firstLook.seen',
     match: 'exact',
     area: 'local',

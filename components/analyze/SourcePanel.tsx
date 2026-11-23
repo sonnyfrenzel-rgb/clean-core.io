@@ -97,7 +97,6 @@ export default function SourcePanel({
                 {sev ? <CcSeverity value={sev} /> : null}
                 {level ? <CcCleanCoreLevel value={level} /> : null}
                 <span className="cc-text-identifier text-cc-ink">{calmTitle(ef.title)}</span>
-                <span className="font-cc-mono cc-text-meta font-medium text-cc-ink-muted">{ef.id}</span>
               </span>
               {ef.cleanCoreImpact ? <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{ef.cleanCoreImpact}</p> : null}
               <p className="m-0 mt-1 cc-text-meta text-cc-ink">

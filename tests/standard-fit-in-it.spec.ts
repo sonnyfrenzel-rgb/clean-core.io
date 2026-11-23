@@ -46,7 +46,7 @@ test.describe('Standard fit is an IT section, not a Business layer (ADR-096)', (
     // A stage's way back, from any view it was opened in.
     for (const view of ['business', 'it', 'management']) {
       const search = `?view=${view}&from=workspace-tools&layer=standard`;
-      expect(workspaceBackHref({ projectId: 'p-1', search }), view).toBe('/project/p-1?view=it#standard');
+      expect(workspaceBackHref({ projectId: 'p-1', search }), view).toBe('/project/p-1/analyze?view=it#standard');
       expect(stageBackPlace(search), view).toBe('IT view, Where it touches SAP standard');
     }
     // Management's open condition points at the IT section ("See where it touches SAP standard" since 22.10.2026).
@@ -65,7 +65,7 @@ test.describe('Standard fit is an IT section, not a Business layer (ADR-096)', (
     expect(answers).not.toContain('itv.elsewhereStandard');
     expect(answers).not.toMatch(/elsewhere\.open\('business', 'standard'\)/);
     // The card reads the findings IT already holds: the shell and the demo no longer hand IT a layer.
-    expect(read('components/workspace/WorkspaceShell.tsx')).not.toContain('standardLayer=');
+    expect(read('components/analyze/AnalyzeIt.tsx')).not.toContain('standardLayer=');
     expect(read('components/demo/DemoWorkspaceShell.tsx')).not.toContain('standardLayer=');
     // The table is gone; the Business layer section does not draw it either.
     expect(fs.existsSync(path.resolve(__dirname, '..', 'components/workspace/ItStandardFit.tsx'))).toBe(false);
@@ -73,7 +73,7 @@ test.describe('Standard fit is an IT section, not a Business layer (ADR-096)', (
     expect(fs.existsSync(path.resolve(__dirname, '..', 'components/workspace/LayerSection.tsx'))).toBe(false);
     // One layer is no bar: the bar is drawn only where there are two or more. The workspace draws no layer
     // bar at all since v3.1.0 (its Business view is Analyze's, AB-2); the demo keeps the rule.
-    expect(read('components/workspace/WorkspaceShell.tsx')).not.toContain('<WorkspaceLayerBar');
+    expect(read('components/analyze/AnalyzeIt.tsx')).not.toContain('<WorkspaceLayerBar');
     // The demo's one Business section stands in its Analyze, Business without a bar since v3.1.0 (AB-2, O10).
     expect(read('components/demo/DemoWorkspaceShell.tsx')).not.toContain('<WorkspaceLayerBar');
     expect(read('components/demo/DemoAnalyzeBusiness.tsx')).not.toContain('<WorkspaceLayerBar');

@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import CcDisclosure from '@/components/cc/Disclosure';
+import { useRevealOnHash } from '@/hooks/useRevealOnHash';
 
 /**
  * A section of the Analyze stage folded with its count (§2.11: "Business
@@ -25,6 +26,7 @@ export default function FoldedSection({
   summary,
   defaultOpen = false,
   level = 2,
+  revealOn,
   children,
   ...data
 }: {
@@ -38,13 +40,23 @@ export default function FoldedSection({
   defaultOpen?: boolean;
   /** The heading level of the trigger; 2 unless the section sits under an `h3`. */
   level?: 2 | 3 | 4;
+  /**
+   * Ids that open the fold when the address names one of them (`#it-trust`, `#standard`): a link to a place inside a
+   * folded section lands on it open (`hooks/useRevealOnHash.ts`). The section's own id counts too.
+   */
+  revealOn?: readonly string[];
   children: React.ReactNode;
 } & { [key: `data-${string}`]: string | number | undefined }) {
+  const [open, setOpen] = useState(defaultOpen);
+  useRevealOnHash(
+    (place) => place === id || (revealOn ?? []).includes(place),
+    () => setOpen(true),
+  );
   return (
     <section id={id} className="scroll-mt-32 rounded-cc-card border border-cc-line bg-cc-surface shadow-cc px-4 py-2 sm:px-6" {...data}>
       <div className="flex flex-wrap items-start gap-x-3">
         <div className="min-w-0 flex-1">
-          <CcDisclosure level={level} density="cozy" title={title} count={count} summary={summary} defaultOpen={defaultOpen}>
+          <CcDisclosure level={level} density="cozy" title={title} count={count} summary={summary} open={open} onOpenChange={setOpen}>
             <div className="space-y-8 pt-2 pb-2">{children}</div>
           </CcDisclosure>
         </div>

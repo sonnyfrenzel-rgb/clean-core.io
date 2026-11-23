@@ -122,17 +122,13 @@ test.describe('what a layer holds (roadmap 6.2)', () => {
     // Management, the objects and Run & trust in IT.
     const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
     expect(read('components/workspace/DecisionCard.tsx')).toContain('MANAGEMENT_IDS.costs');
-    expect(read('components/workspace/WorkspaceShell.tsx')).toContain('<div id="decision-card">');
-    // No layer bar and no layer section are rendered for Management.
-    const shell = read('components/workspace/WorkspaceShell.tsx');
-    expect(shell).not.toMatch(/data-management-fold|ManagementFold id="(?:process|costs)"/);
-    // Read from the address as it is, not the layer state (QA 6ec03d013196).
-    expect(shell).toContain('layerRedirect(view, window.location.hash');
-    expect(read('app/(app)/project/[projectId]/page.tsx')).toContain('layerRedirect(arrival.view, arrival.hash');
+    // The workspace page dissolved with 3.5.0 (AB-11): every layer address goes through the one redirect table
+    // (`lib/workspace-redirect.ts`, `tests/workspace-redirect.spec.ts`), read from the address as it is.
+    const page = read('app/(app)/project/[projectId]/page.tsx');
+    expect(page).toContain('workspaceRedirectHref({ projectId, search: window.location.search, hash: window.location.hash })');
+    expect(page).not.toMatch(/location\.replace\(`#/);
+    // The demo keeps its workspace and its layer rule.
     expect(read('lib/layer-redirect.ts')).toContain('MANAGEMENT_LAYER_ELSEWHERE[layer]');
-    // A place in the same view is written where Next's router hears of it;
-    // `location.replace('#…')` let its next commit put the old address back.
-    expect(shell).not.toMatch(/location\.replace\(`#/);
     expect(read('components/demo/DemoWorkspaceShell.tsx')).not.toMatch(/location\.replace\(`#/);
   });
 

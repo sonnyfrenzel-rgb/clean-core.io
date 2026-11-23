@@ -163,9 +163,11 @@ function actionHref(action: OpenQuestionAction, projectId: string, view: Workspa
     case 'add-usage':
       return analyze('usage');
     case 'choose-target':
-      // With a signed run the target is changed in the IT view (a new run);
+      // With a signed run the target is changed in Analyze's IT view, at the target profile (a new run);
       // before one it is part of the analysis on Analyze.
-      return hasRun ? `/project/${encodeURIComponent(projectId)}?view=it` : stageHref({ base, path: 'analyze', view, from: WORKSPACE_RETURN.tools });
+      return hasRun
+        ? `/project/${encodeURIComponent(projectId)}/analyze?view=it#it-target-profile`
+        : stageHref({ base, path: 'analyze', view, from: WORKSPACE_RETURN.tools });
     case 'confirm-rules':
       // Owner decision 21.10.2026: the business answers the rules as questions in Design.
       return `${stageHref({ base, path: 'design', view, from: WORKSPACE_RETURN.tools })}#${RULE_QUESTIONS_ID}`;

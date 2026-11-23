@@ -34,6 +34,7 @@ import { DEMO_ROUTE, DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
 import { nav, navViewLabel, type NavigationMessageKey } from '@/lib/messages/navigation';
 import { OPEN_QUESTION_ACTIONS, type OpenQuestionAction } from '@/lib/open-questions';
 import { stageHref } from '@/lib/workspace-back-href';
+import { workspaceRedirectFrom } from '@/lib/workspace-redirect';
 
 /** An id that can stand in a fragment: letters, digits, `_` and `-`, starting with a letter. */
 export const PLACE_ID = /^[A-Za-z][\w-]{0,63}$/;
@@ -361,7 +362,11 @@ function viewHref(base: string, view: WorkspaceView | null, origin: OriginKey | 
   if (view) params.set('view', view);
   if (origin) params.set('origin', origin);
   const query = params.toString();
-  return `${workspaceOf(base)}${query ? `?${query}` : ''}${anchor && PLACE_ID.test(anchor) ? `#${anchor}` : ''}`;
+  const hash = anchor && PLACE_ID.test(anchor) ? `#${anchor}` : '';
+  // A project's workspace page dissolved into Analyze's views (AB-11): the place goes where the one redirect table
+  // sends it, without the extra hop. The demo keeps its workspace.
+  if (base !== DEMO_ROUTE) return workspaceRedirectFrom(base, query, hash);
+  return `${workspaceOf(base)}${query ? `?${query}` : ''}${hash}`;
 }
 
 /**

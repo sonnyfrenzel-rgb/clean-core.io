@@ -2,7 +2,7 @@
 
 import React, { useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { CcCleanCoreLevel } from '@/components/cc/Identifier';
 import { CcNoLevelExplained } from '@/components/cc/LevelExplained';
 import { NO_LEVEL_SUMMARY } from '@/lib/findings-view';
@@ -211,7 +211,7 @@ export default function AnalysisAnswer({
             {routeChosenByReader ? (
               <span>stored by an earlier build&rsquo;s switch; the rules recommended the other route</span>
             ) : route ? (
-              <CcProvenanceChip value="reconstructed" note="fixed rules" />
+              <FamilyChip value="reconstructed" note="fixed rules" />
             ) : null}
             {decideHref ? (
               <span>

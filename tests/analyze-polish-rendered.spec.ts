@@ -163,10 +163,11 @@ test('a run of the example, started on the Analyze page', async ({ page }) => {
   });
   // The EBAN write is the largest single deduction, at its line (the mockup's measured case had two writes; the
   // second stood in a routine nothing called and left with it in 15dcfd60).
-  const eban = page.locator('[data-analysis-answer] li[data-score-deduction="standard-table-write"]');
+  // Since 3.5.0 (AB-9) the deductions are the IT page's first section, "What moves the score"; one line notation (Q11).
+  const eban = page.locator('[data-analyze-moves] li[data-score-deduction="standard-table-write"]');
   await expect(eban).toContainText('EBAN');
-  await expect(eban.locator('[data-cc-anchor]:visible')).toHaveText([`L${EBAN_WRITE_LINE}`]);
-  await expect(page.locator('[data-analysis-answer] [data-score-largest]')).toHaveAttribute('data-score-largest', 'standard-table-write');
+  await expect(eban.locator('[data-cc-anchor]:visible')).toHaveText([`line ${EBAN_WRITE_LINE}`]);
+  await expect(page.locator('[data-analyze-moves] [data-score-largest]')).toHaveAttribute('data-score-largest', 'standard-table-write');
   await expect(page.locator('[data-analysis-answer] [data-score-run]')).toContainText(project.activeRunId!.slice(0, 8));
   // The provenance stands in the score hero, beside the figure it describes (ADR-093, 11.10.2026).
   await expect(page.locator('[data-analysis-answer] [data-stage-meta-toggle]')).toHaveCount(0);

@@ -13,7 +13,7 @@ import CcFilterBar from '@/components/cc/FilterBar';
 import CcSelect from '@/components/cc/Select';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import CcAnchor from '@/components/cc/Anchor';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { CcNoMatches } from '@/components/cc/EmptyState';
 import { CcSeverity, CcCleanCoreLevel } from '@/components/cc/Identifier';
 import { CcCleanCoreLevelExplained, CcNoLevelExplained } from '@/components/cc/LevelExplained';
@@ -45,6 +45,7 @@ import { analyzeAnchors, PAGE_ANCHOR_LABELS } from '@/lib/page-anchors';
 import ObjectSection from './ObjectSection';
 import { useBreakpointS } from '@/hooks/useBreakpointS';
 import SourcePanel from './SourcePanel';
+import { lineAnchorText } from '@/lib/analyze-it';
 
 /**
  * The body of the Analyze object page — proposal A (owner decision
@@ -129,15 +130,14 @@ function rowCells(r: FindingRow, level: CloudReadinessGrade | null, lookup: Leve
         <CcAnchor
           label={`Source line ${r.lines[0] ?? ef.lineStart}${openSource ? ', open the source' : ''}`}
           onOpen={openSource ? () => openSource(r.lines[0] ?? ef.lineStart) : undefined}
-        >{`L${r.lines[0] ?? ef.lineStart}`}</CcAnchor>
+        >{lineAnchorText(r.lines[0] ?? ef.lineStart)}</CcAnchor>
         {r.lines.length > 1 ? <span className="cc-text-meta text-cc-ink-muted">+{r.lines.length - 1}</span> : null}
       </span>
     ),
     severity: sev ? <CcSeverity value={sev} /> : <span className="cc-text-meta text-cc-ink-muted">{ef.severity || '—'}</span>,
     what: (
       <span className="min-w-0">
-        <span className="font-semibold text-cc-ink">{ef.objectName || calmTitle(ef.title)}</span>{' '}
-        <span className="font-cc-mono cc-text-meta font-medium text-cc-ink-muted">{ef.id}</span>
+        <span className="font-semibold text-cc-ink">{ef.objectName || calmTitle(ef.title)}</span>
         {ef.objectName ? <span className="block cc-text-meta font-medium text-cc-ink-muted">{calmTitle(ef.title)}</span> : null}
       </span>
     ),
@@ -230,6 +230,7 @@ export default function EvidenceFindingsTable({
   sideBottom,
   fileName = 'source',
   sideTopLabel = 'Route',
+  layout = 'columns',
 }: {
   findings: readonly EvidenceFinding[];
   /** Lines of the source the findings point into; 0 when it is not on the page. */
@@ -260,6 +261,12 @@ export default function EvidenceFindingsTable({
   fileName?: string;
   /** On a phone the route card is folded under this line — "Route · Side-by-Side" (ADR-093). */
   sideTopLabel?: string;
+  /**
+   * `columns` (the demo): the findings beside their own side column. `main` (Analyze, IT, ADR-140 A10): the main
+   * column's sections only — the page draws the side column from the first section, beside the score's table, and its
+   * cards open the source here through `openSourceLine`.
+   */
+  layout?: 'columns' | 'main';
 }) {
   const [query, setQuery] = useState('');
   const [severity, setSeverity] = useState<SeverityFilter>('All');
@@ -359,16 +366,14 @@ export default function EvidenceFindingsTable({
   const showPoints = Boolean(pointsOf) && grouping === 'kind';
   const sideTopNode = typeof sideTop === 'function' ? sideTop({ openLine: canShowSource ? openSource : undefined, showKind }) : sideTop;
 
-  return (
-    <div data-analysis-findings="" className="min-w-0">
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_22.5rem]">
-        <div className="flex min-w-0 flex-col gap-5">
+  const main = (
+        <div className="flex min-w-0 flex-col gap-6">
           <ObjectSection
             id="analyze-focus"
             title={
               <>
                 Look here first
-                <CcProvenanceChip value="reconstructed" note="by severity and kind" />
+                <FamilyChip value="reconstructed" note="by severity and kind" />
               </>
             }
             right={
@@ -647,6 +652,19 @@ export default function EvidenceFindingsTable({
             ) : null}
           </ObjectSection>
         </div>
+  );
+  if (layout === 'main') {
+    return (
+      <div data-analysis-findings="" data-analysis-findings-layout="main" className="min-w-0">
+        {main}
+      </div>
+    );
+  }
+
+  return (
+    <div data-analysis-findings="" className="min-w-0">
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_22.5rem]">
+        {main}
 
         <aside className="flex min-w-0 flex-col gap-4" aria-label="Route and what is open">
           {phone && sideTopNode ? (

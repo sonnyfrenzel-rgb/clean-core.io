@@ -14,18 +14,16 @@ import { runProjectCommand } from '@/lib/project-command-client';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { doc, getDoc, updateDoc, deleteField } from 'firebase/firestore';
 import { getDb, handleFirestoreError, OperationType, getAuth } from '@/lib/firebase';
-import { UploadCloud, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Info, Shield, Cloud, BookOpenText, FilePlus2, Activity, ListChecks, Workflow } from 'lucide-react';
+import { UploadCloud, CheckCircle2, ArrowRight, ArrowLeft, RefreshCw, Info, Shield, Cloud, BookOpenText, FilePlus2, Activity, ListChecks } from 'lucide-react';
 import clsx from 'clsx';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcToast from '@/components/cc/Toast';
-import CcLinkButton from '@/components/cc/LinkButton';
-import { workspaceProcessHref } from '@/lib/workspace-back-href';
 import { CcTag } from '@/components/cc/Tag';
 import { sourceSizeLimit, wt } from '@/lib/workspace-messages';
 import { ANALYSED_SOURCE_MAX_BYTES } from '@/lib/source-limit';
 import CcDialog from '@/components/cc/Dialog';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcField from '@/components/cc/Field';
 import CcCheckbox from '@/components/cc/Checkbox';
@@ -115,8 +113,9 @@ function programFactsOrNull(code: string, engineVersion: string | null) {
     return null;
   }
 }
-import EvidenceFindingsTable, { AnalyzeAnchorBar, openSourceLine } from '@/components/analyze/EvidenceFindingsTable';
-import { countFindings, groupEvidenceFindings, shortRoute } from '@/components/analyze/analysis-answer';
+import { openSourceLine } from '@/components/analyze/EvidenceFindingsTable';
+import AnalyzeIt from '@/components/analyze/AnalyzeIt';
+import { countFindings, groupEvidenceFindings } from '@/components/analyze/analysis-answer';
 import RouteCard from '@/components/analyze/RouteCard';
 import StaleNotice from '@/components/StaleNotice';
 import { BTP, SIDE_BY_SIDE_ROUTE, sapNamesForDisplay } from '@/lib/sap-naming';
@@ -125,11 +124,9 @@ import { profileCoverage } from '@/lib/assessment-profile';
 import { recordedProfileOf } from '@/lib/assessment-target';
 import { formatTextDate } from '@/lib/format';
 import CleanCoreScoreDialog from '@/components/analyze/CleanCoreScoreDialog';
-import FoldedSection, { FoldedPart } from '@/components/analyze/FoldedSection';
-import NotDeterminedSide, { type NotDeterminedSummary, type OpenItem } from '@/components/analyze/NotDeterminedSide';
+import { FoldedPart } from '@/components/analyze/FoldedSection';
+import type { NotDeterminedSummary, OpenItem } from '@/components/analyze/NotDeterminedSide';
 import ExportMenu from '@/components/requirements/ExportMenu';
-import OpenQuestionsLine from '@/components/workspace/OpenQuestionsLine';
-import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import { useAbcdCatalogLookup } from '@/hooks/useAbcdCatalogLookup';
 // The engine's evidence comes from the server, computed with the catalog
 // snapshot the signed run reads; neither the engine nor a catalog is
@@ -164,8 +161,11 @@ import { stageViewOf, useLocationSearch } from '@/lib/location-search';
  * `components/analyze/AnalyzeManagement.tsx` — the decision read-only, and
  * Re-design as the one way on.
  *
- * **IT** keeps today's page, the score hero with its findings
- * (`AnalyzeScorePage`), until AB-9 gives it one page of its own.
+ * **IT** is one page, code first (AB-9, ADR-140): `AnalyzeScorePage` reads the
+ * project, the signed run's evidence and the score, and renders
+ * `components/analyze/AnalyzeIt.tsx` in the family frame. Since 3.5.0 every
+ * view is the project's entry: the workspace page redirects here (AB-11,
+ * `lib/workspace-redirect.ts`).
  *
  * The view is read from the address in the browser (`useLocationSearch`), as
  * the stage header's view switch writes it, so a switch changes the page in
@@ -211,7 +211,11 @@ export default function AnalyzePage() {
   return <AnalyzeScorePage />;
 }
 
-/** Today's Analyze page: the score hero, findings, route and folds (ADR-093) — IT and Management until AB-9/AB-10. */
+/**
+ * The frame of Analyze's IT page (AB-9): the project, its signed run's evidence, the score and the route are read here;
+ * the page itself is `AnalyzeIt`. A project without a run gets the upload and start path; a working address
+ * (`?reason=`, `?add=`) opens here whatever view it names.
+ */
 function AnalyzeScorePage() {
   const { projectId } = useParams();
   const searchParams = useSearchParams();
@@ -1131,8 +1135,8 @@ function AnalyzeScorePage() {
    * The source or an input changed after the signed run (register L-05, audit
    * M-8): every figure of the report is about what that run read, so the page
    * says so — with the stepper's own sentence (`lib/workflow-steps.ts`) and the
-   * one way on — at the top of the score hero (ADR-093). This page has no
-   * re-run; a new run starts in the workspace's IT view.
+   * one way on — at the top of the answer (ADR-093). A new run starts with the
+   * target profile's *Change target*, under Technical detail (AB-11).
    */
   const staleNotice =
     analyzePhase?.state === 'stale' ? (
@@ -1141,20 +1145,13 @@ function AnalyzeScorePage() {
         reasons={[analyzePhase.detail]}
         action={
           typeof projectId === 'string' ? (
-            <a href={`/project/${encodeURIComponent(projectId)}?view=it`} className="font-semibold text-cc-ink underline underline-offset-2">
-              Run it again in the IT view
+            <a href={`/project/${encodeURIComponent(projectId)}/analyze?view=it#it-target-profile`} className="font-semibold text-cc-ink underline underline-offset-2">
+              Run it again under Technical detail
             </a>
           ) : null
         }
       />
     ) : null;
-  const openQuestionsOfProject = useOpenQuestions(project, typeof projectId === 'string' ? projectId : '');
-  const questionsLine = (
-    <OpenQuestionsLine
-      questions={openQuestionsOfProject}
-      href={typeof projectId === 'string' ? `/project/${encodeURIComponent(projectId)}?view=it#not-determined` : null}
-    />
-  );
   const [importDialog, setImportDialog] = useState<'usage' | 'atc' | null>(() => {
     const asked = searchParams.get('add');
     return asked === 'usage' || asked === 'atc' ? asked : null;
@@ -1181,9 +1178,9 @@ function AnalyzeScorePage() {
       engineVersion: signedEngineVersionOf(project),
       onExplainScore: () => setShowScoreModal(true),
       provenance: {
-        // Signed when and as which run, leading to the run in the workspace's Evidence layer.
+        // Signed when and as which run, leading to the signed run under Technical detail (AB-11).
         run: runId
-          ? { id: runId, when: formatTextDate(project?.auditMetadata?.modelCard?.analysisTimestamp), href: pid ? `/project/${pid}#evidence` : undefined }
+          ? { id: runId, when: formatTextDate(project?.auditMetadata?.modelCard?.analysisTimestamp), href: '#it-trust' }
           : null,
         engine: project?.auditMetadata?.modelCard?.engineVersion ?? signedEngineVersionOf(project),
         rules: recordedProfileOf(project)?.ruleVersion ?? null,
@@ -1197,9 +1194,9 @@ function AnalyzeScorePage() {
       findingCount: findingCounts.total,
       levels: levelFacet,
       decideHref,
-      questionsHref: pid ? `/project/${pid}?view=it#not-determined` : null,
-      // This page has no re-run; a new run starts in the workspace's IT view.
-      rerunHref: pid ? `/project/${pid}?view=it` : null,
+      questionsHref: pid ? '#not-determined' : null,
+      // A new run starts with the target profile's *Change target*, under Technical detail (AB-11).
+      rerunHref: pid ? '#it-target-profile' : null,
       onOpenLine: legacyCode && sourceLines > 0 ? openSourceLine : undefined,
       notice: staleNotice,
       // Roadmap 3.0.19: "Level A by construction" beside the score, where the engine read the whole program as key user.
@@ -1261,15 +1258,13 @@ function AnalyzeScorePage() {
     if (!project) return null;
     return (
       <>
-        {typeof projectId === 'string' ? (
-          <p className="m-0 cc-text-cell text-cc-ink-muted" data-analyze-objects-link="">
-            The code inventory, its modules and the tables the code reads and writes are in the IT view:{' '}
-            <a href={`/project/${encodeURIComponent(projectId)}?view=it#it-objects`} className="font-semibold text-cc-ink underline underline-offset-2">
-              Objects &amp; dependencies
-            </a>
-            .
-          </p>
-        ) : null}
+        <p className="m-0 cc-text-cell text-cc-ink-muted" data-analyze-objects-link="">
+          The objects the code calls, reads and writes, and the program&rsquo;s own parts, are on this page:{' '}
+          <a href="#analyze-touch" className="font-semibold text-cc-ink underline underline-offset-2">
+            What it touches in SAP
+          </a>
+          .
+        </p>
         {/* Cloud Readiness Classification (A–D) */}
         <AssessmentProfileSummary project={project} />
         <AbcdClassificationPanel dataCoupling={project.dataCoupling || []} codeInventory={project.codeInventory || []} deployment={project.s4Deployment} release={project.assessmentProfile?.release} />
@@ -1330,7 +1325,7 @@ function AnalyzeScorePage() {
    */
   const renderTechnicalDetail = () => {
     return (
-      <FoldedSection id="analyze-technical-detail" data-analysis-technical-detail="" title="Technical detail">
+      <>
         <FoldedPart title="Language constructs the engine resolved" data-analysis-constructs={findings.length}>
           {/* Coverage verdict and the construct checklist, with its Confirm. */}
           <CoverageVerdict findings={findings} summary={findingsSummary} />
@@ -1342,12 +1337,105 @@ function AnalyzeScorePage() {
           </SectionBoundary>
         </FoldedPart>
         {renderImports()}
-      </FoldedSection>
+      </>
     );
   };
 
   /** Re-design's decision step — where the program decision is made since ADR-143 (owner request 23.11.2026). */
   const decideHref = typeof projectId === 'string' ? redesignHref(projectId, 'decide') : '/dashboard';
+
+  /** The two optional imports behind one "Add evidence" menu (ADR-093), in the answer card since ADR-140 (A11). */
+  const addEvidenceMenu = legacyCode ? (
+    <ExportMenu<'usage' | 'atc'>
+      label="Add evidence"
+      icon={<FilePlus2 size={16} aria-hidden={true} />}
+      align="end"
+      triggerAttrs={{ 'data-analyze-add-evidence': '' }}
+      items={[
+        {
+          kind: 'usage',
+          label: 'Usage data',
+          hint: 'SCMON, UPL or ST03N exports, for usage-weighted risk',
+          icon: <Activity size={16} aria-hidden={true} />,
+          attrs: { 'data-analyze-add-usage': '', 'aria-label': 'Add usage data' },
+        },
+        {
+          kind: 'atc',
+          label: 'ATC results',
+          hint: 'an ABAP Test Cockpit worklist, compared with the findings',
+          icon: <ListChecks size={16} aria-hidden={true} />,
+          attrs: { 'data-analyze-add-atc': '', 'aria-label': 'Add ATC results' },
+        },
+      ]}
+      onExport={(kind) => setImportDialog(kind)}
+    />
+  ) : null;
+  /** The one way out, in the Export menu of ADR-078/082 — in the answer card and at the bar's end (ADR-140 A11). */
+  const exportMenu = project?.analysis ? (
+    <ExportMenu<'html'>
+      align="end"
+      triggerAttrs={{ 'data-analyze-export-menu': '' }}
+      items={[
+        {
+          kind: 'html',
+          label: 'Confluence',
+          hint: 'a page to paste or upload',
+          icon: <BookOpenText size={16} aria-hidden={true} />,
+          attrs: { 'data-analyze-export-confluence': '', 'aria-label': 'Export Confluence' },
+        },
+      ]}
+      onExport={() => void exportToConfluence()}
+    />
+  ) : null;
+
+  /** One sentence of business context — the engine's "In short" (AB-9), the first line of the summary the Business view opens with. */
+  const inShortSentence = inShort ? (
+    <ProgramInShort lines={inShort.lines.slice(0, 1)} level={inShort.level} proposal={null} authorClaim={null} headingLevel={3} id="analyze-in-short-title" />
+  ) : null;
+
+  /** The IT page for both kinds of report (AB-9, `components/analyze/AnalyzeIt.tsx`). */
+  const renderIt = ({
+    route,
+    routeChosenByReader,
+    routeCard,
+    openItems,
+    summary,
+  }: {
+    route: string | null | undefined;
+    routeChosenByReader: boolean;
+    routeCard: React.ReactNode;
+    openItems: OpenItem[];
+    summary: React.ComponentProps<typeof AnalyzeIt>['summary'];
+  }) =>
+    project && typeof projectId === 'string' ? (
+      <AnalyzeIt
+        projectId={projectId}
+        project={project}
+        source={legacyCode}
+        score={signedCleanCoreScore}
+        route={route}
+        routeChosenByReader={routeChosenByReader}
+        hero={heroProps()}
+        findings={evidenceFindings}
+        sourceLines={sourceLines}
+        levels={{ status: levelLookup.status, of: levelOf }}
+        steps={processSteps}
+        notAssessed={notAssessedItems}
+        notes={evidenceReport?.notes ?? []}
+        pointsOf={pointsOfKind}
+        fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
+        routeCard={routeCard}
+        openItems={openItems}
+        notDeterminedSummary={notDeterminedSummary}
+        summary={summary}
+        technicalDetail={renderTechnicalDetail()}
+        inShort={inShortSentence}
+        addEvidence={addEvidenceMenu}
+        exportMenu={exportMenu}
+        missingObjects={missingDeps.length}
+      />
+    ) : null;
+
 
   const renderAnalysisContent = () => {
     if (!project?.analysis) {
@@ -1375,30 +1463,12 @@ function AnalyzeScorePage() {
       const evidenceOverridden = routeWasOverridden(evidenceRecommended, evidenceRoute);
       const evidenceRationale = project.recommendationJustification ? sapNamesForDisplay(project.recommendationJustification) : null;
       return (
-        <div className="space-y-6 font-sans" data-evidence-only-report>
-          {programInShort}
-          <AnalysisAnswer
-            score={signedCleanCoreScore}
-            route={evidenceRoute}
-            routeChosenByReader={evidenceOverridden}
-            {...heroProps()}
-          />
-
-          {/* The tool's anchor bar (ADR-091), under the score hero, before the first section (ADR-093). */}
-          <AnalyzeAnchorBar findings={evidenceFindings} sourceLines={sourceLines} />
-
-          <EvidenceFindingsTable
-            findings={evidenceFindings}
-            sourceLines={sourceLines}
-            source={legacyCode}
-            levels={{ status: levelLookup.status, of: levelOf }}
-            steps={processSteps}
-            notAssessed={notAssessedItems}
-            notes={evidenceReport?.notes ?? []}
-            pointsOf={pointsOfKind}
-            fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
-            sideTopLabel={`Route · ${shortRoute(evidenceRoute) ?? 'not determined'}`}
-            sideTop={({ openLine }) => (
+        <div data-evidence-only-report="">
+          {renderIt({
+            route: evidenceRoute,
+            routeChosenByReader: evidenceOverridden,
+            openItems,
+            routeCard: (
               <RouteCard
                 route={evidenceRoute}
                 overridden={evidenceOverridden}
@@ -1410,25 +1480,25 @@ function AnalyzeScorePage() {
                 derived={routeDerived}
                 notRecorded={routeNotRecorded(evidenceOverridden, signedRouteConfidence, evidenceRationale)}
                 decideHref={decideHref}
-                openLine={openLine}
+                openLine={legacyCode && sourceLines > 0 ? openSourceLine : undefined}
                 stageOutput
               />
-            )}
-            sideBottom={<NotDeterminedSide items={openItems} questions={questionsLine} summary={notDeterminedSummary} />}
-          />
-
-          {/* Where the model's summary would stand: folded, saying it is not there. */}
-          <FoldedSection id="analyze-summary" data-analysis-summary="not-generated" title="Model summary">
-            <NotGenerated
-              what="Analysis narrative"
-              absence={narrativeAbsence}
-              why={narrativeAbsenceWhy}
-              stage="analyze"
-              hint="Everything on this page was computed by the evidence engine and is covered by this run's signature. Re-run the analysis once a model is available to add the narrative."
-            />
-          </FoldedSection>
-
-          {renderTechnicalDetail()}
+            ),
+            // Where the model's summary would stand: folded, saying it is not there.
+            summary: {
+              onRecord: false,
+              mode: 'not-generated',
+              body: (
+                <NotGenerated
+                  what="Analysis narrative"
+                  absence={narrativeAbsence}
+                  why={narrativeAbsenceWhy}
+                  stage="analyze"
+                  hint="Everything on this page was computed by the evidence engine and is covered by this run's signature. Re-run the analysis once a model is available to add the narrative."
+                />
+              ),
+            },
+          })}
         </div>
       );
     }
@@ -1461,89 +1531,51 @@ function AnalyzeScorePage() {
       // as one muted line: it is about the run, not the code (audit §3.9).
       const openItems: OpenItem[] = [...sourceOpenItems()];
 
-      return (
-        <div className="space-y-6 font-sans">
-          {programInShort}
-          <AnalysisAnswer
-            score={signedCleanCoreScore}
+      return renderIt({
+        route: shownRoute,
+        routeChosenByReader: routeIsOverridden,
+        openItems,
+        routeCard: (
+          /* The route, as the rules recommended it — or as an earlier build's switch stored it. */
+          <RouteCard
             route={shownRoute}
-            routeChosenByReader={routeIsOverridden}
-            {...heroProps()}
-          />
-
-          {/* The tool's anchor bar (ADR-091), under the score hero, before the first section (ADR-093). */}
-          <AnalyzeAnchorBar findings={evidenceFindings} sourceLines={sourceLines} summary />
-
-          <EvidenceFindingsTable
-            findings={evidenceFindings}
-            sourceLines={sourceLines}
-            source={legacyCode}
-            levels={{ status: levelLookup.status, of: levelOf }}
-            steps={processSteps}
-            notAssessed={notAssessedItems}
-            notes={evidenceReport?.notes ?? []}
-            pointsOf={pointsOfKind}
-            fileName={sourceFileName(project) ?? (uploadedFileName !== PASTED_SOURCE_NAME ? uploadedFileName : 'source')}
-            sideTopLabel={`Route · ${shortRoute(shownRoute) ?? 'not determined'}`}
-            sideBottom={<NotDeterminedSide items={openItems} questions={questionsLine} summary={notDeterminedSummary} />}
-            sideTop={({ openLine }) => (
-              /* The route, as the rules recommended it — or as an earlier build's switch stored it. */
-              <RouteCard
-                route={shownRoute}
-                overridden={routeIsOverridden}
-                recommended={recommendedRoute ?? null}
-                targetArtifact={analysisData.extensibilityRouting?.targetArtifact ?? null}
-                confidence={signedRouteConfidence}
-                rationale={rationale}
-                deployment={project.s4Deployment ?? null}
-                derived={routeDerived}
-                notRecorded={routeNotRecorded(routeIsOverridden, signedRouteConfidence, rationale)}
-                decideHref={decideHref}
-                openLine={openLine}
-                stageOutput
-                modelWords
-              >
-                {/* "Why this route" — the decision path, one action deeper
-                    (owner decision 02.10.2026). What drives the route and what
-                    it assumes stand open above it. The model's "Standard Fit"
-                    that stood beside it is gone (owner decision 22.10.2026):
-                    whether SAP standard does what the program does is not
-                    measured, and the Management decision says so. */}
-                <div className="mt-3 border-t border-cc-line pt-1" data-route-why="">
-                  <CcDisclosure title="Why this route">
-                    <SectionBoundary name="Route decision path">
-                      <div className="space-y-8">
-                        {/* Decision matrix pathway */}
-                        <ExtensibilityDecisionMatrix
-                          extensibilityRoute={shownRoute || SIDE_BY_SIDE_ROUTE}
-                          decisionTreeCheckpoints={checkpoints}
-                          comparativeAnalysis={comparative}
-                        />
-
-                      </div>
-                    </SectionBoundary>
-                  </CcDisclosure>
-                </div>
-              </RouteCard>
-            )}
-          />
-
-          {/* What the model wrote about this code — outside the signature by
-              design, so folded and marked as a proposal (owner decision
-              02.10.2026). */}
-          <FoldedSection
-            id="analyze-summary"
-            data-analysis-summary="model"
-            title="Model summary"
-            aside={<CcProvenanceChip value="proposed" />}
+            overridden={routeIsOverridden}
+            recommended={recommendedRoute ?? null}
+            targetArtifact={analysisData.extensibilityRouting?.targetArtifact ?? null}
+            confidence={signedRouteConfidence}
+            rationale={rationale}
+            deployment={project.s4Deployment ?? null}
+            derived={routeDerived}
+            notRecorded={routeNotRecorded(routeIsOverridden, signedRouteConfidence, rationale)}
+            decideHref={decideHref}
+            openLine={legacyCode && sourceLines > 0 ? openSourceLine : undefined}
+            stageOutput
+            modelWords
           >
+            {/* "Why this route" — the decision path, one action deeper (owner decision 02.10.2026). */}
+            <div className="mt-3 border-t border-cc-line pt-1" data-route-why="">
+              <CcDisclosure title="Why this route">
+                <SectionBoundary name="Route decision path">
+                  <div className="space-y-8">
+                    <ExtensibilityDecisionMatrix
+                      extensibilityRoute={shownRoute || SIDE_BY_SIDE_ROUTE}
+                      decisionTreeCheckpoints={checkpoints}
+                      comparativeAnalysis={comparative}
+                    />
+                  </div>
+                </SectionBoundary>
+              </CcDisclosure>
+            </div>
+          </RouteCard>
+        ),
+        // What the model wrote about this code — outside the signature by design, so folded and marked as a
+        // proposal (owner decision 02.10.2026; plan P4: the model summary stops being a block of its own).
+        summary: {
+          onRecord: true,
+          mode: 'model',
+          aside: <FamilyChip value="proposed" />,
+          body: (
             <div className="min-w-0">
-              {/*
-                The summary is the one narrative field a reader treats as
-                the report's conclusion, and it is outside the signature by
-                design. It shows which of its sentences point at a line
-                of the program and which do not.
-              */}
               {analysisData.summary ? (
                 <AnchoredNarrative
                   text={analysisData.summary}
@@ -1555,9 +1587,8 @@ function AnalyzeScorePage() {
               ) : (
                 <p className="m-0 cc-text-cell text-cc-ink-muted">The narrative has no summary.</p>
               )}
-              {/* SAP identifiers the model named anywhere in its analysis,
-                  each checked against SAP data this product holds (external
-                  review F-03). The anchored summary keeps its own renderer. */}
+              {/* SAP identifiers the model named anywhere in its analysis, each checked against SAP data this
+                  product holds (external review F-03). */}
               <SapIdentifierChecks
                 texts={[
                   analysisData.summary,
@@ -1569,11 +1600,9 @@ function AnalyzeScorePage() {
                 title="SAP identifiers named in the model's analysis"
               />
             </div>
-          </FoldedSection>
-
-          {renderTechnicalDetail()}
-        </div>
-      );
+          ),
+        },
+      });
     }
 
     // A project analysed before runs existed, with a narrative that is not
@@ -1628,69 +1657,15 @@ function AnalyzeScorePage() {
       <StageHeader tools={{ steps: phases, current: 'analyze' }}
         project={project}
         stage="analyze"
+        // Analyze is the project's entry in every view (ADR-109; AB-11): its way back is My workspace, never itself.
+        backToMyWorkspace
         actions={
-          legacyCode || (hasResults && project?.analysis) ? (
+          // The family has no header actions (ADR-140 A11): *Add evidence* and *Export* stand in the answer card. Only a
+          // project analysed before runs existed, which has no answer card, keeps them here.
+          project?.analysis && !project?.activeRunId?.trim() ? (
             <div className="flex flex-wrap items-center gap-2" data-analyze-header-actions="">
-              {/* The process is not drawn here: its BPMN map stands in the
-                  Business view (ADR-080). A reader who looks for it in Analyze
-                  gets the way there at once (owner, 11.10.2026) — where a run is
-                  signed, since the map is drawn only from signed source. */}
-              {project?.activeRunId?.trim() ? (
-                <CcLinkButton
-                  variant="ghost"
-                  href={workspaceProcessHref(projectId as string)}
-                  icon={<Workflow size={16} aria-hidden={true} />}
-                  data-analyze-open-process=""
-                >
-                  Process (BPMN)
-                </CcLinkButton>
-              ) : null}
-              {/* The two optional imports behind one "Add evidence" menu (owner
-                  decision Q5, 11.10.2026, ADR-093); each still opens the upload
-                  it always had, in a dialog, and `?add=usage|atc` opens it
-                  directly (ADR-081). */}
-              {legacyCode ? (
-                <ExportMenu<'usage' | 'atc'>
-                  label="Add evidence"
-                  icon={<FilePlus2 size={16} aria-hidden={true} />}
-                  align="end"
-                  triggerAttrs={{ 'data-analyze-add-evidence': '' }}
-                  items={[
-                    {
-                      kind: 'usage',
-                      label: 'Usage data',
-                      hint: 'SCMON, UPL or ST03N exports, for usage-weighted risk',
-                      icon: <Activity size={16} aria-hidden={true} />,
-                      attrs: { 'data-analyze-add-usage': '', 'aria-label': 'Add usage data' },
-                    },
-                    {
-                      kind: 'atc',
-                      label: 'ATC results',
-                      hint: 'an ABAP Test Cockpit worklist, compared with the findings',
-                      icon: <ListChecks size={16} aria-hidden={true} />,
-                      attrs: { 'data-analyze-add-atc': '', 'aria-label': 'Add ATC results' },
-                    },
-                  ]}
-                  onExport={(kind) => setImportDialog(kind)}
-                />
-              ) : null}
-              {/* The one way out, in the Export menu of ADR-078/082. */}
-              {hasResults && project?.analysis ? (
-                <ExportMenu<'html'>
-                  align="end"
-                  triggerAttrs={{ 'data-analyze-export-menu': '' }}
-                  items={[
-                    {
-                      kind: 'html',
-                      label: 'Confluence',
-                      hint: 'a page to paste or upload',
-                      icon: <BookOpenText size={16} aria-hidden={true} />,
-                      attrs: { 'data-analyze-export-confluence': '', 'aria-label': 'Export Confluence' },
-                    },
-                  ]}
-                  onExport={() => void exportToConfluence()}
-                />
-              ) : null}
+              {addEvidenceMenu}
+              {exportMenu}
             </div>
           ) : undefined
         }

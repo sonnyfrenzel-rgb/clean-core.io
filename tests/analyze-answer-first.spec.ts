@@ -157,29 +157,29 @@ test.describe('the page, rendered in the workspace', () => {
     await signInThroughForm(page, acct);
     await page.goto(`/project/${acct.projectId}/analyze?view=it&from=workspace-tools`, { waitUntil: 'domcontentloaded' });
 
-    // Since ADR-093 (11.10.2026) the answer is the score hero: the figure, its
-    // band, what it is not, and what moves it.
+    // Since 3.5.0 (AB-9, ADR-140) the answer is the family's answer card: the question, the score with its band in
+    // one sentence, the score box beside it with what the figure is not, and four facets.
     const answer = page.locator('[data-analysis-answer]');
     await expect(answer).toBeVisible({ timeout: 90000 });
-    await expect(answer.locator('h2')).toHaveText('Clean Core Score');
+    await expect(answer.locator('[data-answer-question]')).toContainText('How far is this code from clean core?');
     await expect(answer.locator('[data-analyze-score-value]')).toHaveText('62');
     await expect(answer).toContainText('of 100');
-    await expect(answer).toContainText('not a compliance percentage and not an SAP measure');
-    await expect(answer.locator('[data-analysis-facet="Findings"]')).toContainText(/\d+/);
+    await expect(answer).toContainText('not a compliance percentage');
+    await expect(answer.locator('[data-facet="findings"]')).toContainText(/\d+/);
 
     // The answer stands above the findings; what is not determined stands
-    // beside them, in the side column, and nowhere else.
+    // beside them, in the page's side column (ADR-140 A10), and nowhere else.
     const order = await page.evaluate(() => {
       const top = (sel: string) => document.querySelector(sel)?.getBoundingClientRect().top ?? -1;
       return {
         answer: top('[data-analysis-answer]'),
         findings: top('[data-analysis-findings]'),
-        openInFindings: !!document.querySelector('[data-analysis-findings] [data-analysis-not-determined]'),
+        openInSide: !!document.querySelector('[data-analyze-it-side] [data-analysis-not-determined]'),
       };
     });
     expect(order.answer).toBeGreaterThan(0);
     expect(order.answer).toBeLessThan(order.findings);
-    expect(order.openInFindings).toBe(true);
+    expect(order.openInSide).toBe(true);
 
     const body = page.locator('body');
     await expect(body).not.toContainText(/\d+\s*%\s*Compliance|Compliance:/i);
@@ -191,7 +191,7 @@ test.describe('the page, rendered in the workspace', () => {
     await expect(open).toHaveCount(1);
     const n = Number(await open.getAttribute('data-analysis-not-determined'));
     expect(n).toBeGreaterThan(0);
-    await expect(open.locator('h2')).toHaveText('Not determined');
+    await expect(open.locator('h2').first()).toHaveText('Not determined');
     // The answer no longer repeats the count as a facet of its own (ADR-081:
     // the duplicate Analyze facet went) — the side card is the one place.
     await expect(answer).not.toContainText(/\d+ things? not determined/);

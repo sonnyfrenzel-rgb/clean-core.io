@@ -223,8 +223,8 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
     const inline = tour.slice(tour.indexOf('export function ProcessTourInline'));
     expect(inline.indexOf('data-tour-sheet=""')).toBeLessThan(inline.indexOf('data-tour-inline-map=""'));
     expect(inline).not.toMatch(/\border-(first|last|\d+)\b/);
-    // The workspace shell keeps no Business order to drift from it.
-    expect(read('components/workspace/WorkspaceShell.tsx')).not.toContain('BUSINESS_ORDER');
+    // The workspace shell is gone (3.5.0, AB-11); Analyze's IT page keeps no Business order to drift from it.
+    expect(read('components/analyze/AnalyzeIt.tsx')).not.toContain('BUSINESS_ORDER');
   });
 
   test('on a phone the toolbar is a menu in every view (§2.9)', () => {

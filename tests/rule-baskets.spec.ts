@@ -591,7 +591,8 @@ test.describe('the register in IT, rendered', () => {
 });
 
 test.describe('the places (source guards)', () => {
-  const shell = read('components/workspace/WorkspaceShell.tsx');
+  // The workspace shell dissolved with 3.5.0 (AB-11); the rule register stands under Analyze, IT's Technical detail.
+  const shell = read('components/analyze/AnalyzeIt.tsx');
   test('no rule card in the Business view; the text around the map says the one sentence and offers no rule decision; the endings lead with no rule', () => {
     // Business is Analyze's page since v3.1.0 (AB-2, ADR-109).
     const business = read('components/analyze/AnalyzeBusiness.tsx');
@@ -614,7 +615,7 @@ test.describe('the places (source guards)', () => {
   });
 
   test('the full register is in IT; the questions stand in the Business view of Design; open questions lead there', () => {
-    expect(shell).toContain('rules={<ItRuleRegister');
+    expect(shell).toContain('<ItRuleRegister project={project} projectId={projectId} reading={reading} />');
     const design = read('app/(app)/project/[projectId]/design/page.tsx');
     expect(design.indexOf('<RuleQuestions')).toBeGreaterThan(-1);
     // ADR-130 (3.5.0): the Business view's section, built once and mounted in every view.
