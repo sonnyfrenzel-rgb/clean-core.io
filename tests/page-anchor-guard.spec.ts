@@ -58,6 +58,7 @@ const BAR_CALLERS = [
   'components/delivery/DemoDelivery.tsx',
   'components/workspace/ItAnswers.tsx', // the IT view (ADR-086)
   'app/(app)/settings/page.tsx', // Profile settings in the tools' family (ADR-139 (3))
+  'components/analyze/AnalyzeManagement.tsx', // Analyze, Management (AB-10, ADR-143)
 ];
 
 /** Where each tool draws its sections — the real page and its demo twin. */

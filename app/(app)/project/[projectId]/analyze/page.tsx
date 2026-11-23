@@ -147,6 +147,8 @@ import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { takeOwnCodeHandoff } from '@/lib/own-code-handoff';
 import { countSourceLines } from '@/lib/source-lines';
 import AnalyzeBusiness from '@/components/analyze/AnalyzeBusiness';
+import AnalyzeManagement from '@/components/analyze/AnalyzeManagement';
+import { redesignHref } from '@/lib/redesign';
 import { createDraftHolder } from '@/lib/process-map-draft';
 import { stageViewOf, useLocationSearch } from '@/lib/location-search';
 
@@ -158,8 +160,12 @@ import { stageViewOf, useLocationSearch } from '@/lib/location-search';
  * `components/analyze/AnalyzeBusiness.tsx`. A project without source has no
  * map yet, so it gets the upload and start path below (P4).
  *
- * **IT and Management** keep today's page, the score hero with its findings
- * (`AnalyzeScorePage`), until AB-9 and AB-10 give each one page of its own.
+ * **Management** is a page of its own (AB-10, ADR-143):
+ * `components/analyze/AnalyzeManagement.tsx` — the decision read-only, and
+ * Re-design as the one way on.
+ *
+ * **IT** keeps today's page, the score hero with its findings
+ * (`AnalyzeScorePage`), until AB-9 gives it one page of its own.
  *
  * The view is read from the address in the browser (`useLocationSearch`), as
  * the stage header's view switch writes it, so a switch changes the page in
@@ -198,6 +204,9 @@ export default function AnalyzePage() {
     return (
       <AnalyzeBusiness key={projectId} projectId={projectId} first={first} draftHolder={processDraft} fallback={<AnalyzeScorePage />} />
     );
+  }
+  if (view === 'management' && !working && typeof projectId === 'string') {
+    return <AnalyzeManagement key={projectId} projectId={projectId} fallback={<AnalyzeScorePage />} />;
   }
   return <AnalyzeScorePage />;
 }
@@ -1337,8 +1346,8 @@ function AnalyzeScorePage() {
     );
   };
 
-  /** The workspace's Management view — where the program decision is made (owner decision 10.10.2026). */
-  const decideHref = typeof projectId === 'string' ? `/project/${encodeURIComponent(projectId)}?view=management#decision-card` : '/dashboard';
+  /** Re-design's decision step — where the program decision is made since ADR-143 (owner request 23.11.2026). */
+  const decideHref = typeof projectId === 'string' ? redesignHref(projectId, 'decide') : '/dashboard';
 
   const renderAnalysisContent = () => {
     if (!project?.analysis) {
