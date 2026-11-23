@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v3.5.0] — 2026-11-24
+
 ### Security
 
 - Accepting or previewing an invitation to read a project or a portfolio selection now needs the second factor, as
