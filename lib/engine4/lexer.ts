@@ -194,6 +194,23 @@ function newLine(s: State): void {
 }
 
 /**
+ * One line of an EXEC SQL block: where `ENDEXEC` stands and where an ABAP `"` comment starts, both only outside
+ * an SQL string literal `'…'` (a doubled `''` stays inside). A `"` outside a literal starts the comment, so a
+ * quoted identifier `"…"` never hides a terminator after it either. A literal does not continue on the next line.
+ */
+function scanExecLine(line: string): { end: { index: number } | null; quote: number } {
+  let inString = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (c === "'") { inString = !inString; continue; }
+    if (inString) continue;
+    if (c === '"') return { end: null, quote: i };
+    if (/^ENDEXEC\b/i.test(line.slice(i, i + 8)) && (i === 0 || !/\w/.test(line[i - 1]))) return { end: { index: i }, quote: -1 };
+  }
+  return { end: null, quote: -1 };
+}
+
+/**
  * Native mode: each line one `nativeSql` token, `*` in column 1 still a comment.
  * EXEC SQL ends before the word `ENDEXEC` (an ABAP `"` comment on the line is
  * honoured); an AMDP body ends before a line starting with `ENDMETHOD`.
@@ -211,8 +228,7 @@ function lexNative(s: State, mode: 'exec' | 'amdp'): void {
       if (atStart && /^\s*ENDMETHOD\b/i.test(line)) return;
       emitNative(s, s.pos, eol);
     } else {
-      const end = /\bENDEXEC\b/i.exec(line);
-      const quote = line.indexOf('"');
+      const { end, quote } = scanExecLine(line);
       if (quote !== -1 && (!end || quote < end.index)) {
         emitNative(s, s.pos, s.pos + quote);
         lexComment(s);

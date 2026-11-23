@@ -29,7 +29,8 @@ The engine release. What changes for anyone who analyses a program:
 - **Fewer false findings.** `INSERT REPORT`, `DELETE REPORT` and `READ REPORT` (and their `TEXTPOOL` and `DYNPRO`
   forms) are no longer reported as a critical write to a table called `REPORT`. A constant declared in one
   subroutine no longer decides which table a dynamic statement in another subroutine touches: `DELETE FROM (name)`
-  was reported as a critical write to a table the statement never names; it is now listed as not determined.
+  was reported as a critical write to a table the statement never names; it is now listed as not determined. A
+  subroutine that declares the name itself, also inline with `DATA( )` or `FINAL( )`, hides a global constant of it.
 - Runs signed by an earlier engine keep exactly what they signed: every change above applies from engine 3.4.0 on.
 
 ### 3.4.0 — the engine release (owner decision 22.11.2026)

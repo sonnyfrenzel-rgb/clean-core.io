@@ -253,7 +253,8 @@ function blank(text: string): string {
  * is an offset in the real one.
  */
 export function maskLiterals(text: string): string {
-  // Parse once (3.5.0): inside a build the same text is masked once (a pure function, so neutral).
+  // Parse once (3.5.0): inside a build the same text is masked once and the result reused; the neutrality run
+  // (`scripts/engine/parse-once-neutrality.ts`) checks that the reuse changes nothing.
   const memo = maskScope?.get(text);
   if (memo !== undefined) return memo;
   const out = maskLiteralsScan(text);

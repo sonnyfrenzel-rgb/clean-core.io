@@ -114,3 +114,20 @@ test('PERFORM (name) fixed to a FORM this source lacks is unresolved, so reachab
   expect(edgesAt(g, 4)).toEqual(['unresolved FORM MISSING']);
   expect(g.certain).toBe(false);
 });
+
+test('a receiver resolves by the scope of the call: same name, different REF TO types in two methods', () => {
+  const src = [
+    'CLASS zcl_a DEFINITION.', '  PUBLIC SECTION.', '    METHODS run.', 'ENDCLASS.',
+    'CLASS zcl_b DEFINITION.', '  PUBLIC SECTION.', '    METHODS run.', 'ENDCLASS.',
+    'CLASS lcl_main DEFINITION.', '  PUBLIC SECTION.', '    METHODS one.', '    METHODS two.', 'ENDCLASS.',
+    'CLASS zcl_a IMPLEMENTATION.', '  METHOD run.', '  ENDMETHOD.', 'ENDCLASS.',
+    'CLASS zcl_b IMPLEMENTATION.', '  METHOD run.', '  ENDMETHOD.', 'ENDCLASS.',
+    'CLASS lcl_main IMPLEMENTATION.',
+    '  METHOD one.', '    DATA lo TYPE REF TO zcl_a.', '    lo->run( ).', '  ENDMETHOD.',
+    '  METHOD two.', '    DATA lo TYPE REF TO zcl_b.', '    lo->run( ).', '  ENDMETHOD.',
+    'ENDCLASS.',
+  ].join('\n');
+  const g = graph(src);
+  expect(edgesAt(g, 25)).toEqual(['static METHOD ZCL_A=>RUN']);
+  expect(edgesAt(g, 29)).toEqual(['static METHOD ZCL_B=>RUN']);
+});

@@ -172,3 +172,18 @@ ENDFORM.
   expect(writes(NEW)).toEqual([]);
   expect(writes(OLD)).toEqual(['CRITICAL: Direct Write to SAP Standard Table KNA1']);
 });
+
+test('an inline FINAL( ) declaration hides a global constant as DATA( ) does', () => {
+  const code = `REPORT zfinal.
+CONSTANTS lv_tab TYPE tabname VALUE 'VBAK'.
+FORM a.
+  FINAL(lv_tab) = get_tabname( ).
+  DELETE FROM (lv_tab).
+ENDFORM.
+`;
+  const r = readTableDependencies(code, { multiLineTemplates: true, scopedConstants: true });
+  expect(r.dependencies.filter((d) => !d.possibleTargetOf && d.access !== 'read').map((d) => `${d.line}:${d.table}`)).toEqual([]);
+  expect(r.unresolved.map((u) => u.line)).toEqual([5]);
+  const writes = buildAbapEvidence(code, 'final.abap', 'private', undefined, NEW).findings.filter((f) => f.kind === 'standard-table-write');
+  expect(writes).toEqual([]);
+});

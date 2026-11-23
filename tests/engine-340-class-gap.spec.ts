@@ -242,3 +242,16 @@ INSERT REPORT 'ZGEN' FROM lt_src.
   expect(writes(NEW)).toEqual([]);
   expect(buildAbapEvidence(code, 'zins.abap', 'private', undefined, NEW).findings.some((f) => f.kind === 'security-review')).toBe(true);
 });
+
+test('a class named on a continuation line is anchored on its statement start, as every finding is', () => {
+  // Findings name the line a statement starts on, so a re-wrapped source keeps its findings (abap-metamorphic).
+  const code = `REPORT zcont.
+DATA lv_url TYPE string.
+lv_url =
+  cl_http_utility=>unescape_url( lv_url ).
+`;
+  const http = classFindings(code, NEW).find((f) => f.objectName === 'CL_HTTP_UTILITY')!;
+  expect(http.lines).toEqual([3]);
+  expect(http.lineStart).toBe(3);
+  expect(http.snippet).toContain('cl_http_utility');
+});

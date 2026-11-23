@@ -591,14 +591,14 @@ function methodDeclaresParameter(ctx: Context, method: Container, name: string):
 }
 
 /**
- * Does this routine declare `name` itself, as anything but a constant — `DATA`, `STATICS`, an inline `DATA( )`, a
+ * Does this routine declare `name` itself, as anything but a constant — `DATA`, `STATICS`, an inline `DATA( )` or `FINAL( )`, a
  * parameter on its `FORM` line, or a formal parameter of the method (`methodDeclaresParameter`)? Then a global
  * constant of that name is hidden in it.
  */
 function declaresLocally(ctx: Context, scope: Container, name: string): boolean {
   if (scope.kind === 'method' && methodDeclaresParameter(ctx, scope, name)) return true;
   const word = escapeRegExp(name);
-  const inline = new RegExp(`\\bDATA\\(\\s*${word}\\s*\\)`, 'i');
+  const inline = new RegExp(`\\b(?:DATA|FINAL)\\(\\s*${word}\\s*\\)`, 'i');
   const parameter = new RegExp(`\\b(?:USING|CHANGING|TABLES)\\b.*?(?:^|[\\s(])(?:VALUE\\(\\s*)?${word}(?=$|[\\s,.)])`, 'i');
   for (let i = 0; i < ctx.statements.length; i++) {
     const line = ctx.statements[i].line;

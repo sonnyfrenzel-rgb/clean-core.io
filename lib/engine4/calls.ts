@@ -149,21 +149,60 @@ function implementers(m: Model, intf: string, name: string): string[] {
   return [...out];
 }
 
-/** Declared reference types: `DATA lo TYPE REF TO x`, attributes, method parameters — by name, the first wins. */
-function refTypes(list: readonly Statement[], d: Declarations): Map<string, string> {
-  const out = new Map<string, string>();
+/** The routine block (method, FORM, function, module, event) statement `i` sits in, or null at program level. */
+function routineOf(tree: BlockTree, i: number): Block | null {
+  for (let b: Block | null = tree.blocks[tree.owner[i]] ?? null; b; b = b.parent) if (ROUTINE_KINDS.has(b.kind)) return b;
+  return null;
+}
+
+/**
+ * Declared reference types: `DATA lo TYPE REF TO x`, attributes, method parameters. Resolved by the lexical
+ * scope of the call site: the routine's own declarations and, in a method, its own parameters shadow the
+ * program-level declarations and attributes; within one scope the first declaration wins. Parameters of other
+ * methods stay a last fallback, as a receiver named like one is still best read with that type.
+ */
+function refTypes(list: readonly Statement[], tree: BlockTree, d: Declarations): (recv: string, at: number) => string | undefined {
+  const local = new Map<number, Map<string, string>>();
+  const global = new Map<string, string>();
+  const params = new Map<string, string>();
   for (const s of list) {
     if (!['Data', 'ClassData', 'Statics'].includes(s.kind)) continue;
     const u = unitsOf(s.tokens.slice(s.headCount));
     const own = s.headCount === 0 ? u.slice(1) : u;
     const r = own.indexOf('REF');
-    if (r > 0 && own[r - 1] === 'TYPE' && own[r + 1] === 'TO' && own[0] && !out.has(own[0])) out.set(own[0], own[r + 2]);
+    if (!(r > 0 && own[r - 1] === 'TYPE' && own[r + 1] === 'TO' && own[0])) continue;
+    const scope = routineOf(tree, s.index);
+    const into = scope ? local.get(scope.id) ?? local.set(scope.id, new Map()).get(scope.id)! : global;
+    if (!into.has(own[0])) into.set(own[0], own[r + 2]);
   }
   for (const t of d.types) {
-    for (const a of t.attributes) if (a.type.kind === 'ref' && a.type.name && !out.has(a.name)) out.set(a.name, a.type.name);
-    for (const me of t.methods) for (const p of me.parameters) if (p.type.kind === 'ref' && p.type.name && !out.has(p.name)) out.set(p.name, p.type.name);
+    for (const a of t.attributes) if (a.type.kind === 'ref' && a.type.name && !global.has(a.name)) global.set(a.name, a.type.name);
+    for (const me of t.methods) for (const p of me.parameters) if (p.type.kind === 'ref' && p.type.name && !params.has(p.name)) params.set(p.name, p.type.name);
   }
-  return out;
+  const typeOf = new Map(d.types.map((t) => [t.name, t]));
+  /** The REF TO parameters of the method implemented by block `b`, `M` or `INTF~M`. */
+  const ownParams = (b: Block): Map<string, string> => {
+    const out = new Map<string, string>();
+    const name = (b.name ?? '').toUpperCase();
+    const [owner, method] = name.includes('~') ? name.split('~') : [classOf(b.parent)?.name ?? '', name];
+    const decl = typeOf.get(owner)?.methods.find((x) => x.name === method);
+    for (const p of decl?.parameters ?? []) if (p.type.kind === 'ref' && p.type.name && !out.has(p.name)) out.set(p.name, p.type.name);
+    return out;
+  };
+  const paramCache = new Map<number, Map<string, string>>();
+  return (recv, at) => {
+    const scope = routineOf(tree, at);
+    if (scope) {
+      const hit = local.get(scope.id)?.get(recv);
+      if (hit) return hit;
+      if (scope.kind === 'method') {
+        const ps = paramCache.get(scope.id) ?? paramCache.set(scope.id, ownParams(scope)).get(scope.id)!;
+        const p = ps.get(recv);
+        if (p) return p;
+      }
+    }
+    return global.get(recv) ?? params.get(recv);
+  };
 }
 
 /** The method calls of one statement: `[receiver, method]` with receiver `ME`, `SUPER`, `=>CLS`, a variable, or '' for a bare call. */
@@ -201,7 +240,7 @@ function methodCalls(s: Statement): Array<[string, string]> {
 export function callGraph(list: readonly Statement[], tree: BlockTree): CallGraph {
   const d = declarations(list, tree);
   const m = model(d);
-  const types = refTypes(list, d);
+  const typeAt = refTypes(list, tree, d);
   const routines: Routine[] = [{ key: 'PROGRAM', kind: 'program', name: '', block: 0, row: 1 }];
   const keyOf = new Map<number, string>([[0, 'PROGRAM']]);
   for (const b of tree.blocks) {
@@ -284,7 +323,7 @@ export function callGraph(list: readonly Statement[], tree: BlockTree): CallGrap
       if (recv === 'ME') cls = own;
       else if (recv === 'SUPER') { cls = m.superOf.get(own); fixed = true; }
       else if (recv.startsWith('=>')) { cls = recv.slice(2); fixed = true; }
-      else cls = types.get(recv);
+      else cls = typeAt(recv, s.index);
       if (!cls) { push(s, 'method', 'unresolved', null, `${recv}->${name}`); continue; }
       if (m.interfaces.has(cls)) {
         const targets = implementers(m, cls, name);

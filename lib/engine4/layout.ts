@@ -469,7 +469,7 @@ function orderObject(w: Work, o: UploadObject): void {
   // A class's main file holds no INCLUDE (abapGit, or a pasted class): its parts go by role, local definitions first.
   const byRoles = o.type === 'class' && main !== undefined && main.includes.length === 0;
   if (main && !byRoles) visit(main, []);
-  else if (o.type !== 'include') diag(w, 'missing-main', 'info', own[0]?.file ?? '', 0, `${o.name}: its main program is not part of the upload; read in the workbench's order.`);
+  else if (!main && o.type !== 'include') diag(w, 'missing-main', 'info', own[0]?.file ?? '', 0, `${o.name}: its main program is not part of the upload; read in the workbench's order.`);
   for (const p of byRank(own)) {
     if (seen.has(p.name)) continue;
     if (main && main.includes.length > 0 && p.how !== 'abapGit') {

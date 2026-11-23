@@ -11,8 +11,8 @@
  * This replaces the per-reader design of 22.11.2026 (every reader calling `ledger.judge(i)`): the class is
  * data in the kind table, so completeness does not depend on each reader remembering to register.
  *
- * Pure and inert (ADR-125): imports only within `lib/engine4/`. Nothing in the product reads it; its effect
- * on what a run says about completeness is a gated reading of the switch.
+ * Pure (ADR-125): imports only within `lib/engine4/`; `tests/engine4-layer-guard.spec.ts` checks that no product
+ * module imports it. Letting it change what a run says about completeness is a gated reading of the switch.
  */
 import type { ReferenceTable } from './references';
 import { kindInfo, type EffectClass, type StatementKind } from './statement-kinds';

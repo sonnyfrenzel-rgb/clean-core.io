@@ -140,7 +140,8 @@ test('nothing in the product imports lib/engine4 before the switch, except the p
   for (const dir of ['app', 'components', 'hooks', 'lib']) {
     for (const file of walk(path.join(ROOT, dir))) {
       const rel = path.relative(ROOT, file);
-      for (const spec of importsOf(file).filter((s) => /(?:^|\/)engine4(?:\/|$)/.test(s))) {
+      // A computed import could reach lib/engine4 unseen, so the product has none (none existed when this was added).
+      for (const spec of importsOf(file).filter((s) => s === COMPUTED || /(?:^|\/)engine4(?:\/|$)/.test(s))) {
         if (rel === PARSE_ONCE_EXCEPTION.file && spec === PARSE_ONCE_EXCEPTION.spec) exceptionSeen = true;
         else if (rel === REFERENCES_EXCEPTION.file && spec === REFERENCES_EXCEPTION.spec) referencesSeen = true;
         else bad.push(`${rel} → ${spec}`);
