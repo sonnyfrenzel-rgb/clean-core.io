@@ -16,12 +16,11 @@
  * factors behind the baseline proposal (owner, 03.10.2026). No cost winner while any
  * option is missing a mandatory field.
  *
- * What this is not: `lib/tco-model.ts`. That is the demonstration forecast of
- * the Economics stage — one estate, one modernisation, coefficients nothing
- * measured, a fixed target score of 95. It prices *an improvement*. This prices
- * *options against each other*, including the option of doing nothing, and it
- * refuses to name a cheapest one until every option is complete. They share the
- * stage and nothing else; neither reads the other.
+ * The one money model of Economics (ADR-128 (2)). The demonstration forecast
+ * that shared the page until 3.5.0 (`lib/tco-model.ts`: payback, Year-1 ROI and
+ * a five-year net benefit on a fixed target score of 95) is gone; its question,
+ * "what does changing save against keeping?", is answered here, as each
+ * option's difference to Keep, from the same figures as everything else.
  *
  * ── Why this is its own module, and not three other things ──
  *
@@ -187,12 +186,10 @@ export function emptyCostAssumptions(): CostAssumptions {
 /**
  * The fixed effort factors per 1,000 lines, offered as a proposal.
  *
- * Same order of magnitude as the demonstration forecast in `lib/tco-model.ts`
- * (2.5 / 0.8 development days and 1.8 / 0.6 test days per upgrade / feature
- * pack), and deliberately a separate declaration: there they are a stated
- * assumption of a model that calls itself a demonstration, here they are a
- * suggestion the reader has to accept before it becomes a field. Nothing
- * measured either of them.
+ * The same order of magnitude as the coefficients of the demonstration forecast
+ * that left the product with ADR-128 (2) (2.5 / 0.8 development days and
+ * 1.8 / 0.6 test days per upgrade / feature pack). A suggestion the reader has
+ * to accept before it becomes a field; nothing measured it.
  */
 export const PROPOSED_DAYS_PER_1000_LINES = {
   oneOffDevLow: 2.0,
@@ -769,8 +766,8 @@ export function optionCost(a: CostAssumptions, option: CostOption): OptionCost {
     high: oneOff.high + runningTotal + baselineTotal,
   };
 
-  // The backstop `lib/tco-model.ts` learned the hard way: a chart is the one
-  // place a non-finite number renders without complaining.
+  // The backstop the old demonstration forecast learned the hard way: a chart is
+  // the one place a non-finite number renders without complaining.
   if (![oneOff.low, oneOff.high, runningTotal, baselineTotal, total.low, total.high].every(Number.isFinite)) {
     return base;
   }
@@ -1140,6 +1137,22 @@ export function costComparison(a: CostAssumptions): CostComparison {
 
   const winner = first.optionId;
   return shell(winner, null, assumptionTippingPoints(a, winner), '');
+}
+
+/* ---------- the cheapest among some options (ADR-128 (1), mock-up E3) ---------- */
+
+/**
+ * The kinds that keep what the program does: every option but Retire. Move to SAP standard keeps it only *if the
+ * standard covers it* — not measured (3.0.21); the page says so beside it.
+ */
+export const KEEPS_FUNCTION_KINDS: readonly OptionKind[] = Object.freeze(['do-nothing', 'keep', 'rebuild', 'standard', 'keyuser']);
+
+/**
+ * The comparison over some kinds only — the same arithmetic, the same four refusals, the same tipping points — so
+ * "the cheapest change that keeps the function" is answered by the rule that answers "the lowest overall". Pure.
+ */
+export function cheapestAmong(a: CostAssumptions, kinds: readonly OptionKind[]): CostComparison {
+  return costComparison({ ...a, options: (a.options || []).filter((o) => kinds.includes(o.kind)) });
 }
 
 /* ---------- display ---------- */

@@ -4,7 +4,6 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
-import { openEconomicsRow } from './helpers/economics';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -13,8 +12,8 @@ import { signInViaLanding } from './helpers/sign-in';
  *   - ffddf6b4fee6 — a project read that fails is not a project without a score;
  *   - b23daef11548 — a score from a run of a previous source is not modelled
  *     against the current source's line count;
- *   - 246b1ea24dbc — the LoC slider can hold the uploaded size (420 lines here);
- *   - 2289f335cbb4 — a year without an upgrade or a feature pack can be modelled.
+ *   - 246b1ea24dbc — the line count holds the uploaded size (420 lines here), now under "Model another size";
+ *   - 2289f335cbb4 belonged to the demonstration forecast's sliders, which left with ADR-128 (2).
  *
  * Needs the app and the emulators.
  */
@@ -100,30 +99,17 @@ test('a score from a previous source is not modelled against the current one (b2
   test.setTimeout(180 * 1000);
   await openEconomics(page, STALE);
   await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
-  await expect(page.locator('[data-tco-stale]')).toBeVisible();
-  expect(await page.locator('[data-tco-cost]').count(), 'no figures are asked for').toBe(0);
+  // The score is said to describe a previous source, and the upkeep proposal does not rest on it.
+  await expect(page.locator('[data-economics-rest="score"]')).toContainText('previous source');
   await expect(page.locator('body')).not.toContainText('Year 1 ROI');
 });
 
-test('the sliders hold the uploaded size and a year without updates (246b1ea24dbc, 2289f335cbb4)', async ({ page }) => {
+test('the line count holds the uploaded size (246b1ea24dbc)', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openEconomics(page, SCORED);
-  // Attached, not visible: the fields sit closed under their checklist rows
-  // until a row is opened (proposal A, owner decision 01.10.2026).
-  await page.waitForSelector('[data-tco-cost]', { state: 'attached', timeout: 30000 });
-
-  // A range input whose minimum is above its value draws — and reports — the
-  // minimum. 420 lines used to become 1,000 on the slider.
-  // Labels in plain words since the stage became one checklist (gap/stages).
-  const loc = page.getByLabel('Lines of custom code');
-  await expect(loc).toHaveValue(String(LOC));
-
-  const upgrades = page.getByLabel('Release upgrades per year');
-  const packs = page.getByLabel('Feature pack updates per year');
-  await expect(upgrades).toHaveAttribute('min', '0');
-  await expect(packs).toHaveAttribute('min', '0');
-  await openEconomicsRow(page, 'upgrades');
-  await upgrades.fill('0');
-  await expect(upgrades).toHaveValue('0');
-  await expect(page.locator('body')).toContainText('0 upgrades');
+  await page.waitForSelector('[data-economics-page]', { timeout: 30000 });
+  // 420 lines used to become 1,000 on a slider with a higher minimum; the count is said as it is.
+  await expect(page.locator('[data-economics-rest="lines"]')).toContainText(`${LOC} lines`);
+  await page.locator('[data-economics-model-size-open]').click();
+  await expect(page.locator('[data-economics-model-size]')).toHaveValue(String(LOC));
 });

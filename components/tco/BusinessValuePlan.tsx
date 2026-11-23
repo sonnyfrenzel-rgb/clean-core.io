@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import FoldedSection from '@/components/analyze/FoldedSection';
 import BusinessValueAudit from '@/components/analyze/BusinessValueAudit';
 import PlainEnglishGuide from '@/components/analyze/PlainEnglishGuide';
@@ -71,7 +71,7 @@ export default function BusinessValuePlan({
           <div data-action-plan-origin={plan ? 'model' : 'generic'} className="flex flex-wrap items-center gap-2">
             <span className="cc-text-label text-cc-ink-muted">Action plan</span>
             {plan ? (
-              <CcProvenanceChip value="proposed" />
+              <FamilyChip kind="ai" />
             ) : (
               <span className="cc-text-meta text-cc-ink-muted">
                 Generic guidance — no action plan was returned for this run. The steps are the same for every analysis, not derived from this code.
@@ -89,7 +89,7 @@ export default function BusinessValuePlan({
       id="economics-business-value"
       data-business-value-plan={!data ? (analysis ? 'text-report' : 'not-generated') : plan ? 'model' : 'generic'}
       title="Business value and action plan"
-      aside={data ? <CcProvenanceChip value="proposed" /> : undefined}
+      aside={data ? <FamilyChip kind="ai" /> : undefined}
     >
       {body}
     </FoldedSection>

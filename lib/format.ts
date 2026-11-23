@@ -233,3 +233,30 @@ export function roundDays(value: number): number {
   const digits = Math.abs(value) > 0 && Math.abs(value) < 1 ? 2 : 1;
   return Math.round(value * 10 ** digits) / 10 ** digits || 0;
 }
+
+/**
+ * A positive amount to two significant figures (ADR-128 (4)), rounded `down` (-1), `up` (1) or to the nearest (0):
+ * 4,785 → 4,700 down, 4,800 up. Zero and below stay as they are — nothing to round outward from.
+ */
+export function roundSignificant(value: number, direction: -1 | 0 | 1, figures = 2): number {
+  if (!Number.isFinite(value) || value <= 0) return value;
+  const step = 10 ** (Math.floor(Math.log10(value)) - (figures - 1));
+  const scaled = value / step;
+  // A float like 47.00000000001 must not round up to 48: a hair of tolerance before ceil/floor.
+  const r = direction < 0 ? Math.floor(scaled + 1e-9) : direction > 0 ? Math.ceil(scaled - 1e-9) : Math.round(scaled);
+  return r * step;
+}
+
+/**
+ * A money range where the eye lands — the answer, the facets, the chart (ADR-128 (4)): two significant figures,
+ * rounded outward (the lower bound down, the upper bound up), so a rounded range is never narrower than the computed
+ * one — "EUR 4,700–6,600". A point is "about EUR 30,000". The tables keep whole units (`formatMoney`). `null` without
+ * a currency or a finite range.
+ */
+export function formatMoneyRangeOutward(range: { low: number; high: number } | null | undefined, currency: string): string | null {
+  if (!range || !currency || !Number.isFinite(range.low) || !Number.isFinite(range.high)) return null;
+  if (range.low === range.high) return `about ${formatMoney(roundSignificant(range.low, 0), currency)}`;
+  const low = roundSignificant(range.low, -1);
+  const high = roundSignificant(range.high, 1);
+  return `${formatMoney(low, currency)}–${decimals(high, Math.abs(high) >= 1000 ? 0 : 2)}`;
+}

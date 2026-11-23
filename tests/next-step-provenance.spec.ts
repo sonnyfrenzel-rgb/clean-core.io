@@ -100,7 +100,7 @@ test.describe('the point says why it is this one', () => {
     expect(
       [...seen].sort(),
       'the fixtures stopped covering the open phases — the loop would pass on an empty set',
-    ).toEqual(['analyze', 'design', 'documentation', 'testing', 'transformation']);
+    ).toEqual(['analyze', 'design', 'documentation', 'tco', 'testing', 'transformation']);
   });
 
   test('what stands before it is the phase contract\'s own list, not a second tally', () => {

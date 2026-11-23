@@ -3,17 +3,13 @@
 /**
  * Options with costs — roadmap 7.4, the screen half.
  *
- * Since 03.10.2026 (owner: "you first have to find 'Take over the proposal'")
- * the module draws two steps of the guided stage: step 3, the effort per
- * option with the proposal and its take-over on the card itself, and step 4's
- * verdict. The cards no longer price anything; every amount stands once, in
- * the result.
+ * Since ADR-128 the module draws the fold "Effort in days" of the Economics
+ * page (`components/tco/EconomicsObjectPage.tsx`): the effort per option, with
+ * the proposal and its take-over on the card itself. The cards price nothing;
+ * every amount stands once, in the answer, the chart and the table above.
  *
- * The shared figures (currency, day rates, time horizon, release cadence) are
- * entered once, in the stage's checklist (`EconomicsChecklist`) — they used to
- * be asked for a second time here, beside a forecast that asked for the same day
- * rates (audit 01.10.2026, row 7). This module draws what is per option — the
- * effort fields and what each option costs — and the verdict.
+ * The shared figures (currency, day rates, period, release cadence) are entered
+ * once, in place in the answer card. This module draws what is per option.
  *
  * Every amount on this panel comes out of one revision of stated assumptions
  * (`lib/cost-assumptions.ts`), and the panel shows which revision, one level
@@ -22,13 +18,11 @@
  * and while any option is missing a mandatory field, the comparison refuses to
  * name a cheapest one and says which option stopped it.
  *
- * `lib/tco-model.ts` and the savings forecast are a different thing and stay a
- * different thing: that is a demonstration of one modernisation against
- * assumed coefficients; this prices options against each other, including
- * doing nothing.
+ * One money model (ADR-128 (2)): the demonstration forecast that once shared
+ * the page is gone; this prices options against each other, including Keep.
  */
 
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { formatDays, formatNumber } from '@/lib/format';
 import {
   COMPARISON_KIND,
@@ -36,8 +30,6 @@ import {
   COST_ASSUMPTIONS_VERSION,
   effortProposalFor,
   emptyCostAssumptions,
-  formatAmount,
-  formatAmountRange,
   type CostAssumptions,
   type CostComparison,
   type CostOption,
@@ -64,7 +56,7 @@ import { CircleAlert } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcField from '@/components/cc/Field';
 import CcDisclosure from '@/components/cc/Disclosure';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { DECISION_OPTION_LABELS } from '@/lib/decision-options';
 
 /**
@@ -379,7 +371,7 @@ export function refusalHeadline(comparison: CostComparison, options: CostOption[
   const incomplete = comparison.costs.filter((c) => !c.total).map((c) => c.label);
   switch (comparison.refusal?.code) {
     case 'assumptions-incomplete':
-      return 'No option can be priced until your rates (step 2) and the effort per option (step 3) are in.';
+      return 'No option can be priced until your figures and the effort per option are in.';
     case 'option-incomplete':
       return `Not every option is complete yet: ${incomplete.join(', ')}.`;
     case 'too-few-options':
@@ -496,13 +488,13 @@ function EffortChip({
   return (
     <span {...{ [data]: state }}>
       {state === 'not-entered' ? (
-        <CcProvenanceChip value="not-determined" note="not entered" />
+        <FamilyChip kind="not-determined" note="not entered" />
       ) : state === 'proposal' ? (
-        <CcProvenanceChip value="simulation" note="proposal" />
+        <FamilyChip kind="engine" note="proposal" />
       ) : state === 'from-proposal' ? (
-        <CcProvenanceChip value="confirmed" note="your figure, from the proposal" />
+        <FamilyChip kind="yours" note="from the proposal" />
       ) : (
-        <CcProvenanceChip value="confirmed" note="your figure" />
+        <FamilyChip kind="yours" />
       )}
     </span>
   );
@@ -621,7 +613,7 @@ function CardValue({
  *     a proposal shows its figures and how they were derived;
  *   - what it still needs, each with what it is, why, and the action that
  *     opens the field for it;
- *   - its cost, or why there is none yet — with a way to the figure in step 2
+ *   - its cost, or why there is none yet — with a way to the shared figure
  *     it waits for;
  *   - whether it is saved.
  *
@@ -656,7 +648,7 @@ export default function OptionComparison({
   onToggleEdit: (id: string) => void;
   /** Opens a card's fields and puts the cursor in one of them. */
   onOpenEdit?: (id: string, field: string) => void;
-  /** Scrolls to a field of step 2 by its `data-cost-field` and puts the cursor in it. */
+  /** Opens the shared figures and puts the cursor in one by its `data-cost-field` and puts the cursor in it. */
   onGoToField?: (field: string) => void;
   /** The lines the proposals were computed from, and the lines of the source. */
   loc?: number;
@@ -845,11 +837,11 @@ export default function OptionComparison({
                     <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
                       Cost:
                       {priced ? (
-                        <span className="text-cc-ink">priced in step 4</span>
+                        <span className="text-cc-ink">priced above</span>
                       ) : (
                         // No figure is not a warning: it is the absence of a verdict (§1.1).
                         <span data-cost-option-not-determined={option.id}>
-                          <CcProvenanceChip value="not-determined" />
+                          <FamilyChip kind="not-determined" />
                         </span>
                       )}
                     </p>
@@ -857,7 +849,7 @@ export default function OptionComparison({
                       <div className="flex flex-col gap-1 cc-text-meta text-cc-ink-muted" data-cost-option-why={option.id}>
                         {shared.length > 0 ? (
                           <span className="flex flex-wrap items-center gap-x-1 gap-y-1">
-                            <span>Waits for step 2:</span>
+                            <span>Waits for your figures:</span>
                             {shared.map((b, i) => (
                               <span key={b.label} className="inline-flex items-center">
                                 <CcButton
@@ -993,150 +985,6 @@ export default function OptionComparison({
           );
         })}
       </ul>
-    </div>
-  );
-}
-
-/**
- * Step 4's comparison: what each option costs over the time horizon, the
- * verdict — or the refusal, which is the point of roadmap 7.4 — and how far an
- * assumption may move before the answer changes.
- */
-export function OptionVerdict({
-  assumptions,
-  comparison,
-  currency,
-}: {
-  assumptions: CostAssumptions;
-  comparison: CostComparison;
-  currency: string;
-}) {
-  const winnerLabel = comparison.winner
-    ? comparison.costs.find((c) => c.optionId === comparison.winner)?.label
-    : null;
-  const years = assumptions.horizonYears;
-  const yearsWord =
-    years === null ? '' : `${formatNumber(years, { maximumFractionDigits: 1 })} year${years === 1 ? '' : 's'}`;
-  // Open by itself once there is a lead to overturn, until the reader decides otherwise.
-  const [tippingChoice, setTippingChoice] = useState<boolean | null>(null);
-  const tippingOpen = tippingChoice ?? comparison.tippingPoints.length > 0;
-  return (
-    <div className="space-y-4" data-cost-result="">
-      <ul className="m-0 list-none divide-y divide-cc-line p-0" data-cost-totals="">
-        {assumptions.options.map((option) => {
-          const cost = comparison.costs.find((c) => c.optionId === option.id);
-          const lead = comparison.winner === option.id;
-          return (
-            <li
-              key={option.id}
-              className="flex flex-col gap-1 py-3 first:pt-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4"
-            >
-              <div className="min-w-0">
-                <span className="cc-text-identifier text-cc-ink">{option.label}</span>
-                {lead ? <span className="ml-2 cc-text-meta font-semibold text-cc-ink">· lowest cost</span> : null}
-                {cost && cost.total ? (
-                  <span className="block cc-text-meta text-cc-ink-muted">
-                    one-off {formatAmountRange(cost.oneOff, currency)} ·{' '}
-                    {formatNumber(cost.releasesInHorizon, { maximumFractionDigits: 1 })} releases{' '}
-                    {formatAmount(cost.runningTotal, currency)}
-                    {BASELINE_KINDS.has(option.kind) ? ` · maintenance ${formatAmount(cost.baselineTotal, currency)}` : ''}
-                  </span>
-                ) : null}
-              </div>
-              {cost && cost.total ? (
-                <span className="cc-text-h3 whitespace-nowrap text-cc-ink" data-cost-option-total={option.id}>
-                  {formatAmountRange(cost.total, currency)}
-                </span>
-              ) : (
-                <span>
-                  <CcProvenanceChip value="not-determined" />
-                </span>
-              )}
-            </li>
-          );
-        })}
-      </ul>
-      {yearsWord ? (
-        <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
-          Total over {yearsWord}, as a range from the low and high one-off effort{' '}
-          <CcProvenanceChip value="simulation" />
-        </p>
-      ) : null}
-
-      <div className="border-t border-cc-line pt-4" data-cost-verdict="">
-        {comparison.winner ? (
-          <div data-cost-winner={comparison.winner}>
-            <span className="flex flex-wrap items-center gap-2 cc-text-label text-cc-ink-muted">
-              Lowest cost over the time horizon <CcProvenanceChip value="simulation" />
-            </span>
-            <h3 className="mt-1 cc-text-h2 text-cc-ink">{winnerLabel}</h3>
-            <p className="mt-2 cc-text-body text-cc-ink-muted">
-              Its upper bound is below every other option&rsquo;s lower bound, so the ordering does not depend on
-              where inside the one-off range the effort lands. Lowest cost is not the same as the best decision.
-            </p>
-          </div>
-        ) : (
-          <div data-cost-no-winner={comparison.refusal?.code || 'unknown'}>
-            <h3 className="cc-text-h3 text-cc-ink">No cheapest option yet</h3>
-            <p className="mt-1 cc-text-body text-cc-ink">{refusalHeadline(comparison, assumptions.options)}</p>
-            {comparison.refusal?.sentence ? (
-              <div className="mt-2">
-                <CcDisclosure title="The full reason">
-                  <p className="cc-text-cell text-cc-ink-muted" data-cost-refusal-sentence>
-                    {comparison.refusal.sentence}
-                  </p>
-                </CcDisclosure>
-              </div>
-            ) : null}
-          </div>
-        )}
-
-        <div className="mt-4 border-t border-cc-line pt-3">
-          <CcDisclosure
-            title="How far an assumption has to move before the answer changes"
-            open={tippingOpen}
-            onOpenChange={setTippingChoice}
-          >
-            {comparison.tippingPoints.length > 0 ? (
-              <ul className="space-y-2" data-cost-tipping-points>
-                {comparison.tippingPoints.map((point) => {
-                  const found = point.risesBy !== null || point.fallsBy !== null;
-                  return (
-                    <li
-                      key={point.field}
-                      data-cost-tipping-field={point.field}
-                      data-cost-tipping-found={found ? 'yes' : 'no'}
-                      className={`cc-text-cell ${found ? 'text-cc-ink font-semibold' : 'text-cc-ink-muted'}`}
-                    >
-                      {point.sentence}
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="cc-text-cell text-cc-ink-muted" data-cost-tipping-points-empty>
-                {comparison.tippingPointsSentence}
-              </p>
-            )}
-            <p className="mt-3 cc-text-meta text-cc-ink-muted">
-              Each distance is solved from the figures you stated, not sampled at a chosen spread. It says
-              where the answer flips, not how likely that is &mdash; nothing here knows the distribution of a day rate.
-            </p>
-          </CcDisclosure>
-        </div>
-
-        {/* The revision every amount comes from — a technical name, one level deeper. */}
-        <div className="mt-2">
-          <CcDisclosure title="Technical details">
-            <p className="cc-text-meta text-cc-ink-muted">
-              Assumption revision:{' '}
-              <code data-cost-revision className="font-cc-mono text-cc-ink break-all">
-                {comparison.revision}
-              </code>
-            </p>
-          </CcDisclosure>
-        </div>
-      </div>
     </div>
   );
 }

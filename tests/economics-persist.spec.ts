@@ -69,19 +69,18 @@ async function openEconomics(page: Page, email: string, project = PROJECT) {
   await page.setViewportSize({ width: 1440, height: 900 });
   await signInViaLanding(page, email, SIGN_IN, { pauseMs: 3500 });
   await page.goto(`/project/${project}/tco`, { waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('[data-economics-steps]', { timeout: 60000 });
+  await page.waitForSelector('[data-economics-page]', { timeout: 60000 });
 }
 
-async function fillFourSteps(page: Page) {
+async function fillEverything(page: Page) {
   await fillEconomics(page, '[data-cost-field="currency"]', 'EUR');
   await fillEconomics(page, '[data-cost-field="dev-day-rate"]', '820');
   await fillEconomics(page, '[data-cost-field="test-day-rate"]', '640');
   await fillEconomics(page, '[data-cost-field="horizon-years"]', '5');
   await fillEconomics(page, '[data-cost-field="release-cadence"]', '2');
   await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]');
-  await page.locator('[data-economics-next] [data-economics-take-over-all]').click();
+  await page.locator('[data-answer-next] [data-economics-take-over-all]').first().click();
   await fillEconomics(page, '[data-cost-field="do-nothing-upgrade-delay"]', '2');
-  await fillEconomics(page, '[data-tco-cost="investment"]', '40000');
 }
 
 /** The figures a reader would check, as the fields show them. */
@@ -89,23 +88,22 @@ async function expectFigures(page: Page) {
   await expect(page.locator('[data-cost-field="currency"]')).toHaveValue('EUR');
   await expect(page.locator('[data-cost-field="dev-day-rate"] input, input[data-cost-field="dev-day-rate"]').first()).toHaveValue('820');
   await expect(page.locator('[data-cost-field="test-day-rate"] input, input[data-cost-field="test-day-rate"]').first()).toHaveValue('640');
-  await expect(page.locator('[data-tco-cost="investment"] input, input[data-tco-cost="investment"]').first()).toHaveValue('40000');
   await expect(page.locator('[data-cost-option="rebuild"]')).toHaveAttribute('data-effort-provenance', 'from-proposal');
-  await expect(page.locator('[data-cost-option="rebuild"] [data-effort-chip="from-proposal"]')).toContainText('your figure, from the proposal');
-  await expect(page.locator('[data-economics-next]')).toHaveAttribute('data-economics-next', 'none');
+  await expect(page.locator('[data-cost-option="rebuild"] [data-effort-chip="from-proposal"]')).toContainText('from the proposal');
+  await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'priced');
 }
 
-test('the four steps survive another tool and a reload, and Economics earns its check', async ({ page }) => {
+test('the figures survive another tool and a reload, and Economics earns its check', async ({ page }) => {
   test.setTimeout(240 * 1000);
   await openEconomics(page, OWNER);
   await expect(tool(page, 'tco')).toHaveAttribute('data-workspace-tool-mark-kind', 'none');
 
-  await fillFourSteps(page);
-  await expect(page.locator('[data-economics-next]')).toHaveAttribute('data-economics-next', 'none');
+  await fillEverything(page);
+  await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'priced');
   await expect(page.locator('[data-economics-save="saved"]')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('[data-economics-save="saved"]')).toHaveText(/Saved/);
 
-  // All four steps done: the tool's own output is on record, and it says so.
+  // Every option priced (ADR-128 (2): the comparison alone): the tool's own output is on record, and it says so.
   await expect(tool(page, 'tco')).toHaveAttribute('data-workspace-tool-mark-kind', 'check', { timeout: 15000 });
   await expect(tool(page, 'tco')).toHaveAttribute('data-phase-state', 'done');
 
@@ -121,13 +119,13 @@ test('the four steps survive another tool and a reload, and Economics earns its 
   await expect(gate).toBeVisible({ timeout: 30000 });
   await gate.locator('a[data-analyze-soft-gate-continue]').click();
   await page.waitForURL(new RegExp(`/project/${PROJECT}/tco`), { timeout: 60000 });
-  await page.waitForSelector('[data-economics-steps]', { timeout: 60000 });
+  await page.waitForSelector('[data-economics-page]', { timeout: 60000 });
   await expectFigures(page);
   await expect(tool(page, 'tco')).toHaveAttribute('data-workspace-tool-mark-kind', 'check');
 
   // A reload.
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await page.waitForSelector('[data-economics-steps]', { timeout: 60000 });
+  await page.waitForSelector('[data-economics-page]', { timeout: 60000 });
   await expectFigures(page);
   await expect(page.locator('[data-economics-save="saved"]')).toBeVisible();
 
@@ -139,12 +137,13 @@ test('an invited reader sees the stored figures, read-only', async ({ page }) =>
   test.setTimeout(180 * 1000);
   await openEconomics(page, READER);
   await expect(page.locator('[data-economics-save="read-only"]')).toBeVisible();
-  await expect(page.locator('[data-cost-field="currency"]')).toHaveValue('EUR');
-  await expect(page.locator('[data-cost-field="currency"]')).toBeDisabled();
-  await expect(page.locator('input[data-cost-field="dev-day-rate"], [data-cost-field="dev-day-rate"] input').first()).toHaveValue('820');
+  // The owner's figures as chips; no field to change them, and no action that would.
+  await expect(page.locator('[data-economics-assumption="currency"]')).toHaveText('EUR');
+  await expect(page.locator('[data-economics-assumption="dev-day-rate"]')).toContainText('EUR 820');
+  await expect(page.locator('[data-economics-assumptions]')).toHaveCount(0);
   await expect(page.locator('[data-economics-editable="false"]')).toHaveCount(1);
-  await expect(page.locator('input[data-tco-cost="investment"], [data-tco-cost="investment"] input').first()).toBeDisabled();
-  await expect(page.locator('[data-economics-next]')).toHaveAttribute('data-economics-next', 'none');
+  await expect(page.locator('[data-economics-change-figures]')).toHaveCount(0);
+  await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'priced');
   await expect(tool(page, 'tco')).toHaveAttribute('data-workspace-tool-mark-kind', 'check');
 });
 

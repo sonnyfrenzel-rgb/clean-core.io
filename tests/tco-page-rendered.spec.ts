@@ -3,25 +3,17 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
-import { adminSetDoc, adminMergeDoc } from './helpers/admin-seed';
-import { tcoForecast } from '../lib/tco-model';
+import { adminSetDoc } from './helpers/admin-seed';
 import { formatAmount } from '../lib/cost-assumptions';
 import { fillEconomics, revealEconomicsField } from './helpers/economics';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
- * The Economics stage, opened.
+ * The Economics tool, opened (ADR-128): the answer first, the chart, the comparison, how firm the answer is.
  *
- * `tests/tco-model.spec.ts` runs the forecast and checks the page only for the
- * call — which a change could keep while rendering something else entirely
- * (QA review of 10b1c3939600, 89642d985ff3). This signs in, opens the stage for
- * a seeded project and reads the figures off the screen, including the case the
- * model refuses: a project nothing scored gets no forecast at all.
- *
- * The expected numbers are not written down here. They come from the same
- * function the page calls, with the same inputs — a literal would have to be
- * updated by hand every time an effort coefficient moves, which is how the old
- * guard's copy of the arithmetic drifted in the first place.
+ * `tests/cost-assumptions.spec.ts` and `tests/economics-answer.spec.ts` run the arithmetic and the words; this signs
+ * in, opens the tool for a seeded project and reads what the page says — because a model that refuses correctly while
+ * the page prints a figure anyway is the defect these steps exist to remove.
  */
 
 const EMAIL = `tco-page-${Date.now()}@cleancore-test.io`;
@@ -30,35 +22,20 @@ const SCORED = `tco-scored-${Date.now()}`;
 const UNSCORED = `tco-unscored-${Date.now()}`;
 const RUN_ID = `tco-run-${Date.now()}`;
 
-/**
- * The stage has no default cost figures — it refuses to model until the reader
- * states their own, which is the point of the empty state below. The spec fills
- * in the same three the model is then run with.
- */
 const LOC = 420;
 const SCORE = 62;
 const DEV_RATE = 900;
 const USER_RATE = 650;
-const INVESTMENT = 15_000;
-/**
- * Deliberately not the euro (roadmap 7.11): this half of the page used to print
- * a euro sign it had no field for. The figures below are stated in whatever the
- * reader names, once, and both halves of the stage use that.
- */
+/** Deliberately not the euro (roadmap 7.11): the unit is the one the reader names, once. */
 const CURRENCY = 'CHF';
 
-async function enterCostFigures(page: import('@playwright/test').Page) {
-  await fillEconomics(page, '[data-tco-cost="dev-rate"]', String(DEV_RATE));
-  await fillEconomics(page, '[data-tco-cost="user-rate"]', String(USER_RATE));
-  await fillEconomics(page, '[data-tco-cost="investment"]', String(INVESTMENT));
-  // Three figures and no unit: the page has no currency of its own any more, so
-  // it still shows no amount.
-  await expect(page.locator('[data-tco-no-forecast]')).toBeVisible({ timeout: 15000 });
+async function statedFigures(page: import('@playwright/test').Page) {
   await fillEconomics(page, '[data-cost-field="currency"]', CURRENCY);
-  // Not a sleep: wait for the state the figures produce. A fixed pause is a
-  // guess about how fast the page recomputes, and it reads whatever is on
-  // screen when it expires (QA review of 84f183b16761, c83ea117ce56).
-  await expect(page.locator('body')).not.toContainText('No savings forecast yet', { timeout: 15000 });
+  await fillEconomics(page, '[data-cost-field="dev-day-rate"]', String(DEV_RATE));
+  await fillEconomics(page, '[data-cost-field="test-day-rate"]', String(USER_RATE));
+  await fillEconomics(page, '[data-cost-field="horizon-years"]', '5');
+  await fillEconomics(page, '[data-cost-field="release-cadence"]', '2');
+  await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]');
 }
 
 test.describe.configure({ mode: 'serial' });
@@ -106,69 +83,42 @@ async function openEconomics(page: import('@playwright/test').Page, projectId: s
   await page.waitForSelector('[data-stage-title]', { timeout: 30000 });
 }
 
-test('a scored project shows the figures this model computes', async ({ page }) => {
+test('the answer comes first and names nothing until every option is priced', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openEconomics(page, SCORED);
+  await page.waitForSelector('[data-economics-page]');
+  const answer = page.locator('[data-economics-answer]');
+  await expect(answer).toContainText('Not determined yet');
+  // The unit is one of the things it is missing, rather than one it invents.
+  await expect(answer, 'the currency is asked for, not assumed').toContainText('currency');
+  await expect(page.locator('[data-economics-chart="not-priced"]')).toBeVisible();
 
-  // Before any figures are entered the stage refuses to model, and names what
-  // it is missing rather than filling in €900 and €15,000 as it once did.
-  const empty = await page.locator('body').innerText();
-  expect(empty).toContain('No savings forecast yet');
-  expect(empty).toContain('developer day rate');
-  // And the unit is one of the things it is missing, rather than one it invents.
-  expect(empty, 'the currency is asked for, not assumed').toContain('currency');
+  await statedFigures(page);
+  await revealEconomicsField(page, '[data-economics-take-over-all]');
+  await page.locator('[data-answer-next] [data-economics-take-over-all]').first().click();
+  await fillEconomics(page, '[data-cost-field="do-nothing-upgrade-delay"]', '2');
+  await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'priced', { timeout: 15000 });
 
-  await enterCostFigures(page);
+  // The answer, in the unit the reader named and no other.
+  await expect(answer).toContainText(new RegExp(`Keeping it costs (about )?${CURRENCY}`));
   const body = await page.locator('body').innerText();
-
-  const expected = tcoForecast({
-    loc: LOC, devRate: DEV_RATE, userRate: USER_RATE,
-    upgradeFreq: 1, fpFreq: 2, oneTimeCost: INVESTMENT, scoreBefore: SCORE,
-  })!;
-  expect(expected, 'the model produces a forecast for these inputs').not.toBeNull();
-
-  // The figures on the screen are the model's, to the last unit. A page that
-  // rendered its own arithmetic, or mapped a field wrongly, fails here. The
-  // amounts are written by `formatAmount` because the page writes them with it
-  // (roadmap 7.11) — the unit comes from the one source both use, and the
-  // number is still the model's own, compared in full.
-  expect(body, 'the Year-1 return').toContain(`${expected.roiYear1}%`);
-  expect(body, 'the annual saving').toContain(formatAmount(expected.annualSavings, CURRENCY));
-  expect(body, 'the overhead reduction').toContain(`${expected.overheadReductionPct}%`);
-  expect(body, 'and the five-year net benefit').toContain(
-    formatAmount(expected.cumulativeSavings5Yr[5]['Net Financial Benefit'], CURRENCY),
-  );
-  // The unit the reader named, and no other: the six fixed euro signs are gone.
   expect(body, 'no currency the reader did not name').not.toContain('€');
+  // ADR-128 (2): one money model — no payback, no ROI, no savings forecast.
+  for (const gone of ['Year 1 ROI', 'Payback', 'Annual Net Savings', 'Savings from modernising']) expect(body).not.toContain(gone);
+  // The chart has a row per option, Keep as the reference.
+  await expect(page.locator('[data-economics-chart="priced"] [data-economics-chart-row]')).toHaveCount(4);
+  // The table, in whole units, with the difference to keeping.
+  await expect(page.locator('[data-cost-option-difference="do-nothing"]')).toHaveText('the reference');
+  await expect(page.locator('[data-cost-option-total="rebuild"]')).toContainText(CURRENCY);
 });
 
-test('a project nothing scored gets no forecast, and says so', async ({ page }) => {
+test('a project nothing scored still compares, and proposes Keep\'s upkeep without an uplift', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openEconomics(page, UNSCORED);
+  await page.waitForSelector('[data-economics-page]');
+  await expect(page.locator('[data-economics-rest="score"]')).toContainText('No Clean Core Score');
   const body = await page.locator('body').innerText();
-
-  // The page used to substitute a score of 30 and print exact euro figures on
-  // top of it. Now nothing any input could fix is said before the inputs: the
-  // stage explains, and offers no cost fields to fill in at all.
-  expect(body).toContain('No baseline to model against');
-  expect(body).toContain('no Clean Core score from a signed run');
-  expect(body, 'no ROI is offered for a project without a baseline').not.toContain('Year 1 ROI');
-  expect(await page.locator('[data-tco-cost]').count(), 'and no figures are asked for').toBe(0);
-});
-
-test('code already at the target is not modelled either', async ({ page }) => {
-  test.setTimeout(180 * 1000);
-  // The stage reads the hydrated project, and hydration takes the score from
-  // the active run — so the run is where a score has to be changed.
-  await adminMergeDoc('projects', SCORED, { cleanCoreScore: 97 });
-  await adminMergeDoc(`projects/${SCORED}/runs`, RUN_ID, { cleanCoreScore: 97 });
-  await openEconomics(page, SCORED);
-  const body = await page.locator('body').innerText();
-  expect(body).toMatch(/already scores 97/i);
-  expect(body, 'and no financial case is derived from an assumption it cannot beat').not.toContain('Year 1 ROI');
-  expect(await page.locator('[data-tco-cost]').count(), 'no figures are asked for either').toBe(0);
-  await adminMergeDoc('projects', SCORED, { cleanCoreScore: SCORE });
-  await adminMergeDoc(`projects/${SCORED}/runs`, RUN_ID, { cleanCoreScore: SCORE });
+  expect(body, 'no ROI is offered').not.toContain('Year 1 ROI');
 });
 
 /**
@@ -182,7 +132,7 @@ test('code already at the target is not modelled either', async ({ page }) => {
 test('the option comparison names nothing until every option is complete', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openEconomics(page, SCORED);
-  await page.waitForSelector('[data-cost-comparison]');
+  await page.waitForSelector('[data-cost-result]');
 
   // Nothing entered: each option says "Not determined", and the panel says why
   // rather than showing a zero.
@@ -206,9 +156,9 @@ test('the option comparison names nothing until every option is complete', async
   // refuses to call one cheapest instead of comparing what happens to be filled in.
   await expect(page.locator('[data-cost-no-winner]')).toBeVisible();
   await expect(page.locator('[data-cost-option-not-determined="do-nothing"]')).toBeVisible();
-  const body = await page.locator('[data-cost-comparison]').innerText();
+  const body = await page.locator('[data-cost-result]').innerText();
   expect(body, 'no amount is invented from the rates alone').not.toMatch(/CHF\s*0\b/);
-  expect(body).toContain('one-off effort range');
+  expect(await page.locator('[data-cost-comparison]').textContent()).toContain('one-off effort range');
 });
 
 /**
@@ -222,7 +172,7 @@ test('the option comparison names nothing until every option is complete', async
 test('once an option leads, the panel says how far each assumption may move', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openEconomics(page, SCORED);
-  await page.waitForSelector('[data-cost-comparison]');
+  await page.waitForSelector('[data-cost-result]');
 
   await fillEconomics(page, '[data-cost-field="currency"]', 'CHF');
   await fillEconomics(page, '[data-cost-field="dev-day-rate"]', '800');
@@ -251,6 +201,8 @@ test('once an option leads, the panel says how far each assumption may move', as
 
   await expect(page.locator('[data-cost-winner="standard"]')).toBeVisible({ timeout: 15000 });
 
+  // In plain words first (ADR-128 (3)); the exact distances in the detail under it.
+  await expect(page.locator('[data-economics-firm-row]')).toHaveCount(4);
   const points = page.locator('[data-cost-tipping-field]');
   await expect(points).toHaveCount(4);
   const sentences = await points.allInnerTexts();
@@ -272,11 +224,9 @@ test('once an option leads, the panel says how far each assumption may move', as
 test('the printed page carries the entered cost figures, and an empty one as "Not determined"', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openEconomics(page, SCORED);
-  await fillEconomics(page, '[data-tco-cost="dev-rate"]', String(DEV_RATE));
-  await fillEconomics(page, '[data-tco-cost="user-rate"]', String(USER_RATE));
+  await fillEconomics(page, '[data-cost-field="dev-day-rate"]', String(DEV_RATE));
   await fillEconomics(page, '[data-cost-field="currency"]', CURRENCY);
-  // The investment stays empty.
-  await expect(page.locator('[data-tco-cost="investment"]')).toHaveValue('');
+  // The key-user rate stays empty.
 
   const footer = page.locator('[data-tco-print-inputs]');
   await expect(footer, 'the footer prints only').toBeHidden();
@@ -284,12 +234,9 @@ test('the printed page carries the entered cost figures, and an empty one as "No
   await page.emulateMedia({ media: 'print' });
   await expect(footer).toBeVisible();
   await expect(footer).toContainText(`developer day rate ${formatAmount(DEV_RATE, CURRENCY)}`);
-  await expect(footer).toContainText(`key-user day rate ${formatAmount(USER_RATE, CURRENCY)}`);
-  await expect(footer).toContainText('modernisation investment Not determined');
-  await expect(footer).toContainText(`${LOC} LoC`);
-  // Neither cadence was moved: both print as the assumed start value, not as
-  // the reader's figure (carried QA finding 5666ef8155a0).
-  await expect(footer).toContainText('1 release upgrade (assumed, not stated) and 2 feature pack updates (assumed, not stated) per year');
+  await expect(footer).toContainText('key-user day rate Not determined');
+  await expect(footer).toContainText(`${LOC} lines`);
+  await expect(footer).toContainText('no period');
   expect(formatAmount(DEV_RATE, CURRENCY), 'the expected amount names the currency').toContain(CURRENCY);
   await page.emulateMedia({ media: 'screen' });
 });
@@ -300,8 +247,8 @@ test('the printed page carries the entered cost figures, and an empty one as "No
 test('a currency outside the list is entered under "Other currency…" and every amount names it', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await openEconomics(page, SCORED);
-  await fillEconomics(page, '[data-tco-cost="dev-rate"]', String(DEV_RATE));
-  await fillEconomics(page, '[data-tco-cost="user-rate"]', String(USER_RATE));
+  await fillEconomics(page, '[data-cost-field="dev-day-rate"]', String(DEV_RATE));
+  await fillEconomics(page, '[data-cost-field="test-day-rate"]', String(USER_RATE));
 
   const combo = page.locator('[data-cost-field="currency"]');
   await revealEconomicsField(page, '[data-cost-field="currency"]');

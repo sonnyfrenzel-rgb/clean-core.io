@@ -20,8 +20,9 @@
  *   - a count where it says something; the label alone where it would not.
  *
  * Which tools carry one, and why the others do not, is ADR-091: Design is a
- * canvas with its own tabs, Economics is a guided four-step flow whose step
- * guide is its navigation, and the Management view has none (ADR-087).
+ * canvas with its own tabs, and the Management view has none (ADR-087).
+ * Economics carries one since it leads with its answer (ADR-128, mock-up E6,
+ * amending ADR-091's exemption of the old guided four-step flow).
  */
 
 /** One in-page jump of the bar: where it goes, what it is called, what is in it. */
@@ -70,6 +71,14 @@ export const PAGE_ANCHOR_IDS = {
     hand: 'testing-hand',
     scenarios: 'testing-scenarios',
   },
+  economics: {
+    range: 'economics-range',
+    options: 'economics-compare',
+    firm: 'economics-firm',
+    effort: 'economics-effort',
+    how: 'economics-how',
+    model: 'economics-model',
+  },
   delivery: {
     chain: 'evidence-chain',
     needed: 'still-needed',
@@ -84,6 +93,7 @@ export const PAGE_ANCHOR_LABELS = {
   analyze: 'Sections of Analyze',
   transformation: 'Sections of Transformation',
   testing: 'Sections of Testing',
+  economics: 'Sections of Economics',
   delivery: 'Sections of Delivery',
 } as const;
 
@@ -169,6 +179,28 @@ export function testingAnchors(content: {
     title: 'Step 3 — what no generated test covers',
   });
   if (content.scenarios > 0) out.push({ key: 'scenarios', target: ids.scenarios, label: 'Scenarios', count: n(content.scenarios), title: 'Every scenario, one row each' });
+  return out;
+}
+
+/* ---------------------------------------------------------------- Economics */
+
+/**
+ * Economics (ADR-128, mock-up E6): the range chart, the options, *How firm is the answer?*, the effort in days, how
+ * it is calculated, and the model's view — the last only where the analysis wrote one.
+ */
+export function economicsAnchors(content: {
+  /** The model's business value and action plan is on record. */
+  model: boolean;
+}): PageAnchor[] {
+  const ids = PAGE_ANCHOR_IDS.economics;
+  const out: PageAnchor[] = [
+    { key: 'range', target: ids.range, label: 'Cost range', title: 'What each choice costs, as a range' },
+    { key: 'options', target: ids.options, label: 'Options', title: 'The four answers, with the difference to keeping' },
+    { key: 'firm', target: ids.firm, label: 'How firm', title: 'Which of your figures could change the order' },
+    { key: 'effort', target: ids.effort, label: 'Effort', title: 'The days behind every amount' },
+    { key: 'how', target: ids.how, label: 'Method', title: 'How it is calculated' },
+  ];
+  if (content.model) out.push({ key: 'model', target: ids.model, label: "Model's view", title: 'Business value and action plan, AI-generated' });
   return out;
 }
 

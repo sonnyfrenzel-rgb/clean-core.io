@@ -158,7 +158,7 @@ test.describe('the maintenance-baseline proposal', () => {
   });
 });
 
-test.describe('the guided stage', () => {
+test.describe('the stage, answer first (ADR-128)', () => {
   test.describe.configure({ mode: 'serial' });
 
   test.beforeAll(async () => {
@@ -201,14 +201,14 @@ test.describe('the guided stage', () => {
     await page.setViewportSize({ width, height });
     await signInViaLanding(page, EMAIL, SIGN_IN, { pauseMs: 3500 });
     await page.goto(`/project/${project}/tco`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-economics-steps]', { timeout: 60000 });
+    await page.waitForSelector('[data-economics-page]', { timeout: 60000 });
   }
 
   /** Every number the stage shows, as text and as the value of an input. */
   async function rawNumbers(page: Page): Promise<string[]> {
     return page.locator('[data-economics]').evaluate((root, pattern) => {
       const re = new RegExp(pattern, 'g');
-      // Open every fold first, so what is one action deeper is checked too.
+      // Folded parts are in the page (hidden), so textContent checks what is one action deeper too.
       const text = (root as HTMLElement).innerText + ' ' + (root.textContent ?? '');
       const values = Array.from(root.querySelectorAll('input')).map((i) => (i as HTMLInputElement).value);
       return [...(text.match(re) ?? []), ...values.filter((v) => new RegExp(pattern).test(v))];
@@ -224,36 +224,39 @@ test.describe('the guided stage', () => {
     await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]');
   }
 
-  test('the next step is above the fold, and the proposal is one action away', async ({ page }) => {
+  /** Opens "Effort in days", where the option cards are. */
+  async function openEffort(page: Page) {
+    const fold = page.locator('#economics-effort');
+    if ((await fold.getAttribute('data-economics-fold')) !== 'open') await fold.locator('[data-economics-fold-toggle]').click();
+    await expect(fold).toHaveAttribute('data-economics-fold', 'open');
+  }
+
+  test('the answer and the next step are above the fold, and the proposal is one action away', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await open(page, 1440, 900);
-    const next = page.locator('[data-economics-next]');
-    await expect(next).toBeInViewport();
-    await expect(next).toHaveAttribute('data-economics-next', '2');
-    await expect(next.locator('[data-economics-next-action]')).toBeInViewport();
+    // ADR-128 (1): the page opens on the answer, not on a form.
+    await expect(page.locator('[data-answer-card]')).toBeInViewport();
+    await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'first-visit');
+    await expect(page.locator('[data-economics-next-action]').first()).toBeInViewport();
 
-    // The take-over stands in the guide while the rates are still the next step.
-    const takeOver = page.locator('[data-economics-steps] [data-economics-take-over-all]');
-    await expect(takeOver).toBeInViewport();
-    await expect(takeOver).toHaveText(/Take over all 4 proposals/);
-
-    // Once the rates are in, the take-over is the next step itself.
+    // Once the shared figures are in, taking the proposals over is the next step itself.
     await fillRates(page);
-    await expect(next).toHaveAttribute('data-economics-next', '3');
     await page.evaluate(() => window.scrollTo(0, 0));
-    await expect(next.locator('[data-economics-next-action]')).toHaveText(/Take over all 4 proposals/);
-    await expect(next.locator('[data-economics-next-action]')).toBeInViewport();
+    const next = page.locator('[data-answer-next] [data-economics-take-over-all]').first();
+    await expect(next).toHaveText(/Take over all 4 proposals/);
+    await expect(next).toBeInViewport();
     expect(await rawNumbers(page), 'a raw float on the stage').toEqual([]);
   });
 
   test('taking over makes the proposal the reader’s own figure, and says so', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await open(page, 1440, 900);
+    await openEffort(page);
     const options = page.locator('[data-cost-option]');
     await expect(options).toHaveCount(4);
     for (const id of ['do-nothing', 'rebuild', 'standard', 'retire']) {
       await expect(page.locator(`[data-cost-option="${id}"]`)).toHaveAttribute('data-effort-provenance', 'proposal');
-      await expect(page.locator(`[data-cost-option="${id}"] [data-effort-chip="proposal"]`)).toContainText('Simulation');
+      await expect(page.locator(`[data-cost-option="${id}"] [data-effort-chip="proposal"]`)).toContainText('From the engine');
     }
 
     // The maintenance baseline is proposed for Keep (stored as `do-nothing`), and for nothing else.
@@ -261,7 +264,7 @@ test.describe('the guided stage', () => {
     for (const id of ['do-nothing']) {
       const card = page.locator(`[data-cost-option="${id}"]`);
       await expect(card).toHaveAttribute('data-baseline-provenance', 'proposal');
-      await expect(card.locator('[data-baseline-chip="proposal"]')).toContainText('Simulation');
+      await expect(card.locator('[data-baseline-chip="proposal"]')).toContainText('From the engine');
       await expect(card.locator(`[data-cost-baseline-proposal="${id}"]`)).toHaveText(
         `${formatDays(baseline.perYear.devDays)} developer and ${formatDays(baseline.perYear.testDays)} key-user days of maintenance per year.`,
       );
@@ -278,12 +281,12 @@ test.describe('the guided stage', () => {
     const keep = page.locator('[data-cost-option="do-nothing"]');
     await expect(keep).toHaveAttribute('data-effort-provenance', 'from-proposal');
     await expect(keep).toHaveAttribute('data-baseline-provenance', 'from-proposal');
-    await expect(keep.locator('[data-effort-chip="from-proposal"]')).toContainText('your figure, from the proposal');
-    await expect(keep.locator('[data-baseline-chip="from-proposal"]')).toContainText('your figure, from the proposal');
+    await expect(keep.locator('[data-effort-chip="from-proposal"]')).toContainText('from the proposal');
+    await expect(keep.locator('[data-baseline-chip="from-proposal"]')).toContainText('from the proposal');
     await expect(keep.locator('[data-cost-apply-proposal]')).toHaveCount(0);
 
     // The rest in one action.
-    await page.locator('[data-economics-steps] [data-economics-take-over-all]').click();
+    await page.locator('#economics-effort [data-economics-take-over-all]').click();
     for (const id of ['rebuild', 'standard', 'retire']) {
       await expect(page.locator(`[data-cost-option="${id}"]`)).toHaveAttribute('data-effort-provenance', 'from-proposal');
     }
@@ -298,11 +301,9 @@ test.describe('the guided stage', () => {
     await expect(page.locator('[data-cost-option="do-nothing"]')).toHaveAttribute('data-baseline-provenance', 'stated');
     await expect(page.locator('[data-cost-option="do-nothing"]')).toHaveAttribute('data-effort-provenance', 'from-proposal');
 
-    // The taken-over figures are rounded in the input too, and editing one makes it a typed figure. Rebuild keeps the
-    // factor that gives 0.668 × 5 = 3.3400000000000003 (hotfix 3.0.22, HF-e: Move to SAP standard has its own, lower
-    // factors since, so its field reads 2 — the option's own proposal, also rounded).
+    // 668 lines × 3 days per 1,000 (Move to SAP standard's own high factor) = 2.004, shown as 2; Rebuild's
+    // 0.668 × 5 = 3.3400000000000003 shows as 3.3 (hotfix 3.0.22, HF-e).
     await page.click('[data-cost-option-edit="standard"]');
-    // 668 lines × 3 days per 1,000 (Move to SAP standard's own high factor) = 2.004, shown as 2.
     await expect(page.locator('[data-cost-field="standard-oneoff-high-dev"]')).toHaveValue('2');
     await page.click('[data-cost-option-edit="standard"]');
     await page.click('[data-cost-option-edit="rebuild"]');
@@ -310,30 +311,22 @@ test.describe('the guided stage', () => {
     await expect(high).toHaveValue('3.3');
     await high.fill('4');
     await expect(page.locator('[data-cost-option="rebuild"]')).toHaveAttribute('data-effort-provenance', 'stated');
-    await expect(page.locator('[data-cost-option="rebuild"] [data-effort-chip="stated"]')).toContainText('your figure');
-    // Every option's own field does the same: typing over Move to SAP standard's proposal makes it the reader's figure.
-    await page.click('[data-cost-option-edit="standard"]');
-    await page.locator('[data-cost-field="standard-oneoff-high-dev"]').fill('3');
-    await expect(page.locator('[data-cost-option="standard"]')).toHaveAttribute('data-effort-provenance', 'stated');
-    await expect(page.locator('[data-cost-option="standard"] [data-effort-chip="stated"]')).toContainText('your figure');
+    await expect(page.locator('[data-cost-option="rebuild"] [data-effort-chip="stated"]')).toContainText('Yours');
     expect(await rawNumbers(page), 'a raw float on the stage').toEqual([]);
   });
 
-  test('a complete scenario shows no raw float, folded parts included', async ({ page }) => {
+  test('a complete scenario answers first and shows no raw float, folded parts included', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await open(page, 1440, 900);
     await fillRates(page);
-    await page.locator('[data-economics-next] [data-economics-take-over-all]').click();
-    for (const id of ['do-nothing']) {
-      await fillEconomics(page, `[data-cost-field="${id}-baseline-dev"]`, '3');
-      await fillEconomics(page, `[data-cost-field="${id}-baseline-test"]`, '1');
-    }
+    await page.locator('[data-answer-next] [data-economics-take-over-all]').first().click();
     await fillEconomics(page, '[data-cost-field="do-nothing-upgrade-delay"]', '2');
-    await fillEconomics(page, '[data-tco-cost="investment"]', '40000');
+    await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'priced');
     await expect(page.locator('[data-cost-winner], [data-cost-no-winner]')).toBeVisible();
-    await expect(page.getByText('Annual Net Savings · Scenario')).toBeVisible();
-    await expect(page.locator('[data-economics-next]')).toHaveAttribute('data-economics-next', 'none');
-    await page.locator('[data-economics-how] [data-cc-disclosure] button').first().click();
+    await expect(page.locator('[data-economics-answer]')).toContainText(/Keeping it costs (about )?EUR/);
+    // ADR-128 (2): no demonstration forecast, no budget to type.
+    await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
+    await page.locator('#economics-how [data-economics-fold-toggle]').click();
     expect(await rawNumbers(page), 'a raw float on the stage').toEqual([]);
   });
 
@@ -343,27 +336,32 @@ test.describe('the guided stage', () => {
     const overflow = () =>
       page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(await overflow(), 'empty stage').toBeLessThanOrEqual(0);
-    await expect(page.locator('[data-economics-next] [data-economics-next-action]')).toBeVisible();
+    await expect(page.locator('[data-economics-next-action]').first()).toBeVisible();
     await fillRates(page);
-    await page.locator('[data-economics-next] [data-economics-take-over-all]').click();
+    await page.locator('[data-answer-next] [data-economics-take-over-all]').first().click();
+    await openEffort(page);
     await page.click('[data-cost-option-edit="do-nothing"]');
-    await fillEconomics(page, '[data-tco-cost="investment"]', '40000');
     expect(await overflow(), 'filled stage').toBeLessThanOrEqual(0);
     expect(await rawNumbers(page)).toEqual([]);
   });
 });
 
 test.describe('the demo stage', () => {
-  test('guided the same way, no raw float, nothing sideways on a phone', async ({ page }) => {
+  test('the same page, no raw float, nothing sideways on a phone', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/demo/tco', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
-    await expect(page.locator('[data-economics-next]')).toHaveAttribute('data-economics-next', '2');
-    for (const [id, v] of [['demo-dev-rate', '800'], ['demo-user-rate', '600'], ['demo-investment', '40000']] as const) {
-      await fillEconomics(page, `[data-testid="${id}"]`, v);
-    }
-    await expect(page.getByTestId('demo-forecast')).toBeVisible();
+    await expect(page.locator('[data-demo-economics] [data-economics-page]')).toHaveAttribute('data-economics-page', 'first-visit');
+    await fillEconomics(page, '[data-cost-field="currency"]', 'EUR');
+    await fillEconomics(page, '[data-cost-field="dev-day-rate"]', '800');
+    await fillEconomics(page, '[data-cost-field="test-day-rate"]', '600');
+    await fillEconomics(page, '[data-cost-field="horizon-years"]', '5');
+    await fillEconomics(page, '[data-cost-field="release-cadence"]', '2');
+    await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]');
+    await page.locator('[data-answer-next] [data-economics-take-over-all]').first().click();
+    await fillEconomics(page, '[data-cost-field="do-nothing-upgrade-delay"]', '2');
+    await expect(page.locator('[data-demo-economics] [data-economics-page]')).toHaveAttribute('data-economics-page', 'priced');
     const text = await page.locator('[data-demo-economics]').innerText();
     expect(text.match(RAW_FLOAT) ?? []).toEqual([]);
     expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(0);

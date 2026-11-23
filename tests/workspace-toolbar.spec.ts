@@ -158,10 +158,11 @@ test.describe('the mark is the stepper\'s reading of the phase', () => {
   test('O8: no "Next" tag for an analysis-only reader until a later tool was opened once in this browser (plan AB-4)', () => {
     const run = hydrateProject('o', { ...analyzedDoc('u'), activeRunId: 'r' } as Project, { kind: 'found', data: analyzedRun('o', 'u', 'r') });
     const analysed = workflowSteps(run);
-    expect(nextPhaseKey(analysed)).toBe('design');
+    // ADR-128 (5): right after the analysis, the next tool is Economics.
+    expect(nextPhaseKey(analysed)).toBe('tco');
     // Analysis-only: Analyze done, nothing after it on record but the free Economics baseline.
-    expect(nextTagShown(analysed, 'design', false)).toBe(false);
-    expect(nextTagShown(analysed, 'design', true)).toBe(true);
+    expect(nextTagShown(analysed, 'tco', false)).toBe(false);
+    expect(nextTagShown(analysed, 'tco', true)).toBe(true);
     // A reader with a later tool's work on record is not analysis-only.
     const designed = workflowSteps({ ...run, solutionDesign: '# Target\n' } as Project);
     expect(nextTagShown(designed, nextPhaseKey(designed), false)).toBe(true);

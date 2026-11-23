@@ -5,72 +5,56 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import { adminSetDoc } from './helpers/admin-seed';
 import firebaseConfig from '../firebase-config.json';
-import { fillEconomics } from './helpers/economics';
+import { fillEconomics, revealEconomicsField } from './helpers/economics';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
+import { initialCostAssumptions } from '../components/tco/OptionComparison';
 
 /**
- * No savings forecast from figures nobody entered (roadmap E12-F01-US02).
+ * No amount from figures nobody entered (roadmap E12-F01-US02, ADR-035).
  *
- * The acceptance: "Without suitable cost inputs no savings forecast is shown.
- * With negative annual benefits there is no negative payback period, but 'no
- * payback in the model'."
- *
- * Before: the Economics page opened with a developer rate of €900, a key-user
- * rate of €650 and an investment of €15,000 already set — "standard enterprise
- * SAP guidelines" — and showed annual savings, a payback period, an ROI and a
- * five-year chart on them before the reader had typed anything. Its print
- * button was labelled "Print Business Case".
+ * Before 3.0: the Economics page opened with a developer rate of €900, a key-user rate of €650 and an investment of
+ * €15,000 already set, and showed annual savings, a payback period, an ROI and a five-year chart on them before the
+ * reader had typed anything; its print button was labelled "Print Business Case". With ADR-128 (2) that forecast left
+ * the product altogether — the page prices the options against each other, and nothing else.
  */
 const PAGE = 'app/(app)/project/[projectId]/tco/page.tsx';
-const src = () =>
+const OBJECT_PAGE = 'components/tco/EconomicsObjectPage.tsx';
+const code = (rel: string) =>
   fs
-    .readFileSync(path.resolve(__dirname, '..', PAGE), 'utf8')
+    .readFileSync(path.resolve(__dirname, '..', rel), 'utf8')
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^\s*\/\/.*$/gm, '');
-
-/** The calculation, which the page now calls instead of carrying. */
-const model = () =>
-  (require('fs') as typeof import('fs'))
-    .readFileSync((require('path') as typeof import('path')).resolve(__dirname, '..', 'lib/tco-model.ts'), 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
 
 test.describe('the page', () => {
   test('starts every cost figure empty, not at a default', () => {
-    const s = src();
-    for (const setter of ['setDevRate', 'setUserRate', 'setOneTimeCost']) {
-      expect(s, `${setter} starts from a number`).toMatch(new RegExp(`\\[\\w+, ${setter}\\] = useState<number \\| null>\\(null\\)`));
-    }
+    const s = code(PAGE);
+    expect(s).toMatch(/\[assumptions, setAssumptions\] = useState<CostAssumptions>\(initialCostAssumptions\)/);
     expect(s).not.toMatch(/useState\(900\)|useState\(650\)|useState\(15000\)/);
-    // The currency is the fourth figure nobody may supply for the reader
-    // (roadmap 7.11, ADR-035). It starts empty and there is no default.
-    expect(s).toMatch(/\[currency, setCurrency\] = useState\(''\)/);
-    expect(s, 'and no euro sign is printed beside an amount').not.toMatch(/€\$\{|€\{/);
+    const start = initialCostAssumptions();
+    // The currency is a figure nobody may supply for the reader (roadmap 7.11, ADR-035).
+    expect(start).toMatchObject({ currency: '', devDayRate: null, testDayRate: null, horizonYears: null, releaseCadence: null });
+    for (const o of start.options) expect([o.oneOff, o.perRelease, o.maintenanceBaselinePerYear]).toEqual([null, null, null]);
+    expect(s + code(OBJECT_PAGE), 'and no euro sign is printed beside an amount').not.toMatch(/€\$\{|€\{/);
   });
 
-  test('computes nothing until all three are there', () => {
-    // The refusal moved into `lib/tco-model.ts` with the rest of the
-    // calculation (roadmap 0.17, QA finding f3428b0782a9); the behaviour it
-    // guards is exercised in `tests/tco-model.spec.ts`.
-    expect(model()).toMatch(/if \(devRate === null \|\| userRate === null \|\| oneTimeCost === null\) return null;/);
-    // The page asks through the stage's four steps (`lib/economics-record.ts`, 03.10.2026).
-    expect(src(), 'and the page asks the model for it').toContain('economicsProgress({');
-    expect(fs.readFileSync(path.join(process.cwd(), 'lib', 'economics-record.ts'), 'utf8')).toContain('tcoForecast({');
+  test('one money model: the demonstration forecast is gone (ADR-128 (2))', () => {
+    expect(fs.existsSync(path.resolve(__dirname, '..', 'lib', 'tco-model.ts'))).toBe(false);
+    const all = code(PAGE) + code(OBJECT_PAGE) + code('lib/economics-record.ts');
+    for (const gone of ['tcoForecast', 'TCO_TARGET_SCORE', 'Payback Period', 'Year 1 ROI', 'Annual Net Savings', 'Savings from modernising']) {
+      expect(all, gone).not.toContain(gone);
+    }
+    expect(code(PAGE), 'the page prices the comparison').toContain('costComparison(assumptions)');
   });
 
-  test('says "no payback in the model" rather than a negative period', () => {
-    expect(src()).toContain('No payback in the model');
-    expect(model()).toMatch(/annualSavings > 0\s*\?/);
-  });
-
-  test('calls itself a demonstration model, not a business case', () => {
-    const s = src();
+  test('calls itself a comparison, never a business case', () => {
+    const s = code(PAGE) + code(OBJECT_PAGE);
     expect(s).not.toContain('Print Business Case');
+    expect(s).not.toContain('Print model estimate');
     expect(s).not.toContain('Business Value Report');
-    expect(s).not.toContain('Better Practice Mapped');
-    expect(s).toContain('A demonstration model, not a business case.');
+    expect(s).toContain('Print the comparison');
+    expect(s).toContain('not a quote');
   });
 });
 
@@ -91,7 +75,6 @@ test.describe('rendered', () => {
       firstName: 'Tco', lastName: 'Cost', email: EMAIL, tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
-    // Two thousand lines: large enough that the model has something to price.
     const legacy = Array.from({ length: 2000 }, (_, i) => `  SELECT * FROM vbak WHERE vbeln = ${i}.`).join('\n');
     await adminSetDoc('projects', PROJECT_ID, {
       name: 'TCO cost fixture', userId: uid, createdAt: new Date(), status: 'analyzed',
@@ -103,59 +86,45 @@ test.describe('rendered', () => {
     });
   });
 
-  test('no forecast until the reader has entered all three figures', async ({ page }) => {
+  test('no amount until every shared figure is stated and the effort taken over', async ({ page }) => {
     test.setTimeout(120 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}/tco`, { waitUntil: 'domcontentloaded' });
 
-    const noForecast = page.locator('[data-tco-no-forecast]');
-    await expect(noForecast).toBeVisible({ timeout: 30000 });
-    await expect(noForecast).toContainText('developer day rate, key-user day rate, modernisation investment');
-    await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
-    await expect(page.locator('[data-tco-model-notice]')).toBeVisible();
+    const answer = page.locator('[data-economics-answer]');
+    await expect(answer).toContainText('Not determined yet', { timeout: 30000 });
+    await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'first-visit');
+    await expect(page.locator('[data-economics-chart="not-priced"]')).toBeVisible();
 
-    // Two of three is still not enough.
-    await fillEconomics(page, '[data-tco-cost="dev-rate"]', '1000');
-    await fillEconomics(page, '[data-tco-cost="user-rate"]', '700');
-    await expect(noForecast).toContainText('modernisation investment');
-    await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
-
-    await fillEconomics(page, '[data-tco-cost="investment"]', '20000');
-    // Three of three and still nothing: the stage has no currency of its own
-    // either (roadmap 7.11). It used to print a fixed euro sign at six places
-    // with no field to state one.
-    await expect(noForecast).toContainText('currency');
-    await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
+    await fillEconomics(page, '[data-cost-field="dev-day-rate"]', '1000');
+    await fillEconomics(page, '[data-cost-field="test-day-rate"]', '700');
+    // Two rates and no unit: still no amount.
+    await expect(answer).toContainText('the currency');
+    await expect(page.locator('[data-cost-option-total]')).toHaveCount(0);
 
     await fillEconomics(page, '[data-cost-field="currency"]', 'CHF');
-    await expect(noForecast).toHaveCount(0);
-    await expect(page.getByText('Annual Net Savings · Scenario')).toBeVisible();
+    await fillEconomics(page, '[data-cost-field="horizon-years"]', '5');
+    await fillEconomics(page, '[data-cost-field="release-cadence"]', '2');
+    await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]');
+    // The shared figures are in, the proposals are not taken over: still no amount, and the answer says what it waits on.
+    await expect(answer).toContainText('your go on the effort');
+    await expect(page.locator('[data-cost-option-total]')).toHaveCount(0);
 
-    // Clearing a figure takes the forecast away again.
-    await fillEconomics(page, '[data-tco-cost="user-rate"]', '');
-    await expect(page.locator('[data-tco-no-forecast]')).toBeVisible();
-    await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
-
-    // And so does clearing the currency, for the same reason: an amount whose
-    // unit nobody stated is not an amount.
-    await fillEconomics(page, '[data-tco-cost="user-rate"]', '700');
-    await expect(page.locator('[data-tco-no-forecast]')).toHaveCount(0);
-    await fillEconomics(page, '[data-cost-field="currency"]', '');
-    await expect(page.locator('[data-tco-no-forecast]')).toBeVisible();
-    await expect(page.getByText('Annual Net Savings')).toHaveCount(0);
+    await revealEconomicsField(page, '[data-economics-take-over-all]');
+    await page.locator('[data-economics-take-over-all]').first().click();
+    await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'priced', { timeout: 15000 });
+    await expect(answer).toContainText(/Keeping it costs (about )?CHF/);
   });
 });
 
-// Sonny, 30.09.2026: the printed estimate names the inputs it was priced with —
-// the input panel does not print, and "the cost figures entered above" pointed
-// at nothing on paper. Amounts go through formatAmount, so an input left empty
-// prints "Not determined", never a zero.
-test('the printed estimate names the inputs it was priced with', () => {
+// Sonny, 30.09.2026: the printed comparison names the inputs it was priced with — the fields do not print. Amounts go
+// through formatAmount, so an input left empty prints "Not determined", never a zero.
+test('the printed comparison names the inputs it was priced with', () => {
   const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'tco', 'page.tsx'), 'utf8');
-  const print = page.slice(page.indexOf('hidden print:block'), page.indexOf('</div>', page.indexOf('hidden print:block')));
+  const print = page.slice(page.indexOf('hidden border-t'), page.indexOf('</div>', page.indexOf('data-tco-print-inputs')));
   expect(print).toContain('data-tco-print-inputs');
-  for (const input of ['formatAmount(devRate, currency)', 'formatAmount(userRate, currency)', 'formatAmount(oneTimeCost, currency)', 'formatNumber(loc)']) {
+  for (const input of ['formatAmount(assumptions.devDayRate, cur)', 'formatAmount(assumptions.testDayRate, cur)', 'formatNumber(loc)']) {
     expect(print, `the print footer does not name ${input}`).toContain(input);
   }
   expect(print).not.toContain('entered above');

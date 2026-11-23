@@ -403,8 +403,8 @@
     {
       "id": "L-08",
       "subject": "economics",
-      "statement": "Economics is PhaseState 'done' only when its stored figures complete the stage's four steps, is never proven, and workflowSummary().next skips it either way.",
-      "consequence": "Deliberate (CR-23 / E12-F02; figures stored since 03.10.2026): a cost scenario on the reader's own figures, with a savings forecast on assumed effort coefficients, is never evidence and never the step the path waits on.",
+      "statement": "Economics is PhaseState 'done' only when its stored figures price every option (ADR-128 (2): the comparison alone), is never proven, and workflowSummary().next names it right after Analyze only until a later tool holds a record (economicsPassedOver, ADR-128 (5)).",
+      "consequence": "Deliberate (CR-23 / E12-F02; figures stored since 03.10.2026; ADR-128): a cost scenario on the reader's own figures is never evidence; it is the next step after the analysis, and passed over once the reader has gone on without it.",
       "evidence": "lib/workflow-steps.ts, the `economics` phase and workflowSummary.",
       "workspace": {
         "kind": "shown",
@@ -643,7 +643,7 @@
           {
             "field": "cleanCoreScore",
             "from": "run",
-            "why": "the baseline; without it the page declines to model anything"
+            "why": "what Keep's upkeep proposal is raised for (ADR-128: the demonstration forecast that started from it is gone); without it the upkeep is proposed with no uplift"
           }
         ],
         "optional": [
@@ -669,19 +669,10 @@
         "enforceActiveRun": true,
         "generationBlockersTarget": null,
         "otherGates": [
-          "cleanCoreScore must be a number below TCO_TARGET_SCORE (95); otherwise the page renders 'No baseline to model against'",
-          "no developer rate, key-user rate or investment means no savings forecast — the missing input is named"
+          "no currency, day rate, period, confirmed cadence or effort per option means no amount — the answer names what is missing (ADR-128, lib/economics-answer.ts)"
         ]
       },
       "errors": [
-        {
-          "when": "there is no signed score",
-          "does": "renders 'No baseline to model against' and says every figure derives from a signed run."
-        },
-        {
-          "when": "the score is at or above 95",
-          "does": "declines to price an improvement rather than reporting a negative return."
-        },
         {
           "when": "loadProjectAndHydrate rejects",
           "does": "logged only; loading stops and the page renders with its default inputs."
@@ -697,15 +688,15 @@
           {
             "field": "legacyCode",
             "locator": "[data-stage-output=\"legacyCode\"]",
-            "text": "{lines:project.legacyCode} LoC",
-            "why": "the line count on the lines-of-custom-code row of the inputs checklist, visible without opening it — the only form the source takes on this page"
+            "text": "{lines:project.legacyCode} lines",
+            "why": "the line count in the side column \"What the figures rest on\", visible without opening anything — the only form the source takes on this page"
           }
         ],
         "onlyAfterARun": [],
         "notShown": [
           {
             "field": "cleanCoreScore",
-            "why": "on this path the score is never printed: it is the forecast's input. The branch that does print it is the refusal for a score at or above TCO_TARGET_SCORE, which this reference case, at 62, does not take"
+            "why": "said in the side column as what Keep's upkeep proposal is raised for; not anchored as an output — the demonstration forecast it once fed is gone (ADR-128 (2))"
           }
         ],
         "notYetAnchored": []
@@ -1678,7 +1669,7 @@
         },
         "badges": {
           "analyze": "Signed run",
-          "tco": "Model estimate"
+          "tco": "Not priced yet"
         },
         "detailContains": {
           "analyze": "Clean Core Score 62"
@@ -1702,7 +1693,7 @@
           "execution": "not-started",
           "handover": "not-started"
         },
-        "nextStep": "design"
+        "nextStep": "tco"
       }
     },
     {
@@ -2105,7 +2096,7 @@
     {
       "id": "RC-tco-model-estimate",
       "stage": "tco",
-      "title": "A model estimate on assumed coefficients, never a finished phase",
+      "title": "Nothing priced yet, never a finished phase",
       "seed": {
         "project": {
           "name": "Preservation register — economics",
@@ -2158,10 +2149,10 @@
           "delivery": "empty"
         },
         "badges": {
-          "tco": "Model estimate"
+          "tco": "Not priced yet"
         },
         "detailContains": {
-          "tco": "assumed effort coefficients"
+          "tco": "Nothing is priced yet"
         },
         "generationBlockers": {
           "transformation": [],
@@ -2182,7 +2173,7 @@
           "execution": "not-started",
           "handover": "not-started"
         },
-        "nextStep": "design"
+        "nextStep": "tco"
       }
     },
     {
