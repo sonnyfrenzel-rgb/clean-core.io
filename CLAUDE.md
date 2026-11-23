@@ -10,9 +10,9 @@ Guide for working in this repo. Deeper reference: `docs/ARCHITECTURE.md` (archit
 roadmap. Publicly there is one jump: **3.0 is the UX rebuild along
 `docs/roadmap/clean-core-mockups-v2_8.html`**, built to `DESIGN.md` (look, structure and
 behaviour; decisions in `docs/design/decisions.md`), reached in phases of small steps
-(v2.10–v2.20). Since 3.0.1 every account opens its projects in the workspace — three
-views, six layers, and the seven stages as tools in its tool bar; the admin-only switch
-is gone. The Business view leads: the process is reconstructed from the ABAP code as BPMN (line anchors on
+(v2.10–v2.20). Since 3.5.0 every project opens in Analyze — three views (Business, IT,
+Management) on one tool, and the seven stages as tools in its tool bar; the workspace page
+with its layers and coach marks is gone (`/project/<id>` redirects). The Business view leads: the process is reconstructed from the ABAP code as BPMN (line anchors on
 every element), editable, exchanged with SAP Signavio via BPMN 2.0 XML files — no
 Signavio API connection. Rules that hold everywhere:
 - **Sign-up and account stay unchanged.** No handle, no field removal, no migration.
@@ -58,7 +58,7 @@ else passes, which reads like a code regression and is not one. CI passes the fl
 ## Layout
 
 - `app/` — App Router. `app/(app)/` = authenticated product shell; public/legal pages + `api/` at top level.
-- `app/(app)/project/[projectId]/page.tsx` — the **workspace** of a project (`components/workspace/WorkspaceShell.tsx`, model in `lib/workspace-model.ts`): Business, IT and Management view, the six layers, and the tool bar. Every project opens here (3.0.1).
+- `app/(app)/project/[projectId]/page.tsx` — no page since 3.5.0: it redirects every old workspace address to Analyze (`lib/workspace-redirect.ts`, one table, `tests/workspace-redirect.spec.ts`). **Every project opens in Analyze** (`analyze/page.tsx`), whose three views are Business (`components/analyze/AnalyzeBusiness.tsx`, the map), IT (`components/analyze/AnalyzeIt.tsx`, code first) and Management; views, layers and their labels stay in `lib/workspace-model.ts` for the demo workspace and the redirect.
 - `app/(app)/project/[projectId]/<stage>/` — the seven stages as tools of the workspace, one page each: `analyze` → `tco` (Economics) → `design` → `transformation` → `documentation` → `testing` → `delivery` (ADR-128). Order and per-phase state come only from `lib/workflow-steps.ts` — tool bar, rail, dashboard and delivery all read it, and none reads `project.status` (see `docs/ARCHITECTURE.md` §2).
 - `app/api/*/route.ts` — ~38 route handlers (gemini proxy, runs/create, mfa, admin, export sign/verify, s4 connectivity, email, abcd-classify).
 - `components/` — shared `.tsx`; feature subfolders `components/analyze/`, `components/design/`.

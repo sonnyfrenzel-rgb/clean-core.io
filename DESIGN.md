@@ -258,6 +258,12 @@ is not lost in the process. The new demo follows §6.1.2.
 
 ### 2.3 Object page of the workspace
 
+> **Since 3.5.0 the workspace page is gone (AB-11).** `/project/<id>` redirects every address it wrote to Analyze
+> (`lib/workspace-redirect.ts`); its header, tool row and way back are the tools' family frame (§2.12), its three
+> views are Analyze's (§5.6), its read access is *Invite to view* in every tool header, and its coach marks retired
+> (§6.2). What follows describes the page as it stood until 3.5.0, kept for the demo workspace and as the record of
+> where each part came from.
+
 From top to bottom:
 
 1. **Header:** project title; meta line in mono (project ID, manifest, revision, source state, engine, rule version);
@@ -551,7 +557,10 @@ For first-time users less is more — the depth stays, it just does not come fir
 - **Date:** in text "15 Sep 2026"; in meta lines, tables and exports ISO 8601 `2026-09-15` in mono; times with
   time zone. One exception (owner decision H-O10, 06.11.2026; AB-14b): the project list of My workspace prints
   "6 Nov 2026" in its Last change column, in the text face; ISO stays in exports and audit views.
-- **Line anchors** in mono: `L243`, `L380-412`, finding IDs `CC-017`, rules `BR-004`.
+- **Line anchors** in mono. The tools' family writes one notation (UX review 22.11.2026, Q11; the family mock-ups):
+  **"line 243"**, **"line 380–412"** (`lineAnchorText`, `lib/analyze-it.ts`) — Analyze, IT first since 3.5.0, the other
+  tools as their family pages are built. The address keeps its own form, `#L243` / `#L380-412`
+  (`lib/analyze-entry.ts`). Finding IDs (`CC-017`) are not shown to a reader (Q2); rules `BR-004`.
 
 ### 3.1 No AI traces
 
@@ -869,7 +878,22 @@ and every assignment shows its evidence:
   are in the answer sentence or directly below it, never only in the popover.
 - **IT:** the chain belongs to a selected finding. The table marks the selected row, the chain sits above it
   with "Chain for CC-017 — select a finding to follow its chain", a click on a chain link filters the table, and
-  the coverage is stated with it: *"Chain complete for 31 of 42 findings · 11 end at Not determined"*.
+  the coverage is stated with it: *"Chain complete for 31 of 42 findings · 11 end at Not determined"*. *(The chain
+  stood in the workspace's IT view, which dissolved with 3.5.0; Analyze's IT page does not draw it — see below.)*
+
+**IT is one page, code first (3.5.0, AB-9, ADR-140; `components/analyze/AnalyzeIt.tsx`).** The answer card asks *How
+far is this code from clean core?*: the score and its band in one sentence, what carries most of the distance, the two
+largest deductions with their lines as the "why", where the figure comes from in one line with the rest behind
+*Details* (Q3), *Add evidence* and *Export*, and four facets — Findings, Clean core levels, Recommended route, Not
+determined. Then the "On this page" bar (Score · First look · Findings · SAP objects · Summary · Detail) and two
+columns from 1100 px: *What moves the score* (the score's own table), *Look here first* (the findings that matter most,
+each beside its code), *Where in the program*, *Findings by kind* (the rest as a table), *What it touches in SAP* (every
+object with how and the statement, the program's own parts folded under it), the model summary and *Technical detail*
+folded; beside them the route, *Not determined* with the project's one list of open questions, *Risks for a change* and
+the main sequence. *Technical detail* holds the target profile with *Change target*, the route contract, the signed
+run, where the program touches SAP standard, the DDIC types and the rule register; a link to one of them opens it.
+No internal id is shown (Q2); the per-finding chain of the workspace's IT view is not drawn (an open point for the
+owner).
 
 ### 5.7 The process map without a mouse
 
@@ -1246,7 +1270,8 @@ Sonny 15.09.2026):
 
 ### 6.2 Want (ranked by benefit)
 
-1. **Three coach marks on the first workspace** — "Select the decision point", "This is what we could not determine", "Your
+1. *(Retired with 3.5.0, AB-11, plan P7: Analyze's invitation and walk-through do their job; "Show tips again" brings
+   back the demo tour only.)* **Three coach marks on the first workspace** — "Select the decision point", "This is what we could not determine", "Your
    next step". Dismissible, remembered **only in the browser** — never in the account, never in the database, no usage log
    (ADR-036). "Show tips again" in the help menu brings them back. The tour starts at "Your next step", the page's one
    primary action, in every view and at every width, and then follows the page in reading order (Business: next step,
@@ -1311,6 +1336,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.18 | 23.11.2026 | Analyze, IT is one page, code first, in the family frame (AB-9, ADR-140, §5.6); the workspace page dissolves and `/project/<id>` redirects every address to Analyze (AB-11, §2.3); the coach marks retire (§6.2); one line-anchor notation, "line 243" (Q11, §3) |
 | 1.8.17 | 13.11.2026 | Shell bar below 1024 px (§2.1, ADR-115, owner decision 13.11.2026): the path drops the "My workspace" crumb before a project and shows the project and what follows it; Help shows its "?" alone, with its word as accessible name and tooltip. From 1024 px up unchanged. |
 | 1.8.16 | 13.11.2026 | Analyze, Business after the 3.1.0 acceptance run (§5): the canvas first with Map | Steps in its row and everything about the map under it; the tool bar compact in one row with the soft-gate hint; one code panel beside the map (no card inside it); a name over a step lets its click through; the project search on this page |
 | 1.8.15 | 13.11.2026 | The paced build-up retires (plan AB-3): the First insights below the map stand in their end state from the first frame; the start's model wait is said at the map's place (§5.2). The workspace's Business view, its "Work from this process" hub and "Your analysis is ready" line leave the app (ADR-090 retired, AB-2). The demo opens like a project, on its Analyze, Business (O10, §6.1.2) |
