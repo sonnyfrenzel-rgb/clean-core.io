@@ -187,3 +187,37 @@ ENDFORM.
   const writes = buildAbapEvidence(code, 'final.abap', 'private', undefined, NEW).findings.filter((f) => f.kind === 'standard-table-write');
   expect(writes).toEqual([]);
 });
+
+test('a class constant is seen in its own class only and hides a global one there', () => {
+  // The global gc_tab is MARA, the class's own gc_tab is VBAK. The FORM sees the global constant only; the method of
+  // the declaring class sees its class's constant; another class sees the global one again.
+  const code = `REPORT zclass_const.
+CONSTANTS gc_tab TYPE tabname VALUE 'MARA'.
+CLASS lcl DEFINITION.
+  PUBLIC SECTION.
+    CONSTANTS gc_tab TYPE tabname VALUE 'VBAK'.
+    METHODS run.
+ENDCLASS.
+CLASS lcl IMPLEMENTATION.
+  METHOD run.
+    DELETE FROM (gc_tab).
+  ENDMETHOD.
+ENDCLASS.
+CLASS lcl_other DEFINITION.
+  PUBLIC SECTION.
+    METHODS run.
+ENDCLASS.
+CLASS lcl_other IMPLEMENTATION.
+  METHOD run.
+    DELETE FROM (gc_tab).
+  ENDMETHOD.
+ENDCLASS.
+FORM purge.
+  DELETE FROM (gc_tab).
+ENDFORM.
+`;
+  const r = readTableDependencies(code, { multiLineTemplates: true, scopedConstants: true });
+  expect(r.dependencies.filter((d) => d.access !== 'read' && !d.possibleTargetOf).map((d) => `${d.line}:${d.table}`))
+    .toEqual(['10:VBAK', '19:MARA', '23:MARA']);
+  expect(r.unresolved.map((u) => u.line)).toEqual([]);
+});

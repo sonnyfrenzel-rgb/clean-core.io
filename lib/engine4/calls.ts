@@ -157,8 +157,9 @@ function routineOf(tree: BlockTree, i: number): Block | null {
 
 /**
  * Declared reference types: `DATA lo TYPE REF TO x`, attributes, method parameters. Resolved by the lexical
- * scope of the call site: the routine's own declarations and, in a method, its own parameters shadow the
- * program-level declarations and attributes; within one scope the first declaration wins. Parameters of other
+ * scope of the call site: the routine's own declarations and, in a method, its own parameters and then its own
+ * class's attributes shadow the program-level declarations and other classes' attributes; within one scope the
+ * first declaration wins. Parameters of other
  * methods stay a last fallback, as a receiver named like one is still best read with that type.
  */
 function refTypes(list: readonly Statement[], tree: BlockTree, d: Declarations): (recv: string, at: number) => string | undefined {
@@ -175,8 +176,15 @@ function refTypes(list: readonly Statement[], tree: BlockTree, d: Declarations):
     const into = scope ? local.get(scope.id) ?? local.set(scope.id, new Map()).get(scope.id)! : global;
     if (!into.has(own[0])) into.set(own[0], own[r + 2]);
   }
+  // Attributes are kept per class as well: in a method, the own class's attribute wins over another class's.
+  const attributes = new Map<string, Map<string, string>>();
   for (const t of d.types) {
-    for (const a of t.attributes) if (a.type.kind === 'ref' && a.type.name && !global.has(a.name)) global.set(a.name, a.type.name);
+    for (const a of t.attributes) {
+      if (a.type.kind !== 'ref' || !a.type.name) continue;
+      const own = attributes.get(t.name) ?? attributes.set(t.name, new Map()).get(t.name)!;
+      if (!own.has(a.name)) own.set(a.name, a.type.name);
+      if (!global.has(a.name)) global.set(a.name, a.type.name);
+    }
     for (const me of t.methods) for (const p of me.parameters) if (p.type.kind === 'ref' && p.type.name && !params.has(p.name)) params.set(p.name, p.type.name);
   }
   const typeOf = new Map(d.types.map((t) => [t.name, t]));
@@ -199,6 +207,8 @@ function refTypes(list: readonly Statement[], tree: BlockTree, d: Declarations):
         const ps = paramCache.get(scope.id) ?? paramCache.set(scope.id, ownParams(scope)).get(scope.id)!;
         const p = ps.get(recv);
         if (p) return p;
+        const attribute = attributes.get(classOf(scope.parent)?.name?.toUpperCase() ?? '')?.get(recv);
+        if (attribute) return attribute;
       }
     }
     return global.get(recv) ?? params.get(recv);

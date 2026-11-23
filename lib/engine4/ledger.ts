@@ -12,7 +12,7 @@
  * data in the kind table, so completeness does not depend on each reader remembering to register.
  *
  * Pure (ADR-125): imports only within `lib/engine4/`; `tests/engine4-layer-guard.spec.ts` checks that no product
- * module imports it. Letting it change what a run says about completeness is a gated reading of the switch.
+ * module imports it.
  */
 import type { ReferenceTable } from './references';
 import { kindInfo, type EffectClass, type StatementKind } from './statement-kinds';

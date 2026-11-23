@@ -638,7 +638,24 @@ function visibleConstants(ctx: Context, name: string, line: number) {
     }
     if (hidden) return [];
   }
-  return all.filter((c) => localScopeAt(ctx, c.lineStart) === null);
+  // A constant of a class (`CONSTANTS` in its definition) is seen inside that class — its definition and
+  // implementation, matched by name — where it hides a global one of that name; outside the class it is not global.
+  const unscoped = all.filter((c) => localScopeAt(ctx, c.lineStart) === null);
+  const owner = classAt(ctx, line);
+  if (owner) {
+    const ofClass = unscoped.filter((c) => classAt(ctx, c.lineStart) === owner);
+    if (ofClass.length > 0) return ofClass;
+  }
+  return unscoped.filter((c) => classAt(ctx, c.lineStart) === null);
+}
+
+/** The upper-cased name of the class whose definition or implementation holds `line`, or null. */
+function classAt(ctx: Context, line: number): string | null {
+  let best: Container | null = null;
+  for (const c of ctx.constants.containers) {
+    if (c.kind === 'class' && c.lineStart <= line && line <= c.lineEnd && (!best || c.lineStart > best.lineStart)) best = c;
+  }
+  return best ? best.name.toUpperCase() : null;
 }
 
 function resolveValue(expression: string, ctx: Context, line?: number): Resolution {

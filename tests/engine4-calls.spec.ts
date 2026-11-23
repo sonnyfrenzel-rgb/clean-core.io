@@ -131,3 +131,19 @@ test('a receiver resolves by the scope of the call: same name, different REF TO 
   expect(edgesAt(g, 25)).toEqual(['static METHOD ZCL_A=>RUN']);
   expect(edgesAt(g, 29)).toEqual(['static METHOD ZCL_B=>RUN']);
 });
+
+test('a receiver that is a class attribute resolves to its own class\'s attribute type', () => {
+  const src = [
+    'CLASS zcl_x DEFINITION.', '  PUBLIC SECTION.', '    METHODS run.', 'ENDCLASS.',
+    'CLASS zcl_y DEFINITION.', '  PUBLIC SECTION.', '    METHODS run.', 'ENDCLASS.',
+    'CLASS lcl_one DEFINITION.', '  PUBLIC SECTION.', '    METHODS go.', '  PRIVATE SECTION.', '    DATA lo TYPE REF TO zcl_x.', 'ENDCLASS.',
+    'CLASS lcl_two DEFINITION.', '  PUBLIC SECTION.', '    METHODS go.', '  PRIVATE SECTION.', '    DATA lo TYPE REF TO zcl_y.', 'ENDCLASS.',
+    'CLASS zcl_x IMPLEMENTATION.', '  METHOD run.', '  ENDMETHOD.', 'ENDCLASS.',
+    'CLASS zcl_y IMPLEMENTATION.', '  METHOD run.', '  ENDMETHOD.', 'ENDCLASS.',
+    'CLASS lcl_one IMPLEMENTATION.', '  METHOD go.', '    lo->run( ).', '  ENDMETHOD.', 'ENDCLASS.',
+    'CLASS lcl_two IMPLEMENTATION.', '  METHOD go.', '    lo->run( ).', '  ENDMETHOD.', 'ENDCLASS.',
+  ].join('\n');
+  const g = graph(src);
+  expect(edgesAt(g, 31)).toEqual(['static METHOD ZCL_X=>RUN']);
+  expect(edgesAt(g, 36)).toEqual(['static METHOD ZCL_Y=>RUN']);
+});
