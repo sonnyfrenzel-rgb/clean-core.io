@@ -8,7 +8,8 @@ import type { CustomerTexts } from '../abap/customer-texts';
 export interface ReadingOptions {
   processName: string;
   sourceFileName: string;
-  exporterVersion?: string;
+  /** The engine the reading is drawn for; `null`, a run without an engine stamp (the oldest engine). */
+  exporterVersion?: string | null;
   /** The project's stored business names, for a download (3.0.21, `BpmnExportOptions.naming`). The map passes none. */
   naming?: ProcessNamingRecord | null;
   /** 3.1.0 (H5b): the project's customer texts (`BpmnExportOptions.customerTexts`). */
@@ -26,7 +27,9 @@ export interface ReadingOptions {
  * loading the BPMN writer onto the page it is there to keep responsive.
  */
 export function readingExportsKey(source: string, options: ReadingOptions): string {
-  const base = [options.processName, options.sourceFileName ?? null, options.exporterVersion ?? null, source];
+  // Absent and `null` are two readings: this release, and the oldest engine for a run without a stamp (3.5.0).
+  const engine = options.exporterVersion === undefined ? null : options.exporterVersion === null ? '(unstamped)' : options.exporterVersion;
+  const base = [options.processName, options.sourceFileName ?? null, engine, source];
   // A naming changes the plain file; without one the key is what it was.
   const naming = options.naming;
   // Customer texts change the plain file too; without them the key is what it was.

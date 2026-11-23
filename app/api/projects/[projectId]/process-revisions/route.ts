@@ -34,6 +34,7 @@ import { readBoundedRequestJson } from '@/lib/url-validation';
 /** A drawing of at most MAX_REVISION_XML characters and its base revision, read under a bound before parsing. */
 const SAVE_BODY_LIMITS = { maxBytes: MAX_REVISION_XML * 6 + 16 * 1024, timeoutMs: 20_000 };
 import { parseRevisionCursor, readRevisionPage, type RevisionQuery } from '@/lib/process-revision-page';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 
 /**
  * The revisions of a project's process model — roadmap 3.2.
@@ -453,6 +454,8 @@ async function ensureBaseline(
   const { xml } = buildBpmnExportFromSource(source, {
     processName: typeof gate.project.name === 'string' && gate.project.name ? gate.project.name : fileName,
     sourceFileName: fileName,
+    // The engine of the signed run, as the map draws it; a run without a stamp reads as the oldest engine (3.5.0).
+    exporterVersion: engineVersionOfProject(gate.project),
   });
   const stats = readRevisionStats(xml);
   const record: ProcessRevisionRecord = {

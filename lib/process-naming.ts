@@ -107,7 +107,8 @@ export const NAMING_WITHOUT_FACTS_PAUSED = true;
  * facts by it, and the pause lets exactly such a context through.
  */
 export function namingFactsApply(engineVersion?: string | null): boolean {
-  return NAMING_WITH_FACTS && engineReads310Apply(engineVersion ?? APP_VERSION);
+  // `null` is a run without an engine stamp: the oldest engine (3.5.0; before, this release).
+  return NAMING_WITH_FACTS && engineReads310Apply(engineVersion === undefined ? APP_VERSION : engineVersion);
 }
 
 /**

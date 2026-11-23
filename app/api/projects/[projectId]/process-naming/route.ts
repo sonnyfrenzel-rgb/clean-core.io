@@ -268,7 +268,8 @@ export async function POST(
     if (Buffer.byteLength(gate.legacyCode, 'utf8') > MAX_SOURCE_BYTES) {
       return NextResponse.json({ error: 'This source is too large to name in one request.', code: 'too-large' }, { status: 413 });
     }
-    const context = namingContextOf(gate.legacyCode, gate.engineVersion ? { engineVersion: gate.engineVersion } : {});
+    // The run's engine; `null` (a run without an engine stamp) reads as the oldest engine, as the map draws it (3.5.0).
+    const context = namingContextOf(gate.legacyCode, { engineVersion: gate.engineVersion });
     // Paused (owner decision 06.11.2026): a naming not built from the engine's
     // facts is not stored. 403 with its own code, as `/api/gemini` answers a
     // switched-off stage; nothing is written, and a stored naming stays as it is.

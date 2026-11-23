@@ -22,6 +22,7 @@ import {
 } from '@/lib/process-map';
 import type { ProvenanceValue } from '@/lib/provenance';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 
 /**
  * The traceability quote of a project's process map — roadmap 2.5.
@@ -265,6 +266,8 @@ export async function POST(
     const { xml, stats } = buildBpmnExportFromSource(source, {
       processName: typeof gate.project.name === 'string' && gate.project.name ? gate.project.name : fileName,
       sourceFileName: fileName,
+      // The engine of the signed run, as the map draws it; a run without a stamp reads as the oldest engine (3.5.0).
+      exporterVersion: engineVersionOfProject(gate.project),
     });
 
     // The statuses are counted out of the file, not asserted here: whatever 2.6

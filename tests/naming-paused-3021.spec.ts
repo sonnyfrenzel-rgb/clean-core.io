@@ -110,7 +110,9 @@ test.describe('3.0.21: business names paused until they are built from the code\
     expect(NAMING_WITHOUT_FACTS_PAUSED).toBe(true);
     // 3.0.x builds say the names are paused; from 3.1.0 the build hands the facts over and asks.
     expect(NAMING_ASKED_IN_THIS_BUILD).toBe(engineReads310Apply(APP_VERSION));
-    expect(namingFactsApply(null)).toBe(engineReads310Apply(APP_VERSION));
+    // Absent: this release. `null`, a run without an engine stamp, reads as the oldest engine (3.5.0).
+    expect(namingFactsApply()).toBe(engineReads310Apply(APP_VERSION));
+    expect(namingFactsApply(null)).toBe(false);
     expect(namingFactsApply('3.0.21')).toBe(false);
     expect(namingFactsApply('3.0.23')).toBe(false);
     expect(namingFactsApply('3.1.0')).toBe(true);

@@ -57,7 +57,7 @@ export interface BpmnExportOptions {
    * (`ENGINE_READS_3021_FROM`) at the business level — a routine drawn once, a run of guard checks as one step
    * (`ExportModelOptions.businessLevel`).
    */
-  exporterVersion?: string;
+  exporterVersion?: string | null;
   /**
    * `plain` names every element for a business reader (`lib/abap/plain-language.ts`,
    * deterministic, provenance `reconstructed`) and labels every branch; the
@@ -148,9 +148,24 @@ export interface BpmnExport {
   stats: BpmnExportStats;
 }
 
+/**
+ * The engine a reading is drawn for (3.5.0, carried from the 3.1.0 QA review): the run's (`exporterVersion`); `null`, a
+ * run signed before the engine stamp existed, reads as the oldest engine, as `engineVersionOfProject` says and every
+ * gate reads it; absent, this release. Before, `null` fell back to this release, so the map and the file of an
+ * unstamped run were drawn by an engine that never signed it.
+ */
+function readingEngineOf(options: { exporterVersion?: string | null }): string | null {
+  return options.exporterVersion === undefined ? APP_VERSION : options.exporterVersion;
+}
+
+/** The engine a file records: the run's, `unstamped` for a run without a stamp, this release when absent. */
+function recordedEngineOf(options: { exporterVersion?: string | null }): string {
+  return options.exporterVersion === null ? 'unstamped' : options.exporterVersion ?? APP_VERSION;
+}
+
 /** The export API. `skeleton` is `buildProcessSkeleton(source)` of the source the signed run analysed. */
 export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOptions): BpmnExport {
-  const version = options.exporterVersion ?? APP_VERSION;
+  const version = readingEngineOf(options);
   const model = buildExportModel(skeleton, options.names === 'plain'
     ? businessLevelOf(skeleton, options.source, version, options.customerTexts)
     : { businessLevel: engineReads3021Apply(version) });
@@ -195,7 +210,7 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
     el('bpmn:extensionElements', [], [...(ai ? [aiMarkingElement(ai, options)] : []), el('cc:reconstruction', [
       ['status', STATUS],
       ['file', options.sourceFileName],
-      ['engine', options.exporterVersion ?? APP_VERSION],
+      ['engine', recordedEngineOf(options)],
       ['anchored', anchored],
       ['unanchored', nodes.length - anchored],
       ['unreachedRoutines', skeleton.notDrawn.unreached.length],
@@ -262,7 +277,7 @@ export function buildBpmnExport(skeleton: ProcessSkeleton, options: BpmnExportOp
 export function businessLevelOf(
   skeleton: ProcessSkeleton,
   source: string | undefined,
-  engineVersion: string,
+  engineVersion: string | null,
   /** 3.1.0 (H5b): the project's customer texts — the first source of words, read only from that engine on. */
   customerTexts?: CustomerTexts | null,
 ): ExportModelOptions {
@@ -278,7 +293,7 @@ export function businessLevelOf(
 export function buildBpmnExportFromSource(source: string, options: BpmnExportOptions): BpmnExport {
   const { naming, ...rest } = options;
   // The technical file is the engine's alone (owner decision 23.10.2026): a naming applies to the plain file only.
-  const engine = { engineVersion: rest.exporterVersion ?? APP_VERSION };
+  const engine = { engineVersion: readingEngineOf(rest) };
   if (!naming || rest.names !== 'plain') return buildBpmnExport(buildProcessSkeleton(source, engine), { source, ...rest });
   // The naming context reads the same skeleton (`buildProcessSkeletonFrom` of the same facts), so it is read once —
   // unless the run's engine draws another map than this release (`skeletonReadFor`).
@@ -336,7 +351,7 @@ export function buildReadingExports(
   const { naming, ...base } = options;
   // A stored naming (a download, 3.0.21) puts the model's names on the plain file, marked; the technical file is the
   // code's own tokens and stays so.
-  const engineVersion = options.exporterVersion ?? APP_VERSION;
+  const engineVersion = readingEngineOf(options);
   const context = naming ? namingContextOf(source, { engineVersion }) : null;
   const skeleton = context
     ? skeletonReadFor(context.skeleton, () => buildProcessFacts(source), engineVersion)
@@ -392,7 +407,7 @@ export function buildPhoneReadingXml(
     if (w <= fit) return undefined;
     return w <= 2 * fit ? PHONE_WRAP : PHONE_MIN_WRAP;
   };
-  const skeleton = buildProcessSkeleton(source, { engineVersion: options.exporterVersion ?? APP_VERSION });
+  const skeleton = buildProcessSkeleton(source, { engineVersion: readingEngineOf(options) });
   const build = (wrapOf: (key: string) => number | undefined) =>
     buildBpmnExport(skeleton, {
       ...options,
