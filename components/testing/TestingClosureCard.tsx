@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import CcRadioGroup from '@/components/cc/RadioGroup';
 import CcTextarea from '@/components/cc/Textarea';
 import CcDateText from '@/components/cc/DateText';
@@ -104,7 +104,7 @@ export default function TestingClosureCard({
               reopens it.
             </span>
             <span className="flex flex-wrap items-center gap-2">
-              <CcProvenanceChip value="confirmed" note={closureByline(c, isOwner)} />
+              <FamilyChip value="confirmed" note={closureByline(c, isOwner)} />
               <span className="cc-text-meta text-cc-ink-muted">
                 <CcDateText value={c.at} format="datetime" />
               </span>
@@ -211,7 +211,7 @@ export default function TestingClosureCard({
           >
             {busy ? 'Recording…' : 'Close testing — not verified'}
           </CcButton>
-          <CcProvenanceChip value="confirmed" note="your statement · not a test result" />
+          <FamilyChip value="confirmed" note="your statement · not a test result" />
         </div>
         {error ? (
           <p role="alert" data-testing-closure-error="" className="m-0 cc-text-cell font-semibold text-cc-error">

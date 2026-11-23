@@ -291,6 +291,8 @@ async function seedBoth(prefix: string): Promise<{ account: SeededProject; abapI
 async function openTesting(page: Page, projectId: string) {
   await page.goto(`/project/${projectId}/testing`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-testing-flow]')).toBeVisible({ timeout: 90000 });
+  // Every scenario, one row each, stands in "For developers", folded (ADR-131 S8).
+  await page.locator('#testing-developers [data-cc-disclosure-trigger]').click();
 }
 
 async function noSidewaysScroll(page: Page, what: string) {
@@ -321,11 +323,12 @@ test.describe('the scenarios on the page', () => {
     const section = page.locator('[data-testing-scenarios]');
     // The summary at the top and the legend, once for the stage.
     await expect(section.locator('[data-scope-summary]')).toContainText('10 need your SAP system');
-    const legend = page.locator('[data-testing-scope-legend]');
-    await expect(legend).toHaveCount(1);
-    for (const scope of ['here-mock', 'your-system', 'tenant']) await expect(legend.locator(`[data-scope-entry="${scope}"]`)).toHaveCount(1);
-    await expect(legend.locator('[data-scope-entry="tenant"]')).toContainText('locked');
-    await expect(legend.locator('[data-scope-entry="your-system"]')).toContainText('ADT');
+    // The three places, once for the stage: "Where it ran" (ADR-131 S3, S5).
+    const places = page.locator('[data-test-places]');
+    await expect(places).toHaveCount(1);
+    for (const place of ['here', 'your-system', 'tenant']) await expect(places.locator(`[data-test-place="${place}"]`)).toHaveCount(1);
+    await expect(places.locator('[data-test-place="tenant"]')).toContainText('Locked');
+    await expect(places.locator('[data-test-place="your-system"]')).toContainText('ABAP Unit runs');
     // What to do next, in one line, and the class to take there.
     await expect(section.locator('[data-testing-next]')).toContainText('ADT');
     await expect(section.getByRole('button', { name: 'Copy test class' })).toBeVisible();
@@ -442,9 +445,9 @@ test.describe('the scenarios on the page', () => {
     test.setTimeout(240 * 1000);
     await signInThroughForm(page, seeded.account);
     await page.goto('/demo/testing', { waitUntil: 'domcontentloaded' });
-    const legend = page.locator('[data-testing-scope-legend]');
-    await expect(legend).toBeVisible({ timeout: 90000 });
-    for (const scope of ['here-mock', 'your-system', 'tenant']) await expect(legend.locator(`[data-scope-entry="${scope}"]`)).toHaveCount(1);
+    // ADR-131 S12: the demo tests nothing and says so in the answer; it names no place a result ran.
+    await expect(page.locator('[data-testing-answer="demo"]')).toContainText('The demo tests nothing', { timeout: 90000 });
+    await expect(page.locator('[data-test-places]')).toHaveCount(0);
     await expect(page.locator('main')).not.toContainText(/\bProven\b/);
   });
 });

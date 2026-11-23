@@ -387,17 +387,12 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 5: TESTING SANDBOX ---
     console.log('Navigating to Stage 5: Testing Sandbox...');
     await openTool(page, 'testing');
-    // "Generate Test Suite" is the empty state's own button. This used to look for
-    // "Generate Suite" — the card header's — which was the same action offered a
-    // second time on the same screen and is now shown only once a suite exists,
-    // as "Regenerate Suite". The selector followed the duplicate; it follows the
-    // real one now.
-    // Step 1 of the guided flow: the scenarios, generated unless the seed preloaded them.
+    // The answer first (ADR-131): with no scenario its one action is "Write the scenarios", beside the answer.
     await page.waitForSelector('[data-testing-flow]', { timeout: 60000 });
-    if ((await page.locator('[data-testing-step="write"]').getAttribute('data-step-state')) !== 'done') {
-      console.log('Test suite not preloaded. Clicking Generate scenarios...');
-      await page.click('button:has-text("Generate scenarios")');
-      await expect(page.locator('[data-testing-step="write"]')).toHaveAttribute('data-step-state', 'done', { timeout: 60000 });
+    if ((await page.locator('[data-testing-answer="not-started"]').count()) > 0) {
+      console.log('Test suite not preloaded. Clicking Write the scenarios...');
+      await page.locator('[data-answer-card]').getByRole('button', { name: 'Write the scenarios' }).click();
+      await expect(page.locator('[data-testing-answer="not-started"]')).toHaveCount(0, { timeout: 60000 });
     } else {
       console.log('Test suite preloaded.');
     }
@@ -418,12 +413,11 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     page.on('request', (r) => {
       if (r.url().includes('/api/run-tests')) runTestsRequests.push(r.method());
     });
-    const runStep = page.locator('[data-testing-step="run"]');
-    await expect(runStep).toHaveAttribute('data-step-state', 'unavailable');
-    await expect(runStep.locator('[data-testing-run-unavailable]')).toContainText('ABAP Unit test classes run only inside an ABAP system');
-    // No run is offered. The ADR-094 closure ("Close testing — not verified") may stand here: on a
-    // route where nothing runs, an impossible run is exactly what it concludes.
-    await expect(runStep.locator('button:not([data-testing-close]):not([data-testing-reopen])')).toHaveCount(0);
+    // "Where it ran" marks your SAP system and offers no run here (ADR-131 S3, S5).
+    const ran = page.locator('[data-testing-ran]');
+    await expect(ran.locator('[data-test-place="your-system"][data-test-place-active]')).toBeVisible();
+    await expect(ran.locator('[data-test-place="here"]')).toContainText('cannot run an ABAP Unit class');
+    await expect(page.getByRole('button', { name: /against SAP mocks$/ })).toHaveCount(0);
     // No result card appears from nowhere.
     await expect(page.locator('div.group', { has: page.locator('h4', { hasText: 'Extract Invoice Headers' }) })).toHaveCount(0);
     expect(runTestsRequests).toEqual([]);

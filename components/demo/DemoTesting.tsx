@@ -1,30 +1,30 @@
 'use client';
 
-import React from 'react';
-import CcCard from '@/components/cc/Card';
+import React, { useState } from 'react';
+import CcLinkButton from '@/components/cc/LinkButton';
+import AnswerCard from '@/components/family/AnswerCard';
+import FamilyChip from '@/components/family/FamilyChip';
 import PageAnchorBar from '@/components/PageAnchorBar';
 import { PAGE_ANCHOR_LABELS, testingAnchors } from '@/lib/page-anchors';
-import { TestingMetaLine } from '@/components/testing/TestingHeader';
 import ToolSection from '@/components/testing/ToolSection';
 import HandChecks, { type HandCheckGap } from '@/components/testing/HandChecks';
-import TestScopeLegend from '@/components/testing/TestScopeLegend';
-import { LIVE_TEST_EXECUTION } from '@/lib/locked-paths';
-import { catalogForReader } from '@/lib/messages/demo';
+import CounterChecks from '@/components/testing/CounterChecks';
+import RuleResults from '@/components/testing/RuleResults';
+import NotProvenList from '@/components/testing/NotProvenList';
+import { useMaterialRules } from '@/hooks/useMaterialRules';
+import { notProvenItems, TESTING_SECTION_IDS } from '@/lib/testing-answer';
 import { normaliseSeverity } from '@/lib/severity';
+import { APP_VERSION } from '@/lib/version';
 import type { DemoProject } from '@/lib/demo-project';
 
 /**
- * The demo's Testing stage in the tool's own layout — the guided flow of the
- * real tool (owner 02.10.2026): write the scenarios, run them against mocks,
- * check by hand — so the demo and a project read the same way.
+ * The demo's Testing tool in the tool's own layout (ADR-131, mock-up S12): the demo tests nothing and says so in the
+ * answer, then shows what is real — the engine's business rules, the acceptance checks a business tester can run for
+ * each, and the places no generated test would cover. One action: upload your own program.
  *
- * Everything is the demo's engine run (`lib/demo-project.ts`): the coverage
- * report, the findings, the routines. What a project would add — scenarios a
- * model wrote, a run against mocks, a tenant connection — the demo has none
- * of, and each step that would show it says so instead of showing a figure.
- * There is no button: the demo has no model and no runner, and a button that
- * cannot act is a promise it cannot keep. No facet tiles either — like an
- * empty project, the demo has nothing to report on until step 3.
+ * Everything is the demo's engine reading of the shipped example (`lib/demo-project.ts`). What a project would add —
+ * scenarios a model wrote, a run against mocks, a result from your SAP system — the demo has none of, and nothing here
+ * shows a figure for it. There is no run button: the demo has no model and no runner.
  */
 export default function DemoTesting({ demo }: { demo: DemoProject }) {
   const coverage = demo.analyze.coverage;
@@ -38,68 +38,103 @@ export default function DemoTesting({ demo }: { demo: DemoProject }) {
     const severity = normaliseSeverity(f.severity);
     return severity ? [{ id: f.id, line: f.lineStart, severity, title: f.title }] : [];
   });
+  const rules = useMaterialRules(demo.analyze.source, APP_VERSION);
+  const [acceptance, setAcceptance] = useState<number | null>(null);
+  const notProven = notProvenItems({
+    abap: false,
+    cases: 1, // the demo lists what no test would cover, not "nothing has run": it has nothing to run
+    modelCases: 0,
+    missingRules: [],
+    places: gaps,
+    onlyYourSystem: [],
+    ranHere: false,
+  });
+  const placeCount = gaps.reduce((sum, g) => sum + g.count, 0);
+  const ruleCount = rules.rules ? rules.rules.length : null;
 
   return (
     <div data-demo-testing="">
-      <TestingMetaLine
-        parts={[
-          { value: demo.sourceFile },
-          { value: `${demo.totalLines} lines` },
-          { label: 'catalog', value: catalogForReader(demo.catalogVersion), title: demo.catalogVersion },
-          { label: 'snapshot', value: demo.catalogSnapshot },
+      <AnswerCard
+        id="testing-answer"
+        question="Is the example program tested?"
+        chips={<FamilyChip kind="not-determined" note="demo" />}
+        answer={
+          <span data-testing-answer="demo">
+            The demo tests nothing: it writes no scenario and runs none. What it shows is real: the engine&apos;s business rules,
+            the checks a business tester can run for each, and the places no generated test would cover.
+          </span>
+        }
+        condition="In your own project the engine and a model write the scenarios, and they run against SAP mocks or in your SAP system. A made-up result is the one thing this page may never show."
+        action={
+          <CcLinkButton href="/dashboard" variant="primary">
+            Upload your own program
+          </CcLinkButton>
+        }
+        actionNote="Starts a project in My workspace. Free; your code stays in your project."
+        facets={[
+          { id: 'scenarios', label: 'Scenarios', value: 'None in a demo', note: 'The demo makes no model call.' },
+          {
+            id: 'rules',
+            label: 'Business rules',
+            value: ruleCount === null ? 'Being read' : `${ruleCount} read from the code`,
+            note: 'By the engine. The demo writes no case for them.',
+            chip: <FamilyChip kind="engine" />,
+            href: `#${TESTING_SECTION_IDS.tested}`,
+          },
+          { id: 'result', label: 'Result', value: 'None in a demo', note: 'Nothing ran: there is nothing to run.' },
+          {
+            id: 'open',
+            label: 'Not proven',
+            value: `${placeCount} ${placeCount === 1 ? 'place' : 'places'}`,
+            note: 'No generated test would cover them.',
+            href: `#${TESTING_SECTION_IDS.open}`,
+          },
         ]}
       />
 
-      {/* The tool's anchor bar, as on a project (ADR-091): the three steps, no scenarios in a demo. */}
+      {/* The shared bar, as on a project (ADR-126 (3)): no "Where it ran" and no developer depth in a demo. */}
       <PageAnchorBar
-        anchors={testingAnchors({ scenarios: 0, handChecks: gaps.length, sapResult: false })}
+        anchors={testingAnchors({ rules: ruleCount, ran: false, notProven: notProven.length, acceptance, developers: false })}
         label={PAGE_ANCHOR_LABELS.testing}
         name="testing-anchor"
         plural="testing-anchors"
-        className="mb-3"
       />
 
-      <div data-testing-flow="" className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex min-w-0 flex-col gap-5">
-          <ToolSection
-            id="testing-write"
-            data-testing-step="write"
-            step={{ n: 1, state: 'unavailable', word: 'Not in the demo' }}
-            title="Write the scenarios"
-            lead="In a project the testing model writes them from the target code, with one button here. They stay its proposal until a run gives them a verdict."
-          >
-            <p
-              data-not-determined=""
-              className="m-0 rounded-cc-row border border-dashed border-cc-field-border bg-cc-surface-muted px-3 py-3 cc-text-cell text-cc-ink-muted"
-            >
-              The demo writes no scenarios — it calls no model.
-            </p>
-          </ToolSection>
+      <div data-testing-flow="" className="grid grid-cols-1 items-start gap-6">
+        <ToolSection
+          id="testing-tested"
+          data-testing-tested=""
+          title="What was tested"
+          titleExtra={<FamilyChip kind="engine" note="rules" />}
+          lead="The business rules the engine read from the code. In your own project each gets its scenarios here, with the result and where it ran."
+        >
+          {rules.rules ? (
+            <RuleResults
+              rules={rules.rules.map((r) => ({
+                id: r.id,
+                text: r.text || r.label,
+                decision: null,
+                lines: r.ranges.length > 0 ? r.ranges.map((x) => (x.lineStart === x.lineEnd ? `L${x.lineStart}` : `L${x.lineStart}–L${x.lineEnd}`)).join(', ') : null,
+                cases: [],
+              }))}
+              untraced={[]}
+              placeNote={null}
+              emptyNote="The demo writes no scenarios: it calls no model. The acceptance checks below are the engine's, and real."
+            />
+          ) : (
+            <p className="m-0 cc-text-cell text-cc-ink-muted">The rules of the example are being read.</p>
+          )}
+        </ToolSection>
 
-          <ToolSection
-            id="testing-verified"
-            data-testing-step="run"
-            step={{ n: 2, state: 'unavailable', word: 'Not in the demo' }}
-            title="Run them against mocks"
-            lead="In a project on the CAP route the scenarios run in an isolated runner against SAP mocks — not in your S/4HANA system. On the ABAP Cloud route nothing here runs ABAP Unit: you record the result from your own SAP system, as a result file or your confirmation. Running tests on a tenant is locked."
-          >
-            <p
-              data-not-determined=""
-              className="m-0 rounded-cc-row border border-dashed border-cc-field-border bg-cc-surface-muted px-3 py-3 cc-text-cell text-cc-ink-muted"
-            >
-              Nothing has run: the demo has neither scenarios nor a runner, so there are no results to count.
-            </p>
-          </ToolSection>
-
-          <ToolSection
-            id="testing-hand"
-            data-testing-step="hand"
-            step={{ n: 3, state: 'open' }}
-            title="Check by hand"
-            aside={gaps.length}
-            lead="What no generated test covers: every construct the engine did not judge, with the line it starts on."
-          >
-            <div data-testid="demo-manual-areas">
+        <ToolSection
+          id="testing-open"
+          data-testing-open=""
+          title="Not proven"
+          aside={notProven.length > 0 ? notProven.length : undefined}
+          lead="What no generated test would cover in this program, read from the code by the engine."
+        >
+          <NotProvenList items={notProven}>
+            <div id="testing-hand" data-testing-hand="" data-testid="demo-manual-areas" className="mt-5 scroll-mt-32 border-t border-cc-line pt-4">
               <HandChecks
                 noSource={false}
                 gaps={gaps}
@@ -111,19 +146,18 @@ export default function DemoTesting({ demo }: { demo: DemoProject }) {
                 }}
               />
             </div>
-          </ToolSection>
-        </div>
+          </NotProvenList>
+        </ToolSection>
 
-        <aside aria-label="About this tool" className="flex min-w-0 flex-col gap-4">
-          {/* The same legend as in a project: what can be tested where, said once for the stage. */}
-          <TestScopeLegend isAbapCloud={null} tenantLocked={LIVE_TEST_EXECUTION.locked} />
-          <CcCard title="Tenant connection" level={2}>
-            <p className="m-0 cc-text-cell text-cc-ink">
-              In a project, bring your own tenant (BYOT) opens a connection check, a metadata read and one read-only OData
-              call. Running tests on a tenant stays locked. The demo connects to nothing.
-            </p>
-          </CcCard>
-        </aside>
+        <ToolSection
+          id="testing-acceptance"
+          data-testing-acceptance=""
+          title="Acceptance checks for a business tester"
+          titleExtra={<FamilyChip kind="engine" />}
+          lead="How someone in the business department checks each rule in a test system, without ABAP: one case where the rule applies, and its counter-check where it must not. A check is a question, not a result: nothing here has run."
+        >
+          <CounterChecks source={demo.analyze.source} engineVersion={APP_VERSION} onCount={setAcceptance} />
+        </ToolSection>
       </div>
     </div>
   );

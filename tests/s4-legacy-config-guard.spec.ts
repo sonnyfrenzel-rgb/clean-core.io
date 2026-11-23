@@ -66,11 +66,10 @@ test.describe('SEC-2026-759 — retired connection field', () => {
     expect(deletions.length).toBeGreaterThanOrEqual(2);
   });
 
-  test('the Testing page shows only the encrypted-store wording for a saved connection', () => {
+  test('the Testing page holds no connection form, so it shows no saved connection at all (ADR-131 (5))', () => {
+    // The saved connection used to be summarised in Testing's tenant section; it is in Settings now.
     const page = fs.readFileSync(path.join(ROOT, 'app/(app)/project/[projectId]/testing/page.tsx'), 'utf8');
-    expect(page).toContain('project.s4Meta?.configured');
-    expect(page).toContain('profile?.s4Meta?.configured');
-    expect(page).toContain('Stored encrypted (AES-256-GCM) on the server');
+    expect(page).not.toContain('s4Meta');
     expect(page).not.toMatch(/savedS4\.legacy|legacy:\s*true/);
   });
 });

@@ -64,11 +64,17 @@ export const PAGE_ANCHOR_IDS = {
     side: 'tf-side',
   },
   testing: {
+    // The five sections of ADR-131 (S14), in page order …
+    tested: 'testing-tested',
+    ran: 'testing-ran',
+    open: 'testing-open',
+    acceptance: 'testing-acceptance',
+    developers: 'testing-developers',
+    // … and the places inside them the choice addresses and Delivery link to (`lib/choice-addresses.ts`).
     write: 'testing-write',
     run: 'testing-verified',
     sapResult: 'testing-sap-result',
     hand: 'testing-hand',
-    scenarios: 'testing-scenarios',
   },
   delivery: {
     chain: 'evidence-chain',
@@ -148,27 +154,34 @@ export function transformationAnchors(content: {
 /* ------------------------------------------------------------------ Testing */
 
 export function testingAnchors(content: {
-  /** Scenarios written — "Scenarios" is drawn only once there are any. */
-  scenarios: number;
-  /** Hand checks listed under step 3; null where no source was read. */
-  handChecks: number | null;
-  /** The ABAP Cloud route's "Record the result from your SAP system" is drawn. */
-  sapResult: boolean;
+  /** Business rules the page lists under "What was tested"; null while none are read. */
+  rules: number | null;
+  /** "Where it ran" is drawn (not in the demo). */
+  ran: boolean;
+  /** Points of the *Not proven* list — amber, an open count. */
+  notProven: number;
+  /** Rules with acceptance checks; 0 or null hides the anchor. */
+  acceptance: number | null;
+  /** "For developers" is drawn (not in the demo). */
+  developers: boolean;
 }): PageAnchor[] {
   const ids = PAGE_ANCHOR_IDS.testing;
   const out: PageAnchor[] = [
-    { key: 'write', target: ids.write, label: 'Write', title: 'Step 1 — write the scenarios' },
-    { key: 'run', target: ids.run, label: 'Run', title: 'Step 2 — run them' },
+    { key: 'tested', target: ids.tested, label: 'What was tested', count: content.rules && content.rules > 0 ? n(content.rules) : null, title: 'Every business rule with the scenarios that test it' },
   ];
-  if (content.sapResult) out.push({ key: 'sap-result', target: ids.sapResult, label: 'Your SAP result', title: 'The result from your own SAP system' });
+  if (content.ran) out.push({ key: 'ran', target: ids.ran, label: 'Where it ran', title: 'Here against SAP mocks, or in your SAP system' });
   out.push({
-    key: 'hand',
-    target: ids.hand,
-    label: 'Check by hand',
-    count: content.handChecks === null ? null : content.handChecks > 0 ? n(content.handChecks) : 'none',
-    title: 'Step 3 — what no generated test covers',
+    key: 'open',
+    target: ids.open,
+    label: 'Not proven',
+    count: content.notProven > 0 ? n(content.notProven) : null,
+    tone: content.notProven > 0 ? 'open' : undefined,
+    title: 'What no result on this page proves',
   });
-  if (content.scenarios > 0) out.push({ key: 'scenarios', target: ids.scenarios, label: 'Scenarios', count: n(content.scenarios), title: 'Every scenario, one row each' });
+  if (content.acceptance && content.acceptance > 0) {
+    out.push({ key: 'acceptance', target: ids.acceptance, label: 'Acceptance checks', count: n(content.acceptance), title: 'How a business tester checks each rule, without ABAP' });
+  }
+  if (content.developers) out.push({ key: 'developers', target: ids.developers, label: 'For developers', title: 'Test code, run output and the checks of the suite' });
   return out;
 }
 

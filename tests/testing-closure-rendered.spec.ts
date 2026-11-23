@@ -126,8 +126,9 @@ test('closed: the card says who closed it, when and why, "not verified", and the
   expect(t).toContain('Closed without a passing run by owner@example.com on 11 Oct 2026: the runner failed here — the last run on 11 Oct 2026 gave no result');
   expect(t).toContain('“Repairs did not compile”');
   expect(t).toContain('Nothing here verified the code');
-  expect(html).toContain('data-provenance="confirmed"');
-  expect(html).not.toContain('data-provenance="proven"');
+  // The family's chip for the account's own statement (ADR-131, UX review L2): "Yours", never "Signed".
+  expect(html).toContain('data-family-chip="yours"');
+  expect(html).not.toContain('data-family-chip="signed"');
   expect(t).toContain('Reopen testing');
   // An invited reader sees the same statement and no button.
   const reader = text(card(closed(failed()), false));

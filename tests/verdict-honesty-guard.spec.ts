@@ -90,7 +90,9 @@ test.describe('a verdict is only reported when there is one', () => {
       'the pass rate is over every test again. Twenty skipped tests and four ' +
         'passes is not 17%, it is 100% of the four that ran — and the page has to ' +
         'say which it means.',
-    ).toContain('const verdicts = passed + failed');
+    ).not.toMatch(/passRate|Math\.round\(\(passed/);
+    // ADR-131: no rate at all — passed, failed and "without a result" are counted apart (`countsLine`).
+    expect(src).toContain('countsLine(run.counts)');
   });
 
   test('a draft run nobody recorded is refused, not returned as its runner exit code', () => {

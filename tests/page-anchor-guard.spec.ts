@@ -78,7 +78,8 @@ const RENDERERS: Record<keyof typeof PAGE_ANCHOR_IDS, { real: string[]; demo: st
   testing: {
     real: [PAGE('testing')],
     demo: ['components/demo/DemoTesting.tsx'],
-    demoIds: ['write', 'run', 'hand'],
+    // ADR-131 (S12): the demo runs nothing, so it has no "Where it ran" and no developer depth.
+    demoIds: ['tested', 'open', 'acceptance', 'hand'],
   },
   delivery: {
     real: [PAGE('delivery'), 'components/delivery/DeliveryObjectPage.tsx'],
@@ -232,15 +233,16 @@ test.describe('only ids that render', () => {
     expect(tf.find((a) => a.key === 'package')!.count).toBe('none');
     expect(tf.at(-1)!.target).toBe('tf-side');
 
-    // Testing — scenarios only once written, the SAP result only on its route.
-    const empty = testingAnchors({ scenarios: 0, handChecks: null, sapResult: false });
-    check('testing', empty);
-    expect(empty.map((a) => a.key)).toEqual(['write', 'run', 'hand']);
-    const abap = testingAnchors({ scenarios: 8, handChecks: 0, sapResult: true });
-    check('testing', abap);
-    expect(abap.map((a) => [a.key, a.count ?? null])).toEqual([
-      ['write', null], ['run', null], ['sap-result', null], ['hand', 'none'], ['scenarios', '8'],
+    // Testing (ADR-131, S14) — What was tested · Where it ran · Not proven (amber) · Acceptance checks · For developers.
+    const demo = testingAnchors({ rules: 12, ran: false, notProven: 1, acceptance: 0, developers: false });
+    check('testing', demo);
+    expect(demo.map((a) => a.key)).toEqual(['tested', 'open']);
+    const testingFull = testingAnchors({ rules: 12, ran: true, notProven: 4, acceptance: 11, developers: true });
+    check('testing', testingFull);
+    expect(testingFull.map((a) => [a.key, a.count ?? null, a.tone ?? null])).toEqual([
+      ['tested', '12', null], ['ran', null, null], ['open', '4', 'open'], ['acceptance', '11', null], ['developers', null, null],
     ]);
+    expect(testingAnchors({ rules: null, ran: true, notProven: 0, acceptance: null, developers: true }).find((a) => a.key === 'open')!.count).toBeNull();
 
     // Delivery — "none" still needed is the answer; the slides only with a deck.
     const d = deliveryAnchors({ stillNeeded: 0, artefacts: 6, pack: 'Available', slides: false });
@@ -276,8 +278,8 @@ test.describe('one place', () => {
     expect(body).not.toMatch(/AnchorBar\b/);
 
     before('components/transformation/TransformationObjectPage.tsx', /<PageAnchorBar\b/, 'id="tf-flow"');
-    before(PAGE('testing'), /<PageAnchorBar\b/, 'id="testing-write"');
-    before('components/demo/DemoTesting.tsx', /<PageAnchorBar\b/, 'id="testing-write"');
+    before(PAGE('testing'), /<PageAnchorBar\b/, 'id="testing-tested"');
+    before('components/demo/DemoTesting.tsx', /<PageAnchorBar\b/, 'id="testing-tested"');
     before(PAGE('delivery'), /<PageAnchorBar\b/, 'id="evidence-chain"');
     before('components/delivery/DemoDelivery.tsx', /<PageAnchorBar\b/, 'id="evidence-chain"');
     before(PAGE('documentation'), /<DocumentChapterBar\b/, 'data-documentation-description');

@@ -51,34 +51,16 @@ test.describe('the fabricated sandbox test stays gone', () => {
 test.describe('the real read in stage 5 claims only what it did', () => {
   const testing = () => read('app/(app)/project/[projectId]/testing/page.tsx');
 
-  test('it calls the route instead of simulating one', () => {
+  test('Testing holds no tenant read any more, so it can claim none (ADR-131 (5))', () => {
+    // The read-only OData call stood in Testing's tenant section; since 3.5.0 the tenant connection is "Your SAP
+    // test system" in Settings and Testing links there. What Testing renders cannot claim a read it does not do.
     const s = testing();
-    expect(s).toContain('handleReadEntitySet');
-    expect(s).toContain("'/api/test-s4-odata-read'");
-    // What is shown is what came back: since 3.0.21 the fields the metadata declares, no record count.
-    expect(s).toContain('result.sampleFields');
-    expect(s).not.toContain('result.recordCount');
-  });
-
-  test('it does not claim equivalence, and signs nothing off', () => {
-    const s = testing();
-    // The rendered output only — the doc comment above the handler names the
-    // claim it replaced, which is how the next person learns why it is absent.
+    expect(s).not.toContain("'/api/test-s4-odata-read'");
+    expect(s).not.toContain('handleReadEntitySet');
     const rendered = s.slice(s.indexOf('return ('));
     for (const overclaim of ['Equivalence', 'Type coercion holds', 'rows fetched']) {
-      expect(rendered, `stage 5 renders "${overclaim}"`).not.toContain(overclaim);
+      expect(rendered, `Testing renders "${overclaim}"`).not.toContain(overclaim);
     }
-    const idx = s.indexOf('const handleReadEntitySet');
-    const body = s.slice(idx, s.indexOf('\n  };\n', idx));
-    expect(body, 'the read signs a finding off').not.toContain('signedOff');
-    // It says out loud that it is a read and not a comparison.
-    expect(body).toContain('not a comparison');
-  });
-
-  test('no row count in the read path is a literal', () => {
-    const s = testing();
-    const idx = s.indexOf('const handleReadEntitySet');
-    const body = s.slice(idx, s.indexOf('\n  };\n', idx));
-    expect(body).not.toMatch(/\b\d{2,}\s+(rows|records|items)\b/i);
+    expect(rendered).not.toMatch(/signedOff/);
   });
 });

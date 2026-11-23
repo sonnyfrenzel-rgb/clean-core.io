@@ -6,7 +6,7 @@ import CcButton from '@/components/cc/Button';
 import CcCodeSurface from '@/components/cc/CodeSurface';
 import CcDateText from '@/components/cc/DateText';
 import CcDialog from '@/components/cc/Dialog';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import CcStateText from '@/components/cc/StateText';
 import { CcTag } from '@/components/cc/Tag';
 import { saveAs } from '@/lib/fileSaver';
@@ -176,7 +176,7 @@ export type ScenarioOutsideResult =
 /** The chip a row and its details wear for a result from the reader's SAP system. */
 function OutsideWord({ result }: { result: ScenarioOutsideResult }) {
   if (result.kind === 'confirmed') {
-    return <CcProvenanceChip value="confirmed" note={result.classPassed ? 'class passed · by you' : 'class had failures · by you'} />;
+    return <FamilyChip value="confirmed" note={result.classPassed ? 'class passed · by you' : 'class had failures · by you'} />;
   }
   if (result.outcome === 'none') {
     return (
@@ -185,7 +185,7 @@ function OutsideWord({ result }: { result: ScenarioOutsideResult }) {
       </CcStateText>
     );
   }
-  return <CcProvenanceChip value="imported" note={result.outcome} />;
+  return <FamilyChip value="imported" note={result.outcome} />;
 }
 
 const LABEL = 'cc-text-label text-cc-ink-muted';
@@ -217,7 +217,7 @@ function FieldValue({ value, ordered }: { value: string | string[] | null; order
 }
 
 function VerdictWord({ verdict }: { verdict: string | null }) {
-  if (verdict === 'Passed') return <CcProvenanceChip value="demonstrated-mock" />;
+  if (verdict === 'Passed') return <FamilyChip value="demonstrated-mock" />;
   if (verdict === 'Failed') return <CcStateText state="error">Failed</CcStateText>;
   if (verdict) return <CcStateText state="neutral" hollow>{verdict}</CcStateText>;
   return <CcStateText state="neutral" hollow>Not run</CcStateText>;
@@ -272,7 +272,7 @@ export function ScenarioDetails({
   return (
     <div data-scenario-details="" className="flex min-w-0 flex-col gap-5">
       <p className="m-0 flex flex-wrap items-center gap-2 cc-text-meta text-cc-ink-muted">
-        <CcProvenanceChip value="proposed" />
+        <FamilyChip value="proposed" />
         Written by the testing model from the generated code — a proposal nobody has checked.
       </p>
 

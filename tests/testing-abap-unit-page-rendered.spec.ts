@@ -48,7 +48,10 @@ test('the Testing page shows the passed-in-SAP count for a current result, and n
   await page.setViewportSize({ width: 1440, height: 900 });
   await signInThroughForm(page, acct);
   await page.goto(`/project/${acct.projectId}/testing`, { waitUntil: 'domcontentloaded' });
-  const block = page.locator('[data-testing-step="run"] [data-test-evidence-abap-unit]');
+  // The ABAP Unit evidence stands in "For developers", folded (ADR-131 S8).
+  const openDevelopers = () => page.locator('#testing-developers [data-cc-disclosure-trigger]').click({ timeout: 90_000 });
+  await openDevelopers();
+  const block = page.locator('#testing-developers [data-test-evidence-abap-unit]');
   await expect(block).toBeVisible({ timeout: 90_000 });
   await expect(block).toContainText('passed in SAP: 70 of 77 ABAP Unit test methods');
   await expect(block).not.toContainText('not known here');
@@ -56,6 +59,7 @@ test('the Testing page shows the passed-in-SAP count for a current result, and n
   // The same result for another package state is out of date: the page says so.
   await adminMergeDoc('projects', acct.projectId, { outsideTestResult: { ...confirmed, subject: { ...(confirmed.subject as object), codeDigest: 'other' } } });
   await page.reload({ waitUntil: 'domcontentloaded' });
+  await openDevelopers();
   await expect(block).toBeVisible({ timeout: 90_000 });
   await expect(block).toContainText('passed in SAP: not known here');
 });

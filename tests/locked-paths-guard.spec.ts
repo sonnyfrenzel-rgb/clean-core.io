@@ -76,7 +76,9 @@ test.describe('the lock holds in code', () => {
     // different refusals, and none of them said how to get the connection
     // itself. The run is still refused; what changed is how often it is said.
     expect((src.match(/data-live-test-lock/g) || []).length).toBe(1);
-    expect(src).toContain('{LIVE_TEST_EXECUTION.userNotice}');
+    // Since 3.5.0 (ADR-131 S9) the lock is one line beside the place it locks, "Your tenant, from here", with the way
+    // to the connection check in Settings — the long notice went with the tenant section.
+    expect(src).toContain('LIVE_TEST_EXECUTION.locked');
     // Since 02.10.2026 the tenant is a section of the tool, not a mode of it:
     // the page never asks for a live run. Whatever environment an earlier
     // build stored, the run it sends is against mocks, and nothing on the page
@@ -85,8 +87,8 @@ test.describe('the lock holds in code', () => {
     expect(src).toMatch(/useTestExecution\(projectId as string, runProject, setProject\)/);
     expect(src).not.toMatch(/s4Environment:\s*(env|activeEnvTab|'live')\b/);
     expect(src).not.toContain('>Admin-Gated</span>');
-    // The way out, named: BYOT is what opens the connection check.
-    expect(src).toMatch(/Bring your own tenant \(BYOT\)/);
+    // The way out, named: the connection check is in Settings, "Your SAP test system".
+    expect(src).toContain('/settings#sap-test-system');
   });
 });
 
@@ -163,27 +165,23 @@ test.describe('the lock holds when used', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
 
     // The fixture is a project an earlier build left on the tenant tab
-    // (`s4Environment: 'live'`). Since 02.10.2026 the tenant is a folded
-    // section of the tool, not a mode: it opens where the reader was, the
-    // notice stands in it exactly once — with the way to open the connection
-    // itself (roadmap 1.7 / ADR-004) — and the run beside it is against mocks.
+    // (`s4Environment: 'live'`). Since 3.5.0 (ADR-131 S3, S9) the tenant is one
+    // of the three places in "Where it ran", locked, and the side column says so
+    // once, with the way to the connection check in Settings; the run beside it
+    // is against mocks.
     await page.goto(`/project/${PROJECT_ID}/testing`, { waitUntil: 'domcontentloaded' });
-    await expect(page.getByText(LIVE_TEST_EXECUTION.userNotice).first()).toBeVisible({ timeout: 30000 });
-    await expect(page.getByText('Tests against a tenant are locked')).toBeVisible();
+    await expect(page.locator('[data-test-place="tenant"]')).toContainText('Locked', { timeout: 30000 });
     await expect(page.getByRole('tablist')).toHaveCount(0);
     const notice = page.locator('[data-live-test-lock]');
     await expect(notice).toHaveCount(1);
     await expect(notice).toBeVisible();
-    await expect(notice).toContainText('Bring your own tenant (BYOT)');
-    await expect(notice).toContainText('an administrator reviews it by hand');
-    await expect(page.locator('[data-live-test-hint]')).toContainText('against mocks', { timeout: 30000 });
+    await expect(notice.getByRole('link', { name: 'Settings, Your SAP test system' })).toHaveAttribute('href', '/settings#sap-test-system');
 
     // The run is offered — a saved suite opens selected — and what it sends is
     // a run against mocks, whatever the stored environment says. The route
     // still refuses 'live' (the test above); the page no longer asks for it.
-    const run = page.locator('[data-testing-step="run"]').getByRole('button', { name: 'Run tests against mocks' });
-    await expect(page.getByRole('checkbox').first()).toBeChecked({ timeout: 30000 });
-    await expect(run).toBeEnabled({ timeout: 10000 });
+    const run = page.locator('[data-testing-results]').getByRole('button', { name: /^Run the \d+ scenarios? against SAP mocks$/ });
+    await expect(run).toBeEnabled({ timeout: 30000 });
     const answered = page.waitForResponse((r) => r.url().includes('/api/run-tests') && r.request().method() === 'POST', { timeout: 120000 });
     await run.click();
     const response = await answered;

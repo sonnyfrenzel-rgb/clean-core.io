@@ -178,8 +178,10 @@ test.describe('missing values are not replaced by the best available answer', ()
 
   test('an empty test run is not a pass rate', () => {
     const src = read('app/(app)/project/[projectId]/testing/page.tsx');
-    // `0 / 0` reached the dashboard as NaN% and a broken chart.
-    expect(src).toMatch(/if \(total === 0\) return null;/);
+    // `0 / 0` reached the dashboard as NaN% and a broken chart. Since ADR-131 the page draws no pass rate and no
+    // chart at all: a run is counted passed · failed · without a result (`countsLine`), and nothing is divided.
+    expect(src).not.toMatch(/passRate|TestingPieChart|TestingBarChart/);
+    expect(src).toContain('countsLine(run.counts)');
   });
 });
 
