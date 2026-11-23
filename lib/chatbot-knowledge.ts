@@ -18,7 +18,7 @@
  * Sources:
  * - Knowledge Hub (/knowledge) — FAQs, glossary, RAP vs CAP comparison
  * - How-To (/how-to) — the seven-phase walkthrough, read from `lib/how-to-content.ts`
- * - Platform pages — Analyze, Design, Transformation, Documentation, Testing, Economics, Delivery
+ * - Platform pages — Analyze, Economics, Design, Transformation, Documentation, Testing, Delivery
  * - Settings — BYOK, S/4HANA tenant configuration
  *
  * Roadmap 0.2, UX-102 (the follow-up in the knowledge base). This file described

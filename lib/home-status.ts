@@ -1,4 +1,4 @@
-import { phaseActionLabel, staleness, workflowSteps, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
+import { PHASE_KEYS, phaseActionLabel, staleness, workflowSteps, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
 import type { ProgressTone } from '@/lib/project-progress';
 import type { Project } from '@/lib/types';
 
@@ -28,7 +28,7 @@ export type HomeStatusKind = 'nocode' | 'notrun' | 'analysed' | 'redesign' | 'co
 export type AttentionReason = 'code-changed' | 'design-outdated' | 'test-failed';
 
 /** The six tools of re-design, in the order of the phase contract. */
-export const REDESIGN_KEYS: readonly PhaseKey[] = ['design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
+export const REDESIGN_KEYS: readonly PhaseKey[] = PHASE_KEYS.filter((key) => key !== 'analyze');
 
 export const REDESIGN_TOTAL = REDESIGN_KEYS.length;
 

@@ -50,8 +50,8 @@ sealed as an immutable, signed run, and the handover pack is signed over it.
 One workspace, three views of the same facts: the Business view ("Do I still need this,
 and what changes for me?"), the IT view ("What exactly, where to, and is it right?") and
 the Management view ("What do I risk, what do I decide?"). A view orders what is shown;
-it changes no result. The seven stages — Analyze, Design, Transformation, Documentation,
-Testing, Economics, Delivery — are tools in that workspace. The process leaves as a
+it changes no result. The seven stages — Analyze, Economics, Design, Transformation,
+Documentation, Testing, Delivery — are tools in that workspace. The process leaves as a
 BPMN 2.0 XML file; there is no connection to a Signavio workspace. Generated RAP or CAP
 code is a draft for a person to review.
 
@@ -101,7 +101,7 @@ Details and limits: ${baseUrl}/how-it-works.
   published data holds no answer), and the Clean Core
   Score (5–100, higher is better) in four bands.
 - Business, IT and Management views of the same facts.
-- Seven tools: Analyze, Design, Transformation, Documentation, Testing, Economics,
+- Seven tools: Analyze, Economics, Design, Transformation, Documentation, Testing,
   Delivery. Their layout is oriented on SAP Fiori patterns; it is not an SAP Fiori app
   and not endorsed by SAP.
 - Read access by invitation: a link bound to one confirmed e-mail address, including

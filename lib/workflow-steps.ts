@@ -181,15 +181,34 @@ export const PHASE_TONE_CLASS: Record<PhaseTone, { border: string; fill: string;
   none: { border: 'border-cc-neutral-border', fill: 'bg-cc-line', surface: 'bg-cc-surface', ink: 'text-cc-ink-muted' },
 };
 
+/**
+ * The seven tools in their one order — ADR-128 (5), owner 15.11.2026: Analyze → Economics → Design →
+ * Transformation → Documentation → Testing → Delivery. Economics comes second: it prices the program decision,
+ * and Design works from that decision with Economics' range as its guard rail. Every reader of the order — the
+ * tool bar, the rail, My workspace, the dashboard, Delivery's next step, the demo — reads it from here, and
+ * `inToolOrder` puts any list of phases into it.
+ */
 export const PHASES: ReadonlyArray<{ n: number; key: PhaseKey; label: string }> = [
   { n: 1, key: 'analyze', label: 'Analyze' },
-  { n: 2, key: 'design', label: 'Design' },
-  { n: 3, key: 'transformation', label: 'Transformation' },
-  { n: 4, key: 'documentation', label: 'Documentation' },
-  { n: 5, key: 'testing', label: 'Testing' },
-  { n: 6, key: 'tco', label: 'Economics' },
+  { n: 2, key: 'tco', label: 'Economics' },
+  { n: 3, key: 'design', label: 'Design' },
+  { n: 4, key: 'transformation', label: 'Transformation' },
+  { n: 5, key: 'documentation', label: 'Documentation' },
+  { n: 6, key: 'testing', label: 'Testing' },
   { n: 7, key: 'delivery', label: 'Delivery' },
 ];
+
+/** The phase keys in tool order. */
+export const PHASE_KEYS: readonly PhaseKey[] = Object.freeze(PHASES.map((p) => p.key));
+
+/** Any list of phases, in the tool order of `PHASES` (stable; an unknown key goes last). */
+export function inToolOrder<T extends { key: PhaseKey }>(steps: readonly T[]): T[] {
+  const at = (key: PhaseKey) => {
+    const i = PHASE_KEYS.indexOf(key);
+    return i < 0 ? PHASE_KEYS.length : i;
+  };
+  return [...steps].sort((a, b) => at(a.key) - at(b.key));
+}
 
 /**
  * What each tool is for, in one short line — the one source the tools bar, its
@@ -1286,7 +1305,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
     const noAnalysis = (base: RailStep): RailStep =>
       stale(base, 'Made before this project had a signed analysis — run the analysis, then make it again.', 'Out of date');
     const leftovers = hasGenerated || tests.total > 0 || hasDocs;
-    return [
+    return inToolOrder([
       analyze,
       hasDesign ? noAnalysis(design) : design,
       hasGenerated ? noAnalysis(transformation) : transformation,
@@ -1296,10 +1315,10 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
       leftovers
         ? stale(delivery, 'Nothing can be handed over before a signed analysis — run the analysis first.', 'Blocked')
         : delivery,
-    ];
+    ]);
   }
 
-  return [
+  return inToolOrder([
     hasRun && s.sourceChanged
       ? stale(analyze, 'The source on this project is not the one the signed run analysed — re-run the analysis.', 'Source changed')
       : hasRun && s.unverifiedInputs.length > 0
@@ -1349,7 +1368,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
       : blockers.length > 0
         ? stale(delivery, `Handover blocked — built for ${prevBasis}: ${blockers.join(', ')}.`, 'Blocked')
         : delivery,
-  ];
+  ]);
 }
 
 /**

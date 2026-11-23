@@ -20,7 +20,7 @@ import { accessUseOfKind, findingRows, processStepBands, type ProcessStepBand } 
 import { readProcess } from '@/lib/first-look';
 import { findingsWorklist } from '@/lib/findings-worklist';
 import { catalogSnapshotKeyForProject } from '@/lib/abap/catalog-snapshots';
-import { PHASES, type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
+import { inToolOrder, PHASES, type PhaseKey, type PhaseState } from '@/lib/workflow-steps';
 import { findingTarget, trackOfRoute, type ProjectTrack, type TargetKind } from '@/lib/transformation-view';
 import type { CodeInventoryItem, DataCouplingEntry, WorklistItem } from '@/lib/types';
 import { buildReadingExports } from '@/lib/bpmn/export';
@@ -290,7 +290,7 @@ function buildRail(demo: Omit<DemoProject, 'rail'>): DemoRailStep[] {
   // with the places in the code beside it, so the rail and the page agree.
   const f = demo.analyze.distinctFindings;
   const places = demo.analyze.findings.length;
-  return [
+  return inToolOrder([
     railStep(
       'analyze',
       'partial',
@@ -335,7 +335,7 @@ function buildRail(demo: Omit<DemoProject, 'rail'>): DemoRailStep[] {
       'Not handed over',
       'A demo produces no audit pack and no signed export. What a real handover would still need is listed here.',
     ),
-  ];
+  ]);
 }
 
 function planOf(findings: EvidenceFinding[], track: ProjectTrack): { plan: DemoPlanItem[]; unplanned: number } {

@@ -10,8 +10,9 @@
  *     and the decision record (Design phase). Each slot says what is taken,
  *     at which level, from which tool, when, and — where its input is missing
  *     or could be better — a warning line with the place to fix it. Economics
- *     comes after Transformation and is never part of it: the slots' phases are
- *     the phases of `PHASES` *before* Transformation, and a spec holds that.
+ *     is never part of it (it comes before Design since ADR-128, but no cost
+ *     figure enters a generation): the slots' phases are the phases of `PHASES`
+ *     *before* Transformation other than Economics, and a spec holds that.
  *   - **the tips** (`qualityTips`): the open inputs that change what the
  *     generation uses, ordered by impact, each with a real count from this
  *     project, its effect on the code, and one address to the place it is
@@ -143,9 +144,13 @@ export const CHAIN_SLOTS: ReadonlyArray<{ key: ChainSlotKey; phase: PhaseKey }> 
   { key: 'decision-record', phase: 'design' },
 ]);
 
-/** The phases a generation builds on: those before Transformation. Economics (phase 6) never is one. */
+/**
+ * The phases a generation builds on: those before Transformation, but never Economics. Economics comes second since
+ * ADR-128 (5) and prices the program decision; no cost figure, scenario or revision enters the generation (ADR-101,
+ * owner correction 12.10.2026), so it is left out by name, not by its place in the order.
+ */
 export const CHAIN_PHASES: readonly PhaseKey[] = Object.freeze(
-  PHASES.filter((p) => p.n < (PHASES.find((x) => x.key === 'transformation')?.n ?? 0)).map((p) => p.key),
+  PHASES.filter((p) => p.key !== 'tco' && p.n < (PHASES.find((x) => x.key === 'transformation')?.n ?? 0)).map((p) => p.key),
 );
 
 /**

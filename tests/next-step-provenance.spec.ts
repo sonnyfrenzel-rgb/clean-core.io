@@ -104,21 +104,28 @@ test.describe('the point says why it is this one', () => {
   });
 
   test('what stands before it is the phase contract\'s own list, not a second tally', () => {
-    // Design generated, not signed off: Analyze alone stands before it.
+    // Design generated, not signed off: Analyze and Economics stand before it (ADR-128 (5): Economics is second).
     const halfway = finished({ approvedByArchitect: false, approvedBy: undefined });
     const point = nextOpenPoint(halfway)!;
     const steps = workflowSteps(halfway);
     const at = steps.findIndex((s) => s.key === point.key);
-    expect(at, 'the fixture no longer stops at Design').toBe(1);
-    expect(point.selection).toContain(`The one phase before it, ${steps[0].label}, is on record`);
+    expect(at, 'the fixture no longer stops at Design').toBe(2);
+    expect(steps.slice(0, at).map((s) => s.key)).toEqual(['analyze', 'tco']);
+    expect(point.selection).toContain(
+      steps[1].done ? 'All 2 phases before it are on record' : `1 of the 2 phases before it are on record; ${steps[1].label} is passed over`,
+    );
     expect(point.selection).toMatch(/first in the workflow order that is not/i);
 
     // Three phases on record, Documentation open: the plural form, counted.
     const later = finished({ documentation: undefined });
     const point3 = nextOpenPoint(later)!;
     expect(point3.key).toBe('documentation');
-    const before3 = workflowSteps(later).findIndex((s) => s.key === 'documentation');
-    expect(point3.selection).toContain(`All ${before3} phases before it are on record`);
+    const laterSteps = workflowSteps(later);
+    const before3 = laterSteps.findIndex((s) => s.key === 'documentation');
+    const done3 = laterSteps.slice(0, before3).filter((s) => s.done).length;
+    expect(point3.selection).toContain(
+      done3 === before3 ? `All ${before3} phases before it are on record` : `${done3} of the ${before3} phases before it are on record`,
+    );
   });
 
   test('a phase that is skipped is named and given its reason, never silently dropped', () => {
