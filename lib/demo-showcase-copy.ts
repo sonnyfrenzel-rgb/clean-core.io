@@ -405,10 +405,6 @@ export const SHOWCASE_END = {
   ],
 };
 
-/** The one line "My workspace" shows after the showcase's sign-in (`?from=demo`), and nothing is stored. */
-export const SHOWCASE_CONTINUE_LINE =
-  'You have seen Z_MM_PO_APPROVAL. Open it as your own project (free the first time), or bring your own program.';
-
 /**
  * The showcase step that shows a tool of the product (mockup v3, "Decisions"):
  * Analyze the map, Design the route, Delivery the sealed pack; the tools the

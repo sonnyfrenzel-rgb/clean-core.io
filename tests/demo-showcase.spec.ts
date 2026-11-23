@@ -5,11 +5,12 @@ import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
 import { buildDemoShowcase } from '../lib/demo-showcase';
 import {
-  SHOWCASE_CONTINUE_LINE,
   SHOWCASE_STEP_COUNT,
   showcaseSteps,
 } from '../lib/demo-showcase-copy';
 import { adminSetDoc } from './helpers/admin-seed';
+import { homeFromDemoTitle } from '../lib/messages/workspace';
+import { DEMO_OBJECT_NAME } from '../lib/demo-marks';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -184,7 +185,9 @@ test('My workspace says the one line after the showcase, and only then', async (
 
   await page.goto('/dashboard?from=demo', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-home-first-view]')).toBeVisible({ timeout: 90_000 });
-  await expect(page.locator('[data-home-from-demo]')).toHaveText(SHOWCASE_CONTINUE_LINE);
+  // Since 3.3.0 My workspace has one banner for a reader who has seen the demo (W7); the showcase's
+  // address is one more way in, so the banner is the same one, naming the example just seen.
+  await expect(page.locator('[data-home-from-demo]')).toContainText(homeFromDemoTitle(DEMO_OBJECT_NAME));
 
   await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-home-first-view]')).toBeVisible({ timeout: 90_000 });
