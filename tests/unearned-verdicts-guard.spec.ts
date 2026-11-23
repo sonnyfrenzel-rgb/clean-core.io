@@ -111,7 +111,12 @@ test.describe('delivery reports artefacts rather than assuming them', () => {
     // page; the old "Incomplete" branch is that facet's "Not handed over".
     // Readiness still has to be earned: only `delivery.done` may say it, and
     // every other path says the handover has not happened.
-    expect(jsx).toContain('handoverFacets(');
+    // ADR-132: the answer of `lib/delivery-view.ts` — Yes only on an empty still-needed list; a download is
+    // never "Handed over" (L4).
+    expect(jsx).toContain('handoverAnswer(hp, facts)');
+    const view = rendered('lib/delivery-view.ts');
+    expect(view).toMatch(/if \(facts\.stillNeeded\.length === 0\) \{\s*return \{\s*verdict: 'yes'/);
+    expect(view).not.toMatch(/'Handed over'/);
     const facets = rendered('lib/handover.ts');
     expect(facets).not.toContain('Ready for Deployment');
     expect(facets).toMatch(/:\s*delivery\.done\s*\?\s*\{[\s\S]{0,400}?'Ready to hand over'[\s\S]{0,400}?\}\s*:\s*\{[\s\S]{0,100}?value: 'Not handed over'/);

@@ -221,7 +221,9 @@ test.describe('the handover reads what is on record', () => {
     const fresh = project();
     const next = handoverNextStep(fresh, workflowSteps(fresh), [], buildHandoverChain(fresh, workflowSteps(fresh)), 'p1');
     expect(next.kind).toBe('open');
-    if (next.kind === 'open') expect(next.href).toBe('/project/p1/design');
+    // The tool order of ADR-128 (Delivery L9): Economics prices the options before Design.
+    if (next.kind === 'open') expect(next.href).toBe('/project/p1/tco');
+    if (next.kind === 'open') expect(next.action).toBe('Open Economics');
     expect(chainSummary(buildHandoverChain(fresh, workflowSteps(fresh))).of).toBe(9);
   });
 
@@ -403,16 +405,17 @@ test.describe('the handover on screen', () => {
 
     const links = page.locator('[data-chain-link]');
     await expect(links).toHaveCount(9, { timeout: 60000 });
-    // The pack's four steps lead; the nine links sit one level deeper (proposal A).
-    await expect(page.locator('[data-chain-group]')).toHaveCount(4);
-    await expect(page.locator('[data-chain-group="decision"]')).toContainText('Side-by-Side SAP BTP (CAP)');
-    await expect(page.locator('[data-delivery-facet]')).toHaveCount(4);
+    // ADR-132: the proof table leads, statement by statement; the nine links sit one level deeper, in words.
+    await expect(page.locator('[data-proof-row]')).toHaveCount(12);
+    await expect(page.locator('[data-cc-table-row="proof-target"]')).toContainText('Side-by-Side SAP BTP (CAP)');
+    await expect(page.locator('[data-proof-row="target"]')).toHaveAttribute('data-proof-status', 'sealed');
+    await expect(page.locator('[data-answer-card] [data-facet]')).toHaveCount(4);
     await expect(page.locator('[data-still-needed-item="economics"]')).toBeVisible();
     await page.locator('[data-chain-detail] [data-cc-disclosure-trigger]').click();
     await expect(page.locator('[data-chain-link="economics"]')).toHaveAttribute('data-chain-state', 'open');
     await expect(page.locator('[data-chain-link="design"]')).toContainText('Side-by-Side SAP BTP (CAP)');
     await expect(page.locator('[data-handover-next]')).toBeVisible();
-    await expect(page.locator('[data-signature-covers]')).toContainText('Not signed');
+    await expect(page.locator('[data-signature-covers]')).toContainText('Never in the signed pack');
     await expect(page.locator('[data-confirmations]')).toContainText(acct.email);
     await expect(page.getByText('MEDIUM RISK')).toHaveCount(0);
     await expect(page.getByText('Compliance tier', { exact: false })).toHaveCount(0);

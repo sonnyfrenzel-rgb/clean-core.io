@@ -100,7 +100,7 @@ test('downloading the pack seals it on the page at once: chain, card, list and n
 
   const next = page.locator('[data-handover-next]');
   const needed = page.locator('[data-still-needed-item]');
-  const chainDelivery = page.locator('[data-chain-group="delivery"]');
+  const chainDelivery = page.locator('[data-handover-step="audit-pack"]');
   const card = page.locator('#audit-pack');
   await expect(next).toBeVisible({ timeout: 90_000 });
 
@@ -113,7 +113,7 @@ test('downloading the pack seals it on the page at once: chain, card, list and n
   await expect(next).toHaveAttribute('data-handover-next', 'seal');
   await expect(next).toContainText('Download the signed audit pack');
   await expect(next).not.toContainText('Nothing open');
-  await expect(chainDelivery).toContainText('Audit pack not sealed yet.');
+  await expect(chainDelivery).toContainText('Not sealed');
   await expect(card).toContainText('Never');
   await expect(card).toContainText('The first download of this run seals it.');
 
@@ -123,10 +123,10 @@ test('downloading the pack seals it on the page at once: chain, card, list and n
 
   // After, without a reload: sealed everywhere the page says it.
   await expect(next).toHaveAttribute('data-handover-next', 'none', { timeout: 60_000 });
-  await expect(next).toContainText('Nothing open — hand the package to operations');
+  await expect(next).toContainText('Nothing blocks the handover');
   await expect(next).toContainText(/Audit pack sealed on \d{4}-\d{2}-\d{2}/);
   await expect(needed).toHaveCount(0);
-  await expect(chainDelivery).toContainText('Audit pack sealed and downloaded.');
+  await expect(chainDelivery).toHaveAttribute('data-handover-step-mark', 'done');
   await expect(card).not.toContainText('Never');
   await expect(card).toContainText(/\d{4}-\d{2}-\d{2}/);
   await expect(page.locator('[data-audit-pack-seal-missing]')).toHaveCount(0);

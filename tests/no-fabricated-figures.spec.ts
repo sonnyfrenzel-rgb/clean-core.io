@@ -97,7 +97,8 @@ test.describe('no fabricated figures on measured values', () => {
       'utf8',
     );
     expect(source).toContain('No test suite generated');
-    expect(source).toContain('Coverage not estimated');
+    // The generator's coverage estimate left Delivery with ADR-131/132: a guess is not a figure of the handover.
+    expect(source).not.toContain('estimated coverage');
     // The tick in front of each line has to follow the fact, not the layout.
     //
     // This used to assert `testCaseCount > 0 ? (` — the tick followed the number
@@ -121,7 +122,6 @@ test.describe('no fabricated figures on measured values', () => {
     expect(source).not.toContain('testingPhase.done ? (');
     // And the line beside the tick says which of the two it is.
     expect(source).toContain('no test run is on record behind these verdicts');
-    expect(source).toContain('coveragePercentage !== undefined ? (');
   });
 
   test('the architect sign-off shows no confidence bar without a score', () => {

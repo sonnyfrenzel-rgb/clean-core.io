@@ -77,11 +77,12 @@ export const PAGE_ANCHOR_IDS = {
     hand: 'testing-hand',
   },
   delivery: {
-    chain: 'evidence-chain',
-    needed: 'still-needed',
-    artefacts: 'artefacts',
+    open: 'before-go-live',
+    package: 'in-the-package',
+    proof: 'proof',
     pack: 'audit-pack',
-    slides: 'presentation-preview',
+    import: 'import-into-sap',
+    timeline: 'timeline',
   },
 } as const;
 
@@ -187,22 +188,39 @@ export function testingAnchors(content: {
 
 /* ----------------------------------------------------------------- Delivery */
 
+/**
+ * Delivery (ADR-132 L13, the mock-up of 15.11.2026): Before go-live (an amber count while something blocks the
+ * handover) · Package · Proof · Audit pack · Import · Timeline. The demo has no import and no timeline: nothing leaves
+ * a demo and nothing is recorded in one (L12).
+ */
 export function deliveryAnchors(content: {
-  stillNeeded: number;
-  artefacts: number;
-  /** The audit pack's state word ("Available", "Not available"); null hides the anchor. */
-  pack: string | null;
-  /** The stakeholder slides are drawn. */
-  slides: boolean;
+  /** What blocks the handover — the amber count; 0 draws none. */
+  blocking: number;
+  /** Parts of the package that exist (of six); null in the demo, which makes none. */
+  parts: number | null;
+  /** The audit pack's state when it needs attention ("check failed", "blocked"); null otherwise. */
+  packNote?: string | null;
+  /** Dated events in the timeline; null hides Import and Timeline (the demo). */
+  events: number | null;
 }): PageAnchor[] {
   const ids = PAGE_ANCHOR_IDS.delivery;
   const out: PageAnchor[] = [
-    { key: 'chain', target: ids.chain, label: 'Evidence chain', title: 'Requirement → decision → receipt → artefact' },
-    { key: 'needed', target: ids.needed, label: 'Still needed', count: content.stillNeeded > 0 ? n(content.stillNeeded) : 'none', title: 'What a real handover still needs' },
-    { key: 'artefacts', target: ids.artefacts, label: 'Artefacts', count: content.artefacts > 0 ? n(content.artefacts) : null, title: 'What leaves with the package — not signed' },
+    {
+      key: 'open',
+      target: ids.open,
+      label: 'Before go-live',
+      count: content.blocking > 0 ? n(content.blocking) : null,
+      tone: content.blocking > 0 ? 'open' : undefined,
+      title: 'What blocks the handover, what travels open, what stays yours',
+    },
+    { key: 'package', target: ids.package, label: 'Package', count: content.parts === null ? null : content.parts > 0 ? n(content.parts) : 'none', title: 'The six parts of the package — not signed' },
+    { key: 'proof', target: ids.proof, label: 'Proof', title: 'What is proven, and what is not' },
+    { key: 'pack', target: ids.pack, label: 'Audit pack', count: content.packNote ?? null, tone: content.packNote ? 'open' : undefined, title: 'The one file the server signs' },
   ];
-  if (content.pack !== null) out.push({ key: 'pack', target: ids.pack, label: 'Audit pack', count: content.pack.toLowerCase(), title: 'The one artefact the server signs' });
-  if (content.slides) out.push({ key: 'slides', target: ids.slides, label: 'Stakeholder slides', title: 'The deck built from the signed run' });
+  if (content.events !== null) {
+    out.push({ key: 'import', target: ids.import, label: 'Import', title: 'Import into SAP with abapGit' });
+    out.push({ key: 'timeline', target: ids.timeline, label: 'Timeline', count: content.events > 0 ? n(content.events) : null, title: 'Who did what, when' });
+  }
   return out;
 }
 

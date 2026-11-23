@@ -84,7 +84,7 @@ const RENDERERS: Record<keyof typeof PAGE_ANCHOR_IDS, { real: string[]; demo: st
   delivery: {
     real: [PAGE('delivery'), 'components/delivery/DeliveryObjectPage.tsx'],
     demo: ['components/delivery/DemoDelivery.tsx', 'components/delivery/DeliveryObjectPage.tsx'],
-    demoIds: ['chain', 'needed', 'artefacts', 'pack'],
+    demoIds: ['open', 'package', 'proof', 'pack'],
   },
 };
 
@@ -244,13 +244,20 @@ test.describe('only ids that render', () => {
     ]);
     expect(testingAnchors({ rules: null, ran: true, notProven: 0, acceptance: null, developers: true }).find((a) => a.key === 'open')!.count).toBeNull();
 
-    // Delivery — "none" still needed is the answer; the slides only with a deck.
-    const d = deliveryAnchors({ stillNeeded: 0, artefacts: 6, pack: 'Available', slides: false });
+    // Delivery (ADR-132 L13) — Before go-live carries an amber count only while something blocks; the demo has no
+    // import and no timeline, and its package no count.
+    const d = deliveryAnchors({ blocking: 0, parts: 6, events: 4 });
     check('delivery', d);
     expect(d.map((a) => [a.key, a.count ?? null])).toEqual([
-      ['chain', null], ['needed', 'none'], ['artefacts', '6'], ['pack', 'available'],
+      ['open', null], ['package', '6'], ['proof', null], ['pack', null], ['import', null], ['timeline', '4'],
     ]);
-    check('delivery', deliveryAnchors({ stillNeeded: 3, artefacts: 6, pack: null, slides: true }));
+    const blocked = deliveryAnchors({ blocking: 3, parts: 0, packNote: 'blocked', events: 0 });
+    check('delivery', blocked);
+    expect(blocked.find((a) => a.key === 'open')).toMatchObject({ count: '3', tone: 'open' });
+    expect(blocked.find((a) => a.key === 'package')!.count).toBe('none');
+    const demo = deliveryAnchors({ blocking: 5, parts: null, events: null });
+    check('delivery', demo);
+    expect(demo.map((a) => a.key)).toEqual(['open', 'package', 'proof', 'pack']);
   });
 });
 
@@ -278,10 +285,10 @@ test.describe('one place', () => {
     expect(body).not.toMatch(/AnchorBar\b/);
 
     before('components/transformation/TransformationObjectPage.tsx', /<PageAnchorBar\b/, 'id="tf-flow"');
-    before(PAGE('testing'), /<PageAnchorBar\b/, 'id="testing-tested"');
-    before('components/demo/DemoTesting.tsx', /<PageAnchorBar\b/, 'id="testing-tested"');
-    before(PAGE('delivery'), /<PageAnchorBar\b/, 'id="evidence-chain"');
-    before('components/delivery/DemoDelivery.tsx', /<PageAnchorBar\b/, 'id="evidence-chain"');
+    before(PAGE('testing'), /<PageAnchorBar/, 'id="testing-tested"');
+    before('components/demo/DemoTesting.tsx', /<PageAnchorBar/, 'id="testing-tested"');
+    before(PAGE('delivery'), /<PageAnchorBar/, 'id="before-go-live"');
+    before('components/delivery/DemoDelivery.tsx', /<PageAnchorBar/, 'id="before-go-live"');
     before(PAGE('documentation'), /<DocumentChapterBar\b/, 'data-documentation-description');
     before('components/workspace/ItAnswers.tsx', /<ItAnchorBar\b/, 'id={IT_SECTION_IDS.findings}');
 

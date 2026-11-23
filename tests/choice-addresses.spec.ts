@@ -65,7 +65,7 @@ test.describe('every choice has one address', () => {
     'testing.sap-result': `${BASE}/testing?view=it&origin=it.next-step#testing-sap-result`,
     'testing.hand': `${BASE}/testing?view=it&origin=it.next-step#testing-hand`,
     'delivery.audit-pack': `${BASE}/delivery?view=it&origin=it.next-step#audit-pack`,
-    'delivery.still-needed': `${BASE}/delivery?view=it&origin=it.next-step#still-needed`,
+    'delivery.still-needed': `${BASE}/delivery?view=it&origin=it.next-step#before-go-live`,
     'analyze.add-usage': `${BASE}/analyze?view=it&origin=it.next-step&add=usage`,
     'analyze.add-atc': `${BASE}/analyze?view=it&origin=it.next-step&add=atc`,
     'requirements.nfr-questions': `${BASE}/design/requirements?view=it&origin=it.next-step#spec-s4`,
@@ -88,7 +88,7 @@ test.describe('every choice has one address', () => {
 
   test('the anchors are the ids the pages already render, where they exist', () => {
     expect(CHOICES['delivery.audit-pack'].anchor).toBe(PAGE_ANCHOR_IDS.delivery.pack);
-    expect(CHOICES['delivery.still-needed'].anchor).toBe(PAGE_ANCHOR_IDS.delivery.needed);
+    expect(CHOICES['delivery.still-needed'].anchor).toBe(PAGE_ANCHOR_IDS.delivery.open);
     expect(CHOICES['testing.run'].anchor).toBe(PAGE_ANCHOR_IDS.testing.run);
     expect(CHOICES['testing.write'].anchor).toBe(PAGE_ANCHOR_IDS.testing.write);
     expect(CHOICES['testing.sap-result'].anchor).toBe(PAGE_ANCHOR_IDS.testing.sapResult);
@@ -278,7 +278,7 @@ test.describe('the way back goes one level, to the place that asked', () => {
       `${BASE}?view=management#decision-rests-on-contract`,
     );
     expect(originBackHref({ base: BASE, origin: 'delivery.still-needed', search: '?view=it&origin=delivery.still-needed' })).toBe(
-      `${BASE}/delivery?view=it#still-needed`,
+      `${BASE}/delivery?view=it#before-go-live`,
     );
     expect(originBackHref({ base: BASE, origin: 'delivery.chain.tests', search: '' })).toBe(`${BASE}/delivery#evidence-chain-tests`);
     expect(originBackHref({ base: BASE, origin: 'workspace.tools', search: '?view=business&origin=workspace.tools' })).toBe(
@@ -300,7 +300,7 @@ test.describe('the way back goes one level, to the place that asked', () => {
 
   test('the words: "Back to" and the place', () => {
     expect(originBackLabel('management.options')).toEqual({ lead: 'Back to', place: 'Management view, Options' });
-    expect(originBackLabel('delivery.still-needed')).toEqual({ lead: 'Back to', place: 'Delivery, Still needed' });
+    expect(originBackLabel('delivery.still-needed')).toEqual({ lead: 'Back to', place: 'Delivery, Before go-live' });
     expect(originBackLabel('management.rests-on.cost')?.place).toBe('Management view, What it rests on: Costs');
     expect(originBackLabel('workspace.tools', '?view=it')?.place).toBe('IT view, Tools');
     expect(originBackLabel('workspace.tools', '')?.place).toBe('Tools');

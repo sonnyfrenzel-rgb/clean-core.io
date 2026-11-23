@@ -1,44 +1,39 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, BookOpen, Briefcase, Eye, Package } from 'lucide-react';
+import { ArrowRight, ClipboardList, FileCode2, FileText, FlaskConical, Presentation, Workflow } from 'lucide-react';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import { NOT_SIGNED, SIGNED_COVERS } from '@/lib/handover';
+import FamilyChip from '@/components/family/FamilyChip';
+import AnswerCard from '@/components/family/AnswerCard';
 import { PHASES } from '@/lib/workflow-steps';
 import { routeLabel } from '@/lib/sap-naming';
 import { APP_VERSION } from '@/lib/version';
 import { catalogForReader } from '@/lib/messages/demo';
 import type { DemoProject } from '@/lib/demo-project';
-import { STATE_CLASSES } from '@/components/cc/state';
-import { cn } from '@/lib/utils';
 import PageAnchorBar from '@/components/PageAnchorBar';
 import { deliveryAnchors, PAGE_ANCHOR_LABELS } from '@/lib/page-anchors';
-import {
-  DeliveryArtefactCard,
-  DeliveryChainBoxes,
-  DeliveryFacets,
-  DeliveryKeyValues,
-  DeliveryMetaline,
-  DeliveryNextStep,
-  DeliverySection,
-  DeliveryStatusLine,
-  DeliveryStillNeeded,
-} from './DeliveryObjectPage';
+import { NEVER_IN_PACK, proofRows, type DeliveryFacts } from '@/lib/delivery-view';
 import { scoreWithBand } from '@/lib/clean-core-score';
+import type { HandoverProject } from '@/lib/handover';
+import {
+  BeforeGoLive,
+  DeliveryKeyValues,
+  DeliverySection,
+  NeverInPack,
+  PackagePart,
+  ProofTable,
+  SideCard,
+} from './DeliveryObjectPage';
 
 /**
- * The demo's Delivery stage, in the object-page form of the real one (owner
- * decision 01.10.2026, proposal A). Every figure is the engine run of
- * `lib/demo-project.ts`; the choices are this browser's. The demo signs
- * nothing, so the page has no download, no export and no pack — the
- * capability is absent rather than disabled (`tests/demo-project.spec.ts`).
+ * The demo's Delivery stage, in the form of the real one (ADR-132, the mock-up's *Demo project* state, L12). Every
+ * figure is the engine run of `lib/demo-project.ts`; the choices are this browser's. The demo signs nothing, so the
+ * page has no download, no export, no pack and no check — the capability is absent rather than disabled
+ * (`tests/demo-project.spec.ts`). It says what a real handover of the program would hold.
  *
- * It used to end in a "Record a decision" card (proceed / park plus a note).
- * The real Delivery has no such card — the program decision is taken in
- * Management — so the demo taught a place that does not exist. It is gone
- * (decision-input audit De2, 10.10.2026).
+ * The facets are plain figures, not links: in a demo nothing they would jump to can be acted on, and a link named
+ * "Audit pack" reads as an offer.
  */
 
 export interface DemoDeliveryState {
@@ -47,6 +42,17 @@ export interface DemoDeliveryState {
 
 const capitalise = (s: string) => `${s.charAt(0).toUpperCase()}${s.slice(1)}`;
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/** The proof table's statements without a project: every row reads "nothing in a demo". */
+const DEMO_FACTS: DeliveryFacts = {
+  program: '',
+  blockers: [],
+  exportedAt: null,
+  stillNeeded: [],
+  chain: [],
+  phases: [],
+  parts: { code: false, tests: false, documentation: false, bpmn: false, spec: false, slides: false },
+};
 
 export default function DemoDelivery({
   demo,
@@ -60,106 +66,49 @@ export default function DemoDelivery({
   // engine's occurrences, which are places in the code.
   const findings = demo.analyze.distinctFindings;
   const missing = demo.delivery.missing;
-  const ran = demo.testing.verdicts.passed + demo.testing.verdicts.failed;
+  const program = demo.sourceFile.replace(/\.[^.]+$/, '');
 
   return (
     <div data-demo-delivery="" className="flex flex-col">
-      <div className="-mt-4">
-        <DeliveryMetaline
-          items={[
-            { key: 'file', value: demo.sourceFile },
-            { key: 'lines', value: `${demo.totalLines} lines` },
-            { key: 'catalog', label: 'catalog', value: catalogForReader(demo.catalogVersion) },
-            { key: 'snapshot', label: 'snapshot', value: demo.catalogSnapshot },
-            { key: 'engine', label: 'engine', value: APP_VERSION },
-          ]}
-        />
-      </div>
+      <AnswerCard
+        id="demo-handover-answer"
+        question={`Can ${program} be handed over?`}
+        answer={`A demo hands nothing over. It is never signed and writes no code, so there is no package and no audit pack — this page shows what a real handover of ${program} would hold.`}
+        condition="A pack is sealed against a signed run and carries the account that made it; a demo has neither. So nothing here can be downloaded, and no button pretends it could."
+        action={
+          state.targetConfirmed ? (
+            <CcLinkButton href="#before-go-live" variant="primary" icon={<ArrowRight size={14} aria-hidden="true" />}>
+              Go to the list
+            </CcLinkButton>
+          ) : (
+            <CcLinkButton href="/demo/design" variant="primary" icon={<ArrowRight size={14} aria-hidden="true" />}>
+              Open Design
+            </CcLinkButton>
+          )
+        }
+        actionNote={
+          state.targetConfirmed
+            ? 'The route is confirmed here, in this browser only. A real handover still needs everything listed below.'
+            : 'Confirm the target architecture in Design: the chain cannot reach a handover while it is open.'
+        }
+        facets={[
+          { id: 'on-record', label: 'On record', value: 'None in a demo', note: 'A demo records nothing that a handover could rest on.' },
+          { id: 'package', label: 'The package', value: 'None in a demo', note: 'The demo makes no model call and writes no code.' },
+          { id: 'tests', label: 'Tests', value: 'None in a demo', note: 'Nothing in a demo runs.' },
+          { id: 'audit-pack', label: 'Audit pack', value: 'Not available', note: 'Sealed only against a signed run — a demo has none.' },
+        ]}
+      />
 
-      <div className="mt-4">
-        <DeliveryFacets
-          facets={[
-            {
-              key: 'handover',
-              label: 'Handover',
-              value: 'Not handed over',
-              sub: `${plural(missing.length, 'thing')} a handover still needs`,
-              provenance: 'not-determined',
-              basis: 'A demo is never signed, so nothing in it can be handed over.',
-            },
-            {
-              key: 'audit-pack',
-              label: 'Audit pack',
-              value: 'Not available',
-              sub: 'Sealed only against a signed run — a demo has none',
-              provenance: 'not-determined',
-              basis: 'An audit pack is sealed against a signed run and carries the account that made it.',
-            },
-            {
-              key: 'decision',
-              label: 'Architecture decision',
-              value: state.targetConfirmed ? 'Confirmed here' : 'Pending',
-              sub: state.targetConfirmed ? `${route} · in this browser only` : `${route} · sign-off not recorded`,
-              provenance: state.targetConfirmed ? 'confirmed' : 'proposed',
-              basis: state.targetConfirmed
-                ? 'Ticked on the Design stage of this demo. It stays in this browser and is attributed to nobody.'
-                : 'The engine recommends this route; nobody has confirmed it.',
-            },
-            {
-              key: 'quality',
-              label: 'Quality',
-              value: ran > 0 ? 'Run' : 'Not run',
-              sub: ran > 0 ? `${ran} of ${demo.testing.verdicts.total} with a verdict` : 'Nothing in this demo has run',
-              provenance: 'not-determined',
-              basis: 'The demo generates no test suite and runs nothing.',
-            },
-          ]}
-        />
-        <DeliveryStatusLine
-          items={[
-            { key: 'run', label: 'Run', value: 'not signed', tone: 'neutral' },
-            { key: 'receipts', label: 'Receipts', value: 'none', tone: 'neutral' },
-            { key: 'engine', label: 'Engine', value: `${APP_VERSION} · no model`, tone: 'information' },
-          ]}
-        />
-      </div>
-
-      {/* The tool's anchor bar, as on a project (ADR-091). */}
+      {/* The tool's anchor bar, as on a project (ADR-126 (3)); no import and no timeline in a demo. */}
       <PageAnchorBar
-        anchors={deliveryAnchors({ stillNeeded: missing.length, artefacts: 4, pack: 'Not available', slides: false })}
+        anchors={deliveryAnchors({ blocking: missing.length, parts: null, events: null })}
         label={PAGE_ANCHOR_LABELS.delivery}
         name="delivery-anchor"
         plural="delivery-anchors"
       />
 
-      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="flex min-w-0 flex-col gap-5">
-          {state.targetConfirmed ? (
-            <DeliveryNextStep
-              kind="open"
-              titleId="demo-handover-next-title"
-              headline="See what a real handover still needs"
-              reason="The route is confirmed here, in this browser only. A real handover still needs everything listed below."
-              action={
-                <CcLinkButton href="#still-needed" variant="primary" icon={<ArrowRight size={14} aria-hidden="true" />}>
-                  Go to the list
-                </CcLinkButton>
-              }
-            />
-          ) : (
-            <DeliveryNextStep
-              kind="open"
-              titleId="demo-handover-next-title"
-              headline="Confirm the target architecture in Design"
-              reason="The chain cannot reach a handover while the decision is open."
-              action={
-                <CcLinkButton href="/demo/design" variant="primary" icon={<ArrowRight size={14} aria-hidden="true" />}>
-                  Open Design
-                </CcLinkButton>
-              }
-            />
-          )}
-
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="flex min-w-0 flex-col gap-6">
           <CcMessageStrip state="information" headline="No pack leaves this screen.">
             <span data-testid="demo-no-pack">
               There is no download here, and there is no button that would make one. An audit pack is sealed against a
@@ -169,109 +118,57 @@ export default function DemoDelivery({
             </span>
           </CcMessageStrip>
 
-          <DeliverySection id="evidence-chain" title="Evidence chain" meta="requirement → decision → receipt → artefact">
-            <DeliveryChainBoxes
-              boxes={[
-                {
-                  key: 'requirement',
-                  label: 'Requirement',
-                  title: `${plural(findings, 'finding')} in the code`,
-                  sub: `Read by the engine · Clean Core Score ${scoreWithBand(demo.analyze.cleanCoreScore)} · no signed run`,
-                  provenance: 'reconstructed',
-                  provenanceNote: null,
-                },
-                {
-                  key: 'decision',
-                  label: 'Decision',
-                  title: route,
-                  sub: state.targetConfirmed ? 'Confirmed in this browser — attributed to nobody' : 'Recommended, not confirmed',
-                  provenance: 'not-determined',
-                  provenanceNote: state.targetConfirmed ? 'this browser only' : 'open',
-                },
-                {
-                  key: 'receipt',
-                  label: 'Receipt',
-                  title: 'Test run',
-                  sub: 'No run on record',
-                  provenance: 'not-determined',
-                  provenanceNote: 'none',
-                },
-                {
-                  key: 'delivery',
-                  label: 'Delivery artefact',
-                  title: 'Handover package',
-                  sub: 'Not built — nothing to seal',
-                  provenance: 'not-determined',
-                  provenanceNote: 'none',
-                },
-              ]}
-            />
-          </DeliverySection>
-
-          <DeliverySection id="still-needed" title="What a real handover still needs" meta={String(missing.length)}>
+          <DeliverySection
+            id="before-go-live"
+            title="Before go-live"
+            lead="In a real project this list says what blocks the handover, what travels open but named, and what stays yours."
+          >
             <div data-testid="demo-missing">
-              <DeliveryStillNeeded
-                empty="Nothing."
-                items={missing.map((m, i) => {
+              <BeforeGoLive
+                blocking={missing.map((m, i) => {
                   const stage = demo.delivery.missingAt[i];
                   const where = PHASES.find((p) => p.key === stage)?.label ?? 'Delivery';
                   return { key: `${i}`, text: capitalise(m), where, href: stage && stage !== 'delivery' ? `/demo/${stage}` : null };
                 })}
+                travels={[]}
+                empty="Nothing."
+                yours={
+                  <>
+                    <span className="font-semibold">Yours, in your system:</span> activation, transport and go-live, on a real
+                    project. Nothing here can be handed over.
+                  </>
+                }
               />
             </div>
           </DeliverySection>
 
-          <DeliverySection id="artefacts" title="Artefacts" meta="made on a real project only">
-            <ul className="m-0 grid list-none grid-cols-1 gap-3 p-0 md:grid-cols-2">
-              <DeliveryArtefactCard
-                icon={<Package size={18} aria-hidden="true" />}
-                title="Delivery bundle"
-                chip={<CcProvenanceChip value="not-determined" />}
-                detail="Code, tests and documentation as one ZIP — built from the model’s code on a real project. The demo has none."
-              />
-              <DeliveryArtefactCard
-                icon={<Eye size={18} aria-hidden="true" />}
-                title="Stakeholder briefing"
-                chip={<CcProvenanceChip value="not-determined" />}
-                detail="Seven slides from a signed run and the engine’s findings, no savings figure. A demo has no signed run."
-              />
-              <DeliveryArtefactCard
-                icon={<Briefcase size={18} aria-hidden="true" />}
-                title="Business documentation"
-                chip={<CcProvenanceChip value="not-determined" />}
-                detail="Operating procedures, roles and controls — written on the Documentation stage of a real project."
-              />
-              <DeliveryArtefactCard
-                icon={<BookOpen size={18} aria-hidden="true" />}
-                title="Developer guide"
-                detail="General rules for the chosen route — a fixed template, given with a real project."
-              />
+          <DeliverySection id="in-the-package" title="In the package" lead="What a real package holds — none of it exists in a demo.">
+            <ul className="m-0 list-none p-0">
+              {[
+                { id: 'code', icon: <FileCode2 size={18} aria-hidden="true" />, name: 'Code for abapGit', sub: `${route} · the engine’s frame, a model’s function bodies`, body: 'On a real project the engine writes the frame of every object and a model the function bodies between its markers.' },
+                { id: 'tests', icon: <FlaskConical size={18} aria-hidden="true" />, name: 'Tests', sub: 'Cases from the original’s branches', body: 'On a real project they run in your SAP system or the sandbox, and the result is recorded.' },
+                { id: 'documentation', icon: <FileText size={18} aria-hidden="true" />, name: 'Documentation', sub: 'The process, the business documentation, the developer guide', body: 'Written in Documentation on a real project.' },
+                { id: 'bpmn', icon: <Workflow size={18} aria-hidden="true" />, name: 'Process as BPMN 2.0', sub: 'Reconstructed from the code a signed run read', body: 'A demo has no signed run.' },
+                { id: 'spec', icon: <ClipboardList size={18} aria-hidden="true" />, name: 'Requirements specification', sub: 'Drafted from the code, with your answers from Design', body: 'Written in Design on a real project.' },
+                { id: 'slides', icon: <Presentation size={18} aria-hidden="true" />, name: 'Stakeholder slides', sub: 'Seven slides from a signed run, no savings figure', body: 'A demo has no signed run.' },
+              ].map((p) => (
+                <PackagePart key={p.id} id={p.id} icon={p.icon} name={p.name} sub={p.sub} present={false} chips={<FamilyChip kind="not-determined" note="none in a demo" />} state="">
+                  <p className="m-0 cc-text-cell text-cc-ink-muted">{p.body}</p>
+                </PackagePart>
+              ))}
             </ul>
           </DeliverySection>
-        </div>
 
-        <aside className="flex min-w-0 flex-col gap-4" aria-label="Audit pack and signature">
-          <DeliverySection
-            id="audit-pack"
-            title="Audit pack"
-            meta={
-              <span
-                className={cn(
-                  'inline-flex items-center rounded-full border px-2 py-px text-[11px] font-semibold leading-4',
-                  STATE_CLASSES.warning.bg,
-                  STATE_CLASSES.warning.border,
-                  STATE_CLASSES.warning.text,
-                )}
-              >
-                Not available
-              </span>
-            }
-          >
+          <DeliverySection id="proof" title="What is proven, and what is not" lead="On a real project the server signs what it computed itself; a person’s statements are sealed as their word; what a model wrote is not signed.">
+            <ProofTable rows={proofRows({} as HandoverProject, DEMO_FACTS)} demo />
+          </DeliverySection>
+
+          <DeliverySection id="audit-pack" title="Audit pack" lead="No pack leaves a demo.">
             <DeliveryKeyValues
               rows={[
                 { k: 'Input fingerprint', v: 'None — a demo is not signed' },
-                { k: 'Decision', v: state.targetConfirmed ? 'Confirmed in this browser only' : 'Pending sign-off' },
-                { k: 'Engine', v: APP_VERSION },
+                { k: 'Design target', v: state.targetConfirmed ? `${route} — Confirmed here, in this browser only` : `${route} — Pending sign-off` },
+                { k: 'Engine', v: `${APP_VERSION} · catalog ${catalogForReader(demo.catalogVersion)}` },
                 { k: 'Model', v: 'No model — deterministic evidence only' },
               ]}
             />
@@ -280,17 +177,20 @@ export default function DemoDelivery({
               offline verifier.
             </p>
           </DeliverySection>
+        </div>
 
-          <DeliverySection title="What a signature covers">
-            <p className="m-0 cc-text-label text-cc-ink-muted">Signed</p>
-            <ul className="cc-text-cell mt-1 list-disc pl-4 text-cc-ink">
-              {SIGNED_COVERS.map((s) => <li key={s}>{s}</li>)}
-            </ul>
-            <p className="m-0 mt-3 cc-text-label text-cc-ink-muted">Not signed</p>
-            <ul className="cc-text-cell mt-1 list-disc pl-4 text-cc-ink">
-              {NOT_SIGNED.map((s) => <li key={s}>{s}</li>)}
-            </ul>
-          </DeliverySection>
+        <aside className="flex min-w-0 flex-col gap-4" aria-label="Status and limits">
+          <SideCard title="Built on">
+            <DeliveryKeyValues
+              rows={[
+                { k: 'The demo example', v: `${demo.sourceFile}, ${demo.totalLines} lines — the engine’s run, not signed` },
+                { k: 'Findings', v: `${plural(findings, 'finding')} in the code · Clean Core Score ${scoreWithBand(demo.analyze.cleanCoreScore)}` },
+              ]}
+            />
+          </SideCard>
+          <SideCard title="Never in the signed pack">
+            <NeverInPack items={NEVER_IN_PACK} />
+          </SideCard>
         </aside>
       </div>
     </div>

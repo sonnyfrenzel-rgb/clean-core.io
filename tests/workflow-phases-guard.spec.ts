@@ -226,8 +226,10 @@ test.describe('every view reads the contract', () => {
     expect(src).not.toContain('The transformation lifecycle is complete');
     expect(src).not.toContain('All artefacts present');
     // Readiness comes from the phase contract: the page hands the phases to
-    // the handover facets (proposal A), and those read the delivery phase.
-    expect(src).toContain('handoverFacets(hp, phases, chain, handoverState)');
+    // the answer (ADR-132), which reads the still-needed list over the same
+    // phases; the old facets still read the delivery phase.
+    expect(src).toContain('const facts: DeliveryFacts = { program, blockers, exportedAt: handoverState.exportedAt, stillNeeded, chain, phases, parts };');
+    expect(src).toContain('handoverAnswer(hp, facts)');
     const handover = read('lib/handover.ts');
     expect(handover).toContain("const delivery = phase('delivery');");
     expect(handover).toContain('delivery.done');
