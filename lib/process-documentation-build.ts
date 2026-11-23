@@ -21,6 +21,7 @@ import { capabilityFactsOf } from '@/lib/documentation-facts';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
 import { engineReads310Apply } from '@/lib/abap/engine-reads-310-gate';
 import { customerTextProvenance, type CustomerTexts } from '@/lib/abap/customer-texts';
+import { plainLabels } from '@/lib/abap/plain-language';
 import { APP_VERSION } from '@/lib/version';
 import { screenProgramDocument } from '@/lib/sensitive-text';
 
@@ -128,10 +129,16 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
   );
 
   const texts = engineReads310Apply(input.engineVersion === undefined ? APP_VERSION : input.engineVersion) && input.customerTexts ? input.customerTexts : null;
+  // 3.5.0 (carried from the 3.1.0 QA review): a step credits only the customer texts its plain name was built from,
+  // recorded where each word was used (`PlainLabels.customerUses`), not every text its words happen to contain.
+  const labels = texts
+    ? plainLabels(skeleton, source, { engineVersion: input.engineVersion === undefined ? APP_VERSION : input.engineVersion, customerTexts: texts })
+    : null;
   const steps: DocStep[] = map.elements.map((element) => {
     const businessName = cleanName(element.businessName);
     const lane = cleanName(element.lane);
-    const customerText = texts ? customerTextProvenance(element.plainName ?? '', texts) : '';
+    const used = labels && element.nodeId ? labels.customerUses?.(element.nodeId) ?? [] : [];
+    const customerText = texts ? customerTextProvenance(element.plainName ?? '', texts, used) : '';
     return {
       ...(customerText ? { customerText } : {}),
       id: element.id,

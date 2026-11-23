@@ -169,8 +169,19 @@ export function readCustomerTexts(files: ReadonlyArray<{ name: string; text: str
  * themselves, case-insensitive, so it holds for every surface that phrases business text — a step, a line of
  * "In short", a rule title, a question — whichever way the sentence was built.
  */
-export function customerTextProvenance(sentence: string, texts: CustomerTexts | null | undefined): string {
+export function customerTextProvenance(
+  sentence: string,
+  texts: CustomerTexts | null | undefined,
+  /**
+   * The codes the sentence was built from, recorded where each customer word was used (`PlainLabels.customerUses`;
+   * 3.5.0, carried from the 3.1.0 QA review). Given, only these texts are credited: a one-word text ("Plant") said
+   * inside a phrase the engine took from SAP's dictionary ("plant stock") is not the customer's. Absent, every text
+   * the sentence says counts, as before.
+   */
+  usedCodes?: Iterable<string> | null,
+): string {
   if (!texts || !sentence) return '';
+  const allowed = usedCodes ? new Set([...usedCodes].map((code) => code.toUpperCase())) : null;
   const said = sentence.toLowerCase();
   // Every text once, under its shortest code (a field before the data element it is typed on), longest text first: a
   // text said inside a longer one ("customer group" in "… per customer group") is that one's, not a second source.
@@ -179,6 +190,7 @@ export function customerTextProvenance(sentence: string, texts: CustomerTexts | 
   const offer = (code: string, text: string) => {
     const t = text.trim();
     if (t.length < 4) return;
+    if (allowed && !allowed.has(code.toUpperCase())) return;
     const key = t.toLowerCase();
     const had = byText.get(key);
     if (!had || code.length < had.length) byText.set(key, code);

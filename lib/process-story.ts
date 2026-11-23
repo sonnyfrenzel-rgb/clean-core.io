@@ -116,6 +116,11 @@ const STOP_PREFIX = /^(stop|stopped|rejected)\s*:\s*/i;
 interface Item extends StoryStep {
   expands: string | null;
   loop: boolean;
+  /**
+   * 3.5.0: the customer-text codes of the labels this step was built from (`PlainLabels.customerUses`) — its own
+   * node, its checks and stops, and the step it stands within. Its marker credits only these.
+   */
+  uses: Set<string>;
 }
 
 const sentence = (text: string): string => (text ? text.charAt(0).toUpperCase() + text.slice(1) : text);
@@ -158,6 +163,8 @@ export function processStory(
 ): ProcessStory {
   const texts = engineReads310Apply(engineVersion) && customerTexts ? customerTexts : null;
   const labels = plainLabels(skeleton, source, { engineVersion, ...(texts ? { customerTexts: texts } : {}) });
+  /** 3.5.0: the customer texts a node's label was built from — none for a business name the model proposed. */
+  const usesOf = (node: SkeletonNode): string[] => (businessNames?.get(node.id)?.trim() ? [] : labels.customerUses?.(node.id) ?? []);
   const reading: FirstLookReading | null = engineReads3020Apply(engineVersion)
     ? firstLookReadingOf(source, readDemoSwitches(source, engineVersion), engineVersion)
     : null;
@@ -250,13 +257,14 @@ export function processStory(
   for (const node of skeleton.nodes) byRegion.set(node.region, [...(byRegion.get(node.region) ?? []), node]);
   for (const list of byRegion.values()) list.sort(order);
 
-  interface Inside { checks: string[]; stops: string[]; technical: number; unsaid: number }
+  interface Inside { checks: string[]; stops: string[]; technical: number; unsaid: number; uses: Set<string> }
   /** The checks and stops of a region and the regions under it, a few levels down. */
   const inside = (region: string | null | undefined, depth: number, seen: Set<string>): Inside => {
-    if (!region || depth > 3 || seen.has(region)) return { checks: [], stops: [], technical: 0, unsaid: 0 };
+    if (!region || depth > 3 || seen.has(region)) return { checks: [], stops: [], technical: 0, unsaid: 0, uses: new Set() };
     seen.add(region);
     const checks: string[] = [];
     const stops: string[] = [];
+    const uses = new Set<string>();
     let technical = 0;
     let unsaid = 0;
     for (const node of byRegion.get(region) ?? []) {
@@ -265,7 +273,10 @@ export function processStory(
         else {
           const check = sayCheck(node);
           if (check === null) unsaid += 1;
-          else checks.push(check);
+          else {
+            checks.push(check);
+            for (const u of usesOf(node)) uses.add(u);
+          }
         }
       } else if (node.kind === 'end-error' || (node.kind === 'end' && node.detail?.early === true)) {
         const label = nameOf(node);
@@ -273,18 +284,22 @@ export function processStory(
           const stop = stopOf(node, label);
           if (stop.kind === 'technical') technical += 1;
           else if (stop.kind === 'unsaid') unsaid += 1;
-          else stops.push(stop.text);
+          else {
+            stops.push(stop.text);
+            for (const u of usesOf(node)) uses.add(u);
+          }
         }
       }
       if (node.expandsTo) {
         const deeper = inside(node.expandsTo, depth + 1, seen);
         checks.push(...deeper.checks);
         stops.push(...deeper.stops);
+        for (const u of deeper.uses) uses.add(u);
         technical += deeper.technical;
         unsaid += deeper.unsaid;
       }
     }
-    return { checks: unique(checks), stops: unique(stops), technical, unsaid };
+    return { checks: unique(checks), stops: unique(stops), technical, unsaid, uses };
   };
 
   /** 3.0.21: a loop or a set-up step — machinery, not a step of the business story. */
@@ -294,6 +309,7 @@ export function processStory(
     const out: Item[] = [];
     // Decision points before the first step of a level wait for it.
     let pending: string[] = [];
+    let pendingUses = new Set<string>();
     let pendingTechnical = 0;
     let pendingUnsaid = 0;
     for (const node of byRegion.get(region) ?? []) {
@@ -310,8 +326,13 @@ export function processStory(
         if (check === null) {
           if (previous) previous.unsaid = (previous.unsaid ?? 0) + 1;
           else pendingUnsaid += 1;
-        } else if (previous) previous.checks = unique([...previous.checks, check]);
-        else pending.push(check);
+        } else if (previous) {
+          previous.checks = unique([...previous.checks, check]);
+          for (const u of usesOf(node)) previous.uses.add(u);
+        } else {
+          pending.push(check);
+          for (const u of usesOf(node)) pendingUses.add(u);
+        }
         continue;
       }
       if (node.kind === 'end-error' || (node.kind === 'end' && node.detail?.early === true)) {
@@ -320,7 +341,10 @@ export function processStory(
           const stop = stopOf(node, label);
           if (stop.kind === 'technical') previous.technical = (previous.technical ?? 0) + 1;
           else if (stop.kind === 'unsaid') previous.unsaid = (previous.unsaid ?? 0) + 1;
-          else previous.stops = unique([...previous.stops, stop.text]);
+          else {
+            previous.stops = unique([...previous.stops, stop.text]);
+            for (const u of usesOf(node)) previous.uses.add(u);
+          }
         }
         continue;
       }
@@ -335,6 +359,7 @@ export function processStory(
           };
         }
         pending = [];
+        pendingUses = new Set();
         pendingTechnical = 0;
         pendingUnsaid = 0;
         continue;
@@ -343,7 +368,7 @@ export function processStory(
       const loop = node.kind === 'loop' || String(node.detail?.multiInstance ?? '') === 'true';
       // 3.0.21: a loop left unopened rolls up into the step around it — with what it checks.
       const deeper = loop
-        ? plain ? inside(loopRegion(node), 1, new Set()) : { checks: [], stops: [], technical: 0, unsaid: 0 }
+        ? plain ? inside(loopRegion(node), 1, new Set()) : { checks: [], stops: [], technical: 0, unsaid: 0, uses: new Set<string>() }
         : inside(node.expandsTo, 1, new Set());
       out.push({
         text,
@@ -354,10 +379,12 @@ export function processStory(
         nodeId: node.id,
         expands: node.expandsTo ?? (loop ? loopRegion(node) : null),
         loop,
+        uses: new Set([...usesOf(node), ...pendingUses, ...deeper.uses]),
         ...(reading ? { technical: pendingTechnical + deeper.technical } : {}),
         ...(plain ? { unsaid: pendingUnsaid + deeper.unsaid } : {}),
       });
       pending = [];
+      pendingUses = new Set();
       pendingTechnical = 0;
       pendingUnsaid = 0;
     }
@@ -396,6 +423,8 @@ export function processStory(
     const within = item.loop ? item.text : item.within;
     const opened = itemsOf(item.expands as string, within);
     if (opened.length === 0) break;
+    // The opened steps stand within this one: what it said is said in theirs.
+    if (within !== null) for (const o of opened) for (const u of item.uses) o.uses.add(u);
     // The decision points of an opened step stay with the steps they stand between.
     items = [...items.slice(0, at), ...opened, ...items.slice(at + 1)];
   }
@@ -407,13 +436,14 @@ export function processStory(
     const kept: Item[] = [];
     let carry: Item | null = null;
     const fold = (into: Item, from: Item) => {
+      for (const u of from.uses) into.uses.add(u);
       into.checks = unique([...into.checks, ...from.checks]);
       into.stops = unique([...into.stops, ...from.stops]);
       if (from.technical !== undefined) into.technical = (into.technical ?? 0) + from.technical;
       if (from.unsaid !== undefined) into.unsaid = (into.unsaid ?? 0) + from.unsaid;
     };
     for (const item of items) {
-      const copy: Item = { ...item, checks: [...item.checks], stops: [...item.stops] };
+      const copy: Item = { ...item, checks: [...item.checks], stops: [...item.stops], uses: new Set(item.uses) };
       if (machinery(item)) {
         const last = kept[kept.length - 1];
         if (last) fold(last, copy);
@@ -436,11 +466,12 @@ export function processStory(
   for (const item of items) {
     const last = merged[merged.length - 1];
     if (last && last.text === item.text && (plain !== null || last.within === item.within)) {
+      for (const u of item.uses) last.uses.add(u);
       last.checks = unique([...last.checks, ...item.checks]);
       last.stops = unique([...last.stops, ...item.stops]);
       if (item.technical !== undefined) last.technical = (last.technical ?? 0) + item.technical;
       if (item.unsaid !== undefined) last.unsaid = (last.unsaid ?? 0) + item.unsaid;
-    } else merged.push({ ...item, checks: [...item.checks], stops: [...item.stops] });
+    } else merged.push({ ...item, checks: [...item.checks], stops: [...item.stops], uses: new Set(item.uses) });
   }
 
   // More than eight: join neighbours, the pair that carries least first.
@@ -461,6 +492,7 @@ export function processStory(
     merged.splice(best, 2, {
       ...a,
       text: `${a.text}, then ${lower(b.text)}`,
+      uses: new Set([...a.uses, ...b.uses]),
       checks: unique([...a.checks, ...b.checks]),
       stops: unique([...a.stops, ...b.stops]),
       ...(a.technical !== undefined || b.technical !== undefined ? { technical: (a.technical ?? 0) + (b.technical ?? 0) } : {}),
@@ -482,8 +514,9 @@ export function processStory(
   }
 
   return {
-    steps: merged.map(({ text, within, checks, stops, anchor, nodeId, technical, unsaid }) => {
-      const customerText = texts ? customerTextProvenance([text, within ?? '', ...checks, ...stops].join(' | '), texts) : '';
+    steps: merged.map(({ text, within, checks, stops, anchor, nodeId, technical, unsaid, uses }) => {
+      // 3.5.0: only the customer texts the step's labels were built from (point of use), not every text it says.
+      const customerText = texts ? customerTextProvenance([text, within ?? '', ...checks, ...stops].join(' | '), texts, uses) : '';
       return {
         text, within, checks, stops, anchor, nodeId,
         ...(technical !== undefined ? { technical } : {}),
