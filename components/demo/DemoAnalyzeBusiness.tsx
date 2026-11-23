@@ -64,6 +64,7 @@ import {
 } from '@/lib/demo-workspace-state';
 import type { DemoWorkspaceData } from '@/lib/demo-workspace';
 import { bizLinesLabel, tourContinuesIn, tourPausedAt, WALKED_BEFORE, walkedAll, wt } from '@/lib/workspace-messages';
+import { demoRedesignHref } from '@/lib/redesign';
 
 /** The map pulls bpmn-js: client only and on demand, as in a project's Analyze. */
 const ProcessMap = dynamic(() => import('@/components/process-map/ProcessMap'), { ssr: false });
@@ -232,7 +233,7 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
       variant={variant}
       owner={true}
       rules={reading ? rules.length : null}
-      designHref={stageHref({ base: '/demo', path: 'design', view: 'business', from: WORKSPACE_RETURN.tools })}
+      designHref={demoRedesignHref()}
       anotherHref={myWorkspaceHref()}
     >
       {children}

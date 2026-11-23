@@ -147,13 +147,22 @@ test.describe('the way on leads through Re-design (ADR-143)', () => {
     expect(bar).toContain('data-stage-tools-group="redesign"');
     expect(bar).toContain("aria-current={group.current ? 'page' : undefined}");
     const header = code('components/StageHeader.tsx');
-    expect(header).toMatch(/projectId && !demo && \(onRedesign \|\| toolCurrent === 'analyze'\)/);
+    expect(header).toMatch(/\(projectId \|\| demo\) && \(onRedesign \|\| toolCurrent === 'analyze'\)/);
+    expect(header).toContain('demo ? demoRedesignHref() : redesignHref(projectId)');
     const route = code('app/(app)/project/[projectId]/redesign/page.tsx');
     expect(route).toContain('<RedesignPage');
     const redesign = code('components/redesign/RedesignPage.tsx');
     expect(redesign).toContain('place="redesign"');
-    expect(redesign).toContain('id={step.key === \'decide\' ? REDESIGN_DECIDE_ID : undefined}');
+    expect(redesign).toContain('<RedesignView');
+    const view = code('components/redesign/RedesignView.tsx');
+    expect(view).toContain('id={step.key === \'decide\' ? REDESIGN_DECIDE_ID : undefined}');
     // Read-only apart from the reused decision parts: no write of its own.
-    expect(redesign).not.toMatch(/setDoc|updateDoc|addDoc|fetch\(/);
+    for (const src of [redesign, view]) expect(src).not.toMatch(/setDoc|updateDoc|addDoc|fetch\(/);
+    // The demo has its own Re-design page, drawn by the same view, and its onward links lead there.
+    expect(code('app/(app)/demo/redesign/page.tsx')).toContain('<DemoRedesign');
+    expect(code('components/demo/DemoRedesign.tsx')).toContain('<RedesignView');
+    expect(code('components/demo/DemoAnalyze.tsx')).not.toContain('/demo/workspace?view=management');
+    expect(code('components/demo/DemoAnalyze.tsx')).toContain("decideHref={demoRedesignHref('decide')}");
+    expect(code('components/demo/DemoAnalyzeBusiness.tsx')).toContain('designHref={demoRedesignHref()}');
   });
 });

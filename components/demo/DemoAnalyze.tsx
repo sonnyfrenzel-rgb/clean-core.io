@@ -29,6 +29,7 @@ import { catalogForReader } from '@/lib/messages/demo';
 import { APP_VERSION } from '@/lib/version';
 import type { DemoProject } from '@/lib/demo-project';
 import { countSourceLines } from '@/lib/source-lines';
+import { demoRedesignHref } from '@/lib/redesign';
 
 /**
  * The demo's Analyze stage — the object page a real project's Analyze stage
@@ -163,7 +164,7 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
         levels={levelFacet}
         route={route}
         routeChosenByReader={false}
-        decideHref="/demo/workspace?view=management"
+        decideHref={demoRedesignHref('decide')}
         questionsHref="/demo/workspace?view=it#not-determined"
         rerunHref={null}
         onOpenLine={source ? openSourceLine : undefined}
@@ -196,7 +197,7 @@ export default function DemoAnalyze({ demo }: { demo: DemoProject }) {
             deployment={demo.deployment}
             derived={{ drivers: routeDrivers({ findings: a.findings }, demo.deployment, APP_VERSION), assumptions: demo.design.assumptions }}
             notRecorded={[]}
-            decideHref="/demo/workspace?view=management"
+            decideHref={demoRedesignHref('decide')}
             openLine={openLine}
           />
         )}

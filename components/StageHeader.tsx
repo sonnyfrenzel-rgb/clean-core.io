@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import {
   Calculator,
@@ -23,9 +24,11 @@ import ChoiceBackLink from '@/components/ChoiceBackLink';
 import { DEMO_ROUTE } from '@/lib/demo-marks';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
 import { StageToolBar, type ToolClick, type ToolGroup } from '@/components/workspace/ToolBar';
-import { REDESIGN_LABEL, redesignHref } from '@/lib/redesign';
+import { REDESIGN_LABEL, demoRedesignHref, redesignHref } from '@/lib/redesign';
 import StageViewSwitch from '@/components/StageViewSwitch';
-import InviteToView from '@/components/family/InviteToView';
+// Loaded on demand: the control reads who is signed in on mount, and the demo (no project) never renders it, so its
+// pages must not carry it on their load path (`tests/public-no-google-before-signin-guard.spec.ts`).
+const InviteToView = dynamic(() => import('@/components/family/InviteToView'));
 import { useLocationSearch } from '@/lib/location-search';
 import { familyTitleOf } from '@/lib/family-title';
 import { familyViewMode, ONE_PAGE_NOTE } from '@/lib/family-frame';
@@ -163,8 +166,8 @@ export default function StageHeader({
   const onRedesign = place === 'redesign';
   // The Re-design page leads back to Analyze, where every way into it starts (mock-up of 23.11.2026, screen 2).
   const way: typeof familyWay =
-    onRedesign && projectId && familyWay.kind === 'link'
-      ? { kind: 'link', href: `/project/${encodeURIComponent(projectId)}/analyze`, place: 'Analyze', to: 'analyze' }
+    onRedesign && (projectId || demo) && familyWay.kind === 'link'
+      ? { kind: 'link', href: demo ? `${DEMO_ROUTE}/analyze` : `/project/${encodeURIComponent(projectId)}/analyze`, place: 'Analyze', to: 'analyze' }
       : familyWay;
   // The program: the page's project, or the name the loader announced to the shell bar, or the demo's name.
   const announcedName = useShellProjectName(projectId || null);
@@ -176,10 +179,10 @@ export default function StageHeader({
   const mode = view ?? (onRedesign ? 'one-page' : familyViewMode(toolCurrent ?? stage ?? null));
   const eyebrowTool = toolLabel ?? (toolCurrent ? PHASES.find((p) => p.key === toolCurrent)?.label : undefined);
   const ToolIcon = onRedesign ? Route : toolCurrent ? TOOL_ICONS[toolCurrent] : null;
-  // The "Re-design ›" group: on Analyze and on the Re-design page of a project; the demo has no Re-design page.
+  // The "Re-design ›" group: on Analyze and on the Re-design page, of a project and of the demo (`/demo/redesign`).
   const group: ToolGroup | null =
-    projectId && !demo && (onRedesign || toolCurrent === 'analyze')
-      ? { href: redesignHref(projectId), label: `${REDESIGN_LABEL}`, current: onRedesign }
+    (projectId || demo) && (onRedesign || toolCurrent === 'analyze')
+      ? { href: demo ? demoRedesignHref() : redesignHref(projectId), label: `${REDESIGN_LABEL}`, current: onRedesign }
       : null;
 
 

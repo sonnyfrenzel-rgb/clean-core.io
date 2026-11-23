@@ -1,13 +1,11 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
-import { ArrowRight, Check } from 'lucide-react';
 import StageFrame from '@/components/StageFrame';
 import StageHeader from '@/components/StageHeader';
-import AnswerCard, { type FacetProps } from '@/components/family/AnswerCard';
+import { type FacetProps } from '@/components/family/AnswerCard';
+import RedesignView from '@/components/redesign/RedesignView';
 import CcButton from '@/components/cc/Button';
-import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import ProjectNoAccess from '@/components/ProjectNoAccess';
@@ -23,8 +21,7 @@ import { rulesStatus } from '@/lib/rules-editor';
 import { formatTextDate } from '@/lib/format';
 import { DECISION_OPTION_LABELS } from '@/lib/decision-options';
 import type { OptionPlace } from '@/lib/decision-option-signals';
-import { REDESIGN_DECIDE_ID, REDESIGN_STEPS_ID, redesignModel, type RedesignStep } from '@/lib/redesign';
-import { cn } from '@/lib/utils';
+import { REDESIGN_DECIDE_ID, redesignModel } from '@/lib/redesign';
 import type { Project } from '@/lib/types';
 
 /**
@@ -98,7 +95,6 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
   }
 
   const base = `/project/${encodeURIComponent(projectId)}`;
-  const hrefOf = (path: string) => (path.startsWith('#') ? path : `${base}/${path}`);
   const runDate = formatTextDate(project?.auditMetadata?.modelCard?.analysisTimestamp);
   const indicated = program.state.indicated;
   const decided = program.state.option;
@@ -154,183 +150,56 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
         Build its clean core successor from the same evidence: priced, decided, designed, built, documented, tested and delivered.
       </StageHeader>
 
-      <div className="flex flex-col gap-6">
-        <AnswerCard
-          id="redesign-answer"
-          question="Where is the re-design of this program?"
-          answer={model.answer}
-          condition={
-            model.analysed
-              ? `It builds on the signed analysis run${runDate ? ` of ${runDate}` : ''}. Not counted against your runs.`
-              : 'Every step stands on a signed analysis run.'
-          }
-          action={
-            model.next ? (
-              <CcLinkButton href={hrefOf(model.next.path)} variant="primary" data-redesign-next={model.next.key}>
-                {model.next.label}
-                <ArrowRight size={16} aria-hidden={true} />
-              </CcLinkButton>
-            ) : null
-          }
-          actionNote={model.next ? model.next.note : null}
-          facets={facets}
-        />
-
-        <div className="grid grid-cols-1 items-start gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_340px]">
-          <section
-            id={REDESIGN_STEPS_ID}
-            aria-labelledby={`${REDESIGN_STEPS_ID}-h`}
-            className="min-w-0 scroll-mt-24 rounded-cc-card border border-cc-line bg-cc-surface px-5 py-4 shadow-cc max-[720px]:px-4"
-          >
-            <h2 id={`${REDESIGN_STEPS_ID}-h`} className="m-0 cc-text-h2 text-cc-ink">
-              The steps of Re-design
-            </h2>
-            <p className="m-0 mt-1 max-w-[860px] cc-text-cell text-cc-ink-muted">
-              In order. Each state is read from the project; nothing new is stored. Every step stays reachable.
-            </p>
-            <ol data-redesign-steps="" className="m-0 mt-3 list-none p-0">
-              <li data-redesign-step="analyze" data-redesign-step-state={model.analysed ? 'done' : 'open'} className="grid grid-cols-[32px_minmax(0,1fr)_auto] items-start gap-3 py-3 max-[720px]:grid-cols-[32px_minmax(0,1fr)]">
-                <StepMark state={model.analysed ? 'done' : 'open'} n={0} />
-                <div className="min-w-0">
-                  <Link href={`${base}/analyze`} className="cc-text-body font-bold text-cc-ink underline-offset-2 hover:underline">
-                    Analyze
-                  </Link>
-                  <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                    What it does, how far it is from clean core{runDate ? `: signed run of ${runDate}` : ''}.
-                  </p>
+      <RedesignView
+        base={base}
+        model={model}
+        facets={facets}
+        condition={
+          model.analysed
+            ? `It builds on the signed analysis run${runDate ? ` of ${runDate}` : ''}. Not counted against your runs.`
+            : 'Every step stands on a signed analysis run.'
+        }
+        analyzeWords={model.analysed ? 'Done' : 'Not signed yet'}
+        analyzeNote={`What it does, how far it is from clean core${runDate ? `: signed run of ${runDate}` : ''}.`}
+        indicatedLabel={indicated ? DECISION_OPTION_LABELS[indicated] : null}
+        backToAnalyzeHref={`${base}/analyze?view=management`}
+        decide={
+          <DecideStep
+            hasRun={hasRun}
+            indicated={indicated ? DECISION_OPTION_LABELS[indicated] : null}
+            options={
+              hasRun ? (
+                <DecisionOptions
+                  view={program.options}
+                  hrefFor={hrefFor}
+                  mode="project"
+                  standardConditions={program.conditions}
+                  pending={program.decision.state === 'loading' ? 'reading' : program.decision.state === 'absent' ? 'unreadable' : null}
+                  choice={
+                    program.choice
+                      ? { ...program.choice, beforeWrite: stand.checkBeforeWrite, onChanged: onDecisionChanged }
+                      : null
+                  }
+                />
+              ) : null
+            }
+            record={
+              hasRun ? (
+                <div data-redesign-record="">
+                  <DecisionCard
+                    projectId={projectId}
+                    beforeWrite={stand.checkBeforeWrite}
+                    onChanged={onDecisionChanged}
+                    costScenario={costScenario}
+                    revision={revision}
+                  />
                 </div>
-                <StateWords step={null} words={model.analysed ? 'Done' : 'Not signed yet'} />
-              </li>
-              {model.steps.map((step) => (
-                <li
-                  key={step.key}
-                  id={step.key === 'decide' ? REDESIGN_DECIDE_ID : undefined}
-                  data-redesign-step={step.key}
-                  data-redesign-step-state={step.state}
-                  data-redesign-step-next={model.next?.key === step.key ? '' : undefined}
-                  className={cn(
-                    'grid scroll-mt-24 grid-cols-[32px_minmax(0,1fr)_auto] items-start gap-3 border-t border-cc-line py-3 max-[720px]:grid-cols-[32px_minmax(0,1fr)]',
-                    step.key === 'decide' && '-mx-5 border-cc-information-border bg-cc-information-bg px-5 max-[720px]:-mx-4 max-[720px]:px-4',
-                  )}
-                >
-                  <StepMark state={step.state} n={step.n} now={model.next?.key === step.key} />
-                  <div className="min-w-0">
-                    {step.path ? (
-                      <Link href={`${base}/${step.path}`} className="cc-text-body font-bold text-cc-ink underline-offset-2 hover:underline">
-                        {step.key === 'tco' ? 'Economics: price the options' : step.label}
-                      </Link>
-                    ) : (
-                      <h3 className="m-0 cc-text-body font-bold text-cc-ink">Decide</h3>
-                    )}
-                    <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{step.purpose}</p>
-                    {step.key === 'decide' ? (
-                      <DecideStep
-                        hasRun={hasRun}
-                        indicated={indicated ? DECISION_OPTION_LABELS[indicated] : null}
-                        options={
-                          hasRun ? (
-                            <DecisionOptions
-                              view={program.options}
-                              hrefFor={hrefFor}
-                              mode="project"
-                              standardConditions={program.conditions}
-                              pending={program.decision.state === 'loading' ? 'reading' : program.decision.state === 'absent' ? 'unreadable' : null}
-                              choice={
-                                program.choice
-                                  ? { ...program.choice, beforeWrite: stand.checkBeforeWrite, onChanged: onDecisionChanged }
-                                  : null
-                              }
-                            />
-                          ) : null
-                        }
-                        record={
-                          hasRun ? (
-                            <div data-redesign-record="">
-                              <DecisionCard
-                                projectId={projectId}
-                                beforeWrite={stand.checkBeforeWrite}
-                                onChanged={onDecisionChanged}
-                                costScenario={costScenario}
-                                revision={revision}
-                              />
-                            </div>
-                          ) : null
-                        }
-                      />
-                    ) : null}
-                  </div>
-                  <StateWords step={step} words={step.stateWords} />
-                </li>
-              ))}
-            </ol>
-            <p className="m-0 mt-3 cc-text-cell text-cc-ink-muted">
-              A decision other than Rebuild builds nothing: the steps after Design read &ldquo;Not needed&rdquo;, and Design still shows what the
-              decided option means for this program.
-            </p>
-          </section>
-
-          <aside aria-label="Beside the page" className="flex min-w-0 flex-col gap-6 min-[1101px]:sticky min-[1101px]:top-24">
-            <div className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3 shadow-cc">
-              <h2 className="m-0 cc-text-body font-bold text-cc-ink">Where you came from</h2>
-              <p className="m-0 mt-1 cc-text-cell text-cc-ink">
-                {indicated ? (
-                  <>
-                    Analyze indicated <span className="font-semibold">{DECISION_OPTION_LABELS[indicated]}</span>: an indication, not a decision.
-                  </>
-                ) : (
-                  'Analyze reads the program; the evidence does not point to one option yet.'
-                )}
-              </p>
-              <div className="mt-3">
-                <CcLinkButton href={`${base}/analyze?view=management`} variant="ghost" data-redesign-back-to-analyze="">
-                  Back to Analyze, Management
-                </CcLinkButton>
-              </div>
-            </div>
-            <div className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3 shadow-cc">
-              <h2 className="m-0 cc-text-body font-bold text-cc-ink">Accountability</h2>
-              <p className="m-0 mt-1 cc-text-cell text-cc-ink">
-                The decision and every confirmation are recorded by the signed-in account: a self-declaration, not a mandate. Business, IT and
-                Management are views only, never stored on the project, a run or a pack.
-              </p>
-            </div>
-          </aside>
-        </div>
-      </div>
+              ) : null
+            }
+          />
+        }
+      />
     </StageFrame>
-  );
-}
-
-function StepMark({ state, n, now = false }: { state: RedesignStep['state'] | 'open'; n: number; now?: boolean }) {
-  const done = state === 'done';
-  return (
-    <span
-      aria-hidden={true}
-      className={cn(
-        'flex size-[26px] items-center justify-center rounded-full border-2 cc-text-meta font-bold',
-        done
-          ? 'border-cc-success bg-cc-success-bg text-cc-success'
-          : now
-            ? 'border-cc-ink bg-cc-ink text-cc-on-dark'
-            : 'border-cc-ink-muted bg-cc-surface text-cc-ink-muted',
-      )}
-    >
-      {done ? <Check size={14} /> : n > 0 ? n : null}
-    </span>
-  );
-}
-
-function StateWords({ step, words }: { step: RedesignStep | null; words: string }) {
-  return (
-    <span
-      data-redesign-step-words=""
-      className={cn(
-        'cc-text-meta font-semibold text-right max-[720px]:col-start-2 max-[720px]:text-left',
-        step?.state === 'stale' ? 'text-cc-warning' : 'text-cc-ink-muted',
-      )}
-    >
-      {words}
-    </span>
   );
 }
 
