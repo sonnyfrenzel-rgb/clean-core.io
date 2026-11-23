@@ -19,7 +19,7 @@ import { safeReturnPath } from '../lib/return-path';
  *
  * The showcase computes its figures from the engine of the checkout when the
  * page is built; what it records is the drawing of the map
- * (`lib/demo-showcase-planes.json`, `npm run demo:showcase`) and a few
+ * (`lib/demo-showcase-planes.json`, `npx tsx scripts/regenerate-demo-showcase.ts`) and a few
  * statements in the guide's own words (`lib/demo-showcase-copy.ts`). This spec
  * fails when the engine no longer writes the BPMN file the drawings were made
  * from, or no longer supports one of those statements — so the plan rule "the
@@ -31,7 +31,7 @@ const showcase = buildDemoShowcase(data);
 
 test('the drawings and the guide’s own statements match the engine of this checkout', () => {
   const drift = showcaseDrift(data);
-  expect(drift, `run npm run demo:showcase and review the copy:\n${drift.join('\n')}`).toEqual([]);
+  expect(drift, `run npx tsx scripts/regenerate-demo-showcase.ts and review the copy:\n${drift.join('\n')}`).toEqual([]);
 });
 
 test('the drift check can fail', () => {
