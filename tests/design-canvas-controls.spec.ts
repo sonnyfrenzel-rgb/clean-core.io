@@ -46,7 +46,7 @@ async function openDesign(page: Page, prefix: string) {
   await adminMergeDoc('projects', seeded.projectId, { solutionDesign: DESIGN_JSON });
   await page.setViewportSize({ width: 1440, height: 900 });
   await signInThroughForm(page, seeded);
-  await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('svg[data-architecture-canvas]')).toBeVisible({ timeout: 120_000 });
   await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
   return seeded;

@@ -2,7 +2,7 @@
 
 import CcTable from '@/components/cc/Table';
 import { CcTag } from '@/components/cc/Tag';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 
 interface ApiEndpoint {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE';
@@ -33,7 +33,7 @@ export default function ApiEndpointsCatalog({ apiEndpoints, embedded = false }: 
       <div className="mb-4">
         <div className="flex flex-wrap items-center gap-2">
           <h4 className={embedded ? 'cc-text-h3 text-cc-ink' : 'cc-text-h2 text-cc-ink'}>Target API Catalog</h4>
-          {embedded ? null : <CcProvenanceChip value="proposed" />}
+          {embedded ? null : <FamilyChip value="proposed" />}
         </div>
         <p className="cc-text-cell text-cc-ink-muted mt-1">Proposed API layer handling the transformed legacy transaction capability.</p>
       </div>

@@ -118,7 +118,7 @@ test.describe('the Design stage keeps its proportions', () => {
     test.setTimeout(300_000);
     seeded = await seedStageProject({ prefix: 'designfit', acceptTerms: true });
     await signInThroughForm(page, seeded);
-    await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
     for (const [w, h] of WIDTHS) await expectFits(page, w, h, 'project');
@@ -126,7 +126,7 @@ test.describe('the Design stage keeps its proportions', () => {
 
   test('the demo, which draws the same stage', async ({ page }) => {
     test.setTimeout(180_000);
-    await page.goto('/demo/design', { waitUntil: 'domcontentloaded' });
+    await page.goto('/demo/design?view=it', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60_000 });
     for (const [w, h] of WIDTHS) await expectFits(page, w, h, 'demo');
   });

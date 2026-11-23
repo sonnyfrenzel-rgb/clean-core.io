@@ -5,7 +5,7 @@ import { ArrowUpRight, Copy } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { CcTag } from '@/components/cc/Tag';
 import { SapReferenceInline, SapReferenceList } from '@/components/design/SapReference';
 import { SapCheckedText } from '@/components/SapIdentifierCheck';
@@ -369,7 +369,7 @@ export default function CloudServiceIntegrations({ cloudServices, embedded = fal
           <h3 className={embedded ? 'cc-text-h3 text-cc-ink' : 'cc-text-h2 text-cc-ink'}>Cloud Service Integrations</h3>
           {/* Which services, what for and which packages: the model's design.
               The details behind each row are our own reference text. */}
-          {embedded ? null : <CcProvenanceChip value="proposed" />}
+          {embedded ? null : <FamilyChip value="proposed" />}
         </div>
         <p className="cc-text-cell text-cc-ink-muted mt-1">Platform service bindings and technical dependencies required for the target architecture.</p>
       </div>

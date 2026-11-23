@@ -613,14 +613,14 @@ test.describe('the places (source guards)', () => {
     expect(read('components/analyze/AnalyzeEndings.tsx')).not.toMatch(/requestRuleEditing|rulesStatus|data-next-step-rules/);
   });
 
-  test('the full register is in IT; the questions stand in Design beside its canvas; open questions lead there', () => {
+  test('the full register is in IT; the questions stand in the Business view of Design; open questions lead there', () => {
     expect(shell).toContain('rules={<ItRuleRegister');
     const design = read('app/(app)/project/[projectId]/design/page.tsx');
     expect(design.indexOf('<RuleQuestions')).toBeGreaterThan(-1);
-    // Owner decision 22.10.2026 (3.0.21, ADR-106): no longer above the canvas — handed to it as its side panel.
+    // ADR-130 (3.5.0): the Business view's section, built once and mounted in every view.
     expect(design).toContain('const questionsPanel = <RuleQuestions ');
-    const canvas = design.slice(design.indexOf('<DesignCanvasStage'));
-    expect(canvas).toContain('questions={questionsPanel}');
+    expect(design).toContain('id="design-questions"');
+    expect(design).toContain('{questionsPanel}');
     const oq = read('components/workspace/OpenQuestions.tsx');
     expect(oq).toMatch(/case 'confirm-rules':[\s\S]{0,200}path: 'design'[\s\S]{0,80}RULE_QUESTIONS_ID/);
   });

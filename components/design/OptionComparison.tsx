@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { CcTag } from '@/components/cc/Tag';
 import { SapCheckedText } from '@/components/SapIdentifierCheck';
 import {
@@ -51,7 +51,7 @@ export default function OptionComparison({ design, keyUser = null, keyUserChosen
       <div className="flex flex-wrap items-center gap-2">
         <h3 id="design-options-title" className="m-0 cc-text-h3 text-cc-ink">{fourOptions || keyUser ? 'Standard, key user, RAP and CAP compared' : 'Standard, RAP and CAP compared'}</h3>
         {/* Only over a comparison the model wrote: an absent or unreadable one proposes nothing (QA 5a559787: 9af97544d758). */}
-        {view.state === 'absent' || view.state === 'malformed' ? null : <CcProvenanceChip value="proposed" />}
+        {view.state === 'absent' || view.state === 'malformed' ? null : <FamilyChip value="proposed" />}
       </div>
       {view.state === 'absent' ? (
         <p data-design-not-written="Options compared" className="m-0 rounded-cc-row border border-dashed border-cc-field-border px-3 py-2 text-[13px] text-cc-ink-muted">
@@ -150,7 +150,7 @@ function KeyUserLimits({ list }: { list: KeyUserStepList }) {
     <div data-option-key-user-limits={list.scope} className="flex min-w-0 flex-col gap-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
       <span className="flex flex-wrap items-center gap-2">
         <b className="text-[14px] font-bold text-cc-ink">{COMPARED_OPTION_LABELS.keyuser} — the engine&apos;s reading and its limits</b>
-        <CcProvenanceChip value="reconstructed" />
+        <FamilyChip value="reconstructed" />
       </span>
       <p className="m-0 text-[13px] text-cc-ink [overflow-wrap:anywhere]">{list.sentence}</p>
       {list.levelByConstruction ? (

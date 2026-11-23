@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ChevronRight, ClipboardCopy, Copy, FileDown, FileText, ListChecks, PenLine } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcFilterBar from '@/components/cc/FilterBar';
 import CcSelect from '@/components/cc/Select';
@@ -380,7 +380,7 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <h2 id="fr-title" className="m-0 cc-text-h2 text-cc-ink">Functional requirements</h2>
-        <CcProvenanceChip value="reconstructed" />
+        <FamilyChip value="reconstructed" />
       </div>
       <p className="m-0 max-w-3xl text-[14px] leading-relaxed text-cc-ink-muted">
         What the code requires, as numbered requirements: one per business rule, decision point, early end and step that
@@ -487,13 +487,13 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
                       </p>
                       {proposed ? (
                         <span data-fr-statement-provenance="">
-                          <CcProvenanceChip value="proposed" note="wording" />
+                          <FamilyChip value="proposed" note="wording" />
                         </span>
                       ) : null}
                     </div>
                     {proposed ? (
                       <p data-fr-engine-wording="" className="m-0 flex flex-wrap items-center gap-2 text-[13px] text-cc-ink-muted [overflow-wrap:anywhere]">
-                        <CcProvenanceChip value="reconstructed" />
+                        <FamilyChip value="reconstructed" />
                         <span>Engine wording: {r.statement}</span>
                       </p>
                     ) : null}
@@ -531,7 +531,7 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
                       </dd>
                       <dt className="font-semibold text-cc-ink">Provenance</dt>
                       <dd className="m-0 flex flex-wrap items-center gap-2 text-cc-ink">
-                        <CcProvenanceChip value="reconstructed" />
+                        <FamilyChip value="reconstructed" />
                         <span className="text-cc-ink-muted">Read from the code by the engine{proposed ? '; the sentence above is AI-generated, checked against these lines' : ''}.</span>
                       </dd>
                     </dl>
@@ -634,7 +634,7 @@ export default function FunctionalRequirements({ projectId, projectName, fileNam
           <li key={o.id} data-fr-open={o.id} className="flex min-w-0 flex-col gap-2 rounded-cc-card border border-dashed border-cc-field-border bg-cc-surface p-3 sm:p-4">
             <span className="flex flex-wrap items-center gap-2">
               <span className="font-cc-mono text-[13px] font-semibold text-cc-ink">{o.id}</span>
-              <CcProvenanceChip value="not-determined" />
+              <FamilyChip value="not-determined" />
             </span>
             <p className="m-0 text-[14px] font-semibold text-cc-ink [overflow-wrap:anywhere]">{o.question}</p>
             <p className="m-0 text-[13px] text-cc-ink-muted [overflow-wrap:anywhere]">

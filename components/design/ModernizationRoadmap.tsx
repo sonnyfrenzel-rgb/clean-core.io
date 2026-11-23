@@ -1,6 +1,6 @@
 'use client';
 
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { CcTag } from '@/components/cc/Tag';
 
 interface RoadmapPhase {
@@ -32,7 +32,7 @@ export default function ModernizationRoadmap({ roadmap, embedded = false }: Mode
       <div className="mb-4">
         <div className="flex flex-wrap items-center gap-2">
           <h4 className={embedded ? 'cc-text-h3 text-cc-ink' : 'cc-text-h2 text-cc-ink'}>Modernization Roadmap</h4>
-          {embedded ? null : <CcProvenanceChip value="proposed" />}
+          {embedded ? null : <FamilyChip value="proposed" />}
         </div>
         <p className="cc-text-cell text-cc-ink-muted mt-1">The phases of the change, in order.</p>
       </div>

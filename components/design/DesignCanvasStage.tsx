@@ -6,7 +6,7 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcButton from '@/components/cc/Button';
 import CcCodeSurface from '@/components/cc/CodeSurface';
 import CcIconButton from '@/components/cc/IconButton';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import CcTabs from '@/components/cc/Tabs';
 import CcDateText from '@/components/cc/DateText';
@@ -99,7 +99,16 @@ export interface DesignCanvasStageProps {
   documentNotice: React.ReactNode | null;
   /** The router's own rationale, beside the alternatives. */
   routingRationale: React.ReactNode | null;
-  view: 'canvas' | 'list';
+  /** The drawing, or the reflowing list a phone shows. The page no longer offers a switch (ADR-130); the list stays for the phone form. */
+  view?: 'canvas' | 'list';
+  /**
+   * `decision` (the demo, today's form): the canvas with the side panel — decision, contract, alternatives,
+   * evidence — and the drawer under it. `it` (ADR-130, the Design tool's IT view): the canvas with the evidence of
+   * the box clicked beside it, no figures over it (the page's answer card carries them), no decision tabs and no
+   * footer (the sign-off is the Management view's), and the contract, the alternatives and the document once, in the
+   * drawer.
+   */
+  layout?: 'decision' | 'it';
   /**
    * What the sign-off is, where it is not a real project's. Unset, it is the
    * self-declaration of the signed-in account, bound to the run; the demo's is
@@ -283,7 +292,8 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     documentFallback,
     documentNotice,
     routingRationale,
-    view,
+    view = 'canvas',
+    layout = 'decision',
     signOffWording,
     confirmTarget,
     questions = null,
@@ -607,13 +617,13 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
   } else if (evidence.state === 'absent') {
     board = (
       <p data-design-canvas-absent="" className="m-0 rounded-cc-row border border-dashed border-cc-field-border p-4 text-[13px] text-cc-ink-muted">
-        <CcProvenanceChip value="not-determined" /> {evidence.reason}
+        <FamilyChip value="not-determined" /> {evidence.reason}
       </p>
     );
   } else if (!contract || !model) {
     board = (
       <p data-design-canvas-absent="" className="m-0 rounded-cc-row border border-dashed border-cc-field-border p-4 text-[13px] text-cc-ink-muted">
-        <CcProvenanceChip value="not-determined" />{' '}
+        <FamilyChip value="not-determined" />{' '}
         {evidence.contractSentence ?? 'There is no architecture contract for this project, so there is no route to draw.'}
       </p>
     );
@@ -690,68 +700,10 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
           ? 'Not confirmed. This design document has no sign-off section; regenerate it, then confirm — a self-declaration of your account, not an organisational mandate.'
           : 'Not confirmed. Generate the design document to review and confirm it.';
 
-  const decisionTab = (
-    <div className="flex flex-col gap-4">
-      <section
-        data-design-answer={confirmed ? 'confirmed' : answer.kind}
-        data-design-answer-code={confirmed ? undefined : answer.code ?? undefined}
-        aria-labelledby="design-answer"
-        className="rounded-cc-card border p-3"
-        style={{
-          background:
-            model?.route === 'in-app-rap'
-              ? 'var(--cc-brand-surface)'
-              : 'color-mix(in srgb, var(--cc-chart-4) 6%, var(--cc-surface))',
-          borderColor:
-            model?.route === 'in-app-rap'
-              ? 'var(--cc-brand-strong)'
-              : 'color-mix(in srgb, var(--cc-chart-4) 30%, var(--cc-surface))',
-        }}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className={LABEL} style={{ color: model?.route === 'in-app-rap' ? 'var(--cc-brand-deep)' : 'var(--cc-chart-4)' }}>
-            {answerHeading}
-          </p>
-          {answer.kind === 'loading' && !confirmed ? null : (
-            <CcProvenanceChip value={confirmed ? 'confirmed' : answer.kind === 'stored' ? 'not-determined' : 'reconstructed'} />
-          )}
-        </div>
-        <h2 id="design-answer" className="m-0 mt-1 text-[22px] leading-tight font-extrabold tracking-[-0.01em] text-cc-ink">
-          {confirmed ? confirmed.label : answer.kind === 'loading' ? 'Reading the route…' : answerLabel ?? 'Target not determined'}
-        </h2>
-        {confirmed ? (
-          <p className="m-0 mt-2 text-[13px] text-cc-ink">
-            Confirmed{confirmed.by ? <> by {confirmed.by}</> : null}
-            {confirmed.at ? <> on <CcDateText value={confirmed.at} format="text" /></> : null}.{' '}
-            {signOffWording?.confirmed ?? 'A self-declaration by the signed-in account, not an organisational mandate.'}
-          </p>
-        ) : (
-          <p className="m-0 mt-2 text-[13px] text-cc-ink">
-            {chosenAlt?.reason ??
-              (answer.kind === 'loading'
-                ? 'The route is derived from the code on the server.'
-                : answer.kind === 'stored'
-                  ? 'There is no architecture contract for this code, so this is the value stored on the project, not a recommendation derived from the code. Not confirmed yet.'
-                  : answerLabel
-                    ? 'Recommended from the analysis of the code. Not confirmed yet.'
-                    : 'The analysis on record recommends no target architecture. Run the analysis, then generate the design.')}
-          </p>
-        )}
-        {storedNote ? (
-          <p data-design-stored-route={answer.storedDiffers?.source} className="m-0 mt-2 text-[12px] text-cc-ink-muted">
-            {storedNote}
-          </p>
-        ) : null}
-        {chosenAlt && !confirmed ? (
-          <div className="mt-2">
-            <Anchors lines={linesOf(chosenAlt.citations)} />
-          </div>
-        ) : null}
-        {typeof confidence === 'number' && !confirmed ? (
-          <p className="m-0 mt-2 text-[12px] text-cc-ink-muted">Confidence {confidence} — the router’s, not a proof.</p>
-        ) : null}
-      </section>
-
+  // What the canvas numbers, and the four alternatives at a glance: the decision tab's, and the IT view's side
+  // while no box is clicked (ADR-130: the alternatives once on that page).
+  const glance = (
+    <>
       {numbered.length ? (
         <div>
           <p className={cn(LABEL, 'mb-1')}>Numbered on the canvas</p>
@@ -766,7 +718,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
                 >
                   <PinMark n={row.n} />
                   <span>{row.text}</span>
-                  <CcProvenanceChip value={row.chip} />
+                  <FamilyChip value={row.chip} />
                 </button>
               </li>
             ))}
@@ -813,6 +765,73 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
         </div>
       ) : null}
 
+    </>
+  );
+
+  const decisionTab = (
+    <div className="flex flex-col gap-4">
+      <section
+        data-design-answer={confirmed ? 'confirmed' : answer.kind}
+        data-design-answer-code={confirmed ? undefined : answer.code ?? undefined}
+        aria-labelledby="design-answer"
+        className="rounded-cc-card border p-3"
+        style={{
+          background:
+            model?.route === 'in-app-rap'
+              ? 'var(--cc-brand-surface)'
+              : 'color-mix(in srgb, var(--cc-chart-4) 6%, var(--cc-surface))',
+          borderColor:
+            model?.route === 'in-app-rap'
+              ? 'var(--cc-brand-strong)'
+              : 'color-mix(in srgb, var(--cc-chart-4) 30%, var(--cc-surface))',
+        }}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className={LABEL} style={{ color: model?.route === 'in-app-rap' ? 'var(--cc-brand-deep)' : 'var(--cc-chart-4)' }}>
+            {answerHeading}
+          </p>
+          {answer.kind === 'loading' && !confirmed ? null : (
+            <FamilyChip value={confirmed ? 'confirmed' : answer.kind === 'stored' ? 'not-determined' : 'reconstructed'} />
+          )}
+        </div>
+        <h2 id="design-answer" className="m-0 mt-1 text-[22px] leading-tight font-extrabold tracking-[-0.01em] text-cc-ink">
+          {confirmed ? confirmed.label : answer.kind === 'loading' ? 'Reading the route…' : answerLabel ?? 'Target not determined'}
+        </h2>
+        {confirmed ? (
+          <p className="m-0 mt-2 text-[13px] text-cc-ink">
+            Confirmed{confirmed.by ? <> by {confirmed.by}</> : null}
+            {confirmed.at ? <> on <CcDateText value={confirmed.at} format="text" /></> : null}.{' '}
+            {signOffWording?.confirmed ?? 'A self-declaration by the signed-in account, not an organisational mandate.'}
+          </p>
+        ) : (
+          <p className="m-0 mt-2 text-[13px] text-cc-ink">
+            {chosenAlt?.reason ??
+              (answer.kind === 'loading'
+                ? 'The route is derived from the code on the server.'
+                : answer.kind === 'stored'
+                  ? 'There is no architecture contract for this code, so this is the value stored on the project, not a recommendation derived from the code. Not confirmed yet.'
+                  : answerLabel
+                    ? 'Recommended from the analysis of the code. Not confirmed yet.'
+                    : 'The analysis on record recommends no target architecture. Run the analysis, then generate the design.')}
+          </p>
+        )}
+        {storedNote ? (
+          <p data-design-stored-route={answer.storedDiffers?.source} className="m-0 mt-2 text-[12px] text-cc-ink-muted">
+            {storedNote}
+          </p>
+        ) : null}
+        {chosenAlt && !confirmed ? (
+          <div className="mt-2">
+            <Anchors lines={linesOf(chosenAlt.citations)} />
+          </div>
+        ) : null}
+        {typeof confidence === 'number' && !confirmed ? (
+          <p className="m-0 mt-2 text-[12px] text-cc-ink-muted">Confidence {confidence} — the router’s, not a proof.</p>
+        ) : null}
+      </section>
+
+      {glance}
+
       <div id="architect-sign-off" data-design-signoff={locked ? 'locked' : 'open'} className="scroll-mt-24">
         <p className={cn(LABEL, 'mb-1')}>Sign-off</p>
         {signOffText ? (
@@ -834,7 +853,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
         <li key={f.key} className="border-b border-cc-line pb-3 last:border-b-0">
           <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
             <b className="text-[13px] font-semibold text-cc-ink">{f.label}</b>
-            <CcProvenanceChip value={f.provenance} />
+            <FamilyChip value={f.provenance} />
           </div>
           <FieldText f={f} clampLines />
         </li>
@@ -944,7 +963,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
             >
               <span className="flex flex-wrap items-center justify-between gap-2">
                 <b className="text-[14px] font-bold text-cc-ink">{s.title}</b>
-                <CcProvenanceChip value="proposed" />
+                <FamilyChip value="proposed" />
               </span>
               {s.excerpt ? <span className="line-clamp-3 text-[14px] font-semibold text-cc-ink">{s.excerpt}</span> : null}
               {s.meta ? <span className="text-[12px] text-cc-ink-muted">{s.meta}</span> : null}
@@ -990,7 +1009,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
           <article key={f.key} data-contract-field={f.key} className="flex min-w-0 flex-col gap-2 rounded-cc-card border border-cc-line bg-cc-surface p-4">
             <span className="flex flex-wrap items-center justify-between gap-2">
               <b className="text-[14px] font-bold text-cc-ink">{f.label}</b>
-              <CcProvenanceChip value={f.provenance} />
+              <FamilyChip value={f.provenance} />
             </span>
             <FieldText f={f} />
             <Anchors lines={linesOf(f.citations)} />
@@ -1048,7 +1067,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
         <div className="rounded-cc-card border border-cc-line bg-cc-surface p-4">
           <span className="mb-2 flex flex-wrap items-center gap-2">
             <b className="text-[14px] font-bold text-cc-ink">What the route assumes</b>
-            <CcProvenanceChip value={preconditions.provenance} />
+            <FamilyChip value={preconditions.provenance} />
           </span>
           <FieldText f={preconditions} />
         </div>
@@ -1066,11 +1085,27 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
     </div>
   );
 
+  // The drawer: the document with its option comparison, the contract and the alternatives — once (ADR-130 (1)).
+  const drawer = (
+      <section aria-label="Design document and contract" data-design-drawer="" className="border-t border-cc-line bg-cc-surface px-4 pt-2 pb-6 min-[720px]:px-6">
+        <CcTabs
+          label="Design document and contract"
+          density="cozy"
+          tabs={[
+            { value: 'document', label: `Design document${hasDocument ? ` (${written} of ${sections.length})` : ''}`, content: documentTab },
+            { value: 'contract', label: `Contract ${contract?.contractId ?? ''}${contract ? ` (${contract.fields.length} fields)` : ''}`.trim(), content: drawerContract },
+            ...(layout === 'it' ? [] : [{ value: 'alternatives', label: 'Alternatives', count: contract?.alternatives.length, content: drawerAlternatives }]),
+            { value: 'assumptions', label: 'Assumptions', count: contract ? assumptionCount : undefined, content: drawerAssumptions },
+          ]}
+        />
+      </section>
+  );
+
   const successorsKpi = model ? `${model.successors.length} · ${model.successorUses} uses` : '—';
 
   return (
     <div data-design-canvas-stage="" className="overflow-clip rounded-cc-card border border-cc-line bg-cc-surface shadow-cc">
-      <div className="grid grid-cols-1 min-[1100px]:grid-cols-[minmax(0,1fr)_420px]">
+      <div className={cn('grid grid-cols-1', layout === 'it' ? 'min-[1100px]:grid-cols-[minmax(0,1fr)_340px]' : 'min-[1100px]:grid-cols-[minmax(0,1fr)_420px]')}>
         {/* The stage */}
         <section aria-label="Target architecture canvas" className="relative flex min-w-0 flex-col bg-cc-surface-muted">
           <svg aria-hidden="true" className="pointer-events-none absolute inset-0 size-full max-[719px]:hidden">
@@ -1082,7 +1117,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
             <rect width="100%" height="100%" fill={`url(#dots-${hintId.replace(/[^a-zA-Z0-9]/g, '')})`} />
           </svg>
           <div className="relative flex flex-col gap-4 p-3 min-[720px]:px-7 min-[720px]:pt-4 min-[720px]:pb-6 min-[1100px]:sticky min-[1100px]:top-0">
-            {proposalShown ? (
+            {proposalShown && layout !== 'it' ? (
             <div className="grid grid-cols-2 gap-2 min-[720px]:flex min-[720px]:flex-wrap min-[720px]:gap-3">
               <Kpi
                 icon={<Cloud size={16} />}
@@ -1092,7 +1127,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
                 extra={
                   model ? (
                     <>
-                      <CcProvenanceChip value="reconstructed" />
+                      <FamilyChip value="reconstructed" />
                       {typeof confidence === 'number' ? <span>confidence {confidence}</span> : null}
                     </>
                   ) : null
@@ -1119,7 +1154,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <h2 className="m-0 flex flex-wrap items-center gap-2 text-[15px] font-bold text-cc-ink">
                   Target architecture
-                  {contract && proposalShown ? <CcProvenanceChip value="reconstructed" note={`from contract ${contract.contractId}`} /> : null}
+                  {contract && proposalShown ? <FamilyChip value="reconstructed" note={`from contract ${contract.contractId}`} /> : null}
                 </h2>
                 {view === 'canvas' && model && proposalShown ? (
                   <div className="flex flex-wrap items-center gap-3">
@@ -1197,7 +1232,22 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
           </div>
         </section>
 
-        {/* The side panel */}
+        {/* The side panel. In the IT view it holds the evidence of the box clicked, nothing else (ADR-130). */}
+        {layout === 'it' ? (
+          <aside aria-label="Evidence" data-design-panel="evidence" className="flex min-w-0 flex-col border-t border-cc-line bg-cc-surface px-4 py-4 min-[720px]:px-5 min-[1100px]:border-t-0 min-[1100px]:border-l">
+            {selected && model ? (
+              <>
+                <p className={LABEL}>Evidence</p>
+                <div className="mt-2 min-w-0">{evidenceTab}</div>
+              </>
+            ) : (
+              <div className="flex min-w-0 flex-col gap-4">
+                <p className="m-0 cc-text-cell text-cc-ink-muted">Click a box to see its evidence.</p>
+                {glance}
+              </div>
+            )}
+          </aside>
+        ) : (
         <aside
           aria-label={proposalShown ? 'Decision' : 'Questions for the business'}
           data-design-panel={proposalShown ? 'decision' : 'questions'}
@@ -1279,6 +1329,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
           </div>
           ) : null}
         </aside>
+        )}
       </div>
 
       <CcDialog
@@ -1338,18 +1389,13 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
       {/* The drawer — the document with its option comparison, the contract
           and the alternatives: part of the proposal, so it waits with it (ADR-106). */}
       {proposalShown ? (
-      <section aria-label="Design document and contract" data-design-drawer="" className="border-t border-cc-line bg-cc-surface px-4 pt-2 pb-6 min-[720px]:px-6">
-        <CcTabs
-          label="Design document and contract"
-          density="cozy"
-          tabs={[
-            { value: 'document', label: `Design document${hasDocument ? ` (${written} of ${sections.length})` : ''}`, content: documentTab },
-            { value: 'contract', label: `Contract ${contract?.contractId ?? ''}${contract ? ` (${contract.fields.length} fields)` : ''}`.trim(), content: drawerContract },
-            { value: 'alternatives', label: 'Alternatives', count: contract?.alternatives.length, content: drawerAlternatives },
-            { value: 'assumptions', label: 'Assumptions', count: contract ? assumptionCount : undefined, content: drawerAssumptions },
-          ]}
-        />
-      </section>
+        layout === 'it' ? (
+          <div id="design-contract" className="scroll-mt-32">
+            {drawer}
+          </div>
+        ) : (
+          drawer
+        )
       ) : null}
     </div>
   );

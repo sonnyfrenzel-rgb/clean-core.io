@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronRight, CircleHelp, ClipboardCopy, Code2, Copy, FileDown, FileText, ListChecks, Minus } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcDisclosure from '@/components/cc/Disclosure';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSelect from '@/components/cc/Select';
 import CcTabs from '@/components/cc/Tabs';
@@ -260,7 +260,7 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-2">
         <h2 id="nfr-title" className="m-0 cc-text-h2 text-cc-ink">Non-functional requirements</h2>
-        <CcProvenanceChip value="reconstructed" />
+        <FamilyChip value="reconstructed" />
       </div>
       <p className="m-0 max-w-3xl text-[14px] leading-relaxed text-cc-ink-muted">
         What the code says about authorization, records, errors, data, operations and the switch-over — each with the lines
@@ -409,7 +409,7 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
         >
           <div className="flex min-w-0 flex-col gap-2 pb-3">
             <span>
-              <CcProvenanceChip value="proposed" />
+              <FamilyChip value="proposed" />
             </span>
             <p className="m-0 whitespace-pre-wrap text-[13px] text-cc-ink [overflow-wrap:anywhere]">{p.text}</p>
             <p className="m-0 text-[12px] text-cc-ink-muted">
@@ -465,7 +465,7 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
               <dd className="m-0 font-cc-mono text-cc-ink [overflow-wrap:anywhere]">{r.objects.length ? r.objects.join(', ') : <span className="font-sans text-cc-ink-muted">No object named at these lines.</span>}</dd>
               <dt className="font-semibold text-cc-ink">Provenance</dt>
               <dd className="m-0 flex flex-wrap items-center gap-2 text-cc-ink">
-                <CcProvenanceChip value="reconstructed" />
+                <FamilyChip value="reconstructed" />
                 <span className="text-cc-ink-muted">Read from the code by the engine.</span>
               </dd>
             </dl>
@@ -570,7 +570,7 @@ export default function NonFunctionalRequirements({ projectName, fileName, sourc
                   <div className="flex min-w-0 flex-1 flex-col gap-2">
                     <span className="flex flex-wrap items-center gap-2">
                       <span data-nfr-question-id="" className="font-cc-mono text-[13px] font-semibold text-cc-ink">{x.id}</span>
-                      <CcProvenanceChip value="not-determined" />
+                      <FamilyChip value="not-determined" />
                       <OwnerTag owner={x.owner} />
                     </span>
                     <p className="m-0 text-[14px] font-semibold text-cc-ink [overflow-wrap:anywhere]">{x.question}</p>
