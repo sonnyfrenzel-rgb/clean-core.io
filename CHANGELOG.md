@@ -74,7 +74,7 @@ The new UX along the accepted mock-ups, every proposal of the UX review of 22.11
     Level A–D marks explain themselves on hover, keyboard focus and tap.
   - Re-design says when a step's model is switched off for your account; Design, Economics and Transformation
     send the decision to Re-design.
-  - "Ask this case" is back in Analyze's IT view; usage and ATC data can be added before the first run; open
+  - Usage and ATC data can be added before the first run; open
     questions and "In short" use the one line notation ("line 42").
   - The process map fits a phone again for runs without an engine stamp; no tool page is wider than a 360 px
     phone; a view switch starts the new view at its top; the demo's way back no longer leads to itself.
