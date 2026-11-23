@@ -321,7 +321,8 @@ test.describe('Economics: configuration effort, not a build — counts and the a
     // No figure of its own: every number on the card is a prop.
     expect(card).not.toMatch(/\*\s*\d|\d\s*\*/);
     const page = read('app/(app)/project/[projectId]/tco/page.tsx');
-    expect(page).toContain('keyUserRate={userRate}');
+    // The key-user day rate is the assumptions' test and key-user day rate (one rate for both since 3.0.19).
+    expect(page).toContain('keyUserRate={assumptions.testDayRate}');
     // Owner decision 19.10.2026: the card reads the key-user cost option, not Rebuild's days.
     expect(page).toContain("option={assumptions.options.find((o) => o.kind === 'keyuser')}");
   });

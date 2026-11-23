@@ -49,20 +49,21 @@ const base: RouteCardProps = {
   decideHref: '/project/p?view=management',
 };
 
-const chips = (html: string) => [...html.matchAll(/data-provenance="([^"]+)"/g)].map((m) => m[1]);
+// The family chips since 3.5.0 (lib/family-chips.ts): reconstructed is "engine", confirmed is "yours".
+const chips = (html: string) => [...html.matchAll(/data-family-chip="([^"]+)"/g)].map((m) => m[1]);
 
 test('no route on record: the chip says not determined, never reconstructed', () => {
   const html = renderToStaticMarkup(React.createElement(RouteCard, base));
   expect(html).toContain('Not determined');
-  expect(chips(html)).not.toContain('reconstructed');
+  expect(chips(html)).not.toContain('engine');
   expect(chips(html)).toContain('not-determined');
 });
 
 test('a recommended route keeps its reconstructed chip; a chosen one says confirmed', () => {
   const recommended = renderToStaticMarkup(React.createElement(RouteCard, { ...base, route: 'In-App (ABAP Cloud)' }));
-  expect(chips(recommended)).toContain('reconstructed');
+  expect(chips(recommended)).toContain('engine');
   const chosen = renderToStaticMarkup(React.createElement(RouteCard, {
     ...base, route: 'Side-by-Side (SAP BTP)', overridden: true, recommended: 'In-App (ABAP Cloud)',
   }));
-  expect(chips(chosen)).toContain('confirmed');
+  expect(chips(chosen)).toContain('yours');
 });

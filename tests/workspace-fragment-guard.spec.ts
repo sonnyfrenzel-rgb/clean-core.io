@@ -4,7 +4,7 @@
  * (Sonny, 10.10.2026: from IT on `#architecture`, Business bounced straight
  * back to IT).
  *
- * Source pin for the page, the demo shell and the helper; the behaviour in a
+ * Source pin for the redirect page, the demo shell and the helper; the behaviour in a
  * browser is held by `workspace-view-switch.spec.ts`.
  */
 import { test, expect } from '@playwright/test';
@@ -19,18 +19,11 @@ import { MANAGEMENT_IDS } from '../lib/management-sections';
 const PAGE = path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'page.tsx');
 const DEMO = path.join(__dirname, '..', 'components', 'demo', 'DemoWorkspaceShell.tsx');
 
-test('every query rewrite of the workspace page carries the fragment the helper lets through, and opens at the top', () => {
-  const src = fs.readFileSync(PAGE, 'utf8');
-  const pushes = src.match(/router\.push\(`\?\$\{query\.toString\(\)\}[^`]*`/g) ?? [];
-  expect(pushes.length, 'the view switch pushes a query').toBeGreaterThanOrEqual(1);
-  for (const call of pushes) {
-    expect(call, `${call} drops the fragment`).toContain('${currentHash()}');
-  }
-  // The fragment comes from the window and nowhere else, through the helper.
-  expect(src).toMatch(/function currentHash\(\): string \{[\s\S]*?return viewSwitchHash\(window\.location\.hash\);/);
-  // And the new view opens at its top.
-  expect(src).toMatch(/router\.push\(`\?\$\{query\.toString\(\)\}\$\{currentHash\(\)\}`, \{ scroll: false \}\);\s*window\.scrollTo\(\{ top: 0 \}\);/);
-  // The demo's switch does the same.
+test('the demo workspace view switch carries the fragment the helper lets through, and opens at the top', () => {
+  // The project's workspace page is a redirect into Analyze since 3.5.0 (AB-11) and switches no view of its own;
+  // the demo workspace keeps its switch.
+  const page = fs.readFileSync(PAGE, 'utf8');
+  expect(page).not.toContain('router.push(`?${query.toString()}');
   const demo = fs.readFileSync(DEMO, 'utf8');
   const set = demo.slice(demo.indexOf('const setView = useCallback('));
   const body = set.slice(0, set.indexOf('[router, searchParams]'));
@@ -46,14 +39,8 @@ test('a subject is carried over, a place of the old view is not', () => {
   for (const place of [BUSINESS_MAP_ID, 'business-rules']) expect(viewSwitchHash(`#${place}`), place).toBe('');
 });
 
-test('a view switch drops the origin of a choice; a redirect of the arrival keeps it (package A)', () => {
-  const src = fs.readFileSync(PAGE, 'utf8');
-  const set = src.slice(src.indexOf('const setView = useCallback('));
-  const body = set.slice(0, set.indexOf('[router, searchParams]'));
-  // Deleted from the query the switch pushes, before it pushes it.
-  expect(body).toMatch(/query\.set\('view', next\);[\s\S]*?query\.delete\('origin'\);[\s\S]*?router\.push\(`\?\$\{query\.toString\(\)\}\$\{currentHash\(\)\}`/);
-  // The layer redirect to another view rewrites the query it arrived with, origin included,
-  // and the one to Economics hands the origin on.
-  expect(src).toMatch(/const query = new URLSearchParams\(searchParams\?\.toString\(\) \?\? ''\);\s*query\.set\('view', leaving\.view\);/);
-  expect(src).toMatch(/path: 'tco',[\s\S]{0,200}origin: originOf\(searchParams\?\.toString\(\)\)/);
+test('the redirect of an old workspace address keeps the origin of a choice (package A)', () => {
+  // The arrival's query, origin included, is handed to the redirect table (lib/workspace-redirect.ts).
+  const page = fs.readFileSync(PAGE, 'utf8');
+  expect(page).toContain('workspaceRedirectHref({ projectId, search: window.location.search, hash: window.location.hash })');
 });

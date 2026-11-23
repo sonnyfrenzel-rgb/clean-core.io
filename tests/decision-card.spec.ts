@@ -974,9 +974,10 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     expect(DECISION_PLACE_IDS.itOpenQuestions).toBe(IT_SECTION_IDS.questions);
     expect(DECISION_PLACE_IDS.itStandardFit).toBe(IT_SECTION_IDS.standard);
     expect(DECISION_PLACE_IDS.businessMap).toBe(BUSINESS_MAP_ID);
-    const economics = fs.readFileSync(path.resolve(__dirname, '..', 'app/(app)/project/[projectId]/tco/page.tsx'), 'utf8');
+    // Economics draws its sections in the object page it shares with the demo (ADR-128); the route follows the hash.
+    const economics = fs.readFileSync(path.resolve(__dirname, '..', 'components/tco/EconomicsObjectPage.tsx'), 'utf8');
     expect(economics).toContain(`id="${DECISION_PLACE_IDS.economicsCompare}"`);
-    expect(economics).toContain('useFollowHash()');
+    expect(fs.readFileSync(path.resolve(__dirname, '..', 'app/(app)/project/[projectId]/tco/page.tsx'), 'utf8')).toContain('useFollowHash()');
     const rulesEditor = fs.readFileSync(path.resolve(__dirname, '..', 'components/workspace/BusinessRulesEditor.tsx'), 'utf8');
     expect(rulesEditor).toContain(`export const BUSINESS_RULES_ID = '${DECISION_PLACE_IDS.businessRules}'`);
     expect(decisionTodoCount(2, 3)).toBe('2 to do · 3 stay open');

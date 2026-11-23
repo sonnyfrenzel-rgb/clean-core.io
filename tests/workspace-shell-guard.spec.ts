@@ -144,8 +144,8 @@ test.describe('there is no switch any more (roadmap 3.0.1, ADR-061)', () => {
   });
 
   test('the workspace page asks for a signed-in account and nothing else', () => {
+    // The workspace page is a redirect into Analyze since 3.5.0 (AB-11); it reads no account at all.
     const page = fs.readFileSync(path.join(root, 'app', '(app)', 'project', '[projectId]', 'page.tsx'), 'utf8');
-    expect(page).toContain('const enabled = profile != null;');
     expect(page, 'the workspace page reads an admin flag again').not.toMatch(/isAdmin/);
     const demo = fs.readFileSync(path.join(root, 'components', 'demo', 'DemoWorkspaceShell.tsx'), 'utf8');
     expect(demo).toContain('const enabled = profile != null;');

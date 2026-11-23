@@ -41,7 +41,7 @@ test('the plan and its origin are decided through modelActionPlan wherever it is
   // The fallback, the origin line and the chip all read that one decision.
   expect(planModule).toMatch(/const steps = plan \?\? \[/);
   expect(planModule).toMatch(/data-action-plan-origin=\{plan \? 'model' : 'generic'\}/);
-  expect(planModule).toMatch(/\{plan \? \(\s*<CcProvenanceChip value="proposed" \/>/);
+  expect(planModule).toMatch(/\{plan \? \(\s*<FamilyChip kind="ai" \/>/);
   expect(exportModule.match(GUARDED)?.length ?? 0, 'the export: its fallback').toBeGreaterThanOrEqual(1);
   const page = `${planModule}
 ${exportModule}`;

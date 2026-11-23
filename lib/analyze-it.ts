@@ -95,7 +95,7 @@ export interface ItAnswerPart {
 }
 
 export interface ItAnswer {
-  /** "Far from clean core: 40 of 100." plus what carries most of the distance. */
+  /** The score band's label and the score ("<band>: 40 of 100.") plus what carries most of the distance. */
   answer: string;
   /** The two largest deductions, each with its line. */
   why: ItAnswerPart[];

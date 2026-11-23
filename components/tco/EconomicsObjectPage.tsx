@@ -704,7 +704,7 @@ function Method({ loc, proposals, revision }: { loc: number | null; proposals: O
       ) : null}
       <p className="m-0">
         <b className="font-semibold">Not priced:</b> what a deferred upgrade costs Keep (stated, not priced: nothing here knows it),
-        licences and run cost of SAP standard or BTP, data migration and archiving unless you put them into the one-off effort, and
+        licences and run cost of SAP standard or SAP BTP, data migration and archiving unless you put them into the one-off effort, and
         whether SAP standard covers what the program does (functional fit is not measured).
       </p>
       <p className="m-0 cc-text-meta text-cc-ink-muted">

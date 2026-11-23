@@ -60,7 +60,7 @@ import type { Project } from '@/lib/types';
  * 3.5.0 item (1); ADR-140; the IT page of `docs/roadmap/analyze-family-mockup.html`).
  *
  *   ┌ answer card: How far is this code from clean core? [From the engine · fixed rules]          ┌ score box ┐
- *   │ Far from clean core: 40 of 100. The direct write … carry most of the distance.               │ 40 of 100 │
+ *   │ <band label>: 40 of 100.      The direct write … carry most of the distance.               │ 40 of 100 │
  *   │ why, with the lines · signed run · Details                                                   │ [Add evidence] [Export]
  *   ├ Findings │ Clean core levels │ Recommended route │ Not determined ─────────────────────────────┘
  *   On this page: Score · First look · Findings · SAP objects · Summary · Detail                 [Export]

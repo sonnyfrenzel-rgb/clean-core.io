@@ -119,9 +119,9 @@ test('stopped: the card stays, names the stage it stopped in, and the total stop
   expect(text(html)).toContain('Stopped while writing the scenarios and the suite — nothing was saved; the reason is below.');
 });
 
-test('the page draws the card from the hook, in both states of the step', () => {
+test('the page draws the card from the hook, in its one place (ADR-131)', () => {
   const page = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'project', '[projectId]', 'testing', 'page.tsx'), 'utf8');
-  expect(page.match(/<TestingProgress progress=\{genProgress\} \/>/g)?.length).toBe(2);
+  expect(page.match(/<TestingProgress progress=\{genProgress\} \/>/g)?.length).toBe(1);
   const hook = fs.readFileSync(path.join(ROOT, 'hooks', 'useTestGeneration.ts'), 'utf8');
   for (const stage of ["enter('model')", "enter('checking')", "enter('storing')", 'startTestGenProgress(Date.now())', "'written'", "'failed'"]) {
     expect(hook).toContain(stage);

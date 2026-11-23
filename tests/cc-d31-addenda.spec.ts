@@ -68,7 +68,9 @@ test.describe('D.31 in the source', () => {
     expect(css).toMatch(/@utility cc-text-figure \{[^}]*font-size:\s*22px;[^}]*font-weight:\s*800;[^}]*tabular-nums/);
     const tco = read('app/(app)/project/[projectId]/tco/page.tsx');
     expect(tco).not.toMatch(/text-\[22px\] font-extrabold/);
-    expect(tco.match(/cc-text-figure/g) ?? []).toHaveLength(3);
+    // Economics' key figures stand in the family answer card's facets (ADR-128), which draw them in that role.
+    expect(read('components/tco/EconomicsObjectPage.tsx')).toContain('<AnswerCard');
+    expect(read('components/family/AnswerCard.tsx')).toContain('cc-text-figure');
   });
 
   test('forced-colors has a rule for SVG chart segments', () => {

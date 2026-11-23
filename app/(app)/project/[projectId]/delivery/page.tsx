@@ -1415,7 +1415,7 @@ export default function DeliveryPage() {
           <SideCard title="Built on" data-delivery-built-on="">
             <DeliveryKeyValues
               rows={[
-                { k: 'Signed run', v: hasRun ? <span className="font-cc-mono cc-text-meta break-all">{String(project.activeRunId).slice(0, 12)}…</span> : 'None' },
+                { k: 'Signed analysis', v: hasRun ? <span className="font-cc-mono cc-text-meta break-all">{String(project.activeRunId).slice(0, 12)}…</span> : 'None' },
                 { k: 'Source', v: fingerprint ? `${fingerprint.fileName} · ${fingerprint.lineCount} lines` : 'Not recorded' },
                 // The revision key carries a hash; the screen says what it means (machine-strings guard).
                 { k: 'Engine', v: `${engineVersion ?? 'not recorded'}${catalog ? ` · catalog ${catalogForReader(catalog)}` : ''}` },

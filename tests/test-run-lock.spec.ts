@@ -98,8 +98,9 @@ test('every runner path of /api/run-tests takes the slot first and gives it back
   expect(route.match(/const slot = await takeRunSlot\(decodedToken\.uid\);/g) ?? []).toHaveLength(3);
   expect(route.match(/activeRuns\+\+;/g) ?? []).toHaveLength(3);
   // Given back wherever the instance counter is: in each finally, and on the capacity refusal.
-  expect(route.match(/activeRuns--;\n\s+await giveBackRunSlot\(slot\.lock\);/g) ?? []).toHaveLength(3);
-  expect(route.match(/await giveBackRunSlot\(slot\.lock\);\n\s+return NextResponse\.json\(\n\s+\{ output: '', error: 'The test runner is at capacity/g) ?? []).toHaveLength(3);
+  // `\r?\n`: a Windows checkout carries CRLF, the CI image LF.
+  expect(route.match(/activeRuns--;\r?\n\s+await giveBackRunSlot\(slot\.lock\);/g) ?? []).toHaveLength(3);
+  expect(route.match(/await giveBackRunSlot\(slot\.lock\);\r?\n\s+return NextResponse\.json\(\r?\n\s+\{ output: '', error: 'The test runner is at capacity/g) ?? []).toHaveLength(3);
   const admin = fs.readFileSync(path.join(ROOT, 'lib/firebase-admin.ts'), 'utf8');
   expect(admin.match(/tryDelete\('test_run_locks'/g) ?? []).toHaveLength(2);
 });

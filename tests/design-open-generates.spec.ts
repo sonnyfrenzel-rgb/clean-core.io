@@ -10,8 +10,8 @@ import { sha256Hex } from '../lib/artefact-digest';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import { TERMS_VERSION } from '../lib/constants';
 import { DESIGN_WRITE_COST } from '../lib/model-stages';
-import { PHASE_PURPOSE } from '../lib/workflow-steps';
-import { nextOpenPoint } from '../lib/next-step';
+import { PHASE_PURPOSE, workflowSteps } from '../lib/workflow-steps';
+import { nextOpenPoint, nextOpenPointOf } from '../lib/next-step';
 import type { Project } from '../lib/types';
 
 /**
@@ -134,12 +134,15 @@ test.describe('what opening Design costs, said before the click', () => {
     expect(PHASE_PURPOSE.design).toMatch(/not counted against your analysis runs/);
     expect(DESIGN_WRITE_COST).toMatch(/not counted against your analysis runs/);
     const analysed = { name: 'p', legacyCode: 'REPORT z.', activeRunId: 'r', status: 'analyzed', analysis: '{}', cleanCoreScore: 50 } as unknown as Project;
-    const point = nextOpenPoint(analysed);
-    // QA f1d02d0dd36e: the next step is Design here, so the check is never skipped.
+    // In the tool order Economics comes before Design (ADR-128 (5)): right after Analyze the next step is Economics.
+    expect(nextOpenPoint(analysed)?.key).toBe('tco');
+    // Once Economics is done, the next step is Design, and the check is never skipped there.
+    const priced = workflowSteps(analysed).map((s) => (s.key === 'tco' ? { ...s, state: 'done' as const, done: true } : s));
+    const point = nextOpenPointOf(priced, true);
     expect(point?.key).toBe('design');
     expect(point?.reason).toContain(DESIGN_WRITE_COST);
     // With the stage off nothing can be written, and the step says so instead.
-    const off = nextOpenPoint(analysed, { modelStages: { design: false } });
+    const off = nextOpenPointOf(priced, true, { modelStages: { design: false } });
     expect(off?.key).toBe('design');
     expect(off?.reason).not.toContain(DESIGN_WRITE_COST);
   });
