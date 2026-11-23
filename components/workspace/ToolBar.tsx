@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { Check, ChevronDown, Wrench } from 'lucide-react';
+import Link from 'next/link';
+import { Check, ChevronDown, ChevronRight, Wrench } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,17 @@ import { analysisKeyOfBase, resultReadyTag } from '@/lib/analysis-read';
 import { useLocationSearch } from '@/lib/location-search';
 import { useAnalyzeProgress } from '@/hooks/useAnalyzeProgress';
 import { nextTagShown } from '@/lib/analyze-progress';
+
+/**
+ * The "Re-design ›" group of the tool row (ADR-143): on Analyze and on the Re-design page the six tools after Analyze
+ * stand inside one group whose label opens Re-design, `/project/[id]/redesign`. `current` marks the label as the page
+ * the reader is on (the Re-design page itself).
+ */
+export interface ToolGroup {
+  href: string;
+  label: string;
+  current?: boolean;
+}
 
 /** A plain click on a tool link; `event.preventDefault()` holds the navigation. */
 export type ToolClick = (tool: WorkspaceTool, href: string, event: React.MouseEvent<HTMLElement>) => void;
@@ -225,8 +237,11 @@ function ToolsNav({
   readKey,
   compact: compactStage = false,
   onTool,
+  group = null,
 }: {
   tools: WorkspaceTool[];
+  /** The six tools after Analyze grouped under "Re-design ›" (stage surface only, ADR-143). */
+  group?: ToolGroup | null;
   /** Whose analysis "Result ready" is about — the project id or `demo` (`lib/analysis-read.ts`). */
   readKey: string | null;
   /** Everything of a tool's address but its path — every link goes through `stageHref`. */
@@ -371,7 +386,7 @@ function ToolsNav({
   ));
 
   if (surface === 'stage') {
-    return <FamilyToolStrip tools={tools} current={current} items={barItems} />;
+    return <FamilyToolStrip tools={tools} current={current} items={group ? groupedItems(tools, barItems, group) : barItems} />;
   }
 
   // Hidden by width, so the open bar and the menu are never both reachable at
@@ -440,6 +455,38 @@ function ToolsNav({
           </div>
         )}
       </div>
+    </>
+  );
+}
+
+/**
+ * Analyze first, then the six tools after it inside the "Re-design ›" group (ADR-143): the label opens the Re-design
+ * page, and the tools stay one click away for a reader who knows where to go.
+ */
+function groupedItems(tools: readonly WorkspaceTool[], items: readonly React.ReactNode[], group: ToolGroup): React.ReactNode {
+  const first = items.filter((_, i) => tools[i].key === 'analyze');
+  const rest = items.filter((_, i) => tools[i].key !== 'analyze');
+  return (
+    <>
+      {first}
+      <span
+        data-stage-tools-group="redesign"
+        className={cn(
+          'inline-flex items-center gap-2 rounded-cc-card border py-1 pr-1 pl-2',
+          group.current ? 'border-cc-ink' : 'border-dashed border-cc-field-border',
+        )}
+      >
+        <Link
+          href={group.href}
+          data-stage-tools-group-open=""
+          aria-current={group.current ? 'page' : undefined}
+          className="inline-flex min-h-8 items-center gap-1 rounded-cc-row px-1 cc-text-cell font-bold text-cc-ink no-underline hover:underline aria-[current=page]:px-2"
+        >
+          {group.label}
+          <ChevronRight size={14} aria-hidden={true} />
+        </Link>
+        {rest}
+      </span>
     </>
   );
 }
@@ -579,10 +626,14 @@ export function StageToolBar({
   base,
   compact = false,
   onTool,
+  group = null,
 }: {
   /** `workflowSteps(project)` — or the demo's rail, which is assignable to it. */
   steps: WorkspaceTool[];
-  current: PhaseKey;
+  /** The tool the reader is on; none on the Re-design page, which is not a tool. */
+  current?: PhaseKey;
+  /** The "Re-design ›" group (ADR-143). */
+  group?: ToolGroup | null;
   /** `/project/<id>`, or `/demo`. */
   base: string;
   /** One row, as the compact bar: the tools, their marks and the legend (Analyze, Business — mockup state 3). */
@@ -606,6 +657,7 @@ export function StageToolBar({
       surface="stage"
       compact={compact}
       onTool={onTool}
+      group={group}
       readKey={analysisKeyOfBase(base)}
       link={{ base, view: params.get('view'), from, layer: params.get('layer') }}
     />

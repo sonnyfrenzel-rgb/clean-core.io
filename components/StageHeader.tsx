@@ -10,6 +10,7 @@ import {
   FlaskConical,
   Package,
   PenTool,
+  Route,
   ScanSearch,
   Shuffle,
   Users,
@@ -21,7 +22,8 @@ import { useShellProjectName } from '@/lib/shell-context';
 import ChoiceBackLink from '@/components/ChoiceBackLink';
 import { DEMO_ROUTE } from '@/lib/demo-marks';
 import { BACK_LINK_CLASS } from '@/components/BackLink';
-import { StageToolBar, type ToolClick } from '@/components/workspace/ToolBar';
+import { StageToolBar, type ToolClick, type ToolGroup } from '@/components/workspace/ToolBar';
+import { REDESIGN_LABEL, redesignHref } from '@/lib/redesign';
 import StageViewSwitch from '@/components/StageViewSwitch';
 import InviteToView from '@/components/family/InviteToView';
 import { useLocationSearch } from '@/lib/location-search';
@@ -49,6 +51,10 @@ import { familyViewMode, ONE_PAGE_NOTE } from '@/lib/family-frame';
  *    name as the page's `h1` (`lib/family-title.ts`: the source header's title the engine read, else the project's
  *    name), its technical name in mono under it, then the lead. Until the project is read the `h1` is the tool's name.
  *    The `h1` is 22 px / 800, `-0.02em`, `--cc-ink` (`cc-text-title`, `DESIGN.md` §1.2, §2.3).
+ *
+ * **Re-design (ADR-143).** On Analyze the six tools after it stand in one group of the tool row, "Re-design ›", whose
+ * label opens the Re-design page (`/project/[id]/redesign`). That page is not a tool: it passes `place="redesign"`,
+ * which names it in the eyebrow, marks the group's label as current and leads back to Analyze.
  *
  * `stage` names the tool from `PHASES` in `lib/workflow-steps.ts`, the list the tool bar, the rail and the dashboard
  * read, so a tool cannot be called one thing in the bar and another in its own eyebrow (UX-169). Navigation does not
@@ -91,6 +97,7 @@ export default function StageHeader({
   toolsAfter,
   backToMyWorkspace = false,
   view,
+  place,
   children,
 }: {
   /** The tool this header belongs to; its name comes from `PHASES`. */
@@ -131,6 +138,11 @@ export default function StageHeader({
    * by tool (`familyViewMode`): the switch on Analyze and Design, the note on the five others.
    */
   view?: 'switch' | 'one-page' | 'none';
+  /**
+   * A page of the family that is not one of the seven tools: `redesign`, the Re-design page (ADR-143). Its eyebrow
+   * says "Re-design", the tool row marks the group's label as current, and the way back is Analyze.
+   */
+  place?: 'redesign';
   /** The lead sentence. */
   children?: React.ReactNode;
 }) {
@@ -147,7 +159,13 @@ export default function StageHeader({
 
   const demo = tools?.base === DEMO_ROUTE;
   const back = stageBackLink({ projectId, search, demo });
-  const way = familyBackLink({ projectId, search, demo, toMyWorkspace: backToMyWorkspace });
+  const familyWay = familyBackLink({ projectId, search, demo, toMyWorkspace: backToMyWorkspace });
+  const onRedesign = place === 'redesign';
+  // The Re-design page leads back to Analyze, where every way into it starts (mock-up of 23.11.2026, screen 2).
+  const way: typeof familyWay =
+    onRedesign && projectId && familyWay.kind === 'link'
+      ? { kind: 'link', href: `/project/${encodeURIComponent(projectId)}/analyze`, place: 'Analyze', to: 'workspace' }
+      : familyWay;
   // The program: the page's project, or the name the loader announced to the shell bar, or the demo's name.
   const announcedName = useShellProjectName(projectId || null);
   const family = familyTitleOf(project ?? (projectName ? { name: projectName } : announcedName ? { name: announcedName } : null));
@@ -155,9 +173,15 @@ export default function StageHeader({
   const programId = title ? null : family?.programId ?? null;
   const toolCurrent = tools?.current ?? stage;
   const toolBase = tools?.base ?? (projectId ? `/project/${projectId}` : null);
-  const mode = view ?? familyViewMode(toolCurrent ?? stage ?? null);
+  const mode = view ?? (onRedesign ? 'one-page' : familyViewMode(toolCurrent ?? stage ?? null));
   const eyebrowTool = toolLabel ?? (toolCurrent ? PHASES.find((p) => p.key === toolCurrent)?.label : undefined);
-  const ToolIcon = toolCurrent ? TOOL_ICONS[toolCurrent] : null;
+  const ToolIcon = onRedesign ? Route : toolCurrent ? TOOL_ICONS[toolCurrent] : null;
+  // The "Re-design ›" group: on Analyze and on the Re-design page of a project; the demo has no Re-design page.
+  const group: ToolGroup | null =
+    projectId && !demo && (onRedesign || toolCurrent === 'analyze')
+      ? { href: redesignHref(projectId), label: `${REDESIGN_LABEL}`, current: onRedesign }
+      : null;
+
 
   return (
     <header data-stage-header={stage ?? ''} data-family-header="" className={`mt-0 mb-6 ${centred ? 'text-center' : ''}`}>
@@ -203,10 +227,17 @@ export default function StageHeader({
         </div>
       )}
 
-      {tools && toolCurrent && toolBase && (
+      {tools && (toolCurrent || onRedesign) && toolBase && (
         <div data-stage-toolbar="" className="cc-no-print mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
           <div className="min-w-0 flex-1 basis-[36rem]">
-            <StageToolBar steps={tools.steps} current={toolCurrent} base={toolBase} compact={toolsCompact ?? true} onTool={onTool} />
+            <StageToolBar
+              steps={tools.steps}
+              current={onRedesign ? undefined : toolCurrent}
+              base={toolBase}
+              compact={toolsCompact ?? true}
+              onTool={onTool}
+              group={group}
+            />
           </div>
           {toolsNote ? (
             <p data-stage-tools-note="" className="m-0 cc-text-meta font-medium text-cc-ink-muted">
@@ -219,13 +250,13 @@ export default function StageHeader({
 
       <div className={centred ? 'mt-4' : 'mt-4 flex flex-col gap-4 md:flex-row md:items-start md:justify-between'}>
         <div className="min-w-0">
-          {eyebrowTool && (
+          {(eyebrowTool || onRedesign) && (
             <div className={`flex flex-wrap items-center gap-2 ${centred ? 'justify-center' : ''}`}>
               <p data-stage-tool="" className="m-0 inline-flex items-center gap-2 cc-text-label text-cc-ink-muted">
                 <span aria-hidden="true" data-stage-icon="" className="inline-flex shrink-0 [&>svg]:size-4">
                   {icon ?? (ToolIcon ? <ToolIcon size={16} /> : null)}
                 </span>
-                <span>Tool · {eyebrowTool}</span>
+                <span>{onRedesign ? REDESIGN_LABEL : <>Tool · {eyebrowTool}</>}</span>
               </p>
               {eyebrow}
             </div>
