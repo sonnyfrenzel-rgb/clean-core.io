@@ -8,6 +8,7 @@ import FamilyChip from '@/components/family/FamilyChip';
 import PageAnchorBar from '@/components/PageAnchorBar';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
+import CcTable from '@/components/cc/Table';
 import { cn } from '@/lib/utils';
 import type { DocAnchor } from '@/lib/process-documentation';
 import type { PdData, ProcessDocument } from '@/lib/process-document';
@@ -87,7 +88,7 @@ const lines = (a: DocAnchor) => (a.lineEnd > a.lineStart ? `L${a.lineStart}–${
 /** A line anchor, quiet, in Analyze's notation; with Analyze at hand it opens the code there. */
 function Anchor({ anchor, analyzeHref }: { anchor: DocAnchor; analyzeHref?: string | null }) {
   const text = lines(anchor);
-  const cls = 'ml-1 inline-flex items-center rounded-cc-control border border-cc-line bg-cc-surface-muted px-1 font-cc-mono cc-text-meta font-medium text-cc-ink-muted no-underline align-baseline whitespace-nowrap';
+  const cls = 'ml-1 inline-flex items-center rounded-cc-row border border-cc-line bg-cc-surface-muted px-1 font-cc-mono cc-text-meta font-medium text-cc-ink-muted no-underline align-baseline whitespace-nowrap';
   if (analyzeHref) {
     return (
       <a href={`${analyzeHref}#L${anchor.lineStart}`} data-doc-anchor={text} title={`Lines ${text.slice(1)} — opens the code in Analyze`} className={cn(cls, 'hover:text-cc-ink')}>
@@ -164,7 +165,7 @@ function Chapter({
 /** A fold: one line with a count, its content on a click. Open in print. */
 function Fold({ title, count, icon, children, id, open }: { title: React.ReactNode; count?: React.ReactNode; icon?: React.ReactNode; children: React.ReactNode; id?: string; open?: boolean }) {
   return (
-    <details data-doc-fold={id ?? ''} open={open} className="group rounded-cc-control border border-cc-line bg-cc-surface">
+    <details data-doc-fold={id ?? ''} open={open} className="group rounded-cc-row border border-cc-line bg-cc-surface">
       <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 px-3 py-2 cc-text-cell font-semibold text-cc-ink [&::-webkit-details-marker]:hidden">
         <ChevronRight size={16} aria-hidden={true} className="shrink-0 transition-transform group-open:rotate-90" />
         {icon}
@@ -188,7 +189,7 @@ export function DocFigure({ figure, open, onStep }: { figure: ProcessFigure; ope
   const { x, y, width, height } = figure.box;
   return (
     <figure data-doc-figure="" className="m-0">
-      <div className="overflow-x-auto rounded-cc-control border border-cc-line bg-cc-surface max-sm:hidden">
+      <div className="overflow-x-auto rounded-cc-row border border-cc-line bg-cc-surface max-sm:hidden">
         <svg
           role="img"
           aria-label={figureCaption(figure)}
@@ -258,7 +259,7 @@ export function DocFigure({ figure, open, onStep }: { figure: ProcessFigure; ope
                 tabIndex={0}
                 aria-label={`Step ${s.step}: ${s.name}${s.anchor ? `, ${s.anchor}` : ''}`}
                 aria-pressed={here}
-                className="cursor-pointer focus:outline-none focus-visible:[&_rect]:stroke-cc-focus"
+                className="cursor-pointer"
                 onClick={() => onStep(s.step as number)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' || event.key === ' ') {
@@ -276,8 +277,8 @@ export function DocFigure({ figure, open, onStep }: { figure: ProcessFigure; ope
       <figcaption className="mt-2 cc-text-cell text-cc-ink-muted max-sm:hidden">
         <strong className="text-cc-ink">Figure 1</strong> · {figureCaption(figure).replace(/^Figure 1 · /, '')} · the same picture as in Analyze and in every file
       </figcaption>
-      <p data-doc-figure-phone="" className="m-0 hidden items-start gap-2 rounded-cc-control border border-cc-line bg-cc-surface-muted p-3 cc-text-cell text-cc-ink-muted max-sm:flex">
-        <MapIcon size={16} aria-hidden={true} className="mt-0.5 shrink-0" />
+      <p data-doc-figure-phone="" className="m-0 hidden items-start gap-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 cc-text-cell text-cc-ink-muted max-sm:flex">
+        <MapIcon size={16} aria-hidden={true} className="mt-1 shrink-0" />
         <span>Figure 1, the process map, is in every export and in Analyze. On a phone the steps read as a list.</span>
       </p>
     </figure>
@@ -289,9 +290,9 @@ export function DocFigure({ figure, open, onStep }: { figure: ProcessFigure; ope
 function ObjectList({ items, writes }: { items: DocStep['reads']; writes?: boolean }) {
   if (items.length === 0) return <span className="cc-text-cell text-cc-ink-muted">Nothing.</span>;
   return (
-    <span className="flex flex-wrap gap-1.5">
+    <span className="flex flex-wrap gap-2">
       {items.map((o) => (
-        <span key={`${o.name}-${o.line}`} className={cn('inline-flex items-center gap-1 rounded-cc-control border px-2 py-0.5 cc-text-cell text-cc-ink', writes ? 'border-cc-warning-border bg-cc-warning-bg' : 'border-cc-line bg-cc-surface-muted')}>
+        <span key={`${o.name}-${o.line}`} className={cn('inline-flex items-center gap-1 rounded-cc-row border px-2 py-1 cc-text-cell text-cc-ink', writes ? 'border-cc-warning-border bg-cc-warning-bg' : 'border-cc-line bg-cc-surface-muted')}>
           {writes ? <PenLine size={12} aria-hidden={true} /> : <Database size={12} aria-hidden={true} />}
           {o.plain ?? o.name}
           {o.plain ? <Tech>{o.name}</Tech> : null}
@@ -319,7 +320,7 @@ export function DocStepPage({
 }) {
   const row = (label: React.ReactNode, body: React.ReactNode) => (
     <div className="grid grid-cols-[8.5rem_minmax(0,1fr)] gap-3 border-t border-cc-line py-2 max-sm:grid-cols-1 max-sm:gap-1">
-      <span className="inline-flex items-center gap-1.5 cc-text-meta text-cc-ink-muted">{label}</span>
+      <span className="inline-flex items-center gap-1 cc-text-meta text-cc-ink-muted">{label}</span>
       <div className="min-w-0 cc-text-cell text-cc-ink">{body}</div>
     </div>
   );
@@ -337,7 +338,7 @@ export function DocStepPage({
     )
     : <span className="text-cc-ink-muted">{none}</span>);
   return (
-    <article data-doc-step-page={step.position} aria-labelledby={`doc-step-${step.position}-h`} className="mt-2 rounded-cc-control border border-cc-line bg-cc-surface-muted p-4">
+    <article data-doc-step-page={step.position} aria-labelledby={`doc-step-${step.position}-h`} className="mt-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="m-0 cc-text-meta text-cc-ink-muted">
@@ -364,7 +365,7 @@ export function DocStepPage({
       </div>
       {step.gateAfter ? (
         <p className="m-0 mt-2 flex items-start gap-2 cc-text-cell text-cc-ink-muted">
-          <Info size={14} aria-hidden={true} className="mt-0.5 shrink-0" />
+          <Info size={14} aria-hidden={true} className="mt-1 shrink-0" />
           <span>After this step: <strong className="text-cc-ink">{step.gateAfter.label}</strong> {step.gateAfter.line}</span>
         </p>
       ) : null}
@@ -462,7 +463,7 @@ function StopsChapter({ page, doc, analyzeHref }: { page: DocumentationPage; doc
           <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0">
             {going.map((e, i) => (
               <li key={i} className="flex items-start gap-2 cc-text-cell text-cc-ink">
-                <TriangleAlert size={14} aria-hidden={true} className="mt-0.5 shrink-0 text-cc-warning" />
+                <TriangleAlert size={14} aria-hidden={true} className="mt-1 shrink-0 text-cc-warning" />
                 <span>{e.shown ? `“${e.shown}”` : e.what}<Anchors anchors={e.anchors} analyzeHref={analyzeHref} max={1} /></span>
               </li>
             ))}
@@ -530,13 +531,20 @@ function SystemsChapter({ doc, analyzeHref }: { doc: ProcessDocument; analyzeHre
   const reads = doc.trigger.data;
   const own = reads.filter((d) => d.owner === 'Customer').length;
   const writes = doc.writes ?? [];
-  const row = (kind: string, items: Array<{ name: string; anchors: DocAnchor[] }>) => (items.length ? (
-    <tr className="border-t border-cc-line align-top">
-      <th scope="row" className="py-2 pr-3 text-left cc-text-cell font-semibold text-cc-ink">{kind} ({items.length})</th>
-      <td className="py-2 pr-3 font-cc-mono cc-text-meta font-medium text-cc-ink-muted [overflow-wrap:anywhere]">{items.map((i) => i.name).join(', ')}</td>
-      <td className="py-2 whitespace-nowrap"><Anchors anchors={items.flatMap((i) => i.anchors)} analyzeHref={analyzeHref} max={2} /></td>
-    </tr>
-  ) : null);
+  const groups: Array<[string, Array<{ name: string; anchors: DocAnchor[] }>]> = [
+    ['Reads', reads],
+    ['Changes', writes],
+    ['Calls', doc.integrations],
+    ['Controls', doc.controls.map((c) => ({ name: c.detail ?? c.text, anchors: c.anchors }))],
+  ];
+  const rows = groups.filter(([, items]) => items.length > 0).map(([kind, items]) => ({
+    key: kind,
+    cells: {
+      kind: `${kind} (${items.length})`,
+      objects: <span className="font-cc-mono cc-text-meta font-medium text-cc-ink-muted [overflow-wrap:anywhere]">{items.map((i) => i.name).join(', ')}</span>,
+      lines: <Anchors anchors={items.flatMap((i) => i.anchors)} analyzeHref={analyzeHref} max={2} />,
+    },
+  }));
   const total = reads.length + writes.length + doc.integrations.length + doc.controls.length;
   return (
     <Chapter
@@ -548,23 +556,11 @@ function SystemsChapter({ doc, analyzeHref }: { doc: ProcessDocument; analyzeHre
     >
       {total ? (
         <Fold id="systems" title="Every table, call and control, by technical name" count={plural(total, 'object')} icon={<Database size={14} aria-hidden={true} />}>
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  <th className="pb-1 text-left cc-text-label text-cc-ink-muted">Kind</th>
-                  <th className="pb-1 text-left cc-text-label text-cc-ink-muted">Objects</th>
-                  <th className="pb-1 text-left cc-text-label text-cc-ink-muted">Lines</th>
-                </tr>
-              </thead>
-              <tbody>
-                {row('Reads', reads)}
-                {row('Changes', writes)}
-                {row('Calls', doc.integrations)}
-                {row('Controls', doc.controls.map((c) => ({ name: c.detail ?? c.text, anchors: c.anchors })))}
-              </tbody>
-            </table>
-          </div>
+          <CcTable
+            caption="Every table, call and control, by technical name"
+            columns={[{ key: 'kind', label: 'Kind' }, { key: 'objects', label: 'Objects' }, { key: 'lines', label: 'Lines' }]}
+            rows={rows}
+          />
         </Fold>
       ) : null}
     </Chapter>
@@ -684,21 +680,19 @@ export default function DocumentationOnePage({
   const word = kinds.includes('docx');
   const others = kinds.filter((k) => k !== 'docx');
   const exportButton = (kind: DocExportKind) => (
-    <button
+    <CcButton
       key={kind}
-      type="button"
+      variant="secondary"
+      density="cozy"
       onClick={() => exports?.onExport(kind)}
+      icon={EXPORT_LABELS[kind].icon}
+      title={`${EXPORT_LABELS[kind].label}: ${EXPORT_LABELS[kind].hint}`}
       aria-label={kind === 'html' ? 'Export Confluence' : kind === 'bpmn' ? 'Export BPMN 2.0' : undefined}
       {...EXPORT_ATTRS[kind]}
       {...(kind === 'html' ? { 'data-export-confluence': exports?.stale ? 'stale' : 'current', 'aria-describedby': exports?.stale ? exports.staleNoteId : undefined } : {})}
-      className="inline-flex min-h-11 min-w-0 flex-1 basis-[8rem] items-center gap-2 rounded-cc-control border border-cc-line bg-cc-surface px-2 py-1.5 text-left cc-text-cell font-semibold text-cc-ink hover:bg-cc-surface-muted focus-visible:outline-2 focus-visible:outline-cc-focus"
     >
-      {EXPORT_LABELS[kind].icon}
-      <span className="min-w-0">
-        {EXPORT_LABELS[kind].label}
-        <small className="block cc-text-meta font-medium text-cc-ink-muted">{EXPORT_LABELS[kind].hint}</small>
-      </span>
-    </button>
+      {EXPORT_LABELS[kind].label}
+    </CcButton>
   );
   const facets: FacetProps[] = page.answer.counts.map((c) => ({
     id: c.key,
@@ -714,7 +708,7 @@ export default function DocumentationOnePage({
   return (
     <div ref={root} data-documentation-one-page="" data-process-document="">
       {before}
-      <div id={DOC_EXPORT_ID} tabIndex={-1} className="scroll-mt-32 outline-none">
+      <div id={DOC_EXPORT_ID} tabIndex={-1} className="scroll-mt-32">
         <AnswerCard
           id={DOC_ANSWER_ID}
           question={<>{title} · Process description · read from the code</>}
@@ -802,7 +796,7 @@ export default function DocumentationOnePage({
             {page.phases.map((phase, k) => (
               <div key={k} data-doc-phase={k + 1} className="min-w-0">
                 <p className="m-0 cc-text-label text-cc-ink-muted">Phase {k + 1}</p>
-                <h3 className="m-0 mt-0.5 cc-text-h3 text-cc-ink">{phase.title}</h3>
+                <h3 className="m-0 mt-1 cc-text-h3 text-cc-ink">{phase.title}</h3>
                 {phase.sentence ? <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{phase.sentence}</p> : null}
                 <ol className="m-0 mt-2 flex list-none flex-col gap-1 p-0">
                   {phase.steps.map((position) => {
@@ -816,8 +810,8 @@ export default function DocumentationOnePage({
                           aria-expanded={here}
                           onClick={() => (here ? setOpen(null) : openStep(position))}
                           className={cn(
-                            'grid min-h-11 w-full grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-2 rounded-cc-control border px-2 py-1.5 text-left cc-text-cell text-cc-ink',
-                            here ? 'border-cc-brand-strong bg-cc-brand-surface' : 'border-cc-line bg-cc-surface hover:bg-cc-surface-muted',
+                            'grid min-h-11 w-full cursor-pointer grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-2 rounded-cc-row border px-2 py-1 text-left font-[inherit] cc-text-cell text-cc-ink focus-visible:outline-2 focus-visible:outline-cc-focus',
+                            here ? 'border-cc-brand-strong font-semibold' : 'border-cc-line',
                           )}
                         >
                           <span className="inline-flex size-6 items-center justify-center rounded-full bg-cc-surface-muted cc-text-meta text-cc-ink">{position}</span>
@@ -825,7 +819,7 @@ export default function DocumentationOnePage({
                           <span className="font-cc-mono cc-text-meta font-medium text-cc-ink-muted">{step.anchors[0] ? lines(step.anchors[0]) : ''}</span>
                         </button>
                         {step.gateAfter ? (
-                          <span className="ml-9 mt-0.5 block cc-text-meta font-medium text-cc-ink-muted">◇ {step.gateAfter.label}{step.gateAfter.ends ? ' → can end here' : ''}</span>
+                          <span className="ml-9 mt-1 block cc-text-meta font-medium text-cc-ink-muted">◇ {step.gateAfter.label}{step.gateAfter.ends ? ' → can end here' : ''}</span>
                         ) : null}
                         {here ? (
                           <DocStepPage step={step} total={total} phaseTitle={phaseTitle(step)} analyzeHref={analyzeHref} onStep={openStep} onClose={() => setOpen(null)} />
