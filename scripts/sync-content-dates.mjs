@@ -54,7 +54,6 @@ const ROUTE_SOURCES = {
     'lib/provenance.ts',
     'lib/clean-core-level.ts',
     'lib/abap/public-cloud-fit.ts',
-    'lib/landing-shots.ts',
     'lib/abap/abcd-classification.ts',
     'lib/abap/catalog-index.ts',
     // The FAQ is rendered on the landing page, and since 3.0.8 its first answer

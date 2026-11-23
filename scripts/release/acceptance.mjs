@@ -79,7 +79,7 @@ export const ROWS = [
   { id: 'DW-1', title: 'All phase acceptances have run on main', specs: [], manual: 'CI validate job green on the main release commit (gh run list --branch main)' },
   { id: 'DW-2', title: 'Three complete paths plus the undecidable case, with negative probes', specs: ['g4-chain-acceptance.spec.ts', 'full-pipeline.spec.ts'], manual: 'protocol and findings: docs/release/g4-chain-acceptance.md; the owner watches one walk on the release build' },
   { id: 'DW-3', title: 'Copy CI green', specs: ['copy-ci-guard.spec.ts'] },
-  { id: 'DW-4', title: 'New landing live with real product views, no mockup image', specs: ['landing-consistency-guard.spec.ts'], manual: 'captures re-recorded (CAPTURE_LANDING=1) with a community account; live check on clean-core.io after deploy' },
+  { id: 'DW-4', title: 'New landing live with real product views, no mockup image', specs: ['landing-consistency-guard.spec.ts'], manual: 'since 3.5.0 the landing shows no product capture (ADR-122, UX review 22.11.2026 Q10); live check on clean-core.io after deploy' },
   { id: 'DW-5', title: 'Sign-in reachable as today', specs: ['public-pages-smoke.spec.ts'], manual: '/?auth=signin on clean-core.io after deploy' },
   { id: 'DW-6', title: 'Landing guards green', specs: ['landing-style-guard.spec.ts', 'landing-consistency-guard.spec.ts', 'seo-surface-guard.spec.ts'] },
   { id: 'DW-7', title: 'Signavio and money guards green', specs: ['signavio-claims-guard.spec.ts', 'money-honesty-guard.spec.ts', 'tco-cost-inputs-guard.spec.ts', 'tco-page-rendered.spec.ts'] },

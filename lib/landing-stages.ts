@@ -38,7 +38,7 @@ export interface LandingStageText {
   lines: readonly [string, string];
   worker: StageWorker;
   provenance: readonly ProvenanceValue[];
-  /** What the stage's picture shows (`lib/landing-shots.ts`), for the `alt` text. */
+  /** What the stage shows, in one line (the whitepaper's stage list). */
   shows: string;
 }
 
