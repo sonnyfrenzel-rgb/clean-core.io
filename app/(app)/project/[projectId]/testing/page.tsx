@@ -1301,7 +1301,7 @@ export default function TestingSandboxPage() {
   // runs the step list's acceptance checks in the system.
   if (keyUserWhole) return (
     <StageFrame stage="testing" className="min-h-screen">
-      <StageHeader stage="testing" tools={{ steps: phases, current: 'testing' }} projectName={project?.name}>
+      <StageHeader stage="testing" tools={{ steps: phases, current: 'testing' }} project={project}>
         <span data-testing-lead="" data-key-user-lead="">
           The decision is key-user extensibility: no test code is written. The steps of the key-user step list become acceptance checks a key user runs in the system once they are configured.
         </span>
@@ -1348,7 +1348,7 @@ export default function TestingSandboxPage() {
         ]}
       />
 
-      <StageHeader stage="testing" tools={{ steps: phases, current: 'testing' }} projectName={project?.name}>
+      <StageHeader stage="testing" tools={{ steps: phases, current: 'testing' }} project={project}>
         {/* What the tool does, in one sentence, before anything else (owner
             02.10.2026: "it is a tool, not a tab"). Said per route, because
             the two routes differ in the one thing a reader needs to know: on

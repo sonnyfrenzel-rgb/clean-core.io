@@ -181,15 +181,39 @@ export const PHASE_TONE_CLASS: Record<PhaseTone, { border: string; fill: string;
   none: { border: 'border-cc-neutral-border', fill: 'bg-cc-line', surface: 'bg-cc-surface', ink: 'text-cc-ink-muted' },
 };
 
+/**
+ * The seven tools in their one order — ADR-128 (5), owner 15.11.2026: Analyze → Economics → Design →
+ * Transformation → Documentation → Testing → Delivery. Economics comes second: it prices the program decision,
+ * and Design works from that decision with Economics' range as its guard rail. Every reader of the order — the
+ * tool bar, the rail, My workspace, the dashboard, Delivery's next step, the demo — reads it from here, and
+ * `inToolOrder` puts any list of phases into it.
+ */
 export const PHASES: ReadonlyArray<{ n: number; key: PhaseKey; label: string }> = [
   { n: 1, key: 'analyze', label: 'Analyze' },
-  { n: 2, key: 'design', label: 'Design' },
-  { n: 3, key: 'transformation', label: 'Transformation' },
-  { n: 4, key: 'documentation', label: 'Documentation' },
-  { n: 5, key: 'testing', label: 'Testing' },
-  { n: 6, key: 'tco', label: 'Economics' },
+  { n: 2, key: 'tco', label: 'Economics' },
+  { n: 3, key: 'design', label: 'Design' },
+  { n: 4, key: 'transformation', label: 'Transformation' },
+  { n: 5, key: 'documentation', label: 'Documentation' },
+  { n: 6, key: 'testing', label: 'Testing' },
   { n: 7, key: 'delivery', label: 'Delivery' },
 ];
+
+/** A tool's place in the order, as the messages that send the reader to a stage number it ("stage 3"). */
+export function stageNumber(key: PhaseKey): number {
+  return PHASES.find((p) => p.key === key)?.n ?? 0;
+}
+
+/** The phase keys in tool order. */
+export const PHASE_KEYS: readonly PhaseKey[] = Object.freeze(PHASES.map((p) => p.key));
+
+/** Any list of phases, in the tool order of `PHASES` (stable; an unknown key goes last). */
+export function inToolOrder<T extends { key: PhaseKey }>(steps: readonly T[]): T[] {
+  const at = (key: PhaseKey) => {
+    const i = PHASE_KEYS.indexOf(key);
+    return i < 0 ? PHASE_KEYS.length : i;
+  };
+  return [...steps].sort((a, b) => at(a.key) - at(b.key));
+}
 
 /**
  * What each tool is for, in one short line — the one source the tools bar, its
@@ -675,10 +699,10 @@ export function generationBlockers(
     ];
   }
   const prev = s.basis === 'profile' ? 'a previous target profile' : 'a previous source';
-  if (s.design && p.design) out.push(`The solution design was generated for ${prev}. Regenerate it in stage 2 first.`);
-  if (s.signOff) out.push(`The architecture sign-off was given for ${prev}. Confirm it again in stage 2.`);
+  if (s.design && p.design) out.push(`The solution design was generated for ${prev}. Regenerate it in stage ${stageNumber('design')} first.`);
+  if (s.signOff) out.push(`The architecture sign-off was given for ${prev}. Confirm it again in stage ${stageNumber('design')}.`);
   if (target !== 'transformation' && s.code && p.code) {
-    out.push(`The code was generated from ${prev}. Regenerate it in stage 3 first.`);
+    out.push(`The code was generated from ${prev}. Regenerate it in stage ${stageNumber('transformation')} first.`);
   }
   return out;
 }
@@ -1091,7 +1115,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
       badge: 'Self-reported',
       detail:
         `All ${plural(tests.total, 'test case')} are marked as passed, and no test run is on record for this code. ` +
-        'Run the suite in stage 5 to record one.',
+        `Run the suite in stage ${stageNumber('testing')} to record one.`,
     });
   } else if (executed === 0) {
     testing = phase('testing', {
@@ -1238,7 +1262,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
           ? 'Code, documentation and a passing ABAP Unit run imported from your SAP system are on record — run there, not here. Whether to deploy remains an architect’s decision.'
           : testing.verifiedOutside === 'confirmed'
           ? 'Code, documentation and your confirmation that the ABAP Unit class passed in your SAP system are on record — a self-declaration, not a run here. Whether to deploy remains an architect’s decision.'
-          : 'Code, documentation and test verdicts are on record — no test run is on record behind the verdicts. Run the suite in stage 5 before handing this over.',
+          : `Code, documentation and test verdicts are on record — no test run is on record behind the verdicts. Run the suite in stage ${stageNumber('testing')} before handing this over.`,
       })
     : !keyUser && !hasGenerated && tests.total === 0 && !hasDocs
       ? phase('delivery', {
@@ -1286,7 +1310,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
     const noAnalysis = (base: RailStep): RailStep =>
       stale(base, 'Made before this project had a signed analysis — run the analysis, then make it again.', 'Out of date');
     const leftovers = hasGenerated || tests.total > 0 || hasDocs;
-    return [
+    return inToolOrder([
       analyze,
       hasDesign ? noAnalysis(design) : design,
       hasGenerated ? noAnalysis(transformation) : transformation,
@@ -1296,10 +1320,10 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
       leftovers
         ? stale(delivery, 'Nothing can be handed over before a signed analysis — run the analysis first.', 'Blocked')
         : delivery,
-    ];
+    ]);
   }
 
-  return [
+  return inToolOrder([
     hasRun && s.sourceChanged
       ? stale(analyze, 'The source on this project is not the one the signed run analysed — re-run the analysis.', 'Source changed')
       : hasRun && s.unverifiedInputs.length > 0
@@ -1349,7 +1373,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
       : blockers.length > 0
         ? stale(delivery, `Handover blocked — built for ${prevBasis}: ${blockers.join(', ')}.`, 'Blocked')
         : delivery,
-  ];
+  ]);
 }
 
 /**

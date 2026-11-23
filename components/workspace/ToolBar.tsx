@@ -9,7 +9,7 @@ import { nextPhaseKey, PHASE_PURPOSE, phaseNeeds, type PhaseKey, type PhaseState
 import { toolMark, type WorkspaceView } from '@/lib/workspace-model';
 import { useWorkspaceLayer } from '@/hooks/useWorkspaceLayer';
 import { stageHref, WORKSPACE_RETURN, type WorkspaceReturnPoint } from '@/lib/workspace-back-href';
-import { toolsNextHint, wt } from '@/lib/workspace-messages';
+import { toolsNextHint, toolsPosition, toolsPositionLabel, wt } from '@/lib/workspace-messages';
 import InfoPopover from './InfoPopover';
 import { useAnalysisRead } from '@/hooks/useAnalysisRead';
 import { analysisKeyOfBase, resultReadyTag } from '@/lib/analysis-read';
@@ -370,10 +370,16 @@ function ToolsNav({
     </div>
   ));
 
+  if (surface === 'stage') {
+    return <FamilyToolStrip tools={tools} current={current} items={barItems} />;
+  }
+
   // Hidden by width, so the open bar and the menu are never both reachable at
   // once. Open: the bar from 601 px, the menu on a phone (§2.9). Otherwise the
   // bar from 1025 px (breakpoint L), the menu below it.
-  const barHidden = open ? 'max-[600px]:hidden' : 'max-[1024px]:hidden';
+  // One breakpoint, its two sides: Tailwind's `max-[N]` is `width < N` and `min-[N]` is `width >= N`, so a pair
+  // of `max-[1024px]` and `min-[1025px]` left exactly 1024 px with both navigations (UX review 22.11.2026, Q9).
+  const barHidden = open ? 'max-[601px]:hidden' : 'max-[1025px]:hidden';
   const menuHidden = open ? 'min-[601px]:hidden' : 'min-[1025px]:hidden';
   const hook = (value: 'open' | 'menu') =>
     surface === 'workspace'
@@ -435,6 +441,89 @@ function ToolsNav({
         )}
       </div>
     </>
+  );
+}
+
+/**
+ * The tool row of the tools' family (mock-ups of 15.11.2026, ADR-140; UX review 22.11.2026, Q9, Q12, L5): the same
+ * row on every tool, at every width — no menu, no second navigation, no hint line under it.
+ *
+ *   - **One row.** "Tools", the seven tools with their marks, and the legend at the end. When the row does not fit,
+ *     the legend steps back (below 1280 px; each mark keeps its words for a screen reader) and the row scrolls
+ *     sideways with a fade on the edge where more tools wait, the current tool scrolled into view.
+ *   - **On a phone, "2 of 7"** (L5) stands where "Tools" stands: where the reader is in the seven, with the state marks
+ *     on every tool in the strip — the old "Tools" menu hid both.
+ *   - **44 px touch targets** (Q12): every tool link is 44 px high on a touch screen and on a phone.
+ *
+ * What each tool is for stays each link's accessible description (`describedBy`), as on the workspace's bar.
+ */
+function FamilyToolStrip({
+  tools,
+  current,
+  items,
+}: {
+  tools: readonly WorkspaceTool[];
+  current?: PhaseKey;
+  items: React.ReactNode;
+}) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const [edges, setEdges] = useState<{ start: boolean; end: boolean }>({ start: false, end: false });
+  const at = current ? tools.findIndex((t) => t.key === current) : -1;
+  useEffect(() => {
+    const row = rowRef.current;
+    if (!row || typeof window === 'undefined') return undefined;
+    const read = () => {
+      const more = row.scrollWidth - row.clientWidth > 1;
+      setEdges({ start: more && row.scrollLeft > 1, end: more && row.scrollLeft + row.clientWidth < row.scrollWidth - 1 });
+    };
+    // The current tool in view: on a phone the row starts scrolled to it, not to Analyze.
+    const here = row.querySelector<HTMLElement>('a[aria-current="page"]');
+    if (here && row.scrollWidth > row.clientWidth) {
+      const left = here.offsetLeft - row.offsetLeft - 16;
+      row.scrollLeft = Math.max(0, left);
+    }
+    read();
+    row.addEventListener('scroll', read, { passive: true });
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(read);
+    observer?.observe(row);
+    return () => {
+      row.removeEventListener('scroll', read);
+      observer?.disconnect();
+    };
+  }, [current]);
+  // The fade is a utility of `app/globals.css` (`cc-fade-*`): no colour or gradient literal in a component.
+  const fade = edges.start && edges.end ? 'cc-fade-both' : edges.end ? 'cc-fade-end' : edges.start ? 'cc-fade-start' : undefined;
+  return (
+    <nav data-stage-tools="open" aria-label={wt('tools.label')} className="cc-no-print flex min-w-0 items-center gap-2">
+      <span aria-hidden={true} className="shrink-0 cc-text-label text-cc-ink-muted max-sm:hidden">
+        {wt('tools.label')}
+      </span>
+      {at >= 0 ? (
+        <span data-stage-tools-position="" className="shrink-0 cc-text-meta whitespace-nowrap text-cc-ink-muted sm:hidden">
+          <span aria-hidden={true}>{toolsPosition(at + 1, tools.length)}</span>
+          <span className="sr-only">{toolsPositionLabel(at + 1, tools.length, tools[at].label)}</span>
+        </span>
+      ) : null}
+      <div
+        ref={rowRef}
+        data-stage-tools-row=""
+        className={cn(
+          // `relative`: the links' `sr-only` descriptions (position: absolute) stay inside the scrolling row instead of
+          // widening the page on a phone.
+          'relative flex min-w-0 flex-1 flex-nowrap items-center gap-2 overflow-x-auto overscroll-x-contain py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [&>*]:shrink-0',
+          '[&_a]:whitespace-nowrap [&_a]:py-1 max-sm:[&_a]:min-h-11',
+          // The current tool filled in ink, as the family draws it; its marks in the light tints that read on ink.
+          '[&_a[aria-current=page]]:border-cc-ink [&_a[aria-current=page]]:bg-cc-ink [&_a[aria-current=page]]:text-cc-on-dark',
+          '[&_a[aria-current=page]_[data-workspace-tool-mark=check]]:text-cc-success-border [&_a[aria-current=page]_[data-workspace-tool-mark=half]]:text-cc-information-border',
+          fade,
+        )}
+      >
+        {items}
+      </div>
+      <div className="ml-auto shrink-0 max-xl:hidden">
+        <ToolsLegend />
+      </div>
+    </nav>
   );
 }
 

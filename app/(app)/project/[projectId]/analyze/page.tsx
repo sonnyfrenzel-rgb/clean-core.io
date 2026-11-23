@@ -1617,7 +1617,7 @@ function AnalyzeScorePage() {
     // the upload form below keeps its reading width, left-aligned to it.
     <StageFrame stage="analyze" className="motion-safe:animate-in fade-in duration-500">
       <StageHeader tools={{ steps: phases, current: 'analyze' }}
-        projectName={project?.name}
+        project={project}
         stage="analyze"
         actions={
           legacyCode || (hasResults && project?.analysis) ? (

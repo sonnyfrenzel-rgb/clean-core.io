@@ -207,9 +207,9 @@
     ],
     "generationBlockerMessages": {
       "sourceChanged": "The source changed after the signed run. Re-run the analysis in stage 1 first.",
-      "designStale": "The solution design was generated for a previous source. Regenerate it in stage 2 first.",
-      "signOffStale": "The architecture sign-off was given for a previous source. Confirm it again in stage 2.",
-      "codeStale": "The code was generated from a previous source. Regenerate it in stage 3 first."
+      "designStale": "The solution design was generated for a previous source. Regenerate it in stage 3 first.",
+      "signOffStale": "The architecture sign-off was given for a previous source. Confirm it again in stage 3.",
+      "codeStale": "The code was generated from a previous source. Regenerate it in stage 4 first."
     },
     "handoverBlockerReasons": [
       "the analysis (the source changed after the signed run)",
@@ -625,8 +625,114 @@
       }
     },
     {
-      "key": "design",
+      "key": "tco",
       "n": 2,
+      "label": "Economics",
+      "route": "/project/{projectId}/tco",
+      "page": "app/(app)/project/[projectId]/tco/page.tsx",
+      "alsoWrites": [],
+      "purpose": "Price the upgrade effort with the reader's own cost figures, on assumed coefficients. A demonstration model, not a business case.",
+      "inputs": {
+        "required": [
+          {
+            "field": "activeRunId",
+            "from": "project",
+            "via": "enforceActiveRun",
+            "why": "enforceActiveRun redirects to Analyze without it"
+          },
+          {
+            "field": "cleanCoreScore",
+            "from": "run",
+            "why": "the baseline; without it the page declines to model anything"
+          }
+        ],
+        "optional": [
+          {
+            "field": "legacyCode",
+            "from": "project",
+            "why": "its line count seeds the editable estate size — not multiplied"
+          },
+          {
+            "field": "analysis",
+            "from": "run",
+            "why": "the model's business value assessment and action plan, folded and marked as a proposal (components/tco/BusinessValuePlan.tsx) — moved here from Analyze on 02.10.2026; read through readStoredAnalysis, which masks every amount"
+          }
+        ]
+      },
+      "outputs": {
+        "clientWrites": [],
+        "serverWrites": null,
+        "consumedByNextStage": [],
+        "note": "The only stage that writes nothing. Every cost figure lives in component state and is lost on reload."
+      },
+      "preconditions": {
+        "enforceActiveRun": true,
+        "generationBlockersTarget": null,
+        "otherGates": [
+          "cleanCoreScore must be a number below TCO_TARGET_SCORE (95); otherwise the page renders 'No baseline to model against'",
+          "no developer rate, key-user rate or investment means no savings forecast — the missing input is named"
+        ]
+      },
+      "errors": [
+        {
+          "when": "there is no signed score",
+          "does": "renders 'No baseline to model against' and says every figure derives from a signed run."
+        },
+        {
+          "when": "the score is at or above 95",
+          "does": "declines to price an improvement rather than reporting a negative return."
+        },
+        {
+          "when": "loadProjectAndHydrate rejects",
+          "does": "logged only; loading stops and the page renders with its default inputs."
+        }
+      ],
+      "referenceCase": "RC-tco-model-estimate",
+      "alsoDisplays": [
+        "legacyCode",
+        "cleanCoreScore"
+      ],
+      "rendered": {
+        "shows": [
+          {
+            "field": "legacyCode",
+            "locator": "[data-stage-output=\"legacyCode\"]",
+            "text": "{lines:project.legacyCode} LoC",
+            "why": "the line count on the lines-of-custom-code row of the inputs checklist, visible without opening it — the only form the source takes on this page"
+          }
+        ],
+        "onlyAfterARun": [],
+        "notShown": [
+          {
+            "field": "cleanCoreScore",
+            "why": "on this path the score is never printed: it is the forecast's input. The branch that does print it is the refusal for a score at or above TCO_TARGET_SCORE, which this reference case, at 62, does not take"
+          }
+        ],
+        "notYetAnchored": []
+      },
+      "workspace": {
+        "kind": "shown",
+        "facet": "costs",
+        "where": [
+          {
+            "module": "components/workspace/ToolBar.tsx",
+            "evidence": "link={{ base: `/project/${projectId}`, view, from: compact ? WORKSPACE_RETURN.headTools : WORKSPACE_RETURN.tools, layer }}"
+          },
+          {
+            "module": "components/workspace/StatusLine.tsx",
+            "evidence": "data-workspace-status-tool={phase.key}"
+          },
+          {
+            "module": "lib/workspace-model.ts",
+            "evidence": "value: 'assumed effort coefficients, not observed costs'"
+          }
+        ],
+        "note": "The Costs status with the Simulation chip and the Costs layer; the model itself is run in the Economics tool."
+      }
+    },
+    {
+      "key": "design",
+      "n": 3,
       "label": "Design",
       "route": "/project/{projectId}/design",
       "page": "app/(app)/project/[projectId]/design/page.tsx",
@@ -838,7 +944,7 @@
     },
     {
       "key": "transformation",
-      "n": 3,
+      "n": 4,
       "label": "Transformation",
       "route": "/project/{projectId}/transformation",
       "page": "app/(app)/project/[projectId]/transformation/page.tsx",
@@ -982,7 +1088,7 @@
     },
     {
       "key": "documentation",
-      "n": 4,
+      "n": 5,
       "label": "Documentation",
       "route": "/project/{projectId}/documentation",
       "page": "app/(app)/project/[projectId]/documentation/page.tsx",
@@ -1124,7 +1230,7 @@
     },
     {
       "key": "testing",
-      "n": 5,
+      "n": 6,
       "label": "Testing",
       "route": "/project/{projectId}/testing",
       "page": "app/(app)/project/[projectId]/testing/page.tsx",
@@ -1315,112 +1421,6 @@
           }
         ],
         "note": "The verdicts as the Execution status, failed as a status of its own, and a recorded run against mocks named from the server's receipt (a stored Simulated names no execution since 3.0.9). The cases and the suite are read in the Testing tool."
-      }
-    },
-    {
-      "key": "tco",
-      "n": 6,
-      "label": "Economics",
-      "route": "/project/{projectId}/tco",
-      "page": "app/(app)/project/[projectId]/tco/page.tsx",
-      "alsoWrites": [],
-      "purpose": "Price the upgrade effort with the reader's own cost figures, on assumed coefficients. A demonstration model, not a business case.",
-      "inputs": {
-        "required": [
-          {
-            "field": "activeRunId",
-            "from": "project",
-            "via": "enforceActiveRun",
-            "why": "enforceActiveRun redirects to Analyze without it"
-          },
-          {
-            "field": "cleanCoreScore",
-            "from": "run",
-            "why": "the baseline; without it the page declines to model anything"
-          }
-        ],
-        "optional": [
-          {
-            "field": "legacyCode",
-            "from": "project",
-            "why": "its line count seeds the editable estate size — not multiplied"
-          },
-          {
-            "field": "analysis",
-            "from": "run",
-            "why": "the model's business value assessment and action plan, folded and marked as a proposal (components/tco/BusinessValuePlan.tsx) — moved here from Analyze on 02.10.2026; read through readStoredAnalysis, which masks every amount"
-          }
-        ]
-      },
-      "outputs": {
-        "clientWrites": [],
-        "serverWrites": null,
-        "consumedByNextStage": [],
-        "note": "The only stage that writes nothing. Every cost figure lives in component state and is lost on reload."
-      },
-      "preconditions": {
-        "enforceActiveRun": true,
-        "generationBlockersTarget": null,
-        "otherGates": [
-          "cleanCoreScore must be a number below TCO_TARGET_SCORE (95); otherwise the page renders 'No baseline to model against'",
-          "no developer rate, key-user rate or investment means no savings forecast — the missing input is named"
-        ]
-      },
-      "errors": [
-        {
-          "when": "there is no signed score",
-          "does": "renders 'No baseline to model against' and says every figure derives from a signed run."
-        },
-        {
-          "when": "the score is at or above 95",
-          "does": "declines to price an improvement rather than reporting a negative return."
-        },
-        {
-          "when": "loadProjectAndHydrate rejects",
-          "does": "logged only; loading stops and the page renders with its default inputs."
-        }
-      ],
-      "referenceCase": "RC-tco-model-estimate",
-      "alsoDisplays": [
-        "legacyCode",
-        "cleanCoreScore"
-      ],
-      "rendered": {
-        "shows": [
-          {
-            "field": "legacyCode",
-            "locator": "[data-stage-output=\"legacyCode\"]",
-            "text": "{lines:project.legacyCode} LoC",
-            "why": "the line count on the lines-of-custom-code row of the inputs checklist, visible without opening it — the only form the source takes on this page"
-          }
-        ],
-        "onlyAfterARun": [],
-        "notShown": [
-          {
-            "field": "cleanCoreScore",
-            "why": "on this path the score is never printed: it is the forecast's input. The branch that does print it is the refusal for a score at or above TCO_TARGET_SCORE, which this reference case, at 62, does not take"
-          }
-        ],
-        "notYetAnchored": []
-      },
-      "workspace": {
-        "kind": "shown",
-        "facet": "costs",
-        "where": [
-          {
-            "module": "components/workspace/ToolBar.tsx",
-            "evidence": "link={{ base: `/project/${projectId}`, view, from: compact ? WORKSPACE_RETURN.headTools : WORKSPACE_RETURN.tools, layer }}"
-          },
-          {
-            "module": "components/workspace/StatusLine.tsx",
-            "evidence": "data-workspace-status-tool={phase.key}"
-          },
-          {
-            "module": "lib/workspace-model.ts",
-            "evidence": "value: 'assumed effort coefficients, not observed costs'"
-          }
-        ],
-        "note": "The Costs status with the Simulation chip and the Costs layer; the model itself is run in the Economics tool."
       }
     },
     {
@@ -1961,10 +1961,10 @@
         "generationBlockers": {
           "transformation": [],
           "documentation": [
-            "The code was generated from a previous source. Regenerate it in stage 3 first."
+            "The code was generated from a previous source. Regenerate it in stage 4 first."
           ],
           "testing": [
-            "The code was generated from a previous source. Regenerate it in stage 3 first."
+            "The code was generated from a previous source. Regenerate it in stage 4 first."
           ]
         },
         "handoverBlockers": [

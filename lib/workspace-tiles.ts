@@ -1,5 +1,5 @@
 import type { Project } from '@/lib/types';
-import { PHASES, staleness, workflowSteps, nextPhaseKey, toolOnRecord, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
+import { PHASE_KEYS, PHASES, staleness, workflowSteps, nextPhaseKey, toolOnRecord, type PhaseKey, type RailStep } from '@/lib/workflow-steps';
 import { DECISION_OPTION_LABELS, optionOfArchitecture, type DecisionOption } from '@/lib/decision-options';
 import { wsContinue, wsDeliveredOn, wsNotNeeded, wt } from '@/lib/workspace-messages';
 import { ATTENTION_LABEL } from '@/lib/home-status';
@@ -28,7 +28,7 @@ import { isoDate } from '@/lib/workspace-rows';
 export type ListedProject = Project & { id: string };
 
 /** The six tools of Re-design, in the tool bar's order. */
-export const REDESIGN_KEYS: readonly PhaseKey[] = ['design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'];
+export const REDESIGN_KEYS: readonly PhaseKey[] = PHASE_KEYS.filter((key) => key !== 'analyze');
 
 export type AnalyseState =
   | { kind: 'signed'; on: string | null }

@@ -59,7 +59,7 @@ else passes, which reads like a code regression and is not one. CI passes the fl
 
 - `app/` — App Router. `app/(app)/` = authenticated product shell; public/legal pages + `api/` at top level.
 - `app/(app)/project/[projectId]/page.tsx` — the **workspace** of a project (`components/workspace/WorkspaceShell.tsx`, model in `lib/workspace-model.ts`): Business, IT and Management view, the six layers, and the tool bar. Every project opens here (3.0.1).
-- `app/(app)/project/[projectId]/<stage>/` — the seven stages as tools of the workspace, one page each: `analyze` → `design` → `transformation` → `documentation` → `testing` → `tco` (Economics) → `delivery`. Order and per-phase state come only from `lib/workflow-steps.ts` — tool bar, rail, dashboard and delivery all read it, and none reads `project.status` (see `docs/ARCHITECTURE.md` §2).
+- `app/(app)/project/[projectId]/<stage>/` — the seven stages as tools of the workspace, one page each: `analyze` → `tco` (Economics) → `design` → `transformation` → `documentation` → `testing` → `delivery` (ADR-128). Order and per-phase state come only from `lib/workflow-steps.ts` — tool bar, rail, dashboard and delivery all read it, and none reads `project.status` (see `docs/ARCHITECTURE.md` §2).
 - `app/api/*/route.ts` — ~38 route handlers (gemini proxy, runs/create, mfa, admin, export sign/verify, s4 connectivity, email, abcd-classify).
 - `components/` — shared `.tsx`; feature subfolders `components/analyze/`, `components/design/`.
 - `lib/` — non-UI logic. `lib/abap/` is the deterministic evidence/grounding engine (~24 files).

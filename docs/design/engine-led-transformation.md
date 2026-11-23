@@ -151,10 +151,11 @@ first), released successors of the objects the unit reads, the data mode. Rules 
 shared pack — each unit carries its own rules (§8). Over budget, lines drop in the reverse of this
 order and the pack says how many were dropped.
 
-**Economics is not a source.** Economics comes after Transformation in `PHASES`
-(`lib/workflow-steps.ts`: Analyze → Design → Transformation → Documentation → Testing → Economics →
-Delivery). No cost figure, scenario or revision enters the pack, the scaffold, the screen's chain or
-the tips (owner correction, 12.10.2026).
+**Economics is not a source.** Since ADR-128 (5) Economics comes second in `PHASES`
+(`lib/workflow-steps.ts`: Analyze → Economics → Design → Transformation → Documentation → Testing →
+Delivery), before Transformation — and it still is not a source: no cost figure, scenario or revision
+enters the pack, the scaffold, the screen's chain or the tips (owner correction, 12.10.2026). The chain
+leaves it out by name (`CHAIN_PHASES` in `lib/transformation-chain.ts`), not by its place in the order.
 
 ## 6. Stage 2 — The deterministic scaffold
 
@@ -774,8 +775,8 @@ what is different in factual terms:
   Design) and each phase's contribution slots from `CONTEXT_SLOTS` in `lib/transformation-context.ts`
   — `analyze: ['first-insights', 'analyze', 'business-rules']`, `design: ['design', 'requirements',
   'decision-record']`. A spec asserts that every slot's phase comes before `transformation` in
-  `PHASES` and that the order matches, so the chain cannot drift and Economics (after Transformation)
-  can never appear.
+  `PHASES` and that the order matches, so the chain cannot drift and Economics (excluded by name since
+  it moved before Design, ADR-128) can never appear.
 - **Each slot** shows: the tool name, a link back to it (opens in a new tab while a generation runs,
   labelled so; same tab before and after), its date or revision (run date, need revision, spec
   revision, decision date), its facts with the level chip — *Reconstructed* (engine), *Confirmed*

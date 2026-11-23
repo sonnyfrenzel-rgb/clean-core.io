@@ -37,11 +37,11 @@ Under `app/(app)/project/[projectId]/`, each stage is its own `page.tsx` (`'use 
 | # | Stage | Route | Purpose |
 |---|-------|-------|---------|
 | 1 | Analyze | `analyze/` | Upload ABAP → run static evidence engine → code inventory + findings → create Run |
-| 2 | Design | `design/` | Target architecture (RAP/CAP/…), topology, roadmap |
-| 3 | Transformation | `transformation/` | Gemini-generated modern code |
-| 4 | Documentation | `documentation/` | Process docs / BPMN |
-| 5 | Testing | `testing/` | Test generation & sandbox execution against mocks; optional S/4 connection check — **tests against a tenant are locked** (`lib/locked-paths.ts`, SECURITY.md §7.1) |
-| 6 | Economics | `tco/` | Total cost of ownership — a model on assumed coefficients |
+| 2 | Economics | `tco/` | Total cost of ownership — a model on assumed coefficients; second since ADR-128 (5), it prices the program decision before Design |
+| 3 | Design | `design/` | Target architecture (RAP/CAP/…), topology, roadmap |
+| 4 | Transformation | `transformation/` | Gemini-generated modern code |
+| 5 | Documentation | `documentation/` | Process docs / BPMN |
+| 6 | Testing | `testing/` | Test generation & sandbox execution against mocks; optional S/4 connection check — **tests against a tenant are locked** (`lib/locked-paths.ts`, SECURITY.md §7.1) |
 | 7 | Delivery | `delivery/` | Final delivery + audit pack |
 
 Downstream stages call `enforceActiveRun()` — missing Run redirects to Analyze. Legacy runs degrade gracefully via `lib/run-capabilities.ts` (shape detection → `LegacyRunBanner`).

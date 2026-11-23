@@ -1938,7 +1938,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
   if (generating) return (
     <StageFrame stage="transformation">
-      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} projectName={project?.name}>
+      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} project={project}>
         <span data-track-loading>{project ? track.loading : 'Opening the project…'}</span>
       </StageHeader>
       {/* The generation, while it runs (roadmap 3.0.12). It was a progress
@@ -1964,7 +1964,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
   if (busy && !transformedCode) return (
     <StageFrame stage="transformation">
-      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} projectName={project?.name}>
+      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} project={project}>
         {/* Before the project has loaded its track is unknown, and the
             default copy named the side-by-side track for an ABAP Cloud
             project. */}
@@ -1978,7 +1978,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
 
   if (evidencePending) return (
     <StageFrame stage="transformation">
-      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} projectName={project?.name}>
+      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} project={project}>
         <span data-evidence-loading>Opening the project…</span>
       </StageHeader>
       <div className="mt-6">
@@ -1991,7 +1991,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
   // the step list the engine built; nothing is generated, leased or filled.
   if (keyUserWhole) return (
     <StageFrame stage="transformation">
-      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} projectName={project?.name}>
+      <StageHeader stage="transformation" tools={{ steps: phases, current: 'transformation' }} project={project}>
         <span data-track-lead="" data-key-user-lead="">
           The decision is key-user extensibility: no code is generated. A key user configures the program in the system from the step list the engine built from the signed run.
         </span>
@@ -2238,7 +2238,7 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
           actions, the facets below it carry the answer. */}
       <StageHeader tools={{ steps: phases, current: 'transformation' }}
         stage="transformation"
-        projectName={project?.name}
+        project={project}
         actions={
           <>
             <CcButton

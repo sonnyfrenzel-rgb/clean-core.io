@@ -100,7 +100,7 @@ test.describe('the contract', () => {
       "The signed run's inputs cannot all be shown to still match — the target deployment. Re-run the analysis in stage 1 first.",
     ]);
     expect(workflowSteps(p)[0]).toMatchObject({ key: 'analyze', state: 'stale', badge: 'Inputs changed' });
-    expect(workflowSteps(p)[5]).toMatchObject({ key: 'tco', state: 'stale' });
+    expect(workflowSteps(p).find((s) => s.key === 'tco')).toMatchObject({ key: 'tco', state: 'stale' });
   });
 
   test('an input the reader cannot read is invalid, not current', () => {

@@ -313,7 +313,7 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
       <StageHeader
         stage="analyze"
         tools={{ steps: demo.rail, current: 'analyze', base: '/demo' }}
-        title={`${demo.title} — ${demo.rail.find((r) => r.key === 'analyze')?.label ?? 'Analyze'}`}
+        projectName={demo.title}
         eyebrow={<CcTag>{DEMO_TAG}</CcTag>}
         backToMyWorkspace
         toolsNote={softGateShown(progress) ? wt('abiz.softGate') : null}

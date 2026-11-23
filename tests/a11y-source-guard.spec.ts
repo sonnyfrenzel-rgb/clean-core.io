@@ -229,7 +229,9 @@ test.describe('the workspace (roadmap 3.0.4)', () => {
 
   test('on a phone the toolbar is a menu in every view (§2.9)', () => {
     const src = code('components/workspace/ToolBar.tsx');
-    expect(src).toContain('max-[600px]:hidden');
+    // One breakpoint, its two sides (Tailwind v4: `max-[N]` is width < N, `min-[N]` is width >= N), so no width
+    // shows both the bar and the menu (UX review 22.11.2026, Q9).
+    expect(src).toContain('max-[601px]:hidden');
     expect(src).toContain('min-[601px]:hidden');
   });
 

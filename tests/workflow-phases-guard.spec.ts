@@ -65,13 +65,17 @@ const acceptanceProject = (over: Partial<Project> = {}): Project => ({
 const byKey = (p: Project | null) => Object.fromEntries(workflowSteps(p).map((s) => [s.key, s]));
 
 test.describe('the contract', () => {
-  test('seven phases in the roadmap order; Upload is part of Analyze, Economics is sixth', () => {
+  test('seven phases in the tool order; Upload is part of Analyze, Economics is second (ADR-128 (5))', () => {
     expect(PHASES.map((p) => p.key)).toEqual([
-      'analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery',
+      'analyze', 'tco', 'design', 'transformation', 'documentation', 'testing', 'delivery',
     ]);
-    expect(PHASES.find((p) => p.key === 'tco')).toMatchObject({ n: 6, label: 'Economics' });
+    expect(PHASES.find((p) => p.key === 'tco')).toMatchObject({ n: 2, label: 'Economics' });
+    expect(PHASES.map((p) => p.n)).toEqual([1, 2, 3, 4, 5, 6, 7]);
     expect(PHASES.map((p) => p.label)).not.toContain('Upload');
+    // Every list of phases the product reads comes out in that order — the project's and the demo's.
     expect(workflowSteps(null)).toHaveLength(7);
+    expect(workflowSteps(null).map((s) => s.key)).toEqual(PHASES.map((p) => p.key));
+    expect(workflowSteps(null).map((s) => s.n)).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
   test('generated tests that never ran are a draft, and delivery is not ready on them', () => {

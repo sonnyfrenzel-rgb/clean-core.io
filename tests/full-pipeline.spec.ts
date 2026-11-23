@@ -376,7 +376,7 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     console.log('Navigating to Stage 4: Documentation...');
     await openTool(page, 'documentation');
     // One name for the stage everywhere (UX-169): the title is the stepper's label.
-    await page.waitForSelector('h1[data-stage-title]:has-text("Documentation")', { timeout: 45000 });
+    await page.waitForSelector('[data-stage-header="documentation"] h1[data-stage-title]', { timeout: 45000 });
 
     // Roadmap 3.0.5: the documentation is read out of the code by the engine;
     // since 03.10.2026 opening the stage writes it, without a click.

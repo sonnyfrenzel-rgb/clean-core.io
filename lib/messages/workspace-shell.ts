@@ -100,6 +100,16 @@ export function infoAboutLabel(subject: string): string {
   return `About ${subject}`;
 }
 
+/** "2 of 7" — where the current tool stands in the phone tool strip (UX review 22.11.2026, L5). */
+export function toolsPosition(index: number, total: number): string {
+  return `${index} of ${total}`;
+}
+
+/** "Tool 2 of 7: Economics" — the same, for a screen reader. */
+export function toolsPositionLabel(index: number, total: number, tool: string): string {
+  return `Tool ${index} of ${total}: ${tool}`;
+}
+
 /** "Next: Analyze — Reads the code and signs a run." — the hint row under the tools. */
 export function toolsNextHint(tool: string, purpose: string): string {
   return `Next: ${tool} — ${purpose}`;

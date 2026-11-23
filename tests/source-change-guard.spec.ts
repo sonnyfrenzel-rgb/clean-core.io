@@ -102,14 +102,14 @@ test.describe('the contract', () => {
     const design = workflowSteps(redesigned).find((x) => x.key === 'design')!;
     expect(design).toMatchObject({ state: 'partial', badge: 'Re-confirm' });
     expect(generationBlockers(redesigned, 'transformation')).toEqual([
-      'The architecture sign-off was given for a previous source. Confirm it again in stage 2.',
+      'The architecture sign-off was given for a previous source. Confirm it again in stage 3.',
     ]);
 
     const reconfirmed = afterChange({ solutionDesign: 'design for B', architectSignOffAt: '2026-09-11T09:00:00.000Z' });
     expect(generationBlockers(reconfirmed, 'transformation')).toEqual([]);
     // Documentation and testing still wait for code built on the current design.
     expect(generationBlockers(reconfirmed, 'documentation')).toEqual([
-      'The code was generated from a previous source. Regenerate it in stage 3 first.',
+      'The code was generated from a previous source. Regenerate it in stage 4 first.',
     ]);
 
     const all = afterChange({

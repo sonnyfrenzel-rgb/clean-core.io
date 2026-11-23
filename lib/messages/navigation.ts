@@ -24,6 +24,8 @@ export const NAVIGATION_MESSAGES = {
   'nav.allProjects': 'all projects',
   'nav.goToMyWorkspace': 'Go to My workspace',
   'nav.backToProjectWorkspace': 'Back to project workspace',
+  // The demo's workspace, as the family's way back names it (`familyBackLink`).
+  'nav.demoWorkspace': 'Demo workspace',
   // The eyebrow of every in-page anchor bar (`components/PageAnchorBar.tsx`, ADR-091): one wording on every tool.
   'nav.onThisPage': 'On this page',
   // The way back from a choice to the place that asked for it (`lib/choice-addresses.ts`,

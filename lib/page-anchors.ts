@@ -34,7 +34,15 @@ export interface PageAnchor {
   count?: string | null;
   /** The reader question the section answers — the chip's tooltip. */
   title?: string;
+  /**
+   * `open` paints the count amber: open questions, the one count that asks the reader for something (ADR-126 (3)).
+   * Every other count is a quiet grey badge.
+   */
+  tone?: 'open';
 }
+
+/** The most items one "On this page" bar names (ADR-126 (3)). */
+export const PAGE_ANCHOR_MAX = 6;
 
 /**
  * The section ids each tool's bar may name. A guard reads these and finds each

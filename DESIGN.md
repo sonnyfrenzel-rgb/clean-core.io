@@ -158,10 +158,10 @@ A 4 px grid as tokens; there are no other spacings.
 |---|---|---|
 | `primary` | Surface `--cc-brand-strong`, text white, hover `--cc-brand-deep` | **one** per area — an area is a card, a dialog or a bar; the page's main action is in "Next step" |
 | `secondary` | Surface `#f0fdf4`, border `--cc-brand-strong`, text `--cc-brand-strong` (4.8 : 1) | further actions |
-| `ghost` | Surface white, border `--cc-field-border`, text `--cc-ink-muted` | Cancel, secondary actions; destructive with `error` text |
+| `ghost` | Surface white, border `--cc-field-border`, text `--cc-ink` (ADR-140 W3; `--cc-ink-muted` before 3.5.0) | Cancel, secondary actions; destructive with `error` text |
 | `dark` | Surface `#030712`, text white | **only** for the binding confirmation (decision) in the message box or the edit footer — never next to a `primary` in the same bar |
 
-Height 32 px *compact*, 40 px *cozy*. Destructive actions go through a **message box** (§2.6), never through `window.confirm`.
+Height 32 px *compact*, 40 px *cozy*; a long label wraps balanced inside the button and grows it by the line (ADR-140 W3). Destructive actions go through a **message box** (§2.6), never through `window.confirm`.
 
 Not buttons in the sense of this rule, but with a fixed appearance:
 
@@ -342,26 +342,14 @@ Headings: the project title is `h1`, every section `h2`, every card `h3`; no lev
 | **Layer** (anchor bar) | jumps to a section of the page and marks where you are; in IT, the IT sections (ADR-086); Management has none (ADR-087) | does not switch the view | Business: its one layer, without a bar (ADR-096); IT and Management: the answer at the top | URL fragment (`#evidence`, `#it-objects`, `#standard`) |
 | **Tool** (toolbar) | opens the stage as a page of its own; "Back to workspace" returns to view and layer; marks whether the tool has been used in this project, or is out of date (ADR-060) | marks no position — the workspace is no stage | — | URL of the stage |
 
-**The header of a stage** (ADR-050). A stage is a tool page of the workspace, not a landing section. Its
-header comes from `StageHeader` and stands like the project title: **22 px / 800, `-0.02em`, `--cc-ink`**, as `h1`. The
-icon stands neutrally in front of it — 20 px, `--cc-ink-muted`, without a surface; no green bubble, because in the workspace green means
-evidenced (§1.1). Above the title the link **"Back to workspace"** (13 px / 600, `--cc-ink-muted`, arrow left; a link,
-not a button), which leads back to the view and layer from which the stage was opened — on a demo stage to the demo
-workspace (`/demo/workspace`) by the same rule. On the same row, top right, the **view switch** (ADR-105): the segmented
-control "Business | IT | Management" of §1.5, the view the tool is read in selected (from `?view=`; none or an unknown
-one reads as Business, where the way back leads); one click changes the view in the address and stays on the same tool,
-every other parameter kept — the view stays a view only. On S it wraps under the way back and its segments share the
-row. Below it the same toolbar as in
-the workspace (ADR-060): the seven tools with their marks and the legend, the stage's own tool selected in `--cc-ink` with
-`aria-current="page"`, each link keeping view, origin and layer — side by side from breakpoint L, a "Tools" menu below.
-It is the one way across for every account and in the demo; the seven-circle stepper, its rail and the "Proceed to …"
-footer are gone (ADR-061). Every stage stands in the **same frame** (`StageFrame`, ADR-063): way back, tools bar, title and content start at the same x on all seven tools and the demo at every width; a stage sets no width of its own, a narrower block is left-aligned to the frame. Eyebrow and lead
-stay, in the scale of §1.2 (micro label, body text). A tool with several long sections carries the **"On this page" bar** (ADR-091) — the IT view's anchor
-bar, `PageAnchorBar`, the same on every tool: under the header and the page's answer, before the first section, at the
-frame's full width, sticky under the shell bar, the section being read marked (on Analyze under the score hero, which
-has no anchor of its own — ADR-093). Analyze, Transformation, Documentation,
-Testing and Delivery carry it; Design (a canvas with its own tabs) and Economics (a guided flow whose step guide is its
-navigation) do not.
+**The header of a stage** (ADR-050; since 3.5.0 the family frame of §2.12). A stage is a tool page of the workspace,
+not a landing section. Its header comes from `StageHeader`, the one header of the tools' family — the program's
+business name as the `h1` (**22 px / 800, `-0.02em`, `--cc-ink`**), the tool as the eyebrow above it, one way back, one
+tool row — and is described in §2.12. Every stage stands in the **same frame** (`StageFrame`, ADR-063): way back, tool
+row, title and content start at the same x on all seven tools and the demo at every width; a stage sets no width of its
+own, a narrower block is left-aligned to the frame. The seven-circle stepper, its rail and the "Proceed to …" footer are
+gone (ADR-061). A tool with more than one section carries the **"On this page" bar** (ADR-091, ADR-126 (3)),
+`PageAnchorBar`, the same on every tool (§2.12).
 
 **The Design tool reads canvas first** (ADR-106, amending ADR-102's order). The canvas is the page's picture, right
 under the header; the questions for the business stand beside it as its side panel from L (below it on S and M) — the
@@ -478,6 +466,27 @@ The most used pattern — for confirming rules, inviting, capturing assumptions:
   "Why?" popover — otherwise a disclosure line breaks into many lines.
 - **Initials in the header:** popover with names and "Read access since" (roadmap 5.5), only for the owner.
 
+### 2.12 The tools' family frame (3.5.0)
+
+The eight family mock-ups of 15.11.2026 (`docs/roadmap/*-next-mockup.html`, `documentation-v2`, `analyze-family`,
+`settings-next`; ADR-126 – ADR-132, ADR-139, ADR-140) share one frame. It is built once; a tool fills its body.
+Sizes come from §1.2, not from the mock-ups (owner, 22.11.2026).
+
+| Part | Component | What it is |
+|---|---|---|
+| Head row | `components/StageHeader.tsx` | `‹ My workspace · <program>` — one way back (`familyBackLink` in `lib/workspace-back-href.ts`: My workspace by default and on the project's entry; the workspace's view and layer while the address carries one; the demo workspace on a demo tool; a choice's `?origin=` keeps `ChoiceBackLink`). Right: the view switch on **Analyze and Design** only, on the five others the note *One page for every reader: business, IT and management* (`lib/family-frame.ts`; the view stays in the address). Beside it **Invite to view** for the owner (`components/family/InviteToView.tsx`, the existing invitation dialog). |
+| Tool row | `StageToolBar` (`components/workspace/ToolBar.tsx`, `FamilyToolStrip`) | One row on every tool and width: "Tools", the seven tools in the order of `PHASES` (Analyze → Economics → Design → Transformation → Documentation → Testing → Delivery, ADR-128) with their marks, the legend at the end (steps back below 1280 px). Overflow scrolls sideways with a fade; the current tool filled in ink and scrolled into view. On S "2 of 7" where "Tools" stands; 44 px targets on S and under a coarse pointer. No menu, no hint line. |
+| Title block | `StageHeader` | Eyebrow: the tool's icon (16 px, muted) and *Tool · Economics* (micro label), chips beside it. `h1`: the program's business name (`lib/family-title.ts`: the source header's title the engine read for the active run, else the project name). Under it the technical name in mono (12 px / 600). Then the lead (14 px / 500). Stage-wide actions right. |
+| Answer card | `components/family/AnswerCard.tsx` | The first card on every tool. Props: `question`, `chips`, `answer` (one or two sentences, 15 px / 700), `condition` (13 px / 500), `after`, `action` (the page's one primary), `actionNote`, `moreActions`, `facets` (four `FacetProps`), `children`, `id`. Action column drops under the answer below 900 px. |
+| Facets | `Facet`, `Facets` (same file) | `FacetProps`: `label`, `value` (22 px / 800 tabular), `unit`, `note`, `chip`, `href` (jump) or `onClick` (open), `id`. Four columns under a rule, two below 1100 px. |
+| On this page | `components/PageAnchorBar.tsx` | ADR-126 (3): a 48 px sticky white strip under the shell bar reaching over the frame's gutter, *On this page* (13 px / 600, sentence case), items 15 px / 500 in ink with a 3 px brand bar under the current one, at most six (`PAGE_ANCHOR_MAX`), counts as quiet grey badges (`tone: 'open'` amber for open questions), one optional `action` at the right end, a sideways row with fade on S, focus moves to the section heading, no bar for a single section. |
+| Provenance | `components/family/FamilyChip.tsx`, `lib/family-chips.ts` | Six chips (UX review L2): **Signed** (filled), **From the engine** (outline), **Yours** (filled), **AI-generated** (dashed), **Simulation** (dashed), **Not determined** (outline) — 12 px / 600, a white pill whose border carries the meaning. `<FamilyChip kind="ai" />` or `<FamilyChip value={provenanceValue} />` (`familyChipOf` reduces the nine values of §4; *stale* is no chip — a strip and the tool bar's mark say it). |
+
+**Widths** (ADR-140 W1, UX review Q9): the shell bar and the slim one-line footer stand at 1536 px on every page; the
+content of a tool at 1536 px, of a list or reading page at 1280 px, the gutter 16 / 24 / 32 px. A tool's frame starts 16
+px under the shell bar. **Buttons** (W3): 32 / 40 px, a long label wraps balanced inside the button, the ghost's label
+in ink. **Spacing**: 24 px between sections, 16 px between tiles of a grid.
+
 ### 2.11 Show less, lose nothing
 
 For first-time users less is more — the depth stays, it just does not come first (ADR-037, Sonny 15.09.2026):
@@ -592,6 +601,11 @@ forbids freely worded provenance badges (ADR-006).
 | `not-determined` | **Not determined** | neutral | Question mark | could not be determined — with a reason | not computed, No verdict |
 
 Every chip carries **word and icon** — readable without colour, in print and for screen readers.
+
+**In the tools' family (3.5.0) the nine values are shown as six chips** (§2.12, `lib/family-chips.ts`, UX review L2):
+*Signed* ← proven; *From the engine* ← reconstructed, imported (note *imported*); *Yours* ← confirmed; *AI-generated* ←
+proposed; *Simulation* ← simulation, demonstrated-mock (note *mocks*); *Not determined*. *Stale* is no chip there. The
+nine values stay the one list of what a statement is; the six are how a rebuilt tool shows them.
 
 **Shape is the second feature** (ADR-017). Blue carries three values, yellow four; someone who only skims should still
 be able to tell self-declaration from derivation and assumption from stale. That is why the shape says **how firm** a

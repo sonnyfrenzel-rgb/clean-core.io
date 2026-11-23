@@ -1374,7 +1374,7 @@ export default function DocumentationPage() {
 
   if (loading) return (
     <StageFrame stage="documentation">
-      <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} projectName={project?.name} />
+      <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} project={project} />
       {progressCard}
       <CcSkeleton shape="cards" label="documentation" count={2} />
     </StageFrame>
@@ -1383,7 +1383,7 @@ export default function DocumentationPage() {
   // The progress card stays with its end state and its *Try again* (a reload).
   if (loadError) return (
     <StageFrame stage="documentation">
-      <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} projectName={project?.name} />
+      <StageHeader stage="documentation" tools={{ steps: phases, current: 'documentation' }} project={project} />
       {progressCard}
       <div className="max-w-xl">
         <CcMessageStrip
@@ -1635,7 +1635,7 @@ export default function DocumentationPage() {
           this stage's. */}
       <StageHeader tools={{ steps: phases, current: 'documentation' }}
         stage="documentation"
-        projectName={project?.name}
+        project={project}
         eyebrow={
           <CcProvenanceChip
             value={documentationStale ? 'stale' : 'reconstructed'}

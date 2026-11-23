@@ -43,8 +43,8 @@ review, and the tests check it against test scenarios, not in a real S/4HANA sys
 
 Since 3.0.1 every project opens in its workspace: the business process reconstructed
 from the code leads (Business view), with an IT view and a Management view over the
-same facts and six layers; the seven stages — Analyze → Design → Transformation →
-Documentation → Testing → Economics → Delivery — are tools in its tool bar. Around
+same facts and six layers; the seven stages — Analyze → Economics → Design →
+Transformation → Documentation → Testing → Delivery — are tools in its tool bar. Around
 it: "My workspace", knowledge pages, settings and a public site with a catalog of SAP
 objects.
 

@@ -23,7 +23,7 @@ import { wt } from '@/lib/workspace-messages';
 export default function StageViewSwitch({ search }: { search: string }) {
   const view = stageViewOf(search);
   return (
-    <div data-stage-view-switch={view} className="cc-no-print mb-3 shrink-0 max-[600px]:w-full">
+    <div data-stage-view-switch={view} className="cc-no-print shrink-0 max-[600px]:w-full">
       <CcSegmentedControl
         stretch
         label={wt('page.view')}
