@@ -59,7 +59,7 @@ import {
   type PdSectionKey,
   type PdTable,
 } from '@/lib/process-document-outline';
-import { processOverviewSvg } from '@/lib/process-overview-svg';
+import { figureCaption, figureParts, processFigureSvg, type ProcessFigure } from '@/lib/process-figure';
 import { BUSINESS_PAGE, businessPageLineText, type BusinessPage } from '@/lib/documentation-business-page';
 import { SOP_BASIS, layerFacts, sopBasisText, type SopStatement } from '@/lib/sop-provenance';
 import { readCapabilityFacts } from '@/lib/documentation-capabilities';
@@ -120,6 +120,11 @@ export interface ConfluenceExportOptions {
    * the engine's reading alone gets neither.
    */
   ai?: { sop: AiAuthorship | null; analysis: AiAuthorship | null; appVersion: string };
+  /**
+   * ADR-127 (3): Figure 1 — Analyze's map, read-only (`lib/process-figure.ts`) — printed in chapter 1, cut for A4 where
+   * it is wide. Absent: the page carries no picture of the process.
+   */
+  figure?: ProcessFigure | null;
 }
 
 /**
@@ -131,6 +136,17 @@ export interface ConfluenceExportOptions {
  */
 export const CONTROLS_FROM_THE_CODE =
   `Controls are read from the code: “${sectionName('systems')}” in the process description. The model proposes no controls and no KPI targets.`;
+
+/**
+ * Figure 1 on the page: every part of Analyze's map as SVG — our own markup, every text in it escaped by
+ * `processFigureSvg` — with its caption, escaped here. Empty without a figure.
+ */
+function figureHtml(figure: ProcessFigure | null): string {
+  if (!figure) return '';
+  return figureParts(figure)
+    .map((part) => `<figure class="card" data-doc-figure="${part.index}">${processFigureSvg(figure, part)}<figcaption><em>${escapeHtml(figureCaption(figure, part))}</em></figcaption></figure>`)
+    .join('');
+}
 
 /** The note a stale export opens with; empty for a current one. Our own markup, no model value. */
 function staleNoteHtml(options: ConfluenceExportOptions | undefined): string {
@@ -271,7 +287,7 @@ export function buildEngineConfluenceHtml(
 
   const overviewSection = `${h2('overview')}${lead('overview')}
     ${runStartsSection}
-    <div class="card">${processOverviewSvg(document.overview.path, document.program)}</div>
+    ${figureHtml(options?.figure ?? null)}
     <h3 id="pd-steps">${esc(o.tables.steps.caption)}</h3>
     ${o.whoActsLine ? `<p class="meta" data-doc-who-acts-none="">${esc(o.whoActsLine)}</p>` : ''}
     ${tableOf(o.tables.steps)}`;
