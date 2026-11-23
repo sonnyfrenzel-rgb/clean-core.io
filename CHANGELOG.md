@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The charts under the map count FORM and method names apart: a FORM named like a method finds its `PERFORM`
+  callers again, and only `PERFORM` calls a FORM (`lib/process-fact-charts.ts`, display only; QA d0f38d1a7bc7).
 - The UX review workflow runs on `main` only; started on any other ref, every job is skipped (SEC-35f5c34-01).
 - Roadmap: the eight "family" mock-ups accepted by the owner on 15.11.2026 are on `dev` with their decisions and
   3.5.0 items (they had stayed on a side branch): Documentation v2 (ADR-127), Economics (ADR-128, Economics
@@ -47,8 +49,9 @@ The engine release. What changes for anyone who analyses a program:
 
 - **Faster analysis of large programs.** The engine reads a source once and every reader shares that reading, and the
   process outline is built in passes that no longer repeat work. Measured on a program of 25,000 lines: the evidence
-  takes about 5 seconds instead of 32, the process outline well under a second instead of about 20. The results are
-  the same byte for byte; only the time changed.
+  takes about 5 seconds instead of 32, the process outline well under a second instead of about 20. This rebuild
+  alone changes no result: on the frozen corpus (evidence 330 of 330, process skeleton 1,656) its output is the same
+  byte for byte. The new readings below do change results, from engine 3.4.0 on.
 - **SAP classes and interfaces are graded.** Every SAP class, interface and exception class a program names, and that
   SAP's files place at level C or D, is now a finding of its own with every line it stands on. Before, almost all of
   them went unmentioned. The data types the code declares with are shown by level in the IT view.
@@ -59,7 +62,8 @@ The engine release. What changes for anyone who analyses a program:
 - **Fewer false findings.** `INSERT REPORT`, `DELETE REPORT` and `READ REPORT` (and their `TEXTPOOL` and `DYNPRO`
   forms) are no longer reported as a critical write to a table called `REPORT`. A constant declared in one
   subroutine no longer decides which table a dynamic statement in another subroutine touches: `DELETE FROM (name)`
-  was reported as a critical write to a table the statement never names; it is now listed as not determined.
+  was reported as a critical write to a table the statement never names; it is now listed as not determined. A
+  subroutine that declares the name itself, also inline with `DATA( )` or `FINAL( )`, hides a global constant of it.
 - Runs signed by an earlier engine keep exactly what they signed: every change above applies from engine 3.4.0 on.
 
 ### 3.4.0 — the engine release (owner decision 22.11.2026)
@@ -115,6 +119,8 @@ an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are uncha
   such a value is only a possible one (pinned for QA 9fdd7c97ca76). The statement
   becomes a `dynamic-target` gap (`readTableDependencies` option `scopedConstants`, passed by the evidence engine and
   its coverage; `tests/engine-340-scoped-constants.spec.ts`). Display readers without the option keep the old lookup.
+  A constant of a class (`CONSTANTS` in its definition) is seen inside that class only, where it hides a global one
+  of the same name; outside it, it is no global constant (QA 5734c73ebeb0).
 - The class-gap finding stands where every other finding stands: at the first line of the statement that names the
   class, quoting the statement as read (no comment), and in line order among the findings
   (`tests/abap-metamorphic.spec.ts` P2 and P3 at 3.4.0). Being one finding per object for the whole file (owner
@@ -144,7 +150,7 @@ Built beside the shipping engine and wired into nothing apart from the parse-onc
 - Engine 4.0, L3 upload layout: `lib/engine4/layout.ts` reads the files of an upload — one paste, several files, an abapGit folder, or a joined project source cut back at its markers — into programs, function groups, function modules, classes and interfaces with their parts, the order SAP reads them in, the includes that are missing, and the macro names every part sees (an HR program's `RP_PROVIDE_FROM_LAST` included). On the starter examples and benchmark learn halves it reads all 394 files (the shipping join leaves 86 out) and recognises every macro call; every difference from the shipping upload path is categorised in `docs/design/engine4.md`, which also gains an inventory of the engine's knowledge sources and how engine 4 will consume them.
 - Engine 4.0, real-code sample: L2 was run over 312 ABAP files and 174,591 lines that stay outside the repository. 300 of the files come from 17 MIT and Apache-2.0 repositories; the other 12 are owner programs. L2 reports no false unterminated block; its one report is a real typo. The shipping block reader reports 166 false ones. The shadow scripts take `--corpus <MANIFEST.json>`, and the damage shadow counts apart the flags an engine already gives on the undamaged file. `docs/design/engine4.md` records the numbers and the evidence on open questions 5 to 9, with a recommendation for each.
 - Engine 4.0, L4 first step (inert): a reference table (`lib/engine4/references.ts`) lists every SAP object a program points at — classes, interfaces, exception classes, types, tables, function modules, message classes, authorisation objects, transactions, programs, transformations, type pools — with its line, its use and how the name was found; a dynamic name (`CALL FUNCTION lv_fm`, `FROM (lv_tab)`) is resolved where the source sets it on the straight path or as a constant, and otherwise lists every value the source writes. A shadow against today's evidence confirms a reviewer's finding: of 925 class, interface and exception references in the corpus, today's findings name 7. Also designed: a statement ledger that makes `coverage.complete` provable (`docs/design/engine4.md`).
-- QA review of the v3.4.0 candidate (inert modules, no signed output moves): a dynamic `PERFORM (name)` the value reading fixes to a FORM the source does not define is an unresolved edge, so reachability is no longer called certain (`calls.ts`, QA 365a3f83ed04); without a reference table the ledger reads `INSERT`/`UPDATE`/`MODIFY`/`DELETE` as `unknown` instead of guessing a database write (`ledger.ts`, QA 1fa0b4ed2e9e); `ParsedSource.maskNonCode` masks a literal with an astral character to its full length, as the shipping mask does (`parsed-source.ts`, QA 188cda29e6b5), and so does the mask of each statement (`compat.ts`, QA e495a5d09166). `abapGitName` types its result with the full object-type union (QA 538c8a806453). The headers of `index.ts`, `compat.ts`, `values.ts` and two specs no longer call modules on the product path inert (QA 63fec651e2e9, 88ca06da5ca3); the layer guard reads subdirectories of `lib/engine4/` and every module the product reaches (QA f080c61f61d4). Code comments under `lib/` say what the code does and cite no finding fingerprint, so the comment hygiene guard holds again (a round-1 comment in `statement-reader.ts` had broken it).
+- QA review of the v3.4.0 candidate (inert modules, no signed output moves): a dynamic `PERFORM (name)` the value reading fixes to a FORM the source does not define is an unresolved edge, so reachability is no longer called certain (`calls.ts`, QA 365a3f83ed04); a receiver that is a class attribute resolves to its own class's attribute type before another class's of the same name (`calls.ts`, QA f4b1eb13816a); without a reference table the ledger reads `INSERT`/`UPDATE`/`MODIFY`/`DELETE` as `unknown` instead of guessing a database write (`ledger.ts`, QA 1fa0b4ed2e9e); `ParsedSource.maskNonCode` masks a literal with an astral character to its full length, as the shipping mask does (`parsed-source.ts`, QA 188cda29e6b5), and so does the mask of each statement (`compat.ts`, QA e495a5d09166). `abapGitName` types its result with the full object-type union (QA 538c8a806453). The headers of `index.ts`, `compat.ts`, `values.ts` and two specs no longer call modules on the product path inert (QA 63fec651e2e9, 88ca06da5ca3); the layer guard reads subdirectories of `lib/engine4/` and every module the product reaches (QA f080c61f61d4). Code comments under `lib/` say what the code does and cite no finding fingerprint, so the comment hygiene guard holds again (a round-1 comment in `statement-reader.ts` had broken it).
 
 ## [v3.3.0] — 2026-11-23
 

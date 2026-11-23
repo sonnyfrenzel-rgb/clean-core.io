@@ -241,6 +241,8 @@ test.describe('L3: module pools and classes', () => {
     ]);
     expect(objectsOf(l)).toEqual(['class:ZCL_X']);
     expect(orderOf(l)).toEqual(['ZCL_X.LOCALS_DEF', 'ZCL_X.MACROS', 'ZCL_X', 'ZCL_X.LOCALS_IMP', 'ZCL_X.TESTCLASSES']);
+    // The main file is there and read by role: no missing-main.
+    expect(codes(l)).not.toContain('missing-main');
     const read = readUpload(l.parts.map((p) => ({ name: p.file, source: p.source })));
     const main = read.parts.find((p) => p.part === 'ZCL_X')!;
     expect(main.statements.map((s) => s.kind)).toContain('MacroCall');

@@ -189,8 +189,8 @@ export interface RoutineCalls {
 }
 
 export function routineCallsOf(statements: readonly AbapStatement[]): RoutineCalls {
-  const routines: Array<{ name: string; cls: string | null; lineStart: number; lineEnd: number }> = [];
-  let open: { name: string; cls: string | null; lineStart: number } | null = null;
+  const routines: Array<{ name: string; cls: string | null; method: boolean; lineStart: number; lineEnd: number }> = [];
+  let open: { name: string; cls: string | null; method: boolean; lineStart: number } | null = null;
   let cls: string | null = null;
   for (const s of statements) {
     const implementation = /^CLASS\s+([\w/]+)\s+IMPLEMENTATION\b/i.exec(s.text);
@@ -198,7 +198,8 @@ export function routineCallsOf(statements: readonly AbapStatement[]): RoutineCal
     else if (/^ENDCLASS\b/i.test(s.text)) cls = null;
     const head = /^(FORM|METHOD)\s+([\w/~]+)/i.exec(s.text);
     if (head && !open) {
-      open = { name: head[2].toLowerCase().split('~').pop() ?? '', cls: head[1].toUpperCase() === 'METHOD' ? cls : null, lineStart: s.lineStart };
+      const method = head[1].toUpperCase() === 'METHOD';
+      open = { name: head[2].toLowerCase().split('~').pop() ?? '', cls: method ? cls : null, method, lineStart: s.lineStart };
       continue;
     }
     if (open && /^END(?:FORM|METHOD)\b/i.test(s.text)) {
@@ -207,17 +208,23 @@ export function routineCallsOf(statements: readonly AbapStatement[]): RoutineCal
     }
   }
   const escape = (name: string) => name.replace(/[/]/g, '\\/');
+  // FORMs and methods are named apart: `PERFORM run` reaches no method `run`, and a method `run` makes no FORM `run`
+  // ambiguous. Only `PERFORM` calls a FORM.
   const named = new Map<string, number>();
-  for (const r of routines) if (r.name) named.set(r.name, (named.get(r.name) ?? 0) + 1);
+  for (const r of routines) if (r.name && r.method) named.set(r.name, (named.get(r.name) ?? 0) + 1);
   /**
    * The lines that call a routine. A name only one routine here carries is that routine's at every call. A method
    * name several classes here implement is one class's only where the call names that class (`lcl_a=>run(`): an
    * instance call (`lo->run(`) could reach either, and a caller of the other one is no caller of this one.
    */
-  const callersOfRoutine = (r: { name: string; cls: string | null }): number[] => {
+  const callersOfRoutine = (r: { name: string; cls: string | null; method: boolean }): number[] => {
     const n = escape(r.name);
+    if (!r.method) {
+      const perform = new RegExp(`^PERFORM\\s+${n}\\b`, 'i');
+      return statements.filter((s) => perform.test(s.text)).map((s) => s.lineStart);
+    }
     if ((named.get(r.name) ?? 0) <= 1) {
-      const pattern = new RegExp(`(?:^PERFORM\\s+${n}\\b|[>~]${n}\\s*\\(|^CALL\\s+METHOD\\s+(?:[\\w/]+(?:->|=>|~))*${n}\\b)`, 'i');
+      const pattern = new RegExp(`(?:[>~]${n}\\s*\\(|^CALL\\s+METHOD\\s+(?:[\\w/]+(?:->|=>|~))*${n}\\b)`, 'i');
       return statements.filter((s) => pattern.test(s.text)).map((s) => s.lineStart);
     }
     if (!r.cls) return [];

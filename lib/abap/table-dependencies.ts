@@ -722,14 +722,14 @@ function declaringParameters(ctx: Context, method: Container): string | null {
 }
 
 /**
- * Does this routine declare `name` itself, as anything but a constant — `DATA`, `STATICS`, an inline `DATA( )`, a
+ * Does this routine declare `name` itself, as anything but a constant — `DATA`, `STATICS`, an inline `DATA( )` or `FINAL( )`, a
  * parameter on its `FORM` line, or a formal parameter of the method (`methodDeclaresParameter`)? Then a global
  * constant of that name is hidden in it.
  */
 function declaresLocally(ctx: Context, scope: Container, name: string): boolean {
   if (scope.kind === 'method' && methodDeclaresParameter(ctx, scope, name)) return true;
   const word = escapeRegExp(name);
-  const inline = new RegExp(`\\bDATA\\(\\s*${word}\\s*\\)`, 'i');
+  const inline = new RegExp(`\\b(?:DATA|FINAL)\\(\\s*${word}\\s*\\)`, 'i');
   const parameter = new RegExp(`\\b(?:USING|CHANGING|TABLES)\\b.*?(?:^|[\\s(])(?:VALUE\\(\\s*)?${word}(?=$|[\\s,.)])`, 'i');
   for (let i = 0; i < ctx.statements.length; i++) {
     const line = ctx.statements[i].line;
@@ -769,7 +769,24 @@ function visibleConstants(ctx: Context, name: string, line: number) {
     }
     if (hidden) return [];
   }
-  return all.filter((c) => localScopeAt(ctx, c.lineStart) === null);
+  // A constant of a class (`CONSTANTS` in its definition) is seen inside that class — its definition and
+  // implementation, matched by name — where it hides a global one of that name; outside the class it is not global.
+  const unscoped = all.filter((c) => localScopeAt(ctx, c.lineStart) === null);
+  const owner = classAt(ctx, line);
+  if (owner) {
+    const ofClass = unscoped.filter((c) => classAt(ctx, c.lineStart) === owner);
+    if (ofClass.length > 0) return ofClass;
+  }
+  return unscoped.filter((c) => classAt(ctx, c.lineStart) === null);
+}
+
+/** The upper-cased name of the class whose definition or implementation holds `line`, or null. */
+function classAt(ctx: Context, line: number): string | null {
+  let best: Container | null = null;
+  for (const c of ctx.constants.containers) {
+    if (c.kind === 'class' && c.lineStart <= line && line <= c.lineEnd && (!best || c.lineStart > best.lineStart)) best = c;
+  }
+  return best ? best.name.toUpperCase() : null;
 }
 
 function resolveValue(expression: string, ctx: Context, line?: number): Resolution {

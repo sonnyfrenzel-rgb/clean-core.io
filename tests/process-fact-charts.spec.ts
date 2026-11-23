@@ -244,3 +244,27 @@ test('a method name two classes implement: a write in one finds only the callers
   // A name only one routine carries is found at every call, as before.
   expect(calls.callersOf(26)).toEqual([29]);
 });
+
+test('a FORM that shares its name with a method still finds its PERFORM callers', () => {
+  const source = [
+    'REPORT zdup.', //                                        1
+    'CLASS lcl_a DEFINITION.', //                             2
+    '  PUBLIC SECTION.', //                                   3
+    '    CLASS-METHODS run.', //                              4
+    'ENDCLASS.', //                                           5
+    'CLASS lcl_a IMPLEMENTATION.', //                         6
+    '  METHOD run.', //                                       7
+    '    UPDATE zta SET x = 1.', //                           8
+    '  ENDMETHOD.', //                                        9
+    'ENDCLASS.', //                                           10
+    'START-OF-SELECTION.', //                                 11
+    '  PERFORM run.', //                                      12
+    '  lcl_a=>run( ).', //                                    13
+    'FORM run.', //                                           14
+    '  UPDATE ztb SET x = 1.', //                             15
+    'ENDFORM.', //                                            16
+  ].join('\n');
+  const calls = routineCallsOf(readStatements(source));
+  expect(calls.callersOf(15)).toEqual([12]);
+  expect(calls.callersOf(8)).toEqual([13]);
+});

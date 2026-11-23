@@ -170,6 +170,17 @@ test('next.config.mjs computes it at build time, the run signs it beside engineV
   expect(config).toMatch(/CC_ENGINE_DIGEST:\s*computeEngineDigest\(/);
   const route = fs.readFileSync(path.join(ROOT, 'app', 'api', 'runs', 'create', 'route.ts'), 'utf8');
   expect(route.match(/\.\.\.\(ENGINE_DIGEST \? \{ engineDigest: ENGINE_DIGEST \} : \{\}\)/g)?.length).toBe(2);
+  // The signed one stands inside the payload the run hash is computed over, not in data added after it.
+  const payloadAt = route.indexOf('const unsignedRunPayload');
+  const digestAt = route.indexOf('...(ENGINE_DIGEST ? { engineDigest: ENGINE_DIGEST } : {})');
+  const hashAt = route.indexOf("const runHash = crypto.createHash('sha256').update(canonicalPayloadStr)");
+  expect(payloadAt).toBeGreaterThan(0);
+  expect(digestAt).toBeGreaterThan(payloadAt);
+  const canonicalAt = route.indexOf('const canonicalPayloadStr = canonicalizeJson(unsignedRunPayload);');
+  expect(canonicalAt).toBeGreaterThan(digestAt);
+  expect(hashAt).toBeGreaterThan(canonicalAt);
+  // Nothing between the payload and its hash closes the payload and opens another object for the digest.
+  expect(route.slice(payloadAt, digestAt)).not.toMatch(/\n {4}\};/);
   const lib = fs.readFileSync(path.join(ROOT, 'lib', 'engine-digest.ts'), 'utf8');
   expect(lib).toContain('process.env.CC_ENGINE_DIGEST');
 });

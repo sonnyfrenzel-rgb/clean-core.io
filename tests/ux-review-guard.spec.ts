@@ -207,6 +207,10 @@ test.describe('three jobs, three trust levels', () => {
       const cond = job(name).split(/\r?\n/).find((l) => /^ {4}if: /.test(l)) || '';
       expect(cond).toContain(MAIN);
     }
+    // The review, the job with the keys, runs only after a successful scope and only on main — its condition in full.
+    const reviewIf = job('review').split(/\r?\n/).find((l) => /^ {4}if: /.test(l))?.trim();
+    expect(reviewIf).toBe(`if: \${{ !cancelled() && ${MAIN} && needs.scope.result == 'success' && needs.scope.outputs.mode != 'skip' }}`);
+    expect(job('review')).toMatch(/\n {4}needs: \[scope, capture\]\r?\n/);
     expect(job('review')).toContain('ref: ${{ github.sha }}');
     expect(wf()).not.toMatch(/github\.ref_name == 'dev'|refs\/heads\/dev/);
   });

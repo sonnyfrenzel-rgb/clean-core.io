@@ -77,6 +77,14 @@ test.describe('golden token streams', () => {
     ]);
   });
 
+  test('native SQL: ENDEXEC inside a string literal or after a quoted identifier does not end the block', () => {
+    const { tokens } = lex(`EXEC SQL.\n  UPDATE t SET c = 'ENDEXEC' WHERE d = 'it''s ENDEXEC'\n  SELECT "ENDEXEC" FROM t\nENDEXEC.`);
+    expect(stream(tokens)).toEqual([
+      'word:EXEC', 'word:SQL', 'period:.', "nativeSql:UPDATE t SET c = 'ENDEXEC' WHERE d = 'it''s ENDEXEC'",
+      'nativeSql:SELECT', 'comment:"ENDEXEC" FROM t', 'word:ENDEXEC', 'period:.',
+    ]);
+  });
+
   test('an AMDP body is native up to the line starting with ENDMETHOD', () => {
     const src = `METHOD get BY DATABASE PROCEDURE FOR HDB LANGUAGE SQLSCRIPT USING vbak.\n  et = SELECT "VBELN" FROM vbak; -- x.\nENDMETHOD.`;
     expect(stream(lex(src).tokens).slice(-3)).toEqual(['nativeSql:et = SELECT "VBELN" FROM vbak; -- x.', 'word:ENDMETHOD', 'period:.']);
