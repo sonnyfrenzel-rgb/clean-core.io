@@ -327,15 +327,20 @@ test.describe('Management, rendered', () => {
     });
   });
 
-  async function open(page: Page, projectId: string): Promise<void> {
-    await page.goto(`/project/${projectId}?view=management`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="management"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-management-executive]')).toBeVisible({ timeout: 60000 });
+  /**
+   * Analyze's Management view is a page of its own since ADR-143 (owner request 23.11.2026): the decision's question
+   * as the answer card, four facets (the distance to clean core with its Level A–D mix replaces the fit-to-standard
+   * card of ADR-069 there), the serious findings by name with their lines, and one way on, Re-design. A project with
+   * no signed run gets Analyze's start path in that view.
+   */
+  async function open(page: Page, projectId: string, ready: string): Promise<void> {
+    await page.goto(`/project/${projectId}/analyze?view=management`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator(ready).first()).toBeVisible({ timeout: 90000 });
   }
 
   /** The primary buttons a reader can see on the page — the next step must be the only one. */
   const visiblePrimaries = (page: Page) =>
-    page.locator('[data-workspace-shell="management"] [data-cc-button="primary"]').evaluateAll((els) =>
+    page.locator('main [data-cc-button="primary"]').evaluateAll((els) =>
       els.filter((el) => (el as HTMLElement).offsetParent !== null).map((el) => (el.textContent || '').trim()),
     );
 
@@ -343,21 +348,18 @@ test.describe('Management, rendered', () => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, acct);
-    await open(page, FRESH);
+    await open(page, FRESH, '[data-stage-tools="open"] a[data-workspace-tool="analyze"]');
 
-    const analyzeTool = page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"]');
+    const analyzeTool = page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]');
     await expect(analyzeTool.locator('[data-workspace-tool-mark="check"]')).toHaveCount(0);
-    await expect(analyzeTool).toHaveAttribute('data-workspace-tool-next', '');
 
-    const fit = page.locator('#standard-fit');
-    await expect(fit).toHaveAttribute('data-standard-fit', 'not-determined', { timeout: 60000 });
-    await expect(fit).toHaveAttribute('data-standard-fit-why', 'no-run');
-    await expect(fit.locator('[data-standard-fit-value]')).toHaveText('Not determined');
-    await expect(fit, 'a percentage nobody measured').not.toContainText('%');
+    // No signed run: no Management page with a figure on it, and no number nobody measured.
+    await expect(page.locator('[data-analyze-management="ready"]')).toHaveCount(0);
+    await expect(page.locator('[data-facet="distance"]')).toHaveCount(0);
+    await expect(page.locator('main'), 'a percentage nobody measured').not.toContainText(/\d\s*%/);
 
-    await expect.poll(() => visiblePrimaries(page)).toEqual(['Run the analysis']);
-    await expect(page.locator('[data-executive-next-action]')).toHaveAttribute('href', /\/analyze\?/);
-    // "Run the analysis" is said once as an action, not in three cards.
+    // One primary action, the start of the analysis; no second "Next step" card.
+    await expect.poll(() => visiblePrimaries(page), { timeout: 60000 }).toEqual(['Start Analysis']);
     expect(await page.locator('[data-next-step]').count(), 'a second "Next step" card in Management').toBe(0);
   });
 
@@ -365,68 +367,39 @@ test.describe('Management, rendered', () => {
     test.setTimeout(300 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, acct);
-    await open(page, SIGNED);
+    await open(page, SIGNED, '[data-analyze-management="ready"]');
 
-    await expect(page.locator('[data-workspace-tools="open"] a[data-workspace-tool="analyze"] [data-workspace-tool-mark="check"]')).toHaveCount(1);
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"] [data-workspace-tool-mark="check"]')).toHaveCount(1);
 
-    const fit = page.locator('#standard-fit');
-    await expect(fit).toHaveAttribute('data-standard-fit', 'ready', { timeout: 90000 });
-    await expect(fit.locator('h3')).toHaveText('What stands in the way of the SAP standard on Public Edition');
-    await expect(fit).toContainText('Clean-Core.io measure, not an SAP figure');
-    const percent = Number(await fit.locator('[data-standard-fit-value]').getAttribute('data-standard-fit-percent'));
-    const [fits, counted] = (await fit.locator('[data-standard-fit-count]').getAttribute('data-standard-fit-count'))!
-      .split('/')
-      .map(Number);
-    expect(counted).toBeGreaterThan(0);
-    expect(percent).toBe(fits === counted ? 100 : fits === 0 ? 0 : Math.min(99, Math.max(1, Math.round((fits / counted) * 100))));
-    await expect(fit.locator('[data-overview-bar="standard-fit"]')).toHaveAttribute('role', 'img');
+    // The figure: the signed score, of 100, with the Level A–D mix of the objects the findings name.
+    const distance = page.locator('[data-facet="distance"]');
+    await expect(distance).toContainText('Distance to clean core');
+    await expect(distance).toContainText('58');
+    await expect(distance).toContainText('of 100');
+    const levels = distance.locator('[data-management-levels] [data-cc-level-trigger]');
+    await expect(levels).toHaveCount(4, { timeout: 90000 });
+    // The direct write to EKPO is level D: at least one D.
+    await expect(distance.locator('[data-cc-level-trigger="D"]')).toContainText(/D [1-9]/);
 
-    // Each blocker: object, level, line anchor, provenance chip.
-    const blockers = fit.locator('[data-standard-fit-list="blocks"] [data-standard-fit-item]');
-    expect(await blockers.count()).toBeGreaterThan(0);
-    for (const b of await blockers.all()) {
-      await expect(b.locator('[data-standard-fit-object]')).not.toBeEmpty();
-      await expect(b.locator('[data-cc-identifier="clean-core-level"]')).toHaveCount(1);
-      await expect(b.locator('[data-standard-fit-anchor]')).toHaveAttribute('data-standard-fit-anchor', /^\d+$/);
-      await expect(b.locator('[data-standard-fit-anchor] [data-cc-anchor]')).toContainText(/^L\d+/);
-      await expect(b.locator('[data-cc-provenance], [data-provenance]').first()).toBeVisible();
+    // The blockers by name: the serious findings, grouped, each with its line anchors.
+    const risks = page.locator('[data-management-risks] > li');
+    expect(await risks.count()).toBeGreaterThan(0);
+    for (const r of await risks.all()) {
+      await expect(r.locator('span.font-semibold').first()).not.toBeEmpty();
+      await expect(r.locator('[data-cc-anchor]').first()).toContainText(/^L\d+/);
     }
-    // The direct write to EKPO is named as level D.
-    await expect(fit.locator('[data-standard-fit-item="EKPO"] [data-cc-identifier="clean-core-level"]')).toHaveAttribute('data-cc-value', 'D');
 
-    // The whole frame on a desktop, not a 768 px column.
-    const width = await page.locator('[data-management-executive]').evaluate((el) => el.getBoundingClientRect().width);
+    // The whole frame on a desktop, not a 768 px column: the answer card takes it.
+    const width = await page.locator('#management-answer').evaluate((el) => el.getBoundingClientRect().width);
     expect(width, 'Management uses less than the frame').toBeGreaterThan(1000);
-    // ADR-079: the decision with its four options takes the whole width, and
-    // the distance to SAP standard stands under it — with the readiness trend
-    // beside it, the third block of the first screen (mockup s5, ADR-087).
-    const trend = page.locator('#management-readiness');
-    const [d, f, t] = await Promise.all([
-      page.locator('[data-executive-decision]').boundingBox(),
-      fit.boundingBox(),
-      trend.boundingBox(),
-    ]);
-    expect(f!.y, 'the distance to standard is not under the decision').toBeGreaterThan(d!.y + d!.height - 1);
-    expect(d!.width, 'the decision does not take the whole width').toBeGreaterThan(1000);
-    expect(f!.width, 'the distance to standard is squeezed').toBeGreaterThan(d!.width / 2);
-    expect(Math.abs(t!.y - f!.y), 'the trend does not stand beside the distance to standard').toBeLessThan(4);
-    expect(t!.x).toBeGreaterThan(f!.x + f!.width - 1);
-    expect(Math.abs(t!.x + t!.width - (d!.x + d!.width)), 'the trend does not end where the decision ends').toBeLessThan(4);
 
-    // One primary action; the rest in ONE fold, named, with a summary, always
-    // closed when the page opens (ADR-087) — no Costs and no Process fold.
-    await expect.poll(() => visiblePrimaries(page)).toHaveLength(1);
-    await expect(page.locator('[data-management-fold="options"]')).toHaveCount(0);
-    await expect(page.locator('[data-management-fold]')).toHaveCount(1);
-    await expect(page.locator('[data-management-fold="evidence"] > [data-cc-disclosure="closed"]')).toHaveCount(1);
-    await expect(page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] > [data-cc-disclosure-summary]')).not.toBeEmpty();
-    // It does not remember an open state across visits: open it, reload, closed again.
-    await page.locator('[data-management-fold="evidence"] [data-cc-disclosure-trigger]').first().click();
-    await expect(page.locator('[data-management-fold="evidence"] > [data-cc-disclosure="open"]')).toHaveCount(1);
-    await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-management-fold="evidence"] > [data-cc-disclosure="closed"]')).toHaveCount(1, { timeout: 90000 });
-    // One quiet row of links out ends the view.
-    await expect(page.locator('[data-management-elsewhere] [data-management-elsewhere-link]')).toHaveCount(4);
+    // One primary action, the way on to Re-design; no folds of the old view.
+    await expect.poll(() => visiblePrimaries(page), { timeout: 60000 }).toHaveLength(1);
+    await expect(page.locator('[data-analyze-management-redesign]')).toHaveAttribute('href', `/project/${SIGNED}/redesign`);
+    await expect(page.locator('[data-management-fold]')).toHaveCount(0);
+    // The four options are listed without a tool link, and the cost is said once.
+    await expect(page.locator('[data-management-option]')).toHaveCount(4);
+    await expect(page.locator('[data-management-not-priced]')).toHaveCount(1);
   });
 
   test('(b) on a phone at 390 px: stacked, and nothing scrolls sideways', async ({ browser }) => {
@@ -434,18 +407,20 @@ test.describe('Management, rendered', () => {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const page = await context.newPage();
     await signInThroughForm(page, acct);
-    await open(page, SIGNED);
-    await expect(page.locator('#standard-fit')).toHaveAttribute('data-standard-fit', 'ready', { timeout: 90000 });
+    await open(page, SIGNED, '[data-analyze-management="ready"]');
+    const trigger = page.locator('[data-management-levels] [data-cc-level-trigger]').first();
+    await expect(trigger).toBeVisible({ timeout: 90000 });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow, 'Management scrolls sideways at 390 px').toBeLessThanOrEqual(0);
-    const [d, f] = await Promise.all([
-      page.locator('[data-executive-decision]').boundingBox(),
-      page.locator('#standard-fit').boundingBox(),
+    const [a, o] = await Promise.all([
+      page.locator('#management-answer').boundingBox(),
+      page.locator('#mgmt-options').boundingBox(),
     ]);
-    expect(f!.y, 'the fit card is not under the decision on a phone').toBeGreaterThan(d!.y + d!.height - 1);
-    // The definition is a tap away, not behind a hover.
-    await page.locator('button[data-info-popover="standard-fit"]').tap();
-    await expect(page.locator('[data-info-popover-panel="standard-fit"]')).toContainText('not an SAP figure');
+    expect(o!.y, 'the options are not under the answer on a phone').toBeGreaterThan(a!.y + a!.height - 1);
+    // A level is a tap away, not behind a hover.
+    await trigger.tap();
+    const level = await trigger.getAttribute('data-cc-level-trigger');
+    await expect(page.locator(`[data-cc-level-explanation="${level}"]`).first()).toBeVisible();
     await context.close();
   });
 });

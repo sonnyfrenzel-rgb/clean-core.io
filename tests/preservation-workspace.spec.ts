@@ -533,75 +533,24 @@ test.describe('the reference cases, opened in the workspace', () => {
 
     for (const rc of register.referenceCases) {
       const projectId = projectIdOf(rc);
-      // The status line is one folded row in every view since 04.10.2026
-      // (ADR-026 note); one click opens the seven, each its own "Why?".
+      // The workspace page and its folded status line retired with 3.5.0 (AB-11): the old address lands on Analyze,
+      // and the state of every phase is the tool row's, each tool marked and its mark said in words (the "Why?" of
+      // the status line), at its route.
       await page.goto(`/project/${projectId}?view=it`, { waitUntil: 'domcontentloaded' });
-      await page.locator('[data-workspace-status-toggle][aria-expanded="false"]').click({ timeout: 60000 });
-      await page.waitForSelector('[data-workspace-status-line]', { timeout: 60000 });
+      await expect(page).toHaveURL(new RegExp(`/project/${projectId}/analyze\?view=it`), { timeout: 60000 });
+      const bar = page.locator('[data-stage-tools="open"]');
+      await bar.waitFor({ timeout: 60000 });
 
-      for (const [facet, value] of Object.entries(rc.workspace.statusLine)) {
-        await expect(
-          page.locator(`[data-workspace-status="${facet}"]`),
-          `${rc.id}: ${facet} on screen`,
-        ).toHaveAttribute('data-status', value.split('/')[0]);
-      }
-
-      // Every tool, at its route.
       for (const stage of register.stages) {
-        await expect(
-          page.locator(
-            `[data-workspace-tools] a[href="/project/${projectId}/${stage.route.split('/').pop()}?view=it&from=workspace-tools"]`,
-          ),
-          `${rc.id}: the ${stage.key} tool`,
-        ).toHaveCount(1);
-      }
-
-      // Handover's "Why?" states the two phases without a facet, with their tools.
-      const handover = page.locator('[data-workspace-status="handover"]');
-      await handover.locator('[data-cc-why]').click();
-      for (const key of ['delivery', 'transformation', 'documentation'] as const) {
-        await expect(handover.locator(`[data-workspace-status-phase="${key}"]`)).toBeVisible();
-        await expect(handover.locator(`[data-workspace-status-tool="${key}"]`)).toHaveAttribute(
-          'href',
-          `/project/${projectId}/${key}?view=it&from=workspace-status`,
-        );
-      }
-      for (const [key, badge] of Object.entries(rc.expect.badges)) {
-        const facet = register.workspace.phaseFacets[key as PhaseKey] ?? register.workspace.unfacetedPhasesReadBy;
-        if (facet !== 'handover') continue;
-        await expect(handover.locator(`[data-workspace-status-phase="${key}"]`)).toContainText(badge);
-      }
-      await page.keyboard.press('Escape');
-
-      // And every other status: its "Why?" opens, names each phase it rests
-      // on with that phase's badge, and links to that phase's tool. Opening
-      // only Handover's left a broken control or a wrong detail on the other
-      // four invisible to this test (QA review of 4b4586aff273, b30189096d30).
-      const stageRoute = (key: string) =>
-        register.stages.find((stage: { key: string }) => stage.key === key)?.route.split('/').pop() ?? key;
-      for (const facet of Object.keys(rc.workspace.statusLine)) {
-        if (facet === 'handover') continue;
-        const status = page.locator(`[data-workspace-status="${facet}"]`);
-        await status.locator('[data-cc-why]').click();
-        await expect(status.locator('[data-workspace-status-basis]'), `${rc.id}: ${facet} "Why?"`).toBeVisible();
-        const phases = (Object.keys(register.workspace.phaseFacets) as PhaseKey[]).filter(
-          (key) => (register.workspace.phaseFacets[key] ?? register.workspace.unfacetedPhasesReadBy) === facet,
-        );
-        for (const key of phases) {
-          await expect(status.locator(`[data-workspace-status-phase="${key}"]`), `${rc.id}: ${facet} names ${key}`).toBeVisible();
-          await expect(status.locator(`[data-workspace-status-tool="${key}"]`)).toHaveAttribute(
-            'href',
-            `/project/${projectId}/${stageRoute(key)}?view=it&from=workspace-status`,
-          );
-          const badge = (rc.expect.badges as Record<string, string>)[key];
-          if (badge) await expect(status.locator(`[data-workspace-status-phase="${key}"]`)).toContainText(badge);
-        }
-        await page.keyboard.press('Escape');
+        const tool = bar.locator(`a[data-workspace-tool="${stage.key}"]`);
+        await expect(tool, `${rc.id}: the ${stage.key} tool`).toHaveAttribute('data-phase-state', rc.expect.phaseStates[stage.key as PhaseKey]);
+        await expect(tool, `${rc.id}: the ${stage.key} tool's address`).toHaveAttribute('href', new RegExp(`/project/${projectId}/${stage.route.split('/').pop()}(\?|$)`));
+        expect((await tool.getAttribute('data-workspace-tool-mark-meaning')) ?? '', `${rc.id}: ${stage.key} says its state in words`).not.toBe('');
       }
 
       if (rc.workspace.nextStep) {
-        await expect(page.locator('[data-next-step-state="open"]')).toHaveAttribute(
-          'data-next-step-key',
+        await expect(bar.locator('a[data-workspace-tool-next]'), `${rc.id}: the next tool`).toHaveAttribute(
+          'data-workspace-tool',
           rc.workspace.nextStep,
         );
       }

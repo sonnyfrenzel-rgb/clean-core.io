@@ -41,16 +41,25 @@ const DESIGN_JSON = JSON.stringify({
   roadmap: [],
 });
 
-async function openDesign(page: Page, prefix: string) {
+async function openDesign(page: Page, prefix: string, view: 'it' | 'management' = 'it') {
   const seeded = await seedStageProject({ prefix, acceptTerms: true, rich: true });
   await adminMergeDoc('projects', seeded.projectId, { solutionDesign: DESIGN_JSON });
   await page.setViewportSize({ width: 1440, height: 900 });
   await signInThroughForm(page, seeded);
-  await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('svg[data-architecture-canvas]')).toBeVisible({ timeout: 120_000 });
-  await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
+  await page.goto(`/project/${seeded.projectId}/design?view=${view}`, { waitUntil: 'domcontentloaded' });
+  if (view === 'it') {
+    await expect(page.locator('svg[data-architecture-canvas]')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
+  } else {
+    // Confirm target is the Management view's one action, behind the checklist (ADR-130 (1), G8).
+    await expect(page.locator('[data-design-confirm]')).toBeEnabled({ timeout: 120_000 });
+  }
   return seeded;
 }
+
+/** The rich fixture's code is side-by-side by the engine (`tests/design-one-story.spec.ts`). */
+const CAP = 'Side-by-Side Extensibility (CAP / Node.js)';
+const CONFIRMED = 'The target is confirmed.';
 
 const scale = (page: Page) => page.locator('[data-canvas-zoom]').getAttribute('data-canvas-zoom').then(Number);
 const drawnWidth = (page: Page) => page.locator('svg[data-architecture-canvas]').getAttribute('width').then(Number);
@@ -192,18 +201,24 @@ test('zoom changes the scale both ways, fit returns, and full screen opens and c
   await page.keyboard.press('Escape');
   await expect(card).toHaveAttribute('data-canvas-fullscreen', 'false');
 
-  // The side panel stays usable at every width.
+  // The evidence panel and the drawer stay usable at every width. In the IT view (ADR-130) the panel beside the
+  // canvas holds the evidence and the alternatives; Regenerate is in the header, Confirm target in Management.
   for (const width of [1024, 1440, 1920, 390]) {
     await page.setViewportSize({ width, height: 900 });
-    const confirm = page.locator('[data-design-confirm]');
-    await confirm.scrollIntoViewIfNeeded();
-    await expect(confirm).toBeVisible();
-    await expect(page.getByRole('button', { name: /Regenerate design/ })).toBeVisible();
-    await expectOnTop(page, '[data-design-confirm]');
-    const tab = page.locator('[data-design-panel]').getByRole('tab', { name: /Alternatives/ });
+    const panel = page.locator('[data-design-panel="evidence"]');
+    await panel.scrollIntoViewIfNeeded();
+    await expect(panel).toBeVisible();
+    await expect(panel.locator('[data-design-alternative]').first()).toBeVisible();
+    const regenerate = page.locator('[data-design-regenerate]');
+    await regenerate.scrollIntoViewIfNeeded();
+    await expect(regenerate).toBeVisible();
+    await expectOnTop(page, '[data-design-regenerate]');
+    const drawer = page.locator('[data-design-drawer]');
+    await drawer.scrollIntoViewIfNeeded();
+    const tab = drawer.getByRole('tab', { name: /^Contract/ });
     await tab.click();
     await expect(tab).toHaveAttribute('aria-selected', 'true');
-    await page.locator('[data-design-panel]').getByRole('tab', { name: /^Decision/ }).click();
+    await drawer.getByRole('tab', { name: /^Design document/ }).click();
     expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth), `page scrolls sideways at ${width}`).toBeLessThanOrEqual(0);
     if (SHOTS && width === 390) await page.screenshot({ path: `${SHOTS}/design-ctl-canvas-390.png`, fullPage: true });
   }
@@ -211,8 +226,9 @@ test('zoom changes the scale both ways, fit returns, and full screen opens and c
 
 test('Confirm target asks first: Cancel and Escape write nothing, the box’s Confirm target signs off', async ({ page }) => {
   test.setTimeout(300_000);
-  const seeded = await openDesign(page, 'dctl-confirm');
-  const label = (await page.locator('#design-answer').textContent())!.trim();
+  const seeded = await openDesign(page, 'dctl-confirm', 'management');
+  const label = CAP;
+  const answer = page.locator('#design-answer [data-answer]');
   const opener = page.locator('[data-design-confirm]');
   const box = page.locator('[data-cc-message-box]');
   const ask = page.locator('[data-design-confirm-ask]');
@@ -231,7 +247,7 @@ test('Confirm target asks first: Cancel and Escape write nothing, the box’s Co
   await box.getByRole('button', { name: 'Cancel' }).click();
   await expect(box).toHaveCount(0);
   await expect(opener).toBeFocused();
-  await expect(page.locator('[data-design-answer]')).not.toHaveAttribute('data-design-answer', 'confirmed');
+  await expect(answer).not.toHaveText(CONFIRMED);
   expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect ?? false).toBe(false);
 
   // Escape: the same.
@@ -239,7 +255,7 @@ test('Confirm target asks first: Cancel and Escape write nothing, the box’s Co
   await expect(box).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(box).toHaveCount(0);
-  await expect(page.locator('[data-design-answer]')).not.toHaveAttribute('data-design-answer', 'confirmed');
+  await expect(answer).not.toHaveText(CONFIRMED);
   expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect ?? false).toBe(false);
 
   // At phone width it is the same small box, inside the screen.
@@ -257,7 +273,7 @@ test('Confirm target asks first: Cancel and Escape write nothing, the box’s Co
   // Only the box's own button confirms — with the command it always used.
   await opener.click();
   await box.getByRole('button', { name: 'Confirm target' }).click();
-  await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible({ timeout: 60_000 });
+  await expect(answer).toHaveText(CONFIRMED, { timeout: 60_000 });
   await expect(box).toHaveCount(0);
   await expect(opener).toHaveText(/Change target/);
   const stored = await adminGetDoc('projects', seeded.projectId);

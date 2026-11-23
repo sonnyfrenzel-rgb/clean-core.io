@@ -218,29 +218,31 @@ test.describe('rendered: the Analyze tool says "Result ready" until Analyze has 
     expect(res.ok, `the run was not signed: ${res.status}`).toBe(true);
   });
 
-  test('the IT view\'s tool bar tags Analyze, opening it clears the tag, and the phase does not move', async ({ page }) => {
+  // The workspace page dissolved into Analyze (3.5.0, AB-11) and every project opens there, so the tag is read where it
+  // can still stand: on the tool row of another tool, Economics, the first after Analyze.
+  test('another tool\'s tool bar tags Analyze, opening it clears the tag, and the phase does not move', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await withoutTips(page);
     await signInThroughForm(page, account);
-    await page.goto(`/project/${projectId}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
+    await page.goto(`/project/${projectId}/tco`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 90_000 });
 
-    const analyzeTool = page.locator('[data-workspace-tools="open"] [data-workspace-tool="analyze"]');
+    const analyzeTool = page.locator('[data-stage-tools="open"] [data-workspace-tool="analyze"]');
     await expect(analyzeTool).toHaveAttribute('data-phase-state', 'done', { timeout: 60_000 });
     await expect(analyzeTool).toHaveAttribute('data-workspace-tool-unread', '');
     await expect(analyzeTool.locator('[data-workspace-tool-result-ready]')).toHaveText('Result ready');
 
-    // Analyze with its result on the page marks it read (IT keeps today's score page until AB-9).
+    // Analyze with its result on the page marks it read.
     await page.goto(`/project/${projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 90_000 });
     await expect
       .poll(() => page.evaluate(() => window.localStorage.getItem('cc.workspace.analysis.read') ?? ''), { timeout: 60_000 })
       .toContain(projectId);
 
-    // Back in the workspace the tag is gone; the phase is as it was.
-    await page.goto(`/project/${projectId}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
+    // Back on the other tool the tag is gone; the phase is as it was.
+    await page.goto(`/project/${projectId}/tco`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-stage-title]')).toBeVisible({ timeout: 90_000 });
     await expect(analyzeTool).toHaveAttribute('data-phase-state', 'done', { timeout: 60_000 });
     await expect(analyzeTool).not.toHaveAttribute('data-workspace-tool-unread', '');
     await expect(page.locator('[data-workspace-tool-result-ready]')).toHaveCount(0);

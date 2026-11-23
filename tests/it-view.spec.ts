@@ -1,10 +1,6 @@
-import { test, expect, type Page } from './helpers/test';
+import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
-import firebaseConfig from '../firebase-config.json';
 import { itFindingsView, type ItFindingRow, type ItFindingsSource } from '../lib/it-findings';
 import { findingsOf } from '../lib/it-findings-build';
 // Registers the Private Edition snapshots, as the findings route's import does.
@@ -29,7 +25,8 @@ import { IT_ANCHORS, IT_LAYER_ELSEWHERE, IT_SECTION_IDS, runTrust } from '../lib
 import { LAYER_ADDRESSES } from '../lib/workspace-model';
 import type { ItUseRow } from '../lib/it-findings';
 import type { Project } from '../lib/types';
-import { signInViaLanding } from './helpers/sign-in';
+import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
+import { adminMergeDoc } from './helpers/admin-seed';
 
 /**
  * The 3.0 IT view (mockup v2.8 `s4`, gap audit row 6): the answer first, facet
@@ -386,125 +383,74 @@ test.describe('the IT order, as the source writes it (the page is measured below
 
 /* ------------------------------------------------------- the rendered view */
 
-const clientApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const clientAuth = getAuth(clientApp);
-try {
-  connectAuthEmulator(clientAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
-} catch {
-  /* already connected */
-}
-
-const PASSWORD = 'ItViewRebuild123!';
-const unique = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-async function signIn(page: Page, email: string): Promise<void> {
-  await signInViaLanding(page, email, PASSWORD);
-}
-
 test.describe('the IT view on a real project', () => {
-  const ADMIN = `${unique('itv-admin')}@cleancore-test.io`;
-  const PROJECT_ID = unique('it-view');
+  // Since 3.5.0 (AB-9, ADR-140) the IT view is Analyze's IT page, drawn from the signed run: a project without a run
+  // gets the upload and start path there, so this project carries one (`seedStageProject`, the PO approval source).
+  let acct: SeededProject;
 
   test.beforeAll(async () => {
     test.setTimeout(180 * 1000);
-    const cred = await createUserWithEmailAndPassword(clientAuth, ADMIN, PASSWORD);
-    await adminSetCustomClaim(cred.user.uid, { admin: true });
-    await adminSetDoc('users', cred.user.uid, {
-      firstName: 'IT', lastName: 'View', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true,
-      transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
-    });
-    await adminSetDoc('projects', PROJECT_ID, {
-      name: 'Emergency purchase approval', userId: cred.user.uid,
-      createdAt: new Date(), status: 'created', s4Deployment: 'private',
-      legacyCode: read('tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap'),
-    });
+    acct = await seedStageProject({ prefix: 'itv', admin: true, acceptTerms: true, rich: true });
+    const source = read('tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap').replace(/\r\n/g, '\n');
+    await adminMergeDoc('projects', acct.projectId, { name: 'Emergency purchase approval', legacyCode: source, s4Deployment: 'private' });
+    await adminMergeDoc(`projects/${acct.projectId}/runs`, acct.runId, { legacyCode: source });
   });
 
   test('answer first, facets, filter bar, objects and the side column', async ({ page }) => {
     test.setTimeout(240 * 1000);
-    await signIn(page, ADMIN);
-    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    const view = page.locator('[data-it-view=""]');
-    await expect(view, 'the IT answers never arrived').toBeVisible({ timeout: 90000 });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signInThroughForm(page, acct);
+    // The old workspace address lands on the IT page (AB-11).
+    await page.goto(`/project/${acct.projectId}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(new RegExp(`/project/${acct.projectId}/analyze\?view=it$`), { timeout: 60000 });
+    const answer = page.locator('[data-analysis-answer] [data-answer-card]');
+    await expect(answer, 'the IT answers never arrived').toBeVisible({ timeout: 90000 });
 
-    // The answer stands above the Business blocks that used to push it 2,700 px down.
-    const answerTop = await page.locator('[data-it-headline]').boundingBox();
+    // The answer stands above everything else, the open questions included.
+    const answerTop = await answer.boundingBox();
     const notDetermined = await page.locator('#not-determined').boundingBox();
     expect(answerTop && notDetermined && answerTop.y < notDetermined.y).toBe(true);
-    // IT shows only its own content (ADR-086): no layer bar, no first look —
-    // its own anchor bar under the answer, in the page's order. "Ask this case"
-    // stands in IT since 22.10.2026 (owner decision: it left the Business view),
-    // under IT's own answer, never above it.
+    // IT shows only its own content (ADR-086): no layer bar, no first look, no map.
     await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
     await expect(page.locator('[data-first-look], [data-around-the-map]')).toHaveCount(0);
-    const ask = page.locator('[data-ask-this-case]');
-    if ((await ask.count()) > 0) {
-      const askTop = await ask.first().boundingBox();
-      expect(answerTop && askTop && answerTop.y < askTop.y).toBe(true);
+    // Four figures under the answer (ADR-140): findings, levels, route, not determined.
+    for (const id of ['findings', 'levels', 'route', 'not-determined']) {
+      await expect(answer.locator(`[data-facet="${id}"]`)).toHaveCount(1);
     }
-    const anchors = page.locator('[data-it-anchor]');
-    await expect(anchors.first()).toBeVisible({ timeout: 30000 });
-    // The three sections this page always has are in the bar; only the route
-    // and the trust anchor depend on the run (QA c26c5ec50586).
-    const readOrder = () => anchors.evaluateAll((els) => els.map((e) => e.getAttribute('data-it-anchor')));
-    await expect.poll(readOrder, { timeout: 30000 }).toEqual(expect.arrayContaining(['findings', 'objects', 'questions']));
-    const order = await readOrder();
-    const expected = ['findings', 'objects', 'questions', 'route', 'trust', 'standard'].filter((k) => order.includes(k));
-    expect(order).toEqual(expected);
-    await expect(page.locator('[data-it-anchors]')).not.toContainText(/\bempty\b/);
-    const bar = await page.locator('[data-it-anchors]').boundingBox();
+    // The anchor bar under the answer; findings before the objects the code touches.
+    const bar = await page.locator('[data-analyze-anchors]').boundingBox();
     expect(answerTop && bar && answerTop.y < bar.y, 'the IT answer does not stand above its anchor bar').toBe(true);
-    // Findings → Objects & dependencies → Open questions, top to bottom.
-    const findingsBox = await page.locator('#it-findings').boundingBox();
-    const objectsBox = await page.locator('#it-objects').boundingBox();
-    expect(findingsBox && objectsBox && notDetermined && findingsBox.y < objectsBox.y && objectsBox.y < notDetermined.y).toBe(true);
-    // One quiet row of links out — Standard fit is no longer one: it is IT's own (ADR-096).
-    await expect(page.locator('[data-it-elsewhere-link]')).toHaveCount(3);
-    await expect(page.locator('[data-it-headline]')).toContainText(/\d+ findings at \d+ places in the code · /);
+    const findingsBox = await page.locator('#analyze-kinds').boundingBox();
+    const objectsBox = await page.locator('#analyze-touch').boundingBox();
+    expect(findingsBox && objectsBox && findingsBox.y < objectsBox.y).toBe(true);
 
-    // Four figures under the answer, each with its coverage (v3.0.1: what the
-    // code uses took the target tile's place; the buckets stand with the findings).
-    for (const id of ['uses', 'findings', 'level', 'not-determined']) {
-      await expect(page.locator(`[data-it-figure="${id}"] [data-figure-coverage]`)).toHaveCount(1);
-    }
-    // Where to resolves under SAP Cloud ERP Private.
-    await expect(page.locator('[data-it-where-to]')).toContainText('SAP Cloud ERP Private', { timeout: 60000 });
+    // The filter bar of the findings: a severity filter opens what it matches.
+    const list = page.locator('[data-analysis-findings]');
+    await list.getByLabel('Severity', { exact: true }).selectOption('Medium');
+    const open = await list.locator('[data-findings-group]').evaluateAll((els) => els.map((e) => e.getAttribute('data-findings-group-open')));
+    expect(open.length).toBeGreaterThan(0);
+    expect(open.every((o) => o === 'true')).toBe(true);
 
-    // The side column: target profile with the PCE snapshot, the route, the imports.
-    await expect(page.locator('[data-it-profile-catalog]')).toContainText('SAP Cloud ERP Private');
-    await expect(page.locator('[data-it-catalog-note]')).toContainText('abap-atc-cr-cv-s4hc');
+    // The target profile with the PCE snapshot, the routes and the imports: in the technical detail since 3.5.0.
+    const detail = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]').first();
+    await detail.click();
+    await expect(detail).toHaveAttribute('aria-expanded', 'true');
+    const rail = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]', { hasText: 'Target, route contract and signed run' }).first();
+    if ((await rail.getAttribute('aria-expanded')) !== 'true') await rail.click();
+    await expect(page.locator('[data-it-profile-catalog]')).toContainText('SAP Cloud ERP Private', { timeout: 60000 });
     await expect(page.locator('[data-it-routes] li').first()).toBeVisible();
-    await expect(page.locator('[data-it-import="usage-none"]')).toContainText('never “unused”');
-
-    // The filter bar: "no level" leaves only findings that name no object. (The
-    // Not determined figure counts the engine's open points since v3.0.1, the
-    // same number as the list — `tests/it-view-uses.spec.ts`.)
-    await page.locator('[data-it-show-no-level]').click();
-    await expect(page.locator('[data-cc-filter-bar="active"]')).toBeVisible();
-    const absent = page.locator('[data-it-level-absent]');
-    const graded = page.locator('[data-it-level]');
-    await expect(graded).toHaveCount(0);
-    expect(await absent.count()).toBeGreaterThan(0);
-    await page.locator('[data-cc-clear-filters]').first().click();
-    await expect(graded.first()).toBeVisible();
-
-    // The level per SAP object the code uses.
-    await expect(page.locator('[data-it-use-level]').first()).toBeVisible();
+    await expect(page.locator('[data-it-imports]')).toBeVisible();
   });
 
   test('on a phone the page does not scroll sideways', async ({ page }) => {
     test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signInThroughForm(page, acct);
     await page.setViewportSize({ width: 390, height: 844 });
-    await signIn(page, ADMIN);
-    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-it-view=""]')).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-it-where-to]')).toContainText('SAP Cloud ERP Private', { timeout: 60000 });
+    await page.goto(`/project/${acct.projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analysis-answer] [data-answer-card]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('#analyze-kinds')).toBeVisible({ timeout: 60000 });
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
-    // The filter bar folds behind one button on a phone.
-    await expect(page.locator('[data-it-filter-bar]')).toBeHidden();
-    await page.locator('[data-it-filter-toggle] button, button[data-it-filter-toggle]').first().click();
-    await expect(page.locator('[data-it-filter-bar]')).toBeVisible();
   });
 });

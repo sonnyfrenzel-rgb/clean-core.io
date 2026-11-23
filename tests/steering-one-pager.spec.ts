@@ -629,6 +629,7 @@ async function signIn(page: Page, email: string): Promise<void> {
 test.describe('8.6 rendered — the one-pager in the Management view', () => {
   const OWNER = `${unique('steering-owner')}@cleancore-test.io`;
   const PROJECT_ID = unique('steering');
+  const RUN_PROJECT_ID = unique('steering-run');
 
   test.beforeAll(async () => {
     test.setTimeout(180 * 1000);
@@ -644,18 +645,26 @@ test.describe('8.6 rendered — the one-pager in the Management view', () => {
       createdAt: new Date(), status: 'created',
       legacyCode: 'REPORT z_bare.\nWRITE 1.\n',
     });
+    // A signed run on record: Analyze's Management view is its own page then, with the button beside it.
+    await adminSetDoc('projects', RUN_PROJECT_ID, {
+      name: 'Analysed', userId: cred.user.uid,
+      createdAt: new Date(), status: 'analyzed',
+      legacyCode: 'REPORT z_steer.\nWRITE 1.\n', activeRunId: 'run-1', cleanCoreScore: 58,
+    });
+    await adminSetDoc(`projects/${RUN_PROJECT_ID}/runs`, 'run-1', {
+      runId: 'run-1', userId: cred.user.uid, createdAt: '2026-10-01T10:00:00.000Z', status: 'completed', cleanCoreScore: 58,
+    });
   });
 
   test('opens as one page: the decision, four figures, reasons in place, links without addresses', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, OWNER);
-    // The closed place under the answer is no second button any more
-    // (ADR-087): the page opens from the button at the top of the decision
-    // card, the Export menu, or a link to `#steering-one-pager`.
+    // The closed place is no button of its own (ADR-087): the page opens from the button beside Analyze's
+    // Management page (ADR-143) or a link to `#steering-one-pager`. Without a signed run Management shows the start
+    // path, and the place still stands, so the link opens the one-pager and it says in place that nothing is signed.
     await page.goto(`/project/${PROJECT_ID}?view=management`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-steering-one-pager="closed"]')).toBeAttached({ timeout: 60000 });
     await expect(page.locator('[data-steering-one-pager="closed"] button')).toHaveCount(0);
-    await expect(page.locator('[data-executive-one-pager]')).toHaveCount(1, { timeout: 60000 });
     // A link with the anchor opens it on arrival (a full load: the fragment is
     // read when the page mounts).
     await page.evaluate(() => {
@@ -689,7 +698,7 @@ test.describe('8.6 rendered — the one-pager in the Management view', () => {
     // On paper, nothing but the one-pager, no buttons, and one page.
     await page.emulateMedia({ media: 'print' });
     await expect(pager).toBeVisible();
-    await expect(page.locator('[data-management-view=""]')).toBeHidden();
+    await expect(page.locator('[data-stage-header]').first()).toBeHidden();
     // A level chip is a button on screen (it explains itself, roadmap 3.0.6) and
     // prints as the chip; its explanation panel never does.
     for (const b of await pager.locator('button:not([data-cc-level-trigger])').all()) await expect(b).toBeHidden();
@@ -715,20 +724,23 @@ test.describe('8.6 rendered — the one-pager in the Management view', () => {
   // QA review of 7fecaa0102eb (0b9e215d8467): the two advertised controls,
   // clicked — the test above opens by fragment and only counts the button, so
   // a broken dispatch from either control would pass it.
-  test('the decision card button and the Export menu each open it', async ({ page }) => {
+  // Since ADR-143 the decision card stands on Re-design and Management has no Export menu: the advertised ways are
+  // the button beside Analyze's Management page and the workspace's old address with the anchor, which the redirect
+  // carries to Management (`lib/workspace-redirect.ts`).
+  test('the button beside the Management page and the old workspace address each open it', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, OWNER);
-    await page.goto(`/project/${PROJECT_ID}?view=management`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${RUN_PROJECT_ID}/analyze?view=management`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-steering-one-pager="closed"]')).toBeAttached({ timeout: 60000 });
     const pager = page.locator('[data-steering-one-pager="open"]');
 
-    await page.locator('[data-executive-one-pager]').click({ timeout: 60000 });
+    await page.locator('[data-management-one-pager]').click({ timeout: 60000 });
     await expect(pager.locator('[data-steering-summary]')).toBeVisible({ timeout: 60000 });
     await pager.getByRole('button', { name: 'Close', exact: true }).first().click();
     await expect(page.locator('[data-steering-one-pager="closed"]')).toBeAttached();
 
-    await page.locator('[data-workspace-export=""]').click();
-    await page.locator('[data-workspace-export-one-pager]').click();
+    await page.goto(`/project/${RUN_PROJECT_ID}?view=it#steering-one-pager`, { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(new RegExp(`/project/${RUN_PROJECT_ID}/analyze\\?view=management#steering-one-pager$`), { timeout: 60000 });
     await expect(pager.locator('[data-steering-summary]')).toBeVisible({ timeout: 60000 });
   });
 });

@@ -90,7 +90,7 @@ interface Probe {
   violations: string[];
 }
 
-test('the Documentation tool stays responsive while a slow map is drawn, and the map arrives', async ({ page }) => {
+test('Analyze, Business stays responsive while a slow map is drawn, and the map arrives', async ({ page }) => {
   test.setTimeout(300 * 1000);
   await page.setViewportSize({ width: 1600, height: 1100 });
   await signInViaLanding(page, EMAIL, PASSWORD);
@@ -108,9 +108,11 @@ test('the Documentation tool stays responsive while a slow map is drawn, and the
     if (forceInline) delete (window as unknown as { Worker?: unknown }).Worker;
   }, FORCE_INLINE);
 
-  await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+  // The map and its editor are Analyze, Business since 3.5.0 (Documentation shows Figure 1, read-only, ADR-127).
+  await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
   // The map is slow enough to be seen pending — the window this spec is about.
-  await expect(page.getByText('Reading the process from the code…')).toBeVisible({ timeout: 90_000 });
+  // Analyze, Business says the map is being read in its own place (`data-workspace-process="loading"`).
+  await expect(page.locator('[data-workspace-process="loading"]')).toBeAttached({ timeout: 90_000 });
 
   await page.locator('[data-process-map-canvas] [data-map-node]').first().waitFor({ timeout: 240_000 });
   const drawnAt = await page.evaluate(() => performance.now());

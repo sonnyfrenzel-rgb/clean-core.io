@@ -101,9 +101,9 @@ test('a choice’s address opens its place with the focus, and the way back retu
   await signInThroughForm(page, account);
   const base = `/project/${encodeURIComponent(projectId)}`;
 
-  // The place that asks: the IT view, its target profile.
-  await page.goto(`${base}?view=it`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
+  // The place that asks: Analyze in the IT view (the workspace page dissolved into it, 3.5.0), its target profile.
+  await page.goto(`${base}/analyze?view=it#it-target-profile`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90_000 });
   await expect(page.locator('#it-target-profile')).toBeVisible({ timeout: 90_000 });
 
   // The choice's one address, with the origin it was asked from.
@@ -127,7 +127,7 @@ test('a choice’s address opens its place with the focus, and the way back retu
   // The way back names the place that asked, and carries no origin itself.
   const label = originBackLabel('it.target-profile', '?view=it&origin=it.target-profile')!;
   const backHref = originBackHref({ base, origin: 'it.target-profile', search: '?view=it&origin=it.target-profile' })!;
-  expect(backHref).toBe(`${base}?view=it#it-target-profile`);
+  expect(backHref).toBe(`${base}/analyze?view=it#it-target-profile`);
   const back = page.locator('header[data-stage-header="tco"] a[data-stage-back="origin"]');
   await expect(back).toBeVisible();
   await expect(back.locator('[data-choice-back-lead]')).toHaveText(label.lead);
@@ -137,47 +137,39 @@ test('a choice’s address opens its place with the focus, and the way back retu
   await expect(page.locator('[data-stage-back="workspace"]')).toHaveCount(0);
 
   await back.click();
-  await page.waitForURL((url) => url.pathname === base && url.hash === '#it-target-profile', { timeout: 60_000 });
+  await page.waitForURL((url) => url.pathname === `${base}/analyze` && url.hash === '#it-target-profile', { timeout: 60_000 });
   const landed = new URL(page.url());
   expect(landed.searchParams.get('view')).toBe('it');
   expect(landed.searchParams.has('origin'), 'the way back carried an origin').toBe(false);
-  await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
+  await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90_000 });
   await expectSettledInView(page, 'it-target-profile');
   // One level deep: no origin, so nothing here claims to have been arrived at.
   await expect(page.locator('[data-arrived]')).toHaveCount(0);
 });
 
-test('a link on the same page that changes the query and the fragment is followed', async ({ page }) => {
+test('a link to another place that changes the path and the fragment is followed', async ({ page }) => {
   test.setTimeout(300_000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await signInThroughForm(page, account);
   const base = `/project/${encodeURIComponent(projectId)}`;
-  await page.goto(`${base}?view=it`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90_000 });
+  await page.goto(`${base}/analyze?view=it#it-route`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90_000 });
 
+  // IT's "Review in the decision" leads to the program decision, Re-design's step since ADR-143.
   const link = page.locator('a[data-it-review-contract]');
   await expect(link).toBeVisible({ timeout: 90_000 });
-  expect(await link.getAttribute('href')).toBe(`${base}?view=management#decision-card`);
+  expect(await link.getAttribute('href')).toBe(`${base}/redesign#decide`);
   await link.scrollIntoViewIfNeeded();
   // A client navigation: the page is not loaded again, so a marker set now survives it.
   await page.evaluate(() => {
-    (window as unknown as { __reveals: string[]; __samePage: boolean }).__reveals = [];
     (window as unknown as { __samePage: boolean }).__samePage = true;
   });
   await link.click();
-  await page.waitForURL((url) => url.searchParams.get('view') === 'management' && url.hash === '#decision-card', { timeout: 60_000 });
-  await expect(page.locator('[data-workspace-shell="management"]')).toBeVisible({ timeout: 60_000 });
+  await page.waitForURL((url) => url.pathname === `${base}/redesign` && url.hash === '#decide', { timeout: 60_000 });
   expect(await page.evaluate(() => (window as unknown as { __samePage?: boolean }).__samePage), 'the link loaded the page again').toBe(true);
-  // The follow started again for the new address — it asked the place to show itself — and the place is on screen.
-  await expect.poll(() => reveals(page), { timeout: 30_000 }).toContain('decision-card');
-  // Not held at the top edge: measured 11.10.2026 on the production build, the
-  // management view grows under the card after the first scroll, the browser
-  // moves the page by itself (no wheel, key or press), the follow reads that as
-  // the reader's scroll and stops, and the card settles ~26 px above the
-  // viewport. Reported to the caller as a defect of `useFollowHash`; until it is
-  // fixed this holds what is true — on screen, near the top — and
-  // `expectSettledInView` (top edge in view) is the bar to raise it to.
-  await expectSettledInView(page, 'decision-card', { minTop: -120 });
-  // No origin in the address: the reader's focus is not taken.
-  await expect(page.locator('#decision-card[data-arrived]')).toHaveCount(0);
+  // The place is on screen.
+  await expect(page.locator('#decide')).toBeVisible({ timeout: 60_000 });
+  await expectSettledInView(page, 'decide', { minTop: -120 });
+  // No origin in the address: nothing claims to have been arrived at.
+  await expect(page.locator('#decide[data-arrived]')).toHaveCount(0);
 });

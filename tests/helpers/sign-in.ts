@@ -47,8 +47,15 @@ export async function signInViaLanding(
   const { pauseMs = SIGN_IN_PAUSE_MS, alsoGermanLabel = false, gotoTimeout } = options;
   if (gotoTimeout === undefined) await page.goto('/');
   else await page.goto('/', { timeout: gotoTimeout });
+  // The header's "Sign in" is a link to `?auth=signin`. A click that lands before the landing has hydrated opens
+  // nothing on a dev server under load; the address it leads to opens the same dialog on any server.
   await page.click('[data-header-sign-in]');
-  await page.waitForSelector('input[type="email"]');
+  if (!(await page.locator('input[type="email"]').isVisible().catch(() => false))) {
+    await page.waitForSelector('input[type="email"]', { timeout: 20_000 }).catch(async () => {
+      await page.goto('/?auth=signin');
+      await page.waitForSelector('input[type="email"]');
+    });
+  }
   await page.fill('input[type="email"]', email);
   await page.fill('input[type="password"]', password);
   await page.click(alsoGermanLabel ? SUBMIT_OR_GERMAN : SUBMIT);

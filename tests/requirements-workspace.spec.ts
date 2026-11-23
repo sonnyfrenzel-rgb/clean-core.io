@@ -362,12 +362,16 @@ test('Delivery lists the specification among the artefacts — what it holds, ne
   const { context, page } = await signedInPage(browser, OWNER);
   await noModel(page);
   await page.goto(`/project/${PROJECT}/delivery`, { waitUntil: 'domcontentloaded' });
-  const line = page.locator('[data-delivery-spec]');
-  await expect(line).toBeVisible({ timeout: 120_000 });
+  // Since 3.5.0 each part of the package is a row that opens (Delivery's object page): its line is one click deep.
+  const card = page.locator('li[data-package-part="spec"]');
+  await expect(card).toBeVisible({ timeout: 120_000 });
+  await card.locator('summary').click();
+  const line = card.locator('[data-delivery-spec]');
+  await expect(line).toBeVisible({ timeout: 30_000 });
   await expect(line).toContainText(/Requirements specification: \d+ requirements \(\d+ functional, \d+ non-functional\), \d+ open decisions?\./);
   await expect(line).toContainText('Not part of the signed audit pack.');
-  const card = line.locator('xpath=ancestor::li[1]');
-  await expect(card.locator('[data-provenance="proven"]')).toHaveCount(0);
+  // Never as proven: neither the old chip nor the family's "Signed".
+  await expect(card.locator('[data-provenance="proven"], [data-family-chip="signed"]')).toHaveCount(0);
   await card.scrollIntoViewIfNeeded();
   await shot(page, 'delivery-1440');
   await context.close();

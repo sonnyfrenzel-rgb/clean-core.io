@@ -156,7 +156,8 @@ test.describe('every stage renders its title identically', () => {
 
       // The family's one way back above the title (ADR-140) — a link, not a button. Opened without a workspace
       // place in the address, every tool leads to My workspace; with one, to that place (`familyBackLink`).
-      const back = page.locator('[data-stage-back]');
+      // The header's: since 3.5.0 the footer draws the same way back at the end of the page (`StageFooter`).
+      const back = page.locator('[data-stage-header] [data-stage-back]');
       await expect(back, `${stage} has no way back`).toHaveCount(1);
       await expect(back).toHaveText(/^(My workspace|IT view|Management view|Business view)/);
       expect(await back.evaluate((el) => el.tagName), `${stage}: the way back is not a link`).toBe('A');
@@ -173,7 +174,7 @@ test.describe('every stage renders its title identically', () => {
         .poll(
           () =>
             page.evaluate(() => {
-              const b = document.querySelector('[data-stage-back]')?.getBoundingClientRect();
+              const b = document.querySelector('[data-stage-header] [data-stage-back]')?.getBoundingClientRect();
               const t = document.querySelector('[data-stage-title]')?.getBoundingClientRect();
               return Boolean(b && t && b.height > 0 && t.height > 0 && b.bottom <= t.top);
             }),
@@ -306,16 +307,17 @@ test.describe('every stage stays on the type scale', () => {
  * Here, on a used project at desktop width: the bar starts at the frame's x
  * and spans the frame, sticks 56 px from the top (under the shell bar), says
  * "On this page", stands above every section it names, and is still in view
- * after scrolling to the last of them. Design has none; Economics carries one since ADR-128 (mock-up E6).
+ * after scrolling to the last of them. Economics carries one since ADR-128 (mock-up E6), Design since it joined the
+ * family frame (ADR-130, ADR-140: the shared "On this page" bar on every tool).
  */
 test.describe('the "On this page" bar stands in the same place on every tool', () => {
-  test('same x, full width, sticky under the shell bar, above its sections — and none on Design', async ({ page }) => {
+  test('same x, full width, sticky under the shell bar, above its sections — Design included', async ({ page }) => {
     test.setTimeout(6 * 60 * 1000);
     const seeded = await seedStageProject({ prefix: 'stagebar', admin: true, acceptTerms: true, rich: true });
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, { email: seeded.email, password: seeded.password });
 
-    const WITH_BAR = ['analyze', 'transformation', 'testing', 'tco', 'delivery'];
+    const WITH_BAR = ['analyze', 'design', 'transformation', 'testing', 'tco', 'delivery'];
     const offSpec: string[] = [];
     for (const stage of STAGES) {
       await page.goto(`/project/${seeded.projectId}/${stage}${stage === 'analyze' ? '?view=it' : ''}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });

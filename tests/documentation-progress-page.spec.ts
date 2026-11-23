@@ -17,12 +17,14 @@ import { businessLayerFor, engineDocumentationOf, fixtureSource, FIXTURE_FILE } 
  * — never a real call:
  *
  *   - opening reads the run, the process and the description and calls no
- *     model: the card ends there and says the layer waits for "Generate draft"
- *     (3.0.21, legal review 06.11.2026, item 1);
+ *     model: the layer waits for "Generate draft (sends code to …)" (3.0.21,
+ *     legal review 06.11.2026, item 1); since 3.5.0 the card is a status line
+ *     only while the code is read or a step stopped (ADR-107 (1)), so it goes
+ *     once the description stands;
  *   - after that click the stages become active in their order, the model
  *     stage says what it expects before it is done, and its elapsed time moves
- *     while it waits; the card ends "written", and the call names its answer
- *     shape;
+ *     while it waits; the card goes once the layer is written and stored, and
+ *     the call names its answer shape;
  *   - a stopped call ends the card with its reason and *Try again*, and the
  *     retry writes it;
  *   - a program too large for one answer is written in parts — one call per
@@ -107,11 +109,19 @@ test.describe('the Documentation tool says what it is doing', () => {
   const stagesOf = (page: Page) => page.locator('[data-doc-stage]').evaluateAll(
     (els) => els.map((e) => [e.getAttribute('data-doc-stage'), e.getAttribute('data-stage-state')] as [string, string]),
   );
-  /** The card's end and its stages read in one go, so a sample never pairs an end with the stages of another render. */
-  const snapshotOf = (page: Page) => page.locator('[data-doc-progress]').evaluate((card) => ({
-    end: card.getAttribute('data-doc-progress-end'),
-    states: [...card.querySelectorAll('[data-doc-stage]')].map((e) => [e.getAttribute('data-doc-stage'), e.getAttribute('data-stage-state')] as [string, string]),
-  }));
+  /**
+   * The card's end and its stages read in one go, so a sample never pairs an end with the stages of another render.
+   * `end` is `null` once the card is gone: it stands only while something runs or a step stopped (ADR-107 (1)).
+   */
+  const snapshotOf = (page: Page) => page.evaluate(() => {
+    const card = document.querySelector('[data-doc-progress]');
+    return {
+      end: card ? card.getAttribute('data-doc-progress-end') : null,
+      states: card ? [...card.querySelectorAll('[data-doc-stage]')].map((e) => [e.getAttribute('data-doc-stage'), e.getAttribute('data-stage-state')] as [string, string]) : [],
+    };
+  });
+  /** What the store holds for the project's SOP and RACI. */
+  const storedLayer = async (projectId: string) => String((await adminGetDoc('projects', projectId))?.businessDocumentation ?? '');
 
   /**
    * Opening calls no model (3.0.21, item 1): the engine stages end, the business layer
@@ -120,16 +130,18 @@ test.describe('the Documentation tool says what it is doing', () => {
    */
   async function openThenGenerate(page: Page, projectId: string, modelCalls: () => number) {
     await page.goto(`/project/${projectId}/documentation`, { waitUntil: 'domcontentloaded' });
-    const card = page.locator('[data-doc-progress]');
-    await expect(card).toHaveAttribute('data-doc-progress-end', 'nothing', { timeout: 120000 });
-    expect(await stagesOf(page)).toEqual([['run', 'done'], ['process', 'done'], ['description', 'done'], ['business', 'skipped'], ['storing', 'skipped']]);
-    // One sentence that says what comes next — not "Nothing more to write — Not written yet." (UX review 22.11.2026, Q4).
-    await expect(card).toContainText('The SOP and the RACI wait for your click on Generate draft below; nothing is sent before.');
-    await expect(card).not.toContainText('Nothing more to write');
+    // The engine stages end on opening: the description stands, and the button that sends the code is enabled.
     const button = page.locator('[data-generate-business-layer]');
+    await expect(button).toBeEnabled({ timeout: 120000 });
+    await expect(page.locator('[data-process-document]')).toBeVisible();
+    // Nothing runs and nothing stopped, so there is no status line (ADR-107 (1)), and no dead end such as
+    // "Nothing more to write — Not written yet." (UX review 22.11.2026, Q4).
+    await expect(page.locator('[data-doc-progress]')).toHaveCount(0, { timeout: 60000 });
+    await expect(page.locator('body')).not.toContainText('Nothing more to write');
+    // The one action names where the code goes before anything is sent (legal review 06.11.2026).
     await expect(button).toHaveText('Generate draft (sends code to Google)');
-    await expect(button).toBeEnabled({ timeout: 60000 });
     expect(modelCalls(), 'opening called the model').toBe(0);
+    expect(await storedLayer(projectId), 'opening wrote a layer').toBe('');
     await button.click();
   }
 
@@ -173,6 +185,8 @@ test.describe('the Documentation tool says what it is doing', () => {
       expect(Date.now(), 'the card did not end').toBeLessThan(deadline);
       await page.waitForTimeout(250);
     }
+    // The card went without stopping: the layer is written.
+    expect(await snapshotOf(page)).toEqual({ end: null, states: [] });
     expect(activeOrder).toEqual(DOC_STAGE_ORDER.filter((k) => activeOrder.includes(k)));
     // After the click only the model and the store run: the engine stages ended on opening.
     expect(activeOrder[0]).toBe('business');
@@ -180,9 +194,9 @@ test.describe('the Documentation tool says what it is doing', () => {
     expect(sawExpected, 'the expected time was not said while the model wrote').toBe(true);
     expect(businessTimes.size, `the elapsed time did not move: ${[...businessTimes].join(', ')}`).toBeGreaterThan(2);
 
-    await expect(card).toHaveAttribute('data-doc-progress-end', 'written');
-    await expect(card).toContainText('Written — the process description and the SOP and RACI are stored with this project.');
-    await expect(page.locator('[data-business-sop]')).toBeVisible({ timeout: 60000 });
+    await expect(card).toHaveCount(0);
+    expect(JSON.parse(await storedLayer(SLOW)).sop_details).toHaveLength(LAYER.sop_details.length);
+    await expect(page.locator('[data-business-sop]')).toBeAttached({ timeout: 60000 });
     expect(bodies).toHaveLength(1);
     expect(bodies[0].stage).toBe('documentation');
     expect(bodies[0].responseShape).toBe('documentation-business');
@@ -210,9 +224,12 @@ test.describe('the Documentation tool says what it is doing', () => {
     await expect(card).toHaveAttribute('data-doc-progress-end', 'failed', { timeout: 120000 });
     await expect(page.locator('[data-doc-stage="business"]')).toHaveAttribute('data-stage-state', 'failed');
     await expect(card).toContainText('Stopped at “Writing the SOP and the RACI”: The model did not answer within 870 seconds');
+    expect(await storedLayer(STOP), 'a stopped call stored something').toBe('');
     await page.locator('[data-doc-progress-retry]').click();
-    await expect(card).toHaveAttribute('data-doc-progress-end', 'written', { timeout: 120000 });
+    // The retry writes it: the card goes (it stands only while something runs or stopped), the layer is stored.
+    await expect(card).toHaveCount(0, { timeout: 120000 });
     expect(calls).toBe(2);
+    await expect.poll(() => storedLayer(STOP), { timeout: 30000 }).not.toBe('');
   });
 
   test('a program too large for one answer is written in parts, and the joined layer has every step', async ({ page }) => {
@@ -240,11 +257,13 @@ test.describe('the Documentation tool says what it is doing', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
     await openThenGenerate(page, PARTS, () => prompts.length);
 
+    // While it runs, the card names the plan and lists the parts (each call takes 2.5 s, so it stands for 5 s at least).
     const card = page.locator('[data-doc-progress]');
     await expect(page.locator('[data-doc-parts] [data-doc-part]')).toHaveCount(2, { timeout: 120000 });
     await expect(card).toContainText('Written in 2 parts of up to 60 steps — 120 steps in all');
+    // Then it goes, and the cost line under the proposals keeps saying how it was written.
+    await expect(card).toHaveCount(0, { timeout: 120000 });
     await expect(page.locator('[data-model-proposals-cost]')).toContainText('written in 2 parts, one model call each');
-    await expect(card).toHaveAttribute('data-doc-progress-end', 'written', { timeout: 120000 });
 
     expect(prompts).toHaveLength(2);
     expect(prompts[0]).toContain('THIS IS PART 1 OF 2');

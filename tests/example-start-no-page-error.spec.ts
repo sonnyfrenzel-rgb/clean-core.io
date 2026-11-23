@@ -172,10 +172,12 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
     for (const [name, path, ready] of [
       // The project's address opens Analyze, Business, since AB-2 (ADR-109); IT stays on the workspace.
       ['the project, Analyze in the Business view', '', '[data-analyze-business="ready"]'],
-      ['the workspace, IT view', '?view=it', '[data-workspace-shell]'],
-      // The bucket panel stands in the folded "Evidence" since 03.10.2026; the
-      // answer the view opens with is the decision beside fit to standard.
-      ['the workspace, management view', '?view=management', '[data-management-executive]'],
+      // The workspace page dissolved into Analyze in 3.5.0 (AB-11): its old addresses open Analyze's IT and
+      // Management views (AB-9, AB-10), each drawn by its own page.
+      ['the workspace, IT view', '?view=it', '[data-analyze-it]'],
+      ['the workspace, management view', '?view=management', '[data-analyze-management="ready"]'],
+      // Re-design, the way on from Analyze (ADR-143).
+      ['Re-design', '/redesign', '[data-stage-title]'],
       ['Analyze, IT view', '/analyze?view=it', '[data-analysis-answer]'],
       ['Transformation', '/transformation', '[data-stage-title]'],
     ] as const) {

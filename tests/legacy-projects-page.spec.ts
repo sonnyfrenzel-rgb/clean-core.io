@@ -106,30 +106,33 @@ test.describe('historical project forms, opened in the workspace', () => {
       const businessText = await page.locator('[data-stage-frame="analyze"]').first().innerText();
       expect(businessText, `${key} in business`).not.toMatch(/\bundefined\b|\bNaN\b|\[object Object\]/);
 
+      // IT and Management are Analyze's views since 3.5.0 (AB-9, AB-10): the old workspace address opens them there.
       for (const view of ['it', 'management']) {
         await page.goto(`/project/${id}?view=${view}`, { waitUntil: 'domcontentloaded' });
-        const shell = page.locator('[data-workspace-shell]');
-        await expect(shell, `${key} did not open in ${view}`).toBeVisible({ timeout: 60000 });
-        await expect(shell).toHaveAttribute('data-workspace-shell', view);
-        // The document id is the one in the path, whatever the document carries.
-        await expect(page.locator('[data-workspace-title]')).toContainText(String(form.project.name));
-        // Wait for what is compared, not for the network to go quiet: the
-        // workspace keeps Firestore listeners open, so 'networkidle' never
-        // arrived and every view waited out its full minute (24 views, one
-        // test timeout). The gaps are derived once the reads are in; poll them.
-        await expect
-          .poll(
-            async () =>
-              (
-                await page.locator('[data-not-determined-record]').evaluateAll((els) =>
-                  els.map((el) => el.getAttribute('data-not-determined-record') || ''),
-                )
-              ).sort(),
-            { message: `${key} in ${view}`, timeout: 30000 },
-          )
-          .toEqual([...form.gaps].sort());
+        await page.waitForURL(new RegExp(`/project/${id}/analyze\\?view=${view}`), { timeout: 60000 });
+        await expect(page.locator('[data-stage-view-switch]'), `${key} did not open in ${view}`).toHaveAttribute('data-stage-view-switch', view, {
+          timeout: 60000,
+        });
+        await expect(page.locator('[data-stage-title]'), `${key} did not open in ${view}`).toBeVisible({ timeout: 60000 });
+        // The document id is the one in the path, whatever the document carries: the shell path names the project.
+        await expect(page.locator('header [data-shell-path] [data-shell-path-project]')).toContainText(String(form.project.name), { timeout: 60000 });
+        if (view === 'it') {
+          // The record gaps stand in IT's open questions (ADR-081). Wait for what is compared, not for the network to
+          // go quiet: the page keeps Firestore listeners open, so 'networkidle' never arrives.
+          await expect
+            .poll(
+              async () =>
+                (
+                  await page.locator('[data-not-determined-record]').evaluateAll((els) =>
+                    els.map((el) => el.getAttribute('data-not-determined-record') || ''),
+                  )
+                ).sort(),
+              { message: `${key} in ${view}`, timeout: 30000 },
+            )
+            .toEqual([...form.gaps].sort());
+        }
 
-        const text = await page.locator('[data-workspace-shell]').innerText();
+        const text = await page.locator('[data-stage-frame="analyze"]').first().innerText();
         expect(text, `${key} in ${view}`).not.toMatch(/\bundefined\b|\bNaN\b|\[object Object\]/);
       }
 

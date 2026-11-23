@@ -769,8 +769,11 @@ test.describe('G4 path 2 — targeted extension (CC-031: side-by-side CAP, sandb
     await page.goto(`/project/${projectId}/documentation`);
     // Owner 03.10.2026: opening the stage writes the documentation from the
     // code — no click, no model call. The trace is drawn only once the stored
-    // document has come back from the transaction.
-    await expect(page.locator('[data-engine-documentation]')).toBeVisible({ timeout: 120_000 });
+    // document has come back from the transaction. Since ADR-127 the trace stands in the appendix fold of the one
+    // page: it is drawn closed, and opened here to be read.
+    await expect(page.locator('[data-engine-documentation]')).toBeAttached({ timeout: 120_000 });
+    await page.locator('details[data-doc-fold="appendix"] > summary').click();
+    await expect(page.locator('[data-engine-documentation]')).toBeVisible();
     const h = await handover(projectId);
     expect(h.link('documentation').provenance).toBe('reconstructed');
   });
@@ -1179,17 +1182,19 @@ test.describe('G4 path 4 — undecidable (CC-021: the deciding logic is in an IN
   test('design and delivery pages: nothing reads as decided', async ({ page }) => {
     test.setTimeout(300_000);
     await signInThroughForm(page, owner);
+    // Design in its three views since ADR-130: the answer card names the program decision first (read on the server,
+    // "Reading the decision…" until then), and the IT view holds the route evidence. Neither may read as decided.
     await page.goto(`/project/${projectId}/design`);
-    const answer = page.locator('[data-design-answer]');
-    await expect(answer).toBeVisible({ timeout: 120_000 });
-    // The route is read on the server first ("Reading the route…"); the answer settles after it.
-    await expect(answer).toContainText('Confidence', { timeout: 120_000 });
-    await expect(answer).not.toContainText('Reading the route', { timeout: 120_000 });
-    await expect(answer).not.toHaveAttribute('data-design-answer', 'confirmed');
-    await expect(answer).toContainText('Recommended');
-    await expect(answer).not.toContainText('Confirmed by');
+    const decision = page.locator('[data-design-decision]').first();
+    await expect(decision).toHaveAttribute('data-design-decision', 'none', { timeout: 120_000 });
+    await expect(decision).toContainText('Not taken yet');
+    await expect(page.locator('main')).not.toContainText(/Confirmed by|Confirmed in /);
     // Recorded for the protocol (finding G4-F2): what the Design stage says about a case it cannot decide.
-    test.info().annotations.push({ type: 'design-on-undecidable', description: (await answer.innerText()).replace(/\s+/g, ' ') });
+    test.info().annotations.push({ type: 'design-on-undecidable', description: (await decision.innerText()).replace(/\s+/g, ' ') });
+    await page.goto(`/project/${projectId}/design?view=it`);
+    await expect(page.locator('#design-canvas')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('main')).not.toContainText(/Confirmed by|Confirmed in /);
+    await expect(page.locator('[data-design-answer="confirmed"]')).toHaveCount(0);
 
     await page.goto(`/project/${projectId}/delivery`);
     await expect(page.locator('[data-handover-step="decision"]')).toContainText('not confirmed', { timeout: 90_000 });

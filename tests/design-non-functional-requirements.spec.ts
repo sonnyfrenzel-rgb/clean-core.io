@@ -240,7 +240,8 @@ test.describe('a real project', () => {
     await expect(specific).toContainText('ZMM_PO_APPR');
     await specific.getByRole('button', { name: /AI-generated/ }).click();
     await expect(specific.getByText(PROPOSALS.dataRetention)).toBeVisible();
-    await expect(specific.locator('[data-provenance="proposed"]')).toBeVisible();
+    // The family's AI-generated chip (lib/family-chips.ts: "proposed").
+    await expect(specific.locator('[data-family-chip="ai"]')).toBeVisible();
 
     expect(modelCalls).toEqual([]);
 

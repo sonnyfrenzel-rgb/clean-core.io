@@ -179,7 +179,8 @@ test.describe('the design document', () => {
     await expect(overview.locator('[data-design-fact="mappings"]')).toContainText('4 SAP API mappings');
     await expect(overview.locator('[data-design-fact="files"]')).toContainText('7 files');
     // One "AI-generated" per section, not one per card.
-    expect(await overview.locator('[data-provenance="proposed"]').count()).toBe(1);
+    // The family's chip since 3.5.0: AI-generated is `data-family-chip="ai"` (lib/family-chips.ts).
+    expect(await overview.locator('[data-family-chip="ai"]').count()).toBe(1);
     expect(calls).toEqual([]);
   });
 

@@ -218,7 +218,9 @@ test('revision 1 is the process reconstructed by the server, and a browser canno
   expect(created.status(), await created.text()).toBe(201);
 
   const one = await revision(request, 1);
-  const expected = buildBpmnExportFromSource(PROGRAM, { processName: 'Requisition release', sourceFileName: FILE_NAME });
+  // The signed run of this project carries no engine stamp, so the route reconstructs with the oldest engine and
+  // records it as unstamped (3.5.0, `engineVersionOfProject` → null), as the map draws it.
+  const expected = buildBpmnExportFromSource(PROGRAM, { processName: 'Requisition release', sourceFileName: FILE_NAME, exporterVersion: null });
   expect(one.revision).toBe(1);
   expect(one.origin).toBe('reconstructed');
   expect(one.xml, 'revision 1 is not what the engine reads out of the source').toBe(expected.xml);

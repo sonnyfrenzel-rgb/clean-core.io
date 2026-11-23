@@ -5,7 +5,8 @@ import { editionName, type Edition } from '../../lib/score-hero';
 /**
  * The Analyze score hero (ADR-093) as a reader sees it, read off the rendered
  * page — not off `lib/score-hero.ts`. A row's points are the text it shows
- * ("−23"), its places are the line chips a wide screen draws ("L246"), so the
+ * ("−23"), its places are the line chips a wide screen draws ("line 246", the one notation of
+ * UX review Q11, `lineAnchorText`), so the
  * arithmetic below is the page's own and would catch a table that renders other
  * figures than the module computes, drops a row, or sorts it differently.
  *
@@ -37,13 +38,20 @@ export async function readScoreHero(page: Page): Promise<RenderedHero> {
       Array.from(li.querySelectorAll<HTMLElement>('[data-cc-anchor]'))
         .filter((el) => el.offsetParent !== null)
         .map((el) => (el.textContent ?? '').trim());
-    const one = (sel: string) => document.querySelector(`[data-analysis-answer] ${sel}`);
+    // Since 3.5.0 (AB-9) the IT page splits the hero: the figure, its band and the edition rule stand in the answer
+    // card, the deductions are the first section, "What moves the score" (`[data-analyze-moves]`).
+    const one = (sel: string) =>
+      document.querySelector(`[data-analyze-moves] ${sel}`) ?? document.querySelector(`[data-analysis-answer] ${sel}`);
     const free = one('li[data-score-free-own-writes]');
     const sub = one('li[data-score-code-subtotal]');
     const nd = one('li[data-score-not-determined]');
     const total = one('li[data-score-total]');
     return {
-      deductions: Array.from(document.querySelectorAll('[data-analysis-answer] li[data-score-deduction]')).map((li) => ({
+      deductions: Array.from(
+        document.querySelectorAll('[data-analyze-moves] li[data-score-deduction]').length
+          ? document.querySelectorAll('[data-analyze-moves] li[data-score-deduction]')
+          : document.querySelectorAll('[data-analysis-answer] li[data-score-deduction]'),
+      ).map((li) => ({
         kind: li.getAttribute('data-score-deduction') ?? '',
         points: points(li),
         chips: chips(li),
@@ -72,9 +80,11 @@ export async function expectScoreHeroAddsUp(
   expected: { score: number; edition: Edition; otherScore: number; signedLabel: string; minDeductions?: number },
 ): Promise<RenderedHero> {
   const answer = page.locator('[data-analysis-answer]');
-  await expect(answer.locator('[data-score-breakdown="shown"]')).toBeVisible({ timeout: 60_000 });
+  // The deduction table: the answer card's until 3.5.0, "What moves the score" on the IT page since (AB-9).
+  const table = page.locator('[data-analyze-moves], [data-analysis-answer]').locator('[data-score-breakdown="shown"]').first();
+  await expect(table).toBeVisible({ timeout: 60_000 });
   // Settled: the table has its rows before anything is read.
-  await expect(answer.locator('li[data-score-total]')).toHaveAttribute('data-score-total', String(expected.score));
+  await expect(table.locator('li[data-score-total]')).toHaveAttribute('data-score-total', String(expected.score));
   const hero = await readScoreHero(page);
   const { score } = expected;
 
@@ -89,7 +99,7 @@ export async function expectScoreHeroAddsUp(
     expect(d.points, `${d.kind}: not a deduction`).toBeLessThan(0);
     expect(d.label, `${d.kind}: no words`).not.toBe('');
     expect(d.chips.length, `${d.kind}: no line chip`).toBeGreaterThan(0);
-    for (const chip of d.chips) expect(chip, `${d.kind}: a chip that is not a line`).toMatch(/^L\d+$/);
+    for (const chip of d.chips) expect(chip, `${d.kind}: a chip that is not a line`).toMatch(/^line \d+$/);
   }
   expect(pts, 'the deductions are not the largest first').toEqual([...pts].sort((a, b) => b - a));
   expect(hero.largest, 'the largest single deduction is not the first row').toBe(hero.deductions[0].kind);

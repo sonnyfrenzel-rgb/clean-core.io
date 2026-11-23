@@ -78,7 +78,7 @@ try {
 const PASSWORD = 'TargetEdition123!';
 
 test.describe('an example started for the Public Edition', () => {
-  test('is signed for the Public Edition, and the management overview says so', async ({ page }) => {
+  test('is signed for the Public Edition, and the IT view’s target says so', async ({ page }) => {
     test.setTimeout(360 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     const email = `edition-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@cleancore-test.io`;
@@ -122,16 +122,16 @@ test.describe('an example started for the Public Edition', () => {
       }, { timeout: 90000 })
       .toBe('public');
 
-    await page.goto(`/project/${projectId}?view=management`, { waitUntil: 'domcontentloaded', timeout: 90000 });
-    // The distance to SAP standard is read on the target edition: its title
-    // names it (the second bucket card that used to say it went, ADR-087).
-    const fitTitle = page.locator('#standard-fit[data-standard-fit="ready"] h3');
-    await expect(fitTitle).toBeAttached({ timeout: 90000 });
-    await expect(fitTitle).toContainText('Public Edition', { timeout: 60000 });
+    // Since 3.5.0 Analyze's Management view carries no per-edition standard fit (ADR-143 (3)); the target the
+    // run was signed for is named in the IT view's target profile (its own address opens the fold).
+    await page.goto(`/project/${projectId}/analyze?view=it#it-target-profile`, { waitUntil: 'domcontentloaded', timeout: 90000 });
+    const profile = page.locator('[data-it-profile]');
+    await expect(profile).toBeVisible({ timeout: 90000 });
+    await expect(profile).toContainText('Public Edition', { timeout: 60000 });
     // Neither private name — the current one, nor the one before the 3.0.12
     // rename, which a stale string would bring back (QA review of
     // c38f8043f118, 6b28196085ce).
-    await expect(fitTitle).not.toContainText('SAP Cloud ERP Private');
-    await expect(fitTitle).not.toContainText('Private Edition');
+    await expect(profile).not.toContainText('SAP Cloud ERP Private');
+    await expect(profile).not.toContainText('Private Edition');
   });
 });

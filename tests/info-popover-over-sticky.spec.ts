@@ -116,9 +116,19 @@ async function openDemo(page: Page, stage: string) {
   await expect(page.locator('[data-demo-ready="true"]').first()).toBeAttached({ timeout: 120_000 });
 }
 
-test('delivery: an open "Why?" is not covered by the shell bar', async ({ page }) => {
+// Delivery's object page (3.5.0) says its status in words and carries no "Why?" any more; the "Why?" a reader still
+// meets is the coverage verdict's, in Analyze's technical detail.
+test('analyze: an open "Why?" is not covered by the shell bar', async ({ page }) => {
   test.setTimeout(180_000);
-  await openDemo(page, 'delivery');
+  await openDemo(page, 'analyze');
+  const detail = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]').first();
+  // Clicked until it says it is open: the demo renders before it hydrates.
+  await expect(async () => {
+    await detail.click();
+    await expect(detail).toHaveAttribute('aria-expanded', 'true', { timeout: 2000 });
+  }).toPass({ timeout: 30_000 });
+  const constructs = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]', { hasText: 'Language constructs the engine resolved' }).first();
+  if ((await constructs.getAttribute('aria-expanded')) !== 'true') await constructs.click();
   await page.locator('button[data-cc-why]').first().click();
   await expect(page.locator('[data-cc-why-popover]')).toBeVisible();
   // Opens downward: its "?" ends up under the shell bar.

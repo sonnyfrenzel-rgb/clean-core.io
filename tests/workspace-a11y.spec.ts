@@ -4,6 +4,8 @@ import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'fi
 import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import { createGalleryAdmin, openGallery, type GalleryAdmin } from './helpers/cc-gallery';
 import firebaseConfig from '../firebase-config.json';
+import { sha256Hex } from '../lib/artefact-digest';
+import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 
 /**
  * Roadmap 3.0.4 — the accessibility base, checked on the rendered workspace.
@@ -16,7 +18,10 @@ import firebaseConfig from '../firebase-config.json';
  *
  * Every test here opens the real workspace of a seeded project, signed in as
  * its owner (every account has the page since roadmap 3.0.1). Needs the dev
- * server and the emulators.
+ * server and the emulators. Since 3.5.0 the workspace page is gone (AB-11):
+ * every view is Analyze's — Business, IT and Management — in the family frame,
+ * so the checks run there, on a project with a signed run (IT and Management
+ * are drawn from it).
  */
 
 const firebaseApp = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
@@ -52,6 +57,7 @@ const BRANCHING = [
 
 const ADMIN = `${unique('a11y-admin')}@cleancore-test.io`;
 const PROJECT_ID = unique('a11y-case');
+const RUN_ID = unique('a11y-run');
 
 async function signIn(page: Page): Promise<void> {
   await page.goto('/');
@@ -64,33 +70,22 @@ async function signIn(page: Page): Promise<void> {
 }
 
 /**
- * Opens a view of the project and waits until it has settled. Business is
- * Analyze's page since v3.1.0 (plan AB-2, ADR-109): the map, and the first
- * insights below it in their end state. IT and Management are the workspace's.
+ * Opens a view of the project in Analyze and waits until it has settled (AB-2, AB-9, AB-10): Business is the map page,
+ * IT the page drawn from the signed run, Management its own page.
  */
 async function openWorkspace(page: Page, view: 'business' | 'it' | 'management'): Promise<void> {
+  await page.goto(`/project/${PROJECT_ID}/analyze?view=${view}`, { waitUntil: 'domcontentloaded' });
   if (view === 'business') {
-    await page.goto(`/project/${PROJECT_ID}/analyze?view=business`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible({ timeout: 60000 });
     return;
   }
-  await page.goto(`/project/${PROJECT_ID}?view=${view}`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator(`[data-workspace-shell="${view}"]`)).toBeVisible({ timeout: 60000 });
-  // Management has no first look since ADR-087 — its answer and one fold,
-  // Evidence, which always starts closed: open it, so what is checked below is
-  // the whole page.
   if (view === 'management') {
-    await expect(page.locator('[data-management-view=""]')).toBeVisible({ timeout: 60000 });
-    const evidence = page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first();
-    if ((await evidence.getAttribute('aria-expanded')) !== 'true') await evidence.click();
+    await expect(page.locator('[data-analyze-management="ready"]')).toBeVisible({ timeout: 90000 });
     return;
   }
-  // IT has no first look since ADR-086 (254ab06e): it shows only its own
-  // answer, so the wait is for that answer to have loaded ("loading" until then).
-  if (view === 'it') {
-    await expect(page.locator('[data-it-view=""] [data-it-headline]')).toBeVisible({ timeout: 90000 });
-  }
+  // IT: the answer card stands once the run's evidence has been read.
+  await expect(page.locator('[data-analyze-it] [data-answer-card]')).toBeVisible({ timeout: 90000 });
 }
 
 /** The heading levels inside the page content, in document order. */
@@ -114,10 +109,23 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
       tier: 'pilot', status: 'approved', isAdmin: true,
       transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
     });
+    // A signed run, signed the way `api/runs/create` signs one: IT and Management are drawn from it since 3.5.0.
+    const fingerprint = {
+      sha256: sha256Hex(BRANCHING), fileName: 'z_a11y_demo.abap', lineCount: BRANCHING.split('\n').length,
+      byteSize: BRANCHING.length, objectType: 'Report', uploadedAt: new Date().toISOString(),
+    };
     await adminSetDoc('projects', PROJECT_ID, {
       name: 'Order limit check', userId: cred.user.uid,
-      createdAt: new Date(), status: 'created',
-      legacyCode: BRANCHING,
+      createdAt: new Date(), status: 'analyzed',
+      legacyCode: BRANCHING, activeRunId: RUN_ID, inputFingerprint: fingerprint, s4Deployment: 'private',
+    });
+    const unsignedRun = {
+      runId: RUN_ID, projectId: PROJECT_ID, userId: cred.user.uid,
+      createdAt: new Date().toISOString(), status: 'completed', inputFingerprint: fingerprint,
+    };
+    const runHash = recomputeStoredRunHash(unsignedRun);
+    await adminSetDoc(`projects/${PROJECT_ID}/runs`, RUN_ID, {
+      ...unsignedRun, runHash, signature: signRunHash(runHash, process.env.AUDIT_SIGNING_KEY!),
     });
   });
 
@@ -187,8 +195,7 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await signIn(page);
-    // The workspace's header (Details, the view switch, the tools) is IT's and Management's since v3.1.0:
-    // Business is Analyze's page (AB-2), with the stage header's own switch (`tests/stage-view-switch.spec.ts`).
+    // Since 3.5.0 every view is Analyze's, with the family header's view switch (`tests/stage-view-switch.spec.ts`).
     await openWorkspace(page, 'it');
 
     // The first Tab stop is the skip link, and it lands in the content.
@@ -199,50 +206,28 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await page.keyboard.press('Enter');
     await expect(page.locator('#main-content')).toBeFocused();
 
-    // The focus ring is drawn on a focused control (§1.6): 2px, solid.
-    const details = page.locator('[data-workspace-details-toggle]');
-    await details.focus();
+    // The view switch is one tab stop; the arrows move the view.
+    const selected = page.locator('[data-stage-view-switch] [role="radiogroup"] [aria-checked="true"]');
+    await selected.focus();
+    // The focus ring is drawn on a focused control (§1.6): 2px, solid — reached by the keyboard.
     await page.keyboard.press('Shift+Tab');
     await page.keyboard.press('Tab');
-    const ring = await details.evaluate((el) => {
+    await expect(selected).toBeFocused();
+    const ring = await selected.evaluate((el) => {
       const s = getComputedStyle(el);
       return { style: s.outlineStyle, width: s.outlineWidth };
     });
     expect(ring.style).toBe('solid');
     expect(parseFloat(ring.width)).toBeGreaterThanOrEqual(2);
-
-    // The view switch is one tab stop; the arrows move the view.
-    const selected = page.locator('[data-workspace-shell] [role="radiogroup"][aria-label="View"] [aria-checked="true"]');
-    await selected.focus();
     await page.keyboard.press('ArrowRight');
     await expect(page).toHaveURL(/view=management/);
-    await expect(page.locator('[data-workspace-shell="management"]')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('[data-analyze-management="ready"]')).toBeVisible({ timeout: 60000 });
     await page.keyboard.press('ArrowLeft');
     await expect(page).toHaveURL(/view=it/);
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 60000 });
 
-    // "Tools" is a disclosure: Escape closes it and returns the focus. Since
-    // ADR-060 the tools stand open from breakpoint L, so the menu is measured
-    // where Management still has it — breakpoint M (Business had it there too
-    // until its view moved to Analyze in v3.1.0).
-    await openWorkspace(page, 'management');
-    await page.setViewportSize({ width: 1000, height: 1200 });
-    const tools = page.locator('[data-workspace-tools="menu"] button[aria-expanded]');
-    await tools.focus();
-    await page.keyboard.press('Enter');
-    await expect(tools).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('[data-workspace-tools-panel]')).toBeVisible();
-    expect(await page.locator('[data-workspace-tools-panel][role="menu"]').count(), 'a menu role without menuitems').toBe(0);
-    // Into the panel first: pressed on "Tools" itself, Escape would leave the
-    // focus where it already was, and the return would go untested (QA review
-    // of 60b94e108964, 45543760e08e). From a tool link, the link goes with the
-    // panel, and only the handler can bring the focus back.
-    await page.keyboard.press('Tab');
-    await expect(page.locator('[data-workspace-tools-panel] a').first()).toBeFocused();
-    await page.keyboard.press('Escape');
-    await expect(page.locator('[data-workspace-tools-panel]')).toHaveCount(0);
-    await expect(tools).toBeFocused();
-    await page.setViewportSize({ width: 1440, height: 1200 });
+    // The workspace's "Tools" disclosure retired with the workspace page: the family's tool row is links, without a
+    // menu to close (ADR-140, UX review L5).
 
     // The account menu does the same.
     const account = page.locator('[data-account-menu]');
@@ -319,7 +304,7 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     await openWorkspace(page, 'it');
 
     const segments = await page
-      .locator('[data-workspace-shell] [role="radiogroup"][aria-label="View"] [role="radio"]')
+      .locator('[data-stage-view-switch] [role="radiogroup"] [role="radio"]')
       .evaluateAll((els) =>
         els.map((el) => ({
           on: el.getAttribute('aria-checked') === 'true',
@@ -333,7 +318,7 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
       expect(segment.background, 'the chosen view looks like the others without colour').not.toBe(on[0].background);
     }
 
-    const toggle = page.locator('[data-workspace-details-toggle]');
+    const toggle = page.locator('[data-stage-view-switch] [role="radiogroup"] [aria-checked="true"]');
     await toggle.focus();
     await page.keyboard.press('Shift+Tab');
     await page.keyboard.press('Tab');
@@ -344,8 +329,8 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     expect(ring.style).toBe('solid');
     expect(parseFloat(ring.width)).toBeGreaterThanOrEqual(2);
 
-    // The provenance chips keep their three forms (§4) — the word stays.
-    const chips = await page.locator('[data-workspace-shell] [data-provenance]').evaluateAll((els) =>
+    // The provenance chips keep their forms (§4) — the word stays (the family's six chips since 3.5.0, L2).
+    const chips = await page.locator('[data-analyze-it] [data-family-chip]').evaluateAll((els) =>
       els.map((el) => (el.textContent || '').trim()),
     );
     expect(chips.length).toBeGreaterThan(0);
@@ -405,10 +390,10 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     expect(heights.length).toBeGreaterThan(3);
     for (const target of heights) expect(target.h, `"${target.text}" is under 44px on touch`).toBeGreaterThanOrEqual(44);
 
-    // In IT the toolbar is open on a wide screen — on S it is still a menu.
+    // In IT, on S, nothing scrolls sideways either (the tool row is the family's strip, UX review L5).
     await openWorkspace(page, 'it');
-    await expect(page.locator('[data-workspace-tools="open"]')).toBeHidden();
-    await expect(page.locator('[data-workspace-tools="menu"]')).toBeVisible();
+    const itOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(itOverflow, 'the IT page scrolls sideways on a phone').toBeLessThanOrEqual(0);
 
     await context.close();
   });
@@ -445,14 +430,12 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     // print sheet's own header (project, run, date — WorkspacePrintSheet,
     // mockup s10) is the page's heading on paper, not a bar.
     for (const selector of [
-      'header:not([data-workspace-print] header)',
+      'header',
       'footer',
-      '[data-workspace-tools="open"]',
-      '[data-workspace-tools="menu"]',
-      '[data-workspace-layers]',
-      // IT's own anchor bar and its links out (ADR-086) are screen navigation too.
-      '[data-it-anchors]',
-      '[data-it-elsewhere]',
+      // The family's tool row, its view switch and the page's "On this page" bar are screen navigation (ADR-140).
+      '[data-stage-tools]',
+      '[data-stage-view-switch]',
+      '[data-analyze-anchors]',
       '[data-command-search-trigger]',
       '[data-help-menu]',
     ]) {
@@ -466,23 +449,23 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     // No background: the page is white, cards carry a 1px rule instead of a shadow.
     const body = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
     expect(body).toBe('rgb(255, 255, 255)');
-    const cards = await page.locator('[data-workspace-shell] .cc-card').evaluateAll((els) =>
+    // The family's cards: the answer card and each section, outlined, never shadowed.
+    const cards = await page.locator('[data-analyze-it] [data-answer-card], [data-analyze-it] section.rounded-cc-card').evaluateAll((els) =>
       els.map((el) => {
         const s = getComputedStyle(el);
-        return { shadow: s.boxShadow, border: s.borderTopWidth, breakInside: s.breakInside };
+        return { shadow: s.boxShadow, border: s.borderTopWidth };
       }),
     );
     expect(cards.length).toBeGreaterThan(0);
     for (const card of cards) {
       expect(card.shadow).toBe('none');
       expect(card.border).toBe('1px');
-      expect(card.breakInside).toBe('avoid');
     }
 
     // A chip prints its word and its icon, on white.
-    const chips = await page.locator('[data-workspace-shell] [data-provenance]').evaluateAll((els) =>
+    const chips = await page.locator('[data-analyze-it] [data-family-chip]').evaluateAll((els) =>
       els.map((el) => ({
-        word: (el.querySelector('[data-cc-provenance-label]')?.textContent || '').trim(),
+        word: (el.querySelector('[data-family-chip-label]')?.textContent || '').trim(),
         icons: el.querySelectorAll('svg').length,
         background: getComputedStyle(el).backgroundColor,
       })),
@@ -499,8 +482,8 @@ test.describe('the workspace without a mouse, without sight, on a phone and on p
     const pseudo = await page.evaluate(() => {
       const after = (el: Element | null) => (el ? getComputedStyle(el, '::after').content : 'missing');
       return {
-        reference: after(document.querySelector('[data-workspace-shell] a[href]:not([data-cc-button]):not([href^="#"])')),
-        action: after(document.querySelector('[data-workspace-shell] a[data-cc-button]')),
+        reference: after(document.querySelector('[data-analyze-it] a[href]:not([data-cc-button]):not([href^="#"])')),
+        action: after(document.querySelector('[data-analyze-it] a[data-cc-button]')),
       };
     });
     expect(pseudo.reference, 'a printed reference link does not name its target').not.toBe('none');

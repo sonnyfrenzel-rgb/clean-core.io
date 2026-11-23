@@ -113,6 +113,11 @@ test.describe('rendered', () => {
 
     await revealEconomicsField(page, '[data-economics-take-over-all]');
     await page.locator('[data-economics-take-over-all]').first().click();
+    // Keep's upgrade deferral is the reader's figure as well (no proposal, no default): still no amount without it.
+    await expect(answer).toContainText('the effort of one option');
+    await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'needs-figures');
+    await expect(page.locator('[data-cost-option-total]')).toHaveCount(0);
+    await fillEconomics(page, '[data-cost-field="do-nothing-upgrade-delay"]', '2');
     await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'priced', { timeout: 15000 });
     await expect(answer).toContainText(/Keeping it costs (about )?CHF/);
   });

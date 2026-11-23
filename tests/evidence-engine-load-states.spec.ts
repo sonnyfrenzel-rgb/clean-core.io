@@ -228,8 +228,10 @@ test.describe('the project evidence, read from the server', () => {
     await expect(failed).toContainText('The evidence for this code could not be read');
     await expect(page.locator('[data-transformation-object-page]')).toHaveCount(0);
     await expect(page.locator('[data-transformation-places]')).toHaveCount(0);
-    // The source and the package beside it do not depend on the findings.
-    await expect(failed.locator('#tf-side')).toBeVisible();
+    // The source and the package beside it do not depend on the findings. Since 3.5.0 they are a drawer (ADR-129 (4)),
+    // opened from beside the error that hides the findings.
+    await failed.getByRole('button', { name: 'All code side by side' }).click();
+    await expect(page.getByRole('dialog', { name: 'All code side by side' }).locator('#tf-side')).toBeVisible();
   });
 
   test('the workspace Public-Cloud-Fit card waits for the evidence, then sorts it', async ({ page }) => {

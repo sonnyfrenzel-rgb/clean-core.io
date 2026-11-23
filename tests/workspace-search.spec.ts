@@ -30,6 +30,7 @@ import {
 } from '../lib/workspace-search';
 import type { Project, WorklistItem } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
+import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 
 /**
  * Roadmap 6.6 — search in the project (⌘K) and the glossary.
@@ -864,7 +865,7 @@ test.describe('a Fachwort in the answer carries the glossary with it', () => {
   });
 
   test('the term is a keyboard-reachable button, its popover names a source, and no model is called', async ({ page }) => {
-    test.setTimeout(180 * 1000);
+    test.setTimeout(240 * 1000);
 
     let geminiCalled = false;
     await page.route('**/api/gemini', async (route) => {
@@ -873,16 +874,21 @@ test.describe('a Fachwort in the answer carries the glossary with it', () => {
       await route.fulfill({ status: 500, body: 'a glossary popover must never reach this route' });
     });
 
-    await signIn(page, ADMIN);
-    // "Ask this case" stands in the IT view since 22.10.2026 (owner decision; DESIGN.md §5.3).
-    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-workspace-shell]', { timeout: 60000 });
+    // "Ask this case" left with the workspace page (3.5.0): the questions go to the one assistant in the header
+    // (ADR-043). The answer that carries a Fachwort is the IT page's route — "SAP BTP", "RAP", "CAP" — drawn from the
+    // signed run, so this project carries one.
+    const acct = await seedStageProject({ prefix: 'glossary-it', admin: true, acceptTerms: true, rich: true });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signInThroughForm(page, acct);
+    await page.goto(`/project/${acct.projectId}?view=it`, { waitUntil: 'domcontentloaded' });
+    const card = page.locator('#analyze-route');
+    await expect(card).toBeVisible({ timeout: 90000 });
 
-    const card = page.locator('[data-ask-this-case="answered"]');
-    await expect(card).toBeVisible();
-
-    const term = card.locator('[data-glossary-term="Customizing"]').first();
-    await expect(term, 'the Fachwort in the pre-answered question carries no glossary trigger').toBeVisible();
+    const term = card.locator('[data-glossary-term]').first();
+    await expect(term, 'the Fachwort in the route carries no glossary trigger').toBeVisible({ timeout: 60000 });
+    const shortName = (await term.getAttribute('data-glossary-term')) ?? '';
+    const entry = Object.values(GLOSSARY_ITEMS).find((item) => item.shortName === shortName);
+    expect(entry, `no glossary entry for "${shortName}"`).toBeTruthy();
     // A tab stop, not a decorated span: it takes focus and opens on Enter.
     await expect(term).toHaveAttribute('aria-expanded', 'false');
     await term.focus();
@@ -892,12 +898,10 @@ test.describe('a Fachwort in the answer carries the glossary with it', () => {
 
     const popover = card.locator('[data-glossary-popover]').first();
     await expect(popover).toBeVisible();
-    await expect(popover.locator('[data-glossary-popover-body]')).toContainText(
-      GLOSSARY_ITEMS.Customizing.definition,
-    );
+    await expect(popover.locator('[data-glossary-popover-body]')).toContainText(glossaryAnswerText(entry!));
     const source = popover.locator('[data-glossary-popover-source]');
-    await expect(source).toHaveAttribute('data-source-origin', 'absent');
-    await expect(source).toContainText('Source not recorded');
+    await expect(source).toHaveAttribute('data-source-origin', entry!.sourceRef.origin);
+    await expect(source).toContainText(glossarySourceText(entry!));
 
     // Escape closes it and hands the focus back to the word it came from.
     await page.keyboard.press('Escape');

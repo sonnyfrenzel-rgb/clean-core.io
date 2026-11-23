@@ -200,10 +200,18 @@ export async function seedStageProject(options: SeedOptions): Promise<SeededProj
  */
 export async function signInThroughForm(page: Page, account: { email: string; password: string }): Promise<void> {
   await page.goto('/');
+  // The header's "Sign in" is a link to `?auth=signin`. A click that lands before the landing has hydrated opens
+  // nothing on a dev server under load; the address it leads to opens the same dialog on any server.
   await page.click('[data-header-sign-in]');
-  await page.waitForSelector('input[type="email"]');
+  if (!(await page.locator('input[type="email"]').isVisible().catch(() => false))) {
+    await page.waitForSelector('input[type="email"]', { timeout: 20_000 }).catch(async () => {
+      await page.goto('/?auth=signin');
+      await page.waitForSelector('input[type="email"]');
+    });
+  }
   await page.fill('input[type="email"]', account.email);
   await page.fill('input[type="password"]', account.password);
   await page.click('button[type="submit"]:has-text("Sign In")');
-  await page.waitForURL((url) => url.pathname.startsWith('/dashboard'), { timeout: 90000 });
+  // The address is the condition, not the dashboard's load event (a dev server under load is slow to fire it).
+  await page.waitForURL((url) => url.pathname.startsWith('/dashboard'), { timeout: 90000, waitUntil: 'commit' });
 }

@@ -55,16 +55,18 @@ test.describe('the reference run is read, not typed', () => {
     await browser.goto('/', { waitUntil: 'domcontentloaded', timeout: 200_000 });
     const card = await browser.locator('[data-landing-reference]').innerText();
     expect(card).toContain(r.linesOfCode.toLocaleString('en-US'));
-    for (const b of [r.resolved, r.decision, r.handedBack]) {
-      expect(card).toContain(String(b.count));
-      expect(card).toContain(b.label);
-    }
     // QA 7063f946eb4c: the total and the quoted business decision are claims
     // the section makes too, so they are checked as rendered, not as field names.
     const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
     expect(norm(card), 'the rendered total is not the run’s').toMatch(new RegExp(`(^|\\D)${r.totalFindings} ?findings`));
     // Since the landing page 3.5 the roll-call and the quote sit in a "For IT" fold of #evidence: open it first.
     await browser.locator('details:has([data-landing-rollcall]) > summary').click();
+    // The three buckets stand in the same fold since the landing page 3.5, each count with its label.
+    const buckets = await browser.locator('[data-landing-rollcall-card]').innerText();
+    for (const b of [r.resolved, r.decision, r.handedBack]) {
+      expect(buckets).toContain(String(b.count));
+      expect(buckets).toContain(b.label);
+    }
     const quote = browser.locator('[data-landing-rollcall-card] p.honest');
     const first = r.businessDecisions[0];
     if (!first) {

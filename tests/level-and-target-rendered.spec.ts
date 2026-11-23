@@ -82,8 +82,9 @@ test.describe('the IT view explains a level on hover, on a tap, and closes on Es
 
   async function openIt(page: Page): Promise<Locator> {
     await signInViaLanding(page, OWNER, PASSWORD);
-    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-it-view=""]'), 'the IT answers never arrived').toBeVisible({ timeout: 90000 });
+    // Since 3.5.0 the IT view is Analyze's (AB-9): "What it touches in SAP" explains each object's level.
+    await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-touch]'), 'the IT view never arrived').toBeVisible({ timeout: 90000 });
     await dismissCoachMarks(page);
     const trigger = page.locator(`[data-it-use-level="${BAPI}"] [data-cc-level-trigger]`).first();
     await expect(trigger).toBeVisible({ timeout: 60000 });

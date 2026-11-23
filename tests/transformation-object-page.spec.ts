@@ -133,7 +133,7 @@ test.describe('the demo Transformation renders the Object Page', () => {
     const released = tool.locator('[data-facet="released"]');
     await expect(released).toContainText(`of ${distinctFindings} findings`);
     await expect(tool.locator('[data-answer]')).toContainText('The demo stops where the model begins');
-    await expect(tool.locator('[data-transformation-flow] svg')).toContainText(`YOUR CODE · ${distinctFindings} FINDINGS`);
+    await expect(tool.locator('[data-transformation-flow] svg[role="img"]')).toContainText(`YOUR CODE · ${distinctFindings} FINDINGS`);
     await expect(tool.locator('[data-code-status]')).toContainText(`${distinctFindings} findings at ${places} places in the code`);
     // The anchor bar's count chip (PageAnchorBar, ADR-091) — the number alone, no parentheses.
     await expect(tool.locator('a[href="#tf-flow"] [data-tf-anchor-count]')).toHaveText(String(distinctFindings));

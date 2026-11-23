@@ -321,8 +321,11 @@ test.describe('dashboard, stepper and delivery agree on a test draft', () => {
     await expect(row.locator('[data-home-status-title]')).toHaveText('Re-design under way');
     await expect(row.locator('[data-home-status-detail]')).toHaveText('3 of 6 steps done');
     await expect(row.locator('[data-home-redesign-bar]')).toHaveAttribute('data-home-redesign-bar', '3');
-    await expect(row.locator('[data-home-next]')).toHaveAttribute('data-home-next', 'testing');
+    // The way on leads through Re-design, never straight into a tool (owner decision 23.11.2026, ADR-143 (5)); the
+    // words still name the step the program is at.
+    await expect(row.locator('[data-home-next]')).toHaveAttribute('data-home-next', 'redesign');
     await expect(row.locator('[data-home-next]')).toContainText('Continue: Testing');
+    await expect(row.locator(`[data-home-next-link="${PROJECT_ID}"]`)).toHaveAttribute('href', `/project/${PROJECT_ID}/redesign`);
     await expect(row).not.toContainText('Re-design done');
     await expect(row).not.toContainText('Completed');
     await expect(row).not.toContainText('100%');

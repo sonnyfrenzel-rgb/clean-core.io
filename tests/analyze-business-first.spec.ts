@@ -249,12 +249,12 @@ test.describe('rendered: the seeded PO approval project in Analyze, Business', (
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInThroughForm(page, seeded);
     await page.goto(`/project/${seeded.po}?view=business#need`, { waitUntil: 'domcontentloaded' });
-    await page.waitForURL(new RegExp(`/project/${seeded.po}/analyze\\?view=business#${BUSINESS_MAP_ID}$`), { timeout: 60000 });
+    await page.waitForURL(new RegExp(`/project/${seeded.po}/analyze\\?view=business#${BUSINESS_MAP_ID}$`), { timeout: 60000, waitUntil: 'commit' });
     await expect(page.locator(`#${BUSINESS_MAP_ID} [data-workspace-process="ready"]`)).toBeVisible({ timeout: 120000 });
-    // IT stays on the workspace until AB-9.
+    // Since AB-9 (3.5.0) IT is Analyze's IT page too: the old IT address lands there, not on a workspace.
     await page.goto(`/project/${seeded.po}?view=it`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="it"]')).toBeVisible({ timeout: 90000 });
-    expect(new URL(page.url()).pathname).toBe(`/project/${seeded.po}`);
+    await page.waitForURL(new RegExp(`/project/${seeded.po}/analyze\\?view=it$`), { timeout: 60000, waitUntil: 'commit' });
+    await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90000 });
   });
 
   test('an invited reader sees the map, no "Edit", and asks no model (P8)', async ({ browser }) => {

@@ -6,9 +6,22 @@ import { SIDE_BY_SIDE_ROUTE } from '../lib/sap-naming';
 /**
  * The Design tool's sign-off opens as a dialog from "Confirm target" (owner
  * decision 01.10.2026) — same `ArchitectSignOff`, same command, same run
- * binding; the side panel stays compact. And the stage draws one architecture
+ * binding; the page stays compact. And the stage draws one architecture
  * picture, the engine's: the model-drawn diagrams are gone.
+ *
+ * Since 3.5.0 "Confirm target" is the Management view's one primary action,
+ * behind the checklist (ADR-130 (1), G8); the answer card says whether the
+ * target is confirmed.
  */
+
+const CONFIRMED = 'The target is confirmed.';
+
+async function openManagement(page: import('@playwright/test').Page, projectId: string) {
+  await page.goto(`/project/${projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-design-view="management"] [data-design-checklist]')).toBeVisible({ timeout: 120_000 });
+  // Enabled once the checklist is done: the business questions read and the design current.
+  await expect(page.locator('[data-design-confirm]')).toBeEnabled({ timeout: 120_000 });
+}
 
 const DESIGN_JSON = JSON.stringify({
   projectName: 'Sign-off dialog fixture',
@@ -30,11 +43,9 @@ test('Confirm target opens the sign-off as a dialog, and a confirmation closes i
   await adminMergeDoc('projects', seeded.projectId, { solutionDesign: DESIGN_JSON });
 
   await signInThroughForm(page, seeded);
-  await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
+  await openManagement(page, seeded.projectId);
 
-  // Compact panel: the sign-off form is not in the page until asked for.
-  await expect(page.locator('#architect-sign-off')).toBeVisible();
+  // Compact: the sign-off form is not in the page until asked for.
   await expect(page.locator('[data-architect-signoff]')).toHaveCount(0);
   // One architecture picture — the engine's — and no model-drawn diagram.
   await expect(page.locator('text=Target Architecture Diagram')).toHaveCount(0);
@@ -50,12 +61,12 @@ test('Confirm target opens the sign-off as a dialog, and a confirmation closes i
   // Escape leaves without deciding.
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
-  await expect(page.locator('[data-design-answer="recommended"]')).toBeVisible();
+  await expect(page.locator('#design-answer [data-answer]')).not.toHaveText(CONFIRMED);
 
   await page.locator('[data-design-confirm]').click();
   await page.locator('[data-design-confirm-other]').click();
   await page.locator('[data-design-signoff-dialog] button:has-text("Confirm & Lock Architecture")').click();
-  await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('#design-answer [data-answer]')).toHaveText(CONFIRMED, { timeout: 60_000 });
   await expect(page.locator('[data-design-signoff-dialog]')).toHaveCount(0);
   await expect(page.locator('[data-design-confirm]')).toHaveText(/Change target/);
 
@@ -79,10 +90,11 @@ test('the dialog recommends the contract’s route, not a route switch the brows
   await adminMergeDoc('projects', seeded.projectId, { solutionDesign: DESIGN_JSON, extensibilityRoute: SIDE_BY_SIDE_ROUTE });
 
   await signInThroughForm(page, seeded);
-  await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-design-canvas-stage]')).toBeVisible({ timeout: 120_000 });
+  // The IT view names the contract's route in its answer, whatever the switch says.
+  await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
-  await expect(page.locator('#design-answer')).toHaveText('Developer Extensibility (RAP / ABAP Cloud)');
+  await expect(page.locator('#design-answer [data-answer]')).toHaveText('Developer Extensibility (RAP / ABAP Cloud).');
+  await openManagement(page, seeded.projectId);
 
   // The question names the same route the card and the panel name.
   await page.locator('[data-design-confirm]').click();
@@ -94,7 +106,7 @@ test('the dialog recommends the contract’s route, not a route switch the brows
   await expect(panel).not.toContainText('Side-by-Side (CAP) extensibility path');
 
   await page.locator('[data-design-signoff-dialog] button:has-text("Confirm & Lock Architecture")').click();
-  await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('#design-answer [data-answer]')).toHaveText(CONFIRMED, { timeout: 60_000 });
   await expect(page.locator('[data-signoff-refusal]')).toHaveCount(0);
   const stored = await adminGetDoc('projects', seeded.projectId);
   expect(stored?.targetArchitecture).toBe('rap');

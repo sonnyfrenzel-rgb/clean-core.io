@@ -22,18 +22,18 @@ test.beforeAll(async () => {
 });
 
 
-// Since v3.1.0 Business has no layer and is Analyze's page (plan AB-2, ADR-109): an old Business layer
-// address opens Analyze, Business with the fragment dropped (`lib/analyze-entry.ts`), and the view switch
-// there is the stage header's. The promise is the same: the new view opens, holds, and keeps no fragment.
-test('from an old Business layer address, Analyze opens in Business without it, and Management opens and stays', async ({ page }) => {
+// Since 3.5.0 the workspace page is gone (AB-11): an old Business layer address opens Analyze where its content
+// lives now (`lib/workspace-redirect.ts`; the evidence layer is IT's Run & trust), and the view switch there is the
+// stage header's. The promise is the same: the new view opens, holds, and keeps no place of the old one.
+test('from an old Business layer address, Analyze opens where its content lives, and Management opens and stays', async ({ page }) => {
   test.setTimeout(300_000);
   await page.setViewportSize({ width: 1440, height: 900 });
   await signInThroughForm(page, account);
   for (const layer of ['evidence']) {
     await page.goto(`/project/${account.projectId}?view=business#${layer}`, { waitUntil: 'domcontentloaded' });
-    await page.waitForURL(new RegExp(`/project/${account.projectId}/analyze\\?view=business$`), { timeout: 90_000 });
+    await page.waitForURL(new RegExp(`/project/${account.projectId}/analyze\\?view=it#it-trust$`), { timeout: 90_000 });
+    await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', 'it', { timeout: 90_000 });
     await page.waitForTimeout(1500);
-    expect(new URL(page.url()).hash, `Business kept #${layer}`).toBe('');
     const stageRadio = page.locator('[data-stage-view-switch] button[role="radio"]', { hasText: 'Management' });
     await stageRadio.evaluate((el) => (el as HTMLElement).click());
     await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', 'management', { timeout: 30_000 });

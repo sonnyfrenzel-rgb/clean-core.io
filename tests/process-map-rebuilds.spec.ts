@@ -126,7 +126,8 @@ test('an unchanged model draws the reading map once, and Edit model is not lost'
   await signInViaLanding(page, EMAIL, PASSWORD);
   await countBuilds(page);
 
-  await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+  // The map and its editor are Analyze, Business since 3.5.0 (Documentation shows Figure 1, read-only, ADR-127).
+  await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
   await page.locator('[data-process-map-canvas] [data-map-node]').first().waitFor({ timeout: 90_000 });
   // Long enough for every late answer the page waits on — the model
   // availability, the naming record, the stored quote, the handbook — to have
@@ -148,7 +149,8 @@ test('Edit model pressed the moment the map is there stays open', async ({ page 
   test.setTimeout(240 * 1000);
   await page.setViewportSize({ width: 1600, height: 1100 });
   await signInViaLanding(page, EMAIL, PASSWORD);
-  await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+  // The map and its editor are Analyze, Business since 3.5.0 (Documentation shows Figure 1, read-only, ADR-127).
+  await page.goto(`/project/${PROJECT_ID}/analyze`, { waitUntil: 'domcontentloaded' });
   await page.locator('[data-process-edit-toggle]').click({ timeout: 90_000 });
   await expect(page.locator('[data-process-editor]')).toBeVisible({ timeout: 30_000 });
   // The window the late model used to arrive in, and well past it.

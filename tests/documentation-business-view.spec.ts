@@ -294,9 +294,10 @@ test.describe('the Documentation stage in a browser', () => {
     const matrix = page.locator('[data-raci-matrix]');
     await expect(matrix).toBeVisible();
     await expect(matrix.locator('tbody tr')).toHaveCount(LAYER.raci_matrix.length - 1);
-    // Owner request 10.10.2026: the owner can edit the RACI; the proposal says it is one until then.
+    // The proposal says it is one. Since 3.5.0 (ADR-127) the RACI is read-only on this page: the editor of
+    // 10.10.2026 is retired, so nothing offers an edit.
     await expect(page.locator('[data-raci-provenance="proposed"]')).toBeVisible();
-    await expect(page.locator('[data-raci-edit]')).toBeVisible();
+    await expect(page.locator('[data-raci-edit]')).toHaveCount(0);
     const roles = raciMatrix(sopSteps(LAYER, STEPS)).roles.length;
     await expect(matrix.locator('thead th')).toHaveCount(roles + 2);
     await expect(matrix.locator('[data-raci-gap="no-accountable"]')).toHaveCount(1);

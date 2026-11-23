@@ -92,7 +92,7 @@ test.describe('the stage, read', () => {
 });
 
 /** The four answers, each once; the two folds closed. */
-async function expectOnePlaceEach(page: Page) {
+async function expectOnePlaceEach(page: Page, objects: RegExp) {
   await expect(page.locator('[data-analysis-answer]')).toHaveCount(1);
   await expect(page.locator('[data-analyze-score]').first()).toBeVisible();
   await expect(page.locator('[data-analysis-findings]')).toHaveCount(1);
@@ -126,9 +126,10 @@ async function expectOnePlaceEach(page: Page) {
   const detail = page.locator('#analyze-technical-detail');
   await expect(detail.getByRole('heading', { level: 3, name: 'Language constructs the engine resolved' })).toBeVisible();
   // The meters left Analyze (ADR-093, owner decision Q3); the inventory and the
-  // data coupling are the IT view's, linked from here (Q4).
+  // data coupling are said once and linked from here (Q4) — since 3.5.0 (AB-9) on the same IT page, "What it touches
+  // in SAP"; the demo still links its workspace's IT view.
   await expect(detail.getByRole('heading', { level: 3, name: 'Complexity and criticality' })).toHaveCount(0);
-  await expect(detail.locator('[data-analyze-objects-link] a')).toHaveAttribute('href', /view=it#it-objects$/);
+  await expect(detail.locator('[data-analyze-objects-link] a')).toHaveAttribute('href', objects);
 }
 
 test.describe('the stage, rendered', () => {
@@ -142,7 +143,8 @@ test.describe('the stage, rendered', () => {
     await page.goto(`/project/${acct.projectId}/analyze?view=it&from=workspace-tools`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-analysis-answer]')).toBeVisible({ timeout: 90000 });
 
-    await expectOnePlaceEach(page);
+    await expectOnePlaceEach(page, /^#analyze-touch$/);
+    await expect(page.locator('#analyze-touch'), 'the link lands on nothing').toHaveCount(1);
     // The model's summary says whose it is while it is closed.
     await expect(page.locator('#analyze-summary')).toContainText('AI-generated');
 
@@ -196,6 +198,6 @@ test.describe('the stage, rendered', () => {
     // The score page is the demo's Analyze in IT since v3.1.0 (its Business view is the map page, AB-2, O10).
     await page.goto('/demo/analyze?view=it', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-analyze]')).toBeVisible({ timeout: 120000 });
-    await expectOnePlaceEach(page);
+    await expectOnePlaceEach(page, /view=it#it-objects$/);
   });
 });

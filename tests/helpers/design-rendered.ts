@@ -69,18 +69,16 @@ export const CATALOG_OBJECT = 'vbak';
 const FIRST_LOOK_DONE = '[data-around-the-map="ready"]';
 
 /**
- * What says each view has drawn its content. Only Business — Analyze's page
- * since v3.1.0 (AB-2, ADR-109) — still draws the first look, below the map:
- * IT shows only its own answer since ADR-086
- * (254ab06e) and Management only its decision since ADR-087 (7fecaa01), so
- * waiting for the first look there waits for something that never comes.
- * `data-it-view=""` is the loaded IT answer (`"loading"` while it is not);
- * Management's trend reads the runs until `data-management-history="read"`.
+ * What says each of Analyze's views has drawn its content. Since 3.5.0 every
+ * project opens in Analyze and the workspace page is gone (`/project/<id>`
+ * redirects): Business draws the map and the text around it; IT its answer
+ * (`data-analyze-it`); Management its own page once the decision is read
+ * (`data-analyze-management="ready"`, ADR-143).
  */
 const VIEW_READY = {
   business: `[data-analyze-business="ready"] [data-analyze-map], ${FIRST_LOOK_DONE}`,
-  it: '[data-it-view=""] [data-it-headline]',
-  management: '[data-management-history="read"] [data-management-executive]',
+  it: '[data-analyze-it] [data-answer-card]',
+  management: '[data-analyze-management="ready"] [data-answer-card]',
 } as const;
 
 export const STAGES = ['analyze', 'design', 'transformation', 'documentation', 'testing', 'tco', 'delivery'] as const;
@@ -111,7 +109,7 @@ export const ROUTES: RouteDef[] = [
   { key: 'settings', route: '/settings', session: 'signed-in', url: '/settings', ready: ['h1'] },
   { key: 'admin-workspace', route: '/admin/workspace', session: 'signed-in', url: '/admin/workspace', ready: ['h1'] },
   { key: 'dashboard', route: '/dashboard', session: 'signed-in', url: '/dashboard', ready: ['h1'] },
-  // Business is Analyze's page since v3.1.0 (AB-2, ADR-109); IT and Management stay on the workspace.
+  // Analyze in its three views (the workspace page is gone since 3.5.0); IT is `stage-analyze` below.
   {
     key: 'project-business',
     route: '/project/[id]/analyze (business)',
@@ -119,20 +117,20 @@ export const ROUTES: RouteDef[] = [
     url: '/project/{project}/analyze?view=business',
     ready: ['[data-analyze-business="ready"] h1', VIEW_READY.business],
   },
-  ...(['it', 'management'] as const).map((view) => ({
-    key: `project-${view}`,
-    route: `/project/[id] (${view})`,
+  {
+    key: 'project-management',
+    route: '/project/[id]/analyze (management)',
     session: 'signed-in' as const,
-    url: `/project/{project}?view=${view}`,
-    ready: [`[data-workspace-shell="${view}"] h1`, VIEW_READY[view]],
-  })),
+    url: '/project/{project}/analyze?view=management',
+    ready: ['[data-stage-title]', VIEW_READY.management],
+  },
   // Analyze's own address is its Business view (`project-business` above); the score page is its IT view.
   ...STAGES.map((stage) => ({
     key: `stage-${stage}`,
     route: `/project/[id]/${stage}${stage === 'analyze' ? ' (IT)' : ''}`,
     session: 'signed-in' as const,
     url: `/project/{project}/${stage}${stage === 'analyze' ? '?view=it' : ''}`,
-    ready: ['[data-stage-title]'],
+    ready: stage === 'analyze' ? ['[data-stage-title]', VIEW_READY.it] : ['[data-stage-title]'],
   })),
   {
     key: 'stage-design-requirements',

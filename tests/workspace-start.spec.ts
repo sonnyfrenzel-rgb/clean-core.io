@@ -136,7 +136,8 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     expect(account?.starterExamplesUsed?.[EXAMPLE]).toBe(true);
 
     // (2) The way back, on a desktop: Analyze is the project's entry, so it leads to My workspace.
-    const back = page.locator('[data-stage-back="my-workspace"]');
+    // The header's (the footer draws the same way back at the end of the page, `StageFooter`).
+    const back = page.locator('[data-stage-header] [data-stage-back="my-workspace"]');
     await expect(back).toBeVisible();
     await expect(back).toHaveAttribute('href', '/dashboard');
 
@@ -149,25 +150,27 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     await expect(page.locator('[data-workspace-layer-section="need"]')).toHaveCount(0);
     // IT has no layers since ADR-086: an old `?view=it#need` lands on the map
     // in Business, where the process stands, instead of an IT section.
-    // The workspace's own address: Business has moved to Analyze (AB-2), IT and Management have not yet.
+    // The workspace's own address, a redirect into Analyze since 3.5.0 (AB-11); Business is Analyze's default view, so
+    // the address may leave it out.
     const here = { pathname: `/project/${projectId}` };
     await page.goto(`${here.pathname}?view=it#need`, { waitUntil: 'domcontentloaded' });
-    await page.waitForURL(/\?view=business#process-map$/, { timeout: 60000 });
+    await page.waitForURL(/\/analyze(\?view=business)?#process-map$/, { timeout: 60000 });
     await expect(page.locator('#process-map')).toBeVisible({ timeout: 60000 });
     // Management has no layers since ADR-087: an old `?view=management#need`
     // lands on the map in Business too. Its process is one line in the
     // decision's Need row — what the map holds, not "empty", not "nothing on
     // record", counted as the map counts — and the row's action leads to Business.
+    // The decision is Re-design's step since ADR-143.
     await page.goto(`${here.pathname}?view=management#need`, { waitUntil: 'domcontentloaded' });
-    await page.waitForURL(/\?view=business#process-map$/, { timeout: 60000 });
-    await page.goto(`${here.pathname}?view=management`, { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(/\/analyze(\?view=business)?#process-map$/, { timeout: 60000 });
+    await page.goto(`${here.pathname}/redesign`, { waitUntil: 'domcontentloaded' });
     const need = page.locator('[data-decision-pillar="need"]');
     await expect(need).toBeVisible({ timeout: 90000 });
     const line = need.locator('[data-decision-need-process]');
     await expect(line).toContainText(`${steps} step`, { timeout: 30000 });
     await expect(line).toContainText(`${decisions} decision point`);
     await expect(need).not.toContainText('Nothing on record');
-    await expect(need.locator('[data-decision-pillar-action]')).toHaveAttribute('href', /\?view=business#process-map$|\/design\?[^#]*#rule-questions$/);
+    await expect(need.locator('[data-decision-pillar-action]')).toHaveAttribute('href', /\/analyze(\?view=business)?#process-map$|\/design\?[^#]*#rule-questions$/);
     await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
   });
 
@@ -184,7 +187,7 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     expect(overflow, 'the page scrolls sideways on a phone').toBeLessThanOrEqual(1);
 
     // (2) The way back, on a phone: visible, a 44 px target, and it leads to the list.
-    const back = page.locator('[data-stage-back="my-workspace"]');
+    const back = page.locator('[data-stage-header] [data-stage-back="my-workspace"]');
     await back.scrollIntoViewIfNeeded();
     await expect(back).toBeVisible();
     const box = await back.boundingBox();

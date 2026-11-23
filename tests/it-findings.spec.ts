@@ -1,11 +1,7 @@
-import { test, expect, type Page } from './helpers/test';
+import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { initializeFirestore, connectFirestoreEmulator } from 'firebase/firestore';
-import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
-import firebaseConfig from '../firebase-config.json';
+import { adminMergeDoc } from './helpers/admin-seed';
 import {
   CHAIN_LINKS,
   chainOf,
@@ -17,7 +13,7 @@ import {
 import { findingsOf } from '../lib/it-findings-build';
 import { isProvenanceValue } from '../lib/provenance';
 import { LEVEL_OVERLAY_NOTE } from '../lib/process-overlays';
-import { signInViaLanding } from './helpers/sign-in';
+import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 
 /**
  * Roadmap 8.1 — the IT view.
@@ -394,101 +390,53 @@ test.describe('the level stays out of the signed record', () => {
 
 /* ------------------------------------------------- 6. the rendered screen */
 
-const clientApp = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-const clientAuth = getAuth(clientApp);
-const clientDb = initializeFirestore(clientApp, {});
-try {
-  connectAuthEmulator(clientAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
-} catch {
-  /* already connected */
-}
-try {
-  connectFirestoreEmulator(clientDb, '127.0.0.1', 8080);
-} catch {
-  /* already connected */
-}
-
-const PASSWORD = 'ItFindingsView123!';
-const unique = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-async function signIn(page: Page, email: string): Promise<void> {
-  await signInViaLanding(page, email, PASSWORD);
-}
-
 test.describe('the IT view on a real project, in a browser', () => {
-  const ADMIN = `${unique('it-admin')}@cleancore-test.io`;
-  const PROJECT_ID = unique('it-findings');
+  // Since 3.5.0 (AB-9, ADR-140) the IT view is Analyze's IT page, drawn from the signed run: the project carries one.
+  // The per-finding chain (ADR-029) and the two catalog halves as columns were the old workspace view's; the IT page
+  // of the accepted mock-up keeps the level per finding with its reason where there is none, and the snapshot that
+  // answered in the target profile — that is what is held here.
+  let acct: SeededProject;
 
   test.beforeAll(async () => {
     test.setTimeout(180 * 1000);
-    const cred = await createUserWithEmailAndPassword(clientAuth, ADMIN, PASSWORD);
-    await adminSetCustomClaim(cred.user.uid, { admin: true });
-    await adminSetDoc('users', cred.user.uid, {
-      firstName: 'IT', lastName: 'Admin', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true,
-      transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
-    });
-    await adminSetDoc('projects', PROJECT_ID, {
-      name: 'Emergency purchase approval', userId: cred.user.uid,
-      createdAt: new Date(), status: 'created',
-      legacyCode: read('tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap'),
-    });
+    acct = await seedStageProject({ prefix: 'itf', admin: true, acceptTerms: true, rich: true });
+    const source = read('tests/fixtures/starter-examples-3.0.17/Z_MM_PO_APPROVAL.abap').replace(/\r\n/g, '\n');
+    await adminMergeDoc('projects', acct.projectId, { name: 'Emergency purchase approval', legacyCode: source, s4Deployment: 'private' });
+    await adminMergeDoc(`projects/${acct.projectId}/runs`, acct.runId, { legacyCode: source });
   });
 
   test('the chain, both catalog views and the level distribution are on the screen', async ({ page }) => {
     test.setTimeout(240 * 1000);
-    await signIn(page, ADMIN);
-    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signInThroughForm(page, acct);
+    await page.goto(`/project/${acct.projectId}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
+    const answer = page.locator('[data-analysis-answer] [data-answer-card]');
+    await expect(answer, 'the IT answers never arrived').toBeVisible({ timeout: 90000 });
 
-    const view = page.locator('[data-it-view=""]');
-    await expect(view, 'the IT answers never arrived').toBeVisible({ timeout: 60000 });
+    // The level distribution: the facet names the worst level and says the catalog answered it.
+    await expect(answer.locator('[data-facet="levels"]')).toContainText("from SAP's catalog", { timeout: 60000 });
+    // The level per finding, as a column of the findings table.
+    const list = page.locator('[data-analysis-findings]');
+    await expect(list.locator('[data-cc-table] th', { hasText: 'Level' }).first()).toBeVisible();
 
-    // ADR-029: the chain names the finding it is for, and its coverage stands
-    // beside it rather than in a popover.
-    // In plain words (chainLine): for how many places it holds, and why the rest stop.
-    await expect(page.locator('[data-it-chain-coverage]')).toContainText('The chain from requirement to target is complete for');
-    const links = page.locator('[data-it-chain-link]');
-    await expect(links).toHaveCount(4);
-    await expect(page.locator('[data-it-chain-link="requirement"] [data-it-chain-absent]')).toHaveText(
-      'Not determined',
-    );
-
-    // Both halves of the catalog, as columns, on the rendered table.
-    await expect(page.locator('[data-cc-table] th', { hasText: 'Release view' })).toHaveCount(1);
-    await expect(page.locator('[data-cc-table] th', { hasText: 'Classification' })).toHaveCount(1);
-
-    // The distribution, and the snapshot that answered it.
-    await expect(page.locator('[data-it-level-coverage]')).toContainText(' of ');
-    await expect(page.locator('[data-it-catalog-note]')).toContainText('abap-atc-cr-cv-s4hc');
-
-    // Every figure on the screen carries its coverage — the same promise the
-    // Management view keeps, in the same words.
-    const figures = page.locator('[data-it-figure]');
-    const covers = page.locator('[data-it-figure] [data-figure-coverage]');
-    await expect(figures).not.toHaveCount(0);
-    expect(await covers.count()).toBe(await figures.count());
-
-    // The table marks the chosen row, and choosing another moves the chain.
-    const first = page.locator('[data-it-finding][data-it-finding-selected="yes"]').first();
-    await expect(first).toHaveCount(1);
-    const chosen = await first.getAttribute('data-it-finding');
-    await expect(page.locator('[data-it-chain-title]')).toContainText(`Chain for ${chosen}`);
-
-    const other = page.locator('[data-it-finding][data-it-finding-selected="no"]').first();
-    const otherId = await other.getAttribute('data-it-finding');
-    await other.click();
-    await expect(page.locator('[data-it-chain-title]')).toContainText(`Chain for ${otherId}`);
+    // The snapshot that answered, in the target profile.
+    const detail = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]').first();
+    await detail.click();
+    await expect(detail).toHaveAttribute('aria-expanded', 'true');
+    const rail = page.locator('#analyze-technical-detail [data-cc-disclosure-trigger]', { hasText: 'Target, route contract and signed run' }).first();
+    if ((await rail.getAttribute('aria-expanded')) !== 'true') await rail.click();
+    await expect(page.locator('[data-it-profile-catalog]')).toContainText('SAP Cloud ERP Private', { timeout: 60000 });
   });
 
   test('the IT panel is IT’s, and does not appear in the other two views', async ({ page }) => {
     test.setTimeout(240 * 1000);
-    await signIn(page, ADMIN);
-    // Business is Analyze's page since v3.1.0 (ADR-109); Management stays the workspace's.
-    await page.goto(`/project/${PROJECT_ID}?view=business`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-it-view]')).toHaveCount(0);
-    await page.goto(`/project/${PROJECT_ID}?view=management`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-workspace-shell="management"]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-it-view]')).toHaveCount(0);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await signInThroughForm(page, acct);
+    await page.goto(`/project/${acct.projectId}?view=business`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-analyze-it]')).toHaveCount(0);
+    await page.goto(`/project/${acct.projectId}?view=management`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-management="ready"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-analyze-it]')).toHaveCount(0);
   });
 });

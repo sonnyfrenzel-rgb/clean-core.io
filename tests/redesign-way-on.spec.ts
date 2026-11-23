@@ -65,6 +65,20 @@ test.describe('the Re-design model', () => {
     expect(m.next?.key).toBe('decide');
   });
 
+  test("a step the account's own switch blocks says so, and the next step's note names the switch", () => {
+    // The rule of the retired "Next step" card (lib/next-step.ts), carried into Re-design: opening still works.
+    const off = { modelStages: { design: false } };
+    const decided = { stage: 'confirmed', option: 'rebuild', indicated: 'rebuild' } as const;
+    const m = redesignModel(rail({ analyze: 'done', tco: 'done' }), decided, off);
+    const design = m.steps.find((s) => s.key === 'design');
+    expect(design?.blocked).toBe('The model is switched off for solution design blueprint on this account.');
+    expect(m.next).toMatchObject({ key: 'design', path: 'design' });
+    expect(m.next?.note).toContain('switched off');
+    // Only an empty step, and never without the account's own switch.
+    expect(redesignModel(rail({ analyze: 'done', tco: 'done', design: 'partial' }), decided, off).steps.find((s) => s.key === 'design')?.blocked).toBeUndefined();
+    expect(redesignModel(rail({ analyze: 'done', tco: 'done' }), decided).steps.some((s) => s.blocked)).toBe(false);
+  });
+
   test('no em dash in a sentence the page shows', () => {
     const m = redesignModel(rail({ analyze: 'done' }), none);
     for (const s of m.steps) expect(`${s.purpose} ${s.stateWords}`).not.toContain('—');

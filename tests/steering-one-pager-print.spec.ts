@@ -309,8 +309,9 @@ async function printAndCount(page: Page, label: string): Promise<number> {
 }
 
 /**
- * In a project the one-pager opens from the decision card or the Export menu,
- * or on arrival at `#steering-one-pager` (`lib/steering-open.ts`) — the last is
+ * In a project the one-pager opens from the button beside Analyze's Management
+ * page (ADR-143), or on arrival at `#steering-one-pager` (`lib/steering-open.ts`;
+ * the workspace's old address keeps it through the redirect) — the last is
  * the one that does not depend on where the Management view puts its button.
  * The demo keeps its own toggle.
  */

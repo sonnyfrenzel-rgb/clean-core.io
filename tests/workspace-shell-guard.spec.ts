@@ -539,7 +539,7 @@ test.describe('every account opens its own projects in the workspace — and onl
     expect(new URL(page.url()).searchParams.get('next')).toBe(`/project/${PROJECT_ID}`);
   });
 
-  test('a community account opens its project in the workspace, and its stages lead back there', async ({ page }) => {
+  test('a community account opens its project in Analyze, in every view, and its stages lead back there', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signIn(page, COMMUNITY);
@@ -547,31 +547,32 @@ test.describe('every account opens its own projects in the workspace — and onl
     await page.goto(`/project/${PROJECT_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(new RegExp(`/project/${PROJECT_ID}/analyze`), { timeout: 60000 });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
-    // The workspace itself (IT and Management) opens for it as well.
-    expect(
-      await openWorkspace(page, PROJECT_ID, '?view=it'),
-      'an ordinary account was refused its own workspace',
-    ).toBe('shell');
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
+    // The old workspace address of IT opens Analyze in IT for it as well (3.5.0, AB-11).
+    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await page.waitForURL(new RegExp(`/project/${PROJECT_ID}/analyze\\?view=it$`), { timeout: 60000 });
+    await expect(page.locator('[data-project-gate="no-access"]'), 'an ordinary account was refused its own project').toHaveCount(0);
+    await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', 'it', { timeout: 60000 });
 
-    // A stage is a tool of it: the shell path names the project from the
-    // stage's own read (D.29) and leads back to the workspace, the stage's own
-    // way back does too, and the seven tools stand under it. Analyze in IT:
-    // Analyze in Business is the entry, whose way back is My workspace, and IT
-    // stays on the workspace (ADR-109 (2), (3)); every later stage sends a
-    // project without a signed run to Analyze (`lib/run-guard.ts`), and this
-    // one has none.
-    await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
+    // A stage is a tool of the project: the shell path names the project from
+    // the stage's own read (D.29) and leads back to Analyze in the view the
+    // address carries, and the seven tools stand under the header. Analyze is
+    // the project's entry, so its own way back is My workspace (ADR-109).
     await expect(page.locator('[data-stage-title]').first()).toBeVisible({ timeout: 60000 });
     const crumb = page.locator('header [data-shell-path] [data-shell-path-project]');
     await expect(crumb).toHaveText('A community project', { timeout: 30000 });
-    await expect(crumb).toHaveAttribute('href', `/project/${PROJECT_ID}?view=it`);
+    await expect(crumb).toHaveAttribute('href', `/project/${PROJECT_ID}/analyze?view=it`);
     await expect(page.locator('header [data-shell-path] [aria-current="page"]')).toHaveText('Analyze');
-    await expect(page.locator('[data-stage-back]')).toHaveAttribute('href', `/project/${PROJECT_ID}?view=it`);
+    await expect(page.locator('[data-stage-header] [data-stage-back]')).toHaveAttribute('href', '/dashboard');
     await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool]')).toHaveCount(7);
     await expect(page.locator('nav[aria-label="Workflow phases"]'), 'the old stepper').toHaveCount(0);
     // No project search on a stage, so no search button in the shell.
     await expect(page.locator('header [data-command-search-trigger]')).toHaveCount(0);
+
+    // Another tool, opened from IT, leads back to Analyze, IT.
+    await page.goto(`/project/${PROJECT_ID}/documentation?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-stage-header] [data-stage-back]')).toHaveAttribute('href', `/project/${PROJECT_ID}/analyze?view=it`, {
+      timeout: 60000,
+    });
   });
 
   test('another account reads that the project is not shared with it', async ({ page }) => {
@@ -661,161 +662,83 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     });
   });
 
-  test('an empty project paints "not started" seven times, and nothing green', async ({ page }) => {
+
+  // Since 3.5.0 the project's workspace page is gone (AB-11): its seven-status fold and meta line went with it, and
+  // what a reader sees of a project's state is the tool row of every tool's header (ADR-060: a green check where a
+  // tool was used) and the provenance chips (`FamilyChip`, UX review L2). The promise is the same: an empty project
+  // claims nothing, and nothing in it is painted green.
+  test('an empty project paints no tool as used, and nothing green', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await signIn(page, ADMIN);
 
-    // The workspace holds IT and Management since v3.1.0 (Business is Analyze's, AB-2); the seven
-    // statuses fold the same way in both. IT here.
-    expect(await openWorkspace(page, EMPTY_ID, '?view=it')).toBe('shell');
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
-
-    // The seven are folded away; open them, because what this test is about
-    // is what they say, not where they are.
-    await page.click('[data-workspace-status-toggle]');
-    await page.waitForSelector('[data-workspace-status-line]');
-
-    // No window to race: measuring a colour mid-transition passes or fails by
-    // how fast the machine is (the note in tests/phase-honesty-guard.spec.ts).
+    await page.goto(`/project/${EMPTY_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', 'it', { timeout: 90000 });
+    const tools = page.locator('[data-stage-tools="open"] a[data-workspace-tool]');
+    await expect(tools).toHaveCount(7, { timeout: 60000 });
     await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important;}' });
 
-    const chips = await page.locator('[data-workspace-status]').evaluateAll((els) =>
-      els.map((el) => ({
-        facet: el.getAttribute('data-workspace-status') || '',
-        status: el.getAttribute('data-status') || '',
-        label: (el.querySelector('[data-cc-object-status-label]')?.textContent || '').trim(),
-        colour: getComputedStyle(el.querySelector('[data-cc-object-status-label]') as Element).color,
-      })),
+    const states = await tools.evaluateAll((els) =>
+      els.map((el) => `${el.getAttribute('data-workspace-tool')}:${el.getAttribute('data-phase-state')}:${el.getAttribute('data-workspace-tool-mark-meaning')}`),
     );
-
-    expect(chips.map((c) => c.facet), 'the seven of DESIGN.md §2.3').toEqual([...STATUS_FACETS]);
-
-    const claiming = chips.filter((c) => c.status !== 'not-started' || c.label !== 'not started');
-    expect(
-      claiming.map((c) => `${c.facet} → ${c.status} "${c.label}"`),
-      'a facet of an empty project claims something happened',
-    ).toEqual([]);
+    expect(states.filter((s) => /:done:|:done$|:started$|:stale$/.test(s)), 'a tool of an empty project claims something happened').toEqual([]);
+    await expect(page.locator('[data-stage-tools="open"] [data-workspace-tool-mark="check"]'), 'an untouched tool carries a check').toHaveCount(0);
+    // Nothing on the page says "Signed": there is no run.
+    await expect(page.locator('[data-family-chip="signed"]')).toHaveCount(0);
 
     // Green is a proof, and nothing here was proved.
-    const success = await page.evaluate(() =>
-      getComputedStyle(document.documentElement).getPropertyValue('--cc-success').trim(),
-    );
+    const success = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cc-success').trim());
     expect(success, 'the token never reached the browser — the comparison would be vacuous').not.toBe('');
-    const green = chips.filter((c) => c.colour === success || c.colour === 'rgb(4, 120, 87)');
-    expect(green.map((c) => c.facet), 'an untouched facet is painted as proven').toEqual([]);
-
-    // And the meta line, when it is opened, admits it has nothing to show —
-    // since 02.10.2026 in one sentence instead of a row of "not recorded".
-    await page.click('[data-workspace-details-toggle]');
-    const meta = page.locator('[data-workspace-meta]');
-    await expect(meta).toHaveAttribute('data-recorded', 'none');
-    await expect(meta).toContainText('No signed run yet');
-    await expect(page.locator('[data-workspace-meta-value]'), 'a meta value appeared from nowhere').toHaveCount(0);
-
-    // A fold folds back (QA review of 247b20c16e38): the row stays, and the
-    // same button closes what it opened.
-    const fold = page.locator('[data-workspace-status-toggle]');
-    await expect(fold).toHaveAttribute('aria-expanded', 'true');
-    await fold.click();
-    await expect(page.locator('[data-workspace-status-line]'), 'the project status cannot be folded again').toHaveCount(0);
-    await expect(fold).toHaveAttribute('aria-expanded', 'false');
-
-    // The area the row asks for, and the sentence that is not "0" — the open
-    // questions, in Management's Evidence fold (ADR-081; the Business list went
-    // with the workspace's Business view in v3.1.0).
-    expect(await openWorkspace(page, EMPTY_ID, '?view=management')).toBe('shell');
-    await page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first().click({ timeout: 60000 });
-    await expect(page.locator('[data-not-determined-state="no-source"]')).toBeVisible({ timeout: 60000 });
+    const green = await page.locator('[data-stage-header] *').evaluateAll((els) =>
+      els
+        .filter((el) => (el as HTMLElement).offsetParent !== null)
+        .filter((el) => getComputedStyle(el).color === 'rgb(4, 120, 87)')
+        .map((el) => el.outerHTML.slice(0, 80)),
+    );
+    expect(green, 'something in the header of an empty project is painted as proven').toEqual([]);
   });
 
-  test('a project with a signed run says so — and unverified work is still not green', async ({ page }) => {
+  test('a project with a signed run says so — and only what the run proves is "Signed"', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await signIn(page, ADMIN);
 
-    // IT has the same calm header as Business since 04.10.2026 (ADR-026
-    // note): the seven statuses in one folded row whose summary names the
-    // provenance status, the meta line behind "Details". Both one click away.
-    expect(await openWorkspace(page, FULL_ID, '?view=it')).toBe('shell');
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
-    await expect(page.locator('[data-workspace-status-line]'), 'IT opens with the statuses folded').toHaveCount(0);
-    await expect(page.locator('[data-workspace-meta]'), 'IT opens with the meta line behind Details').toHaveCount(0);
-    await expect(page.locator('[data-workspace-status-summary-provenance] [data-cc-object-status-label]')).toHaveText('done');
-    await page.click('[data-workspace-status-toggle]');
-    await page.waitForSelector('[data-workspace-status-line]');
-    // Seven statuses, seven "Why?" — and each is the status itself, not a "?" beside it.
-    await expect(page.locator('[data-workspace-status] [data-cc-why][data-cc-why-form="statement"]')).toHaveCount(7);
-    await page.click('[data-workspace-details-toggle]');
-    await page.addStyleTag({ content: '*,*::before,*::after{transition:none!important;animation:none!important;}' });
+    await page.goto(`/project/${FULL_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90000 });
 
-    const chips = await page.locator('[data-workspace-status]').evaluateAll((els) =>
-      els.map((el) => ({
-        facet: el.getAttribute('data-workspace-status') || '',
-        status: el.getAttribute('data-status') || '',
-        colour: getComputedStyle(el.querySelector('[data-cc-object-status-label]') as Element).color,
-      })),
-    );
-    const by = Object.fromEntries(chips.map((c) => [c.facet, c]));
+    // The run is named where the evidence stands: IT's Run & trust, with the run the project points at.
+    await page.goto(`/project/${FULL_ID}?view=it#evidence`, { waitUntil: 'domcontentloaded' });
+    await expect(page).toHaveURL(/\/analyze\?view=it#it-trust$/, { timeout: 90000 });
+    await expect(page.locator('#it-trust [data-it-trust="signed"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-it-trust-run]')).toContainText(RUN_ID);
 
-    expect(by.provenance.status, 'a signed run is on record').toBe('done');
-    expect(by.execution.status).toBe('done');
-    expect(by.confirmed.status, 'a design the account signed off on itself is a draft').toBe('draft');
-    expect(by.need.status).toBe('not-started');
-    expect(by.standard.status).toBe('not-started');
+    // Analyze is used: its tool carries the check. The design the account signed off on itself is a
+    // self-declaration; nowhere on Analyze is it called signed.
+    const analyze = page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]');
+    await expect(analyze).toHaveAttribute('data-phase-state', 'done');
+    await expect(analyze.locator('[data-workspace-tool-mark="check"]')).toHaveCount(1);
 
-    // The rendered form of the one rule: green ⇔ proven. The design phase is
-    // `done` and unverified, so it must not share a colour with the signed run.
-    expect(by.confirmed.colour).not.toBe(by.provenance.colour);
-    expect(by.execution.colour).toBe(by.provenance.colour);
-
-    // The meta line, opened, reads the manifest the run signed.
-    const meta = await page
-      .locator('[data-workspace-meta-value]')
-      .evaluateAll((els) =>
-        Object.fromEntries(
-          els.map((el) => [el.getAttribute('data-workspace-meta-value'), (el.textContent || '').trim()]),
-        ),
-      );
-    expect(meta.manifest).toBe(manifest.hash.slice(0, 8));
-    expect(meta.revision).toBe(String(manifest.revision));
-    expect(meta.engine).toBe('3.0.0');
-    expect(meta.rules).toBe('levels/1.3');
-
-    // The shell bar carries the path with the project's name and the search
-    // button (§2.1, D.29); the page's own path row is gone.
+    // The shell bar carries the path with the project's name (§2.1, D.29).
     const crumb = page.locator('header [data-shell-path] [data-shell-path-project]');
     await expect(crumb).toHaveText('Emergency purchase approval');
-    await expect(crumb).toHaveAttribute('aria-current', 'page');
-    await expect(page.locator('header [data-command-search-trigger]')).toBeVisible();
-    await expect(page.locator('[data-workspace-shell] nav[aria-label="Path"]')).toHaveCount(0);
 
-    // Seven tools, open in IT, each a real link to its stage.
-    const tools = page.locator('[data-workspace-tools="open"] a[data-cc-button]');
+    // Seven tools, each a real link to its stage that carries the view along.
+    const tools = page.locator('[data-stage-tools="open"] a[data-workspace-tool]');
     await expect(tools).toHaveCount(7);
-    // …and each carries the view and this bar into the stage, so "Back to
-    // workspace" returns to IT at the toolbar (block D, D.29).
-    await expect(tools.first()).toHaveAttribute('href', `/project/${FULL_ID}/analyze?view=it&from=workspace-tools`);
-    await expect(page.locator('#workspace-tools [data-workspace-tools="open"]')).toHaveCount(1);
-
-    // The open point the engine stepped over, with its reason and its line —
-    // in its open-question group, one click deeper (ADR-081).
-    const group = page.locator('[data-open-question-group]:has([data-cc-disclosure-trigger])').first();
-    await expect(group).toBeVisible();
-    await group.locator('[data-cc-disclosure-trigger]').first().click();
-    await expect(group.locator('[data-not-determined-item]').first()).toContainText('L2');
+    await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="tco"]')).toHaveAttribute(
+      'href',
+      new RegExp(`^/project/${FULL_ID}/tco\\?view=it`),
+    );
   });
 
-  test('the view switcher and "About this view" — roadmap 6.1; no IT focus (ADR-058)', async ({ page }) => {
+  test('the view switcher — three views of Analyze, no model call; no IT focus (ADR-058)', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1200 });
     await signIn(page, ADMIN);
 
     // W22-A02 of the phase's acceptance line, checked from the network rather
     // than from the component: a switch "creates no new hypothesis" and
-    // "triggers no model call". Any request to the one path a model call
-    // can leave this product (`/api/gemini`) or to the route that mints a
-    // signed run would show up here regardless of what the UI claims to do.
+    // "triggers no model call".
     const modelOrRunCalls: string[] = [];
     await page.route('**/api/gemini', (route) => {
       if (isAutomaticWordingCall(route.request())) return route.fulfill(AUTOMATIC_WORDING_REFUSAL);
@@ -827,66 +750,33 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
       return route.continue();
     });
 
-    // The workspace opens on IT here: Business is Analyze's page since v3.1.0 (AB-2, ADR-109), and its
-    // own view switch is the stage header's (`tests/stage-view-switch.spec.ts`).
-    expect(await openWorkspace(page, FULL_ID, '?view=it')).toBe('shell');
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
+    // The views are Analyze's since 3.5.0 (AB-9, AB-10, AB-11), switched in its header (ADR-105). "About this
+    // view" went with the workspace page: each view's answer card asks its own question instead (ADR-140).
+    await page.goto(`/project/${FULL_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', 'it');
 
     // One segmented control in the header: the view. There is no Focus (ADR-058).
     await expect(page.locator('[data-cc-segmented][aria-label="Focus"]')).toHaveCount(0);
-
-    // "About this view" is a real button, collapsed by default, with an
-    // accessible name and a proper expanded/controls relationship — not a
-    // bare "?" and not a link that goes nowhere.
-    const aboutToggle = page.locator('[data-workspace-view-about-toggle]');
-    const aboutPanel = page.locator('[data-workspace-view-about]');
-    await expect(aboutToggle).toHaveAttribute('aria-expanded', 'false');
-    await expect(aboutPanel).toHaveCount(0);
-    await aboutToggle.click();
-    await expect(aboutToggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(aboutPanel).toBeVisible();
-    // What the paragraph says and what the code shows must be the same text —
-    // a hand-written duplicate in the DOM would drift from `lib/workspace-model.ts`.
-    await expect(aboutPanel).toHaveText(VIEW_ABOUT.it);
-
-    // The toggle names the exact paragraph it opens — a real `aria-controls`
-    // relationship, not just a visual disclosure two elements happen to sit
-    // next to. `useId()` values contain colons, so this is compared as plain
-    // strings rather than fed into a CSS id selector.
-    const controls = await aboutToggle.getAttribute('aria-controls');
-    const panelId = await aboutPanel.getAttribute('id');
-    expect(controls, 'the toggle does not name the paragraph it opens').toBeTruthy();
-    expect(controls).toBe(panelId);
-
-    // IT shows IT — and no Focus switch beside the view (ADR-058:
-    // the "Application · Solution · Enterprise" switch scoped nothing and was
-    // removed on the owner's decision of 02.10.2026).
-
     await expect(page.locator('[data-workspace-it-focus]')).toHaveCount(0);
-    await expect(page.locator('[data-cc-segmented][aria-label="Focus"]')).toHaveCount(0);
     for (const word of ['Application', 'Solution', 'Enterprise']) {
       await expect(
-        page.locator('[data-workspace-shell] button[role="radio"]', { hasText: word }),
+        page.locator('[data-stage-header] button[role="radio"]', { hasText: word }),
         `the IT header still offers a "${word}" segment`,
       ).toHaveCount(0);
     }
 
-    // Management: the view is still in the URL. Tight on purpose: by here the
-    // page is loaded and the URL change is client-side (QA review of 4a99d5355716).
-    await page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'Management' }).click();
+    const radio = (name: string) => page.locator('[data-stage-view-switch] [data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: name });
+    // Management: the view is in the URL. Tight on purpose: the change is client-side (QA review of 4a99d5355716).
+    await radio('Management').click();
     await expect(page).toHaveURL(/[?&]view=management\b/, { timeout: 5000 });
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'management');
-    // The "About this view" paragraph re-opens for Management's own text — the toggle
-    // state is not reset by a view switch, but the content it shows is.
-    await expect(page.locator('[data-workspace-view-about]')).toHaveText(VIEW_ABOUT.management);
+    await expect(page.locator('[data-analyze-management="ready"]')).toBeVisible({ timeout: 60000 });
 
-    // Business: the workspace's switch leads to Analyze, Business (v3.1.0, AB-2), with no model call either.
-    await page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'Business' }).click();
-    await page.waitForURL(new RegExp(`/project/${FULL_ID}/analyze\\?view=business`), { timeout: 60000 });
+    // Business: the map, with no model call either.
+    await radio('Business').click();
+    await expect(page).toHaveURL(/[?&]view=business\b/, { timeout: 5000 });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
 
-    // Every switch above — two views, one "About this view" toggle — and not
-    // one of them called the model or minted a run.
     expect(modelOrRunCalls, `a view switch reached ${JSON.stringify(modelOrRunCalls)}`).toEqual([]);
   });
 
@@ -897,85 +787,50 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     page.on('pageerror', (err) => pageErrors.push(err.message));
     await signIn(page, ADMIN);
 
-    expect(await openWorkspace(page, FULL_ID, '?view=it&focus=solution')).toBe('shell');
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute('data-workspace-shell', 'it');
-    await expect(page.locator('[data-workspace-gate]')).toHaveCount(0);
+    await page.goto(`/project/${FULL_ID}?view=it&focus=solution`, { waitUntil: 'domcontentloaded' });
+    // The redirect into Analyze drops `focus` (`lib/workspace-redirect.ts`).
+    await page.waitForURL(new RegExp(`/project/${FULL_ID}/analyze\\?view=it$`), { timeout: 60000 });
+    await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90000 });
     await expect(page.locator('[data-workspace-it-focus]')).toHaveCount(0);
     await expect(page.locator('[data-cc-segmented][aria-label="Focus"]')).toHaveCount(0);
-    // The view switch still works from there, and nothing rewrote or acted on the old parameter.
-    // Business is Analyze's since v3.1.0 (AB-2): the switch lands there, and `focus` is not carried on.
-    await page.locator('[data-cc-segmented][aria-label="View"] button[role="radio"]', { hasText: 'Business' }).click();
+    // The view switch still works from there.
+    await page.locator('[data-stage-view-switch] button[role="radio"]', { hasText: 'Business' }).click();
     await page.waitForURL(new RegExp(`/project/${FULL_ID}/analyze\\?view=business$`), { timeout: 60000 });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
     expect(pageErrors, `the page threw: ${pageErrors.join(' | ')}`).toEqual([]);
   });
 
   /**
-   * Roadmap 6.10 — the Management view begins with its answer.
+   * Roadmap 6.10 — the Management view begins with its answer (`DESIGN.md` §5.6: "Management begins with a sentence
+   * above all cards that answers the view's question").
    *
-   * Until this step the three Management blocks were rendered in two files:
-   * the Public-Cloud-Fit panel and "Members on this case" in this shell, the
-   * four answers as a sibling *after* it in
-   * `app/(app)/project/[projectId]/page.tsx`. Nobody decided that order, and
-   * it read Public-Cloud-Fit → members → answers: a decider met an access
-   * control list before the verdict, which is exactly the state ADR-029
-   * abolished (`DESIGN.md` §5.6: *"Management begins with a sentence above
-   * all cards that answers the view's question"*).
-   *
-   * Measured on the painted page rather than in the source, and twice over:
-   * the document order of the three sections **and** their vertical position,
-   * because a DOM order can be undone by a grid or an `order:` and the reader
-   * only ever sees the second one.
-   *
-   * The second half is the property both files carried a correct comment
-   * about and which the move must not lose: neither Management block exists at
-   * all in Business or IT — not hidden, not a stub, absent — while "Members on
-   * this case" is in every view because read access is not a perspective.
+   * Since 3.5.0 Management is Analyze's own page (ADR-143): the answer card "Keep, rebuild or retire", then the
+   * options, the risk and what is needed. Measured on the painted page, in document order **and** by vertical position,
+   * because a DOM order can be undone by a grid or an `order:`. And the property the old shell carried: none of
+   * Management's blocks exists in Business or IT — absent, not hidden — while "Invite to view" (read access is not a
+   * perspective) is in every view's header.
    */
-  test('Management reads answers → Public-Cloud-Fit → links out → members, and neither answer exists in the other two views', async ({
+  test('Management reads its answer first, then the options, the risk and what is needed, and none of it exists in the other two views', async ({
     page,
   }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1600 });
     await signIn(page, ADMIN);
 
-    expect(await openWorkspace(page, FULL_ID, '?view=management')).toBe('shell');
-    await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
-      'data-workspace-shell',
-      'management',
-    );
-
-    // All three have to be on the screen before the order means anything: the
-    // answers and the access list both arrive from a fetch, and comparing
-    // positions while one of them is still `null` would compare two things.
-    await expect(page.locator('[data-management-view]')).toBeVisible({ timeout: 60000 });
-    // The bucket panel stands in the one "Evidence" fold under the answer
-    // (owner 03.10.2026: at most three things above the fold; ADR-087: it
-    // always starts closed) — open it to lay it out.
-    await page.locator('[data-management-fold="evidence"] > [data-cc-disclosure] [data-cc-disclosure-trigger]').first().click();
-    await expect(page.locator('[data-public-cloud-fit-panel]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-workspace-access]')).toBeVisible({ timeout: 60000 });
-    // No layer bar, no first look and no Process or Costs fold in Management (ADR-087).
+    await page.goto(`/project/${FULL_ID}?view=management`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-analyze-management="ready"]')).toBeVisible({ timeout: 90000 });
     await expect(page.locator('[data-workspace-layers], [data-first-look], [data-around-the-map]')).toHaveCount(0);
-    await expect(page.locator('[data-management-fold]')).toHaveCount(1);
 
-    const SELECTORS = [
-      '[data-management-view]',
-      '[data-public-cloud-fit-panel]',
-      '[data-management-elsewhere]',
-      '[data-workspace-access]',
-    ];
+    const SELECTORS = ['#management-answer', '#mgmt-options', '#mgmt-risk', '#mgmt-needs'];
+    for (const s of SELECTORS) await expect(page.locator(s)).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-family-invite]').first()).toBeVisible();
 
-    // `querySelectorAll` with a selector list answers in document order.
     const documentOrder = await page.evaluate((selectors) => {
       const els = Array.from(document.querySelectorAll(selectors.join(',')));
       return els.map((el) => selectors.find((s) => el.matches(s)) ?? '?');
     }, SELECTORS);
     expect(documentOrder, 'the Management view does not begin with its answer').toEqual(SELECTORS);
 
-    // And on the screen. Tops, not a promise about the markup: `order`,
-    // `flex-direction: column-reverse` or a grid row would each satisfy the
-    // check above and paint the opposite of it.
     const tops = await page.evaluate(
       (selectors) =>
         selectors.map((s) => {
@@ -987,34 +842,22 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     expect(tops.some(Number.isNaN), 'one of the sections was not laid out at all').toBe(false);
     expect(
       tops[0] < tops[1] && tops[1] < tops[2] && tops[2] < tops[3],
-      `painted top to bottom the three sit at ${JSON.stringify(tops)} — the answer is not above the cards`,
+      `painted top to bottom they sit at ${JSON.stringify(tops)} — the answer is not above the cards`,
     ).toBe(true);
 
-    // The property the move had to keep: in the other two views the Management
-    // blocks are not rendered at all, while the access list is.
-    // Business is Analyze's page since v3.1.0 (AB-2): it renders neither block either.
-    await page.goto(`/project/${FULL_ID}/analyze?view=business`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
-    await expect(page.locator('[data-management-view], [data-public-cloud-fit-panel], [data-management-elsewhere]')).toHaveCount(0);
-    for (const other of ['it'] as const) {
-      await page.goto(`/project/${FULL_ID}?view=${other}`, { waitUntil: 'domcontentloaded' });
-      await expect(page.locator('[data-workspace-shell]')).toHaveAttribute(
-        'data-workspace-shell',
-        other,
-        { timeout: 60000 },
-      );
-      await expect(page.locator('[data-workspace-access]')).toBeVisible({ timeout: 60000 });
+    // In the other two views Management's blocks are not rendered at all; the invitation is.
+    for (const other of ['business', 'it'] as const) {
+      await page.goto(`/project/${FULL_ID}/analyze?view=${other}`, { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('[data-stage-view-switch]')).toHaveAttribute('data-stage-view-switch', other, { timeout: 60000 });
+      await expect(page.locator(other === 'it' ? '[data-analyze-it]' : '[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
+      await expect(page.locator('[data-family-invite]').first()).toBeVisible({ timeout: 60000 });
       await expect(
-        page.locator('[data-management-view]'),
-        `Management's answers are rendered in the ${other} view`,
+        page.locator('#management-answer, #mgmt-options, #mgmt-needs, [data-analyze-management-redesign]'),
+        `Management's blocks are rendered in the ${other} view`,
       ).toHaveCount(0);
-      await expect(
-        page.locator('[data-public-cloud-fit-panel]'),
-        `the Public-Cloud-Fit panel is rendered in the ${other} view`,
-      ).toHaveCount(0);
-      await expect(page.locator('[data-management-elsewhere]')).toHaveCount(0);
     }
   });
+
 
   test('the switch route is gone — there is nothing left to turn on', async ({ request }) => {
     test.setTimeout(60 * 1000);

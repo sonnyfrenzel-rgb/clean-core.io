@@ -91,9 +91,10 @@ async function withholdAccessAnswer(page: Page) {
   );
 }
 
-async function openDesign(page: Page, projectId: string, email = EMAIL) {
+/** The document stands in the IT view (ADR-130); the stage-off reason under the business questions, the default view. */
+async function openDesign(page: Page, projectId: string, email = EMAIL, view: 'business' | 'it' = 'business') {
   await signInViaLanding(page, email, SIGN_IN, { pauseMs: 3500 });
-  await page.goto(`/project/${projectId}/design`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${projectId}/design?view=${view}`, { waitUntil: 'domcontentloaded' });
 }
 
 test('a project that cannot be read ends in an error, not an endless skeleton (46b8c6352769)', async ({ page }) => {
@@ -110,7 +111,7 @@ test('a project that cannot be read ends in an error, not an endless skeleton (4
 
 test('a design for a previous source is neither regenerated nor exported (f9aea437967e)', async ({ page }) => {
   test.setTimeout(180 * 1000);
-  await openDesign(page, STALE);
+  await openDesign(page, STALE, EMAIL, 'it');
   await page.waitForSelector('[data-stage-output="solutionDesign"]', { timeout: 30000 });
   await expect(page.locator('[data-design-regenerate]')).toBeDisabled();
   await expect(page.locator('[data-design-export="view"]')).toBeDisabled();
@@ -135,7 +136,7 @@ test('with the stage off, opening it sends no model request (6c4734f60aa8)', asy
   expect(modelCalls, 'a request the proxy will refuse was sent').toEqual([]);
 
   // An existing design: Regenerate is there, and closed.
-  await page.goto(`/project/${DESIGNED}/design`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${DESIGNED}/design?view=it`, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('[data-stage-output="solutionDesign"]', { timeout: 30000 });
   await expect(page.locator('[data-design-regenerate]')).toBeDisabled({ timeout: 15000 });
 });

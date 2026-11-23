@@ -252,18 +252,19 @@ test.describe('the demo is operable, and its state never leaves the browser', ()
   test('a value survives a reload and "Reset demo" throws it away', async ({ page }) => {
     // The demo's own state is the reader's assumptions and decisions; Analyze
     // is the real object page now and keeps nothing of its own.
+    // Economics in the demo is the product's own page since ADR-128 (`DemoEconomics`), with the product's fields.
     await openStage(page, 'tco');
-    await fillEconomics(page, '[data-testid="demo-dev-rate"]', '900');
+    await fillEconomics(page, '[data-cost-field="dev-day-rate"]', '900');
     const stored = () => page.evaluate((key) => window.localStorage.getItem(key), DEMO_STORAGE_KEY);
     // It lives in this browser — and only there.
-    await expect.poll(stored, { message: 'the demo did not keep its state in the browser' }).toContain('"devRate":900');
+    await expect.poll(stored, { message: 'the demo did not keep its state in the browser' }).toContain('"devDayRate":900');
 
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
-    expect(await stored()).toContain('"devRate":900');
+    expect(await stored()).toContain('"devDayRate":900');
 
     await page.getByTestId('demo-reset').click();
-    await expect.poll(stored).not.toContain('"devRate":900');
+    await expect.poll(stored).not.toContain('"devDayRate":900');
   });
 
   test('Analyze is the object page of a real run, fed by the engine', async ({ page }) => {
@@ -332,16 +333,26 @@ test.describe('the demo is operable, and its state never leaves the browser', ()
   });
 
   test('Economics shows no output until the assumptions are the reader’s', async ({ page }) => {
+    // The product's Economics page (ADR-128): before the reader's figures it says what it needs and shows no amount.
     await openStage(page, 'tco');
-    await expect(page.getByTestId('demo-forecast-refused')).toContainText('developer day rate');
-    await expect(page.getByTestId('demo-forecast')).toHaveCount(0);
+    const economics = page.locator('[data-demo-economics] [data-economics-page]');
+    await expect(economics).toHaveAttribute('data-economics-page', 'first-visit');
+    await expect(page.locator('[data-demo-economics] [data-economics-answer]')).toContainText('Not determined yet');
+    await expect(page.locator('[data-demo-economics] [data-economics-answer]')).not.toContainText(/\d/);
 
-    await fillEconomics(page, '[data-testid="demo-dev-rate"]', '900');
-    await fillEconomics(page, '[data-testid="demo-user-rate"]', '600');
-    await fillEconomics(page, '[data-testid="demo-investment"]', '40000');
+    await fillEconomics(page, '[data-cost-field="currency"]', 'EUR');
+    await fillEconomics(page, '[data-cost-field="dev-day-rate"]', '900');
+    await fillEconomics(page, '[data-cost-field="test-day-rate"]', '600');
+    await fillEconomics(page, '[data-cost-field="horizon-years"]', '5');
+    await fillEconomics(page, '[data-cost-field="release-cadence"]', '2');
+    await page.check('[data-cost-field="release-cadence-confirmed"] input[type="checkbox"]');
+    // Still no amount: the effort per option is a proposal until the reader takes it over.
+    await expect(economics).not.toHaveAttribute('data-economics-page', 'priced');
+    await page.locator('[data-answer-next] [data-economics-take-over-all]').first().click();
+    await fillEconomics(page, '[data-cost-field="do-nothing-upgrade-delay"]', '2');
 
-    await expect(page.getByTestId('demo-forecast')).toBeVisible();
-    await expect(page.getByTestId('demo-forecast-refused')).toHaveCount(0);
+    await expect(economics).toHaveAttribute('data-economics-page', 'priced');
+    await expect(page.locator('[data-demo-economics] [data-economics-answer]')).toContainText(/EUR/);
   });
 });
 

@@ -137,8 +137,10 @@ test('the option comparison names nothing until every option is complete', async
   // Nothing entered: each option says "Not determined", and the panel says why
   // rather than showing a zero.
   // ADR-079: the four options of the decision, Keep stored under `do-nothing`.
+  // Since 3.5.0 (ADR-128) each option says it twice: in the options table under the answer and on its card
+  // under "Effort in days".
   for (const id of ['do-nothing', 'rebuild', 'standard', 'retire']) {
-    await expect(page.locator(`[data-cost-option-not-determined="${id}"]`)).toHaveText('Not determined');
+    await expect(page.locator(`[data-cost-option-not-determined="${id}"]`)).toHaveText(['Not determined', 'Not determined']);
   }
   await expect(page.locator('[data-cost-no-winner]')).toBeVisible();
   await expect(page.locator('[data-cost-revision]')).toContainText('unconfirmed:');
@@ -155,7 +157,8 @@ test('the option comparison names nothing until every option is complete', async
   // Still nothing: the day rates are there, the options are not, and the panel
   // refuses to call one cheapest instead of comparing what happens to be filled in.
   await expect(page.locator('[data-cost-no-winner]')).toBeVisible();
-  await expect(page.locator('[data-cost-option-not-determined="do-nothing"]')).toBeVisible();
+  await expect(page.locator('[data-cost-option-not-determined="do-nothing"]')).toHaveCount(2);
+  await expect(page.locator('[data-cost-option-not-determined="do-nothing"]').first()).toBeVisible();
   const body = await page.locator('[data-cost-result]').innerText();
   expect(body, 'no amount is invented from the rates alone').not.toMatch(/CHF\s*0\b/);
   expect(await page.locator('[data-cost-comparison]').textContent()).toContain('one-off effort range');

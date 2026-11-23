@@ -103,6 +103,23 @@ test('the big example: its main path was some 1,350 units wide and now fits a ph
   expect(PHONE_MIN_WRAP).toBe(2);
 });
 
+test('a run without an engine stamp: the phone layout is drawn with the engine the map was drawn with', () => {
+  // 3.5.0: the map of a run signed before the engine stamp is drawn with the oldest engine and records
+  // `engine="unstamped"`. The phone layout has to be asked for with that engine, or its process differs from the
+  // map's and the canvas falls back to the wide layout — cut off on a phone (`components/process-map/phone-layout.ts`).
+  const source = read(BIG);
+  const unstamped = { processName: 'Z_MM_PO_APPROVAL', sourceFileName: BIG, exporterVersion: null };
+  const { bpmn } = buildReadingExports(source, unstamped);
+  const phone = buildPhoneReadingXml(source, unstamped, { readingXml: bpmn.xml, technical: false, fitWidth: FIT });
+  expect(phone, 'the unstamped map gets no phone layout').not.toBeNull();
+  expect(planeWidths(phone!)[0]).toBeLessThanOrEqual(FIT);
+  // Asked for with this build's engine instead, it is another process, and nothing comes back.
+  expect(buildPhoneReadingXml(source, { processName: 'Z_MM_PO_APPROVAL', sourceFileName: BIG }, { readingXml: bpmn.xml, technical: false, fitWidth: FIT })).toBeNull();
+  // The one caller passes the map's engine on.
+  const caller = fs.readFileSync(path.join(ROOT, 'components/process-map/phone-layout.ts'), 'utf8');
+  expect(caller).toContain('exporterVersion: input.engineVersion');
+});
+
 test('a process that already fits keeps its reading layout; a file that is not this source is never redrawn', () => {
   const source = read('Z_BUSINESS_PARTNER_SYNC.txt');
   const options = { processName: 'Z_BUSINESS_PARTNER_SYNC', sourceFileName: 'Z_BUSINESS_PARTNER_SYNC.txt' };

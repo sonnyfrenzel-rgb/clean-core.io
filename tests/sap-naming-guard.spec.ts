@@ -507,12 +507,11 @@ test.describe('SAP naming (roadmap 3.0.15) — rendered', () => {
     await signInThroughForm(page, acct);
 
     const routes: { url: string; ready: string }[] = [
-      // Business is Analyze's page since v3.1.0 (AB-2, ADR-109); IT and Management stay on the workspace.
+      // Analyze in its three views (the workspace page redirects there since 3.5.0, AB-11), and Re-design, the way on (ADR-143).
       { url: `/project/${acct.projectId}/analyze?view=business`, ready: '[data-analyze-business="ready"] h1' },
-      ...(['it', 'management'] as const).map((v) => ({
-        url: `/project/${acct.projectId}?view=${v}`,
-        ready: `[data-workspace-shell="${v}"] h1`,
-      })),
+      { url: `/project/${acct.projectId}/analyze?view=it`, ready: '[data-analyze-it] [data-answer-card]' },
+      { url: `/project/${acct.projectId}/analyze?view=management`, ready: '[data-analyze-management="ready"] [data-answer-card]' },
+      { url: `/project/${acct.projectId}/redesign`, ready: '[data-redesign="ready"] [data-answer-card]' },
       ...STAGES.map((s) => ({ url: `/project/${acct.projectId}/${s}`, ready: '[data-stage-title]' })),
       // The demo opens like a project since v3.1.0 (O10): its Business view is `/demo/analyze`.
       { url: '/demo/analyze', ready: '[data-analyze-business="ready"][data-demo-ready="true"] h1' },
