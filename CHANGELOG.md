@@ -11,6 +11,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The UX review workflow runs on `main` only; started on any other ref, every job is skipped (SEC-35f5c34-01).
 
+### Fixed
+
+UX review of 22.11.2026, the defects that are wrong whatever the 3.5.0 redesign brings (quick wins Q1, Q4, Q6):
+
+- **Delivery says the status, not the kind of coverage.** "The pack's own chain" showed "Decision — Confirmed · your
+  statement" and "Receipt — Proven · signed" on a project with no decision and no test, directly above "Nobody has
+  confirmed anything on this project yet". Each link now carries the status of this project with one plain line: the
+  decision is a statement only once the target is signed off, and the receipt row says it is the model's receipt —
+  where the narrative came from — and not a test run. The Audit pack card says whether the pack is sealed yet ("Not
+  sealed yet · the first download seals its 13 files"), and the Delivery bundle card says what the ZIP holds now and
+  what is not in it yet, instead of promising code, tests and documentation the project does not have.
+- **No dead ends.** On Analyze, "No process map yet" no longer offers "Open Analyze", which only opened the page the
+  reader was on. Transformation shows "Copy Code" only once there is code to copy. Documentation's progress card no
+  longer reads "Nothing more to write — Not written yet." while the SOP and RACI wait for the click; it says the
+  process description is done and the SOP and RACI wait for *Generate draft*.
+- **The process map on Analyze opens readable on a desktop.** It opened at 42 % on a 1440 px screen, names about
+  5 px high. On a canvas from 640 px up it now opens no smaller than 80 % — the floor the other maps read at — from
+  the top of the process, and the reader pans; *Fit*, full screen, the walk-through and the Documentation map still
+  show the whole level. The phone keeps its 40 % floor.
+
 ## [v3.4.0] — 2026-11-23
 
 The engine release. What changes for anyone who analyses a program:

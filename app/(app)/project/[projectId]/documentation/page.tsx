@@ -1318,6 +1318,7 @@ export default function DocumentationPage() {
       failedAt: businessFailedAt,
       onRecord: Boolean(parsedBusinessDoc),
       absence: businessAbsence,
+      waitsForClick: businessAbsence === wt('doc.businessWaitsForClick'),
       availabilityLoading: modelAvailability.loading,
       expected: businessExpected,
       plan: businessPlanLine,

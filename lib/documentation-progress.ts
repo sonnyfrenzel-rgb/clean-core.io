@@ -57,6 +57,8 @@ export interface DocProgressInput {
     onRecord: boolean;
     /** Why the layer is not written on this visit — model off, a reader, another tab, a blocker. Null: it will be. */
     absence: string | null;
+    /** The absence is only the wait for *Generate draft* — nothing stopped, the reader's click is next. */
+    waitsForClick?: boolean;
     /** The model availability is still being asked for. */
     availabilityLoading: boolean;
     /** "Expected: about 1–3 minutes (estimate)." — before and during the call. */
@@ -184,7 +186,11 @@ export function documentationProgress(input: DocProgressInput): { stages: DocSta
       ? { stages: view(), end: { kind: 'written', text: M['doc.endWritten'] } }
       : { stages: view(), end: { kind: 'up-to-date', text: M['doc.endUpToDate'] } };
   }
-  if (b.absence) return nothing('business', b.absence);
+  if (b.absence) {
+    const end = nothing('business', b.absence);
+    // Waiting for the click is not "nothing more to write": the end says what comes next, in one sentence.
+    return b.waitsForClick ? { ...end, end: { ...end.end, text: M['doc.endWaitsForClick'] } } : end;
+  }
   // Nothing in the way and nothing on record: the call is about to start.
   s.business = {
     state: 'active',

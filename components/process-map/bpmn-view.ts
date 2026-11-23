@@ -75,13 +75,20 @@ export const NARROW_MIN_SCALE = 0.4;
  * of a wide process. On a phone-wide canvas it never goes below 40 % (owner:
  * navigable, and 20 % is not readable): a level that does not fit then opens
  * at its start, and the reader pans or zooms out.
+ *
+ * `readable` (Analyze's inline map, UX review 22.11.2026, Q1): on a canvas from
+ * {@link NARROW_CANVAS} up the fit also stops at the readable floor of
+ * {@link fitWithPadding} (80 %). Z_MM_PO_APPROVAL opened at 42 % on a 1440 px
+ * desktop — names about 5 px high. A larger level then opens from its top,
+ * centred where its width fits, and the reader pans; *Fit*, full screen, the
+ * tour and the Documentation map keep the whole level. The phone is unchanged.
  */
-export function fitWhole(canvas: ViewboxCanvas): void {
+export function fitWhole(canvas: ViewboxCanvas, options: { readable?: boolean } = {}): void {
   const { inner, outer } = canvas.viewbox();
   if (!inner.width || !inner.height || !outer.width || !outer.height) return;
   const fit = Math.min(1, (outer.width - 2 * MARGIN) / inner.width, (outer.height - 2 * MARGIN) / inner.height);
   if (fit <= 0) return;
-  const floor = outer.width < NARROW_CANVAS ? NARROW_MIN_SCALE : 0;
+  const floor = outer.width < NARROW_CANVAS ? NARROW_MIN_SCALE : options.readable ? MIN_SCALE : 0;
   const scale = Math.max(floor, fit);
   const width = outer.width / scale;
   const height = outer.height / scale;

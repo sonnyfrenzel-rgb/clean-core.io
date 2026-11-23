@@ -63,6 +63,8 @@ import {
   handoverStillNeeded,
   handoverTimeline,
   packEvidenceChain,
+  packChainRows,
+  bundleContentsLine,
   signedOffTarget,
   signedSourceOf,
   storedDecisionOf,
@@ -975,7 +977,12 @@ export default function DeliveryPage() {
                 detail={isKeyUserDecision(project)
                   // Roadmap 3.0.19: no code on a key-user route — the step list is what the bundle carries.
                   ? `The key-user step list (${KEY_USER_STEPS_PATH}) with its acceptance checks and the documentation as one ZIP, with STATUS.md and a manifest. No code: the decision is key-user extensibility. A review version, built in your browser and not signed.`
-                  : 'The generated code, the test suite and the documentation as one ZIP, with STATUS.md and a manifest that say what is decided, tested and only proposed. A review version, built in your browser and not signed.'}
+                  // Says what the ZIP holds now, not what a finished project's would (UX review 22.11.2026, Q6).
+                  : bundleContentsLine({
+                      code: hasGeneratedCode,
+                      tests: typeof project.testSuite?.code === 'string' && project.testSuite.code.trim().length > 0,
+                      documentation: Boolean(project.documentation),
+                    })}
                 action={
                   <CcButton
                     variant="ghost"
@@ -1368,16 +1375,15 @@ export default function DeliveryPage() {
             </ul>
             <p className="m-0 mt-3 cc-text-label text-cc-ink-muted">The pack’s own chain</p>
             <ul className="m-0 mt-1 flex list-none flex-col gap-1 p-0" data-pack-chain="">
-              {packChain.steps.map((s) => (
-                <li key={s.id} className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="cc-text-cell text-cc-ink">{s.label}</span>
-                  {s.coverage === 'signed' ? (
-                    <CcProvenanceChip value="proven" note="signed" />
-                  ) : s.coverage === 'attested' ? (
-                    <CcProvenanceChip value="confirmed" note="your statement" />
-                  ) : (
-                    <CcProvenanceChip value="not-determined" />
-                  )}
+              {/* The status of this project's record per link, not the kind of coverage the link could have
+                  (UX review 22.11.2026, Q6): "Decision — Confirmed" stood above "Nobody has confirmed anything". */}
+              {packChainRows(hp, packChain).map((s) => (
+                <li key={s.id} className="flex flex-col gap-0.5" data-pack-chain-step={s.id} data-pack-chain-status={s.provenance}>
+                  <span className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="cc-text-cell text-cc-ink">{s.label}</span>
+                    <CcProvenanceChip value={s.provenance} note={s.note} />
+                  </span>
+                  <span className="cc-text-meta text-cc-ink-muted">{s.text}</span>
                 </li>
               ))}
             </ul>

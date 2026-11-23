@@ -578,6 +578,80 @@ export function packEvidenceChain(project: HandoverProject): EvidenceChain {
   });
 }
 
+/**
+ * What the delivery bundle holds today, in one sentence (UX review 22.11.2026, Q6). The card used to promise
+ * "the generated code, the test suite and the documentation" beside "Not drafted · No tests", on a project that had
+ * none of them; the ZIP then held the analysis and STATUS.md. It names what is in it and what is not yet.
+ */
+export function bundleContentsLine(has: { code: boolean; tests: boolean; documentation: boolean }): string {
+  const parts: Array<[boolean, string]> = [
+    [has.code, 'the generated code'],
+    [has.tests, 'the test suite'],
+    [has.documentation, 'the documentation'],
+  ];
+  const list = (xs: string[]) => (xs.length <= 1 ? xs.join('') : `${xs.slice(0, -1).join(', ')} and ${xs[xs.length - 1]}`);
+  const inIt = parts.filter(([on]) => on).map(([, w]) => w);
+  const notYet = parts.filter(([on]) => !on).map(([, w]) => w);
+  const holds = list(['the analysis', ...inIt, 'STATUS.md with a manifest']);
+  return (
+    `One ZIP with ${holds}.` +
+    (notYet.length ? ` Not in it yet: ${list(notYet)}.` : '') +
+    ' A review version, built in your browser and not signed.'
+  );
+}
+
+/** One row of "The pack's own chain" on the Delivery page: what the pack would carry for this link today. */
+export interface PackChainRow {
+  id: EvidenceChain['steps'][number]['id'];
+  label: string;
+  /** The chip — the status of this project's record, never the kind of coverage the link could have. */
+  provenance: ProvenanceValue;
+  note?: string;
+  /** The same status in plain words, for a reader who does not read chips. */
+  text: string;
+}
+
+/**
+ * The pack's own chain as the Delivery page shows it (UX review 22.11.2026, Q6).
+ *
+ * `covers[]` says what *kind* of record a link would have — the decision link is
+ * always `attested`, because whatever decision there is lives in
+ * `07-user-attested.md`. Drawn as a status chip, that read "Decision — Confirmed"
+ * on a project where nobody had confirmed anything, directly above "Nobody has
+ * confirmed anything on this project yet". Each row here says the status of
+ * this project instead: the decision link is a statement only once the target
+ * is signed off (what `07-user-attested.md` records), and the receipt link
+ * names which receipt it is — the model's, never a test run.
+ */
+export function packChainRows(project: HandoverProject, chain: EvidenceChain = packEvidenceChain(project)): PackChainRow[] {
+  const target = signedOffTarget(project);
+  const participation = project.auditMetadata?.modelCard?.modelParticipation;
+  return chain.steps.map((s): PackChainRow => {
+    switch (s.id) {
+      case 'decision':
+        return target
+          ? { id: s.id, label: s.label, provenance: 'confirmed', note: 'your statement', text: `Target signed off (${target}) — your own statement, sealed in the pack; nobody vouches for it.` }
+          : { id: s.id, label: s.label, provenance: 'not-determined', text: 'Nothing confirmed yet — the pack would record that no sign-off was given.' };
+      case 'receipt':
+        return s.coverage === 'signed'
+          ? { id: s.id, label: s.label, provenance: 'proven', note: 'signed', text: 'A model receipt: where the narrative came from. It is not a test run.' }
+          : {
+              id: s.id,
+              label: s.label,
+              provenance: 'not-determined',
+              text: participation === 'none'
+                ? 'No model took part, so there is no model receipt; no test run is carried either.'
+                : 'No receipt in the pack — neither a model receipt nor a test run.',
+            };
+      case 'requirement':
+        return { id: s.id, label: s.label, provenance: 'not-determined', text: 'Not in the pack — no signed run records a business requirement.' };
+      case 'delivery':
+      default:
+        return { id: s.id, label: s.label, provenance: 'not-determined', text: 'Not in the pack — generated code is not signed.' };
+    }
+  });
+}
+
 /* ------------------------------------------------- who, when, and what next */
 
 export interface Confirmation {
@@ -1073,7 +1147,18 @@ export function handoverFacets(
     : !hasRun
       ? { key: 'audit-pack', label: 'Audit pack', value: 'Not available', sub: 'Sealed only against a signed run', provenance: 'not-determined', basis: 'No readable signed run is on record.' }
       : project.auditMetadata?.inputFingerprint
-        ? { key: 'audit-pack', label: 'Audit pack', value: 'Available', sub: `${AUDIT_PACK_FILES.length} files, signed by the server when downloaded`, provenance: 'proven', basis: 'The signed run and its input fingerprint are on record.' }
+        ? {
+            key: 'audit-pack',
+            label: 'Audit pack',
+            value: 'Available',
+            // Said by the seal (UX review 22.11.2026, Q6): "Available" beside "Not handed over" read as a finished
+            // package; it means the pack can be downloaded, and whether that has happened is said here.
+            sub: state.exportedAt
+              ? `Sealed · ${AUDIT_PACK_FILES.length} files, signed by the server`
+              : `Not sealed yet · the first download seals its ${AUDIT_PACK_FILES.length} files`,
+            provenance: 'proven',
+            basis: 'The signed run and its input fingerprint are on record. It can be downloaded at any time; what the pack does not carry stays named in it.',
+          }
         : { key: 'audit-pack', label: 'Audit pack', value: 'Partial', sub: 'No input fingerprint — run the analysis again', provenance: 'not-determined', basis: 'The run on record carries no input fingerprint.' };
 
   const target = signedOffTarget(project);

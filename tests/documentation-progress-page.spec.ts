@@ -123,7 +123,9 @@ test.describe('the Documentation tool says what it is doing', () => {
     const card = page.locator('[data-doc-progress]');
     await expect(card).toHaveAttribute('data-doc-progress-end', 'nothing', { timeout: 120000 });
     expect(await stagesOf(page)).toEqual([['run', 'done'], ['process', 'done'], ['description', 'done'], ['business', 'skipped'], ['storing', 'skipped']]);
-    await expect(card).toContainText('It is written when you click Generate draft below; nothing is sent before.');
+    // One sentence that says what comes next — not "Nothing more to write — Not written yet." (UX review 22.11.2026, Q4).
+    await expect(card).toContainText('The SOP and the RACI wait for your click on Generate draft below; nothing is sent before.');
+    await expect(card).not.toContainText('Nothing more to write');
     const button = page.locator('[data-generate-business-layer]');
     await expect(button).toHaveText('Generate draft (sends code to Google)');
     await expect(button).toBeEnabled({ timeout: 60000 });
