@@ -27,10 +27,16 @@ export function phoneLayout(input: {
   /** The file the canvas would otherwise draw — `model.xml`. */
   readingXml: string;
   technical: boolean;
+  /**
+   * The engine the reading map was drawn with (`engineVersionOfProject`; `null` for a run without an engine stamp).
+   * The phone's layout must be drawn with the same one: `buildPhoneReadingXml` hands back nothing unless its process
+   * is the reading map's, and a run without a stamp is recorded as `engine="unstamped"` (3.5.0).
+   */
+  engineVersion: string | null;
 }): PhoneXml {
   return (fitWidth) => {
     const width = Math.floor(fitWidth);
-    const key = `${input.technical ? 't' : 'p'}|${width}|${input.fileName}|${input.readingXml}`;
+    const key = `${input.technical ? 't' : 'p'}|${width}|${input.engineVersion ?? 'unstamped'}|${input.fileName}|${input.readingXml}`;
     const kept = held.get(key);
     if (kept) return kept;
     const made = (async () => {
@@ -38,7 +44,7 @@ export function phoneLayout(input: {
       const { phoneReadingXmlOffThread } = await import('@/lib/bpmn/reading-exports-client');
       return phoneReadingXmlOffThread(
         input.source,
-        { processName: input.processName, sourceFileName: input.fileName },
+        { processName: input.processName, sourceFileName: input.fileName, exporterVersion: input.engineVersion },
         { readingXml: input.readingXml, technical: input.technical, fitWidth: width },
       );
     })().catch(() => null);

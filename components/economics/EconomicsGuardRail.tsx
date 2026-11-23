@@ -22,7 +22,7 @@ export default function EconomicsGuardRail({
   rail: Rail;
   /** The project's Economics tool, e.g. `/project/{id}/tco`. */
   economicsHref: string;
-  /** Where the decision is taken — Management's decision card. */
+  /** Where the decision is taken — Re-design's decision step (ADR-143). */
   managementHref?: string;
   /** Design's plan leaves the priced range (`true`), stays inside (`false`), or cannot be compared (`null`). */
   outside?: boolean | null;
@@ -30,7 +30,7 @@ export default function EconomicsGuardRail({
   const link =
     rail.state === 'no-decision' && managementHref ? (
       <CcLinkButton href={managementHref} variant="secondary">
-        Take the decision in Management
+        Take the decision in Re-design
       </CcLinkButton>
     ) : (
       <CcLinkButton href={economicsHref} variant={outside ? 'primary' : 'secondary'}>

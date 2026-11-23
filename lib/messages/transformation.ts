@@ -30,7 +30,7 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.warnDecision.standard': 'The decision on record is to move to SAP standard — generating a rebuild goes against it.',
   'transformation.warnDecision.standardFitOpen': 'SAP standard has not been weighed against a rebuild yet — decide Keep, Rebuild, Move to SAP standard or Retire first.',
   'transformation.warnDecision.openDecision': 'Open the decision',
-  'transformation.warnDecision.checkStandardFit': 'Decide in Management',
+  'transformation.warnDecision.checkStandardFit': 'Decide in Re-design',
   'transformation.warnDecision.lead': 'You can still generate — the decision stays yours.',
 
   'transformation.tip.rules.titleLoading': 'Decide the open business rules',

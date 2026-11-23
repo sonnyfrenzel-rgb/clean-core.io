@@ -31,7 +31,7 @@ export default function StageFooter({ toMyWorkspace = false }: { toMyWorkspace?:
   if (way.kind !== 'link') return null;
   return (
     <div data-stage-footer="" className="cc-no-print mt-10 border-t border-cc-line pt-4">
-      <Link href={way.href} data-stage-back={way.to} className={`${BACK_LINK_CLASS} min-w-0 flex-wrap max-sm:min-h-11`}>
+      <Link href={way.href} data-stage-back={way.to} className={`${BACK_LINK_CLASS} min-w-0 max-w-full flex-wrap max-sm:min-h-11`}>
         <ChevronLeft size={16} aria-hidden="true" className="shrink-0" />
         <span data-stage-back-lead="">{way.place}</span>
         {title ? (

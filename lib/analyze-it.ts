@@ -83,6 +83,15 @@ export function lineAnchorText(start: number, end?: number | null): string {
   return typeof end === 'number' && end > start ? `line ${start}–${end}` : `line ${start}`;
 }
 
+/**
+ * An anchor already written as `L42` or `L40-48` (the open questions, the program in short), said in the one notation
+ * of {@link lineAnchorText} (UX review Q11). Anything else is returned as it came.
+ */
+export function lineAnchorWords(anchor: string): string {
+  const m = /^L(\d+)(?:\s*[-–]\s*L?(\d+))?$/.exec(anchor.trim());
+  return m ? lineAnchorText(Number(m[1]), m[2] ? Number(m[2]) : null) : anchor;
+}
+
 /* ------------------------------------------------------------------ answer */
 
 export interface ItAnswerPart {

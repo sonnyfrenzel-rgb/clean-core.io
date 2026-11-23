@@ -1043,7 +1043,8 @@
           {
             "field": "generatedCode",
             "locator": "[data-stage-output=\"generatedCode\"]",
-            "why": "the code viewer; it carries the attribute only while a file of the workspace is actually shown"
+            "opensWith": "All code side by side",
+            "why": "the code viewer, in the drawer the package opens since 3.5.0 (ADR-129 (4)); it carries the attribute only while a file of the workspace is actually shown"
           }
         ],
         "onlyAfterARun": [],

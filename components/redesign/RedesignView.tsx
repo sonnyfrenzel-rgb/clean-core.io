@@ -103,6 +103,11 @@ export default function RedesignView({
                     <h3 className="m-0 cc-text-body font-bold text-cc-ink">Decide</h3>
                   )}
                   <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{step.purpose}</p>
+                  {step.blocked ? (
+                    <p data-redesign-step-blocked="" className="m-0 mt-1 cc-text-cell text-cc-ink">
+                      {step.blocked}
+                    </p>
+                  ) : null}
                   {step.key === 'decide' ? decide : null}
                 </div>
                 <StateWords step={step} words={step.stateWords} />

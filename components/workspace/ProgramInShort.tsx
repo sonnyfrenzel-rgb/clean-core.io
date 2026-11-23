@@ -7,6 +7,7 @@ import type { SummaryLine } from '@/lib/program-summary-text';
 import { CcTag } from '@/components/cc/Tag';
 import { AUTHOR_CLAIM_LABEL, type AuthorClaim } from '@/lib/program-summary-check';
 import { wt } from '@/lib/workspace-messages';
+import { lineAnchorText } from '@/lib/analyze-it';
 
 /**
  * "In short" — what the program is for, in two to four sentences, before
@@ -60,7 +61,7 @@ export default function ProgramInShort({
       {authorClaim?.state === 'shown' ? (
         <p data-program-in-short-author-claim="" className="m-0 flex flex-wrap items-center gap-2 text-[15px] leading-snug font-semibold text-cc-ink">
           <span className="min-w-0 break-words">{`“${authorClaim.text}”`}</span>
-          <CcAnchor label={`${wt('firstLook.sourceLine')} L${authorClaim.lineStart}`}>{`L${authorClaim.lineStart}`}</CcAnchor>
+          <CcAnchor label={`${wt('firstLook.sourceLine')} ${authorClaim.lineStart}`}>{lineAnchorText(authorClaim.lineStart)}</CcAnchor>
           <CcTag>{AUTHOR_CLAIM_LABEL}</CcTag>
         </p>
       ) : null}
@@ -81,7 +82,7 @@ export default function ProgramInShort({
             {line.anchors[0] ? (
               <>
                 {' '}
-                <CcAnchor label={`${wt('firstLook.sourceLine')} L${line.anchors[0].lineStart}`}>{`L${line.anchors[0].lineStart}`}</CcAnchor>
+                <CcAnchor label={`${wt('firstLook.sourceLine')} ${line.anchors[0].lineStart}`}>{lineAnchorText(line.anchors[0].lineStart)}</CcAnchor>
               </>
             ) : null}
             {i < lines.length - 1 ? ' ' : null}

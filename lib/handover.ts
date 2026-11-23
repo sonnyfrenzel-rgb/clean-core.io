@@ -823,6 +823,12 @@ export function handoverNextStep(
   // The tool order of ADR-128 (Delivery L9): Economics prices the options before Design works from the decision.
   const order: PhaseKey[] = ['tco', 'design', 'transformation', 'documentation', 'testing'];
   const missing = order.map(phase).find((p) => !p.done);
+  if (missing?.key === 'tco') {
+    // The cost scenario never holds the seal back (ADR-022, below): Economics leads while something else is open
+    // before the seal, but a program whose pack is all that is left is asked for the seal, not for a price.
+    const rest = handoverNextStep(project, phases.map((p) => (p.key === 'tco' ? { ...p, done: true } : p)), blockers, links, projectId, exportedAt);
+    if (rest.kind === 'seal' || rest.kind === 'none') return rest;
+  }
   if (missing) {
     // What has to happen, in words; the button names where.
     const WHAT: Partial<Record<PhaseKey, string>> = {

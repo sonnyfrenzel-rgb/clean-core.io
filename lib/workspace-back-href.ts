@@ -177,12 +177,14 @@ export function familyBackLink({
   const params = new URLSearchParams(search);
   const view = params.get('view');
   const carriesPlace = view === 'it' || view === 'management' || !!layerParam(params.get('layer')) || !!params.get('from');
+  // The entry (Analyze, Business) leads to the list in the demo too: the demo workspace would send it back to itself.
+  if (toMyWorkspace) return { kind: 'link', href: myWorkspaceHref(), place: nav('nav.myWorkspace'), to: 'my-workspace' };
   if (demo) {
-    return carriesPlace && !toMyWorkspace
+    return carriesPlace
       ? { kind: 'link', href: back.href, place: stageBackPlace(search) ?? nav('nav.demoWorkspace'), to: 'demo' }
       : { kind: 'link', href: demoWorkspaceBackHref(''), place: nav('nav.demoWorkspace'), to: 'demo' };
   }
-  if (toMyWorkspace || !carriesPlace) return { kind: 'link', href: myWorkspaceHref(), place: nav('nav.myWorkspace'), to: 'my-workspace' };
+  if (!carriesPlace) return { kind: 'link', href: myWorkspaceHref(), place: nav('nav.myWorkspace'), to: 'my-workspace' };
   // The project's workspace page dissolved (AB-11): the place is a view of Analyze — "Analyze, IT view".
   return { kind: 'link', href: back.href, place: workspaceRedirectPlace(back.href), to: 'analyze' };
 }

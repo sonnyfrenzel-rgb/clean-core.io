@@ -26,6 +26,7 @@ import { MANAGEMENT_IDS } from '@/lib/management-sections';
 import type { ProjectDecision, DecisionCondition, DecisionConfirmation, DecisionStatus } from '@/lib/project-decision';
 import { outdatedReasonsOfAnswer, type DecisionCostBasis, type DecisionCostCheck, type OutdatedReason } from '@/lib/decision-cost';
 import { stageHref } from '@/lib/workspace-back-href';
+import { workspaceRedirectHref } from '@/lib/workspace-redirect';
 import { cn } from '@/lib/utils';
 import InfoPopover from './InfoPopover';
 import type { ObjectStatusValue } from '@/lib/object-status';
@@ -642,7 +643,8 @@ function placeHref(projectId: string, place: DecisionPlace): string {
   // ADR-079: an option chosen in Management is changed in the four options above.
   if (place.kind === 'view' && place.view === 'management') return '#decision-options';
   if (place.kind === 'view') {
-    return `/project/${encodeURIComponent(projectId)}?view=${place.view}${place.hash ? `#${encodeURIComponent(place.hash)}` : ''}`;
+    // The workspace page dissolved into Analyze (3.5.0, AB-11): the place's own address in Analyze, not a redirect.
+    return workspaceRedirectHref({ projectId, search: `?view=${place.view}`, hash: place.hash ?? '' });
   }
   // Back to this view from the stage: a link parameter, never a stored role.
   const href = stageHref({ base: `/project/${encodeURIComponent(projectId)}`, path: place.path, view: THIS_VIEW });

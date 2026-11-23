@@ -29,7 +29,9 @@ import { anchorLabel } from '@/lib/first-look';
 import { DECISION_OPTION_LABELS } from '@/lib/decision-options';
 import { OPTION_SIGNAL_WORDS } from '@/lib/decision-option-signals';
 import { REDESIGN_LABEL, redesignHref, redesignModel } from '@/lib/redesign';
-import { STEERING_ANCHOR } from '@/lib/steering-open';
+import { openSteeringOnePager } from '@/lib/steering-open';
+import SteeringOnePager from '@/components/workspace/SteeringOnePager';
+import { CcCleanCoreLevelExplained } from '@/components/cc/LevelExplained';
 import { managementRisks, managementLevelMix, MANAGEMENT_PAGE_IDS } from '@/lib/analyze-management';
 import { cn } from '@/lib/utils';
 import type { Project } from '@/lib/types';
@@ -126,8 +128,16 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
       </div>
     );
   }
-  // No signed run: nothing to decide on yet; today's start path stands (as in the Business view).
-  if (!project?.activeRunId) return <>{fallback}</>;
+  // No signed run: nothing to decide on yet; today's start path stands (as in the Business view). The steering
+  // one-pager still opens on arrival at `#steering-one-pager` and says in place that there is no signed run.
+  if (!project?.activeRunId) {
+    return (
+      <>
+        {fallback}
+        <SteeringOnePager project={project} projectId={projectId} />
+      </>
+    );
+  }
 
   const base = `/project/${encodeURIComponent(projectId)}`;
   const options = program.options;
@@ -160,8 +170,8 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
       label: 'Distance to clean core',
       value: score !== null ? String(score) : 'Not measured',
       unit: band ? `of 100 · ${band.label.toLowerCase()}` : undefined,
+      // The level marks explain themselves on hover, focus and tap (buttons), so this facet is no link.
       note: levels ? <LevelMix mix={levels} /> : 'Levels A to D are read with the findings.',
-      href: `#${MANAGEMENT_PAGE_IDS.options}`,
     },
     focusCost
       ? {
@@ -246,7 +256,7 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
         after={
           <div data-analyze-indication="" className="mt-2 max-w-[640px] rounded-cc-card border border-cc-ink bg-cc-surface px-4 py-3">
             <p className="m-0 cc-text-label text-cc-ink-muted">{chosen && decided ? 'Decision' : 'Indication from the analysis'}</p>
-            <p className="m-0 mt-1 cc-text-body font-bold text-cc-ink">
+            <p data-decision-answer={chosen && decided ? '' : undefined} className="m-0 mt-1 cc-text-body font-bold text-cc-ink">
               {chosen && decided
                 ? options.answer
                 : indicated
@@ -254,7 +264,7 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
                   : 'The evidence does not point to one option yet.'}
             </p>
             {!decided && indicated ? <p className="m-0 mt-1 cc-text-cell text-cc-ink">{indicated.reason}</p> : null}
-            <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
+            <p data-decision-who={chosen && decided ? '' : undefined} className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
               {chosen && decided
                 ? options.who ?? 'Recorded by the signed-in account: a self-declaration, not a mandate.'
                 : `An indication, not a decision. You decide in ${REDESIGN_LABEL}, after the options are priced.`}
@@ -393,9 +403,9 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
               <CcLinkButton href={redesign} variant="ghost" data-management-open-redesign="">
                 Open {REDESIGN_LABEL}
               </CcLinkButton>
-              <CcLinkButton href={`${base}?view=management#${STEERING_ANCHOR}`} variant="ghost" data-management-one-pager="">
+              <CcButton variant="ghost" onClick={openSteeringOnePager} data-management-one-pager="">
                 One page for the steering committee
-              </CcLinkButton>
+              </CcButton>
             </div>
           </div>
           <div className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3 shadow-cc">
@@ -406,6 +416,10 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
           </div>
         </aside>
       </div>
+
+      {/* The steering one-pager (roadmap 8.6): closed it is a place, opened by the button beside the page or on arrival
+          at `#steering-one-pager`; on paper it is the only thing printed. */}
+      <SteeringOnePager project={project} projectId={projectId} />
     </StageFrame>
   );
 }
@@ -456,11 +470,13 @@ const LEVEL_CLASS: Record<'A' | 'B' | 'C' | 'D', string> = {
 /** The Level A–D mix of the findings, as four small marks — a reading of SAP's lists, never part of the signed pack. */
 function LevelMix({ mix }: { mix: Record<'A' | 'B' | 'C' | 'D', number> }) {
   return (
-    <span data-management-levels="" className="flex flex-wrap items-center gap-1" title="Clean core levels A to D of the objects the findings name. Not part of the signed run.">
+    <span data-management-levels="" className="flex flex-wrap items-center gap-1">
       {(['A', 'B', 'C', 'D'] as const).map((k) => (
-        <span key={k} className={cn('inline-flex items-center rounded-cc-row border px-1 cc-text-meta font-bold', LEVEL_CLASS[k])}>
-          {k} {mix[k]}
-        </span>
+        <CcCleanCoreLevelExplained
+          key={k}
+          value={k}
+          trigger={<span className={cn('inline-flex items-center rounded-cc-row border px-1 cc-text-meta font-bold', LEVEL_CLASS[k])}>{k} {mix[k]}</span>}
+        />
       ))}
     </span>
   );

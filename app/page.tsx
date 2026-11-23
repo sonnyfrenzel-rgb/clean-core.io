@@ -1052,7 +1052,7 @@ export default function Home() {
             <Link href="/terms">Terms of Service</Link>). The platform is provided free of charge and without warranty.
           </p>
           <div className="disc">
-            <SapTrademarkNotice />
+            <SapTrademarkNotice tone="dark" />
           </div>
           <p className="copy">
             © 2026 Clean-Core.io · Version {APP_VERSION} · {APP_RELEASE_DATE}

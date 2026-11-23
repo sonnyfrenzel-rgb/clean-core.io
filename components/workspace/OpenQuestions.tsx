@@ -24,6 +24,7 @@ import type { RecordGap } from '@/lib/legacy-project';
 import type { WorkspaceView } from '@/lib/workspace-model';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
+import { lineAnchorWords } from '@/lib/analyze-it';
 import { oqAnswerBy, oqAnswerQuote, oqCount, oqLinesTitle, oqOwner, wt } from '@/lib/workspace-messages';
 
 /** What this page wrote since the project was read; `null` for an answer it removed. */
@@ -361,7 +362,7 @@ function Group({
                   <span className="inline-flex flex-wrap items-center gap-2">
                     <span className="font-semibold text-cc-ink">{line.label}</span>
                     {line.anchor ? (
-                      <CcAnchor label={`${wt('notDetermined.sourceLine')} ${line.anchor}`}>{line.anchor}</CcAnchor>
+                      <CcAnchor label={`${wt('notDetermined.sourceLine')} ${lineAnchorWords(line.anchor).replace(/^line /, '')}`}>{lineAnchorWords(line.anchor)}</CcAnchor>
                     ) : null}
                   </span>
                   {line.catalog ? (

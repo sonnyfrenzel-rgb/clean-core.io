@@ -1352,7 +1352,9 @@ ${DESIGN_ANSWER_REMINDER}`;
   const pid = encodeURIComponent(projectId as string);
   const base = `/project/${pid}`;
   const economicsHref = `${base}/tco`;
-  const managementHref = `${base}?view=management`;
+  // The program decision is taken in Re-design, its step 2 (ADR-143, owner 23.11.2026); Analyze's Management view only
+  // shows it.
+  const managementHref = `${base}/redesign#decide`;
   const viewHref = (v: 'business' | 'it' | 'management', hash = '') => `${base}/design?view=${v}${hash}`;
 
   const decision = decisionRead.state === 'ready' ? designDecisionOf(decisionRead.answer) : NO_DESIGN_DECISION;
@@ -1571,7 +1573,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         question: 'What does keeping leave in place?',
         chips: engineChip,
         answer: `The program stays classic ABAP. ${plural(objects.byLevel.D, 'Level D object', 'Level D objects')} and ${plural(objects.byLevel.C, 'Level C object', 'Level C objects')} stay.`,
-        condition: 'Keep builds nothing. Removing any of it is a change, and so a new decision in Management.',
+        condition: 'Keep builds nothing. Removing any of it is a change, and so a new decision in Re-design.',
         action: decisionBox,
         facets: [
           { id: 'score', label: 'Clean Core Score', value: typeof project?.cleanCoreScore === 'number' ? String(project.cleanCoreScore) : '—', note: 'from the analysis run' },

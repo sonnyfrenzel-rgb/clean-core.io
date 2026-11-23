@@ -1390,7 +1390,7 @@ function AnalyzeScorePage() {
 
   /** One sentence of business context — the engine's "In short" (AB-9), the first line of the summary the Business view opens with. */
   const inShortSentence = inShort ? (
-    <ProgramInShort lines={inShort.lines.slice(0, 1)} level={inShort.level} proposal={null} authorClaim={null} headingLevel={3} id="analyze-in-short-title" />
+    <ProgramInShort lines={inShort.lines.slice(0, 1)} level={inShort.level} proposal={null} authorClaim={null} headingLevel={2} id="analyze-in-short-title" />
   ) : null;
 
   /** The IT page for both kinds of report (AB-9, `components/analyze/AnalyzeIt.tsx`). */
@@ -1660,9 +1660,10 @@ function AnalyzeScorePage() {
         // Analyze is the project's entry in every view (ADR-109; AB-11): its way back is My workspace, never itself.
         backToMyWorkspace
         actions={
-          // The family has no header actions (ADR-140 A11): *Add evidence* and *Export* stand in the answer card. Only a
-          // project analysed before runs existed, which has no answer card, keeps them here.
-          project?.analysis && !project?.activeRunId?.trim() ? (
+          // The family has no header actions (ADR-140 A11): *Add evidence* and *Export* stand in the answer card. A
+          // project without a signed run has no answer card — one analysed before runs existed, or one whose code is
+          // uploaded and not yet analysed — and keeps them here, so the imports stay reachable before the first run.
+          (project?.analysis || legacyCode) && !project?.activeRunId?.trim() ? (
             <div className="flex flex-wrap items-center gap-2" data-analyze-header-actions="">
               {addEvidenceMenu}
               {exportMenu}

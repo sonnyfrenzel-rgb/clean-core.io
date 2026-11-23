@@ -313,7 +313,9 @@ function RaciSection({ steps, action, editedLine, emptyLead }: { steps: SopStep[
             <CcTable
               caption={wt('doc.raciCaption')}
               columns={[
-                { key: 'step', label: wt('doc.sopStepColumn'), width: '220px' },
+                // 160 px, not 220: since 3.5.0 (ADR-127) chapter 6 is half the page at 1440, and six role columns
+                // must fit beside the step without a sideways scroll. The step name wraps.
+                { key: 'step', label: wt('doc.sopStepColumn'), width: '160px' },
                 ...matrix.roles.map((role) => ({
                   key: `role-${role.name}`,
                   // A long role name is shortened in the head; the key under the

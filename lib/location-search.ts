@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useSyncExternalStore } from 'react';
 import { isWorkspaceView, DEFAULT_VIEW, type WorkspaceView } from '@/lib/workspace-model';
+import { viewSwitchHash } from '@/lib/view-switch';
 
 /**
  * The address's query, read where the stage's chrome needs it — the way back,
@@ -74,11 +75,19 @@ export function stageViewHref({ pathname, search, hash = '' }: { pathname: strin
  * (a history entry of its own, so Back returns to the view before), and the
  * readers of `useLocationSearch` read it again. Never stored anywhere else — a
  * view is a view only (CLAUDE.md), not a property of a project or a run.
+ *
+ * A subject in the fragment (a line, `#L42`; a place of the tool such as
+ * Design's `#architect-sign-off`) stays. A place that belongs to one view — one
+ * of Analyze's IT or Management sections, the Business map — does not
+ * (`viewSwitchHash`, owner 10.10.2026), and without a fragment the new view
+ * starts at its top rather than at the old view's scroll position.
  */
 export function switchStageView(view: WorkspaceView): void {
   const { pathname, search, hash } = window.location;
-  const href = stageViewHref({ pathname, search, hash }, view);
+  const kept = viewSwitchHash(hash);
+  const href = stageViewHref({ pathname, search, hash: kept }, view);
   if (href === `${pathname}${search}${hash}`) return;
   window.history.pushState(null, '', href);
   window.dispatchEvent(new Event(LOCATION_SEARCH_EVENT));
+  if (!kept) window.scrollTo({ top: 0 });
 }

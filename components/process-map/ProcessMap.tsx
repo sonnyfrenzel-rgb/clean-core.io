@@ -338,8 +338,8 @@ export default function ProcessMap({
   // editor, drafts, revisions and downloads go on reading `model.xml`.
   const technicalShown = technical && Boolean(modelProp.technicalXml);
   const phoneXml = useMemo(
-    () => phoneLayout({ source, processName: modelProp.processName, fileName: modelProp.fileName, readingXml: model.xml, technical: technicalShown }),
-    [source, modelProp.processName, modelProp.fileName, model.xml, technicalShown],
+    () => phoneLayout({ source, processName: modelProp.processName, fileName: modelProp.fileName, readingXml: model.xml, technical: technicalShown, engineVersion }),
+    [source, modelProp.processName, modelProp.fileName, model.xml, technicalShown, engineVersion],
   );
 
   const view = viewProp ?? viewLocal;

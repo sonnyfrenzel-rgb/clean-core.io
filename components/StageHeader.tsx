@@ -199,7 +199,7 @@ export default function StageHeader({
               <Link
                 href={way.href}
                 data-stage-back={way.to}
-                className={`${BACK_LINK_CLASS} cc-no-print min-w-0 max-sm:min-h-11`}
+                className={`${BACK_LINK_CLASS} cc-no-print min-w-0 max-w-full max-sm:min-h-11`}
               >
                 <ChevronLeft size={16} aria-hidden="true" className="shrink-0" />
                 <span data-stage-back-lead="">{way.place}</span>

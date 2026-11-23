@@ -58,8 +58,10 @@ export function Facet({ label, value, unit, note, chip, href, onClick, id }: Fac
         {label}
         {chip}
       </span>
-      <span className="mt-1 block cc-text-figure text-cc-ink tabular-nums whitespace-nowrap">
-        {value}
+      <span className="mt-1 block cc-text-figure text-cc-ink tabular-nums">
+        {/* The figure stays on one line where there is room; on a phone a worded value ("None in a demo") and a long
+            unit ("checks passed · 0 failed") wrap instead of pushing the page wider than the screen. */}
+        <span className="whitespace-nowrap max-[720px]:whitespace-normal">{value}</span>
         {unit ? <small className="ml-1 cc-text-identifier tracking-normal text-cc-ink-muted">{unit}</small> : null}
       </span>
       {note ? <span className="mt-1 block cc-text-cell text-cc-ink-muted">{note}</span> : null}

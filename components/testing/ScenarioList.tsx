@@ -185,7 +185,9 @@ function OutsideWord({ result }: { result: ScenarioOutsideResult }) {
       </CcStateText>
     );
   }
-  return <FamilyChip value="imported" note={result.outcome} />;
+  // "imported" is the note that keeps an imported result apart from an engine reading on the shared chip
+  // (`familyChipOf`); a note given here replaces it, so it is said again before the outcome.
+  return <FamilyChip value="imported" note={`imported · ${result.outcome}`} />;
 }
 
 const LABEL = 'cc-text-label text-cc-ink-muted';
