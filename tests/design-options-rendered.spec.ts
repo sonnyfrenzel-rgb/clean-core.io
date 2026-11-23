@@ -44,7 +44,7 @@ test.describe('Design, rendered — standard, RAP and CAP compared', () => {
       }),
     });
     await signInThroughForm(page, seeded);
-    await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
     const section = page.locator('[data-design-section="options"]');
     await expect(section).toBeVisible({ timeout: 60_000 });
     await expect(section).toHaveAttribute('data-option-comparison', 'ready');
@@ -64,7 +64,7 @@ test.describe('Design, rendered — standard, RAP and CAP compared', () => {
       solutionDesign: design({ options: OPTIONS, recommended: 'cap', decisionReason: 'CAP because the target architecture is CAP.', requirementOthersMiss: 'CAP.' }),
     });
     await signInThroughForm(page, seeded);
-    await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
     const section = page.locator('[data-design-section="options"]');
     await expect(section).toBeVisible({ timeout: 60_000 });
     await expect(section.locator('[data-option-reason]')).toHaveCount(0);

@@ -127,7 +127,7 @@ async function openDesign(page: Page, width: number, height: number) {
   });
   await page.setViewportSize({ width, height });
   await signInViaLanding(page, seeded.email, PASSWORD);
-  await page.goto(`/project/${seeded.projectId}/design`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-stage-output="solutionDesign"]')).toBeVisible({ timeout: 120_000 });
   // The canvas has read its contract and findings, so the levels are in.
   await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });

@@ -247,7 +247,7 @@ test.describe('a real project', () => {
     // The design document points to the requirements module instead of
     // carrying the prose: the group "How it is secured and run" links to its
     // card on Design (03.10.2026; the module since ADR-078, 04.10.2026).
-    await page.goto(`/project/${PROJECT}/design`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${PROJECT}/design?view=it`, { waitUntil: 'domcontentloaded' });
     await page.locator('[data-design-group-toggle="secure"]').click({ timeout: 120_000 });
     await expect(page.locator('[data-design-group="secure"] [data-nfr-moved] a[href="#requirements"]')).toBeVisible();
     await expect(page.locator('#requirements[data-spec-card]')).toBeVisible();

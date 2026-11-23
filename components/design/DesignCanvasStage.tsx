@@ -700,6 +700,74 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
           ? 'Not confirmed. This design document has no sign-off section; regenerate it, then confirm — a self-declaration of your account, not an organisational mandate.'
           : 'Not confirmed. Generate the design document to review and confirm it.';
 
+  // What the canvas numbers, and the four alternatives at a glance: the decision tab's, and the IT view's side
+  // while no box is clicked (ADR-130: the alternatives once on that page).
+  const glance = (
+    <>
+      {numbered.length ? (
+        <div>
+          <p className={cn(LABEL, 'mb-1')}>Numbered on the canvas</p>
+          <ul className="m-0 list-none p-0">
+            {numbered.map((row, i) => (
+              <li key={row.n} className={cn('py-1', i > 0 && 'border-t border-cc-line')}>
+                <button
+                  type="button"
+                  data-canvas-legend={row.key}
+                  onClick={() => select(row.key)}
+                  className="grid w-full cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-cc-row py-1 text-left text-[13px] text-cc-ink hover:underline"
+                >
+                  <PinMark n={row.n} />
+                  <span>{row.text}</span>
+                  <FamilyChip value={row.chip} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {contract ? (
+        <div>
+          <p className={cn(LABEL, 'mb-1')}>Alternatives at a glance</p>
+          <ul className="m-0 flex list-none flex-col gap-2 p-0">
+            {contract.alternatives.map((a) => (
+              <li
+                key={a.id}
+                data-design-alternative={a.id}
+                data-verdict={a.verdict}
+                className="flex items-center gap-3 rounded-cc-row border px-3 py-2 text-[13px]"
+                style={
+                  a.verdict === 'chosen'
+                    ? {
+                        borderColor: 'color-mix(in srgb, var(--cc-chart-4) 45%, var(--cc-surface))',
+                        background: 'color-mix(in srgb, var(--cc-chart-4) 6%, var(--cc-surface))',
+                      }
+                    : { borderColor: 'var(--cc-line)' }
+                }
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'grid size-7 shrink-0 place-items-center rounded-full',
+                    a.verdict === 'rejected' ? 'bg-cc-error-bg text-cc-error' : 'bg-cc-surface-muted text-cc-ink-muted',
+                  )}
+                  style={a.verdict === 'chosen' ? { color: 'var(--cc-chart-4)', background: 'color-mix(in srgb, var(--cc-chart-4) 14%, var(--cc-surface))' } : undefined}
+                >
+                  {a.verdict === 'chosen' ? <Target size={14} /> : a.verdict === 'rejected' ? <X size={14} /> : <CircleDashed size={14} />}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <b className="block font-semibold text-cc-ink">{SHORT[a.id] ?? a.label}</b>
+                  <span className="block text-[12px] text-cc-ink-muted">{verdictText(a, deviation)}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+    </>
+  );
+
   const decisionTab = (
     <div className="flex flex-col gap-4">
       <section
@@ -762,66 +830,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
         ) : null}
       </section>
 
-      {numbered.length ? (
-        <div>
-          <p className={cn(LABEL, 'mb-1')}>Numbered on the canvas</p>
-          <ul className="m-0 list-none p-0">
-            {numbered.map((row, i) => (
-              <li key={row.n} className={cn('py-1', i > 0 && 'border-t border-cc-line')}>
-                <button
-                  type="button"
-                  data-canvas-legend={row.key}
-                  onClick={() => select(row.key)}
-                  className="grid w-full cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-cc-row py-1 text-left text-[13px] text-cc-ink hover:underline"
-                >
-                  <PinMark n={row.n} />
-                  <span>{row.text}</span>
-                  <FamilyChip value={row.chip} />
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {contract ? (
-        <div>
-          <p className={cn(LABEL, 'mb-1')}>Alternatives at a glance</p>
-          <ul className="m-0 flex list-none flex-col gap-2 p-0">
-            {contract.alternatives.map((a) => (
-              <li
-                key={a.id}
-                data-design-alternative={a.id}
-                data-verdict={a.verdict}
-                className="flex items-center gap-3 rounded-cc-row border px-3 py-2 text-[13px]"
-                style={
-                  a.verdict === 'chosen'
-                    ? {
-                        borderColor: 'color-mix(in srgb, var(--cc-chart-4) 45%, var(--cc-surface))',
-                        background: 'color-mix(in srgb, var(--cc-chart-4) 6%, var(--cc-surface))',
-                      }
-                    : { borderColor: 'var(--cc-line)' }
-                }
-              >
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'grid size-7 shrink-0 place-items-center rounded-full',
-                    a.verdict === 'rejected' ? 'bg-cc-error-bg text-cc-error' : 'bg-cc-surface-muted text-cc-ink-muted',
-                  )}
-                  style={a.verdict === 'chosen' ? { color: 'var(--cc-chart-4)', background: 'color-mix(in srgb, var(--cc-chart-4) 14%, var(--cc-surface))' } : undefined}
-                >
-                  {a.verdict === 'chosen' ? <Target size={14} /> : a.verdict === 'rejected' ? <X size={14} /> : <CircleDashed size={14} />}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <b className="block font-semibold text-cc-ink">{SHORT[a.id] ?? a.label}</b>
-                  <span className="block text-[12px] text-cc-ink-muted">{verdictText(a, deviation)}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      {glance}
 
       <div id="architect-sign-off" data-design-signoff={locked ? 'locked' : 'open'} className="scroll-mt-24">
         <p className={cn(LABEL, 'mb-1')}>Sign-off</p>
@@ -1085,7 +1094,7 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
           tabs={[
             { value: 'document', label: `Design document${hasDocument ? ` (${written} of ${sections.length})` : ''}`, content: documentTab },
             { value: 'contract', label: `Contract ${contract?.contractId ?? ''}${contract ? ` (${contract.fields.length} fields)` : ''}`.trim(), content: drawerContract },
-            { value: 'alternatives', label: 'Alternatives', count: contract?.alternatives.length, content: drawerAlternatives },
+            ...(layout === 'it' ? [] : [{ value: 'alternatives', label: 'Alternatives', count: contract?.alternatives.length, content: drawerAlternatives }]),
             { value: 'assumptions', label: 'Assumptions', count: contract ? assumptionCount : undefined, content: drawerAssumptions },
           ]}
         />
@@ -1226,8 +1235,17 @@ export default function DesignCanvasStage(props: DesignCanvasStageProps) {
         {/* The side panel. In the IT view it holds the evidence of the box clicked, nothing else (ADR-130). */}
         {layout === 'it' ? (
           <aside aria-label="Evidence" data-design-panel="evidence" className="flex min-w-0 flex-col border-t border-cc-line bg-cc-surface px-4 py-4 min-[720px]:px-5 min-[1100px]:border-t-0 min-[1100px]:border-l">
-            <p className={LABEL}>Evidence</p>
-            <div className="mt-2 min-w-0">{evidenceTab}</div>
+            {selected && model ? (
+              <>
+                <p className={LABEL}>Evidence</p>
+                <div className="mt-2 min-w-0">{evidenceTab}</div>
+              </>
+            ) : (
+              <div className="flex min-w-0 flex-col gap-4">
+                <p className="m-0 cc-text-cell text-cc-ink-muted">Click a box to see its evidence.</p>
+                {glance}
+              </div>
+            )}
           </aside>
         ) : (
         <aside

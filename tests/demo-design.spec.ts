@@ -110,13 +110,14 @@ test.describe('the demo Design stage on screen', () => {
     const data = buildDemoDesign(buildDemoProject());
     const label = LABEL_OF_ROUTE[data.contract!.route.chosen];
 
-    await openStage(page, 'design');
+    // ADR-130: the canvas, the contract and the document are the IT view's.
+    await openStage(page, 'design?view=it');
     const stage = page.getByTestId('demo-design');
+    await expect(stage).toHaveAttribute('data-design-view', 'it');
     await expect(stage.locator('[data-design-canvas-stage]')).toBeVisible();
 
-    // One story: the card names the contract's route.
-    await expect(page.locator('[data-design-answer]')).toHaveAttribute('data-design-answer', 'recommended');
-    await expect(page.locator('#design-answer')).toHaveText(label);
+    // One story: the answer card names the contract's route, and the alternatives at a glance stand beside the canvas.
+    await expect(page.locator('#design-answer [data-answer]')).toHaveText(`${label}.`);
     await expect(page.locator(`[data-design-alternative="${data.contract!.route.chosen}"]`)).toHaveAttribute(
       'data-verdict',
       'chosen',
@@ -133,15 +134,14 @@ test.describe('the demo Design stage on screen', () => {
     await expect(page.locator('[data-design-section]')).toHaveCount(0);
     await expect(page.locator('[data-design-section-body]')).toHaveCount(0);
 
-    // No generation: the button is there and disabled.
-    const generate = page.getByRole('button', { name: /^(Generate|Regenerate) design$/ });
-    await expect(generate).toHaveCount(1);
-    await expect(generate).toBeDisabled();
+    // No generation in the demo, and none offered beside the canvas.
+    await expect(page.getByRole('button', { name: /^(Generate|Regenerate) design$/ })).toHaveCount(0);
 
-    // The sign-off says what it is in the demo, not what it is on a real project.
-    const signOff = page.locator('#architect-sign-off');
-    await expect(signOff).toContainText('In the demo, confirming is a switch in this browser');
-    await expect(signOff).not.toContainText('self-declaration');
+    // The sign-off is the Management view's, and says what it is in the demo, not what it is on a real project.
+    await openStage(page, 'design?view=management');
+    const note = page.locator('#design-answer [data-answer-next]');
+    await expect(note).toContainText('In the demo, confirming is a switch in this browser');
+    await expect(note).not.toContainText('self-declaration');
   });
 
   test('confirming is a switch in this browser that the Delivery stage reads, and withdrawing resets it', async ({ page }) => {
@@ -149,7 +149,8 @@ test.describe('the demo Design stage on screen', () => {
     const data = buildDemoDesign(buildDemoProject());
     const label = LABEL_OF_ROUTE[data.contract!.route.chosen];
 
-    await openStage(page, 'design');
+    // ADR-130: "Confirm target" is the Management view's one primary action.
+    await openStage(page, 'design?view=management');
     await page.getByTestId('demo-reset').click();
     await expect(page.locator('[data-design-confirm]')).toHaveText(/Confirm target/);
 
@@ -165,11 +166,12 @@ test.describe('the demo Design stage on screen', () => {
     await page.locator('[data-cc-message-box] button:has-text("Confirm target")').click();
     const dialog = page.locator('[data-design-signoff-dialog]');
 
-    // Confirmed: the dialog closes on the lock, the card names the target, attributed to nobody.
-    await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible();
-    await expect(page.locator('#design-answer')).toHaveText(label);
-    await expect(page.locator('[data-design-answer]')).toContainText('In this browser only: attributed to nobody');
-    await expect(page.locator('[data-design-answer]')).not.toContainText('self-declaration');
+    // Confirmed: the answer card says so, attributed to nobody.
+    const card = page.locator('#design-answer');
+    await expect(card.locator('[data-answer]')).toHaveText('The target is confirmed, in this browser only.');
+    await expect(card).toContainText('In this browser only: attributed to nobody');
+    await expect(card).not.toContainText('self-declaration');
+    await expect(page.locator('[data-design-confirm]')).toHaveText('Change target');
     await page.locator('[data-design-confirm]').click();
     await expect(dialog.getByTestId('demo-confirm-target')).toHaveAttribute('aria-pressed', 'true');
     await page.keyboard.press('Escape');
@@ -181,15 +183,15 @@ test.describe('the demo Design stage on screen', () => {
     await expect(delivery).not.toContainText('Pending sign-off');
 
     // Withdrawing resets it, there too.
-    await openStage(page, 'design');
-    await expect(page.locator('[data-design-answer="confirmed"]')).toBeVisible();
+    await openStage(page, 'design?view=management');
+    await expect(page.locator('[data-design-confirm]')).toHaveText('Change target');
     await page.locator('[data-design-confirm]').click();
     const withdraw = page.locator('[data-design-signoff-dialog]').getByTestId('demo-confirm-target');
     await expect(withdraw).toHaveText('Withdraw the confirmation');
     await withdraw.click();
     await expect(withdraw).toHaveAttribute('aria-pressed', 'false');
     await page.keyboard.press('Escape');
-    await expect(page.locator('[data-design-answer="recommended"]')).toBeVisible();
+    await expect(page.locator('[data-design-confirm]')).toHaveText('Confirm target');
 
     await openStage(page, 'delivery');
     await expect(page.locator('[data-demo-delivery]')).toContainText('Pending sign-off');

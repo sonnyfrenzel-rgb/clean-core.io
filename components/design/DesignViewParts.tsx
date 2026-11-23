@@ -46,7 +46,7 @@ export function DesignSection({
   children: React.ReactNode;
 }) {
   return (
-    <section id={id} aria-labelledby={`${id}-h`} data-design-section={id} className="mt-6 min-w-0 scroll-mt-32">
+    <section id={id} aria-labelledby={`${id}-h`} data-design-part={id} className="mt-6 min-w-0 scroll-mt-32">
       <div className="mb-3 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
         <div className="min-w-0">
           <h2 id={`${id}-h`} tabIndex={-1} className="m-0 cc-text-h2 text-cc-ink">

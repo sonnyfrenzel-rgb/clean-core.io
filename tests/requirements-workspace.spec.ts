@@ -114,7 +114,7 @@ test('Design shows one card; the workspace opens on its own address and starts o
   test.setTimeout(300_000);
   const { context, page } = await signedInPage(browser, OWNER);
   const calls = await noModel(page);
-  await page.goto(`/project/${PROJECT}/design`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${PROJECT}/design?view=it`, { waitUntil: 'domcontentloaded' });
   const card = page.locator('[data-spec-card]');
   await expect(card).toBeVisible({ timeout: 120_000 });
   await expect(card).toHaveAttribute('data-spec-card', 'not-started');
@@ -381,7 +381,7 @@ test('an invited reader reads, opens a decision and exports — and writes nothi
   page.on('request', (r) => {
     if (r.method() === 'POST' && r.url().includes('/requirements-spec')) posts.push(r.url());
   });
-  await page.goto(`/project/${PROJECT}/design`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${PROJECT}/design?view=it`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-spec-card]')).toHaveAttribute('data-spec-card', /draft|ready/, { timeout: 120_000 });
   await openWorkspace(page);
   await expect(page.locator('[data-spec-workspace]')).toHaveAttribute('data-spec-mode', 'reader');
@@ -422,7 +422,7 @@ test('on a phone the owner reads and decides, with no sideways scroll', async ({
   await shot(page, 'trace-matrix-390');
   const after = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(after).toBeLessThanOrEqual(0);
-  await page.goto(`/project/${PROJECT}/design`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`/project/${PROJECT}/design?view=it`, { waitUntil: 'domcontentloaded' });
   await page.locator('[data-spec-card]').scrollIntoViewIfNeeded({ timeout: 120_000 });
   await shot(page, 'card-390');
   await context.close();
@@ -436,7 +436,7 @@ test('the demo shows the engine’s draft read-only and stores nothing', async (
     if (r.method() === 'POST' && r.url().includes('/api/')) posts.push(r.url());
   });
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/demo/design', { waitUntil: 'domcontentloaded' });
+  await page.goto('/demo/design?view=it', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 90_000 });
   await page.locator('[data-spec-card] [data-spec-open]').click();
   // The App Router changes the address only once the new route's payload has
