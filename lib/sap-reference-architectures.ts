@@ -52,13 +52,13 @@ import type { CloudServiceKey } from '@/lib/cloud-service-key';
 export { CLOUD_SERVICE_KEYS, type CloudServiceKey } from '@/lib/cloud-service-key';
 
 /** The day every binding and every RA's metadata below was checked against the repository. */
-export const VERIFIED_AT = '2026-11-12';
+export const VERIFIED_AT = '2026-11-23';
 
 /** The repository, branch and commit the bindings were checked against. */
 export const ARCHITECTURE_CENTER_SOURCE = {
   repository: 'https://github.com/SAP/architecture-center',
   branch: 'dev',
-  commit: '7e0f9af938a89ee2cbf4aac12aa77d78bf644e22',
+  commit: '2582312997c699ace710cc51f41a63e0bcb3ad35',
   license: 'Apache-2.0',
 } as const;
 
@@ -88,7 +88,7 @@ export const SAP_REFERENCE_ARCHITECTURES: Readonly<Record<SapRaId, SapReferenceA
   RA0001: { id: 'RA0001', slug: '196eba', title: 'Designing Event-Driven Applications on SAP BTP', lastUpdate: '2025-10-10', archived: false },
   RA0019: { id: 'RA0019', slug: '89ab6b', title: 'SAP IAM integration with SAP Cloud Identity Services', lastUpdate: '2026-10-27', archived: false },
   RA0021: { id: 'RA0021', slug: '6501d5', title: 'App2App Integration with SAP Integration Suite', lastUpdate: '2026-10-28', archived: false },
-  RA0022: { id: 'RA0022', slug: '5f90af', title: 'API Managed Integration with SAP Integration Suite', lastUpdate: '2026-10-26', archived: false },
+  RA0022: { id: 'RA0022', slug: '5f90af', title: 'API Managed Integration with SAP Integration Suite', lastUpdate: '2026-11-18', archived: false },
   RA0023: { id: 'RA0023', slug: 'b51e91', title: 'DevOps on SAP BTP with CI/CD and SAP Build', lastUpdate: '2026-10-28', archived: false },
 });
 
