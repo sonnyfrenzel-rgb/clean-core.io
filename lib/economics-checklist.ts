@@ -38,11 +38,7 @@ export type ChecklistRowKey =
   | 'one-off'
   | 'per-release'
   | 'baseline'
-  | 'upgrade-delay'
-  | 'loc'
-  | 'investment'
-  | 'upgrades'
-  | 'feature-packs';
+  | 'upgrade-delay';
 
 export interface ChecklistRow {
   key: ChecklistRowKey;
@@ -148,30 +144,6 @@ export function comparisonChecklist(a: CostAssumptions): ChecklistRow[] {
     );
   }
   return rows;
-}
-
-/** The inputs of the savings forecast that the comparison does not already ask for. */
-export function forecastChecklist(input: {
-  loc: number;
-  sourceLoc: number | null;
-  oneTimeCost: number | null;
-  /** Whether the reader moved the release-upgrade figure off its starting value. */
-  upgradesStated: boolean;
-  featurePacksStated: boolean;
-}): ChecklistRow[] {
-  return [
-    {
-      key: 'loc',
-      label: 'Lines of custom code',
-      status: 'done',
-      detail: input.sourceLoc !== null && input.loc === input.sourceLoc ? 'from your source' : 'stated',
-    },
-    { key: 'investment', label: 'One-time modernisation budget', status: input.oneTimeCost === null ? 'open' : 'done' },
-    // Model assumptions with a starting value: a reader can change them, and
-    // until then they are said to be assumed rather than counted as stated.
-    { key: 'upgrades', label: 'Release upgrades per year', status: input.upgradesStated ? 'done' : 'assumed' },
-    { key: 'feature-packs', label: 'Feature pack updates per year', status: input.featurePacksStated ? 'done' : 'assumed' },
-  ];
 }
 
 /** Rows that still keep an amount away — `open` and `partial`, and a cadence nobody confirmed. */

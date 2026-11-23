@@ -15,6 +15,8 @@ import CcTable from '@/components/cc/Table';
 import { CcTag } from '@/components/cc/Tag';
 import DemoEconomics from '@/components/tco/DemoEconomics';
 import type { PhaseKey } from '@/lib/workflow-steps';
+import type { CostAssumptions } from '@/lib/cost-assumptions';
+import { routeLabel } from '@/lib/sap-naming';
 import { DEMO_ANALYSIS_KEY, markAnalysisRead } from '@/lib/analysis-read';
 import type { DemoProject } from '@/lib/demo-project';
 import type { WorklistItem } from '@/lib/types';
@@ -67,12 +69,12 @@ interface DemoState {
    */
   worklist: WorklistItem[] | null;
   targetConfirmed: boolean;
-  /** Assumptions for the Economics stage. Null means nobody entered one. */
-  devRate: number | null;
-  userRate: number | null;
-  upgradeFreq: number;
-  fpFreq: number;
-  oneTimeCost: number | null;
+  /**
+   * The Economics tool's assumptions as the reader stated them (ADR-128) — `null` until anything is entered. The
+   * demonstration forecast's fields of earlier versions (`devRate`, `userRate`, `upgradeFreq`, `fpFreq`,
+   * `oneTimeCost`) may still sit in a stored state; nothing reads them.
+   */
+  economics: CostAssumptions | null;
   // `decision` and `decisionNote` were a Delivery decision the real product
   // does not have (decision-input audit, De2, 10.10.2026). A state stored by an
   // earlier version may still carry them; nothing reads them.
@@ -81,11 +83,7 @@ interface DemoState {
 const EMPTY_STATE: DemoState = {
   worklist: null,
   targetConfirmed: false,
-  devRate: null,
-  userRate: null,
-  upgradeFreq: 1,
-  fpFreq: 2,
-  oneTimeCost: null,
+  economics: null,
 };
 
 function readState(): DemoState {
@@ -204,8 +202,9 @@ export default function DemoWorkspace({
           <DemoEconomics
             loc={demo.economics.loc}
             scoreBefore={demo.economics.scoreBefore}
-            values={state}
-            onChange={patch}
+            route={demo.design.recommendedRoute ? routeLabel(demo.design.recommendedRoute) : null}
+            value={state.economics}
+            onChange={(economics) => patch({ economics })}
           />
         )}
         {stage === 'delivery' && <Delivery demo={demo} state={state} />}

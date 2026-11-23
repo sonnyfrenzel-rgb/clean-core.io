@@ -264,13 +264,25 @@ export function toolOnRecord(step: { key: PhaseKey; state: PhaseState }): boolea
 }
 
 /**
- * The phase the product recommends next, or `null` once nothing is open — the
- * rule of `workflowSummary` (Economics passed over: a cost scenario is the
- * reader's choice, never the step the path waits on) for any rail, the demo's
- * included.
+ * Whether the path has moved on past Economics: a tool after it holds a record of its own (`toolOnRecord`) or one
+ * that went out of date. ADR-128 (5): Economics comes right after Analyze and is the next step there — it prices the
+ * program decision Design works from. Once the reader has gone on without it, a "next" that sends them back would
+ * park every project on a scenario that is theirs to make or not, so it is passed over from then on.
+ */
+export function economicsPassedOver(steps: ReadonlyArray<{ key: PhaseKey; state: PhaseState }>): boolean {
+  const at = steps.findIndex((s) => s.key === 'tco');
+  if (at < 0) return true;
+  return steps.slice(at + 1).some((s) => s.key !== 'delivery' && (toolOnRecord(s) || s.state === 'stale'));
+}
+
+/**
+ * The phase the product recommends next, or `null` once nothing is open — the rule of `workflowSummary` for any rail,
+ * the demo's included: the first phase in order that is not done, Economics included until the path has moved on
+ * past it (`economicsPassedOver`).
  */
 export function nextPhaseKey(steps: ReadonlyArray<{ key: PhaseKey; state: PhaseState }>): PhaseKey | null {
-  const open = steps.find((s) => s.state !== 'done' && s.key !== 'tco');
+  const skipEconomics = economicsPassedOver(steps);
+  const open = steps.find((s) => s.state !== 'done' && !(skipEconomics && s.key === 'tco'));
   if (open) return open.key;
   return null;
 }
@@ -1160,52 +1172,46 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
   // 4 done, but no green check; … the values are gone"). The loader reads that
   // record into `_economics`; nothing here reads `status`.
   //
-  //   - nothing stored: the signed run is the baseline, nothing is estimated —
-  //     `partial`, as before, and the tool carries no check (`toolOnRecord`);
-  //   - figures stored and the four steps of the stage done
-  //     (`economicsProgress`, the stage's own step logic): `done`, never
-  //     proven — a scenario on the reader's figures, not a quote, and the
-  //     savings forecast runs on assumed coefficients (CR-23, E12-F02);
-  //   - figures stored, some step still open: `partial`;
+  //   - nothing stored: nothing is priced yet — `partial`, as before, and the
+  //     tool carries no check (`toolOnRecord`);
+  //   - figures stored and every option priced (`economicsProgress`, the rule
+  //     the page shares — ADR-128 (2): the comparison alone): `done`, never
+  //     proven — a scenario on the reader's figures, not a quote;
+  //   - figures stored, an option not priced yet: `partial`;
   //   - figures stored against another score than the signed run's now:
   //     `stale` below — they were priced for a different reading of the code.
   const econ = project?._economics ?? null;
   const sourceLines = hasCode ? countSourceLines(project!.legacyCode as string) : null;
-  const econProgress = econ && hasRun && !runUnreadable
-    ? recordProgress(econ, { sourceLoc: sourceLines, score, sourceChanged: staleness(project).sourceChanged })
-    : null;
+  const econProgress = econ && hasRun && !runUnreadable ? recordProgress(econ, { sourceLoc: sourceLines }) : null;
   const economics = runUnreadable
     ? phase('tco', {
         state: 'empty',
         badge: 'No baseline',
-        detail: 'The signed run could not be read — the cost model has no Clean Core score to start from.',
+        detail: 'The signed run could not be read — the options have no analysed program to be priced for.',
       })
     : hasRun && econ && econProgress
     ? econProgress.complete
       ? phase('tco', {
           state: 'done',
           badge: 'Scenario priced',
-          detail:
-            'Every option is priced from your own figures, which are stored with the project — a scenario, not a quote. ' +
-            'The savings forecast uses assumed effort coefficients, not observed costs.',
+          detail: 'Every option is priced from your own figures, which are stored with the project — a scenario, not a quote.',
         })
       : phase('tco', {
           state: 'partial',
           badge: 'Figures started',
-          detail: `Your cost figures are stored; ${econProgress.doneCount} of 4 steps are done, so not every option is priced yet.`,
+          detail: 'Your cost figures are stored, but not every option is priced yet.',
         })
     : hasRun
     ? phase('tco', {
         state: 'partial',
-        badge: 'Model estimate',
-        // The run is the baseline, not an estimate: no cost figures are stored
-        // for this project, so nothing has been priced.
-        detail: 'The signed run is the baseline. An estimate needs your cost figures and uses assumed effort coefficients, not observed costs.',
+        badge: 'Not priced yet',
+        // No cost figures are stored for this project, so nothing has been priced.
+        detail: 'The signed run is the baseline. Nothing is priced yet: the options are priced from your own figures, and nothing has a default.',
       })
     : phase('tco', {
         state: 'empty',
         badge: 'No baseline',
-        detail: 'No signed run — the cost model starts from its Clean Core score.',
+        detail: 'No signed run — the options are priced for an analysed program.',
       });
   // The figures were stored against a score the signed run no longer has.
   const econScoreMoved = Boolean(econ && econProgress && econ.basis.score !== score);
@@ -1379,15 +1385,18 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
 /**
  * How far along, and where "continue" should go.
  *
- * `next` is the first phase in order that is not done. Economics is passed over
- * for that purpose only: a cost scenario on the reader's own figures is theirs
- * to make or not (it can be done since its figures are stored, 03.10.2026),
- * and a continue button that parks every reader there is not a way forward.
+ * `next` is the first phase in order that is not done — the rule of `nextPhaseKey`: Economics, right after Analyze,
+ * is the next step until the path has moved on past it (`economicsPassedOver`, ADR-128 (5)); from then on a cost
+ * scenario on the reader's own figures is theirs to make or not, and a continue button that parks every reader there
+ * is not a way forward.
  */
 export function workflowSummary(steps: RailStep[]) {
   const doneCount = steps.filter((s) => s.done).length;
+  const skipEconomics = economicsPassedOver(steps);
   const next =
-    steps.find((s) => !s.done && s.key !== 'tco') ?? steps.find((s) => s.key === 'delivery') ?? steps[steps.length - 1];
+    steps.find((s) => !s.done && !(skipEconomics && s.key === 'tco')) ??
+    steps.find((s) => s.key === 'delivery') ??
+    steps[steps.length - 1];
   return { doneCount, total: steps.length, next };
 }
 

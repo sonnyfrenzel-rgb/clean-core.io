@@ -42,7 +42,7 @@ import { pinnedExamplePath } from './helpers/starter-example-files';
  * Every assertion below runs the real derivation on real ABAP — the eight
  * programs this product ships, plus four snippets for the cases none of them
  * contains. Nothing is asserted against a hand-written copy of the arithmetic
- * (the reason `tests/tco-model.spec.ts` replaced its predecessor).
+ * (the reason the demonstration forecast's own spec replaced its predecessor, before ADR-128 removed both).
  *
  * **Not vacuous.** On 2026-09-18 each assurance below was broken on its own in
  * `lib/evidence-level.ts` or `lib/abap/standard-coverage.ts`, the suite run, and

@@ -30,7 +30,6 @@ import {
   takeOverPatch,
 } from '../components/tco/OptionComparison';
 import { formatDays } from '../lib/format';
-import { stepWord } from '../components/tco/EconomicsSteps';
 
 /**
  * Economics helps a reader state their figures (owner, 11.10.2026): "give
@@ -96,11 +95,12 @@ test.describe('the hints', () => {
     expect(EFFORT_HELP.deferral).toMatch(/It is not priced/);
     expect(EFFORT_HELP.deferral).toMatch(/Keep is only priced once you state it, or say it is not determined/);
     expect(releasesInHorizonText(2, 5)).toBe('With your figures: 2 releases a year × 5 years = 10 releases.');
-    expect(releasesInHorizonText(null, 5)).toMatch(/releases per year × time horizon in step 2/);
+    expect(releasesInHorizonText(null, 5)).toMatch(/your releases per year × the years you compare over/);
   });
 
   test('stand in the page and the cards', () => {
-    const page = read(PAGE);
+    // The shared figures are edited in place in the answer card (ADR-128 (1), mock-up E5).
+    const page = read('components/tco/EconomicsObjectPage.tsx');
     for (const key of ['devRate', 'testRate', 'horizon']) expect(page).toContain(`hint={RATES_HELP.${key}}`);
     const fields = read('components/tco/EconomicsChecklist.tsx');
     expect(fields).toContain('hint={RATES_HELP.cadence}');
@@ -116,8 +116,8 @@ test.describe('the hints', () => {
       expect(inputs.length, rel).toBeGreaterThan(0);
       expect((src.match(/inputMode="decimal"/g) ?? []).length, rel).toBe(inputs.length);
     }
-    const page = read(PAGE);
-    expect((page.match(/prefix=\{currency \|\| undefined\}/g) ?? []).length).toBe(3);
+    const page = read('components/tco/EconomicsObjectPage.tsx');
+    expect((page.match(/prefix=\{cur \|\| undefined\}/g) ?? []).length).toBe(2);
     expect((page.match(/suffix="\/ day"/g) ?? []).length).toBe(2);
     expect(page).toContain('suffix="years"');
     expect(read('components/tco/EconomicsChecklist.tsx')).toContain('suffix="per year"');
@@ -151,8 +151,8 @@ test.describe('a proposal explains itself', () => {
   });
 
   test('says where its lines come from', () => {
-    expect(linesBasis(668, 668)).toBe('668 lines — the lines of your source (step 1)');
-    expect(linesBasis(5000, 668)).toBe('5,000 lines — the size you set in step 1');
+    expect(linesBasis(668, 668)).toBe('668 lines — the lines of your source');
+    expect(linesBasis(5000, 668)).toBe('5,000 lines — the size you set under "Model another size"');
   });
 
   test('stands beside the proposed figure on the card, behind "How is this proposed?"', () => {
@@ -247,7 +247,7 @@ test.describe('a card shows its figures, and why it has no cost', () => {
 
   test('the chip "Not determined" keeps its own element, and the reason stands beside it', () => {
     const cards = read('components/tco/OptionComparison.tsx');
-    expect(cards).toMatch(/<span data-cost-option-not-determined=\{option\.id\}>\s*<CcProvenanceChip value="not-determined" \/>\s*<\/span>/);
+    expect(cards).toMatch(/<span data-cost-option-not-determined=\{option\.id\}>\s*<FamilyChip kind="not-determined" \/>\s*<\/span>/);
     expect(cards).toContain('data-cost-option-why={option.id}');
     expect(cards).toContain('onGoToField?.(b.field)');
   });
@@ -307,11 +307,6 @@ test.describe('saved or not, per section', () => {
     expect(savedStepState(true, { state: 'failed', message: 'm' })).toBe('unsaved');
     expect(savedStepState(true, { state: 'saved', at: a })).toBe('done');
     expect(savedStepState(true, { state: 'none' })).toBe('done');
-    // The step's word: complete while saving, and only "Done" once stored.
-    expect(stepWord({ state: 'saving' })).toBe('Complete');
-    expect(stepWord({ state: 'unsaved' })).toBe('Complete, not saved');
-    expect(stepWord({ state: 'done' })).toBe('Done');
-    expect(stepWord({ state: 'input' })).toBe('Your input needed');
   });
 
   test('the time is the reader’s clock, with its zone named', () => {
@@ -320,12 +315,11 @@ test.describe('saved or not, per section', () => {
     expect(savedTimeText('not a date')).toBeNull();
   });
 
-  test('the page shows it per step and per card, politely, with a retry', () => {
+  test('the page shows it for the shared figures, the effort and per card, politely, with a retry', () => {
     const page = read(PAGE);
-    expect(page).toContain('<SaveStatus status={ratesSave} onRetry={retry} live scope="rates" />');
+    expect(page).toContain('<SaveStatus status={sectionStatus(\'rates\')} onRetry={retry} live scope="rates" />');
     expect(page).toContain('<SaveStatus status={effortSave} onRetry={retry} live scope="effort" />');
     expect(page).toContain('<SaveStatus status={sectionStatus(`option:${id}`)} onRetry={retry} scope={`option:${id}`} />');
-    expect(page).toMatch(/state: savedStepState\(ratesDone, ratesSave\) \?\? 'input'/);
     const status = read('components/tco/SaveStatus.tsx');
     expect(status).toContain("'aria-live': 'polite' as const");
     expect(status).toContain('Not saved — {status.message}');

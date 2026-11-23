@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
+import FamilyChip from '@/components/family/FamilyChip';
 import { formatAmount, type CostOption } from '@/lib/cost-assumptions';
 import { formatDays } from '@/lib/format';
 import type { KeyUserStepList } from '@/lib/key-user-steps';
@@ -43,7 +43,7 @@ export default function KeyUserEffort({
     >
       <div className="flex flex-wrap items-center gap-2">
         <h3 id="ku-effort-title" className="m-0 cc-text-h3 text-cc-ink">Configuration effort, not a build</h3>
-        <CcProvenanceChip value="reconstructed" />
+        <FamilyChip kind="engine" />
       </div>
       <p className="m-0 cc-text-cell text-cc-ink" data-key-user-effort-counts="">
         {mode === 'whole' ? 'The decision is key-user extensibility. ' : 'Part of this program is key user. '}
@@ -52,7 +52,7 @@ export default function KeyUserEffort({
       <p className="m-0 cc-text-cell text-cc-ink-muted">
         How many days that takes is yours to state: enter them on the option {KEY_USER_COST_OPTION.label} — key-user days only, nothing is built in code
         {mode === 'whole' ? '' : '; the parts that stay code keep their days on Rebuild, which is unchanged'}. They are priced with your
-        key-user day rate{typeof keyUserRate === 'number' && currency ? ` (${formatAmount(keyUserRate, currency)} per day)` : ', which step 2 asks for'}. Clean-Core.io proposes no number of days for key-user work.
+        key-user day rate{typeof keyUserRate === 'number' && currency ? ` (${formatAmount(keyUserRate, currency)} per day)` : ', which the answer asks for'}. Clean-Core.io proposes no number of days for key-user work.
       </p>
       {priced ? (
         <p className="m-0 cc-text-cell text-cc-ink" data-key-user-effort-priced="">

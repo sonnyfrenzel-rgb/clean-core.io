@@ -91,13 +91,13 @@ export function readFigure(raw: string, kind: FigureKind, badInput = false): Fig
 }
 
 /**
- * What each field of step 2 is for, in a sentence or two — orientation, never a
+ * What each shared figure is for, in a sentence or two — orientation, never a
  * figure to copy: rates differ too much by country and contract for any number
  * here to be anything but a default in disguise.
  */
 export const RATES_HELP = Object.freeze({
   currency:
-    'The currency your day rates and budget are in; every amount on this page uses it. Type a code, a currency or a country — “EU”, “dollar”, “India” — and pick it from the list.',
+    'The currency your day rates are in; every amount on this page uses it. Type a code, a currency or a country — “EU”, “dollar”, “India” — and pick it from the list.',
   devRate:
     'What one day of SAP ABAP or SAP BTP development costs you, internal or external. Rates vary widely by country and contract — use what you actually pay. Every developer day on this page is priced at it.',
   testRate:
@@ -131,7 +131,7 @@ export function releasesInHorizonText(perYear: number | null | undefined, years:
     const n = (v: number) => formatNumber(v, { maximumFractionDigits: 2 }) ?? String(v);
     return `With your figures: ${n(perYear)} release${perYear === 1 ? '' : 's'} a year × ${n(years)} year${years === 1 ? '' : 's'} = ${n(perYear * years)} releases.`;
   }
-  return 'How many releases that is follows from releases per year × time horizon in step 2.';
+  return 'How many releases that is follows from your releases per year × the years you compare over.';
 }
 
 /* ------------------------------------------------------------ 2. proposals */
@@ -211,8 +211,8 @@ export function baselineDerivation(loc: number, proposal: BaselineProposal): Der
 /** Where the line count of a proposal comes from, in a few words. */
 export function linesBasis(loc: number, sourceLoc: number | null): string {
   return sourceLoc !== null && loc === sourceLoc
-    ? `${formatLines(loc)} lines — the lines of your source (step 1)`
-    : `${formatLines(loc)} lines — the size you set in step 1`;
+    ? `${formatLines(loc)} lines — the lines of your source`
+    : `${formatLines(loc)} lines — the size you set under "Model another size"`;
 }
 
 /** The closing sentence of every derivation: a proposal, and whose figure it becomes. */

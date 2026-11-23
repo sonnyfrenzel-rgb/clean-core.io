@@ -258,7 +258,7 @@ test('no page promises an outcome nobody measured', () => {
   const PROMISES: { re: RegExp; why: string }[] = [
     { re: /\b\d+\s*%\s*(faster|quicker|cheaper|less|lower|fewer|reduction|savings?)\b/i, why: 'a percentage nothing measured' },
     { re: /\b(save|saves|saving)\s+(you\s+)?(days|weeks|hours|months)\b/i, why: 'a time saving nobody can check' },
-    { re: /\bpredict(s|ing)?\s+(your\s+)?(tco|roi|savings?|costs?)\b/i, why: 'a forecast lib/tco-model.ts refuses to make' },
+    { re: /\bpredict(s|ing)?\s+(your\s+)?(tco|roi|savings?|costs?)\b/i, why: 'a forecast the product does not make (ADR-128 (2))' },
     { re: /\breduces?\s+(your\s+)?(tco|total cost of ownership)\b/i, why: 'a TCO reduction nothing computes' },
     { re: /\bcalculates?\s+the\s+reduction\s+in\b/i, why: 'a reduction nothing calculates' },
     { re: /\bpays?\s+for\s+itself\b/i, why: 'a payback nobody measured' },

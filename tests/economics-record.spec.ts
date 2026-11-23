@@ -168,24 +168,21 @@ test.describe('the wire form', () => {
   });
 });
 
-test.describe('the four steps, decided once', () => {
-  test('a complete payload completes all four; a missing budget leaves step 4 open', () => {
+test.describe('whether it is priced, decided once — the comparison alone (ADR-128 (2))', () => {
+  test('a complete payload is complete; a missing one-time budget no longer holds it back', () => {
     const p = complete();
-    const ctx = { sourceLoc: LOC, score: 62, sourceChanged: false };
-    expect(recordProgress(record(p), ctx)).toMatchObject({ codebase: true, rates: true, effort: true, result: true, doneCount: 4, complete: true });
+    const ctx = { sourceLoc: LOC };
+    expect(recordProgress(record(p), ctx)).toMatchObject({ codebase: true, rates: true, effort: true, compared: true, complete: true });
+    // The demonstration forecast's budget left the page with ADR-128 (2): the phase rests on the comparison alone.
     const noBudget = record({ ...p, inputs: { ...p.inputs, oneTimeBudget: null } });
-    expect(recordProgress(noBudget, ctx)).toMatchObject({ compared: true, result: false, doneCount: 3, complete: false });
-    // No forecast is possible above the target score, so step 4 needs only the comparison.
-    expect(recordProgress(noBudget, { ...ctx, score: 97 })).toMatchObject({ forecastPossible: false, result: true, complete: true });
+    expect(recordProgress(noBudget, ctx)).toMatchObject({ compared: true, complete: true });
+    expect(recordProgress(noBudget, ctx)).not.toHaveProperty('forecastPossible');
   });
 
-  test('an unconfirmed cadence keeps step 2 open', () => {
+  test('an unconfirmed cadence keeps the shared figures open', () => {
     const p = complete();
     p.assumptions.releaseCadence = { perYear: 2, confirmed: false };
-    const r = economicsProgress({
-      assumptions: p.assumptions, loc: LOC, sourceLoc: LOC, upgradesPerYear: 1, upgradesStated: false,
-      featurePacksPerYear: 2, featurePacksStated: false, oneTimeBudget: 40000, score: 62, sourceChanged: false,
-    });
+    const r = economicsProgress({ assumptions: p.assumptions, sourceLoc: LOC });
     expect(r.rates).toBe(false);
     expect(r.complete).toBe(false);
   });
@@ -195,7 +192,7 @@ test.describe('what the phase contract makes of a stored record', () => {
   test('nothing stored: the baseline, partial, and no check', () => {
     for (const p of [project(undefined), project(null)]) {
       const step = tco(p);
-      expect(step).toMatchObject({ state: 'partial', badge: 'Model estimate', proven: false });
+      expect(step).toMatchObject({ state: 'partial', badge: 'Not priced yet', proven: false });
       expect(toolOnRecord(step)).toBe(false);
       expect(toolMark(step).kind).toBe('none');
     }
@@ -215,7 +212,7 @@ test.describe('what the phase contract makes of a stored record', () => {
     const started = record({ ...p, assumptions: { ...p.assumptions, horizonYears: null } });
     const step = tco(project(started));
     expect(step).toMatchObject({ state: 'partial', badge: 'Figures started' });
-    expect(step.detail).toContain('2 of 4 steps');
+    expect(step.detail).toContain('not every option is priced yet');
     expect(toolOnRecord(step)).toBe(false);
   });
 

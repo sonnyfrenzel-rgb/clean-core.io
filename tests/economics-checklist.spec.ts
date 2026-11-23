@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
-import { comparisonChecklist, forecastChecklist, openRows } from '../lib/economics-checklist';
+import { comparisonChecklist, openRows } from '../lib/economics-checklist';
 import { initialCostAssumptions, optionGroups } from '../components/tco/OptionComparison';
 import { costComparison, proposeEffort, type CostAssumptions } from '../lib/cost-assumptions';
 
@@ -126,20 +126,8 @@ test('each option card opens a group for every gap the comparison holds against 
   }
 });
 
-test('the forecast rows: the line count from the source is done, the starting values are assumed', () => {
-  const rows = forecastChecklist({ loc: 669, sourceLoc: 669, oneTimeCost: null, upgradesStated: false, featurePacksStated: false });
-  expect(rows.map((r) => [r.key, r.status, r.detail ?? null])).toEqual([
-    ['loc', 'done', 'from your source'],
-    ['investment', 'open', null],
-    ['upgrades', 'assumed', null],
-    ['feature-packs', 'assumed', null],
-  ]);
-  // An assumed starting value does not keep an amount away, so it is not counted as open.
-  expect(openRows(rows).map((r) => r.key)).toEqual(['investment']);
-});
-
 test('the stage asks for each day rate once, and shows no machine string', () => {
-  const page = fs.readFileSync(path.resolve(__dirname, '..', 'app/(app)/project/[projectId]/tco/page.tsx'), 'utf8');
+  const page = fs.readFileSync(path.resolve(__dirname, '..', 'components/tco/EconomicsObjectPage.tsx'), 'utf8');
   const panel = fs.readFileSync(path.resolve(__dirname, '..', 'components/tco/OptionComparison.tsx'), 'utf8');
   const both = page + panel;
   expect((both.match(/'data-cost-field': 'dev-day-rate'|data-cost-field="dev-day-rate"/g) || []).length).toBe(1);
@@ -148,7 +136,7 @@ test('the stage asks for each day rate once, and shows no machine string', () =>
   // No "(ADR-…)" in anything a reader sees: JSX text, not comments.
   const visible = both.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
   expect(visible).not.toMatch(/\(ADR[-‑]\d+\)/);
-  // The revision string stands one level deeper, under "Technical details".
-  expect(panel.indexOf('title="Technical details"')).toBeGreaterThan(-1);
-  expect(panel.indexOf('data-cost-revision')).toBeGreaterThan(panel.indexOf('title="Technical details"'));
+  // The revision string stands one level deeper, in the fold "How it is calculated".
+  expect(page.indexOf('title="How it is calculated"')).toBeGreaterThan(-1);
+  expect(page.indexOf('data-cost-revision')).toBeGreaterThan(page.indexOf('function Method('));
 });

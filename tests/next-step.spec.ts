@@ -7,6 +7,7 @@ import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
 import { receiptFor } from './helpers/test-receipt';
 import firebaseConfig from '../firebase-config.json';
 import { nextOpenPoint } from '../lib/next-step';
+import { record, REBUILD_CHEAPEST } from './helpers/decision-cost-fixtures';
 import { workflowSteps, workflowSummary } from '../lib/workflow-steps';
 import type { Project, TestCase } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
@@ -82,9 +83,12 @@ test.describe('nextOpenPoint reads the one phase contract, nothing else', () => 
   });
 
   test('a stage switched off: an empty phase names the switch instead of an instruction to press it', () => {
-    // A run is on record (Analyze is done) and nothing else is — Design is next,
-    // and this account has switched the design stage off.
-    const project = { name: 'x', legacyCode: 'REPORT z.\n', activeRunId: 'run-1' } as Project;
+    // A run is on record (Analyze is done) and Economics is priced (ADR-128 (5): it is the next step after Analyze
+    // until then) — Design is next, and this account has switched the design stage off.
+    const project = {
+      name: 'x', legacyCode: 'REPORT z.\n', activeRunId: 'run-1',
+      _economics: { ...record(REBUILD_CHEAPEST), basis: { runId: 'run-1', score: null } },
+    } as Project;
     const off = nextOpenPoint(project, { modelStages: { design: false } });
     expect(off).not.toBeNull();
     expect(off!.key).toBe('design');

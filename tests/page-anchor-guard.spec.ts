@@ -7,6 +7,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import {
   analyzeAnchors,
   deliveryAnchors,
+  economicsAnchors,
   PAGE_ANCHOR_IDS,
   PAGE_ANCHOR_LABELS,
   testingAnchors,
@@ -31,7 +32,8 @@ import { NAVIGATION_MESSAGES } from '../lib/messages/navigation';
  *
  *   1. one bar: `PageAnchorBar` is the only anchor bar, it says "On this page"
  *      itself (a page cannot pass other words), and it is used only where
- *      ADR-091 says — not on Design, not on Economics, not in Management;
+ *      ADR-091 says — not on Design, not in Management; Economics carries one
+ *      since it leads with its answer (ADR-128, mock-up E6);
  *   2. only ids that render: every section id a bar may name is the id of an
  *      element in the files that draw that tool — real and demo — and the
  *      builders never name one that is not on the page, never an "empty" chip;
@@ -59,6 +61,7 @@ const BAR_CALLERS = [
   'components/delivery/DemoDelivery.tsx',
   PAGE('design'), // ADR-130 (G12): Design's sections per view and decision case
   'components/demo/DemoDesign.tsx',
+  'components/tco/EconomicsObjectPage.tsx', // Economics and its demo (ADR-128)
   'components/workspace/ItAnswers.tsx', // the IT view (ADR-086)
   'app/(app)/settings/page.tsx', // Profile settings in the tools' family (ADR-139 (3))
   'components/analyze/AnalyzeManagement.tsx', // Analyze, Management (AB-10, ADR-143)
@@ -83,6 +86,12 @@ const RENDERERS: Record<keyof typeof PAGE_ANCHOR_IDS, { real: string[]; demo: st
     real: [PAGE('testing')],
     demo: ['components/demo/DemoTesting.tsx'],
     demoIds: ['write', 'run', 'hand'],
+  },
+  economics: {
+    real: ['components/tco/EconomicsObjectPage.tsx', PAGE('tco')],
+    demo: ['components/tco/EconomicsObjectPage.tsx', 'components/tco/DemoEconomics.tsx'],
+    // The demo has no model summary, and so no fold for it.
+    demoIds: ['range', 'options', 'firm', 'effort', 'how'],
   },
   delivery: {
     real: [PAGE('delivery'), 'components/delivery/DeliveryObjectPage.tsx'],
@@ -124,9 +133,9 @@ test.describe('one bar', () => {
     for (const gone of ['components/testing/SectionAnchorBar.tsx']) expect(fs.existsSync(path.resolve(ROOT, gone)), gone).toBe(false);
     expect(code('components/delivery/DeliveryObjectPage.tsx')).not.toContain('DeliveryAnchorBar');
 
-    // ADR-091: Economics a guided flow whose step guide is its navigation;
-    // Management has none (ADR-087). Design has the one bar since ADR-130 (G12);
-    // its canvas component draws none of its own.
+    // Management has none (ADR-087). Design has the one bar since ADR-130 (G12); its canvas component draws none of
+    // its own. Economics draws its bar in the object page it shares with the demo (ADR-128), not in the route or the
+    // demo wrapper.
     for (const rel of [
       'components/design/DesignCanvasStage.tsx',
       PAGE('tco'),
@@ -273,6 +282,12 @@ test.describe('only ids that render', () => {
       ['chain', null], ['needed', 'none'], ['artefacts', '6'], ['pack', 'available'],
     ]);
     check('delivery', deliveryAnchors({ stillNeeded: 3, artefacts: 6, pack: null, slides: true }));
+
+    // Economics — the model's view only where the analysis wrote one (ADR-128, mock-up E6).
+    const econ = economicsAnchors({ model: true });
+    check('economics', econ);
+    expect(econ.map((a) => a.key)).toEqual(['range', 'options', 'firm', 'effort', 'how', 'model']);
+    expect(economicsAnchors({ model: false }).map((a) => a.key)).not.toContain('model');
   });
 });
 
@@ -304,6 +319,9 @@ test.describe('one place', () => {
     before('components/demo/DemoTesting.tsx', /<PageAnchorBar\b/, 'id="testing-write"');
     before(PAGE('delivery'), /<PageAnchorBar\b/, 'id="evidence-chain"');
     before('components/delivery/DemoDelivery.tsx', /<PageAnchorBar\b/, 'id="evidence-chain"');
+    // Economics: under the answer card, before the range chart (ADR-128).
+    before('components/tco/EconomicsObjectPage.tsx', /<AnswerCard\b/, '<PageAnchorBar');
+    before('components/tco/EconomicsObjectPage.tsx', /<PageAnchorBar\b/, 'id="economics-range"');
     before(PAGE('documentation'), /<DocumentChapterBar\b/, 'data-documentation-description');
     before('components/workspace/ItAnswers.tsx', /<ItAnchorBar\b/, 'id={IT_SECTION_IDS.findings}');
 

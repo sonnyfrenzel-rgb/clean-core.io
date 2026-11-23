@@ -156,7 +156,8 @@ test.describe('the combobox, from its source', () => {
   test('keeps the field the specs and the save address, and starts from no currency', () => {
     expect(field).toContain('data-cost-field="currency"');
     const page = fs.readFileSync(path.resolve(__dirname, '..', 'app/(app)/project/[projectId]/tco/page.tsx'), 'utf8');
-    expect(page).toMatch(/\[currency, setCurrency\] = useState\(''\)/);
+    // One set of assumptions, starting from nothing stated (ADR-128): the currency is '' until the reader picks one.
+    expect(page).toMatch(/\[assumptions, setAssumptions\] = useState<CostAssumptions>\(initialCostAssumptions\)/);
     // Picking is the only way a listed currency gets in: nothing in the field picks one by itself.
     expect(field).not.toMatch(/onChange\((['"])[A-Z]{3}\1\)/);
     expect(field).not.toMatch(/CURRENCY_OPTIONS\[0\]/);

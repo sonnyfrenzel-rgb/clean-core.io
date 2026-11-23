@@ -18,10 +18,13 @@
  *      (`restoreAssumptions`). Coverage, canonical form and fingerprint treat
  *      both the same, so the revision of a restored record is the revision
  *      that was stored.
- *   3. **How far the four steps are** (`economicsProgress`) — the stage's own
- *      step logic, moved here so that the stage, the phase contract
- *      (`lib/workflow-steps.ts`) and the tool's check cannot disagree about
- *      whether "4 of 4" is done.
+ *   3. **Whether the comparison is priced** (`economicsProgress`) — the rule the
+ *      page, the phase contract (`lib/workflow-steps.ts`) and the tool's check
+ *      share, so they cannot disagree about whether Economics is done. Since
+ *      ADR-128 (2) it rests on the option comparison alone: the demonstration
+ *      forecast (`lib/tco-model.ts`, payback and Year-1 ROI on a fixed target
+ *      score) left the product, and with it the one-time budget the tool could
+ *      not be finished without.
  *
  * What it is not: evidence. A scenario on the reader's own figures is never
  * part of a signed run, a signature or an audit pack (ADR-022, ADR-035). The
@@ -45,8 +48,7 @@ import {
   type ReleaseCadence,
   type Stated,
 } from './cost-assumptions';
-import { comparisonChecklist, forecastChecklist, type ChecklistRow } from './economics-checklist';
-import { tcoForecast, TCO_TARGET_SCORE, type TcoForecast } from './tco-model';
+import { comparisonChecklist, type ChecklistRow } from './economics-checklist';
 import { formatTextDate } from './format';
 
 /** Format of the stored record. Bumped only when its shape changes. */
@@ -84,7 +86,11 @@ export const ECONOMICS_LIMITS = Object.freeze({
   maxFeaturePacksPerYear: 4,
 });
 
-/** The forecast's own inputs — the ones the option comparison does not ask for. */
+/**
+ * The record's second half — the inputs of the demonstration forecast that left the page with ADR-128 (2), and the
+ * line count of "Model another size". The record keeps its shape (no stored field changes): the forecast inputs are
+ * still read, validated and sent back as they were stored, but nothing shows, writes or prices them any more.
+ */
 export interface EconomicsInputs {
   /** "Model a different size": `null` while it is the line count of the source. */
   loc: number | null;
@@ -425,48 +431,27 @@ export function readEconomicsRecord(v: unknown): EconomicsRecord | null {
   };
 }
 
-/* ---------------------------------------------------------- the four steps */
+/* ------------------------------------------------- whether it is priced */
 
 export interface EconomicsProgressInput {
   /** The comparison's assumptions, the shared figures folded in. */
   assumptions: CostAssumptions;
-  /** The lines the forecast models. */
-  loc: number;
   /** The lines of the source on the project, or `null` when there is none. */
   sourceLoc: number | null;
-  upgradesPerYear: number;
-  upgradesStated: boolean;
-  featurePacksPerYear: number;
-  featurePacksStated: boolean;
-  oneTimeBudget: number | null;
-  /** The Clean Core Score of the signed run, or `null`. */
-  score: number | null;
-  /** The source changed after the signed run. */
-  sourceChanged: boolean;
 }
 
 export interface EconomicsProgress {
-  /** Step 1 — the lines and score of the signed run are there. */
+  /** The lines of the signed run's source are there — what the proposals are computed from. */
   codebase: boolean;
-  /** Step 2 — currency, both day rates, the horizon and a confirmed cadence. */
+  /** Currency, both day rates, the period and a confirmed cadence. */
   rates: boolean;
-  /** Step 3 — every option has its effort, its baseline and, for Do nothing, its deferral. */
+  /** Every option has its effort, its baseline and, for Keep, its deferral. */
   effort: boolean;
-  /** Steps 2 and 3: every option is priced from the reader's figures. */
+  /** Both: every option is priced from the reader's figures. */
   compared: boolean;
-  /** Whether a savings forecast can be made for this code at all. */
-  forecastPossible: boolean;
-  /** Whether the forecast is shown — possible, and every input it needs is there. */
-  forecastShown: boolean;
-  /** Step 4 — compared, and the forecast shown wherever one is possible. */
-  result: boolean;
-  /** How many of the four steps are done. */
-  doneCount: number;
-  /** All four. */
+  /** The phase's `done` — the comparison, and nothing else (ADR-128 (2)). */
   complete: boolean;
   comparisonRows: ChecklistRow[];
-  forecastRows: ChecklistRow[];
-  calculations: TcoForecast | null;
 }
 
 /** Whether every listed row is done; a row the checklist does not carry does not hold a step back. */
@@ -481,75 +466,28 @@ export const RATE_ROWS: ReadonlyArray<ChecklistRow['key']> = ['currency', 'dev-r
 export const EFFORT_ROWS: ReadonlyArray<ChecklistRow['key']> = ['one-off', 'per-release', 'baseline', 'upgrade-delay'];
 
 /**
- * The stage's four steps, decided once. The Economics page draws them, the
- * phase contract reads them from the stored record, and so "4 of 4" on the
- * stage and *done* on the tool are one statement.
+ * Whether Economics is done, decided once: the page draws it, the phase contract reads it from the stored record,
+ * and so *priced* on the page and *done* on the tool are one statement. It rests on the comparison alone
+ * (ADR-128 (2)): the shared figures and every option's effort.
  */
 export function economicsProgress(input: EconomicsProgressInput): EconomicsProgress {
-  const a = input.assumptions;
-  const forecastPossible = !(input.score === null || input.score >= TCO_TARGET_SCORE || input.sourceChanged);
-  const calculations = tcoForecast({
-    loc: input.loc,
-    devRate: a.devDayRate,
-    userRate: a.testDayRate,
-    upgradeFreq: input.upgradesPerYear,
-    fpFreq: input.featurePacksPerYear,
-    oneTimeCost: input.oneTimeBudget,
-    scoreBefore: input.score,
-  });
-  const comparisonRows = comparisonChecklist(a);
-  const forecastRows = forecastPossible
-    ? forecastChecklist({
-        loc: input.loc,
-        sourceLoc: input.sourceLoc,
-        oneTimeCost: input.oneTimeBudget,
-        upgradesStated: input.upgradesStated,
-        featurePacksStated: input.featurePacksStated,
-      })
-    : [];
-  const all = [...comparisonRows, ...forecastRows];
-  const codebase = input.sourceLoc !== null;
-  const rates = rowsDone(all, RATE_ROWS);
-  const effort = rowsDone(all, EFFORT_ROWS);
+  const comparisonRows = comparisonChecklist(input.assumptions);
+  const rates = rowsDone(comparisonRows, RATE_ROWS);
+  const effort = rowsDone(comparisonRows, EFFORT_ROWS);
   const compared = rates && effort;
-  const forecastShown = forecastPossible && calculations !== null && Boolean(a.currency);
-  const result = compared && !(forecastPossible && !forecastShown);
-  const steps = [codebase, rates, effort, result];
-  const doneCount = steps.filter(Boolean).length;
   return {
-    codebase,
+    codebase: input.sourceLoc !== null,
     rates,
     effort,
     compared,
-    forecastPossible,
-    forecastShown,
-    result,
-    doneCount,
-    complete: doneCount === steps.length,
+    complete: compared,
     comparisonRows,
-    forecastRows,
-    calculations,
   };
 }
 
-/** The progress of a stored record, for a project whose source has `sourceLoc` lines. */
-export function recordProgress(
-  record: EconomicsRecord,
-  context: { sourceLoc: number | null; score: number | null; sourceChanged: boolean },
-): EconomicsProgress {
-  const loc = record.inputs.loc ?? context.sourceLoc ?? 0;
-  return economicsProgress({
-    assumptions: restoreAssumptions(record.assumptions),
-    loc,
-    sourceLoc: context.sourceLoc,
-    upgradesPerYear: record.inputs.upgradesPerYear,
-    upgradesStated: record.inputs.upgradesStated,
-    featurePacksPerYear: record.inputs.featurePacksPerYear,
-    featurePacksStated: record.inputs.featurePacksStated,
-    oneTimeBudget: record.inputs.oneTimeBudget,
-    score: context.score,
-    sourceChanged: context.sourceChanged,
-  });
+/** The progress of a stored record. */
+export function recordProgress(record: EconomicsRecord, context: { sourceLoc: number | null }): EconomicsProgress {
+  return economicsProgress({ assumptions: restoreAssumptions(record.assumptions), sourceLoc: context.sourceLoc });
 }
 
 /** How many options a stored record prices, and of how many — for the views that may not show an amount. */

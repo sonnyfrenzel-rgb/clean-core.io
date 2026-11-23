@@ -183,17 +183,16 @@ test.describe('missing values are not replaced by the best available answer', ()
   });
 });
 
-test.describe('the TCO page does not invent a business case', () => {
+test.describe('the Economics page does not invent a business case', () => {
   const REL = 'app/(app)/project/[projectId]/tco/page.tsx';
 
-  test('no score is substituted for an unscored project', () => {
+  test('no score is substituted for an unscored project, and no forecast is made on one', () => {
     const src = read(REL);
     expect(src).not.toMatch(/cleanCoreScore\s*\|\|\s*30/);
-    // Without a baseline there is no model, and the page says so instead of
-    // presenting euro figures. The refusal lives with the calculation since
-    // roadmap 0.17 (`lib/tco-model.ts`), and is exercised there.
-    expect(read('lib/tco-model.ts')).toContain("if (typeof scoreBefore !== 'number' || !Number.isFinite(scoreBefore)) return null;");
-    expect(rendered(REL)).toContain('No baseline to model against');
+    // ADR-128 (2): the demonstration forecast that priced "an improvement" on a fixed target score is gone with
+    // `lib/tco-model.ts`; the page prices the options against each other on the reader's figures only.
+    expect(fs.existsSync(path.join(ROOT, 'lib', 'tco-model.ts'))).toBe(false);
+    expect(rendered(REL)).not.toMatch(/tcoForecast|TCO_TARGET_SCORE|paybackMonths|roiYear1/);
   });
 
   test('the uploaded line count is not multiplied', () => {
@@ -201,36 +200,11 @@ test.describe('the TCO page does not invent a business case', () => {
     // `Math.max(1000, Math.min(lineCount * 10, 50000))` turned a ten-line
     // snippet into 1,000 lines, and every figure came from that.
     expect(src).not.toMatch(/lineCount \* 10/);
+    expect(src).toContain('countSourceLines(data.legacyCode)');
   });
 
-  test('the outputs are labelled as a scenario', () => {
-    expect(rendered(REL)).toMatch(/Annual Net Savings ·  ?Scenario/);
-  });
-});
-
-test.describe('the TCO model refuses degenerate inputs', () => {
-  const REL = 'app/(app)/project/[projectId]/tco/page.tsx';
-
-  test('the modernised side is not floored while the legacy side rounds to zero', () => {
-    const src = read('lib/tco-model.ts');
-    // The floors were asymmetric: legacy days round to 0 for a small codebase
-    // while modern days were pinned at 1 each. The model then reported that
-    // modernising *costs* €1,550 a year, pays back in −116 months, and reduces
-    // overhead by −Infinity %. The old `lineCount * 10` extrapolation hid it by
-    // never letting `loc` fall below 1,000.
-    expect(src).not.toMatch(/Math\.max\(1,\s*Math\.round\(legacy/);
-  });
-
-  test('no baseline cost means no model', () => {
-    expect(read('lib/tco-model.ts')).toContain('if (legacyAnnualTotal <= 0) return null;');
-  });
-
-  test('the overhead figure cannot be an infinity', () => {
-    const src = rendered(REL);
-    // Computed once, behind the zero guard, instead of inline in the markup
-    // where a division by zero reached the screen as "-Infinity%".
-    expect(src).not.toMatch(/1 - calculations\.modernAnnualTotal \/ calculations\.legacyAnnualTotal/);
-    expect(src).toContain('overheadReductionPct');
+  test('the outputs are labelled as a simulation', () => {
+    expect(read('components/tco/EconomicsObjectPage.tsx')).toContain('<FamilyChip kind="simulation"');
   });
 });
 

@@ -1001,10 +1001,10 @@ test.describe('the register matches the code', () => {
       expect(text, 'something writes `presentation` now — update L-09').not.toMatch(/\bpresentation:\s/);
     }
 
-    // L-08: Economics is skipped by "continue", is done only from stored
-    // figures that complete its four steps (03.10.2026), and is never proven.
+    // L-08: Economics is the next step after Analyze until a later tool holds a record (ADR-128 (5)), is done only
+    // from stored figures that price every option (ADR-128 (2)), and is never proven.
     expect(limit('L-08').subject).toBe('economics');
-    expect(contract).toContain("s.key !== 'tco'");
+    expect(contract).toContain('!(skipEconomics && s.key === \'tco\')');
     const economics = contract.slice(contract.indexOf('const economics ='), contract.indexOf('const gaps ='));
     expect(economics.length).toBeGreaterThan(0);
     expect(economics, 'Economics is done from something else now — update L-08').toMatch(/econProgress\.complete\s*\?\s*phase\('tco', \{\s*state: 'done'/);

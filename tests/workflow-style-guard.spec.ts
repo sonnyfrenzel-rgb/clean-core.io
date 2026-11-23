@@ -306,16 +306,16 @@ test.describe('every stage stays on the type scale', () => {
  * Here, on a used project at desktop width: the bar starts at the frame's x
  * and spans the frame, sticks 56 px from the top (under the shell bar), says
  * "On this page", stands above every section it names, and is still in view
- * after scrolling to the last of them. Design and Economics have none.
+ * after scrolling to the last of them. Design has none; Economics carries one since ADR-128 (mock-up E6).
  */
 test.describe('the "On this page" bar stands in the same place on every tool', () => {
-  test('same x, full width, sticky under the shell bar, above its sections — and none on Design or Economics', async ({ page }) => {
+  test('same x, full width, sticky under the shell bar, above its sections — and none on Design', async ({ page }) => {
     test.setTimeout(6 * 60 * 1000);
     const seeded = await seedStageProject({ prefix: 'stagebar', admin: true, acceptTerms: true, rich: true });
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInThroughForm(page, { email: seeded.email, password: seeded.password });
 
-    const WITH_BAR = ['analyze', 'transformation', 'testing', 'delivery'];
+    const WITH_BAR = ['analyze', 'transformation', 'testing', 'tco', 'delivery'];
     const offSpec: string[] = [];
     for (const stage of STAGES) {
       await page.goto(`/project/${seeded.projectId}/${stage}${stage === 'analyze' ? '?view=it' : ''}`, { waitUntil: 'domcontentloaded', timeout: 120_000 });
