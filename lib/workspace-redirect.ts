@@ -120,6 +120,10 @@ export function workspaceRedirectFrom(projectBase: string, search: string, hash:
     if (lines) {
       view = named === 'management' ? 'business' : named;
       fragment = place;
+    } else if (/^oq-[a-z-]{1,40}$/.test(place)) {
+      // One group of the open questions (`#oq-add-atc`, a choice's address): where the list stands.
+      view = named === 'management' ? 'management' : 'it';
+      fragment = place;
     } else if (Object.prototype.hasOwnProperty.call(WORKSPACE_PLACES, place)) {
       const home = WORKSPACE_PLACES[place];
       if (place === ANALYZE_IT_IDS.notDetermined && named === 'management') {

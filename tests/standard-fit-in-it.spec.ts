@@ -46,7 +46,7 @@ test.describe('Standard fit is an IT section, not a Business layer (ADR-096)', (
     // A stage's way back, from any view it was opened in.
     for (const view of ['business', 'it', 'management']) {
       const search = `?view=${view}&from=workspace-tools&layer=standard`;
-      expect(workspaceBackHref({ projectId: 'p-1', search }), view).toBe('/project/p-1?view=it#standard');
+      expect(workspaceBackHref({ projectId: 'p-1', search }), view).toBe('/project/p-1/analyze?view=it#standard');
       expect(stageBackPlace(search), view).toBe('IT view, Where it touches SAP standard');
     }
     // Management's open condition points at the IT section ("See where it touches SAP standard" since 22.10.2026).

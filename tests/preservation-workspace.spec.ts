@@ -432,11 +432,12 @@ test.describe('the open gaps are still open — closing one has to update the re
     expect(gap('WG-01'), 'WG-01 is closed by 3.0.1 — the register still lists it').toBeUndefined();
     expect(gap('WG-02'), 'WG-02 is closed by 3.0.1 — the register still lists it').toBeUndefined();
     expect(register.workspace.reachability).toContain('3.0.1');
+    // Since 3.5.0 (AB-11) the project's page is Analyze; the workspace route is a redirect that reads nothing.
     const page = raw(register.workspace.page);
-    expect(page).toContain('const enabled = profile != null;');
     expect(page).not.toMatch(/workspaceShell|isAdmin/);
+    expect(raw('app/(app)/project/[projectId]/page.tsx')).toContain('workspaceRedirectHref(');
     const back = stageBackLink({ projectId: 'p-1', search: '' });
-    expect(back).toEqual({ kind: 'link', href: '/project/p-1' });
+    expect(back).toEqual({ kind: 'link', href: '/project/p-1/analyze' });
     // …and the stage header renders exactly that decision as its link (QA 1a44e754567b).
     const header = raw('components/StageHeader.tsx');
     expect(header).toContain('const back = stageBackLink({ projectId, search, demo });');
@@ -451,7 +452,8 @@ test.describe('the open gaps are still open — closing one has to update the re
     expect(header).toContain('backToMyWorkspace = false,');
     const setters = ['app', 'components', 'lib'].flatMap((dir) => grepTsx(dir, /(?<![.\w])backToMyWorkspace\b/))
       .filter((f) => f !== 'components/StageHeader.tsx');
-    expect(setters.sort()).toEqual(['components/analyze/AnalyzeBusiness.tsx', 'components/demo/DemoAnalyzeBusiness.tsx']);
+    // Since 3.5.0 Analyze is the entry in every view (AB-11): its IT frame sets the flag too.
+    expect(setters.sort()).toEqual(['app/(app)/project/[projectId]/analyze/page.tsx', 'components/analyze/AnalyzeBusiness.tsx', 'components/demo/DemoAnalyzeBusiness.tsx']);
   });
 
   test('WG-03: the "Why?" of a status is still its own 24-px target (3.0.4)', () => {

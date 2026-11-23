@@ -142,19 +142,20 @@ test.describe('the title of a tool is the program (family header)', () => {
 });
 
 test.describe('one way back (ADR-140)', () => {
-  test('My workspace by default, the workspace place while the address carries one, the demo workspace in the demo', () => {
+  test('My workspace by default, Analyze in the view the address carries, the demo workspace in the demo', () => {
     expect(familyBackLink({ projectId: 'p-1', search: '' })).toEqual({ kind: 'link', href: '/dashboard', place: 'My workspace', to: 'my-workspace' });
     expect(familyBackLink({ projectId: 'p-1', search: '?view=business' })).toMatchObject({ href: '/dashboard', to: 'my-workspace' });
     expect(familyBackLink({ projectId: 'p-1', search: '?view=it' })).toEqual({
       kind: 'link',
-      href: '/project/p-1?view=it',
-      place: 'IT view',
-      to: 'workspace',
+      href: '/project/p-1/analyze?view=it',
+      place: 'Analyze, IT view',
+      to: 'analyze',
     });
     expect(familyBackLink({ projectId: 'p-1', search: '?view=business&from=workspace-tools&layer=evidence' })).toMatchObject({
-      href: '/project/p-1?view=business#evidence',
-      place: 'Business view, Evidence & controls',
-      to: 'workspace',
+      href: '/project/p-1/analyze?view=it#it-trust',
+      // The workspace page dissolved (AB-11): the Business evidence layer is IT's signed run, in Analyze.
+      place: 'Analyze, IT view',
+      to: 'analyze',
     });
     // The project's entry (Analyze, Business) always goes to the list.
     expect(familyBackLink({ projectId: 'p-1', search: '?view=it', toMyWorkspace: true })).toMatchObject({ href: '/dashboard', to: 'my-workspace' });

@@ -29,15 +29,16 @@ const TCO = 'app/(app)/project/[projectId]/tco/page.tsx';
 
 test.describe('the stage, read', () => {
   test('no worklist, no gaps matrix, no business value fold on Analyze — real page or demo', () => {
+    // Since 3.5.0 (AB-9) the real page draws its IT page through `AnalyzeIt`, which holds the side card and the folds.
     for (const rel of [PAGE, DEMO]) {
-      const src = read(rel);
+      const src = rel === PAGE ? `${read(rel)}\n${read('components/analyze/AnalyzeIt.tsx')}` : read(rel);
       expect(src, rel).not.toMatch(/<GapsWorklist\b|import GapsWorklist/);
       expect(src, rel).not.toMatch(/<BusinessValueAudit\b|<PlainEnglishGuide\b/);
       expect(src, rel).not.toContain('data-stage-output="worklist"');
       expect(src, rel).not.toMatch(/title="Why this route — decision path/);
       // One side card for not determined, one fold each for the summary and the detail.
-      expect(src, rel).toMatch(/<NotDeterminedSide\s+items=\{openItems\}(\s+questions=\{questionsLine\})?\s+summary=\{[\s\S]*?\}\s*\/>/);
-      expect(src.match(/<NotDeterminedSide\b/g)?.length, rel).toBe(rel === PAGE ? 2 : 1);
+      expect(src, rel).toMatch(/<NotDeterminedSide\s+items=\{openItems\}[\s\S]*?\/>/);
+      expect(src.match(/<NotDeterminedSide\b/g)?.length, rel).toBe(1);
       expect(src, rel).toMatch(/title="Technical detail"/);
       expect(src, rel).toMatch(/title="Model summary"/);
       // The big upload panels are gone.
@@ -77,7 +78,8 @@ test.describe('the stage, read', () => {
     const card = read('components/analyze/RouteCard.tsx');
     expect(card).toContain('Decide in Management');
     expect(card).not.toMatch(/updateDoc|setDoc|data-route-switch/);
-    expect(read(PAGE)).toContain('?view=management#decision-card');
+    // The decision is made in Analyze's Management view (AB-10, AB-11).
+    expect(read(PAGE)).toContain('/analyze?view=management`');
     expect(read(DEMO)).toContain('decideHref="/demo/workspace?view=management"');
   });
 

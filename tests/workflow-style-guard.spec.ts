@@ -371,23 +371,24 @@ test.describe('the "On this page" bar stands in the same place on every tool', (
 test.describe('"Back to workspace" leads to the view and layer the stage was opened from (QA 472315d93455, e5483b2e4ca7)', () => {
   test('view and layer are kept, anything unknown is dropped, and the way back is always the workspace', () => {
     expect(workspaceBackHref({ projectId: 'p-1', search: '?view=it&from=it-answers-heading' })).toBe(
-      '/project/p-1?view=it#it-answers-heading',
+      '/project/p-1/analyze?view=it#analyze-answer',
     );
-    expect(workspaceBackHref({ projectId: 'p-1', search: '' })).toBe('/project/p-1');
+    // Since 3.5.0 the workspace page is a redirect (AB-11): the way back lands on Analyze directly.
+    expect(workspaceBackHref({ projectId: 'p-1', search: '' })).toBe('/project/p-1/analyze');
     // A view the workspace does not know, and a layer id that is not an id, are dropped.
-    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=admin&from=%3Cscript%3E' })).toBe('/project/p-1');
-    expect(workspaceBackHref({ projectId: 'p 1', search: '' })).toBe('/project/p%201');
+    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=admin&from=%3Cscript%3E' })).toBe('/project/p-1/analyze');
+    expect(workspaceBackHref({ projectId: 'p 1', search: '' })).toBe('/project/p%201/analyze');
     // Roadmap 3.0.1 (ADR-061): every account has the workspace, so no reader is
     // sent to the dashboard by "Back to workspace" any more.
-    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=it' })).toBe('/project/p-1?view=it');
+    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=it' })).toBe('/project/p-1/analyze?view=it');
   });
 
   test('a workspace account is never sent to the dashboard — no account is, any more (f8d5367e0a00, ba5d2cdeda03)', () => {
     // The wrong way used to be possible while the profile loaded, because the
     // way back depended on the account. Since roadmap 3.0.1 (ADR-061) it does
     // not: the link is the workspace's from the first render, for every reader.
-    expect(stageBackLink({ projectId: 'p-1', search: '?view=it' })).toEqual({ kind: 'link', href: '/project/p-1?view=it' });
-    expect(stageBackLink({ projectId: 'p-1', search: '' })).toEqual({ kind: 'link', href: '/project/p-1' });
+    expect(stageBackLink({ projectId: 'p-1', search: '?view=it' })).toEqual({ kind: 'link', href: '/project/p-1/analyze?view=it' });
+    expect(stageBackLink({ projectId: 'p-1', search: '' })).toEqual({ kind: 'link', href: '/project/p-1/analyze' });
     expect(stageBackLink({ projectId: '', search: '' })).toEqual({ kind: 'none' });
     // …and the header and footer render from that decision, not from a second
     // copy of it, and neither reads the profile to make it.
@@ -417,7 +418,8 @@ test.describe('"Back to workspace" leads to the view and layer the stage was ope
         const href = stageHref({ base: '/project/p-1', path: 'design', view, from });
         expect(href).toBe(`/project/p-1/design?view=${view}&from=${from}`);
         const search = href.slice(href.indexOf('?'));
-        expect(workspaceBackHref({ projectId: 'p-1', search })).toBe(`/project/p-1?view=${view}#${from}`);
+        // The workspace's return points are the tool header's now (AB-11): back to Analyze in that view, at its top.
+        expect(workspaceBackHref({ projectId: 'p-1', search })).toBe(`/project/p-1/analyze${view === 'business' ? '?view=business' : `?view=${view}`}`);
       }
     }
     // The demo has no workspace to return to, and an unknown view is dropped.

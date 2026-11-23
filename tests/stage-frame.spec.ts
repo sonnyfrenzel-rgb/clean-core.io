@@ -53,19 +53,19 @@ test.describe('the way back names the view and the layer', () => {
     // fragment. IT has no layers since ADR-086, so a stage opened from one
     // (a link from before 3.0.7) returns to where that content lives now —
     // Need & process to the Business map — and says so.
-    expect(workspaceBackHref({ projectId: 'p-1', search })).toBe('/project/p-1?view=business#process-map');
+    expect(workspaceBackHref({ projectId: 'p-1', search })).toBe('/project/p-1/analyze?view=business#process-map');
     expect(stageBackPlace(search)).toBe('Business view, Process map');
     const itBack = (layer: string) => workspaceBackHref({ projectId: 'p-1', search: `?view=it&from=workspace-tools&layer=${layer}` });
     // Standard fit is IT's own section since ADR-096 (owner, 12.10.2026).
-    expect(itBack('standard')).toBe('/project/p-1?view=it#standard');
+    expect(itBack('standard')).toBe('/project/p-1/analyze?view=it#standard');
     // The section at #standard is "Where it touches SAP standard" since 22.10.2026 (owner decision).
     expect(stageBackPlace('?view=it&layer=standard')).toBe('IT view, Where it touches SAP standard');
-    expect(itBack('architecture')).toBe('/project/p-1?view=it#it-objects');
-    expect(itBack('evidence')).toBe('/project/p-1?view=it#it-trust');
-    expect(itBack('changes')).toBe('/project/p-1?view=management#decision-card');
+    expect(itBack('architecture')).toBe('/project/p-1/analyze?view=it#analyze-touch');
+    expect(itBack('evidence')).toBe('/project/p-1/analyze?view=it#it-trust');
+    expect(itBack('changes')).toBe('/project/p-1/analyze?view=management#decision-card');
     // Costs live in a tool; a way back never leads into a tool, so it returns
     // to the IT view at the control it left by.
-    expect(itBack('costs')).toBe('/project/p-1?view=it#workspace-tools');
+    expect(itBack('costs')).toBe('/project/p-1/analyze?view=it');
     expect(stageBackPlace('?view=it&layer=architecture')).toBe('IT view, Objects & dependencies');
     expect(stageBackPlace('?view=it&layer=changes')).toBe('Management view, Decision');
     expect(stageBackPlace('?view=it&layer=costs')).toBe('IT view');
@@ -74,25 +74,25 @@ test.describe('the way back names the view and the layer', () => {
     // decision, the changes to the decision, the rest to Business and IT.
     const mgmtBack = (layer: string) =>
       workspaceBackHref({ projectId: 'p-1', search: `?view=management&from=workspace-tools&layer=${layer}` });
-    expect(mgmtBack('costs')).toBe('/project/p-1?view=management#decision-rests-on-cost');
-    expect(mgmtBack('changes')).toBe('/project/p-1?view=management#decision-card');
-    expect(mgmtBack('need')).toBe('/project/p-1?view=business#process-map');
-    expect(mgmtBack('standard')).toBe('/project/p-1?view=it#standard');
-    expect(mgmtBack('architecture')).toBe('/project/p-1?view=it#it-objects');
-    expect(mgmtBack('evidence')).toBe('/project/p-1?view=it#it-trust');
+    expect(mgmtBack('costs')).toBe('/project/p-1/analyze?view=management#decision-rests-on-cost');
+    expect(mgmtBack('changes')).toBe('/project/p-1/analyze?view=management#decision-card');
+    expect(mgmtBack('need')).toBe('/project/p-1/analyze?view=business#process-map');
+    expect(mgmtBack('standard')).toBe('/project/p-1/analyze?view=it#standard');
+    expect(mgmtBack('architecture')).toBe('/project/p-1/analyze?view=it#analyze-touch');
+    expect(mgmtBack('evidence')).toBe('/project/p-1/analyze?view=it#it-trust');
     expect(stageBackPlace('?view=management&layer=costs')).toBe('Management view, Costs');
     expect(stageBackPlace('?view=management&layer=architecture')).toBe('IT view, Objects & dependencies');
     // Business has no Need & process since ADR-080: a link from before it
     // returns to the map, and says so.
     const old = '?view=business&from=workspace-tools&layer=need';
-    expect(workspaceBackHref({ projectId: 'p-1', search: old })).toBe('/project/p-1?view=business#process-map');
+    expect(workspaceBackHref({ projectId: 'p-1', search: old })).toBe('/project/p-1/analyze?view=business#process-map');
     expect(stageBackPlace(old)).toBe('Business view, Process map');
     // Standard fit left Business for IT (ADR-096): a stage opened from it in
     // Business returns to IT, where the content lives now, and says so.
-    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=business&layer=standard' })).toBe('/project/p-1?view=it#standard');
+    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=business&layer=standard' })).toBe('/project/p-1/analyze?view=it#standard');
     expect(stageBackPlace('?view=business&layer=standard')).toBe('IT view, Where it touches SAP standard');
     // Business's own layer still returns to Business.
-    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=business&layer=evidence' })).toBe('/project/p-1?view=business#evidence');
+    expect(workspaceBackHref({ projectId: 'p-1', search: '?view=business&layer=evidence' })).toBe('/project/p-1/analyze?view=it#it-trust');
     expect(stageBackPlace('?view=it')).toBe('IT view');
     expect(stageBackPlace('')).toBeNull();
     // Nothing the workspace does not know is carried or said.
@@ -454,7 +454,7 @@ function App() {
   const bar = location.search.includes('bar');
   return (
     <div>
-      <ChoiceBackLink href="/project/p-1?view=management#decision-options" label={{ lead: 'Back to', place: 'Management view, Options' }} stage />
+      <ChoiceBackLink href="/project/p-1/analyze?view=management#decision-options" label={{ lead: 'Back to', place: 'Management view, Options' }} stage />
       <div style={{ height: 3000 }} />
       {bar ? <div className="sticky" data-test-bar="" style={{ position: 'sticky', bottom: 0, height: 64, background: '#eee' }}>Save</div> : null}
       <div style={{ height: 400 }} />
@@ -497,13 +497,13 @@ createRoot(document.getElementById('root')!).render(<App />);
     await page.waitForTimeout(500);
     expect(errors).toEqual([]);
     await expect(header).toHaveAttribute('data-stage-back', 'origin');
-    await expect(header).toHaveAttribute('href', '/project/p-1?view=management#decision-options');
+    await expect(header).toHaveAttribute('href', '/project/p-1/analyze?view=management#decision-options');
     await expect(header).toContainText('Back to');
     await expect(header).toContainText('Management view, Options');
     await expect(pill, 'the header link is in view').toHaveCount(0);
     await page.evaluate(() => window.scrollTo(0, 1500));
     await expect(pill).toBeVisible();
-    await expect(pill).toHaveAttribute('href', '/project/p-1?view=management#decision-options');
+    await expect(pill).toHaveAttribute('href', '/project/p-1/analyze?view=management#decision-options');
     const box = (await pill.boundingBox())!;
     expect(Math.round(box.y + box.height), 'the pill stands at the foot').toBe(700 - 16);
     await page.evaluate(() => window.scrollTo(0, 0));

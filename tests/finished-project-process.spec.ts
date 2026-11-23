@@ -104,14 +104,12 @@ test.describe('a finished project reopens on its process', () => {
     expect(hook).not.toMatch(/workflowSteps|nextOpenPoint|\.status\b/);
   });
 
-  test('Analyze has the way to the process where a run is signed', () => {
-    // The process stands in Analyze's Business view since AB-2 (ADR-109), no longer on the workspace.
+  test('the process is one view away from Analyze, IT: the map is the Business view', () => {
+    // The process stands in Analyze's Business view since AB-2 (ADR-109). Since 3.5.0 (ADR-140 A11) the IT page has
+    // no "Process (BPMN)" header link: the view switch in the header leads there, as on every view.
     expect(workspaceProcessHref('p1')).toBe(`/project/p1/analyze?view=business#${BUSINESS_MAP_ID}`);
     const analyze = read('app/(app)/project/[projectId]/analyze/page.tsx');
-    const at = analyze.indexOf('data-analyze-open-process');
-    expect(at, 'Analyze has no link to the process').toBeGreaterThan(0);
-    const link = analyze.slice(analyze.lastIndexOf('project?.activeRunId?.trim() ?', at), at + 160);
-    expect(link).toContain('href={workspaceProcessHref(projectId as string)}');
-    expect(link).toContain('Process (BPMN)');
+    expect(analyze).not.toContain('data-analyze-open-process');
+    expect(read('components/StageHeader.tsx')).toContain('<StageViewSwitch');
   });
 });

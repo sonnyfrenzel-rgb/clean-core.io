@@ -128,7 +128,9 @@ test.describe('4. the head does not contradict itself about the model', () => {
     // where it stands, folded as "Model summary" and marked "AI-generated".
     expect(page).not.toMatch(/\{ key: '(\w+)', label: '\w+', value:/);
     const hero = read('components/analyze/CleanCoreScoreSection.tsx');
-    expect(hero).toMatch(/<CcProvenanceChip value="reconstructed" note="fixed rules" \/>\s*no model involved/);
-    expect(page).toMatch(/title="Model summary"\s*aside=\{<CcProvenanceChip value="proposed" \/>\}/);
+    // The family's chips (L2) since 3.5.0; in IT the provenance line sits in the answer card (AB-9).
+    expect(hero).toMatch(/<FamilyChip value="reconstructed" note="fixed rules" \/>\s*no model involved/);
+    expect(read('components/analyze/AnalyzeIt.tsx')).toMatch(/<FamilyChip kind="engine" note="fixed rules" \/>\s*no model involved/);
+    expect(page).toMatch(/aside: <FamilyChip value="proposed" \/>/);
   });
 });
