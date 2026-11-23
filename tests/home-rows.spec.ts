@@ -20,6 +20,8 @@ import {
 import { homeStatus, ATTENTION_LABEL, HOME_STATUS_LABEL, REDESIGN_TOTAL } from '../lib/home-status';
 import { attentionOf, programNextLink, tileCounts, tileMatches } from '../lib/workspace-tiles';
 import { computeProjectInShort, inShortOf, inShortSentencesOf, PROJECT_IN_SHORT_VERSION } from '../lib/project-in-short';
+import { IN_SHORT_SENTENCES } from '../lib/project-in-short-read';
+import { DOES_SENTENCES } from '../lib/around-the-map';
 import { STORAGE_KEYS } from '../lib/storage-keys';
 import { sha256Hex, artefactDigest } from '../lib/artefact-digest';
 import { STARTER_EXAMPLES } from '../lib/starter-examples';
@@ -363,7 +365,7 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
   });
 });
 
-test.describe('"In short" — stored with the run, not shown yet (AB-14c data, H-O6)', () => {
+test.describe('"In short" — stored with the run, shown on the Continue card (AB-14c, H-O6)', () => {
   test('the engine\'s "What this program does", each sentence with its line — every shipped example', () => {
     const demo = inShortSentencesOf(DEMO, APP_VERSION);
     expect(demo.length).toBeGreaterThan(0);
@@ -391,6 +393,25 @@ test.describe('"In short" — stored with the run, not shown yet (AB-14c data, H
     expect(inShortOf({ activeRunId: 'run-a', inShort: { ...rec, sentences: [{ text: 'Hi <b>x</b>.', anchor: 'L1' }] } })).toBeNull();
     expect(inShortOf({ activeRunId: 'run-a', inShort: { ...rec, sentences: [{ text: 'Fine.', anchor: 'line 1' }] } })).toBeNull();
     expect(inShortOf({ activeRunId: 'run-a' })).toBeNull();
+  });
+
+  test('3.5.0: the row carries it for the active run only, read back strictly; the reader needs no engine', () => {
+    const rec = computeProjectInShort({ runId: 'run-s', sourceSha256: 'x', source: DEMO, engineVersion: APP_VERSION }, new Date('2026-11-15T00:00:00Z'));
+    const withIt = toHomeRow(analysed('s', { inShort: rec } as Partial<Project>));
+    expect(withIt.inShort).toEqual(rec.sentences.length > 0 ? rec.sentences : null);
+    // Another run's sentences are never shown.
+    expect(toHomeRow(analysed('t', { inShort: { ...rec, runId: 'run-0' } } as Partial<Project>)).inShort).toBeNull();
+    // The route's answer is read back strictly: markup, a third sentence or an extra key drop the row.
+    const good = JSON.parse(JSON.stringify(withIt));
+    expect(homeRowsOf({ rows: [good] })).toHaveLength(1);
+    expect(homeRowsOf({ rows: [{ ...good, inShort: [{ text: '<b>x</b>.', anchor: 'L1' }] }] })).toHaveLength(0);
+    expect(homeRowsOf({ rows: [{ ...good, inShort: [{ text: 'A.', anchor: 'L1', by: 'model' }] }] })).toHaveLength(0);
+    expect(homeRowsOf({ rows: [{ ...good, inShort: [1, 2, 3].map(() => ({ text: 'A.', anchor: 'L1' })) }] })).toHaveLength(0);
+    // The browser reads it through the engine-free reader; the two limits are one.
+    expect(IN_SHORT_SENTENCES).toBe(DOES_SENTENCES);
+    expect(code('lib/home-rows.ts')).toContain("from '@/lib/project-in-short-read'");
+    expect(code('lib/home-rows.ts')).not.toMatch(/from '@\/lib\/project-in-short'/);
+    expect(code('lib/project-in-short-read.ts').match(/^import .*$/gm)).toEqual(["import type { AroundSentence } from '@/lib/around-the-map';"]);
   });
 
   test('runs/create writes it after the signed transaction, Admin SDK only, never into the run or the audit pack', () => {

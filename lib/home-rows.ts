@@ -3,6 +3,8 @@ import { formatIsoDate, formatTextDate } from '@/lib/format';
 import { countSourceLines } from '@/lib/source-lines';
 import { sourceFileName } from '@/lib/source-file-name';
 import { summaryOf } from '@/lib/project-summary';
+import { inShortOf, isAnchorLabel, isPlainSentence, IN_SHORT_SENTENCES } from '@/lib/project-in-short-read';
+import type { AroundSentence } from '@/lib/around-the-map';
 import { HOME_STATUS_LABEL, HOME_STATUS_ORDER, homeStatus, type HomeStatus, type HomeStatusKind } from '@/lib/home-status';
 import { needsAttention, toProgramTile, type ProgramTile } from '@/lib/workspace-tiles';
 
@@ -59,12 +61,18 @@ export interface HomeRow {
    * the tiles need no project document in the browser either: geometry and words, no source, no model text.
    */
   tile: ProgramTile;
+  /**
+   * "In short" for the Continue card (AB-14c, H-O6): the engine's own sentences of the active run, each with its line,
+   * as the server wrote them (`lib/project-in-short.ts`, read by `lib/project-in-short-read.ts`) — never a model's wording; `null` when the active run has
+   * none. Read back strictly (`inShortOf`), so a sentence of an earlier run is never shown.
+   */
+  inShort: AroundSentence[] | null;
 }
 
 /** Every key a row carries. A key outside this list is not sent — the spec checks it. */
 export const HOME_ROW_KEYS: readonly (keyof HomeRow)[] = [
   'id', 'name', 'program', 'access', 'fromExample', 'hasSource', 'hasRun', 'lines', 'linesFromRun', 'findings', 'score',
-  'status', 'lastChange', 'lastChangeText', 'factsKey', 'tile',
+  'status', 'lastChange', 'lastChangeText', 'factsKey', 'tile', 'inShort',
 ];
 
 /** "Z_MM_PO_APPROVAL.abap" → "Z_MM_PO_APPROVAL". */
@@ -99,7 +107,14 @@ export function toHomeRow(project: Project & { id: string }, access: 'own' | 'sh
     lastChangeText: changed ? formatTextDate(changed) : null,
     factsKey: `${hasRun ? project.activeRunId : ''}:${source.length}:${sourceHash(source)}`,
     tile: toProgramTile(project, access),
+    inShort: inShortSentencesOfProject(project),
   };
+}
+
+/** The stored "In short" of the active run, or null when there is none or it says nothing. */
+function inShortSentencesOfProject(project: Project): AroundSentence[] | null {
+  const record = inShortOf(project as { activeRunId?: unknown; inShort?: unknown });
+  return record && record.sentences.length > 0 ? record.sentences : null;
 }
 
 /**
@@ -232,6 +247,13 @@ function isProgramTile(v: unknown, id: string): v is ProgramTile {
   return strOrNull(v.lastChange) && typeof v.sortKey === 'string';
 }
 
+/** "In short" as the route sends it: null, or one or two plain sentences, each with its line label. */
+function isInShort(v: unknown): v is AroundSentence[] | null {
+  if (v === null) return true;
+  if (!Array.isArray(v) || v.length === 0 || v.length > IN_SHORT_SENTENCES) return false;
+  return v.every((s) => isObj(s) && isPlainSentence(s.text) && isAnchorLabel(s.anchor) && Object.keys(s).length === 2);
+}
+
 /** The rows of `GET /api/workspace-rows`, read back strictly: a row not exactly of the shape is dropped. */
 export function homeRowsOf(body: unknown): HomeRow[] | null {
   if (!isObj(body) || !Array.isArray(body.rows)) return null;
@@ -244,6 +266,7 @@ export function homeRowsOf(body: unknown): HomeRow[] | null {
     if (!numOrNull(r.lines) || typeof r.linesFromRun !== 'boolean' || !numOrNull(r.findings) || !numOrNull(r.score)) continue;
     if (!isHomeStatus(r.status) || !strOrNull(r.lastChange) || !strOrNull(r.lastChangeText) || typeof r.factsKey !== 'string') continue;
     if (!isProgramTile(r.tile, r.id)) continue;
+    if (!isInShort(r.inShort)) continue;
     const row = Object.fromEntries(HOME_ROW_KEYS.map((k) => [k, r[k]])) as unknown as HomeRow;
     out.push(row);
   }

@@ -76,6 +76,8 @@ export function HomeNextCell({
   if (!next) {
     return <span className="text-[12px] font-medium text-cc-ink-muted" data-home-next="none">{wt('homeList.nothingOpen')}</span>;
   }
+  // Q12: on a phone card the link is a 44 px touch target.
+  const linkClass = compact ? `${NEXT_LINK} min-h-11` : NEXT_LINK;
   const label = (
     <>
       <span>{next.label}</span>
@@ -85,11 +87,11 @@ export function HomeNextCell({
   return (
     <span className="flex min-w-0 flex-col items-start gap-1" data-home-next={next.path}>
       {next.run && onRun ? (
-        <button type="button" className={NEXT_LINK} onClick={onRun} data-home-run={projectId}>
+        <button type="button" className={linkClass} onClick={onRun} data-home-run={projectId}>
           {label}
         </button>
       ) : (
-        <Link href={`/project/${encodeURIComponent(projectId)}/${next.path}`} className={NEXT_LINK} data-home-next-link={projectId}>
+        <Link href={`/project/${encodeURIComponent(projectId)}/${next.path}`} className={linkClass} data-home-next-link={projectId}>
           {label}
         </Link>
       )}

@@ -533,6 +533,9 @@ export default function WorkspaceListReport(_props: {
   const attention = useMemo(() => attentionRows(projects), [projects]);
   // The tiles of 3.3.0 come with the lean rows, computed on the server (`lib/home-rows.ts`).
   const tiles: ProgramTile[] = useMemo(() => projects.map((r) => r.tile), [projects]);
+  // AB-14c: the Continue card's "In short", as the server stored it for each program's active run.
+  const inShortById = useMemo(() => new Map(projects.map((r) => [r.id, r.inShort] as const)), [projects]);
+  const inShortFor = useCallback((id: string) => inShortById.get(id) ?? null, [inShortById]);
 
   // ADR-123: the frame with the final sizes, never a line of text that the page then replaces.
   if (profileLoading || !user) return <WorkspaceSkeleton />;
@@ -573,7 +576,13 @@ export default function WorkspaceListReport(_props: {
   // The design system's Object Identifier (§2.4): the name, the program's own
   // name in mono (the only identifier, AB-14b), and what the project is.
   const nameCell = (row: HomeRow) => (
-    <Link href={`/project/${row.id}`} data-workspace-open={row.id} data-workspace-access={row.access} className="min-w-0">
+    <Link
+      href={`/project/${row.id}`}
+      data-workspace-open={row.id}
+      data-workspace-access={row.access}
+      // Q12: on a phone every row is a 44 px touch target.
+      className="min-w-0 max-[600px]:flex max-[600px]:min-h-11 max-[600px]:items-center"
+    >
       <CcObjectIdentifier
         title={row.name}
         identifier={row.program ?? undefined}
@@ -1010,6 +1019,7 @@ export default function WorkspaceListReport(_props: {
         list={listSection}
         sharing={sharingSection}
         actionsFor={actionsFor}
+        inShortFor={inShortFor}
         notices={tileNotices.length > 0 ? <>{tileNotices}</> : null}
       />
 

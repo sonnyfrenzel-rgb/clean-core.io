@@ -258,13 +258,31 @@ test.describe('the page', () => {
     expect(prefs).toContain("useSyncExternalStore(noSubscription, readWorkspaceMode, () => 'tiles' as const)");
   });
 
+  test('Q12: with no stored choice a phone opens the list, every other width the tiles; a stored choice wins', () => {
+    const prefs = code('lib/workspace-prefs.ts');
+    expect(prefs).toContain('export const LIST_FIRST_MAX_WIDTH = 600;');
+    expect(prefs).toContain("window.matchMedia(`(max-width: ${LIST_FIRST_MAX_WIDTH}px)`).matches ? 'list' : 'tiles'");
+    expect(prefs).toMatch(/if \(stored === 'list' \|\| stored === 'tiles'\) return stored;\s*return defaultWorkspaceMode\(\);/);
+    // The switch stands at every width, so the tiles chosen on a phone have their way back to the list.
+    expect(page).not.toMatch(/data-ws-mode-switch[^>]*max-\[600px\]:hidden|max-\[600px\]:hidden'\} data-ws-mode-switch/);
+  });
+
+  test('AB-14c: the Continue card reads the one next step of the page and the stored "In short", nothing of its own', () => {
+    const card = page.slice(page.indexOf('function ContinueCard('), page.indexOf('export default function WorkspaceTiles('));
+    expect(card).toContain('programNextLabel(programNextStep(next.tile))');
+    expect(card).not.toMatch(/nextStepOf\(|programNextStep\(tile\)|sortKey/);
+    expect(page).toContain('<ContinueCard next={next} alsoWaiting={alsoWaiting} inShort={inShortFor(next.tile.id)} />');
+    expect(card).toContain('<CcProvenanceChip value="reconstructed" />');
+    expect(card).toContain("wt('ws.continue')");
+  });
+
   test('one filled action: the next step', () => {
     expect(page.match(/variant="primary"/g) ?? []).toHaveLength(1);
     expect(page).toMatch(/variant="primary"\s+density="cozy"\s+data-ws-next-go/);
   });
 
-  test('three sections: Next step, At a glance, Your programs — and no "launchpad", no "optional"', () => {
-    for (const key of ['ws.nextStep', 'ws.atAGlance', 'ws.yourPrograms'] as const) expect(page).toContain(`wt('${key}')`);
+  test('three sections: Continue where you left off, At a glance, Your programs — and no "launchpad", no "optional"', () => {
+    for (const key of ['ws.continue', 'ws.atAGlance', 'ws.yourPrograms'] as const) expect(page).toContain(`wt('${key}')`);
     const ws = Object.entries(WORKSPACE_PAGE_MESSAGES).filter(([k]) => k.startsWith('ws.')).map(([, v]) => v).join('\n');
     expect(ws).not.toMatch(/launchpad|optional/i);
   });

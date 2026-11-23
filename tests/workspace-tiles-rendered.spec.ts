@@ -259,10 +259,14 @@ test.describe('a returning account: next step, counts, tiles', () => {
       test.setTimeout(300_000);
       await page.setViewportSize({ width: w, height: h });
       await signInViaLanding(page, RET_EMAIL, PASSWORD);
+      // Q12: a phone opens the list unless the tiles were chosen; this test reads the tiles at both widths.
+      await page.evaluate(() => window.localStorage.setItem('cc.workspace.mode', 'tiles'));
       await instrument(page);
       await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
       await expect(page.locator('[data-program-tile]').first()).toBeVisible({ timeout: 120_000 });
       const m = await measure(page, `returning-${w}`);
+      // AB-14c: the Continue card names the program of the page's next step, with its map.
+      await expect(page.locator('[data-ws-continue] [data-map-thumb]')).toHaveCount(1);
 
       await expect(page.locator('[data-program-tile]')).toHaveCount(programs.length);
       // The page keeps a side gutter of at least 16 px on both sides (QA review afa4774ce08d).
@@ -358,21 +362,27 @@ test.describe('a returning account: next step, counts, tiles', () => {
     await shot(page, 'returning-1440-start-open');
   });
 
-  test('at 390 the switch is hidden on the tiles, and a remembered list keeps its way back', async ({ page }) => {
+  test('at 390 the list opens first (Q12), its rows are 44 px touch targets, and the switch leads to the tiles and back', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 390, height: 844 });
     await signInViaLanding(page, RET_EMAIL, PASSWORD);
-    await page.evaluate(() => window.localStorage.setItem('cc.workspace.mode', 'tiles'));
+    await page.evaluate(() => window.localStorage.removeItem('cc.workspace.mode'));
     await page.goto('/dashboard', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-program-tile]').first()).toBeVisible({ timeout: 120_000 });
-    await expect(page.locator('[data-mode="list"]')).toBeHidden();
-    // The mode is remembered per browser: a list chosen in a wider window is what a narrow one opens on.
-    await page.evaluate(() => window.localStorage.setItem('cc.workspace.mode', 'list'));
-    await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-workspace-list]')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-workspace-card]').first()).toBeVisible();
+    const heights = await page.locator('[data-workspace-card] [data-workspace-open], [data-workspace-card] [data-home-next-link], [data-workspace-card] [data-home-run]').evaluateAll((els) =>
+      els.map((el) => Math.round(el.getBoundingClientRect().height)),
+    );
+    expect(heights.length).toBeGreaterThan(0);
+    for (const h of heights) expect(h).toBeGreaterThanOrEqual(44);
     await shot(page, 'returning-390-list');
     await page.locator('[data-mode="tiles"]').click();
     await expect(page.locator('[data-program-tile]').first()).toBeVisible({ timeout: 30_000 });
-    await expect(page.locator('[data-mode="list"]')).toBeHidden();
+    // The switch stays, so the list is one press away again — and the choice is remembered.
+    await expect(page.locator('[data-mode="list"]')).toBeVisible();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-program-tile]').first()).toBeVisible({ timeout: 120_000 });
+    await page.locator('[data-mode="list"]').click();
+    await expect(page.locator('[data-workspace-list]')).toBeVisible({ timeout: 30_000 });
   });
 });

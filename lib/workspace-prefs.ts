@@ -3,7 +3,8 @@
  * lens a returning account reads its tiles through, and whether it sees tiles
  * or the list. Never stored on an account, a project, a run or anywhere a
  * server sees it; views are views only (CLAUDE.md). A browser that refuses
- * storage simply starts from Business and tiles each time.
+ * storage simply starts from Business and, by its width, the list on a phone or
+ * the tiles elsewhere each time (Q12 of the UX review of 22.11.2026).
  *
  * Both keys are named in the Privacy Policy's list of local-storage keys since
  * version 1.4 (`lib/legal/texts/privacy.en.ts` / `.de.ts`; lawyer, statement
@@ -42,12 +43,31 @@ export function readWorkspaceLens(): WorkspaceLens {
   }
 }
 
-export function readWorkspaceMode(): WorkspaceMode {
+/**
+ * The width up to which My workspace opens as the list when this browser remembers no choice (UX review 22.11.2026,
+ * Q12): on a phone the list's rows are shorter than a tile and every row is a 44 px touch target. The breakpoint S of
+ * `DESIGN.md` §2.9, the same 600 px the page's own `max-[600px]` classes use.
+ */
+export const LIST_FIRST_MAX_WIDTH = 600;
+
+/** No stored choice: the list on a phone, the tiles everywhere else. */
+export function defaultWorkspaceMode(): WorkspaceMode {
   try {
-    return window.localStorage.getItem(WORKSPACE_MODE_KEY) === 'list' ? 'list' : 'tiles';
+    return window.matchMedia(`(max-width: ${LIST_FIRST_MAX_WIDTH}px)`).matches ? 'list' : 'tiles';
   } catch {
     return 'tiles';
   }
+}
+
+export function readWorkspaceMode(): WorkspaceMode {
+  let stored: string | null = null;
+  try {
+    stored = window.localStorage.getItem(WORKSPACE_MODE_KEY);
+  } catch {
+    /* storage refused: the default for this width stands */
+  }
+  if (stored === 'list' || stored === 'tiles') return stored;
+  return defaultWorkspaceMode();
 }
 
 const noSubscription = () => () => {};

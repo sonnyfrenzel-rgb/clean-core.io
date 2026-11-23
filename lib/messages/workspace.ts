@@ -258,7 +258,9 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'ws.analyseAnotherShort': 'Analyse a program',
   'ws.redesignProgram': 'Re-design a program',
   'ws.startPanel': 'Start an analysis',
-  'ws.nextStep': 'Next step',
+  'ws.continue': 'Continue where you left off',
+  'ws.inShort': 'In short',
+  'ws.openMap': 'Open the process map',
   'ws.alsoWaiting': 'Also waiting',
   'ws.atAGlance': 'At a glance',
   'ws.yourPrograms': 'Your programs',
@@ -498,6 +500,16 @@ export function wsNextBodyStart(): string {
 
 export function wsNextBodyAnalyse(): string {
   return 'The code is uploaded. One run reads it and draws its process map.';
+}
+
+/** The Continue card's date line: "Changed 6 Nov 2026" (H-O10's list format). */
+export function wsChangedOn(date: string): string {
+  return `Changed ${date}`;
+}
+
+/** The caption under the Continue card's map: "Process map · 29 steps". */
+export function wsMapCaption(steps: number | null): string {
+  return steps === null ? 'Process map' : `Process map · ${wsSteps(steps)}`;
 }
 
 /** "Order fulfilment audit report — the code changed since the analysis." */

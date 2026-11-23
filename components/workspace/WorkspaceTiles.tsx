@@ -8,7 +8,8 @@ import type { UserProfile } from '@/hooks/useUserProfile';
 import { PHASES, type PhaseKey } from '@/lib/workflow-steps';
 import { DECISION_OPTION_LABELS } from '@/lib/decision-options';
 import { runsLeftLabel } from '@/lib/run-quota-rule';
-import { formatNumber } from '@/lib/format';
+import { formatNumber, formatTextDate } from '@/lib/format';
+import type { AroundSentence } from '@/lib/around-the-map';
 import {
   COUNTS_FROM,
   nextStepOf,
@@ -17,6 +18,7 @@ import {
   REDESIGN_KEYS,
   tileCounts,
   tileMatches,
+  type NextStep,
   type ProgramTile,
   type TileFilter,
   type TrackMark,
@@ -26,13 +28,14 @@ import {
   homeExampleLines,
   wsAlsoWaiting,
   wsAnalysedOn,
+  wsChangedOn,
   wsChangedThisWeek,
   wsDeliveredOn,
   wsNextBody,
   wsNextBodyAnalyse,
   wsNextBodyRerun,
   wsNextBodyStart,
-  wsNextTitle,
+  wsMapCaption,
   wsNotNeeded,
   wsOutOfDate,
   wsProgramsCount,
@@ -47,6 +50,7 @@ import {
 import { t } from '@/lib/cc-messages';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
+import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import StarterExamples from '@/components/StarterExamples';
 import MapThumb from './MapThumb';
 import WorkspaceRowActions, { type RowActionHandlers } from './WorkspaceRowActions';
@@ -57,9 +61,10 @@ import { HOME_LINK, OwnCodeWay, ProductMark } from './HomeStartParts';
  * `docs/roadmap/workspace-two-products-mockup.html` (ADR-123 (4)): three
  * sections and nothing else.
  *
- *   1. **Next step** — the one filled button of the page, for the one program
- *      the account should go on with (`nextStepOf`), and one line for another
- *      that waits.
+ *   1. **Continue where you left off** (AB-14c, 3.5.0) — the one filled button
+ *      of the page, for the one program the account should go on with
+ *      (`nextStepOf`), with its map miniature and "In short", and one line for
+ *      another that waits.
  *   2. **At a glance** — five count tiles from three programs on (W10). They
  *      are the filter: pressing one shows its programs, pressing it again all.
  *      "Changed in the last 7 days" from the documents' own dates — there is no
@@ -465,6 +470,122 @@ function Segmented<T extends string>({
   );
 }
 
+/**
+ * "Continue where you left off" (AB-14c, mock-up `docs/roadmap/home-mockup-v2.html` state 2), on the tiles page of
+ * 3.3.0. **One source for the next step** (owner decision 22.11.2026): the program is the page's next step
+ * (`nextStepOf`), and its button says what that program's tile and list row say (`programNextStep`) — the card adds
+ * the map miniature and "In short", it never picks a program or a step of its own. Without a remembered "last
+ * opened" (H-O5 would need a new browser key the Privacy Policy does not name), the next step's program is where the
+ * account left off. "In short" is the engine's sentence the server stored for the active run (`HomeRow.inShort`,
+ * never a model's), marked *Reconstructed*; without one the card shows none (H-O6).
+ */
+function ContinueCard({
+  next,
+  alsoWaiting,
+  inShort,
+}: {
+  next: NextStep;
+  alsoWaiting: ProgramTile | null;
+  inShort: AroundSentence[] | null;
+}) {
+  const tile = next.tile;
+  const changed = formatTextDate(tile.lastChange);
+  const goHref =
+    next.kind === 'continue' ? toolHref(tile, next.key) : next.kind === 'start-redesign' ? toolHref(tile, 'design') : analysisHref(tile);
+  // The map is Analyze: a second way there only when the next step goes somewhere else.
+  const mapLink = tile.analyse.kind === 'signed' && goHref !== analysisHref(tile);
+  return (
+    <section aria-labelledby="ws-continue" data-ws-next={next.kind} data-ws-continue={tile.id} className="rounded-cc-card border border-cc-line bg-cc-surface shadow-cc">
+      <div className="grid grid-cols-1 gap-4 px-4 py-4 min-[601px]:px-5 min-[901px]:grid-cols-[minmax(0,1fr)_300px] min-[901px]:gap-6 min-[901px]:px-6 min-[901px]:py-5">
+        <div className="flex min-w-0 flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span id="ws-continue" className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
+              {wt('ws.continue')}
+            </span>
+            {changed ? <span className="text-[12px] font-medium text-cc-ink-muted">{wsChangedOn(changed)}</span> : null}
+          </div>
+          <div className="min-w-0">
+            <h2 className="m-0 text-[20px] leading-tight font-bold text-cc-ink">
+              <Link href={analysisHref(tile)} className="no-underline hover:underline" data-ws-continue-open="">
+                {tile.title}
+              </Link>
+            </h2>
+            <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-medium text-cc-ink-muted">
+              {tile.objectName ? <span className="font-cc-mono text-cc-ink">{tile.objectName}</span> : null}
+              {tile.lines !== null ? (
+                <span>
+                  {tile.objectName ? '· ' : ''}
+                  {homeExampleLines(formatNumber(tile.lines) ?? String(tile.lines))}
+                </span>
+              ) : null}
+              {tile.example ? (
+                <span className="inline-flex rounded-full border border-cc-line px-2 leading-5 font-semibold">{wt('ws.tile.example')}</span>
+              ) : null}
+            </div>
+          </div>
+          {inShort ? (
+            <div data-ws-in-short="">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
+                <span className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">{wt('ws.inShort')}</span>
+                <CcProvenanceChip value="reconstructed" />
+              </div>
+              <p className="m-0 max-w-[640px] text-[14px] leading-relaxed font-medium text-cc-ink">
+                {inShort.map((sentence, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 ? ' ' : ''}
+                    {sentence.text}{' '}
+                    <span className="font-cc-mono text-[12px] text-cc-ink-muted" data-anchor={sentence.anchor}>
+                      {sentence.anchor}
+                    </span>
+                  </React.Fragment>
+                ))}
+              </p>
+            </div>
+          ) : null}
+        </div>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <MapThumb thumb={tile.thumb} objectName={tile.objectName ?? tile.title} steps={tile.steps} className="h-[132px] w-full min-[901px]:h-[150px]" />
+          <span className="text-[12px] font-medium text-cc-ink-muted">{wsMapCaption(tile.steps)}</span>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-b-cc-card border-t border-cc-line bg-cc-surface-muted px-4 py-3 min-[601px]:px-5 min-[901px]:px-6">
+        <span className="min-w-0 text-[13px] font-medium text-cc-ink-muted">
+          {next.kind === 'continue'
+            ? wsNextBody(
+                REDESIGN_KEYS.filter((k, i) => tile.track[i] === 'done').map((k) => TOOL_LABEL[k]),
+                wt(`home.path.${next.key}`),
+              )
+            : next.kind === 'rerun'
+              ? wsNextBodyRerun()
+              : next.kind === 'start-redesign'
+                ? wsNextBodyStart()
+                : wsNextBodyAnalyse()}
+        </span>
+        <div className="flex flex-wrap items-center gap-2 max-[600px]:w-full max-[600px]:[&>*]:flex-1">
+          {mapLink ? (
+            <CcLinkButton href={analysisHref(tile)} variant="secondary" density="cozy" data-ws-open-map="">
+              {wt('ws.openMap')}
+            </CcLinkButton>
+          ) : null}
+          <CcLinkButton href={goHref} variant="primary" density="cozy" data-ws-next-go="">
+            {programNextLabel(programNextStep(next.tile))}
+            <ArrowRight size={14} aria-hidden={true} />
+          </CcLinkButton>
+        </div>
+      </div>
+      {alsoWaiting ? (
+        <div className="flex flex-wrap items-center gap-3 border-t border-cc-line px-4 py-3 text-[13px] font-medium text-cc-ink-muted min-[601px]:px-5 min-[901px]:px-6">
+          <Status tone="outdated">{wt('ws.alsoWaiting')}</Status>
+          <span>{wsAlsoWaiting(alsoWaiting.title, alsoWaiting.analyse.kind === 'stale')}</span>
+          <ActionLink href={analysisHref(alsoWaiting)} data-ws-also-go="">
+            {programNextLabel(programNextStep(alsoWaiting))}
+          </ActionLink>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
 export default function WorkspaceTiles({
   userId,
   profile,
@@ -478,6 +599,7 @@ export default function WorkspaceTiles({
   list,
   sharing,
   actionsFor,
+  inShortFor,
   notices,
 }: {
   userId: string;
@@ -496,6 +618,8 @@ export default function WorkspaceTiles({
   /** The sharing section, shown behind "Sharing". */
   sharing: React.ReactNode;
   actionsFor: (tile: ProgramTile) => RowActionHandlers | undefined;
+  /** The stored "In short" of a program's active run (`HomeRow.inShort`), or null — read for the Continue card only. */
+  inShortFor: (id: string) => AroundSentence[] | null;
   /** What the page must say above everything (the runs are spent, an action failed). */
   notices?: React.ReactNode;
 }) {
@@ -573,60 +697,7 @@ export default function WorkspaceTiles({
       {notices}
 
       {next ? (
-        <section aria-labelledby="ws-next" data-ws-next={next.kind} className="rounded-cc-card border border-cc-line bg-cc-surface shadow-cc">
-          <div className="grid grid-cols-1 items-center gap-3 px-4 py-4 min-[601px]:grid-cols-[auto_minmax(0,1fr)_auto] min-[601px]:gap-4 min-[601px]:px-5 min-[601px]:py-4">
-            <MapThumb
-              thumb={next.tile.thumb}
-              objectName={next.tile.objectName ?? next.tile.title}
-              steps={next.tile.steps}
-              className="h-16 w-[120px] max-[600px]:hidden"
-            />
-            <div className="min-w-0">
-              <span id="ws-next" className="text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
-                {wt('ws.nextStep')}
-              </span>
-              <b className="block text-[15px] font-bold text-cc-ink">
-                {wsNextTitle(next.tile.title, next.kind, next.kind === 'continue' ? TOOL_LABEL[next.key] : '')}
-              </b>
-              <span className="text-[13px] font-medium text-cc-ink-muted">
-                {next.kind === 'continue'
-                  ? wsNextBody(
-                      REDESIGN_KEYS.filter((k, i) => next.tile.track[i] === 'done').map((k) => TOOL_LABEL[k]),
-                      wt(`home.path.${next.key}`),
-                    )
-                  : next.kind === 'rerun'
-                    ? wsNextBodyRerun()
-                    : next.kind === 'start-redesign'
-                      ? wsNextBodyStart()
-                      : wsNextBodyAnalyse()}
-              </span>
-            </div>
-            <CcLinkButton
-              href={
-                next.kind === 'continue'
-                  ? toolHref(next.tile, next.key)
-                  : next.kind === 'start-redesign'
-                    ? toolHref(next.tile, 'design')
-                    : `${next.tile.href}/analyze`
-              }
-              variant="primary"
-              density="cozy"
-              data-ws-next-go=""
-            >
-              {programNextLabel(programNextStep(next.tile))}
-              <ArrowRight size={14} aria-hidden={true} />
-            </CcLinkButton>
-          </div>
-          {alsoWaiting ? (
-            <div className="flex flex-wrap items-center gap-3 border-t border-cc-line px-4 py-3 text-[13px] font-medium text-cc-ink-muted min-[601px]:px-5">
-              <Status tone="outdated">{wt('ws.alsoWaiting')}</Status>
-              <span>{wsAlsoWaiting(alsoWaiting.title, alsoWaiting.analyse.kind === 'stale')}</span>
-              <ActionLink href={`${alsoWaiting.href}/analyze`} data-ws-also-go="">
-                {programNextLabel(programNextStep(alsoWaiting))}
-              </ActionLink>
-            </div>
-          ) : null}
-        </section>
+        <ContinueCard next={next} alsoWaiting={alsoWaiting} inShort={inShortFor(next.tile.id)} />
       ) : null}
 
       {tiles.length >= COUNTS_FROM ? (
@@ -716,9 +787,9 @@ export default function WorkspaceTiles({
                 { value: 'management', label: wt('ws.lens.management') },
               ]}
             />
-            {/* Hidden on a phone, where the tiles are the view — except while the list is on: the mode is
-                remembered per browser, and a list chosen in a wider window needs its way back here too. */}
-            <span className={mode === 'list' ? undefined : 'max-[600px]:hidden'} data-ws-mode-switch="">
+            {/* Shown at every width: on a phone the list is the default (Q12, `lib/workspace-prefs.ts`), and the tiles
+                chosen there need their way back to it as much as a list chosen in a wider window does. */}
+            <span data-ws-mode-switch="">
               <Segmented<WorkspaceMode>
                 label={wt('ws.showAs')}
                 value={mode}
