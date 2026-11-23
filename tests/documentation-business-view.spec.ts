@@ -180,14 +180,14 @@ test.describe('the Confluence export', () => {
   });
 });
 
-/** Description (with its glance) -> business layer -> map -> technical trace, top to bottom. */
+/** ADR-127: the answer -> chapter 1 with Figure 1 -> chapter 6 with the proposal -> the appendix, top to bottom. */
 async function expectReadingOrder(page: Page) {
   const top = async (selector: string) => (await page.locator(selector).first().boundingBox())!.y;
   const order = [
-    '[data-stage-output="documentation"]',
-    '[data-business-sop], [data-business-layer-offer]',
-    '[data-handbook-stage]',
-    '[data-doc-section="appendix"]',
+    '[data-answer-card]',
+    '[data-doc-figure]',
+    '[data-doc-chapter="roles"]',
+    '[data-doc-appendix]',
   ];
   for (let i = 1; i < order.length; i += 1) {
     expect(await top(order[i - 1]), `${order[i - 1]} does not stand above ${order[i]}`).toBeLessThan(await top(order[i]));
@@ -262,23 +262,19 @@ test.describe('the Documentation stage in a browser', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${WITH}/documentation`, { waitUntil: 'domcontentloaded' });
 
-    // Owner 04.10.2026 (ADR-077 amended twice): the description opens with its
-    // own summary — key figures, the rules and risks to know, each with its lines.
-    const points = page.locator('[data-doc-glance] [data-doc-point]');
-    await expect.poll(() => points.count(), { timeout: 120000 }).toBeGreaterThan(1);
-    for (let i = 0; i < await points.count(); i += 1) {
-      await expect(points.nth(i).locator('[data-cc-anchor]').first(), `point ${i} has no anchor`).toBeVisible();
-    }
-    await expect(page.locator('[data-doc-glance] [data-doc-figure]')).toHaveCount(6);
+    // ADR-127 (1): the first screen answers — Starts, Ends, Needs a decision with their lines, and four numbers.
+    const facts = page.locator('[data-doc-answer-facts]');
+    await expect(facts).toBeVisible({ timeout: 120000 });
+    await expect(facts.locator('[data-doc-anchor]').first()).toBeVisible();
+    await expect(page.locator('[data-answer-card] [data-facet]')).toHaveCount(4);
 
-    // The page reads like the document — the process description, then the
-    // SOP, then the map to explore, then the technical trace.
+    // The page reads like the Word file; the SOP and RACI proposal stands in chapter 6, folded once on record.
+    await expect(page.locator('[data-doc-appendix]')).toBeAttached({ timeout: 60000 });
+    await expectReadingOrder(page);
+    await page.locator('[data-doc-fold="model-proposals"] summary').click();
     const sop = page.locator('[data-business-sop]');
     await expect(sop).toBeVisible();
     await expect(sop.locator('[data-provenance="proposed"]').first()).toBeVisible();
-    await expect(page.locator('[data-business-glance]')).toHaveCount(0);
-    await expect(page.locator('[data-doc-section="appendix"]')).toBeAttached({ timeout: 60000 });
-    await expectReadingOrder(page);
 
     // The strip: every step of the process, in order, with its anchor and a provenance chip.
     // Owner review 10.10.2026: a row for a step the process does not have is
@@ -339,8 +335,8 @@ test.describe('the Documentation stage in a browser', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${WITH}/documentation`, { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-doc-fold="model-proposals"] summary').click({ timeout: 120000 });
     await expect(page.locator('[data-business-sop]')).toBeVisible({ timeout: 120000 });
-    await expect.poll(() => page.locator('[data-doc-glance] [data-doc-point]').count(), { timeout: 120000 }).toBeGreaterThan(1);
     await expect(page.locator('[data-raci-matrix]')).toBeHidden();
     await expect(page.locator('[data-raci-list]')).toBeVisible();
     await expect(page.locator('[data-raci-list-step]').first()).toBeVisible();
@@ -362,6 +358,7 @@ test.describe('the Documentation stage in a browser', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${MANY}/documentation`, { waitUntil: 'domcontentloaded' });
+    await page.locator('[data-doc-fold="model-proposals"] summary').click({ timeout: 120000 });
     const matrix = page.locator('[data-raci-matrix]');
     await expect(matrix).toBeVisible({ timeout: 120000 });
     await expect(matrix.locator('thead th')).toHaveCount(6 + 2);
@@ -402,16 +399,15 @@ test.describe('the Documentation stage in a browser', () => {
     await page.goto(`/project/${WITHOUT}/documentation`, { waitUntil: 'domcontentloaded' });
     const offer = page.locator('[data-business-layer-offer]');
     await expect(offer).toBeVisible({ timeout: 120000 });
-    await expect(offer.locator('[data-provenance="proposed"]')).toBeVisible();
     // No model: the reason in one line, and the way to Settings — never a silent nothing.
     await expect(offer.locator('[data-business-layer-off]')).toBeVisible();
     await expect(offer.locator('[data-business-layer-off] a[href="/settings"]')).toBeVisible();
     await expect(offer.getByRole('button', { name: 'Generate the business SOP & RACI' })).toHaveCount(0);
     await expect(page.locator('[data-stage-output="documentation"]')).toBeVisible();
     const y = async (selector: string) => (await page.locator(selector).first().boundingBox())!.y;
-    // Right after the process description, above the map (owner 04.10.2026).
-    expect(await y('[data-stage-output="documentation"]')).toBeLessThan(await y('[data-business-layer-offer]'));
-    expect(await y('[data-business-layer-offer]')).toBeLessThan(await y('[data-handbook-stage]'));
+    // ADR-127: in chapter 6, after Figure 1 and before the appendix.
+    expect(await y('[data-doc-figure]')).toBeLessThan(await y('[data-business-layer-offer]'));
+    expect(await y('[data-business-layer-offer]')).toBeLessThan(await y('[data-doc-appendix]'));
     await expect(page.getByRole('tab', { name: /Business SOP/ })).toHaveCount(0);
   });
 
@@ -429,14 +425,13 @@ test.describe('the Documentation stage in a browser', () => {
     await signInViaLanding(page, READER_EMAIL, PASSWORD);
 
     await page.goto(`/project/${WITH}/documentation`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-business-sop]')).toBeVisible({ timeout: 120000 });
+    await expect(page.locator('[data-business-sop]')).toBeAttached({ timeout: 120000 });
     await expect(page.locator('[data-process-document]')).toBeVisible({ timeout: 120000 });
-    await expect(page.locator('[data-doc-section="appendix"]')).toBeAttached({ timeout: 60000 });
+    await expect(page.locator('[data-doc-appendix]')).toBeAttached({ timeout: 60000 });
     await expectReadingOrder(page);
     await expect(page.locator('[data-regenerate-documentation]')).toHaveCount(0);
     await expect(page.locator('[data-regenerate-business-layer]')).toHaveCount(0);
-    // The exports are a reader's too: one Export menu in the stage header (roadmap 3.0.7).
-    await page.locator('[data-documentation-export-menu]').click();
+    // The exports are a reader's too, beside the answer (ADR-127 (1)).
     await expect(page.locator('[data-export-process-md]')).toBeVisible();
 
     await page.goto(`/project/${WITHOUT}/documentation`, { waitUntil: 'domcontentloaded' });

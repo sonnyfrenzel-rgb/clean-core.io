@@ -9,7 +9,7 @@ import { sha256Hex } from '../lib/artefact-digest';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
-import { PROCESS_DOCUMENT_SECTIONS } from '../lib/process-document';
+import { DOC_CHAPTERS } from '../lib/documentation-page';
 import { businessLayerFor, engineDocumentationOf, fixtureSource, FIXTURE_FILE } from './helpers/business-layer-fixture';
 
 /**
@@ -148,16 +148,16 @@ test.describe('the Documentation stage on opening', () => {
     // The process description, its sections in order; the appendix stands
     // apart at the foot of the page (owner 04.10.2026), still last.
     await expect(page.locator('[data-process-document]')).toBeVisible({ timeout: 120000 });
-    await expect(page.locator('[data-doc-section="appendix"]')).toBeAttached({ timeout: 60000 });
-    const order = await page.locator('[data-doc-section]').evaluateAll(
-      (els) => els.map((e) => e.getAttribute('data-doc-section')),
+    // ADR-127: one page in the order of the Word file — seven chapters, then the appendix; Figure 1 in chapter 1.
+    await expect(page.locator('[data-doc-appendix]')).toBeAttached({ timeout: 60000 });
+    const order = await page.locator('section[data-doc-chapter]').evaluateAll(
+      (els) => els.map((e) => e.getAttribute('data-doc-chapter')),
     );
-    expect(order).toEqual(PROCESS_DOCUMENT_SECTIONS.map((s) => s.key));
-    // The description is the first thing under the header, the map below it.
-    const description = (await page.locator('[data-process-document]').boundingBox())!.y;
-    expect(description).toBeLessThan((await page.locator('[data-handbook-stage]').boundingBox())!.y);
+    expect(order).toEqual(DOC_CHAPTERS.map((c) => c.key));
+    await expect(page.locator('[data-doc-chapter="process"] [data-doc-figure]')).toBeAttached();
 
-    await expect(page.locator('[data-business-sop]')).toBeVisible({ timeout: 60000 });
+    // The SOP and RACI proposal stands in chapter 6, folded once it is on record.
+    await expect(page.locator('[data-business-sop]')).toBeAttached({ timeout: 60000 });
     expect(calls.n, 'the business layer was asked for more than once').toBe(1);
     const stored = await adminGetDoc('projects', ON);
     expect(JSON.parse(String(stored?.documentation)).format).toBe('engine-process-documentation');
@@ -171,7 +171,7 @@ test.describe('the Documentation stage on opening', () => {
 
     // Opening it again finds everything current and calls nothing.
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-business-sop]')).toBeVisible({ timeout: 120000 });
+    await expect(page.locator('[data-business-sop]')).toBeAttached({ timeout: 120000 });
     await expect(page.locator('[data-process-document]')).toBeVisible({ timeout: 120000 });
     await page.waitForTimeout(3000);
     expect(calls.n, 'a current business layer was written again').toBe(1);
@@ -202,13 +202,13 @@ test.describe('the Documentation stage on opening', () => {
     await page.goto(`/project/${PHONE}/documentation`, { waitUntil: 'domcontentloaded' });
     const description = page.locator('[data-process-document]');
     await expect(description).toBeVisible({ timeout: 120000 });
-    await expect(page.locator('[data-doc-main-step]').first()).toBeVisible();
+    await expect(page.locator('[data-doc-step]').first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, 'the page scrolls sideways on a phone').toBeLessThanOrEqual(0);
     if (SHOTS) {
       await description.scrollIntoViewIfNeeded();
       await page.screenshot({ path: path.join(SHOTS, 'stage-390-description.png') });
-      await page.locator('[data-doc-section="rules"]').scrollIntoViewIfNeeded();
+      await page.locator('[data-doc-chapter="rules"]').scrollIntoViewIfNeeded();
       await page.screenshot({ path: path.join(SHOTS, 'stage-390-rules.png') });
     }
   });

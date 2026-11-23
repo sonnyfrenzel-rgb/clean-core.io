@@ -128,13 +128,9 @@ test.describe('the documentation stage, stale and current, in a browser', () => 
   /** Opens the stage's Export menu and reads the Confluence item before the click closes the menu. */
   async function exportFrom(page: Page, projectId: string): Promise<{ state: string | null; describedBy: string | null; html: string }> {
     await page.goto(`/project/${projectId}/documentation`, { waitUntil: 'domcontentloaded' });
-    const menu = page.locator('[data-documentation-export-menu]');
-    await expect(menu).toBeVisible({ timeout: 90000 });
+    // ADR-127 (1): the formats stand beside the answer, no menu to open.
     const button = page.getByRole('button', { name: /Export Confluence/ });
-    await expect.poll(async () => {
-      if (!(await button.isVisible())) await menu.click();
-      return button.isVisible();
-    }, { timeout: 90000 }).toBe(true);
+    await expect(button).toBeVisible({ timeout: 90000 });
     const state = await button.getAttribute('data-export-confluence');
     const describedBy = await button.getAttribute('aria-describedby');
     const [download] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), button.click()]);

@@ -14,7 +14,7 @@ import {
   type PageAnchor,
 } from '../lib/page-anchors';
 import { IT_ANCHORS } from '../lib/it-sections';
-import { PROCESS_DOCUMENT_SECTIONS } from '../lib/process-document';
+import { DOC_CHAPTERS } from '../lib/documentation-page';
 import { NAVIGATION_MESSAGES } from '../lib/messages/navigation';
 
 /**
@@ -51,7 +51,7 @@ const PAGE = (stage: string) => `app/(app)/project/[projectId]/${stage}/page.tsx
 const BAR_CALLERS = [
   'components/analyze/EvidenceFindingsTable.tsx', // AnalyzeAnchorBar — Analyze and its demo
   'components/transformation/TransformationObjectPage.tsx', // Transformation and its demo
-  'components/documentation/ProcessDocumentView.tsx', // DocumentChapterBar — Documentation and its demo
+  'components/documentation/DocumentationOnePage.tsx', // Documentation and its demo (ADR-127)
   PAGE('testing'),
   'components/demo/DemoTesting.tsx',
   PAGE('delivery'),
@@ -187,11 +187,11 @@ test.describe('only ids that render', () => {
   test('the IT view and Documentation name only sections that render', () => {
     const it = code('components/workspace/ItAnswers.tsx') + code('components/workspace/ItRail.tsx');
     for (const key of IT_ANCHORS) expect(it, `IT anchor ${key}`).toContain(`id={IT_SECTION_IDS.${key}}`);
-    const doc = code('components/documentation/ProcessDocumentView.tsx');
-    expect(doc).toContain('target: `pd-${c.key}`');
-    for (const { key } of PROCESS_DOCUMENT_SECTIONS) {
-      expect(doc.includes(`<SectionCard id="${key}"`) || doc.includes(`id="pd-${key}"`), `chapter ${key}`).toBe(true);
-    }
+    // Documentation (ADR-127): every chapter the bar names is a `Chapter` drawn with its id from `DOC_CHAPTERS`.
+    const doc = code('components/documentation/DocumentationOnePage.tsx');
+    expect(doc).toContain('id={c.id}');
+    expect(code('lib/documentation-page.ts')).toContain('target: c.id');
+    for (const { key } of DOC_CHAPTERS) expect(doc, `chapter ${key}`).toContain(`chapter="${key}"`);
   });
 
   test('the builders name only their own ids, in the page order, and never an empty chip', () => {
@@ -280,17 +280,21 @@ test.describe('one place', () => {
     before('components/demo/DemoTesting.tsx', /<PageAnchorBar\b/, 'id="testing-write"');
     before(PAGE('delivery'), /<PageAnchorBar\b/, 'id="evidence-chain"');
     before('components/delivery/DemoDelivery.tsx', /<PageAnchorBar\b/, 'id="evidence-chain"');
-    before(PAGE('documentation'), /<DocumentChapterBar\b/, 'data-documentation-description');
+    before('components/documentation/DocumentationOnePage.tsx', /<PageAnchorBar\b/, 'chapter="process"');
     before('components/workspace/ItAnswers.tsx', /<ItAnchorBar\b/, 'id={IT_SECTION_IDS.findings}');
 
     // The bar is never wrapped in a section's own container: on Testing and
-    // Delivery it is a direct child of the frame, the same as Documentation's.
-    for (const stage of ['testing', 'delivery', 'documentation']) {
+    // Delivery it is a direct child of the frame.
+    for (const stage of ['testing', 'delivery']) {
       const src = code(PAGE(stage));
-      const at = src.search(stage === 'documentation' ? /<DocumentChapterBar\b/ : /<PageAnchorBar\b/);
+      const at = src.search(/<PageAnchorBar\b/);
       const indent = src.slice(src.lastIndexOf('\n', at) + 1, at);
-      // StageFrame's children stand at six spaces; Documentation's bar sits in a `{cond ? … : null}` one level in.
+      // StageFrame's children stand at six spaces.
       expect(indent.length, `${stage}: the bar is nested inside a section`).toBeLessThanOrEqual(8);
     }
+    // Documentation (ADR-127): a direct child of the page's own element, which runs to the foot of the page.
+    const one = code('components/documentation/DocumentationOnePage.tsx');
+    const at = one.search(/<PageAnchorBar\b/);
+    expect(one.slice(one.lastIndexOf('\n', at) + 1, at), 'Documentation: the bar is nested inside a section').toBe('      ');
   });
 });

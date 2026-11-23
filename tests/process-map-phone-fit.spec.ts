@@ -159,11 +159,6 @@ async function workspaceMap(page: Page, acct: SeededProject): Promise<Locator> {
   return showMap(page, '[data-workspace-process]');
 }
 
-async function documentationMap(page: Page, acct: SeededProject): Promise<Locator> {
-  await page.goto(`/project/${acct.projectId}/documentation`, { waitUntil: 'domcontentloaded' });
-  return showMap(page, '[data-documentation-explore]');
-}
-
 test.use({ hasTouch: true, userAgent: PHONE.userAgent });
 
 test.describe('on a phone the process map fits its card at 40 % or more', () => {
@@ -262,15 +257,10 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     await shot(page, 'workspace-small-390', frame);
   });
 
-  test('Documentation, "Explore the process": the big example', async ({ page }) => {
-    test.setTimeout(300_000);
-    await signIn(page, big);
-    const frame = await documentationMap(page, big);
-    await shot(page, 'documentation-big-390', frame);
-    await expectFits(frame, 'documentation, Z_MM_PO_APPROVAL');
-  });
+  // ADR-127: Documentation draws no map canvas; its Figure 1 steps back on a phone for the step list
+  // (tests/documentation-v2.spec.ts), so only the workspace and the demo's Analyze are measured here.
 
-  test('the demo workspace and the demo documentation (Z_MM_PO_APPROVAL)', async ({ page }) => {
+  test('the demo workspace (Z_MM_PO_APPROVAL)', async ({ page }) => {
     test.setTimeout(300_000);
     // The demo workspace is for a signed-in account, like a project.
     await signIn(page, small);
@@ -279,11 +269,5 @@ test.describe('on a phone the process map fits its card at 40 % or more', () => 
     const frame = await showMap(page, '[data-process-map]');
     await shot(page, 'demo-workspace-390', frame);
     await expectFits(frame, 'demo workspace');
-
-    await page.goto('/demo/documentation', { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60_000 });
-    const doc = await showMap(page, '[data-documentation-explore]');
-    await shot(page, 'demo-documentation-390', doc);
-    await expectFits(doc, 'demo documentation');
   });
 });

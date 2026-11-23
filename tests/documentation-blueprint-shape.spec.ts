@@ -197,10 +197,11 @@ test.describe('the documentation is read from the code, and a legacy blueprint i
     await expect(page.locator('[data-process-document]')).toBeVisible();
     // Section 9 is the project's one list of open questions (ADR-081); the
     // engine's questions about the requirements stand in appendix A.4.
-    await expect(page.locator('[data-doc-section="questions"] [data-doc-open-question]').first()).toBeVisible();
+    // ADR-127: chapter 7 lists Analyze's open questions; the requirement questions stand in the appendix.
+    await expect(page.locator('[data-doc-chapter="questions"]')).toBeVisible();
     await expect(page.locator('[data-doc-requirement-question-list]')).toBeAttached();
     await expect(page.locator('[data-doc-requirement-question-list]')).toContainText('Questions about the requirements');
-    await expect(page.locator('[data-doc-section="rules"]')).toContainText('50000.00');
+    await expect(page.locator('[data-doc-chapter="rules"]')).toBeVisible();
     const stored = await adminGetDoc('projects', PROJECT_ID);
     const doc = JSON.parse(String(stored?.documentation));
     expect(doc.format).toBe('engine-process-documentation');

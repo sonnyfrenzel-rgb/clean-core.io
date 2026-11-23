@@ -451,41 +451,13 @@ test.describe('phone: every map moves under a finger', () => {
     await openMapView(page);
     broken.push(...(await exerciseTouch(page, cdp, bpmnProbe(page, 'demo workspace map'))));
 
+    // ADR-127: the demo's Documentation draws no map canvas — Figure 1 steps back on a phone for the step list,
+    // and every step is a button a finger can hit.
     await page.goto('/demo/documentation', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60000 });
-    await expect.poll(async () => page.locator('[data-process-map-canvas] [data-map-node]').count(), { timeout: 90000 }).toBeGreaterThan(5);
-    const probe = bpmnProbe(page, 'demo documentation map');
-    broken.push(...(await exerciseTouch(page, cdp, probe)));
-    broken.push(...(await smallTargets(page.locator('[data-map-view-tools] button'), 'demo documentation map controls')));
-
-    // A double tap on the background fits again.
-    const fitted = await (async () => {
-      await page.locator('[data-map-fit]').first().evaluate((el) => (el as HTMLElement).click());
-      await page.waitForTimeout(300);
-      return probe.read();
-    })();
-    const box = (await probe.surface.boundingBox())!;
-    await touchPinch(cdp, { x: box.x + box.width / 2, y: box.y + box.height / 2 }, 60, 200);
-    await doubleTap(cdp, { x: box.x + 6, y: box.y + box.height - 6 });
-    const back = await probe.read();
-    if (Math.abs(back.scale - fitted.scale) > 0.01) broken.push(`demo documentation map: a double tap did not fit (scale ${back.scale.toFixed(2)}, fitted ${fitted.scale.toFixed(2)})`);
-
-    // Full screen: one finger pans in every direction.
-    const toggleFs = page.locator('[data-map-fullscreen-toggle]').first();
-    if ((await toggleFs.count()) === 0) {
-      broken.push('demo documentation map: no full-screen control');
-      console.log(`[mobile-responsive] demo maps:\n${broken.join('\n')}`);
-      expect(broken).toEqual([]);
-    }
-    await toggleFs.evaluate((el) => (el as HTMLElement).click());
-    await expect(page.locator('[data-map-canvas-frame]')).toHaveAttribute('data-map-fullscreen', 'true');
-    const fbox = (await probe.surface.boundingBox())!;
-    const fc = { x: fbox.x + fbox.width / 2, y: fbox.y + fbox.height / 2 };
-    const fBefore = await probe.read();
-    await touchSwipe(cdp, { x: fc.x, y: fc.y + 100 }, { x: fc.x, y: fc.y - 100 });
-    const fAfter = await probe.read();
-    if (Math.abs(fAfter.y - fBefore.y) < 40) broken.push('demo documentation map: in full screen a vertical swipe did not pan the map');
-    broken.push(...(await smallTargets(page.locator('[data-map-view-tools] button'), 'demo documentation map controls in full screen')));
+    await expect(page.locator('[data-process-map-canvas]')).toHaveCount(0);
+    await expect(page.locator('[data-doc-figure-phone]')).toBeVisible({ timeout: 60000 });
+    broken.push(...(await smallTargets(page.locator('[data-doc-step]'), 'demo documentation steps')));
 
     console.log(`[mobile-responsive] demo maps:\n${broken.join('\n') || '(none)'}`);
     expect(broken).toEqual([]);
@@ -507,7 +479,7 @@ test.describe('phone: every map moves under a finger', () => {
     expect(broken).toEqual([]);
   });
 
-  test('a signed project: the workspace map, the Documentation map, and a legacy blueprint as one strip', async ({ page, context }) => {
+  test('a signed project: the workspace map, the Documentation steps, and a legacy blueprint as one strip', async ({ page, context }) => {
     test.setTimeout(420 * 1000);
     if (!acct) await seed();
     await signIn(page);
@@ -521,11 +493,10 @@ test.describe('phone: every map moves under a finger', () => {
     broken.push(...(await smallTargets(page.locator('[data-process-map] [role="radiogroup"] [role="radio"]'), 'Map | Steps')));
     broken.push(...(await smallTargets(page.locator('[data-map-view-tools] button'), 'project workspace map controls')));
 
+    // ADR-127: Documentation's Figure 1 is read-only and steps back on a phone; its steps are the targets.
     await page.goto(`/project/${acct.projectId}/documentation`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-process-map]').first()).toBeAttached({ timeout: 90000 });
-    await openMapView(page);
-    broken.push(...(await exerciseTouch(page, cdp, bpmnProbe(page, 'project documentation map'))));
-    broken.push(...(await smallTargets(page.locator('[data-map-view-tools] button'), 'project documentation map controls')));
+    await expect(page.locator('[data-doc-step]').first()).toBeVisible({ timeout: 90000 });
+    broken.push(...(await smallTargets(page.locator('[data-doc-step]'), 'project documentation steps')));
 
     // Roadmap 3.0.7 (ADR-082): a legacy blueprint is no longer drawn — no flow
     // to move under a finger, one strip instead. What a finger needs there is
