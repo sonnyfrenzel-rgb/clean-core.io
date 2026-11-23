@@ -75,7 +75,7 @@ export async function openGallery(page: Page, admin: GalleryAdmin, width = 1440)
   await page.setViewportSize({ width, height: 1200 });
 
   await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+  await page.click('[data-header-sign-in]');
   await page.waitForSelector('input[type="email"]');
   await page.fill('input[type="email"]', admin.email);
   await page.fill('input[type="password"]', admin.password);

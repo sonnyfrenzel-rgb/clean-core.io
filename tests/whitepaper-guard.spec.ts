@@ -1,7 +1,7 @@
 import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
-import { FROM_LANDING, USP_SHORT, USP_LONG, WHITEPAPER_SECTIONS } from '../lib/whitepaper';
+import { FROM_LANDING, WHITEPAPER_30, USP_SHORT, USP_LONG, WHITEPAPER_SECTIONS } from '../lib/whitepaper';
 import { fileDigest, readStamp, sourceFingerprint } from '../scripts/lib/pdf-stamp';
 
 /**
@@ -117,13 +117,13 @@ test.describe('the rendered whitepaper', () => {
       const res = await page.goto(route, { waitUntil: 'domcontentloaded', timeout: 150_000 });
       expect(res?.status()).toBe(200);
       await expect(page.locator('h1')).toContainText(USP_SHORT);
-      await expect(page.locator('[data-wp-limits]')).toHaveText(FROM_LANDING.limits);
+      await expect(page.locator('[data-wp-limits]')).toHaveText(WHITEPAPER_30.limits);
       for (const s of WHITEPAPER_SECTIONS) {
         await expect(page.locator(`#${s.id}-title`)).toHaveText(s.title);
         await expect(page.locator(`a[href="#${s.id}"]`)).toHaveCount(1);
       }
       // Five links of the chain of evidence, each with its mark.
-      await expect(page.locator('[data-wp-chain] [data-chain-step]')).toHaveCount(FROM_LANDING.chain.length);
+      await expect(page.locator('[data-wp-chain] [data-chain-step]')).toHaveCount(WHITEPAPER_30.chain.length);
     });
   }
 

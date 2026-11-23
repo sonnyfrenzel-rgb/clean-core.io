@@ -42,6 +42,20 @@ test.describe('a target outside our own paths is discarded', () => {
     ['/project/abc/secrets', 'a stage that does not exist'],
     ['/demo/workspace/', 'the workspace demo with a trailing slash'],
     ['/demo/workspacex', 'a look-alike of the workspace demo'],
+    // Roadmap 3.5.0 (8), H2: the showcase's one address with a query is compared exactly; every near miss is refused.
+    ['/dashboard?from=demox', 'a look-alike of the showcase return'],
+    ['/dashboard?from=demo&next=https://evil.example', 'the showcase return with a second parameter'],
+    ['/dashboard?from=demo#x', 'the showcase return with a fragment'],
+    ['/dashboard?from=Demo', 'the showcase return in another case'],
+    ['/dashboard/?from=demo', 'the showcase return with a trailing slash'],
+    ['/dashboard?from=%64emo', 'the showcase return percent-encoded'],
+    ['/admin?from=demo', 'the showcase query on another page'],
+    ['/dashboard?from=demo ', 'the showcase return with a trailing space'],
+    // H3: the own-code start, exactly.
+    ['/admin/new-project/upload/', 'the own-code start with a trailing slash'],
+    ['/admin/new-project/uploadx', 'a look-alike of the own-code start'],
+    ['/admin/new-project/upload?x=1', 'the own-code start with a query'],
+    ['/admin/new-project', 'the new-project page, which is not a showcase target'],
     ['', 'the empty string'],
     ['/' + 'x'.repeat(600), 'an absurd length'],
   ];
@@ -72,6 +86,9 @@ test.describe('our own paths survive', () => {
     '/demo',
     // Roadmap 3.0.1: the landing's "Explore the demo" signs in to the workspace demo.
     '/demo/workspace',
+    // Roadmap 3.5.0 (8): the showcase's two returns — My workspace with its line, and the own-code start.
+    '/dashboard?from=demo',
+    '/admin/new-project/upload',
     '/trust',
     '/verify-pack',
     '/project/abc123',

@@ -8,6 +8,7 @@ import { runsLeftLabel, starterExampleIsFree } from '@/lib/run-quota-rule';
 import { exampleTiers } from '@/lib/example-catalog';
 import { DEMO_STORAGE_KEY } from '@/lib/demo-marks';
 import { TOUR_STORAGE_KEY } from '@/lib/demo-tour';
+import { useLocationSearch } from '@/lib/location-search';
 import {
   homeAnalyseCostLine,
   homeFromDemoBody,
@@ -45,7 +46,8 @@ export { OWN_CODE_START_ROUTE } from './HomeStartParts';
  *
  * Below the pair, the demo as a line. A reader who has opened the demo in
  * this browser (its own keys, already listed in the Privacy Policy — read
- * here, never written) sees the banner that continues it instead (W7); that
+ * here, never written) or who arrives from the public showcase
+ * (`?from=demo`, read from the address) sees the banner that continues it instead (W7); that
  * banner then carries the one filled button.
  *
  * No map is drawn here (ADR-123 (5)): no bpmn-js on My workspace. The page
@@ -64,7 +66,11 @@ export default function HomeFirstView({
   // The demo's keys, read hydration-safe: a server render (and its hydration) reads "not seen", every render in the
   // browser after it reads the storage at once — no flash in the usual path, where the shell renders this view in the
   // browser only, and no hydration mismatch if a server ever renders it (14.11.2026).
-  const fromDemo = useSyncExternalStore(noSubscription, seenTheDemo, notSeenOnTheServer);
+  const seenInThisBrowser = useSyncExternalStore(noSubscription, seenTheDemo, notSeenOnTheServer);
+  // Arrived from the public demo showcase (`/dashboard?from=demo`, lib/return-path.ts): the same banner. The showcase
+  // stores nothing, so the address is its only trace; read here, never written.
+  const fromShowcase = new URLSearchParams(useLocationSearch()).get('from') === 'demo';
+  const fromDemo = seenInThisBrowser || fromShowcase;
   const free = starterExampleIsFree(profile, recommended);
 
   return (

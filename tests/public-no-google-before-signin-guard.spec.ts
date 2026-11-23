@@ -342,7 +342,9 @@ test.describe('the public pages of the signed-in shell start Auth only behind th
   });
 
   test('a pathname is matched to its route the way usePathname() reports it', () => {
-    for (const pathname of ['/knowledge', '/knowledge/', '/about', '/demo', '/demo/analyze', '/demo/design/requirements', '/demo/workspace', '/verify-pack', '/admin/design-system/first-render']) {
+    // `/demo` is the public showcase since 3.5.0 and no page of the shell (app/demo/page.tsx).
+    expect(isPublicShellPath('/demo'), '/demo').toBe(false);
+    for (const pathname of ['/knowledge', '/knowledge/', '/about', '/demo/analyze', '/demo/design/requirements', '/demo/workspace', '/verify-pack', '/admin/design-system/first-render']) {
       expect(isPublicShellPath(pathname), pathname).toBe(true);
     }
     for (const pathname of ['/', '/dashboard', '/settings', '/project/abc', '/project/abc/analyze', '/admin', '/admin/workspace', '/admin/design-system', '/invitation/a/b', '/portfolio/shared/x', '/knowledgebase', '/demo/a/b/c']) {

@@ -39,27 +39,21 @@ test.describe('the landing page shows the phases the product has', () => {
     test.setTimeout(240_000);
     await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 200_000 });
 
-    // Since 3.0.6 a timeline: one panel per phase (`[data-landing-phase]`), one tab
-    // label per phase (`[data-landing-phase-title]`), and the same seven again as
-    // the phone list. All three follow PHASES.
-    const cards = page.locator('[data-landing-phase]');
-    await expect(cards).toHaveCount(PHASES.length);
-    expect(await cards.evaluateAll((els) => els.map((el) => el.getAttribute('data-landing-phase')))).toEqual(
+    // Since the landing page 3.5 a row of seven tools in "What happens after the
+    // decision?" (#after): one item per phase (`[data-landing-phase]`) with the
+    // product label (`[data-landing-phase-title]`). The 3.0 timeline with a panel
+    // and a capture per phase retired with the accepted mockup; what the tools
+    // produce is said in the section's lead and its reader lines.
+    const items = page.locator('#after [data-landing-phase]');
+    await expect(items).toHaveCount(PHASES.length);
+    expect(await items.evaluateAll((els) => els.map((el) => el.getAttribute('data-landing-phase')))).toEqual(
       PHASES.map((p) => p.key),
     );
-    expect(await page.locator('[data-landing-phase-title]').allInnerTexts()).toEqual(PHASES.map((p) => p.label));
-    expect(
-      await page.locator('[data-landing-stage-item]').evaluateAll((els) => els.map((el) => el.getAttribute('data-landing-stage-item'))),
-    ).toEqual(PHASES.map((p) => p.key));
-
-    // Every phase says something, in the HTML — the inactive panels are hidden,
-    // not absent, so the text is read as text content. An empty panel would
-    // satisfy the order check.
-    for (const phase of PHASES) {
-      const card = page.locator(`[data-landing-phase="${phase.key}"]`);
-      const text = (await card.evaluate((el) => el.textContent ?? '')).trim();
-      expect(text.length, `${phase.key} has no text`).toBeGreaterThan(80);
-    }
+    expect(await page.locator('#after [data-landing-phase-title]').allInnerTexts()).toEqual(PHASES.map((p) => p.label));
+    // The section says something about them, in the HTML — a bare row of names
+    // would satisfy the order check.
+    const section = (await page.locator('#after').evaluate((el) => el.textContent ?? '')).trim();
+    expect(section.length, '#after has no text beside the names').toBeGreaterThan(400);
   });
 
   test('no July screenshot is served or referenced any more', async ({ page }) => {
@@ -82,8 +76,8 @@ test.describe('the landing page shows the phases the product has', () => {
   test('the process section advertises nothing the product does not do', async ({ page }) => {
     test.setTimeout(240_000);
     await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 200_000 });
-    // Since 3.0.6 the seven stages sit in #workspace-tools; #process is the BPMN section.
-    const section = await page.locator('#workspace-tools').innerText();
+    // Since the landing page 3.5 the seven tools sit in #after; #process is the map.
+    const section = await page.locator('#after').innerText();
 
     for (const claim of RETIRED_CLAIMS) {
       expect(section.toLowerCase(), `"${claim}" is back on the landing page`).not.toContain(claim.toLowerCase());

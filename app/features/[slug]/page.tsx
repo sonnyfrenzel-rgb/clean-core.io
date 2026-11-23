@@ -52,7 +52,7 @@ export default async function FeaturePage({ params }: { params: Promise<{ slug: 
           access fragments landed at the top of the page, and
           tests/landing-fragment-guard.spec.ts now checks every landing fragment. */}
       <Link
-        href="/#what"
+        href="/#process"
         className="inline-flex items-center gap-2 text-sm font-semibold text-cc-ink-muted underline-offset-4 hover:text-cc-ink hover:underline transition-colors mb-8"
       >
         <ArrowLeft size={16} /> Back to the overview

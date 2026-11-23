@@ -50,9 +50,13 @@ const ALLOWED_TARGETS: RegExp[] = [
   // that needs an account to sign in and back; "My workspace" is the list they open.
   /^\/admin\/workspace$/,
   /^\/first-run$/,
+  // Roadmap 3.5.0 (8), H3: the demo showcase's "See it with your own code" opens the own-code start.
+  /^\/admin\/new-project\/upload$/,
   /^\/demo$/,
   // Roadmap 3.0.1: the landing's "Explore the demo" opens the workspace demo with its tour.
   /^\/demo\/workspace$/,
+  // Landing page 3.5: the IT reader's path ends in the upload of an own program.
+  /^\/admin\/new-project\/upload$/,
   /^\/knowledge$/,
   /^\/trust$/,
   /^\/verify-pack$/,
@@ -73,7 +77,14 @@ const ALLOWED_TARGETS: RegExp[] = [
  * on for. A fragment is otherwise refused below; these two are compared
  * character for character, so there is still nothing to clean or decode.
  */
-const ALLOWED_PLACES = new Set<string>(['/settings#own-key', '/settings#sign-in-security']);
+const ALLOWED_PLACES = new Set<string>([
+  '/settings#own-key',
+  '/settings#sign-in-security',
+  // Roadmap 3.5.0 (8), H2: the demo showcase returns to My workspace, which then says
+  // "you have seen the example" (components/workspace/HomeFirstView.tsx). One exact
+  // address with its query, compared character for character like the two above.
+  '/dashboard?from=demo',
+]);
 
 /**
  * The internal path to return to after sign-in, or `null`.

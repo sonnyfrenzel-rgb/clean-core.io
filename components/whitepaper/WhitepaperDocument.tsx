@@ -48,14 +48,14 @@ import {
 } from '@/lib/abap/public-cloud-fit';
 import { STARTER_EXAMPLES } from '@/lib/starter-examples';
 import { TRUST_CLAIMS, SECURITY_MODEL_URL, type TrustClaim } from '@/lib/trust-claims';
-import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_SOURCE_FILE, DEMO_WORKSPACE_ROUTE } from '@/lib/demo-marks';
+import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_SOURCE_FILE } from '@/lib/demo-marks';
 import { TOUR_STATIONS } from '@/lib/demo-tour';
 import { landingHero, landingProcess } from '@/lib/landing-process';
 import { landingStages, STAGE_WORKER_LABEL } from '@/lib/landing-stages';
-import { LANDING_FAQ } from '@/lib/landing-faq';
+import { LANDING_FAQ, LANDING_FAQ_MORE } from '@/lib/landing-faq';
 import {
   DOES_NOT_DO,
-  FROM_LANDING,
+  WHITEPAPER_30,
   PROCESS_MORE,
   SIGNING,
   SUMMARY_CARDS,
@@ -197,15 +197,16 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
   const notCovered = constructs.filter((c) => c.level === 'not-supported').length;
 
   const ladder = (['A', 'B', 'C', 'D'] as const).map((level) => {
-    const example = FROM_LANDING.levelExamples.find((e) => getObjectDimensions(e.name).graded.grade === level);
+    const example = WHITEPAPER_30.levelExamples.find((e) => getObjectDimensions(e.name).graded.grade === level);
     return { level, label: CLEAN_CORE_LEVEL[level].label, example };
   });
 
   const stages = landingStages();
-  const chain = FROM_LANDING.chain.map((c) => ({ ...c, d: c.d.replace('{line}', String(plantRule.line)) }));
-  const startLead = FROM_LANDING.startLead.replace('{examples}', String(STARTER_EXAMPLES.length));
+  const chain = WHITEPAPER_30.chain.map((c) => ({ ...c, d: c.d.replace('{line}', String(plantRule.line)) }));
+  const startLead = WHITEPAPER_30.startLead.replace('{examples}', String(STARTER_EXAMPLES.length));
 
-  const demoHref = `/?auth=signin&next=${DEMO_WORKSPACE_ROUTE}`;
+  // The public showcase (roadmap row 3.5.0, item 8): no account, as on the landing page.
+  const demoHref = '/demo';
 
   return (
     <div className={`lp3 wp3 min-h-screen bg-cc-page text-cc-ink${print ? ' print' : ''}`} data-whitepaper={edition}>
@@ -234,7 +235,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
                 {USP_LONG}
               </p>
               <p className="hlimits" data-wp-limits="">
-                {FROM_LANDING.limits}
+                {WHITEPAPER_30.limits}
               </p>
               <p className="wp-meta">
                 <span>Edition {APP_VERSION}</span>
@@ -244,12 +245,12 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
               </p>
               {print ? (
                 <p className="wp-cover-link">
-                  Read online at <a href={`${SITE}/whitepaper`}>clean-core.io/whitepaper</a> · the demo project is in every free account
+                  Read online at <a href={`${SITE}/whitepaper`}>clean-core.io/whitepaper</a> · a four-minute demo at clean-core.io/demo, no account
                 </p>
               ) : (
                 <div className="cta-row">
                   <Link href={demoHref} className={publicButton('primary')} data-testid="wp-demo">
-                    See the whole chain in the demo <ArrowRight size={18} aria-hidden="true" />
+                    Watch the 4-minute demo <ArrowRight size={18} aria-hidden="true" />
                   </Link>
                   <a href={PDF_HREF} download className={publicButton('secondary')} data-testid="wp-pdf">
                     <Download size={18} aria-hidden="true" /> Download the PDF
@@ -277,7 +278,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
         </section>
 
         {/* ─── 01 In one page ─── */}
-        <Section id="summary" lead={FROM_LANDING.whatLead} alt>
+        <Section id="summary" lead={WHITEPAPER_30.whatLead} alt>
           <div className="wp-grid3" data-wp-summary="">
             {SUMMARY_CARDS.map((c) => (
               <div key={c.k} className="pcard">
@@ -289,7 +290,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
           </div>
 
           <ul className="diff wp-diff">
-            {FROM_LANDING.contrast.map((d, i) => (
+            {WHITEPAPER_30.contrast.map((d, i) => (
               <li key={d.title} className="dcard">
                 <span className="ic">{i === 0 ? <BookOpen className="i" aria-hidden="true" /> : <RefreshCw className="i" aria-hidden="true" />}</span>
                 <h3>{d.title}</h3>
@@ -301,14 +302,14 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
                 <Link2 className="i" aria-hidden="true" />
               </span>
               <h3>Clean-Core.io</h3>
-              <p>{FROM_LANDING.contrastUs}</p>
-              <p className="more">{FROM_LANDING.contrastUsMore}</p>
+              <p>{WHITEPAPER_30.contrastUs}</p>
+              <p className="more">{WHITEPAPER_30.contrastUsMore}</p>
             </li>
           </ul>
 
           <div className="chain" data-wp-chain="">
             <h3>One chain of evidence</h3>
-            <p className="sub2">{FROM_LANDING.chainSub}</p>
+            <p className="sub2">{WHITEPAPER_30.chainSub}</p>
             <ol className="chain5">
               {chain.map((c, i) => (
                 <li key={c.key} data-chain-step={c.key}>
@@ -324,12 +325,12 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
                 </li>
               ))}
             </ol>
-            <p className="honest">{FROM_LANDING.chainHonest}</p>
+            <p className="honest">{WHITEPAPER_30.chainHonest}</p>
           </div>
         </Section>
 
         {/* ─── 02 Process ─── */}
-        <Section id="process" lead={FROM_LANDING.processLead}>
+        <Section id="process" lead={WHITEPAPER_30.processLead}>
           <figure className="pcard wp-figure" aria-labelledby="wp-process-cap">
             <h3>The process of {DEMO_OBJECT_NAME}, reconstructed from the code</h3>
             <figcaption className="sub2" id="wp-process-cap">
@@ -349,7 +350,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
           </figure>
 
           <div className="feat4">
-            {FROM_LANDING.processFeatures.map((f) => (
+            {WHITEPAPER_30.processFeatures.map((f) => (
               <div key={f.t} className="feat">
                 <h3>{f.t}</h3>
                 <p>{f.d}</p>
@@ -367,7 +368,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
         </Section>
 
         {/* ─── 03 Views ─── */}
-        <Section id="views" lead={FROM_LANDING.viewsLead} alt>
+        <Section id="views" lead={WHITEPAPER_30.viewsLead} alt>
           <div className="three">
             <div>
               <div className="stagecard static">
@@ -375,8 +376,8 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
                   <span className="st-label">Example · {DEMO_PROJECT_TITLE} · fictitious code</span>
                 </div>
                 <div className="rm3" aria-label="The same rule in three views">
-                  {FROM_LANDING.views.map((v) => {
-                    const ex = FROM_LANDING.viewExample[v.key as keyof typeof FROM_LANDING.viewExample];
+                  {WHITEPAPER_30.views.map((v) => {
+                    const ex = WHITEPAPER_30.viewExample[v.key as keyof typeof WHITEPAPER_30.viewExample];
                     return (
                       <div key={v.key}>
                         <h3>{v.name}</h3>
@@ -396,10 +397,10 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
                   })}
                 </div>
               </div>
-              <p className="vnote">{FROM_LANDING.viewsNote}</p>
+              <p className="vnote">{WHITEPAPER_30.viewsNote}</p>
             </div>
             <ul className="vlist">
-              {FROM_LANDING.views.map((v) => (
+              {WHITEPAPER_30.views.map((v) => (
                 <li key={v.key}>
                   <h3>
                     {VIEW_ICON[v.key]}
@@ -414,11 +415,11 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
         </Section>
 
         {/* ─── 04 Clean core ─── */}
-        <Section id="clean-core" lead={FROM_LANDING.cleanCoreLead}>
+        <Section id="clean-core" lead={WHITEPAPER_30.cleanCoreLead}>
           <div className="cc2">
             <div className="pcard">
               <h3>What clean core means</h3>
-              <p className="t">{FROM_LANDING.cleanCoreMeans}</p>
+              <p className="t">{WHITEPAPER_30.cleanCoreMeans}</p>
               <CleanCoreSchema />
             </div>
             <div className="pcard">
@@ -467,7 +468,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
                   <span className="bi">{BUCKET_ICON[b]}</span>
                   <div>
                     <h4>{PUBLIC_CLOUD_FIT_BUCKET_LABELS[b]}</h4>
-                    <p>{FROM_LANDING.bucketRules[b]}</p>
+                    <p>{WHITEPAPER_30.bucketRules[b]}</p>
                     <p className="m">{PUBLIC_CLOUD_FIT_BUCKET_MEANINGS[b]}</p>
                   </div>
                 </div>
@@ -507,16 +508,16 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
             <h3>Where the evidence comes from</h3>
             <ol className="wp-stations">
               {[
-                FROM_LANDING.evidenceStations[0],
-                FROM_LANDING.evidenceStations[1],
+                WHITEPAPER_30.evidenceStations[0],
+                WHITEPAPER_30.evidenceStations[1],
                 {
                   key: 'sap',
                   t: 'SAP’s published data',
                   d: `The Cloudification Repository and SAP’s object classification, ${catalogObjects}, synced ${facts.catalogSyncDate}.`,
                   pv: 'imported' as ProvenanceValue,
                 },
-                FROM_LANDING.evidenceStations[2],
-                FROM_LANDING.evidenceStations[3],
+                WHITEPAPER_30.evidenceStations[2],
+                WHITEPAPER_30.evidenceStations[3],
               ].map((s, i) => (
                 <li key={s.key}>
                   <span className="no" aria-hidden="true">
@@ -691,7 +692,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
             </div>
           </div>
           <ol className="verify3">
-            {FROM_LANDING.verifySteps.map((s) => (
+            {WHITEPAPER_30.verifySteps.map((s) => (
               <li key={s.t}>
                 <b>{s.t}</b>
                 {s.d}
@@ -714,7 +715,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
               <span role="columnheader">What it is for</span>
               <span role="columnheader">How Clean-Core.io relates</span>
             </div>
-            {FROM_LANDING.toolchain.map((row) => (
+            {WHITEPAPER_30.toolchain.map((row) => (
               <div key={row.tool} className="tools-row" role="row">
                 <span role="rowheader">{row.tool}</span>
                 <span role="cell">
@@ -791,7 +792,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
         {/* ─── 10 Start ─── */}
         <Section id="start" lead={startLead}>
           <ol className="steps3">
-            {FROM_LANDING.startSteps.map((s, i) => (
+            {WHITEPAPER_30.startSteps.map((s, i) => (
               <li key={s.t}>
                 <span className="no" aria-hidden="true">
                   {i + 1}
@@ -829,7 +830,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
               {!print && (
                 <div className="cta-row wp-cta">
                   <Link href={demoHref} className={publicButton('primary')}>
-                    Explore the demo <ArrowRight size={18} aria-hidden="true" />
+                    Watch the 4-minute demo <ArrowRight size={18} aria-hidden="true" />
                   </Link>
                   <a href={PDF_HREF} download className={publicButton('secondary')}>
                     <Download size={18} aria-hidden="true" /> Download the PDF
@@ -852,7 +853,7 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
         {/* ─── 11 FAQ ─── */}
         <Section id="faq" alt>
           <div className="acc">
-            {LANDING_FAQ.map((f, i) => (
+            {[...LANDING_FAQ, ...LANDING_FAQ_MORE].map((f, i) => (
               <details key={f.q} open={print || i === 0} lang={f.lang} className="acc-item">
                 <summary>
                   <h3>{f.q}</h3>
@@ -875,11 +876,11 @@ export default function WhitepaperDocument({ edition }: { edition: WhitepaperEdi
       <footer className="foot wp-foot">
         <div className="wrap">
           <div className="foot-top">
-            <p>{FROM_LANDING.closing}</p>
+            <p>{WHITEPAPER_30.closing}</p>
             {!print && (
               <div className="cta-row">
                 <Link href={demoHref} className={publicButton('primary')}>
-                  Explore the demo <ArrowRight size={18} aria-hidden="true" />
+                  Watch the 4-minute demo <ArrowRight size={18} aria-hidden="true" />
                 </Link>
                 <a href={PDF_HREF} download className={publicButton('ghost')}>
                   Download the PDF

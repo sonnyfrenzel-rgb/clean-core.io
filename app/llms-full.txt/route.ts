@@ -1,5 +1,5 @@
 import { GET as llmsTxt } from '@/app/llms.txt/route';
-import { LANDING_FAQ } from '@/lib/landing-faq';
+import { LANDING_FAQ, LANDING_FAQ_MORE } from '@/lib/landing-faq';
 import { BTP, BTP_FIRST, BUSINESS_AI_PLATFORM, BUSINESS_AI_PLATFORM_PARTS, SAP_BTP_ABAP_ENVIRONMENT } from '@/lib/sap-naming';
 
 /**
@@ -10,7 +10,8 @@ import { BTP, BTP_FIRST, BUSINESS_AI_PLATFORM, BUSINESS_AI_PLATFORM_PARTS, SAP_B
  *
  *   - the start page's FAQ, read from `lib/landing-faq.ts` — the same list the
  *     visible accordion and the `FAQPage` JSON-LD read, so the three cannot
- *     answer one question three ways;
+ *     answer one question three ways, followed by the questions that left the
+ *     page with 3.5 (`LANDING_FAQ_MORE`);
  *   - the terms a reader meets on the site, each defined once, so a generated
  *     answer does not confuse SAP's names with ours (the Clean Core Score is
  *     ours; level A–D, the Cloudification Repository and SAP BTP are SAP's).
@@ -37,7 +38,7 @@ const GLOSSARY: Array<[string, string]> = [
 
 export async function GET() {
   const head = await llmsTxt().text();
-  const faq = LANDING_FAQ.filter((f) => !f.lang)
+  const faq = [...LANDING_FAQ, ...LANDING_FAQ_MORE].filter((f) => !f.lang)
     .map((f) => `### ${f.q}\n\n${f.a}`)
     .join('\n\n');
   const glossary = GLOSSARY.map(([term, text]) => `- **${term}**: ${text}`).join('\n');

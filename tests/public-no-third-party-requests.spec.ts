@@ -29,12 +29,11 @@ import { SIGNED_IN_HINT_KEY } from '../lib/auth-hint';
  * shell is captured without an edit here. `/demo/workspace` needs an account
  * and sends a visitor without the hint to the sign-in dialog; so does
  * `/demo/analyze` in its Business view, where the demo opens since v3.1.0 (AB-2,
- * O10) — both have a test of their own below. `/demo` itself redirects to the
- * first stage (app/(app)/demo/page.tsx), so it is that stage's visit: since
- * Analyze is the first stage and opens in Business, `/demo` sends a visitor
- * without the hint to sign in too, and is tested with those two. The demo's
- * Analyze stage in IT (`/demo/analyze?view=it`) stays public and is captured
- * with the rest.
+ * O10) — both have a test of their own below. `/demo` itself is the public
+ * demo showcase since 3.5.0 (app/demo/page.tsx, outside the shell): captured on
+ * load, at a step's address and at its end, and walked through all ten steps
+ * by a test of its own below. The demo's Analyze stage in IT
+ * (`/demo/analyze?view=it`) stays public and is captured with the rest.
  */
 
 /** A route of lib/shell-routes.ts as addresses to visit: a dynamic segment becomes every value the page renders. */
@@ -47,13 +46,8 @@ function shellAddresses(route: string): string[] {
   return [route];
 }
 
-/** Where `/demo` redirects (app/(app)/demo/page.tsx; held by the first test below). */
-const DEMO_ENTRY_TARGET = `/demo/${PHASES[0].key}`;
-
 /** Sends a visitor without the hint to sign in, which starts Auth by design; see its own test. */
 const SIGN_IN_FIRST = new Set(['/demo/workspace', '/demo/analyze']);
-// The entry is its first stage's visit: a redirect to a page that sends the visitor to sign in does the same.
-if (SIGN_IN_FIRST.has(DEMO_ENTRY_TARGET)) SIGN_IN_FIRST.add('/demo');
 
 /** A demo address, which a sign-in-first visit is counted on until it leaves for the sign-in. */
 const isDemoPath = (pathname: string) => pathname === '/demo' || pathname.startsWith('/demo/');
@@ -76,6 +70,10 @@ const PAGES = [
   '/catalog',
   '/reference-analysis',
   '/whitepaper',
+  // The public demo showcase (roadmap 3.5.0 item 8), outside the shell: its start, a step's address and its end.
+  '/demo',
+  '/demo#step=5',
+  '/demo#step=end&lens=it',
   ...SHELL_PAGES,
   // Deep links into the shell: a query and a fragment change nothing.
   '/knowledge?q=clean-core#levels',
@@ -121,9 +119,40 @@ async function foreignRequests(browser: Browser, profile: keyof typeof PROFILES,
   return foreign;
 }
 
-test("the demo's entry redirects to its first stage, the address the capture classifies it by", () => {
-  const entry = fs.readFileSync(path.resolve(__dirname, '..', 'app', '(app)', 'demo', 'page.tsx'), 'utf8');
-  expect(entry).toContain('redirect(`/demo/${PHASES[0].key}`)');
+test("the demo's entry is the public showcase, outside the signed-in shell", () => {
+  // `/demo` is captured above as a page of its own; it is no longer the shell's
+  // redirect to the demo project's Analyze, which sent a visitor to sign in.
+  expect(fs.existsSync(path.resolve(__dirname, '..', 'app', 'demo', 'page.tsx'))).toBe(true);
+  expect(fs.existsSync(path.resolve(__dirname, '..', 'app', '(app)', 'demo', 'page.tsx'))).toBe(false);
+  expect(PUBLIC_SHELL_ROUTES).not.toContain('/demo');
+});
+
+test('walking the whole showcase, step by step to its end, contacts only its own origin', async ({ browser, baseURL }) => {
+  test.setTimeout(180000);
+  for (const profile of Object.keys(PROFILES) as (keyof typeof PROFILES)[]) {
+    const base = baseURL ?? 'http://localhost:3000';
+    const context = await browser.newContext({ ...PROFILES[profile], baseURL: base });
+    const own = new URL(base).origin;
+    const foreign: string[] = [];
+    context.on('request', (request) => {
+      const target = request.url();
+      if (/^(data|blob|about):/.test(target)) return;
+      if (new URL(target).origin !== own) foreign.push(`${request.resourceType()} ${target.split('?')[0]}`);
+    });
+    try {
+      const page = await context.newPage();
+      await page.goto('/demo', { waitUntil: 'load' });
+      await expect(page.locator('[data-showcase-ready="true"]')).toBeAttached({ timeout: 60000 });
+      for (let step = 2; step <= 11; step++) {
+        await page.keyboard.press('ArrowRight');
+        await expect(page.locator('[data-showcase]')).toHaveAttribute('data-showcase-step', step === 11 ? 'end' : String(step));
+      }
+      await page.waitForTimeout(1500);
+    } finally {
+      await context.close();
+    }
+    expect(foreign, `the showcase asked someone other than its own origin (${profile})`).toEqual([]);
+  }
 });
 
 test.describe('a signed-out visit contacts only its own origin', () => {

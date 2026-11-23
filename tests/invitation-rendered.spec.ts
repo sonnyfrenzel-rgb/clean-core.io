@@ -71,7 +71,7 @@ test('the invitation dialog says, in the dialog, that this includes the source c
   await page.setViewportSize({ width: 1440, height: 1000 });
 
   await page.goto('/');
-  await page.click('a:has-text("Get Free Access"), button:has-text("Get Free Access")');
+  await page.click('[data-header-sign-in]');
   await page.waitForSelector('input[type="email"]');
   await page.fill('input[type="email"]', EMAIL);
   await page.fill('input[type="password"]', PASSWORD);

@@ -29,12 +29,66 @@ const trust = (id: string) => TRUST_CLAIMS.find((c) => c.id === id)!.text;
 /** The band labels as the score page shows them, read from `SCORE_BANDS`. */
 const bandLabels = SCORE_BANDS.map((b) => `${b.label} (${b.from}–${b.to})`).join(', ');
 
+/**
+ * The ten questions the landing page shows (landing page 3.5, owner decision
+ * O6): the real objections first. The visible accordion and the `FAQPage`
+ * JSON-LD read this list, so they cannot say different things.
+ */
 export const LANDING_FAQ: LandingFaq[] = [
   {
+    q: 'Is there a demo without an account?',
+    a: 'Yes. A four-minute demo at /demo shows one fictitious program, Z_MM_PO_APPROVAL, read end to end: no account, nothing saved, no AI call. The interactive demo project lives in your workspace and needs a free account.',
+    more: { href: '/demo', label: 'Try the 4-minute demo' },
+  },
+  {
+    q: 'What does it cost?',
+    a: 'Nothing. Clean-Core.io is a free community project with no paid tier, and we accept no payment. An account has five analysis runs; each starter example is free the first time you run it. After that you continue with your own model key, which its provider bills under your own agreement with that provider.',
+  },
+  {
+    q: 'Is my code kept confidential?',
+    a: `Only the account that created a project, and anyone that account invites. An invitation is bound to one confirmed e-mail address and gives read access including the source code until it is withdrawn, which can happen at any time. Its link expires if nobody accepts it. There are no public links. ${trust('free')}`,
+    more: { href: '/datenschutz#project-access', label: 'Privacy Policy §8' },
+  },
+  {
+    q: 'Where is my code stored, and what leaves it?',
+    a: `${trust('residency')} The engine reads your code without a model; text and code drafts are written by the model provider, reached only through our server: the Google Gemini API, or the provider of your own key. ${trust('tracking')} ${trust('erasure')}`,
+    more: { href: '/trust', label: 'Trust and privacy' },
+  },
+  {
+    q: 'Is my code used to train models?',
+    a: trust('training'),
+    more: { href: '/datenschutz#source-code', label: 'Privacy Policy §3' },
+  },
+  {
     q: 'What is SAP clean core?',
-    a: 'Clean core keeps the SAP S/4HANA standard unmodified: extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP, part of the SAP Business AI Platform. SAP’s clean core level concept grades what an extension uses from A (released APIs and extension points) to D (not recommended: modifications, implicit enhancements, writes to SAP tables).',
+    a: 'Clean core keeps the SAP S/4HANA standard unmodified: extensions use only released, upgrade-stable interfaces, in-app with ABAP Cloud or side-by-side on SAP BTP, part of the SAP Business AI Platform. SAP’s clean core level concept grades what an extension uses from A (released APIs and extension points) to D (not recommended: modifications, implicit enhancements, writes to SAP tables).',
     more: { href: '/clean-core-explained', label: 'Clean core, explained without the jargon' },
   },
+  {
+    q: 'Is the generated code ready to go live?',
+    a: 'No. The transformed RAP or CAP code from Clean-Core.io is a draft for a person to review. On the CAP track its test scenarios run in an isolated runner against mocks, so they do not show that the code runs in a real SAP S/4HANA system; on the RAP track they are an ABAP Unit class that runs only in your own system, and nothing is run here; you record its result as an imported file or your own confirmation, never as proven. A signed run proves where a result came from and that it has not changed since, not that it is correct. What the engine could not determine is listed as not determined rather than guessed.',
+    more: { href: '/how-it-works', label: 'How it works, and its limits' },
+  },
+  {
+    q: 'Does it replace ABAP Test Cockpit or SAP’s own tools?',
+    a: 'No. ABAP Test Cockpit stays the check to rely on: the level Clean-Core.io shows is its reading of SAP’s published data (an orientation, never part of a signed audit pack), and you can import your ATC results to compare them with the engine. SAP’s agents, Joule for Developers and the Custom Code Migration Agent, work inside your system and tell developers what to fix. Clean-Core.io shows the business what the code does and carries the same evidence through a design, a code draft and tests to a decision, including whether the program is still needed at all.',
+  },
+  {
+    q: 'Does it work with SAP Signavio?',
+    a: 'Clean-Core.io exchanges standard BPMN 2.0 XML files: it exports the reconstructed process, and a BPMN 2.0 XML file can be imported back into its process editor as a new revision. Import into SAP Signavio has not been verified yet, so we do not claim it, and there is no connection to a Signavio workspace.',
+  },
+  {
+    q: 'Is Clean-Core.io an SAP product?',
+    a: 'No. It is an independent community project, not affiliated with or endorsed by SAP SE. It follows SAP’s clean core level concept and reads SAP’s published Cloudification Repository.',
+  },
+];
+
+/**
+ * The questions that left the page with 3.5 (owner decision O6): answer
+ * engines still get them, in `/llms-full.txt` after the ten above, and the
+ * whitepaper keeps them in its FAQ.
+ */
+export const LANDING_FAQ_MORE: LandingFaq[] = [
   {
     q: 'What does Clean-Core.io do with my ABAP?',
     a: 'A deterministic engine reads the program before any language model does. It reconstructs the business process with a line anchor on every element, or the reason it has none, lists the business rules hard-coded in the program, shows the clean core level of each SAP object the code uses, or Unknown where SAP’s published data holds no answer, and names what it could not determine. The same evidence then carries a target design, a transformed code draft and test scenarios — on the CAP track run against mocks in an isolated runner, on the RAP track an ABAP Unit class for your own system, whose result you record from that system — and every completed analysis is sealed as a signed run. The code is a draft you review; a run against mocks checks it against test scenarios, not in your S/4HANA system.',
@@ -57,32 +111,6 @@ export const LANDING_FAQ: LandingFaq[] = [
     more: { href: '/features/process-blueprints', label: 'Process blueprints' },
   },
   {
-    q: 'Is my code used to train models?',
-    a: trust('training'),
-    more: { href: '/datenschutz#source-code', label: 'Privacy Policy §3' },
-  },
-  {
-    q: 'What does it cost?',
-    a: 'Nothing. Clean-Core.io is a free community project with no paid tier, and we accept no payment. An account has five analysis runs; each starter example is free the first time you run it. After that you continue with your own Gemini API key, which Google bills under your own agreement with Google.',
-  },
-  {
-    q: 'Is the generated code ready to go live?',
-    a: 'No. The transformed RAP or CAP code from Clean-Core.io is a draft for a person to review. On the CAP track its test scenarios run in an isolated runner against mocks, so they do not show that the code runs in a real SAP S/4HANA system; on the RAP track they are an ABAP Unit class that runs only in your own system, and nothing is run here — you record its result as an imported file or your own confirmation, never as proven. A signed run proves where a result came from and that it has not changed since — not that it is correct. What the engine could not determine is listed as not determined rather than guessed.',
-    more: { href: '/how-it-works', label: 'How it works, and its limits' },
-  },
-  {
-    q: 'Does it replace ABAP Test Cockpit?',
-    a: 'No. ABAP Test Cockpit stays the check to rely on. The level Clean-Core.io shows is its reading of SAP’s published data — an orientation, never part of a signed audit pack. Confirm with ABAP Test Cockpit, and import your ATC results to compare them with the engine.',
-  },
-  {
-    q: 'Does it replace Joule for Developers or SAP’s Custom Code Migration Agent?',
-    a: 'No. SAP’s agents work inside your system and tell developers what to fix. Clean-Core.io shows the business what the code does, then carries the same evidence through a design, a code draft and tests to a decision — including whether the program is still needed at all. What stays goes to the developers and their tools, and ABAP Test Cockpit stays the authority.',
-  },
-  {
-    q: 'Does it work with SAP Signavio?',
-    a: 'Clean-Core.io exchanges standard BPMN 2.0 XML files: it exports the reconstructed process, and a BPMN 2.0 XML file can be imported back into its process editor as a new revision. Import into SAP Signavio has not been verified yet, so we do not claim it, and there is no connection to a Signavio workspace.',
-  },
-  {
     q: 'What are the Business, IT and Management views?',
     a: 'Three ways to read the same Clean-Core.io project. The Business view answers “Do I still need this, and what changes for me?”, the IT view “What exactly, where to, and is it right?”, and the Management view “What do I risk, what do I decide?”. A view only orders what is shown; it changes no result, and it is never stored on a run or a signature.',
   },
@@ -97,24 +125,7 @@ export const LANDING_FAQ: LandingFaq[] = [
     more: { href: '/catalog', label: 'Open the SAP object catalog' },
   },
   {
-    q: 'Who can see my projects?',
-    a: 'Only the account that created a project, and anyone that account invites. An invitation is bound to one confirmed e-mail address and gives read access including the source code until it is withdrawn, which can happen at any time. Its link expires if nobody accepts it. There are no public links.',
-  },
-  {
-    q: 'Where is my data stored?',
-    a: `${trust('residency')} ${trust('tracking')} ${trust('erasure')}`,
-    more: { href: '/trust', label: 'Trust and privacy' },
-  },
-  {
-    q: 'Can I try the demo without an account?',
-    a: 'No. The demo project lives in your workspace, so it needs a free account. Inside it nothing you do is saved, and nothing counts against your analysis runs.',
-  },
-  {
     q: 'How does clean core reduce S/4HANA upgrade risk?',
     a: 'Custom code that reads or modifies the SAP standard directly is what makes an upgrade expensive: a modification has to be adjusted in SPAU before the upgrade can proceed, native SQL bypasses the database abstraction, and every direct table read relies on a structure SAP never promised to keep. Clean core replaces those with released APIs. Clean-Core.io names them in your own ABAP, object by object against SAP’s published Cloudification Repository, and flags what a generator cannot reach instead of transforming it into something plausible and wrong.',
-  },
-  {
-    q: 'Is Clean-Core.io an SAP product?',
-    a: 'No. It is an independent community project, not affiliated with or endorsed by SAP SE. It follows SAP’s clean core level concept and reads SAP’s published Cloudification Repository.',
   },
 ];

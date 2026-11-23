@@ -44,7 +44,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ROUTE_SOURCES = {
   '/': [
     'app/page.tsx',
-    'components/landing/StageTimeline.tsx',
+    'lib/landing-35.ts',
     'lib/landing-stages.ts',
     'lib/reference-analysis.ts',
     'lib/facts.ts',
@@ -54,7 +54,6 @@ const ROUTE_SOURCES = {
     'lib/provenance.ts',
     'lib/clean-core-level.ts',
     'lib/abap/public-cloud-fit.ts',
-    'lib/landing-shots.ts',
     'lib/abap/abcd-classification.ts',
     'lib/abap/catalog-index.ts',
     // The FAQ is rendered on the landing page, and since 3.0.8 its first answer

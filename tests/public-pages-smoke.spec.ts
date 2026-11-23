@@ -36,15 +36,16 @@ test.describe('public pages, signed out', () => {
       await expect(page.locator(`main a[href="/features/${slug}"]`).first(), `/features/${slug}`).toBeVisible();
     }
 
-    // The two access cards: the free community edition and bring-your-own-key.
-    await expect(page.getByTestId('card-sandbox')).toBeVisible();
-    await expect(page.getByTestId('card-developer')).toBeVisible();
+    // The price card (landing page 3.5 merged the two access cards into one):
+    // the free community edition with the own-key line in it.
+    await expect(page.getByTestId('card-price')).toBeVisible();
+    await expect(page.getByTestId('card-price')).toContainText('No quota with your own key');
 
     // The string an earlier version looked for — "Free Community Tool" — appears
     // nowhere in the codebase; the landing page says "Free Community Edition".
     await expect(page.getByText('Free Community Edition').first()).toBeVisible();
 
-    await expect(page.locator('button, a').filter({ hasText: /Get Free Access|Open Workspace/ }).first()).toBeVisible();
+    await expect(page.locator('button, a').filter({ hasText: /^Sign in$|Go to Workspace/ }).first()).toBeVisible();
   });
 
   test('the imprint is linked from the landing page and opens', async ({ page }) => {
