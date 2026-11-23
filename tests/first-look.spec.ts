@@ -423,49 +423,21 @@ test.describe('the first look on screen', () => {
     await expect(page.locator('[data-first-look="building"]')).toHaveCount(0);
   });
 
-  test('the pre-answered question stands there, out of the code and without a model call', async ({
+  test('the pre-answered question left with the workspace page: Analyze IT reads the decision points on its own', async ({
     page,
   }) => {
     test.setTimeout(240 * 1000);
     await signIn(page, ADMIN);
-    // "Ask this case" stands in the IT view since 22.10.2026 (owner decision; DESIGN.md §5.3) — Analyze's IT page
-    // since 3.5.0 (AB-9), which reads a signed run: the project's first visit signs the engine's reading (ADR-072).
+    // "Ask this case" left the Business view on 22.10.2026 (ADR-103) and the IT view with 3.5.0 (AB-9, AB-11):
+    // the decision points are read on the map and in the walk-through. The first visit still signs the reading.
     await page.goto(`/project/${PROJECT_ID}/analyze?first=1`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-analyze-business="ready"]')).toBeVisible({ timeout: 90000 });
     await expect(page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]')).toHaveAttribute('data-phase-state', 'done', {
       timeout: 90000,
     });
-    await page.goto(`/project/${PROJECT_ID}?view=it`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`/project/${PROJECT_ID}/analyze?view=it`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-analyze-it]')).toBeVisible({ timeout: 90000 });
-
-    const card = page.locator('[data-ask-this-case]');
-    await expect(card).toBeVisible({ timeout: 60000 });
-    await expect(card).toHaveAttribute('data-ask-this-case', 'answered');
-
-    // The question a business reader reads is the decision point's plain
-    // label (owner, 03.10.2026); the code's own question, condition as the
-    // source writes it, stays under "Show the code".
-    const wording = await card.getAttribute('data-ask-wording');
-    if (wording === 'plain') {
-      const plain = (await page.locator('[data-ask-question]').textContent()) || '';
-      expect(plain.startsWith('What happens at the decision point')).toBe(true);
-      await card.getByRole('button', { name: /Show the code/ }).click();
-    }
-    const question =
-      ((await page.locator(wording === 'plain' ? '[data-ask-code-question]' : '[data-ask-question]').textContent()) || '').trim();
-    expect(question.startsWith('What happens when ')).toBe(true);
-    // The condition is the source's own text, not a paraphrase.
-    const condition = question.replace(/^What happens when /, '').replace(/\?$/, '');
-    expect(BRANCHING.toUpperCase()).toContain(condition.split(' ')[0].toUpperCase());
-
-    // Both halves of "without a model call and without touching the quota".
-    const note = (await page.locator('[data-ask-no-model]').textContent()) || '';
-    expect(note).toContain('No model call');
-    expect(note).toContain('Not counted');
-
-    // And every branch is there, with a line behind it.
-    await expect(page.locator('[data-ask-code-branch]').first()).toBeVisible();
-    await expect(card.locator('[data-cc-anchor]').first()).toBeVisible();
+    await expect(page.locator('[data-ask-this-case]')).toHaveCount(0);
   });
 
   // A project with nothing staged: Analyze, Business shows the upload and

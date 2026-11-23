@@ -11,8 +11,6 @@ import FoldedSection, { FoldedPart } from '@/components/analyze/FoldedSection';
 import EvidenceFindingsTable, { openSourceLine, type LevelLookup } from '@/components/analyze/EvidenceFindingsTable';
 import NotDeterminedSide, { type NotDeterminedSummary, type OpenItem } from '@/components/analyze/NotDeterminedSide';
 import ItTouches from '@/components/analyze/ItTouches';
-import AskThisCase from '@/components/workspace/AskThisCase';
-import { preAnsweredQuestion } from '@/lib/ask-this-case';
 import { EditionRule, ScoreDeductions, ScoreScale, type ScoreProvenance } from '@/components/analyze/CleanCoreScoreSection';
 import OpenQuestions, { type OpenAnswerOverlay } from '@/components/workspace/OpenQuestions';
 import ItRail, { useContract } from '@/components/workspace/ItRail';
@@ -212,10 +210,6 @@ export default function AnalyzeIt({
     [picks, rows.length, touches, summary.onRecord, score],
   );
   const sequence = useMemo(() => mainSequence(reading?.skeleton ?? null), [reading]);
-  const askAnswer = useMemo(
-    () => (reading ? preAnsweredQuestion(reading.skeleton, reading.ruleSet, source || undefined) : null),
-    [reading, source],
-  );
   const risks = useMemo(
     () => changeRisks({ model: addsUp ? model : null, missingObjects, notAssessedPlaces: notDeterminedSummary.places }),
     [addsUp, model, missingObjects, notDeterminedSummary.places],
@@ -493,10 +487,6 @@ export default function AnalyzeIt({
           />
 
           <ItTouches objects={objects} source={source} onOpenLine={openLine} />
-
-          {/* "Ask this case", one question already answered from the branches of the code: no model call, not counted
-              (roadmap 2.7 / 6.8, ADR-103). */}
-          {askAnswer ? <AskThisCase answer={askAnswer} /> : null}
 
           <FoldedSection
             id="analyze-summary"

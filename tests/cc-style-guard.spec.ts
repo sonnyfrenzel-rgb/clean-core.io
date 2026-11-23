@@ -245,8 +245,6 @@ function hardCodedText(rel: string, text: string): string[] {
 
 /** Surface files whose every visible word arrives as a prop or from a `lib/` list with its own guard. */
 const PROPS_ONLY_SURFACES: string[] = [
-  // The glossary popover: the term, its category and its definition are the glossary's (lib/glossary.ts).
-  'components/workspace/GlossaryText.tsx',
   // The canvas: its name and its badges arrive as props from ProcessMap and BpmnEditor.
   'components/process-map/BpmnCanvas.tsx',
   // The guided tour's map: its one name arrives as a prop from ProcessTour (walkMapLabel).
