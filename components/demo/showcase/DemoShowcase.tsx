@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Link2, RotateCw } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, Link2, RotateCw } from 'lucide-react';
 import AuthLink from '@/components/landing/AuthLink';
 import type { ShowcaseData } from '@/lib/demo-showcase';
 import {
@@ -421,7 +421,7 @@ export default function DemoShowcase({ data }: { data: ShowcaseData }) {
             ))}
             <li>
               <button type="button" aria-label="The end: your turn" aria-current={atEnd ? 'step' : undefined} onClick={() => go(N)}>
-                ✓
+                <Check size={14} aria-hidden="true" />
               </button>
             </li>
           </ol>

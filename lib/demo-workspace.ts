@@ -7,6 +7,7 @@ import { applyNaming, namingContextOf } from '@/lib/process-naming';
 import { findingsOf } from '@/lib/it-findings-build';
 import { APP_VERSION } from '@/lib/version';
 import type { ItFindingsSource } from '@/lib/it-findings';
+import { readSource, revealedRules, type RevealedRule } from '@/lib/first-look';
 import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_SOURCE_FILE } from '@/lib/demo-marks';
 import type { Project } from '@/lib/types';
 
@@ -42,6 +43,8 @@ export interface DemoWorkspaceData {
   project: Project;
   processMap: ProcessMapModel;
   itFindings: ItFindingsSource;
+  /** The business rules this engine reveals in the example, read once here for the release record and the showcase. */
+  rules: RevealedRule[];
 }
 
 const DEMO_PATH = path.join(process.cwd(), 'public', 'starter-examples', DEMO_SOURCE_FILE);
@@ -75,6 +78,7 @@ export function buildDemoWorkspace(): DemoWorkspaceData {
     processMap: demoProcessMap(source),
     // The same snapshot as the demo's evidence — its target profile's.
     itFindings: findingsOf(source, DEMO_SOURCE_FILE, demo.deployment, demo.catalogSnapshot, APP_VERSION),
+    rules: revealedRules(readSource(source, APP_VERSION).ruleSet),
   };
 
   // The same invariant as the stages: a demo that carries a run, a signature or

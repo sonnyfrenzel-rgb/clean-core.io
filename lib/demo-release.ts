@@ -1,6 +1,5 @@
 import { createHash } from 'crypto';
 import { getLevelRuleVersion } from '@/lib/abap/catalog-service';
-import { readSource, revealedRules } from '@/lib/first-look';
 import { APP_VERSION } from '@/lib/version';
 import { buildDemoWorkspace, type DemoWorkspaceData } from '@/lib/demo-workspace';
 import { TOUR_STATIONS, type TourPlace } from '@/lib/demo-tour';
@@ -95,7 +94,7 @@ export function figuresOf(data: DemoWorkspaceData): DemoReleaseFigures {
     cleanCoreScore: demo.analyze.cleanCoreScore,
     recommendedRoute: demo.design.recommendedRoute,
     notDeterminedConstructs: demo.analyze.coverage.unassessed.length,
-    rulesRevealed: revealedRules(readSource(data.source, APP_VERSION).ruleSet).length,
+    rulesRevealed: data.rules.length,
     processSteps: data.processMap.elements.length,
     processLevels: data.processMap.planes.length,
     standardCandidates: demo.transformation.plan.filter((p) => p.successor).length,

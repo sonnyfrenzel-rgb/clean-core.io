@@ -125,7 +125,6 @@ const NEW_RUN = new Set([
   'lib/demo-list-row.ts#computeDemoListRow',
   'lib/demo-project.ts#buildDemoProject',
   'lib/demo-project.ts#demoProcess',
-  'lib/demo-release.ts#figuresOf', // the demo's figures, measured on what this engine builds
   'lib/demo-workspace.ts#buildDemoWorkspace',
   'components/demo/DemoDesign.tsx#DemoDesign',
   'components/demo/DemoTesting.tsx#DemoTesting', // 3.5.0 (ADR-131 S12): the demo's rules and acceptance checks, by this engine

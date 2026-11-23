@@ -174,7 +174,7 @@ export function customerTextProvenance(
   texts: CustomerTexts | null | undefined,
   /**
    * The codes the sentence was built from, recorded where each customer word was used (`PlainLabels.customerUses`;
-   * 3.5.0, carried from the 3.1.0 QA review). Given, only these texts are credited: a one-word text ("Plant") said
+   * since 3.5.0). Given, only these texts are credited: a one-word text ("Plant") said
    * inside a phrase the engine took from SAP's dictionary ("plant stock") is not the customer's. Absent, every text
    * the sentence says counts, as before.
    */

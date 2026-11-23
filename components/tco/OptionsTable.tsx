@@ -39,7 +39,7 @@ export default function OptionsTable({ answer, options }: { answer: EconomicsAns
   return (
     <div data-cost-result="">
       <div className="-mx-1 overflow-x-auto">
-        <table className="w-full min-w-0 border-collapse" data-cost-totals="">
+        <table className="doc-table w-full min-w-0 border-collapse" data-cost-totals="">
           <thead className="border-b border-cc-line">
             <tr>
               <th scope="col" className={TH}>Option</th>
@@ -80,27 +80,27 @@ export default function OptionsTable({ answer, options }: { answer: EconomicsAns
                   </th>
                   {c && c.total ? (
                     <>
-                      <td className={`${TD} ${COL} whitespace-nowrap`}>
+                      <td data-label="Once" className={`${TD} ${COL} whitespace-nowrap`}>
                         {c.oneOff && c.oneOff.low === 0 && c.oneOff.high === 0 ? 'none' : exactRange(c.oneOff, currency)}
                       </td>
-                      <td className={`${TD} ${COL} whitespace-nowrap`}>{c.runningTotal ? formatAmount(c.runningTotal, currency) : 'none'}</td>
-                      <td className={`${TD} ${COL} whitespace-nowrap`}>{isKeep(o) ? formatAmount(c.baselineTotal, currency) : '—'}</td>
-                      <td className={`${TD} font-semibold whitespace-nowrap`} data-cost-option-total={o.id}>
+                      <td data-label="Per release" className={`${TD} ${COL} whitespace-nowrap`}>{c.runningTotal ? formatAmount(c.runningTotal, currency) : 'none'}</td>
+                      <td data-label="Upkeep" className={`${TD} ${COL} whitespace-nowrap`}>{isKeep(o) ? formatAmount(c.baselineTotal, currency) : '—'}</td>
+                      <td data-label="Total" className={`${TD} font-semibold whitespace-nowrap`} data-cost-option-total={o.id}>
                         {exactRange(c.total, currency)}
                       </td>
-                      <td className={`${TD} ${COL}`} data-cost-option-difference={o.id}>
+                      <td data-label="Difference to keeping" className={`${TD} ${COL}`} data-cost-option-difference={o.id}>
                         {isKeep(o) ? 'the reference' : keep?.total ? differenceExact(differenceToKeeping(keep.total, c.total), currency) : '—'}
                       </td>
                     </>
                   ) : (
                     <>
-                      <td className={`${TD} ${COL}`}>—</td>
-                      <td className={`${TD} ${COL}`}>—</td>
-                      <td className={`${TD} ${COL}`}>—</td>
-                      <td className={TD} data-cost-option-not-determined={o.id}>
+                      <td data-label="Once" className={`${TD} ${COL}`}>—</td>
+                      <td data-label="Per release" className={`${TD} ${COL}`}>—</td>
+                      <td data-label="Upkeep" className={`${TD} ${COL}`}>—</td>
+                      <td data-label="Total" className={TD} data-cost-option-not-determined={o.id}>
                         <FamilyChip kind="not-determined" />
                       </td>
-                      <td className={`${TD} ${COL}`}>—</td>
+                      <td data-label="Difference to keeping" className={`${TD} ${COL}`}>—</td>
                     </>
                   )}
                 </tr>

@@ -1,7 +1,6 @@
 import { createHash } from 'crypto';
 import planesRecord from '@/lib/demo-showcase-planes.json';
 import { buildDemoWorkspace, type DemoWorkspaceData } from '@/lib/demo-workspace';
-import { readSource, revealedRules } from '@/lib/first-look';
 import { assertNoTrustChain } from '@/lib/demo-project';
 import { APP_VERSION } from '@/lib/version';
 import { TOP_PLANE, type ShowcasePlane, type ShowcasePlanesRecord } from '@/lib/demo-showcase-planes';
@@ -200,7 +199,7 @@ export function buildDemoShowcase(data: DemoWorkspaceData = buildDemoWorkspace()
     elements: processMap.elements.length,
     levels: processMap.planes.length,
     anchored: processMap.traceability.anchored,
-    rules: revealedRules(readSource(data.source, APP_VERSION).ruleSet).length,
+    rules: data.rules.length,
     findings: demo.analyze.findings.length,
     distinctFindings: demo.analyze.distinctFindings,
     severity: { critical: s.criticalCount, high: s.highCount, medium: s.mediumCount, low: s.lowCount, info: s.infoCount },
@@ -264,7 +263,7 @@ export function showcaseDrift(data: DemoWorkspaceData = buildDemoWorkspace()): s
     if (!ids.has(id)) out.push(`step ${step} selects ${id}, which the map no longer has`);
   }
   const anchors = new Map<string, string[]>();
-  for (const r of revealedRules(readSource(data.source, APP_VERSION).ruleSet)) anchors.set(r.id, r.anchors);
+  for (const r of data.rules) anchors.set(r.id, r.anchors);
   for (const r of SHOWCASE_RULES) {
     const a = anchors.get(r.ruleId);
     if (!a) out.push(`rule ${r.ruleId} (${r.value}) is no longer revealed`);

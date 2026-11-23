@@ -270,7 +270,7 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
     },
   ];
   const chipRow = (
-    <span className="mt-1 flex flex-wrap gap-1.5 whitespace-normal" data-economics-assumption-chips="">
+    <span className="mt-1 flex flex-wrap gap-2 whitespace-normal" data-economics-assumption-chips="">
       {chips.map((c) => (
         <span
           key={c.key}
@@ -661,7 +661,7 @@ function Method({ loc, proposals, revision }: { loc: number | null; proposals: O
           {loc !== null ? `, taken from ${formatLines(loc)} lines` : ''}.
         </p>
         <div className="mt-2 overflow-x-auto">
-          <table className="w-full border-collapse" data-economics-factors="">
+          <table className="doc-table w-full border-collapse" data-economics-factors="">
             <thead className="border-b border-cc-line">
               <tr className="cc-text-meta font-semibold text-cc-ink-muted">
                 <th scope="col" className="px-2 py-1 text-left">Option</th>
@@ -678,10 +678,10 @@ function Method({ loc, proposals, revision }: { loc: number | null; proposals: O
                 return (
                   <tr key={kind} data-economics-factor={kind}>
                     <th scope="row" className="px-2 py-1 text-left font-normal">{label}</th>
-                    <td className="px-2 py-1">{range(f.oneOffDevLow, f.oneOffDevHigh)}</td>
-                    <td className="px-2 py-1">{range(f.oneOffTestLow, f.oneOffTestHigh)}</td>
-                    <td className="px-2 py-1">{n(f.perReleaseDev)}</td>
-                    <td className="px-2 py-1">{n(f.perReleaseTest)}</td>
+                    <td data-label="Once, developer" className="px-2 py-1">{range(f.oneOffDevLow, f.oneOffDevHigh)}</td>
+                    <td data-label="Once, test" className="px-2 py-1">{range(f.oneOffTestLow, f.oneOffTestHigh)}</td>
+                    <td data-label="Per release, developer" className="px-2 py-1">{n(f.perReleaseDev)}</td>
+                    <td data-label="Per release, test" className="px-2 py-1">{n(f.perReleaseTest)}</td>
                   </tr>
                 );
               })}

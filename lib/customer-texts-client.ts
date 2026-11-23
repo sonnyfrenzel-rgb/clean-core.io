@@ -78,8 +78,7 @@ export async function storeCustomerTexts(projectId: string, texts: CustomerTexts
 }
 
 /**
- * How long a reader waits for the customer texts before it goes on without them (3.5.0, carried from the 3.1.0 QA
- * review). The process map waited for them without a limit, so a request that never answered (a stalled session
+ * How long a reader waits for the customer texts before it goes on without them (since 3.5.0). The process map waited for them without a limit, so a request that never answered (a stalled session
  * restore, a hanging network) left the map at "loading" for good. After the deadline the map draws as it does
  * without an abapGit package; the texts are a better wording, never a condition of the map.
  */

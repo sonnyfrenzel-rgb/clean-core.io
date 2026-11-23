@@ -128,7 +128,19 @@ function Frame({
         <div className="crumb">
           <span>Demo project</span> › <span>{data.facts.subject}</span> › <b>{name}</b>
         </div>
-        <span className="srch q" aria-disabled="true" role="button" tabIndex={0} onClick={actions.quiet}>
+        <span
+          className="srch q"
+          aria-disabled="true"
+          role="button"
+          tabIndex={0}
+          onClick={actions.quiet}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              actions.quiet();
+            }
+          }}
+        >
           <Search className="i" aria-hidden="true" /> Search this project
         </span>
       </div>
@@ -254,6 +266,8 @@ export function BusinessScreen({ data, state, actions }: { data: ShowcaseData; s
           </div>
           <div
             className="mapview"
+            role="group"
+            aria-label={`Process map: ${plane.label}`}
             data-showcase-map=""
             data-plane={plane.id}
             onClick={(e) => {
@@ -420,24 +434,22 @@ export function ItScreen({ data, actions }: { data: ShowcaseData; actions: Scree
             <span className="hero">{facts.score}</span>
             <span className="s">of 100</span>
           </div>
-          <table className="bd">
-            <tbody>
-              {facts.scoreLines.map((l) => (
-                <tr key={l.label}>
-                  <td>
-                    {l.label} ({l.count})
-                  </td>
-                  <td>−{l.points}</td>
-                </tr>
-              ))}
-              {facts.unassessedKinds ? (
-                <tr>
-                  <td>Kinds of code not assessed ({facts.unassessedKinds})</td>
-                  <td>−{facts.unassessedPoints}</td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
+          <dl className="bd">
+            {facts.scoreLines.map((l) => (
+              <div key={l.label}>
+                <dt>
+                  {l.label} ({l.count})
+                </dt>
+                <dd>−{l.points}</dd>
+              </div>
+            ))}
+            {facts.unassessedKinds ? (
+              <div>
+                <dt>Kinds of code not assessed ({facts.unassessedKinds})</dt>
+                <dd>−{facts.unassessedPoints}</dd>
+              </div>
+            ) : null}
+          </dl>
         </div>
         <div className="card">
           <h3>Findings</h3>
@@ -480,7 +492,7 @@ export function ItScreen({ data, actions }: { data: ShowcaseData; actions: Scree
           </h3>
           <p className="s">A to D from SAP’s Cloudification Repository and classification file, with the line that uses the object.</p>
           <div className="tscroll">
-            <table className="lt" style={{ marginTop: 8 }}>
+            <table className="lt doc-table" style={{ marginTop: 8 }}>
               <thead>
                 <tr>
                   <th scope="col">Object</th>
@@ -492,12 +504,12 @@ export function ItScreen({ data, actions }: { data: ShowcaseData; actions: Scree
               <tbody>
                 {uses.map((u) => (
                   <tr key={`${u.object}@${u.use}`}>
-                    <td className="mono">{u.object}</td>
-                    <td>{useWord[u.use] ?? u.use}</td>
-                    <td>
+                    <td className="mono" data-label="Object">{u.object}</td>
+                    <td data-label="Use">{useWord[u.use] ?? u.use}</td>
+                    <td data-label="Level">
                       <span className={`lv ${levelClass(u.level)}`}>{u.level === 'Unknown' ? 'unknown' : u.level}</span>
                     </td>
-                    <td className="mono">{u.lines.join(', ')}</td>
+                    <td className="mono" data-label="Line">{u.lines.join(', ')}</td>
                   </tr>
                 ))}
               </tbody>
@@ -595,7 +607,7 @@ export function ManagementScreen({ data, actions, changes }: { data: ShowcaseDat
         </div>
         <div className="card tile">
           <div className="lbl">Effort and cost</div>
-          <div className="fig" style={{ fontSize: 20 }}>
+          <div className="fig" style={{ fontSize: 22 }}>
             Your figures
           </div>
           <p>Economics needs your two day rates; none are guessed.</p>
@@ -626,7 +638,7 @@ export function DeliveryScreen({ data, actions }: { data: ShowcaseData; actions:
         </div>
         <div className="card pack" {...part('pack')}>
           <div className="lbl">Audit pack</div>
-          <h3 className="chips" style={{ fontSize: 16, fontWeight: 800, margin: '4px 0' }}>
+          <h3 className="chips" style={{ fontSize: 15, fontWeight: 800, margin: '4px 0' }}>
             Signed and verifiable <span className="chip demo">Not in the demo</span>
           </h3>
           <p style={{ fontSize: 13 }}>Signed by the server over the analysis run. It holds:</p>
