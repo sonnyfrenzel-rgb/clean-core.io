@@ -2,8 +2,8 @@
   "key": "abap-cheat-sheets",
   "source": "https://github.com/SAP-samples/abap-cheat-sheets",
   "branch": "main",
-  "commit": "25af9c6f7e8638243236edd302fd999beebcaaaf",
-  "syncedAt": "2026-11-09",
+  "commit": "82815d28fda10f00fb6168747e8a08097e90e729",
+  "syncedAt": "2026-11-23",
   "licence": {
     "spdx": "Apache-2.0",
     "github": "Apache-2.0",
@@ -16,8 +16,8 @@
   "files": [
     {
       "path": "01_Internal_Tables.md",
-      "sha256": "dd27e71ec7376a0aa856fa6104c7767bfab027a53d2308411be1258cd26af9f3",
-      "size": 506105
+      "sha256": "66a8289b4bd6ffc1c8ce08d7fa88bac3b5fdf706fc294d0cd633812154c4c0ce",
+      "size": 506107
     },
     {
       "path": "02_Structures.md",
@@ -26,8 +26,8 @@
     },
     {
       "path": "03_ABAP_SQL.md",
-      "sha256": "77bb85aaea69c7bd26cc06df54850e0e790b7a9db66f6676a2b3c80aa0c32b59",
-      "size": 173485
+      "sha256": "d101a8acfc9a7631498883eeab901a59cb69d7eea1f736d472977f5336c7ad03",
+      "size": 174108
     },
     {
       "path": "04_ABAP_Object_Orientation.md",
@@ -76,8 +76,8 @@
     },
     {
       "path": "13_Program_Flow_Logic.md",
-      "sha256": "b734e17e8631ebd52978f2882ad78d8a2dddaa092486b1d94510be76c422ce07",
-      "size": 79066
+      "sha256": "e890dd9ff9e3a75d242c85619a8026aa4bfbb9848661088515c7d56945751d5a",
+      "size": 94254
     },
     {
       "path": "14_ABAP_Unit_Tests.md",
@@ -91,8 +91,8 @@
     },
     {
       "path": "16_Data_Types_and_Objects.md",
-      "sha256": "ce5051510046681202f7c4894c1c8ec38bdfb8b6067c33e924064f44828516c2",
-      "size": 134496
+      "sha256": "671b00707ee1157a1bbd8e8adc813f358569278d50197b43e62b811207920e11",
+      "size": 136901
     },
     {
       "path": "17_SAP_LUW.md",
@@ -171,13 +171,13 @@
     },
     {
       "path": "32_Performance_Notes.md",
-      "sha256": "a4db5d851a71047a686ac01a3db9ff04390ea3c9ef17b7d3cdcca3e0eb75921d",
-      "size": 105768
+      "sha256": "536edc2b987f1ff870040f952eb9132dbe93addf6ff8c825da199772c1cf8304",
+      "size": 105175
     },
     {
       "path": "33_ABAP_Release_News.md",
-      "sha256": "f9deacf5787de6836c471db6d65a0a6a61965128e70e2c234af35f01f73a385a",
-      "size": 744557
+      "sha256": "0032dda9c36ff8e32084868e3c97d9d5266c1a9d40146a61c4abe1e5d44498c3",
+      "size": 745951
     },
     {
       "path": "34_OO_Design_Patterns.md",
@@ -196,8 +196,8 @@
     },
     {
       "path": "37_Logical_Expressions_and_Functions.md",
-      "sha256": "0e2267e3d43347f51b3ad56490b72a440b75a1654c3ee7794933f8166cd52d5d",
-      "size": 36158
+      "sha256": "cd4ae986954b2a5ab86540994e6a1cf89385a3cee1f151ee53ef972ba8a59add",
+      "size": 57357
     },
     {
       "path": "src/ezdemo_abap_lock.enqu.xml",
@@ -1106,7 +1106,7 @@
       "heading": "Internal Tables",
       "level": 1,
       "anchor": "internal-tables",
-      "hash": "b3bf6dabc57ce769eb60f39147769a1409761858e9d1d235af62ee58aa27c57c"
+      "hash": "569fc35dbe7ef979f3f127cfe6f3a353d0ff661ff041a8fb6cbfa62d43fc62d7"
     },
     {
       "file": "01_Internal_Tables.md",
@@ -1372,7 +1372,7 @@
       "heading": "Modifying Internal Table Content",
       "level": 2,
       "anchor": "modifying-internal-table-content",
-      "hash": "69cb010249e5ecf1008face4cbba248be6e03d922fd3dfc96ee2a73111e33394"
+      "hash": "b9a2b1c3955b59708e6960d4e0466824d186b1dacb78393e7722a5f0dda7dcd3"
     },
     {
       "file": "01_Internal_Tables.md",
@@ -1862,7 +1862,7 @@
       "heading": "ABAP SQL",
       "level": 1,
       "anchor": "abap-sql",
-      "hash": "7f511001ab6530e7f0567ec6341eeaf0e7a6d333845d15f512be3496e3c51bf9"
+      "hash": "5c6bf9565e8b50b8699182be2d4a618fc63d00c7c0ccf1d252c0c562a09ee839"
     },
     {
       "file": "03_ABAP_SQL.md",
@@ -1883,7 +1883,7 @@
       "heading": "Read Operations Using SELECT",
       "level": 2,
       "anchor": "read-operations-using-select",
-      "hash": "17e867489536fa2a0d9e838049a3bcf6caebdaf5e364cb736cfa759960100912"
+      "hash": "419b30ef779f416451232769740f029bf8941fbe7935d9a8ad406b3dbfd9568e"
     },
     {
       "file": "03_ABAP_SQL.md",
@@ -1939,7 +1939,7 @@
       "heading": "Selecting Data From a Source by Evaluating the Content of an Internal Table",
       "level": 3,
       "anchor": "selecting-data-from-a-source-by-evaluating-the-content-of-an-internal-table",
-      "hash": "0992e65d0f7a002408b6a0349642410ba13df9a955ff4478e125377d911370cb"
+      "hash": "8cf844752abde17b7f3ec6e71290e8ccc2e476bb183c72c3ab70964386448e49"
     },
     {
       "file": "03_ABAP_SQL.md",
@@ -4158,7 +4158,7 @@
       "heading": "Program Flow Logic",
       "level": 1,
       "anchor": "program-flow-logic",
-      "hash": "a224e60b9591eac21a37632a980bf1eab1168ccf199071b85f670311e5763a2d"
+      "hash": "9a5fb3a7865c207eb4de34aa94c5cd3ded3c4a9e317af543aab91ee60801d86d"
     },
     {
       "file": "13_Program_Flow_Logic.md",
@@ -4179,14 +4179,21 @@
       "heading": "Control Structures",
       "level": 2,
       "anchor": "control-structures",
-      "hash": "b54ddd2d89c94e10c54a469eb45f0294bfd5afb0f84801f58ca55a39e0e0e042"
+      "hash": "d046c69b9ed995d4a4da05383763b9a6e69a4c70feedd2ee53c168fde9a878c3"
     },
     {
       "file": "13_Program_Flow_Logic.md",
       "heading": "`IF` Statements",
       "level": 3,
       "anchor": "if-statements",
-      "hash": "1ed9939af849106d7f1a90848fc5ee52a07d41ca925a7a15447e09aee02dbb54"
+      "hash": "1dcb8061b9397e9094d28d785fc3a12ce7d8fa78a5d479f88f681d9711e8df63"
+    },
+    {
+      "file": "13_Program_Flow_Logic.md",
+      "heading": "Predicate Expressions with `IF` Statements",
+      "level": 4,
+      "anchor": "predicate-expressions-with-if-statements",
+      "hash": "5d5fefa26174c0890c9f0fbd244b70644b9d5d35e93c383f65ab3b10a8cdfcae"
     },
     {
       "file": "13_Program_Flow_Logic.md",
@@ -4200,7 +4207,7 @@
       "heading": "`CASE`: Case Distinctions",
       "level": 3,
       "anchor": "case-case-distinctions",
-      "hash": "fca7aec1f5de5ca33477c2e03a42e4187d04889e72df0716f505c28fbbc47d5a"
+      "hash": "285a04ca75d316fda645ef4905cea2c42237b4a5ab5428c91d9ec074ddedbed4"
     },
     {
       "file": "13_Program_Flow_Logic.md",
@@ -4208,6 +4215,13 @@
       "level": 4,
       "anchor": "control-structures-using-case-type-of",
       "hash": "f0df14b0561a955ce116ed52db3c86e9a343f8cfc0d00301c3fae1eb95bba609"
+    },
+    {
+      "file": "13_Program_Flow_Logic.md",
+      "heading": "Control Structures Using CASE DATA TYPE OF",
+      "level": 4,
+      "anchor": "control-structures-using-case-data-type-of",
+      "hash": "1c143d44334b68bd540f8c03764308e7f3610eab97e313e57514e18aecc01116"
     },
     {
       "file": "13_Program_Flow_Logic.md",
@@ -4221,7 +4235,7 @@
       "heading": "Loops",
       "level": 3,
       "anchor": "loops",
-      "hash": "34275532b3364faa098aceb8ae55f6a2b95f4bc19a018a92f1baf1f2a7ae8045"
+      "hash": "a1201d6c967ba7ed1ddca0e24bf78d90e9dd2fe8dc6c59d6532a14a194f002cc"
     },
     {
       "file": "13_Program_Flow_Logic.md",
@@ -4229,13 +4243,6 @@
       "level": 4,
       "anchor": "do-unconditional-loops",
       "hash": "10c292b180608a1835030b8aa5c38ef1da407c90ce8724fc84974b7c2930ff67"
-    },
-    {
-      "file": "13_Program_Flow_Logic.md",
-      "heading": "Interrupting and Exiting Loops",
-      "level": 4,
-      "anchor": "interrupting-and-exiting-loops",
-      "hash": "98a520fcfa83efda4c24eb2dcf4ac8b313dc6bb8e9a0de2932fb6bddb66698bc"
     },
     {
       "file": "13_Program_Flow_Logic.md",
@@ -4250,6 +4257,13 @@
       "level": 4,
       "anchor": "loops-across-tables",
       "hash": "49544f3b0ef01d3e95d4fb1a83d81e3c83c3f4de56e7aa763f5e42dd117ecff1"
+    },
+    {
+      "file": "13_Program_Flow_Logic.md",
+      "heading": "Interrupting and Exiting Loops",
+      "level": 4,
+      "anchor": "interrupting-and-exiting-loops",
+      "hash": "98a520fcfa83efda4c24eb2dcf4ac8b313dc6bb8e9a0de2932fb6bddb66698bc"
     },
     {
       "file": "13_Program_Flow_Logic.md",
@@ -4487,7 +4501,7 @@
       "heading": "Data Types and Data Objects",
       "level": 1,
       "anchor": "data-types-and-data-objects",
-      "hash": "e00f73d1ad13da3c29d2e2587c33f3ae8e3193a01f69d4984284be4af6b7e73b"
+      "hash": "ebea3c717b9bdc68e68aefb224c4cd63c5bec181cc3fb7ece0b9f26be68f67cb"
     },
     {
       "file": "16_Data_Types_and_Objects.md",
@@ -4627,14 +4641,21 @@
       "heading": "Notes in a Nutshell",
       "level": 2,
       "anchor": "notes-in-a-nutshell",
-      "hash": "17f55c8047af413aca2912c95c0167d8a4276b303ed5b8f09ada755d545cca13"
+      "hash": "0af77e678ed12228f261d061f3372592b1ca773fc7569fa32fe353ad5da0bacb"
     },
     {
       "file": "16_Data_Types_and_Objects.md",
       "heading": "Type Conversions, Compatibility and Assignments",
       "level": 3,
       "anchor": "type-conversions-compatibility-and-assignments",
-      "hash": "257844da483ef46bfcb58380c8efa0e46fa7fe84e0010f3b4c19bab354dd167f"
+      "hash": "afd4e2482b9238f75292276dddc7eafa8875da228bb691a9660d94e89c96180b"
+    },
+    {
+      "file": "16_Data_Types_and_Objects.md",
+      "heading": "Checking Type Compatibility",
+      "level": 4,
+      "anchor": "checking-type-compatibility",
+      "hash": "2768276f8dd71fb1a30178775f7b119828fff5c5ae9b72692cba1b6b2266dc40"
     },
     {
       "file": "16_Data_Types_and_Objects.md",
@@ -6713,7 +6734,7 @@
       "heading": "ABAP Performance Notes",
       "level": 1,
       "anchor": "abap-performance-notes",
-      "hash": "05cf1ea58190881560c0a3c02868d855e1a970dfdc9099d3af2379653ab2cb2d"
+      "hash": "1a98bd0cc4eda75265b249aacd8c99d4bce494d72d5d038535949026fbedeba1"
     },
     {
       "file": "32_Performance_Notes.md",
@@ -6839,14 +6860,14 @@
       "heading": "Miscellaneous Contexts",
       "level": 2,
       "anchor": "miscellaneous-contexts",
-      "hash": "0c5a67852a4254de2df2f8621d623a83708e29795ef77f5cc4380a26705b01b5"
+      "hash": "5826529138c066b64e07fdcfd3dfa15de245bdd77eda41e73c80aef9f900e537"
     },
     {
       "file": "32_Performance_Notes.md",
       "heading": "Using Strings",
       "level": 3,
       "anchor": "using-strings",
-      "hash": "d9c2f898f1d953fd7ac8ae5d8dab2979ea37f62534119fd279eae7e11babea43"
+      "hash": "e5fe225b439a64a0b100b72daa23ff5c0054fba67ed7d0682f58de70d95c50e0"
     },
     {
       "file": "32_Performance_Notes.md",
@@ -6874,21 +6895,21 @@
       "heading": "Executable Example",
       "level": 2,
       "anchor": "executable-example",
-      "hash": "23a06721b7a2ec220fac3249a5ed6ab285b7830ad3f8e3df7f6deef7a9f2c3f1"
+      "hash": "0cd644770b3661407926ec25c1d4e71e47078422d1e46a289715947de5574d1f"
     },
     {
       "file": "33_ABAP_Release_News.md",
       "heading": "ABAP Release News",
       "level": 1,
       "anchor": "abap-release-news",
-      "hash": "3d604479face582d9b0b53f5f7b0bebfb2cc9e1fd0c62cc52e1099a3eeb3ab44"
+      "hash": "d79152cdf3dc36943f794cb0724c74b3bd71f0edec3d101de47ca3ba2759034d"
     },
     {
       "file": "33_ABAP_Release_News.md",
       "heading": "ABAP for Cloud Development Documentation Release News",
       "level": 2,
       "anchor": "abap-for-cloud-development-documentation-release-news",
-      "hash": "e9ac4c84d0338302118b1ab5ba4fec54536973ba8a1490d4bb7c84f16b797256"
+      "hash": "f3cd49ce55275579659894c76c2ec06004d80f9bb227424da5c1619ef6c52ba1"
     },
     {
       "file": "33_ABAP_Release_News.md",
@@ -7259,7 +7280,7 @@
       "heading": "Logical Expressions and Functions",
       "level": 1,
       "anchor": "logical-expressions-and-functions",
-      "hash": "48fa01c477195826c76bcb90b27ea205a70c78832c3d68fafeec1826ae3666ec"
+      "hash": "fcbeaa71acb69c3cb387db2f15280f7b31231bbf1f6184a4644153b4ee3a06e1"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
@@ -7273,63 +7294,119 @@
       "heading": "Comparison Expressions with Comparison Operators",
       "level": 2,
       "anchor": "comparison-expressions-with-comparison-operators",
-      "hash": "167e045427ed2e1355f568ffbd72687f933dad318e29500e3957251fdb1af0d4"
+      "hash": "368098908df6dd1bb0ced099f79b88fcb5a3b183d1b888a8e7adbc5e0bedf5c2"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
-      "heading": "General Comparison Operators",
+      "heading": "General Comparison Operators (=, EQ, <>, NE, <, LT, >, GT, <=, LE, >=, GE, BETWEEN ... AND, IN)",
       "level": 3,
-      "anchor": "general-comparison-operators",
-      "hash": "68b97e9f74c7a4565e5a60e5a5fdc010f55d83342c6bfaf52e2b0bdba4f83348"
+      "anchor": "general-comparison-operators--eq--ne--lt--gt--le--ge-between--and-in",
+      "hash": "e2fc18cfb076b505bf34275bf7a253ebbabed551790261236a08e102e93b6a0c"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
-      "heading": "Comparison Operators for Character-Like Data Types",
+      "heading": "Comparison Operators for Character-Like Data Types (CA, NA, CO, CN, CS, NS, CP, NP)",
       "level": 3,
-      "anchor": "comparison-operators-for-character-like-data-types",
-      "hash": "39f2e0cdf3130eb0c150d77c8b878bab80b06d762f83af00a32690357dade36d"
+      "anchor": "comparison-operators-for-character-like-data-types-ca-na-co-cn-cs-ns-cp-np",
+      "hash": "6d37b2e03a4debbf17101dc61ba907625af06088dd40e0a30c1ee332b5c95dfc"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
       "heading": "Predicates",
       "level": 2,
       "anchor": "predicates",
-      "hash": "ddf9bf3a182a03c2590318556821d4bb91d9a6a06911131c5d7fb605a542a201"
+      "hash": "85e5b3b0412aaf800c02fd0689e0d627ebb6fff43598691d66c0cc604d68b9c8"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
       "heading": "Predicate Expressions",
       "level": 3,
       "anchor": "predicate-expressions",
-      "hash": "3210e59097681e05ed4f962cd0a6b9f05260ece747097b73816f0f52000c1dfd"
+      "hash": "f89b0f175d56e42d61429109f5cf7d22a69b402adc62d56ccea527c66486a08e"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
-      "heading": "Predicate Functions",
+      "heading": "IS [NOT] INITIAL",
+      "level": 4,
+      "anchor": "is-not-initial",
+      "hash": "bc27a6a7a7c6b50be30e1f85aa3055ba5b5f422d604d33a8572886e4aba30192"
+    },
+    {
+      "file": "37_Logical_Expressions_and_Functions.md",
+      "heading": "IS [NOT] BOUND",
+      "level": 4,
+      "anchor": "is-not-bound",
+      "hash": "87f57f8cb9bc7a68ac0ef8993f5b5ed9d059a5f388599008b231f3616a01c185"
+    },
+    {
+      "file": "37_Logical_Expressions_and_Functions.md",
+      "heading": "IS [NOT] INSTANCE OF",
+      "level": 4,
+      "anchor": "is-not-instance-of",
+      "hash": "a990f33617bc1fdad6bec452786c5cb76b803134cdd1447ddaf296741aa662c0"
+    },
+    {
+      "file": "37_Logical_Expressions_and_Functions.md",
+      "heading": "IS [NOT] ASSIGNED",
+      "level": 4,
+      "anchor": "is-not-assigned",
+      "hash": "7fcff8c34786e4ecf3cb0b71c771a63760c8735caa31a0afbc178af6280cb90a"
+    },
+    {
+      "file": "37_Logical_Expressions_and_Functions.md",
+      "heading": "IS [NOT] SUPPLIED",
+      "level": 4,
+      "anchor": "is-not-supplied",
+      "hash": "6254dbaca770e43f72e2dc76c6211293f92c22374d5beb42c6a7a78b2c666717"
+    },
+    {
+      "file": "37_Logical_Expressions_and_Functions.md",
+      "heading": "IS [NOT] COMPATIBLE WITH",
+      "level": 4,
+      "anchor": "is-not-compatible-with",
+      "hash": "ae100e0cdebaffe6ae59ea6af5b0a18fd856e9752fffeb1a98c588c2f7d89443"
+    },
+    {
+      "file": "37_Logical_Expressions_and_Functions.md",
+      "heading": "Predicate Functions (contains, contains_any_of, contains_any_not_of, matches, line_exists)",
       "level": 3,
-      "anchor": "predicate-functions",
-      "hash": "bc3dce2de640e0bac001b533bb391303afd95efb08635a7e10e689bbe3190933"
+      "anchor": "predicate-functions-contains-contains_any_of-contains_any_not_of-matches-line_exists",
+      "hash": "30d522bd02cc04788035944d8b8aeb52b043d0664da6ba14582db0a0d3cde390"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
-      "heading": "Predicative Method Calls, Data Objects as Relational Expressions",
+      "heading": "Predicative Method Calls",
       "level": 3,
-      "anchor": "predicative-method-calls-data-objects-as-relational-expressions",
-      "hash": "5ebad14b4885a9ce1a878c4c0190bf61d63cd32753aed498f35a1e9f58c99e12"
+      "anchor": "predicative-method-calls",
+      "hash": "da3679be384d9deab49adbfbda3a31bfb6e9b9130d072117142084c4c594a263"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
-      "heading": "Boolean Operators and Parentheses",
-      "level": 2,
-      "anchor": "boolean-operators-and-parentheses",
-      "hash": "9162b34b0c87bcb44a65e42513fe5e1253832af083d5665a5a1d9bba50ac4682"
+      "heading": "Data Objects as Relational Expressions",
+      "level": 3,
+      "anchor": "data-objects-as-relational-expressions",
+      "hash": "0b28f38bab8d042dfc32e94a01b117d233da21d4d53f05aaf14cd20ed8d57f7f"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
-      "heading": "Boolean Functions",
+      "heading": "Boolean Operators (AND, OR, EQUIV), Negations (NOT) and Using Parentheses",
       "level": 2,
-      "anchor": "boolean-functions",
-      "hash": "4d1ceca4b74e40c98a497920c276127708f81bea4414295461c4d29f481a2f8e"
+      "anchor": "boolean-operators-and-or-equiv-negations-not-and-using-parentheses",
+      "hash": "495b419cc20d4e9d6bd94b4919d6297ada8e38f812356ed2b8c31a5d3aecba6c"
+    },
+    {
+      "file": "37_Logical_Expressions_and_Functions.md",
+      "heading": "Boolean Value Expressions",
+      "level": 2,
+      "anchor": "boolean-value-expressions",
+      "hash": "9fac197ddd2ea81ff1e809d0405575180975c079237e0eefe527101b57fe1779"
+    },
+    {
+      "file": "37_Logical_Expressions_and_Functions.md",
+      "heading": "Boolean Functions (boolc, xsdbool)",
+      "level": 2,
+      "anchor": "boolean-functions-boolc-xsdbool",
+      "hash": "a876384f18a4ac230acbc1d1e5dc549b766edc9a355952ead3864398d3e6596b"
     },
     {
       "file": "37_Logical_Expressions_and_Functions.md",
