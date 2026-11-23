@@ -299,73 +299,11 @@ export function transformationFlow(occurrences: readonly EvidenceFinding[], trac
   return { kinds, targets, links };
 }
 
-/* ---------------------------------------------------- finding to change */
+/* ---------------------------------------------------- the generated package */
 
 export interface GeneratedFile {
   path: string;
   content: string;
-}
-
-export interface ChangeExcerpt {
-  path: string;
-  /** The 1-based line of the match. */
-  line: number;
-  /** What was searched for and found. */
-  term: string;
-  /** The match line, with its real number, cut to a window around the term. */
-  lines: Array<{ number: number; text: string; highlighted: boolean }>;
-}
-
-/**
- * Where the stored package mentions this finding's successor or object — a
- * text search, nothing more. The caller says so: a mention is a place to look,
- * not proof the change is right. Null when no file mentions either.
- */
-export function changeExcerpt(finding: EvidenceFinding, files: readonly GeneratedFile[]): ChangeExcerpt | null {
-  const terms = [finding.sapReplacement?.objectName, finding.objectName].filter(
-    (t): t is string => !!t && t.trim().length >= 3,
-  );
-  for (const term of terms) {
-    const re = new RegExp(`(^|[^A-Za-z0-9_])${term.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}(?![A-Za-z0-9_])`, 'i');
-    for (const file of files) {
-      const lines = file.content.split('\n');
-      const at = lines.findIndex((l) => re.test(l));
-      if (at < 0) continue;
-      // The match line alone, cut to a window around the term so it reads in a
-      // narrow box; an ellipsis marks every cut.
-      const raw = lines[at].replace(/\s+$/, '').trimStart();
-      const m = raw.search(re);
-      const start = Math.max(0, m - 24);
-      const end = Math.min(raw.length, start + 72);
-      const text = `${start > 0 ? '…' : ''}${raw.slice(start, end)}${end < raw.length ? '…' : ''}`;
-      const excerpt = [{ number: at + 1, text, highlighted: true }];
-      return { path: file.path, line: at + 1, term, lines: excerpt };
-    }
-  }
-  return null;
-}
-
-const SEVERITY_RANK = (f: EvidenceFinding) => RANK[f.severity] ?? 9;
-
-/**
- * The findings the "From finding to change" section shows first: the most
- * severe of each target kind, so the three boxes show three different answers
- * (a successor, none published, the route) rather than three reads of one
- * table. The rest follow, most severe first, behind "Show all".
- */
-export function changeOrder(occurrences: readonly EvidenceFinding[], track: ProjectTrack): EvidenceFinding[] {
-  // One change per finding; its places in the code travel with it (`findingRows`).
-  const sorted = findingUnits(occurrences).sort((a, b) => SEVERITY_RANK(a) - SEVERITY_RANK(b) || a.lineStart - b.lineStart);
-  const first: EvidenceFinding[] = [];
-  const seen = new Set<TargetKind>();
-  for (const f of sorted) {
-    const k = findingTarget(f, track).kind;
-    if (seen.has(k)) continue;
-    seen.add(k);
-    first.push(f);
-    if (first.length === 3) break;
-  }
-  return [...first, ...sorted.filter((f) => !first.includes(f))];
 }
 
 /* ------------------------------------------------------- not generated */

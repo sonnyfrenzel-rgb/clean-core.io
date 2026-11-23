@@ -468,7 +468,6 @@ test.describe('the open gaps are still open — closing one has to update the re
       register.workspace.shell,
       'components/workspace/StatusLine.tsx',
       'components/workspace/ToolBar.tsx',
-      'components/workspace/NextStepCard.tsx',
       'lib/next-step.ts',
     ].map(raw);
     for (const text of sources) {

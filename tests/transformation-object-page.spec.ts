@@ -4,8 +4,6 @@ import type { EvidenceFinding } from '../lib/abap/evidence-model';
 import { findingRows } from '../lib/findings-view';
 import DEMO_RELEASE from '../lib/demo-release.json';
 import {
-  changeExcerpt,
-  changeOrder,
   fileCard,
   findingTarget,
   planByKind,
@@ -107,27 +105,12 @@ test.describe('the figures are counts of what the engine and the package hold', 
     expect(flow.links.reduce((n, l) => n + l.count, 0)).toBe(units.length);
     expect(flow.targets.reduce((n, t) => n + t.count, 0)).toBe(units.length);
     expect(planByKind(f).reduce((n, k) => n + k.total, 0)).toBe(units.length);
-    expect(changeOrder(f, track)).toHaveLength(units.length);
   });
 
   test('the demo figures are the release file’s: 24 findings at 27 places in the code (v3.4.0)', () => {
     const fig = transformationFigures(buildDemoProject().analyze.findings);
     expect(fig.findings).toBe(DEMO_RELEASE.figures.distinctFindings);
     expect(fig.places).toBe(DEMO_RELEASE.figures.findings);
-  });
-
-  test('a change excerpt is a real line of a stored file, or nothing', () => {
-    const files = [
-      { path: 'package.json', content: '{\n  "name": "x"\n}' },
-      { path: 'srv/service.ts', content: 'import x from "y";\n\nconst api = "API_PURCHASEREQUISITION_SRV";\nexport default api;' },
-    ];
-    const f = finding({ objectName: 'EBAN', sapReplacement: { objectName: 'API_PURCHASEREQUISITION_SRV', objectType: 'OData API', confidence: 'Verified' } });
-    const hit = changeExcerpt(f, files)!;
-    expect(hit).toMatchObject({ path: 'srv/service.ts', line: 3, term: 'API_PURCHASEREQUISITION_SRV' });
-    expect(hit.lines.find((l) => l.highlighted)!.text).toContain('API_PURCHASEREQUISITION_SRV');
-    // A substring of a longer name is not a mention.
-    expect(changeExcerpt(finding({ objectName: 'EBA' }), files)).toBeNull();
-    expect(changeExcerpt(finding({ objectName: 'LFA1' }), files)).toBeNull();
   });
 
   test('a file card reads its role off the path and its size off the content', () => {

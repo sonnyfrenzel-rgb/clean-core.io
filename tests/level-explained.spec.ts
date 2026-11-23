@@ -80,17 +80,14 @@ test.describe('where the IT view shows a level, it explains it', () => {
 
 test.describe('where the Management view shows a level, it explains it (owner 06.10.2026, ADR-079)', () => {
   const exec = read('components/workspace/ManagementExecutive.tsx');
-  const overview = read('components/workspace/ManagementOverview.tsx');
 
   test('the distance-to-standard rows and the level table use the explained chip, and no bare chip is left', () => {
     expect(exec).toContain('<CcCleanCoreLevelExplained value={item.level} />');
     expect(exec, 'a bare level chip is left in the Management panel').not.toMatch(/<CcCleanCoreLevel\s/);
-    expect(overview, 'a bare level chip is left in the Management overview').not.toMatch(/<CcCleanCoreLevel\s/);
     // ADR-087 (7fecaa01, owner 10.10.2026): the overview's levels card and its
     // level table are gone — each fact once, and the level of each object is
     // said in the distance-to-standard rows above. It must not come back as a
     // second, differently drawn level list.
-    expect(overview, 'the overview shows levels again beside the distance rows').not.toContain('CcCleanCoreLevelExplained');
   });
 
   test('the explanation never sits inside a picture: the level bar stays role="img", the explained rows are the table under it', () => {
@@ -127,13 +124,6 @@ test.describe('level chips explain themselves everywhere (3.0.6)', () => {
     expect(abcd).toContain('<CcCleanCoreLevelExplained value={it.grade} />');
     // The legend writes the explanation out beside its chips.
     expect(abcd.match(/<CcCleanCoreLevel\s/g) ?? []).toHaveLength(1);
-  });
-
-  test('the print sheet prints the same words as a legend, since paper has no hover', () => {
-    const src = read('components/workspace/WorkspacePrintSheet.tsx');
-    expect(src).toContain("from '@/lib/clean-core-level-explain'");
-    expect(src).toContain('{cleanCoreLevelExplanation(value).meaning}');
-    expect(src).toContain('data-print-level-caveat');
   });
 
   test('on paper only the chip prints: the panel is hidden even when open, the target shrinks', () => {

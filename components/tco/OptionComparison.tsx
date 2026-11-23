@@ -366,23 +366,6 @@ export function optionGroups(cost: CostComparison['costs'][number] | undefined, 
   return groups;
 }
 
-/** The refusal in a few words; the whole sentence stays one click deeper. */
-export function refusalHeadline(comparison: CostComparison, options: CostOption[]): string {
-  const incomplete = comparison.costs.filter((c) => !c.total).map((c) => c.label);
-  switch (comparison.refusal?.code) {
-    case 'assumptions-incomplete':
-      return 'No option can be priced until your figures and the effort per option are in.';
-    case 'option-incomplete':
-      return `Not every option is complete yet: ${incomplete.join(', ')}.`;
-    case 'too-few-options':
-      return 'One option on its own is not a comparison.';
-    case 'ranges-overlap':
-      return 'The two lowest options overlap inside their effort ranges, so neither is established as cheaper.';
-    default:
-      return options.length === 0 ? 'There is no option to compare.' : 'No option is established as cheapest.';
-  }
-}
-
 /**
  * Where an option's effort figures stand — the provenance the card shows.
  *

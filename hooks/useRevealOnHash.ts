@@ -10,8 +10,7 @@ const PLACE_ID = /^[A-Za-z][\w-]{0,63}$/;
  * editing mode — when the address names it (owner 11.10.2026: every choice
  * leads straight to its place; `lib/choice-addresses.ts`).
  *
- * The rule `components/workspace/ManagementFold.tsx` wrote for its one fold,
- * for any component: `match(id)` says whether the place is this component's
+ * One rule for any component: `match(id)` says whether the place is this component's
  * to open, `reveal(id)` opens it. It runs
  *
  *   - once on mount, for the address the page was opened with — a component

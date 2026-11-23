@@ -2351,13 +2351,9 @@
           {
             "module": "components/workspace/StatusLine.tsx",
             "evidence": "{phase.detail}"
-          },
-          {
-            "module": "components/workspace/NextStepCard.tsx",
-            "evidence": ": point.reason}"
           }
         ],
-        "note": "Every phase detail in a \"Why?\"; the detail of the next open phase also on the Next step card."
+        "note": "Every phase detail in a \"Why?\"."
       },
       "generationBlockers": {
         "kind": "linked",
@@ -2365,13 +2361,9 @@
           {
             "module": "components/workspace/StatusLine.tsx",
             "evidence": "data-workspace-status-tool={phase.key}"
-          },
-          {
-            "module": "components/workspace/NextStepCard.tsx",
-            "evidence": "{point.action}"
           }
         ],
-        "note": "Enforced on the stage page, and the workspace generates nothing, so nothing here can launder a stale state. Where a blocker stands, the Next step card points at the stage the blocker sends the reader to."
+        "note": "Enforced on the stage page, and the workspace generates nothing, so nothing here can launder a stale state."
       },
       "handoverBlockers": {
         "kind": "shown",

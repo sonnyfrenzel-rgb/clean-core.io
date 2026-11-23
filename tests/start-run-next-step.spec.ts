@@ -11,8 +11,8 @@ import path from 'path';
  * a second run.
  *
  * Since v3.1.0 the start run is signed in Analyze, Business (AB-2), and the
- * workspace — IT and Management only — starts none of its own. The NextStepCard
- * and Management rules below stay: they are the forms a running point takes.
+ * workspace — IT and Management only — starts none of its own. The Management
+ * rule below stays: it is the form a running point takes there.
  *
  * Source-level, no server; the rendered half is
  * `tests/start-run-next-step-rendered.spec.ts`.
@@ -38,22 +38,7 @@ test('Analyze, Business offers nothing that could start a second run while the s
   expect(read('app/(app)/project/[projectId]/page.tsx')).not.toMatch(/useStartRun/);
 });
 
-test('"Next step" offers no button for a running point, in both of its forms', () => {
-  const card = read('components/workspace/NextStepCard.tsx');
-  // The bar: the button stands behind `!point.running`.
-  expect(card).toContain('{point !== null && !point.running ? (');
-  // The card: selection and button only outside the running state.
-  const card2 = card.slice(card.indexOf('<CcCard'));
-  const gate = card2.indexOf('{point.running ? null : (');
-  expect(gate, 'the card form renders its button while the run is running').toBeGreaterThan(-1);
-  expect(card2.indexOf('<CcLinkButton')).toBeGreaterThan(gate);
-  expect(card.match(/wt\('nextStep\.running'\)/g)?.length).toBe(2);
-});
-
 test('Management says the run is running and offers no button for it', () => {
-  const overview = read('components/workspace/ManagementOverview.tsx');
-  expect(overview).toContain("reason: nextStep.running ? wt('nextStep.running') : nextStep.reason,");
-  expect(overview).toContain('running: nextStep.running === true,');
   const exec = read('components/workspace/ManagementExecutive.tsx');
   const buttons = exec.split('data-executive-next-action=""').length - 1;
   const gates = exec.split('{primary?.running ? null : (').length - 1;

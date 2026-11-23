@@ -203,21 +203,6 @@ test.describe('what counts as a move (CR-15)', () => {
 /* --------------------------------------------- the wiring, read */
 
 test.describe('where the Stand is asked (CR-15)', () => {
-  test('the badge and its notice keep their two exits', () => {
-    // The workspace shell that rendered the badge dissolved with 3.5.0 (AB-11); plan P5 puts the Stand into
-    // Analyze's header with the decision record (AB-10).
-
-    const stand = read('components/workspace/RevisionStand.tsx');
-    expect(stand).toContain('data-workspace-revision=');
-    expect(stand).toContain('data-workspace-revision-banner=');
-    expect(stand, 'the notice lost "keep the old Stand"').toContain('data-workspace-revision-keep=');
-    expect(stand, 'the notice lost "refresh"').toContain('data-workspace-revision-refresh=');
-    // Neither exit is the primary: the screen must not choose for the reader.
-    expect(stand, 'one of the two exits was promoted to the page\'s primary action').not.toMatch(
-      /variant="primary"/,
-    );
-  });
-
   test('the check happens at focus, at mount and before the write — and the write waits for it', () => {
     const hook = read('hooks/useWorkspaceRevision.ts');
     expect(hook, 'the screen never rechecks when it comes back into focus').toContain(
@@ -226,12 +211,6 @@ test.describe('where the Stand is asked (CR-15)', () => {
     expect(hook).toContain("addEventListener('visibilitychange'");
     expect(hook, 'the probe is built per event, so every event is its own window').toContain('useMemo');
 
-    const access = read('components/workspace/AccessList.tsx');
-    const revoke = access.slice(access.indexOf('const revoke = useCallback'));
-    const gate = revoke.indexOf('await beforeWrite()');
-    const write = revoke.indexOf('await revokeProjectAccess(');
-    expect(gate, 'the writing action asks nothing about the Stand').toBeGreaterThan(-1);
-    expect(gate, 'the Stand is checked after the revocation was already sent').toBeLessThan(write);
   });
 
   test('saving the map is a writing action: it waits for the Stand, and its revision becomes the Stand', () => {
@@ -269,7 +248,6 @@ test.describe('where the Stand is asked (CR-15)', () => {
     for (const rel of [
       'lib/workspace-revision.ts',
       'hooks/useWorkspaceRevision.ts',
-      'components/workspace/RevisionStand.tsx',
     ]) {
       const src = read(rel);
       expect(src, `${rel} writes to Firestore`).not.toMatch(/setDoc|updateDoc|addDoc|method: 'POST'/);

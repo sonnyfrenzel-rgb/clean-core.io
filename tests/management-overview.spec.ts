@@ -1,13 +1,6 @@
-import { test, expect, type Page } from './helpers/test';
+import { test, expect } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
-import { build } from 'esbuild';
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
-import { adminSetDoc, adminSetCustomClaim } from './helpers/admin-seed';
-import firebaseConfig from '../firebase-config.json';
 import {
   MAX_OVERVIEW_CARDS,
   OVERVIEW_CARD_ORDER,
@@ -34,18 +27,16 @@ import {
 import { emptyProjectDecision } from '../lib/project-decision';
 import type { ItFindingRow, ItFindingsSource } from '../lib/it-findings';
 import type { Project } from '../lib/types';
-import { signInViaLanding } from './helpers/sign-in';
 
 /**
  * Roadmap 3.0.10 — the Management view becomes readable in seconds.
  *
- * Two halves. The first drives `lib/management-overview.ts` from fixtures and
+ * It drives `lib/management-overview.ts` from fixtures and
  * holds the three limits of the roadmap line where they are decided: *not
  * determined* is its own segment of every chart and never folded away, every
- * card names its coverage, and no card carries an amount of money. The second
- * renders the overview on a seeded project, one test per diagram, and reads
- * each chart as a reader without a mouse or without sight would: the
- * `aria-label`, the table, the dashed *not determined* area.
+ * card names its coverage, and no card carries an amount of money. The
+ * component that drew these cards in the old workspace left with 3.5.0; the
+ * models stay, read by the steering one-pager and Analyze's Management view.
  */
 
 const ROOT = path.resolve(__dirname, '..');
@@ -414,7 +405,7 @@ test.describe('(a) one sentence, at most six cards', () => {
   test('no amount of money anywhere in the overview', () => {
     const text = JSON.stringify(managementOverview(source(), { hasSource: true, hasRun: true }));
     expect(text).not.toMatch(/€|\$\s?\d|\bEUR\b|\bUSD\b|currency/i);
-    for (const rel of ['lib/management-overview.ts', 'components/workspace/ManagementOverview.tsx']) {
+    for (const rel of ['lib/management-overview.ts']) {
       expect(read(rel), `${rel} formats money`).not.toMatch(/style:\s*'currency'|€/);
     }
   });
@@ -425,335 +416,19 @@ test.describe('(a) one sentence, at most six cards', () => {
       expect(line).not.toMatch(/react|firebase|firestore|gemini/i);
     }
     expect(src).not.toContain('fetch(');
-    const component = read('components/workspace/ManagementOverview.tsx');
-    expect(component, 'the overview writes').not.toMatch(/setDoc|updateDoc|addDoc|method:\s*'(POST|PUT|PATCH|DELETE)'/);
   });
 
-  test('a command of the Decision card makes the overview reread the decision', () => {
-    // QA review of 4b4586aff273: the overview read the decision once per
-    // project, so after a confirmation it still said "open".
-    const component = read('components/workspace/ManagementOverview.tsx');
-    expect(component).toMatch(/'decision',[\s\S]*?\}, \[projectId, decisionRevision\]\);/);
-    const answers = read('components/workspace/ManagementAnswers.tsx');
-    expect(answers).toContain('decisionRevision={decisionRevision}');
-    // The workspace shell that wired the two together dissolved with 3.5.0 (AB-11); Analyze's Management view (AB-10)
-    // mounts them, and its own spec holds the wiring.
+  test('both successful commands of the Decision card tell the page that mounts it', () => {
     const card = read('components/workspace/DecisionCard.tsx');
-    // Both successful commands tell the shell.
     expect(card.match(/setReload\(\(n\) => n \+ 1\);\s*onChanged\?\.\(\);/g)?.length).toBe(2);
   });
 
-  test('the run history holds back the trend only, never the decision (ADR-087)', () => {
-    // The whole answer used to wait for the runs to be read; a slow read held
-    // the decision back. Only the readiness trend needs them.
-    const answers = read('components/workspace/ManagementAnswers.tsx');
-    expect(answers).not.toMatch(/if \(history === undefined\) \{\s*return/);
-    expect(answers).toContain('historyPending={history === undefined}');
-    const component = read('components/workspace/ManagementOverview.tsx');
-    // While the read is in flight the card says it is reading. It used to take
-    // `overview.readiness.title`, which is derived from `history ?? null` and so
-    // said "the runs could not be read" until the read ended (CI 38051799180).
-    expect(component).toMatch(/historyPending\s*\?\s*\{ state: 'loading', title: READINESS_READING \}/);
-    expect(component).toMatch(/const READINESS_READING = 'Reading [^']*';/);
-  });
-
-  // QA review of d939fb5b056b (4de9b70ecb56): the same rule, rendered. The
-  // component bundled and rendered while the history read is still pending and
-  // after it: the decision stands in both, the trend says it is reading, then
-  // shows the history.
-  test('rendered: the decision stands while the run history is read, the trend says it is reading', async () => {
-    test.setTimeout(120 * 1000);
-    const root = path.resolve(__dirname, '..');
-    const out = path.resolve(root, 'tmp', 'management-overview-rendered', 'ManagementOverview.cjs');
-    fs.mkdirSync(path.dirname(out), { recursive: true });
-    await build({
-      entryPoints: [path.resolve(root, 'components', 'workspace', 'ManagementOverview.tsx')],
-      outfile: out,
-      bundle: true,
-      format: 'cjs',
-      platform: 'node',
-      jsx: 'automatic',
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
-      alias: { '@': root },
-      logLevel: 'silent',
-    });
-    const ManagementOverview = require(out).default as React.ComponentType<Record<string, unknown>>;
-    const p = project();
-    const render = (pending: boolean) =>
-      renderToStaticMarkup(
-        React.createElement(ManagementOverview, {
-          project: p,
-          projectId: 'p-history',
-          view: managementAnswers(p, pending ? null : HISTORY, null),
-          historyPending: pending,
-          decision: React.createElement('div', { 'data-rendered-decision': '' }, 'The decision'),
-        }),
-      );
-    const readiness = (html: string) => {
-      const at = html.indexOf('data-overview-card="readiness"');
-      expect(at, 'the readiness card is rendered').toBeGreaterThan(-1);
-      return html.slice(at, at + 2000);
-    };
-
-    const pending = render(true);
-    expect(pending, 'the decision does not wait for the history').toContain('data-rendered-decision');
-    expect(readiness(pending)).toContain('data-overview-state="loading"');
-    expect(readiness(pending)).toContain('Reading the Clean Core Score history');
-    expect(pending, 'no verdict on a history still being read').not.toContain('could not be read');
-
-    const read = render(false);
-    expect(read).toContain('data-rendered-decision');
-    expect(readiness(read)).toContain('data-overview-state="ready"');
-    expect(read).not.toContain('Reading the Clean Core Score history');
-  });
-
-  test('rendered: one run reads as a finished measurement — fact, run link, hint, the rule version once', async () => {
-    test.setTimeout(120 * 1000);
-    const root = path.resolve(__dirname, '..');
-    const out = path.resolve(root, 'tmp', 'management-overview-rendered-one-run', 'ManagementOverview.cjs');
-    fs.mkdirSync(path.dirname(out), { recursive: true });
-    await build({
-      entryPoints: [path.resolve(root, 'components', 'workspace', 'ManagementOverview.tsx')],
-      outfile: out,
-      bundle: true,
-      format: 'cjs',
-      platform: 'node',
-      jsx: 'automatic',
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
-      alias: { '@': root },
-      logLevel: 'silent',
-    });
-    const ManagementOverview = require(out).default as React.ComponentType<Record<string, unknown>>;
-    const p = project({ activeRunId: 'run-1' });
-    const one = [entry({ runId: 'run-1', createdAt: '2026-10-11T09:00:00.000Z', cleanCoreScore: 75 })];
-    const html = renderToStaticMarkup(
-      React.createElement(ManagementOverview, {
-        project: p,
-        projectId: 'p-one',
-        view: managementAnswers(p, one, null),
-        historyPending: false,
-        decision: React.createElement('div', null, 'The decision'),
-      }),
-    );
-    const at = html.indexOf('data-overview-card="readiness"');
-    expect(at, 'the readiness card is rendered').toBeGreaterThan(-1);
-    const card = html.slice(at, html.indexOf('</section>', at));
-    expect(card).toContain('data-overview-runs="one"');
-    expect(card).toContain('Clean Core Score 75 · measured on 11 Oct 2026');
-    expect(card).toContain('Analysis done');
-    expect(card).toContain('data-overview-run="run-1"');
-    expect(card).toContain('href="/project/p-one/analyze');
-    // The band beside the score, and the run link itself: "Analysis done · Run <id>",
-    // the link pointing at Analyze and naming the run.
-    expect(card).toMatch(/data-overview-fact=""[^>]*>75 of 100 · significant rework \(60–80\)/);
-    expect(card).toMatch(
-      /Analysis done · <a href="\/project\/p-one\/analyze[^"]*" data-overview-run="run-1"[^>]*>Run run-1<\/a>/,
-    );
-    expect(card).toContain('A trend appears after the next analysis measured by the same rule.');
-    expect(card).toContain('data-provenance="proven"');
-    // Nothing that reads as an open item: no dashed "Not determined: 0 runs", no
-    // one-row table, no line through one point, no "no history".
-    expect(card).not.toContain('data-overview-not-determined');
-    expect(card).not.toContain('data-overview-table');
-    expect(card).not.toContain('data-overview-trend');
-    expect(card).not.toMatch(/no history|Not determined:/);
-    // The grade explanation once, the rule version once (in its disclosure).
-    expect(card.split('not a compliance percentage').length - 1).toBe(1);
-    expect(card.split('rules-v1.0').length - 1).toBe(1);
-    expect(card).toContain('data-cc-disclosure="closed"');
-  });
-
   test('Management renders none of the duplicates the owner dropped (ADR-087) — their models stay', () => {
-    const component = read('components/workspace/ManagementOverview.tsx');
-    // The decision and bucket cards, the levels and blockers cards, the four
-    // figures with the second bucket bar and the phases, the detailed answers.
-    for (const gone of ['data-overview-card="decision"', 'data-overview-card="buckets"', 'data-overview-card="levels"', 'data-overview-card="blockers"', 'ExecutiveEvidence', 'children']) {
-      expect(component, `${gone} is rendered again`).not.toContain(gone);
-    }
-    expect(read('components/workspace/ManagementAnswers.tsx')).not.toContain('data-management-answer');
     expect(read('components/workspace/ManagementExecutive.tsx')).not.toContain('data-executive-phases');
     // The models the one-pager and the specs read are still there.
     const model = read('lib/management-overview.ts');
     for (const kept of ['export function bucketsCard', 'export function levelsCard', 'export function blockersCard', 'export function decisionOverviewCard']) {
       expect(model).toContain(kept);
     }
-  });
-
-  test('while the decision is reread, the previous answer is not shown as current', () => {
-    // Carried QA finding 89203dfdb3df: after a withdrawal the overview kept
-    // the confirmed decision on screen until the new read landed.
-    const component = read('components/workspace/ManagementOverview.tsx');
-    expect(component).toContain("decisionHeld.rev === decisionRevision ? decisionHeld.value : { state: 'loading' }");
-    expect(component).toContain('(value) => setDecisionHeld({ rev: decisionRevision, value })');
-  });
-});
-
-/* -------------------------------------------------------- on the screen */
-
-const firebaseApp = getApps().find((a) => a.name === '[DEFAULT]') ?? initializeApp(firebaseConfig);
-const clientAuth = getAuth(firebaseApp);
-try {
-  connectAuthEmulator(clientAuth, 'http://127.0.0.1:9099', { disableWarnings: true });
-} catch {
-  /* already connected */
-}
-
-const PASSWORD = 'ManagementOverview123!';
-const unique = (prefix: string) => `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-
-async function signIn(page: Page, email: string): Promise<void> {
-  await signInViaLanding(page, email, PASSWORD);
-}
-
-/** Reads, standard-table access, a modification: enough objects for every chart to have segments. */
-const SEEDED_SOURCE = `REPORT z_mgmt_overview.
-DATA: lt_ekpo TYPE TABLE OF ekpo.
-SELECT * FROM ekpo INTO TABLE lt_ekpo.
-SELECT SINGLE * FROM t16fs INTO @DATA(ls_t16fs).
-UPDATE ekpo SET loekz = 'L' WHERE ebeln = '1'.
-CALL FUNCTION 'BAPI_PO_CREATE1'.
-`;
-
-test.describe('the overview on the screen — one rendered test per chart', () => {
-  const ADMIN = `${unique('mgmt-ov-admin')}@cleancore-test.io`;
-  const ID = unique('mgmt-ov');
-  const RUN = { rulesetVersion: 'rules-v1.0', analyzerVersion: '2.9.0', sapApiCatalogVersion: 'cat-2026-08' };
-
-  test.beforeAll(async () => {
-    test.setTimeout(180 * 1000);
-    const cred = await createUserWithEmailAndPassword(clientAuth, ADMIN, PASSWORD);
-    await adminSetCustomClaim(cred.user.uid, { admin: true });
-    await adminSetDoc('users', cred.user.uid, {
-      firstName: 'Overview', lastName: 'Admin', email: ADMIN,
-      tier: 'pilot', status: 'approved', isAdmin: true,
-      transformationsUsed: 1, transformationsLimit: 5, createdAt: new Date(),
-    });
-    await adminSetDoc('projects', ID, {
-      name: 'Overview charts', userId: cred.user.uid, createdAt: new Date(), status: 'analyzed',
-      legacyCode: SEEDED_SOURCE, s4Deployment: 'private', activeRunId: 'run-b',
-    });
-    for (const [runId, createdAt, score, version] of [
-      ['run-a', '2026-05-20T10:00:00.000Z', 42, RUN],
-      ['run-b', '2026-09-09T10:00:00.000Z', 58, RUN],
-      ['run-old', '2026-04-01T10:00:00.000Z', 30, { ...RUN, sapApiCatalogVersion: 'cat-2026-01' }],
-    ] as const) {
-      await adminSetDoc(`projects/${ID}/runs`, runId, {
-        runId, userId: cred.user.uid, createdAt, cleanCoreScore: score, ...version,
-      });
-    }
-  });
-
-  async function open(page: Page) {
-    await signIn(page, ADMIN);
-    await page.goto(`/project/${ID}?view=management`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-management-overview]')).toBeVisible({ timeout: 60000 });
-  }
-
-  test('the decision panel comes first: question, answer, what it rests on, one next step — and nothing twice', async ({ page }) => {
-    test.setTimeout(240 * 1000);
-    await open(page);
-    const panel = page.locator('[data-management-executive]');
-    await expect(panel.locator('[data-executive-question]')).toContainText('Keep, rebuild, move to SAP standard or retire Z_MGMT_OVERVIEW?');
-    // With a run, the decision record is the panel's hero (owner 03.10.2026).
-    // The answer names the option once; the card under it does not say it
-    // again (ADR-087) — what it rests on stands as four rows.
-    await expect(panel.locator('[data-decision-card][data-decision-status]')).toBeVisible({ timeout: 60000 });
-    await expect(panel.locator('[data-decision-answer]')).toContainText(/Not decided yet|Rebuild|Retire|Keep|Move to SAP standard/);
-    await expect(panel.locator('[data-decision-headline], [data-decision-why]')).toHaveCount(0);
-    await expect(panel.locator('[data-decision-pillar]')).toHaveCount(4);
-    await expect(panel.locator('[data-decision-rests-on-title]')).toHaveText(/^What it rests on: [0-4] of 4 in place$/);
-    await expect(panel.locator('[data-executive-next-action]')).toHaveCount(1);
-    // Under it the distance to SAP standard, beside it the readiness trend.
-    await expect(panel.locator('#standard-fit')).toBeVisible();
-    await expect(panel.locator('#management-readiness')).toBeVisible();
-    await expect(panel, 'an amount of money in the decision panel').not.toContainText(/€|EUR/);
-    // What the first screen says is not said again further down (§2.11).
-    for (const gone of ['[data-executive-evidence]', '[data-executive-figure]', '[data-overview-bar="executive-buckets"]', '[data-executive-phase]', '[data-overview-card="decision"]', '[data-overview-card="buckets"]', '[data-overview-card="levels"]', '[data-overview-card="blockers"]', '[data-management-answer]']) {
-      await expect(page.locator(gone), `${gone} is rendered again`).toHaveCount(0);
-    }
-    // One "Open Economics" link under the options, not one per card.
-    await expect(panel.locator('[data-option-open-economics]')).toHaveCount(0);
-    await expect(panel.locator('[data-options-compare-economics]')).toHaveCount(1);
-  });
-
-  test('the Evidence fold holds every object per bucket and the open questions — nothing else', async ({ page }) => {
-    test.setTimeout(240 * 1000);
-    await open(page);
-    const fold = page.locator('[data-management-fold="evidence"]');
-    await expect(fold.locator('> [data-cc-disclosure="closed"]')).toHaveCount(1);
-    await fold.locator('[data-cc-disclosure-trigger]').first().click();
-    await expect(fold.locator('#public-cloud-fit')).toBeVisible({ timeout: 60000 });
-    await expect(fold.locator('#not-determined')).toBeAttached();
-    // No second bucket bar, no figures, no phases, no source cards.
-    await expect(fold.locator('[data-overview-bar], [data-overview-card], [data-executive-figure]')).toHaveCount(0);
-    await expect(fold, 'an amount of money in the Evidence fold').not.toContainText(/€|EUR/);
-  });
-
-  test('(c) score history on the first screen: two points on one rule version, the older version named as a break', async ({ page }) => {
-    test.setTimeout(240 * 1000);
-    await open(page);
-    const card = page.locator('#management-readiness [data-overview-card="readiness"]');
-    await expect(card.locator('h3')).toHaveText('Clean Core Score 58, up from 42 with the same rules', { timeout: 60000 });
-    // Not one action deeper any more (mockup s5): never inside a fold.
-    expect(await card.evaluate((el) => Boolean(el.closest('[data-management-fold]')))).toBe(false);
-    await expect(card.locator('[data-overview-trend]')).toHaveAttribute('aria-label', /42 on 2026-05-20, 58 on 2026-09-09/);
-    await expect(card.locator('[data-overview-breaks]')).toContainText('cat-2026-01');
-    // Every seeded run is drawn or named as a break, so there is nothing to
-    // count as not determined — and no dashed box saying "0" (owner, 11.10.2026).
-    await expect(card.locator('[data-overview-not-determined="readiness"]')).toHaveCount(0);
-    await expect(card.locator('[data-overview-table]')).toBeVisible();
-    await expect(card).toContainText('A grade, not a compliance percentage');
-  });
-
-  test('(e) what stands in the way: the objects by name, and what else blocks it, each with its evidence', async ({ page }) => {
-    test.setTimeout(240 * 1000);
-    await open(page);
-    const list = page.locator('#standard-fit [data-standard-fit-list="blocks"]');
-    await expect(list).toBeVisible({ timeout: 60000 });
-    for (const row of await list.locator('[data-standard-fit-blocker]').all()) {
-      await expect(row.locator('[data-provenance]').first()).toBeVisible();
-      await expect(row).not.toBeEmpty();
-    }
-  });
-
-  test('(f) the decision: what it rests on is one list, every open condition under its foundation', async ({ page }) => {
-    test.setTimeout(240 * 1000);
-    await open(page);
-    const card = page.locator('[data-decision-card][data-decision-status]');
-    await expect(card).toBeVisible({ timeout: 60000 });
-    // Every condition stands under one of the four rows (or the account's own row).
-    const conditions = card.locator('[data-decision-condition]');
-    for (const c of await conditions.all()) {
-      expect(await c.evaluate((el) => Boolean(el.closest('[data-decision-pillar], [data-decision-other]')))).toBe(true);
-    }
-    // The limits nobody here can close: one muted folded line under the contract.
-    const limits = card.locator('[data-decision-limits]');
-    for (const l of await limits.all()) {
-      expect(await l.evaluate((el) => Boolean(el.closest('[data-decision-pillar="contract"]')))).toBe(true);
-      await expect(l.locator('[data-cc-disclosure="closed"]')).toHaveCount(1);
-    }
-    // The need's open rules and decision points are said once — in the Need row.
-    await expect(card.getByText(/still needs? a business answer/)).toHaveCount(0);
-    // Each row has one action of its own.
-    for (const key of ['need', 'option', 'cost', 'contract']) {
-      await expect(card.locator(`[data-decision-pillar="${key}"] [data-decision-pillar-action]`)).toHaveCount(1);
-    }
-  });
-
-  test('forced colours and print keep every chart readable', async ({ browser }) => {
-    test.setTimeout(240 * 1000);
-    const context = await browser.newContext({ forcedColors: 'active' });
-    const page = await context.newPage();
-    await open(page);
-    const seg = page.locator('[data-overview-bar="standard-fit"] [data-chart-segment]').first();
-    await expect(seg).toBeVisible({ timeout: 60000 });
-    expect(await seg.evaluate((el) => getComputedStyle(el).borderStyle)).toBe('solid');
-    await page.emulateMedia({ media: 'print' });
-    // Since 5b9a180b the workspace prints its own sheet (§7.1, mockup s10),
-    // never the screen's cards: the chart is not on paper at all, rather than
-    // on paper without its fills. The sheet is what prints.
-    await expect(page.locator('[data-workspace-print]')).toBeVisible();
-    await expect(page.locator('[data-overview-card="readiness"]')).toBeHidden();
-    await context.close();
   });
 });
