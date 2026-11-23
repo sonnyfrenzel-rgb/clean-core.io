@@ -93,8 +93,6 @@ export function outsidePricedRange(decision: DesignDecision, routeDeviation: boo
   return decision.outdated.length > 0 || (decision.case === 'rebuild' && routeDeviation);
 }
 
-export const OUTSIDE_PRICED_HEADLINE = 'This design lies outside what Economics priced. Re-price it.';
-
 /* --------------------------------------------------------- the target board */
 
 /** A step's mark on the board. `stays` is drawn unmarked. */
