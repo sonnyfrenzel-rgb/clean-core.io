@@ -206,7 +206,7 @@ const ALLOWED: Record<PhaseState, string[]> = {
   stale: ['partial'],
 };
 
-/** "Regenerate it in stage 3 first." → transformation. */
+/** "Regenerate it in stage 4 first." → transformation (ADR-128: Economics is stage 2). */
 function stageNamedBy(message: string): PhaseKey {
   const m = /stage (\d)/.exec(message);
   expect(m, `a blocker names no stage: "${message}"`).not.toBeNull();
@@ -445,9 +445,10 @@ test.describe('the open gaps are still open — closing one has to update the re
     // The flag is off by default and set by that one page — and by the demo's Analyze, Business, which is where the
     // demo opens since v3.1.0 (O10, the demo opens like a project).
     expect(register.workspace.reachability).toContain('ADR-109');
-    expect(header).toContain('href={toMyWorkspace ? myWorkspaceHref() : back.href}');
+    // Since 3.5.0 the family's one way back (ADR-140, `familyBackLink`) leads to My workspace by default as well; the
+    // flag still forces it whatever the address carries.
+    expect(header).toContain('familyBackLink({ projectId, search, demo, toMyWorkspace: backToMyWorkspace })');
     expect(header).toContain('backToMyWorkspace = false,');
-    expect(header).toContain('const toMyWorkspace = backToMyWorkspace;');
     const setters = ['app', 'components', 'lib'].flatMap((dir) => grepTsx(dir, /(?<![.\w])backToMyWorkspace\b/))
       .filter((f) => f !== 'components/StageHeader.tsx');
     expect(setters.sort()).toEqual(['components/analyze/AnalyzeBusiness.tsx', 'components/demo/DemoAnalyzeBusiness.tsx']);

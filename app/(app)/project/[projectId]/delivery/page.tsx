@@ -615,7 +615,7 @@ export default function DeliveryPage() {
 
   if (loading || (!project && !loadFailed)) return (
     <StageFrame stage="delivery">
-      <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} projectName={project?.name} />
+      <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} project={project} />
       <CcSkeleton shape="cards" label="Finalizing delivery package..." count={4} />
     </StageFrame>
   );
@@ -697,7 +697,7 @@ export default function DeliveryPage() {
           for deployment" on every project, including one with nothing but an
           analysis run behind it. Block D, D.19: the title is the stage's name
           from `PHASES`, left-aligned like every other stage. */}
-      <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} projectName={project?.name}>
+      <StageHeader stage="delivery" tools={{ steps: phases, current: 'delivery' }} project={project}>
         {/* `proven`, not `done`. The material can all be present while the test
             run behind the verdicts never happened — `testCases[].status` is
             client-writable and used to be read as an execution.
@@ -832,9 +832,9 @@ export default function DeliveryPage() {
                           }
                           detail={
                             !hasGeneratedCode
-                              ? 'Run stage 3 to produce the code this line reports on'
+                              ? 'Run Transformation to produce the code this line reports on'
                               : codeStale
-                                ? `${codeStaleWords(project)?.short ?? `Generated from ${previousBasis(project)}`} — regenerate in stage 3`
+                                ? `${codeStaleWords(project)?.short ?? `Generated from ${previousBasis(project)}`} — regenerate in Transformation`
                                 : isAbapCloud
                                   ? 'ABAP Cloud packages generated — not compiled or tested'
                                   : 'TypeScript package generated — not compiled or tested'
@@ -860,9 +860,9 @@ export default function DeliveryPage() {
                           }
                           detail={
                             !hasDocumentation
-                              ? 'Run stage 4 to produce the documentation this line reports on'
+                              ? 'Run Documentation to produce the documentation this line reports on'
                               : docsStale
-                                ? `Written for ${previousBasis(project)} — regenerate in stage 4`
+                                ? `Written for ${previousBasis(project)} — regenerate in Documentation`
                                 : documentationFromCode
                                   ? 'Every statement with its lines'
                                   : 'Written by a language model from 1,000-character slices'
@@ -891,7 +891,7 @@ export default function DeliveryPage() {
                               testCaseCount === 0
                                 ? 'Nothing to verify'
                                 : testingPhase.state === 'stale'
-                                  ? `Written for ${testsPreviousBasis(project)} — regenerate in stage 5`
+                                  ? `Written for ${testsPreviousBasis(project)} — regenerate in Testing`
                                   // ADR-094 — closed by the owner without a passing run:
                                   // named, not a blocker, never a pass.
                                   : testingClosure.state === 'current'
@@ -913,7 +913,7 @@ export default function DeliveryPage() {
                                         ? (isAbapCloud ? 'ADT: every generated test returned a pass' : 'Sandbox: every generated test returned a pass')
                                         : countsLine(recordedTestRun.counts))
                                     : testsPassed > 0
-                                      ? `${testsPassed} marked as passed — no test run is on record behind these verdicts. Run the suite in stage 5.`
+                                      ? `${testsPassed} marked as passed — no test run is on record behind these verdicts. Run the suite in Testing.`
                                       : [
                                         testsFailed > 0 ? `${testsFailed} marked as failed` : null,
                                         testsConnectivity > 0 ? `${testsConnectivity} connectivity checks — not tests of the code` : null,

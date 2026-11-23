@@ -198,6 +198,11 @@ export const PHASES: ReadonlyArray<{ n: number; key: PhaseKey; label: string }> 
   { n: 7, key: 'delivery', label: 'Delivery' },
 ];
 
+/** A tool's place in the order, as the messages that send the reader to a stage number it ("stage 3"). */
+export function stageNumber(key: PhaseKey): number {
+  return PHASES.find((p) => p.key === key)?.n ?? 0;
+}
+
 /** The phase keys in tool order. */
 export const PHASE_KEYS: readonly PhaseKey[] = Object.freeze(PHASES.map((p) => p.key));
 
@@ -694,10 +699,10 @@ export function generationBlockers(
     ];
   }
   const prev = s.basis === 'profile' ? 'a previous target profile' : 'a previous source';
-  if (s.design && p.design) out.push(`The solution design was generated for ${prev}. Regenerate it in stage 2 first.`);
-  if (s.signOff) out.push(`The architecture sign-off was given for ${prev}. Confirm it again in stage 2.`);
+  if (s.design && p.design) out.push(`The solution design was generated for ${prev}. Regenerate it in stage ${stageNumber('design')} first.`);
+  if (s.signOff) out.push(`The architecture sign-off was given for ${prev}. Confirm it again in stage ${stageNumber('design')}.`);
   if (target !== 'transformation' && s.code && p.code) {
-    out.push(`The code was generated from ${prev}. Regenerate it in stage 3 first.`);
+    out.push(`The code was generated from ${prev}. Regenerate it in stage ${stageNumber('transformation')} first.`);
   }
   return out;
 }
@@ -1110,7 +1115,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
       badge: 'Self-reported',
       detail:
         `All ${plural(tests.total, 'test case')} are marked as passed, and no test run is on record for this code. ` +
-        'Run the suite in stage 5 to record one.',
+        `Run the suite in stage ${stageNumber('testing')} to record one.`,
     });
   } else if (executed === 0) {
     testing = phase('testing', {
@@ -1257,7 +1262,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
           ? 'Code, documentation and a passing ABAP Unit run imported from your SAP system are on record — run there, not here. Whether to deploy remains an architect’s decision.'
           : testing.verifiedOutside === 'confirmed'
           ? 'Code, documentation and your confirmation that the ABAP Unit class passed in your SAP system are on record — a self-declaration, not a run here. Whether to deploy remains an architect’s decision.'
-          : 'Code, documentation and test verdicts are on record — no test run is on record behind the verdicts. Run the suite in stage 5 before handing this over.',
+          : `Code, documentation and test verdicts are on record — no test run is on record behind the verdicts. Run the suite in stage ${stageNumber('testing')} before handing this over.`,
       })
     : !keyUser && !hasGenerated && tests.total === 0 && !hasDocs
       ? phase('delivery', {

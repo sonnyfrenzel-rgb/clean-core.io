@@ -37,7 +37,7 @@ export function buildTenantPendingEmail({ name, recipient }: TenantMailInput): s
   return buildUserMail({
     greeting: `Hello ${name},`,
     paragraphs: [
-      'We have received your request to connect your own S/4HANA tenant (BYOT) in stage 5, Testing.',
+      'We have received your request to connect your own S/4HANA tenant (BYOT) in the Testing tool.',
       'Every custom sandbox endpoint is reviewed by hand before access is granted; this usually takes up to 24 hours. You will get a mail once access is active.',
       'In the meantime: use non-production development or test tenants only. Basic authentication or OAuth 2.0 client credentials can be stored for the connection. Connection checks are sent from the Clean-Core.io server as read-only requests; business, transactional and master data from your tenant is not stored.',
     ],
@@ -54,8 +54,8 @@ export function buildTenantApprovalEmail({ name, recipient }: TenantMailInput): 
   return buildUserMail({
     greeting: `Hello ${name},`,
     paragraphs: [
-      'Your request to connect a live SAP S/4HANA Cloud Public Edition tenant has been reviewed and approved. You can now connect your non-production SAP environment in stage 5 to check the connection and read OData metadata. Running the generated tests against the tenant stays locked until the isolated live runner is switched on; until then they run against mocks.',
-      'In stage 5, open the tab "Check tenant connection", enter your credentials and choose "Test Connection".',
+      'Your request to connect a live SAP S/4HANA Cloud Public Edition tenant has been reviewed and approved. You can now connect your non-production SAP environment in the Testing tool to check the connection and read OData metadata. Running the generated tests against the tenant stays locked until the isolated live runner is switched on; until then they run against mocks.',
+      'In the Testing tool, open the tab "Check tenant connection", enter your credentials and choose "Test Connection".',
       '<strong>Credentials stay on the server.</strong> They are encrypted with AES-256-GCM in a server-only store, decrypted only for the server-side calls to your tenant, and never returned to the browser.',
       '<strong>Guidelines for a safe connection.</strong> Prefer importing the connection as an HTTP destination (JSON) from the SAP Destination service over entering credentials by hand. Use OAuth 2.0 SAML bearer assertions where you want user-specific identity propagation and audit logs in the target system. For on-premise development tenants, route traffic through the SAP Cloud Connector so your firewall stays closed. Connection checks and metadata reads are read-only requests from the Clean-Core.io server.',
       '<strong>What is available now.</strong> A connection check, the OData metadata and one read-only call against your non-production tenant; the stored credentials; and a log of the read-only requests sent to the tenant.',
