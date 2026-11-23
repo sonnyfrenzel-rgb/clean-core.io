@@ -3,9 +3,11 @@
  * ADR-125 (4)): one parsed source that every reader can share instead of
  * splitting, masking and nesting the text again.
  *
- * Pure: imports only within `lib/engine4/`. Inert until the owner decides the
- * wiring (`docs/design/engine4.md`, "Phase 0"): ADR-125 (1) keeps `lib/abap/`
- * from importing this tree before the switch.
+ * Pure: imports only within `lib/engine4/`. On the product path since the
+ * parse-once wiring (ADR-133 (1), `docs/design/engine4.md`, "Phase 0 wiring"):
+ * `lib/abap/statement-reader.ts` reads it, so every reading of the shipping
+ * engine goes through it — a change here is an engine change. ADR-125 (1)
+ * keeps the rest of `lib/abap/` from importing this tree before the switch.
  *
  * What it holds, each computed once:
  *

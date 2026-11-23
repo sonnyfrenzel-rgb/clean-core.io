@@ -3,6 +3,8 @@ import {
   PARSE_ONCE_READER,
   parseOnceFallback,
   parseOnceStatistics,
+  parsedSource,
+  parsedSourceOf,
   readStatements,
   readStatementsShipping,
   withParsedSource,
@@ -72,6 +74,16 @@ test('inside a build one reading per source, every caller gets its own copy, not
   expect(inside.reused - before.reused).toBe(1);
   readStatements(src);
   expect(parseOnceStatistics().parsed - inside.parsed).toBe(1);
+});
+
+test('the class gap reads the same parse as the statement reader inside a build (QA f73d9d8a7a2b)', () => {
+  const src = 'REPORT z.\nDATA lo TYPE REF TO cl_gui_alv_grid.\n';
+  withParsedSource(() => {
+    readStatements(src);
+    expect(parsedSourceOf(src)).toBe(parsedSource(src));
+  });
+  // Outside a build nothing is kept: each call parses afresh.
+  expect(parsedSourceOf(src)).not.toBe(parsedSourceOf(src));
 });
 
 test('the container index answers the shipping scan on every line of every corpus file', () => {

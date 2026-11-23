@@ -13,10 +13,12 @@
  * `dynamic` and lists every literal the source ever writes into the variable,
  * so a reader still sees the candidates.
  *
- * Pure and inert (ADR-125): imports only within `lib/engine4/`. It knows no
- * catalog: whether a name is SAP's, released or level A–D is the consumer's
- * question (today the shadow script asks `lib/abap/catalog-service.ts`; later
- * `lib/knowledge/`, ADR-133 (2)). Nothing in the product reads it.
+ * Pure (ADR-125): imports only within `lib/engine4/`. It knows no catalog:
+ * whether a name is SAP's, released or level A–D is the consumer's question
+ * (`lib/abap/catalog-service.ts`; later `lib/knowledge/`, ADR-133 (2)).
+ * Product path: from engine 3.4.0 `lib/abap/sap-class-references.ts` reads it
+ * for the class gap (ADR-141), its static references only, so a change here
+ * can change a signed finding and is reviewed like any engine change.
  */
 import type { BlockTree } from './blocks';
 import type { Statement } from './statements';

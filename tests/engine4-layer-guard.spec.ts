@@ -99,6 +99,17 @@ test('nothing in the product imports lib/engine4 before the switch, except the p
   expect(referencesSeen).toBe(true);
 });
 
+test('a module the product reads does not call itself inert or unread in its header (QA 9e385135eeec)', () => {
+  // The two exceptions above are on the product path: their headers name it, and claim no inertness a reviewer
+  // could take as a reason to skip them.
+  for (const spec of [PARSE_ONCE_EXCEPTION.spec, REFERENCES_EXCEPTION.spec]) {
+    const file = path.join(ROOT, 'lib', 'engine4', `${path.basename(spec)}.ts`);
+    const text = fs.readFileSync(file, 'utf8');
+    const header = text.slice(0, text.search(/^(?:import|export)\b/m));
+    expect(header, file).not.toMatch(/\binert\b|Nothing in (?:the )?product reads/i);
+  }
+});
+
 test('no file over 1,500 lines and no function over 150 lines in lib/engine4', () => {
   const bad: string[] = [];
   for (const file of engineFiles()) {
