@@ -626,10 +626,10 @@ export function readStatementsShipping(source: string): AbapStatement[] {
 //
 // `readStatements` hands every reader the statements of one `ParsedSource`
 // (lib/engine4/parsed-source.ts, the engine 4.0 strand's L0–L2) instead of
-// scanning the text again. It is a pure refactor: on every source where the
-// parsed view could differ from the shipping scanner, it falls back to
-// `readStatementsShipping`, and the frozen digests, the goldens and the verify
-// mode prove the rest byte for byte.
+// scanning the text again. It is meant to change no reading: on every source
+// where the parsed view could differ from the shipping scanner, it falls back to
+// `readStatementsShipping`; the frozen digests, the goldens and the verify mode
+// are the checks that compare the rest with the shipping scanner.
 //
 //   - **Fallback** (`parseOnceFallback`): a lexer error (an unterminated
 //     literal, template or native SQL block, a stray brace, an unknown

@@ -153,6 +153,34 @@ ENDCLASS.
   expect(classFindings(rap, NEW).map((f) => f.objectName)).not.toContain('ORDER');
 });
 
+test('`CLASS x DEFINITION LOAD|DEFERRED` announces an SAP class, it does not define it away', () => {
+  const use = `DATA lo TYPE REF TO cl_http_utility.
+DATA(lv) = cl_http_utility=>escape_url( \`a\` ).
+`;
+  for (const announce of ['CLASS cl_http_utility DEFINITION LOAD.', 'CLASS cl_http_utility LOAD.', 'CLASS cl_http_utility DEFINITION DEFERRED.']) {
+    const code = `REPORT zload.
+${announce}
+${use}`;
+    expect(readSapClassReferences(code).map((r) => [r.name, r.lines]), announce).toEqual([['CL_HTTP_UTILITY', [3, 4]]]);
+    expect(classFindings(code, NEW).map((f) => f.objectName), announce).toContain('CL_HTTP_UTILITY');
+  }
+  // A local class announced first is still defined by its own definition further down.
+  const local = `REPORT zlocal.
+CLASS lcl_a DEFINITION DEFERRED.
+DATA lo TYPE REF TO lcl_a.
+CLASS lcl_a DEFINITION.
+ENDCLASS.
+CLASS lcl_a IMPLEMENTATION.
+ENDCLASS.
+`;
+  expect(references(readSource(local).statements, readSource(local).tree).references.filter((r) => r.name === 'LCL_A').every((r) => r.defined)).toBe(true);
+  const iface = `REPORT ziface.
+INTERFACE if_http_client LOAD.
+DATA go TYPE REF TO if_http_client.
+`;
+  expect(readSapClassReferences(iface).map((r) => r.name)).toContain('IF_HTTP_CLIENT');
+});
+
 test('route: no score point, no route change, rework on the ABAP Cloud track and named in the rationale', () => {
   for (const d of ['private', 'public'] as const) {
     const before = routeExtensibility(buildAbapEvidence(PROGRAM, 'zgap.abap', d, undefined, OLD), d, OLD);

@@ -392,6 +392,8 @@ interface Context {
   budget: { left: number };
   /** From engine 3.4.0 (`scopedConstants`): a constant names a dynamic target only in the scope it is declared in. */
   scopedConstants: boolean;
+  /** `declaresLocally` per routine and name, so a routine with many dynamic targets is scanned once per name. */
+  declaredLocally: Map<string, boolean>;
 }
 
 /**
@@ -525,6 +527,7 @@ function buildContext(source: string, options: TableDependencyOptions): Context 
     adbc: code.some((c) => /\bCL_SQL_(?:STATEMENT|CONNECTION)\b/i.test(c)),
     budget: { left: MACRO_EXPANSION_BUDGET },
     scopedConstants: options.scopedConstants === true,
+    declaredLocally: new Map(),
   };
 }
 
@@ -621,11 +624,19 @@ function declaresLocally(ctx: Context, scope: Container, name: string): boolean 
  */
 function visibleConstants(ctx: Context, name: string, line: number) {
   const all = ctx.constants.declared.filter((c) => c.name === name);
+  // No constant of that name anywhere: nothing to hide, nothing to scan.
+  if (all.length === 0) return all;
   const scope = localScopeAt(ctx, line);
   if (scope) {
     const own = all.filter((c) => localScopeAt(ctx, c.lineStart) === scope);
     if (own.length > 0) return own;
-    if (declaresLocally(ctx, scope, name)) return [];
+    const key = `${scope.lineStart}:${scope.lineEnd}:${name}`;
+    let hidden = ctx.declaredLocally.get(key);
+    if (hidden === undefined) {
+      hidden = declaresLocally(ctx, scope, name);
+      ctx.declaredLocally.set(key, hidden);
+    }
+    if (hidden) return [];
   }
   return all.filter((c) => localScopeAt(ctx, c.lineStart) === null);
 }

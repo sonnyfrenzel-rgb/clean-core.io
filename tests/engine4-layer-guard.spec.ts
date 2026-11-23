@@ -41,16 +41,21 @@ const inside = (target: string, root: string) => {
   return rel !== '' && !rel.startsWith('..') && !path.isAbsolute(rel);
 };
 
-function importsOf(file: string): string[] {
-  const sf = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
+/** What `importsOf` records for an `import()` or `require()` whose target is not a literal. */
+const COMPUTED = '<computed import>';
+
+function importsOf(file: string, text: string = fs.readFileSync(file, 'utf8')): string[] {
+  const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
   const out: string[] = [];
   const visit = (node: ts.Node) => {
     if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier && ts.isStringLiteral(node.moduleSpecifier)) {
       out.push(node.moduleSpecifier.text);
     }
-    if (ts.isCallExpression(node) && node.arguments[0] && ts.isStringLiteral(node.arguments[0]) &&
+    if (ts.isCallExpression(node) &&
       (node.expression.kind === ts.SyntaxKind.ImportKeyword || (ts.isIdentifier(node.expression) && node.expression.text === 'require'))) {
-      out.push(node.arguments[0].text);
+      const arg = node.arguments[0];
+      // A computed target (`import(target)`, `require(dir + name)`) cannot be checked, so it is never allowed.
+      out.push(arg && (ts.isStringLiteral(arg) || ts.isNoSubstitutionTemplateLiteral(arg)) ? arg.text : COMPUTED);
     }
     ts.forEachChild(node, visit);
   };
@@ -95,15 +100,25 @@ test('the engine file list reaches into subdirectories (QA f080c61f61d4)', () =>
  */
 test('lib/knowledge imports only itself and synced JSON', () => {
   const dir = path.join(ROOT, 'lib', 'knowledge');
+  const generated = path.join(ROOT, 'lib', 'abap', 'generated');
   const bad: string[] = [];
-  for (const f of fs.readdirSync(dir).filter((x) => x.endsWith('.ts'))) {
-    for (const spec of importsOf(path.join(dir, f))) {
-      if (spec.startsWith('./')) continue;
-      if (/^\.\.\/abap\/generated\/[\w.-]+\.json$/.test(spec)) continue;
-      bad.push(`${f} → ${spec}`);
+  // Every module of the tree, subdirectories included, each import resolved against the file that writes it.
+  for (const file of engineFiles(dir)) {
+    for (const spec of importsOf(file)) {
+      const target = resolvedImport(file, spec);
+      if (target && inside(target, dir)) continue;
+      if (target && inside(target, generated) && path.dirname(target) === generated && /\.json$/.test(target)) continue;
+      bad.push(`${path.relative(dir, file)} → ${spec}`);
     }
   }
   expect(bad).toEqual([]);
+});
+
+test('a computed import or require is recorded, so the boundary tests reject it', () => {
+  const file = path.join(ENGINE4, 'probe.ts');
+  const specs = importsOf(file, "const target = '../abap/x';\nvoid import(target);\nrequire(target);\nvoid import(`./lexer`);\n");
+  expect(specs).toEqual([COMPUTED, COMPUTED, './lexer']);
+  expect(resolvedImport(file, COMPUTED)).toBeNull();
 });
 
 /**

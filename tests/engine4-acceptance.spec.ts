@@ -122,7 +122,11 @@ test.describe('metamorphic: what L1 reads does not depend on case, line breaks o
       const base = sig(statements(tokens));
       expect(sig(read(recase(src, tokens, (w) => w.toUpperCase())))).toEqual(base);
       expect(sig(read(recase(src, tokens, (w) => w.toLowerCase())))).toEqual(base);
-      expect(sig(read(rebreak(src, tokens)))).toEqual(base);
+      const broken = rebreak(src, tokens);
+      // The transformation must actually break lines, or the comparison reads the same input twice.
+      expect(broken).not.toBe(src);
+      expect(broken.split('\n').length).toBeGreaterThan(src.split('\n').length);
+      expect(sig(read(broken))).toEqual(base);
     });
   }
 

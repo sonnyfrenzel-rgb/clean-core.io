@@ -278,7 +278,14 @@ function step(s: Scan, at: number): void {
   const st = s.list[at];
   if (st.context !== 'abap') return;
   if (st.kind === 'Process') s.flowLogic = true;
-  if (st.kind === 'Module' && s.flowLogic) return;
+  if (st.kind === 'Module' && s.flowLogic) {
+    // A flow-logic call (`MODULE status_0100.`, `… ON CHAIN-REQUEST`) opens nothing. `MODULE x OUTPUT|INPUT.` is
+    // the ABAP implementation of a module: the flow logic is over and the module opens its block as usual.
+    const units = unitsOf(st.tokens);
+    const last = units[units.length - 1];
+    if (last !== 'OUTPUT' && last !== 'INPUT') return;
+    s.flowLogic = false;
+  }
   const info = kindInfo(st.kind);
   // ADR-134 Q5: a macro body holds only macro-context statements. Once L1 has
   // ended a body that lost its END-OF-DEFINITION, the DEFINE ends with it.

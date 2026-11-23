@@ -95,6 +95,10 @@ an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are uncha
   passes and its hotspot removed (25k lines: 20.2 s to 0.3–0.5 s), byte-neutral on 1,656 frozen skeleton digests
   (`tests/fixtures/skeleton-v3.2.0-frozen.json`, `tests/skeleton-frozen-digests.spec.ts`).
 - The L4 reference table no longer reads a RAP entity alias (`FOR order~set_status`, EML) as an interface.
+- The class gap no longer loses an SAP class or interface the program announces with `CLASS x DEFINITION LOAD`, `CLASS x LOAD`, `CLASS x DEFINITION DEFERRED` or `INTERFACE x LOAD|DEFERRED`: an announcement names an object defined elsewhere, so only the source's own `CLASS x DEFINITION` or `INTERFACE x` makes a name local (QA ba12b4543f85; `tests/engine-340-class-gap.spec.ts`).
+- The 3.4.0 scoped constant reading of dynamic table names scans a routine once per constant name instead of once per dynamic statement, and not at all for a name no constant carries; same answers (QA 142df2df5404).
+- L2 blocks: a module implementation (`MODULE x OUTPUT|INPUT.`) written after dynpro flow logic in the same upload opens its block again; before, every `MODULE` after the first `PROCESS` was taken as a flow-logic call (QA 46b7cc0e1754).
+- Engine guard specs: the line-break metamorphic test asserts its input really changed (QA b0dfc6b1aa41); the layer guard rejects a computed `import()`/`require()` (QA e223d01ebdb5) and checks every module under `lib/knowledge/`, subdirectories included (QA 475338d3c389).
 - The scaling guard measures the process skeleton and the business statements too, at today's curve (5k → 10k lines) plus a noise margin, so a
   regression fails; both are super-linear today (25k lines: about 19 s and 25 s).
 

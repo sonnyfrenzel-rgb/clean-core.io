@@ -211,8 +211,11 @@ function collectDefinitions(list: readonly Statement[]): Definitions {
     const own = ownUnits(s);
     const first = own[0]?.kind === 'name' ? own[0].up : null;
     const declared = first === 'BEGIN' || first === 'END' ? own[2]?.up : first;
-    if (s.kind === 'ClassDefinition' || s.kind === 'ClassDeferred' || s.kind === 'ClassLoad') { if (u[1]) d.classes.add(u[1].up); }
-    else if (s.kind === 'Interface' || s.kind === 'InterfaceDeferred' || s.kind === 'InterfaceLoad') { if (u[1]) d.interfaces.add(u[1].up); }
+    // Only a real definition defines a name. `CLASS x DEFINITION DEFERRED|LOAD` and `INTERFACE x DEFERRED|LOAD` announce
+    // a class or interface defined elsewhere — usually SAP's own — and must not hide its references; a local class
+    // that is announced first is still defined by its own `CLASS x DEFINITION` further down.
+    if (s.kind === 'ClassDefinition') { if (u[1]) d.classes.add(u[1].up); }
+    else if (s.kind === 'Interface') { if (u[1]) d.interfaces.add(u[1].up); }
     else if (s.kind === 'Types' && declared) d.types.add(declared);
     else if (DECLARING_KINDS.has(s.kind) && declared) {
       // `TABLES vbak` declares a work area named like the table: still the table.

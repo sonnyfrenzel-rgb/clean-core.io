@@ -37,8 +37,8 @@ import {
  * **The helper seam (engine review, B2).** "No effect of its own" is decided here and nowhere else:
  * `directEffects` is the one list of statements that make a routine a step. A routine whose only effect this list
  * does not know is folded as a technical helper, and whatever it does is then not drawn. A gated reading that widens
- * the list (a later engine version) changes this function and nothing downstream; this pass is byte-neutral and
- * changes no reading.
+ * the list (a later engine version) changes this function and nothing downstream. The pass was moved out of the
+ * builder unchanged; the frozen skeleton digests are the check for that, not this comment.
  *
  * The method calls and the bound event handlers still come from the builder's dispatch (`callsIn`,
  * `handlersRaisedBy`); they are inputs here until the dispatch is a pass of its own.

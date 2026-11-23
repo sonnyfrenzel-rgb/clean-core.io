@@ -309,6 +309,12 @@ test.describe('L2: candidates, macros, native SQL, flow logic', () => {
     expect(tree.diagnostics).toEqual([]);
   });
 
+  test('a module implementation after the flow logic opens its block', () => {
+    const { tree } = read("PROCESS BEFORE OUTPUT.\n  MODULE status_0100.\nMODULE status_0100 OUTPUT.\n  SET PF-STATUS 'S'.\nENDMODULE.\nMODULE user_command_0100 INPUT.\n  CLEAR x.\nENDMODULE.");
+    expect(outline(tree)).toEqual(['module STATUS_0100 3-5', 'module USER_COMMAND_0100 6-8']);
+    expect(tree.diagnostics).toEqual([]);
+  });
+
   test('AT <field group> is a block, AT SELECTION-SCREEN an event', () => {
     const { tree } = read('AT SELECTION-SCREEN.\n  LOOP.\n    AT header.\n      WRITE x.\n    ENDAT.\n  ENDLOOP.');
     expect(outline(tree)).toEqual(['event AT SELECTION-SCREEN 1-6 implicit', '  loop 2-6', '    at 3-5']);
