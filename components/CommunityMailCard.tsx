@@ -26,7 +26,7 @@ const TEXT_LINK = 'font-semibold text-cc-brand-strong underline underline-offset
  * listener on /settings then carries the stored state back in through
  * `consent`; until it does, the answer of the POST is shown.
  */
-export default function CommunityMailCard({ consent }: { consent?: CommunityMailConsent | null }) {
+export default function CommunityMailCard({ consent, level = 2 }: { consent?: CommunityMailConsent | null; level?: 2 | 3 }) {
   const stored = consent?.optIn === true;
   // The POST's answer, with the stored value it was given against.
   const [answered, setAnswered] = useState<{ value: boolean; against: boolean } | null>(null);
@@ -68,7 +68,7 @@ export default function CommunityMailCard({ consent }: { consent?: CommunityMail
 
   return (
     <div data-community-mail-card="">
-      <CcCard level={2} title="Community mail">
+      <CcCard level={level} title="Community mail">
       <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
         Surveys about what to build next and the occasional community update. We send them only if you switch
         this on, and you can switch it off here or with the unsubscribe link in any of those mails. Mails about

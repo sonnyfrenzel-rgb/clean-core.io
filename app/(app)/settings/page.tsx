@@ -31,6 +31,7 @@ import {
   type User as FirebaseUser,
 } from 'firebase/auth';
 import ModelStagesCard from '@/components/ModelStagesCard';
+import PageAnchorBar, { type PageAnchor } from '@/components/PageAnchorBar';
 import { byokAllowed } from '@/lib/byok-eligibility';
 import OwnKeyProviderChoice from '@/components/settings/OwnKeyProviderChoice';
 import { ByokAddendumAcceptance, OwnKeyAutoSteps, OwnKeyNotices, OwnKeyProviderSuspended, OwnKeyUntested } from '@/components/settings/OwnKeyTerms';
@@ -66,6 +67,15 @@ const INSET = 'rounded-cc-row border border-cc-line bg-cc-surface-muted p-4';
 /** The two cards a link can name (roadmap 3.0.21 (3)): the own key, and the two-factor it needs. */
 const OWN_KEY_ID = OWN_KEY_HREF.slice(OWN_KEY_HREF.indexOf('#') + 1);
 const SIGN_IN_SECURITY_ID = 'sign-in-security';
+/**
+ * The sections of the page, in the order of the accepted mock-up `docs/roadmap/settings-next-mockup.html` (ADR-139):
+ * profile, sign-in security, AI model, the SAP test system, mail and assistant, and ending the account last.
+ */
+const PROFILE_ID = 'profile';
+const AI_MODEL_ID = 'ai-model';
+const SAP_SYSTEM_ID = 'sap-test-system';
+const PREFS_ID = 'mail-and-assistant';
+const END_ID = 'end-account';
 /** A link in running text. */
 const TEXT_LINK ='font-semibold text-cc-brand-strong underline underline-offset-2 hover:text-cc-brand-deep';
 
@@ -694,7 +704,7 @@ export default function SettingsPage() {
   }, [profile, loading, router, accountErased, isDeletingAccount]);
 
   if (loading) return (
-    <div className="mx-auto max-w-[880px] space-y-4 px-4 py-6 pb-20 sm:px-6">
+    <div className="mx-auto w-full max-w-[1280px] space-y-4 px-4 py-6 pb-20 sm:px-6">
       <CcSkeleton shape="header" label="Loading profile settings..." />
       <CcSkeleton shape="cards" label="Loading profile settings..." count={4} />
     </div>
@@ -1268,8 +1278,18 @@ export default function SettingsPage() {
     withdrawReceivedAt ??
     (profileWithdrawal?.state === 'receipt-pending' && typeof profileWithdrawal.receivedAt === 'string' ? profileWithdrawal.receivedAt : null);
 
+  // "On this page" (ADR-139 (3), the shared bar of the tools): a section that is not on the page has no anchor.
+  const settingsAnchors: PageAnchor[] = [
+    { key: 'profile', target: PROFILE_ID, label: 'Profile' },
+    { key: 'sign-in', target: SIGN_IN_SECURITY_ID, label: 'Sign-in security' },
+    { key: 'ai', target: AI_MODEL_ID, label: 'AI model' },
+    ...(isPilotTier ? [{ key: 'sap', target: SAP_SYSTEM_ID, label: 'SAP test system' }] : []),
+    { key: 'prefs', target: PREFS_ID, label: 'Mail and assistant' },
+    { key: 'end', target: END_ID, label: 'End or delete' },
+  ];
+
   return (
-    <div className="mx-auto flex max-w-[880px] flex-col gap-4 px-4 py-6 pb-20 sm:px-6">
+    <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-4 px-4 py-6 pb-20 sm:px-6">
       {/* The way back is a link, in the ghost style of the four (DESIGN.md
           §1.5): it goes somewhere, so it is an `<a>`, not a button that
           calls the router. */}
@@ -1283,803 +1303,835 @@ export default function SettingsPage() {
           22/800, ink, one line of lead. "Profile settings" is the name the
           privacy policy and the account mails point readers to. */}
       <div>
+        <p className="m-0 text-[12px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">Your account</p>
         <h1 className="m-0 text-[22px] font-extrabold tracking-[-0.02em] text-cc-ink">Profile settings</h1>
         <p className="mt-1 text-[13px] font-medium text-cc-ink-muted">
-          Your profile, sign-in security, use of the AI model and your free analysis runs. Changes here apply to your account only.
+          Your profile, sign-in security, the AI model and your SAP test system. Changes here apply to your account only.
         </p>
       </div>
 
-      <CcCard
-        level={2}
-        title="Your profile"
-        actions={
-          <CcButton
-            variant="ghost"
-            icon={<Edit2 size={16} aria-hidden={true} />}
-            onClick={() => {
-              setIsEditing(!isEditing);
-              setFirstName(profile?.firstName || '');
-              setLastName(profile?.lastName || '');
-            }}
+      <PageAnchorBar anchors={settingsAnchors} label="Sections of Profile settings" name="settings-anchor" plural="settings-anchors" />
+
+      {/* ADR-139 (3): the main column and the side column of the tools' family (DESIGN.md §2.9: the side column below
+          the content up to 1024 px, 360 px beside it from there). */}
+      <div className="grid grid-cols-1 items-start gap-6 min-[1025px]:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex min-w-0 flex-col gap-6" data-settings-main="">
+          <CcCard
+            level={2}
+            title="Your profile"
+            id={PROFILE_ID}
+            actions={
+              <CcButton
+                variant="ghost"
+                icon={<Edit2 size={16} aria-hidden={true} />}
+                onClick={() => {
+                  setIsEditing(!isEditing);
+                  setFirstName(profile?.firstName || '');
+                  setLastName(profile?.lastName || '');
+                }}
+              >
+                {isEditing ? 'Cancel' : 'Edit name'}
+              </CcButton>
+            }
           >
-            {isEditing ? 'Cancel' : 'Edit name'}
-          </CcButton>
-        }
-      >
-        {isEditing ? (
-          <form onSubmit={handleUpdateProfile} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {/* The same bounds sign-up holds (firestore.rules, isValidUserCreate). */}
-              <SettingsInput label="First name" value={firstName} onChange={setFirstName} autoComplete="given-name" required maxLength={100} />
-              <SettingsInput label="Last name" value={lastName} onChange={setLastName} autoComplete="family-name" required maxLength={100} />
-            </div>
-            <CcButton type="submit" variant="primary" busy={isUpdating}>
-              {isUpdating ? 'Saving...' : 'Save name'}
-            </CcButton>
-          </form>
-        ) : (
-          <dl className="m-0 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="min-w-0">
-              <dt className="cc-text-label text-cc-ink-muted">Name</dt>
-              <dd className="m-0 mt-1 cc-text-body text-cc-ink">{profile?.firstName} {profile?.lastName}</dd>
-            </div>
-            <div className="min-w-0">
-              <dt className="cc-text-label text-cc-ink-muted">E-mail address</dt>
-              <dd className="m-0 mt-1 truncate cc-text-body text-cc-ink">{profile?.email}</dd>
-            </div>
-          </dl>
-        )}
-      </CcCard>
-
-      {/* The plan and its quota — a sidebar until the single column (gap
-          audit 3.0, §18). The "community status" card beside it repeated the
-          plan in other words and is folded in here. There are no plans, so
-          the card is named after what it counts — the quota's one name,
-          counted as left like the header (roadmap 3.0.21 (2)). */}
-      <CcCard level={2} title={QUOTA_NAME} meta={<StateWord state="success">Active</StateWord>}>
-        <p className="m-0 cc-text-body text-cc-ink">{tierInfo.label}</p>
-        <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{tierInfo.text}</p>
-
-        <dl className="m-0 mt-4 space-y-2 border-t border-cc-line pt-4 cc-text-cell">
-          <div className="flex items-center justify-between gap-3">
-            <dt className="text-cc-ink-muted">{QUOTA_NAME}</dt>
-            <dd data-settings-quota="" className="m-0 font-semibold text-cc-ink">
-              {profile?.byokConfigured ? 'Unlimited (your own key)' : runsLeftLabel(profile)}
-            </dd>
-          </div>
-          {profile?.accessUntil && (
-            <div className="flex items-center justify-between gap-3">
-              <dt className="text-cc-ink-muted">Valid until</dt>
-              <dd className="m-0 inline-flex items-center gap-1 font-semibold text-cc-ink">
-                <Clock size={14} aria-hidden={true} /> <CcDateText value={profile.accessUntil.toDate()} format="text" />
-              </dd>
-            </div>
-          )}
-        </dl>
-        <p className="m-0 mt-4 cc-text-cell text-cc-ink-muted">
-          Questions about your account? Write to <a href="mailto:info@clean-core.io" className={TEXT_LINK}>info@clean-core.io</a>.
-        </p>
-      </CcCard>
-
-      <CcCard level={2} title="Sign-in security" id={SIGN_IN_SECURITY_ID}>
-        <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-          Ask for a code from an authenticator app at every sign-in, and change your password.
-        </p>
-
-        {/* Tailwind v4 draws `divide-y` as the bottom border of the first
-            block, so the space sits inside each block, not between them. */}
-        <div className="divide-y divide-cc-line">
-          {/* Two-factor authentication */}
-          <div className="space-y-4 pb-6">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <h3 className="m-0 cc-text-h3 text-cc-ink">Two-factor authentication</h3>
-                <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                  After your password, the sign-in asks for a 6-digit code from the authenticator app on your phone.
-                </p>
-              </div>
-              <StateWord state={profile?.mfaEnabled ? (enrolledFactorCount === 0 ? 'warning' : 'success') : 'neutral'}>
-                {profile?.mfaEnabled ? (enrolledFactorCount === 0 ? 'Set up again' : 'On') : 'Off'}
-              </StateWord>
-            </div>
-
-            {profile?.mfaEnabled && enrolledFactorCount === 0 ? (
-              <div className="space-y-4">
-                <CcMessageStrip state="warning" headline="Your authenticator needs to be set up again">
-                  The authenticator you set up earlier no longer signs you in. Set it up again — it takes a minute — and the account is protected at sign-in itself, before any session exists.
-                </CcMessageStrip>
-                <div className="flex flex-wrap gap-3">
-                  <CcButton variant="primary" onClick={handleStartMfaSetup} icon={<ShieldCheck size={16} aria-hidden={true} />}>
-                    Set up the authenticator again
-                  </CcButton>
-                  <CcButton
-                    variant="ghost"
-                    onClick={handleTurnOffStranded}
-                    busy={isClearingStranded}
-                    icon={<X size={16} aria-hidden={true} />}
-                  >
-                    {isClearingStranded ? 'Turning off...' : 'Turn off two-factor authentication'}
-                  </CcButton>
+            {isEditing ? (
+              <form onSubmit={handleUpdateProfile} className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  {/* The same bounds sign-up holds (firestore.rules, isValidUserCreate). */}
+                  <SettingsInput label="First name" value={firstName} onChange={setFirstName} autoComplete="given-name" required maxLength={100} />
+                  <SettingsInput label="Last name" value={lastName} onChange={setLastName} autoComplete="family-name" required maxLength={100} />
                 </div>
-                {strandedError && (
+                <CcButton type="submit" variant="primary" busy={isUpdating}>
+                  {isUpdating ? 'Saving...' : 'Save name'}
+                </CcButton>
+              </form>
+            ) : (
+              <dl className="m-0 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="min-w-0">
+                  <dt className="cc-text-label text-cc-ink-muted">Name</dt>
+                  <dd className="m-0 mt-1 cc-text-body text-cc-ink">{profile?.firstName} {profile?.lastName}</dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="cc-text-label text-cc-ink-muted">E-mail address</dt>
+                  <dd className="m-0 mt-1 truncate cc-text-body text-cc-ink">{profile?.email}</dd>
+                </div>
+              </dl>
+            )}
+          </CcCard>
+
+          <CcCard level={2} title="Sign-in security" id={SIGN_IN_SECURITY_ID}>
+            <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
+              Ask for a code from an authenticator app at every sign-in, and change your password.
+            </p>
+
+            {/* Tailwind v4 draws `divide-y` as the bottom border of the first
+                block, so the space sits inside each block, not between them. */}
+            <div className="divide-y divide-cc-line">
+              {/* Two-factor authentication */}
+              <div className="space-y-4 pb-6">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="m-0 cc-text-h3 text-cc-ink">Two-factor authentication</h3>
+                    <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
+                      After your password, the sign-in asks for a 6-digit code from the authenticator app on your phone.
+                    </p>
+                  </div>
+                  <StateWord state={profile?.mfaEnabled ? (enrolledFactorCount === 0 ? 'warning' : 'success') : 'neutral'}>
+                    {profile?.mfaEnabled ? (enrolledFactorCount === 0 ? 'Set up again' : 'On') : 'Off'}
+                  </StateWord>
+                </div>
+
+                {profile?.mfaEnabled && enrolledFactorCount === 0 ? (
+                  <div className="space-y-4">
+                    <CcMessageStrip state="warning" headline="Your authenticator needs to be set up again">
+                      The authenticator you set up earlier no longer signs you in. Set it up again — it takes a minute — and the account is protected at sign-in itself, before any session exists.
+                    </CcMessageStrip>
+                    <div className="flex flex-wrap gap-3">
+                      <CcButton variant="primary" onClick={handleStartMfaSetup} icon={<ShieldCheck size={16} aria-hidden={true} />}>
+                        Set up the authenticator again
+                      </CcButton>
+                      <CcButton
+                        variant="ghost"
+                        onClick={handleTurnOffStranded}
+                        busy={isClearingStranded}
+                        icon={<X size={16} aria-hidden={true} />}
+                      >
+                        {isClearingStranded ? 'Turning off...' : 'Turn off two-factor authentication'}
+                      </CcButton>
+                    </div>
+                    {strandedError && (
+                      <CcMessageStrip state="error" announce>
+                        {strandedError}
+                      </CcMessageStrip>
+                    )}
+                  </div>
+                ) : profile?.mfaEnabled ? (
+                  <div className="space-y-4">
+                    <CcMessageStrip state="success" headline="Two-factor authentication is on">
+                      Every sign-in asks for your authenticator code — before any session exists.
+                    </CcMessageStrip>
+
+                    <div className={INSET}>
+                      <span className="mb-2 block cc-text-label text-cc-ink-muted">If you lose the authenticator</span>
+                      <p className="m-0 cc-text-cell text-cc-ink-muted">
+                        There are no backup codes. Write to <a href="mailto:info@clean-core.io" className={TEXT_LINK}>info@clean-core.io</a> from your account address; an administrator removes the factor after confirming with you, and you set it up again here.
+                      </p>
+                    </div>
+
+                    <CcButton variant="ghost" tone="danger" onClick={() => setShowMfaDisable(true)} icon={<X size={16} aria-hidden={true} />}>
+                      Turn off two-factor authentication
+                    </CcButton>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Not `m-0`: `space-y-*` spaces siblings with their bottom margin. */}
+                    <p className={cn(INSET, 'cc-text-cell text-cc-ink-muted')}>
+                      Any standard authenticator app works, for example Google Authenticator, 1Password or Authy. It costs nothing and works offline.
+                    </p>
+                    <CcButton variant="primary" onClick={handleStartMfaSetup} icon={<Smartphone size={16} aria-hidden={true} />}>
+                      Set up two-factor authentication
+                    </CcButton>
+                  </div>
+                )}
+                {mfaStartError && (
                   <CcMessageStrip state="error" announce>
-                    {strandedError}
+                    {mfaStartError}
                   </CcMessageStrip>
                 )}
               </div>
-            ) : profile?.mfaEnabled ? (
-              <div className="space-y-4">
-                <CcMessageStrip state="success" headline="Two-factor authentication is on">
-                  Every sign-in asks for your authenticator code — before any session exists.
-                </CcMessageStrip>
 
-                <div className={INSET}>
-                  <span className="mb-2 block cc-text-label text-cc-ink-muted">If you lose the authenticator</span>
-                  <p className="m-0 cc-text-cell text-cc-ink-muted">
-                    There are no backup codes. Write to <a href="mailto:info@clean-core.io" className={TEXT_LINK}>info@clean-core.io</a> from your account address; an administrator removes the factor after confirming with you, and you set it up again here.
-                  </p>
-                </div>
+              {/* Password */}
+              <div className="space-y-4 pt-6">
+                <h3 className="m-0 cc-text-h3 text-cc-ink">Password</h3>
 
-                <CcButton variant="ghost" tone="danger" onClick={() => setShowMfaDisable(true)} icon={<X size={16} aria-hidden={true} />}>
-                  Turn off two-factor authentication
-                </CcButton>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Not `m-0`: `space-y-*` spaces siblings with their bottom margin. */}
-                <p className={cn(INSET, 'cc-text-cell text-cc-ink-muted')}>
-                  Any standard authenticator app works, for example Google Authenticator, 1Password or Authy. It costs nothing and works offline.
-                </p>
-                <CcButton variant="primary" onClick={handleStartMfaSetup} icon={<Smartphone size={16} aria-hidden={true} />}>
-                  Set up two-factor authentication
-                </CcButton>
-              </div>
-            )}
-            {mfaStartError && (
-              <CcMessageStrip state="error" announce>
-                {mfaStartError}
-              </CcMessageStrip>
-            )}
-          </div>
-
-          {/* Password */}
-          <div className="space-y-4 pt-6">
-            <h3 className="m-0 cc-text-h3 text-cc-ink">Password</h3>
-
-            {profile?.authMethod !== 'password' ? (
-              <CcMessageStrip state="information" headline="You sign in with Google">
-                Your password is managed by Google, not here. Change or reset it in your Google account.
-              </CcMessageStrip>
-            ) : (
-              <form onSubmit={handleChangePassword} className="space-y-4">
-                <SettingsInput
-                  label="Current password"
-                  value={currentPassword}
-                  onChange={setCurrentPassword}
-                  required
-                  placeholder="••••••••"
-                  autoComplete="current-password"
-                  reveal={{ shown: showCurrentPw, onToggle: () => setShowCurrentPw(!showCurrentPw), label: 'Show current password' }}
-                />
-
-                {enrolledFactorCount !== null && enrolledFactorCount > 0 && (
-                  <SettingsInput
-                    label="Code from your authenticator app"
-                    required
-                    value={pwChangeMfaCode}
-                    onChange={(value) => setPwChangeMfaCode(value.replace(/[^0-9]/g, ''))}
-                    maxLength={6}
-                    inputMode="numeric"
-                    autoComplete="one-time-code"
-                    placeholder="123456"
-                    mono
-                  />
-                )}
-
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <div>
+                {profile?.authMethod !== 'password' ? (
+                  <CcMessageStrip state="information" headline="You sign in with Google">
+                    Your password is managed by Google, not here. Change or reset it in your Google account.
+                  </CcMessageStrip>
+                ) : (
+                  <form onSubmit={handleChangePassword} className="space-y-4">
                     <SettingsInput
-                      label="New password"
-                      value={newPassword}
-                      onChange={setNewPassword}
+                      label="Current password"
+                      value={currentPassword}
+                      onChange={setCurrentPassword}
                       required
                       placeholder="••••••••"
-                      autoComplete="new-password"
-                      reveal={{ shown: showNewPw, onToggle: () => setShowNewPw(!showNewPw), label: 'Show new password' }}
+                      autoComplete="current-password"
+                      reveal={{ shown: showCurrentPw, onToggle: () => setShowCurrentPw(!showCurrentPw), label: 'Show current password' }}
                     />
 
-                    {/* Password strength meter — the word carries it, the
-                        bars and their state colour repeat it. */}
-                    {newPassword && (
-                      <div className="mt-2 space-y-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
-                        <div className="flex items-center justify-between">
-                          <span className="cc-text-label text-cc-ink-muted">Strength</span>
-                          <StateWord state={getPasswordStrength(newPassword).state}>
-                            {getPasswordStrength(newPassword).label}
-                          </StateWord>
-                        </div>
-                        <div className="grid h-2 grid-cols-4 gap-1" aria-hidden={true}>
-                          {[1, 2, 3, 4].map((step) => (
-                            <div
-                              key={step}
-                              className={cn(
-                                'h-full rounded-full',
-                                getPasswordStrength(newPassword).score >= step
-                                  ? STATE_CLASSES[getPasswordStrength(newPassword).state].mark
-                                  : 'bg-cc-line',
-                              )}
-                            />
-                          ))}
-                        </div>
+                    {enrolledFactorCount !== null && enrolledFactorCount > 0 && (
+                      <SettingsInput
+                        label="Code from your authenticator app"
+                        required
+                        value={pwChangeMfaCode}
+                        onChange={(value) => setPwChangeMfaCode(value.replace(/[^0-9]/g, ''))}
+                        maxLength={6}
+                        inputMode="numeric"
+                        autoComplete="one-time-code"
+                        placeholder="123456"
+                        mono
+                      />
+                    )}
+
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                      <div>
+                        <SettingsInput
+                          label="New password"
+                          value={newPassword}
+                          onChange={setNewPassword}
+                          required
+                          placeholder="••••••••"
+                          autoComplete="new-password"
+                          reveal={{ shown: showNewPw, onToggle: () => setShowNewPw(!showNewPw), label: 'Show new password' }}
+                        />
+
+                        {/* Password strength meter — the word carries it, the
+                            bars and their state colour repeat it. */}
+                        {newPassword && (
+                          <div className="mt-2 space-y-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
+                            <div className="flex items-center justify-between">
+                              <span className="cc-text-label text-cc-ink-muted">Strength</span>
+                              <StateWord state={getPasswordStrength(newPassword).state}>
+                                {getPasswordStrength(newPassword).label}
+                              </StateWord>
+                            </div>
+                            <div className="grid h-2 grid-cols-4 gap-1" aria-hidden={true}>
+                              {[1, 2, 3, 4].map((step) => (
+                                <div
+                                  key={step}
+                                  className={cn(
+                                    'h-full rounded-full',
+                                    getPasswordStrength(newPassword).score >= step
+                                      ? STATE_CLASSES[getPasswordStrength(newPassword).state].mark
+                                      : 'bg-cc-line',
+                                  )}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
+
+                      <SettingsInput
+                        label="Repeat the new password"
+                        type={showNewPw ? 'text' : 'password'}
+                        value={confirmNewPassword}
+                        onChange={setConfirmNewPassword}
+                        required
+                        placeholder="••••••••"
+                        autoComplete="new-password"
+                        valueState={confirmNewPassword ? (newPassword !== confirmNewPassword ? 'error' : 'success') : undefined}
+                        message={
+                          confirmNewPassword
+                            ? newPassword !== confirmNewPassword
+                              ? 'Passwords do not match. Type the new password again.'
+                              : 'Passwords match'
+                            : undefined
+                        }
+                      />
+                    </div>
+
+                    {pwChangeStatus === 'success' && (
+                      <CcMessageStrip state="success" announce>
+                        Your password has been changed.
+                      </CcMessageStrip>
+                    )}
+
+                    {pwChangeStatus === 'error' && (
+                      <CcMessageStrip state="error" announce>
+                        {pwChangeError || 'Error updating password.'}
+                      </CcMessageStrip>
+                    )}
+
+                    <CcButton
+                      type="submit"
+                      variant="primary"
+                      busy={isChangingPassword}
+                      disabled={!currentPassword || !newPassword || !confirmNewPassword || newPassword !== confirmNewPassword}
+                      icon={<Key size={16} aria-hidden={true} />}
+                    >
+                      {isChangingPassword ? 'Changing...' : 'Change password'}
+                    </CcButton>
+                  </form>
+                )}
+              </div>
+            </div>
+          </CcCard>
+
+          {/* ADR-139 (4): one section for the AI model — the key that pays and the steps that may call it. */}
+          <section id={AI_MODEL_ID} aria-labelledby="settings-ai-h" className="flex scroll-mt-28 flex-col gap-4" data-settings-section="ai">
+            <div>
+              <h2 id="settings-ai-h" className="m-0 cc-text-h2 text-cc-ink">AI model</h2>
+              <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">
+                Which key pays for the AI steps, and which steps may call the model. The findings, the extensibility route and the Clean Core Score never use a model.
+              </p>
+            </div>
+            {isPilotTier && (
+              <CcCard
+                level={3}
+                title="Your own model key (BYOK)"
+                id={OWN_KEY_ID}
+                meta={profile?.byokConfigured ? <StateWord state="success">{savedProvider ? `${PROVIDER_LABEL[savedProvider]} key saved` : 'Key saved'}</StateWord> : undefined}
+              >
+                <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
+                  With your own model key, the limit of {profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK} free analysis runs no longer applies, and every model call of this account runs on your key and your contract with that provider. The key is stored encrypted on our server and used only there; it never reaches your browser again.
+                </p>
+
+                <form onSubmit={handleSaveKey} className="space-y-4 text-cc-ink">
+                  <OwnKeyProviderChoice
+                    value={keyProvider}
+                    savedProvider={profile?.byokConfigured ? savedProvider : null}
+                    onChange={(p) => {
+                      setChosenProvider(p);
+                      if (validationStatus !== 'idle') setValidationStatus('idle');
+                    }}
+                    disabled={isSavingKey || isDeletingKey}
+                  />
+
+                  <OwnKeyNotices provider={keyProvider} />
+
+                  <SettingsInput
+                    label={`${PROVIDER_LABEL[keyProvider]} API key`}
+                    value={geminiKey}
+                    onChange={(value) => {
+                      setGeminiKey(value);
+                      if (validationStatus !== 'idle') setValidationStatus('idle');
+                    }}
+                    help={
+                      profile?.byokConfigured
+                        ? savedProvider && savedProvider !== keyProvider
+                          ? `A ${PROVIDER_LABEL[savedProvider]} key is saved. Saving this ${PROVIDER_LABEL[keyProvider]} key replaces it.`
+                          : 'A key is saved. Enter a new one to replace it.'
+                        : undefined
+                    }
+                    placeholder={profile?.byokConfigured && savedProvider === keyProvider ? (profile.byokLast4 ? "••••••••••••" + profile.byokLast4 : "••••••••••••••••••••••••••••••••") : KEY_PLACEHOLDER[keyProvider]}
+                    autoComplete="off"
+                    mono
+                    reveal={{ shown: showKey, onToggle: () => setShowKey(!showKey), label: 'Show API key' }}
+                  />
+
+                  {addendumRequired(keyProvider) && geminiKey.trim() ? (
+                    <ByokAddendumAcceptance
+                      checked={addendumAccepted}
+                      language={addendumLanguage}
+                      onChange={setAddendumAccepted}
+                      onLanguage={setAddendumLanguage}
+                      disabled={isSavingKey}
+                    />
+                  ) : null}
+
+                  {keyAvailability.suspendedProvider ? <OwnKeyProviderSuspended provider={keyAvailability.suspendedProvider} notice={keyAvailability.suspendedNotice} /> : null}
+                  {profile?.byokConfigured && !ownKeyTested ? <OwnKeyUntested /> : null}
+                  {profile?.byokConfigured && savedProvider ? (
+                    <OwnKeyAutoSteps
+                      provider={savedProvider}
+                      checked={profile.byokAutoSteps === true}
+                      tested={ownKeyTested}
+                      busy={autoStepsBusy}
+                      onChange={(on) => void handleAutoSteps(on)}
+                    />
+                  ) : null}
+
+                  {validationStatus === 'success' && (
+                    <CcMessageStrip state="success" headline="The key works" announce>
+                      {PROVIDER_LABEL[testedProvider]} accepted the key. It is ready to use.
+                    </CcMessageStrip>
+                  )}
+
+                  {validationStatus === 'error' && (
+                    <CcMessageStrip state="error" headline="The key test failed" announce>
+                      {validationError || 'The API key did not pass authentication. Please check your credentials.'}
+                    </CcMessageStrip>
+                  )}
+
+                  {keyError && (
+                    <CcMessageStrip state="error" announce>
+                      {keyError}
+                    </CcMessageStrip>
+                  )}
+
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                    <CcButton
+                      variant="secondary"
+                      onClick={handleTestConnection}
+                      busy={isValidatingKey}
+                      disabled={!geminiKey.trim() && !profile?.byokConfigured}
+                      icon={<Zap size={16} aria-hidden={true} />}
+                    >
+                      {isValidatingKey ? 'Testing the key...' : 'Test the key'}
+                    </CcButton>
+
+                    <CcButton
+                      type="submit"
+                      variant="primary"
+                      busy={isSavingKey}
+                      disabled={!geminiKey.trim() || (addendumRequired(keyProvider) && !addendumAccepted)}
+                      icon={keySaved ? <CheckCircle2 size={16} aria-hidden={true} /> : undefined}
+                    >
+                      {isSavingKey ? 'Saving the key...' : keySaved ? 'Key saved' : 'Save the key'}
+                    </CcButton>
+
+                    {profile?.byokConfigured && (
+                      <CcButton
+                        variant="ghost"
+                        tone="danger"
+                        onClick={() => setConfirmDeleteKey(true)}
+                        busy={isDeletingKey}
+                        icon={<Trash2 size={16} aria-hidden={true} />}
+                      >
+                        {savedProvider === 'anthropic' ? 'Delete key and end agreement' : 'Remove the key'}
+                      </CcButton>
+                    )}
+                  </div>
+                  {/* Said before the request rather than as a 403 after it: the
+                      own-key routes require an enrolled factor (lib/mfa-gate.ts,
+                      byokRequiresEnrolment). */}
+                  <p className="m-0 cc-text-cell text-cc-ink-muted">
+                    Saving, testing or removing your own key needs two-factor authentication on this account —{' '}
+                    <a href={`#${SIGN_IN_SECURITY_ID}`} data-own-key-mfa-link="" className={TEXT_LINK}>
+                      set it up under Sign-in security
+                    </a>{' '}
+                    first.
+                  </p>
+                </form>
+              </CcCard>
+            )}
+            {/* Roadmap 1.2 — the model stages, one switch each. Next to the
+                key it spends, because the two questions are asked together. */}
+            <ModelStagesCard level={3} />
+          </section>
+
+          {isPilotTier && (
+            <CcCard
+              level={2}
+              title="Your SAP test system"
+              id={SAP_SYSTEM_ID}
+              meta={
+                profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
+                  <StateWord state="success">Access granted</StateWord>
+                ) : profile?.s4TenantAccessRequested ? (
+                  <StateWord state="warning">Request in review</StateWord>
+                ) : null
+              }
+            >
+              <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
+                Connect a non-productive S/4HANA Cloud or on-premise system to the Testing stage, to check the connection and read OData metadata. Running the generated tests against that system stays locked until the isolated test runner has passed its review.
+              </p>
+
+              <div className="mb-4">
+                <CcMessageStrip state="information" headline="What the connection test does">
+                  &quot;Test the connection&quot; makes a real HTTPS call to your S/4HANA system and reports whether it is reachable and the sign-in works. Full OData entity integration is planned for a later release.
+                </CcMessageStrip>
+              </div>
+
+              {(profile?.s4TenantAccessAllowed || profile?.isAdmin) && (
+                <div className={cn(INSET, 'mb-4 space-y-3')}>
+                  <div className="flex items-start gap-3">
+                    <BookOpen size={20} className="shrink-0 text-cc-ink-muted" aria-hidden={true} />
+                    <div className="flex-1 space-y-2">
+                      <p className="m-0 cc-text-label text-cc-ink">Setup guide</p>
+                      <p className="m-0 cc-text-cell text-cc-ink-muted">
+                        Step-by-step help for Basic Auth, OAuth 2.0 client credentials, SAP API Hub sandbox keys and SAP Destination service JSON.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2 pl-8">
+                    <CcLinkButton href="/knowledge" variant="ghost" density="compact" icon={<ExternalLink size={16} aria-hidden={true} />}>
+                      Knowledge Hub
+                    </CcLinkButton>
+                    {/* Outside a project the assistant answers product and
+                        SAP questions, which is what this block is about. */}
+                    <CcButton
+                      variant="ghost"
+                      density="compact"
+                      onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
+                      icon={<HelpCircle size={16} aria-hidden={true} />}
+                    >
+                      Ask the assistant
+                    </CcButton>
+                  </div>
+                </div>
+              )}
+
+              {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
+                <form onSubmit={saveS4Config} className="space-y-4 text-cc-ink">
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <SettingsInput
+                      label="System address (HTTPS URL)"
+                      type="url"
+                      required
+                      value={s4Url}
+                      onChange={setS4Url}
+                      placeholder="https://my300120-api.s4hana.cloud.sap"
+                      help={<>Must start with <span className="font-bold">https://</span>. Production systems are blocked.</>}
+                    />
+
+                    <CcSelect
+                      label="Sign-in method"
+                      value={s4AuthType}
+                      onChange={setS4AuthType}
+                      options={[
+                        { value: 'basic', label: 'User name and password' },
+                        { value: 'oauth2', label: 'OAuth 2.0 client credentials' },
+                        { value: 'sap_hub', label: 'SAP Accelerator Hub sandbox key' },
+                        { value: 'btp_destination', label: 'SAP Destination service (JSON)' },
+                      ]}
+                    />
+
+                    {s4AuthType === 'oauth2' && (
+                      <div className="col-span-1 md:col-span-2">
+                        <SettingsInput
+                          label="OAuth 2.0 token URL"
+                          type="url"
+                          required
+                          value={s4TokenUrl}
+                          onChange={setS4TokenUrl}
+                          placeholder="https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token"
+                          help={<>The XSUAA or IAS token endpoint of your SAP BTP subaccount, used for <span className="font-bold">grant_type=client_credentials</span>.</>}
+                        />
+                      </div>
+                    )}
+
+                    {s4AuthType === 'btp_destination' && (
+                      <div className="col-span-1 md:col-span-2">
+                        <CcTextarea
+                          label="SAP Destination service (JSON)"
+                          required
+                          rows={8}
+                          value={btpDestinationJson}
+                          onChange={handleBtpJsonChange}
+                          help={<>Paste the full JSON export from the destination service in the SAP BTP cockpit. Supports <span className="font-bold">BasicAuthentication</span>, <span className="font-bold">OAuth2ClientCredentials</span> and <span className="font-bold">PrincipalPropagation</span>.</>}
+                          placeholder={`{
+      "Name": "S4_CLOUDSANDBOX",
+      "Type": "HTTP",
+      "URL": "https://my300120-api.s4hana.cloud.sap",
+      "Authentication": "OAuth2ClientCredentials",
+      "tokenServiceURL": "https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token",
+      "clientId": "sb-clone-xxxx...",
+      "clientSecret": "...",
+      "ProxyType": "Internet"
+    }`}
+                        />
+                      </div>
+                    )}
+
+                    {s4AuthType !== 'sap_hub' && s4AuthType !== 'btp_destination' && (
+                      <>
+                        <SettingsInput
+                          label={s4AuthType === 'oauth2' ? 'Client ID' : 'User name'}
+                          required
+                          value={s4Username}
+                          onChange={setS4Username}
+                          placeholder={s4AuthType === 'oauth2' ? 'sb-clone-xxxx...' : 'CC_INTEGRATOR'}
+                        />
+
+                        <SettingsInput
+                          label={s4AuthType === 'oauth2' ? 'Client secret' : 'Password'}
+                          required
+                          value={s4Password}
+                          onChange={setS4Password}
+                          placeholder="••••••••••••••••"
+                          reveal={{ shown: showS4Password, onToggle: () => setShowS4Password(!showS4Password), label: 'Show password' }}
+                        />
+                      </>
                     )}
                   </div>
 
-                  <SettingsInput
-                    label="Repeat the new password"
-                    type={showNewPw ? 'text' : 'password'}
-                    value={confirmNewPassword}
-                    onChange={setConfirmNewPassword}
-                    required
-                    placeholder="••••••••"
-                    autoComplete="new-password"
-                    valueState={confirmNewPassword ? (newPassword !== confirmNewPassword ? 'error' : 'success') : undefined}
-                    message={
-                      confirmNewPassword
-                        ? newPassword !== confirmNewPassword
-                          ? 'Passwords do not match. Type the new password again.'
-                          : 'Passwords match'
-                        : undefined
-                    }
-                  />
-                </div>
-
-                {pwChangeStatus === 'success' && (
-                  <CcMessageStrip state="success" announce>
-                    Your password has been changed.
-                  </CcMessageStrip>
-                )}
-
-                {pwChangeStatus === 'error' && (
-                  <CcMessageStrip state="error" announce>
-                    {pwChangeError || 'Error updating password.'}
-                  </CcMessageStrip>
-                )}
-
-                <CcButton
-                  type="submit"
-                  variant="primary"
-                  busy={isChangingPassword}
-                  disabled={!currentPassword || !newPassword || !confirmNewPassword || newPassword !== confirmNewPassword}
-                  icon={<Key size={16} aria-hidden={true} />}
-                >
-                  {isChangingPassword ? 'Changing...' : 'Change password'}
-                </CcButton>
-              </form>
-            )}
-          </div>
-        </div>
-      </CcCard>
-
-      {isPilotTier && (
-        <CcCard
-          level={2}
-          title="Your own model key (BYOK)"
-          id={OWN_KEY_ID}
-          meta={profile?.byokConfigured ? <StateWord state="success">{savedProvider ? `${PROVIDER_LABEL[savedProvider]} key saved` : 'Key saved'}</StateWord> : undefined}
-        >
-          <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-            With your own model key, the limit of {profile?.transformationsLimit ?? COMMUNITY_QUOTA_FALLBACK} free analysis runs no longer applies, and every model call of this account runs on your key and your contract with that provider. The key is stored encrypted on our server and used only there; it never reaches your browser again.
-          </p>
-
-          <form onSubmit={handleSaveKey} className="space-y-4 text-cc-ink">
-            <OwnKeyProviderChoice
-              value={keyProvider}
-              savedProvider={profile?.byokConfigured ? savedProvider : null}
-              onChange={(p) => {
-                setChosenProvider(p);
-                if (validationStatus !== 'idle') setValidationStatus('idle');
-              }}
-              disabled={isSavingKey || isDeletingKey}
-            />
-
-            <OwnKeyNotices provider={keyProvider} />
-
-            <SettingsInput
-              label={`${PROVIDER_LABEL[keyProvider]} API key`}
-              value={geminiKey}
-              onChange={(value) => {
-                setGeminiKey(value);
-                if (validationStatus !== 'idle') setValidationStatus('idle');
-              }}
-              help={
-                profile?.byokConfigured
-                  ? savedProvider && savedProvider !== keyProvider
-                    ? `A ${PROVIDER_LABEL[savedProvider]} key is saved. Saving this ${PROVIDER_LABEL[keyProvider]} key replaces it.`
-                    : 'A key is saved. Enter a new one to replace it.'
-                  : undefined
-              }
-              placeholder={profile?.byokConfigured && savedProvider === keyProvider ? (profile.byokLast4 ? "••••••••••••" + profile.byokLast4 : "••••••••••••••••••••••••••••••••") : KEY_PLACEHOLDER[keyProvider]}
-              autoComplete="off"
-              mono
-              reveal={{ shown: showKey, onToggle: () => setShowKey(!showKey), label: 'Show API key' }}
-            />
-
-            {addendumRequired(keyProvider) && geminiKey.trim() ? (
-              <ByokAddendumAcceptance
-                checked={addendumAccepted}
-                language={addendumLanguage}
-                onChange={setAddendumAccepted}
-                onLanguage={setAddendumLanguage}
-                disabled={isSavingKey}
-              />
-            ) : null}
-
-            {keyAvailability.suspendedProvider ? <OwnKeyProviderSuspended provider={keyAvailability.suspendedProvider} notice={keyAvailability.suspendedNotice} /> : null}
-            {profile?.byokConfigured && !ownKeyTested ? <OwnKeyUntested /> : null}
-            {profile?.byokConfigured && savedProvider ? (
-              <OwnKeyAutoSteps
-                provider={savedProvider}
-                checked={profile.byokAutoSteps === true}
-                tested={ownKeyTested}
-                busy={autoStepsBusy}
-                onChange={(on) => void handleAutoSteps(on)}
-              />
-            ) : null}
-
-            {validationStatus === 'success' && (
-              <CcMessageStrip state="success" headline="The key works" announce>
-                {PROVIDER_LABEL[testedProvider]} accepted the key. It is ready to use.
-              </CcMessageStrip>
-            )}
-
-            {validationStatus === 'error' && (
-              <CcMessageStrip state="error" headline="The key test failed" announce>
-                {validationError || 'The API key did not pass authentication. Please check your credentials.'}
-              </CcMessageStrip>
-            )}
-
-            {keyError && (
-              <CcMessageStrip state="error" announce>
-                {keyError}
-              </CcMessageStrip>
-            )}
-
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <CcButton
-                variant="secondary"
-                onClick={handleTestConnection}
-                busy={isValidatingKey}
-                disabled={!geminiKey.trim() && !profile?.byokConfigured}
-                icon={<Zap size={16} aria-hidden={true} />}
-              >
-                {isValidatingKey ? 'Testing the key...' : 'Test the key'}
-              </CcButton>
-
-              <CcButton
-                type="submit"
-                variant="primary"
-                busy={isSavingKey}
-                disabled={!geminiKey.trim() || (addendumRequired(keyProvider) && !addendumAccepted)}
-                icon={keySaved ? <CheckCircle2 size={16} aria-hidden={true} /> : undefined}
-              >
-                {isSavingKey ? 'Saving the key...' : keySaved ? 'Key saved' : 'Save the key'}
-              </CcButton>
-
-              {profile?.byokConfigured && (
-                <CcButton
-                  variant="ghost"
-                  tone="danger"
-                  onClick={() => setConfirmDeleteKey(true)}
-                  busy={isDeletingKey}
-                  icon={<Trash2 size={16} aria-hidden={true} />}
-                >
-                  {savedProvider === 'anthropic' ? 'Delete key and end agreement' : 'Remove the key'}
-                </CcButton>
-              )}
-            </div>
-            {/* Said before the request rather than as a 403 after it: the
-                own-key routes require an enrolled factor (lib/mfa-gate.ts,
-                byokRequiresEnrolment). */}
-            <p className="m-0 cc-text-cell text-cc-ink-muted">
-              Saving, testing or removing your own key needs two-factor authentication on this account —{' '}
-              <a href={`#${SIGN_IN_SECURITY_ID}`} data-own-key-mfa-link="" className={TEXT_LINK}>
-                set it up under Sign-in security
-              </a>{' '}
-              first.
-            </p>
-          </form>
-        </CcCard>
-      )}
-
-      {/* Roadmap 1.2 — the model stages, one switch each. Next to the
-          key it spends, because the two questions are asked together. */}
-      <ModelStagesCard />
-
-      {/* System Preferences. Until the 3.0 rebuild this card also offered
-          "Default Landing View" and "Automated Backup Sync". Both were saved
-          to the profile (`landingPageDefault`, `backupEnabled`) and read by
-          nothing: sign-in always lands on My workspace, and no backup job
-          exists. A control that changes nothing is not a preference, and one
-          that promises a backup that never runs is a false statement — so
-          they went, and the fields stay on old accounts untouched and unread
-          (no migration), like `theme` before them. What is left is the one
-          setting that acts. */}
-      <CcCard level={2} title="Assistant button">
-        {/* The theme selector — Light / Dark / System — stood here until
-            roadmap 1.6. It offered a theme the product did not have:
-            the dark overrides covered a named list of utility classes and
-            nothing else, so choosing "Dark" left the dashboard table white
-            and the project row barely readable. A switch that makes the app
-            worse is not a preference. */}
-        <form onSubmit={handleSavePreferences} className="space-y-4 text-cc-ink">
-          {/* A checkbox, not a switch: it waits for "Save", and a switch that
-              does nothing until Save lies about when it acts
-              (components/cc/Switch.tsx, DESIGN.md §2.7).
-              What the setting really does, and nothing more: only a saved
-              `true` removes `sm:hidden` from the floating toggle in
-              `components/GlossaryChatbot.tsx`. The assistant itself stays,
-              and so does the button in the header — saying otherwise here
-              would be the one lie a settings page cannot afford. */}
-          <CcCheckbox
-            label="Show the floating assistant button on a computer screen too"
-            help="The assistant is always in the header. On a phone the floating button is the way in and stays."
-            checked={desktopChatbotEnabled}
-            onChange={setDesktopChatbotEnabled}
-          />
-
-          <CcButton type="submit" variant="primary" busy={isSavingPrefs} icon={<Save size={16} aria-hidden={true} />}>
-            {isSavingPrefs ? 'Saving...' : 'Save'}
-          </CcButton>
-        </form>
-        <CcToast open={prefsSaved} onDismiss={dismissPrefsSaved}>
-          Setting saved
-        </CcToast>
-      </CcCard>
-
-      {/* Owner decision 30.09.2026: community mail only with consent,
-          switched on here and written by the server. */}
-      <CommunityMailCard consent={profile?.communityMail} />
-
-      {isPilotTier && (
-        <CcCard
-          level={2}
-          title="Connection to your S/4HANA test system"
-          meta={
-            profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
-              <StateWord state="success">Access granted</StateWord>
-            ) : profile?.s4TenantAccessRequested ? (
-              <StateWord state="warning">Request in review</StateWord>
-            ) : null
-          }
-        >
-          <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-            Connect a non-productive S/4HANA Cloud or on-premise system to the Testing stage, to check the connection and read OData metadata. Running the generated tests against that system stays locked until the isolated test runner has passed its review.
-          </p>
-
-          <div className="mb-4">
-            <CcMessageStrip state="information" headline="What the connection test does">
-              &quot;Test the connection&quot; makes a real HTTPS call to your S/4HANA system and reports whether it is reachable and the sign-in works. Full OData entity integration is planned for a later release.
-            </CcMessageStrip>
-          </div>
-
-          {(profile?.s4TenantAccessAllowed || profile?.isAdmin) && (
-            <div className={cn(INSET, 'mb-4 space-y-3')}>
-              <div className="flex items-start gap-3">
-                <BookOpen size={20} className="shrink-0 text-cc-ink-muted" aria-hidden={true} />
-                <div className="flex-1 space-y-2">
-                  <p className="m-0 cc-text-label text-cc-ink">Setup guide</p>
-                  <p className="m-0 cc-text-cell text-cc-ink-muted">
-                    Step-by-step help for Basic Auth, OAuth 2.0 client credentials, SAP API Hub sandbox keys and SAP Destination service JSON.
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2 pl-8">
-                <CcLinkButton href="/knowledge" variant="ghost" density="compact" icon={<ExternalLink size={16} aria-hidden={true} />}>
-                  Knowledge Hub
-                </CcLinkButton>
-                {/* Outside a project the assistant answers product and
-                    SAP questions, which is what this block is about. */}
-                <CcButton
-                  variant="ghost"
-                  density="compact"
-                  onClick={() => window.dispatchEvent(new CustomEvent('open-chatbot'))}
-                  icon={<HelpCircle size={16} aria-hidden={true} />}
-                >
-                  Ask the assistant
-                </CcButton>
-              </div>
-            </div>
-          )}
-
-          {profile?.s4TenantAccessAllowed || profile?.isAdmin ? (
-            <form onSubmit={saveS4Config} className="space-y-4 text-cc-ink">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <SettingsInput
-                  label="System address (HTTPS URL)"
-                  type="url"
-                  required
-                  value={s4Url}
-                  onChange={setS4Url}
-                  placeholder="https://my300120-api.s4hana.cloud.sap"
-                  help={<>Must start with <span className="font-bold">https://</span>. Production systems are blocked.</>}
-                />
-
-                <CcSelect
-                  label="Sign-in method"
-                  value={s4AuthType}
-                  onChange={setS4AuthType}
-                  options={[
-                    { value: 'basic', label: 'User name and password' },
-                    { value: 'oauth2', label: 'OAuth 2.0 client credentials' },
-                    { value: 'sap_hub', label: 'SAP Accelerator Hub sandbox key' },
-                    { value: 'btp_destination', label: 'SAP Destination service (JSON)' },
-                  ]}
-                />
-
-                {s4AuthType === 'oauth2' && (
-                  <div className="col-span-1 md:col-span-2">
-                    <SettingsInput
-                      label="OAuth 2.0 token URL"
-                      type="url"
-                      required
-                      value={s4TokenUrl}
-                      onChange={setS4TokenUrl}
-                      placeholder="https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token"
-                      help={<>The XSUAA or IAS token endpoint of your SAP BTP subaccount, used for <span className="font-bold">grant_type=client_credentials</span>.</>}
-                    />
-                  </div>
-                )}
-
-                {s4AuthType === 'btp_destination' && (
-                  <div className="col-span-1 md:col-span-2">
-                    <CcTextarea
-                      label="SAP Destination service (JSON)"
-                      required
-                      rows={8}
-                      value={btpDestinationJson}
-                      onChange={handleBtpJsonChange}
-                      help={<>Paste the full JSON export from the destination service in the SAP BTP cockpit. Supports <span className="font-bold">BasicAuthentication</span>, <span className="font-bold">OAuth2ClientCredentials</span> and <span className="font-bold">PrincipalPropagation</span>.</>}
-                      placeholder={`{
-  "Name": "S4_CLOUDSANDBOX",
-  "Type": "HTTP",
-  "URL": "https://my300120-api.s4hana.cloud.sap",
-  "Authentication": "OAuth2ClientCredentials",
-  "tokenServiceURL": "https://mysubaccount.authentication.eu10.hana.ondemand.com/oauth/token",
-  "clientId": "sb-clone-xxxx...",
-  "clientSecret": "...",
-  "ProxyType": "Internet"
-}`}
-                    />
-                  </div>
-                )}
-
-                {s4AuthType !== 'sap_hub' && s4AuthType !== 'btp_destination' && (
-                  <>
-                    <SettingsInput
-                      label={s4AuthType === 'oauth2' ? 'Client ID' : 'User name'}
-                      required
-                      value={s4Username}
-                      onChange={setS4Username}
-                      placeholder={s4AuthType === 'oauth2' ? 'sb-clone-xxxx...' : 'CC_INTEGRATOR'}
-                    />
-
-                    <SettingsInput
-                      label={s4AuthType === 'oauth2' ? 'Client secret' : 'Password'}
-                      required
-                      value={s4Password}
-                      onChange={setS4Password}
-                      placeholder="••••••••••••••••"
-                      reveal={{ shown: showS4Password, onToggle: () => setShowS4Password(!showS4Password), label: 'Show password' }}
-                    />
-                  </>
-                )}
-              </div>
-
-              {connectionMessage && (
-                <CcMessageStrip
-                  state={connectionStatus === 'connected' ? 'success' : connectionStatus === 'failed' ? 'error' : 'information'}
-                >
-                  {connectionMessage}
-                </CcMessageStrip>
-              )}
-
-              <div className="flex flex-col gap-3 border-t border-cc-line pt-4 sm:flex-row">
-                <CcButton
-                  variant="secondary"
-                  onClick={handleTestS4Connection}
-                  busy={testingConnection}
-                  disabled={!s4Url}
-                  icon={<Globe size={16} aria-hidden={true} />}
-                >
-                  {testingConnection ? 'Testing the connection...' : 'Test the connection'}
-                </CcButton>
-                <CcButton type="submit" variant="primary" busy={isSavingConfig} icon={<Save size={16} aria-hidden={true} />}>
-                  {isSavingConfig ? 'Saving...' : 'Save the connection'}
-                </CcButton>
-              </div>
-              <p data-connection-check-scope className="cc-text-meta text-cc-ink-muted">
-                The test sends one request for the OData service description ($metadata, schema only). It checks that the system is reachable, that the sign-in is accepted and that the service exists and is authorised. It reads no record.
-              </p>
-            </form>
-          ) : (
-            <div className="space-y-4">
-              <div className={INSET}>
-                <h3 className="m-0 mb-3 cc-text-label text-cc-ink">How it works</h3>
-                <ol className="m-0 list-decimal space-y-2 pl-4 cc-text-cell text-cc-ink-muted">
-                  <li><strong className="text-cc-ink">Request access</strong> with the form below.</li>
-                  <li><strong className="text-cc-ink">Provide an HTTPS address</strong> of your S/4HANA sandbox or test system.</li>
-                  <li><strong className="text-cc-ink">Enter the sign-in details</strong> once access is granted (user name and password, or OAuth 2.0).</li>
-                  <li><strong className="text-cc-ink">Check the connection</strong> from the Testing stage: the handshake, the OData metadata and one read-only call. Running the generated tests against the system stays locked until the isolated test runner has passed its review.</li>
-                </ol>
-              </div>
-
-              <div className={INSET}>
-                <h3 className="m-0 mb-3 cc-text-label text-cc-ink">How your system is protected</h3>
-                <ul className="m-0 list-disc space-y-2 pl-4 cc-text-cell text-cc-ink-muted">
-                  <li><strong className="text-cc-ink">Encrypted when stored:</strong> passwords and tokens travel over HTTPS to the server, which encrypts them with AES-256-GCM in a server-only store. They are never returned to the browser.</li>
-                  <li><strong className="text-cc-ink">No production systems:</strong> production interfaces (<code className="rounded-[4px] border border-cc-line bg-cc-surface px-1 font-cc-mono text-[12px] text-cc-ink">*-api.s4hana.ondemand.com</code>) are blocked.</li>
-                  <li><strong className="text-cc-ink">Only the server calls your system:</strong> your browser never talks to it. Each call goes through a checked HTTPS request that reaches non-production hosts only.</li>
-                </ul>
-              </div>
-
-              <CcMessageStrip state="warning" headline="No warranty">
-                This is the free Community Edition, provided without warranty, guarantee or liability. Never use productive ERP data or real passwords.
-              </CcMessageStrip>
-
-              {profile?.s4TenantAccessRequested ? (
-                <CcMessageStrip state="information" headline="Request in review">
-                  An administrator is reviewing your request for access. This usually takes less than 24 hours.
-                </CcMessageStrip>
-              ) : (
-                <form onSubmit={handleRequestByot} className="space-y-4 pt-2">
-                  <CcTextarea
-                    label="What do you want to use the connection for?"
-                    required
-                    rows={3}
-                    value={byotMotivation}
-                    onChange={setByotMotivation}
-                    placeholder="E.g., connecting our non-productive SAP S/4HANA Cloud Public Edition sandbox to validate OData interfaces..."
-                  />
-
-                  {byotStatus === 'success' && (
-                    <CcMessageStrip state="success" announce>
-                      Your request has been sent.
+                  {connectionMessage && (
+                    <CcMessageStrip
+                      state={connectionStatus === 'connected' ? 'success' : connectionStatus === 'failed' ? 'error' : 'information'}
+                    >
+                      {connectionMessage}
                     </CcMessageStrip>
                   )}
 
-                  {byotStatus === 'error' && (
-                    <CcMessageStrip state="error" announce>
-                      {byotError || 'Error submitting request. Please try again.'}
-                    </CcMessageStrip>
-                  )}
-
-                  <CcButton
-                    type="submit"
-                    variant="primary"
-                    busy={isRequestingByot}
-                    disabled={!byotMotivation.trim()}
-                    icon={<Send size={16} aria-hidden={true} />}
-                  >
-                    {isRequestingByot ? 'Sending...' : 'Request access'}
-                  </CcButton>
-                  {/* Said here, before the request, rather than as a 403
-                      after approval: the enrolment requirement is enforced
-                      by every S/4 route (lib/firebase-admin.ts,
-                      assertS4TenantAccess). */}
-                  <p className="m-0 cc-text-cell text-cc-ink-muted">
-                    A connection needs two-factor authentication on this account. Set it up under Sign-in
-                    security before you use one — the S/4 endpoints refuse an account without an authenticator.
+                  <div className="flex flex-col gap-3 border-t border-cc-line pt-4 sm:flex-row">
+                    <CcButton
+                      variant="secondary"
+                      onClick={handleTestS4Connection}
+                      busy={testingConnection}
+                      disabled={!s4Url}
+                      icon={<Globe size={16} aria-hidden={true} />}
+                    >
+                      {testingConnection ? 'Testing the connection...' : 'Test the connection'}
+                    </CcButton>
+                    <CcButton type="submit" variant="primary" busy={isSavingConfig} icon={<Save size={16} aria-hidden={true} />}>
+                      {isSavingConfig ? 'Saving...' : 'Save the connection'}
+                    </CcButton>
+                  </div>
+                  <p data-connection-check-scope className="cc-text-meta text-cc-ink-muted">
+                    The test sends one request for the OData service description ($metadata, schema only). It checks that the system is reachable, that the sign-in is accepted and that the service exists and is authorised. It reads no record.
                   </p>
                 </form>
-              )}
-            </div>
-          )}
-        </CcCard>
-      )}
+              ) : (
+                <div className="space-y-4">
+                  <div className={INSET}>
+                    <h3 className="m-0 mb-3 cc-text-label text-cc-ink">How it works</h3>
+                    <ol className="m-0 list-decimal space-y-2 pl-4 cc-text-cell text-cc-ink-muted">
+                      <li><strong className="text-cc-ink">Request access</strong> with the form below.</li>
+                      <li><strong className="text-cc-ink">Provide an HTTPS address</strong> of your S/4HANA sandbox or test system.</li>
+                      <li><strong className="text-cc-ink">Enter the sign-in details</strong> once access is granted (user name and password, or OAuth 2.0).</li>
+                      <li><strong className="text-cc-ink">Check the connection</strong> from the Testing stage: the handshake, the OData metadata and one read-only call. Running the generated tests against the system stays locked until the isolated test runner has passed its review.</li>
+                    </ol>
+                  </div>
 
-      {/* Legal — the "Legal & Privacy Directory" of the old sidebar, as links
-          to the pages that hold the binding text instead of a second copy.
-          Its privacy paragraph promised a data download in the Danger Zone
-          that does not exist; the policy itself says what is offered. */}
-      <CcCard level={2} title="Legal and privacy">
-        <p className="m-0 cc-text-cell text-cc-ink-muted">
-          Clean-Core.io is a free community edition, provided without warranty.
-        </p>
-        <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">
-          The findings, the route and the Clean Core Score come from a deterministic engine that reads your code; no model is involved in them. A language model (Google Gemini, or Anthropic Claude when your own key is a Claude key) writes only drafts on top of that evidence: the analysis narrative, business names for the process, the solution design, the code proposal, the documentation and the test suite. A draft can be wrong — code that does not compile, a statement the code does not support — so review a draft before you rely on it.
-        </p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <CcLinkButton href="/impressum" variant="ghost">Legal notice</CcLinkButton>
-          <CcLinkButton href="/datenschutz" variant="ghost">Privacy policy</CcLinkButton>
-          <CcLinkButton href="/terms" variant="ghost">Terms of service</CcLinkButton>
-        </div>
-      </CcCard>
+                  <div className={INSET}>
+                    <h3 className="m-0 mb-3 cc-text-label text-cc-ink">How your system is protected</h3>
+                    <ul className="m-0 list-disc space-y-2 pl-4 cc-text-cell text-cc-ink-muted">
+                      <li><strong className="text-cc-ink">Encrypted when stored:</strong> passwords and tokens travel over HTTPS to the server, which encrypts them with AES-256-GCM in a server-only store. They are never returned to the browser.</li>
+                      <li><strong className="text-cc-ink">No production systems:</strong> production interfaces (<code className="rounded-[4px] border border-cc-line bg-cc-surface px-1 font-cc-mono text-[12px] text-cc-ink">*-api.s4hana.ondemand.com</code>) are blocked.</li>
+                      <li><strong className="text-cc-ink">Only the server calls your system:</strong> your browser never talks to it. Each call goes through a checked HTTPS request that reaches non-production hosts only.</li>
+                    </ul>
+                  </div>
 
-      {/* C13 — the voluntary withdrawal / termination function (Terms
-          section 13; A6 of 3.0.21): its own card and its own form, not the
-          deletion below, so it reads as a withdrawal throughout. The button
-          is the card's one action and wears `secondary`, which stands out
-          from the ghost buttons of the Danger Zone. */}
-      <CcCard
-        level={2}
-        id={END_CONTRACT_ID}
-        title={
-          <span className="inline-flex items-center gap-2">
-            <FileX size={16} className="text-cc-brand-strong" aria-hidden={true} />
-            {END_CONTRACT_LABEL}
-          </span>
-        }
-      >
-        <div data-settings-end-contract="">
-          {pendingWithdrawalAt ? (
-            <div data-settings-withdrawal-pending="">
-              <CcMessageStrip state="information" announce>
-                <span className="block">{withdrawalReceiptPendingMessage(pendingWithdrawalAt, 'en')}</span>
-                <span lang="de" className="mt-1 block">{withdrawalReceiptPendingMessage(pendingWithdrawalAt, 'de')}</span>
-              </CcMessageStrip>
-            </div>
-          ) : isWithdrawing ? (
-            <div role="status" className="flex flex-col items-center justify-center gap-3 rounded-cc-row border border-cc-line bg-cc-surface-muted p-6 text-center">
-              <Loader2 className="motion-safe:animate-spin text-cc-brand-strong" size={32} aria-hidden={true} />
-              <p className="m-0 cc-text-h3 text-cc-ink">Receiving your withdrawal...</p>
-              <p className="m-0 max-w-sm cc-text-cell text-cc-ink-muted">We send the receipt to your e-mail address, then delete your account.</p>
-            </div>
-          ) : (
-            <>
-              {withdrawError && (
-                <div className="mb-4">
-                  <CcMessageStrip state="error" announce>
-                    {withdrawError}
+                  <CcMessageStrip state="warning" headline="No warranty">
+                    This is the free Community Edition, provided without warranty, guarantee or liability. Never use productive ERP data or real passwords.
                   </CcMessageStrip>
+
+                  {profile?.s4TenantAccessRequested ? (
+                    <CcMessageStrip state="information" headline="Request in review">
+                      An administrator is reviewing your request for access. This usually takes less than 24 hours.
+                    </CcMessageStrip>
+                  ) : (
+                    <form onSubmit={handleRequestByot} className="space-y-4 pt-2">
+                      <CcTextarea
+                        label="What do you want to use the connection for?"
+                        required
+                        rows={3}
+                        value={byotMotivation}
+                        onChange={setByotMotivation}
+                        placeholder="E.g., connecting our non-productive SAP S/4HANA Cloud Public Edition sandbox to validate OData interfaces..."
+                      />
+
+                      {byotStatus === 'success' && (
+                        <CcMessageStrip state="success" announce>
+                          Your request has been sent.
+                        </CcMessageStrip>
+                      )}
+
+                      {byotStatus === 'error' && (
+                        <CcMessageStrip state="error" announce>
+                          {byotError || 'Error submitting request. Please try again.'}
+                        </CcMessageStrip>
+                      )}
+
+                      <CcButton
+                        type="submit"
+                        variant="primary"
+                        busy={isRequestingByot}
+                        disabled={!byotMotivation.trim()}
+                        icon={<Send size={16} aria-hidden={true} />}
+                      >
+                        {isRequestingByot ? 'Sending...' : 'Request access'}
+                      </CcButton>
+                      {/* Said here, before the request, rather than as a 403
+                          after approval: the enrolment requirement is enforced
+                          by every S/4 route (lib/firebase-admin.ts,
+                          assertS4TenantAccess). */}
+                      <p className="m-0 cc-text-cell text-cc-ink-muted">
+                        A connection needs two-factor authentication on this account. Set it up under Sign-in
+                        security before you use one — the S/4 endpoints refuse an account without an authenticator.
+                      </p>
+                    </form>
+                  )}
                 </div>
               )}
-              <p className="m-0 mb-1 cc-text-body text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.settingsLead.en}</p>
-              <p lang="de" className="m-0 mb-3 cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.settingsLead.de}</p>
-              <CcButton variant="secondary" onClick={openWithdrawal} icon={<FileX size={16} aria-hidden={true} />} data-settings-end-contract-button="">
-                {END_CONTRACT_LABEL}
-              </CcButton>
-              {/* The German label under the button: one line of button text fits a phone (mobile-responsive). */}
-              <p lang="de" className="m-0 mt-1 cc-text-meta font-semibold text-cc-ink">{END_CONTRACT_LABEL_DE}</p>
-            </>
+            </CcCard>
           )}
+
+          <section id={PREFS_ID} aria-labelledby="settings-prefs-h" className="flex scroll-mt-28 flex-col gap-4" data-settings-section="prefs">
+            <h2 id="settings-prefs-h" className="m-0 cc-text-h2 text-cc-ink">Mail and assistant</h2>
+            {/* Owner decision 30.09.2026: community mail only with consent,
+                switched on here and written by the server. */}
+            <CommunityMailCard consent={profile?.communityMail} level={3} />
+            {/* System Preferences. Until the 3.0 rebuild this card also offered
+                "Default Landing View" and "Automated Backup Sync". Both were saved
+                to the profile (`landingPageDefault`, `backupEnabled`) and read by
+                nothing: sign-in always lands on My workspace, and no backup job
+                exists. A control that changes nothing is not a preference, and one
+                that promises a backup that never runs is a false statement — so
+                they went, and the fields stay on old accounts untouched and unread
+                (no migration), like `theme` before them. What is left is the one
+                setting that acts. */}
+            <CcCard level={3} title="Assistant button">
+              {/* The theme selector — Light / Dark / System — stood here until
+                  roadmap 1.6. It offered a theme the product did not have:
+                  the dark overrides covered a named list of utility classes and
+                  nothing else, so choosing "Dark" left the dashboard table white
+                  and the project row barely readable. A switch that makes the app
+                  worse is not a preference. */}
+              <form onSubmit={handleSavePreferences} className="space-y-4 text-cc-ink">
+                {/* A checkbox, not a switch: it waits for "Save", and a switch that
+                    does nothing until Save lies about when it acts
+                    (components/cc/Switch.tsx, DESIGN.md §2.7).
+                    What the setting really does, and nothing more: only a saved
+                    `true` removes `sm:hidden` from the floating toggle in
+                    `components/GlossaryChatbot.tsx`. The assistant itself stays,
+                    and so does the button in the header — saying otherwise here
+                    would be the one lie a settings page cannot afford. */}
+                <CcCheckbox
+                  label="Show the floating assistant button on a computer screen too"
+                  help="The assistant is always in the header. On a phone the floating button is the way in and stays."
+                  checked={desktopChatbotEnabled}
+                  onChange={setDesktopChatbotEnabled}
+                />
+
+                <CcButton type="submit" variant="primary" busy={isSavingPrefs} icon={<Save size={16} aria-hidden={true} />}>
+                  {isSavingPrefs ? 'Saving...' : 'Save'}
+                </CcButton>
+              </form>
+              <CcToast open={prefsSaved} onDismiss={dismissPrefsSaved}>
+                Setting saved
+              </CcToast>
+            </CcCard>
+          </section>
+
+          {/* ADR-139 (6): ending the account last, apart from the rest. The card title "Danger Zone" stays: the privacy
+              policy and the account mails send readers to it. */}
+          <section id={END_ID} aria-labelledby="settings-end-h" className="flex scroll-mt-28 flex-col gap-4 border-t border-cc-line pt-6" data-settings-section="end">
+            <div>
+              <h2 id="settings-end-h" className="m-0 cc-text-h2 text-cc-ink">End or delete your account</h2>
+              <p className="m-0 mt-1 cc-text-body text-cc-ink-muted">Two separate ways out. Each opens its own form and asks you to confirm; neither can be undone.</p>
+            </div>
+            <div className="grid grid-cols-1 gap-4 min-[1181px]:grid-cols-2">
+              {/* C13 — the voluntary withdrawal / termination function (Terms
+                  section 13; A6 of 3.0.21): its own card and its own form, not the
+                  deletion below, so it reads as a withdrawal throughout. The button
+                  is the card's one action and wears `secondary`, which stands out
+                  from the ghost buttons of the Danger Zone. */}
+              <CcCard
+                level={3}
+                id={END_CONTRACT_ID}
+                title={
+                  <span className="inline-flex items-center gap-2">
+                    <FileX size={16} className="text-cc-brand-strong" aria-hidden={true} />
+                    {END_CONTRACT_LABEL}
+                  </span>
+                }
+              >
+                <div data-settings-end-contract="">
+                  {pendingWithdrawalAt ? (
+                    <div data-settings-withdrawal-pending="">
+                      <CcMessageStrip state="information" announce>
+                        <span className="block">{withdrawalReceiptPendingMessage(pendingWithdrawalAt, 'en')}</span>
+                        <span lang="de" className="mt-1 block">{withdrawalReceiptPendingMessage(pendingWithdrawalAt, 'de')}</span>
+                      </CcMessageStrip>
+                    </div>
+                  ) : isWithdrawing ? (
+                    <div role="status" className="flex flex-col items-center justify-center gap-3 rounded-cc-row border border-cc-line bg-cc-surface-muted p-6 text-center">
+                      <Loader2 className="motion-safe:animate-spin text-cc-brand-strong" size={32} aria-hidden={true} />
+                      <p className="m-0 cc-text-h3 text-cc-ink">Receiving your withdrawal...</p>
+                      <p className="m-0 max-w-sm cc-text-cell text-cc-ink-muted">We send the receipt to your e-mail address, then delete your account.</p>
+                    </div>
+                  ) : (
+                    <>
+                      {withdrawError && (
+                        <div className="mb-4">
+                          <CcMessageStrip state="error" announce>
+                            {withdrawError}
+                          </CcMessageStrip>
+                        </div>
+                      )}
+                      <p className="m-0 mb-1 cc-text-body text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.settingsLead.en}</p>
+                      <p lang="de" className="m-0 mb-3 cc-text-meta text-cc-ink-muted">{CONSENT_TEXTS.withdrawal.settingsLead.de}</p>
+                      <CcButton variant="secondary" onClick={openWithdrawal} icon={<FileX size={16} aria-hidden={true} />} data-settings-end-contract-button="">
+                        {END_CONTRACT_LABEL}
+                      </CcButton>
+                      {/* The German label under the button: one line of button text fits a phone (mobile-responsive). */}
+                      <p lang="de" className="m-0 mt-1 cc-text-meta font-semibold text-cc-ink">{END_CONTRACT_LABEL_DE}</p>
+                    </>
+                  )}
+                </div>
+              </CcCard>
+              {/* Danger Zone — the name the privacy policy and the account mails
+                  send readers to ("Settings → Danger Zone"). */}
+              <CcCard
+                level={3}
+                title={
+                  <span className="inline-flex items-center gap-2">
+                    <AlertCircle size={16} className="text-cc-error" aria-hidden={true} />
+                    Danger Zone
+                  </span>
+                }
+              >
+                <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
+                  Delete your account for good (GDPR Art. 17, right to erasure). This cannot be undone. Your sign-in and the live database entries — uploaded ABAP source files, solution designs, generated code and test cases — are deleted at once. The security audit record of administrative actions on your account and of the actions you took yourself is kept for 24 months from each action, with a keyed hash in place of your account identifier and no address of your account; copies in encrypted backups age out within 30 days; the privacy policy lists what else deletion does not reach.
+                </p>
+
+                {isDeletingAccount ? (
+                  <div role="status" className="flex flex-col items-center justify-center gap-3 rounded-cc-row border border-cc-error-border bg-cc-error-bg p-6 text-center">
+                    <Loader2 className="motion-safe:animate-spin text-cc-error" size={32} aria-hidden={true} />
+                    <p className="m-0 cc-text-h3 text-cc-ink">Deleting your account and data...</p>
+                    <p className="m-0 max-w-sm cc-text-cell text-cc-ink-muted">Your projects, uploaded source code, access requests, settings and sign-in are being removed from our database.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {deleteError && (
+                      <CcMessageStrip state="error" announce>
+                        {deleteError}
+                      </CcMessageStrip>
+                    )}
+                    <CcButton variant="ghost" tone="danger" onClick={openDeleteAccount} icon={<Trash2 size={16} aria-hidden={true} />}>
+                      Delete my account
+                    </CcButton>
+                  </div>
+                )}
+              </CcCard>
+            </div>
+          </section>
         </div>
-      </CcCard>
 
-      {/* Danger Zone — the name the privacy policy and the account mails
-          send readers to ("Settings → Danger Zone"). */}
-      <CcCard
-        level={2}
-        title={
-          <span className="inline-flex items-center gap-2">
-            <AlertCircle size={16} className="text-cc-error" aria-hidden={true} />
-            Danger Zone
-          </span>
-        }
-      >
-        <p className="m-0 mb-4 cc-text-body text-cc-ink-muted">
-          Delete your account for good (GDPR Art. 17, right to erasure). This cannot be undone. Your sign-in and the live database entries — uploaded ABAP source files, solution designs, generated code and test cases — are deleted at once. The security audit record of administrative actions on your account and of the actions you took yourself is kept for 24 months from each action, with a keyed hash in place of your account identifier and no address of your account; copies in encrypted backups age out within 30 days; the privacy policy lists what else deletion does not reach.
-        </p>
+        <aside aria-label="Account facts" className="flex min-w-0 flex-col gap-4" data-settings-side="">
+          {/* The plan and its quota — a sidebar until the single column (gap
+              audit 3.0, §18). The "community status" card beside it repeated the
+              plan in other words and is folded in here. There are no plans, so
+              the card is named after what it counts — the quota's one name,
+              counted as left like the header (roadmap 3.0.21 (2)). */}
+          <CcCard level={2} title={QUOTA_NAME} meta={<StateWord state="success">Active</StateWord>}>
+            <p className="m-0 cc-text-body text-cc-ink">{tierInfo.label}</p>
+            <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">{tierInfo.text}</p>
 
-        {isDeletingAccount ? (
-          <div role="status" className="flex flex-col items-center justify-center gap-3 rounded-cc-row border border-cc-error-border bg-cc-error-bg p-6 text-center">
-            <Loader2 className="motion-safe:animate-spin text-cc-error" size={32} aria-hidden={true} />
-            <p className="m-0 cc-text-h3 text-cc-ink">Deleting your account and data...</p>
-            <p className="m-0 max-w-sm cc-text-cell text-cc-ink-muted">Your projects, uploaded source code, access requests, settings and sign-in are being removed from our database.</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {deleteError && (
-              <CcMessageStrip state="error" announce>
-                {deleteError}
-              </CcMessageStrip>
-            )}
-            <CcButton variant="ghost" tone="danger" onClick={openDeleteAccount} icon={<Trash2 size={16} aria-hidden={true} />}>
-              Delete my account
-            </CcButton>
-          </div>
-        )}
-      </CcCard>
+            <dl className="m-0 mt-4 space-y-2 border-t border-cc-line pt-4 cc-text-cell">
+              <div className="flex items-center justify-between gap-3">
+                <dt className="text-cc-ink-muted">{QUOTA_NAME}</dt>
+                <dd data-settings-quota="" className="m-0 font-semibold text-cc-ink">
+                  {profile?.byokConfigured ? 'Unlimited (your own key)' : runsLeftLabel(profile)}
+                </dd>
+              </div>
+              {profile?.accessUntil && (
+                <div className="flex items-center justify-between gap-3">
+                  <dt className="text-cc-ink-muted">Valid until</dt>
+                  <dd className="m-0 inline-flex items-center gap-1 font-semibold text-cc-ink">
+                    <Clock size={14} aria-hidden={true} /> <CcDateText value={profile.accessUntil.toDate()} format="text" />
+                  </dd>
+                </div>
+              )}
+            </dl>
+            <p className="m-0 mt-4 cc-text-cell text-cc-ink-muted">
+              Questions about your account? Write to <a href="mailto:info@clean-core.io" className={TEXT_LINK}>info@clean-core.io</a>.
+            </p>
+          </CcCard>
+
+          {/* Legal — the "Legal & Privacy Directory" of the old sidebar, as links
+              to the pages that hold the binding text instead of a second copy.
+              Its privacy paragraph promised a data download in the Danger Zone
+              that does not exist; the policy itself says what is offered. */}
+          <CcCard level={2} title="Legal and privacy">
+            <p className="m-0 cc-text-cell text-cc-ink-muted">
+              Clean-Core.io is a free community edition, provided without warranty.
+            </p>
+            <p className="mt-2 mb-0 cc-text-cell text-cc-ink-muted">
+              The findings, the route and the Clean Core Score come from a deterministic engine that reads your code; no model is involved in them. A language model (Google Gemini, or Anthropic Claude when your own key is a Claude key) writes only drafts on top of that evidence: the analysis narrative, business names for the process, the solution design, the code proposal, the documentation and the test suite. A draft can be wrong — code that does not compile, a statement the code does not support — so review a draft before you rely on it.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <CcLinkButton href="/impressum" variant="ghost">Legal notice</CcLinkButton>
+              <CcLinkButton href="/datenschutz" variant="ghost">Privacy policy</CcLinkButton>
+              <CcLinkButton href="/terms" variant="ghost">Terms of service</CcLinkButton>
+            </div>
+          </CcCard>
+        </aside>
+      </div>
 
       {/* 2FA setup — a dialog that asks for input (DESIGN.md §2.6, §2.7).
           Escape and the close button end it like "Later" does; the dimmed

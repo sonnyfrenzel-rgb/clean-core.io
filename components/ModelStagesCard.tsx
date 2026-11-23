@@ -42,7 +42,7 @@ const COUNT_WORDS: Record<number, string> = { 5: 'Five', 6: 'Six', 7: 'Seven' };
  * Every stage is offered to every account, the workspace's own (roadmap 2.4's
  * business names, 17.10's business sentences) included (roadmap 3.0.1).
  */
-export default function ModelStagesCard() {
+export default function ModelStagesCard({ level = 2 }: { level?: 2 | 3 } = {}) {
   const model = useModelAvailability();
   const stages = offeredModelStages();
   // 3.0.21: a stage that sends nothing in this build is not counted as sending a prompt.
@@ -114,7 +114,7 @@ export default function ModelStagesCard() {
       {/* One section of /settings: a `CcCard` with an `h2` title, like every
           other section of the page since the 3.0 rebuild. */}
       <CcCard
-        level={2}
+        level={level}
         title="Where the AI model is used"
         meta={
           model.known && !model.keyAvailable ? (

@@ -126,7 +126,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
    * Whether anyone is signed in: undefined until Firebase has answered. A
    * visitor nobody signed in for (the public pages under this shell — About,
    * Knowledge …) gets a "Sign in" link, not an account menu with an empty name,
-   * "Settings & Profile" and "Sign Out", which read as a pseudo account (owner
+   * "Profile settings" and "Sign Out", which read as a pseudo account (owner
    * report 21.10.2026).
    */
   const [firebaseSignedIn, setFirebaseSignedIn] = useState<boolean | undefined>(undefined);
@@ -215,7 +215,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
   const pathCurrent = ((): string | null => {
     const stage = /^\/project\/[^/]+\/([^/?#]+)/.exec(pathname ?? '')?.[1];
     if (stage) return PHASES.find((p) => p.key === stage)?.label ?? null;
-    if (pathname?.startsWith('/settings')) return 'Settings & Profile';
+    if (pathname?.startsWith('/settings')) return 'Profile settings';
     // The 3.0 list report is "My workspace" itself, and a new project is a step
     // of it — neither is the Admin Console, whatever folder they live in.
     if (pathname?.startsWith('/admin/workspace')) return null;
@@ -430,7 +430,7 @@ export default function AppLayout({children}: {children: React.ReactNode}) {
                     )}
 
                     <Link href="/settings" role="menuitem" tabIndex={-1} onClick={() => closeAccountMenu(false)}>
-                      <Settings size={16} aria-hidden={true} /> Settings & Profile
+                      <Settings size={16} aria-hidden={true} /> Profile settings
                     </Link>
 
                     <button
