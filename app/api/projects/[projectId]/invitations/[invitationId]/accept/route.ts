@@ -5,6 +5,7 @@ import {
   getAdminAuth,
   getAdminDb,
   assertAccountActive,
+  assertMfaSatisfied,
   QuotaError,
 } from '@/lib/firebase-admin';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
@@ -119,6 +120,17 @@ export async function GET(
       const q = rateErr as { message?: string; status?: number };
       return NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 });
     }
+    // The second factor holds here as on every other signed-in route: a first-factor token alone neither reads an
+    // invitation nor turns it into access.
+    try {
+      await assertMfaSatisfied(req, decodedToken);
+    } catch (mfaErr: unknown) {
+      if (!(mfaErr instanceof QuotaError)) throw mfaErr;
+      return NextResponse.json(
+        { error: mfaErr.message || 'Multi-factor authentication required.', code: 'mfa-required' },
+        { status: mfaErr.status || 403 },
+      );
+    }
     // The same account gate as `POST`, and like it before the invitation is
     // read: a suspended or erased account with a still-valid token is told
     // what `POST` tells it and learns nothing about any invitation.
@@ -185,6 +197,17 @@ export async function POST(
     } catch (rateErr: unknown) {
       const q = rateErr as { message?: string; status?: number };
       return NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 });
+    }
+    // The second factor holds here as on every other signed-in route: a first-factor token alone neither reads an
+    // invitation nor turns it into access.
+    try {
+      await assertMfaSatisfied(req, decodedToken);
+    } catch (mfaErr: unknown) {
+      if (!(mfaErr instanceof QuotaError)) throw mfaErr;
+      return NextResponse.json(
+        { error: mfaErr.message || 'Multi-factor authentication required.', code: 'mfa-required' },
+        { status: mfaErr.status || 403 },
+      );
     }
 
     const accountEmail = normaliseInvitedEmail(decodedToken.email);

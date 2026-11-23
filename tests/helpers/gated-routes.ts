@@ -196,6 +196,12 @@ export const GATED_ROUTES: GatedRoute[] = [
   // Roadmap 3.0.21 — the portfolio view of a shared selection: the gate answers
   // before the selection is looked up, so an id that does not exist is enough.
   { file: 'app/api/portfolio/view/route.ts', method: 'GET', path: () => '/api/portfolio/view?selection=not-a-selection' },
+  // Accepting an invitation grants read access, and its preview names the project or selection: both behind the
+  // factor like the owner's side of sharing. The gate answers before the invitation is looked up.
+  { file: 'app/api/projects/[projectId]/invitations/[invitationId]/accept/route.ts', method: 'GET', path: (p) => `/api/projects/${p}/invitations/not-an-invitation/accept` },
+  { file: 'app/api/projects/[projectId]/invitations/[invitationId]/accept/route.ts', method: 'POST', path: (p) => `/api/projects/${p}/invitations/not-an-invitation/accept` },
+  { file: 'app/api/portfolio/selections/[selectionId]/invitations/[invitationId]/accept/route.ts', method: 'GET', path: () => '/api/portfolio/selections/not-a-selection/invitations/not-an-invitation/accept' },
+  { file: 'app/api/portfolio/selections/[selectionId]/invitations/[invitationId]/accept/route.ts', method: 'POST', path: () => '/api/portfolio/selections/not-a-selection/invitations/not-an-invitation/accept' },
 ];
 
 /**

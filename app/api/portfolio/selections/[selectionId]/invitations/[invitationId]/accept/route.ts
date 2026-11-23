@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { logger, errMessage } from '@/lib/logger';
-import { verifyRequestAuth, getAdminAuth, getAdminDb, assertAccountActive, QuotaError } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminAuth, getAdminDb, assertAccountActive, assertMfaSatisfied, QuotaError } from '@/lib/firebase-admin';
 import { assertRateLimit, getClientIp } from '@/lib/rate-limit';
 import { escapeHtml } from '@/lib/utils';
 import { wrapEmailDocument } from '@/lib/email-layout';
@@ -50,6 +50,17 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ sele
       const q = rateErr as { message?: string; status?: number };
       return NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 });
     }
+    // The second factor holds here as on every other signed-in route: a first-factor token alone neither reads an
+    // invitation nor turns it into access.
+    try {
+      await assertMfaSatisfied(req, decodedToken);
+    } catch (mfaErr: unknown) {
+      if (!(mfaErr instanceof QuotaError)) throw mfaErr;
+      return NextResponse.json(
+        { error: mfaErr.message || 'Multi-factor authentication required.', code: 'mfa-required' },
+        { status: mfaErr.status || 403 },
+      );
+    }
     try {
       await assertAccountActive(decodedToken.uid, { isAdminClaim: decodedToken.admin === true });
     } catch (gateErr: unknown) {
@@ -81,6 +92,17 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
     } catch (rateErr: unknown) {
       const q = rateErr as { message?: string; status?: number };
       return NextResponse.json({ error: q?.message || 'Too many requests.' }, { status: q?.status || 429 });
+    }
+    // The second factor holds here as on every other signed-in route: a first-factor token alone neither reads an
+    // invitation nor turns it into access.
+    try {
+      await assertMfaSatisfied(req, decodedToken);
+    } catch (mfaErr: unknown) {
+      if (!(mfaErr instanceof QuotaError)) throw mfaErr;
+      return NextResponse.json(
+        { error: mfaErr.message || 'Multi-factor authentication required.', code: 'mfa-required' },
+        { status: mfaErr.status || 403 },
+      );
     }
     const accountEmail = normaliseInvitedEmail(decodedToken.email);
     if (!accountEmail) {
