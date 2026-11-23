@@ -224,7 +224,7 @@ test.describe('a new account: two equal products', () => {
 });
 
 test.describe('Re-design an example end to end (W4)', () => {
-  test('the example’s analysis is signed, then Design opens on it', async ({ page }) => {
+  test('the example’s analysis is signed, then Re-design opens on it (ADR-143)', async ({ page }) => {
     test.setTimeout(360_000);
     const email = `ws330-rd-${stamp}@cleancore-test.io`;
     await makeAccount(email);
@@ -234,8 +234,8 @@ test.describe('Re-design an example end to end (W4)', () => {
     await page.locator('[data-home-redesign-example]').click({ timeout: 120_000 });
     await page.waitForURL(/\/project\/[^/?#]+\/analyze\?first=1/, { timeout: 120_000 });
     const analysed = new URL(page.url()).pathname.split('/')[2];
-    await page.waitForURL(/\/project\/[^/?#]+\/design/, { timeout: 180_000 });
-    // Design opens on the same project, and only after its run is signed (QA review 89dc729101ad).
+    await page.waitForURL(/\/project\/[^/?#]+\/redesign/, { timeout: 180_000 });
+    // Re-design opens on the same project, and only after its run is signed (QA review 89dc729101ad).
     expect(new URL(page.url()).pathname.split('/')[2]).toBe(analysed);
     const project = await adminGetDoc('projects', analysed);
     expect(typeof project?.activeRunId, 'the example’s run is signed').toBe('string');

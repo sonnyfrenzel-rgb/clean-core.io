@@ -136,7 +136,7 @@ test('an analysis without a recommendation claims no override', async ({ page })
   await expect(page.locator('[data-route-confidence]')).toHaveCount(0);
 });
 
-test('there is no route switch: the one next action is the decision in Management', async ({ page }) => {
+test('there is no route switch: the one next action is the decision in Re-design (ADR-143)', async ({ page }) => {
   test.setTimeout(180 * 1000);
   await adminMergeDoc('projects', PROJECT_ID, {
     analysis: ANALYSIS,
@@ -151,6 +151,6 @@ test('there is no route switch: the one next action is the decision in Managemen
   await expect(page.locator('body')).not.toContainText('Not the route you want?');
   await expect(page.locator('body')).not.toContainText(/Switch to (ABAP Cloud|SAP BTP)/);
   const next = page.locator('[data-route-next] a');
-  await expect(next).toHaveText(/Decide in Management/);
-  await expect(next).toHaveAttribute('href', `/project/${PROJECT_ID}?view=management#decision-card`);
+  await expect(next).toHaveText(/Decide in Re-design/);
+  await expect(next).toHaveAttribute('href', `/project/${PROJECT_ID}/redesign#decide`);
 });

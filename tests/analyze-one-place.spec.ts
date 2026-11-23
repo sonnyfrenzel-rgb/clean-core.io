@@ -65,7 +65,7 @@ test.describe('the stage, read', () => {
     expect(read('components/analyze/EvidenceFindingsTable.tsx')).toContain('with successor');
   });
 
-  test('one route card, shared; no route switch; the next action is the decision in Management', () => {
+  test('one route card, shared; no route switch; the next action is the decision in Re-design (ADR-143)', () => {
     for (const rel of [PAGE, DEMO]) {
       const src = read(rel);
       expect(src, rel).toMatch(/<RouteCard\b/);
@@ -75,9 +75,9 @@ test.describe('the stage, read', () => {
     // The page writes `extensibilityRoute` only through the run, never from the browser.
     expect(read(PAGE)).not.toMatch(/updateDoc\([^)]*\{\s*extensibilityRoute/);
     const card = read('components/analyze/RouteCard.tsx');
-    expect(card).toContain('Decide in Management');
+    expect(card).toContain('Decide in Re-design');
     expect(card).not.toMatch(/updateDoc|setDoc|data-route-switch/);
-    expect(read(PAGE)).toContain('?view=management#decision-card');
+    expect(read(PAGE)).toContain("redesignHref(projectId, 'decide')");
     expect(read(DEMO)).toContain('decideHref="/demo/workspace?view=management"');
   });
 
@@ -144,14 +144,14 @@ test.describe('the stage, rendered', () => {
     await expect(page.locator('#analyze-summary')).toContainText('AI-generated');
 
     // The route explains its decision path one action deeper; there is no
-    // switch, and the one next action is the decision in Management.
+    // switch, and the one next action is the decision in Re-design (ADR-143).
     const why = page.locator('[data-route-why]');
     await expect(why).toHaveCount(1);
     await why.locator('[data-cc-disclosure-trigger]').first().click();
     await expect(page.locator('[data-route-switch], [data-route-override]')).toHaveCount(0);
     const next = page.locator('[data-route-next] a');
-    await expect(next).toHaveText(/Decide in Management/);
-    await expect(next).toHaveAttribute('href', new RegExp(`/project/${acct.projectId}\\?view=management#decision-card$`));
+    await expect(next).toHaveText(/Decide in Re-design/);
+    await expect(next).toHaveAttribute('href', new RegExp(`/project/${acct.projectId}/redesign#decide$`));
     // Two cards in the side column, not three.
     await expect(page.locator('aside[aria-label="Route and what is open"] > section')).toHaveCount(2);
 

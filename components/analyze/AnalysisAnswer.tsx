@@ -217,7 +217,7 @@ export default function AnalysisAnswer({
               <span>
                 · decided in{' '}
                 <a href={decideHref} className="font-semibold text-cc-ink underline underline-offset-2">
-                  Management
+                  Re-design
                 </a>
               </span>
             ) : null}

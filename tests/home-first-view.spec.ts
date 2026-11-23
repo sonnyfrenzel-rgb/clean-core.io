@@ -148,7 +148,7 @@ test.describe('the start', () => {
     expect(code('components/workspace/HomeStartParts.tsx')).not.toMatch(/\.text\(\)|FileReader|arrayBuffer/);
   });
 
-  test('"Re-design an example end to end" travels as an intent in module memory, once, and Analyze opens Design on it (W4)', () => {
+  test('"Re-design an example end to end" travels as an intent in module memory, once, and Analyze opens Re-design on it (W4, ADR-143)', () => {
     expect(takeRedesignAfterAnalysis('p1')).toBe(false);
     leaveRedesignAfterAnalysis('p1');
     expect(takeRedesignAfterAnalysis('p2')).toBe(false);
@@ -157,7 +157,8 @@ test.describe('the start', () => {
     const examples = code('components/StarterExamples.tsx');
     expect(examples).toContain("if (afterRun.current === 'design') leaveRedesignAfterAnalysis(docRef.id);");
     const analyze = code('components/analyze/AnalyzeBusiness.tsx');
-    expect(analyze).toMatch(/if \(takeRedesignAfterAnalysis\(projectId\)\) \{\s*router\.push\(`\/project\/\$\{encodeURIComponent\(projectId\)\}\/design`\);/);
+    expect(analyze).toMatch(/if \(takeRedesignAfterAnalysis\(projectId\)\) \{\s*router\.push\(redesignPageHref\(projectId\)\);/);
+    expect(code('lib/redesign.ts')).toContain('`/project/${encodeURIComponent(projectId)}/${REDESIGN_SEGMENT}`');
   });
 
   test('a pasted program travels under its own name', () => {

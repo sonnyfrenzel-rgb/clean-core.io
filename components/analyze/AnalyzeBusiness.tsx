@@ -40,6 +40,7 @@ import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
 import { analyzeLinesFromHash } from '@/lib/analyze-entry';
 import { takeRedesignAfterAnalysis } from '@/lib/home-start-handoff';
+import { redesignHref as redesignPageHref } from '@/lib/redesign';
 import { gateBody, gateContinue, gateLabel, WALKED_BEFORE, walkedAll, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
 
@@ -133,9 +134,9 @@ export default function AnalyzeBusiness({
   /** Read again once the start run is signed, so the map draws from the run (ADR-072). */
   const reload = useCallback(async () => {
     // "Re-design an example end to end" (ADR-123, W4): the analysis is signed,
-    // so Design opens on its result instead of Analyze. Taken once.
+    // so Re-design opens on its result instead of Analyze (ADR-143). Taken once.
     if (takeRedesignAfterAnalysis(projectId)) {
-      router.push(`/project/${encodeURIComponent(projectId)}/design`);
+      router.push(redesignPageHref(projectId));
       return;
     }
     try {
@@ -321,15 +322,18 @@ export default function AnalyzeBusiness({
     if (gate) gateRef.current?.focus();
   }, [gate]);
 
-  /** The two endings: Design for the owner (P8: a sentence for a reader), and the reader's own list. */
+  /** The two endings: Re-design for the owner (ADR-143; P8: a sentence for a reader), and the reader's own list. */
   const ruleCount = around.reading ? around.reading.ruleSet.rules.length : null;
-  const redesignHref = `/project/${encodeURIComponent(projectId)}/design`;
+  const redesignHref = redesignPageHref(projectId);
   const endings = (variant: 'compact' | 'full', children?: React.ReactNode) => (
     <AnalyzeEndings variant={variant} owner={!!owner} rules={ruleCount} designHref={redesignHref} anotherHref={myWorkspaceHref()}>
       {children}
     </AnalyzeEndings>
   );
-  /** Where the basket line under the questions leads: Design's questions, as the First insights' line did (3.0.21). */
+  /**
+   * Where the basket line under the questions leads: Design's questions, as the First insights' line did (3.0.21). It
+   * stays a direct link into Design: a list of questions, not a step of Re-design (ADR-143).
+   */
   const designHref = `/project/${encodeURIComponent(projectId)}/design#${RULE_QUESTIONS_ID}`;
 
   if (state === 'missing') return <ProjectNoAccess />;

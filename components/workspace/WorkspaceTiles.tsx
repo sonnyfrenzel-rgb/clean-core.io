@@ -55,6 +55,7 @@ import StarterExamples from '@/components/StarterExamples';
 import MapThumb from './MapThumb';
 import WorkspaceRowActions, { type RowActionHandlers } from './WorkspaceRowActions';
 import { HOME_LINK, OwnCodeWay, ProductMark } from './HomeStartParts';
+import { REDESIGN_DECIDE_ID, REDESIGN_SEGMENT } from '@/lib/redesign';
 
 /**
  * "My workspace" for a returning account — direction A of the mock-up
@@ -85,6 +86,11 @@ import { HOME_LINK, OwnCodeWay, ProductMark } from './HomeStartParts';
 const TOOL_LABEL = Object.fromEntries(PHASES.map((p) => [p.key, p.label])) as Record<PhaseKey, string>;
 
 const toolHref = (tile: ProgramTile, key: PhaseKey) => `${tile.href}/${key}`;
+/**
+ * Every "go on" of a tile leads to Re-design, which leads into the tools (owner request 23.11.2026, ADR-143): start,
+ * continue and the decision. `tile.href` is `/project/{id}`; the decision is Re-design's step 2 (`#decide`).
+ */
+const redesignHref = (tile: ProgramTile, decide = false) => `${tile.href}/${REDESIGN_SEGMENT}${decide ? `#${REDESIGN_DECIDE_ID}` : ''}`;
 // The lens only decides which fact a tile highlights; the analysis opens as it always does. Privacy policy 1.4,
 // section 7 (lawyer, statement 20c E2): the view "only decides which figure the tiles highlight".
 const analysisHref = (tile: ProgramTile) => `${tile.href}/analyze`;
@@ -186,7 +192,7 @@ function RedesignLine({ tile }: { tile: ProgramTile }) {
     case 'not-needed':
       status = <Status tone="waiting">{wsNotNeeded(DECISION_OPTION_LABELS[r.option], r.confirmed)}</Status>;
       left = meta(wt('ws.rd.nothingBuilt'));
-      action = <ActionLink href={toolHref(tile, 'design')} data-tile-action="open-decision">{programNextLabel({ kind: 'open-decision', key: 'design', run: false })}</ActionLink>;
+      action = <ActionLink href={redesignHref(tile, true)} data-tile-action="open-decision">{programNextLabel({ kind: 'open-decision', key: 'design', run: false })}</ActionLink>;
       break;
     case 'waits':
       status = <Status tone="waiting">{wt('ws.rd.waits')}</Status>;
@@ -196,12 +202,12 @@ function RedesignLine({ tile }: { tile: ProgramTile }) {
     case 'not-started':
       status = <Status tone="waiting">{wt('ws.rd.notStarted')}</Status>;
       left = meta(wt('ws.rd.startsInDesign'));
-      action = <ActionLink href={toolHref(tile, 'design')} data-tile-action="start-redesign">{programNextLabel({ kind: 'start-redesign', key: 'design', run: false })}</ActionLink>;
+      action = <ActionLink href={redesignHref(tile)} data-tile-action="start-redesign">{programNextLabel({ kind: 'start-redesign', key: 'design', run: false })}</ActionLink>;
       break;
     case 'step':
       status = <Status tone="moving">{wsRedesignStep(TOOL_LABEL[r.key], r.index + 1)}</Status>;
       left = <Track marks={tile.track} />;
-      action = <ActionLink href={toolHref(tile, r.key)} data-tile-action="continue">{programNextLabel({ kind: 'continue', key: r.key, run: false })}</ActionLink>;
+      action = <ActionLink href={redesignHref(tile)} data-tile-action="continue">{programNextLabel({ kind: 'continue', key: r.key, run: false })}</ActionLink>;
       break;
     case 'delivered':
       status = <Status tone="signed">{wsDeliveredOn(r.on)}</Status>;
@@ -491,7 +497,7 @@ function ContinueCard({
   const tile = next.tile;
   const changed = formatTextDate(tile.lastChange);
   const goHref =
-    next.kind === 'continue' ? toolHref(tile, next.key) : next.kind === 'start-redesign' ? toolHref(tile, 'design') : analysisHref(tile);
+    next.kind === 'continue' || next.kind === 'start-redesign' ? redesignHref(tile) : analysisHref(tile);
   // The map is Analyze: a second way there only when the next step goes somewhere else.
   const mapLink = tile.analyse.kind === 'signed' && goHref !== analysisHref(tile);
   return (
@@ -645,7 +651,7 @@ export default function WorkspaceTiles({
     const candidates = tiles.filter((t) => t.access === 'own' && (t.redesign.kind === 'step' || t.redesign.kind === 'not-started'));
     if (candidates.length === 1) {
       const t = candidates[0];
-      router.push(toolHref(t, t.redesign.kind === 'step' ? t.redesign.key : 'design'));
+      router.push(redesignHref(t));
       return;
     }
     setFilter('analysed');

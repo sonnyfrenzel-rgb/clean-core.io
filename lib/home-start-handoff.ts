@@ -44,8 +44,8 @@ export function pastedFileName(text: string): string {
 
 /**
  * "Re-design an example end to end" (ADR-123, W4): the analysis runs as for any
- * start, and once its run is signed the project opens in Design instead of
- * staying in Analyze. The intent is this session's and this project's only —
+ * start, and once its run is signed the project opens in Re-design
+ * (`/project/[id]/redesign`, ADR-143) instead of staying in Analyze. The intent is this session's and this project's only —
  * module memory like the handoff above, never a stored field — and is taken
  * once, by Analyze when the start run has signed (`AnalyzeBusiness`). A reload
  * between the two simply leaves the reader in Analyze, which is where every
