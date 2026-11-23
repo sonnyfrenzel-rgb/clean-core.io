@@ -198,7 +198,11 @@ test('metamorphic: no transformation that adds paths makes an answer more certai
       const after = answers(changed);
       for (const [tag, a] of before) {
         const b = after.get(tag);
-        if (!b) continue;
+        // Every transformation keeps every tagged call: an answer that disappears is a loss, not a skip (QA 7393c7330fbb).
+        if (!b) {
+          violations.push(`seed ${seed}, ${name}, tag ${tag}: ${a.name ?? 'open'} ${a.resolution} -> no answer\n${changed.join('\n')}`);
+          continue;
+        }
         compared += 1;
         const ok = certainty(b.resolution) <= certainty(a.resolution) && (b.name === null || b.name === a.name);
         if (!ok) violations.push(`seed ${seed}, ${name}, tag ${tag}: ${a.name ?? 'open'} ${a.resolution} -> ${b.name ?? 'open'} ${b.resolution}\n${changed.join('\n')}`);

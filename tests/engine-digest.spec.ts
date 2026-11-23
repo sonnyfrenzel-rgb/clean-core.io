@@ -127,19 +127,34 @@ test('every release fixture and the release registry agree, and every registered
   }
 });
 
-test('a release captured after the fact recomputes from its commit (skipped where the clone lacks it)', () => {
-  for (const [engine, r] of Object.entries(readReleases().releases)) {
-    if (r.how !== 'after the fact') continue;
+/**
+ * One test per release captured after the fact, so a commit one clone lacks skips that release only and never the
+ * others (QA 5303a617dcd8). The skip is for a local shallow clone: CI's test jobs check out the full history
+ * (`.github/workflows/deploy.yml`, e2e `fetch-depth: 0`, held by `tests/quality-gate-guard.spec.ts`), so under CI a
+ * missing commit is a failure, never a silent pass (QA 92721e404824, c8edce86c25e, 1754b7686e51, ae3f17cccba5,
+ * b5af81fb7c3f, 0b53bd088269). The fixture-and-registry agreement above needs no history and always runs.
+ */
+const AFTER_THE_FACT = Object.entries(readReleases().releases).filter(([, r]) => r.how === 'after the fact');
+
+test('at least one release is checked against its commit', () => {
+  expect(AFTER_THE_FACT.length).toBeGreaterThan(0);
+});
+
+for (const [engine, r] of AFTER_THE_FACT) {
+  test(`${engine}, captured after the fact, recomputes from its commit ${r.commit}`, () => {
     let present = true;
     try {
       execFileSync('git', ['cat-file', '-e', `${r.commit}^{commit}`], { cwd: ROOT, stdio: 'ignore' });
     } catch {
       present = false;
     }
-    test.skip(!present, `${r.commit} is not in this clone`);
+    if (!present && process.env.CI) {
+      throw new Error(`${engine}: ${r.commit} is not in this CI clone, so the release cannot be recomputed — CI test jobs must fetch the full history`);
+    }
+    test.skip(!present, `${r.commit} is not in this local clone`);
     expect(computeEngineDigestAt(ROOT, r.commit).digest, engine).toBe(r.digest);
-  }
-});
+  });
+}
 
 test('the label: a release, an unreleased build, or not recorded', () => {
   const [engine, r] = Object.entries(readReleases().releases)[0];

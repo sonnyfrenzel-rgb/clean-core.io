@@ -56,7 +56,12 @@ an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are uncha
   and the probes (never the holdout) in a new format 3 that adds the process skeleton, the business statements and the
   engine digest, and pushes the fixture and `lib/engine-releases.json` to the bot branch
   `chore/engine-release-capture`. `tests/engine-frozen-digests.spec.ts` checks every release fixture,
-  `tests/engine-digest.spec.ts` the registry against the fixtures.
+  `tests/engine-digest.spec.ts` the registry against the fixtures. A release recorded after the fact is recomputed
+  from its commit in a test of its own; a commit missing from the clone skips only that release locally and fails
+  under CI, whose test jobs fetch the full history (QA 92721e404824, c8edce86c25e, 1754b7686e51, 5303a617dcd8,
+  ae3f17cccba5, b5af81fb7c3f, 0b53bd088269). The engine-version guard accepts the release replay of
+  `frozen-digests.ts#digestOf` only with its own `engine` parameter (QA c68319d48404), and the engine 4 value
+  reading's metamorphic test counts an answer that disappears as a violation (QA 7393c7330fbb).
 - **Input hygiene** (`lib/abap/input-hygiene.ts`): from 3.4.0 a byte order mark is dropped and a lone CR ends a line
   before the engine reads a source, so a program saved with CR-only line ends is read line by line. Before 3.4.0 such
   a program was read as one comment line — no finding and a "complete" coverage; a run signed by an earlier engine
