@@ -164,7 +164,7 @@ export default function StageHeader({
   // The Re-design page leads back to Analyze, where every way into it starts (mock-up of 23.11.2026, screen 2).
   const way: typeof familyWay =
     onRedesign && projectId && familyWay.kind === 'link'
-      ? { kind: 'link', href: `/project/${encodeURIComponent(projectId)}/analyze`, place: 'Analyze', to: 'workspace' }
+      ? { kind: 'link', href: `/project/${encodeURIComponent(projectId)}/analyze`, place: 'Analyze', to: 'analyze' }
       : familyWay;
   // The program: the page's project, or the name the loader announced to the shell bar, or the demo's name.
   const announcedName = useShellProjectName(projectId || null);

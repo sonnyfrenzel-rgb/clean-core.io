@@ -25,13 +25,18 @@
 import { analyzeLinesFromHash } from '@/lib/analyze-entry';
 import { BUSINESS_MAP_ID } from '@/lib/business-layers';
 import { ANALYZE_IT_IDS } from '@/lib/analyze-it';
+import { MANAGEMENT_PAGE_IDS } from '@/lib/analyze-management';
+import { REDESIGN_DECIDE_ID, REDESIGN_SEGMENT } from '@/lib/redesign';
+
+/** The program decision: Re-design's decision step since ADR-143 (Analyze, Management shows it read-only). */
+const DECIDE: WorkspacePlaceHome = { kind: 'tool', path: 'redesign', hash: REDESIGN_DECIDE_ID };
 
 export type AnalyzeView = 'business' | 'it' | 'management';
 
 /** Where one old place lands: a view of Analyze at a place (or its top), or a tool. */
 export type WorkspacePlaceHome =
   | { kind: 'analyze'; view: AnalyzeView | 'same'; hash: string | null }
-  | { kind: 'tool'; path: 'tco' };
+  | { kind: 'tool'; path: 'tco' | 'redesign'; hash?: string };
 
 const A = (view: AnalyzeView | 'same', hash: string | null = null): WorkspacePlaceHome => ({ kind: 'analyze', view, hash });
 
@@ -46,7 +51,7 @@ export const WORKSPACE_PLACES: Readonly<Record<string, WorkspacePlaceHome>> = Ob
   costs: { kind: 'tool', path: 'tco' },
   architecture: A('it', ANALYZE_IT_IDS.touch),
   evidence: A('it', 'it-trust'),
-  changes: A('management', 'decision-card'),
+  changes: DECIDE,
   // Business: the map (ADR-080) and the next step.
   [BUSINESS_MAP_ID]: A('business', BUSINESS_MAP_ID),
   'next-step': A('same'),
@@ -66,14 +71,16 @@ export const WORKSPACE_PLACES: Readonly<Record<string, WorkspacePlaceHome>> = Ob
   // The project's one list of open questions (ADR-081) stands in IT's side column; Management keeps its own (below).
   'not-determined': A('it', ANALYZE_IT_IDS.notDetermined),
   // Management (ADR-087): the decision and what it rests on — Analyze's Management view (AB-10).
-  'decision-card': A('management', 'decision-card'),
-  'decision-rests-on': A('management', 'decision-rests-on'),
-  'decision-rests-on-need': A('management', 'decision-rests-on-need'),
-  'decision-rests-on-option': A('management', 'decision-rests-on-option'),
-  'decision-rests-on-cost': A('management', 'decision-rests-on-cost'),
-  'decision-rests-on-contract': A('management', 'decision-rests-on-contract'),
-  'decision-options': A('management', 'decision-options'),
-  'management-readiness': A('management', 'management-readiness'),
+  // The decision record, what it rests on and its options are Re-design's decision step (ADR-143).
+  'decision-card': DECIDE,
+  'decision-rests-on': DECIDE,
+  'decision-rests-on-need': DECIDE,
+  'decision-rests-on-option': DECIDE,
+  'decision-rests-on-cost': DECIDE,
+  'decision-rests-on-contract': DECIDE,
+  'decision-options': DECIDE,
+  // The readiness trend is gone with the old Management view: its page opens at the answer.
+  'management-readiness': A('management'),
   'management-elsewhere': A('management'),
   // The workspace's own chrome: the tool row and the status fold are the tool header's now, read access is
   // "Invite to view" in that header (UX review L7).
@@ -122,16 +129,22 @@ export function workspaceRedirectFrom(projectBase: string, search: string, hash:
       fragment = place;
     } else if (/^oq-[a-z-]{1,40}$/.test(place)) {
       // One group of the open questions (`#oq-add-atc`, a choice's address): where the list stands.
-      view = named === 'management' ? 'management' : 'it';
-      fragment = place;
+      if (named === 'management') {
+        view = 'management';
+        fragment = MANAGEMENT_PAGE_IDS.open;
+      } else {
+        view = 'it';
+        fragment = place;
+      }
     } else if (Object.prototype.hasOwnProperty.call(WORKSPACE_PLACES, place)) {
       const home = WORKSPACE_PLACES[place];
       if (place === ANALYZE_IT_IDS.notDetermined && named === 'management') {
-        // Management keeps its own "still open" (AB-10); Business and IT read the one list in IT's side column.
+        // Management keeps its own "Still open" (AB-10); Business and IT read the one list in IT's side column.
         view = 'management';
-        fragment = place;
+        fragment = MANAGEMENT_PAGE_IDS.open;
       } else if (home.kind === 'tool') {
-        tool = home.path;
+        tool = home.path === 'redesign' ? REDESIGN_SEGMENT : home.path;
+        fragment = home.hash ?? '';
       } else {
         view = home.view === 'same' ? named : home.view;
         fragment = home.hash ?? '';

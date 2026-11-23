@@ -34,7 +34,7 @@ test.describe('/project/<id> goes to Analyze', () => {
     expect(go('?first=1')).toBe('/project/p1/analyze?first=1');
     expect(go('?view=it&from=workspace-tools&focus=abc&x=1')).toBe('/project/p1/analyze?view=it&from=workspace-tools');
     expect(go('?view=management&origin=management.options', '#decision-options')).toBe(
-      '/project/p1/analyze?view=management&origin=management.options#decision-options',
+      '/project/p1/redesign?view=management&origin=management.options#decide',
     );
     expect(go('?view=it&add=usage')).toBe('/project/p1/analyze?view=it&add=usage');
     expect(go('?view=it&add=evil')).toBe('/project/p1/analyze?view=it');
@@ -68,22 +68,24 @@ const TABLE: ReadonlyArray<readonly [string, string, string]> = [
   ['', '#costs', '/project/p1/tco'],
   ['?view=it', '#architecture', `/project/p1/analyze?view=it#${ANALYZE_IT_IDS.touch}`],
   ['?view=business', '#evidence', '/project/p1/analyze?view=it#it-trust'],
-  ['?view=it', '#changes', '/project/p1/analyze?view=management#decision-card'],
+  ['?view=it', '#changes', '/project/p1/redesign?view=it#decide'],
   ['?view=it', `#${IT_SECTION_IDS.findings}`, `/project/p1/analyze?view=it#${ANALYZE_IT_IDS.kinds}`],
   ['?view=it', `#${IT_SECTION_IDS.objects}`, `/project/p1/analyze?view=it#${ANALYZE_IT_IDS.touch}`],
   ['?view=it', `#${IT_SECTION_IDS.questions}`, '/project/p1/analyze?view=it#not-determined'],
   ['', '#not-determined', '/project/p1/analyze?view=it#not-determined'],
-  ['?view=management', '#not-determined', '/project/p1/analyze?view=management#not-determined'],
+  ['?view=management', '#not-determined', '/project/p1/analyze?view=management#mgmt-still-open'],
+  ['?view=management', '#oq-add-atc', '/project/p1/analyze?view=management#mgmt-still-open'],
   ['?view=it', `#${IT_SECTION_IDS.profile}`, '/project/p1/analyze?view=it#it-target-profile'],
   ['?view=it', `#${IT_SECTION_IDS.route}`, '/project/p1/analyze?view=it#it-route'],
   ['?view=it', `#${IT_SECTION_IDS.trust}`, '/project/p1/analyze?view=it#it-trust'],
   ['?view=it', `#${IT_SECTION_IDS.standard}`, '/project/p1/analyze?view=it#standard'],
   ['?view=it', '#business-rules', '/project/p1/analyze?view=it#business-rules'],
   ['?view=it', '#it-elsewhere', '/project/p1/analyze?view=it'],
-  ['?view=management', `#${MANAGEMENT_IDS.decision}`, '/project/p1/analyze?view=management#decision-card'],
-  ['', `#${MANAGEMENT_IDS.decision}`, '/project/p1/analyze?view=management#decision-card'],
-  ['?view=management', `#${MANAGEMENT_IDS.costs}`, '/project/p1/analyze?view=management#decision-rests-on-cost'],
-  ['?view=management', `#${MANAGEMENT_IDS.readiness}`, '/project/p1/analyze?view=management#management-readiness'],
+  ['?view=management', `#${MANAGEMENT_IDS.decision}`, '/project/p1/redesign?view=management#decide'],
+  ['', `#${MANAGEMENT_IDS.decision}`, '/project/p1/redesign#decide'],
+  ['?view=management', `#${MANAGEMENT_IDS.costs}`, '/project/p1/redesign?view=management#decide'],
+  ['?view=management', '#decision-options', '/project/p1/redesign?view=management#decide'],
+  ['?view=management', `#${MANAGEMENT_IDS.readiness}`, '/project/p1/analyze?view=management'],
   ['?view=management', `#${MANAGEMENT_IDS.elsewhere}`, '/project/p1/analyze?view=management'],
   ['?view=it', `#${WORKSPACE_RETURN.tools}`, '/project/p1/analyze?view=it'],
   ['?view=management', `#${WORKSPACE_RETURN.status}`, '/project/p1/analyze?view=management'],
@@ -144,7 +146,7 @@ test.describe('the ways in land there without a hop', () => {
       expect(back, key).not.toMatch(/^\/project\/p1(\?|#|$)/);
     }
     expect(choiceHref({ base: '/project/p1', choice: 'management.confirm', origin: 'it.open-questions', view: 'it' })).toBe(
-      '/project/p1/analyze?view=management&origin=it.open-questions#decision-card',
+      '/project/p1/redesign?view=management&origin=it.open-questions#decide',
     );
     expect(choiceHref({ base: '/project/p1', choice: 'it.target', view: 'management' })).toBe('/project/p1/analyze?view=it#it-target-profile');
     // The demo keeps its own workspace.

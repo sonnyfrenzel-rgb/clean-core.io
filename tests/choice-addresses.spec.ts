@@ -45,14 +45,14 @@ test.describe('every choice has one address', () => {
   // The inventory of the plan, C1–C21: key → the address it must produce from the IT view.
   const EXPECTED: Record<string, string> = {
     'design.target-signoff': `${BASE}/design?view=it&origin=it.next-step#architect-sign-off`,
-    'management.options': `${BASE}/analyze?view=management&origin=it.next-step#decision-options`,
-    'management.confirm': `${BASE}/analyze?view=management&origin=it.next-step#decision-card`,
+    'management.options': `${BASE}/redesign?view=management&origin=it.next-step#decide`,
+    'management.confirm': `${BASE}/redesign?view=management&origin=it.next-step#decide`,
     // Owner decision 21.10.2026: the rules are answered as questions for the business in Design.
     'business.rules': `${BASE}/design?view=it&origin=it.next-step#rule-questions`,
     'business.walk': `${BASE}/analyze?view=business&origin=it.next-step#process-map`,
     'business.open-questions': `${BASE}/analyze?view=it&origin=it.next-step#not-determined`,
     'it.open-questions': `${BASE}/analyze?view=it&origin=it.next-step#not-determined`,
-    'management.open-questions': `${BASE}/analyze?view=management&origin=it.next-step#not-determined`,
+    'management.open-questions': `${BASE}/analyze?view=management&origin=it.next-step#mgmt-still-open`,
     'it.target': `${BASE}/analyze?view=it&origin=it.next-step#it-target-profile`,
     'it.standard-fit': `${BASE}/analyze?view=it&origin=it.next-step#standard`,
     'economics.rates': `${BASE}/tco?view=it&origin=it.next-step#economics-step-rates`,
@@ -119,7 +119,7 @@ test.describe('every choice has one address', () => {
     for (const view of ['business', 'it', 'management'] as const) {
       expect(choiceHref({ base: BASE, choice: 'economics.rates', view })).toBe(`${BASE}/tco?view=${view}#economics-step-rates`);
       // The decision lives in Management, whichever view asked.
-      expect(choiceHref({ base: BASE, choice: 'management.confirm', view })).toBe(`${BASE}/analyze?view=management#decision-card`);
+      expect(choiceHref({ base: BASE, choice: 'management.confirm', view })).toBe(`${BASE}/redesign?view=management#decide`);
     }
     expect(choiceHref({ base: BASE, choice: 'economics.rates' })).toBe(`${BASE}/tco#economics-step-rates`);
     expect(choiceHref({ base: BASE, choice: 'economics.rates', view: 'admin' })).toBe(`${BASE}/tco#economics-step-rates`);
@@ -273,9 +273,9 @@ test.describe('the origin is a key of a closed list, or nothing', () => {
 
 test.describe('the way back goes one level, to the place that asked', () => {
   test('to a view, to a tool, to the workspace in the reader\'s view', () => {
-    expect(originBackHref({ base: BASE, origin: 'management.options' })).toBe(`${BASE}/analyze?view=management#decision-options`);
+    expect(originBackHref({ base: BASE, origin: 'management.options' })).toBe(`${BASE}/redesign?view=management#decide`);
     expect(originBackHref({ base: BASE, origin: 'management.rests-on.contract', search: '?view=management&origin=management.rests-on.contract' })).toBe(
-      `${BASE}/analyze?view=management#decision-rests-on-contract`,
+      `${BASE}/redesign?view=management#decide`,
     );
     expect(originBackHref({ base: BASE, origin: 'delivery.still-needed', search: '?view=it&origin=delivery.still-needed' })).toBe(
       `${BASE}/delivery?view=it#still-needed`,
@@ -316,7 +316,7 @@ test.describe('the way back goes one level, to the place that asked', () => {
       href: '/project/p-1/analyze?view=management',
       origin: {
         key: 'management.rests-on.contract',
-        href: '/project/p-1/analyze?view=management#decision-rests-on-contract',
+        href: '/project/p-1/redesign?view=management#decide',
         label: { lead: 'Back to', place: 'Management view, What it rests on: Architecture contract' },
       },
     });
