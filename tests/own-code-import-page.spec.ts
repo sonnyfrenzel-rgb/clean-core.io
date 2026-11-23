@@ -77,7 +77,7 @@ test.describe('own code: choose, check, start', () => {
     await expect(page.locator('[data-shell-path] [aria-current="page"]').last()).toHaveText('New project');
     // The one-line footer of a project step, not the marketing footer.
     await expect(page.locator('footer')).toContainText('Privacy Policy');
-    await expect(page.locator('footer')).not.toContainText('Knowledge Base');
+    await expect(page.locator('footer')).not.toContainText(/knowledge base/i);
   });
 
   test('choosing own code writes nothing and opens the upload page', async ({ page }) => {

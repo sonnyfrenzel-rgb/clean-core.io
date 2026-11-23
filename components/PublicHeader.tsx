@@ -26,11 +26,11 @@ import HeaderAuthButton from '@/components/HeaderAuthButton';
 
 /** The pages with search reach — the desktop row and the phone menu read the same list. */
 export const PUBLIC_NAV: ReadonlyArray<{ href: string; label: string }> = [
-  { href: '/clean-core-explained', label: 'Clean Core Explained' },
-  { href: '/how-it-works', label: 'How It Works' },
+  { href: '/clean-core-explained', label: 'Clean core explained' },
+  { href: '/how-it-works', label: 'How it works' },
   { href: '/sap-clean-core-object-classification', label: 'Classification A–D' },
-  { href: '/catalog', label: 'SAP Object Catalog' },
-  { href: '/knowledge', label: 'Knowledge Base' },
+  { href: '/catalog', label: 'SAP object catalog' },
+  { href: '/knowledge', label: 'Knowledge base' },
 ];
 
 export default function PublicHeader({
