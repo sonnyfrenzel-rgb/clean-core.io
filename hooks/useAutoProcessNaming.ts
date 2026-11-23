@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { askModeOf } from '@/lib/auto-steps';
 import { sha256Hex } from '@/lib/artefact-digest';
+import { APP_VERSION } from '@/lib/version';
 import {
   PROCESS_NAMING_STORED_EVENT,
   namingModelEnabled,
@@ -70,7 +71,8 @@ export function useAutoProcessNaming(input: {
 } {
   const { projectId, source, owner, availability, state, onStored, autoAllowed, withFacts } = input;
   const awaitNotice = input.awaitNotice === true;
-  const engineVersion = input.engineVersion ?? null;
+  // Absent: this release. `null`: a run without an engine stamp, read as the oldest engine (3.5.0).
+  const engineVersion: string | null = input.engineVersion === undefined ? APP_VERSION : input.engineVersion;
   const [asking, setAsking] = useState(false);
   // The outcome belongs to the map it was asked for (project and source digest): another map on the same page has
   // had no answer yet, so it reads none rather than an earlier map's failure.
@@ -99,7 +101,7 @@ export function useAutoProcessNaming(input: {
           const [naming, client] = await Promise.all([import('@/lib/process-naming'), import('@/lib/process-naming-client')]);
           const outcome = await client.requestProcessNaming(
             pid,
-            naming.namingContextOf(src, engineVersion ? { engineVersion } : {}),
+            naming.namingContextOf(src, { engineVersion }),
             { known, keyAvailable, stages: { [naming.NAMING_STAGE]: modelEnabled } },
             undefined,
             { automatic },

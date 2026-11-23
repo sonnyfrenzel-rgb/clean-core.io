@@ -30,6 +30,8 @@ export interface SkeletonReadings {
   reads310: boolean;
   /** Engine 3.2.0 (`ENGINE_READS_320_FROM`). */
   reads320: boolean;
+  /** Engine 3.5.0 (`ENGINE_READS_350_FROM`): the skeleton readings listed in `engine-reads-350-gate.ts`. */
+  reads350: boolean;
 }
 
 /** A way out of what the walk drew last, not yet connected to what comes next. */

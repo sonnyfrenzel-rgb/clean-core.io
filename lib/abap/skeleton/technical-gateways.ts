@@ -4,7 +4,7 @@ import {
   isTechnicalGateway,
   type ComparableElementKind,
 } from '../element-comparability';
-import type { SkeletonGraph } from './graph';
+import type { SkeletonGraph, SkeletonReadings } from './graph';
 
 /**
  * Pass "technical gateways" — engine 4 phase 3, a fold after the walk and the guards
@@ -12,7 +12,8 @@ import type { SkeletonGraph } from './graph';
  *
  * Reads: nodes, edges, `region.entryNodeId`. Writes: a gateway turned boundary in place (`kind`, `label`,
  * `detail`), the `from`/`kind`/`condition` of the arms it moves; drops the gateway and its incoming edges where a
- * boundary already stood (the double drawing). No reading gate.
+ * boundary already stood (the double drawing). Reading gate: engine 3.5.0 reads `sy-tabix` with its own polarity
+ * (`conditionAsserts`).
  */
 
 /**
@@ -45,7 +46,29 @@ const SUCCESS_CONDITIONS: RegExp[] = [
   /^LINES\s*\([^()]*\)\s*(?:>|GT)\s*0$/i,
 ];
 
-export function conditionAsserts(condition: string): 'failure' | 'success' | null {
+/**
+ * Engine 3.5.0 (`ENGINE_READS_350_FROM`): `sy-tabix` is read with its own polarity. It is not a return code but the
+ * row index the last `READ TABLE`/`LOOP AT` set, so `sy-tabix > 0` says a row was found and `sy-tabix = 0` says none
+ * was — the opposite of `sy-subrc`, which the lists above read it as. Before 3.5.0 the fold hung the arm that found a
+ * row on the boundary event as the failure.
+ */
+const FAILURE_CONDITIONS_350: RegExp[] = [
+  /^SY-SUBRC\s*(?:<>|NE|>|GT)\s*0$/i,
+  /^SY-SUBRC\s+IS\s+NOT\s+INITIAL$/i,
+  /^SY-TABIX\s*(?:=|EQ)\s*0$/i,
+  /^SY-TABIX\s+IS\s+INITIAL$/i,
+  ...FAILURE_CONDITIONS.slice(2),
+];
+
+const SUCCESS_CONDITIONS_350: RegExp[] = [
+  /^SY-SUBRC\s*(?:=|EQ)\s*0$/i,
+  /^SY-SUBRC\s+IS\s+INITIAL$/i,
+  /^SY-TABIX\s*(?:<>|NE|>|GT)\s*0$/i,
+  /^SY-TABIX\s+IS\s+NOT\s+INITIAL$/i,
+  ...SUCCESS_CONDITIONS.slice(2),
+];
+
+export function conditionAsserts(condition: string, reads350 = false): 'failure' | 'success' | null {
   let text = condition.trim();
   let negated = false;
   // `CHECK sy-subrc = 0.` leaves `NOT ( sy-subrc = 0 )` on the other arm
@@ -55,10 +78,10 @@ export function conditionAsserts(condition: string): 'failure' | 'success' | nul
     negated = true;
     text = not[1].trim();
   }
-  for (const pattern of FAILURE_CONDITIONS) {
+  for (const pattern of reads350 ? FAILURE_CONDITIONS_350 : FAILURE_CONDITIONS) {
     if (pattern.test(text)) return negated ? 'success' : 'failure';
   }
-  for (const pattern of SUCCESS_CONDITIONS) {
+  for (const pattern of reads350 ? SUCCESS_CONDITIONS_350 : SUCCESS_CONDITIONS) {
     if (pattern.test(text)) return negated ? 'failure' : 'success';
   }
   return null;
@@ -72,11 +95,11 @@ export function conditionAsserts(condition: string): 'failure' | 'success' | nul
  * error arm by elimination. Anything else is `null`: two arms that both read as
  * failure, or neither, are not the shape this rule is about.
  */
-export function failureArm(arms: SkeletonEdge[]): SkeletonEdge | null {
-  const failing = arms.filter((e) => conditionAsserts(e.condition) === 'failure');
+export function failureArm(arms: SkeletonEdge[], reads350 = false): SkeletonEdge | null {
+  const failing = arms.filter((e) => conditionAsserts(e.condition, reads350) === 'failure');
   if (failing.length === 1) return failing[0];
   if (failing.length > 1) return null;
-  const working = arms.filter((e) => conditionAsserts(e.condition) === 'success');
+  const working = arms.filter((e) => conditionAsserts(e.condition, reads350) === 'success');
   const bare = arms.filter((e) => !e.condition.trim());
   if (working.length === 1 && bare.length === 1) return bare[0];
   return null;
@@ -131,7 +154,7 @@ export function failureArm(arms: SkeletonEdge[]): SkeletonEdge | null {
  * words too. Nothing becomes unreachable — every arm of the gateway is still a
  * flow, only from one node further up.
  */
-export function foldTechnicalGateways(graph: SkeletonGraph): void {
+export function foldTechnicalGateways(graph: SkeletonGraph, readings: Pick<SkeletonReadings, 'reads350'> = { reads350: false }): void {
   const byId = new Map(graph.nodes.map((n) => [n.id, n]));
   const outgoing = new Map<string, SkeletonEdge[]>();
   const incoming = new Map<string, SkeletonEdge[]>();
@@ -223,7 +246,7 @@ export function foldTechnicalGateways(graph: SkeletonGraph): void {
     const distance = branchStatement - stepStatement;
     if (distance < 1 || distance > (boundary ? 2 : 1)) continue;
 
-    const failure = failureArm(arms);
+    const failure = failureArm(arms, readings.reads350);
     if (!failure) continue;
     const survivor = arms.find((e) => e !== failure);
     if (!survivor) continue;

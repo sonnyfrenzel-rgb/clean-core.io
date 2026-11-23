@@ -77,14 +77,53 @@ export async function storeCustomerTexts(projectId: string, texts: CustomerTexts
   }
 }
 
-/** The project's stored texts, or null when there are none or they cannot be read. */
-export async function fetchCustomerTexts(projectId: string): Promise<CustomerTexts | null> {
+/**
+ * How long a reader waits for the customer texts before it goes on without them (3.5.0, carried from the 3.1.0 QA
+ * review). The process map waited for them without a limit, so a request that never answered (a stalled session
+ * restore, a hanging network) left the map at "loading" for good. After the deadline the map draws as it does
+ * without an abapGit package; the texts are a better wording, never a condition of the map.
+ */
+export const CUSTOMER_TEXTS_DEADLINE_MS = 4000;
+
+/**
+ * `work`'s answer, or `fallback` when it has not answered within `deadlineMs`; the signal handed to `work` is aborted
+ * then, so a request it started is abandoned. A `work` that throws answers `fallback` too.
+ */
+export async function withinDeadline<T>(
+  work: (signal: AbortSignal | undefined) => Promise<T>,
+  deadlineMs: number,
+  fallback: T,
+): Promise<T> {
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const deadline = new Promise<T>((resolve) => {
+    timer = setTimeout(() => {
+      controller?.abort();
+      resolve(fallback);
+    }, deadlineMs);
+  });
   try {
-    const res = await fetch(customerTextsPath(projectId), { headers: await authHeader() });
+    return await Promise.race([work(controller?.signal).catch(() => fallback), deadline]);
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
+/**
+ * The project's stored texts, or null when there are none, they cannot be read, or they have not arrived within
+ * `deadlineMs` (the request is then abandoned).
+ */
+export async function fetchCustomerTexts(
+  projectId: string,
+  deadlineMs: number = CUSTOMER_TEXTS_DEADLINE_MS,
+): Promise<CustomerTexts | null> {
+  return withinDeadline(async (signal) => {
+    const res = await fetch(customerTextsPath(projectId), {
+      headers: await authHeader(),
+      ...(signal ? { signal } : {}),
+    });
     if (!res.ok) return null;
     const body = (await res.json()) as { texts?: unknown };
     return isCustomerTexts(body.texts) ? body.texts : null;
-  } catch {
-    return null;
-  }
+  }, deadlineMs, null);
 }

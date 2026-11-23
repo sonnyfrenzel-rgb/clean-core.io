@@ -365,6 +365,8 @@ export default function DeliveryPage() {
     const { xml } = buildBpmnExportFromSource(signedSource.source, {
       processName: project?.name || signedSource.fileName,
       sourceFileName: signedSource.fileName,
+      // The engine of the project's run, as the map draws it; a run without a stamp reads as the oldest engine.
+      exporterVersion: engineVersionOfProject(project),
     });
     const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });
     await saveAs(blob, bpmnFileName(`${project?.name || 'Project'}_Process`));

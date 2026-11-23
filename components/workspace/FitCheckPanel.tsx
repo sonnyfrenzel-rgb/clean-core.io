@@ -26,6 +26,7 @@ import {
 } from '@/lib/fit-check';
 import type { ItFindingRow } from '@/lib/it-findings';
 import type { Project } from '@/lib/types';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 
 /**
  * The guided fit-to-standard check and the workshop package — stage 2 of the
@@ -110,7 +111,10 @@ export default function FitCheckPanel({
       const fromSource = signed ?? (demo && typeof project?.legacyCode === 'string' ? { source: project.legacyCode, fileName: projectName } : null);
       if (!xml && fromSource) {
         const { buildBpmnExportFromSource } = await import('@/lib/bpmn/export');
-        xml = buildBpmnExportFromSource(fromSource.source, { processName: projectName, sourceFileName: fromSource.fileName }).xml;
+        // The engine of the project's run, as the map draws it; a run without a stamp reads as the oldest engine.
+        xml = buildBpmnExportFromSource(fromSource.source, {
+          processName: projectName, sourceFileName: fromSource.fileName, exporterVersion: engineVersionOfProject(project),
+        }).xml;
       }
       if (!xml) throw new Error('no process');
       await saveAs(new Blob([xml], { type: 'application/xml;charset=utf-8' }), workshopFileName(projectName, 'bpmn'));

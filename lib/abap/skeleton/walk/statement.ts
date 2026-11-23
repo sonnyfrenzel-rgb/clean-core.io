@@ -23,7 +23,7 @@ import {
   selectTables,
 } from '../recognisers';
 import { leavesDialogStep } from '../statement-readers';
-import { callRoutine, walkEnhancementCall, walkFunction, walkMacroCall, walkMethodCalls, walkPerform } from './calls';
+import { callRoutine, walkEnhancementCall, walkFunction, walkLuwEnd, walkMacroCall, walkMethodCalls, walkPerform } from './calls';
 import { handlersRaisedBy, recordHandlerRegistration } from './callbacks';
 import { recordEvidence } from './records';
 import type { WalkContext, Walker } from './walker';
@@ -141,6 +141,18 @@ export function walkStatement(
       anchorOf(statement), ctx.region, ctx.container, { detail: { returns: false } });
     w.graph.connect(incoming, node.id);
     w.graph.edges.push({ from: node.id, to: ctx.region.endNodeId, kind: 'sequence', condition: '', reason: 'no-return' });
+    return { exits: [], outputRun: null };
+  }
+  if (w.readings.reads350 && /^LEAVE\s+PROGRAM\b/i.test(text)) {
+    // Engine 3.5.0 (`ENGINE_READS_350_FROM`): `LEAVE PROGRAM` ends the program, and nothing in the statement says it
+    // failed: in a dialog it is the person choosing Back, Exit or Cancel. It is a normal end of the whole run, drawn
+    // where it stands, and hands over to no later event block (`detail.leaveProgram`, `chainReportEvents` reads only
+    // a region's own end and early ends). An error ends where the statement before it said so (a `MESSAGE … TYPE 'E'`
+    // is its own error end). Before 3.5.0 it was always an error end.
+    const node = w.graph.addNode('end', 'LEAVE PROGRAM', anchorOf(statement), ctx.region, ctx.container, {
+      detail: { leaveProgram: true },
+    });
+    w.graph.connect(incoming, node.id);
     return { exits: [], outputRun: null };
   }
   if (/^LEAVE\s+PROGRAM\b/i.test(text) || isErrorMessage(text, w.readings.reads320) || raisesException(statement)) {
@@ -314,6 +326,11 @@ export function walkStatement(
     if (target === 'file') w.state.fileRunDatasets.set(node.id, new Set(dataset ? [dataset] : []));
     w.graph.connect(incoming, node.id);
     return { exits: [{ from: node.id, condition: '', kind: 'sequence' }], outputRun: node };
+  }
+
+  if (w.readings.reads350 && (statement.keyword === 'COMMIT' || statement.keyword === 'ROLLBACK')) {
+    const ran = walkLuwEnd(w, statement, ctx, incoming);
+    if (ran) return { exits: ran, outputRun: null };
   }
 
   if (w.input.macros.has(statement.keyword)) {

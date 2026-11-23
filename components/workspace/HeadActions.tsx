@@ -15,6 +15,7 @@ import { HEAD_INITIALS, readerInitials } from '@/lib/workspace-head';
 import type { WorkspaceView } from '@/lib/workspace-model';
 import { bizMoreReaders, bizReadAccess, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
+import { engineVersionOfProject } from '@/lib/run-engine-version';
 
 /**
  * Who can read this project — "Read access: only you" and the initials of
@@ -135,6 +136,8 @@ export default function WorkspaceHeadActions({
       const { xml } = buildBpmnExportFromSource(signed.source, {
         processName: project?.name || signed.fileName,
         sourceFileName: signed.fileName,
+        // The engine of the project's run, as the map draws it; a run without a stamp reads as the oldest engine.
+        exporterVersion: engineVersionOfProject(project),
       });
       saveAs(new Blob([xml], { type: 'application/xml;charset=utf-8' }), bpmnFileName(`${project?.name || 'Project'}_Process`));
       setExportOpen(false);

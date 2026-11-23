@@ -1130,6 +1130,8 @@ export default function DocumentationPage() {
     const { bpmn: { xml } } = await readingExportsOffThread(signedSource.source, {
       processName: project?.name || signedSource.fileName,
       sourceFileName: signedSource.fileName,
+      // The engine of the project's run, as the map draws it; a run without a stamp reads as the oldest engine.
+      exporterVersion: engineVersionOfProject(project),
       ...(naming ? { naming } : {}),
     });
     const blob = new Blob([xml], { type: 'application/xml;charset=utf-8' });

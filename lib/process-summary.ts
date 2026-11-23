@@ -57,8 +57,10 @@ export function processSummaryOf(
   engineVersion: string | null = APP_VERSION,
 ): ProcessSummary | null {
   if (!source.trim()) return null;
-  const { bpmn, technical } = buildReadingExports(source, { processName: processName || fileName, sourceFileName: fileName });
-  const named = applyNaming(namingContextOf(source), null);
+  // Drawn by the engine the summary is read for, as the map is (3.5.0): before, the map of the summary was this
+  // release's whatever the run's engine.
+  const { bpmn, technical } = buildReadingExports(source, { processName: processName || fileName, sourceFileName: fileName, exporterVersion: engineVersion });
+  const named = applyNaming(namingContextOf(source, { engineVersion }), null);
   const model = buildProcessMapModel({ bpmn, technical, named, fileName });
   const { steps, decisions } = processCounts(model.elements);
   if (steps === 0 && decisions === 0) return null;

@@ -825,9 +825,12 @@ function buildAbapEvidenceRead(
   // an access either (R26): neither becomes a finding here.
   // From 3.4.0 (`ENGINE_READS_340_FROM`, B1): a constant closes a dynamic target only in the scope it is declared in.
   const scopedConstants = engineReads340Apply(engine);
-  // From 3.5.0 (`ENGINE_READS_350_FROM`): a write form only ABAP SQL has names a table whatever a local is called.
+  // From 3.5.0 (`ENGINE_READS_350_FROM`): a write form only ABAP SQL has names a table whatever a local is called,
+  // and a method's formal parameters are read in the definition that declares the method (`declaringDefinition`).
   const databaseWriteForms = engineReads350Apply(engine);
-  const dependencies = readTableDependencies(code, { ...tokenizeOptions, scopedConstants, databaseWriteForms });
+  const dependencies = readTableDependencies(code, {
+    ...tokenizeOptions, scopedConstants, databaseWriteForms, declaringDefinition: databaseWriteForms,
+  });
   const accessesAt = new Map<number, TableDependency[]>();
   // From 3.4.0 (`ENGINE_READS_340_FROM`, engine review of 22.11.2026): `INSERT REPORT`, `DELETE REPORT`,
   // `READ REPORT` and their `TEXTPOOL`/`DYNPRO` forms handle program source and texts, not a database table: the

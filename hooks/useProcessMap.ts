@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getAuth } from '@/lib/firebase';
 import { sha256Hex } from '@/lib/artefact-digest';
+import { APP_VERSION } from '@/lib/version';
 import type { NamingAvailability } from '@/lib/process-naming';
 import type { ProcessMapModel, ProcessMapRecord } from '@/lib/process-map';
 
@@ -116,14 +117,15 @@ export function useProcessMap(
     /**
      * The engine of the project's run (`engineVersionOfProject`): the map is drawn and the naming context read for it,
      * so an older project keeps its map and its stored naming keeps its digest after a release draws another one.
-     * Absent or null (no run yet): this release.
+     * Absent (no run yet): this release. Null (a run signed before the engine stamp existed): the oldest engine, as
+     * every gate reads it (3.5.0; before, this release).
      */
     engineVersion?: string | null;
   },
 ): ProcessMapState {
   const measure = options?.measure !== false;
   const reload = options?.reload ?? 0;
-  const engineVersion = options?.engineVersion ?? null;
+  const engineVersion: string | null = options?.engineVersion === undefined ? APP_VERSION : options.engineVersion;
   const [held, setHeld] = useState<Held>({ key: '', model: null, measuredAt: null, failed: false });
 
   const source = signed?.source ?? null;
@@ -186,13 +188,13 @@ export function useProcessMap(
       const reading = reader.readingExportsOffThread(source, {
         processName: processName || fileName,
         sourceFileName: fileName,
-        ...(engineVersion ? { exporterVersion: engineVersion } : {}),
+        exporterVersion: engineVersion,
         ...(customerTexts ? { customerTexts } : {}),
       });
       // Not left unhandled while the naming is fetched; awaited below.
       reading.catch(() => undefined);
 
-      const context = naming.namingContextOf(source, engineVersion ? { engineVersion } : {});
+      const context = naming.namingContextOf(source, { engineVersion });
       const record = await client.fetchProcessNaming(projectId);
       if (cancelled) return;
 

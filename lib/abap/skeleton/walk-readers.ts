@@ -174,7 +174,8 @@ export class WalkReaders {
       const statement = this.input.statements[j];
       if (DECLARATIVE.has(statement.keyword)) continue;
       if (/^WAIT\b/i.test(statement.text)
-        && (/\bUNTIL\b/i.test(statement.text) || /\bFOR\s+ASYNCHRONOUS\s+TASKS\b/i.test(statement.text))) {
+        && (/\bUNTIL\b/i.test(statement.text) || /\bFOR\s+ASYNCHRONOUS\s+TASKS\b/i.test(statement.text))
+        && (!this.readings.reads350 || this.waitJoins(statement, members))) {
         joinIndex = j;
       }
       break;
@@ -186,6 +187,33 @@ export class WalkReaders {
       joinIndex,
       resumeIndex: (joinIndex ?? members[members.length - 1]) + 1,
     };
+  }
+
+  /**
+   * Engine 3.5.0 (`ENGINE_READS_350_FROM`): is this `WAIT` the join of **every** task of the group?
+   *
+   * A `WAIT UNTIL cond` holds the caller until `cond` is true, and only the callbacks the tasks name `ON END OF TASK`
+   * can make it true while the caller waits. It waits for a task only when that task's callback writes a field the
+   * condition reads: `WAIT UNTIL gv_done = abap_true` behind two tasks of which one callback sets `gv_done` waits
+   * for that one task, not for both. So the `WAIT` is the join when each task names a `FORM` of this source
+   * `PERFORMING … ON END OF TASK` and each such form writes (assigns, adds to, appends to, or receives into) a field
+   * the condition names. A task without a callback this reader can open (none, or a method named `CALLING`) is not
+   * proven to be waited for, and then there is no join. Before 3.5.0 every `WAIT UNTIL` was the join of every task.
+   */
+  private waitJoins(wait: AbapStatement, members: readonly number[]): boolean {
+    const until = /\bUNTIL\b([\s\S]*)$/i.exec(maskLiterals(wait.text))?.[1] ?? '';
+    const read = new Set((until.match(/[A-Za-z_/][\w/]*(?:-[\w/]+)*/g) ?? []).map((n) => n.toUpperCase().replace(/-.*$/, '')));
+    if (!read.size) return false;
+    return members.every((m) => {
+      const name = /\bPERFORMING\s+'?([\w/]+)'?\s+ON\s+END\s+OF\s+TASK\b/i.exec(this.input.statements[m].text)?.[1];
+      const block = name ? this.input.formBlocks.get(name.toUpperCase()) : undefined;
+      if (!block) return false;
+      const [from, to] = bodyRange(block);
+      for (let i = from; i <= to; i++) {
+        for (const written of fieldsWrittenBy(this.input.statements[i])) if (read.has(written)) return true;
+      }
+      return false;
+    });
   }
 
   /**
@@ -380,4 +408,25 @@ export class WalkReaders {
     const tail = /\bEXCEPTIONS\b([\s\S]*)$/i.exec(text)?.[1] ?? '';
     return [...tail.matchAll(/([\w_]+)\s*=\s*\d+/g)].map((m) => m[1].toUpperCase());
   }
+}
+
+/**
+ * The fields a statement writes, upper-cased and without components: the left side of an assignment
+ * (`gv_done = abap_true`, `gv_count += 1`), `ADD`/`SUBTRACT … TO|FROM f`, `APPEND|INSERT … TO|INTO [TABLE] f`, and
+ * the actual parameters a `RECEIVE RESULTS` receives into (`IMPORTING p = f`). Engine 3.5.0 (`waitJoins`).
+ */
+function fieldsWrittenBy(statement: AbapStatement | undefined): string[] {
+  if (!statement) return [];
+  const text = maskLiterals(statement.text).trim();
+  const base = (name: string) => name.toUpperCase().replace(/-.*$/, '');
+  const assigned = /^([A-Za-z_/][\w/]*(?:-[\w/]+)*)\s*(?:\+|-|\*|\/|&&)?=(?!=)/.exec(text);
+  if (assigned) return [base(assigned[1])];
+  const added = /^(?:ADD|SUBTRACT)\b[\s\S]*?\b(?:TO|FROM)\s+([A-Za-z_/][\w/]*(?:-[\w/]+)*)/i.exec(text);
+  if (added) return [base(added[1])];
+  const appended = /^(?:APPEND|INSERT)\b[\s\S]*?\b(?:TO|INTO)\s+(?:TABLE\s+)?([A-Za-z_/][\w/]*)/i.exec(text);
+  if (appended) return [base(appended[1])];
+  if (/^RECEIVE\s+RESULTS\b/i.test(text)) {
+    return [...text.matchAll(/[\w/]+\s*=\s*([A-Za-z_/][\w/]*(?:-[\w/]+)*)/g)].map((m) => base(m[1]));
+  }
+  return [];
 }

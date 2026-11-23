@@ -8,6 +8,7 @@ import { type LuwEvent, type UpdateRegistration } from './luw-states';
 import { type BatchInputCall } from './batch-input';
 import { engineReads310Apply } from './engine-reads-310-gate';
 import { engineReads320Apply } from './engine-reads-320-gate';
+import { engineReads350Apply } from './engine-reads-350-gate';
 import { APP_VERSION } from '../version';
 import { SkeletonGraph, type SkeletonReadings } from './skeleton/graph';
 import { buildLanes } from './skeleton/lanes';
@@ -26,6 +27,7 @@ import { noteUnreachableSteps } from './skeleton/unreachable-notes';
 import { attachLuwStates } from './skeleton/luw';
 import { notDrawn } from './skeleton/not-drawn';
 import { foldTechnicalGateways } from './skeleton/technical-gateways';
+import { linkScreenModules } from './skeleton/screen-modules';
 import { applyGuards } from './skeleton/guards';
 import { collapseSmallRegions } from './skeleton/collapse';
 
@@ -103,10 +105,14 @@ export type SkeletonNodeKind =
    * End event — the normal end of an entry or of a sub-process, anchored at its
    * closing word; since ADR-054 also an **early** end (`detail.early`): a
    * `RETURN`, an `EXIT` outside a loop or a `STOP` that leaves the block while
-   * something drawn would still have followed. See `leaveEarly`.
+   * something drawn would still have followed. See `leaveEarly`. From engine 3.5.0 also `LEAVE PROGRAM`
+   * (`detail.leaveProgram`): the end of the whole run where it stands.
    */
   | 'end'
-  /** Error end event — `MESSAGE … TYPE 'E'/'A'/'X'`, `RAISE` of an exception (not `RAISE EVENT`), `LEAVE PROGRAM`. */
+  /**
+   * Error end event — `MESSAGE … TYPE 'E'/'A'/'X'`, `RAISE` of an exception (not `RAISE EVENT`); before engine 3.5.0
+   * also `LEAVE PROGRAM`.
+   */
   | 'end-error'
   /** Exclusive gateway — `IF`, `CASE`, and a `CHECK` that is not a run switch. */
   | 'gateway'
@@ -504,6 +510,7 @@ export function buildProcessSkeletonFrom(facts: ProcessFacts, options: SkeletonB
     facts.calls,
     reads.reads310,
     reads.reads320,
+    reads.reads350,
   ).build());
   readFor.set(skeleton, reads);
   return skeleton;
@@ -512,11 +519,15 @@ export function buildProcessSkeletonFrom(facts: ProcessFacts, options: SkeletonB
 /** Which gated readings a build for `engineVersion` carries; absent, this release's. */
 function readsOf(engineVersion: string | null | undefined): SkeletonReadings {
   const version = engineVersion === undefined ? APP_VERSION : engineVersion;
-  return { reads310: engineReads310Apply(version), reads320: engineReads320Apply(version) };
+  return {
+    reads310: engineReads310Apply(version),
+    reads320: engineReads320Apply(version),
+    reads350: engineReads350Apply(version),
+  };
 }
 
 function sameReadings(a: SkeletonReadings, b: SkeletonReadings): boolean {
-  return a.reads310 === b.reads310 && a.reads320 === b.reads320;
+  return a.reads310 === b.reads310 && a.reads320 === b.reads320 && a.reads350 === b.reads350;
 }
 
 /** The readings each skeleton built here was drawn with — kept beside it, so the skeleton's own shape is unchanged. */
@@ -636,7 +647,17 @@ class SkeletonBuilder {
      * (`resolveMethod`, `dynamicDispatch`). False for a run of an older engine, whose map stays as it was.
      */
     private reads320 = false,
+    /**
+     * Engine 3.5.0 (`ENGINE_READS_350_FROM`): the skeleton readings listed in `engine-reads-350-gate.ts`. False for a
+     * run of an older engine, whose map stays as it was.
+     */
+    private reads350 = false,
   ) {}
+
+  /** The gated readings of this build, as the passes take them. */
+  private readings(): SkeletonReadings {
+    return { reads310: this.reads310, reads320: this.reads320, reads350: this.reads350 };
+  }
 
   build(): ProcessSkeleton {
     const d = readDeclarations({ statements: this.statements, structure: this.structure, control: this.control });
@@ -662,7 +683,7 @@ class SkeletonBuilder {
       methodImpls: this.methodImpls,
       superOf: this.superOf,
       routineBlocks: this.routineBlocks,
-    }, { reads310: this.reads310, reads320: this.reads320 });
+    }, this.readings());
     this.dispatch.readCallSites();
     this.dispatch.readEventHandlers();
     this.methodCallSites = this.dispatch.methodCallSites;
@@ -680,7 +701,7 @@ class SkeletonBuilder {
       localData: this.localData,
       callsIn: (statement) => this.dispatch.methodCallsIn(statement),
       handlersRaisedBy: (statement) => (this.boundHandlers.length ? this.dispatch.handlersRaisedBy(statement) : []),
-    }, { reads310: this.reads310, reads320: this.reads320 });
+    }, this.readings());
     this.effects = routineEffects.effects;
     this.performedFrom = routineEffects.performedFrom;
     this.helpers = routineEffects.helpers;
@@ -695,7 +716,7 @@ class SkeletonBuilder {
       blockAt: this.blockAt,
       formBlocks: this.formBlocks,
       selectionNames: this.selectionNames,
-    }, { reads310: this.reads310, reads320: this.reads320 });
+    }, this.readings());
     this.entryReader = new EntryReader({
       statements: this.statements,
       structure: this.structure,
@@ -731,7 +752,7 @@ class SkeletonBuilder {
       readers: this.readers,
       entryReader: this.entryReader,
       runEntries: this.runEntries,
-    }, this.walk, { reads310: this.reads310, reads320: this.reads320 });
+    }, this.walk, this.readings());
     walkEntries(walker, entries);
     // ADR-054, once every region is walked: an early end is only early where
     // something drawn would still have followed it.
@@ -748,13 +769,15 @@ class SkeletonBuilder {
     // Roadmap 2.15: after the guards, so a folded run switch is already on its
     // flow when the conditions of a gateway are read — and before the notes,
     // which are counted over the graph this pass leaves behind.
-    foldTechnicalGateways(this.graph);
+    foldTechnicalGateways(this.graph, this.readings());
     // ADR-054, after the fold, so what the fold decides is exactly what it
     // decided before a plane had a start event of its own.
     addSubProcessStarts(this.graph, { reads310: this.reads310 });
     // Roadmap 3.0.7, once every node and end is settled: a reporting event
     // block that ends normally hands over to the next one.
     chainReportEvents(this.graph);
+    // Engine 3.5.0: a `CALL SCREEN n` names the dialog modules of screen n (`screen-modules.ts`).
+    if (this.reads350) linkScreenModules(this.graph, this.statements);
     if (this.reads310) markEmptyEntries(this.graph);
     noteUnreachableSteps(this.graph, { statements: this.statements, cutOffBoundaries: this.walk.cutOffBoundaries });
     // Roadmap 2.16, last: a lane holds node ids, and `foldTechnicalGateways`

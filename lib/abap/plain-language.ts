@@ -2265,6 +2265,9 @@ export function stepName(node: SkeletonNode, ctx?: PlainContext): string {
         return fit(eventName(node.label));
       }
       case 'end':
+        // Engine 3.5.0: `LEAVE PROGRAM` ends the whole run (`detail.leaveProgram`), the words an older engine gave its
+        // error end.
+        if (node.detail?.leaveProgram === true) return 'Program ends';
         return node.detail?.early === true ? 'Ends early' : 'Done';
       case 'end-error':
         return outcomeName(node, null, c);
@@ -2626,6 +2629,13 @@ export interface PlainLabels {
    */
   comment?(nodeId: string): AuthorComment | null;
   /**
+   * The customer texts this node's label was built from, by their codes (`WERKS`, `ZZSTATUS = A`), recorded where the
+   * word was used (3.5.0, carried from the 3.1.0 QA review). A surface that marks a sentence built from labels credits
+   * only these (`customerTextProvenance`, `used`), so a one-word customer text is not credited to a longer phrase the
+   * engine took from elsewhere. Empty without customer texts or an older engine.
+   */
+  customerUses?(nodeId: string): string[];
+  /**
    * 3.1.0 (H9): a lane's name for a business reader — an authorization check by what it protects, with its object
    * ("Authorization for purchase requisitions by purchasing group (M_BANF_EKG)"). '' keeps the skeleton's name; always
    * '' for an older engine.
@@ -2750,6 +2760,8 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
   const technical = new Map<string, string>();
   const technique = new Map<string, string>();
   const details = new Map<string, string>();
+  /** 3.5.0: the customer-text codes each label was built from (`PlainLabels.customerUses`). */
+  const customerUses = new Map<string, string[]>();
   const comments = new Map<string, AuthorComment>();
   const commentReader = ctx.reads310 ? authorCommentsOf(source ?? '') : null;
   const byId = new Map<string, SkeletonNode>();
@@ -3037,6 +3049,7 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
         if (note) details.set(node.id, note);
       } catch { /* no note */ }
     }
+    if (usedCustomer.length) customerUses.set(node.id, usedCustomer.map(([code]) => code));
     if (usedCustomer.length) {
       const said = `${CUSTOMER_TEXT_LABEL}: ${usedCustomer.map(([code, text]) => `${code} “${text}”`).join('; ')}.`;
       details.set(node.id, [details.get(node.id), said].filter(Boolean).join(' '));
@@ -3070,6 +3083,9 @@ export function plainLabels(skeleton: ProcessSkeleton, source?: string, options:
     },
     detail(nodeId: string): string {
       return details.get(nodeId) ?? '';
+    },
+    customerUses(nodeId: string): string[] {
+      return customerUses.get(nodeId) ?? [];
     },
     comment(nodeId: string): AuthorComment | null {
       return comments.get(nodeId) ?? null;

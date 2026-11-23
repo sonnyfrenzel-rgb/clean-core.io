@@ -58,12 +58,17 @@ test('where 3.1.0 draws another map, its digest differs — so a naming is never
 test('the live map, the automatic naming and the naming route read the naming context for the project\'s engine', () => {
   const read = (p: string) => fs.readFileSync(path.join(__dirname, '..', ...p.split('/')), 'utf8');
   const map = read('hooks/useProcessMap.ts');
-  expect(map).toMatch(/namingContextOf\(source, engineVersion \? \{ engineVersion \} : \{\}\)/);
-  expect(map).toMatch(/exporterVersion: engineVersion/);
-  expect(read('hooks/useAutoProcessNaming.ts')).toMatch(/namingContextOf\(src, engineVersion \? \{ engineVersion \} : \{\}\)/);
+  // 3.5.0: a run without an engine stamp (`null`) is passed on as `null` and reads as the oldest engine; only an
+  // absent version (no run) is this release.
+  expect(map).toMatch(/namingContextOf\(source, \{ engineVersion \}\)/);
+  expect(map).toMatch(/exporterVersion: engineVersion,/);
+  expect(map).toMatch(/options\?\.engineVersion === undefined \? APP_VERSION : options\.engineVersion/);
+  const auto = read('hooks/useAutoProcessNaming.ts');
+  expect(auto).toMatch(/namingContextOf\(src, \{ engineVersion \}\)/);
+  expect(auto).toMatch(/input\.engineVersion === undefined \? APP_VERSION : input\.engineVersion/);
   const route = read('app/api/projects/[projectId]/process-naming/route.ts');
   expect(route).toMatch(/engineVersion: engineVersionOfProject\(project\)/);
-  expect(route).toMatch(/namingContextOf\(gate\.legacyCode, gate\.engineVersion \? \{ engineVersion: gate\.engineVersion \} : \{\}\)/);
+  expect(route).toMatch(/namingContextOf\(gate\.legacyCode, \{ engineVersion: gate\.engineVersion \}\)/);
   const workspace = read('components/workspace/WorkspaceProcess.tsx');
   expect(workspace.match(/engineVersion: engineVersionOfProject\(project\)/g)?.length).toBe(2);
   expect(read('app/(app)/project/[projectId]/documentation/page.tsx')).toMatch(/modelAvailability,\s+\{ engineVersion: engineVersionOfProject\(project\) \},/);

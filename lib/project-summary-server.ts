@@ -52,8 +52,8 @@ export function computeProjectSummary(input: SummaryInput, now: Date = new Date(
       const { xml } = buildBpmnExportFromSource(input.source, {
         processName: input.processName || input.sourceFileName,
         sourceFileName: input.sourceFileName,
-        // As the map in Analyze draws it (`hooks/useProcessMap.ts`): a run without a stamp draws with this release.
-        ...(input.engineVersion ? { exporterVersion: input.engineVersion } : {}),
+        // As the map in Analyze draws it (`hooks/useProcessMap.ts`): a run without a stamp draws as the oldest engine.
+        exporterVersion: input.engineVersion,
         // The reading map's rows (Analyze draws it wrapped), so the thumbnail has the map's shape, not one long line.
         wrap: READING_WRAP,
       });

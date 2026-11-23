@@ -1,6 +1,7 @@
 import type { EntryPoint } from '../entries';
 import type { SkeletonGraph, SkeletonReadings } from '../graph';
 import { callbackEntry } from './callbacks';
+import { notePendingLuwForms } from './calls';
 import { walkRange } from './range';
 import { buildEntryRegion, routineRegion } from './regions';
 import type { WalkState } from './state';
@@ -46,4 +47,6 @@ export function walkEntries(w: Walker, entries: readonly EntryPoint[]): void {
     const entry = callbackEntry(w, w.state.callbacks[next]);
     if (entry) buildEntryRegion(w, entry);
   }
+  // Engine 3.5.0: what was registered ON COMMIT / ON ROLLBACK and never ran in a walked COMMIT WORK / ROLLBACK WORK.
+  if (w.readings.reads350) notePendingLuwForms(w);
 }
