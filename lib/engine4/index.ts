@@ -1,9 +1,12 @@
 /**
  * Engine 4.0 — the public surface of the new engine's module tree (ADR-125).
  *
- * Pure: imports only within `lib/engine4/`. Nothing in the product reads this
- * yet: no run, signature, audit pack, page or route, until engine 4.0.0 is
- * switched on behind its gate. Layers built so far: L0 (`lex`), L1
+ * Pure: imports only within `lib/engine4/`. No product module imports this
+ * surface; two modules behind it are on the product path already, by their own
+ * paths: `parsed-source.ts` (parse once, read by `lib/abap/statement-reader.ts`,
+ * ADR-133) and `references.ts` (the 3.4.0 class gap, read by
+ * `lib/abap/sap-class-references.ts`, ADR-141). The rest stays off until engine
+ * 4.0.0 is switched on behind its gate. Layers built so far: L0 (`lex`), L1
  * (`statements`), L2 (`blocks`) and the upload layout of L3 (`layout`). See `docs/design/engine4.md`.
  */
 export type { Diagnostic, DiagnosticCode, Position, Token, TokenKind } from './tokens';

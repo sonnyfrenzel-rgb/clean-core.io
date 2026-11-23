@@ -151,13 +151,16 @@ export function classIncludeOf(name: string): { object: string; role: PartRole }
   return null;
 }
 
+/** The object types an abapGit file name carries. */
+export type AbapGitType = 'prog' | 'fugr' | 'clas' | 'intf' | 'type';
+
 /** abapGit's file name `name.type[.part].abap`; `#ns#` is the namespace `/NS/`. */
-export function abapGitName(file: string): { name: string; type: 'prog' | 'fugr' | 'clas' | 'intf' | 'type'; part: string | null } | null {
+export function abapGitName(file: string): { name: string; type: AbapGitType; part: string | null } | null {
   const base = file.split(/[\\/]/).pop() ?? file;
   const m = /^([^.]+)\.(prog|fugr|clas|intf|type)(?:\.([^.]+))?\.abap$/i.exec(base);
   if (!m) return null;
   const ns = (s: string) => s.replace(/^#([^#]+)#/, '/$1/').toUpperCase();
-  return { name: ns(m[1]), type: m[2].toLowerCase() as 'prog', part: m[3] ? ns(m[3]) : null };
+  return { name: ns(m[1]), type: m[2].toLowerCase() as AbapGitType, part: m[3] ? ns(m[3]) : null };
 }
 
 /** File extensions the product reads as ABAP source (`OWN_CODE_SOURCE_EXTENSIONS`). */

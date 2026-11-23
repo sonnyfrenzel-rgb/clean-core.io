@@ -2,12 +2,12 @@
  * Engine 4.0, Phase 0 "parse once": the shipping engine's statement view, built
  * from L0/L1 tokens instead of a second character scan.
  *
- * Pure: imports only within `lib/engine4/`. Nothing in the product reads it
- * (ADR-125 (1) and (2)); `scripts/engine4/shadow-parsed.ts` proves, file by
- * file, that what it yields is identical to the shipping reader's output, so
- * that each reader of `lib/abap/` can later move onto it without a single
- * output moving. Wiring it in is an owner decision (`docs/design/engine4.md`,
- * "Phase 0").
+ * Pure: imports only within `lib/engine4/`. On the product path through
+ * `parsed-source.ts`, which the parse-once scope of `lib/abap/statement-reader.ts`
+ * reads (ADR-133); `scripts/engine4/shadow-parsed.ts` proves,
+ * file by file, that what it yields is identical to the shipping reader's
+ * output, so a reader of `lib/abap/` moved onto it moves no output
+ * (`docs/design/engine4.md`, "Phase 0").
  *
  * `CompatStatement` has the shape of `AbapStatement` in
  * `lib/abap/statement-reader.ts` field for field, so it is assignable to it by
@@ -66,8 +66,9 @@ function maskToken(t: Token, st: MaskState): string {
       const q = t.text[0];
       // Every delimiter character inside is an escaped (doubled) one, which the
       // shipping scanner reads as close + open and so keeps.
+      // By UTF-16 unit, as the shipping scanner does, so an astral character keeps both units.
       let out = '';
-      for (const ch of t.text) out += ch === q ? ch : ' ';
+      for (let i = 0; i < t.text.length; i++) out += t.text[i] === q ? q : ' ';
       return out;
     }
     case 'template':

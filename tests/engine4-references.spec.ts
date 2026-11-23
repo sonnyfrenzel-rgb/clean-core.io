@@ -6,7 +6,9 @@ import { shadowCorpus } from '../scripts/engine4/shadow';
 
 /**
  * Engine 4.0, L4 first step: the reference table (docs/design/engine4.md,
- * "L4: references"). Inert (ADR-125): nothing in the product reads it. The
+ * "L4: references"). On the product path from engine 3.4.0: the class gap reads
+ * its static references (`lib/abap/sap-class-references.ts`, ADR-141; QA
+ * 88ca06da5ca3). The
  * shadow against today's evidence runs over the starter examples and the
  * benchmark learn halves, never the holdout. Server-free.
  */

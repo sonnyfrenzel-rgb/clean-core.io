@@ -61,11 +61,18 @@ an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are uncha
   under CI, whose test jobs fetch the full history (QA 92721e404824, c8edce86c25e, 1754b7686e51, 5303a617dcd8,
   ae3f17cccba5, b5af81fb7c3f, 0b53bd088269). The engine-version guard accepts the release replay of
   `frozen-digests.ts#digestOf` only with its own `engine` parameter (QA c68319d48404), and the engine 4 value
-  reading's metamorphic test counts an answer that disappears as a violation (QA 7393c7330fbb).
+  reading's metamorphic test counts an answer that disappears as a violation (QA 7393c7330fbb). The replay's skip
+  is conditioned on not running under CI (`CI` or `GITHUB_ACTIONS`) in the skip itself, so it cannot pass vacuously
+  there (QA 4ba42a53b0a7). A new capture no longer force-pushes over a capture still waiting on the bot branch: the
+  push job fails while `chore/engine-release-capture` is ahead of `main` (QA 03ae7fa40a1e).
 - **Input hygiene** (`lib/abap/input-hygiene.ts`): from 3.4.0 a byte order mark is dropped and a lone CR ends a line
   before the engine reads a source, so a program saved with CR-only line ends is read line by line. Before 3.4.0 such
   a program was read as one comment line — no finding and a "complete" coverage; a run signed by an earlier engine
-  still rebuilds that way. A `\r\n` line end is left as it is, so no line number of any other source moves.
+  still rebuilds that way. A `\r\n` line end is left as it is, so no line number of any other source moves. The
+  business statements and the map's walk-through read the source the same way when an engine is named
+  (`buildBusinessStatements(source, { engineVersion })`, passed by the documentation build and the workspace map), so
+  the Business view of a CR-only file no longer loses every statement after its first comment (QA 3813c52d1c6c); a
+  call naming no engine — the frozen business digests — reads the source as given.
 - **`INSERT REPORT` is no table write**: `INSERT/DELETE/READ REPORT`, `TEXTPOOL` and `DYNPRO` were read as a CRITICAL
   write to a standard table named `REPORT`.
 - **A constant closes a dynamic target only in its own scope** (B1 of the engine review of 22.11.2026): the table
@@ -74,7 +81,8 @@ an earlier engine rebuilds as it signed, and the v3.2.0 frozen digests are uncha
   module is now seen only there; a global one is hidden in a routine that declares the name itself — a `DATA`, a
   `STATICS`, an inline `DATA( )`, a `FORM` parameter or a method's formal parameter from its `METHODS` declaration
   (QA 7db68ed0ee64: the method parameter was missed, so a parameter named like a global constant still closed the
-  target on that constant). The statement
+  target on that constant). A hidden name is never closed by an assignment elsewhere: it stays an open target and
+  such a value is only a possible one (pinned for QA 9fdd7c97ca76). The statement
   becomes a `dynamic-target` gap (`readTableDependencies` option `scopedConstants`, passed by the evidence engine and
   its coverage; `tests/engine-340-scoped-constants.spec.ts`). Display readers without the option keep the old lookup.
 - The class-gap finding stands where every other finding stands: at the first line of the statement that names the
@@ -102,7 +110,7 @@ Built beside the shipping engine and wired into nothing apart from the parse-onc
 - Engine 4.0, L3 upload layout: `lib/engine4/layout.ts` reads the files of an upload — one paste, several files, an abapGit folder, or a joined project source cut back at its markers — into programs, function groups, function modules, classes and interfaces with their parts, the order SAP reads them in, the includes that are missing, and the macro names every part sees (an HR program's `RP_PROVIDE_FROM_LAST` included). On the starter examples and benchmark learn halves it reads all 394 files (the shipping join leaves 86 out) and recognises every macro call; every difference from the shipping upload path is categorised in `docs/design/engine4.md`, which also gains an inventory of the engine's knowledge sources and how engine 4 will consume them.
 - Engine 4.0, real-code sample: L2 was run over 312 ABAP files and 174,591 lines that stay outside the repository. 300 of the files come from 17 MIT and Apache-2.0 repositories; the other 12 are owner programs. L2 reports no false unterminated block; its one report is a real typo. The shipping block reader reports 166 false ones. The shadow scripts take `--corpus <MANIFEST.json>`, and the damage shadow counts apart the flags an engine already gives on the undamaged file. `docs/design/engine4.md` records the numbers and the evidence on open questions 5 to 9, with a recommendation for each.
 - Engine 4.0, L4 first step (inert): a reference table (`lib/engine4/references.ts`) lists every SAP object a program points at — classes, interfaces, exception classes, types, tables, function modules, message classes, authorisation objects, transactions, programs, transformations, type pools — with its line, its use and how the name was found; a dynamic name (`CALL FUNCTION lv_fm`, `FROM (lv_tab)`) is resolved where the source sets it on the straight path or as a constant, and otherwise lists every value the source writes. A shadow against today's evidence confirms a reviewer's finding: of 925 class, interface and exception references in the corpus, today's findings name 7. Also designed: a statement ledger that makes `coverage.complete` provable (`docs/design/engine4.md`).
-- QA review of the v3.4.0 candidate (inert modules, no signed output moves): a dynamic `PERFORM (name)` the value reading fixes to a FORM the source does not define is an unresolved edge, so reachability is no longer called certain (`calls.ts`, QA 365a3f83ed04); without a reference table the ledger reads `INSERT`/`UPDATE`/`MODIFY`/`DELETE` as `unknown` instead of guessing a database write (`ledger.ts`, QA 1fa0b4ed2e9e); `ParsedSource.maskNonCode` masks a literal with an astral character to its full length, as the shipping mask does (`parsed-source.ts`, QA 188cda29e6b5).
+- QA review of the v3.4.0 candidate (inert modules, no signed output moves): a dynamic `PERFORM (name)` the value reading fixes to a FORM the source does not define is an unresolved edge, so reachability is no longer called certain (`calls.ts`, QA 365a3f83ed04); without a reference table the ledger reads `INSERT`/`UPDATE`/`MODIFY`/`DELETE` as `unknown` instead of guessing a database write (`ledger.ts`, QA 1fa0b4ed2e9e); `ParsedSource.maskNonCode` masks a literal with an astral character to its full length, as the shipping mask does (`parsed-source.ts`, QA 188cda29e6b5), and so does the mask of each statement (`compat.ts`, QA e495a5d09166). `abapGitName` types its result with the full object-type union (QA 538c8a806453). The headers of `index.ts`, `compat.ts`, `values.ts` and two specs no longer call modules on the product path inert (QA 63fec651e2e9, 88ca06da5ca3); the layer guard reads subdirectories of `lib/engine4/` and every module the product reaches (QA f080c61f61d4). Code comments under `lib/` say what the code does and cite no finding fingerprint, so the comment hygiene guard holds again (a round-1 comment in `statement-reader.ts` had broken it).
 
 ## [v3.3.0] — 2026-11-23
 

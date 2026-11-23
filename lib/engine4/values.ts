@@ -29,7 +29,8 @@
  *   - Otherwise **open**: `candidates` lists every value the source can put in.
  *
  * Every answer carries its provenance: the writes (and call sites) it read.
- * Pure and inert (ADR-125): imports only within `lib/engine4/`.
+ * Pure (ADR-125): imports only within `lib/engine4/`. On the product path from engine 3.4.0 through
+ * `references.ts` (the class gap, ADR-141), which reads its static references only.
  */
 import type { Block, BlockTree } from './blocks';
 import type { Statement } from './statements';

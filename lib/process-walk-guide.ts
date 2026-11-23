@@ -48,6 +48,7 @@ import {
 } from './abap/plain-language';
 import { tableTerm } from './abap/business-glossary';
 import { attachTo, buildBusinessStatements } from './abap/business-statement';
+import { sourceForEngine } from './abap/input-hygiene';
 import { isDecisionTag, type ProcessMapElement, type ProcessMapModel } from './process-map';
 
 export interface WalkRange {
@@ -822,7 +823,9 @@ function phaseOf(element: ProcessMapElement, byId: Map<string, ProcessMapElement
  * The walk-through of a process map: every step of `order` (the map's walk,
  * `walkOrder`) said in plain words, grouped by phase, technical steps set apart.
  */
-export function buildWalkGuide(source: string, model: ProcessMapModel, order: readonly string[]): WalkGuide {
+export function buildWalkGuide(source: string, model: ProcessMapModel, order: readonly string[], engineVersion?: string | null): WalkGuide {
+  // The source as the map's engine read it (3.4.0 input hygiene); left out, as given.
+  if (engineVersion !== undefined) source = sourceForEngine(source, engineVersion);
   const r = readingOf(source);
   const byId = new Map(model.elements.map((e) => [e.id, e]));
   let engine = new Map<string, { text: string; anchors: WalkRange[] }>();

@@ -494,7 +494,9 @@ export function buildProcessSkeletonFrom(facts: ProcessFacts, options: SkeletonB
   const reads = readsOf(options.engineVersion);
   // Engine 4 phase 3: the skeleton build is a parse-once scope of its own (`withParsedSource`), so every
   // `maskLiterals` of the same text inside it — the LUW pass reads one per PERFORM per registration — is computed
-  // once. A pure function memoised: neutral by construction, and proven by the frozen skeleton digests.
+  // once. The cache lives for this one build and holds the results of a pure function. Checked by
+  // tests/skeleton-frozen-digests.spec.ts (the frozen v3.2.0 skeleton digests) and scripts/engine/parse-once-neutrality.ts;
+  // a path those inputs do not reach is not covered by them.
   const skeleton = withParsedSource(() => new SkeletonBuilder(
     facts.statements,
     facts.structure,

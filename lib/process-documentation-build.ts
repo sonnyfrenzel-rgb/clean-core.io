@@ -113,7 +113,7 @@ export function buildProcessDocumentation(input: ProcessDocumentationInput): Pro
   const { source, map } = input;
   const skeleton = input.skeleton ?? buildProcessSkeleton(source, { engineVersion: input.engineVersion });
 
-  const sentences = buildBusinessStatements(source);
+  const sentences = buildBusinessStatements(source, { engineVersion: input.engineVersion === undefined ? APP_VERSION : input.engineVersion });
   const statements: DocStatement[] = sentences.map((sentence) => ({
     id: sentence.id,
     text: sentence.text,

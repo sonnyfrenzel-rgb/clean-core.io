@@ -7,6 +7,8 @@ import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { ENGINE_READS_340_FROM, engineReads340Apply } from '../lib/abap/engine-reads-340-gate';
 import { readSapClassReferences, readSapTypeReferences, staticExternalReferences } from '../lib/abap/sap-class-references';
 import { cleanSource } from '../lib/abap/input-hygiene';
+import { buildBusinessStatements } from '../lib/abap/business-statement';
+import { buildProcessDocumentation } from '../lib/process-documentation-build';
 import { ddicTypeGroups } from '../lib/it-findings-build';
 import { readSource } from '../lib/engine4/index';
 import { references } from '../lib/engine4/references';
@@ -186,6 +188,19 @@ test('input hygiene from 3.4.0: a byte order mark and lone CR line ends no longe
   expect(JSON.stringify(now)).toBe(JSON.stringify(buildAbapEvidence(lf, 'z.abap', 'private', undefined, NEW)));
   expect(buildProcessSkeleton(mangled, { engineVersion: NEW }).nodes.length).toBe(buildProcessSkeleton(lf, { engineVersion: NEW }).nodes.length);
   expect(buildProcessSkeleton(mangled, { engineVersion: OLD }).nodes.length).toBe(0);
+});
+
+test('input hygiene reaches the business statements and the documentation when an engine is named (QA 3813c52d1c6c)', () => {
+  const lf = readFileSync(join(ROOT, 'public', 'starter-examples', 'Z_MM_PO_APPROVAL.abap'), 'utf8').replace(/\r\n/g, '\n');
+  const mangled = `\uFEFF${lf.replace(/\n/g, '\r')}`;
+  const want = JSON.stringify(buildBusinessStatements(lf));
+  expect(JSON.parse(want).length).toBeGreaterThan(0);
+  expect(JSON.stringify(buildBusinessStatements(mangled, { engineVersion: NEW }))).toBe(want);
+  // An earlier engine, and a call naming none (the frozen business digests), read the source as given.
+  expect(buildBusinessStatements(mangled, { engineVersion: OLD }).length).toBe(0);
+  expect(buildBusinessStatements(mangled).length).toBe(0);
+  const doc = (source: string) => buildProcessDocumentation({ source, map: { elements: [], lanes: [], processName: 'p', fileName: 'z.abap', overview: null, traceability: {}, naming: {} } as never, engineVersion: NEW }).statements.length;
+  expect(doc(mangled)).toBe(doc(lf));
 });
 
 test('from 3.4.0, INSERT REPORT is no write to a table REPORT (engine review probe); before, the signed reading stays', () => {

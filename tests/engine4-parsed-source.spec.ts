@@ -1,12 +1,13 @@
 import { test, expect } from '@playwright/test';
 import { parseSource } from '../lib/engine4/parsed-source';
-import { maskNonCode } from '../lib/abap/statement-reader';
+import { maskLiterals, maskNonCode } from '../lib/abap/statement-reader';
 import { runParsedShadow, runParsedDamageShadow, runParsedEdgeShadow } from '../scripts/engine4/shadow-parsed';
 
 /**
  * Engine 4.0, Phase 0 "parse once" (ADR-125 (4); docs/design/engine4.md,
- * "Phase 0"). `parseSource` is inert: nothing in the product reads it. These
- * tests are the proof the wiring step will rest on — that the statement view,
+ * "Phase 0"). `parseSource` is on the product path: the parse-once scope of
+ * `lib/abap/statement-reader.ts` reads it (ADR-133; QA 88ca06da5ca3). These
+ * tests are the proof that wiring rests on — that the statement view,
  * the masks and the container index it hands a reader are the shipping
  * engine's own, so moving a reader onto it moves no output.
  */
@@ -61,6 +62,13 @@ test('a literal with an astral character is masked to its full length, as the sh
   const src = "x = '\u{1F600}'.\ny = `\u{1F600}\u{1F600}`.\n";
   expect(parseSource(src).maskNonCode()).toBe("x = '  '.\ny = `    `.\n");
   expect(parseSource(src).maskNonCode()).toBe(maskNonCode(src));
+});
+
+test('the mask of a statement keeps every UTF-16 unit of an astral literal, as maskLiterals does (QA e495a5d09166)', () => {
+  const src = "SELECT '\u{1F600}' AS note FROM vbak INTO TABLE @DATA(rows).\n";
+  const p = parseSource(src);
+  expect(p.maskedText(0)).toHaveLength(p.compat[0].text.length);
+  expect(p.maskedText(0)).toBe(maskLiterals(p.compat[0].text));
 });
 
 test('the container index answers containerAt by lookup, a routine before its event block', () => {

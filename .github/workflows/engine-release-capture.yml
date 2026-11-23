@@ -141,6 +141,31 @@ jobs:
             exit 1
           fi
 
+      # A capture still waiting on the bot branch is never replaced: the force-push below would drop its fixture and
+      # its registry entry, and the artifact behind it is kept one day only (QA 03ae7fa40a1e). Bring that capture in
+      # through dev first, then re-run this workflow. A failed lookup fails the job, never the other way round.
+      - name: Refuse to replace an unintegrated capture
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set +e
+          git -c credential.helper= ls-remote --exit-code --heads "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" chore/engine-release-capture > /dev/null
+          found=$?
+          set -e
+          if [ "$found" = "2" ]; then
+            echo "No capture branch yet"
+            exit 0
+          fi
+          if [ "$found" != "0" ]; then
+            echo "::error::Could not look up chore/engine-release-capture (git ls-remote exit $found)"
+            exit 1
+          fi
+          ahead=$(gh api "repos/${GITHUB_REPOSITORY}/compare/main...chore/engine-release-capture" --jq .ahead_by)
+          if [ "$ahead" != "0" ]; then
+            echo "::error::chore/engine-release-capture holds a capture not yet on main (ahead by '$ahead'): bring it in through dev, then re-run this workflow"
+            exit 1
+          fi
+
       - name: Commit the capture
         env:
           VERSION: ${{ needs.capture.outputs.version }}

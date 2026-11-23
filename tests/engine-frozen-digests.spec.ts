@@ -46,3 +46,14 @@ test('the capture runs on main only: dispatched on another ref, nothing is captu
   expect(job('push')).toMatch(/\n {4}needs: capture\n/);
   expect(job('push')).not.toMatch(/always\(\)|!cancelled\(\)/);
 });
+
+test('a new capture never force-pushes over a capture that has not reached main yet (QA 03ae7fa40a1e)', () => {
+  const wf = readFileSync('.github/workflows/engine-release-capture.yml', 'utf8').replace(/\r\n/g, '\n');
+  const refuse = wf.indexOf('- name: Refuse to replace an unintegrated capture');
+  const force = wf.indexOf('push --force');
+  expect(refuse).toBeGreaterThan(-1);
+  expect(force).toBeGreaterThan(refuse);
+  const step = wf.slice(refuse, wf.indexOf('\n      - name:', refuse + 1));
+  expect(step).toContain('compare/main...chore/engine-release-capture');
+  expect(step).toMatch(/if \[ "\$ahead" != "0" \]; then[\s\S]*?exit 1/);
+});

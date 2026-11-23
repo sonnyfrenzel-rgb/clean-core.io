@@ -148,10 +148,10 @@ for (const [engine, r] of AFTER_THE_FACT) {
     } catch {
       present = false;
     }
-    if (!present && process.env.CI) {
-      throw new Error(`${engine}: ${r.commit} is not in this CI clone, so the release cannot be recomputed — CI test jobs must fetch the full history`);
-    }
-    test.skip(!present, `${r.commit} is not in this local clone`);
+    // GitHub Actions sets both; either one means CI, where the skip below can never apply (QA 4ba42a53b0a7).
+    const inCi = Boolean(process.env.CI || process.env.GITHUB_ACTIONS);
+    test.skip(!present && !inCi, `${r.commit} is not in this local clone (never skipped under CI)`);
+    expect(present, `${engine}: ${r.commit} is not in this CI clone, so the release cannot be recomputed — CI test jobs must fetch the full history`).toBe(true);
     expect(computeEngineDigestAt(ROOT, r.commit).digest, engine).toBe(r.digest);
   });
 }

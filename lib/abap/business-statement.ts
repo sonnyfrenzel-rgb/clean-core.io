@@ -66,6 +66,7 @@ import { readReferenceTypes, resolveMethodTarget, type ClassModel, type MethodTa
 import { readBatchInputFrom, type BatchInputCall } from './batch-input';
 import { containerAt, readBlocks, type Block as NestingBlock } from './block-structure';
 import { enclosingBranches, negateCondition, type EnclosingBranch } from './enclosing-branches';
+import { sourceForEngine } from './input-hygiene';
 
 /**
  * A caveat **on** a statement — never in its place.
@@ -3233,9 +3234,13 @@ function listSentence(
  * gateway with two edges, not three boxes), the line view the sentence of the
  * single statement. `attachTo` chooses per node.
  */
-export function buildBusinessStatements(source: string): BusinessStatement[] {
+export function buildBusinessStatements(source: string, options: { engineVersion?: string | null } = {}): BusinessStatement[] {
+  // With an engine named, the source is read as that engine reads it (3.4.0 input hygiene, `sourceForEngine`), so a
+  // CR-only file gives the same lines here as in the skeleton and the evidence. Without one the
+  // source is read as given, as every release before 3.4.0 and the frozen business digests read it.
+  const read = options.engineVersion === undefined ? source : sourceForEngine(source, options.engineVersion);
   // Parse once (3.5.0, ADR-133): one reading of `source` for the statements and the facts below.
-  return withParsedSource(() => buildBusinessStatementsRead(source));
+  return withParsedSource(() => buildBusinessStatementsRead(read));
 }
 
 function buildBusinessStatementsRead(source: string): BusinessStatement[] {

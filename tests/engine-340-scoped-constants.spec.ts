@@ -148,3 +148,27 @@ ENDCLASS.
   // Before 3.4.0 (the whole-source lookup) every DELETE closed on the global constant, as it signed.
   expect(read(false)).toEqual({ writes: ['12:VBAK', '15:VBAK', '18:VBAK', '21:VBAK'], open: [] });
 });
+
+test('a hidden name is not closed by an assignment in another FORM (QA 9fdd7c97ca76)', () => {
+  // FORM a's parameter hides the global constant; FORM b assigns its own lv_tab = 'MARA'. The DELETE in FORM a stays
+  // an open target: MARA is only a possible value (`possibleTargetOf`), never a closed write, and no write finding.
+  const code = `REPORT zhidden_assign.
+CONSTANTS lv_tab TYPE tabname VALUE 'KNA1'.
+FORM a USING lv_tab TYPE tabname.
+  DELETE FROM (lv_tab).
+ENDFORM.
+FORM b.
+  DATA lv_tab TYPE tabname.
+  lv_tab = 'MARA'.
+ENDFORM.
+`;
+  const r = readTableDependencies(code, { multiLineTemplates: true, scopedConstants: true });
+  expect(r.dependencies.filter((d) => !d.possibleTargetOf).map((d) => `${d.line}:${d.table}`)).toEqual([]);
+  expect(r.unresolved.map((u) => `${u.line}:${u.expression}`)).toEqual(['4:lv_tab']);
+  const writes = (engine: string) =>
+    buildAbapEvidence(code, 'hidden.abap', 'private', undefined, engine).findings
+      .filter((f) => f.kind === 'standard-table-write')
+      .map((f) => f.title);
+  expect(writes(NEW)).toEqual([]);
+  expect(writes(OLD)).toEqual(['CRITICAL: Direct Write to SAP Standard Table KNA1']);
+});

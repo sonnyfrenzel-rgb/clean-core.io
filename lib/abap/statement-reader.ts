@@ -851,8 +851,8 @@ export function readStatements(source: string): AbapStatement[] {
  * The parse-once reading of a source itself, for a reader that needs the L1 statements and the L2 block tree
  * rather than the shipping statement view — from 3.4.0 the reference table behind the class gap
  * (`sap-class-references.ts`, ADR-141). Inside `withParsedSource` it is the same reading `readStatements` and the
- * other splitters share (`parsedSource`), so the class gap does not parse the source a second time (QA
- * f73d9d8a7a2b); the reference table only reads it (`lib/engine4/references.ts` copies what it keeps).
+ * other splitters share (`parsedSource`), so the class gap does not parse the source a second time;
+ * the reference table only reads it (`lib/engine4/references.ts` copies what it keeps).
  */
 export function parsedSourceOf(source: string): ParsedSource {
   return parsedSource(source);
