@@ -128,8 +128,8 @@ test('only the read-only canvas draws the phone layout: no export, editor, draft
     }
   };
   for (const dir of ['app', 'components', 'hooks', 'lib', 'scripts']) walk(path.join(ROOT, dir));
+  // The demo's Documentation drew the canvas with the phone layout until ADR-127; Figure 1 needs none.
   expect(users.sort()).toEqual([
-    'components/demo/DemoDocumentation.tsx',
     'components/process-map/BpmnCanvas.tsx',
     'components/process-map/ProcessMap.tsx',
     'components/process-map/phone-layout.ts',

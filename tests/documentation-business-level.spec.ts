@@ -17,7 +17,8 @@ import { isBusinessLevelLayer, processStepsOf, raciMatrix, sopSteps, type Stored
 import { raciFileTable } from '../lib/raci-edit';
 import { buildEngineConfluenceHtml } from '../lib/documentation-export';
 import { businessSopMarkdown } from '../lib/business-sop-markdown';
-import { currentAnchorKey, documentationProposalsAnchor, DOCUMENTATION_PROPOSALS_ID } from '../lib/page-anchors';
+import { currentAnchorKey } from '../lib/page-anchors';
+import { DOC_CHAPTERS } from '../lib/documentation-page';
 import { pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
@@ -277,15 +278,15 @@ test.describe('the business layer on screen', () => {
 });
 
 test.describe('the chapter bar: the RACI is its own section, never "Open questions"', () => {
-  test('the page names the proposals card between the open questions and the appendix', () => {
+  // ADR-127: the RACI is chapter 6, *Who does what* — named in the bar as "Roles" — and the model's SOP and RACI
+  // proposal stands inside it, read-only. The chapter bar of the old page (`DocumentChapterBar`) retired with it.
+  test('the RACI is chapter 6 of the one bar, and the model proposal stands inside it', () => {
+    const roles = DOC_CHAPTERS.find((c) => c.key === 'roles');
+    expect(roles).toMatchObject({ number: '6', title: 'Who does what', nav: 'Roles' });
     const page = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'), 'utf8');
-    expect(page).toContain('beforeAppendix={[proposalsAnchor]}');
-    expect(page).toContain('id={DOCUMENTATION_PROPOSALS_ID}');
-    const view = fs.readFileSync(path.join(ROOT, 'components', 'documentation', 'ProcessDocumentView.tsx'), 'utf8');
-    expect(view).toContain("[...chapters.slice(0, at), ...beforeAppendix, ...chapters.slice(at)]");
-    const anchor = documentationProposalsAnchor({ steps: 14 });
-    expect(anchor).toMatchObject({ target: DOCUMENTATION_PROPOSALS_ID, label: 'SOP & RACI', count: '14' });
-    expect(documentationProposalsAnchor({ steps: null }).count).toBeNull();
+    expect(page).toContain('roles={proposalsCard}');
+    expect(page).toContain('data-model-proposals=""');
+    expect(page).not.toMatch(/DocumentChapterBar|beforeAppendix/);
     const bar = fs.readFileSync(path.join(ROOT, 'components', 'PageAnchorBar.tsx'), 'utf8');
     expect(bar).toContain('currentAnchorKey(rects, LINE)');
   });

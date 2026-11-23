@@ -456,7 +456,13 @@ export type DocBlock =
   /** `ai`: per item, who wrote it when a model did — aligned with `items`, null for the engine's. */
   | { k: 'ul'; items: string[]; ai?: ReadonlyArray<DocBlockAi | null> }
   /** A new page in Word and in print; nothing in Markdown. */
-  | { k: 'pagebreak' };
+  | { k: 'pagebreak' }
+  /**
+   * A figure (ADR-127 (3): Figure 1 of the process description, Analyze's map): one SVG per part, each with its
+   * caption — our own escaped markup (`lib/process-figure.ts`), never a model's or a source's text unescaped. Word
+   * embeds every part as a picture, HTML inlines it, Markdown names it in a line.
+   */
+  | { k: 'figure'; caption: string; parts: Array<{ caption: string; svg: string }> };
 
 /** An anchor id our own code writes: letters, digits and hyphens only — never a value from a model or a source. */
 const SAFE_ID = /^[a-z][a-z0-9-]{0,60}$/;
@@ -515,6 +521,9 @@ export function blocksMarkdown(blocks: DocBlock[]): string {
       out.push('');
     } else if (b.k === 'pagebreak') {
       out.push('---', '');
+    } else if (b.k === 'figure') {
+      // A text file carries no picture: it names the figure and where it is drawn.
+      out.push(`*${b.caption}: the process map, drawn in the Word, Confluence and PDF files and in Analyze.*`, '');
     }
   }
   return out.join('\n');
@@ -549,6 +558,9 @@ export function blocksHtml(blocks: DocBlock[]): string {
     } else if (b.k === 'toc') {
       parts.push(`<nav aria-label="Contents"><h2>Contents</h2><ul>${b.items.map((i) => `<li${i.level === 2 ? ' style="margin-left:16px"' : ''}>${esc(i.text)}</li>`).join('')}</ul></nav>`);
     } else if (b.k === 'pagebreak') parts.push('<hr style="page-break-after:always;break-after:page;border:0">');
+    else if (b.k === 'figure') {
+      parts.push(b.parts.map((p) => `<figure style="margin:12px 0">${p.svg}<figcaption><em>${esc(p.caption)}</em></figcaption></figure>`).join(''));
+    }
   }
   return parts.join('\n');
 }
@@ -597,8 +609,37 @@ function internalLink(bookmark: string, text: string): string {
   return `<w:hyperlink w:anchor="${bookmark}" w:history="1"><w:r><w:rPr><w:color w:val="0563C1"/><w:u w:val="single"/></w:rPr><w:t xml:space="preserve">${x(text)}</w:t></w:r></w:hyperlink>`;
 }
 
-function blocksDocument(blocks: DocBlock[]): string {
+/** Every picture a document embeds: its part name in the package, its SVG, its caption and drawn size. */
+export function docxFigureMedia(blocks: readonly DocBlock[]): Array<{ name: string; svg: string; caption: string; width: number; height: number }> {
+  const out: Array<{ name: string; svg: string; caption: string; width: number; height: number }> = [];
+  let figure = 0;
+  for (const b of blocks) {
+    if (b.k !== 'figure') continue;
+    figure += 1;
+    b.parts.forEach((p, i) => {
+      const width = Number(/\swidth="(\d+(?:\.\d+)?)"/.exec(p.svg)?.[1] ?? 642);
+      const height = Number(/\sheight="(\d+(?:\.\d+)?)"/.exec(p.svg)?.[1] ?? 400);
+      out.push({ name: `figure${figure}-part${i + 1}`, svg: p.svg, caption: p.caption, width, height });
+    });
+  }
+  return out;
+}
+
+/** A picture of the document, inline in its own centred paragraph; `png` says a raster stands beside the SVG. */
+function docxPicture(id: number, media: { name: string; caption: string; width: number; height: number }, png: boolean): string {
+  // The A4 text width at most (170 mm); 9525 EMU to the CSS pixel.
+  const scale = Math.min(1, 642 / media.width);
+  const cx = Math.round(media.width * scale * 9525);
+  const cy = Math.round(media.height * scale * 9525);
+  const svgRel = `rId${media.name}s`;
+  const main = png ? `rId${media.name}p` : svgRel;
+  return `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="${xAttr(media.name)}" descr="${xAttr(media.caption)}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="${xAttr(media.name)}" descr="${xAttr(media.caption)}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${main}"><a:extLst><a:ext uri="{96DAC541-7B7A-43D3-8B79-37D633B846F1}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="${svgRel}"/></a:ext></a:extLst></a:blip><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+}
+
+function blocksDocument(blocks: DocBlock[], rasters: ReadonlySet<string> = new Set()): string {
   const b: string[] = [];
+  const media = docxFigureMedia(blocks);
+  let mediaAt = 0;
   // The headings that carry an anchor become bookmarks; a link is written only to one of them.
   const bookmarks = new Set<string>();
   for (const block of blocks) {
@@ -637,6 +678,14 @@ function blocksDocument(blocks: DocBlock[]): string {
       });
     }
     else if (block.k === 'pagebreak') b.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
+    else if (block.k === 'figure') {
+      for (const part of block.parts) {
+        const m = media[mediaAt];
+        mediaAt += 1;
+        b.push(docxPicture(mediaAt, m, rasters.has(m.name)));
+        b.push(para(run(part.caption, { italic: true })));
+      }
+    }
     else if (block.k === 'code') {
       for (const a of block.items) {
         b.push(para(run(`${a.label}  `, { mono: true }) + a.quote.split('\n').map((l, i) => (i ? '<w:r><w:br/></w:r>' : '') + run(l, { mono: true })).join('')));
@@ -701,16 +750,64 @@ function withCoreProperties(parts: Record<string, string>, statements: readonly 
   };
 }
 
-export function blocksDocxParts(blocks: DocBlock[], meta: DocxMeta = {}): Record<string, string> {
-  const parts = { ...PACKAGE_PARTS, 'word/styles.xml': STYLES_WITH_H4, 'word/document.xml': blocksDocument(blocks) };
+/**
+ * The text parts of the `.docx`. A document with a figure carries each part as `word/media/<name>.svg` with its
+ * relationship; `rasters` names the parts a PNG stands beside (`word/media/<name>.png`, drawn by `blocksDocx` in the
+ * browser) — Word draws the SVG, an older reader the PNG. Without a figure the parts are exactly the ones before.
+ */
+export function blocksDocxParts(blocks: DocBlock[], meta: DocxMeta = {}, rasters: ReadonlySet<string> = new Set()): Record<string, string> {
+  const parts: Record<string, string> = { ...PACKAGE_PARTS, 'word/styles.xml': STYLES_WITH_H4, 'word/document.xml': blocksDocument(blocks, rasters) };
+  const media = docxFigureMedia(blocks);
+  if (media.length) {
+    parts['[Content_Types].xml'] = parts['[Content_Types].xml'].replace(
+      '<Default Extension="xml" ContentType="application/xml"/>',
+      `<Default Extension="xml" ContentType="application/xml"/><Default Extension="svg" ContentType="image/svg+xml"/>${rasters.size ? '<Default Extension="png" ContentType="image/png"/>' : ''}`,
+    );
+    const rels = media
+      .map((m) => `<Relationship Id="rId${m.name}s" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${m.name}.svg"/>${rasters.has(m.name) ? `<Relationship Id="rId${m.name}p" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/${m.name}.png"/>` : ''}`)
+      .join('');
+    parts['word/_rels/document.xml.rels'] = parts['word/_rels/document.xml.rels'].replace('</Relationships>', `${rels}</Relationships>`);
+    for (const m of media) parts[`word/media/${m.name}.svg`] = m.svg;
+  }
   const statements = docxStatementsOf(meta);
   return statements.length ? withCoreProperties(parts, statements) : parts;
+}
+
+/** A PNG of an SVG at twice its size, drawn by the browser; null where there is no browser or drawing fails. */
+async function rasterOf(svg: string, width: number, height: number): Promise<Uint8Array | null> {
+  if (typeof document === 'undefined' || typeof Image === 'undefined') return null;
+  try {
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('The figure could not be drawn.'));
+      img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+    });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(width * 2);
+    canvas.height = Math.round(height * 2);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+    return blob ? new Uint8Array(await blob.arrayBuffer()) : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function blocksDocx(blocks: DocBlock[], meta: DocxMeta = {}): Promise<Blob> {
   const { default: JSZip } = await import('jszip');
   const zip = new JSZip();
-  for (const [name, content] of Object.entries(blocksDocxParts(blocks, meta))) zip.file(name, content);
+  const rasters = new Map<string, Uint8Array>();
+  for (const m of docxFigureMedia(blocks)) {
+    const png = await rasterOf(m.svg, m.width, m.height);
+    if (png) rasters.set(m.name, png);
+  }
+  for (const [name, content] of Object.entries(blocksDocxParts(blocks, meta, new Set(rasters.keys())))) zip.file(name, content);
+  for (const [name, png] of rasters) zip.file(`word/media/${name}.png`, png);
   return zip.generateAsync({ type: 'blob', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
 }
 

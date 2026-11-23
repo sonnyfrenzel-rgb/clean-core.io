@@ -8,45 +8,42 @@ import { getAuth } from '@/lib/firebase';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { enforceActiveRun } from '@/lib/run-guard';
 import StageFooter from '@/components/StageFooter';
-import { BookOpenText, Download, FileCode2, FileText, Printer, RefreshCw, Rocket, Workflow } from 'lucide-react';
+import { Download, RefreshCw, Rocket } from 'lucide-react';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { generateDraftLabel, providerCompanyOf } from '@/lib/messages/model-consent';
 import dynamic from 'next/dynamic';
-import { clsx } from 'clsx';
 import { callGemini } from '@/lib/gemini';
 import type { ModelReceipt } from '@/lib/model-receipt';
 import type { Project } from '@/lib/types';
 import {
-  authorizationBasisOf,
   readStoredDocumentation,
   type ProcessDocumentation,
 } from '@/lib/process-documentation';
 import { buildEngineConfluenceHtml, confluenceFileName } from '@/lib/documentation-export';
 import { businessLayerStoredText, businessSopPrompt, enrichBusinessLayer, missingBusinessSteps, sopStepInfos } from '@/lib/business-sop-prompt';
 import { businessStepsOf } from '@/lib/business-steps';
-import { DOCUMENTATION_PROPOSALS_ID, documentationProposalsAnchor } from '@/lib/page-anchors';
 import { readCapabilityFacts, type CapabilityFacts } from '@/lib/documentation-capabilities';
 import CcStateText from '@/components/cc/StateText';
-import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { useCustomerTexts } from '@/hooks/useCustomerTexts';
 import ProcessDocumentationView from '@/components/documentation/ProcessDocumentationView';
-import HandbookStage from '@/components/documentation/HandbookStage';
 import LevelDRegister from '@/components/documentation/LevelDRegister';
-import { DirectWriteLevels } from '@/components/documentation/BusinessGlance';
 import BusinessLayer from '@/components/documentation/BusinessLayer';
 import { StatementProposalPanel } from '@/components/documentation/StatementProposal';
-import ExportMenu, { type ExportMenuItem } from '@/components/requirements/ExportMenu';
-import { useBusinessGlance } from '@/hooks/useBusinessGlance';
-import { businessCallouts, type ProcessStepRef } from '@/lib/business-summary';
+import type { ProcessStepRef } from '@/lib/business-summary';
 import { docExpectedLine, docLegacyFileName, docPartsCostLine, docPartsPlanLine, docProposalsCostLine, docWholePlanLine, raciEditedLine, replaceDocBody, replaceSopBody, wt } from '@/lib/workspace-messages';
 import { layerWithRaciEdit, raciEditApplies, raciFileTable, type RaciEditRecord } from '@/lib/raci-edit';
 import { formatTextDate } from '@/lib/format';
-import type { RaciDraft } from '@/components/documentation/RaciEditor';
-import { useProcessHandbook } from '@/hooks/useProcessHandbook';
 import { useProcessDocument } from '@/hooks/useProcessDocument';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
-import ProcessDocumentView, { DocumentChapterBar, ProcessDocumentAppendix } from '@/components/documentation/ProcessDocumentView';
+import { ProcessDocumentAppendix } from '@/components/documentation/DocAppendix';
+import DocumentationOnePage, { DocFold, type DocExportKind } from '@/components/documentation/DocumentationOnePage';
+import FamilyChip from '@/components/family/FamilyChip';
+import { useAroundTheMap } from '@/hooks/useAroundTheMap';
+import { documentationPage } from '@/lib/documentation-page';
+import { figureCaption, figureParts, processFigureSvg } from '@/lib/process-figure';
+import { PHASES } from '@/lib/workflow-steps';
+import { useLocationSearch } from '@/lib/location-search';
 import { processDocumentFileName } from '@/lib/process-document';
 import { documentOutline, processDocumentBlocks, stepSummaryModelNames } from '@/lib/process-document-outline';
 import { aiAuthorshipFactsOf } from '@/lib/ai-authorship';
@@ -74,7 +71,6 @@ import { documentationProgress, type DocPartView } from '@/lib/documentation-pro
 import DocumentationProgress, { useDocStageClock } from '@/components/documentation/DocumentationProgress';
 import { formatElapsed } from '@/lib/generation-progress';
 import { modelAbsenceReason } from '@/lib/model-stages';
-import { useBreakpointS } from '@/hooks/useBreakpointS';
 import { saveAs } from '@/lib/fileSaver';
 import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
@@ -82,36 +78,20 @@ import { workflowSteps, generationBlockers, previousBasis } from '@/lib/workflow
 import StaleNotice from '@/components/StaleNotice';
 import { sha256Hex } from '@/lib/artefact-digest';
 import { useProcessMap } from '@/hooks/useProcessMap';
-import { useProcessMapAddress } from '@/hooks/useProcessMapAddress';
 import { useStatementProposal } from '@/hooks/useStatementProposal';
-import { buildNavigation, levelOf, parseMapAddress, resolveMapAddress } from '@/lib/process-navigation';
-import {
-  ensureProcessBaseline,
-  fetchLatestRevision,
-  revisionOutcomeSentence,
-  saveProcessRevision,
-} from '@/lib/process-revisions-client';
-import { newerBase, revisionLine } from '@/lib/process-revisions';
-import type {
-  OpenedRevision,
-  SaveProcessModelInput,
-  SaveProcessModelResult,
-} from '@/components/process-map/BpmnEditor';
+import { ensureProcessBaseline, revisionOutcomeSentence } from '@/lib/process-revisions-client';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { checkBusinessDocShape, STORED_BLUEPRINT_REJECTED } from './blueprint-schema';
 import CcButton from '@/components/cc/Button';
 import CcEmptyState from '@/components/cc/EmptyState';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
-import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import ReplaceStoredBox from '@/components/ReplaceStoredBox';
 import { t } from '@/lib/cc-messages';
 
 /** A section of this stage — the card of DESIGN.md §1.4. */
 const SECTION = 'rounded-cc-card border border-cc-line bg-cc-surface p-4 md:p-6 shadow-cc';
-/** A section heading (§1.2). */
-const H2 = 'cc-text-h2 text-cc-ink';
 
 /**
  * Roadmap 3.0.7 ("Documentation lean", item 4) — this stage used to merge its
@@ -123,16 +103,6 @@ const H2 = 'cc-text-h2 text-cc-ink';
  */
 const packageCleanupOf = (fields: Record<string, unknown>): { generatedCode?: string } =>
   typeof fields.generatedCode === 'string' ? { generatedCode: fields.generatedCode } : {};
-
-/**
- * Roadmap 2.5 — the reading BPMN view of the process the engine reconstructed.
- *
- * Client only, and loaded on demand: it pulls bpmn-js and the ABAP reader, and
- * neither belongs in the bundle of a reader who never opens this stage. It
- * draws the same file the "Export BPMN" button downloads, so what is on the
- * screen and what leaves the building are the same process.
- */
-const ProcessMap = dynamic(() => import('@/components/process-map/ProcessMap'), { ssr: false });
 
 /**
  * Roadmap 3.2 — the history of the process and the comparison of two revisions.
@@ -600,27 +570,8 @@ export default function DocumentationPage() {
    * opening, asked for only by the button in the documentation; the owner
    * asks, an invited reader reads.
    */
-  /** Owner decision 01.10.2026 — the handbook beside the map, read from the same source. */
   // 3.1.0 (H5b): the project's customer texts — every step, line and summary that says one is marked.
   const customerTexts = useCustomerTexts((Array.isArray(projectId) ? projectId[0] : projectId) ?? null);
-  const handbook = useProcessHandbook(signedSource?.source ?? null, processMap.model, engineVersionOfProject(project), customerTexts);
-  const isPhone = useBreakpointS();
-
-  /**
-   * The clean-core levels of the SAP data the code changes, beside the
-   * description's summary (ADR-077, amended twice): the direct-write callouts
-   * of `lib/business-summary.ts`, read from the handbook and the levels of the
-   * tables the code writes. Nothing is written and no model is called.
-   */
-  const glanceInputs = useBusinessGlance(
-    signedSource?.source ?? null,
-    handbook.handbook,
-    project ? catalogLookupTargetOf(project) : null,
-  );
-  const callouts = useMemo(
-    () => (handbook.handbook ? businessCallouts(handbook.handbook, glanceInputs.levels) : []),
-    [handbook.handbook, glanceInputs],
-  );
 
   const projectIdStr = (Array.isArray(projectId) ? projectId[0] : projectId) ?? null;
   const statementProposal = useStatementProposal(
@@ -629,6 +580,13 @@ export default function DocumentationPage() {
     modelAvailability,
   );
   const isOwner = !!project && getAuth().currentUser?.uid === project.userId;
+  /**
+   * ADR-127 (2), (4): the phases, the roles and the open questions are Analyze's own — the same reading of the same
+   * signed source (`hooks/useAroundTheMap.ts`). Never a model call from here: `model: false` asks for no rewording.
+   */
+  /** The query the reader came with — the next tool opens in the same view (ADR-126 (1)). */
+  const search = useLocationSearch();
+  const around = useAroundTheMap({ project, projectId: projectIdStr ?? '', owner: false, model: false, source: signedSource?.source ?? null });
 
   /**
    * The project's one list of open questions (ADR-081) — the open questions section of the
@@ -675,24 +633,6 @@ export default function DocumentationPage() {
     () => (parsedBusinessDoc && raciEdit ? layerWithRaciEdit(parsedBusinessDoc, raciEdit) : parsedBusinessDoc),
     [parsedBusinessDoc, raciEdit],
   );
-  /** What the roles block of the handbook says (3.0.23): the RACI on record where one is, and the code's own reading. */
-  const handbookRaciRoles = useMemo(() => (businessLayer ? rolesOfLayer(businessLayer) : []), [businessLayer]);
-  const handbookAuthorization = useMemo(() => (engineDoc ? authorizationBasisOf(engineDoc) : null), [engineDoc]);
-  const saveRaci = useCallback(async (draft: RaciDraft): Promise<string | null> => {
-    if (!projectIdStr || !layerSha) return 'There is no SOP and RACI proposal on record to edit.';
-    const { saveRaciEdit } = await import('@/lib/raci-edit-client');
-    const outcome = await saveRaciEdit(projectIdStr, {
-      baseRevision: raciEdit?.revision ?? 0,
-      layerSha256: layerSha,
-      roles: draft.roles,
-      steps: draft.steps,
-    });
-    if (!outcome.ok) return outcome.message;
-    raciRecordRef.current = outcome.record;
-    setRaciRecord(outcome.record);
-    return null;
-  }, [projectIdStr, layerSha, raciEdit]);
-
   /**
    * Owner 03.10.2026 — the process description, built as soon as the stage
    * opens: engine only, no model call, nothing written. The run's narrative
@@ -716,6 +656,17 @@ export default function DocumentationPage() {
     proposalInputs,
     engineVersionOfProject(project),
     customerTexts,
+  );
+
+  /**
+   * ADR-127 — the page in the order of the Word file, from the description, the map and Analyze's text
+   * (`lib/documentation-page.ts`). Analyze's text arrives after the first paint; until it does, one phase holds the steps.
+   */
+  const docPage = useMemo(
+    () => (processDocument.document && processMap.model
+      ? documentationPage({ document: processDocument.document, model: processMap.model, around: around.text })
+      : null),
+    [processDocument.document, processMap.model, around.text],
   );
 
   /**
@@ -905,98 +856,11 @@ export default function DocumentationPage() {
   }, [projectId]);
 
 
-  /**
-   * Roadmap 2.9 — the open level and the selection live in the URL.
-   *
-   * `#map=<plane>&node=<element>`. A link opens exactly there, Back and Forward
-   * do the ordinary thing, and the page is the owner of the address rather than
-   * the map: the map takes `plane` and `selected` as controlled props and says
-   * when they should change, which is the contract roadmap 3.1 inherits along
-   * with everything else in `ProcessMapProps`.
-   *
-   * The address is resolved against the model before it is used. A shared link
-   * outlives the source it was made on, and an element id from a previous
-   * revision must open the top level rather than an empty one.
-   */
-  const address = useProcessMapAddress();
-  const mapNav = useMemo(
-    () => (processMap.model ? buildNavigation(processMap.model) : null),
-    [processMap.model],
-  );
-  const resolved = useMemo(
-    () => (mapNav
-      ? resolveMapAddress(mapNav, { plane: address.plane, node: address.node })
-      : { plane: null as string | null, node: null as string | null }),
-    [mapNav, address.plane, address.node],
-  );
-
-  const { replace: replaceAddress, go: goToAddress } = address;
-
-  // Written back without a history entry: normalising what arrived is not a
-  // navigation, and Back must leave the page rather than undo a tidy-up.
-  useEffect(() => {
-    if (!mapNav) return;
-    if (resolved.plane === address.plane && resolved.node === address.node) return;
-    replaceAddress(resolved);
-  }, [mapNav, resolved, address.plane, address.node, replaceAddress]);
-
-  /**
-   * Owner 04.10.2026 — the map stands below the process description now, so
-   * a link that names a level or an element (`#map=…`) is taken to the map
-   * once it is drawn. Read from the address the page was opened with, once;
-   * a level opened later moves nothing.
-   */
-  const exploreRef = useRef<HTMLElement | null>(null);
-  const openedOnMapLink = useRef<boolean | null>(null);
-  useEffect(() => {
-    if (openedOnMapLink.current !== null) return;
-    const opened = parseMapAddress(window.location.hash);
-    openedOnMapLink.current = opened.plane !== null || opened.node !== null;
-  }, []);
-  useEffect(() => {
-    if (!openedOnMapLink.current || !processMap.model || !exploreRef.current) return;
-    openedOnMapLink.current = false;
-    exploreRef.current.scrollIntoView({ block: 'start' });
-  }, [processMap.model, loading]);
-
-  /**
-   * A level the reader opens keeps the selection only when the selection is on
-   * it. Without that, walking up with a crumb would be undone at once: the
-   * address resolves an element before a level, so a selection left behind on
-   * the level below would pull the view straight back down into it.
-   */
-  const openPlane = useCallback((next: string | null) => {
-    goToAddress((current) => ({
-      plane: next,
-      node: current.node && mapNav && levelOf(mapNav, current.node) === next ? current.node : null,
-    }));
-  }, [goToAddress, mapNav]);
-
-  /** Selecting an element is one move: its level and its selection, one entry. */
-  const selectElement = useCallback((next: string | null) => {
-    goToAddress((current) => ({
-      plane: next && mapNav ? levelOf(mapNav, next) : current.plane,
-      node: next,
-    }));
-  }, [goToAddress, mapNav]);
-
   /* ------------------------------------------------------------------ *
-   * Roadmap 3.2 — the seam between the editor and the revisions.
+   * Roadmap 3.2 — the revisions of this process, read in the appendix. The map editor stays in Analyze (ADR-127 (2)),
+   * so this tool saves no revision; it only reconstructs revision 1 when a project has none.
    * ------------------------------------------------------------------ */
 
-  /**
-   * The revision this draft was opened from.
-   *
-   * A **ref**, not state, and for the same reason the draft in `ProcessMap` is
-   * one: the editor is mounted inside a memoised tree and a state change here
-   * re-renders it. The number is read and written by the callback below and by
-   * nothing that paints.
-   *
-   * `null` means "not established yet" — the baseline call has not answered, or
-   * the last save was refused. The next save establishes it again rather than
-   * guessing at 1: guessing is exactly what `revision-moved` exists to catch.
-   */
-  const baseRevision = useRef<number | null>(null);
   /** Bumped after every answered save, so the history panel reloads. */
   const [revisionsKey, setRevisionsKey] = useState(0);
   /**
@@ -1025,7 +889,6 @@ export default function DocumentationPage() {
     // baseline is asked for and not after it arrives: between the two there is a
     // moment where a save would otherwise carry the previous project's revision
     // number, and `saveProcessRevision` would read it as "your base is current".
-    baseRevision.current = null;
     setBaselineRefusal('');
     if (!idStr || !signedSource) return;
     let cancelled = false;
@@ -1035,81 +898,10 @@ export default function DocumentationPage() {
         setBaselineRefusal(revisionOutcomeSentence(outcome));
         return;
       }
-      // Forward only: a Save pressed before this answer landed has already
-      // moved the base past revision 1, and setting it back would get the next
-      // save refused as `revision-moved`.
-      baseRevision.current = newerBase(baseRevision.current, outcome.record.revision);
       setRevisionsKey((token) => token + 1);
     });
     return () => { cancelled = true; };
   }, [projectId, signedSource]);
-
-  /**
-   * Keep the draft as a revision — what `BpmnEditor` calls when Save is pressed.
-   *
-   * The adapter, and it is deliberately thin. `xml` is the only part of the
-   * editor's input that travels: the reconstruction (`baseXml`) and the file
-   * name are the server's own, built from the source the signed run named, and
-   * a browser that sent them would be sending the one thing the store refuses
-   * to take from a browser.
-   *
-   * Every refusal becomes a sentence through `revisionOutcomeSentence` — never
-   * the raw `code`, which is a word for this file and not for a reader — and
-   * `created: false` is reported as an outcome, not as a failure: saving bytes
-   * that are already the newest revision is supposed to write nothing.
-   */
-  const saveProcessModel = useCallback(async ({ xml }: SaveProcessModelInput): Promise<SaveProcessModelResult> => {
-    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
-    if (!idStr) {
-      return { ok: false, message: 'This project could not be identified, so nothing was saved.' };
-    }
-
-    // The baseline first, when it is not established: a save into an empty
-    // history has no revision to be based on, and the server reconstructs
-    // revision 1 before it accepts an edit anyway.
-    if (baseRevision.current === null) {
-      const baseline = await ensureProcessBaseline(idStr);
-      if (!baseline.ok) {
-        setRevisionsKey((token) => token + 1);
-        return { ok: false, message: revisionOutcomeSentence(baseline) };
-      }
-      baseRevision.current = baseline.record.revision;
-    }
-
-    const outcome = await saveProcessRevision(idStr, xml, baseRevision.current);
-    setRevisionsKey((token) => token + 1);
-
-    if (outcome.ok) {
-      baseRevision.current = outcome.record.revision;
-      return {
-        ok: true,
-        message: revisionOutcomeSentence(outcome),
-        revisionId: String(outcome.record.revision),
-      };
-    }
-
-    // On `revision-moved` the base is left exactly where it was. Moving it to
-    // the server's `latest` would make the next press of Save write this draft
-    // over a revision nobody here has seen, and clearing it would make the next
-    // press ask for the baseline again and be refused for the same reason with
-    // one more request. The reader is told which revision to open, and the
-    // history below has just reloaded so that revision is on the screen.
-    return { ok: false, message: revisionOutcomeSentence(outcome) };
-  }, [projectId]);
-
-  /**
-   * The newest revision, whichever screen saved it — the workspace or this
-   * stage — and from now on the base the next save is written against. Asked
-   * by the editor when it opens; the editor offers it, it does not force it.
-   */
-  const openLatestRevision = useCallback(async (): Promise<OpenedRevision | null> => {
-    const idStr = Array.isArray(projectId) ? projectId[0] : projectId;
-    if (!idStr) return null;
-    const record = await fetchLatestRevision(idStr);
-    if (!record) return null;
-    baseRevision.current = newerBase(baseRevision.current, record.revision);
-    return { revision: record.revision, xml: record.xml, line: revisionLine(record), origin: record.origin };
-  }, [projectId]);
 
   const downloadBPMN = async () => {
     if (!signedSource) return;
@@ -1170,6 +962,8 @@ export default function DocumentationPage() {
       openQuestions: openQuestionsOfProject,
       raciEdit: edit,
       ai: exportAuthorship(),
+      // ADR-127 (3): Analyze's map as Figure 1, cut for A4 where it is wide.
+      figure: docPage?.figure ?? null,
     });
     saveAs(blob, confluenceFileName(project?.name));
   };
@@ -1209,6 +1003,11 @@ export default function DocumentationPage() {
       raci: layer ? raciFileTable(layer, processSteps, edit) : null,
       // 3.0.21 (T08): each model-written block of the Markdown marked where it stands, with its writer.
       ai: exportAuthorship(),
+      // ADR-127 (3): Figure 1 — Analyze's map — in Word in parts that fit A4; Markdown names it in a line.
+      figure: docPage?.figure ? {
+        caption: figureCaption(docPage.figure),
+        parts: figureParts(docPage.figure).map((part) => ({ caption: figureCaption(docPage.figure!, part), svg: processFigureSvg(docPage.figure!, part) })),
+      } : null,
     });
     // 3.0.17: every statement — the layer's and the glance proposal's — as a header comment line of the Markdown file,
     // and in the Word file's core properties.
@@ -1227,38 +1026,18 @@ export default function DocumentationPage() {
   };
 
   /**
-   * Roadmap 3.0.7 — one Export menu in the stage header (ADR-078's menu)
-   * instead of seven buttons in three places: Word · Print / PDF · Confluence ·
-   * Markdown · BPMN 2.0. The PDF is the description itself, printed from the
-   * browser (everything else on the page is `cc-no-print`); the brief of
-   * roadmap 4.4 is gone with it. Each way out is offered once there is
+   * ADR-127 (1) — *Ready to hand over* beside the answer: Word as the one primary action, Confluence, Markdown,
+   * Print / PDF and BPMN 2.0 visible without opening anything (ADR-107 (5) amended: nothing covers the page). The PDF
+   * is the page itself, printed from the browser (navigation is `cc-no-print`). Each way out is offered once there is
    * something true to export.
    */
-  type DocExport = 'docx' | 'print' | 'html' | 'md' | 'bpmn';
-  const exportItems: Array<ExportMenuItem<DocExport>> = [
-    ...(processDocument.document ? [
-      { kind: 'docx' as const, label: 'Word', hint: '.docx with cover, sections and appendix', icon: <FileText size={16} aria-hidden={true} />, attrs: { 'data-export-process-docx': '' } },
-      { kind: 'print' as const, label: 'Print / PDF', hint: 'the process description, from the browser', icon: <Printer size={16} aria-hidden={true} />, attrs: { 'data-export-print': '' } },
-      {
-        kind: 'html' as const,
-        label: 'Confluence',
-        hint: 'a page to paste or upload',
-        icon: <BookOpenText size={16} aria-hidden={true} />,
-        attrs: {
-          'data-export-confluence': documentationStale ? 'stale' : 'current',
-          'aria-label': 'Export Confluence',
-          'aria-describedby': documentationStale ? 'confluence-export-stale' : undefined,
-        },
-      },
-      { kind: 'md' as const, label: 'Markdown', hint: '.md, the same document as text', icon: <FileCode2 size={16} aria-hidden={true} />, attrs: { 'data-export-process-md': '' } },
-    ] : []),
+  const exportKinds: DocExportKind[] = [
+    ...(processDocument.document ? (['docx', 'html', 'md', 'print'] as const) : []),
     // Roadmap 2.6 — drawn from the skeleton of the signed run, so it exists as
     // soon as the run does and says nothing the code does not.
-    ...(signedSource ? [
-      { kind: 'bpmn' as const, label: 'BPMN 2.0', hint: 'the process with line ranges, for SAP Signavio', icon: <Workflow size={16} aria-hidden={true} />, attrs: { 'data-export-bpmn': '', 'aria-label': 'Export BPMN 2.0' } },
-    ] : []),
+    ...(signedSource ? (['bpmn'] as const) : []),
   ];
-  const onExport = (kind: DocExport) => {
+  const onExport = (kind: DocExportKind) => {
     if (kind === 'print') window.print();
     else if (kind === 'html') void downloadConfluenceHTML();
     else if (kind === 'md' || kind === 'docx') void downloadProcessDocument(kind);
@@ -1422,28 +1201,6 @@ export default function DocumentationPage() {
   const tracePanel = engineDoc ? (
     <ProcessDocumentationView appendix doc={engineDoc} proposal={statementPanelProps} proposalPanel={false} groups={processDocument.document?.appendix.groups} />
   ) : null;
-  /** The technical trace, last on the page — after the AI-generated proposals and the map. */
-  const appendixPanel = engineDoc ? (
-    <ProcessDocumentAppendix document={processDocument.document}>{tracePanel}</ProcessDocumentAppendix>
-  ) : null;
-  const technicalPanel = engineDoc ? (
-    processDocument.document ? (
-      <ProcessDocumentView
-        document={processDocument.document}
-        projectName={project?.name}
-        summary={<DirectWriteLevels callouts={callouts} />}
-        openQuestions={openQuestionsOfProject}
-        questionsHref={questionsHref}
-        rulesOutside={handbook.handbook?.rulesOutside ?? null}
-      />
-    ) : processDocument.status === 'failed' ? (
-      <CcMessageStrip state="warning">The process description could not be put together from this source; the technical trace at the foot of this page is complete.</CcMessageStrip>
-    ) : (
-      <div className={SECTION} aria-busy="true">
-        <CcSkeleton shape="text" label="the process description" count={4} />
-      </div>
-    )
-  ) : null;
 
   /**
    * What stands between the reader and the business layer, said before the
@@ -1488,11 +1245,8 @@ export default function DocumentationPage() {
       layer={businessLayer ?? parsedBusinessDoc}
       process={processSteps}
       facts={processDocument.document?.facts ?? readCapabilityFacts(engineDoc?.facts) ?? undefined}
-      raciEditing={{
-        canEdit: isOwner,
-        editedLine: raciEdit ? raciEditedLine(raciEdit.editedBy, formatTextDate(raciEdit.editedAt) ?? raciEdit.editedAt.slice(0, 10)) : null,
-        onSave: saveRaci,
-      }}
+      // ADR-127 (5): read-only. An edit the owner saved before stays on record and is shown as theirs.
+      raciEditedLine={raciEdit ? raciEditedLine(raciEdit.editedBy, formatTextDate(raciEdit.editedAt) ?? raciEdit.editedAt.slice(0, 10)) : null}
       action={isOwner && modelAvailability.enabled('documentation') ? (
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-3">
@@ -1585,37 +1339,109 @@ export default function DocumentationPage() {
   /** Whether an invited reader sees anything of the business sentences — the panel shows nothing to a reader without a proposal. */
   const sentencesShown = engineDoc && (isOwner || statementProposal.view?.state === 'proposed');
 
-  /** The proposals card in the chapter bar (owner 16.10.2026): the RACI is its own section, not "Open questions". */
-  const proposalsAnchor = documentationProposalsAnchor({
-    steps: parsedBusinessDoc && Array.isArray(parsedBusinessDoc.sop_details) ? parsedBusinessDoc.sop_details.length : null,
-  });
+  /**
+   * Chapter 6's fold (ADR-127 (5)): the model's SOP and RACI proposal, read-only, and the owner's way to ask for one.
+   * The roles above it are the code's; only the letters are the model's proposal. The business sentences a model may
+   * word over the engine's stand here too — every model proposal of this tool in one place, with one cost line.
+   */
   const proposalsCard = (
-    <section
-      id={DOCUMENTATION_PROPOSALS_ID}
-      aria-labelledby="model-proposals-title"
+    <div
+      id="model-proposals"
       data-model-proposals=""
       data-business-layer-offer={!parsedBusinessDoc ? '' : undefined}
       data-business-layer-writing={isGeneratingBusinessDoc ? '' : undefined}
       aria-busy={isGeneratingBusinessDoc ? true : undefined}
-      className={clsx(SECTION, 'cc-no-print mb-6 flex scroll-mt-28 flex-col gap-4')}
+      className="cc-no-print"
     >
-      <div>
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 id="model-proposals-title" className={clsx(H2, 'm-0')}>{wt('doc.proposalsTitle')}</h2>
-          <CcProvenanceChip value="proposed" />
-        </div>
-        <p className="m-0 mt-1 max-w-3xl cc-text-cell text-cc-ink-muted">{wt('doc.proposalsLead')}</p>
+      {/* Open while there is nothing on record, so the offer (and the AI notice it carries) is in view; folded once a proposal stands. */}
+      <DocFold
+        id="model-proposals"
+        open={!parsedBusinessDoc || isGeneratingBusinessDoc}
+        title={<span className="inline-flex flex-wrap items-center gap-2">{wt('doc.proposalsTitle')} <FamilyChip kind="ai" /></span>}
+        count={parsedBusinessDoc ? 'proposal on record' : 'none yet'}
+      >
+        <p className="m-0 max-w-3xl cc-text-cell text-cc-ink-muted">{wt('doc.proposalsLead')}</p>
         <p data-model-proposals-cost="" data-business-layer-cost="" className="m-0 mt-1 max-w-3xl cc-text-meta text-cc-ink-muted">{proposalsCostLine}</p>
-      </div>
-      {businessPart}
-      {sentencesShown ? (
-        <div data-model-proposals-sentences="" className="border-t border-cc-line pt-4">
-          <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">{wt('doc.proposalsSentencesTitle')}</h3>
-          <StatementProposalPanel {...statementPanelProps} costLine={false} />
+        <div className="mt-3">{businessPart}</div>
+        {sentencesShown ? (
+          <div data-model-proposals-sentences="" className="mt-4 border-t border-cc-line pt-4">
+            <h3 className="m-0 mb-2 cc-text-h3 text-cc-ink">{wt('doc.proposalsSentencesTitle')}</h3>
+            <StatementProposalPanel {...statementPanelProps} costLine={false} />
+          </div>
+        ) : null}
+      </DocFold>
+    </div>
+  );
+
+  /** The appendix's folds (mock-up: details and evidence, each with its count); the chapters above are made from them. */
+  const idStr = (Array.isArray(projectId) ? projectId[0] : projectId) ?? '';
+  const appendixFolds = (
+    <>
+      {processDocument.document && tracePanel ? (
+        <DocFold id="appendix" title="The full appendix, as every file prints it" count="steps, tables, wording, elements, statements">
+          <ProcessDocumentAppendix document={processDocument.document}>{tracePanel}</ProcessDocumentAppendix>
+        </DocFold>
+      ) : null}
+      {signedSource ? (
+        <div data-process-revisions-section="" className="cc-no-print">
+          <DocFold id="revisions" open={baselineRefusal !== ''} title="Revisions of this process" count="what was kept, what changed">
+            {baselineRefusal ? (
+              <div className="mb-3" data-revision-baseline-refused="">
+                <CcMessageStrip state="error" headline="The process as read from the code could not be recorded.">
+                  {baselineRefusal}
+                </CcMessageStrip>
+              </div>
+            ) : null}
+            <RevisionCompare projectId={idStr} refreshKey={revisionsKey} />
+          </DocFold>
         </div>
       ) : null}
-    </section>
+      {/* DSAG guideline review B7 — the level D register: shown and exported, no inputs. */}
+      {project?.legacyCode ? (
+        <div className="cc-no-print">
+          <DocFold id="level-d" title="Level D register" count="modifications and level D enhancements">
+            <LevelDRegister projectId={idStr} source={project.legacyCode} runId={project.activeRunId ?? ''} projectName={project.name} />
+          </DocFold>
+        </div>
+      ) : null}
+      {hasDocument && isOwner ? (
+        <div className="cc-no-print">
+          <DocFold id="read-again" title="Read again from the code" count={t('run.noModelCall')}>
+            <p className="m-0 max-w-3xl cc-text-cell text-cc-ink-muted">
+              The description is written again from the newest signed run. Nothing of yours is lost, because nothing here is yours.
+            </p>
+            <div className="mt-3">
+              <CcButton
+                variant="secondary"
+                density="cozy"
+                onClick={askReadAgain}
+                disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
+                busy={isGeneratingDoc}
+                data-regenerate-documentation
+                icon={<RefreshCw size={16} aria-hidden={true} />}
+              >
+                Read again from the code
+              </CcButton>
+            </div>
+          </DocFold>
+        </div>
+      ) : null}
+    </>
   );
+
+  /** The next tool in the tool order (ADR-128, `PHASES`), opened in the view the reader came with. */
+  const nextPhase = PHASES[PHASES.findIndex((p) => p.key === 'documentation') + 1] ?? null;
+  const next = nextPhase && idStr
+    ? {
+        label: nextPhase.label,
+        href: `/project/${encodeURIComponent(idStr)}/${nextPhase.key}${search}`,
+        sentence: 'Prepares test cases that show the new version does the same job, from the same rules and early ends as chapters 2 and 3.',
+      }
+    : null;
+  const analyzeHref = idStr ? `/project/${encodeURIComponent(idStr)}/analyze` : null;
+  const sourceLine = signedSource ? `${signedSource.fileName} · ${countSourceLines(signedSource.source)} lines · read from the source the active run signed` : null;
+  /** One status line while the code is read or a step stopped (ADR-107 (1)); nothing once the description stands. */
+  const statusLine = progress.end.kind === 'running' || progress.end.kind === 'failed' ? progressCard : null;
 
   return (
     <StageFrame stage="documentation" className="min-h-screen">
@@ -1629,46 +1455,13 @@ export default function DocumentationPage() {
         ]}
       />
 
-      {/* A slim title with the one Export menu (roadmap 3.0.7, ADR-078's
-          menu): every way out of this stage in one place. The frame
-          (progress, header, back link) is shared; everything under it is
-          this stage's. */}
-      <StageHeader tools={{ steps: phases, current: 'documentation' }}
-        stage="documentation"
-        project={project}
-        eyebrow={
-          <CcProvenanceChip
-            value={documentationStale ? 'stale' : 'reconstructed'}
-            note={documentationStale ? 'regenerate first' : hasDocument ? 'current' : 'code reading'}
-          />
-        }
-        actions={exportItems.length ? (
-          <div data-documentation-exports="" className="cc-no-print flex flex-col items-start gap-1 md:items-end">
-            <ExportMenu<DocExport>
-              items={exportItems}
-              onExport={onExport}
-              align="end"
-              triggerAttrs={{ 'data-documentation-export-menu': '' }}
-              note={
-                <>
-                  {/* Roadmap 0.2 (UX-029): what the BPMN file is, and the part
-                      that is not established, in the same breath — never on hover. */}
-                  {signedSource ? <p data-export-caveat="" className="m-0 cc-text-meta text-cc-ink-muted">{wt('doc.exportBpmnCaveat')}</p> : null}
-                  {processDocument.document ? <p data-export-print-caveat="" className="m-0 cc-text-meta text-cc-ink-muted">{wt('doc.exportPrintCaveat')}</p> : null}
-                </>
-              }
-            />
-            {/* The file opens with the same note (`STALE_EXPORT_NOTE`). */}
-            {documentationStale && processDocument.document ? (
-              <span id="confluence-export-stale" data-confluence-stale-note="">
-                <CcStateText state="warning">{wt('doc.exportStale')}</CcStateText>
-              </span>
-            ) : null}
-          </div>
-        ) : undefined}
-      />
+      {/* The family frame (DESIGN.md §2.12): one page for every reader, so the head row shows the quiet note in
+          the switch's place (ADR-126 (1), ADR-127; `familyViewMode`). The exports stand beside the answer. */}
+      <StageHeader tools={{ steps: phases, current: 'documentation' }} stage="documentation" project={project} view="one-page">
+        The process description of this program, read from its code: for the business, the manager and the developer alike, and ready for your own standard.
+      </StageHeader>
 
-      {progressCard}
+      {statusLine}
 
       <ReplaceStoredBox
         open={replaceAsk !== null}
@@ -1707,53 +1500,54 @@ export default function DocumentationPage() {
         </div>
       )}
 
-      {/* Owner 04.10.2026 (ADR-077 amended) — the stage reads top-down like
-          the document a business reader opens: the process description first;
-          the AI-generated proposals right after it; the map with its chapters to
-          explore below; the technical trace last. Printed, the description
-          and its appendix are the page — everything else is `cc-no-print`. */}
-      <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 max-w-3xl">
-          <h2 id="documentation-stored" className="m-0 cc-text-h2 text-cc-ink">Process description</h2>
-          <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-            Written from the code when the stage opens, no model call. The exports carry the same document; its appendix stands at the foot of this page.
-          </p>
-        </div>
-        {hasDocument && isOwner ? (
-          <div className="cc-no-print">
-            <CcButton
-              variant="secondary"
-              density="cozy"
-              onClick={askReadAgain}
-              disabled={isGeneratingBusinessDoc || !signedSource || !processMap.model}
-              busy={isGeneratingDoc}
-              data-regenerate-documentation
-              icon={<RefreshCw size={16} aria-hidden={true} />}
-            >
-              Read again from the code
-            </CcButton>
-          </div>
-        ) : null}
-      </div>
-
-      {/* Owner review 10.10.2026: the chapter bar — the IT view's anchor bar —
-          a direct child of the stage, so it stays in view from the
-          description down to the appendix at the foot. */}
-      {hasDocument && !isGeneratingDoc && processDocument.document ? (
-        <DocumentChapterBar document={processDocument.document} openQuestions={openQuestionsOfProject} beforeAppendix={[proposalsAnchor]} />
-      ) : null}
-
-      <section aria-labelledby="documentation-stored" data-documentation-description="" className="mb-8">
+      <section aria-label="Process description" data-documentation-description="" className="mb-8">
         {isGeneratingDoc ? (
           <div className={SECTION} aria-busy="true">
-            <h3 className={H2}>Reading the process</h3>
-            <p className="cc-text-cell text-cc-ink-muted mt-1 mb-4">Putting the documentation together from the whole source…</p>
+            <h2 className="m-0 cc-text-h2 text-cc-ink">Reading the process</h2>
+            <p className="cc-text-cell text-cc-ink-muted mt-1 mb-4">Putting the documentation together from the whole source, no model and nothing sent.</p>
             <CcSkeleton shape="text" label="the process documentation" count={4} />
           </div>
         ) : hasDocument ? (
-          <div id="documentation-report" data-stage-output="documentation">
-            {technicalPanel}
-          </div>
+          docPage && processDocument.document ? (
+            <div id="documentation-report" data-stage-output="documentation">
+              <DocumentationOnePage
+                page={docPage}
+                document={processDocument.document}
+                title={project?.name || processDocument.document.program}
+                sourceLine={sourceLine}
+                exports={{
+                  kinds: exportKinds,
+                  onExport,
+                  stale: documentationStale,
+                  staleNoteId: 'confluence-export-stale',
+                  note: (
+                    <>
+                      {/* Roadmap 0.2 (UX-029): what the BPMN file is, and the part that is not established. */}
+                      {signedSource ? <p data-export-caveat="" className="m-0 cc-text-meta text-cc-ink-muted">{wt('doc.exportBpmnCaveat')}</p> : null}
+                      {documentationStale ? (
+                        <span id="confluence-export-stale" data-confluence-stale-note="">
+                          <CcStateText state="warning">{wt('doc.exportStale')}</CcStateText>
+                        </span>
+                      ) : null}
+                    </>
+                  ),
+                }}
+                analyzeHref={analyzeHref}
+                questionsHref={questionsHref}
+                next={next}
+                roles={proposalsCard}
+                appendix={appendixFolds}
+              />
+            </div>
+          ) : processDocument.status === 'failed' || processMap.status === 'failed' ? (
+            <CcMessageStrip state="warning">
+              The process description could not be put together from this source.{processMap.reason ? ` ${processMap.reason}` : ''}
+            </CcMessageStrip>
+          ) : (
+            <div className={SECTION} aria-busy="true">
+              <CcSkeleton shape="text" label="the process description" count={4} />
+            </div>
+          )
         ) : legacyBlueprint !== null ? (
           /* Roadmap 3.0.7 — a blueprint a model wrote before 3.0.5. Its data
              is kept (never migrated, never deleted); its rendering is gone:
@@ -1795,25 +1589,24 @@ export default function DocumentationPage() {
             </span>
           </CcMessageStrip>
         ) : !signedSource ? (
-          /* One state, with the way out (UX-119, UX-166): without the source
-             the active run signed there is nothing to read, so the stage no
-             longer shows "Replace", a closed button and "run the analysis
-             first" at once — it says the one thing and links to Analyze. */
+          /* One state, with the way out (UX-119, UX-166; mock-up state 5): without the source the active run signed
+             there is nothing to read — one sentence, one action. */
           <div data-documentation-needs-run="" className="space-y-4">
             <CcEmptyState
-              title="Run the analysis first"
+              title="Nothing to document yet"
               action={
                 <CcLinkButton
-                  href={`/project/${Array.isArray(projectId) ? projectId[0] : projectId}/analyze`}
+                  href={`/project/${idStr}/analyze`}
                   variant="primary"
                   density="cozy"
                 >
                   Open Analyze
                 </CcLinkButton>
               }
+              cost={t('run.noModelCall')}
             >
-              The documentation is read from exactly the source the active analysis run signed, and this project has
-              no such run, or its source changed since.
+              The description is read from exactly the code an analysis has signed, and this project has no such run,
+              or its source changed since.
               {storedBlueprintRejected ? ' The blueprint stored for it cannot be shown; reading the code after the analysis replaces it.' : null}
             </CcEmptyState>
           </div>
@@ -1849,116 +1642,9 @@ export default function DocumentationPage() {
         )}
       </section>
 
-      {/* The AI-generated proposals — who does what, who is accountable, and the
-          business sentences — on top of the description, so after it. */}
-      {proposalsCard}
-
-      {/* Explore the process: the map as the code runs it, a chapter beside
-          it (owner decision 01.10.2026, proposal B). The level and the
-          selection stay in the address. */}
-      <section
-        ref={exploreRef}
-        aria-labelledby="documentation-explore"
-        data-documentation-explore=""
-        className="cc-no-print mb-8 scroll-mt-24"
-      >
-        <h2 id="documentation-explore" className="m-0 cc-text-h2 text-cc-ink">Explore the process</h2>
-        {!signedSource ? (
-          /* No signed source, no map and no chapters: one line instead of the
-             full map-and-handbook frame around an empty box (UX-119). */
-          <p data-documentation-explore-empty="" className="m-0 mt-1 max-w-3xl cc-text-cell text-cc-ink-muted">
-            The process map and its handbook are drawn from a signed analysis of the code. They appear here once the
-            analysis has run.
-          </p>
-        ) : (
-        <>
-        <p className="m-0 mt-1 mb-3 max-w-3xl cc-text-cell text-cc-ink-muted">
-          The process drawn from the code, with the chapter of each step beside it. Select a step to read its chapter;
-          a link to this page keeps the level and the step that are open.
-        </p>
-        <HandbookStage
-          handbook={handbook.handbook}
-          reading={handbook.status === 'loading' || processMap.status === 'loading'}
-          model={processMap.model}
-          selected={resolved.node}
-          onSelect={selectElement}
-          source={signedSource?.source ?? null}
-          raciRoles={handbookRaciRoles}
-          raciEdited={raciEdit !== null}
-          authorization={handbookAuthorization}
-          map={signedSource && processMap.model ? (
-            <div data-process-map-section="">
-              <ProcessMap
-                layout="stage"
-                /* `DESIGN.md` §5.7 — the steps on a phone, the map elsewhere. */
-                defaultView={isPhone ? 'steps' : 'map'}
-                model={processMap.model}
-                source={signedSource.source}
-                measuredAt={processMap.measuredAt}
-                /* Roadmap 6.3 — the Usage overlay, and only when there is an
-                   import. `usageReport` is a server-written field (roadmap 0.7);
-                   this reads it and never writes it. */
-                usage={project?.usageReport ?? null}
-                catalogTarget={project ? catalogLookupTargetOf(project) : null}
-                engineVersion={engineVersionOfProject(project)}
-                plane={resolved.plane}
-                onPlaneChange={openPlane}
-                selected={resolved.node}
-                onSelectedChange={selectElement}
-                save={saveProcessModel}
-                openLatest={openLatestRevision}
-                projectId={typeof projectId === 'string' ? projectId : null}
-                canEdit={isOwner}
-              />
-            </div>
-          ) : (
-            <div className="rounded-cc-card border border-dashed border-cc-field-border bg-cc-surface-muted p-4">
-              <p className="m-0 cc-text-h3 text-cc-ink">
-                {processMap.status !== 'failed' ? 'Reading the process from the code…' : 'No process map yet'}
-              </p>
-              <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                {processMap.reason ?? 'The map is drawn from the signed analysis as soon as it has been read.'}
-              </p>
-            </div>
-          )}
-        />
-        </>
-        )}
-      </section>
-
-      {/* Roadmap 3.2 — what was kept, and what changed between two of them. */}
-      {signedSource && (
-        <section data-process-revisions-section className={clsx(SECTION, 'cc-no-print mb-8')}>
-          <h2 className="mb-3 cc-text-h2 text-cc-ink">Revisions of this process</h2>
-          {baselineRefusal ? (
-            <div className="mb-3" data-revision-baseline-refused="">
-              <CcMessageStrip state="error" headline="The process as read from the code could not be recorded.">
-                {baselineRefusal}
-              </CcMessageStrip>
-            </div>
-          ) : null}
-          <RevisionCompare
-            projectId={(Array.isArray(projectId) ? projectId[0] : projectId) ?? ''}
-            refreshKey={revisionsKey}
-          />
-        </section>
-      )}
-
-      {/* DSAG guideline review B7 — the level D register: shown and exported, no inputs. */}
-      {project?.legacyCode ? (
-        <div className="cc-no-print mb-8">
-          <LevelDRegister
-            projectId={(Array.isArray(projectId) ? projectId[0] : projectId) ?? ''}
-            source={project.legacyCode}
-            runId={project.activeRunId ?? ''}
-            projectName={project.name}
-          />
-        </div>
-      ) : null}
-
-      {/* The technical trace — the description's appendix, last on the page
-          as it is last in every export. */}
-      {!isGeneratingDoc && appendixPanel ? <div className="mb-8">{appendixPanel}</div> : null}
+      {/* Before the description stands (or when it cannot), the appendix's folds stay in reach: the revisions, the
+          Level D register. With the description they are its appendix. */}
+      {signedSource && !(hasDocument && docPage) ? <div data-doc-appendix-early="" className="mb-8 flex flex-col gap-2">{appendixFolds}</div> : null}
 
       <div className="cc-no-print">
         <StageFooter />

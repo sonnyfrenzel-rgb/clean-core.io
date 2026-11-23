@@ -26,6 +26,7 @@ import { documentOutline, longTables, processDocumentBlocks } from '../lib/proce
 import { buildEngineConfluenceHtml } from '../lib/documentation-export';
 import { blocksMarkdown, blocksDocxParts } from '../lib/requirements-export';
 import { escapeHtml } from '../lib/export-safety';
+import { figureCaption, figureParts, processFigure, processFigureSvg } from '../lib/process-figure';
 import { EXAMPLES_DIR, pinnedExamplePath } from './helpers/starter-example-files';
 
 /**
@@ -61,15 +62,22 @@ function mapOf(source: string, file: string, engineVersion?: string) {
   return buildProcessMapModel({ bpmn, technical, named: applyNaming(namingContextOf(source), null, 'no-key'), fileName: file });
 }
 
-const built = new Map<string, { source: string; doc: ProcessDocument }>();
+const built = new Map<string, { source: string; map: ReturnType<typeof mapOf>; doc: ProcessDocument }>();
 /** The document as the current engine builds it, or as the engine `engineVersion` built it. */
 function documentOf(file: string, engineVersion?: string) {
   const key = engineVersion ? `${file}@${engineVersion}` : file;
   if (!built.has(key)) {
     const source = sourceOf(file);
-    built.set(key, { source, doc: buildProcessDocument({ source, map: mapOf(source, file, engineVersion), ...(engineVersion ? { engineVersion } : {}) }) });
+    const map = mapOf(source, file, engineVersion);
+    built.set(key, { source, map, doc: buildProcessDocument({ source, map, ...(engineVersion ? { engineVersion } : {}) }) });
   }
   return built.get(key)!;
+}
+
+/** ADR-127 (3): Figure 1 of a file — Analyze's map, cut for A4 — as the stage hands it to the Word file. */
+function figureOf(file: string) {
+  const figure = processFigure(documentOf(file).map)!;
+  return { figure, block: { caption: figureCaption(figure), parts: figureParts(figure).map((p) => ({ caption: figureCaption(figure, p), svg: processFigureSvg(figure, p) })) } };
 }
 
 const htmlOf = async (doc: ProcessDocument) => buildEngineConfluenceHtml(doc, null, { projectName: doc.program }).text();
@@ -95,8 +103,19 @@ for (const [file] of EXAMPLES) {
       expect(html.indexOf('data-doc-cover')).toBeLessThan(html.indexOf('data-business-page'));
       expect(html.indexOf('data-business-page')).toBeLessThan(html.indexOf('data-glance-export'));
       expect(html.indexOf('data-glance-export')).toBeLessThan(html.indexOf('data-doc-section="overview"'));
-      expect(html).toContain('<svg');
-      expect(html.indexOf('<svg')).toBeGreaterThan(html.indexOf('data-doc-section="overview"'));
+      // ADR-127 (3): no picture without the map; with it, Figure 1 after the overview's heading, in every format.
+      expect(html).not.toContain('<svg');
+      const { figure, block } = figureOf(file);
+      const withFigure = await buildEngineConfluenceHtml(doc, null, { projectName: doc.program, figure }).text();
+      expect(withFigure.indexOf('<svg')).toBeGreaterThan(withFigure.indexOf('data-doc-section="overview"'));
+      expect(withFigure.match(/data-doc-figure="/g)?.length).toBe(figureParts(figure).length);
+      const blocks = processDocumentBlocks(doc, { projectName: doc.program, figure: block });
+      const docx = blocksDocxParts(blocks);
+      expect(Object.keys(docx).filter((k) => /^word\/media\/figure1-part\d+\.svg$/.test(k))).toHaveLength(block.parts.length);
+      expect(docx['word/document.xml'].match(/<wp:inline\b/g)?.length).toBe(block.parts.length);
+      expect(docx['word/_rels/document.xml.rels']).toContain('Target="media/figure1-part1.svg"');
+      expect(docx['[Content_Types].xml']).toContain('Extension="svg" ContentType="image/svg+xml"');
+      expect(blocksMarkdown(blocks)).toContain('*Figure 1 · ');
     });
 
     test('at a glance: two or three short sentences, six key figures, at most five rules and risks', () => {
@@ -611,15 +630,20 @@ test.describe('owner review 10.10.2026: chapters, shared questions, appendix sum
     expect(markdownOf(doc)).toContain('Go to: What does it do?');
   });
 
-  test('the stage draws the chapter bar once, from the shared anchor bar, and no Go to line', () => {
-    const view = fs.readFileSync(path.join(ROOT, 'components', 'documentation', 'ProcessDocumentView.tsx'), 'utf8');
-    expect(view).toContain("from '@/components/PageAnchorBar'");
-    expect(view).toContain('export function DocumentChapterBar');
-    expect(view).not.toContain('data-doc-goto');
+  // ADR-127: one bar, the shared one (ADR-126 (3)), drawn by the one page the stage and its demo render; the
+  // description's own chapter bar (`DocumentChapterBar`) retired with ADR-107's page.
+  test('the stage draws the one shared bar once, through the one page, and no Go to line', () => {
+    const one = fs.readFileSync(path.join(ROOT, 'components', 'documentation', 'DocumentationOnePage.tsx'), 'utf8');
+    expect(one).toContain("from '@/components/PageAnchorBar'");
+    expect(one.match(/<PageAnchorBar\b/g)?.length).toBe(1);
+    expect(one).not.toContain('data-doc-goto');
+    expect(fs.existsSync(path.join(ROOT, 'components', 'documentation', 'ProcessDocumentView.tsx'))).toBe(false);
     const it = fs.readFileSync(path.join(ROOT, 'components', 'workspace', 'ItAnswers.tsx'), 'utf8');
     expect(it).toContain('<PageAnchorBar');
     for (const file of [['app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'], ['components', 'demo', 'DemoDocumentation.tsx']]) {
-      expect(fs.readFileSync(path.join(ROOT, ...file), 'utf8').match(/<DocumentChapterBar\b/g)?.length, file.join('/')).toBe(1);
+      const src = fs.readFileSync(path.join(ROOT, ...file), 'utf8');
+      expect(src.match(/<DocumentationOnePage\b/g)?.length, file.join('/')).toBe(1);
+      expect(src, file.join('/')).not.toMatch(/<DocumentChapterBar\b|<PageAnchorBar\b/);
     }
   });
 

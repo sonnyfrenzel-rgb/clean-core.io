@@ -62,11 +62,9 @@ test.describe('the source: full screen is the page layout\'s, everything else ke
     expect(map).toContain("const fullscreenParts: CanvasFullscreenParts | null = page ? {");
     expect(map).toContain('fullscreenParts={fullscreenParts}');
     expect(map).toContain('onFullscreenChange={page ? onFullscreenChange : undefined}');
-    // The Documentation stage mounts the map as a stage, with no tour, so its full screen is the old one.
+    // Documentation mounts no map since ADR-127: Figure 1 is drawn read-only (`DocFigure`), the map stays in Analyze.
     const doc = code(DOCUMENTATION);
-    const mount = doc.slice(doc.indexOf('<ProcessMap'), doc.indexOf('/>', doc.indexOf('<ProcessMap')));
-    expect(mount).toContain('layout="stage"');
-    expect(mount).not.toMatch(/\bonWalk=|\btourPanel=|\bembedded\b/);
+    expect(doc).not.toMatch(/<ProcessMap\b|<BpmnCanvas\b/);
   });
 
   test('"Edit" is off whenever full screen opens, unless "Edit model" opened it', () => {

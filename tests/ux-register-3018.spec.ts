@@ -109,16 +109,15 @@ test('UX-119, UX-166: without a signed run the documentation shows one state, wi
   const at = page.indexOf(') : !signedSource ? (');
   expect(at, 'no single no-run state').toBeGreaterThan(-1);
   const state = page.slice(at, page.indexOf('</CcEmptyState>', at));
-  expect(state).toContain('title="Run the analysis first"');
+  // ADR-127, mock-up state 5: one sentence, one action.
+  expect(state).toContain('title="Nothing to document yet"');
   expect(state).toMatch(/<CcLinkButton\s+href=\{`\/project\/\$\{[^}]+\}\/analyze`\}/);
   // The contradiction: a "Replace" title over a closed button beside "run the analysis first".
   expect(page).not.toContain('There is no source here that the active run signed');
   const generate = page.slice(page.lastIndexOf('<CcButton', page.indexOf('data-generate-blueprint')), page.indexOf('data-generate-blueprint'));
   expect(generate, 'the read button is closed for a missing run again').toContain('disabled={!processMap.model}');
-  // The empty map frame collapses to one line.
-  const explore = page.slice(page.indexOf('id="documentation-explore"'), page.indexOf('<HandbookStage'));
-  expect(explore).toContain('{!signedSource ? (');
-  expect(explore).toContain('data-documentation-explore-empty');
+  // The empty map frame is gone with the map (ADR-127): Figure 1 stands in chapter 1 only when there is a document.
+  expect(page).not.toMatch(/id="documentation-explore"|<HandbookStage\b/);
 });
 
 test('UX-120, UX-128, UX-137: the remaining one-off radii and the scroll height are on the scale', () => {

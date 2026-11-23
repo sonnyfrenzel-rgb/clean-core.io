@@ -209,9 +209,9 @@ test.describe('the signed-in Documentation stage', () => {
     await signInViaLanding(page, EMAIL, PASSWORD);
     await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-engine-documentation]')).toBeAttached({ timeout: 90000 });
-    // The map and its chapters are read from the source; wait for them too.
-    await expect(page.locator('[data-handbook-stage]').first()).toBeAttached({ timeout: 90000 });
-    await expect(page.locator('[data-handbook-io]')).toHaveCount(0);
+    // Figure 1 is read from the source; wait for it too. The trace is a fold of the appendix (ADR-127): open it.
+    await expect(page.locator('[data-doc-figure]').first()).toBeAttached({ timeout: 90000 });
+    await page.locator('[data-doc-fold="appendix"] summary').click();
 
     // The premise: this example has long lists and short ones.
     expect(doc.steps.length).toBeGreaterThan(LONG_LIST_ROWS);
@@ -252,9 +252,7 @@ test.describe('the signed-in Documentation stage', () => {
     await page.keyboard.press('Enter');
     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
 
-    // The Confluence export carries every row, folded or not. It is one way
-    // out of the stage header's Export menu (roadmap 3.0.7).
-    await page.locator('[data-documentation-export-menu]').click();
+    // The Confluence export carries every row, folded or not. It stands beside the answer (ADR-127 (1)).
     const button = page.getByRole('button', { name: /Export Confluence/ });
     await expect(button).toBeEnabled({ timeout: 60000 });
     const [download] = await Promise.all([page.waitForEvent('download', { timeout: 60000 }), button.click()]);

@@ -46,8 +46,8 @@ test('ProcessMap holds the draft through it and keys the editor on the project',
   expect(src).toContain('draftFor(drafts.get(), projectId, source)');
   expect(src).toContain('drafts.set({ projectId, source, xml })');
   expect(src).toMatch(/key=\{`\$\{session\}\|\$\{projectId \?\? ''\}\|\$\{source\}`\}/);
-  // Both screens with an editor hand their project in.
-  for (const rel of ['components/workspace/WorkspaceProcess.tsx', 'app/(app)/project/[projectId]/documentation/page.tsx']) {
+  // The screen with an editor hands its project in (Documentation mounts no editor since ADR-127).
+  for (const rel of ['components/workspace/WorkspaceProcess.tsx']) {
     const screen = fs.readFileSync(path.resolve(__dirname, '..', rel), 'utf8');
     const map = jsxOf(screen, 'ProcessMap');
     expect(map, `${rel} does not tell the map which project it shows`).toMatch(/\bprojectId=\{/);

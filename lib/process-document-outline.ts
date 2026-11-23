@@ -242,6 +242,11 @@ export interface PdOutlineMeta {
    * text is model-written all the same and is marked with provider and model "not recorded".
    */
   ai?: { analysis?: DocBlockAi | null; sop?: DocBlockAi | null; naming?: DocBlockAi | null };
+  /**
+   * ADR-127 (3): Figure 1 — Analyze's map, read-only (`lib/process-figure.ts`) — in parts that fit A4, each with its
+   * caption. Printed in chapter 1 after how a run starts. Absent: the file has no figure.
+   */
+  figure?: { caption: string; parts: Array<{ caption: string; svg: string }> } | null;
 }
 
 const UNRECORDED_BLOCK_AI: DocBlockAi = { provider: null, modelId: null };
@@ -937,6 +942,7 @@ export function processDocumentBlocks(doc: ProcessDocument, meta: PdOutlineMeta 
     b.push({ k: 'p', strong: true, text: wt('doc.inputUnused') });
     b.push({ k: 'ul', items: textItems(o.inputUse) });
   }
+  if (meta.figure && meta.figure.parts.length) b.push({ k: 'figure', caption: meta.figure.caption, parts: meta.figure.parts });
   b.push({ k: 'h', level: 3, text: o.tables.steps.caption });
   if (o.whoActsLine) b.push({ k: 'p', em: true, text: o.whoActsLine });
   b.push(tableBlock(o.tables.steps, true, namingAi(meta)));

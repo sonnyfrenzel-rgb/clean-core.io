@@ -134,13 +134,10 @@ test.describe('the handbook\'s roles block (3.0.23 d)', () => {
     const note = handbookRolesNote({ namingState: 'not-named', raciRoles: ['Planner'], authorization: { kind: 'none' }, raciEdited: true });
     expect(note.text).toMatch(/^The edited RACI on record names 1 role/);
     expect(note.text).not.toMatch(/AI-generated/);
-    const stage = fs.readFileSync(path.join(__dirname, '..', 'components', 'documentation', 'HandbookStage.tsx'), 'utf8');
-    expect(stage).toContain("label={proposed || !note.raci ? 'Roles · AI-generated draft only' : 'Roles'}");
-    // The chapter's own proposed roles and the RACI link appear together.
-    const proposedBranch = stage.slice(stage.indexOf('{proposed ? ('), stage.indexOf(') : (', stage.indexOf('{proposed ? (')));
-    expect(proposedBranch).toContain('{raciLink}');
+    // ADR-127: the handbook beside the map retired; an edited RACI on record is shown read-only in chapter 6 as the
+    // owner's (`raciEditedLine`), never as the model's draft.
     const page = fs.readFileSync(path.join(__dirname, '..', 'app', '(app)', 'project', '[projectId]', 'documentation', 'page.tsx'), 'utf8');
-    expect(page).toContain('raciEdited={raciEdit !== null}');
+    expect(page).toContain('raciEditedLine={raciEdit ? raciEditedLine(');
   });
 
   test('without a RACI it says what the code shows, not a fixed "names authorizations"', () => {
@@ -155,14 +152,12 @@ test.describe('the handbook\'s roles block (3.0.23 d)', () => {
       .toBe('The stored AI-generated draft names no role for this chapter.');
   });
 
-  test('the page hands the RACI on record and the reading to the handbook; the screens say gaps through the reading', () => {
-    const stage = read('components/documentation/HandbookStage.tsx');
-    expect(stage).toContain('handbookRolesNote(');
-    expect(stage).not.toContain('The code names authorizations, not people.');
+  test('chapter 6 holds the RACI on record beside the roles from the code; the screens say gaps through the reading', () => {
+    // ADR-127: chapter 6 takes its roles from the code (Analyze's "Who is involved") and the RACI on record beside them.
+    expect(fs.existsSync(path.join(__dirname, '..', 'components', 'documentation', 'HandbookStage.tsx'))).toBe(false);
     const page = read('app/(app)/project/[projectId]/documentation/page.tsx');
-    expect(page).toMatch(/rolesOfLayer\(businessLayer\)/);
-    expect(page).toMatch(/raciRoles=\{handbookRaciRoles\}/);
-    expect(page).toMatch(/authorization=\{handbookAuthorization\}/);
+    expect(page).toContain('roles={proposalsCard}');
+    expect(page).not.toContain('The code names authorizations, not people.');
     expect(read('components/documentation/ProcessDocumentationView.tsx')).toContain('notDeterminedOf(doc).map(');
   });
 });

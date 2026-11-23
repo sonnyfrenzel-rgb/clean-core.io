@@ -1,9 +1,4 @@
 import { test, expect } from '@playwright/test';
-import fs from 'fs';
-import path from 'path';
-import { build } from 'esbuild';
-import React from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
 import { buildProcessSkeleton } from '../lib/abap/process-skeleton';
 import { deriveBusinessRules } from '../lib/abap/business-rule-set';
 import { buildBpmnExportFromSource, buildReadingExports } from '../lib/bpmn/export';
@@ -17,7 +12,8 @@ import { sectionTitle, stepRef, type PdGate, type PdStep } from '../lib/process-
 import { blocksMarkdown } from '../lib/requirements-export';
 import { preAnsweredQuestion } from '../lib/ask-this-case';
 import { decisionTableViews } from '../lib/decision-tables';
-import { processOverviewSvg } from '../lib/process-overview-svg';
+import { documentationPage } from '../lib/documentation-page';
+import { processFigure, processFigureSvg } from '../lib/process-figure';
 
 /**
  * Roadmap 3.0.7 — "Engine: what the MM case review showed", the
@@ -103,11 +99,14 @@ START-OF-SELECTION.
   MODIFY zdemo_light FROM gs_row.
 `;
 
-function documentOf(source: string) {
+function mapOf(source: string) {
   const { bpmn, technical } = buildReadingExports(source, { processName: 'Orders', sourceFileName: 'z.abap' });
   const named = applyNaming(namingContextOf(source), null, 'no-key');
-  const map = buildProcessMapModel({ bpmn, technical, named, fileName: 'z.abap' });
-  return buildProcessDocument({ source, map });
+  return buildProcessMapModel({ bpmn, technical, named, fileName: 'z.abap' });
+}
+
+function documentOf(source: string) {
+  return buildProcessDocument({ source, map: mapOf(source) });
 }
 
 /* ------------------------------------------------------------------ (1) */
@@ -236,49 +235,19 @@ test.describe('(3) the arms of a user action are alternatives, not a sequence', 
     expect(alternatives.map((r) => r.cells[2])).toEqual(['User', 'User', 'User']);
   });
 
-  // QA a5c979bd9e1c: the "Main path" picture drew the alternatives one after the
-  // other, joined by arrows — the very sequence this section says they are not.
-  // Bundled with esbuild and rendered, the pattern of tests/process-states-view.spec.ts.
-  test('the main-path picture stacks the alternatives, with no arrow from one to the next', async () => {
-    test.setTimeout(120 * 1000);
-    const root = path.resolve(__dirname, '..');
-    const out = path.resolve(root, 'tmp', 'views-review-307');
-    fs.mkdirSync(out, { recursive: true });
-    await build({
-      entryPoints: [path.resolve(root, 'components', 'documentation', 'ProcessDocumentView.tsx')],
-      outfile: path.join(out, 'ProcessDocumentView.cjs'),
-      bundle: true,
-      format: 'cjs',
-      platform: 'node',
-      jsx: 'automatic',
-      external: ['react', 'react-dom', 'react/jsx-runtime'],
-      alias: { '@': root },
-      logLevel: 'silent',
-    });
-    const { FlowStrip } = require(path.join(out, 'ProcessDocumentView.cjs')) as {
-      FlowStrip: (props: { path: ReturnType<typeof documentOf>['overview']['path'] }) => React.ReactElement;
-    };
-    const doc = documentOf(REPORT);
-    const html = renderToStaticMarkup(React.createElement(FlowStrip, { path: doc.overview.path }));
-    const group = /<div role="group" data-doc-path-choices="[^"]*"[^>]*>([\s\S]*?)<\/div><\/li>/.exec(html);
-    expect(group, 'one group holds the alternatives').not.toBeNull();
-    const arms = [...(group?.[1] ?? '').matchAll(/<div data-doc-path-arm=""[^>]*>([\s\S]*?)<\/a><\/div>/g)];
-    expect(arms).toHaveLength(3);
-    // Each alternative stands in its own row: none of them is drawn after an arrow from another.
-    for (const [, arm] of arms) expect(arm).not.toContain('aria-hidden="true" class="mt-4');
-    // Every choice step is inside the group, none on the line of the sequence.
-    const choiceSteps = (html.match(/data-doc-path-choice=""/g) ?? []).length;
-    expect(choiceSteps).toBe(3);
-    expect((group?.[1].match(/data-doc-path-choice=""/g) ?? []).length).toBe(3);
-    // QA 867a59061693: each arm says which answer selects it, as text in the arm.
-    const choices = doc.overview.path.filter((e) => e.kind === 'step' && e.choice).map((e) => (e.kind === 'step' ? e.choice?.when : ''));
-    expect(choices.every(Boolean)).toBe(true);
-    const labels = arms.map(([, arm]) => /<span data-doc-path-arm-when=""[^>]*>([^<]*)<\/span>/.exec(arm)?.[1]?.replace(/&amp;/g, '&'));
-    expect(labels).toEqual(choices);
-    // QA fa0c38e095f9: no step read means no Start → End picture, which would claim a completed flow.
-    const none = renderToStaticMarkup(React.createElement(FlowStrip, { path: [] }));
-    expect(none).toContain('data-doc-path-none=""');
-    expect(none).not.toContain('data-doc-path=""');
+  // QA a5c979bd9e1c: the "Main path" picture drew the alternatives one after the other, joined by arrows — the very
+  // sequence this section says they are not. ADR-127 retired that picture (`FlowStrip`): chapter 1 lists the steps
+  // with the description's own references, so each alternative keeps its letter (5a, 5b, 5c) and none is numbered on.
+  test('chapter 1 keeps the alternatives as alternatives: one place on the path, a letter each', () => {
+    const map = mapOf(REPORT);
+    const doc = buildProcessDocument({ source: REPORT, map });
+    const page = documentationPage({ document: doc, model: map, around: null });
+    const alternatives = page.steps.filter((s) => /[a-z]$/.test(s.ref));
+    expect(alternatives).toHaveLength(3);
+    const places = new Set(alternatives.map((s) => s.ref.replace(/[a-z]$/, '')));
+    expect(places.size).toBe(1);
+    // QA fa0c38e095f9: no step read means no steps listed, never a Start → End picture claiming a completed flow.
+    expect(documentationPage({ document: { ...doc, overview: { ...doc.overview, path: [] } }, model: map, around: null }).steps).toEqual([]);
   });
 
   test('a CASE on another selector stays a sequence', () => {
@@ -330,14 +299,17 @@ test.describe('(4) a decision table is one business rule task with its table', (
     expect(gate?.anchor?.lineStart).toBe(9);
   });
 
-  test('the exported overview draws the business rule task as a task, not as a gateway diamond (QA ef1db277d2d3)', () => {
-    const doc = documentOf(ON_THE_PATH);
+  // QA ef1db277d2d3 held the retired one-column overview to the task; Figure 1 (ADR-127 (3)) is the map itself, so
+  // the business rule task is whatever the map draws for it, and never a gateway diamond the map does not draw.
+  test('Figure 1 draws the business rule task as the map does, not as a gateway diamond', () => {
+    const map = mapOf(ON_THE_PATH);
+    const doc = buildProcessDocument({ source: ON_THE_PATH, map });
     expect(doc.overview.path.some((e) => e.kind === 'gate' && !!e.decisionTable)).toBe(true);
-    const svg = processOverviewSvg(doc.overview.path, 'Orders');
-    expect(svg).toContain('Business rule task · decision table DT-001');
-    expect(svg).toContain('data-pd-rule-task=""');
-    // ON_THE_PATH has no other decision point, so no diamond at all.
-    expect(svg).not.toContain('<polygon');
+    const figure = processFigure(map);
+    expect(figure).not.toBeNull();
+    const gateways = map.elements.filter((e) => e.plane === null && /Gateway$/.test(e.tag)).map((e) => e.id).sort();
+    expect(figure!.shapes.filter((s) => s.kind === 'gateway').map((s) => s.id).sort()).toEqual(gateways);
+    expect(processFigureSvg(figure!).startsWith('<svg')).toBe(true);
   });
 
   test('a source without one adds nothing', () => {

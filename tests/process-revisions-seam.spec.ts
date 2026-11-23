@@ -1,4 +1,4 @@
-import { test, expect, type Page, type APIRequestContext } from './helpers/test';
+import { test, expect, type Page } from './helpers/test';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
@@ -6,7 +6,6 @@ import { TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
 import { sha256Hex } from '../lib/artefact-digest';
 import { recomputeStoredRunHash, signRunHash } from '../lib/run-signature';
-import type { ProcessRevisionRecord } from '../lib/process-revisions';
 import { signInViaLanding } from './helpers/sign-in';
 
 /**
@@ -54,21 +53,11 @@ const FILE_NAME = 'z_seam_demo.abap';
 const SOURCE_SHA = sha256Hex(PROGRAM);
 
 let uid = '';
-let idToken = '';
-const path = `/api/projects/${PROJECT_ID}/process-revisions`;
 
 async function signIn(page: Page) {
   await signInViaLanding(page, EMAIL, PASSWORD);
 }
 
-/** One revision with its BPMN, straight out of the store. */
-async function storedRevision(request: APIRequestContext, n: number): Promise<ProcessRevisionRecord | null> {
-  const res = await request.get(`${path}?revision=${n}`, {
-    headers: { Authorization: `Bearer ${idToken}` },
-  });
-  if (res.status() !== 200) return null;
-  return (await res.json()).record as ProcessRevisionRecord;
-}
 
 test.describe.configure({ mode: 'serial' });
 
@@ -82,7 +71,7 @@ test.beforeAll(async () => {
 
   const cred = await createUserWithEmailAndPassword(auth, EMAIL, PASSWORD);
   uid = cred.user.uid;
-  idToken = await cred.user.getIdToken();
+  await cred.user.getIdToken();
 
   await adminSetDoc('users', uid, {
     firstName: 'Revision', lastName: 'Seam', email: EMAIL,
@@ -119,75 +108,8 @@ test.beforeAll(async () => {
   });
 });
 
-test('the documentation stage saves a drawn model as a revision and shows it', async ({ page, request }) => {
-  test.setTimeout(300 * 1000);
-  await page.setViewportSize({ width: 1600, height: 1100 });
-  await signIn(page);
-
-  await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
-  await page.locator('[data-process-map]').waitFor({ timeout: 90000 });
-
-  // 1. The history panel is on the page at all. It was written in 3.2 and
-  //    mounted nowhere, which is one half of the finding.
-  const history = page.locator('[data-revision-compare]');
-  await history.waitFor({ timeout: 60000 });
-
-  // 2. Opening the stage reconstructs revision 1 and the list shows it.
-  await expect(page.locator('[data-revision="1"]')).toBeVisible({ timeout: 60000 });
-  await expect(page.locator('[data-revision="1"]')).toHaveAttribute('data-revision-origin', 'reconstructed');
-  await expect(page.locator('[data-revision="2"]')).toHaveCount(0);
-
-  // 3. Into the editor, and draw one step.
-  await page.locator('[data-process-edit-toggle]').click();
-  await page.locator('[data-process-editor]').waitFor({ timeout: 60000 });
-  await expect
-    .poll(async () => page.locator('[data-draft-row]').count(), { timeout: 60000 })
-    .toBeGreaterThan(1);
-  // The list is built from the draft string and is there before the modeller
-  // is. The palette is not: `add` needs the modeller, and a click that arrives
-  // first is swallowed. So wait for the canvas to have drawn the copy.
-  await expect
-    .poll(async () => page.locator('[data-process-editor-canvas] .djs-shape').count(), { timeout: 60000 })
-    .toBeGreaterThan(2);
-  await page.locator('[data-draft-row]').first().click();
-  await page.locator('[data-palette-item="user-task"]').click();
-  const drawn = page.locator('[data-draft-row][data-drawn="true"]');
-  await expect(drawn).toHaveCount(1);
-  // The id bpmn-js gave it. Asserting on this rather than on the element type
-  // makes the check independent of what the reconstruction happens to contain.
-  const drawnId = await drawn.getAttribute('data-draft-row');
-  expect(drawnId).toBeTruthy();
-
-  // 4. Save. The footer says which revision it became — a sentence, not a code.
-  await page.locator('[data-editor-save]').click();
-  await expect(page.locator('[data-editor-saved]')).toHaveText('Saved as revision 2.', { timeout: 60000 });
-
-  // 5. And the revision is **found**: in the list under the map, which reloads
-  //    because the save moved the key it is given…
-  await expect(page.locator('[data-revision="2"]')).toBeVisible({ timeout: 60000 });
-  await expect(page.locator('[data-revision="2"]')).toHaveAttribute('data-revision-origin', 'edited');
-
-  // …and in the store, through the route, with the drawn element in its BPMN.
-  const two = await storedRevision(request, 2);
-  expect(two, 'Save answered with a revision that is not in the store').not.toBeNull();
-  expect(two!.origin).toBe('edited');
-  expect(two!.account.uid).toBe(uid);
-  expect(two!.runId).toBe(RUN_ID);
-  expect(two!.xml, 'the stored revision is not the draft that was drawn').toContain(drawnId!);
-
-  // 6. The reconstruction it came from is untouched — phase 3's acceptance, now
-  //    that something really writes.
-  const one = await storedRevision(request, 1);
-  expect(one!.origin).toBe('reconstructed');
-  expect(one!.xml, 'the drawn element reached the reconstructed Ist').not.toContain(drawnId!);
-
-  // 7. Saving again with nothing changed is not an error and writes nothing.
-  await page.locator('[data-editor-save]').click();
-  await expect(page.locator('[data-editor-saved]'))
-    .toHaveText('Nothing has changed since revision 2, so no new revision was written.', { timeout: 60000 });
-  expect(await storedRevision(request, 3), 'an unchanged save added a revision').toBeNull();
-});
-
+// ADR-127: Documentation mounts no map editor (the editor stays in Analyze), so it saves no revision; the
+// history is a fold of its appendix. The saving half of this seam is held on the workspace's map.
 
 test('a history that cannot be read says so, and does not claim there are no revisions', async ({ page }) => {
   // Carried QA finding bea464e656f4: every non-OK answer came back as an empty
@@ -202,6 +124,8 @@ test('a history that cannot be read says so, and does not claim there are no rev
       : route.continue(),
   );
   await page.goto(`/project/${PROJECT_ID}/documentation`, { waitUntil: 'domcontentloaded' });
+  // The history is a fold of the appendix (ADR-127).
+  await page.locator('[data-doc-fold="revisions"] summary').first().click({ timeout: 90000 });
   await expect(page.locator('[data-revision-compare="failed"]')).toBeVisible({ timeout: 90000 });
   await expect(page.locator('[data-revision]')).toHaveCount(0);
 });

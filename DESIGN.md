@@ -518,6 +518,22 @@ content of a tool at 1536 px, of a list or reading page at 1280 px, the gutter 1
 px under the shell bar. **Buttons** (W3): 32 / 40 px, a long label wraps balanced inside the button, the ghost's label
 in ink. **Spacing**: 24 px between sections, 16 px between tiles of a grid.
 
+**Documentation (ADR-127, 3.5.0)** fills the frame as one page in the order of the Word file
+(`components/documentation/DocumentationOnePage.tsx`, model `lib/documentation-page.ts`; the demo renders the same
+component). The answer card asks "<program> · Process description · read from the code": what it does, then *Starts*,
+*Ends*, *Needs a decision* with their lines; its action column is *Ready to hand over* — **Export as Word** as the one
+primary, Confluence, Markdown, Print / PDF and BPMN 2.0 visible beside it, nothing covering the page; the four facets
+are Steps, Ways a case ends, Business rules, Questions open, each with its chip and chapter. The bar names six items
+(Process, Rules, Early ends, Changes, Roles, Questions), Export at its end. Chapter 1 is **Figure 1**: Analyze's map
+read-only, drawn from the map's own diagram interchange (`lib/process-figure.ts`), the steps numbered as in the list
+below it, grouped in Analyze's phases; a step opens ADR-107's step page in place (Decides · Stops when · Reads ·
+Changes, the code in Analyze). On S the figure steps back for one line and the steps read as the list. Chapters 2–4
+stand three abreast from 1100 px, 5 alone, 6–7 two abreast; the appendix is folds with counts (the full appendix,
+revisions, the Level D register, *Read again from the code*). The files carry the same Figure 1, cut for A4 in parts at
+gaps between shapes, at one scale (`figureParts`, `figureScale`). No input on the page: the RACI is read-only (the
+roles from the code, the model's letters a proposal, an earlier owner edit shown as theirs), the map editor stays in
+Analyze, there is no view switch. Measured on the demo at 1440 px: about 3,500 px for the page body (10,682 px before).
+
 ### 2.11 Show less, lose nothing
 
 For first-time users less is more — the depth stays, it just does not come first (ADR-037, Sonny 15.09.2026):
