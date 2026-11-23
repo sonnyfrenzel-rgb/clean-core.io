@@ -56,6 +56,46 @@ export function writesDatabaseOnly(write: SqlWrite): boolean {
 }
 
 /**
+ * The 3.5.0 reading of `writesDatabaseOnly` (`ENGINE_READS_350_FROM`, `engine-reads-350-gate.ts`): true when the
+ * statement's form exists only in ABAP SQL, so its target names a database table whatever the source declares under
+ * the same name. `writesDatabaseOnly` knew this of UPDATE alone; these forms have no internal-table counterpart
+ * either:
+ *
+ *   - `DELETE FROM tab …` — an internal table is deleted from as `DELETE itab …`, never with FROM before the name;
+ *   - `INSERT INTO tab VALUES wa` — the internal form puts the work area before INTO;
+ *   - `INSERT tab FROM …` without any INTO — every internal-table INSERT names its table after INTO;
+ *   - `MODIFY tab FROM TABLE itab`, `DELETE tab FROM TABLE itab` — no internal-table statement takes FROM TABLE;
+ *   - a host variable escaped with `@`, or a `CLIENT SPECIFIED` / `USING CLIENT` / `CONNECTION` clause right after
+ *     the target — ABAP SQL syntax only.
+ *
+ * What ABAP spells the same way for an internal table stays with the local-name reading: `MODIFY itab FROM wa`
+ * (inside a loop or with INDEX), `DELETE itab FROM idx`, `DELETE itab WHERE …`, `INSERT wa INTO …`. Pure: it reads
+ * the masked statement, so a keyword inside a literal is never syntax.
+ */
+export function databaseOnlyWriteForm(text: string, write: SqlWrite): boolean {
+  if (writesDatabaseOnly(write)) return true;
+  const bare = maskLiterals(text).trim();
+  const target = '[\\w/]+';
+  const sqlOnlyClause = new RegExp(
+    `^(?:INSERT|MODIFY|DELETE)\\s+(?:FROM\\s+|INTO\\s+)?${target}\\s+(?:CLIENT\\s+SPECIFIED\\b|USING\\s+(?:ALL\\s+)?CLIENTS?\\b|CONNECTION\\b)`,
+    'i',
+  );
+  if (sqlOnlyClause.test(bare)) return true;
+  switch (write.keyword) {
+    case 'DELETE':
+      return /^DELETE\s+FROM\s+[\w/]+/i.test(bare)
+        || new RegExp(`^DELETE\\s+${target}\\s+FROM\\s+(?:TABLE\\b|@)`, 'i').test(bare);
+    case 'INSERT':
+      return new RegExp(`^INSERT\\s+INTO\\s+${target}\\s+VALUES\\b`, 'i').test(bare)
+        || (new RegExp(`^INSERT\\s+${target}\\s+FROM\\b`, 'i').test(bare) && !/\bINTO\b/i.test(bare));
+    case 'MODIFY':
+      return new RegExp(`^MODIFY\\s+${target}\\s+FROM\\s+(?:TABLE\\b|@)`, 'i').test(bare);
+    default:
+      return false;
+  }
+}
+
+/**
  * The database write in this statement, or `null` when it is an internal-table
  * operation, a screen statement, or nothing of the sort.
  */

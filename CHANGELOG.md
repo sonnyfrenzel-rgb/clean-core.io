@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The UX review workflow runs on `main` only; started on any other ref, every job is skipped (SEC-35f5c34-01).
 
+### Fixed
+
+- An engine reading gated for 3.5.0 (`ENGINE_READS_350_FROM`); runs signed before keep what they signed (SEC-2026-1005).
+
 ## [v3.4.0] — 2026-11-23
 
 The engine release. What changes for anyone who analyses a program:
