@@ -110,13 +110,17 @@ test.describe('what the engine says about the shipped examples since 3.0.18 (pri
   // -> 83), E6 classic-api for BAPI_SALESORDER_CREATEFROMDAT2 (Z_SALES_ORDER_CREATOR L71), SAP_WAPI_CREATE_EVENT
   // and BAPI_PO_CREATE1 (PO demo L421, L475), GUID_CREATE and DATE_COMPUTE_DAY (1,000-line example L219, L935). A
   // classic API costs no score points, so only the invoice score moves.
+  // Since the v3.4.0 bump the 3.4.0 gate (ENGINE_READS_340_FROM) is on, and the PO demo gains exactly one finding:
+  // the class gap (ER-03, owner decision 22.11.2026), `unreleased-class` CL_MM_INTERNAL at L845, one finding for the
+  // whole file and one more row (26 -> 27 findings, 23 -> 24 rows). It costs no score points; score, route and
+  // rules stay. No other example names a class SAP grades C or D.
   const EXPECTED: Record<string, { findings: number; rows: number; score: number; route: string; rules: number }> = {
     'Z_MATERIAL_STOCK_CALC.txt': { findings: 3, rows: 3, score: 91, route: 'In-App (ABAP Cloud)', rules: 3 },
     'Z_INVOICE_EXTRACTOR.txt': { findings: 6, rows: 5, score: 83, route: 'In-App (ABAP Cloud)', rules: 0 },
     'Z_SALES_ORDER_CREATOR.txt': { findings: 1, rows: 1, score: 90, route: 'In-App (ABAP Cloud)', rules: 0 },
     // 3.0.19, the key-user example; what the key-user engine reads of it is pinned in tests/key-user-3019.spec.ts.
     'Z_SD_DELIVERY_PRIORITY.abap': { findings: 3, rows: 3, score: 93, route: 'In-App (ABAP Cloud)', rules: 1 },
-    'Z_MM_PO_APPROVAL.abap': { findings: 26, rows: 23, score: 40, route: 'In-App (ABAP Cloud)', rules: 12 },
+    'Z_MM_PO_APPROVAL.abap': { findings: 27, rows: 24, score: 40, route: 'In-App (ABAP Cloud)', rules: 12 },
     'Z_SD_FREIGHT_RATE_CHECK.abap': { findings: 10, rows: 10, score: 82, route: 'Side-by-Side (SAP BTP)', rules: 14 },
     [LEGACY]: { findings: 40, rows: 32, score: 40, route: 'Side-by-Side (SAP BTP)', rules: 30 },
   };

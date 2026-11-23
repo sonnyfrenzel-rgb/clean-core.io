@@ -113,6 +113,12 @@ export interface CoverageOptions {
    */
   multiLineTemplates?: boolean;
   /**
+   * From engine 3.4.0 (`ENGINE_READS_340_FROM`, B1): a dynamic target is closed by a constant only in the scope
+   * the constant is declared in (`readTableDependencies`, `scopedConstants`), so a `FROM (name)` whose constant
+   * stands in another routine is a `dynamic-target` gap. The engine passes true from that version.
+   */
+  scopedConstants?: boolean;
+  /**
    * From engine 3.3.0 (ER-02): the dynamic `CALL FUNCTION name` statements whose
    * name the source closes, by statement index, with the module they call
    * (`resolveDynamicCalls`). Such a call is no `dynamic-invocation` gap: it is
@@ -308,7 +314,7 @@ export function assessCoverage(code: string, options: CoverageOptions = {}): Cov
   const unassessed: UnassessedConstruct[] = [];
   const answered: CatalogAnsweredCall[] = [];
   const cut = { multiLineTemplates: options.multiLineTemplates === true };
-  const unresolved = new Set(readTableDependencies(code, cut).unresolved.map((target) => target.statement));
+  const unresolved = new Set(readTableDependencies(code, { ...cut, scopedConstants: options.scopedConstants === true }).unresolved.map((target) => target.statement));
   const carried = includesCarried(code);
   const statements = tokenize(code, cut);
   const macros = options.macroUsesNamed ? macroDefinitions(statements) : new Map<string, number>();

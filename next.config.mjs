@@ -1,5 +1,7 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
 import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
+import { dirname } from 'node:path';
 
 /**
  * Crawlers that get the page's metadata in <head>, before the body.
@@ -13,6 +15,8 @@ import { createRequire } from 'node:module';
  * from Next rather than copied so it keeps its updates.
  */
 const require = createRequire(import.meta.url);
+// Roadmap 3.4.0 item (3): the engine digest (CommonJS, shared with the release capture and the specs).
+const { computeEngineDigest } = require('./scripts/engine/engine-digest.cjs');
 const { HTML_LIMITED_BOT_UA_RE } = require('next/dist/shared/lib/router/utils/html-bots.js');
 const ANSWER_ENGINE_BOTS = 'GPTBot|OAI-SearchBot|ChatGPT-User|ClaudeBot|Claude-SearchBot|Claude-User|PerplexityBot|Perplexity-User|CCBot|Amazonbot|meta-externalagent';
 const htmlLimitedBots = new RegExp(`${HTML_LIMITED_BOT_UA_RE.source}|${ANSWER_ENGINE_BOTS}`, 'i');
@@ -114,6 +118,12 @@ const nextConfig = {
   // load instead of mixing two builds. deploy.yml passes the commit as a build
   // variable; without one (local builds, CI's validate job) nothing changes.
   deploymentId: process.env.NEXT_DEPLOYMENT_ID || undefined,
+  // Roadmap 3.4.0 item (3): the engine digest, computed from the engine's sources at build time
+  // (scripts/engine/engine-digest.cjs says which files) and read by lib/engine-digest.ts. A signed run carries it
+  // beside engineVersion; it matches a frozen release or reads "unreleased build".
+  env: {
+    CC_ENGINE_DIGEST: computeEngineDigest(dirname(fileURLToPath(import.meta.url))).digest,
+  },
   htmlLimitedBots,
   async headers() {
     return [

@@ -58,7 +58,7 @@
  * are the anchors and the evidence behind them.
  */
 
-import { readStatements, type AbapStatement, type SourceRange } from './statement-reader';
+import { readStatements, withParsedSource, type AbapStatement, type SourceRange } from './statement-reader';
 import { genitivePhrase, isKnownField, nounPhrase, tableTerm, termFor, type BusinessTerm } from './business-glossary';
 import { buildProcessFacts } from './process-facts';
 import { readLuwStates, type LuwModel } from './luw-states';
@@ -66,6 +66,7 @@ import { readReferenceTypes, resolveMethodTarget, type ClassModel, type MethodTa
 import { readBatchInputFrom, type BatchInputCall } from './batch-input';
 import { containerAt, readBlocks, type Block as NestingBlock } from './block-structure';
 import { enclosingBranches, negateCondition, type EnclosingBranch } from './enclosing-branches';
+import { sourceForEngine } from './input-hygiene';
 
 /**
  * A caveat **on** a statement — never in its place.
@@ -3233,7 +3234,16 @@ function listSentence(
  * gateway with two edges, not three boxes), the line view the sentence of the
  * single statement. `attachTo` chooses per node.
  */
-export function buildBusinessStatements(source: string): BusinessStatement[] {
+export function buildBusinessStatements(source: string, options: { engineVersion?: string | null } = {}): BusinessStatement[] {
+  // With an engine named, the source is read as that engine reads it (3.4.0 input hygiene, `sourceForEngine`), so a
+  // CR-only file gives the same lines here as in the skeleton and the evidence. Without one the
+  // source is read as given, as every release before 3.4.0 and the frozen business digests read it.
+  const read = options.engineVersion === undefined ? source : sourceForEngine(source, options.engineVersion);
+  // Parse once (3.5.0, ADR-133): one reading of `source` for the statements and the facts below.
+  return withParsedSource(() => buildBusinessStatementsRead(read));
+}
+
+function buildBusinessStatementsRead(source: string): BusinessStatement[] {
   const statements = readStatements(source);
   // The same reading as in the skeleton: the sentence condenses the model's
   // effect status (2.12); it does not form one of its own.

@@ -1749,6 +1749,29 @@
       }
     },
     {
+      "path": "docs/design/engine4.md",
+      "kind": "plan",
+      "purpose": "Design, shadow numbers and ledger of the engine 4.0 strand: layers L0-L5, parse once, the statement ledger, the skeleton passes, and the open questions for the owner",
+      "audience": "Sonny, agents",
+      "saysToday": "Engine 4.0 built beside the shipping engine and inert except where an ADR wires it in (ADR-133 parse once, ADR-141 draft the class gap of 3.4.0); every step with its neutrality proof.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "The working record of the engine 4.0 strand; the roadmap rows and ADR-133, ADR-134 and ADR-141 point to it.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "docs/design/decisions.md",
+        "docs/ROADMAP.md",
+        "lib/engine4/index.ts"
+      ],
+      "measured": {
+        "lines": 1577
+      }
+    },
+    {
       "path": "docs/prozess-benchmark/ENGINE-320-FREEZE-2026-11-13.md",
       "kind": "plan",
       "purpose": "The frozen configuration of the one holdout measurement of the engine 3.2.0 readings, written before the first holdout case was opened",

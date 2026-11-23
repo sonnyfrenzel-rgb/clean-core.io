@@ -39,6 +39,11 @@ export interface AnalysisRun {
     modelId: string | null;
     engineVersion: string;
     /**
+     * Roadmap 3.4.0 item (3): the engine digest of the build that computed the run (`lib/engine-digest.ts`,
+     * `scripts/engine/engine-digest.cjs`). Absent on every run signed before 3.4.0 and on a build that computed none.
+     */
+    engineDigest?: string;
+    /**
      * Whose key served the call, where a receipt established it; otherwise
      * whether BYOK was configured on the account when the run was created.
      */

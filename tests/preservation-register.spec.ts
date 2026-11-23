@@ -968,7 +968,8 @@ test.describe('the register matches the code', () => {
     const docsPage = src('app/(app)/project/[projectId]/documentation/page.tsx');
     expect(docsPage, 'the documentation stage slices its input again — L-04 is back').not.toContain('.substring(0, 1000)');
     expect(docsPage).toContain("import('@/lib/process-documentation-build')");
-    expect(src('lib/process-documentation-build.ts')).toContain('buildBusinessStatements(source)');
+    // The whole source, and since 3.4.0 with the engine version the run was built with.
+    expect(src('lib/process-documentation-build.ts')).toMatch(/buildBusinessStatements\(source, \{ engineVersion: /);
 
     // L-05: Economics is still the one stage without a StaleNotice; Analyze has
     // one since 10.10.2026 (audit M-8).

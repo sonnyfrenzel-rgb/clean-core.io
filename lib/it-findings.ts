@@ -163,6 +163,19 @@ export interface ItFindingsSource {
    * reads as "not recorded", never as "uses nothing".
    */
   uses?: ItUseRow[];
+  /**
+   * Roadmap 3.4.0 (owner decision 22.11.2026): the DDIC types the code declares with — data elements, structures,
+   * table types, tables used as types — that SAP's files grade, grouped by level, worst first. Not findings: shown
+   * in the IT view only, never stored and never signed. Read from the static references of the L4 table
+   * (`readSapTypeReferences`). Absent for a run of an engine before 3.4.0 and on an answer built before it existed.
+   */
+  ddicTypes?: ItTypeGroup[];
+}
+
+/** One level of `ItFindingsSource.ddicTypes`: every type graded at it, by name, with its lines. */
+export interface ItTypeGroup {
+  level: 'A' | 'B' | 'C' | 'D';
+  types: Array<{ name: string; lines: number[]; state: string | null }>;
 }
 
 /**

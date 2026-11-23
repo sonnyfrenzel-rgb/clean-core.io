@@ -32,6 +32,7 @@ import {
   dictionaryWords,
 } from './sap-dictionary';
 import { APP_VERSION } from '../version';
+import { parsedSource, parseOnceFallback, periodStatements, PARSE_ONCE_READER, type ParsedSource } from './statement-reader';
 import { readStateMachine, stateWords, transitionsIn, type CommandArm, type ScenarioDriver, type StateMachine, type StateTransition } from './state-machine';
 import { interfaceOfMethod, isConstructorName, isTechnicalMethodName, ownMethodName } from './technical-methods';
 
@@ -148,8 +149,45 @@ const EMPTY_CONTEXT: PlainContext = Object.freeze({
   flags: new Set<string>(),
 });
 
-/** Statements of the source, comments removed, one entry per period. */
-function splitStatements(lines: readonly string[]): PlainStatement[] {
+/**
+ * Statements of the source (line ends normalised to `\n`, no BOM), comments removed, one entry per period.
+ *
+ * Parse once (3.5.0; docs/design/engine4.md, "Retiring the other splitters"): read off the parse-once tokens
+ * (`periodStatements`), whitespace collapsed as the scan below collapses it. Where `parseOnceFallback` names a
+ * reason, and where an indented `*` line stands (a comment for the lexer, code for the scan below), the scan
+ * answers; `scripts/engine/splitter-neutrality.ts` proves the rest byte for byte.
+ */
+export function plainStatements(normalized: string): PlainStatement[] {
+  const lines = normalized.split('\n');
+  if (!PARSE_ONCE_READER) return splitStatements(lines);
+  const parsed = parsedSource(normalized);
+  if (plainStatementsFallback(parsed) !== null) return splitStatements(lines);
+  const list = periodStatements(parsed).map((p) => ({
+    line: p.row,
+    endLine: p.terminated ? p.endRow : lines.length,
+    text: p.pieces.join(' ').replace(/\s+/g, ' ').trim(),
+  }));
+  if (typeof process !== 'undefined' && process.env?.ENGINE_PARSE_ONCE_VERIFY === '1') {
+    const shipping = splitStatements(lines);
+    if (JSON.stringify(shipping) !== JSON.stringify(list)) {
+      throw new Error(`parse once is not neutral in plainStatements: ${JSON.stringify(shipping.find((x, k) => JSON.stringify(x) !== JSON.stringify(list[k])) ?? null)}`);
+    }
+  }
+  return list;
+}
+
+/** Why the scan reads a (normalised) source instead of the parse-once tokens, or null. */
+export function plainStatementsFallback(parsed: ParsedSource): string | null {
+  const reason = parseOnceFallback(parsed);
+  if (reason) return reason;
+  if (/^[ \t]+\*/m.test(parsed.source)) return 'indented-asterisk';
+  // `|a\|b|`: the scan below knows no escape in a template and ends it at the escaped bar.
+  if (parsed.tokens.some((t) => t.kind.startsWith('template') && t.text.includes('\\'))) return 'template-escape';
+  return null;
+}
+
+/** The 3.x scan, kept as the reference and the fallback. */
+export function splitStatements(lines: readonly string[]): PlainStatement[] {
   const out: PlainStatement[] = [];
   let buffer = '';
   let start = 0;
@@ -227,7 +265,7 @@ const DECLARATION = /^(PARAMETERS|PARAMETER|SELECT-OPTIONS|DATA|CLASS-DATA|STATI
 export function plainContext(source: string, options: PlainOptions = {}): PlainContext {
   try {
     const lines = String(source ?? '').replace(/^﻿/, '').replace(/\r\n?/g, '\n').split('\n');
-    const statements = splitStatements(lines);
+    const statements = plainStatements(lines.join('\n'));
     const selections = new Map<string, SelectionField>();
     const constants = new Map<string, string>();
     const types = new Map<string, string>();

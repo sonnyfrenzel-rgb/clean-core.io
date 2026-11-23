@@ -5,7 +5,7 @@ import {
   type AbapStatement,
   type SourceRange,
 } from './statement-reader';
-import { readBlocks, containerAt, type BlockStructure } from './block-structure';
+import { readBlocks, containerAt, type BlockStructure, type Container } from './block-structure';
 import { readControlFlowFrom, type Branch, type ControlFlowReport } from './control-flow';
 
 /**
@@ -518,10 +518,13 @@ function readConstants(
 export function readConstantDeclarations(source: string): {
   declared: DeclaredConstant[];
   byName: Map<string, DeclaredConstant | null>;
+  /** The containers of the same reading — the scope a declaration and a use stand in (`table-dependencies.ts`, 3.4.0). */
+  containers: Container[];
 } {
   const statements = readStatements(source);
-  const { declared, index } = readConstants(statements, readBlocks(statements));
-  return { declared, byName: index.byName };
+  const structure = readBlocks(statements);
+  const { declared, index } = readConstants(statements, structure);
+  return { declared, byName: index.byName, containers: structure.containers };
 }
 
 interface Reader {

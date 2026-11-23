@@ -7,7 +7,7 @@ import { tableTerm, termFor } from './business-glossary';
 
 import { assessCoverage, type CoverageReport } from './coverage';
 import { readTableDependencies, type DependencyRoute, type TableDependency } from './table-dependencies';
-import { maskLiterals, readStatements } from './statement-reader';
+import { maskLiterals, readStatements, withParsedSource } from './statement-reader';
 import { BTP } from '../sap-naming';
 import { APP_VERSION } from '../version';
 import { guidelineChecksApply } from './guideline-checks-gate';
@@ -19,6 +19,9 @@ import { engineReads3021Apply } from './engine-reads-3021-gate';
 import { engineReads320Apply } from './engine-reads-320-gate';
 import { engineReads330Apply } from './engine-reads-330-gate';
 import { resolveDynamicCalls } from './dynamic-call-resolution';
+import { engineReads340Apply } from './engine-reads-340-gate';
+import { readSapClassReferences, type SapClassKind } from './sap-class-references';
+import { sourceForEngine } from './input-hygiene';
 import { readStatedRequirements, statedRequirementsApply, type StatedRequirement } from './stated-requirements';
 import { keyUserApplies } from './key-user-gate';
 import { readKeyUserCandidates, type KeyUserReading } from './key-user-candidates';
@@ -73,7 +76,10 @@ export type EvidenceKind =
   // From engine 3.0.18 (`ENGINE_READS_FROM`): a classic API on the ABAP Cloud
   // route, and a file on the application server.
   | 'classic-api'
-  | 'dataset-io';
+  | 'dataset-io'
+  // From engine 3.4.0 (`ENGINE_READS_340_FROM`): an SAP class, interface or
+  // exception class SAP's files grade C or D, one finding per object.
+  | 'unreleased-class';
 
 export type EvidenceSource = 'static-parser' | 'catalog-match' | 'llm-narrative';
 
@@ -121,6 +127,12 @@ export interface EvidenceFinding {
    * statement then), and in every run of an earlier engine.
    */
   rfcTarget?: 'local' | 'outbound';
+  /**
+   * From engine 3.4.0 (`ENGINE_READS_340_FROM`): every line an `unreleased-class` finding's object stands on,
+   * ascending. The finding is one per object, not per line; `lineStart` is the first of these. Absent on every
+   * other finding and in every run of an earlier engine.
+   */
+  lines?: number[];
 }
 
 export interface AbapEvidenceReport {
@@ -680,6 +692,46 @@ function batchInputDetail(call: BatchInputCall | undefined, writes: BatchInputWr
   return `${screens}${fields}.${changes}`;
 }
 
+/** 3.4.0, the class gap: what the reference is, in a reader's words and as the finding's object type. */
+const CLASS_KIND_WORDS: Record<SapClassKind, string> = {
+  class: 'class',
+  interface: 'interface',
+  classOrInterface: 'class or interface',
+  exception: 'exception class',
+};
+const CLASS_OBJECT_TYPES: Record<SapClassKind, string> = {
+  class: 'Class',
+  interface: 'Interface',
+  classOrInterface: 'Class or Interface',
+  exception: 'Exception Class',
+};
+const CLASS_USE_WORDS: Record<string, string> = {
+  typeRef: 'a reference type',
+  staticAccess: 'a static call or constant',
+  interfaceAccess: 'an interface component',
+  instantiation: 'an instantiation',
+  cast: 'a cast',
+  catch: 'a CATCH',
+  raise: 'a RAISE EXCEPTION',
+  raising: 'a RAISING clause',
+  inherit: 'a superclass',
+  implement: 'an implemented interface',
+  friend: 'a friend',
+};
+
+/**
+ * What SAP's files say about a class the source uses — SAP's verbatim state, never the A–D letter (findings go into
+ * the signed run). Without a state, the object is an SAP name neither file lists: SAP's internal object, not
+ * released.
+ */
+function classStateSentence(name: string, what: string, state: string | undefined): string {
+  const lower = (state ?? '').toLowerCase();
+  if (lower === 'nottobereleased') return `SAP's release file lists ${what} ${name} as not to be released (notToBeReleased): ABAP Cloud code cannot use it.`;
+  if (lower === 'deprecated') return `SAP's release file lists ${what} ${name} as deprecated: ABAP Cloud code may no longer use it.`;
+  if (lower === 'noapi') return `SAP's classification file lists ${what} ${name} as noAPI: SAP does not offer it as an API for customer code.`;
+  return `Neither of SAP's synced files lists ${what} ${name}: it is an SAP object that is not released for ABAP Cloud.`;
+}
+
 /**
  * `catalogSnapshot` (roadmap 7.10): the release file SAP object states are read
  * from — `pce-2023-3` for a Private Edition 2023 FPS03 target, say. Omitted, the
@@ -694,6 +746,20 @@ function batchInputDetail(call: BatchInputCall | undefined, writes: BatchInputWr
  * appear only for a run of that engine or later.
  */
 export function buildAbapEvidence(
+  code: string,
+  fileName: string,
+  deployment?: 'public' | 'private',
+  catalogSnapshot?: string,
+  engineVersion?: string | null,
+): AbapEvidenceReport {
+  // From 3.4.0 (`input-hygiene.ts`): a byte order mark is dropped and a lone CR ends a line; a run of an earlier
+  // engine reads the source as it signed it.
+  const source = sourceForEngine(code, engineVersion === undefined ? APP_VERSION : engineVersion);
+  // Parse once (3.5.0, ADR-133): every reader of this build shares one reading of `code`.
+  return withParsedSource(() => buildAbapEvidenceRead(source, fileName, deployment, catalogSnapshot, engineVersion));
+}
+
+function buildAbapEvidenceRead(
   code: string,
   fileName: string,
   deployment?: 'public' | 'private',
@@ -756,10 +822,18 @@ export function buildAbapEvidence(
   // data coupling (`table-dependencies.ts`). A type reference is a dependency
   // but no access, and a possible target of an unresolved dynamic name is not
   // an access either (R26): neither becomes a finding here.
-  const dependencies = readTableDependencies(code, tokenizeOptions);
+  // From 3.4.0 (`ENGINE_READS_340_FROM`, B1): a constant closes a dynamic target only in the scope it is declared in.
+  const scopedConstants = engineReads340Apply(engine);
+  const dependencies = readTableDependencies(code, { ...tokenizeOptions, scopedConstants });
   const accessesAt = new Map<number, TableDependency[]>();
+  // From 3.4.0 (`ENGINE_READS_340_FROM`, engine review of 22.11.2026): `INSERT REPORT`, `DELETE REPORT`,
+  // `READ REPORT` and their `TEXTPOOL`/`DYNPRO` forms handle program source and texts, not a database table: the
+  // word after the verb is no table name (`INSERT REPORT 'ZGEN' FROM lt_src` was a CRITICAL write to a table REPORT).
+  // The statement keeps its own finding (`security-review`, code generated at run time).
+  const programSourceStatement = engineReads340Apply(engine) ? /^\s*(?:INSERT|DELETE|READ)\s+(?:REPORT|TEXTPOOL|DYNPRO)\b/i : null;
   for (const dependency of dependencies.dependencies) {
     if (dependency.access === 'reference' || dependency.possibleTargetOf) continue;
+    if (programSourceStatement?.test(dependency.snippet)) continue;
     accessesAt.set(dependency.statement, [...(accessesAt.get(dependency.statement) ?? []), dependency]);
   }
   const adbcAt = new Set(dependencies.adbc.map((execution) => execution.statement));
@@ -2113,6 +2187,65 @@ export function buildAbapEvidence(
     }
   }
 
+  // From 3.4.0 (`ENGINE_READS_340_FROM`, owner decision 22.11.2026, ER-03): the class gap. Every SAP class,
+  // interface and exception class the source names and SAP's files grade C or D is one finding per object, with
+  // every line it stands on. Read from the L4 reference table (ADR-141). An object another finding of this run
+  // already names is said there. Added after every other detector, so no earlier finding changes its id.
+  if (engineReads340Apply(engine)) {
+    const named = new Set(findings.map((f) => (f.objectName ?? '').trim().toUpperCase()).filter(Boolean));
+    // Every other finding stands at the first line of its statement and quotes the statement as read (comments
+    // dropped). The references name the line of the class name itself, which in a statement written over several
+    // lines is not the statement's first: anchored there, re-wrapping a statement moved the finding, and the
+    // snippet quoted the raw line with its comment (metamorphic P2/P3, `tests/abap-metamorphic.spec.ts`).
+    const statementAt = (line: number) => {
+      let lo = 0;
+      let hi = statements.length - 1;
+      let at = -1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (statements[mid].line <= line) { at = mid; lo = mid + 1; } else hi = mid - 1;
+      }
+      return at >= 0 ? statements[at] : null;
+    };
+    for (const ref of readSapClassReferences(code, catalogSnapshot)) {
+      if (named.has(ref.name)) continue;
+      const first = statementAt(ref.lines[0]);
+      const lines = [...new Set(ref.lines.map((l) => statementAt(l)?.line ?? l))];
+      const what = CLASS_KIND_WORDS[ref.kind];
+      const where = lines.length === 1 ? `line ${lines[0]}` : `lines ${lines.join(', ')}`;
+      const said = classStateSentence(ref.name, what, ref.state);
+      addFinding({
+        kind: 'unreleased-class',
+        title: `Use of ${what} ${ref.name}, ${ref.state ? `which SAP lists as ${ref.state}` : 'which SAP does not release for ABAP Cloud'}`,
+        // D: SAP says the object is not for customer code at all; C: it is SAP's internal object.
+        severity: ref.grade === 'D' ? 'High' : 'Medium',
+        confidence: 'High',
+        objectName: ref.name,
+        objectType: CLASS_OBJECT_TYPES[ref.kind],
+        lineStart: lines[0],
+        lines,
+        snippet: first ? first.text : ref.name,
+        technicalDetail: `${said} The source uses it on ${where} (${ref.uses.map((u) => CLASS_USE_WORDS[u] ?? u).join(', ')}).`,
+        // No A–D letter here: the finding goes into the signed run, and the level stays out of it.
+        cleanCoreImpact: 'ABAP Cloud code may use only classes and interfaces SAP releases for it. Every use of this one ties the program to an SAP object that carries no stability contract, so it is replaced before the code runs in ABAP Cloud, and it is a risk in every upgrade of classic ABAP.',
+        recommendation: 'Replace the use with a released class or interface for the same purpose (SAP names a successor for many deprecated objects on its catalog page), or wrap it in classic ABAP behind a released interface the ABAP Cloud code calls.',
+        targetOptions: ['Developer Extensibility / RAP', 'Side-by-Side CAP'],
+        source: 'catalog-match',
+      });
+      // In line order among the findings before it, as every statement-reading detector adds its own: appended at
+      // the end, the finding of the first program in a concatenation stood after the second program's findings
+      // (metamorphic P4, concatenation is union).
+      const added = findings[findings.length - 1];
+      if (added?.kind === 'unreleased-class') {
+        const at = findings.findIndex((f) => f !== added && f.lineStart > added.lineStart);
+        if (at >= 0) {
+          findings.pop();
+          findings.splice(at, 0, added);
+        }
+      }
+    }
+  }
+
   // Calculate counts for summary
   const summary = {
     criticalCount: findings.filter(f => f.severity === 'Critical').length,
@@ -2181,6 +2314,8 @@ export function buildAbapEvidence(
     macroUsesNamed: engineReads3021Apply(engine),
     // From 3.3.0 (`ENGINE_READS_330_FROM`): the statements cut as above, and the dynamic calls the source closes.
     multiLineTemplates: reads330,
+    // From 3.4.0: the dynamic targets read as the table dependencies above read them.
+    scopedConstants,
     ...(resolvedCalls ? { resolvedCalls } : {}),
   });
   // From 3.0.17 (`STATED_REQUIREMENTS_FROM`): what the owner states in the

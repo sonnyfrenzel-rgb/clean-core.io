@@ -15,6 +15,7 @@
  * model identifiers, and architecture decisions are included.
  */
 
+import { engineDigestLine } from '@/lib/engine-digest';
 import type { Project, WorklistItem } from '@/lib/types';
 import { APP_VERSION, APP_RELEASE_DATE } from '@/lib/version';
 import { csvCell } from '@/lib/csv-formula';
@@ -377,6 +378,7 @@ export function generateExecutiveSummary(project: Project): string {
 | Field | Value |
 |---|---|
 | Platform Version | ${mdCell(mc?.engineVersion || APP_VERSION)} |
+| Engine Digest | ${mdCell(engineDigestLine(mc?.engineDigest))} |
 | SAP API Catalog | ${mdCell(catalogVersionOf(project))} |
 | Model Provider | ${mdCell(modelProviderOf(mc))} |
 | Model | ${mdCell(modelIdOf(mc))} |
@@ -474,6 +476,7 @@ export function generateExecutiveSummaryDoc(project: Project): string {
     </thead>
     <tbody>
       <tr><td>Platform Version</td><td>${escapeHtml(mc?.engineVersion || APP_VERSION)}</td></tr>
+      <tr><td>Engine Digest</td><td>${escapeHtml(engineDigestLine(mc?.engineDigest))}</td></tr>
       <tr><td>Model Provider</td><td>${escapeHtml(modelProviderOf(mc))}</td></tr>
       <tr><td>Model</td><td>${escapeHtml(modelIdOf(mc))}</td></tr>
       <tr><td>BYOK Used</td><td>${escapeHtml(byokLineOf(mc))}</td></tr>
@@ -642,6 +645,7 @@ export function generateModelCard(project: Project): string {
 | Model Provider | ${modelProviderOf(mc)} |
 | Model Identifier | ${modelIdOf(mc)} |
 | Platform Version | ${mc?.engineVersion || APP_VERSION} |
+| Engine Digest | ${mdCell(engineDigestLine(mc?.engineDigest))} |
 | SAP API Catalog | ${mdCell(catalogVersionOf(project))} |
 | BYOK (Bring Your Own Key) | ${byokLineOf(mc)} |
 | Narrative origin | ${narrativeOriginOf(mc)} |
