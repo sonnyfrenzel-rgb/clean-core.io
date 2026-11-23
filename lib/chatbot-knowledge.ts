@@ -67,7 +67,7 @@ A: In-App RAP (ABAP RESTful Application Programming Model) runs directly within 
 A: Clean-Core.io does not configure anything in your SAP BTP subaccount or S/4HANA tenant. The usual security pattern for a side-by-side extension is JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service for stateless API calls with role-based access control (RBAC), and the SAP Connectivity and Destination services routing RFC and OData traffic via SAP Cloud Connector without exposing internal endpoints. Setting that up in your tenant is your team's work; the app provides analysis, design drafts and a read-only connection check, not the deployment.
 
 ### Q: What is the BYOT (Bring Your Own Tenant) connectivity model?
-A: BYOT lets a developer connect their own NON-PRODUCTION S/4HANA sandbox to check the connection, read OData metadata and make one read-only call against a real service. ${LIVE_TEST_EXECUTION.userNotice} It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier.
+A: BYOT lets a developer connect their own NON-PRODUCTION S/4HANA sandbox to check the connection and read the OData metadata of one service ($metadata, schema only). ${LIVE_TEST_EXECUTION.userNotice} It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier.
 
 ### Q: How does Clean-Core.io help modernize legacy ABAP?
 A: A deterministic ABAP evidence engine parses the custom code FIRST (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. On the Transformation stage the engine then writes the target package's skeleton itself — types, guards, the input contract and one function stub per routine with its ABAP lines — and Google Gemini writes only the business logic inside each function: ABAP Cloud artefacts on the RAP track, a Node.js (TypeScript) project on the CAP track. The process documentation and its BPMN 2.0 XML are reconstructed from the code by the engine, with no model; a draft test suite is generated for the code. All AI output is a DRAFT for architect review — it accelerates the assessment; it does not replace human judgment or SAP's own upgrade tooling.
@@ -288,7 +288,7 @@ Paste the full JSON export of your destination from the ${SAP_BTP_COCKPIT}.
   - Endpoint reachability (DNS resolution, TLS certificate validity)
   - Authentication status (credential verification)
   - That the OData service exists
-- The connection check reads no business record. Checking one entity set is a separate action in the Testing stage ("Check the entity set in the tenant"); it reads the service metadata, never a record.
+- The connection check reads no business record, only the service metadata.
 - Click "Save Connection" to persist the configuration.
 
 ### Security

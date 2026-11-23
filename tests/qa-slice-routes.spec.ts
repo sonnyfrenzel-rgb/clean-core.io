@@ -53,11 +53,6 @@ test('0d9a23f48357 — the self-test deadline is cleared only after the body is 
   expect(probe).toMatch(/finally \{\s*clearTimeout\(timer\);/);
 });
 
-test('4688e78a3516 — an unsupported destination authentication is refused, not read anonymously', () => {
-  const src = read('app/api/test-s4-odata-read/route.ts');
-  expect(src).toMatch(/else if \(auth && auth !== 'noauthentication'\) \{[\s\S]{0,200}throw new Error\('Destination authentication type is not supported/);
-});
-
 test('33d5babb43a6 — the web verifier refuses an oversized Blob without reading it', async () => {
   let read = false;
   const huge = {

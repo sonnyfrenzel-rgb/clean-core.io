@@ -1868,7 +1868,7 @@ export default function SettingsPage() {
                       <li><strong className="text-cc-ink">Request access</strong> with the form below.</li>
                       <li><strong className="text-cc-ink">Provide an HTTPS address</strong> of your S/4HANA sandbox or test system.</li>
                       <li><strong className="text-cc-ink">Enter the sign-in details</strong> once access is granted (user name and password, or OAuth 2.0).</li>
-                      <li><strong className="text-cc-ink">Check the connection</strong> from the Testing stage: the handshake, the OData metadata and one read-only call. Running the generated tests against the system stays locked until the isolated test runner has passed its review.</li>
+                      <li><strong className="text-cc-ink">Check the connection</strong>: the handshake and the OData metadata of one service, never a record. Running the generated tests against the system stays locked until the isolated test runner has passed its review.</li>
                     </ol>
                   </div>
 

@@ -72,11 +72,6 @@ function code(rel: string): string {
  */
 const LEAKS: Array<{ file: string; gone: RegExp[]; present: string[] }> = [
   {
-    file: 'app/api/fetch-odata-metadata/route.ts',
-    gone: [/Internal server error: \$\{/, /Response: \$\{errorBody/],
-    present: ["'Internal server error during metadata fetch.'", "logger.error('fetch-odata-metadata failed'", "logger.warn('oauth token exchange rejected'"],
-  },
-  {
     file: 'app/api/fetch-s4-metadata/route.ts',
     // The second shape is the site this file's own sweep found and the audit
     // had not listed: the bounded read's failure was forwarded verbatim too.
@@ -173,8 +168,8 @@ test('and no 500 or 502 in those files carries one either', () => {
 /* 2 — the outgoing metadata routes are metered per account            */
 /* ------------------------------------------------------------------ */
 
-test('both metadata routes bound how often one account may reach out', () => {
-  for (const rel of ['app/api/fetch-odata-metadata/route.ts', 'app/api/fetch-s4-metadata/route.ts']) {
+test('the metadata route bounds how often one account may reach out', () => {
+  for (const rel of ['app/api/fetch-s4-metadata/route.ts']) {
     const src = code(rel);
     expect(src, `${rel} does not import the limiter`).toContain("from '@/lib/rate-limit'");
     const call = src.match(/assertRateLimit\(\s*`([^`]+)`\s*,\s*(\d+)\s*,([^)]+)\)/);

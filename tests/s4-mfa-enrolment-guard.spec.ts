@@ -40,12 +40,10 @@ const read = (rel: string) => fs.readFileSync(path.resolve(ROOT, rel), 'utf8').r
 
 /** Every route that reaches a live tenant. Adding one means adding it here, on purpose. */
 const S4_ROUTES = [
-  'app/api/fetch-odata-metadata/route.ts',
   'app/api/fetch-s4-metadata/route.ts',
   'app/api/run-tests/route.ts',
   'app/api/s4-credentials/route.ts',
   'app/api/test-s4-connection/route.ts',
-  'app/api/test-s4-odata-read/route.ts',
 ];
 
 /**

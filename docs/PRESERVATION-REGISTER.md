@@ -240,7 +240,7 @@ register still points at it and that the lock is still closed.
 
 **`G0:R0` · Testing.** Executing generated tests against a connected S/4HANA
 tenant is closed. Running them against mocks in the restricted runner, the
-connection check, the OData metadata read and one read-only OData call stay open.
+connection check and the OData metadata read stay open.
 The reason and the four conditions for reopening are in `lib/locked-paths.ts` and
 `SECURITY.md` §7.1.
 

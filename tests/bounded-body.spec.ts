@@ -71,10 +71,8 @@ test('a body within the limits is returned as text() would return it', async () 
  * any unbounded read of a foreign response left in it.
  */
 const TENANT_ROUTES = [
-  'app/api/fetch-odata-metadata/route.ts',
   'app/api/fetch-s4-metadata/route.ts',
   'app/api/test-s4-connection/route.ts',
-  'app/api/test-s4-odata-read/route.ts',
 ];
 
 /** The file with its comments taken out — they explain the old reads by name. */

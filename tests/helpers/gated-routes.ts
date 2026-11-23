@@ -47,8 +47,6 @@ export const GATED_ROUTES: GatedRoute[] = [
   { file: 'app/api/secrets/gemini/route.ts', method: 'DELETE', path: () => '/api/secrets/gemini' },
   { file: 'app/api/test-s4-connection/route.ts', method: 'POST', path: () => '/api/test-s4-connection', body: { useStoredCredentials: true } },
   { file: 'app/api/fetch-s4-metadata/route.ts', method: 'POST', path: () => '/api/fetch-s4-metadata', body: { useStoredCredentials: true } },
-  { file: 'app/api/fetch-odata-metadata/route.ts', method: 'POST', path: () => '/api/fetch-odata-metadata', body: { useStoredCredentials: true } },
-  { file: 'app/api/test-s4-odata-read/route.ts', method: 'POST', path: () => '/api/test-s4-odata-read', body: { useStoredCredentials: true, entitySet: 'A_SalesOrder' } },
   // Found by the completeness check, not by anyone remembering them
   // (QA review of 84f183b16761, 2f384e262d78): three routes that gate on the
   // factor and were in none of these lists. Deleting the account is the one

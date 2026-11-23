@@ -29,8 +29,6 @@ const ROOT = path.resolve(__dirname, '..');
 const S4_ROUTES = [
   'app/api/test-s4-connection/route.ts',
   'app/api/fetch-s4-metadata/route.ts',
-  'app/api/fetch-odata-metadata/route.ts',
-  'app/api/test-s4-odata-read/route.ts',
 ];
 
 test.describe('the S/4 credential vault is all-or-nothing', () => {

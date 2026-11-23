@@ -160,36 +160,6 @@ test.describe('the tenant connection check', () => {
   });
 });
 
-test.describe('the OData read', () => {
-  const REL = 'app/api/test-s4-odata-read/route.ts';
-
-  test('is metered per account before the body is read', () => {
-    const src = code(REL);
-    const call = src.match(/assertRateLimit\(\s*`([^`]+)`\s*,\s*(\d+)/);
-    expect(call).not.toBeNull();
-    expect(call![1]).toContain('${decodedToken.uid}');
-    expect(Number(call![2])).toBeLessThanOrEqual(60);
-    // Since SEC-b6716f0-19 the body is read through the bounded reader.
-    expect(src.indexOf('readBoundedBody(req')).toBeGreaterThan(-1);
-    expect(src.indexOf('assertRateLimit(')).toBeLessThan(src.indexOf('readBoundedBody(req'));
-  });
-
-  test('never continues a declared scheme without its credential', () => {
-    const src = code(REL);
-    expect(src, 'a scheme adds its header only when the credential happens to be there').not.toMatch(/if \((user && pass|tokenData\.access_token|tokenUrl && clientId && clientSecret)\)/);
-    expect(src).not.toMatch(/authType === '(basic|oauth2|sap_hub)' &&/);
-    expect(src.match(/requireAccessToken\(await fetchOAuth2Token\(/g) || []).toHaveLength(2);
-  });
-
-  test('cancels the body of a refused read', () => {
-    const src = code(REL);
-    const notOk = src.indexOf('if (!response.ok) {', src.indexOf('safeFetch(readUrl'));
-    expect(notOk).toBeGreaterThan(-1);
-    const answer = src.indexOf('return NextResponse.json(', notOk);
-    expect(src.slice(notOk, answer)).toContain('response.body?.cancel()');
-  });
-});
-
 test.describe('the Resend webhook', () => {
   const REL = 'app/api/webhooks/resend/route.ts';
 

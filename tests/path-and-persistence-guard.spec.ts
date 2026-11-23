@@ -53,7 +53,7 @@ test.describe('OData service paths are constrained, not just hosts', () => {
     expect(route).toContain('servicePath === null || !isSafeODataServicePath(servicePath)');
   });
 
-  for (const rel of ['app/api/fetch-s4-metadata/route.ts', 'app/api/test-s4-odata-read/route.ts']) {
+  for (const rel of ['app/api/fetch-s4-metadata/route.ts']) {
     test(`${rel} validates before building the URL`, () => {
       const source = read(rel);
       expect(source, `${rel} must use the shared validator`).toContain('isSafeODataServicePath');

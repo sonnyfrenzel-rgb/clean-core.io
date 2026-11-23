@@ -393,9 +393,9 @@ export const ODATA_BODY_LIMITS = { maxBytes: 8 * 1024 * 1024, timeoutMs: 20_000 
  * credentials can read — the credentials being the stored ones, which is the
  * whole point of the allowlist in the first place.
  *
- * Lived only in test-s4-odata-read while fetch-s4-metadata concatenated the raw
- * body value. One copy now, because the next OData route will be written by
- * copying one of these two.
+ * Lived only in test-s4-odata-read (removed in 3.5.0) while fetch-s4-metadata
+ * concatenated the raw body value. One copy, because the next OData route will be
+ * written by copying an existing one.
  */
 export function isSafeODataServicePath(servicePath: string): boolean {
   if (typeof servicePath !== 'string' || !servicePath) return false;

@@ -46,7 +46,7 @@ export const LIVE_TEST_EXECUTION: LockedPath = {
     closed:
       'Executing generated tests against a connected S/4HANA tenant: POST /api/run-tests with s4Environment "live", which would let generated code send requests to the tenant through the application credential proxy.',
     open:
-      'Running generated tests against mocks in the isolated test runner (its own Cloud Run service; a deployed app without it runs no tests); checking a tenant connection, reading its OData metadata and one read-only OData call (/api/test-s4-connection, /api/fetch-s4-metadata, /api/test-s4-odata-read) — none of these executes generated code.',
+      'Running generated tests against mocks in the isolated test runner (its own Cloud Run service; a deployed app without it runs no tests); checking a tenant connection and reading its OData metadata (/api/test-s4-connection, /api/fetch-s4-metadata) — none of these executes generated code.',
   },
   reason:
     'Generated test code is untrusted. It runs in a separate runner service without roles, secrets or open network egress, and a live run reaches the tenant only through a proxy that holds the credentials itself; the guards inside the runner process (Node permission model, preloaded module and network guards) remain defense in depth, not an isolation boundary. What is not done yet is the proof on the deployed profile and the documented review of the runner (review findings CR-09, CR-15).',

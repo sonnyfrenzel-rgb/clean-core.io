@@ -58,7 +58,7 @@ export function buildTenantApprovalEmail({ name, recipient }: TenantMailInput): 
       'In the Testing tool, open the tab "Check tenant connection", enter your credentials and choose "Test Connection".',
       '<strong>Credentials stay on the server.</strong> They are encrypted with AES-256-GCM in a server-only store, decrypted only for the server-side calls to your tenant, and never returned to the browser.',
       '<strong>Guidelines for a safe connection.</strong> Prefer importing the connection as an HTTP destination (JSON) from the SAP Destination service over entering credentials by hand. Use OAuth 2.0 SAML bearer assertions where you want user-specific identity propagation and audit logs in the target system. For on-premise development tenants, route traffic through the SAP Cloud Connector so your firewall stays closed. Connection checks and metadata reads are read-only requests from the Clean-Core.io server.',
-      '<strong>What is available now.</strong> A connection check, the OData metadata and one read-only call against your non-production tenant; the stored credentials; and a log of the read-only requests sent to the tenant.',
+      '<strong>What is available now.</strong> A connection check that reads the OData metadata of one service on your non-production tenant; the stored credentials; and a log of the read-only requests sent to the tenant.',
     ],
     link: dashboardLink('Your workspace:'),
     footer: [`Sent to ${recipient} because tenant access was granted for this account on Clean-Core.io.`, ERASURE_NOTE],

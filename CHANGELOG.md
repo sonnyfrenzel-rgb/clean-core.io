@@ -61,6 +61,14 @@ The new UX along the accepted mock-ups, every proposal of the UX review of 22.11
   "analysed" and "analysing" in pages, messages, API errors, mails, the whitepaper and `llms.txt`. Addresses,
   ids and stored values are unchanged; the legal texts are untouched, and the engine's own wording in signed
   results ("Not established for the analysed code") stays until an engine release gates it.
+
+### Removed
+
+- **The Testing OData explorer** (owner, 23.11.2026). Its page part had left Testing with ADR-131; its two routes go now:
+  `/api/fetch-odata-metadata` (a service's metadata for the explorer) and `/api/test-s4-odata-read` (the entity-set
+  check), with `lib/s4-entity-set-metadata.ts` and the specs that held only them. The connection check in Settings
+  ("Your SAP test system", `/api/test-s4-connection`) stays as it was. Help, Settings, the access mail, the chatbot
+  and the locked-path text no longer promise "one read-only call".
 - The charts under the map count FORM and method names apart: a FORM named like a method finds its `PERFORM`
   callers again, and only `PERFORM` calls a FORM (`lib/process-fact-charts.ts`, display only; QA d0f38d1a7bc7).
 - The UX review workflow runs on `main` only; started on any other ref, every job is skipped (SEC-35f5c34-01).

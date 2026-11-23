@@ -20,10 +20,8 @@ const ROOT = path.resolve(__dirname, '..');
 
 /** Every route that sends a request to a connected tenant, and the probe it uses. */
 const TENANT_READERS = [
-  'app/api/fetch-odata-metadata/route.ts',
   'app/api/fetch-s4-metadata/route.ts',
   'app/api/test-s4-connection/route.ts',
-  'app/api/test-s4-odata-read/route.ts',
   'lib/s4-connection-probe.ts',
 ];
 
@@ -84,10 +82,6 @@ test('every URL a tenant reader builds ends in /$metadata', () => {
       expect(u, `${rel} builds a tenant URL that is not a service's $metadata`).toMatch(/\/\$metadata$/);
     }
   }
-  // The route that had the catalog mode builds its candidates this way; if the
-  // pattern above stopped seeing them, the check would pass on nothing.
-  const odata = code('app/api/fetch-odata-metadata/route.ts');
-  expect([...odata.matchAll(/`\$\{resolvedUrl\}[^`]*\/\$metadata`/g)].length).toBeGreaterThanOrEqual(3);
 });
 
 test('no tenant reader names an entity set, a query option or the service catalog', () => {
@@ -111,21 +105,10 @@ test('no tenant reader names an entity set, a query option or the service catalo
   }
 });
 
-test('a metadata request without a service name is refused before anything is sent', () => {
-  const src = code('app/api/fetch-odata-metadata/route.ts');
-  const refusal = src.indexOf('if (!servicePath) {');
-  expect(refusal, 'the route answers a call without a service name again').toBeGreaterThan(-1);
-  expect(refusal, 'the refusal comes after the tenant was asked for a token').toBeLessThan(src.indexOf('await buildAuthHeaders('));
-  expect(refusal).toBeLessThan(src.indexOf('fetchWithTimeout(candidateUrl'));
-  expect(src).not.toMatch(/mode: 'catalog'/);
-});
-
 test('the Testing stage no longer asks for the service catalog', () => {
   const page = fs.readFileSync(path.join(ROOT, 'app', '(app)', 'project', '[projectId]', 'testing', 'page.tsx'), 'utf8');
   expect(page).not.toContain('handleFetchODataCatalog');
   expect(page).not.toContain('Discover Services');
-  // Every call of the metadata route names a service, wherever it is made. Since ADR-131 (3.5.0) the Testing page
-  // has no service explorer and makes none; a caller that comes back must send `servicePath`.
   const sources: string[] = [];
   const walk = (dir: string) => {
     for (const e of fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true })) {
@@ -137,8 +120,12 @@ test('the Testing stage no longer asks for the service catalog', () => {
   };
   for (const dir of ['app', 'components', 'hooks', 'lib']) walk(dir);
   expect(sources.length).toBeGreaterThan(500);
-  const calls = sources.flatMap((src) => [...src.matchAll(/fetch\('\/api\/fetch-odata-metadata'[\s\S]*?\}\)\s*\r?\n\s*\}\);/g)].map((m) => m[0]));
-  for (const c of calls) expect(c, 'a call of the metadata route sends no service name').toContain('servicePath:');
+  // Since ADR-131 (3.5.0) the Testing page has no service explorer, and since the owner decision of 23.11.2026 its
+  // two routes are gone: nothing calls them, and neither comes back unnoticed.
+  for (const route of ['/api/fetch-odata-metadata', '/api/test-s4-odata-read']) {
+    expect(sources.filter((src) => src.includes(`'${route}'`)), `a source calls the removed ${route}`).toEqual([]);
+    expect(fs.existsSync(path.join(ROOT, 'app', route, 'route.ts')), `${route} is back`).toBe(false);
+  }
 });
 
 test('the tenant-security page says what the routes read, not more', () => {

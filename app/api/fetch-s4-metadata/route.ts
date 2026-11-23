@@ -255,8 +255,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Per account, for the same reason as its sibling
-    // `app/api/fetch-odata-metadata/route.ts`: this route reaches out to a host
+    // Per account, as its former sibling `app/api/fetch-odata-metadata/route.ts`
+    // was (removed in 3.5.0): this route reaches out to a host
     // the body names and reads a document of up to 8 MB from it, and
     // `middleware.ts` excludes `/api` from its matcher, so nothing bounded how
     // often one MFA-confirmed account could do that.

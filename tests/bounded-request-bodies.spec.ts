@@ -59,7 +59,6 @@ test('the named routes no longer parse a request body without a bound', () => {
     'app/api/projects/[projectId]/process-revisions/route.ts',
     'app/api/projects/[projectId]/requirements-spec/route.ts',
     'app/api/model-stages/route.ts',
-    'app/api/fetch-odata-metadata/route.ts',
     'app/api/fetch-s4-metadata/route.ts',
     'app/api/portfolio/selections/route.ts',
     'app/api/portfolio/selections/[selectionId]/route.ts',

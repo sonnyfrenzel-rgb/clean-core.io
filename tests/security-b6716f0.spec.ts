@@ -21,7 +21,6 @@ test('SEC-b6716f0-15 · runs/create takes the narrative as text or not at all', 
 
 for (const rel of [
   'app/api/projects/[projectId]/cost-assumptions/route.ts', // SEC-b6716f0-33
-  'app/api/test-s4-odata-read/route.ts', // SEC-b6716f0-19
 ]) {
   test(`${rel} reads its request through the bounded reader only`, () => {
     const src = code(rel);

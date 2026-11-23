@@ -46,9 +46,7 @@ function answers(src: string): string[] {
 test('SEC-2026-525: no token exchange hands the endpoint\'s response body to the caller', () => {
   for (const [file, route] of [
     ['app/api/fetch-s4-metadata/route.ts', 'api/fetch-s4-metadata'],
-    ['app/api/fetch-odata-metadata/route.ts', 'api/fetch-odata-metadata'],
     ['app/api/test-s4-connection/route.ts', 'api/test-s4-connection'],
-    ['app/api/test-s4-odata-read/route.ts', 'api/test-s4-odata-read'],
   ] as const) {
     const src = code(file);
     expect(src, `${file} quotes the token endpoint`).not.toMatch(/Response: \$\{errorBody/);
@@ -84,13 +82,6 @@ test('SEC-2026-481, SEC-2026-492: the catch answers a fixed sentence and logs th
   }
 });
 
-test('SEC-2026-497: the $metadata 404 names no caught error text', () => {
-  const src = code('app/api/fetch-odata-metadata/route.ts');
-  expect(src).not.toMatch(/lastError = err\??\.message/);
-  expect(src).not.toMatch(/lastError = errMessage\(/);
-  expect(src).toContain("logger.warn('odata metadata candidate failed'");
-});
-
 /**
  * Nor into the log (QA review of 46a7d64baad3). The first round kept the
  * upstream body out of the answer by moving the first 200/300 characters into
@@ -112,9 +103,7 @@ test('an upstream error body reaches the log only as a shape word', () => {
 
   for (const file of [
     'app/api/fetch-s4-metadata/route.ts',
-    'app/api/fetch-odata-metadata/route.ts',
     'app/api/test-s4-connection/route.ts',
-    'app/api/test-s4-odata-read/route.ts',
   ]) {
     const src = code(file);
     for (const m of src.matchAll(/logger\.(?:info|warn|error|critical)\(/g)) {
@@ -133,7 +122,7 @@ test('an upstream error body reaches the log only as a shape word', () => {
 });
 
 test('a failed S/4 request answers a fixed sentence, not the fetch error text', () => {
-  for (const file of ['app/api/test-s4-connection/route.ts', 'app/api/test-s4-odata-read/route.ts']) {
+  for (const file of ['app/api/test-s4-connection/route.ts']) {
     const src = code(file);
     for (const answer of answers(src)) {
       expect(answer, `${file} answers with a caught fetch error`).not.toMatch(/(fetchErr|getError|headError)\??\.message/);

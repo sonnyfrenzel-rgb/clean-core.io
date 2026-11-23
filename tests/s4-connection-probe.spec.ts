@@ -250,16 +250,6 @@ test.describe('the route reaches the tenant only through the probe', () => {
     expect(src).toContain('safeFetch(tokenUrl,');
   });
 
-  test('the record read stays a separate route behind the same gates', () => {
-    const src = code('app/api/test-s4-odata-read/route.ts');
-    for (const gate of ['verifyRequestAuth(req)', 'assertMfaSatisfied(req, decodedToken)', 'assertS4TenantAccess(decodedToken.uid', 'assertRateLimit(`test-s4-odata-read:${decodedToken.uid}`']) {
-      expect(src, gate).toContain(gate);
-    }
-    // What it answers: a count and field names, never the record.
-    expect(src).not.toMatch(/NextResponse\.json\(\{[^}]*\bresults\b/);
-    expect(src).not.toMatch(/\bdata:\s*data\b|record:\s*results\[0\]/);
-  });
-
   test('the interfaces name the check and the read honestly', () => {
     // Since 3.5.0 (ADR-131 (5)) Testing holds no tenant check or read; it links to Settings.
     const testing = fs.readFileSync(path.join(ROOT, 'app/(app)/project/[projectId]/testing/page.tsx'), 'utf8');
