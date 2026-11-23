@@ -37,7 +37,8 @@ import '@/components/landing/landing-35.css';
  * build of the accepted mockup `docs/roadmap/landing-35-mockup.html` with the
  * owner's decisions of 13.11.2026: the hero picture is the map building up
  * (O1 = B), the story comes before the price (O2), the calls to action are the
- * showcase's own words (O3), the catalog lookup lives on its own page (O7),
+ * showcase's own words (O3, made plain by the UX review of 22.11.2026), the
+ * catalog lookup lives on its own page (O7),
  * the header offers "Sign in" and "Start free" (O9).
  *
  * One shared story for Business, IT and Management: a plain headline for
@@ -53,8 +54,11 @@ import '@/components/landing/landing-35.css';
  *     figures from `lib/demo-release.json`, the reference run from
  *     `lib/reference-analysis.ts`, the trust lines from `lib/trust-claims.ts`,
  *     the FAQ from `lib/landing-faq.ts`.
- *   - **No drawn product picture.** Where the mockup draws a screen of the
- *     product, the page keeps a marked place for the capture that will show it.
+ *   - **No picture of the product.** The hero map is read from the engine at
+ *     render time; screenshots go stale with every release, so the page shows
+ *     none (UX review 22.11.2026, Q10; ADR-122 as amended 23.11.2026).
+ *   - **Eight screens at most at 1440 px** (UX review L3): seven sections, the
+ *     depth in closed "For IT" folds.
  *   - **One header.** Every section title comes from `SectionHeader`
  *     (`tests/landing-style-guard.spec.ts`).
  */
@@ -90,20 +94,25 @@ export const metadata: Metadata = withTwitterCard({
 
 /** The public showcase (roadmap row 3.5.0, item 8): no account, no third-party request, no model call. */
 const SHOWCASE = '/demo';
-/** The showcase's length, as its story is counted — the link text must stay true (owner, 13.11.2026). */
-const SHOWCASE_CTA = 'Watch the 4-minute demo';
-const DO_CTA = 'Analyse your own Z program — free account';
+/**
+ * The first click (UX review 22.11.2026, L4 and Q10): the showcase, and the button says what it is —
+ * a click-through that needs no account, not a video. Its length as the owner counted it (13.11.2026)
+ * stays in the text around it.
+ */
+const SHOWCASE_CTA = 'Try the demo, no account';
+/** The second path opens the unchanged sign-in dialog; the button says so. */
+const DO_CTA = 'Analyze your own code, free account';
 /** The repository the product publishes as its own. */
 const REPO = 'https://github.com/sonnyfrenzel-rgb/clean-core.io';
 
 /** When an object lands in a bucket — `DESIGN.md` §5.6, as `lib/abap/public-cloud-fit.ts` checks it. */
 const BUCKET_RULE: Record<string, string> = {
   retire:
-    'The rule it serves is confirmed “Drop”, or a usage import shows no executions over at least 13 months — then it is a candidate, an open check, not a verdict.',
+    'The rule it serves is confirmed “Drop”, or a usage import shows no executions over at least 13 months; then it is a candidate, an open check, not a verdict.',
   'no-catalogued-path':
     'Needed, below the target platform’s bar, and SAP’s Cloudification Repository names no released API and no successor for it.',
   rebuild:
-    'Needed, below the bar, and a successor or an extension path is named — and every modification or own write to an SAP table.',
+    'Needed, below the bar, and a successor or an extension path is named, and every modification or own write to an SAP table.',
   keep: 'Needed and permitted on the target platform: SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) level A only, SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition) level A or B.',
 };
 
@@ -143,25 +152,6 @@ function ForIt({ title, children }: { title: string; children: React.ReactNode }
   );
 }
 
-/**
- * The place a product picture will stand. The mockup draws these screens; the
- * page shows only captures of the product (roadmap row 3.5.0, item 4), so until
- * those exist the place says what it will show.
- */
-function CaptureToCome({ name, shows }: { name: string; shows: string[] }) {
-  return (
-    <figure className="capture-todo" data-capture-todo={name} aria-label={`Product picture to come: ${name}`}>
-      <span className="k">Picture follows with the 3.5 captures</span>
-      <b>{name}</b>
-      <ul>
-        {shows.map((s) => (
-          <li key={s}>{s}</li>
-        ))}
-      </ul>
-    </figure>
-  );
-}
-
 function TextLink({ href, children }: { href: string; children: React.ReactNode }) {
   return href.startsWith('http') ? (
     <a href={href} className="textlink" rel="noopener noreferrer" target="_blank">
@@ -197,7 +187,7 @@ export default function Home() {
   const toolchainRows: Array<{ tool: string; purpose: string; relation: string }> = [
     {
       tool: 'ABAP Test Cockpit (ATC)',
-      purpose: 'The authoritative check for clean core violations — keep using it.',
+      purpose: 'The authoritative check for clean core violations; keep using it.',
       relation: `Reads the same SAP Cloudification Repository (${catalogObjects}, classified) and shows its reading as level A–D. Import ATC results to compare them with the engine.`,
     },
     {
@@ -225,8 +215,8 @@ export default function Home() {
   /**
    * Structured data. Every sentence is one the page also says; the FAQ is the
    * visible list (`lib/landing-faq.ts`); version and date from `lib/version.ts`.
-   * No rating, no review, no figure typed in. The screenshots return with the
-   * 3.5 captures; a VideoObject only once the video is published.
+   * No rating, no review, no figure typed in; a VideoObject only once the
+   * video is published.
    */
   const schemaJson = {
     '@context': 'https://schema.org',
@@ -344,12 +334,10 @@ export default function Home() {
               </p>
               <h1 id="hero-title">
                 <span className="h1k">SAP Clean Core Accelerator</span>
-                <span className="h1m">Know what your custom ABAP does — and what to do with it.</span>
+                <span className="h1m">Know what your custom ABAP does.</span>
               </h1>
-              <p className="hero-lead">
-                Clean-Core.io reads a Z program and shows the business process it runs, the rules hidden in it and what
-                stands between it and a clean core. Every step points to its line of code.
-              </p>
+              {/* The hero says at most 25 words (UX review 22.11.2026, Q10): kicker, headline and this line. */}
+              <p className="hero-lead">Its process, rules and clean core gaps, line by line.</p>
               <div className="cta-row">
                 <Link href={SHOWCASE} className={publicButton('primary')} data-cta-see="">
                   <span className="whitespace-normal">{SHOWCASE_CTA}</span> {ARROW}
@@ -358,10 +346,6 @@ export default function Home() {
                   <span className="whitespace-normal">{DO_CTA}</span>
                 </AuthLink>
               </div>
-              <p className="cta-note">
-                <b>The demo needs no account</b> — one fictitious program, read end to end. <b>Free to start:</b> five
-                analysis runs of your own code and every example once, no card.
-              </p>
             </div>
 
             <figure className="shot" aria-labelledby="shot-cap">
@@ -386,16 +370,6 @@ export default function Home() {
                   </span>
                 </div>
                 <div className="wbody">
-                  <div className="does">
-                    <div className="t">
-                      <h3>What this program does</h3>
-                      <p>
-                        It approves emergency purchase requisitions and creates the purchase order in SAP. A price more
-                        than 5&nbsp;% above the agreed one holds the requisition for a buyer{' '}
-                        <span className="ln">L{holdRule.line}</span>.
-                      </p>
-                    </div>
-                  </div>
                   <div className="map" data-hero-map="">
                     <p className="part">
                       The main flow · {build.shownSteps} of its {build.totalSteps} steps
@@ -416,7 +390,7 @@ export default function Home() {
               </div>
             </figure>
 
-            {/* The three reader entries: orientation, never a gate. */}
+            {/* The three reader entries: orientation, never a gate; one row since the length budget (UX review 22.11.2026, L3). */}
             <nav className="readers" aria-labelledby="readers-k">
               <p className="k" id="readers-k">
                 One page for three questions
@@ -425,25 +399,19 @@ export default function Home() {
                 <li>
                   <a href="#process">
                     <span className="who">Business</span>
-                    <span className="q">What does this program do in our process, and which rules are hidden in it?</span>
-                    <span className="gets">The process as a map in plain words, and every hard-coded rule to keep, change or drop.</span>
-                    <span className="go">Read the process →</span>
+                    <span className="q">What does it do, and which rules are in it?</span>
                   </a>
                 </li>
                 <li>
                   <a href="#for-it">
                     <span className="who">IT</span>
-                    <span className="q">What does it touch, where does it break clean core, how do we rebuild it?</span>
-                    <span className="gets">Findings at their line, SAP objects graded A–D, the route, a code draft and tests.</span>
-                    <span className="go">The facts for IT →</span>
+                    <span className="q">What does it touch, and how do we rebuild it?</span>
                   </a>
                 </li>
                 <li>
                   <a href="#decide">
                     <span className="who">Management</span>
-                    <span className="q">What do we risk, what does it cost, what do we decide?</span>
-                    <span className="gets">One page: what it is for, an indication, the risk and the options to decide on.</span>
-                    <span className="go">The decision →</span>
+                    <span className="q">What do we risk, and what do we decide?</span>
                   </a>
                 </li>
               </ul>
@@ -451,31 +419,48 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 1 · process */}
+        {/* 1 · process and the rules in it (one section since 23.11.2026, UX review L3) */}
         <section className="sec alt" id="process" aria-labelledby="process-title">
           <div className="wrap">
-            <SectionHeader eyebrow="From code to process" title="What does this program actually do?" titleId="process-title">
-              Clean-Core.io draws the process the code runs as a map you can walk through, and writes what it does in
-              plain words, with every sentence pointing to its line.
+            <SectionHeader eyebrow="From code to process" title="What does it do, and which rules are hidden in it?" titleId="process-title">
+              The process the code runs, as a map in plain words, and every limit, plant or tolerance written into it.
+              Each with its line.
             </SectionHeader>
             <ForYou
-              business="The steps in your words, who is involved, and how a case can end."
-              it="Every element carries its line, read by the engine before any model."
-              management="What the program is for, before anyone decides about it."
+              business="The steps in your words, and each rule to keep, change, drop or clarify."
+              it="Every element and every hard-coded literal carries its line, read before any model."
+              management="What the program is for, and which decisions are the business's to make."
             />
-            <CaptureToCome
-              name="Analyze, Business view: the walk-through on the map"
-              shows={[
-                `The walk-through stopped at a decision point of ${DEMO_OBJECT_NAME}, with its line.`,
-                'The text around the map — how it runs, who is involved, questions for the business.',
-                'The two charts: how a case can end, and what it changes or only reads.',
-                'The two endings: re-design this program, or analyse another one.',
-              ]}
-            />
+            <div id="rules">
+              <div className="rules" role="list" aria-label="Three rules of the example, read from the code">
+                {hero.rules.shown.map((r, i) => {
+                  const sentence = RULE_SENTENCES[r.label];
+                  return (
+                    <div key={r.id} className="card rule" role="listitem" data-landing-rule={r.label}>
+                      <div>
+                        <p className="rt">{sentence?.text ?? r.plain}</p>
+                        <p className="rm">
+                          <span className="ln">L{r.line}</span>
+                          <code>{r.label}</code>
+                          <CcProvenanceChip value="reconstructed" />
+                          {sentence && <span>{sentence.effect}</span>}
+                        </p>
+                      </div>
+                      <RuleAnswer initial={i === 0 ? 'Keep' : i === 1 ? 'Clarify' : undefined} />
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="honest">
+                Three of the {hero.rules.total} rules the engine reads from the fictitious demo program. The answers here
+                are only a picture; in the product they are recorded as the signed-in account: a self-declaration, not a
+                mandate.
+              </p>
+            </div>
             <ForIt title="How the map is built, and what leaves as a file">
               <ul>
                 <li>
-                  A deterministic ABAP engine parses the program first — no model. The same file gives the same map.
+                  A deterministic ABAP engine parses the program first, with no model. The same file gives the same map.
                   Start and end events, tasks, decision points and sub-processes each carry a line anchor, or the reason
                   they have none.
                 </li>
@@ -498,7 +483,8 @@ export default function Home() {
               </ul>
             </ForIt>
             <p className="linkrow">
-              Deep dives: <TextLink href="/features/process-blueprints">Process blueprints</TextLink>
+              <TextLink href={SHOWCASE}>The map and the rules in the demo →</TextLink>
+              <TextLink href="/features/process-blueprints">Process blueprints</TextLink>
               <TextLink href="/abap-custom-code-analysis">ABAP code analysis</TextLink>
               <TextLink href="/features/extensibility-routing">Extensibility routing</TextLink>
               <TextLink href="/features/rap-cap-engine">RAP and CAP drafts</TextLink>
@@ -509,54 +495,12 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 2 · rules */}
-        <section className="sec" id="rules" aria-labelledby="rules-title">
-          <div className="wrap">
-            <SectionHeader eyebrow="Rules in the code" title="Which business rules are hidden in the code?" titleId="rules-title">
-              Limits, plants and tolerances written into a program decide real cases. Clean-Core.io lists each one with
-              its line, so the business can say what still holds.
-            </SectionHeader>
-            <ForYou
-              business="Answer each rule: keep, change, drop or clarify."
-              it="Hard-coded literals, not customizing, with their line."
-              management="Which decisions are the business's to make before a rebuild."
-            />
-            <div className="rules" role="list" aria-label="Three rules of the example, read from the code">
-              {hero.rules.shown.map((r, i) => {
-                const sentence = RULE_SENTENCES[r.label];
-                return (
-                  <div key={r.id} className="card rule" role="listitem" data-landing-rule={r.label}>
-                    <div>
-                      <p className="rt">{sentence?.text ?? r.plain}</p>
-                      <p className="rm">
-                        <span className="ln">L{r.line}</span>
-                        <code>{r.label}</code>
-                        <CcProvenanceChip value="reconstructed" />
-                        {sentence && <span>{sentence.effect}</span>}
-                      </p>
-                    </div>
-                    <RuleAnswer initial={i === 0 ? 'Keep' : i === 1 ? 'Clarify' : undefined} />
-                  </div>
-                );
-              })}
-            </div>
-            <p className="honest">
-              Three of the {hero.rules.total} rules the engine reads from the fictitious demo program. The answers here
-              are only a picture; in the product they are recorded as the signed-in account — a self-declaration, not a
-              mandate.
-            </p>
-            <p className="linkrow">
-              <TextLink href={SHOWCASE}>See the rules in the demo →</TextLink>
-            </p>
-          </div>
-        </section>
-
-        {/* 3 · clean core */}
-        <section className="sec alt" id="clean-core" aria-labelledby="cc-title">
+        {/* 2 · clean core */}
+        <section className="sec" id="clean-core" aria-labelledby="cc-title">
           <div className="wrap">
             <SectionHeader eyebrow="SAP clean core" title="How far is it from a clean core, and where can it go?" titleId="cc-title">
-              Clean core keeps SAP standard untouched: extensions use only what SAP releases for them. Clean-Core.io
-              shows, object by object, how far a program is from that, and the route that fits.
+              Clean core keeps SAP standard untouched. Clean-Core.io shows, object by object, how far a program is from
+              it, and the route that fits.
             </SectionHeader>
             <ForYou
               business="Why an upgrade can hurt, in one sentence per part."
@@ -623,12 +567,12 @@ export default function Home() {
               <ul>
                 <li>
                   Levels are Clean-Core.io&apos;s versioned reading of the states SAP publishes in its Cloudification
-                  Repository and object classification — an orientation, never part of a signed audit pack. Confirm with
+                  Repository and object classification: an orientation, never part of a signed audit pack. Confirm with
                   ABAP Test Cockpit; import ATC results to compare them with the engine.
                 </li>
                 <li>
                   The free SAP object catalog shows each object&apos;s release state, level and successor, without an
-                  account — {catalogObjects} classified, synced {facts.catalogSyncDate}.{' '}
+                  account: {catalogObjects} classified, synced {facts.catalogSyncDate}.{' '}
                   <TextLink href="/catalog">Open the SAP object catalog →</TextLink>
                 </li>
                 <li>
@@ -647,26 +591,48 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 4 · decide */}
-        <section className="sec" id="decide" aria-labelledby="decide-title">
+        {/* 3 · the decision, and what the seven tools do after it (one section since the length budget, UX review 22.11.2026, L3) */}
+        <section className="sec alt" id="decide" aria-labelledby="decide-title">
           <div className="wrap">
-            <SectionHeader eyebrow="The decision" title="What do we risk, and what do we decide?" titleId="decide-title">
-              Keep it, rebuild it, move to SAP standard or retire it. Clean-Core.io gives an indication with its reasons —
-              the decision stays yours.
+            <SectionHeader eyebrow="The decision and after" title="What do we decide, and what comes after?" titleId="decide-title">
+              Keep, rebuild, move to SAP standard or retire: an indication with its reasons, then the same evidence through
+              every tool. The decision stays yours.
             </SectionHeader>
             <ForYou
-              business="The open questions that block a decision, in plain words."
-              it="One rule per object decides its bucket; every assignment shows its evidence."
-              management="Everything on one page: indication, risk, options, next steps."
+              business="The open questions that block a decision, then documentation ready for your own template."
+              it="One rule per object decides its bucket; then a RAP or CAP draft, test scenarios, an abapGit package."
+              management="Indication, risk and options on one page; costs only as a simulation on your assumptions."
             />
-            <CaptureToCome
-              name="Analyze, Management view: the decision on one page"
-              shows={[
-                'What the program is for, and the indication from the analysis — an indication, not a decision.',
-                `Four figures: records it changes, ${DEMO_FIGURES.rulesRevealed} rules in the code, Clean Core Score ${DEMO_FIGURES.cleanCoreScore} of 100, how often it runs.`,
-                'The options to decide on; effort only where Economics computes it with your own rates.',
-              ]}
-            />
+            <div id="after" className="after">
+              <ol className="stages" aria-label="The seven tools of a project">
+                {PHASES.map((p, i) => (
+                  <li key={p.key} className={i === 0 ? 'cur' : undefined} data-landing-phase={p.key}>
+                    <span className="no">{p.n}</span>
+                    <span data-landing-phase-title="">{p.label}</span>
+                  </li>
+                ))}
+              </ol>
+              <div className="card limits">
+                <h3>What it is, and what it is not</h3>
+                <ul>
+                  <li>
+                    An <b>indication</b> for the decision, never the decision.
+                  </li>
+                  <li>
+                    The code is a <b>draft for review</b>, not a finished product.
+                  </li>
+                  <li>CAP tests run in an isolated runner against mocks, not in your SAP system.</li>
+                  <li>On the RAP track the tests are an ABAP Unit class for your own system; you record its result there.</li>
+                  <li>
+                    Costs appear only as a <CcProvenanceChip value="simulation" /> on your assumptions.
+                  </li>
+                  <li>A person signs the result, not the tool.</li>
+                </ul>
+                <p className="linkrow">
+                  <TextLink href="/how-it-works">How it works, and its limits →</TextLink>
+                </p>
+              </div>
+            </div>
             <ForIt title="Four buckets, one rule per object">
               <div className="buckets">
                 {PUBLIC_CLOUD_FIT_BUCKETS.map((b) => (
@@ -681,63 +647,17 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 5 · after the decision */}
-        <section className="sec alt" id="after" aria-labelledby="after-title">
-          <div className="wrap">
-            <SectionHeader eyebrow="After the decision" title="What happens after the decision?" titleId="after-title">
-              The same evidence carries on: a target design, a code draft, tests, documentation your company can use, the
-              costs and a handover. Each tool produces something you can read and check.
-            </SectionHeader>
-            <ol className="stages" aria-label="The seven tools of a project">
-              {PHASES.map((p, i) => (
-                <li key={p.key} className={i === 0 ? 'cur' : undefined} data-landing-phase={p.key}>
-                  <span className="no">{p.n}</span>
-                  <span data-landing-phase-title="">{p.label}</span>
-                </li>
-              ))}
-            </ol>
-            <ForYou
-              business="Documentation that answers first, ready for your own template."
-              it="A RAP or CAP draft, test scenarios, an abapGit package."
-              management="Costs only as a simulation on your own assumptions."
-            />
-            <div className="after">
-              <CaptureToCome
-                name="Documentation, Overview"
-                shows={['The answer first, five tabs with counts, the process as tiles with their lines.', 'Export as the one primary action.']}
-              />
-              <div className="card limits">
-                <h3>What it is, and what it is not</h3>
-                <ul>
-                  <li>
-                    The code is a <b>draft for review</b>, not a finished product.
-                  </li>
-                  <li>CAP tests run in an isolated runner against mocks — not in your SAP system.</li>
-                  <li>On the RAP track the tests are an ABAP Unit class for your own system; you record its result there.</li>
-                  <li>
-                    Costs appear only as a <CcProvenanceChip value="simulation" /> on your assumptions.
-                  </li>
-                  <li>A person signs the result, not the tool.</li>
-                </ul>
-                <p className="linkrow">
-                  <TextLink href="/how-it-works">How it works, and its limits →</TextLink>
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* 6 · evidence */}
+        {/* 4 · evidence, and what happens to your code (one section since 23.11.2026, UX review L3) */}
         <section className="sec" id="evidence" aria-labelledby="evidence-title">
           <div className="wrap">
-            <SectionHeader eyebrow="Evidence you can check" title="Can we check what it says?" titleId="evidence-title">
-              Yes. Every statement says where it comes from, and every completed analysis is sealed as a signed run that
-              anyone can verify — also years later, also outside the product.
+            <SectionHeader eyebrow="Evidence and your code" title="Can you check what it says, and is your code safe?" titleId="evidence-title">
+              Every statement says where it comes from; every analysis is a signed run. Your code stays in the EU, open
+              only to you and whom you invite.
             </SectionHeader>
             <ForYou
-              business="What is read from the code, what AI wrote, what is still open."
-              it="Signed runs and an audit pack with an offline verifier."
-              management="A decision you can defend in an audit."
+              business="What is read from the code, what AI wrote, and who will see the program."
+              it="Signed runs, an offline verifier, and what leaves your system."
+              management="A decision you can defend in an audit, and where the data lives."
             />
             <div className="ev">
               <div className="card prov">
@@ -764,7 +684,7 @@ export default function Home() {
                   <span>
                     <CcProvenanceChip value="not-determined" />
                   </span>
-                  <span>The code cannot show it — said, not guessed.</span>
+                  <span>The code cannot show it; said, not guessed.</span>
                 </div>
                 <div className="prow">
                   <span>
@@ -789,6 +709,14 @@ export default function Home() {
                   <dt>In the product</dt>
                   <dd>every completed analysis is a signed run (HMAC); its audit pack is signed with HMAC and Ed25519 and verifies offline</dd>
                 </dl>
+                <p className="note">
+                  A signature proves where a run came from and that it is unchanged, not that it is right. A demo run is
+                  never signed.
+                </p>
+              </div>
+            </div>
+            <ForIt title="The reference run in detail: the SAP objects it touched">
+              <div data-landing-rollcall-card="">
                 <ul className="bucket3">
                   {[reference.resolved, reference.decision, reference.handedBack].map((b) => (
                     <li key={b.label}>
@@ -801,14 +729,6 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
-                <p className="note">
-                  A signature proves where a run came from and that it is unchanged — not that it is right. A demo run is
-                  never signed.
-                </p>
-              </div>
-            </div>
-            <ForIt title="The reference run in detail: the SAP objects it touched">
-              <div data-landing-rollcall-card="">
                 <p>
                   With the successor from SAP&apos;s own release data. Where the engine uses a curated field-level mapping
                   instead, the finding says so.
@@ -834,31 +754,13 @@ export default function Home() {
                 )}
               </div>
             </ForIt>
-            <p className="linkrow">
-              <TextLink href="/verify-pack">Verify an audit pack →</TextLink>
-              <TextLink href="/reference-analysis">Open the reference run</TextLink>
-            </p>
-          </div>
-        </section>
-
-        {/* 7 · your code, and the facts for IT */}
-        <section className="sec alt" id="for-it" aria-labelledby="forit-title">
-          <div className="wrap">
-            <SectionHeader eyebrow="Your code · for IT in depth" title="What happens to your code?" titleId="forit-title">
-              It is stored in the EU, only you and the people you invite can open it, and it is never sold. Below, the
-              facts IT asks for before anyone uploads a line.
-            </SectionHeader>
-            <ForYou
-              business="Whether you may upload the program, and who will see it."
-              it="What is deterministic, what a model writes, what leaves your system."
-              management="Where the data lives and who answers for it, for your risk register."
-            />
+            <div id="for-it" className="forit">
             {/* The trust lines verbatim from lib/trust-claims.ts, each with the document that says so. */}
             <ul className="trust3" data-landing-trust="">
               {[
                 { title: 'Stored in the EU', claims: [trust('residency'), trust('tracking')] },
                 { title: 'Only you, and whom you invite', claims: [trust('access')] },
-                { title: 'Never sold; training under your key’s terms', claims: [trust('training'), trust('free')] },
+                { title: 'Never sold; training under your key’s terms', claims: [trust('training')] },
               ].map((card) => (
                 <li key={card.title} className="card">
                   <b>{card.title}</b>
@@ -878,11 +780,8 @@ export default function Home() {
                 </li>
               ))}
             </ul>
-            <div className="card itfacts">
-              <h3>
-                <span className="pill">For IT</span> The facts, precisely
-              </h3>
-              <p>Everything here is in the code, the Privacy Policy or SECURITY.md — follow the links.</p>
+            <ForIt title="The facts, precisely, and next to SAP's own tools">
+              <p>Everything here is in the code, the Privacy Policy or SECURITY.md; follow the links.</p>
               <dl className="facts2">
                 <div className="fx">
                   <dt>Engine first</dt>
@@ -894,7 +793,7 @@ export default function Home() {
                 <div className="fx">
                   <dt>What a model writes</dt>
                   <dd>
-                    Business names, text, designs and code drafts — marked <CcProvenanceChip value="proposed" />, and in
+                    Business names, text, designs and code drafts, marked <CcProvenanceChip value="proposed" />, and in
                     every exported artefact as a header comment and a metadata field.
                   </dd>
                 </div>
@@ -908,7 +807,7 @@ export default function Home() {
                 </div>
                 <div className="fx">
                   <dt>Routes</dt>
-                  <dd>Key user candidates, in-app with ABAP Cloud (RAP), side-by-side on {BTP} (CAP) — each with its reasons and limits.</dd>
+                  <dd>Key user candidates, in-app with ABAP Cloud (RAP), side-by-side on {BTP} (CAP), each with its reasons and limits.</dd>
                 </div>
                 <div className="fx">
                   <dt>Signed runs</dt>
@@ -945,8 +844,7 @@ export default function Home() {
                   <dd>Independent, not affiliated with or endorsed by SAP SE.</dd>
                 </div>
               </dl>
-            </div>
-            <ForIt title="Next to SAP's own tools">
+              <h4 className="fk4">Next to SAP&apos;s own tools</h4>
               <div className="toolt" role="table" aria-label="SAP tools and how Clean-Core.io relates to them" data-landing-tools="">
                 <div className="tr head" role="row">
                   <span role="columnheader">SAP tool</span>
@@ -963,28 +861,22 @@ export default function Home() {
                 ))}
               </div>
             </ForIt>
-            <div className="card itpath" data-landing-it-path="">
-              <p>
-                <b>See it with your own code: 3 steps.</b> Create a free account, upload a file or an abapGit package, and
-                the process map appears first.
-              </p>
-              <AuthLink to="/admin/new-project/upload" variant="secondary" size="sm" testId="it-own-code">
-                Analyse your own Z program
-              </AuthLink>
             </div>
             <p className="linkrow">
-              <TextLink href={SECURITY_MODEL_URL}>SECURITY.md on GitHub →</TextLink>
+              <TextLink href="/verify-pack">Verify an audit pack →</TextLink>
+              <TextLink href="/reference-analysis">Open the reference run</TextLink>
+              <TextLink href={SECURITY_MODEL_URL}>SECURITY.md on GitHub</TextLink>
               <TextLink href={architectureUrl}>Architecture</TextLink>
               <TextLink href="/trust">Trust and privacy</TextLink>
             </p>
           </div>
         </section>
 
-        {/* 8 · start */}
-        <section className="sec" id="start" aria-labelledby="start-title">
+        {/* 6 · start */}
+        <section className="sec alt" id="start" aria-labelledby="start-title">
           <div className="wrap">
             <SectionHeader eyebrow="Start · free" title="What does it cost, and how do we start?" titleId="start-title">
-              Nothing. Watch the demo without an account; create a free account to analyse your own program.
+              Nothing. The demo needs no account, your own code a free one.
             </SectionHeader>
             <ForYou
               business="Bring the Z program nobody can explain any more."
@@ -1022,6 +914,11 @@ export default function Home() {
                   <div>
                     <h3>Bring your own Z program</h3>
                     <p>Upload a file or an abapGit package, or paste the code. The process map appears first.</p>
+                    <p className="step-act" data-landing-it-path="">
+                      <AuthLink to="/admin/new-project/upload" variant="secondary" size="sm" testId="it-own-code">
+                        See it with your own code
+                      </AuthLink>
+                    </p>
                   </div>
                 </li>
               </ol>
@@ -1031,7 +928,7 @@ export default function Home() {
                   <li>
                     <Check aria-hidden="true" />
                     <span>
-                      <b>Five free analysis runs</b> per account — once, not per month.
+                      <b>Five free analysis runs</b> per account, once, not per month.
                     </span>
                   </li>
                   <li>
@@ -1047,7 +944,7 @@ export default function Home() {
                   <li>
                     <Check aria-hidden="true" />
                     <span>
-                      <b>No quota with your own key</b> — Google Gemini, or from 23 December 2026 Claude by Anthropic. The
+                      <b>No quota with your own key</b>: Google Gemini, or from 23 December 2026 Claude by Anthropic. The
                       provider bills it under your own agreement; we take no payment.
                     </span>
                   </li>
@@ -1062,11 +959,11 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="card share">
+            {/* mailto links and a copy button: nothing goes to our server. */}
+            <div className="share">
               <p>
-                <b>Not your decision alone?</b> Send the 4-minute demo on — it needs no account.
+                <b>Not your decision alone?</b> Send the demo on; it needs no account.
               </p>
-              {/* mailto links and a copy button: nothing goes to our server. */}
               <div className="acts">
                 <a className={publicButton('secondary', 'sm')} href={shareBody('it')}>
                   Send to your IT colleague
@@ -1080,13 +977,13 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 9 · FAQ — the same list as the JSON-LD FAQPage above. */}
-        <section className="sec alt" id="faq" aria-labelledby="faq-title">
+        {/* 7 · FAQ — the same list as the JSON-LD FAQPage above. */}
+        <section className="sec" id="faq" aria-labelledby="faq-title">
           <div className="wrap">
             <SectionHeader eyebrow="FAQ" title="Questions people ask before they start" titleId="faq-title" />
             <div className="acc" data-landing-faq="">
-              {LANDING_FAQ.map((f, i) => (
-                <details key={f.q} open={i === 0} lang={f.lang}>
+              {LANDING_FAQ.map((f) => (
+                <details key={f.q} lang={f.lang}>
                   <summary>
                     <h3 data-faq-question="">{f.q}</h3>
                     <ChevronDown size={18} className="ch" aria-hidden="true" />

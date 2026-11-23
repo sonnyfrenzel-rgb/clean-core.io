@@ -44,14 +44,15 @@
   /* sections */
   .lp35 .sec { position: relative; padding: 64px 0; }
   .lp35 .sec.alt { background: var(--cc-surface); }
-  @media (min-width: 768px) { .lp35 .sec { padding: 96px 0; } }
+  /* 64 px on a phone, 56 px from 768 px: the page keeps to eight screens at 1440 (UX review 22.11.2026, L3). */
+  @media (min-width: 768px) { .lp35 .sec { padding: 56px 0; } }
   .lp35 .card { background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: var(--cc-radius-card); box-shadow: var(--cc-shadow); }
-  .lp35 .foryou { list-style: none; margin: 0 auto 32px; padding: 0; display: grid; gap: 10px; max-width: 980px; }
+  .lp35 .foryou { list-style: none; margin: 0 auto 24px; padding: 0; display: grid; gap: 10px; max-width: 1100px; }
   @media (min-width: 900px) { .lp35 .foryou { grid-template-columns: repeat(3, 1fr); } }
-  .lp35 .foryou li { display: flex; gap: 10px; align-items: flex-start; background: var(--cc-surface-muted); border: 1px solid var(--cc-line); border-radius: 10px; padding: 10px 12px; font-size: 14.5px; line-height: 1.45; }
+  .lp35 .foryou li { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; background: var(--cc-surface-muted); border: 1px solid var(--cc-line); border-radius: 10px; padding: 10px 12px; font-size: 14.5px; line-height: 1.45; }
   .lp35 .sec.alt .foryou li { background: var(--cc-page); }
-  .lp35 .foryou .who { flex: none; font-size: 11px; font-weight: 800; line-height: 1; text-transform: uppercase; letter-spacing: 0.06em; padding: 5px 7px; border-radius: 5px; background: var(--cc-surface); border: 1px solid var(--cc-line); color: var(--cc-ink); min-width: 88px; text-align: center; }
-  .lp35 .deep { margin: 28px auto 0; max-width: 980px; border: 1px solid var(--cc-line); border-radius: 10px; background: var(--cc-surface); }
+  .lp35 .foryou .who { flex: none; font-size: 11px; font-weight: 800; line-height: 1; text-transform: uppercase; letter-spacing: 0.06em; padding: 0; color: var(--cc-ink-muted); }
+  .lp35 .deep { margin: 16px auto 0; max-width: 1100px; border: 1px solid var(--cc-line); border-radius: 10px; background: var(--cc-surface); }
   .lp35 .sec.alt .deep { background: var(--cc-page); }
   .lp35 .deep > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 10px; padding: 14px 16px; font-weight: 700; }
   .lp35 .deep > summary::-webkit-details-marker { display: none; }
@@ -91,7 +92,7 @@
   .lp35 .cta-note b { color: var(--cc-ink); }
 
   /* product picture frame */
-  .lp35 .shot { margin: 40px auto 0; max-width: 1120px; }
+  .lp35 .shot { margin: 32px auto 0; max-width: 1120px; }
   .lp35 .shot figcaption { font-size: 13px; color: var(--cc-ink-muted); text-align: center; margin-bottom: 10px; }
   .lp35 .win { background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: 14px; box-shadow: 0 24px 60px color-mix(in srgb, var(--cc-ink) 12%, transparent); overflow: hidden; text-align: left; }
   .lp35 .wbar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--cc-line); background: var(--cc-surface-muted); font-size: 13px; color: var(--cc-ink-muted); flex-wrap: wrap; }
@@ -157,28 +158,19 @@
   }
 
   /* the hero window's "what this program does" row */
-  .lp35 .does { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: center; justify-content: space-between; border: 1px solid var(--cc-line); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
-  .lp35 .does .t { flex: 1 1 420px; min-width: 0; }
-  .lp35 .does h3 { font-size: 15px; margin: 0 0 4px; }
-  .lp35 .does p { margin: 0; font-size: 14.5px; line-height: 1.5; }
 
   /* reader entries */
-  .lp35 .readers { margin: 34px auto 0; max-width: 1120px; }
+  .lp35 .readers { margin: 24px auto 0; max-width: 1120px; }
   .lp35 .readers .k { font-size: 12px; font-weight: 700; line-height: 1; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cc-ink-muted); text-align: center; margin: 0 0 12px; }
   .lp35 .readers ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
   @media (min-width: 900px) { .lp35 .readers ul { grid-template-columns: repeat(3, 1fr); } }
-  .lp35 .readers a { display: flex; flex-direction: column; gap: 6px; height: 100%; text-decoration: none; color: var(--cc-ink); background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: 12px; padding: 14px 16px; transition: border-color 0.15s; }
+  .lp35 .readers a { display: flex; flex-direction: column; gap: 4px; height: 100%; text-decoration: none; color: var(--cc-ink); background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: 12px; padding: 10px 14px; min-height: 44px; transition: border-color 0.15s; }
   .lp35 .readers a:hover { border-color: var(--cc-brand); }
   .lp35 .readers .who { font-size: 12px; font-weight: 800; line-height: 1; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cc-brand-strong); }
-  .lp35 .readers .q { font-size: 15.5px; font-weight: 700; line-height: 1.35; }
-  .lp35 .readers .gets { font-size: 14px; color: var(--cc-ink-muted); line-height: 1.45; }
-  .lp35 .readers .go { margin-top: auto; font-size: 14px; font-weight: 700; color: var(--cc-brand-strong); }
+  .lp35 .readers .q { font-size: 15px; font-weight: 700; line-height: 1.35; }
+  .lp35 .readers .q::after { content: ' →'; color: var(--cc-brand-strong); }
 
   /* a product picture that is still to be captured (roadmap row 3.5.0, item 4) */
-  .lp35 .capture-todo { border: 2px dashed var(--cc-line); border-radius: 14px; background: var(--cc-surface-muted); padding: 28px 20px; text-align: center; color: var(--cc-ink-muted); font-size: 14px; display: grid; place-items: center; gap: 8px; min-height: 220px; }
-  .lp35 .capture-todo b { color: var(--cc-ink); font-size: 15px; }
-  .lp35 .capture-todo .k { font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cc-warning); background: var(--cc-warning-bg); border: 1px solid var(--cc-warning-border); border-radius: 5px; padding: 4px 6px; }
-  .lp35 .capture-todo ul { margin: 0; padding: 0; list-style: none; max-width: 640px; }
 
   /* rules: the decision card */
   .lp35 .rules { max-width: 980px; margin: 0 auto; display: grid; gap: 12px; }
@@ -221,8 +213,9 @@
   .lp35 .stages li { display: flex; align-items: center; gap: 8px; background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: 999px; padding: 7px 12px 7px 7px; font-size: 14px; font-weight: 700; }
   .lp35 .stages li .no { width: 24px; height: 24px; border-radius: 50%; background: var(--cc-ink); color: var(--cc-on-dark); display: grid; place-items: center; font-size: 12px; }
   .lp35 .stages li.cur { border-color: var(--cc-brand); background: var(--cc-brand-surface); }
-  .lp35 .after { display: grid; gap: 16px; }
-  @media (min-width: 1000px) { .lp35 .after { grid-template-columns: 1.25fr 0.75fr; } }
+  /* the seven tools in a row, the limits under them (one section with the decision since 23.11.2026) */
+  .lp35 .after { display: grid; gap: 16px; max-width: 1100px; margin: 0 auto; }
+  @media (min-width: 900px) { .lp35 .after .limits ul { columns: 2; column-gap: 32px; } .lp35 .after .limits li { break-inside: avoid; } }
   .lp35 .limits { padding: 16px 18px; }
   .lp35 .limits h3 { font-size: 16px; margin: 0 0 8px; }
   .lp35 .limits ul { margin: 0; padding-left: 18px; font-size: 14.5px; }
@@ -257,18 +250,15 @@
   .lp35 .trust3 b { display: block; font-size: 16px; margin-bottom: 4px; }
   .lp35 .trust3 p { margin: 0; font-size: 14px; color: var(--cc-ink-muted); }
   .lp35 .trust3 .src { font-size: 12.5px; margin-top: 8px; }
-  .lp35 .itfacts { max-width: 1100px; margin: 0 auto; padding: 18px; }
-  .lp35 .itfacts > h3 { font-size: 18px; margin: 0 0 4px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-  .lp35 .itfacts > h3 .pill { font-size: 11px; font-weight: 800; line-height: 1; text-transform: uppercase; letter-spacing: 0.05em; padding: 4px 6px; border-radius: 5px; border: 1px solid var(--cc-information-border); background: var(--cc-information-bg); color: var(--cc-information); }
-  .lp35 .itfacts > p { margin: 0 0 14px; font-size: 14px; color: var(--cc-ink-muted); }
   .lp35 .facts2 { display: grid; gap: 0 28px; margin: 0; }
   @media (min-width: 900px) { .lp35 .facts2 { grid-template-columns: 1fr 1fr; } }
   .lp35 .fx { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-top: 1px solid var(--cc-line); font-size: 14px; line-height: 1.45; }
   .lp35 .fx dt { font-weight: 800; }
   .lp35 .fx dd { margin: 0; min-width: 0; }
   @media (max-width: 480px) { .lp35 .fx { grid-template-columns: 1fr; gap: 2px; } }
-  .lp35 .itpath { max-width: 1100px; margin: 16px auto 0; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
-  .lp35 .itpath p { margin: 0; font-size: 14.5px; }
+  .lp35 .forit { margin-top: 28px; }
+  .lp35 .steps .step-act { margin-top: 8px; }
+  .lp35 .deep .fk4 { font-size: 15px; margin: 16px 0 0; }
   .lp35 .toolt { font-size: 14px; margin-top: 6px; }
   .lp35 .toolt .tr { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 4px 16px; padding: 8px 0; border-top: 1px solid var(--cc-line); }
   .lp35 .toolt .tr.head { font-weight: 700; border-top: 0; }
@@ -295,12 +285,14 @@
   .lp35 .price li svg { flex: none; width: 18px; height: 18px; color: var(--cc-brand-strong); margin-top: 2px; }
   .lp35 .price .full { display: flex; flex-direction: column; gap: 10px; }
   .lp35 .price .full > a { max-width: 100%; }
-  .lp35 .share { max-width: 1100px; margin: 16px auto 0; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
+  .lp35 .share { max-width: 1100px; margin: 16px auto 0; padding: 0 2px; display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; justify-content: space-between; }
   .lp35 .share p { margin: 0; font-size: 14.5px; }
   .lp35 .share .acts { display: flex; gap: 8px; flex-wrap: wrap; }
 
   /* FAQ */
   .lp35 .acc { max-width: 880px; margin: 0 auto; }
+  /* Two columns from 1100 px: ten questions in five rows (UX review 22.11.2026, L3). */
+  @media (min-width: 1100px) { .lp35 .acc { max-width: 1100px; display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; align-items: start; } }
   .lp35 .acc details { background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: 10px; margin-bottom: 10px; }
   .lp35 .acc summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 12px; padding: 14px 16px; }
   .lp35 .acc summary::-webkit-details-marker { display: none; }
@@ -311,9 +303,9 @@
   .lp35 .acc .a p { margin: 0 0 8px; }
 
   /* footer */
-  .lp35 .foot { background: var(--cc-surface-dark); color: var(--cc-on-dark); padding: 56px 0 28px; font-size: 14px; }
+  .lp35 .foot { background: var(--cc-surface-dark); color: var(--cc-on-dark); padding: 40px 0 24px; font-size: 14px; }
   .lp35 .foot a { color: var(--cc-on-dark); }
-  .lp35 .foot-top { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; border-bottom: 1px solid color-mix(in srgb, var(--cc-on-dark) 15%, transparent); padding-bottom: 28px; margin-bottom: 28px; }
+  .lp35 .foot-top { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; border-bottom: 1px solid color-mix(in srgb, var(--cc-on-dark) 15%, transparent); padding-bottom: 24px; margin-bottom: 24px; }
   .lp35 .foot-top p { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
   .lp35 .foot-top .cta-row { margin: 0; }
   .lp35 .foot .on-dark { background: transparent; color: var(--cc-on-dark); border-color: color-mix(in srgb, var(--cc-on-dark) 60%, transparent); }

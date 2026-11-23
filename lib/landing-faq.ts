@@ -37,8 +37,8 @@ const bandLabels = SCORE_BANDS.map((b) => `${b.label} (${b.from}–${b.to})`).jo
 export const LANDING_FAQ: LandingFaq[] = [
   {
     q: 'Is there a demo without an account?',
-    a: 'Yes. A four-minute demo at /demo shows one fictitious program, Z_MM_PO_APPROVAL, read end to end — no account, nothing saved, no AI call. The interactive demo project lives in your workspace and needs a free account.',
-    more: { href: '/demo', label: 'Watch the 4-minute demo' },
+    a: 'Yes. A four-minute demo at /demo shows one fictitious program, Z_MM_PO_APPROVAL, read end to end: no account, nothing saved, no AI call. The interactive demo project lives in your workspace and needs a free account.',
+    more: { href: '/demo', label: 'Try the 4-minute demo' },
   },
   {
     q: 'What does it cost?',
@@ -51,7 +51,7 @@ export const LANDING_FAQ: LandingFaq[] = [
   },
   {
     q: 'Where is my code stored, and what leaves it?',
-    a: `${trust('residency')} The engine reads your code without a model; text and code drafts are written by the model provider, reached only through our server — the Google Gemini API, or the provider of your own key. ${trust('tracking')} ${trust('erasure')}`,
+    a: `${trust('residency')} The engine reads your code without a model; text and code drafts are written by the model provider, reached only through our server: the Google Gemini API, or the provider of your own key. ${trust('tracking')} ${trust('erasure')}`,
     more: { href: '/trust', label: 'Trust and privacy' },
   },
   {
@@ -61,17 +61,17 @@ export const LANDING_FAQ: LandingFaq[] = [
   },
   {
     q: 'What is SAP clean core?',
-    a: 'Clean core keeps the SAP S/4HANA standard unmodified: extensions use only released, upgrade-stable interfaces — in-app with ABAP Cloud or side-by-side on SAP BTP, part of the SAP Business AI Platform. SAP’s clean core level concept grades what an extension uses from A (released APIs and extension points) to D (not recommended: modifications, implicit enhancements, writes to SAP tables).',
+    a: 'Clean core keeps the SAP S/4HANA standard unmodified: extensions use only released, upgrade-stable interfaces, in-app with ABAP Cloud or side-by-side on SAP BTP, part of the SAP Business AI Platform. SAP’s clean core level concept grades what an extension uses from A (released APIs and extension points) to D (not recommended: modifications, implicit enhancements, writes to SAP tables).',
     more: { href: '/clean-core-explained', label: 'Clean core, explained without the jargon' },
   },
   {
     q: 'Is the generated code ready to go live?',
-    a: 'No. The transformed RAP or CAP code from Clean-Core.io is a draft for a person to review. On the CAP track its test scenarios run in an isolated runner against mocks, so they do not show that the code runs in a real SAP S/4HANA system; on the RAP track they are an ABAP Unit class that runs only in your own system, and nothing is run here — you record its result as an imported file or your own confirmation, never as proven. A signed run proves where a result came from and that it has not changed since — not that it is correct. What the engine could not determine is listed as not determined rather than guessed.',
+    a: 'No. The transformed RAP or CAP code from Clean-Core.io is a draft for a person to review. On the CAP track its test scenarios run in an isolated runner against mocks, so they do not show that the code runs in a real SAP S/4HANA system; on the RAP track they are an ABAP Unit class that runs only in your own system, and nothing is run here; you record its result as an imported file or your own confirmation, never as proven. A signed run proves where a result came from and that it has not changed since, not that it is correct. What the engine could not determine is listed as not determined rather than guessed.',
     more: { href: '/how-it-works', label: 'How it works, and its limits' },
   },
   {
     q: 'Does it replace ABAP Test Cockpit or SAP’s own tools?',
-    a: 'No. ABAP Test Cockpit stays the check to rely on: the level Clean-Core.io shows is its reading of SAP’s published data — an orientation, never part of a signed audit pack — and you can import your ATC results to compare them with the engine. SAP’s agents, Joule for Developers and the Custom Code Migration Agent, work inside your system and tell developers what to fix. Clean-Core.io shows the business what the code does and carries the same evidence through a design, a code draft and tests to a decision — including whether the program is still needed at all.',
+    a: 'No. ABAP Test Cockpit stays the check to rely on: the level Clean-Core.io shows is its reading of SAP’s published data (an orientation, never part of a signed audit pack), and you can import your ATC results to compare them with the engine. SAP’s agents, Joule for Developers and the Custom Code Migration Agent, work inside your system and tell developers what to fix. Clean-Core.io shows the business what the code does and carries the same evidence through a design, a code draft and tests to a decision, including whether the program is still needed at all.',
   },
   {
     q: 'Does it work with SAP Signavio?',

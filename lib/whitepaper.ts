@@ -149,11 +149,11 @@ export const WHITEPAPER_30 = {
   ],
   bucketRules: {
     retire:
-      'The rule it serves is confirmed “Drop”, or a usage import shows no executions over at least 13 months — then it is a candidate, an open check, not a verdict.',
+      'The rule it serves is confirmed “Drop”, or a usage import shows no executions over at least 13 months; then it is a candidate, an open check, not a verdict.',
     'no-catalogued-path':
       'Needed, below the target platform’s bar, and SAP’s Cloudification Repository names no released API and no successor for it.',
     rebuild:
-      'Needed, below the bar, and a successor or an extension path is named — and every modification or own write to an SAP table.',
+      'Needed, below the bar, and a successor or an extension path is named, and every modification or own write to an SAP table.',
     keep: 'Needed and permitted on the target platform: SAP S/4HANA Cloud Public Edition (part of SAP Cloud ERP) level A only, SAP Cloud ERP Private (formerly SAP S/4HANA Cloud Private Edition) level A or B.',
   } as Record<string, string>,
   evidenceStations: [
@@ -169,7 +169,7 @@ export const WHITEPAPER_30 = {
   ],
 
   toolchain: [
-    { tool: 'ABAP Test Cockpit (ATC)', purpose: 'The authoritative check for clean core violations — keep using it.', relation: 'Reads the same SAP Cloudification Repository ({objects}, classified) and shows its reading as level A–D. Import ATC results to compare them with the engine.' },
+    { tool: 'ABAP Test Cockpit (ATC)', purpose: 'The authoritative check for clean core violations; keep using it.', relation: 'Reads the same SAP Cloudification Repository ({objects}, classified) and shows its reading as level A–D. Import ATC results to compare them with the engine.' },
     { tool: 'ABAP Development Tools (ADT)', purpose: 'Where ABAP is developed, compiled and unit-tested; ABAP Unit and the CDS Test Double Framework are on board.', relation: 'Generated drafts arrive as an abapGit package that you import, compile and test there.' },
     { tool: 'Joule for Developers and the Custom Code Migration Agent', purpose: 'SAP’s AI for ABAP developers, inside your system: it explains code and fixes what ATC finds, under SAP’s licence.', relation: 'They tell developers what to fix. Clean-Core.io shows the business what the code does and carries the same evidence through a design, a code draft and tests to a decision; what stays goes to them. ATC stays the authority.' },
     { tool: 'SAP Signavio', purpose: 'Process modelling, under its own licence.', relation: 'The process leaves as a BPMN 2.0 XML file. Import into SAP Signavio has not been verified yet; there is no connection to a Signavio workspace.' },

@@ -90,7 +90,7 @@ export default function HeroMapBuild({
         })}
       </ol>
       <p className="statusline" data-hero-status="">
-        <span>The code&apos;s own names first, then the business names the engine writes from them — no model involved. Excerpt of the main flow.</span>
+        <span>The code&apos;s own names first, then the business names the engine writes from them, with no model involved. Excerpt of the main flow.</span>
         <button type="button" className="replay" onClick={() => setRun((r) => r + 1)}>
           Show again
         </button>
