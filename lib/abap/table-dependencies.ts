@@ -1,6 +1,6 @@
 import { tokenize, type TokenizeOptions } from './declaration-parser';
 import { createLiteralScanner, maskNonCode } from './statement-reader';
-import { databaseWriteIn, isDatasetDeletion, isEntityManipulation, isInternalTableOperation, writesDatabaseOnly } from './open-sql-discrimination';
+import { databaseOnlyWriteForm, databaseWriteIn, isDatasetDeletion, isEntityManipulation, isInternalTableOperation, writesDatabaseOnly } from './open-sql-discrimination';
 import { readConstantDeclarations } from './business-rules';
 import { containerAt, type Container } from './block-structure';
 
@@ -394,6 +394,8 @@ interface Context {
   scopedConstants: boolean;
   /** `declaresLocally` per routine and name, so a routine with many dynamic targets is scanned once per name. */
   declaredLocally: Map<string, boolean>;
+  /** From engine 3.5.0 (`databaseWriteForms`): a write form only ABAP SQL has names a table whatever a local is called. */
+  databaseWriteForms: boolean;
 }
 
 /**
@@ -411,6 +413,12 @@ export interface TableDependencyOptions extends TokenizeOptions {
    * CRITICAL write to VBAK. Off, the whole-source lookup of the engines before.
    */
   scopedConstants?: boolean;
+  /**
+   * From engine 3.5.0 (`ENGINE_READS_350_FROM`, `engine-reads-350-gate.ts`): a write whose form exists only in ABAP
+   * SQL (`databaseOnlyWriteForm`) names a database table even when the source declares a data object of the same
+   * name. Off, only UPDATE is read that way (`writesDatabaseOnly`), as in the engines before.
+   */
+  databaseWriteForms?: boolean;
 }
 
 /**
@@ -528,6 +536,7 @@ function buildContext(source: string, options: TableDependencyOptions): Context 
     budget: { left: MACRO_EXPANSION_BUDGET },
     scopedConstants: options.scopedConstants === true,
     declaredLocally: new Map(),
+    databaseWriteForms: options.databaseWriteForms === true,
   };
 }
 
@@ -972,7 +981,12 @@ function readStatement(text: string, at: Anchor, sink: Sink, ctx: Context, depth
   const write = isEntityManipulation(text) || isDatasetDeletion(text) ? null : databaseWriteIn(text.trim());
   // UPDATE has no internal-table form: its target is a table even when a local
   // data object shares the name, so the local-name suppression does not apply.
-  if (write) sink.table(at, write.table, 'write', 'open-sql', {}, writesDatabaseOnly(write));
+  // From 3.5.0 (`databaseWriteForms`) the same holds for every write form that
+  // only ABAP SQL has (`databaseOnlyWriteForm`).
+  if (write) {
+    const databaseOnly = ctx.databaseWriteForms ? databaseOnlyWriteForm(text, write) : writesDatabaseOnly(write);
+    sink.table(at, write.table, 'write', 'open-sql', {}, databaseOnly);
+  }
   readDynamicWrite(text, code, at, sink);
 
   readAdbc(text, code, at, sink, ctx);

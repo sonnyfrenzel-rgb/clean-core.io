@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   every reader and one "On this page" bar on every tool (ADR-126); `docs/roadmap/*-next-mockup.html`,
   `documentation-v2-mockup.html`, `analyze-family-mockup.html`; ROADMAP 3.5.0 items (6)–(6i). Documentation only.
 
+### Fixed
+
+- An engine reading gated for 3.5.0 (`ENGINE_READS_350_FROM`); runs signed before keep what they signed (SEC-2026-1005).
+
 ## [v3.4.0] — 2026-11-23
 
 The engine release. What changes for anyone who analyses a program:
