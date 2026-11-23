@@ -396,6 +396,10 @@ interface Context {
   declaredLocally: Map<string, boolean>;
   /** From engine 3.5.0 (`databaseWriteForms`): a write form only ABAP SQL has names a table whatever a local is called. */
   databaseWriteForms: boolean;
+  /** From engine 3.5.0 (`declaringDefinition`): a method's parameters are read in the definition that declares it. */
+  declaringDefinition: boolean;
+  /** The class and interface definitions of the source, read once when `declaringDefinition` asks (`definitionsOf`). */
+  definitions?: Map<string, TypeDefinition>;
 }
 
 /**
@@ -419,6 +423,14 @@ export interface TableDependencyOptions extends TokenizeOptions {
    * name. Off, only UPDATE is read that way (`writesDatabaseOnly`), as in the engines before.
    */
   databaseWriteForms?: boolean;
+  /**
+   * From engine 3.5.0 (`ENGINE_READS_350_FROM`, `engine-reads-350-gate.ts`): whether a method's formal parameter hides
+   * a global constant is read in the definition that declares the method: its own class's definition, the interface
+   * an implementation `zif_x~m` names, or, for a redefinition or a method the class inherits, the superclass chain
+   * (`INHERITING FROM`) up to the class that declares it. Off, a redefinition or an interface method is looked up
+   * across every `METHODS` of that name in the source, so a same-named parameter of another class hid the constant.
+   */
+  declaringDefinition?: boolean;
 }
 
 /**
@@ -537,6 +549,7 @@ function buildContext(source: string, options: TableDependencyOptions): Context 
     scopedConstants: options.scopedConstants === true,
     declaredLocally: new Map(),
     databaseWriteForms: options.databaseWriteForms === true,
+    declaringDefinition: options.declaringDefinition === true,
   };
 }
 
@@ -572,6 +585,10 @@ function escapeRegExp(text: string): string {
 function methodDeclaresParameter(ctx: Context, method: Container, name: string): boolean {
   const short = method.name.split('~').pop() ?? method.name;
   const parameter = new RegExp(`(?:^|[\\s(!])${escapeRegExp(name)}\\s*\\)?\\s+(?:TYPE|LIKE)\\b`, 'i');
+  if (ctx.declaringDefinition) {
+    const declared = declaringParameters(ctx, method);
+    if (declared !== null) return parameter.test(declared);
+  }
   const owner = method.name.includes('~')
     ? undefined
     : ctx.constants.containers.find(
@@ -597,6 +614,111 @@ function methodDeclaresParameter(ctx: Context, method: Container, name: string):
     }
   }
   return own ?? anywhere;
+}
+
+/** A class or interface definition of the source: what it inherits and implements, and its method declarations. */
+interface TypeDefinition {
+  kind: 'class' | 'interface';
+  /** `INHERITING FROM`, upper-cased; null for none. */
+  superclass: string | null;
+  /** `INTERFACES` inside the definition, upper-cased. */
+  interfaces: string[];
+  /** Method name (upper-cased) → its declaration's text after the name, and whether it is a `REDEFINITION`. */
+  methods: Map<string, { rest: string; redefinition: boolean }>;
+}
+
+/** Every class and interface definition of the source, by upper-cased name — read once per context (3.5.0). */
+function definitionsOf(ctx: Context): Map<string, TypeDefinition> {
+  if (ctx.definitions) return ctx.definitions;
+  const out = new Map<string, TypeDefinition>();
+  let open: TypeDefinition | null = null;
+  for (let i = 0; i < ctx.code.length; i++) {
+    const text = ctx.code[i].trim();
+    const cls = /^CLASS\s+([\w/]+)\s+DEFINITION\b([\s\S]*)$/i.exec(text);
+    if (cls && !/\b(?:DEFERRED|LOAD)\b/i.test(cls[2])) {
+      open = { kind: 'class', superclass: /\bINHERITING\s+FROM\s+([\w/]+)/i.exec(cls[2])?.[1]?.toUpperCase() ?? null, interfaces: [], methods: new Map() };
+      if (!out.has(cls[1].toUpperCase())) out.set(cls[1].toUpperCase(), open);
+      continue;
+    }
+    const intf = /^INTERFACE\s+([\w/]+)\b([\s\S]*)$/i.exec(text);
+    if (intf && !/\b(?:DEFERRED|LOAD)\b/i.test(intf[2])) {
+      open = { kind: 'interface', superclass: null, interfaces: [], methods: new Map() };
+      if (!out.has(intf[1].toUpperCase())) out.set(intf[1].toUpperCase(), open);
+      continue;
+    }
+    if (/^(?:ENDCLASS|ENDINTERFACE)\b/i.test(text) || /^CLASS\s+[\w/]+\s+IMPLEMENTATION\b/i.test(text)) {
+      open = null;
+      continue;
+    }
+    if (!open) continue;
+    const interfaces = /^INTERFACES\b\s*:?\s*([\s\S]*)$/i.exec(text);
+    if (interfaces) {
+      for (const part of interfaces[1].split(',')) {
+        const n = /^([\w/]+)/.exec(part.trim())?.[1];
+        if (n) open.interfaces.push(n.toUpperCase());
+      }
+      continue;
+    }
+    const methods = /^(?:CLASS-)?METHODS\b\s*:?\s*([\s\S]*)$/i.exec(text);
+    if (!methods) continue;
+    for (const part of methods[1].split(',')) {
+      const declared = /^([\w/~]+)([\s\S]*)$/.exec(part.trim());
+      if (!declared) continue;
+      const key = declared[1].toUpperCase();
+      const redefinition = /\bREDEFINITION\b/i.test(declared[2]);
+      const had = open.methods.get(key);
+      if (!had || (had.redefinition && !redefinition)) open.methods.set(key, { rest: declared[2], redefinition });
+    }
+  }
+  ctx.definitions = out;
+  return out;
+}
+
+/**
+ * Engine 3.5.0 (`declaringDefinition`): the parameter list of the declaration that defines this method, or null when
+ * that declaration is not in the source (the lookup of the engines before then answers). An implementation `zif_x~m`
+ * reads `m` in interface `zif_x` and the interfaces it includes; any other method reads its own class's definition
+ * and, for a `REDEFINITION` or a method the class does not declare itself, the interfaces of that class and then the
+ * superclass chain (`INHERITING FROM`) up to the definition that declares it.
+ */
+function declaringParameters(ctx: Context, method: Container): string | null {
+  const defs = definitionsOf(ctx);
+  const inInterface = (intf: string, short: string, seen: Set<string>): string | null => {
+    if (seen.has(intf)) return null;
+    seen.add(intf);
+    const def = defs.get(intf);
+    if (!def) return null;
+    const own = def.methods.get(short);
+    if (own) return own.rest;
+    for (const inner of def.interfaces) {
+      const found = inInterface(inner, short, seen);
+      if (found !== null) return found;
+    }
+    return null;
+  };
+  const parts = method.name.toUpperCase().split('~');
+  if (parts.length === 2) return inInterface(parts[0], parts[1], new Set());
+  const short = parts[parts.length - 1];
+  const owner = ctx.constants.containers.find(
+    (c) => c.kind === 'class' && c.lineStart <= method.lineStart && method.lineEnd <= c.lineEnd,
+  );
+  let cls = owner ? owner.name.toUpperCase() : null;
+  const seen = new Set<string>();
+  while (cls && !seen.has(cls)) {
+    seen.add(cls);
+    const def = defs.get(cls);
+    if (!def) return null;
+    const own = def.methods.get(short);
+    if (own && !own.redefinition) return own.rest;
+    if (!own) {
+      for (const intf of def.interfaces) {
+        const found = inInterface(intf, short, new Set());
+        if (found !== null) return found;
+      }
+    }
+    cls = def.superclass;
+  }
+  return null;
 }
 
 /**
