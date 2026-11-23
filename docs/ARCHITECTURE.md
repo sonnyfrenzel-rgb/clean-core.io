@@ -37,7 +37,7 @@ Under `app/(app)/project/[projectId]/`, each stage is its own `page.tsx` (`'use 
 | # | Stage | Route | Purpose |
 |---|-------|-------|---------|
 | 1 | Analyze | `analyze/` | Upload ABAP → run static evidence engine → code inventory + findings → create Run |
-| 2 | Economics | `tco/` | Total cost of ownership — a model on assumed coefficients; second since ADR-128 (5), it prices the program decision before Design |
+| 2 | Economics | `tco/` | The options of the program decision priced on the reader's own figures — one money model, `lib/cost-assumptions.ts`, answered first (`lib/economics-answer.ts`, `components/tco/EconomicsObjectPage.tsx`); second since ADR-128 (5), it prices the program decision before Design, which shows the priced range as its guard rail (`lib/economics-guard-rail.ts`) |
 | 3 | Design | `design/` | Target architecture (RAP/CAP/…), topology, roadmap |
 | 4 | Transformation | `transformation/` | Gemini-generated modern code |
 | 5 | Documentation | `documentation/` | Process docs / BPMN |
@@ -50,7 +50,7 @@ Downstream stages call `enforceActiveRun()` — missing Run redirects to Analyze
 
 - **`project.status` is not read.** It is a client-writable label; the dashboard used to turn "tests generated" into "Testing & QA (85%)" from it. Every state derives from an artefact or a verdict.
 - **Testing is done only when every case carries `Passed`.** `Simulated`, `Not run`, `Pending` and absent are not passes. The testing page shows a run's verdicts on screen but does not store them, so in practice Testing — and therefore Delivery — stays `partial`; a stored, attributable run is E07-F02's receipt, not a client write.
-- **Economics cannot be `done` in this release** (no observed costs exist; CR-23 / E12-F02). `workflowSummary().next` skips it so "continue" never parks there.
+- **Economics is `done` only when stored figures price every option** (`economicsProgress`, the comparison alone since ADR-128 (2) removed the demonstration forecast), and never proven (CR-23 / E12-F02). `workflowSummary().next` names it right after Analyze and passes over it once a later tool holds a record (`economicsPassedOver`, ADR-128 (5)), so "continue" never parks a reader who went on without it.
 - The tool bar shows state, not position: being on Testing says nothing about Design. `tests/workflow-phases-guard.spec.ts` holds this, including a rendered check that dashboard, tool bar and delivery agree on a test draft.
 
 **What each stage reads, writes, requires and does when something fails** is the preservation register — `docs/PRESERVATION-REGISTER.md` (the reasoning and the limits) and `docs/registers/preservation-register.json` (the same thing field by field, with one seeded reference case per stage). `tests/preservation-register.spec.ts` re-derives all of it from the code, so a stage that gains or loses a field, a guard or a blocker fails the suite. Roadmap step 1.1; it is what step 3.0.3 re-runs against the rebuilt workspace.
