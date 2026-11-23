@@ -234,9 +234,9 @@ test.describe('only ids that render', () => {
     expect(tf.at(-1)!.target).toBe('tf-side');
 
     // Testing (ADR-131, S14) — What was tested · Where it ran · Not proven (amber) · Acceptance checks · For developers.
-    const demo = testingAnchors({ rules: 12, ran: false, notProven: 1, acceptance: 0, developers: false });
-    check('testing', demo);
-    expect(demo.map((a) => a.key)).toEqual(['tested', 'open']);
+    const testingDemo = testingAnchors({ rules: 12, ran: false, notProven: 1, acceptance: 0, developers: false });
+    check('testing', testingDemo);
+    expect(testingDemo.map((a) => a.key)).toEqual(['tested', 'open']);
     const testingFull = testingAnchors({ rules: 12, ran: true, notProven: 4, acceptance: 11, developers: true });
     check('testing', testingFull);
     expect(testingFull.map((a) => [a.key, a.count ?? null, a.tone ?? null])).toEqual([
@@ -285,10 +285,10 @@ test.describe('one place', () => {
     expect(body).not.toMatch(/AnchorBar\b/);
 
     before('components/transformation/TransformationObjectPage.tsx', /<PageAnchorBar\b/, 'id="tf-flow"');
-    before(PAGE('testing'), /<PageAnchorBar/, 'id="testing-tested"');
-    before('components/demo/DemoTesting.tsx', /<PageAnchorBar/, 'id="testing-tested"');
-    before(PAGE('delivery'), /<PageAnchorBar/, 'id="before-go-live"');
-    before('components/delivery/DemoDelivery.tsx', /<PageAnchorBar/, 'id="before-go-live"');
+    before(PAGE('testing'), /<PageAnchorBar\b/, 'id="testing-tested"');
+    before('components/demo/DemoTesting.tsx', /<PageAnchorBar\b/, 'id="testing-tested"');
+    before(PAGE('delivery'), /<PageAnchorBar\b/, 'id="before-go-live"');
+    before('components/delivery/DemoDelivery.tsx', /<PageAnchorBar\b/, 'id="before-go-live"');
     before(PAGE('documentation'), /<DocumentChapterBar\b/, 'data-documentation-description');
     before('components/workspace/ItAnswers.tsx', /<ItAnchorBar\b/, 'id={IT_SECTION_IDS.findings}');
 
