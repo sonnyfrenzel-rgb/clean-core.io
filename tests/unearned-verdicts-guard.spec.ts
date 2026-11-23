@@ -136,9 +136,9 @@ test.describe('generated code is labelled as generated', () => {
     expect(rendered(REL)).not.toContain('AI Verified');
     // Block D, D.15: the label is the provenance chip's "AI-generated"
     // (`lib/provenance.ts` maps the old "AI Generated" to `proposed`), and it
-    // is still shown only over files a generation produced.
-    expect(rendered(REL)).toMatch(/files\.length > 0 && <CcProvenanceChip value="proposed" \/>/);
-    expect(rendered(REL)).not.toMatch(/<CcProvenanceChip value="(?:proven|confirmed)"/);
+    // is still shown only over files a generation produced. Since 3.5.0 (ADR-129) the tool speaks the family's chips.
+    expect(rendered(REL)).toMatch(/files\.length > 0 && <FamilyChip value="proposed" \/>/);
+    expect(rendered(REL)).not.toMatch(/<(?:CcProvenanceChip|FamilyChip) value="(?:proven|confirmed)"/);
   });
 
   test('local checkboxes do not raise the compliance figure', () => {
