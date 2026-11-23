@@ -482,6 +482,19 @@ Sizes come from §1.2, not from the mock-ups (owner, 22.11.2026).
 | On this page | `components/PageAnchorBar.tsx` | ADR-126 (3): a 48 px sticky white strip under the shell bar reaching over the frame's gutter, *On this page* (13 px / 600, sentence case), items 15 px / 500 in ink with a 3 px brand bar under the current one, at most six (`PAGE_ANCHOR_MAX`), counts as quiet grey badges (`tone: 'open'` amber for open questions), one optional `action` at the right end, a sideways row with fade on S, focus moves to the section heading, no bar for a single section. |
 | Provenance | `components/family/FamilyChip.tsx`, `lib/family-chips.ts` | Six chips (UX review L2): **Signed** (filled), **From the engine** (outline), **Yours** (filled), **AI-generated** (dashed), **Simulation** (dashed), **Not determined** (outline) — 12 px / 600, a white pill whose border carries the meaning. `<FamilyChip kind="ai" />` or `<FamilyChip value={provenanceValue} />` (`familyChipOf` reduces the nine values of §4; *stale* is no chip — a strip and the tool bar's mark say it). |
 
+**Transformation in the frame** (ADR-129, `docs/roadmap/transformation-next-mockup.html`): one page for every reader
+(`view="one-page"`). The answer card asks *What became of <program>?* and answers per state (nothing yet, writing,
+written, not ready, demo); facets *Target* (aims at level A, never "is"), *Released target* (a successor or the project
+route; the rest is open, `releasedTargets`), *Code written*, *Checks*. The next step: Generate while nothing is written
+or the package is not ready, else *Continue in Documentation* (the next tool). *On this page*: Findings · Open ·
+Package · Checks · Trace. Sections: one flow finding → target → object (the object from `traceability.json`), *Still
+open* as one numbered list with one action each, the package by object with its functions and a **Code drawer** (old
+ABAP beside the new function, every line marked engine or model in the gutter), one **Checks** table (check, who ran
+it, check passed / check failed / not run here; the personal checklist a row, never counted), the trace folded. Side
+column: Status of the code, Built on, Not carried over and why. Strips only for what stops the page (prerequisites,
+stale, refused contract, error, unsaved draft); while the code is written the generation screen stands first in the
+main column of the same page. All code side by side is a side drawer (`CcDialog` side + wide, 1040 px).
+
 **Widths** (ADR-140 W1, UX review Q9): the shell bar and the slim one-line footer stand at 1536 px on every page; the
 content of a tool at 1536 px, of a list or reading page at 1280 px, the gutter 16 / 24 / 32 px. A tool's frame starts 16
 px under the shell bar. **Buttons** (W3): 32 / 40 px, a long label wraps balanced inside the button, the ghost's label
