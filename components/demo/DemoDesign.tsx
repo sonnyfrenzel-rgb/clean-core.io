@@ -169,9 +169,8 @@ export default function DemoDesign({
     <div data-testid="demo-design-document">
       <CcMessageStrip state="neutral" headline="The demo stops where the model begins.">
         On a real project a model writes the design document against this contract: {MODEL_SECTIONS.join(', ')}.
-        A demo makes no model call, so there is none here, and writing a convincing one by hand is the one thing this
-        product may never do. The canvas, the contract and the alternatives are what the deterministic engine
-        produced; they carry the line numbers.
+        The demo calls none and never fakes one; the canvas, the contract and the alternatives are the engine&apos;s,
+        with their line numbers.
       </CcMessageStrip>
     </div>
   );

@@ -103,6 +103,8 @@ export const WORKSPACE_IT_MESSAGES = {
   'itv.objectsLead':
     'The program’s own objects and everything the code calls, reads or writes — one row per object and use, with its lines, the clean core level SAP’s catalog gives it under the target profile, and the successor a finding names. The level describes the object; a finding is a separate statement and has its own list.',
   'itv.typesTitle': 'DDIC types the code declares with',
+  // The fold under a long lead (owner 24.11.2026: short on top, complete underneath)
+  'itv.leadMore': 'More on this list',
   'itv.typesLead':
     'The data elements, structures and table types the code declares its data with, grouped by the clean core level SAP’s catalog gives them under the target profile. They are not findings: a type a program declares with is a dependency to check when the code moves, and it is listed here so the move can be planned. Only names written in the code are listed, never one read from a variable.',
   'itv.typesLevel': 'Level',

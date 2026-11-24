@@ -2,6 +2,7 @@ import React from 'react';
 import StageFrame from '@/components/StageFrame';
 import StageHeader from '@/components/StageHeader';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import DemoAbout from '@/components/demo/DemoAbout';
 import { CcTag } from '@/components/cc/Tag';
 import RedesignView from '@/components/redesign/RedesignView';
 import type { FacetProps } from '@/components/family/AnswerCard';
@@ -32,7 +33,7 @@ export default function DemoRedesign({ title, rail, recommendedRoute }: { title:
     ...walk,
     analysed: false,
     answer:
-      'In the demo nothing is priced or decided. In your own project this is where the re-design starts: first the four options are priced with your figures, then you decide, and the decided option is built in the tools after it.',
+      'In the demo nothing is priced or decided. In your own project you price the four options, decide, and the tools after it build the decided one.',
   };
   const indicatedLabel = indicated ? DECISION_OPTION_LABELS[indicated] : null;
 
@@ -48,6 +49,7 @@ export default function DemoRedesign({ title, rail, recommendedRoute }: { title:
       <div className="mt-6 mb-4" data-testid="demo-strip">
         <CcMessageStrip state="information" headline={<span data-testid="demo-notice">{DEMO_STRIP_NOTICE}</span>}>
           <span data-testid="demo-unsigned">{DEMO_UNSIGNED_NOTICE}</span>
+          <DemoAbout />
         </CcMessageStrip>
       </div>
 

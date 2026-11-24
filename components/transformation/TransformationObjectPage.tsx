@@ -238,7 +238,7 @@ export default function TransformationObjectPage({
   if (state === 'demo') {
     chips = <FamilyChip kind="engine" note="plan" />;
     answer = `The demo stops where the model begins. The plan is real: ${name} would become ${target.sentence}${released.findings > 0 ? `; ${releasedSentence.charAt(0).toLowerCase()}${releasedSentence.slice(1)}${released.open > 0 ? `, ${released.open} need a decision` : ''}` : ''}.`;
-    condition = 'In your own project a model writes the function bodies into the engine’s frame. Writing a convincing one by hand is the one thing this product may never do, so the demo shows no code.';
+    condition = 'In your own project a model writes the function bodies into the engine’s frame. The demo never fakes them, so it shows no code.';
   } else if (state === 'running') {
     chips = <FamilyChip kind="ai" note="writing" />;
     answer = generation?.written !== null && generation?.written !== undefined && generation?.total ? `Writing the code: ${generation.written} of ${generation.total} functions done.` : 'Writing the code.';
@@ -477,8 +477,8 @@ export default function TransformationObjectPage({
               <div className="mt-3 rounded-cc-row border border-dashed border-cc-line bg-cc-surface px-4 py-4" data-demo-package="">
                 <p className="m-0 cc-text-h3 text-cc-ink">The demo stops where the model begins.</p>
                 <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                  The transformed code comes out of a model call against your source. Writing a convincing one by hand is
-                  the one thing this product may never do; what you see above is what the deterministic engine produced.
+                  The code comes from a model call against your source, and the demo never fakes it. What you see above is
+                  the engine&apos;s.
                 </p>
               </div>
             ) : state === 'running' ? null : files.length === 0 ? (

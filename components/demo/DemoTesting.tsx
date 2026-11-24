@@ -60,11 +60,11 @@ export default function DemoTesting({ demo }: { demo: DemoProject }) {
         chips={<FamilyChip kind="not-determined" note="demo" />}
         answer={
           <span data-testing-answer="demo">
-            The demo tests nothing: it writes no scenario and runs none. What it shows is real: the engine&apos;s business rules,
-            the checks a business tester can run for each, and the places no generated test would cover.
+            The demo tests nothing. What it shows is real: the business rules, a tester&apos;s check for each, and what no
+            test would cover.
           </span>
         }
-        condition="In your own project the engine and a model write the scenarios, and they run against SAP mocks or in your SAP system. A made-up result is the one thing this page may never show."
+        condition="In your own project the scenarios run against SAP mocks or in your SAP system. A made-up result is never shown."
         action={
           <CcLinkButton href="/dashboard" variant="primary">
             Upload your own program

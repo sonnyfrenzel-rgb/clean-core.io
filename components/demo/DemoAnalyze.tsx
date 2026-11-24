@@ -52,8 +52,7 @@ import { demoRedesignHref } from '@/lib/redesign';
 function DemoStops({ what }: { what: string }) {
   return (
     <CcMessageStrip state="neutral" headline="The demo stops where the model begins.">
-      {what} comes out of a model call in a real run. A demo makes no model call, so there is none here — and
-      writing a convincing one by hand is the one thing this product may never do.
+      {what} comes from a model in a real run. The demo calls none and never fakes one.
     </CcMessageStrip>
   );
 }

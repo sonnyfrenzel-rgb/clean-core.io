@@ -7,6 +7,7 @@ import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
 import { BTP, isSideBySideRoute, sapNamesForDisplay } from '@/lib/sap-naming';
 import { SapIdentifierChecks } from '@/components/SapIdentifierCheck';
+import FoldedText from '@/components/FoldedText';
 
 interface Checkpoint {
   checkpointName: string;
@@ -243,7 +244,7 @@ export default function ExtensibilityDecisionMatrix({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="rounded-cc-row bg-cc-surface-muted p-4 space-y-2">
                 <span className="cc-text-label text-cc-ink-muted block">Custom Technical Assessment</span>
-                <p className="cc-text-cell text-cc-ink">{checkpoints[active].evaluation}</p>
+                <FoldedText key={active} text={checkpoints[active].evaluation} className="m-0 cc-text-cell text-cc-ink" />
               </div>
               <div className="rounded-cc-row bg-cc-surface-muted p-4 space-y-2">
                 <span className="cc-text-label text-cc-ink-muted block">Clean Core Implementation Impact</span>

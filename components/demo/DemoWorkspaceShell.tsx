@@ -9,6 +9,7 @@ import CcButton from '@/components/cc/Button';
 import CcCard from '@/components/cc/Card';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import DemoAbout from '@/components/demo/DemoAbout';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import CcSegmentedControl from '@/components/cc/SegmentedControl';
 import OpenQuestions from '@/components/workspace/OpenQuestions';
@@ -421,6 +422,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
               {DEMO_INVITATION}
             </Link>
           )}
+          <DemoAbout />
         </CcMessageStrip>
       </div>
 

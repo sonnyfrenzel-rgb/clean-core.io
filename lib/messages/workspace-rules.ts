@@ -94,6 +94,7 @@ export const WORKSPACE_RULES_MESSAGES = {
   'firstLook.stepsLabel': 'The first steps of the process',
   'firstLook.factsTitle': 'What the figures mean',
   // RuleDecisionFlow — roadmap 3.0.20 (business rules as a guided decision)
+  'rules.flowLeadMore': 'How this list works',
   'rules.flowLead':
     'The rules by business topic, the weightiest first. Each says what it protects, an example with values from the code and what happens on either side; the engine proposes an answer, and taking it over is one click. Every answer is yours and carries your name.',
   'rules.flowLeadReader':

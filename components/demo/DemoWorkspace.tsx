@@ -6,6 +6,7 @@ import { RotateCcw, ArrowRight } from 'lucide-react';
 import StageHeader from '@/components/StageHeader';
 import StageFrame from '@/components/StageFrame';
 import DemoTesting from '@/components/demo/DemoTesting';
+import DemoAbout from '@/components/demo/DemoAbout';
 import DemoAnalyze from '@/components/demo/DemoAnalyze';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
@@ -31,7 +32,6 @@ import DemoRequirements from './DemoRequirements';
 import type { DemoDesignData } from '@/lib/demo-design';
 import {
   DEMO_INVITATION,
-  DEMO_QUOTA_NOTICE,
   DEMO_RESET_LABEL,
   DEMO_SOURCE_FILE,
   DEMO_STORAGE_KEY,
@@ -236,7 +236,7 @@ function DemoStrip({ onReset }: { onReset: () => void }) {
         <span data-testid="demo-unsigned" className="mt-1 block">
           {DEMO_UNSIGNED_NOTICE}
         </span>
-        <span className="mt-1 block">{DEMO_QUOTA_NOTICE}</span>
+        <DemoAbout />
         <Link
           href="/dashboard"
           data-demo-invitation
@@ -254,9 +254,8 @@ function DemoStrip({ onReset }: { onReset: () => void }) {
 function ModelHalfNotice({ what }: { what: string }) {
   return (
     <CcMessageStrip state="neutral" headline="The demo stops where the model begins.">
-      {what} comes out of a model call against the source in a real run. A demo makes no model call, so there is
-      none here — and writing a convincing one by hand is the one thing this product may never do. What you see
-      above is what the deterministic engine produced, which is the half that carries the line numbers.
+      {what} comes from a model in a real run. The demo calls none and never fakes one; what you see above is the
+      engine&apos;s, with its line numbers.
     </CcMessageStrip>
   );
 }
