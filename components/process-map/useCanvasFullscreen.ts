@@ -203,6 +203,20 @@ export function useCanvasFullscreen({
         // The entry underneath may be a level entry of an earlier full screen:
         // taking ours off must not restore its level.
         unwindingRef.current = true;
+        // Taking our entry off is not a navigation for the reader: the browser must not restore an older
+        // scroll position for it (it did, a moment after the hook had put the page back). Manual for this one
+        // step, and back to what it was once the entry is gone.
+        const restoration = window.history.scrollRestoration;
+        const at = { x: window.scrollX, y: window.scrollY };
+        window.history.scrollRestoration = 'manual';
+        const settle = () => {
+          window.removeEventListener('popstate', settle);
+          window.requestAnimationFrame(() => {
+            if (Math.abs(window.scrollY - at.y) > 1 || Math.abs(window.scrollX - at.x) > 1) window.scrollTo(at.x, at.y);
+            window.history.scrollRestoration = restoration;
+          });
+        };
+        window.addEventListener('popstate', settle);
         window.history.back();
       }
     }
