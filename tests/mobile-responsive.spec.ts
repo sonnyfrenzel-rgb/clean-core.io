@@ -709,6 +709,11 @@ async function fullscreenRoundTrip(page: Page, label: string, phone: boolean): P
             out.push(`${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}[${data}] ${el.scrollTop}`);
           }
         }
+        const active = document.activeElement as HTMLElement | null;
+        if (active) {
+          const data = Array.from(active.attributes).filter((a) => a.name.startsWith('data-')).map((a) => a.name).slice(0, 3).join(',');
+          out.push(`focus on ${active.tagName.toLowerCase()}[${data}] at ${Math.round(active.getBoundingClientRect().top)}`);
+        }
         return out.join('; ');
       });
       broken.push(`${label}: after leaving by ${exit} the page moved (${where.y} → ${back.y}): ${movers}`);

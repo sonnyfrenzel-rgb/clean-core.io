@@ -617,7 +617,7 @@ export default function BpmnCanvas({
             const focused = document.activeElement;
             if (focused && focused !== document.body && focused.getClientRects().length > 0) return;
             const shown = [...host.querySelectorAll<HTMLButtonElement>('[data-map-node]')].filter((b) => b.getClientRects().length > 0);
-            (shown.find((b) => b.tabIndex === 0) ?? shown[0])?.focus();
+            (shown.find((b) => b.tabIndex === 0) ?? shown[0])?.focus({ preventScroll: true });
           });
         }
       });
@@ -642,7 +642,7 @@ export default function BpmnCanvas({
         refocusRef.current = false;
         const lost = !document.activeElement || document.activeElement === document.body;
         const id = activeRef.current;
-        if (lost && id) host.querySelector<HTMLButtonElement>(`[data-map-node="${CSS.escape(id)}"]`)?.focus();
+        if (lost && id) host.querySelector<HTMLButtonElement>(`[data-map-node="${CSS.escape(id)}"]`)?.focus({ preventScroll: true });
       }
     };
 
