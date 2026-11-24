@@ -38,7 +38,6 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import BusinessValuePlan from '@/components/tco/BusinessValuePlan';
 import SaveStatus from '@/components/tco/SaveStatus';
-import { redesignHref } from '@/lib/redesign';
 import { typicalInWords } from '@/lib/typical-assumptions';
 import { combineSaves, sectionKeysOf, sectionSave, sectionsWithFigures, type SectionSave } from '@/lib/economics-help';
 
