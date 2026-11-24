@@ -207,7 +207,7 @@ export async function POST(req: NextRequest) {
       // project on the platform.
       //
       // A run with no manifest is one of two things. Signed before roadmap 0.5
-      // (analyzer before v2.12.0, read from the signed run itself), it is the
+      // (analyzer older than release 2.12.0, read from the signed run itself), it is the
       // migration promise C23-A02: it exports as it always did
       // (tests/conservative-invalidity.spec.ts). Signed by any later build, a
       // missing manifest is not an old run but a broken one, and the comparison
