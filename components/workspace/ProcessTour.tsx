@@ -785,8 +785,14 @@ export function ProcessTourInline({
   const sectionRef = useRef<HTMLElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const opened = useRef(false);
+  // The station the page last scrolled for: leaving or entering full screen redraws the card in its other place
+  // but moves no station, so it does not move the page either.
+  const scrolledFor = useRef<string | null>(null);
   useEffect(() => {
     const section = sectionRef.current;
+    const stationKey = `${tour ? 1 : 0}:${shownAt}`;
+    const sameStation = scrolledFor.current === stationKey;
+    scrolledFor.current = stationKey;
     let still = false;
     try {
       still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -796,7 +802,7 @@ export function ProcessTourInline({
     if (panel) {
       // In full screen's side column the card stands first: the column goes back to its top, the page stays put.
       section?.closest('[data-map-fullscreen-rail]')?.scrollTo({ top: 0 });
-    } else if (section && typeof section.scrollIntoView === 'function') {
+    } else if (!sameStation && section && typeof section.scrollIntoView === 'function') {
       section.scrollIntoView({ block: opened.current ? 'nearest' : 'start', behavior: still || !opened.current ? 'auto' : 'smooth' });
     }
     opened.current = true;
