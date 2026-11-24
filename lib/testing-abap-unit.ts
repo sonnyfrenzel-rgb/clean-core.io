@@ -217,6 +217,17 @@ function variableTypes(statements: AbapStatement[], decls: Map<string, AbapTypeD
   return out;
 }
 
+/**
+ * A constructor operator right before `class=>name(`: the name is a type the expression builds (`VALUE`, `CONV`,
+ * `CORRESPONDING`, …), not a static method. Owner report 24.11.2026: the testing model wrote
+ * `VALUE zcl_mm_po_approv_logic=>ty_run_selection( p_banfn = … )` — the input of `run( )`, typed exactly as the class
+ * declares it — and the check read it as a call of a method `ty_run_selection` that the class does not declare. Every
+ * test class that filled its input this way was refused (three of six real answers to the same prompt), the repair
+ * round was told to remove a call that was not there, and when it was refused again Testing ended in "The ABAP Unit
+ * test class does not fit the class under test" (`tests/testing-abap-constructor-type.spec.ts`).
+ */
+const CONSTRUCTOR_OPERATOR_BEFORE = /\b(?:VALUE|CONV|CORRESPONDING|NEW|REF|CAST|EXACT|REDUCE|FILTER|COND|SWITCH)\s+$/i;
+
 function callsOf(statements: AbapStatement[], types: Map<string, string>): Call[] {
   const out: Call[] = [];
   for (const s of statements) {
@@ -229,7 +240,12 @@ function callsOf(statements: AbapStatement[], types: Map<string, string>): Call[
       out.push({ target: types.get(v) ?? null, method: m[2].toLowerCase(), args: balanced(t, t.indexOf('(', m.index + m[0].length - 1)), line: s.lineStart });
     }
     const stat = /\b([a-z_/][\w/]*)=>([\w~]+)\s*\(/gi;
-    while ((m = stat.exec(t))) out.push({ target: m[1].toLowerCase(), method: m[2].toLowerCase(), args: balanced(t, t.indexOf('(', m.index + m[0].length - 1)), line: s.lineStart });
+    while ((m = stat.exec(t))) {
+      // `VALUE zcl_x=>ty_sel( … )`, `CONV zcl_x=>ty_amount( … )`: a constructor expression whose type is a
+      // class's type — not a call of a static method (bug 24.11.2026: Z_MM_PO_APPROVAL's tests were refused over it).
+      if (CONSTRUCTOR_OPERATOR_BEFORE.test(t.slice(0, m.index))) continue;
+      out.push({ target: m[1].toLowerCase(), method: m[2].toLowerCase(), args: balanced(t, t.indexOf('(', m.index + m[0].length - 1)), line: s.lineStart });
+    }
     const ctor = /\bNEW\s+([a-z_/][\w/]*)\s*\(/gi;
     while ((m = ctor.exec(t))) out.push({ target: m[1].toLowerCase(), method: 'constructor', args: balanced(t, t.indexOf('(', m.index + m[0].length - 1)), line: s.lineStart });
   }

@@ -75,6 +75,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `tests/redesign-way-on.spec.ts`, rendered `tests/redesign-decision-ends.spec.ts`).
 - Economics' "Take it to the decision" opens Re-design's decision step directly instead of an old address and a
   redirect, and its condition line says the decision is taken in Re-design, not in Management.
+- Testing: writing the scenarios for the starter example Z_MM_PO_APPROVAL could end in an error message (owner report
+  24.11.2026), with every server call answered 200. The model filled the input of `run( )` as ABAP Cloud writes it,
+  `VALUE zcl_mm_po_approv_logic=>ty_run_selection( … )`, and the declaration check of the model's ABAP Unit class read
+  that constructor expression's type as a call of an undeclared static method `ty_run_selection`. The class was
+  refused, the repair round was asked to remove a call that was not there, and when that answer was refused too the
+  page showed "The ABAP Unit test class does not fit the class under test". Reproduced with the real model: three of
+  six answers to the same prompt were refused; all six, and the one the walk stored, pass the check now. A constructor operator (`VALUE`, `CONV`, `CORRESPONDING`, `NEW`, `REF`,
+  `CAST`, `EXACT`, `REDUCE`, `FILTER`, `COND`, `SWITCH`) before `class=>name(` now makes the name a type; a call of a
+  method the class does not declare is still refused, inside such an expression too (`lib/testing-abap-unit.ts`,
+  `tests/testing-abap-constructor-type.spec.ts`). Every project on the ABAP Cloud (RAP) route whose package declares
+  its selection type on the logic class shared the path; the Node.js (CAP) route does not run this check.
 
 ## [v3.5.0] — 2026-11-24
 
