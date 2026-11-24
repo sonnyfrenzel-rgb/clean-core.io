@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Economics: one click on **Use typical assumptions** (3.5.1, ADR-144; owner 24.11.2026) fills every figure still
+  missing with a typical value and prices all four options at once: EUR, 1,000 a developer day, 700 a key-user day,
+  5 years and 1 release a year, each with its source in `lib/typical-assumptions.ts`, and the effort per option from
+  the existing size proposal (Keep's upgrade deferral stated as not determined). It never overwrites a figure the
+  reader stated or a proposal they took over, and gives key-user extensibility no days (none are proposed for it).
+  Every typical value stays marked as one (dashed chip, a note under the field, "Simulation · typical assumption" on
+  the effort cards) until the reader changes it in place; the marks are stored with the figures, are part of the
+  assumptions revision, and reach the print, the delivery package's cost revision, Management, Analyze's Management
+  view, the steering one-pager and the handover, which no longer call such a scenario "your own figures". Priced, the
+  next step is the decision in Re-design, then Design.
+- Economics is simpler: the answer and the comparison first; *How firm is the answer?* joins the folds (closed by
+  default) under them; the first-visit box "I have my figures" is gone (its button is the answer's "Enter my own
+  figures"); the side column has two cards, "Saved" moved into "What the figures rest on", and the decision link
+  stands once. "1 release a year" is no longer "1 releases a year".
+
 ### Security
 
 - Security audit of v3.5.0 (653cff96abb5) taken in: nine findings, four fixed with tests, five refuted with evidence

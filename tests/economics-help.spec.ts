@@ -169,9 +169,10 @@ test.describe('a card shows its figures, and why it has no cost', () => {
   test('a chip never stands without the value it qualifies', () => {
     const cards = read('components/tco/OptionComparison.tsx');
     const body = cards.slice(cards.indexOf('export default function OptionComparison'));
-    // Each provenance chip is the `chip` of a value, once: effort and baseline.
-    expect((body.match(/<EffortChip /g) ?? []).length).toBe(2);
-    expect((body.match(/chip=\{<EffortChip /g) ?? []).length).toBe(2);
+    // Each provenance chip is the `chip` of a value, once: effort, baseline, and (3.5.1, ADR-144) the upgrade deferral
+    // when "Use typical assumptions" stated it.
+    expect((body.match(/<EffortChip /g) ?? []).length).toBe(3);
+    expect((body.match(/chip=\{[^}<]*<EffortChip /g) ?? []).length).toBe(3);
     for (const words of ['oneOffWords(option.oneOff)', "pairWords(option.perRelease, 'per release')", "pairWords(option.maintenanceBaselinePerYear, 'per year')", 'deferralWords(option.upgradeDelay)']) {
       expect(body).toContain(words);
     }

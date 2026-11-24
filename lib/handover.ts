@@ -41,6 +41,7 @@ import { sha256Hex } from './artefact-digest';
 import { toDate } from './format';
 import { outsideChipNote, outsideCountsLine, outsideReading, outsideShortfall } from './sap-test-results';
 import { pricedOptions } from './economics-record';
+import { figuresOwnerWords, usesTypical } from './typical-assumptions';
 import { closureHandoverLine, closureReasonText, testingClosureReading } from './testing-closure';
 import { isKeyUserDecision, KEY_USER_STEPS_PATH } from './key-user-route';
 
@@ -438,9 +439,10 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
         return link('economics', {
           stale: tcoPhase.state === 'stale',
           provenance: tcoPhase.state === 'stale' ? 'stale' : 'simulation',
-          provenanceNote: tcoPhase.state === 'stale' ? 'stored against an earlier score' : 'your own figures',
-          value: `Scenario: ${priced} of ${total} options priced from your figures`,
-          by: 'Your figures, stored with the project',
+          // 3.5.1 (ADR-144): a scenario on typical values never calls them the reader's figures.
+          provenanceNote: tcoPhase.state === 'stale' ? 'stored against an earlier score' : figuresOwnerWords(econ.assumptions),
+          value: `Scenario: ${priced} of ${total} options priced from ${usesTypical(econ.assumptions) ? 'typical assumptions' : 'your figures'}`,
+          by: usesTypical(econ.assumptions) ? 'Typical assumptions, stored with the project' : 'Your figures, stored with the project',
           at: str(econ.savedAt),
           missing:
             tcoPhase.state === 'stale'

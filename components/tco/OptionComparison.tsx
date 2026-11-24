@@ -378,12 +378,14 @@ export function optionGroups(cost: CostComparison['costs'][number] | undefined, 
  * allowed "only as a proposal requiring confirmation"); it says where it came
  * from, and it is drawn apart from a proposal nobody accepted.
  */
-export type EffortProvenance = 'not-entered' | 'proposal' | 'from-proposal' | 'stated';
+export type EffortProvenance = 'not-entered' | 'proposal' | 'from-proposal' | 'typical' | 'stated';
 
 export function effortProvenance(option: CostOption, proposal: EffortProposal | null): EffortProvenance {
   const entered = option.oneOff !== null || option.perRelease !== null;
   // Roadmap 3.0.19: nothing proposes key-user days — they are only ever the reader's.
   if (!entered) return proposal && option.kind !== 'keyuser' ? 'proposal' : 'not-entered';
+  // 3.5.1 (ADR-144): filled by "Use typical assumptions" and not changed since — a typical value, not the reader's.
+  if ((option.typical ?? []).includes('effort')) return 'typical';
   return option.effortSource === 'proposal-confirmed' ? 'from-proposal' : 'stated';
 }
 
@@ -396,6 +398,7 @@ export function effortProvenance(option: CostOption, proposal: EffortProposal | 
 export function baselineProvenance(option: CostOption, proposal: BaselineProposal | null): EffortProvenance | null {
   if (!BASELINE_KINDS.has(option.kind)) return null;
   if (option.maintenanceBaselinePerYear == null) return proposal ? 'proposal' : 'not-entered';
+  if ((option.typical ?? []).includes('baseline')) return 'typical';
   return option.baselineSource === 'proposal-confirmed' ? 'from-proposal' : 'stated';
 }
 
@@ -466,7 +469,7 @@ function EffortChip({
   data = 'data-effort-chip',
 }: {
   state: EffortProvenance;
-  data?: 'data-effort-chip' | 'data-baseline-chip';
+  data?: 'data-effort-chip' | 'data-baseline-chip' | 'data-deferral-chip';
 }) {
   return (
     <span {...{ [data]: state }}>
@@ -476,6 +479,8 @@ function EffortChip({
         <FamilyChip kind="engine" note="proposal" />
       ) : state === 'from-proposal' ? (
         <FamilyChip kind="yours" note="from the proposal" />
+      ) : state === 'typical' ? (
+        <FamilyChip kind="simulation" note="typical assumption" />
       ) : (
         <FamilyChip kind="yours" />
       )}
@@ -683,9 +688,9 @@ export default function OptionComparison({
           const isEditing = editing.has(option.id);
           const panelId = `cost-option-fields-${option.id}`;
           const deferral = deferralWords(option.upgradeDelay);
-          const effortDerived = ownProposal && typeof loc === 'number' && (state === 'proposal' || state === 'from-proposal');
+          const effortDerived = ownProposal && typeof loc === 'number' && (state === 'proposal' || state === 'from-proposal' || state === 'typical');
           const baselineDerived =
-            baselineProposal && typeof loc === 'number' && (baselineState === 'proposal' || baselineState === 'from-proposal');
+            baselineProposal && typeof loc === 'number' && (baselineState === 'proposal' || baselineState === 'from-proposal' || baselineState === 'typical');
           return (
             <li key={option.id} className="min-w-0">
               <article
@@ -752,7 +757,11 @@ export default function OptionComparison({
                   ) : null}
 
                   {isComparison ? (
-                    <CardValue label="Upgrade deferral" data={{ 'data-cost-option-deferral': option.id }}>
+                    <CardValue
+                      label="Upgrade deferral"
+                      chip={(option.typical ?? []).includes('deferral') ? <EffortChip state="typical" data="data-deferral-chip" /> : undefined}
+                      data={{ 'data-cost-option-deferral': option.id }}
+                    >
                       {deferral ?? <span className="text-cc-ink-muted">Not stated yet.</span>}
                     </CardValue>
                   ) : null}

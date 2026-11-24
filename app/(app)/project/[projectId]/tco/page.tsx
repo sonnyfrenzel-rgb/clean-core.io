@@ -37,6 +37,8 @@ import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import BusinessValuePlan from '@/components/tco/BusinessValuePlan';
 import SaveStatus from '@/components/tco/SaveStatus';
+import { redesignHref } from '@/lib/redesign';
+import { typicalInWords } from '@/lib/typical-assumptions';
 import { combineSaves, sectionKeysOf, sectionSave, sectionsWithFigures, type SectionSave } from '@/lib/economics-help';
 
 /** How long the page waits after the last change before it saves. */
@@ -331,14 +333,18 @@ export default function TcoCalculatorPage() {
   const analysis = project?.analysis ? readStoredAnalysis<AnalysisData>(project.analysis) : null;
   const routeCode = analysis?.extensibilityRouting?.recommendedRoute || project?.extensibilityRoute || null;
   const decision = programDecisionOf(project);
-  const managementHref = `/project/${encodeURIComponent(String(projectId))}?view=management#decision-card`;
+  // The decision is step 2 of Re-design (ADR-143); Design comes after it.
+  const managementHref = redesignHref(String(projectId), 'decide');
+  const designHref = `/project/${encodeURIComponent(String(projectId))}/design`;
+  const typicalWords = typicalInWords(assumptions);
   const cur = assumptions.currency;
 
   return (
     // `.cc` puts the stage under the workspace's focus ring (§1.6) and its print rule (§7.1).
     <StageFrame stage="tco" className="cc min-h-screen print:p-0" data-economics="">
       <StageHeader tools={{ steps: phases, current: 'tco' }} project={project} stage="tco" view="one-page">
-        What keeping, rebuilding, moving to SAP standard or retiring this program would cost, priced only from figures you state.
+        What keeping, rebuilding, moving to SAP standard or retiring this program would cost, priced from figures you state or from
+        typical assumptions you ask for.
       </StageHeader>
 
       {/* Every change is saved as the reader works; leaving a field saves at once. */}
@@ -357,6 +363,7 @@ export default function TcoCalculatorPage() {
           onPatch={patch}
           onPatchOption={patchOption}
           managementHref={managementHref}
+          designHref={designHref}
           decisionWords={
             decision
               ? `Decision: ${decision.label}${decision.confirmed ? ', signed off' : ', not signed off yet'}.`
@@ -408,7 +415,9 @@ export default function TcoCalculatorPage() {
           printFooter={
             // Printed with the comparison, so a copy cannot leave without it.
             <div className="mt-12 hidden border-t border-cc-line pt-8 text-center cc-text-meta text-cc-ink-muted print:block">
-              <p className="font-bold">Clean-Core.io: a comparison on your figures, not a quote</p>
+              <p className="font-bold">
+                Clean-Core.io: a comparison on {typicalWords ? 'typical assumptions and your figures' : 'your figures'}, not a quote
+              </p>
               {/* The inputs it was priced with, so the printed page can be read on its own (Sonny, 30.09.2026). */}
               <p data-tco-print-inputs="">
                 Inputs: {loc === null ? 'no line count' : `${formatNumber(loc)} lines`} · developer day rate{' '}
@@ -419,6 +428,12 @@ export default function TcoCalculatorPage() {
                   : 'no cadence'}
                 .
               </p>
+              {/* 3.5.1 (ADR-144): typical values print as what they are, never as the reader's inputs. */}
+              {typicalWords ? (
+                <p data-tco-print-typical="">
+                  Typical assumptions, not your own figures: {typicalWords}.
+                </p>
+              ) : null}
               <p>
                 The effort factors per 1,000 lines are proposals nothing measured. Not an official SAP certification. Requires your own
                 review and validation.

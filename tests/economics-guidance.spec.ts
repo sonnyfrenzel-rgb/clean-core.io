@@ -244,6 +244,9 @@ test.describe('the stage, answer first (ADR-128)', () => {
     await expect(page.locator('[data-answer-card]')).toBeInViewport();
     await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'first-visit');
     await expect(page.locator('[data-economics-next-action]').first()).toBeInViewport();
+    // 3.5.1 (ADR-144): with nothing stated, the one primary action fills typical values; your own figures are one click away.
+    await expect(page.locator('[data-answer-next] [data-economics-use-typical]')).toBeInViewport();
+    await expect(page.locator('[data-answer-next] [data-economics-own-figures]')).toBeVisible();
 
     // Once the shared figures are in, taking the proposals over is the next step itself.
     await fillRates(page);

@@ -148,7 +148,22 @@ export interface CostOption {
    * and there is no unconfirmed state for the revision to carry.
    */
   baselineSource?: 'stated' | 'proposal-confirmed';
+  /**
+   * The parts of this option that "Use typical assumptions" filled (3.5.1, ADR-144) and the reader has not changed
+   * since: `effort` (one-off range and per release, from the size proposal), `baseline` (Keep's upkeep proposal),
+   * `deferral` (Keep's upgrade deferral, stated as not determined). Absent: none. A part the reader edits drops out,
+   * so a marked part is never the reader's own figure.
+   */
+  typical?: TypicalPart[];
 }
+
+/** The parts of an option "Use typical assumptions" can fill (`CostOption.typical`). */
+export const TYPICAL_PARTS = ['effort', 'baseline', 'deferral'] as const;
+export type TypicalPart = (typeof TYPICAL_PARTS)[number];
+
+/** The shared figures every option is priced with, by their field name — what `CostAssumptions.typical` marks. */
+export const SHARED_FIGURES = ['currency', 'devDayRate', 'testDayRate', 'horizonYears', 'releaseCadence'] as const;
+export type SharedFigure = (typeof SHARED_FIGURES)[number];
 
 export interface ReleaseCadence {
   perYear: number;
@@ -166,6 +181,12 @@ export interface CostAssumptions {
   horizonYears: number | null;
   releaseCadence: ReleaseCadence | null;
   options: CostOption[];
+  /**
+   * The shared figures that "Use typical assumptions" filled (3.5.1, ADR-144) and the reader has not changed since —
+   * typical values (`lib/typical-assumptions.ts`), never the reader's own. Absent: none. Part of the canonical form,
+   * so a comparison priced on typical values never shares its revision with one priced on the reader's figures.
+   */
+  typical?: SharedFigure[];
 }
 
 /** An empty set of assumptions: every mandatory field absent, and no option. */
@@ -375,6 +396,14 @@ export function canonicalCostAssumptions(a: CostAssumptions): string {
     )
     .sort()
     .join(',');
+  // 3.5.1 (ADR-144): typical values are named, and only when there are any — so the canonical form, and with it the
+  // fingerprint, of every record without them stays what it was.
+  const typicalShared = [...(a.typical ?? [])].sort().join('+');
+  const typicalOptions = [...(a.options || [])]
+    .filter((o) => (o.typical ?? []).length > 0)
+    .map((o) => `${o.id}:${[...(o.typical ?? [])].sort().join('+')}`)
+    .sort()
+    .join(',');
   return [
     `v${a.version}`,
     `currency=${a.currency || 'none'}`,
@@ -383,6 +412,7 @@ export function canonicalCostAssumptions(a: CostAssumptions): string {
     `horizon=${n(a.horizonYears)}`,
     `cadence=${n(a.releaseCadence?.perYear)}:${a.releaseCadence?.confirmed ? 'confirmed' : 'unconfirmed'}`,
     `options=${options}`,
+    ...(typicalShared || typicalOptions ? [`typical=${typicalShared};${typicalOptions}`] : []),
   ].join('|');
 }
 

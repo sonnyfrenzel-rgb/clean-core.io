@@ -279,7 +279,11 @@ export interface CostRevisionFigures {
     perRelease: { dev: number; test: number } | null;
     baselinePerYear: { dev: number; test: number } | null;
     effortSource: string;
+    /** 3.5.1 (ADR-144): the parts filled by "Use typical assumptions"; absent when none. */
+    typical?: string[];
   }>;
+  /** 3.5.1 (ADR-144): the shared figures that are typical values, not the account's; absent when none. */
+  typical?: string[];
 }
 
 /** Where the cost revision sits in the package (roadmap 3.0.12, CO review F17). */
@@ -1855,15 +1859,17 @@ export function buildCostRevision(facts: DeliveryFacts): string {
   lines.push(r.figuresNote, '');
   const f = r.figures;
   if (f) {
-    lines.push(`- Currency: ${f.currency || 'not stated'}`);
-    lines.push(`- Day rate, development: ${f.devDayRate ?? 'not stated'}`);
-    lines.push(`- Day rate, test: ${f.testDayRate ?? 'not stated'}`);
-    lines.push(`- Observation period: ${f.horizonYears === null ? 'not stated' : plural(f.horizonYears, 'year')}`);
-    lines.push(`- Releases per year: ${f.releasesPerYear ?? 'not stated'}${f.cadenceConfirmed === false ? ' (proposal, not confirmed)' : ''}`);
+    // 3.5.1 (ADR-144): a typical value is exported as one, never as the account's own figure.
+    const t = (key: string) => ((f.typical ?? []).includes(key) ? ' (typical assumption, not your figure)' : '');
+    lines.push(`- Currency: ${f.currency || 'not stated'}${t('currency')}`);
+    lines.push(`- Day rate, development: ${f.devDayRate ?? 'not stated'}${t('devDayRate')}`);
+    lines.push(`- Day rate, test: ${f.testDayRate ?? 'not stated'}${t('testDayRate')}`);
+    lines.push(`- Observation period: ${f.horizonYears === null ? 'not stated' : plural(f.horizonYears, 'year')}${t('horizonYears')}`);
+    lines.push(`- Releases per year: ${f.releasesPerYear ?? 'not stated'}${f.cadenceConfirmed === false ? ' (proposal, not confirmed)' : ''}${t('releaseCadence')}`);
     lines.push('');
     lines.push('| Option | Kind | One-off effort, low | One-off effort, high | Per release | Maintenance baseline per year | Effort source |', '|---|---|---|---|---|---|---|');
     for (const o of f.options) {
-      lines.push(`| ${o.label.replace(/\|/g, '\\|')} | ${o.kind} | ${o.oneOff ? days(o.oneOff.low) : 'not stated'} | ${o.oneOff ? days(o.oneOff.high) : 'not stated'} | ${days(o.perRelease)} | ${o.baselinePerYear ? days(o.baselinePerYear) : '—'} | ${o.effortSource} |`);
+      lines.push(`| ${o.label.replace(/\|/g, '\\|')} | ${o.kind} | ${o.oneOff ? days(o.oneOff.low) : 'not stated'} | ${o.oneOff ? days(o.oneOff.high) : 'not stated'} | ${days(o.perRelease)} | ${o.baselinePerYear ? days(o.baselinePerYear) : '—'} | ${o.effortSource}${o.typical && o.typical.length > 0 ? ` (typical assumption: ${o.typical.join(', ')})` : ''} |`);
     }
     lines.push('');
   }

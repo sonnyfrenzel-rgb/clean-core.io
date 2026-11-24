@@ -13,6 +13,7 @@ import type { ObjectStatusValue } from './object-status';
 import type { ProvenanceValue } from './provenance';
 import type { Project } from './types';
 import { economicsInWords, pricedOptions } from './economics-record';
+import { figuresOwnerWords } from './typical-assumptions';
 import { decisionQuestion } from './decision-options';
 
 /**
@@ -61,6 +62,8 @@ export type ExecutiveCosts =
       total: number;
       complete: boolean;
       stale: boolean;
+      /** 3.5.1 (ADR-144): whose figures they are (`figuresOwnerWords`). */
+      owner?: string;
       /**
        * ADR-092, for a confirmed decision: whether its record names the cost
        * revision it was priced on (`recorded`), records that no figures were
@@ -83,6 +86,8 @@ export interface StoredCosts {
   total: number;
   complete: boolean;
   stale: boolean;
+  /** 3.5.1 (ADR-144): whose figures they are — "your own figures" or "typical assumptions, not your own figures". */
+  owner?: string;
 }
 
 export interface ExecutiveSource {
@@ -225,7 +230,15 @@ export function storedCostsOf(project: Project | null, steps: readonly RailStep[
   if (!econ) return null;
   const tco = steps.find((s) => s.key === 'tco');
   const { priced, total } = pricedOptions(econ);
-  return { revision: econ.revision, words: economicsInWords(econ), priced, total, complete: tco?.state === 'done', stale: tco?.state === 'stale' };
+  return {
+    revision: econ.revision,
+    words: economicsInWords(econ),
+    priced,
+    total,
+    complete: tco?.state === 'done',
+    stale: tco?.state === 'stale',
+    owner: figuresOwnerWords(econ.assumptions),
+  };
 }
 
 /** ADR-092, what the decision record says about the cost revision — the number is never guessed. */
@@ -443,10 +456,10 @@ export function managementExecutive(src: ExecutiveSource): ExecutiveSummary {
           value: 'Simulation',
           absentWord: 'Not entered',
           meaning: costs.stale
-            ? 'costs on your own figures, stored against an earlier score — check them; a scenario, not a quote'
+            ? `costs on ${costs.owner ?? 'your own figures'}, stored against an earlier score — check them; a scenario, not a quote`
             : costs.complete
-              ? 'costs on your own figures, every option priced — a scenario, not a quote; amounts stand in Economics'
-              : `costs on your own figures, ${costs.priced} of ${costs.total} options priced so far — a scenario, not a quote`,
+              ? `costs on ${costs.owner ?? 'your own figures'}, every option priced — a scenario, not a quote; amounts stand in Economics`
+              : `costs on ${costs.owner ?? 'your own figures'}, ${costs.priced} of ${costs.total} options priced so far — a scenario, not a quote`,
           provenance: 'simulation',
           // ADR-092: a confirmation since 3.0.10 records the revision it is priced on; one taken
           // before records none, and the number is never guessed.

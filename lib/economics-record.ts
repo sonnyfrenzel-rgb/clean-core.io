@@ -39,6 +39,8 @@ import {
   COST_ASSUMPTIONS_VERSION,
   EFFORT_SOURCES,
   OPTION_KINDS,
+  SHARED_FIGURES,
+  TYPICAL_PARTS,
   costAssumptionsRevision,
   optionCost,
   type CostAssumptions,
@@ -50,6 +52,7 @@ import {
 } from './cost-assumptions';
 import { comparisonChecklist, type ChecklistRow } from './economics-checklist';
 import { formatTextDate } from './format';
+import { usesTypical } from './typical-assumptions';
 
 /** Format of the stored record. Bumped only when its shape changes. */
 export const ECONOMICS_RECORD_FORMAT = 1;
@@ -298,7 +301,7 @@ function option(v: unknown, i: number): CostOption {
     v,
     field,
     ['id', 'kind', 'label', 'oneOff', 'perRelease', 'maintenanceBaselinePerYear', 'upgradeDelay', 'effortSource'],
-    ['baselineSource'],
+    ['baselineSource', 'typical'],
   );
   if (typeof o.id !== 'string' || !OPTION_ID.test(o.id)) throw new Refusal(`${field}.id`, `${field}.id is not an option id.`);
   if (!(OPTION_KINDS as readonly unknown[]).includes(o.kind)) throw new Refusal(`${field}.kind`, `${field}.kind is not an option kind.`);
@@ -321,7 +324,23 @@ function option(v: unknown, i: number): CostOption {
     }
     out.baselineSource = o.baselineSource;
   }
+  if ('typical' in o && o.typical !== undefined) {
+    const parts = marks(o.typical, `${field}.typical`, TYPICAL_PARTS);
+    if (parts.length > 0) out.typical = parts;
+  }
   return out;
+}
+
+/**
+ * The typical marks of 3.5.1 (ADR-144, `lib/typical-assumptions.ts`): a list of known names, each once. An empty list
+ * is no mark and is not stored.
+ */
+function marks<T extends string>(v: unknown, field: string, known: readonly T[]): T[] {
+  if (!Array.isArray(v)) throw new Refusal(field, `${field} is not a list.`);
+  if (v.length > known.length) throw new Refusal(field, `${field} names more than it can.`);
+  for (const x of v) if (!(known as readonly unknown[]).includes(x)) throw new Refusal(field, `${field} names something it does not know.`);
+  if (new Set(v).size !== v.length) throw new Refusal(field, `${field} names one thing twice.`);
+  return v as T[];
 }
 
 function cadence(v: unknown): ReleaseCadence | null {
@@ -332,12 +351,13 @@ function cadence(v: unknown): ReleaseCadence | null {
 }
 
 function assumptions(v: unknown): CostAssumptions {
-  const o = only(v, 'assumptions', ['version', 'currency', 'devDayRate', 'testDayRate', 'horizonYears', 'releaseCadence', 'options']);
+  const o = only(v, 'assumptions', ['version', 'currency', 'devDayRate', 'testDayRate', 'horizonYears', 'releaseCadence', 'options'], ['typical']);
   if (o.version !== COST_ASSUMPTIONS_VERSION) throw new Refusal('assumptions.version', 'assumptions.version is not the current format.');
   if (!Array.isArray(o.options)) throw new Refusal('options', 'options is not a list.');
   if (o.options.length > ECONOMICS_LIMITS.maxOptions) throw new Refusal('options', `more than ${ECONOMICS_LIMITS.maxOptions} options.`);
   const options = o.options.map(option);
   if (new Set(options.map((x) => x.id)).size !== options.length) throw new Refusal('options', 'two options share an id.');
+  const typical = o.typical === undefined ? [] : marks(o.typical, 'assumptions.typical', SHARED_FIGURES);
   return {
     version: COST_ASSUMPTIONS_VERSION,
     currency: currency(o.currency),
@@ -346,6 +366,7 @@ function assumptions(v: unknown): CostAssumptions {
     horizonYears: figure(o.horizonYears, 'horizonYears', ECONOMICS_LIMITS.maxHorizonYears, { nullable: true }),
     releaseCadence: cadence(o.releaseCadence),
     options,
+    ...(typical.length > 0 ? { typical } : {}),
   };
 }
 
@@ -512,6 +533,8 @@ export function economicsInWords(record: EconomicsRecord): string {
   return [
     typeof years === 'number' && Number.isFinite(years) && years > 0 ? `${years} ${years === 1 ? 'year' : 'years'}` : null,
     `${options} ${options === 1 ? 'option' : 'options'}`,
+    // 3.5.1 (ADR-144): a scenario resting on typical values says so wherever it is named.
+    usesTypical(a) ? 'on typical assumptions, not your own figures' : null,
     saved ? `saved ${saved}` : null,
   ]
     .filter((p): p is string => p !== null)

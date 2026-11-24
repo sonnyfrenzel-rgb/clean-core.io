@@ -15,7 +15,8 @@ import { restoreAssumptions } from '@/lib/economics-record';
 /**
  * Economics in the demo (ADR-128): the same object page as a project's tool (`EconomicsObjectPage`), so the demo
  * cannot show a page or an arithmetic the product does not have. The figures start empty on purpose (roadmap 0.4):
- * no currency, no day rate, no period, so no amount — until the reader states their own. What they enter lives in
+ * no currency, no day rate, no period, so no amount — until the reader states their own or asks for typical
+ * assumptions (3.5.1, ADR-144), which stay marked as typical. What they enter lives in
  * this browser's `localStorage` with the rest of the demo and nowhere else; nothing is saved to anyone, nothing is
  * signed, and no model is asked.
  */
@@ -57,7 +58,7 @@ export default function DemoEconomics({
         onPatch={patch}
         onPatchOption={patchOption}
         managementHref={null}
-        decisionWords="Decision: not taken in the demo. A project of your own takes it in Management."
+        decisionWords="Decision: not taken in the demo. A project of your own takes it in Re-design."
         saved={
           <p className="m-0 cc-text-cell text-cc-ink-muted" data-demo-economics-saved="">
             Kept in this browser only, for the demo. Nothing is saved to an account, and nothing is signed.

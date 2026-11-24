@@ -98,7 +98,9 @@ test.describe('the Economics object page, rendered', () => {
     await open(page, null, 1440, 900);
     await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'first-visit');
     await expect(page.locator('[data-economics-answer]')).toContainText('Not determined yet');
-    await expect(page.locator('[data-economics-paths]')).toBeVisible();
+    // 3.5.1 (ADR-144): one primary action fills what is missing with typical values; stating your own stays one click away.
+    await expect(page.locator('[data-answer-next] [data-economics-use-typical]')).toBeInViewport();
+    await expect(page.locator('[data-economics-own-figures]')).toBeVisible();
     await expect(page.locator('[data-economics-chart="not-priced"] [data-economics-chart-days]')).toHaveCount(4);
     await expect(page.locator('[data-cost-option-total]')).toHaveCount(0);
     expect(await overflow(page)).toBeLessThanOrEqual(0);
@@ -116,8 +118,8 @@ test.describe('the Economics object page, rendered', () => {
     expect(bar!.y).toBeGreaterThan(card!.y + card!.height - 1);
     await expect(page.locator('[data-economics-anchor]')).toHaveCount(5);
     await expect(page.locator('[data-economics-chart="priced"] [data-economics-chart-row]')).toHaveCount(4);
-    // The folds are closed until asked for.
-    for (const id of ['economics-effort', 'economics-how']) await expect(page.locator(`#${id}`)).toHaveAttribute('data-economics-fold', 'closed');
+    // The folds are closed until asked for (3.5.1: How firm is one of them).
+    for (const id of ['economics-firm', 'economics-effort', 'economics-how']) await expect(page.locator(`#${id}`)).toHaveAttribute('data-economics-fold', 'closed');
     expect(await overflow(page)).toBeLessThanOrEqual(0);
     await page.screenshot({ path: path.join(SHOTS, 'priced-1440-fold.png') });
     await page.screenshot({ path: path.join(SHOTS, 'priced-1440.png'), fullPage: true });
@@ -131,6 +133,28 @@ test.describe('the Economics object page, rendered', () => {
     await page.locator('[data-cost-field="dev-day-rate"]').fill('2000');
     await expect(page.locator('[data-economics-answer]')).not.toHaveText(before);
     await page.screenshot({ path: path.join(SHOTS, 'priced-1440-editing.png') });
+  });
+
+  test('one click: typical assumptions price all four options, each marked typical, then the way on', async ({ page }) => {
+    await open(page, null, 1440, 900);
+    await page.locator('[data-economics-use-typical]').click();
+    await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'priced');
+    await expect(page.locator('[data-economics-chart="priced"] [data-economics-chart-row]')).toHaveCount(4);
+    await expect(page.locator('[data-economics-assumption-state="typical"]')).toHaveCount(5);
+    await expect(page.locator('[data-facet="assumptions"]')).toContainText('typical assumption');
+    await expect(page.locator('[data-answer-card]')).toContainText('not your own figures');
+    await expect(page.locator('[data-economics-rest="typical"]')).toContainText('Currency EUR');
+    await page.screenshot({ path: path.join(SHOTS, 'typical-1440.png'), fullPage: true });
+    // Changing one in place makes it the reader's: its mark goes, the others stay.
+    await page.locator('[data-facet="assumptions"]').click();
+    await page.locator('[data-cost-field="dev-day-rate"]').fill('1200');
+    await expect(page.locator('[data-economics-assumption="dev-day-rate"]')).toHaveAttribute('data-economics-assumption-state', 'stated');
+    await expect(page.locator('[data-economics-assumption-state="typical"]')).toHaveCount(4);
+    // The effort cards say typical, not "Yours".
+    await page.locator('[data-economics-anchor="effort"]').click();
+    for (const id of ['do-nothing', 'rebuild', 'standard', 'retire']) {
+      await expect(page.locator(`[data-cost-option="${id}"]`)).toHaveAttribute('data-effort-provenance', 'typical');
+    }
   });
 
   test('the anchor bar opens a fold it jumps to', async ({ page }) => {

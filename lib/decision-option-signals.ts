@@ -53,6 +53,7 @@ import {
   type CostOption,
 } from './cost-assumptions';
 import { economicsInWords, restoreAssumptions, type EconomicsRecord } from './economics-record';
+import { usesTypical } from './typical-assumptions';
 import type { OutdatedReason } from './decision-cost';
 import {
   DECISION_OPTIONS,
@@ -368,6 +369,10 @@ function effortOf(o: CostOption | null, economics: EconomicsRecord | null): Opti
       note: null,
     };
   }
+  // 3.5.1 (ADR-144): days "Use typical assumptions" filled are a typical value, never the account's own figure.
+  if ((o.typical ?? []).includes('effort')) {
+    return { value: parts.join(' · '), reason: null, provenance: 'simulation', note: 'a typical assumption from the size proposal, not your own figure' };
+  }
   return {
     value: parts.join(' · '),
     reason: null,
@@ -394,7 +399,7 @@ function costOf(o: CostOption | null, a: CostAssumptions | null, economics: Econ
     reason: null,
     provenance: 'simulation',
     // In words, never the revision key (owner, 10.10.2026) — the key stays in Economics' technical details.
-    note: `Simulation on your own assumptions from Economics (${economicsInWords(economics)}) — not a quote.`,
+    note: `Simulation on ${usesTypical(a) ? 'typical' : 'your own'} assumptions from Economics (${economicsInWords(economics)}) — not a quote.`,
   };
 }
 

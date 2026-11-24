@@ -35,6 +35,16 @@ import CostRangeChart, { proposedDaysOf } from '@/components/tco/CostRangeChart'
 import OptionsTable from '@/components/tco/OptionsTable';
 import HowFirm from '@/components/tco/HowFirm';
 import WhatTheFiguresRestOn from '@/components/tco/WhatTheFiguresRestOn';
+import {
+  SHARED_FIGURES,
+  TYPICAL_SHARED,
+  typicalFill,
+  typicalInWords,
+  typicalPatch,
+  usesTypical,
+  withReaderOptionPatch,
+  withReaderPatch,
+} from '@/lib/typical-assumptions';
 
 /**
  * Economics as one object page for every reader (ADR-128, mock-up `docs/roadmap/economics-next-mockup.html`; ADR-126
@@ -43,13 +53,17 @@ import WhatTheFiguresRestOn from '@/components/tco/WhatTheFiguresRestOn';
  *
  *   1. **The answer first** (`AnswerCard`): the question, one or two sentences — the cost of keeping, the cheapest
  *      change that keeps the function, the lowest overall, each with its condition — the next step, and four facets;
- *      the last facet is the reader's assumptions as chips, edited **in place** in the card, every figure moving as
- *      they type (E1, E3, E5).
+ *      the last facet is the assumptions as chips, edited **in place** in the card, every figure moving as they type
+ *      (E1, E3, E5). Until every option is priced, the one primary action is **Use typical assumptions** (3.5.1,
+ *      ADR-144, `lib/typical-assumptions.ts`): one click fills what is missing with typical values, each marked as a
+ *      typical assumption wherever it shows, and never over a figure the reader stated.
  *   2. **"On this page"** (`PageAnchorBar`, E6).
- *   3. **The range chart**, Keep as the reference (E4).
- *   4. **Options compared** with the difference to keeping (E2), **How firm is the answer?** in plain words (E7),
- *      **Effort in days** as a fold, editable, **How it is calculated** and **the model's view** as folds (E9); the
- *      side column says what the figures rest on (E10), whether they are saved, and where this goes.
+ *   3. **The range chart**, Keep as the reference (E4), and **Options compared** with the difference to keeping (E2):
+ *      the answer and the comparison, nothing else open.
+ *   4. Below, folded and closed until asked for (3.5.1, owner 24.11.2026: the tool was still too complex): **How firm
+ *      is the answer?** in plain words (E7), **Effort in days**, editable, **How it is calculated** and **the model's
+ *      view** (E9). The side column holds two cards (DESIGN.md §5): what the figures rest on, with whether they are
+ *      saved (E10), and where this goes.
  *
  * Every amount comes from `lib/cost-assumptions.ts` through `lib/economics-answer.ts`; nothing here prices anything.
  */
@@ -69,8 +83,10 @@ export interface EconomicsObjectPageProps {
   editable: boolean;
   onPatch: (patch: Partial<CostAssumptions>) => void;
   onPatchOption: (id: string, patch: Partial<CostOption>) => void;
-  /** Where the decision is taken; `null` hides the link (the demo). */
+  /** Where the decision is taken (Re-design, its decision step, ADR-143); `null` hides the link (the demo). */
   managementHref: string | null;
+  /** The Design tool, the step after the decision; `null` or absent hides the link (the demo). */
+  designHref?: string | null;
   /** "Decision: not taken yet", or the option on record. */
   decisionWords: string;
   /** The side column's "Saved" line. */
@@ -119,7 +135,17 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
     () => setEditOpen(true),
   );
   const [editingOptions, setEditingOptions] = useState<ReadonlySet<string>>(() => new Set());
-  const [folds, setFolds] = useState<{ effort: boolean; how: boolean; model: boolean }>({ effort: false, how: false, model: false });
+  const [folds, setFolds] = useState<{ firm: boolean; effort: boolean; how: boolean; model: boolean }>({
+    firm: false,
+    effort: false,
+    how: false,
+    model: false,
+  });
+  // A facet's link (`#economics-firm`, `#economics-effort`) lands on its fold open.
+  useRevealOnHash(
+    (id) => id === 'economics-firm' || id === 'economics-effort' || id === 'economics-how',
+    (id) => setFolds((f) => ({ ...f, [id.replace('economics-', '')]: true })),
+  );
 
   const pending = pendingProposals(a.options, proposals);
   const ans = useMemo(() => economicsAnswer(a, comparison, pending.length), [a, comparison, pending.length]);
@@ -128,6 +154,18 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
   const cur = a.currency;
   const years = yearsWords(a.horizonYears);
   const anyProposalTaken = a.options.some((o) => o.effortSource === 'proposal-confirmed');
+  // 3.5.1 (ADR-144): what one click would fill, and what is a typical value now.
+  const fill = typicalFill(a, proposals);
+  const canFill = editable && (fill.shared.length > 0 || Object.keys(fill.options).length > 0);
+  const typicalNow = usesTypical(a);
+  const typicalWords = typicalInWords(a);
+  const typicalShared = new Set(a.typical ?? []);
+  const allTypical = SHARED_FIGURES.every((f) => typicalShared.has(f));
+  // A change the reader makes in place is theirs: the field it touches loses its typical mark.
+  const patchShared = (p: Partial<CostAssumptions>) => onPatch(withReaderPatch(a, p));
+  const patchOptionAsReader = (id: string, p: Partial<CostOption>) =>
+    onPatchOption(id, withReaderOptionPatch(a.options.find((o) => o.id === id), p));
+  const useTypical = () => onPatch(typicalPatch(a, proposals));
 
   const toggleOption = (id: string) =>
     setEditingOptions((s) => {
@@ -157,78 +195,91 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
     const open = new Set(pending.map((o) => o.id));
     onPatch({ options: a.options.map((o) => (open.has(o.id) ? { ...o, ...takeOverPatch(o, proposals) } : o)) });
   };
-  const openFold = (key: 'effort' | 'how' | 'model') => setFolds((f) => ({ ...f, [key]: true }));
+  const openFold = (key: 'firm' | 'effort' | 'how' | 'model') => setFolds((f) => ({ ...f, [key]: true }));
 
   /* ------------------------------------------------------------ the answer */
   const fromLines = loc !== null ? ` proposed from the ${formatLines(loc)} lines` : '';
   const answer = priced ? answerSentence(ans) : notPricedSentence(ans, pending.length > 0 ? loc : null);
   const condition = priced
-    ? `A simulation on your figures${anyProposalTaken ? ` and on the effort${fromLines}` : ''}. Lowest cost is not the decision by itself; that is taken in Management.`
+    ? typicalNow
+      ? `A simulation ${allTypical ? 'on typical assumptions' : 'partly on typical assumptions'}, not your own figures. Change any of them in place. Lowest cost is not the decision by itself.`
+      : `A simulation on your figures${anyProposalTaken ? ` and on the effort${fromLines}` : ''}. Lowest cost is not the decision by itself; that is taken in Re-design.`
     : ans.state === 'first-visit'
-      ? 'Nothing has a default.'
-      : 'Nothing has a default. Every amount is priced from figures you state or take over.';
+      ? 'Nothing has a default. Use typical assumptions to see the options priced now, or state your own figures.'
+      : 'Nothing has a default. Every amount is priced from figures you state, take over or fill with typical assumptions.';
+
+  const typicalButton = (variant: 'primary' | 'secondary') => (
+    <CcButton variant={variant} data-economics-use-typical="" data-economics-next-action="" onClick={useTypical}>
+      Use typical assumptions
+    </CcButton>
+  );
+  const takeOverButton = (variant: 'primary' | 'secondary') => (
+    <CcButton variant={variant} data-economics-next-action="" data-economics-take-over-all="" onClick={takeOverAll}>
+      {pending.length > 1 ? `Take over all ${pending.length} proposals` : 'Take over the proposal'}
+    </CcButton>
+  );
+  const ownFiguresButton = (
+    <CcButton data-economics-own-figures="" onClick={openEdit}>
+      Enter my own figures
+    </CcButton>
+  );
+  const typicalNote = 'Fills only what is missing, with typical values marked as such. Change any of them in place.';
 
   let action: React.ReactNode = null;
   let actionNote: React.ReactNode = null;
   let moreActions: React.ReactNode = null;
   if (priced) {
     action = props.managementHref ? (
-      <CcLinkButton href={props.managementHref} variant="primary">
-        Take it to the decision
+      <CcLinkButton href={props.managementHref} variant="primary" data-economics-decide="">
+        Decide in Re-design
       </CcLinkButton>
     ) : null;
-    actionNote = 'Then Design, for whichever option is decided.';
+    actionNote = (
+      <>
+        Then{' '}
+        {props.designHref ? (
+          <a href={props.designHref} data-economics-design-link="" className="font-semibold text-cc-ink underline underline-offset-2">
+            Design
+          </a>
+        ) : (
+          'Design'
+        )}
+        , for whichever option is decided.
+      </>
+    );
     moreActions = editable ? (
       <CcButton data-economics-change-figures="" onClick={openEdit}>
-        Change your figures
+        {typicalNow ? 'Change the assumptions' : 'Change your figures'}
       </CcButton>
     ) : null;
-  } else if (editable && ans.state === 'needs-figures') {
-    action =
-      ans.missing.length > 0 ? (
+  } else if (editable) {
+    if (fill.shared.length > 0) {
+      // Shared figures missing: one click fills them and every open effort.
+      action = typicalButton('primary');
+      actionNote = typicalNote;
+      moreActions = ownFiguresButton;
+    } else if (ans.missing.length > 0) {
+      // Only a cadence typed and not confirmed: the reader's own figure, confirmed by them.
+      action = (
         <CcButton variant="primary" data-economics-next-action="" onClick={openEdit}>
           State your figures
         </CcButton>
-      ) : pending.length > 0 ? (
-        <CcButton variant="primary" data-economics-next-action="" data-economics-take-over-all="" onClick={takeOverAll}>
-          {pending.length > 1 ? `Take over all ${pending.length} proposals` : 'Take over the proposal'}
-        </CcButton>
-      ) : (
+      );
+    } else if (pending.length > 0) {
+      action = takeOverButton('primary');
+      moreActions = canFill ? typicalButton('secondary') : null;
+    } else {
+      action = (
         <CcButton variant="primary" data-economics-next-action="" onClick={() => openFold('effort')}>
           Fill in the effort
         </CcButton>
       );
-    if (ans.missing.length > 0 && pending.length > 0) {
-      moreActions = (
-        <CcButton variant="secondary" data-economics-take-over-all="" onClick={takeOverAll}>
-          {pending.length > 1 ? `Take over all ${pending.length} proposals` : 'Take over the proposal'}
-        </CcButton>
-      );
+      moreActions = canFill ? typicalButton('secondary') : null;
     }
   }
 
-  const after =
-    ans.state === 'first-visit' && editable ? (
-      <div data-economics-paths="" className="mt-2 grid gap-3 md:grid-cols-2">
-        <div className="rounded-cc-card border border-cc-line px-4 py-3">
-          {/* h2: the answer card above it carries no heading, so an h3 here skipped a level (DESIGN.md heading order). */}
-          <h2 className="m-0 cc-text-h3 text-cc-ink">I have my figures</h2>
-          <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-            Five fields, here in the answer.
-            {loc !== null
-              ? ` The effort per option is already proposed from the ${formatLines(loc)} lines by fixed factors; it counts once you take it over.`
-              : ' There is no line count to propose the effort from, so the days per option are yours as well.'}
-          </p>
-          <div className="mt-3">
-            <CcButton variant="secondary" data-economics-next-action="" onClick={openEdit}>
-              State your figures
-            </CcButton>
-          </div>
-        </div>
-        {/* ECO-N6 (ADR-128 (7)): "Fill with AI proposals" stands here once its wording has passed the lawyer. */}
-        {props.aiProposals ?? null}
-      </div>
-    ) : null;
+  // ECO-N6 (ADR-128 (7)): "Fill with AI proposals" stands here once its wording has passed the lawyer.
+  const after = ans.state === 'first-visit' && editable && props.aiProposals ? <div className="mt-2">{props.aiProposals}</div> : null;
 
   /* ------------------------------------------------------------ the facets */
   const keepTotal = ans.keep?.total ?? null;
@@ -258,26 +309,31 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
   const keepsFacet = priced ? optionFacet(ans.keeps, 'No cheapest one') : null;
   const allFacet = priced ? optionFacet(ans.all, 'No cheapest option') : null;
 
-  const chips: Array<{ key: string; ok: boolean; text: string; missing: string }> = [
-    { key: 'currency', ok: Boolean(cur), text: cur, missing: 'Currency' },
+  const chips: Array<{ key: string; ok: boolean; text: string; missing: string; typical: boolean }> = [
+    { key: 'currency', ok: Boolean(cur), text: cur, missing: 'Currency', typical: typicalShared.has('currency') },
     {
       key: 'dev-day-rate',
       ok: a.devDayRate !== null,
       text: `Developer ${cur ? formatMoney(a.devDayRate, cur) : formatNumber(a.devDayRate)}`,
       missing: 'Developer day',
+      typical: typicalShared.has('devDayRate'),
     },
     {
       key: 'test-day-rate',
       ok: a.testDayRate !== null,
       text: `Key user ${cur ? formatMoney(a.testDayRate, cur) : formatNumber(a.testDayRate)}`,
       missing: 'Key-user day',
+      typical: typicalShared.has('testDayRate'),
     },
-    { key: 'horizon-years', ok: a.horizonYears !== null, text: years, missing: 'Period' },
+    { key: 'horizon-years', ok: a.horizonYears !== null, text: years, missing: 'Period', typical: typicalShared.has('horizonYears') },
     {
       key: 'release-cadence',
       ok: Boolean(a.releaseCadence),
-      text: a.releaseCadence ? `${formatNumber(a.releaseCadence.perYear, { maximumFractionDigits: 2 })} releases a year${a.releaseCadence.confirmed ? '' : ' (confirm)'}` : '',
+      text: a.releaseCadence
+        ? `${formatNumber(a.releaseCadence.perYear, { maximumFractionDigits: 2 })} release${a.releaseCadence.perYear === 1 ? '' : 's'} a year${a.releaseCadence.confirmed ? '' : ' (confirm)'}`
+        : '',
       missing: 'Releases a year',
+      typical: typicalShared.has('releaseCadence'),
     },
   ];
   const chipRow = (
@@ -286,13 +342,19 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
         <span
           key={c.key}
           data-economics-assumption={c.key}
-          data-economics-assumption-state={c.ok ? 'stated' : 'missing'}
+          data-economics-assumption-state={c.ok ? (c.typical ? 'typical' : 'stated') : 'missing'}
+          title={c.ok && c.typical ? 'A typical assumption, not your figure' : undefined}
           className={cn(
             'inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[13px] leading-5 font-semibold tracking-normal',
-            c.ok ? 'border-cc-line bg-cc-surface text-cc-ink' : 'border-dashed border-cc-field-border bg-cc-surface text-cc-ink-muted',
+            c.ok && !c.typical
+              ? 'border-cc-line bg-cc-surface text-cc-ink'
+              : c.ok
+                ? 'border-dashed border-cc-warning bg-cc-surface text-cc-ink'
+                : 'border-dashed border-cc-field-border bg-cc-surface text-cc-ink-muted',
           )}
         >
           {c.ok ? c.text : c.missing}
+          {c.ok && c.typical ? <span className="sr-only"> (typical assumption)</span> : null}
           {editable ? <Pencil size={12} aria-hidden={true} className="shrink-0 text-cc-ink-muted" /> : null}
         </span>
       ))}
@@ -351,9 +413,17 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
     },
     {
       id: 'assumptions',
-      label: 'Your assumptions',
+      label: typicalNow ? 'Assumptions' : 'Your assumptions',
       value: chipRow,
-      note: priced ? (editable ? 'Your figures. Click to change one; every figure moves.' : 'The owner’s figures, read-only.') : 'Nothing has a default.',
+      note: typicalNow
+        ? editable
+          ? 'Dashed: a typical assumption, not your figure. Click to change one; every figure moves.'
+          : 'Dashed: a typical assumption, not the owner’s figure. Read-only.'
+        : priced
+          ? editable
+            ? 'Your figures. Click to change one; every figure moves.'
+            : 'The owner’s figures, read-only.'
+          : 'Nothing has a default.',
       ...(editable ? { onClick: openEdit } : {}),
     },
   ];
@@ -369,46 +439,58 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
         className="-mx-5 border-t border-cc-line bg-cc-surface-muted px-5 py-4 max-[720px]:-mx-4 max-[720px]:px-4"
       >
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <CurrencyField currency={cur} onChange={(c) => onPatch({ currency: c })} />
-          <FigureField
-            label="Developer day"
-            hint={RATES_HELP.devRate}
-            kind="rate"
-            value={a.devDayRate}
-            onChange={(v) => onPatch({ devDayRate: v })}
-            prefix={cur || undefined}
-            suffix="/ day"
-            data={{ 'data-cost-field': 'dev-day-rate' }}
-          />
-          <FigureField
-            label="Key-user day"
-            hint={RATES_HELP.testRate}
-            kind="rate"
-            value={a.testDayRate}
-            onChange={(v) => onPatch({ testDayRate: v })}
-            prefix={cur || undefined}
-            suffix="/ day"
-            data={{ 'data-cost-field': 'test-day-rate' }}
-          />
-          <FigureField
-            label="Compare over"
-            hint={RATES_HELP.horizon}
-            kind="horizon"
-            value={a.horizonYears}
-            onChange={(v) => onPatch({ horizonYears: v })}
-            suffix="years"
-            data={{ 'data-cost-field': 'horizon-years' }}
-          />
-          <CadenceField
-            perYear={a.releaseCadence?.perYear ?? null}
-            confirmed={a.releaseCadence?.confirmed ?? false}
-            onPerYear={(v) => onPatch({ releaseCadence: v === null ? null : { perYear: v, confirmed: false } })}
-            onConfirmed={(checked) => (a.releaseCadence ? onPatch({ releaseCadence: { ...a.releaseCadence, confirmed: checked } }) : undefined)}
-          />
+          <TypicalMark on={typicalShared.has('currency')} why={TYPICAL_SHARED.currency.why}>
+            <CurrencyField currency={cur} onChange={(c) => patchShared({ currency: c })} />
+          </TypicalMark>
+          <TypicalMark on={typicalShared.has('devDayRate')} why={TYPICAL_SHARED.devDayRate.why}>
+            <FigureField
+              label="Developer day"
+              hint={RATES_HELP.devRate}
+              kind="rate"
+              value={a.devDayRate}
+              onChange={(v) => patchShared({ devDayRate: v })}
+              prefix={cur || undefined}
+              suffix="/ day"
+              data={{ 'data-cost-field': 'dev-day-rate' }}
+            />
+          </TypicalMark>
+          <TypicalMark on={typicalShared.has('testDayRate')} why={TYPICAL_SHARED.testDayRate.why}>
+            <FigureField
+              label="Key-user day"
+              hint={RATES_HELP.testRate}
+              kind="rate"
+              value={a.testDayRate}
+              onChange={(v) => patchShared({ testDayRate: v })}
+              prefix={cur || undefined}
+              suffix="/ day"
+              data={{ 'data-cost-field': 'test-day-rate' }}
+            />
+          </TypicalMark>
+          <TypicalMark on={typicalShared.has('horizonYears')} why={TYPICAL_SHARED.horizonYears.why}>
+            <FigureField
+              label="Compare over"
+              hint={RATES_HELP.horizon}
+              kind="horizon"
+              value={a.horizonYears}
+              onChange={(v) => patchShared({ horizonYears: v })}
+              suffix="years"
+              data={{ 'data-cost-field': 'horizon-years' }}
+            />
+          </TypicalMark>
+          <TypicalMark on={typicalShared.has('releaseCadence')} why={TYPICAL_SHARED.releasesPerYear.why}>
+            <CadenceField
+              perYear={a.releaseCadence?.perYear ?? null}
+              confirmed={a.releaseCadence?.confirmed ?? false}
+              onPerYear={(v) => patchShared({ releaseCadence: v === null ? null : { perYear: v, confirmed: false } })}
+              onConfirmed={(checked) => (a.releaseCadence ? patchShared({ releaseCadence: { ...a.releaseCadence, confirmed: checked } }) : undefined)}
+            />
+          </TypicalMark>
         </div>
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 cc-text-meta text-cc-ink-muted">
           <span className="flex flex-wrap items-center gap-2">
-            Every figure on the page moves as you type. Saved with the project, never part of the signed run.
+            {typicalNow
+              ? 'A figure marked typical is not yours until you change it. Every figure on the page moves as you type.'
+              : 'Every figure on the page moves as you type. Saved with the project, never part of the signed run.'}
             {props.ratesSave ?? null}
           </span>
           <CcButton data-economics-assumptions-done="" onClick={() => setEditOpen(false)}>
@@ -425,9 +507,11 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
   const effortSummary =
     pending.length > 0
       ? 'Proposals waiting for your go'
-      : a.options.every((o) => o.oneOff || o.perRelease)
-        ? 'Yours to change'
-        : 'Not every option has its effort yet';
+      : a.options.some((o) => (o.typical ?? []).length > 0)
+        ? 'Typical assumptions, yours to change'
+        : a.options.every((o) => o.oneOff || o.perRelease)
+          ? 'Yours to change'
+          : 'Not every option has its effort yet';
 
   return (
     <div data-economics-page={ans.state} className="flex min-w-0 flex-col">
@@ -454,7 +538,7 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
         name="economics-anchor"
         plural="economics-anchors"
         onJump={(_e, anchor) => {
-          if (anchor.key === 'effort' || anchor.key === 'how' || anchor.key === 'model') openFold(anchor.key);
+          if (anchor.key === 'firm' || anchor.key === 'effort' || anchor.key === 'how' || anchor.key === 'model') openFold(anchor.key);
         }}
       />
 
@@ -478,7 +562,7 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
         />
       </section>
 
-      <div className="mt-6 grid min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="mt-6 grid min-w-0 grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]" data-economics-body="">
         <div className="flex min-w-0 flex-col gap-6">
           <section id="economics-compare" aria-labelledby="economics-compare-title" className={SECTION}>
             <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
@@ -487,8 +571,8 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
                   Options compared <FamilyChip kind="simulation" />
                 </h2>
                 <p className="m-0 mt-1 cc-text-cell text-cc-ink-muted">
-                  The four answers to the program decision, priced from one set of your figures. The days behind every amount are under
-                  &ldquo;Effort in days&rdquo; further down.
+                  The four answers to the program decision, priced from one set of {typicalNow ? 'assumptions' : 'your figures'}. The days
+                  behind every amount are under &ldquo;Effort in days&rdquo; further down.
                 </p>
               </div>
               <span className="cc-no-print">
@@ -500,16 +584,20 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
             <OptionsTable answer={ans} options={a.options} />
           </section>
 
-          <section id="economics-firm" aria-labelledby="economics-firm-title" className={SECTION}>
-            <h2 id="economics-firm-title" className="m-0 cc-text-h2 text-cc-ink">
-              How firm is the answer?
-            </h2>
-            <p className="m-0 mt-1 mb-3 cc-text-cell text-cc-ink-muted">
-              Your figures are estimates. This shows which of them could change the order of the options if they were wrong, and how wrong
-              they would have to be.
+          <SectionFold
+            id="economics-firm"
+            title="How firm is the answer?"
+            summary={!priced ? 'Once every option is priced' : firmness.tone === 'firm' ? 'Firm at any value' : firmness.tone === 'edge' ? 'Firm, with one limit' : 'No option is clearly ahead'}
+            open={folds.firm}
+            onOpenChange={(open) => setFolds((f) => ({ ...f, firm: open }))}
+            data={{ 'data-economics-firm': '' }}
+          >
+            <p className="m-0 mb-3 cc-text-cell text-cc-ink-muted">
+              {typicalNow ? 'The assumptions are estimates, some of them typical values.' : 'Your figures are estimates.'} This shows which of
+              them could change the order of the options if they were wrong, and how wrong they would have to be.
             </p>
             <HowFirm firmness={firmness} priced={priced} />
-          </section>
+          </SectionFold>
 
           <SectionFold
             id="economics-effort"
@@ -542,7 +630,7 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
                     comparison={comparison}
                     proposal={proposals.effort}
                     baselineProposal={proposals.baseline}
-                    onPatchOption={onPatchOption}
+                    onPatchOption={patchOptionAsReader}
                     editing={editingOptions}
                     onToggleEdit={toggleOption}
                     onOpenEdit={(id, field) => {
@@ -600,7 +688,20 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
                 scoreStale={props.scoreStale}
                 route={props.route}
                 baseline={proposals.baseline}
-                factors={pending.length > 0 ? 'pending' : anyProposalTaken ? 'taken' : loc === null ? 'none' : 'taken'}
+                factors={
+                  pending.length > 0
+                    ? 'pending'
+                    : a.options.some((o) => (o.typical ?? []).includes('effort'))
+                      ? 'typical'
+                      : anyProposalTaken
+                        ? 'taken'
+                        : loc === null
+                          ? 'none'
+                          : 'taken'
+                }
+                typical={a.typical ?? []}
+                typicalWords={typicalWords}
+                saved={props.saved}
                 figures={{
                   currency: cur,
                   dev: a.devDayRate,
@@ -611,16 +712,12 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
               />
             </div>
           </div>
-          <div className={SIDE}>
-            <h2 className="m-0 cc-text-h3 text-cc-ink">Saved</h2>
-            <div className="mt-1">{props.saved}</div>
-          </div>
           <div className={SIDE} data-economics-where-next="">
             <h2 className="m-0 cc-text-h3 text-cc-ink">Where this goes</h2>
             <ol className="m-0 mt-2 list-decimal space-y-1 pl-5 cc-text-cell text-cc-ink">
               <li>
-                <b className="font-semibold">The decision in Management</b>: Keep, Rebuild, Move to SAP standard or Retire. It shows these
-                amounts as a simulation and records the figures it was priced on.
+                <b className="font-semibold">The decision in Re-design</b>: Keep, Rebuild, Move to SAP standard or Retire. It shows these
+                amounts as a simulation and records the assumptions it was priced on, typical ones marked as such.
               </li>
               <li>
                 <b className="font-semibold">Next tool: Design</b>, for every option. Design checks its plan against the range priced here
@@ -630,9 +727,10 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
             <p className="m-0 mt-2 cc-text-meta text-cc-ink-muted" data-economics-decision="">
               {props.decisionWords}
             </p>
-            {props.managementHref ? (
+            {/* Priced, the answer's primary action is this link already; once is enough. */}
+            {props.managementHref && !priced ? (
               <div className="mt-2 cc-no-print">
-                <CcLinkButton href={props.managementHref}>Open the decision in Management</CcLinkButton>
+                <CcLinkButton href={props.managementHref}>Open the decision in Re-design</CcLinkButton>
               </div>
             ) : null}
           </div>
@@ -640,6 +738,24 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
       </div>
 
       {props.printFooter ?? null}
+    </div>
+  );
+}
+
+/**
+ * A shared figure filled by "Use typical assumptions" (3.5.1, ADR-144): the field as always, and under it what the
+ * value is and why it is typical. Gone as soon as the reader changes the figure.
+ */
+function TypicalMark({ on, why, children }: { on: boolean; why: string; children: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1" data-economics-typical-field={on ? 'typical' : undefined}>
+      {children}
+      {on ? (
+        <p className="m-0 flex flex-wrap items-center gap-x-2 gap-y-1 cc-text-meta text-cc-ink-muted">
+          <FamilyChip kind="simulation" note="typical assumption" />
+          <span>{why}</span>
+        </p>
+      ) : null}
     </div>
   );
 }

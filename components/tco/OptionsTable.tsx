@@ -75,7 +75,7 @@ export default function OptionsTable({ answer, options }: { answer: EconomicsAns
                     <span className="mt-1 block cc-text-meta text-cc-ink-muted">
                       {cond ? <b className="font-semibold text-cc-ink">Only {cond}. </b> : null}
                       {meaning}
-                      {deferral ? ` Upgrade deferral: ${deferral}, your figure, not priced.` : ''}
+                      {deferral ? ` Upgrade deferral: ${deferral}, ${(o.typical ?? []).includes('deferral') ? 'a typical assumption' : 'your figure'}, not priced.` : ''}
                     </span>
                   </th>
                   {c && c.total ? (

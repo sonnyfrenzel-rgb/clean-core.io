@@ -165,8 +165,10 @@ export function costRevisionFactsOf(
               perRelease: pair(o.perRelease),
               baselinePerYear: pair(o.maintenanceBaselinePerYear),
               effortSource: o.effortSource,
+              ...(o.typical && o.typical.length > 0 ? { typical: [...o.typical] } : {}),
             };
           }),
+          ...(a.typical && a.typical.length > 0 ? { typical: [...a.typical] } : {}),
         }
       : null,
     figuresNote,

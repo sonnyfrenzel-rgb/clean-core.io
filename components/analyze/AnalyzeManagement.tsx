@@ -21,6 +21,7 @@ import { useCustomerTexts } from '@/hooks/useCustomerTexts';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { workflowSteps } from '@/lib/workflow-steps';
 import { pricedOptions } from '@/lib/economics-record';
+import { figuresOwnerWords } from '@/lib/typical-assumptions';
 import { scoreBand } from '@/lib/clean-core-score';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
 import { managementInShort, programSummary } from '@/lib/program-summary-text';
@@ -315,7 +316,7 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
             </div>
             <p data-management-not-priced="" className="m-0 mt-3 cc-text-cell text-cc-ink-muted">
               {anyCost
-                ? 'Simulations on your own figures from Economics, not a quote. Analyze computes no amount.'
+                ? `Simulations on ${figuresOwnerWords(econ?.assumptions)} from Economics, not a quote. Analyze computes no amount.`
                 : 'Not priced yet: all four options are priced together in step 1 of Re-design. Analyze computes no amount.'}
             </p>
           </Section>

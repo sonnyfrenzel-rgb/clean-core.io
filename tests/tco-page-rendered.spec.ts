@@ -3,7 +3,7 @@ import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
 import { TERMS_VERSION } from '../lib/constants';
-import { adminSetDoc } from './helpers/admin-seed';
+import { adminGetDoc, adminSetDoc } from './helpers/admin-seed';
 import { formatAmount } from '../lib/cost-assumptions';
 import { fillEconomics, revealEconomicsField } from './helpers/economics';
 import { signInViaLanding } from './helpers/sign-in';
@@ -204,7 +204,9 @@ test('once an option leads, the panel says how far each assumption may move', as
 
   await expect(page.locator('[data-cost-winner="standard"]')).toBeVisible({ timeout: 15000 });
 
-  // In plain words first (ADR-128 (3)); the exact distances in the detail under it.
+  // In plain words first (ADR-128 (3)); the exact distances in the detail under it. Since 3.5.1 the section is a fold,
+  // closed until asked for: open it as a reader would.
+  await revealEconomicsField(page, '[data-economics-firm-row]');
   await expect(page.locator('[data-economics-firm-row]')).toHaveCount(4);
   const points = page.locator('[data-cost-tipping-field]');
   await expect(points).toHaveCount(4);
@@ -217,6 +219,60 @@ test('once an option leads, the panel says how far each assumption may move', as
   // At least one of the four is an actual distance; a panel that only ever
   // explains itself would satisfy the loop above.
   expect(sentences.join(' ')).toMatch(/(rises by|falls by|stays between)\s[\d.,]+\s%/);
+});
+
+/**
+ * 3.5.1 (ADR-144, owner 24.11.2026): one click on "Use typical assumptions" fills only what is missing, marks every
+ * value it filled as typical, prices all four options and offers the decision next. A figure the reader stated is
+ * never overwritten, and the marks are stored with the figures, so they survive a reload and reach the print.
+ */
+test('one click fills only what is missing, marks it typical, prices every option and keeps the reader’s figures', async ({ page }) => {
+  test.setTimeout(180 * 1000);
+  await openEconomics(page, SCORED);
+  await page.waitForSelector('[data-economics-page]');
+  await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'first-visit');
+  // Two figures of the reader's own first.
+  await fillEconomics(page, '[data-cost-field="currency"]', CURRENCY);
+  await fillEconomics(page, '[data-cost-field="dev-day-rate"]', '1350');
+  await page.locator('[data-economics-assumptions-done]').click();
+
+  const typical = page.locator('[data-answer-next] [data-economics-use-typical]');
+  // The answer card's own action, at the top of the page.
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect(typical).toBeInViewport();
+  await typical.click();
+  await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'priced', { timeout: 15000 });
+  for (const id of ['do-nothing', 'rebuild', 'standard', 'retire']) await expect(page.locator(`[data-cost-option-total="${id}"]`)).toContainText(CURRENCY);
+  // The reader's figures stand as theirs; the rest is marked typical, and the answer says so.
+  await expect(page.locator('[data-economics-assumption="currency"]')).toHaveAttribute('data-economics-assumption-state', 'stated');
+  await expect(page.locator('[data-economics-assumption="dev-day-rate"]')).toHaveAttribute('data-economics-assumption-state', 'stated');
+  await expect(page.locator('[data-economics-assumption="dev-day-rate"]')).toContainText('1,350');
+  for (const key of ['test-day-rate', 'horizon-years', 'release-cadence']) {
+    await expect(page.locator(`[data-economics-assumption="${key}"]`)).toHaveAttribute('data-economics-assumption-state', 'typical');
+  }
+  await expect(page.locator('[data-answer-card]')).toContainText('typical assumptions, not your own figures');
+  // The next step: the decision in Re-design, then Design.
+  await expect(page.locator('[data-answer-next] [data-economics-decide]')).toHaveAttribute('href', new RegExp(`/project/${SCORED}/redesign#decide$`));
+  await expect(page.locator('[data-economics-design-link]')).toHaveAttribute('href', `/project/${SCORED}/design`);
+
+  // Stored with the marks, the reader's figures untouched.
+  await expect
+    .poll(async () => (await adminGetDoc(`projects/${SCORED}/cost_assumptions`, 'current'))?.assumptions?.typical ?? null, { timeout: 15000 })
+    .toEqual(expect.arrayContaining(['testDayRate', 'horizonYears', 'releaseCadence']));
+  const stored = await adminGetDoc(`projects/${SCORED}/cost_assumptions`, 'current');
+  expect(stored?.assumptions?.devDayRate).toBe(1350);
+  expect(stored?.assumptions?.currency).toBe(CURRENCY);
+  expect(stored?.assumptions?.typical).not.toContain('devDayRate');
+  expect(stored?.assumptions?.options?.find((o: { id: string }) => o.id === 'rebuild')?.typical).toEqual(['effort']);
+
+  // A reload keeps the marks; the print says which values are typical.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForSelector('[data-economics-page="priced"]', { timeout: 60000 });
+  await expect(page.locator('[data-economics-assumption="test-day-rate"]')).toHaveAttribute('data-economics-assumption-state', 'typical');
+  await page.emulateMedia({ media: 'print' });
+  await expect(page.locator('[data-tco-print-typical]')).toContainText('Typical assumptions, not your own figures');
+  await expect(page.locator('[data-tco-print-typical]')).not.toContainText('developer day rate');
+  await page.emulateMedia({ media: 'screen' });
 });
 
 // QA 50585e6ab592: the printed estimate names the inputs it was priced with.
