@@ -158,7 +158,17 @@ async function withoutWithdrawnAdminClaim<T extends { uid: string }>(decoded: T)
   try {
     const { db } = await getAdminDb();
     const snap = await db.collection('users').doc(decoded.uid).get();
-    withdrawn = snap.exists && snap.data()?.isAdmin === false;
+    if (snap.exists) {
+      withdrawn = snap.data()?.isAdmin === false;
+    } else {
+      // No profile: an account that never had one keeps its claim, but an erased one does not. The erasure writes
+      // `erased_accounts/{uid}` in the batch that deletes the profile, and its ID token outlives that by up to an
+      // hour; while the marker holds, the token is no administrator's.
+      const marker = await db.collection('erased_accounts').doc(decoded.uid).get();
+      const expiresAt = marker.exists ? marker.data()?.expiresAt : null;
+      const until = expiresAt && typeof expiresAt.toMillis === 'function' ? expiresAt.toMillis() : expiresAt instanceof Date ? expiresAt.getTime() : null;
+      withdrawn = marker.exists && (until === null || until > Date.now());
+    }
   } catch (err) {
     console.error('verifyRequestAuth: admin mirror unreadable, dropping the admin claim:', err);
     withdrawn = true;

@@ -146,6 +146,24 @@ test.describe('a withdrawal that could not revoke the tokens still holds', () =>
       await removeAccount(uid);
     }
   });
+
+  test('an erased administrator, whose token outlives the profile, opens no admin route', async ({ request }: { request: APIRequestContext }) => {
+    // The erasure deletes the profile and writes `erased_accounts/{uid}` in one batch, and deletes the Auth user
+    // after it; the ID token stays valid for up to an hour. No profile plus a live marker is an erased account, not
+    // one that never had a mirror (QA full review of v3.5.0).
+    const { uid, user } = await seedAccount('erased-admin');
+    try {
+      await adminSetCustomClaim(uid, { admin: true });
+      const headers = { Authorization: `Bearer ${await user.getIdToken(true)}`, 'Content-Type': 'application/json' };
+      await adminDb().collection('erased_accounts').doc(uid).set({ expiresAt: new Date(Date.now() + 60 * 60 * 1000) });
+      await adminDb().collection('users').doc(uid).delete();
+      const res = await request.post('/api/admin/set-admin-claim', { headers, data: {} });
+      expect(res.status(), 'the erased administrator was still served').toBe(403);
+    } finally {
+      await adminDb().collection('erased_accounts').doc(uid).delete().catch(() => undefined);
+      await removeAccount(uid);
+    }
+  });
 });
 
 test.describe('a withdrawn administrator is refused at once', () => {
