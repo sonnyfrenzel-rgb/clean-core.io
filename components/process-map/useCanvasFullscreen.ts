@@ -115,7 +115,8 @@ export function useCanvasFullscreen({
   // Where the page stood when full screen began. The page behind cannot scroll while full screen covers it, so
   // leaving puts it back exactly there: whatever re-lays out the map on the way out (its level height, a focus
   // return, the browser's scroll anchoring) must not leave the reader somewhere else (owner 03.10.2026).
-  const pageAt = useRef<{ x: number; y: number } | null>(null);
+  // The window and every scrolling box the map sits in (the shell may scroll a box, not the window).
+  const pageAt = useRef<{ el: Element; top: number; left: number }[] | null>(null);
   useEffect(() => {
     if (wasFilled.current && !filled) {
       const lost = !document.activeElement || document.activeElement === document.body;
@@ -124,13 +125,29 @@ export function useCanvasFullscreen({
       pageAt.current = null;
       if (at) {
         const restore = () => {
-          if (Math.abs(window.scrollY - at.y) > 1 || Math.abs(window.scrollX - at.x) > 1) window.scrollTo(at.x, at.y);
+          for (const { el, top, left } of at) {
+            if (Math.abs(el.scrollTop - top) > 1 || Math.abs(el.scrollLeft - left) > 1) el.scrollTo(left, top);
+          }
         };
         window.requestAnimationFrame(() => window.requestAnimationFrame(restore));
         window.setTimeout(restore, 200);
       }
     }
-    if (!wasFilled.current && filled) pageAt.current = { x: window.scrollX, y: window.scrollY };
+    if (!wasFilled.current && filled) {
+      const boxes: { el: Element; top: number; left: number }[] = [];
+      const page = document.scrollingElement;
+      if (page) boxes.push({ el: page, top: page.scrollTop, left: page.scrollLeft });
+      // The boxes around the map, and the scrolling boxes of the page beside it (a step list, a code panel): one
+      // pass on the way in, nothing while full screen is open.
+      const seen = new Set<Element>();
+      for (let el = rootRef.current?.parentElement ?? null; el && el !== document.body; el = el.parentElement) seen.add(el);
+      document.querySelectorAll('main, main *').forEach((el) => seen.add(el));
+      for (const el of seen) {
+        if (rootRef.current?.contains(el)) continue;
+        if (el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1) boxes.push({ el, top: el.scrollTop, left: el.scrollLeft });
+      }
+      pageAt.current = boxes;
+    }
     // Into full screen, the focus goes with the reader: the toggle that opened
     // it is replaced by the labelled way out, which takes it.
     if (!wasFilled.current && filled) {
