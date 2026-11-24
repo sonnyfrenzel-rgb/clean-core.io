@@ -112,11 +112,25 @@ export function useCanvasFullscreen({
   }, [overlay, escapeInside]);
 
   const wasFilled = useRef(false);
+  // Where the page stood when full screen began. The page behind cannot scroll while full screen covers it, so
+  // leaving puts it back exactly there: whatever re-lays out the map on the way out (its level height, a focus
+  // return, the browser's scroll anchoring) must not leave the reader somewhere else (owner 03.10.2026).
+  const pageAt = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
     if (wasFilled.current && !filled) {
       const lost = !document.activeElement || document.activeElement === document.body;
       if (lost) toggleRef.current?.focus({ preventScroll: true });
+      const at = pageAt.current;
+      pageAt.current = null;
+      if (at) {
+        const restore = () => {
+          if (Math.abs(window.scrollY - at.y) > 1 || Math.abs(window.scrollX - at.x) > 1) window.scrollTo(at.x, at.y);
+        };
+        window.requestAnimationFrame(() => window.requestAnimationFrame(restore));
+        window.setTimeout(restore, 200);
+      }
     }
+    if (!wasFilled.current && filled) pageAt.current = { x: window.scrollX, y: window.scrollY };
     // Into full screen, the focus goes with the reader: the toggle that opened
     // it is replaced by the labelled way out, which takes it.
     if (!wasFilled.current && filled) {
