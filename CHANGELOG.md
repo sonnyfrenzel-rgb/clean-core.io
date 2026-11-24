@@ -24,6 +24,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   figures"); the side column has two cards, "Saved" moved into "What the figures rest on", and the decision link
   stands once. "1 release a year" is no longer "1 releases a year".
 
+- Mobile readability (owner, 24.11.2026), phone breakpoints only: a provenance chip in a narrow column puts its
+  note on a line of its own instead of breaking it one letter per line; the Economics options table keeps the
+  columns it drops below 720 px dropped when it stacks on a phone (no more rows of "—"); line anchors get a finger
+  box 8 px taller on touch screens, with nothing drawn differently. The phone step of the type scale waits.
+
 - Shorter texts on top, everything still one click deeper (owner feedback 24.11.2026: "viel zu lang", but no
   content may go missing). Display and copy only — no engine output, signed run, audit pack, export or legal text
   changes:

@@ -1324,6 +1324,16 @@ html:has([data-page-anchors]) {
     min-width: 0;
   }
 
+  /* A column the table itself drops on a phone (`max-[720px]:hidden`, the
+     Economics options table) stays dropped when the table stacks: the
+     `display: block` above is unlayered and used to beat the utility, so every
+     dropped column came back as a labelled row of its own — four options times
+     five rows of "—" on a phone (mobile readability, 24.11.2026). */
+  .doc-table td.max-\[720px\]\:hidden,
+  .doc-table th.max-\[720px\]\:hidden {
+    display: none;
+  }
+
   /* Hidden from the eye, not from the accessibility tree (roadmap 3.0.4,
      QA ed9796910f5a): `display: none` removed the column headers, and with
      them the only thing that told a screen reader what each cell was. The
@@ -1396,4 +1406,28 @@ html:has([data-page-anchors]) {
 [data-touch-viewport='free'] .react-flow__pane,
 [data-touch-viewport='free'] .react-flow__node {
   touch-action: none;
+}
+
+/* -------------------------------------------------------------
+ * Line anchors under a finger (mobile readability, 24.11.2026)
+ *
+ * A line anchor is 17-20 px high on purpose — it sits inside a sentence
+ * (DESIGN.md §3) — and was the most frequent target under 24 px on every tool
+ * page on a phone (WCAG 2.5.8). On a touch screen the box a finger hits grows
+ * by 8 px above and below; what the eye sees does not change, and a mouse
+ * keeps the exact box. The same rule as the segments' `pointer-coarse:min-h-11`
+ * (components/cc/SegmentedControl.tsx), without moving the line it sits in.
+ * ------------------------------------------------------------- */
+@media (pointer: coarse) {
+  button[data-cc-anchor],
+  a[data-doc-anchor] {
+    position: relative;
+  }
+
+  button[data-cc-anchor]::after,
+  a[data-doc-anchor]::after {
+    content: '';
+    position: absolute;
+    inset: -8px -2px;
+  }
 }
