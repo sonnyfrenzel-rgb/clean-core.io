@@ -117,6 +117,8 @@ export function useCanvasFullscreen({
   // return, the browser's scroll anchoring) must not leave the reader somewhere else (owner 03.10.2026).
   // The window and every scrolling box the map sits in (the shell may scroll a box, not the window).
   const pageAt = useRef<{ el: Element; top: number; left: number }[] | null>(null);
+  // The last way back to that place, for the history step below to run once its entry is gone.
+  const restorePage = useRef<(() => void) | null>(null);
   useEffect(() => {
     if (wasFilled.current && !filled) {
       const lost = !document.activeElement || document.activeElement === document.body;
@@ -129,6 +131,7 @@ export function useCanvasFullscreen({
             if (Math.abs(el.scrollTop - top) > 1 || Math.abs(el.scrollLeft - left) > 1) el.scrollTo(left, top);
           }
         };
+        restorePage.current = restore;
         window.requestAnimationFrame(() => window.requestAnimationFrame(restore));
         window.setTimeout(restore, 200);
       }
@@ -206,13 +209,14 @@ export function useCanvasFullscreen({
         // Taking our entry off is not a navigation for the reader: the browser must not restore an older
         // scroll position for it (it did, a moment after the hook had put the page back). Manual for this one
         // step, and back to what it was once the entry is gone.
+        // The place to go back to is the one recorded on the way in (above), not where the window stands now:
+        // a click on the way out may have scrolled the document behind full screen.
         const restoration = window.history.scrollRestoration;
-        const at = { x: window.scrollX, y: window.scrollY };
         window.history.scrollRestoration = 'manual';
         const settle = () => {
           window.removeEventListener('popstate', settle);
           window.requestAnimationFrame(() => {
-            if (Math.abs(window.scrollY - at.y) > 1 || Math.abs(window.scrollX - at.x) > 1) window.scrollTo(at.x, at.y);
+            restorePage.current?.();
             window.history.scrollRestoration = restoration;
           });
         };
