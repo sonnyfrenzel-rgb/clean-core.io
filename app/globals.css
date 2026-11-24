@@ -370,19 +370,13 @@
  *   cc-text-title       22 / 800 / -0.02em   project title, stage title
  *   cc-text-figure      22 / 800 / -0.02em / tabular   a key figure (D.31)
  *   cc-text-hero        56→64 / 800 / -0.03em / tabular   Analyze's score, once (ADR-093)
- *   cc-text-h2         16→15 / 700          section title
- *   cc-text-h3          15→14 / 700          card title
- *   cc-text-body        15→14 / 500 / 1.55   running text
- *   cc-text-cell        14→13 / 500          table cell, secondary text
- *   cc-text-identifier  14→13 / 600          object identifier
- *   cc-text-meta        13→12 / 600          meta line, chip (E-1)
- *   cc-text-label       12→11 / 600 / CAPS / 0.08em   micro label, column head
- *
- * "a→b": a on a phone, b from S (40rem) up — the phone step of §1.2
- * (mobile readability, 24.11.2026). A phone is read closer but on a third of
- * the width, and 13 px secondary text was 85-94 % of every tool page there; one
- * pixel more on each reading role, below the title, keeps the hierarchy and
- * leaves every layout from S up exactly as it was.
+ *   cc-text-h2         15 / 700             section title
+ *   cc-text-h3          14 / 700             card title
+ *   cc-text-body        14 / 500 / 1.55      running text
+ *   cc-text-cell        13 / 500             table cell, secondary text
+ *   cc-text-identifier  13 / 600             object identifier
+ *   cc-text-meta        12 / 600             meta line, chip (E-1)
+ *   cc-text-label       11 / 600 / CAPS / 0.08em   micro label, column head
  *
  * Nothing is smaller than `--cc-text-min`, and nothing is 900 (§1.2).
  * ------------------------------------------------------------- */
@@ -421,68 +415,47 @@
 }
 
 @utility cc-text-h2 {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1.375;
-  @media (width >= 40rem) {
-    font-size: 15px;
-  }
 }
 
 @utility cc-text-h3 {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
   line-height: 1.375;
-  @media (width >= 40rem) {
-    font-size: 14px;
-  }
 }
 
 @utility cc-text-body {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
   line-height: 1.55;
-  @media (width >= 40rem) {
-    font-size: 14px;
-  }
 }
 
 @utility cc-text-cell {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   line-height: 1.5;
-  @media (width >= 40rem) {
-    font-size: 13px;
-  }
 }
 
 @utility cc-text-identifier {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 1.5;
-  @media (width >= 40rem) {
-    font-size: 13px;
-  }
-}
-
-@utility cc-text-meta {
   font-size: 13px;
   font-weight: 600;
   line-height: 1.5;
-  @media (width >= 40rem) {
-    font-size: 12px;
-  }
+}
+
+@utility cc-text-meta {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
 }
 
 @utility cc-text-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.08em;
   line-height: 1.4;
   text-transform: uppercase;
-  @media (width >= 40rem) {
-    font-size: 11px;
-  }
 }
 
 /* -------------------------------------------------------------
@@ -1351,16 +1324,6 @@ html:has([data-page-anchors]) {
     min-width: 0;
   }
 
-  /* A column the table itself drops on a phone (`max-[720px]:hidden`, the
-     Economics options table) stays dropped when the table stacks: the
-     `display: block` above is unlayered and used to beat the utility, so every
-     dropped column came back as a labelled row of its own — four options times
-     five rows of "—" on a phone (mobile readability, 24.11.2026). */
-  .doc-table td.max-\[720px\]\:hidden,
-  .doc-table th.max-\[720px\]\:hidden {
-    display: none;
-  }
-
   /* Hidden from the eye, not from the accessibility tree (roadmap 3.0.4,
      QA ed9796910f5a): `display: none` removed the column headers, and with
      them the only thing that told a screen reader what each cell was. The
@@ -1433,28 +1396,4 @@ html:has([data-page-anchors]) {
 [data-touch-viewport='free'] .react-flow__pane,
 [data-touch-viewport='free'] .react-flow__node {
   touch-action: none;
-}
-
-/* -------------------------------------------------------------
- * Line anchors under a finger (mobile readability, 24.11.2026)
- *
- * A line anchor is 17-20 px high on purpose — it sits inside a sentence
- * (DESIGN.md §3) — and was the most frequent target under 24 px on every tool
- * page on a phone (WCAG 2.5.8). On a touch screen the box a finger hits grows
- * by 8 px above and below; what the eye sees does not change, and a mouse
- * keeps the exact box. The same rule as the segments' `pointer-coarse:min-h-11`
- * (components/cc/SegmentedControl.tsx), without moving the line it sits in.
- * ------------------------------------------------------------- */
-@media (pointer: coarse) {
-  button[data-cc-anchor],
-  a[data-doc-anchor] {
-    position: relative;
-  }
-
-  button[data-cc-anchor]::after,
-  a[data-doc-anchor]::after {
-    content: '';
-    position: absolute;
-    inset: -8px -2px;
-  }
 }

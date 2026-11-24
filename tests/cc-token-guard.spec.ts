@@ -214,21 +214,12 @@ test.describe('the whole app uses tokens and nothing else', () => {
  */
 test.describe('the app-wide foundations (D.3)', () => {
   const css = read('app/globals.css');
-  const decls = (block: string) =>
-    Object.fromEntries([...block.matchAll(/([a-z-]+):\s*([^;]+);/g)].map((d) => [d[1], d[2].trim()]));
-  /** The role's declarations as a phone gets them (before any nested `@media`). */
   const utility = (name: string) => {
     const m = css.match(new RegExp(`@utility ${name} \\{([^}]*)\\}`));
     if (!m) return null;
-    return decls(m[1].split('@media')[0]);
-  };
-  /** The role's declarations from S (40rem) up: the phone's, overridden by the nested `@media (width >= 40rem)`. */
-  const utilityFromS = (name: string) => {
-    const m = css.match(new RegExp(`@utility ${name} \\{([^}]*)\\}`));
-    if (!m) return null;
-    const [base, ...rest] = m[1].split('@media');
-    const media = rest.find((r) => /^\s*\(width >= 40rem\)\s*\{/.test(r));
-    return { ...decls(base), ...(media ? decls(media.replace(/^[^{]*\{/, '')) : {}) };
+    return Object.fromEntries(
+      [...m[1].matchAll(/([a-z-]+):\s*([^;]+);/g)].map((d) => [d[1], d[2].trim()]),
+    );
   };
 
   test('the text roles of §1.2, with Meta/Chip (E-1), are utilities with the scale values', () => {
@@ -255,41 +246,13 @@ test.describe('the app-wide foundations (D.3)', () => {
       },
     };
     for (const [name, want] of Object.entries(roles)) {
-      const got = utilityFromS(name);
+      const got = utility(name);
       expect(got, `@utility ${name} is missing from app/globals.css`).not.toBeNull();
       expect(got, name).toMatchObject(want);
       // §1.2: nothing under the floor, nothing at 900, and no colour in a type role.
       expect(parseFloat(got!['font-size']), name).toBeGreaterThanOrEqual(11);
       expect(Number(got!['font-weight']), name).toBeLessThanOrEqual(800);
       expect(got, `${name} sets a colour — ink is a separate decision`).not.toHaveProperty('color');
-    }
-  });
-
-  test('the phone step of §1.2: one pixel more on every reading role below 40rem, the rest unchanged', () => {
-    // Mobile readability (owner, 24.11.2026): the reading roles one pixel larger on a
-    // phone, title and figure as they are, so the hierarchy keeps its steps.
-    const phone: Record<string, string> = {
-      'cc-text-title': '22px',
-      'cc-text-figure': '22px',
-      'cc-text-h2': '16px',
-      'cc-text-h3': '15px',
-      'cc-text-body': '15px',
-      'cc-text-cell': '14px',
-      'cc-text-identifier': '14px',
-      'cc-text-meta': '13px',
-      'cc-text-label': '12px',
-    };
-    for (const [name, size] of Object.entries(phone)) {
-      const got = utility(name);
-      expect(got, `@utility ${name} is missing from app/globals.css`).not.toBeNull();
-      expect(got!['font-size'], `${name} on a phone`).toBe(size);
-      expect(utilityFromS(name)!['font-weight'], `${name} keeps its weight on a phone`).toBe(got!['font-weight']);
-    }
-    // Every step stays above the next one down, on a phone as from S.
-    const order = ['cc-text-h2', 'cc-text-body', 'cc-text-cell', 'cc-text-meta', 'cc-text-label'];
-    for (const get of [utility, utilityFromS]) {
-      const sizes = order.map((n) => parseFloat(get(n)!['font-size']));
-      for (let i = 1; i < sizes.length; i++) expect(sizes[i - 1], `${order[i - 1]} above ${order[i]}`).toBeGreaterThan(sizes[i]);
     }
   });
 

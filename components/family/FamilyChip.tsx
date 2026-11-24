@@ -39,11 +39,7 @@ export default function FamilyChip(props: FamilyChipProps) {
       data-cc-form={entry.form}
       title={props.title ?? entry.meaning}
       className={cn(
-        // `flex-wrap` with a note: in a narrow column (a facet beside another on a
-        // phone) the note moves under the word as a whole instead of being squeezed
-        // into a column one letter wide (mobile readability, 24.11.2026).
-        'inline-flex max-w-full items-center gap-x-1 rounded-full border py-px pr-2 pl-2 align-middle',
-        note ? 'flex-wrap' : null,
+        'inline-flex max-w-full items-center gap-1 rounded-full border py-px pr-2 pl-2 align-middle',
         'text-[12px] leading-4 font-semibold tracking-normal normal-case',
         state.text,
         state.borderStrong,
@@ -51,14 +47,11 @@ export default function FamilyChip(props: FamilyChipProps) {
         entry.form === 'dashed' ? 'border-dashed' : 'border-solid',
       )}
     >
-      {/* Icon and word never part: only the note moves to a line of its own. */}
-      <span className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap">
-        <Icon size={12} aria-hidden={true} className="shrink-0" />
-        <span data-family-chip-label="" className="shrink-0 whitespace-nowrap">
-          {entry.label}
-        </span>
+      <Icon size={12} aria-hidden={true} className="shrink-0" />
+      <span data-family-chip-label="" className="shrink-0 whitespace-nowrap">
+        {entry.label}
       </span>
-      {note ? <span className="min-w-0 font-medium [overflow-wrap:break-word]">· {note}</span> : null}
+      {note ? <span className="min-w-0 font-medium [overflow-wrap:anywhere]">· {note}</span> : null}
     </span>
   );
 }
