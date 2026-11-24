@@ -1755,6 +1755,10 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-1010 | low | P2 | own step, needs Sonny's go (with SEC-2026-016/073: nonce CSP) | scheduled |
 | SEC-2026-1014 | info | P3 | 3.5.0 · comment wording (engine4 lexer is read by parse-once since ADR-133) | scheduled |
 | SEC-2026-1015 | info | P3 | 3.5.0 · comment wording | scheduled |
+| SEC-2026-1016 | medium | P2 | 3.5.1 · fixed cf003123a on integrate/3.5.0, confirmed by the next audit | fixed |
+| SEC-2026-1017 | low | P3 | 3.5.1 · fixed cf003123a on integrate/3.5.0 | fixed |
+| SEC-2026-1018 | info | P3 | 3.5.1 · fixed cf003123a on integrate/3.5.0 | fixed |
+| SEC-2026-1019 | info | P3 | 3.5.1 · comment wording, fixed cf003123a | fixed |
 | SEC-2026-981 | medium | P3 | with SEC-2026-763 | scheduled |
 | SEC-2026-982 | low | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 | SEC-2026-983 | low | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
@@ -2438,7 +2442,7 @@ Scheduling: **0.14** security (15 fingerprints, titles withheld) · **0.15** sta
 | 3d1ade86103c | high | lib/analysis-prompt.ts | An unspecified deployment target is asserted as Private Edition / RISE | — | unclear — reachable only via a hand-built URL with `autoAnalyze`; closed along with 0.15 |
 | 45737310a1d7 | high | lib/abap/extensibility-router.ts | Incomplete detector coverage is converted into a 100% clean score and “trivial” feasibility claim | 0.18 | scheduled |
 | 4a4321a45f3c | high | lib/board-deck.ts | Board deck manufactures go-live approval without approval evidence | 0.8 | fixed (dev) (= UX-002) |
-| 4f7643df8c3e | high | app/api/fetch-odata-metadata/route.ts | S/4 metadata responses can stream without a timeout or size bound | 0.14 | scheduled |
+| 4f7643df8c3e | high | app/api/fetch-odata-metadata/route.ts | S/4 metadata responses can stream without a timeout or size bound | 0.14 | resolved by removal — route removed in v3.5.0 (374763eaa) |
 | 50fd6bd9d3c3 | high | components/analyze/TargetScopeMapping.tsx | Every project is shown fabricated cloud-readiness and decommission percentages | 0.2 | scheduled (= UX-001) |
 | 512ed3a9e6bd | high | scripts/send-survey.ts | *(Title withheld until shipped — integrity)* | — | fixed (dev) |
 | 569fc1c41e35 | high | app/api/admin/set-admin-claim/route.ts | *(Title withheld until shipped — security)* | 0.14 | scheduled |
@@ -2463,14 +2467,14 @@ Scheduling: **0.14** security (15 fingerprints, titles withheld) · **0.15** sta
 | f4561d983d92 | high | scripts/security/lib/surface.mjs | *(Title withheld until shipped — security)* | 0.16 | scheduled |
 | 052d2fe8f51c | high | lib/abap/code-assessment.ts | Short programs that write SAP standard tables are recommended for retirement | 0.18 | scheduled |
 | 0613631545b2 | high | app/(app)/project/[projectId]/analyze/page.tsx | Confluence export fabricates project-specific routing evidence when optional analysis is missing | 0.2 | scheduled |
-| 093df0feed02 | high | app/api/test-s4-odata-read/route.ts | *(Title withheld until shipped — integrity)* | 0.14 | scheduled |
+| 093df0feed02 | high | app/api/test-s4-odata-read/route.ts | *(Title withheld until shipped — integrity)* | 0.14 | resolved by removal — route removed in v3.5.0 (374763eaa) |
 | 0e2d5f95821f | high | app/api/fetch-s4-metadata/route.ts | *(Title withheld until shipped — integrity)* | 0.14 | scheduled |
 | 1386ead8a318 | high | app/api/runs/create/route.ts | The signing route accepts arbitrary non-ABAP text as a completed analysis run | 0.15 | scheduled |
 | 1925189d0606 | high | app/page.tsx | Worked examples are falsely described as compiled, tested, and verified | 0.2 | scheduled |
 | 19bdc218308b | high | lib/abap/findings-detector.ts | Keywords inside string templates become support findings | 0.18 | scheduled |
 | 241c291b4205 | high | lib/workflow-steps.ts | Client-authored test statuses still unlock Testing and Delivery | E07-F02 | scheduled |
 | 2913b2ec26d6 | high | lib/audit-signing-keypair.ts | Signing-key rotation makes previously issued packs fail default verification | 0.5 | scheduled |
-| 2ba9cba8e984 | high | app/api/fetch-odata-metadata/route.ts | *(Title withheld until shipped — integrity)* | 0.14 | scheduled |
+| 2ba9cba8e984 | high | app/api/fetch-odata-metadata/route.ts | *(Title withheld until shipped — integrity)* | 0.14 | resolved by removal — route removed in v3.5.0 (374763eaa) |
 | 2f60dc7f9d20 | high | app/whitepaper/page.tsx | Whitepaper promises export of a compiled package without an ABAP compilation path | 0.2 | scheduled |
 | 359639c30d77 | high | lib/abap/code-assessment.ts | RFC/BAPI detection misses normal module names and scans non-executable text | 0.18 | scheduled |
 | 3ad7de2e710c | high | app/api/audit-pack/create/route.ts | *(Title withheld until shipped — integrity)* | 0.14 | scheduled |
@@ -2486,7 +2490,7 @@ Scheduling: **0.14** security (15 fingerprints, titles withheld) · **0.15** sta
 | 5dce9bd7ff9e | high | lib/abap/usage-parser.ts | Whitespace-only XLSX counts become measured zeroes and retirement candidates | 0.18 | scheduled |
 | 62c08912d745 | high | components/design/CloudServiceIntegrations.tsx | SAP HANA services are still mapped to the PostgreSQL implementation guide | 0.2 | scheduled |
 | 666a399f4dd2 | high | components/TransformationReplay.tsx | Timer-driven replay still reports compilation and generated tests that never occurred | 0.2 | dropped with 3.0.6 (showroom removed, 24.09.2026) |
-| 7182b3754472 | high | app/api/test-s4-odata-read/route.ts | *(Title withheld until shipped — integrity)* | 0.14 | scheduled |
+| 7182b3754472 | high | app/api/test-s4-odata-read/route.ts | *(Title withheld until shipped — integrity)* | 0.14 | resolved by removal — route removed in v3.5.0 (374763eaa) |
 | 725c5d80afc6 | high | lib/abap/extensibility-router.ts | Routing checkpoints assert constructs that were not detected | 0.18 | scheduled |
 | 751bd4ef8e8b | high | app/(app)/project/[projectId]/transformation/page.tsx | Non-JSON model output is still saved as a completed transformation | 0.15 | scheduled |
 | 766ae59f10e4 | high | lib/abap/usage-parser.ts | Whitespace-only spreadsheet counts still become measured zeroes | 0.18 | scheduled |

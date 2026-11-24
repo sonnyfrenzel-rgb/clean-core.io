@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Security audit of v3.5.0 (653cff96abb5) taken in: nine findings, four fixed with tests, five refuted with evidence
+  (sealed register; IDs in `docs/ROADMAP.md` §12). SEC-653cff9-01 (P2), -03 (P3), -04 (P3) and -05 (P3) are fixed:
+  `tests/export-manifest-required.spec.ts`, `tests/acceptance-local-only.spec.ts`, a new case in
+  `tests/signing-key-guard.spec.ts`; comments that stated more than code or tests show now cite the spec that holds
+  them, and `tests/firestore-rules-readers.spec.ts` gains the case its rules comment promised. `docs/ux/ux-brief.md`
+  says where a security observation goes instead of only that it is out of scope. No `firestore.rules` change.
+- The four QA full-review findings scheduled for the two Testing OData routes removed in v3.5.0 are closed by that
+  removal (`docs/ROADMAP.md` §14).
+
 ## [v3.5.0] — 2026-11-24
 
 ### Security
