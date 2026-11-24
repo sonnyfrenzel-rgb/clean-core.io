@@ -494,7 +494,7 @@ export default function BpmnCanvas({
     if (!opener) return;
     // After the hook has put the focus on the toggle: the opener, where it is still on the page.
     window.requestAnimationFrame(() => {
-      if (opener.isConnected && opener.getClientRects().length > 0) opener.focus();
+      if (opener.isConnected && opener.getClientRects().length > 0) opener.focus({ preventScroll: true });
     });
   }, [filled]);
 

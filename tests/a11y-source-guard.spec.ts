@@ -318,15 +318,15 @@ test.describe('the map in full screen on Analyze, Business (AB-5, 3.2.0)', () =>
 
   test('the focus moves in on open (to the way out), Tab stays inside, and the focus comes back on leaving', () => {
     // In: the hook focuses `toggleRef`; in full screen that is the bar's "Leave full screen".
-    expect(hook).toContain('toggleRef.current?.focus();');
+    expect(hook).toContain('toggleRef.current?.focus({ preventScroll: true });');
     expect(canvas).toContain('const leaveRef = toggleRef;');
     expect(bar).toContain('buttonRef={tools.leaveRef}');
     // Inside: Tab and Shift+Tab wrap at the dialog's edges.
     expect(canvas).toContain('onKeyDown={filled ? keepTabInside : undefined}');
     expect(canvas).toMatch(/const keepTabInside = useCallback\(\(event[\s\S]*?event\.key !== 'Tab'[\s\S]*?last\.focus\(\)[\s\S]*?first\.focus\(\)/);
-    // Out: back to the toggle, or to the control that asked for full screen ("Edit model").
-    expect(hook).toMatch(/if \(lost\) toggleRef\.current\?\.focus\(\);/);
-    expect(canvas).toContain('if (opener.isConnected && opener.getClientRects().length > 0) opener.focus();');
+    // Out: back to the toggle, or to the control that asked for full screen ("Edit model"), without moving the page.
+    expect(hook).toContain('if (lost) toggleRef.current?.focus({ preventScroll: true });');
+    expect(canvas).toContain('if (opener.isConnected && opener.getClientRects().length > 0) opener.focus({ preventScroll: true });');
   });
 
   test('Escape leaves it — except inside the editor, where Escape ends a tool', () => {
