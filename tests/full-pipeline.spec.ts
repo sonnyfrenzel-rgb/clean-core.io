@@ -445,13 +445,16 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 7: MODULAR HANDOVER DELIVERY ---
     console.log('Navigating to Stage 7: Delivery...');
     await openTool(page, 'delivery');
-    await page.waitForSelector('button:has-text("Download Bundle")', { timeout: 45000 });
+    // Since 3.5.0 the bundle button says what it hands over: the package, or the review version while the
+    // handover is not complete.
+    const bundleButton = page.getByRole('button', { name: /^Download the (package|review version)$/ }).first();
+    await expect(bundleButton).toBeVisible({ timeout: 45000 });
 
     // Setup download event listener
     const downloadPromise = page.waitForEvent('download');
     
     // Click ZIP Download Handover Bundle
-    await page.click('button:has-text("Download Bundle")');
+    await bundleButton.click();
     const download = await downloadPromise;
 
     // Assert download is successful
