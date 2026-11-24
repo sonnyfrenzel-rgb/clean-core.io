@@ -119,6 +119,13 @@ focus rings and field boundaries stay visible.
 | Micro label | 11 px / **600**, CAPITALS, `0.08em` | Column headers, facet label |
 | Hero figure (`cc-text-hero`) — Analyze's Clean Core Score, once (ADR-093) | 64 px / **800**, `-0.03em`, tabular (56 px on a phone) | "37" |
 
+**Phone step** (below S, 40rem; mobile readability, owner 24.11.2026): every reading role one pixel larger on a
+phone — section title 16, card title 15, body 15, table cell and identifier 14, meta/chip role 13, micro label 12 —
+while the project title and the key figure stay at 22 and the hero at 56. From S up the table above holds unchanged.
+A phone is read on a third of the width with the text a reader cannot lean back from; at 13 px the secondary text
+was most of every tool page there. The roles are `cc-text-*` utilities, so the step lives in one place
+(`app/globals.css`) and `tests/cc-token-guard.spec.ts` holds both columns.
+
 **Lower limit 11 px.** No content in capitals, only labels. 900 does not exist in the workspace — it flattens the
 hierarchy. **12 px is a step of its own** (ADR-047), not the gap between 11 and 13: chips, identifiers, tags,
 meta lines and field hints, always 600 — never for body text and table cells. The stage header (`StageHeader`) follows
@@ -1386,6 +1393,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.20 | 24.11.2026 | Mobile readability (owner 24.11.2026): the phone step of the type scale — every reading role one pixel larger below S, title, figure and hero unchanged, from S up unchanged (§1.2) |
 | 1.8.19 | 23.11.2026 | Analyze, IT is one page, code first, in the family frame (AB-9, ADR-140, §5.6); the workspace page dissolves and `/project/<id>` redirects every address to Analyze (AB-11, §2.3); the coach marks retire (§6.2); one line-anchor notation, "line 243" (Q11, §3) |
 | 1.8.18 | 23.11.2026 | Analyze, Management as a page of its own and Re-design as the way on (ADR-143, owner 23.11.2026): §2.12 the *Re-design ›* group in the tool row of Analyze and the Re-design page (`/project/[id]/redesign`) with the decision as step 2; §5 the Management page of Analyze (AB-10), one primary action *Re-design this program*, the decision read-only. |
 | 1.8.17 | 13.11.2026 | Shell bar below 1024 px (§2.1, ADR-115, owner decision 13.11.2026): the path drops the "My workspace" crumb before a project and shows the project and what follows it; Help shows its "?" alone, with its word as accessible name and tooltip. From 1024 px up unchanged. |
