@@ -18,6 +18,7 @@ import { describeRunCost } from '@/lib/run-cost';
 import { sourceFileName } from '@/lib/source-file-name';
 import { STARTER_EXAMPLES } from '@/lib/starter-examples';
 import { staleness } from '@/lib/workflow-steps';
+import { redesignHref } from '@/lib/redesign';
 import { bucketMoves, type FitByPlatform, type Loaded } from '@/lib/management-overview';
 import {
   normaliseRelease,
@@ -434,7 +435,7 @@ export function TargetChangeNotice({ projectId, project }: { projectId: string; 
               {notice.decisionOutdated ? (
                 <CcLinkButton
                   density="compact"
-                  href={`/project/${encodeURIComponent(projectId)}?view=management#decision-card`}
+                  href={redesignHref(projectId, 'decide')}
                   data-target-change-notice-tool="decision"
                 >
                   {wt('tgt.noticeDecision')}

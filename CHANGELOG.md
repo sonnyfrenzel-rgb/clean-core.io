@@ -35,6 +35,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The four QA full-review findings scheduled for the two Testing OData routes removed in v3.5.0 are closed by that
   removal (`docs/ROADMAP.md` §14).
 
+### Fixed
+
+- Re-design no longer dead-ends after a decision that builds nothing (decision-flow S1). After a confirmed Keep, Move
+  to SAP standard or Retire, Design reads "Not needed" too (before, only Transformation to Delivery did, and Design
+  stayed "Not started" with nothing to write), every step without a record says why ("Not needed: Retire builds
+  nothing"), and the one action is "Open the decision" with "Done. … no step is waiting" instead of "Open Design" for
+  ever. A step that already holds something keeps its own state; an option only chosen reads "Not needed once … is
+  confirmed" and the decision stays the next step. Rebuild is unchanged (`lib/redesign.ts`;
+  `tests/redesign-way-on.spec.ts`, rendered `tests/redesign-decision-ends.spec.ts`).
+- Economics' "Take it to the decision" opens Re-design's decision step directly instead of an old address and a
+  redirect, and its condition line says the decision is taken in Re-design, not in Management.
+
 ## [v3.5.0] — 2026-11-24
 
 ### Security

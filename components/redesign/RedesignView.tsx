@@ -48,7 +48,7 @@ export default function RedesignView({
         condition={condition}
         action={
           model.next ? (
-            <CcLinkButton href={hrefOf(model.next.path)} variant="primary" data-redesign-next={model.next.key}>
+            <CcLinkButton href={hrefOf(model.next.path)} variant="primary" data-redesign-next={model.next.key} data-redesign-done={model.next.done ? '' : undefined}>
               {model.next.label}
               <ArrowRight size={16} aria-hidden={true} />
             </CcLinkButton>
@@ -115,8 +115,8 @@ export default function RedesignView({
             ))}
           </ol>
           <p className="m-0 mt-3 cc-text-cell text-cc-ink-muted">
-            A decision other than Rebuild builds nothing: the steps after Design read &ldquo;Not needed&rdquo;, and Design still shows what the
-            decided option means for this program.
+            A decision other than Rebuild builds nothing: once it is confirmed, the steps after it read &ldquo;Not needed&rdquo; and Re-design is
+            done. Design still shows what the decided option means for this program.
           </p>
         </section>
 

@@ -82,7 +82,7 @@ export function economicsGuardRail(project: GuardRailProject | null | undefined)
   const record = project?._economics ?? null;
   const base = { decision, range: null, days: null, currency: '', years: null } as const;
   if (!decision) {
-    return { ...base, state: 'no-decision', sentence: 'No program decision yet. It is taken in Management, on the costs Economics prices.' };
+    return { ...base, state: 'no-decision', sentence: 'No program decision yet. It is taken in Re-design, on the costs Economics prices.' };
   }
   if (!record) {
     return { ...base, state: 'no-figures', sentence: `${decision.label} is not priced yet: Economics holds no figures for this program.` };

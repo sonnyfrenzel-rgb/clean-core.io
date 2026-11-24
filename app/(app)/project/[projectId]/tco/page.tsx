@@ -32,6 +32,7 @@ import { countSourceLines } from '@/lib/source-lines';
 import { readStoredAnalysis } from '@/lib/money-honesty';
 import { routeLabel } from '@/lib/sap-naming';
 import { programDecisionOf } from '@/lib/economics-guard-rail';
+import { redesignHref } from '@/lib/redesign';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSkeleton from '@/components/cc/Skeleton';
