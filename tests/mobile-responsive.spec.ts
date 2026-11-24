@@ -698,7 +698,21 @@ async function fullscreenRoundTrip(page: Page, label: string, phone: boolean): P
     await page.waitForTimeout(400);
     if (page.url() !== url) broken.push(`${label}: leaving by ${exit} changed the address to ${page.url()}`);
     const back = await pageScroll(page);
-    if (Math.abs(back.y - where.y) > 4) broken.push(`${label}: after leaving by ${exit} the page moved (${where.y} → ${back.y})`);
+    if (Math.abs(back.y - where.y) > 4) {
+      // Name what moved, so a failure points at the scroller and not only at the distance.
+      const movers = await page.evaluate(() => {
+        const root = document.scrollingElement as HTMLElement;
+        const out: string[] = [`window ${root.scrollTop}`];
+        for (const el of document.querySelectorAll<HTMLElement>('main, main *')) {
+          if (el.scrollTop > 0 && !el.closest('[data-process-map-canvas], [data-canvas-scroll], .react-flow, .cc-editor-canvas')) {
+            const data = Array.from(el.attributes).filter((a) => a.name.startsWith('data-')).map((a) => a.name).slice(0, 3).join(',');
+            out.push(`${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}[${data}] ${el.scrollTop}`);
+          }
+        }
+        return out.join('; ');
+      });
+      broken.push(`${label}: after leaving by ${exit} the page moved (${where.y} → ${back.y}): ${movers}`);
+    }
     if (exit !== 'back') await expect(toggle, `${label}: focus returns to the toggle after ${exit}`).toBeFocused();
   }
   return broken;
