@@ -182,6 +182,18 @@ test('2 · an empty `readers` list grants nobody anything', async () => {
   expect(await denied(() => getDoc(doc(db, 'projects', NO_FIELD)))).toBe(true);
 });
 
+test('2b · a `readers` value that is not a list grants nobody anything, even when it names my uid', async () => {
+  // The third default the rules comment names (SEC-653cff9-07). A map is the
+  // case that matters: `in` on a map tests its keys, so without `is list` a
+  // `{ <uid>: true }` would let that uid in.
+  for (const notAList of [uids.reader, { [uids.reader]: true }]) {
+    await adminMergeDoc('projects', NO_FIELD, { readers: notAList });
+    await signIn(READER);
+    expect(await denied(() => getDoc(doc(db, 'projects', NO_FIELD))), JSON.stringify(notAList)).toBe(true);
+  }
+  await adminMergeDoc('projects', NO_FIELD, { readers: [] });
+});
+
 test('3 · somebody else\'s uid on the list is not my uid', async () => {
   await adminMergeDoc('projects', NO_FIELD, { readers: [uids.stranger] });
   await signIn(READER);

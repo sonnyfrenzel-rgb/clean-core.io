@@ -124,7 +124,8 @@ export function sanitizeHtml(html: string): string {
  * exactly as before.
  *
  * With `{ foreignobject: true }` the diagram comes through byte for byte — the
- * theme `<style>` block, the markers, the filters and every label — and the
+ * theme `<style>` block, the markers, the filters and every label; the guard
+ * spec renders a mermaid v11 chart and asserts the cleaned SVG equals it — and the
  * parser does properly what the regexes were approximating. A pattern list has
  * to guess how a browser will read markup; six of the ten shapes
  * `tests/diagram-sanitizer-guard.spec.ts` feeds it came through the old chain
@@ -133,7 +134,8 @@ export function sanitizeHtml(html: string): string {
  * rather than about the spelling.
  *
  * This is the third layer, not the only one: `components/MermaidDiagram.tsx`
- * initialises mermaid with `securityLevel: 'strict'`, and any component that
+ * initialises mermaid with `securityLevel: 'strict'` (asserted by the same
+ * spec), and any component that
  * builds mermaid source from model text has to strip its node labels first
  * (the model-drawn `TargetArchitectureDiagram` that did so was removed on
  * 01.10.2026).

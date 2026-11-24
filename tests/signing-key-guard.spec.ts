@@ -166,3 +166,21 @@ test.describe('the audit signing key has no fallback', () => {
     expect((await res.json()).valid, 'a pack forged with the retired key verified').toBe(false);
   });
 });
+
+test.describe('a missing signing key is not announced to the caller', () => {
+  // SEC-653cff9-04: runs/create checks the key before authentication, and its
+  // 500 used to name the missing key to anyone, signed in or not. Every signing
+  // route now logs the reason and answers with a generic error.
+  test('each signing route answers a missing key with a generic 500 and logs the reason', () => {
+    for (const rel of SIGNING_ROUTES) {
+      const src = fs.readFileSync(path.join(ROOT, rel), 'utf8');
+      const branches = src.split('console.error(MISSING_SIGNING_KEY_LOG);').slice(1);
+      expect(branches.length, `${rel} logs the missing key`).toBeGreaterThan(0);
+      for (const after of branches) {
+        const response = after.slice(after.indexOf('return NextResponse.json('), after.indexOf('status: 500'));
+        expect(response, `${rel} answers with the generic message`).toContain("{ error: 'Internal Server Error' }");
+        expect(response.toLowerCase(), `${rel} names the configuration to the caller`).not.toMatch(/signing key|configuration/);
+      }
+    }
+  });
+});

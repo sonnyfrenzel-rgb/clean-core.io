@@ -132,7 +132,9 @@ export async function POST(req: NextRequest) {
     const signingKey = getAuditSigningKey();
     if (!signingKey) {
       console.error(MISSING_SIGNING_KEY_LOG);
-      return NextResponse.json({ error: 'System configuration error: Signing key missing.' }, { status: 500 });
+      // The reason goes to the log only; a caller, signed in or not, learns that the
+      // server failed, not which configuration it lacks (tests/signing-key-guard.spec.ts).
+      return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 
     // 2. Authenticate caller

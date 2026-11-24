@@ -766,8 +766,8 @@ ${DESIGN_ANSWER_REMINDER}`;
 
   /**
    * The Confluence page is built in `lib/design-export.ts` (block D, D.28),
-   * which escapes every model value and takes its look from
-   * `lib/export-style.ts`. The page decides only whether it is previewed or saved.
+   * which escapes the model's values (tests/export-escaping-guard.spec.ts) and
+   * takes its look from `lib/export-style.ts`. The page decides only whether it is previewed or saved.
    */
   const exportToConfluence = async (viewOnly = false) => {
     const currentProject = projectRef.current;
@@ -783,7 +783,8 @@ ${DESIGN_ANSWER_REMINDER}`;
       // Not `document.write` into a blank window that inherits this origin: the
       // preview opens as its own document, with no handle back to the opener.
       // A blob document still shares this origin, so it carries a policy of its
-      // own under which nothing in it can run or fetch (`lib/export-preview.ts`).
+      // own that forbids scripts and fetches (`lib/export-preview.ts`,
+      // tests/hardening-v220-cf.spec.ts).
       const blob = new Blob([withPreviewPolicy(htmlContent)], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       window.open(url, '_blank', 'noopener,noreferrer');
@@ -809,8 +810,9 @@ ${DESIGN_ANSWER_REMINDER}`;
     //
     // The write that is left removes what earlier versions stored, because a
     // project already carrying those blobs is not helped by adding no more. It
-    // touches no key other than `exports`, which `firestore.rules` already
-    // allows a client to write.
+    // touches no key other than `exports` and only removes entries, the one
+    // change `firestore.rules` lets a client make there (isExportsRemovalOnly;
+    // tests/firestore-rules-field-validation.spec.ts).
     const staleExports = Object.keys(currentProject.exports || {}).filter((key) =>
       key.startsWith('design_confluence_'),
     );

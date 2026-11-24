@@ -412,11 +412,10 @@ export async function POST(req: NextRequest) {
     try {
       xmlText = await readBoundedBody(response, ODATA_BODY_LIMITS);
     } catch (readErr: any) {
-      // Found by the guard rather than by the audit, which named the two 502s
-      // above it: `readBoundedBody` refuses for reasons of ours — a size, a
-      // deadline — but the stream underneath it can fail for reasons that are
-      // the tenant's, and that text is not ours to forward either. Same shape
-      // as its two neighbours: log the cause, answer with the limit.
+      // `readBoundedBody` refuses for reasons of ours — a size, a deadline —
+      // but the stream underneath it can fail for reasons that are the
+      // tenant's, and that text is not forwarded either. Same shape as the two
+      // 502s above: log the cause, answer with the limit.
       logger.error('s4 metadata response could not be read', {
         route: 'api/fetch-s4-metadata',
         error: errMessage(readErr),

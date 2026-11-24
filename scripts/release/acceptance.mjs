@@ -21,8 +21,8 @@
  *   - call a model: GEMINI_API_KEY, OPENROUTER_API_KEY, XAI_API_KEY, OPENAI_API_KEY and
  *     ANTHROPIC_API_KEY are blanked as well;
  *   - touch production data: the Firestore/Auth emulator hosts are forced, the
- *     Admin SDK credentials variable is removed, and a base URL on clean-core.io or
- *     *.run.app is refused for rendered specs — they seed and sign in.
+ *     Admin SDK credentials variable is removed, and any base URL that is not a
+ *     loopback host is refused for rendered specs — they seed and sign in.
  *
  * Run it under Node 22, as CI does (`npx --yes --package=node@22 -- node scripts/release/acceptance.mjs`);
  * on Node 20 one spec fails for a loader reason that CI never sees.
@@ -161,10 +161,22 @@ function safeEnv(extra = {}) {
   return { ...env, ...extra };
 }
 
-function refuseProduction(url) {
-  const host = new URL(url).hostname;
-  if (/(^|\.)clean-core\.io$/i.test(host) || /\.run\.app$/i.test(host)) {
-    throw new Error(`refusing ${url}: rendered specs seed accounts and projects; they run against a local server on the emulators, never against a deployed service`);
+/**
+ * Rendered specs seed accounts and projects, so they run only against a server on
+ * this machine. An allowlist of loopback hosts, not a denylist of known
+ * deployments: a host nobody thought of is refused too
+ * (tests/acceptance-local-only.spec.ts).
+ */
+const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
+export function refuseProduction(url) {
+  let host;
+  try {
+    host = new URL(url).hostname.toLowerCase();
+  } catch {
+    throw new Error(`refusing ${url}: not a URL`);
+  }
+  if (!LOCAL_HOSTS.has(host)) {
+    throw new Error(`refusing ${url}: rendered specs seed accounts and projects; they run only against a local server on the emulators (localhost, 127.0.0.1, ::1), never against a deployed or remote service`);
   }
 }
 

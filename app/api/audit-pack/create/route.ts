@@ -205,8 +205,13 @@ export async function POST(req: NextRequest) {
       // `derivation`-class and are reported, not blocking — the evidence was not
       // computed from them, and a release would otherwise invalidate every
       // project on the platform.
-      const recordedManifest = runData.inputManifest;
-      if (recordedManifest) {
+      //
+      // The comparison runs whether or not the run recorded a manifest. A run
+      // signed before roadmap 0.5 has none, and its inputs cannot be shown to
+      // still match, so every live input comes back not-recorded and the pack is
+      // refused (tests/export-manifest-required.spec.ts).
+      const recordedManifest = runData.inputManifest ?? null;
+      {
         const live: Record<string, string | null> = {
           [INPUT_IDS.source]:
             typeof projectData.legacyCode === 'string' && projectData.legacyCode.trim()
@@ -238,9 +243,11 @@ export async function POST(req: NextRequest) {
         if (unverified.length > 0) {
           blockers.push({
             code: 'inputs-unverified',
-            message: `The signed run's inputs cannot all be shown to still match: ${unverified
-              .map((u) => `${inputLabel(u.id)} (${u.reason})`)
-              .join(', ')}. Re-run the analysis so the pack is bound to the inputs it was computed from.`,
+            message: recordedManifest
+              ? `The signed run's inputs cannot all be shown to still match: ${unverified
+                  .map((u) => `${inputLabel(u.id)} (${u.reason})`)
+                  .join(', ')}. Re-run the analysis so the pack is bound to the inputs it was computed from.`
+              : 'This run was signed before its inputs were recorded, so it cannot be shown that they still match. Re-run the analysis so the pack is bound to the inputs it was computed from.',
           });
         }
       }

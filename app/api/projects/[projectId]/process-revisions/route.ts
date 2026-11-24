@@ -80,16 +80,19 @@ import { engineVersionOfProject } from '@/lib/run-engine-version';
  *      clock. Neither is read out of the request body.
  *
  * Stored at `projects/{projectId}/process_revisions/{n}` through the Admin SDK.
- * `firestore.rules` has no match for that subcollection, so no client can read
- * or write it — which is why there is a GET here at all — and **no rules change
- * and no rules deploy** are needed. Project and account deletion take the
- * revisions with them: both call `recursiveDelete` on the project document,
- * which descends into every subcollection, named or not. The same shape roadmap
- * 2.4 uses for `process_naming` and 2.5 for `process_map`.
+ * `firestore.rules` has no match for that subcollection, so a client can
+ * neither read nor write it — which is why there is a GET here at all. Shown
+ * against the emulator by tests/process-revisions-route.spec.ts ("a written
+ * revision is never written again…", "only the owner reads or writes…") and
+ * tests/firestore-rules-readers.spec.ts. Project and account deletion take the
+ * revisions with them: both call `recursiveDelete` on the project document
+ * (app/api/projects/[projectId]/route.ts, lib/firebase-admin.ts); the spec's
+ * "deleting the project takes its revisions with it" shows the project half.
+ * The same shape roadmap 2.4 uses for `process_naming` and 2.5 for `process_map`.
  *
- * **Not evidence.** A revision records what somebody drew and when, not that
- * the drawing is right. It enters no signed run and no audit pack, and nothing
- * downstream may read it as a statement about the code.
+ * A design rule, not a claim about the data: a revision records what somebody
+ * drew and when, not that the drawing is right. It enters no signed run and no
+ * audit pack, and nothing downstream may read it as a statement about the code.
  *
  * Owner only, for reading as for writing: a process model is the project's code
  * in another shape, and an administrator cannot read a project's code either.

@@ -765,8 +765,9 @@ function AnalyzeScorePage() {
 
   /**
    * The Confluence page is a document that leaves the application; it is built
-   * in `lib/analysis-export.ts` (block D, D.28), which escapes every value and
-   * takes its look from `lib/export-style.ts`. The page asks for the file and
+   * in `lib/analysis-export.ts` (block D, D.28), which escapes the stored values
+   * it writes (tests/export-escaping-guard.spec.ts) and takes its look from
+   * `lib/export-style.ts`. The page asks for the file and
    * saves it.
    */
   /** The toast after a finished download (UX-161, DESIGN.md §2.6). */

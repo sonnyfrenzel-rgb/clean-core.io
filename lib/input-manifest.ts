@@ -268,7 +268,10 @@ export function unverifiedInputs(
 ): UnverifiedInput[] {
   const out: UnverifiedInput[] = [];
   const byId = new Map<string, ManifestInput>();
-  for (const i of recorded?.inputs || []) byId.set(i.id, i);
+  // A run signed before roadmap 0.5 has no manifest, and a malformed one has no
+  // list: both leave `byId` empty, so every live input comes back not-recorded.
+  const inputs = recorded && Array.isArray(recorded.inputs) ? recorded.inputs : [];
+  for (const i of inputs) if (i && typeof i.id === 'string') byId.set(i.id, i);
   for (const id of Object.keys(live).sort()) {
     const entry = byId.get(id);
     if (!entry) {
