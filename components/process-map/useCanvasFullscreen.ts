@@ -115,13 +115,13 @@ export function useCanvasFullscreen({
   useEffect(() => {
     if (wasFilled.current && !filled) {
       const lost = !document.activeElement || document.activeElement === document.body;
-      if (lost) toggleRef.current?.focus();
+      if (lost) toggleRef.current?.focus({ preventScroll: true });
     }
     // Into full screen, the focus goes with the reader: the toggle that opened
     // it is replaced by the labelled way out, which takes it.
     if (!wasFilled.current && filled) {
       const active = document.activeElement;
-      if (!active || active === document.body || !rootRef.current?.contains(active)) toggleRef.current?.focus();
+      if (!active || active === document.body || !rootRef.current?.contains(active)) toggleRef.current?.focus({ preventScroll: true });
     }
     wasFilled.current = filled;
   }, [filled, rootRef]);
