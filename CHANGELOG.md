@@ -36,6 +36,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Line anchors (`L243`, "line 240") get a finger box 8 px taller above and below on touch screens; what is drawn
     does not change.
 
+- Shorter texts on top, everything still one click deeper (owner feedback 24.11.2026: "viel zu lang", but no
+  content may go missing). Display and copy only — no engine output, signed run, audit pack, export or legal text
+  changes:
+  - `components/FoldedText.tsx` (with `lib/text-fold.ts`) shows the first sentences of a long paragraph and folds
+    the rest with `CcDisclosure`, never cutting a word. Used for the router's rationale in the route card (418 words
+    for the demo program, now 44 on top), a decision checkpoint's evaluation, and the IT objects/types leads and the
+    business-rules lead (one sentence on top).
+  - The demo strip says what the screen is and that it is never signed in 42 words instead of 93; why a demo cannot be
+    signed and that it costs no analysis run moved into an "About the demo" fold (`components/demo/DemoAbout.tsx`).
+  - The demo's "the demo stops where the model begins" notices and its Testing, Delivery and Re-design answer cards
+    say the same in roughly half the words.
+  - New model texts get length budgets: the analysis narrative (summary at most 3 sentences / 60 words, as-is context
+    100 words, gap rationale 40, next steps 5 × 20 words; `ANALYSIS_LENGTH_RULE`), the design overview (2–3
+    sentences, 70 words), business statements (aim for 25 words) and SOP claims (25 words). Texts already written
+    keep their length.
+  - `tests/text-fold.spec.ts` holds it.
+
 ### Security
 
 - Security audit of v3.5.0 (653cff96abb5) taken in: nine findings, four fixed with tests, five refuted with evidence

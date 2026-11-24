@@ -73,8 +73,8 @@ export default function DemoDelivery({
       <AnswerCard
         id="demo-handover-answer"
         question={`Can ${program} be handed over?`}
-        answer={`A demo hands nothing over. It is never signed and writes no code, so there is no package and no audit pack — this page shows what a real handover of ${program} would hold.`}
-        condition="A pack is sealed against a signed run and carries the account that made it; a demo has neither. So nothing here can be downloaded, and no button pretends it could."
+        answer={`A demo hands nothing over: no package, no audit pack. This page shows what a real handover of ${program} would hold.`}
+        condition="A pack is sealed against a signed run and its account; a demo has neither, so nothing here downloads."
         action={
           state.targetConfirmed ? (
             <CcLinkButton href="#before-go-live" variant="primary" icon={<ArrowRight size={14} aria-hidden="true" />}>

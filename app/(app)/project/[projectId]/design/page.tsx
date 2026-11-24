@@ -436,7 +436,7 @@ You must return your output strictly in JSON format. Do not include any markdown
 interface DesignData {
   projectName: string; // The name of this modernization project
   architectureOverview: {
-    approachDescription: string; // A concise 2-4 sentence overview of the clean core RAP approach. Focus on in-app extensibility, standard RAP business object adaptations, or custom released RAP endpoints. Say why RAP over adopting the SAP standard and over a side-by-side CAP application, and what is not known that could change it (see OPTIONS below).
+    approachDescription: string; // A concise overview of the clean core RAP approach in 2-3 sentences and at most 70 words. Focus on in-app extensibility, standard RAP business object adaptations, or custom released RAP endpoints. Say why RAP over adopting the SAP standard and over a side-by-side CAP application, and what is not known that could change it (see OPTIONS below).
     nodeFramework: string; // Value MUST be: "SAP RAP (RESTful Application Programming)" with a brief justification
     runtimePlatform: string; // Value MUST be: "SAP S/4HANA Core (Developer Extensibility)"
   };
@@ -483,7 +483,7 @@ You must return your output strictly in JSON format. Do not include any markdown
 interface DesignData {
   projectName: string; // The name of this modernization project
   architectureOverview: {
-    approachDescription: string; // A concise 2-4 sentence overview of the transformed architectural approach. Focus on loose coupling, exposing legacy core through standard versioned APIs, and deploying side-by-side. Say why a side-by-side CAP application over adopting the SAP standard and over an in-app RAP extension — the need for external users, several systems, own orchestration or scale that justifies the extra operation — and what is not known that could change it (see OPTIONS below).
+    approachDescription: string; // A concise overview of the transformed architectural approach in 2-3 sentences and at most 70 words. Focus on loose coupling, exposing legacy core through standard versioned APIs, and deploying side-by-side. Say why a side-by-side CAP application over adopting the SAP standard and over an in-app RAP extension — the need for external users, several systems, own orchestration or scale that justifies the extra operation — and what is not known that could change it (see OPTIONS below).
     nodeFramework: string; // Value MUST be: "SAP CAP (Cloud Application Programming model)" with a brief justification
     runtimePlatform: string; // Value MUST be: "${BTP_FIRST}"
   };

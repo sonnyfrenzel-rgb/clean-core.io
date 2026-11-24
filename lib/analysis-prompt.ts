@@ -34,6 +34,18 @@ export function programFactsBlock(facts: ProgramSummaryFacts | null | undefined)
 }
 
 /**
+ * Length budgets for a new narrative (owner feedback 24.11.2026: the texts are too long; short on top,
+ * complete underneath). A budget for the model's words only — the engine's figures, findings and anchors are not
+ * shortened by it, and what the narrative leaves out stays in the engine's own sections. Narratives already
+ * written keep their length; the page folds them.
+ */
+export const ANALYSIS_LENGTH_RULE =
+  'LENGTH: a business reader reads this first, so be brief. Every text field stays within the budget its comment ' +
+  'gives; a field without a budget is at most 4 sentences. Say each thing once — a fact in summary is not repeated ' +
+  'in asIsContext or the recommendations. No hedging filler ("it is important to note", "in order to"): one ' +
+  'sentence per point, the anchor after it.';
+
+/**
  * The prompt of the Analyze stage, assembled in one place so it can be tested as a whole.
  *
  * It lived inline in the page, and the citation rule had two copies: the CITATIONS block from
@@ -74,16 +86,18 @@ ${SAP_REFERENCE_PROMPT_RULES}
 
 ${OPTION_COMPARISON_RULE} Write that comparison into recommendations.cloudReadiness.
 
+${ANALYSIS_LENGTH_RULE}
+
 interface AnalysisData {
   projectTitle: string;
   cleanCoreScore: number; // YOU MUST USE EXACTLY THIS VALUE: ${routeReport.cleanCoreScore}
-  summary: string; // Plain english business executive summary. Every sentence that states something about THIS program must end with an anchor in one of the forms listed under CITATIONS above. General advice stays uncited.
-  asIsContext: string; // Describe what the legacy program does. Same citation rule: anchor every claim about this code. Open with two plain sentences for a business reader, built only from PROGRAM FACTS: what the program is for, who uses it, which business objects, what it produces, and what it does not do. You may give the business meaning of a code value only as a reading of it (e.g. "FAC, read as facilities"). Never name a business object or table PROGRAM FACTS do not list; never say it posts, sends mail or runs an approval when PROGRAM FACTS say it does not; no money, savings or accuracy claims.
+  summary: string; // Plain english business executive summary, at most 3 sentences and 60 words (anchors not counted). Every sentence that states something about THIS program must end with an anchor in one of the forms listed under CITATIONS above. General advice stays uncited.
+  asIsContext: string; // Describe what the legacy program does, in at most 5 sentences and 100 words (anchors not counted). Same citation rule: anchor every claim about this code. Open with two plain sentences for a business reader, built only from PROGRAM FACTS: what the program is for, who uses it, which business objects, what it produces, and what it does not do. You may give the business meaning of a code value only as a reading of it (e.g. "FAC, read as facilities"). Never name a business object or table PROGRAM FACTS do not list; never say it posts, sends mail or runs an approval when PROGRAM FACTS say it does not; no money, savings or accuracy claims.
   gaps: Array<{
     title: string; 
     severity: 'High' | 'Medium' | 'Low'; 
-    strategy: string; 
-    rationale: string; 
+    strategy: string; // One sentence, at most 20 words.
+    rationale: string; // At most 2 sentences and 40 words.
     complexity: 'High' | 'Medium' | 'Low'; 
   }>;
   recommendations: {
@@ -91,7 +105,7 @@ interface AnalysisData {
     decommissioning: string; // STEP 2: What legacy objects can be RETIRED after the standard alternative from Step 1 is adopted and validated? Never say "delete" — use "retire after replacement validation, data migration assessment, and business sign-off". Be explicit about which custom objects are candidates for retirement. Must be consistent with keepCoreClean.
     cloudReadiness: string; // STEP 3: First the option comparison required above: which option you recommend, the reason over the others, and what is not known that could change it. If Step 1 appears to replace the legacy code, name the capabilities that rests on and say the fit is to be confirmed before the code is retired — never claim it covers all functionality. If Step 1 only partially covers, describe ONLY the remaining gap that needs ABAP Cloud, or a wrapper around an unreleased object plus an influence request to SAP (clean core levels A–D; never call it a "tier"). For complex programs, describe a HYBRID approach: which components go to RAP/In-App, which to CAP on ${BTP}, which to Integration Suite/Event Mesh, and which to Fiori/UI5. NEVER contradict Step 1 or Step 2.
   };
-  strategicNextSteps: string[]; 
+  strategicNextSteps: string[]; // At most 5 steps, each one sentence of at most 20 words.
   extensibilityRouting: {
     // YOU MUST USE EXACTLY THESE PRE-CALCULATED VALUES:
     recommendedRoute: "${routeReport.recommendedRoute}";
@@ -104,8 +118,8 @@ interface AnalysisData {
   businessValueAnalysis: {
     legacyAssetScore: number; 
     technicalDebtLevel: 'Low' | 'Medium' | 'High';
-    valueDrivers: string[]; 
-    plainEnglishActionPlan: string[]; // No money: no costs, savings, ROI or currency amounts anywhere in this object — nothing here rests on approved cost assumptions.
+    valueDrivers: string[]; // At most 5, each at most 15 words.
+    plainEnglishActionPlan: string[]; // At most 5 steps, each one sentence of at most 20 words. No money: no costs, savings, ROI or currency amounts anywhere in this object — nothing here rests on approved cost assumptions.
   };
 }
 

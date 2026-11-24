@@ -3,6 +3,7 @@
 import React from 'react';
 import { Cloud } from 'lucide-react';
 import CcAnchor from '@/components/cc/Anchor';
+import FoldedText from '@/components/FoldedText';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcLinkButton from '@/components/cc/LinkButton';
 import FamilyChip from '@/components/family/FamilyChip';
@@ -170,7 +171,13 @@ export default function RouteCard({
               <span className="cc-text-meta font-semibold text-cc-ink">{confidence}%</span>
             </div>
           ) : null}
-          {rationale ? <p className="m-0 mt-2 cc-text-cell text-cc-ink">{rationale}</p> : null}
+          {/* Short on top, complete underneath (owner 24.11.2026): the router's rationale runs to 400 words on a
+              program with many findings; its first two sentences carry the route, the rest is one click deeper. */}
+          {rationale ? (
+            <div className="mt-2" data-route-rationale="">
+              <FoldedText text={rationale} className="m-0 cc-text-cell text-cc-ink" title="The full reasoning" />
+            </div>
+          ) : null}
         </>
       )}
 

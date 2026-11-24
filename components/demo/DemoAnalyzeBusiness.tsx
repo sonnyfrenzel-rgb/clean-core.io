@@ -12,6 +12,7 @@ import CcCard from '@/components/cc/Card';
 import CcCodeSurface, { type CcCodeLine } from '@/components/cc/CodeSurface';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcMessageStrip from '@/components/cc/MessageStrip';
+import DemoAbout from '@/components/demo/DemoAbout';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { CcTag } from '@/components/cc/Tag';
 import AroundTheMap, { WhatThisProgramDoes } from '@/components/analyze/AroundTheMap';
@@ -308,6 +309,7 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
               {DEMO_INVITATION}
             </Link>
           )}
+          <DemoAbout />
         </CcMessageStrip>
       </div>
 

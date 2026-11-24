@@ -92,7 +92,7 @@ export const DEMO_LIST_TAGLINE = 'Engine reading on every stage · fictitious co
 
 /** The message strip at the top of every demo screen. */
 export const DEMO_STRIP_NOTICE =
-  'Demo project — fictitious code, with the engine’s reading on every stage and no model drafts or test runs. Nothing you do here is saved.';
+  'Demo project — fictitious code and the engine’s reading only, no model drafts or test runs. Nothing you do here is saved.';
 
 /** The recurring invitation. At most one per screen, never a dialog. */
 export const DEMO_INVITATION = 'Try an example or your own code';
@@ -104,9 +104,18 @@ export const DEMO_INVITATION = 'Try an example or your own code';
  * it dangerous: the findings, the line numbers and the score are the same ones a
  * paid run would produce, and nothing but this sentence separates the two.
  */
-export const DEMO_UNSIGNED_NOTICE =
-  'A demo run is never signed. No signed run, no audit pack and no export comes out of this screen — ' +
-  'a signature says a named account analyzed a named source, and none of that happened here.';
+export const DEMO_UNSIGNED_NOTICE = 'A demo run is never signed: no audit pack, no export.';
+
+/**
+ * Why it is never signed — one action deeper, under "About the demo" (owner
+ * 24.11.2026: short on top, complete underneath; the sentence moved, it was not
+ * cut).
+ */
+export const DEMO_UNSIGNED_WHY =
+  'A signature says a named account analyzed a named source, and none of that happened here.';
+
+/** The fold under the strip that holds {@link DEMO_UNSIGNED_WHY} and {@link DEMO_QUOTA_NOTICE}. */
+export const DEMO_ABOUT_TITLE = 'About the demo';
 
 /** The demo costs nothing, because nothing about it reaches the server. */
 export const DEMO_QUOTA_NOTICE =

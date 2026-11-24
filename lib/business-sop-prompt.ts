@@ -111,7 +111,7 @@ CRITICAL — PURE BUSINESS LANGUAGE (no IT/technical content):
 - Do NOT propose KPI targets, control objectives, audit controls or verification methods: the process does not show them, and the controls of this process are read from the code elsewhere.
 
 CRITICAL — EVERY SENTENCE CARRIES ITS BASIS:
-- Write each business step as "claims": one sentence per claim, 2 to 4 claims per step, about the step as a whole — not one claim per element inside it.
+- Write each business step as "claims": one sentence per claim, 2 to 4 claims per step, about the step as a whole — not one claim per element inside it. Each claim at most 25 words; a business reader reads them first.
 - "basis": "code" ONLY when the sentence is a sentence the documentation below writes for this step or an element inside it, copied word for word, and "lines" lists the source line numbers of THIS step that hold it (the line numbers printed in the documentation). Any other wording, and any sentence without such a line, has the basis "proposal".
 - "basis": "proposal" for everything else: who does it, why, how often, and every organisational element — roles or job titles, approval, release, override, escalation, dual control, sign-off, policy, notification of people, audit or compliance records.
 - NEVER upgrade a technical fact. Internal arithmetic checks are NOT a reconciliation against the general ledger or control totals. The current credit record is NOT a credit exposure analysis or a credit-limit breach. A warning shown to the user is NOT an audit message or log. Reading a reference is NOT taking over its terms. A list of proposals is NOT a posting, a clearing, a dunning run or a letter.

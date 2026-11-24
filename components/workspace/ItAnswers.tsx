@@ -40,6 +40,7 @@ import type { SemanticState } from '@/lib/provenance';
 import type { Project } from '@/lib/types';
 import type { CloudReadinessGrade } from '@/lib/abap/abcd-classification';
 import type { NotDetermined } from '@/lib/workspace-model';
+import FoldedText from '@/components/FoldedText';
 /** A place in this view a coach mark of the demo may stand at. */
 type CoachMarkId = 'not-determined' | 'next-step' | 'decision';
 import {
@@ -823,9 +824,13 @@ function ObjectsCard({ objects, catalogNote }: { objects: ItObjects; catalogNote
   return (
     <div id={IT_SECTION_IDS.objects} className="scroll-mt-28">
       <CcCard title={wt('itv.objectsTitle')} count={objects.recorded ? objects.rows.length : undefined}>
-        <p data-it-lead="objects" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
-          {wt('itv.objectsLead')}
-        </p>
+        <FoldedText
+          text={wt('itv.objectsLead')}
+          sentences={1}
+          title={wt('itv.leadMore')}
+          leadAttrs={{ 'data-it-lead': 'objects' }}
+          className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted"
+        />
         {!objects.recorded || objects.rows.length === 0 ? (
           <p data-it-objects-state="not-recorded" className="m-0 mt-2 text-[13px] leading-snug font-medium text-cc-ink">
             {wt('itv.objectsNotRecorded')}
@@ -871,9 +876,13 @@ export function DdicTypesCard({ groups }: { groups: ItTypeGroup[] }) {
   return (
     <div data-it-ddic-types="" className="scroll-mt-28">
       <CcCard title={wt('itv.typesTitle')} count={total}>
-        <p data-it-lead="types" className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted">
-          {wt('itv.typesLead')}
-        </p>
+        <FoldedText
+          text={wt('itv.typesLead')}
+          sentences={1}
+          title={wt('itv.leadMore')}
+          leadAttrs={{ 'data-it-lead': 'types' }}
+          className="m-0 text-[13px] leading-snug font-medium text-cc-ink-muted"
+        />
         <div className="mt-2">
           {groups.map((g) => (
             <div key={g.level} data-it-ddic-level={g.level}>
