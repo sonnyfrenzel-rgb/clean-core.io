@@ -163,7 +163,7 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
   const fromLines = loc !== null ? ` proposed from the ${formatLines(loc)} lines` : '';
   const answer = priced ? answerSentence(ans) : notPricedSentence(ans, pending.length > 0 ? loc : null);
   const condition = priced
-    ? `A simulation on your figures${anyProposalTaken ? ` and on the effort${fromLines}` : ''}. Lowest cost is not the decision by itself; that is taken in Management.`
+    ? `A simulation on your figures${anyProposalTaken ? ` and on the effort${fromLines}` : ''}. Lowest cost is not the decision by itself; that is taken in Re-design.`
     : ans.state === 'first-visit'
       ? 'Nothing has a default.'
       : 'Nothing has a default. Every amount is priced from figures you state or take over.';

@@ -80,6 +80,11 @@ export interface RedesignNext {
   path: string;
   /** One line under the action. */
   note: string;
+  /**
+   * Set when nothing is waiting any more: a confirmed decision that builds nothing (Keep, Move to SAP standard,
+   * Retire) ends the walk. The action then opens the decision record on this page, never a tool.
+   */
+  done?: true;
 }
 
 export interface RedesignModel {
@@ -103,8 +108,18 @@ export const REDESIGN_PURPOSE: Readonly<Record<RedesignStepKey, string>> = Objec
   delivery: 'The package and the signed audit pack: can it be handed over?',
 });
 
-/** The steps that only a Rebuild builds — the others read "Not needed" after a decision that builds nothing. */
-const BUILD_STEPS: readonly PhaseKey[] = ['transformation', 'documentation', 'testing', 'delivery'];
+/**
+ * The steps after the decision that a decision building nothing makes unnecessary: Design (there is no target to design
+ * or sign off) and the four that build. With nothing on record they read "Not needed"; a step that already holds
+ * something keeps its own state, because that is what is on record (`workflowSteps()`).
+ */
+const NOT_NEEDED_STEPS: readonly PhaseKey[] = ['design', 'transformation', 'documentation', 'testing', 'delivery'];
+
+/** "Not needed: Retire builds nothing", or, while the option is only chosen, "Not needed once Retire is confirmed". */
+function notNeededWords(option: DecisionOption, confirmed: boolean): string {
+  const named = DECISION_OPTION_LABELS[option];
+  return confirmed ? `Not needed: ${named} builds nothing` : `Not needed once ${named} is confirmed`;
+}
 
 const DECIDE_LABEL = 'Decide';
 
@@ -169,13 +184,17 @@ export function redesignModel(
   const ordered = inToolOrder(steps.filter((s) => s.key !== 'analyze'));
   const decided = (decision.stage === 'confirmed' || decision.stage === 'outdated' || decision.stage === 'chosen') && decision.option;
   const buildsNothing = Boolean(decided && decision.option !== 'rebuild');
+  // Confirmed on record (also when the run has moved since: the record still stands until it is decided again).
+  const recorded = decision.stage === 'confirmed' || decision.stage === 'outdated';
+  // The walk ends at a confirmed decision that builds nothing: no step after it is waiting.
+  const walkEnds = buildsNothing && decision.stage === 'confirmed';
 
   const out: RedesignStep[] = [];
   let n = 0;
   for (const phase of ordered) {
-    const notNeeded = buildsNothing && BUILD_STEPS.includes(phase.key) && phase.state === 'empty';
+    const notNeeded = buildsNothing && NOT_NEEDED_STEPS.includes(phase.key) && phase.state === 'empty';
     const read = notNeeded
-      ? { state: 'not-needed' as const, words: `Not needed, decided: ${DECISION_OPTION_LABELS[decision.option as DecisionOption]}` }
+      ? { state: 'not-needed' as const, words: notNeededWords(decision.option as DecisionOption, recorded) }
       : phaseStateWords(phase.state, phase.key);
     const stage = MODEL_STAGE_OF[phase.key];
     const blocked =
@@ -206,6 +225,17 @@ export function redesignModel(
       path: 'analyze',
       note: 'Every step of Re-design stands on a signed analysis run.',
     };
+  } else if (walkEnds) {
+    // Nothing is waiting: the decision is the result. The action opens it, as the program's tile does ("Open the
+    // decision", `programNextLink`); Economics or Design stay reachable as steps, never as the next one.
+    const named = DECISION_OPTION_LABELS[decision.option as DecisionOption];
+    next = {
+      key: 'decide',
+      label: 'Open the decision',
+      path: `#${REDESIGN_DECIDE_ID}`,
+      note: `Done. ${named} builds nothing, so no step is waiting.`,
+      done: true,
+    };
   } else {
     const open = out.find((s) => s.state !== 'done' && s.state !== 'not-needed');
     if (open) {
@@ -228,7 +258,11 @@ export function redesignModel(
     ? 'Not started. Re-design builds on a signed analysis run, and there is none yet.'
     : decided
       ? buildsNothing
-        ? `Decided: ${DECISION_OPTION_LABELS[decision.option as DecisionOption]}. Nothing is built; Design shows what the decision means for this program.`
+        ? walkEnds
+          ? `Decided: ${DECISION_OPTION_LABELS[decision.option as DecisionOption]}. Nothing is built, so Re-design is done. Design still shows what the decision means for this program, if you want to read it.`
+          : recorded
+            ? `Decided: ${DECISION_OPTION_LABELS[decision.option as DecisionOption]}, out of date: the evidence or the costs changed since it was confirmed. Review it in step 2.`
+            : `${DECISION_OPTION_LABELS[decision.option as DecisionOption]} chosen, not confirmed yet. Nothing is built after it once it is confirmed.`
         : next
           ? `Decided: Rebuild. Next: ${next.key === 'decide' ? DECIDE_LABEL : out.find((s) => s.key === next?.key)?.label ?? ''}.`
           : 'Decided: Rebuild. Every step is on record.'

@@ -32,6 +32,7 @@ import { countSourceLines } from '@/lib/source-lines';
 import { readStoredAnalysis } from '@/lib/money-honesty';
 import { routeLabel } from '@/lib/sap-naming';
 import { programDecisionOf } from '@/lib/economics-guard-rail';
+import { redesignHref } from '@/lib/redesign';
 import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSkeleton from '@/components/cc/Skeleton';
@@ -331,7 +332,7 @@ export default function TcoCalculatorPage() {
   const analysis = project?.analysis ? readStoredAnalysis<AnalysisData>(project.analysis) : null;
   const routeCode = analysis?.extensibilityRouting?.recommendedRoute || project?.extensibilityRoute || null;
   const decision = programDecisionOf(project);
-  const managementHref = `/project/${encodeURIComponent(String(projectId))}?view=management#decision-card`;
+  const managementHref = redesignHref(String(projectId), 'decide');
   const cur = assumptions.currency;
 
   return (

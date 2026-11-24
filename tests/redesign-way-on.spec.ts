@@ -47,16 +47,56 @@ test.describe('the Re-design model', () => {
     expect(redesignModel(rail({ analyze: 'stale' }), none).next?.label).toBe('Run the analysis again');
   });
 
-  test('a decision that builds nothing: Transformation to Delivery read "Not needed", Design stays', () => {
-    const m = redesignModel(rail({ analyze: 'done', tco: 'done' }), { stage: 'confirmed', option: 'retire', indicated: null });
+  // 3.5.1 (decision-flow S1): a decision that builds nothing used to leave Design "Not started" and the primary action
+  // on "Open Design" for ever. Now the walk ends at the confirmed decision.
+  for (const option of ['retire', 'keep', 'standard'] as const) {
+    test(`a confirmed ${option} builds nothing: Design to Delivery read "Not needed", and the walk ends`, () => {
+      const m = redesignModel(rail({ analyze: 'done', tco: 'done' }), { stage: 'confirmed', option, indicated: null });
+      const by = Object.fromEntries(m.steps.map((s) => [s.key, s]));
+      const named = { retire: 'Retire', keep: 'Keep', standard: 'Move to SAP standard' }[option];
+      for (const k of ['design', 'transformation', 'documentation', 'testing', 'delivery']) {
+        expect(by[k].state, k).toBe('not-needed');
+        expect(by[k].stateWords, k).toBe(`Not needed: ${named} builds nothing`);
+      }
+      expect(by.decide.state).toBe('done');
+      // No step stays waiting.
+      expect(m.steps.filter((s) => s.state !== 'done' && s.state !== 'not-needed')).toEqual([]);
+      // The action opens the decision on this page, never a tool, and never "Open Design".
+      expect(m.next).toMatchObject({ key: 'decide', path: `#${REDESIGN_DECIDE_ID}`, label: 'Open the decision', done: true });
+      expect(m.next?.label).not.toMatch(/Design/);
+      expect(m.next?.note).toBe(`Done. ${named} builds nothing, so no step is waiting.`);
+      expect(m.answer).toContain(`Decided: ${named}. Nothing is built, so Re-design is done.`);
+    });
+  }
+
+  test('the walk ends even with Economics not priced, and a step with something on record keeps its state', () => {
+    // The decision does not require a price (no cost gate in `decision-manager.ts`), so Economics is no next step.
+    const m = redesignModel(rail({ analyze: 'done', tco: 'partial', design: 'partial' }), { stage: 'confirmed', option: 'retire', indicated: null });
     const by = Object.fromEntries(m.steps.map((s) => [s.key, s]));
-    for (const k of ['transformation', 'documentation', 'testing', 'delivery']) {
-      expect(by[k].state, k).toBe('not-needed');
-      expect(by[k].stateWords, k).toBe('Not needed, decided: Retire');
-    }
-    expect(by.design.state).toBe('open');
-    expect(m.next?.key).toBe('design');
-    expect(m.answer).toContain('Decided: Retire');
+    expect(by.tco.state).toBe('started');
+    expect(by.design).toMatchObject({ state: 'started', stateWords: 'Started' });
+    expect(by.transformation.state).toBe('not-needed');
+    expect(m.next).toMatchObject({ key: 'decide', done: true });
+  });
+
+  test('a chosen or outdated option that builds nothing does not end the walk: the decision is still waiting', () => {
+    const chosen = redesignModel(rail({ analyze: 'done', tco: 'done' }), { stage: 'chosen', option: 'retire', indicated: null });
+    expect(chosen.next).toMatchObject({ key: 'decide' });
+    expect(chosen.next?.done).toBeUndefined();
+    expect(chosen.steps.find((s) => s.key === 'design')?.stateWords).toBe('Not needed once Retire is confirmed');
+    expect(chosen.answer).toBe('Retire chosen, not confirmed yet. Nothing is built after it once it is confirmed.');
+    const outdated = redesignModel(rail({ analyze: 'done', tco: 'done' }), { stage: 'outdated', option: 'keep', indicated: null });
+    expect(outdated.steps.find((s) => s.key === 'decide')?.state).toBe('stale');
+    expect(outdated.next).toMatchObject({ key: 'decide' });
+    expect(outdated.next?.done).toBeUndefined();
+    expect(outdated.answer).toContain('out of date');
+  });
+
+  test('Rebuild is unchanged: Design is the next step, nothing reads "Not needed"', () => {
+    const m = redesignModel(rail({ analyze: 'done', tco: 'done' }), { stage: 'confirmed', option: 'rebuild', indicated: 'rebuild' });
+    expect(m.steps.some((s) => s.state === 'not-needed')).toBe(false);
+    expect(m.next).toMatchObject({ key: 'design', path: 'design', label: 'Open Design' });
+    expect(m.next?.done).toBeUndefined();
   });
 
   test('a chosen, unconfirmed option is started, never done', () => {
@@ -80,10 +120,18 @@ test.describe('the Re-design model', () => {
   });
 
   test('no em dash in a sentence the page shows', () => {
-    const m = redesignModel(rail({ analyze: 'done' }), none);
-    for (const s of m.steps) expect(`${s.purpose} ${s.stateWords}`).not.toContain('—');
-    expect(m.answer).not.toContain('—');
-    expect(m.next?.label ?? '').not.toContain('—');
+    const decisions: RedesignDecision[] = [
+      none,
+      { stage: 'confirmed', option: 'retire', indicated: null },
+      { stage: 'chosen', option: 'standard', indicated: null },
+      { stage: 'outdated', option: 'keep', indicated: null },
+    ];
+    for (const d of decisions) {
+      const m = redesignModel(rail({ analyze: 'done' }), d);
+      for (const s of m.steps) expect(`${s.purpose} ${s.stateWords}`).not.toContain('—');
+      expect(m.answer).not.toContain('—');
+      expect(`${m.next?.label ?? ''} ${m.next?.note ?? ''}`).not.toContain('—');
+    }
   });
 
   test('the address', () => {
@@ -133,6 +181,11 @@ test.describe('the way on leads through Re-design (ADR-143)', () => {
     expect(page).toMatch(/view === 'management' && !working[\s\S]*?<AnalyzeManagement\b/);
     expect(page).toContain("redesignHref(projectId, 'decide')");
     expect(page).not.toContain('?view=management#decision-card');
+    // Economics' "Take it to the decision" goes straight to the decision step, not through an old address (S1).
+    const economics = code('app/(app)/project/[projectId]/tco/page.tsx');
+    expect(economics).toContain("redesignHref(String(projectId), 'decide')");
+    expect(economics).not.toContain('?view=management#decision-card');
+    expect(code('components/tco/EconomicsObjectPage.tsx')).not.toContain('that is taken in Management');
     const mgmt = code('components/analyze/AnalyzeManagement.tsx');
     expect(mgmt.match(/variant="primary"/g) ?? []).toHaveLength(1);
     expect(mgmt).toContain('An indication, not a decision.');
