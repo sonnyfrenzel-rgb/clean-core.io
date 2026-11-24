@@ -4,7 +4,10 @@
  *
  * A missing or malformed manifest makes every live input `not-recorded`, which
  * is an invalidating reason, and the route refuses the pack: a run whose inputs
- * cannot be shown to still match is re-run, not exported.
+ * cannot be shown to still match is re-run, not exported. The one exception is
+ * the migration promise C23-A02: a run whose signed analyzer version predates
+ * the manifest (before v2.12.0) exports as it did
+ * (tests/conservative-invalidity.spec.ts).
  *
  * Server-free: the verdict function is pure, and the route's wiring is read
  * from source.
@@ -35,15 +38,22 @@ test.describe('SEC-653cff9-01: no manifest, no pack', () => {
     });
   }
 
-  test('the export route runs the comparison unconditionally, not only when a manifest exists', () => {
+  test('the export route compares every run except one signed before the manifest existed', () => {
     const src = readFileSync(join(__dirname, '..', 'app', 'api', 'audit-pack', 'create', 'route.ts'), 'utf8');
     const start = src.indexOf('const recordedManifest');
     const call = src.indexOf('unverifiedInputs(recordedManifest', start);
     expect(start, 'the route reads the recorded manifest').toBeGreaterThan(0);
     expect(call, 'and compares it').toBeGreaterThan(start);
     const between = src.slice(start, call);
-    expect(between).not.toMatch(/if\s*\(\s*!?\s*recordedManifest\b/);
-    expect(between).not.toMatch(/recordedManifest\s*(&&|\?)/);
+    // The only way around the comparison is a run signed before v2.12.0: no manifest AND an old signed analyzer.
+    expect(between).toMatch(/const signedBeforeManifest = !recordedManifest && analyzerBefore\(runData\.analyzerVersion, \[2, 12, 0\]\);/);
+    expect(between).toMatch(/if \(!signedBeforeManifest\) \{/);
+    const gate = between.indexOf('if (!signedBeforeManifest)');
+    expect(between.slice(0, gate), 'no other condition stands before the comparison').not.toMatch(/\bif\s*\(/);
+    // An unreadable analyzer version is not old: it is held to the manifest.
+    const helper = src.slice(src.indexOf('function analyzerBefore'));
+    expect(helper).toMatch(/if \(typeof version !== 'string'\) return false;/);
+    expect(helper).toMatch(/if \(!m\) return false;/);
     // The comparison's verdict reaches the blocker list.
     expect(src.slice(call, call + 400)).toMatch(/blockers\.push\(\{\s*code:\s*'inputs-unverified'/);
   });

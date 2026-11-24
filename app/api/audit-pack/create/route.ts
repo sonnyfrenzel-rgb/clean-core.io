@@ -206,12 +206,16 @@ export async function POST(req: NextRequest) {
       // computed from them, and a release would otherwise invalidate every
       // project on the platform.
       //
-      // The comparison runs whether or not the run recorded a manifest. A run
-      // signed before roadmap 0.5 has none, and its inputs cannot be shown to
-      // still match, so every live input comes back not-recorded and the pack is
-      // refused (tests/export-manifest-required.spec.ts).
+      // A run with no manifest is one of two things. Signed before roadmap 0.5
+      // (analyzer before v2.12.0, read from the signed run itself), it is the
+      // migration promise C23-A02: it exports as it always did
+      // (tests/conservative-invalidity.spec.ts). Signed by any later build, a
+      // missing manifest is not an old run but a broken one, and the comparison
+      // runs against nothing: every live input comes back not-recorded and the
+      // pack is refused (tests/export-manifest-required.spec.ts).
       const recordedManifest = runData.inputManifest ?? null;
-      {
+      const signedBeforeManifest = !recordedManifest && analyzerBefore(runData.analyzerVersion, [2, 12, 0]);
+      if (!signedBeforeManifest) {
         const live: Record<string, string | null> = {
           [INPUT_IDS.source]:
             typeof projectData.legacyCode === 'string' && projectData.legacyCode.trim()
@@ -462,4 +466,19 @@ export async function POST(req: NextRequest) {
     logger.error('audit-pack/create failed', { route: 'api/audit-pack/create', error: errMessage(error) });
     return NextResponse.json({ error: 'The audit pack could not be created.' }, { status: 500 });
   }
+}
+
+/**
+ * Whether a signed run's analyzer version is older than `limit`. An unreadable version is not old: a run that cannot
+ * show it predates the input manifest is held to it.
+ */
+function analyzerBefore(version: unknown, limit: readonly [number, number, number]): boolean {
+  if (typeof version !== 'string') return false;
+  const m = /^v?(\d+)\.(\d+)\.(\d+)/.exec(version.trim());
+  if (!m) return false;
+  const parts = [Number(m[1]), Number(m[2]), Number(m[3])];
+  for (let i = 0; i < 3; i += 1) {
+    if (parts[i] !== limit[i]) return parts[i] < limit[i];
+  }
+  return false;
 }
