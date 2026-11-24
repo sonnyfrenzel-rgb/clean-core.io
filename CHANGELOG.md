@@ -18,6 +18,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The four QA full-review findings scheduled for the two Testing OData routes removed in v3.5.0 are closed by that
   removal (`docs/ROADMAP.md` §14).
 
+### Changed
+
+- Mobile readability (owner, 24.11.2026), phone breakpoints only — from 768 px up pixel-identical except the chip below:
+  - The type scale has a phone step (`DESIGN.md` §1.2, 1.8.20): below 40rem every reading role is one pixel larger
+    (body 15, table cell and identifier 14, meta 13, micro label 12, section title 16, card title 15); title, key
+    figure and hero unchanged. `tests/cc-token-guard.spec.ts` holds both columns of the scale.
+  - A provenance chip in a narrow column (two facets side by side on a phone) puts its note on a line of its own
+    instead of breaking it one letter per line ("fix / ed / rul / es"); icon and word never part. The same squeeze
+    hit the curated-mapping chip in Analyze's "Look here first" cards at 768 and 1440, which now read in two lines.
+  - The Economics options table keeps the columns it drops below 720 px dropped when it stacks on a phone: the
+    unlayered stacking rule beat `max-[720px]:hidden`, so every option came back as five labelled rows of "—".
+  - Line anchors (`L243`, "line 240") get a finger box 8 px taller above and below on touch screens; what is drawn
+    does not change.
+
 ## [v3.5.0] — 2026-11-24
 
 ### Security
