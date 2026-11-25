@@ -23,7 +23,7 @@ export function GET() {
 
   const body = `# Clean-Core.io
 
-> From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of
+> From custom ABAP nobody understands to a rebuild draft you review, on one chain of
 > evidence you can check.
 
 For the person who has to decide what happens to a custom ABAP program, Clean-Core.io
@@ -72,6 +72,18 @@ ${AS_OF_PARAGRAPH}
 
 ${WHAT_CHANGED_ANSWER}
 
+## Analyze, then Re-design
+
+Clean-Core.io has two parts that share one chain of evidence. Analyze reads the program before any model and shows its process, its rules and its clean core level per SAP object. Re-design takes that evidence through Economics, the decision, Design, Transformation, Documentation, Testing and Delivery. Clean-Core.io deploys nothing to the user's system.
+
+## What it does that others do not
+
+- The process as BPMN, every step back to its line
+- Hidden business rules, found in the code
+- Clean core gaps, each with its level and line
+- Engine first, AI second, and "Not determined" instead of a guess
+- A signed audit pack anyone can verify
+
 ## How the chain works
 
 1. Process: the engine reads the ABAP program and reconstructs its business process as
@@ -80,13 +92,16 @@ ${WHAT_CHANGED_ANSWER}
    Unknown where SAP's published data holds no answer
    (${baseUrl}/method/levels); the Clean Core Score (5–100, higher is better) starts at
    100 and takes points off for the constructs found.
-3. Decision: the Management view asks one question of the program — keep, rebuild, move
-   to SAP standard or retire — and shows what the answer rests on.
-4. Design, code draft, tests: AI-generated drafts built on the signed run, for a person to
-   review; on the CAP track the tests run against mocks in an isolated runner, on the RAP
-   track the ABAP Unit result is recorded from the user's own SAP system.
-5. Signed run: every completed analysis is an immutable run signed with HMAC; the audit
-   pack is signed over it with HMAC and Ed25519 (${baseUrl}/verify-pack).
+3. Economics: it prices keeping the program against a change on the user's own figures.
+   The result is a simulation.
+4. Decision: keep, rebuild, move to SAP standard or retire. The tool indicates an option
+   with its reasons, and a person decides. The signed-in account records the decision.
+5. Design, code draft, documentation, tests: AI-generated drafts built on the signed run,
+   for a person to review; on the CAP track the tests run against mocks in an isolated
+   runner, on the RAP track the ABAP Unit result is recorded from the user's own SAP system.
+6. Signed run and handover: every completed analysis is an immutable run signed with HMAC;
+   the audit pack is signed over it with HMAC and Ed25519 (${baseUrl}/verify-pack), and the
+   code draft leaves as an abapGit package.
 
 Details and limits: ${baseUrl}/how-it-works.
 

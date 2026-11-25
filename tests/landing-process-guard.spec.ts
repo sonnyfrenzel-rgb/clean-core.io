@@ -39,17 +39,19 @@ test.describe('the landing page shows the phases the product has', () => {
     test.setTimeout(240_000);
     await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 200_000 });
 
-    // Since the landing page 3.5 a row of seven tools in "What happens after the
-    // decision?" (#after): one item per phase (`[data-landing-phase]`) with the
-    // product label (`[data-landing-phase-title]`). The 3.0 timeline with a panel
-    // and a capture per phase retired with the accepted mockup; what the tools
-    // produce is said in the section's lead and its reader lines.
-    const items = page.locator('#after [data-landing-phase]');
+    // Since 3.5.2 (landing evolution, ADR-122 amendment) the seven tool chips are
+    // gone: Analyze is step 1 of the chain under the hero, and the six Re-design
+    // tools stand over the six step cards of "Analyze, then Re-design" (#after),
+    // Documentation and Testing on one card. Every one of them carries
+    // `[data-landing-phase]` and its product label, read from PHASES, so in page
+    // order they are the product's seven phases.
+    const items = page.locator('main [data-landing-phase]');
     await expect(items).toHaveCount(PHASES.length);
     expect(await items.evaluateAll((els) => els.map((el) => el.getAttribute('data-landing-phase')))).toEqual(
       PHASES.map((p) => p.key),
     );
-    expect(await page.locator('#after [data-landing-phase-title]').allInnerTexts()).toEqual(PHASES.map((p) => p.label));
+    expect(await page.locator('#after [data-landing-phase-title]').allInnerTexts()).toEqual(PHASES.slice(1).map((p) => p.label));
+    await expect(page.locator(`#readers-k ~ ul [data-landing-phase="${PHASES[0].key}"]`)).toContainText(PHASES[0].label);
     // The section says something about them, in the HTML — a bare row of names
     // would satisfy the order check.
     const section = (await page.locator('#after').evaluate((el) => el.textContent ?? '')).trim();
@@ -76,7 +78,7 @@ test.describe('the landing page shows the phases the product has', () => {
   test('the process section advertises nothing the product does not do', async ({ page }) => {
     test.setTimeout(240_000);
     await page.goto('/', { waitUntil: 'domcontentloaded', timeout: 200_000 });
-    // Since the landing page 3.5 the seven tools sit in #after; #process is the map.
+    // Since 3.5.2 the Re-design steps sit in #after; #process is the map.
     const section = await page.locator('#after').innerText();
 
     for (const claim of RETIRED_CLAIMS) {

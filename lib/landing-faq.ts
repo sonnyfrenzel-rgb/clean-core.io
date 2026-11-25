@@ -44,14 +44,16 @@ export const LANDING_FAQ: LandingFaq[] = [
     q: 'What does it cost?',
     a: 'Nothing. Clean-Core.io is a free community project with no paid tier, and we accept no payment. An account has five analysis runs; each starter example is free the first time you run it. After that you continue with your own model key, which its provider bills under your own agreement with that provider.',
   },
+  // Since 3.5.2 (landing evolution, owner decision 25.11.2026) this question takes the place of
+  // "Is my code kept confidential?"; who can open a project moved into the storage answer below.
   {
-    q: 'Is my code kept confidential?',
-    a: `Only the account that created a project, and anyone that account invites. An invitation is bound to one confirmed e-mail address and gives read access including the source code until it is withdrawn, which can happen at any time. Its link expires if nobody accepts it. There are no public links. ${trust('free')}`,
-    more: { href: '/datenschutz#project-access', label: 'Privacy Policy §8' },
+    q: 'Does Clean-Core.io only analyze, or does it rebuild too?',
+    a: 'Both, in that order. Analyze reads the program before any model and draws its process as BPMN, with the hard-coded rules and the clean core level of each SAP object it uses. Re-design then prices it on your own figures and records your decision. From there a model drafts the target design, RAP or CAP code, documentation and test scenarios, ending in a signed audit pack. The code is a draft for review. Clean-Core.io deploys nothing to your system.',
+    more: { href: '/how-it-works', label: 'How it works, and its limits' },
   },
   {
-    q: 'Where is my code stored, and what leaves it?',
-    a: `${trust('residency')} The engine reads your code without a model; text and code drafts are written by the model provider, reached only through our server: the Google Gemini API, or the provider of your own key. ${trust('tracking')} ${trust('erasure')}`,
+    q: 'Where is my code stored, who can open it, and what leaves it?',
+    a: `${trust('residency')} Only the account that created a project can open it, and anyone that account invites. An invitation is bound to one confirmed e-mail address and gives read access including the source code until it is withdrawn, which can happen at any time. Its link expires if nobody accepts it. There are no public links. The engine reads your code without a model; text and code drafts are written by the model provider, reached only through our server: the Google Gemini API, or the provider of your own key. ${trust('tracking')} ${trust('erasure')} ${trust('free')}`,
     more: { href: '/trust', label: 'Trust and privacy' },
   },
   {

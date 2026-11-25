@@ -102,7 +102,7 @@ const html = `<!doctype html><html><head><meta charset="utf-8"><style>
       <span>Clean-Core<em>.io</em></span>
       <span class="pill">Free for the SAP community</span>
     </div>
-    <h1>From custom ABAP nobody understands to a reviewed, tested rebuild — <em>on one chain of evidence you can check.</em></h1>
+    <h1>From custom ABAP nobody understands to a rebuild draft you review, <em>on one chain of evidence you can check.</em></h1>
     <div class="facts">
       <div class="fact">BPMN with line anchors</div>
       <div class="fact">Clean core level A–D</div>

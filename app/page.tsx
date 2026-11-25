@@ -27,7 +27,7 @@ import { TRUST_CLAIMS, SECURITY_MODEL_URL } from '@/lib/trust-claims';
 import { DEMO_OBJECT_NAME, DEMO_PROJECT_TITLE, DEMO_SOURCE_FILE } from '@/lib/demo-marks';
 import { landingHero } from '@/lib/landing-process';
 import { heroBuild, demoLadder, DEMO_FIGURES, RULE_SENTENCES } from '@/lib/landing-35';
-import { PHASES } from '@/lib/workflow-steps';
+import { PHASES, type PhaseKey } from '@/lib/workflow-steps';
 import { BTP, BTP_FIRST } from '@/lib/sap-naming';
 import { LANDING_FAQ } from '@/lib/landing-faq';
 import '@/components/landing/landing-35.css';
@@ -71,15 +71,21 @@ export const revalidate = 300;
  * approved short USP (owner decision 01.10.2026), which the whitepaper's
  * title repeats.
  */
-const HOME_TITLE = 'SAP Clean Core Accelerator · ABAP Analysis | Clean-Core.io';
+const HOME_TITLE = 'SAP Clean Core Accelerator · ABAP Analysis & Re-design | Clean-Core.io';
 const HOME_SHARE_TITLE = 'Clean-Core.io — SAP Clean Core Accelerator for custom ABAP';
+/**
+ * The share text (og:description, and the start of the JSON-LD description).
+ * Since 3.5.2 it says "a rebuild draft you review": the code is a draft and the
+ * tests run against mocks or in your own system, so "a tested rebuild" claimed
+ * more than the product does (landing evolution 25.11.2026, ADR-122 amendment).
+ */
 const HOME_SHARE_DESCRIPTION =
-  'From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can check. The process as BPMN with line anchors, SAP clean core level A–D per object, signed runs. Free for the SAP community.';
+  'From custom ABAP nobody understands to a rebuild draft you review, on one chain of evidence you can check. The process as BPMN with line anchors, SAP clean core level A–D per object, signed runs. Free for the SAP community.';
 
 export const metadata: Metadata = withTwitterCard({
   title: HOME_TITLE,
   description:
-    'Free SAP clean core tool: reads custom ABAP before any model, draws its process as BPMN with line anchors, grades SAP objects A–D, drafts code and tests.',
+    'Free SAP clean core tool. It reads custom ABAP before any AI and draws its process as BPMN. Then it drafts the rebuild, with a signed audit pack.',
   alternates: {
     canonical: 'https://clean-core.io',
   },
@@ -117,6 +123,86 @@ const BUCKET_RULE: Record<string, string> = {
 };
 
 const ARROW = <ArrowRight size={18} aria-hidden="true" />;
+
+/**
+ * "Analyze, then Re-design" (landing evolution 25.11.2026, ADR-122 amendment):
+ * the six steps after the analysis, in the order of the video's chapters. The
+ * tool names over each step are read from `PHASES` (`phases`), so the page and
+ * the tool bar cannot name the tools differently; the decision is a step of
+ * Re-design, not a tool of its own. `howTo` is the step's sentence in the
+ * `HowTo` JSON-LD node.
+ */
+const REDESIGN_STEPS: Array<{
+  id: string;
+  phases: PhaseKey[];
+  tool?: string;
+  title: string;
+  text: string;
+  howTo: string;
+  chip?: 'simulation' | 'proposed';
+  link?: { href: string; label: string };
+}> = [
+  {
+    id: 'redesign-price',
+    phases: ['tco'],
+    title: 'Price it',
+    text: 'What keeping it costs, and what a change would cost, calculated on your own figures.',
+    howTo: 'What keeping the program costs, and what a change would cost, on your own figures.',
+    chip: 'simulation',
+  },
+  {
+    id: 'decide',
+    phases: [],
+    tool: 'Decision',
+    title: 'Decide',
+    text: 'Keep, rebuild, move to SAP standard or retire. The tool indicates an option with its reasons; a person decides, on record.',
+    howTo: 'Keep, rebuild, move to SAP standard or retire. The tool indicates an option with its reasons, and a person decides.',
+  },
+  {
+    id: 'redesign-design',
+    phases: ['design'],
+    title: 'Design the target',
+    text: 'The decided option, made concrete for this program: the target route and the open business questions, up to sign-off.',
+    howTo: 'The decided option, made concrete for this program, up to sign-off.',
+    chip: 'proposed',
+  },
+  {
+    id: 'redesign-code',
+    phases: ['transformation'],
+    title: 'Draft the code',
+    text: 'A model drafts the RAP or CAP code for the target, every line marked. A draft for review, never a finished product.',
+    howTo: 'A model drafts RAP or CAP code for review, every line marked.',
+    chip: 'proposed',
+  },
+  {
+    id: 'redesign-test',
+    phases: ['documentation', 'testing'],
+    title: 'Document and test it',
+    text: 'A document a successor can read. Tests on the side-by-side route run here against mocks; in-app, you run them in your own system and record the result.',
+    howTo:
+      'On the side-by-side route the tests run here against mocks. On the in-app route you run them in your own system and record the result.',
+  },
+  {
+    id: 'redesign-handover',
+    phases: ['delivery'],
+    title: 'Hand it over',
+    text: 'An abapGit package for ADT and a signed audit pack that anyone can verify, without an account.',
+    howTo: 'An abapGit package and a signed audit pack that anyone can verify without an account.',
+    link: { href: '/verify-pack', label: 'Verify an audit pack →' },
+  },
+];
+
+/** The closing card, as the video ends: the claim and the five things it does that others do not. */
+const END_CLAIM = 'Legacy ABAP, finally explained.';
+const END_USPS = [
+  'The process as BPMN, every step back to its line',
+  'Hidden business rules, found in the code',
+  'Clean core gaps, each with its level and line',
+  'Engine first, AI second, and “Not determined” instead of a guess',
+  'A signed audit pack anyone can verify',
+];
+
+const phaseLabel = (key: PhaseKey) => PHASES.find((p) => p.key === key)!.label;
 
 /** What each reader finds in a section: one line each, never a gate. */
 function ForYou({ business, it, management }: { business: React.ReactNode; it: React.ReactNode; management: React.ReactNode }) {
@@ -283,6 +369,7 @@ export default function Home() {
           'Clean Core Score, 5–100, higher is better, in four bands — published by Clean-Core.io, not an SAP metric',
           'Business, IT and Management views of the same project; an indication for the decision, never the decision',
           'Target design, transformed RAP or CAP code draft and test scenarios — for CAP run against mocks in an isolated runner, for RAP an ABAP Unit class that runs only in your own system',
+          'Re-design walks a program from the evidence of its signed run to a handover. It prices it on your own figures and records the decision; a model then drafts the target design, RAP or CAP code, documentation and test scenarios.',
           'Every completed analysis sealed as a signed run (HMAC); audit pack for handover signed over the run with HMAC and Ed25519',
           'Read access by invitation, bound to one confirmed e-mail address, until it is withdrawn; an invitation link nobody accepts expires',
           'Own model key: Google Gemini; Claude by Anthropic from 23 December 2026',
@@ -302,6 +389,20 @@ export default function Home() {
           name: f.q,
           ...(f.lang ? { inLanguage: f.lang } : {}),
           acceptedAnswer: { '@type': 'Answer', text: f.a },
+        })),
+      },
+      {
+        // The six steps the "Analyze, then Re-design" section shows, and nothing it does not.
+        '@type': 'HowTo',
+        '@id': 'https://clean-core.io/#redesign',
+        name: 'From custom ABAP to a rebuild draft with Clean-Core.io',
+        isAccessibleForFree: true,
+        step: REDESIGN_STEPS.map((s, i) => ({
+          '@type': 'HowToStep',
+          position: i + 1,
+          name: s.title,
+          text: s.howTo,
+          url: `https://clean-core.io/#${s.id}`,
         })),
       },
       {
@@ -390,28 +491,29 @@ export default function Home() {
               </div>
             </figure>
 
-            {/* The three reader entries: orientation, never a gate; one row since the length budget (UX review 22.11.2026, L3). */}
+            {/* The chain under the hero (landing evolution 25.11.2026): three jump links, never a gate. The reader
+                lines stay in every section. Everything is free, so no step is marked free on its own. */}
             <nav className="readers" aria-labelledby="readers-k">
               <p className="k" id="readers-k">
-                One page for three questions
+                One chain of evidence, from code to handover. Free at every step.
               </p>
               <ul>
                 <li>
-                  <a href="#process">
-                    <span className="who">Business</span>
-                    <span className="q">What does it do, and which rules are in it?</span>
-                  </a>
-                </li>
-                <li>
-                  <a href="#for-it">
-                    <span className="who">IT</span>
-                    <span className="q">What does it touch, and how do we rebuild it?</span>
+                  <a href="#process" data-landing-phase={PHASES[0].key}>
+                    <span className="who">1 · {PHASES[0].label}</span>
+                    <span className="q">What does it do, which rules and which clean core gaps?</span>
                   </a>
                 </li>
                 <li>
                   <a href="#decide">
-                    <span className="who">Management</span>
-                    <span className="q">What do we risk, and what do we decide?</span>
+                    <span className="who">2 · Decide</span>
+                    <span className="q">Keep, rebuild, move to SAP standard or retire?</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="#redesign">
+                    <span className="who">3 · Re-design</span>
+                    <span className="q">Price it, design it, draft code, documentation and tests</span>
                   </a>
                 </li>
               </ul>
@@ -487,9 +589,6 @@ export default function Home() {
               <TextLink href="/features/process-blueprints">Process blueprints</TextLink>
               <TextLink href="/abap-custom-code-analysis">ABAP code analysis</TextLink>
               <TextLink href="/features/extensibility-routing">Extensibility routing</TextLink>
-              <TextLink href="/features/rap-cap-engine">RAP and CAP drafts</TextLink>
-              <TextLink href="/features/modernization-assessment">Modernization assessment</TextLink>
-              <TextLink href="/features/audit-evidence">Audit evidence</TextLink>
               <TextLink href="/features/cloudification-catalog">Cloudification catalog</TextLink>
             </p>
           </div>
@@ -591,48 +690,57 @@ export default function Home() {
           </div>
         </section>
 
-        {/* 3 · the decision, and what the seven tools do after it (one section since the length budget, UX review 22.11.2026, L3) */}
-        <section className="sec alt" id="decide" aria-labelledby="decide-title">
+        {/* 3 · Analyze, then Re-design: the six steps after the analysis (landing evolution 25.11.2026, ADR-122 amendment).
+            The decision is step 2, so the `#decide` anchor stays on its card. */}
+        <section className="sec alt" id="redesign" aria-labelledby="redesign-title">
           <div className="wrap">
-            <SectionHeader eyebrow="The decision and after" title="What do we decide, and what comes after?" titleId="decide-title">
-              Keep, rebuild, move to SAP standard or retire: an indication with its reasons, then the same evidence through
-              every tool. The decision stays yours.
+            <SectionHeader eyebrow="Analyze, then Re-design" title="How do you get from analysis to a rebuild draft?" titleId="redesign-title">
+              Re-design walks the rest on the same evidence: price it, decide, design the target, let a model draft the
+              code, documentation and tests, then hand over a signed pack. All of it is free, like the analysis.
             </SectionHeader>
             <ForYou
-              business="The open questions that block a decision, then documentation ready for your own template."
-              it="One rule per object decides its bucket; then a RAP or CAP draft, test scenarios, an abapGit package."
-              management="Indication, risk and options on one page; costs only as a simulation on your assumptions."
+              business="The open questions before the decision, then a document your successor can read."
+              it="A RAP or CAP draft as an abapGit package, with test scenarios, every line marked."
+              management="Costs on your own figures, an indication with its reasons, and your decision on record."
             />
-            <div id="after" className="after">
-              <ol className="stages" aria-label="The seven tools of a project">
-                {PHASES.map((p, i) => (
-                  <li key={p.key} className={i === 0 ? 'cur' : undefined} data-landing-phase={p.key}>
-                    <span className="no">{p.n}</span>
-                    <span data-landing-phase-title="">{p.label}</span>
-                  </li>
-                ))}
-              </ol>
-              <div className="card limits">
-                <h3>What it is, and what it is not</h3>
-                <ul>
-                  <li>
-                    An <b>indication</b> for the decision, never the decision.
-                  </li>
-                  <li>
-                    The code is a <b>draft for review</b>, not a finished product.
-                  </li>
-                  <li>CAP tests run in an isolated runner against mocks, not in your SAP system.</li>
-                  <li>On the RAP track the tests are an ABAP Unit class for your own system; you record its result there.</li>
-                  <li>
-                    Costs appear only as a <CcProvenanceChip value="simulation" /> on your assumptions.
-                  </li>
-                  <li>A person signs the result, not the tool.</li>
-                </ul>
-                <p className="linkrow">
-                  <TextLink href="/how-it-works">How it works, and its limits →</TextLink>
-                </p>
-              </div>
-            </div>
+            <ol id="after" className="rd-steps" aria-label="The six steps of Re-design">
+              {REDESIGN_STEPS.map((s, i) => (
+                <li key={s.id} id={s.id} className="card">
+                  <p className="t">
+                    <span className="no" aria-hidden="true">
+                      {i + 1}
+                    </span>
+                    <span className="tool">
+                      {s.tool ??
+                        s.phases.map((k, j) => (
+                          <span key={k}>
+                            {j > 0 && ' · '}
+                            <span data-landing-phase={k} data-landing-phase-title="">
+                              {phaseLabel(k)}
+                            </span>
+                          </span>
+                        ))}
+                    </span>
+                    {s.chip && (
+                      <span className="c">
+                        <CcProvenanceChip value={s.chip} />
+                      </span>
+                    )}
+                  </p>
+                  <h3>{s.title}</h3>
+                  <p>{s.text}</p>
+                  {s.link && (
+                    <p className="lk">
+                      <TextLink href={s.link.href}>{s.link.label}</TextLink>
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ol>
+            <p className="honest rd-honest">
+              <b>Your system stays as it is.</b> Clean-Core.io deploys nothing to it. A person reviews every draft, and
+              ABAP Test Cockpit stays the authority.
+            </p>
             <ForIt title="Four buckets, one rule per object">
               <div className="buckets">
                 {PUBLIC_CLOUD_FIT_BUCKETS.map((b) => (
@@ -644,6 +752,14 @@ export default function Home() {
               </div>
               <p>The first rule that applies wins. Why 13 months: period-end and year-end programs run once a year.</p>
             </ForIt>
+            <p className="linkrow">
+              <TextLink href={`${SHOWCASE}#step=9`}>See every tool in the demo →</TextLink>
+              <TextLink href="/how-it-works">How it works, and its limits</TextLink>
+              <TextLink href="/features/rap-cap-engine">RAP and CAP drafts</TextLink>
+              <TextLink href="/features/modernization-assessment">Modernization assessment</TextLink>
+              <TextLink href="/features/audit-evidence">Audit evidence</TextLink>
+              <TextLink href="/whitepaper">Whitepaper</TextLink>
+            </p>
           </div>
         </section>
 
@@ -715,7 +831,28 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <ForIt title="The reference run in detail: the SAP objects it touched">
+            <div id="for-it" className="forit">
+            {/* One line of trust: each title with the document that says so, read from lib/trust-claims.ts.
+                The full sentences stand in the FAQ and on /trust (landing evolution 25.11.2026). */}
+            <ul className="trust-row" data-landing-trust="">
+              {[
+                { title: 'Stored in the EU', claim: trust('residency') },
+                { title: 'Only you, and whom you invite', claim: trust('access') },
+                { title: 'Never sold; training under your key’s terms', claim: trust('training') },
+              ].map((item) => {
+                const source = item.claim.sources[0];
+                return (
+                  <li key={item.title}>
+                    <Check className="ok" size={16} aria-hidden="true" />
+                    <b>{item.title}</b>
+                    <Link href={source.href}>{source.label}</Link>
+                  </li>
+                );
+              })}
+            </ul>
+            {/* One "For IT" fold since 3.5.2: the reference run, the facts and SAP's own tools. */}
+            <ForIt title="The reference run, the facts, and SAP's own tools">
+              <h4 className="fk4">The reference run in detail: the SAP objects it touched</h4>
               <div data-landing-rollcall-card="">
                 <ul className="bucket3">
                   {[reference.resolved, reference.decision, reference.handedBack].map((b) => (
@@ -753,34 +890,7 @@ export default function Home() {
                   </p>
                 )}
               </div>
-            </ForIt>
-            <div id="for-it" className="forit">
-            {/* The trust lines verbatim from lib/trust-claims.ts, each with the document that says so. */}
-            <ul className="trust3" data-landing-trust="">
-              {[
-                { title: 'Stored in the EU', claims: [trust('residency'), trust('tracking')] },
-                { title: 'Only you, and whom you invite', claims: [trust('access')] },
-                { title: 'Never sold; training under your key’s terms', claims: [trust('training')] },
-              ].map((card) => (
-                <li key={card.title} className="card">
-                  <b>{card.title}</b>
-                  {card.claims.map((c) => (
-                    <p key={c.id}>{c.text}</p>
-                  ))}
-                  <p className="src">
-                    {card.claims
-                      .flatMap((c) => c.sources)
-                      .map((s, k) => (
-                        <span key={s.href + s.label}>
-                          {k > 0 && ' · '}
-                          <Link href={s.href}>{s.label}</Link>
-                        </span>
-                      ))}
-                  </p>
-                </li>
-              ))}
-            </ul>
-            <ForIt title="The facts, precisely, and next to SAP's own tools">
+              <h4 className="fk4">The facts, precisely</h4>
               <p>Everything here is in the code, the Privacy Policy or SECURITY.md; follow the links.</p>
               <dl className="facts2">
                 <div className="fx">
@@ -1006,8 +1116,16 @@ export default function Home() {
       {/* Footer — every page with search reach, the legal pages, the version. */}
       <footer id="site-footer" className="foot">
         <div className="wrap">
+          {/* The closing card, as the video ends (landing evolution 25.11.2026): the claim and the five USPs. */}
           <div className="foot-top">
-            <p>Read the code before you decide.</p>
+            <div className="foot-end">
+              <p className="foot-claim">{END_CLAIM}</p>
+              <ul className="foot-usp" aria-label="What Clean-Core.io does">
+                {END_USPS.map((u) => (
+                  <li key={u}>{u}</li>
+                ))}
+              </ul>
+            </div>
             <div className="cta-row">
               <Link href={SHOWCASE} className={publicButton('primary')} data-cta-see="">
                 {SHOWCASE_CTA}

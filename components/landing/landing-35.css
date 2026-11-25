@@ -208,19 +208,26 @@
   .lp35 .bucket b { font-size: 14.5px; }
   .lp35 .bucket p { margin: 4px 0 0; font-size: 13px; color: var(--cc-ink-muted); }
 
-  /* after the decision */
-  .lp35 .stages { list-style: none; margin: 0 0 20px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-  .lp35 .stages li { display: flex; align-items: center; gap: 8px; background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: 999px; padding: 7px 12px 7px 7px; font-size: 14px; font-weight: 700; }
-  .lp35 .stages li .no { width: 24px; height: 24px; border-radius: 50%; background: var(--cc-ink); color: var(--cc-on-dark); display: grid; place-items: center; font-size: 12px; }
-  .lp35 .stages li.cur { border-color: var(--cc-brand); background: var(--cc-brand-surface); }
-  /* the seven tools in a row, the limits under them (one section with the decision since 23.11.2026) */
-  .lp35 .after { display: grid; gap: 16px; max-width: 1100px; margin: 0 auto; }
-  @media (min-width: 900px) { .lp35 .after .limits ul { columns: 2; column-gap: 32px; } .lp35 .after .limits li { break-inside: avoid; } }
-  .lp35 .limits { padding: 16px 18px; }
-  .lp35 .limits h3 { font-size: 16px; margin: 0 0 8px; }
-  .lp35 .limits ul { margin: 0; padding-left: 18px; font-size: 14.5px; }
-  .lp35 .limits li { margin: 6px 0; }
-  .lp35 .limits .linkrow { justify-content: flex-start; }
+  /* Analyze, then Re-design: six step cards, also on a phone (landing evolution 25.11.2026) */
+  .lp35 .rd-steps { list-style: none; margin: 0 auto 16px; padding: 0; display: grid; gap: 12px; grid-template-columns: 1fr; max-width: 1160px; }
+  @media (min-width: 700px) { .lp35 .rd-steps { grid-template-columns: repeat(2, 1fr); } }
+  @media (min-width: 1100px) { .lp35 .rd-steps { grid-template-columns: repeat(3, 1fr); } }
+  .lp35 .rd-steps li { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; scroll-margin-top: 96px; }
+  .lp35 .rd-steps .t { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0; }
+  .lp35 .rd-steps .no { width: 24px; height: 24px; border-radius: 50%; background: var(--cc-ink); color: var(--cc-on-dark); display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none; }
+  .lp35 .rd-steps .tool { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--cc-ink-muted); }
+  .lp35 .rd-steps .c { margin-left: auto; }
+  .lp35 .rd-steps h3 { font-size: 18px; line-height: 1.3; margin: 2px 0 0; }
+  .lp35 .rd-steps p { margin: 0; font-size: 15px; line-height: 1.5; color: var(--cc-ink-muted); }
+  .lp35 .rd-steps .lk { margin-top: auto; padding-top: 4px; font-size: 14px; }
+  @media (max-width: 699px) {
+    .lp35 .rd-steps { gap: 8px; }
+    .lp35 .rd-steps li { padding: 12px 14px; gap: 4px; }
+    .lp35 .rd-steps h3 { font-size: 16px; }
+    .lp35 .rd-steps p { font-size: 14px; }
+  }
+  .lp35 .rd-honest { margin: 4px auto 8px; }
+  .lp35 .rd-honest b { color: var(--cc-ink); }
 
   /* evidence */
   .lp35 .ev { display: grid; gap: 16px; }
@@ -244,12 +251,13 @@
   .lp35 .bucket3 p { margin: 2px 0 0; color: var(--cc-ink-muted); }
 
   /* trust and IT */
-  .lp35 .trust3 { list-style: none; margin: 0 auto 28px; padding: 0; display: grid; gap: 12px; max-width: 1100px; }
-  @media (min-width: 900px) { .lp35 .trust3 { grid-template-columns: repeat(3, 1fr); } }
-  .lp35 .trust3 li { padding: 16px 18px; }
-  .lp35 .trust3 b { display: block; font-size: 16px; margin-bottom: 4px; }
-  .lp35 .trust3 p { margin: 0; font-size: 14px; color: var(--cc-ink-muted); }
-  .lp35 .trust3 .src { font-size: 12.5px; margin-top: 8px; }
+  /* one line of trust, each title with its source (since 3.5.2; the full sentences are in the FAQ and on /trust) */
+  .lp35 .trust-row { list-style: none; margin: 0 auto 20px; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 8px 28px; justify-content: center; background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: var(--cc-radius-card); font-size: 15px; }
+  .lp35 .trust-row li { display: grid; grid-template-columns: auto auto; column-gap: 8px; align-items: baseline; }
+  .lp35 .trust-row li a { grid-column: 2; font-size: 13px; }
+  @media (max-width: 699px) { .lp35 .trust-row { flex-direction: column; } .lp35 .trust-row li { grid-template-columns: auto 1fr; } }
+  @media (min-width: 700px) { .lp35 .trust-row li { display: flex; gap: 8px; } }
+  .lp35 .trust-row .ok { color: var(--cc-brand-strong); width: 16px; height: 16px; flex: none; align-self: center; }
   .lp35 .facts2 { display: grid; gap: 0 28px; margin: 0; }
   @media (min-width: 900px) { .lp35 .facts2 { grid-template-columns: 1fr 1fr; } }
   .lp35 .fx { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-top: 1px solid var(--cc-line); font-size: 14px; line-height: 1.45; }
@@ -308,6 +316,13 @@
   .lp35 .foot-top { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; border-bottom: 1px solid color-mix(in srgb, var(--cc-on-dark) 15%, transparent); padding-bottom: 24px; margin-bottom: 24px; }
   .lp35 .foot-top p { font-size: 24px; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
   .lp35 .foot-top .cta-row { margin: 0; }
+  /* the closing card as the video ends: the claim, the five USPs, the two buttons beside them (since 3.5.2) */
+  .lp35 .foot-top:has(.foot-end) { align-items: flex-start; }
+  .lp35 .foot-end { flex: 1 1 560px; }
+  .lp35 .foot-top .foot-claim { margin: 0 0 12px; }
+  .lp35 .foot .foot-usp { margin: 0; padding: 0 0 0 20px; display: grid; gap: 4px 24px; font-size: 14px; opacity: 0.9; list-style: none; }
+  @media (min-width: 900px) { .lp35 .foot .foot-usp { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .lp35 .foot-top:has(.foot-end) .cta-row { align-self: center; }
   .lp35 .foot .on-dark { background: transparent; color: var(--cc-on-dark); border-color: color-mix(in srgb, var(--cc-on-dark) 60%, transparent); }
   .lp35 .foot .on-dark:hover { background: color-mix(in srgb, var(--cc-on-dark) 10%, transparent); color: var(--cc-on-dark); }
   .lp35 .foot-grid { display: grid; gap: 24px; grid-template-columns: 1fr 1fr; }

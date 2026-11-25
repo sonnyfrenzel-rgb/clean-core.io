@@ -10,7 +10,8 @@ import type { ProvenanceValue } from './provenance';
  *
  *   - **`FROM_LANDING`** — sentences the landing page (`app/page.tsx`) already
  *     says (since the landing page 3.5 only the toolchain rows, the bucket
- *     rules and the closing line; the rest of the 3.0 wording is `WHITEPAPER_30`).
+ *     rules; the rest of the 3.0 wording is `WHITEPAPER_30`, the closing line too since
+ *     the landing's footer took the video's end card in 3.5.2).
  *     They are not reworded for the whitepaper; they are the same
  *     sentence. The landing keeps its own copy (its guards want its arrays
  *     inline), so `tests/whitepaper-guard.spec.ts` reads `app/page.tsx` and
@@ -24,9 +25,14 @@ import type { ProvenanceValue } from './provenance';
  * reference run are read where the component renders them.
  */
 
-/** The approved USP, short form (owner decision 01.10.2026) — the landing's H1 and social card. */
+/**
+ * The approved USP, short form (owner decision 01.10.2026) — the whitepaper's H1
+ * and the landing's share text. Since 3.5.2 "a rebuild draft you review" instead
+ * of "a reviewed, tested rebuild", which claimed more than a draft tested against
+ * mocks or in your own system (owner decision 25.11.2026).
+ */
 export const USP_SHORT =
-  'From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of evidence you can check.';
+  'From custom ABAP nobody understands to a rebuild draft you review, on one chain of evidence you can check.';
 
 /**
  * The approved USP, long form (owner decision 01.10.2026).
@@ -195,7 +201,6 @@ export const WHITEPAPER_30 = {
 export const FROM_LANDING = {
   toolchain: WHITEPAPER_30.toolchain,
   bucketRules: WHITEPAPER_30.bucketRules,
-  closing: WHITEPAPER_30.closing,
 } as const;
 
 /* ------------------------------------------------------------------------ */

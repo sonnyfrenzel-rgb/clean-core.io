@@ -1,6 +1,6 @@
 # Clean-Core.io
 
-**From custom ABAP nobody understands to a reviewed, tested rebuild — on one chain of
+**From custom ABAP nobody understands to a rebuild draft you review, on one chain of
 evidence you can check.**
 
 For the person who has to decide what happens to a custom ABAP program, Clean-Core.io is

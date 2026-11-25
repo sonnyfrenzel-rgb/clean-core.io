@@ -15,7 +15,7 @@ export const SOCIAL_CARD = {
   url: 'https://clean-core.io/social-card.png',
   width: 1200,
   height: 630,
-  alt: 'Clean-Core.io — from custom ABAP nobody understands to a reviewed, tested rebuild, on one chain of evidence you can check.',
+  alt: 'Clean-Core.io — from custom ABAP nobody understands to a rebuild draft you review, on one chain of evidence you can check.',
   type: 'image/png',
 } as const;
 
