@@ -47,6 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `6ef1368e30be`); a refused run (source or profile moved) leaves no "In short" and no summary, a committed one
   writes both for its run (`tests/conservative-invalidity.spec.ts`, `tests/assessment-profile-wiring.spec.ts`;
   QA `2e419e6ecb2c`).
+- Tests (Firestore and Auth emulators): a signed-in browser can neither create its profile with the usage-report
+  objection marker nor set, move or clear it; each refusal is paired with the same call without the marker succeeding
+  (`tests/usage-report-objection-rules.spec.ts`; QA `99c8e1d82624`).
 
 ### Changed
 
