@@ -248,6 +248,10 @@ test.describe('no viewing, no copy, no export', () => {
     // The route answers with hold records, and has no action that returns content.
     const route = read('app/api/admin/content-holds/route.ts');
     expect(route).toContain('assertAdminStepUp(req, admin)');
+    // Reading the list needs the same step-up as acting on it.
+    const getHandler = route.slice(route.indexOf('export async function GET'), route.indexOf('export async function POST'));
+    expect(getHandler.indexOf('assertAdminStepUp(req, admin)')).toBeGreaterThan(-1);
+    expect(getHandler.indexOf('assertAdminStepUp(req, admin)')).toBeLessThan(getHandler.indexOf('listContentHolds('));
     expect(route).not.toMatch(/case '(view|export|download|show)'/);
     // `content_holds` stays closed to every browser: no rule names it.
     expect(read('firestore.rules')).not.toContain(CONTENT_HOLD_COLLECTION);

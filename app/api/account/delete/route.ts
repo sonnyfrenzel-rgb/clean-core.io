@@ -15,7 +15,8 @@ import { isRecentLogin } from '@/lib/recent-login';
 
 export async function POST(req: NextRequest) {
   try {
-    const decodedToken = await verifyRequestAuth(req);
+    // Checked against the account: a token outlives the erasure it started.
+    const decodedToken = await verifyRequestAuth(req, { checkRevoked: true });
     if (!decodedToken) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }

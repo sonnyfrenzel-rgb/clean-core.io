@@ -22,7 +22,7 @@ import { retireSecondFactor } from '@/lib/mfa-disable';
  */
 export async function POST(request: NextRequest) {
   try {
-    const decodedToken = await verifyRequestAuth(request);
+    const decodedToken = await verifyRequestAuth(request, { checkRevoked: true });
     if (!decodedToken) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }

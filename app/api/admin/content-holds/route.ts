@@ -43,6 +43,12 @@ export async function GET(req: NextRequest) {
   try {
     const admin = await verifyAdminRequest(req);
     if (!admin) return NextResponse.json({ error: 'Unauthorized. Admin privileges required.' }, { status: 403 });
+    // Reading the holds is a console action too: the records name owners and suspected offences.
+    try {
+      await assertAdminStepUp(req, admin);
+    } catch (stepUpErr: any) {
+      return NextResponse.json({ error: stepUpErr.message || 'Recent administrator step-up verification required.' }, { status: stepUpErr.status || 403 });
+    }
     const { db } = await getAdminDb();
     const now = Date.now();
     return NextResponse.json({ holds: (await listContentHolds(db)).map((h) => rowOf(h, now)) });

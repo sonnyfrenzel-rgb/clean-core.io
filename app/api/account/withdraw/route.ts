@@ -33,7 +33,7 @@ const RECENT_LOGIN_MESSAGE =
 
 export async function POST(req: NextRequest) {
   try {
-    const decodedToken = await verifyRequestAuth(req);
+    const decodedToken = await verifyRequestAuth(req, { checkRevoked: true });
     if (!decodedToken) {
       return NextResponse.json({ error: 'Authentication required.' }, { status: 401 });
     }

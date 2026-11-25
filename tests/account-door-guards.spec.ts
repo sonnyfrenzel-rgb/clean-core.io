@@ -47,7 +47,8 @@ test('the account deletion asks isRecentLogin and does no arithmetic of its own'
 });
 
 test('registration and consent verify the token against the account (checkRevoked)', () => {
-  for (const rel of ['app/api/account/register/route.ts', 'app/api/consent/route.ts']) {
+  // Since 25.11.2026 also the doors out: erasure, withdrawal and the second factor's enrolment and removal.
+  for (const rel of ['app/api/account/register/route.ts', 'app/api/consent/route.ts', 'app/api/account/delete/route.ts', 'app/api/account/withdraw/route.ts', 'app/api/mfa/disable/route.ts', 'app/api/mfa/enrolled/route.ts']) {
     const src = read(rel);
     expect(src, rel).toMatch(/verifyRequestAuth\((request|req), \{ checkRevoked: true \}\)/);
     expect(src, `${rel} has no unchecked verification left`).not.toMatch(/verifyRequestAuth\((request|req)\)/);
