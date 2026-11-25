@@ -44,6 +44,8 @@ import { hydrateProject } from '../lib/project-loader';
 import { TERMS_VERSION } from '../lib/constants';
 import type { Project } from '../lib/types';
 import { signInViaLanding } from './helpers/sign-in';
+import path from 'path';
+import { computeEngineDigest } from '../scripts/engine/engine-digest.cjs';
 
 /**
  * Roadmap 7.10 — "Zielprofil als Eingabe" (CR-02), wired through the five
@@ -439,6 +441,21 @@ test.describe('7.10 — the routes', () => {
     const project = await read(`projects/${PROJECT_ID}`);
     expect(project.assessmentTarget).toEqual(DECLARED);
     expect(project.auditMetadata.assessmentSubject).toBe(run.assessmentSubject);
+  });
+
+  // Roadmap 3.4.0 item (3) through the route itself, not its source text: the run the server created carries the
+  // engine digest of the build that serves it, inside the hash it signed — changing or dropping it breaks the seal.
+  test('the created run signs the engine digest of the build that created it', async () => {
+    expect(publicRunId, 'the run of the test above').not.toBe('');
+    const run = await read(`projects/${PROJECT_ID}/runs/${publicRunId}`);
+    const key = process.env.AUDIT_SIGNING_KEY!;
+    expect(run.model.engineDigest, 'the run carries no engine digest').toBe(computeEngineDigest(path.join(__dirname, '..')).digest);
+    expect(verifyRunIntegrity(run, key)).toEqual({ valid: true });
+    const changed = { ...run, model: { ...run.model, engineDigest: 'f'.repeat(64) } };
+    expect(verifyRunIntegrity(changed, key).valid, 'a changed digest still verifies').toBe(false);
+    const withoutDigest = { ...run.model };
+    delete withoutDigest.engineDigest;
+    expect(verifyRunIntegrity({ ...run, model: withoutDigest }, key).valid, 'a dropped digest still verifies').toBe(false);
   });
 
   test('the same source under another profile is a new subject, and the standing sign-off goes stale', async ({ request }) => {

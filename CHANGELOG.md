@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The map's "measured and kept with this model" date belongs to the active run only. A quote measured for an earlier
   run of the same source (another engine draws another map) is no longer handed out; the next measurement replaces
   it (`quoteOfActiveRun`, `lib/process-map.ts`, `app/api/projects/[projectId]/process-map/route.ts`; QA `854742965114`).
+- Tests: the engine digest is checked through the run route itself — the created run carries the digest of the build
+  that serves it, verifies, and stops verifying when the digest is changed or dropped
+  (`tests/assessment-profile-wiring.spec.ts`; QA `ceff928e4e83`, `f02c00e605e0`, `1e8290b1e58b`, `1d049b79a3fc`,
+  `b7fa4778ad39`).
 
 ### Changed
 
