@@ -153,7 +153,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     // --- STAGE 0: LOGIN ---
     console.log('Navigating to homepage and signing in...');
     await page.goto('/');
-    await expect(page).toHaveTitle(/Clean-Core/i);
+    // The landing title is "SAP Clean Core Accelerator · ABAP Analysis & Re-design" since 3.5.2 (owner, 25.11.2026): the brand
+    // suffix would take it past the 60 characters the snippet guard allows, so the title names the topic.
+    await expect(page).toHaveTitle(/Clean[- ]Core/i);
 
     // Open Sign-In Modal
     await page.click('[data-header-sign-in]');

@@ -23,7 +23,9 @@ test.describe('public pages, signed out', () => {
   test('the landing page shows its title, hero, links to the six feature pages, both access cards, the edition badge and the call to action', async ({ page }) => {
     await page.goto('/');
 
-    await expect(page).toHaveTitle(/Clean-Core/i);
+    // The landing title is "SAP Clean Core Accelerator · ABAP Analysis & Re-design" since 3.5.2 (owner, 25.11.2026): the brand
+    // suffix would take it past the 60 characters the snippet guard allows, so the title names the topic.
+    await expect(page).toHaveTitle(/Clean[- ]Core/i);
 
     const heroHeading = page.locator('h1');
     await expect(heroHeading).toBeVisible();
