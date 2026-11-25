@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   with `Authorization: Bearer <key>`. Streamable HTTP, stateless, protocol revisions 2025-11-25, 2025-06-18 and
   2025-03-26; no new dependency (`lib/mcp/`).
 - Three read-only, deterministic tools: `analyze_abap` (process steps with line ranges, business rules, clean core
-  findings with the level A to D of each SAP object, places where nothing is processed, what the engine could not
+  findings with the level of each SAP object (A to D, or Unknown where the catalog does not grade it), places where nothing is processed, what the engine could not
   assess, and the SHA-256, line count and first code line of the source received), `lookup_sap_object_level` (the
   catalog lookup of `/api/abcd-classify`) and `export_bpmn` (the engine's process map as BPMN 2.0 XML, engine
   labels only). Same pre-checks and engine calls as `runs/create`; default edition `private`. Every result says

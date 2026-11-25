@@ -52,7 +52,7 @@ export const TOOLS = [
     title: 'Analyze ABAP source',
     description:
       'Reads one ABAP program with the Clean-Core.io evidence engine and returns what it found, with line numbers: the process steps, ' +
-      'hard-coded business rules, clean core findings with the level (A to D) of each SAP object, the places where nothing is processed, ' +
+      'hard-coded business rules, clean core findings with the level of each SAP object (A to D, or Unknown where the catalog does not grade it), the places where nothing is processed, ' +
       'and what the engine could not assess. Deterministic: the same source and engine version give the same result. No AI model is called, ' +
       'the source is not stored, and the result is not a signed run. Comment text of the source is not returned. ' +
       `Limit: ${MAX_SOURCE_BYTES / 1024} KB of source per call. The input block returns the SHA-256, line count and first code line of the source as received.`,

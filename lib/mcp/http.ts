@@ -178,5 +178,9 @@ export async function handleMcpPost(req: Request, pathKey: string | null): Promi
 export async function handleMcpOther(req: Request, pathKey: string | null): Promise<Response> {
   const denied = gate(req, pathKey);
   if (denied) return denied;
-  return empty(405, { Allow: 'POST' });
+  const started = Date.now();
+  const res = empty(405, { Allow: 'POST' });
+  // One log line per authenticated request, as SECURITY.md says: the verb only, no body is read.
+  logRequest({ method: `http:${req.method}`, outcome: 'method-not-allowed', started, status: res.status });
+  return res;
 }

@@ -318,6 +318,23 @@ test.describe('MCP beta — HTTP', () => {
     expect(huge.status).toBe(413);
   });
 
+  test('an authenticated GET or DELETE is logged too, with its verb and nothing else', async () => {
+    const lines: string[] = [];
+    const orig = console.log;
+    console.log = (...a: unknown[]) => { lines.push(a.map(String).join(' ')); };
+    try {
+      expect((await handleMcpOther(new Request(URL_), KEY)).status).toBe(405);
+      expect((await handleMcpOther(new Request(URL_, { method: 'DELETE' }), KEY)).status).toBe(405);
+    } finally {
+      console.log = orig;
+    }
+    const logged = lines.join('\n');
+    expect(logged).toContain('http:GET');
+    expect(logged).toContain('http:DELETE');
+    expect(logged).toContain('method-not-allowed');
+    expect(logged).not.toContain(KEY);
+  });
+
   test('the log line holds no source, no key and no file name', async () => {
     const lines: string[] = [];
     const orig = console.log;
