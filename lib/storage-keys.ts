@@ -238,3 +238,33 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     namedInPolicy: true,
   },
 ]);
+
+/**
+ * Keys the app no longer writes or reads, removed once from the browser — clean-ups, not entries. Section 7 does not
+ * name them: a key nothing stores any more needs no sentence (lawyer, statement 22c, 1 (3) and (4): the removal is good
+ * practice, but the policy makes no promise about it). `tests/storage-keys-register.spec.ts` allows exactly these keys
+ * in a `removeItem` call outside the register above, never in a `setItem`, and fails on a clean-up nothing removes.
+ */
+export interface StorageCleanupEntry {
+  key: string;
+  match: 'exact' | 'prefix';
+  area: StorageArea;
+  /** What the entry held while it was written. */
+  held: string;
+  /** Since when nothing writes it, and why it is removed. */
+  why: string;
+}
+
+/** The dismissed coach marks of the old workspace page, gone with 3.5.0 (statement 22c, 1). */
+export const RETIRED_COACH_MARKS_KEY = 'cc.workspace.coachMarks.dismissed';
+
+export const STORAGE_CLEANUPS: readonly StorageCleanupEntry[] = Object.freeze([
+  {
+    key: RETIRED_COACH_MARKS_KEY,
+    match: 'exact',
+    area: 'local',
+    held: 'the ids of the coach marks dismissed on the workspace page',
+    why:
+      'the workspace page and its coach marks are gone since 3.5.0 (register entry removed in f296dce9); browsers that had it keep a leftover until it is removed once at the next signed-in visit (lib/storage-cleanup.ts; privacy policy 1.5 no longer names it, statement 22c, 1)',
+  },
+]);

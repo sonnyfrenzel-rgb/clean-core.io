@@ -14,7 +14,8 @@ import type { LegalLang } from './open-values';
  * Which version is in force is the build's: the newest version whose texts say business names start by themselves
  * (`LEGAL_TEXTS_NAMES_AUTOMATIC`, `lib/legal/names-wording.ts`), version 1.1 before — 1.2 was that version from
  * 3.1.0, 1.3 (the usage figures of section 9, lawyer-approved document 21) from 3.2.0, 1.4 (My workspace, statement 20c)
- * from 3.3.0. Every version comes from
+ * from 3.3.0, 1.5 (two storage entries 3.5.0 no longer writes leave section 7, statement 22c, 1) from 3.5.2. Every
+ * version comes from
  * the one source (`privacyDeFor` / `privacyEnFor`, rendered by version id), and `tests/legal-names-wording.spec.ts`
  * holds each archived file to the source as rendered for its version.
  *
@@ -25,7 +26,7 @@ import type { LegalLang } from './open-values';
  * Import-light (the names rule and a type), so the sign-up dialog and the consent record read it.
  */
 
-export type PrivacyVersionId = '1.1' | '1.2' | '1.3' | '1.4';
+export type PrivacyVersionId = '1.1' | '1.2' | '1.3' | '1.4' | '1.5';
 
 /**
  * The day version 1.4 takes effect — 23.11.2026, the release day of 3.3.0 (the version was built on 22.11.2026 with
@@ -34,6 +35,15 @@ export type PrivacyVersionId = '1.1' | '1.2' | '1.3' | '1.4';
  * one constant. Once published, it never changes.
  */
 export const PRIVACY_14_DATE_ISO = '2026-11-23';
+
+/**
+ * The day version 1.5 takes effect — the release day of 3.5.2 (lawyer, statement 22c, 1: "Fassung 1.5 mit 3.5.0";
+ * 3.5.0 was already live on 24.11.2026, so 1.5 goes with the next release). PROVISIONAL: the day the version was
+ * built (25.11.2026). Before 3.5.2 goes to main it becomes the release day: change this constant, delete
+ * docs/privacy/1.5.md and 1.5.de.md, run `npx tsx scripts/legal/archive-privacy.ts 1.5` and put the printed digests
+ * below, as for 1.4 (commit 2616c157f). Every date of 1.5 is derived from this one constant.
+ */
+export const PRIVACY_15_DATE_ISO = '2026-11-25';
 
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -69,6 +79,12 @@ export interface PrivacyPolicyVersion {
    * E1–E4).
    */
   workspace: boolean;
+  /**
+   * Section 7 no longer names the two entries the interface stopped writing with 3.5.0 — the dismissed hints
+   * (`cc.workspace.coachMarks.dismissed`) and the skipped questions in Design (`cc:design-skip-questions:…`) — from
+   * version 1.5 (legal review, document 22, question 1; statement 22c, 1: the two deletions, no further sentence).
+   */
+  retiredEntriesDropped: boolean;
   /** Repository-relative paths of the immutable archived texts. */
   files: Record<LegalLang, string>;
   /** SHA-256 of each LF-normalised file, lowercase hex. */
@@ -87,6 +103,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     namesAutomatic: false,
     usageFigures: false,
     workspace: false,
+    retiredEntriesDropped: false,
     files: { en: 'docs/privacy/1.1.md', de: 'docs/privacy/1.1.de.md' },
     // Rendered from the source with the names paused; byte for byte what main published from 9 November 2026
     // (compared against the rendering of the release of 13 November 2026 when this archive was made).
@@ -104,6 +121,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     namesAutomatic: true,
     usageFigures: false,
     workspace: false,
+    retiredEntriesDropped: false,
     files: { en: 'docs/privacy/1.2.md', de: 'docs/privacy/1.2.de.md' },
     sha256: {
       en: 'e77e23885f626b27cb3423577a2f51737429dfb5f27313bd831cc0394d2f98b7',
@@ -120,6 +138,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     namesAutomatic: true,
     usageFigures: true,
     workspace: false,
+    retiredEntriesDropped: false,
     files: { en: 'docs/privacy/1.3.md', de: 'docs/privacy/1.3.de.md' },
     sha256: {
       en: '94540d9a86de24f2ad06345eb794afedee155ec7eaa215e46e7453cc4806775f',
@@ -138,10 +157,30 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     namesAutomatic: true,
     usageFigures: true,
     workspace: true,
+    retiredEntriesDropped: false,
     files: { en: 'docs/privacy/1.4.md', de: 'docs/privacy/1.4.de.md' },
     sha256: {
       en: 'd044c4fd43d076f0ed5f3c25a9bedc890e01ef8dfbe8796e0a771c3bac2ecae6',
       de: '3704e60dea033be0001498d4f32e740cbf166a23546bf69014d0d0f66876800a',
+    },
+  },
+  {
+    // The version that goes live with 3.5.2 (lawyer, statement 22c, 1: option B with the silent clean-up): exactly
+    // the two deletions in section 7 and the change note of document 22, question 1, as drafted. No sentence on the
+    // clean-up (option C's sentence is rejected, 22c 1 (4)), no notice mail (22c 1 (5)). The interface removes the
+    // old local entry once (`lib/storage-cleanup.ts`); the register keeps that as a clean-up, not as a named entry.
+    id: '1.5',
+    dateIso: PRIVACY_15_DATE_ISO,
+    date: privacyDateOf(PRIVACY_15_DATE_ISO),
+    recordId: '1.5',
+    namesAutomatic: true,
+    usageFigures: true,
+    workspace: true,
+    retiredEntriesDropped: true,
+    files: { en: 'docs/privacy/1.5.md', de: 'docs/privacy/1.5.de.md' },
+    sha256: {
+      en: '8021afc48111d0c6b78e8c48af462b2eadd0a1ff19a14ca3752e6020dad9ae57',
+      de: '617048220aa5901f90af3283548be0fc0e0a8b4ea5e17fd957db446894b6080e',
     },
   },
 ];
@@ -152,9 +191,9 @@ export function privacyVersion(id: PrivacyVersionId): PrivacyPolicyVersion {
   return v;
 }
 
-/** The version a build renders: 1.4 once business names start by themselves, 1.1 before (1.2 and 1.3 stay archived). */
+/** The version a build renders: 1.5 once business names start by themselves, 1.1 before (1.2 to 1.4 stay archived). */
 export function privacyVersionFor(namesAutomatic: boolean): PrivacyPolicyVersion {
-  return privacyVersion(namesAutomatic ? '1.4' : '1.1');
+  return privacyVersion(namesAutomatic ? '1.5' : '1.1');
 }
 
 /** The version in force in this build. */
@@ -198,6 +237,12 @@ const CHANGE_NOTES: Partial<Record<PrivacyVersionId, Record<LegalLang, string>>>
   '1.4': {
     de: 'Abschnitt 7 nennt die Sicht und die Darstellung von „My workspace“; Abschnitt 3 nennt die Kurzfassung, die unser Server für diese Übersicht zu jedem Projekt ablegt.',
     en: 'section 7 names the view and the layout of My workspace; section 3 names the short summary our server keeps of every project for this overview.',
+  },
+  // Legal review, document 22, question 1, the change note as drafted (statement 22c, 1: "der Änderungshinweis wie
+  // vorgelegt"). The head adds the date and the address of the previous version around it.
+  '1.5': {
+    de: 'Abschnitt 7 nennt zwei Einträge nicht mehr, die die Oberfläche seit Release 3.5.0 nicht mehr anlegt: die weggeklickten Hinweise (cc.workspace.coachMarks.dismissed) und die übersprungenen Fragen im Design (cc:design-skip-questions:…).',
+    en: 'section 7 no longer names two entries the interface stopped writing with release 3.5.0: the dismissed hints (cc.workspace.coachMarks.dismissed) and the skipped questions in Design (cc:design-skip-questions:…).',
   },
 };
 

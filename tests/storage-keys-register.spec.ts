@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { STORAGE_KEYS, policyName, type StorageKeyEntry } from '../lib/storage-keys';
+import { STORAGE_CLEANUPS, STORAGE_KEYS, policyName, type StorageKeyEntry } from '../lib/storage-keys';
 import { PRIVACY_DE } from '../lib/legal/texts/privacy.de';
 import { PRIVACY_EN } from '../lib/legal/texts/privacy.en';
 import { SCANNED_DIRS, SourceTree, scanWrites, type WriteSite } from './helpers/storage-key-scan';
@@ -26,6 +26,24 @@ const sites = scanWrites(ROOT);
 
 const registered = (key: string, match: 'exact' | 'prefix'): StorageKeyEntry | undefined =>
   STORAGE_KEYS.find((e) => e.key === key && e.match === match);
+
+/** A clean-up (`STORAGE_CLEANUPS`): a key the app only removes, once, and no longer stores. */
+const cleanup = (key: string, match: 'exact' | 'prefix') => STORAGE_CLEANUPS.find((e) => e.key === key && e.match === match);
+
+/**
+ * The storage keys a privacy text names in section 7 ("Cookies & Tracking"), as written there — `cc.auth.signedIn`,
+ * or a family as `cc.analyze.walked.…`. Read from section 7 only: the change note at the top of a version names keys
+ * the version stopped naming.
+ */
+function keysNamedInSection7(text: string): string[] {
+  const start = text.search(/^## 7\. /m);
+  const end = text.search(/^## 8\. /m);
+  expect(start, 'section 7 not found').toBeGreaterThan(-1);
+  expect(end, 'section 8 not found').toBeGreaterThan(start);
+  const section = text.slice(start, end);
+  const found = section.match(/(?<![\w.:-])(?:cc|cleancore)[._:-][\w.:-]*…?/g) ?? [];
+  return [...new Set(found.map((k) => (k.endsWith('…') ? k : k.replace(/[.:]+$/, ''))))];
+}
 
 /** What the receiver says about the area, where it says anything (`store.setItem` says nothing). */
 function areaOf(receiver: string): 'local' | 'session' | null {
@@ -53,6 +71,12 @@ test.describe('the code writes only registered keys', () => {
     for (const s of sites) {
       for (const k of s.keys) {
         const entry = registered(k.key, k.match);
+        const removedOnly = cleanup(k.key, k.match);
+        if (!entry && removedOnly && s.method === 'removeItem') {
+          const area = areaOf(s.receiver);
+          if (area && area !== removedOnly.area) missing.push(`${where(s)} ${removedOnly.key} is removed from ${area} storage, registered as ${removedOnly.area}`);
+          continue;
+        }
         if (!entry) {
           missing.push(`${where(s)} ${k.match === 'prefix' ? `${k.key}…` : k.key}`);
           continue;
@@ -68,6 +92,18 @@ test.describe('the code writes only registered keys', () => {
     const written = new Set(sites.flatMap((s) => s.keys.map((k) => `${k.match}:${k.key}`)));
     const stale = STORAGE_KEYS.filter((e) => !written.has(`${e.match}:${e.key}`)).map((e) => e.key);
     expect(stale, 'registered, but nothing writes it any more — remove it from the register (and section 7)').toEqual([]);
+  });
+
+  test('a clean-up is only removed, never stored, and something still removes it', () => {
+    const stored = sites.filter((s) => s.method === 'setItem').flatMap((s) => s.keys.filter((k) => cleanup(k.key, k.match)).map((k) => `${where(s)} ${k.key}`));
+    expect(stored, 'a key on STORAGE_CLEANUPS is written again — register it as an entry instead').toEqual([]);
+    const removed = new Set(sites.filter((s) => s.method === 'removeItem').flatMap((s) => s.keys.map((k) => `${k.match}:${k.key}`)));
+    const unused = STORAGE_CLEANUPS.filter((e) => !removed.has(`${e.match}:${e.key}`)).map((e) => e.key);
+    expect(unused, 'a clean-up nothing removes — remove the code first, then the entry').toEqual([]);
+    // Statement 22c, 1: the leftover of the old workspace page is removed once, at a signed-in visit.
+    expect(STORAGE_CLEANUPS.map((e) => e.key)).toContain('cc.workspace.coachMarks.dismissed');
+    const firebase = fs.readFileSync(path.join(ROOT, 'lib/firebase-app.ts'), 'utf8');
+    expect(firebase).toContain('if (user) removeRetiredStorageEntries();');
   });
 
   test('storage is written only through setItem and removeItem', () => {
@@ -112,6 +148,38 @@ test.describe('the register', () => {
       }
     }
     expect(wrong, 'set namedInPolicy to what the current privacy policy says').toEqual([]);
+  });
+
+  // The other direction (legal review, document 22, question 1; statement 22c, 1 (6)): section 7 fell behind the code
+  // the other way too — it kept naming two keys nothing wrote any more, because the check ran register → text only.
+  test('every key section 7 names is in the register as a named entry, in both languages', () => {
+    const asNamed = new Set(STORAGE_KEYS.filter((e) => e.namedInPolicy).map(policyName));
+    for (const [lang, text] of [['en', PRIVACY_EN], ['de', PRIVACY_DE]] as const) {
+      const named = keysNamedInSection7(text);
+      expect(named.length, `${lang}: the reading of section 7 found nothing (not vacuous)`).toBeGreaterThan(15);
+      const orphans = named.filter((k) => !asNamed.has(k));
+      expect(orphans, `${lang}: section 7 names keys the register does not carry as named — nothing writes them, or the register misses them`).toEqual([]);
+    }
+  });
+
+  test('a clean-up is not named in section 7 (statement 22c, 1: a clean-up, not a named entry)', () => {
+    for (const [lang, text] of [['en', PRIVACY_EN], ['de', PRIVACY_DE]] as const) {
+      const named = keysNamedInSection7(text);
+      for (const e of STORAGE_CLEANUPS) expect(named, `${lang}: ${policyName(e)}`).not.toContain(policyName(e));
+    }
+  });
+
+  test('the reading of section 7 finds keys in their written forms', () => {
+    const sample = [
+      '## 7. Cookies {#cookies}',
+      'a (cc.workspace.lens), b (cc.analyze.walked.…), c (cc:rules-draft:…), d (cc_chunk_reload_at), e (cleancore.demo.v1; more), f cc-fr-derived-….',
+      'Not a key: clean-core.io, success, acc.x.',
+      '## 8. Next',
+      'g (cc.outside.section)',
+    ].join('\n');
+    expect(keysNamedInSection7(sample).sort()).toEqual(
+      ['cc-fr-derived-…', 'cc.analyze.walked.…', 'cc.workspace.lens', 'cc:rules-draft:…', 'cc_chunk_reload_at', 'cleancore.demo.v1'].sort(),
+    );
   });
 });
 

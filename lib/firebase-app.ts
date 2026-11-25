@@ -2,6 +2,7 @@ import { initializeApp, FirebaseApp } from 'firebase/app';
 import { getAuth as firebaseGetAuth, Auth, connectAuthEmulator, onAuthStateChanged } from 'firebase/auth';
 import firebaseConfig from '../firebase-config.json';
 import { markAuthStarted, setSignedInHint } from './auth-hint';
+import { removeRetiredStorageEntries } from './storage-cleanup';
 
 /**
  * The Firebase app and Auth instance, without Firestore.
@@ -49,6 +50,11 @@ export function getAuth(): Auth {
         // the landing dialog, the shell's "Sign Out", an expired session, a
         // sign-out in another tab — moves it with Firebase's own answer.
         onAuthStateChanged(authInstance, (user) => setSignedInHint(Boolean(user)));
+        // A signed-in visit also removes, once per page load, the storage
+        // entries the app no longer uses (lib/storage-cleanup.ts; statement 22c, 1).
+        onAuthStateChanged(authInstance, (user) => {
+            if (user) removeRetiredStorageEntries();
+        });
     }
     return authInstance;
 }
