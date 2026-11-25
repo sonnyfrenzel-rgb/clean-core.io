@@ -568,6 +568,11 @@ export function serviceEntry(reading: Pick<PackageReading, 'packageJson' | 'sour
 /** A path as one shell word: as it is when it is plain, single-quoted otherwise. */
 const shellArg = (p: string) => (/^[\w./-]+$/.test(p) ? p : `'${p.replace(/'/g, `'\\''`)}'`);
 
+/** The top-level fields a generated package.json keeps; the template sets main, scripts, engines and both dependency maps. */
+const PACKAGE_FIELDS = new Set(['name', 'version', 'private', 'description', 'type', 'license', 'author', 'keywords', 'main', 'scripts', 'engines', 'dependencies', 'devDependencies']);
+/** A version, range or dist-tag from the npm registry — no scheme, no slash, no alias. */
+const REGISTRY_SPEC = /^[\w.*^~<>=| -]{1,64}$/;
+
 const npmName = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'clean-core-package';
 
 /**
@@ -590,10 +595,29 @@ export function normalisedPackageJson(
   if (raw === undefined) notes.push('The generated package had no package.json; the template was used.');
   const pkg: PackageJsonShape = parsed ? { ...parsed } : { name: npmName(opts.name), version: '0.1.0', private: true };
 
+  // Only fields a package needs to describe and run itself pass; anything else the model wrote (install hooks by
+  // another name, overrides, workspaces, optional or peer dependencies npm would install unread) is dropped, said.
+  for (const key of Object.keys(pkg)) {
+    if (!PACKAGE_FIELDS.has(key)) {
+      delete pkg[key];
+      notes.push(`Removed the field ${JSON.stringify(key)}: the template does not carry it.`);
+    }
+  }
   const dependencies: Record<string, string> = {};
   const devDependencies: Record<string, string> = {};
-  for (const [k, v] of Object.entries(pkg.dependencies ?? {})) if (typeof v === 'string') dependencies[k] = v;
-  for (const [k, v] of Object.entries(pkg.devDependencies ?? {})) if (typeof v === 'string') devDependencies[k] = v;
+  const keep = (into: Record<string, string>, from: unknown) => {
+    for (const [k, v] of Object.entries(from && typeof from === 'object' ? (from as Record<string, unknown>) : {})) {
+      if (typeof v !== 'string') continue;
+      // A registry version or range only: a URL, git, file or alias specifier installs code from wherever it points.
+      if (!REGISTRY_SPEC.test(v)) {
+        notes.push(`Removed ${k}: ${JSON.stringify(v)} is not a version from the npm registry.`);
+        continue;
+      }
+      into[k] = v;
+    }
+  };
+  keep(dependencies, pkg.dependencies);
+  keep(devDependencies, pkg.devDependencies);
 
   const drop = (name: string, why: string) => {
     if (name in dependencies || name in devDependencies) {
@@ -622,8 +646,8 @@ export function normalisedPackageJson(
   const before = pkg.scripts && typeof pkg.scripts === 'object' ? Object.keys(pkg.scripts) : [];
   const scripts: Record<string, string> = {};
   if (opts.entry) {
-    scripts.start = `node --import tsx ${opts.entry}`;
-    scripts.dev = `tsx watch ${opts.entry}`;
+    scripts.start = `node --import tsx ${shellArg(opts.entry)}`;
+    scripts.dev = `tsx watch ${shellArg(opts.entry)}`;
   }
   scripts.build = 'tsc -p tsconfig.json';
   // Every suite file the package holds, not the first: with one named here and
@@ -682,7 +706,11 @@ export function packageTsconfig(sourcePaths: readonly string[]): string {
  * `node_modules`, which is what put the dev tools back into the runtime image.
  */
 export function packageDockerfile(entry: string, runtimePaths: readonly string[]): string {
-  const copies = runtimePaths.map((p) => `COPY --from=build /app/${p} ./${p}`).join('\n');
+  // A plain path as before; any other in Docker's JSON form, so a space or quote in a name stays one argument.
+  const plain = (p: string) => /^[\w./-]+$/.test(p);
+  const copies = runtimePaths
+    .map((p) => (plain(p) ? `COPY --from=build /app/${p} ./${p}` : `COPY --from=build ${JSON.stringify([`/app/${p}`, `./${p}`])}`))
+    .join('\n');
   return `# Container for review and local trials — a fixed template of Clean-Core.io.
 # It has not been built, scanned or deployed by Clean-Core.io.
 FROM node:${PACKAGE_NODE_MAJOR}-alpine AS build
@@ -703,7 +731,7 @@ COPY --from=build /app/tsconfig.json ./tsconfig.json
 ${copies}
 USER node
 EXPOSE 8080
-CMD ["node", "--import", "tsx", "${entry}"]
+CMD ["node", "--import", "tsx", ${JSON.stringify(entry)}]
 `;
 }
 
