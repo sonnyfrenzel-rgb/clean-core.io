@@ -156,6 +156,16 @@ test.describe('an erasure keeps proofs, not data (privacy section 5, Terms 1.3, 
     expect(col('consent_events').get('other')).toMatchObject({ uid: 'someone', email: 'x@example.org', expiresAt: null });
   });
 
+  test('a delivery record found by uid and by address is one record, counted once', async () => {
+    // m1 matches the uid query and the address query; each query hands back its own reference object.
+    const one = await retainProofsOfErasedAccount(seeded().db, () => DELETE, { uid: UID, addresses: [EMAIL], endedAt: ENDED, ending: 'account-deletion', env: ENV });
+    // The same erasure with m1 reachable by uid only.
+    const { db: byUidOnly, col } = seeded();
+    col('email_events').set('m1', { ...col('email_events').get('m1')!, to: ['someone-else@example.org'] });
+    const two = await retainProofsOfErasedAccount(byUidOnly, () => DELETE, { uid: UID, addresses: [EMAIL], endedAt: ENDED, ending: 'account-deletion', env: ENV });
+    expect(one.pseudonymised).toBe(two.pseudonymised);
+  });
+
   test('the end of the contract and the deletion note are recorded, once even on a retry', async () => {
     const { db, col } = seeded();
     const input = { uid: UID, addresses: [EMAIL], endedAt: ENDED, ending: 'account-deletion' as const, env: ENV };

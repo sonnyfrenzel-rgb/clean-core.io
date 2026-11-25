@@ -34,6 +34,12 @@ import { INVITATION_DELIVERY_RECORDS, pseudonymisedInviterFields } from '@/lib/i
  * with a stand-in (`tests/proof-log-3021.spec.ts`).
  */
 
+/** One document, whichever query found it: its path when the reference has one, else its id (each map holds one collection). */
+const docKey = (row: Doc): string => {
+  const ref = row.ref as { path?: unknown; id?: unknown } | null;
+  return typeof ref?.path === 'string' ? ref.path : String(row.id ?? ref?.id ?? '');
+};
+
 interface Doc {
   id?: string;
   ref: unknown;
@@ -116,16 +122,17 @@ export async function retainProofsOfErasedAccount(
   writes.push((b) => b.set(db.collection('consent_events').doc(`contract-ended__${accountHash}__${day}`), contractEndRecord(end)));
   writes.push((b) => b.set(db.collection(ERASURE_NOTES).doc(`${accountHash}__${day}`), erasureNoteRecord({ accountHash, deletedAt: input.endedAt, ending: input.ending })));
 
-  // 4. The delivery records, by uid and by address.
-  const deliveries = new Map<unknown, Doc>();
-  for (const row of (await db.collection('email_events').where('uid', '==', input.uid).get()).docs) deliveries.set(row.ref, row);
+  // 4. The delivery records, by uid and by address. Keyed by the document, not the reference object: every query
+  //    hands back new reference objects, and a record found by uid and by address is one record.
+  const deliveries = new Map<string, Doc>();
+  for (const row of (await db.collection('email_events').where('uid', '==', input.uid).get()).docs) deliveries.set(docKey(row), row);
   //    Since 3.0.21 a record holds the keyed hash of the address in `to`; one
   //    written before holds the address itself until the owner's one-off
   //    rewrite (`scripts/hash-email-events.ts`) or its 90 days end.
   const keys = new Set<string>([...input.addresses.filter(Boolean), ...addresses]);
   for (const address of addresses) keys.add(accountHashOf(address, env));
   for (const key of keys) {
-    for (const row of (await db.collection('email_events').where('to', 'array-contains', key).get()).docs) deliveries.set(row.ref, row);
+    for (const row of (await db.collection('email_events').where('to', 'array-contains', key).get()).docs) deliveries.set(docKey(row), row);
   }
   for (const row of deliveries.values()) {
     const data = row.data() || {};
@@ -151,11 +158,11 @@ export async function retainProofsOfErasedAccount(
   const suppressions = db.collection('email_suppressions');
   for (const address of addresses) {
     const keyedId = suppressionKeyOf(address, env);
-    const found = new Map<unknown, Doc>();
+    const found = new Map<string, Doc>();
     const legacyRef = suppressions.doc(suppressionId(address)) as DocRef;
     const legacy = await legacyRef.get();
-    if (legacy.exists) found.set(legacy.ref, legacy);
-    for (const row of (await suppressions.where('email', '==', address).get()).docs) found.set(row.ref, row);
+    if (legacy.exists) found.set(docKey(legacy), legacy);
+    for (const row of (await suppressions.where('email', '==', address).get()).docs) found.set(docKey(row), row);
     const keyedRef = suppressions.doc(keyedId) as DocRef;
     const keyed = await keyedRef.get();
     if (found.size === 0 && !keyed.exists) continue;
@@ -174,7 +181,7 @@ export async function retainProofsOfErasedAccount(
         { merge: true },
       ),
     );
-    for (const [ref, row] of found) if (row.id !== keyedId) writes.push((b) => b.delete(ref));
+    for (const row of found.values()) if (row.id !== keyedId) writes.push((b) => b.delete(row.ref));
   }
   for (const row of (await suppressions.where('uid', '==', input.uid).get()).docs) {
     if (row.id && addresses.some((a) => suppressionKeyOf(a, env) === row.id)) continue;
