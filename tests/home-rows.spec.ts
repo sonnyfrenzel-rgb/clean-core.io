@@ -304,8 +304,13 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
   test('the cap of the list is said, never silent: the route answers `truncated` past MAX_ROWS and the list prints it', () => {
     const route = code('app/api/workspace-rows/route.ts');
     expect(route).toMatch(/const MAX_ROWS = 2000;/);
-    expect(route).toContain('.limit(MAX_ROWS + 1)');
-    expect(route).toContain('truncated: snap.docs.length > MAX_ROWS');
+    // Read page by page, never all of an account's full project documents in one answer.
+    expect(route).not.toContain('.limit(MAX_ROWS + 1)');
+    expect(route).toMatch(/const WORKSPACE_ROWS_PAGE = \d{2,3};/);
+    expect(route).toContain('.orderBy(\'__name__\')');
+    expect(route).toContain('owned.startAfter(after) : owned).limit(WORKSPACE_ROWS_PAGE).get()');
+    expect(route).toMatch(/if \(rows\.length \+ page\.docs\.length > MAX_ROWS\) \{\s*truncated = true;/);
+    expect(route).toContain('return NextResponse.json({ rows, truncated }');
     const list = code('components/workspace/WorkspaceListReport.tsx');
     expect(read('lib/workspace-row-flow.ts')).toContain('apply.rows(uid, rows, body?.truncated === true);');
     expect(list).toContain('setLoaded({ uid, rows, truncated });');

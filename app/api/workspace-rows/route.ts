@@ -28,6 +28,13 @@ const MAX_ROWS = 2000;
 /** Projects read in parallel while their artefacts are filled in. */
 const PARALLEL = 8;
 
+/**
+ * Project documents read per query. The list reads them page by page and keeps only the lean row of each, so at
+ * most one page of full documents (each up to a Firestore document of source and artefacts) is held at a time —
+ * never all of an account's projects at once.
+ */
+const WORKSPACE_ROWS_PAGE = 50;
+
 export async function GET(req: NextRequest) {
   try {
     const decodedToken = await verifyRequestAuth(req);
@@ -58,39 +65,59 @@ export async function GET(req: NextRequest) {
     }
 
     const { db } = await getAdminDb();
-    const snap = await db.collection('projects').where('userId', '==', decodedToken.uid).limit(MAX_ROWS + 1).get();
-    const docs = snap.docs.slice(0, MAX_ROWS);
+    const owned = db.collection('projects').where('userId', '==', decodedToken.uid).orderBy('__name__');
     const rows: HomeRow[] = [];
-    for (let i = 0; i < docs.length; i += PARALLEL) {
-      const batch = docs.slice(i, i + PARALLEL);
-      const read = await Promise.all(
-        batch.map(async (d: FirebaseFirestore.QueryDocumentSnapshot) => {
-          const data = (d.data() || {}) as Record<string, unknown>;
-          let full = data;
-          try {
-            full = await withStoredArtefacts(db, d.ref, data);
-          } catch (artefactErr: unknown) {
-            // The row is still listed — a project must never vanish from the list because a part
-            // could not be read; its later phases then read as the document alone shows them.
-            logger.warn('workspace-rows: the stored artefacts of a project could not be read', {
-              route: 'api/workspace-rows',
-              projectId: d.id,
-              error: errMessage(artefactErr),
-            });
-          }
-          const row = toHomeRow({ ...(full as unknown as Project), id: d.id }, 'own');
-          // Only the row's own keys leave the server.
-          return Object.fromEntries(HOME_ROW_KEYS.map((k) => [k, row[k]])) as unknown as HomeRow;
-        }),
-      );
-      rows.push(...read);
+    let truncated = false;
+    let after: FirebaseFirestore.QueryDocumentSnapshot | null = null;
+    for (;;) {
+      const page: FirebaseFirestore.QuerySnapshot = await (after ? owned.startAfter(after) : owned).limit(WORKSPACE_ROWS_PAGE).get();
+      if (page.empty) break;
+      if (rows.length + page.docs.length > MAX_ROWS) {
+        truncated = true;
+      }
+      const docs = page.docs.slice(0, MAX_ROWS - rows.length);
+      after = page.docs[page.docs.length - 1];
+      rows.push(...(await rowsOf(db, docs)));
+      if (truncated || page.docs.length < WORKSPACE_ROWS_PAGE) break;
+      if (rows.length === MAX_ROWS) {
+        // Exactly full: one more document means the list is cut.
+        truncated = !(await owned.startAfter(after).limit(1).get()).empty;
+        break;
+      }
     }
-    return NextResponse.json(
-      { rows, truncated: snap.docs.length > MAX_ROWS },
-      { headers: { 'Cache-Control': 'private, no-store' } },
-    );
+    return NextResponse.json({ rows, truncated }, { headers: { 'Cache-Control': 'private, no-store' } });
   } catch (err: unknown) {
     logger.error('workspace rows could not be listed', { route: 'api/workspace-rows', error: errMessage(err) });
     return NextResponse.json({ error: 'Could not list your projects.' }, { status: 500 });
   }
+}
+
+/** The lean rows of one page of project documents, `PARALLEL` at a time. */
+async function rowsOf(db: FirebaseFirestore.Firestore, docs: FirebaseFirestore.QueryDocumentSnapshot[]): Promise<HomeRow[]> {
+  const rows: HomeRow[] = [];
+  for (let i = 0; i < docs.length; i += PARALLEL) {
+    const batch = docs.slice(i, i + PARALLEL);
+    const read = await Promise.all(
+      batch.map(async (d: FirebaseFirestore.QueryDocumentSnapshot) => {
+        const data = (d.data() || {}) as Record<string, unknown>;
+        let full = data;
+        try {
+          full = await withStoredArtefacts(db, d.ref, data);
+        } catch (artefactErr: unknown) {
+          // The row is still listed — a project must never vanish from the list because a part
+          // could not be read; its later phases then read as the document alone shows them.
+          logger.warn('workspace-rows: the stored artefacts of a project could not be read', {
+            route: 'api/workspace-rows',
+            projectId: d.id,
+            error: errMessage(artefactErr),
+          });
+        }
+        const row = toHomeRow({ ...(full as unknown as Project), id: d.id }, 'own');
+        // Only the row's own keys leave the server.
+        return Object.fromEntries(HOME_ROW_KEYS.map((k) => [k, row[k]])) as unknown as HomeRow;
+      }),
+    );
+    rows.push(...read);
+  }
+  return rows;
 }
