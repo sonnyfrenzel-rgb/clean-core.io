@@ -556,3 +556,43 @@ test('the verifiers name no review finding as refuted', () => {
     expect(fs.readFileSync(file, 'utf8'), file).not.toMatch(/\brefuted\b/i);
   }
 });
+
+/**
+ * One file, one name. JSZip keys an entry by its Unicode Path extra field (0x7075) when the record carries one, and
+ * other tools by the raw name or the local header's name. A record whose names disagree can collapse into a signed
+ * entry in the verifier's map while an extractor shows the other file, so such an archive is not counted.
+ */
+async function nonAsciiPack() {
+  const zip = new JSZip();
+  zip.file('ä-a.csv', 'X');
+  zip.file('manifest.json', '{}');
+  const bytes: Buffer = await zip.generateAsync({ type: 'nodebuffer' });
+  const name = Buffer.from('ä-a.csv', 'utf8');
+  const at: number[] = [];
+  for (let i = bytes.indexOf(name); i !== -1; i = bytes.indexOf(name, i + 1)) at.push(i);
+  // Local header name and its Unicode Path field, then the central-directory name and its Unicode Path field:
+  // JSZip writes the field for a non-ASCII name in both headers.
+  expect(at, 'JSZip no longer writes the name four times; the checks below would be vacuous').toHaveLength(4);
+  return { bytes, at };
+}
+
+test('a genuine archive with a non-ASCII name still counts', async () => {
+  const { bytes } = await nonAsciiPack();
+  expect(duplicateEntryNames(bytes)).toMatchObject({ counted: true, duplicates: [] });
+});
+
+test('a Unicode Path field that names the file differently is not counted', async () => {
+  const { bytes, at } = await nonAsciiPack();
+  Buffer.from('ä-b.csv', 'utf8').copy(bytes, at[3]);
+  const r = duplicateEntryNames(bytes);
+  expect(r.counted).toBe(false);
+  expect(r.why).toContain('Unicode Path');
+});
+
+test('a local header that names the file differently is not counted', async () => {
+  const { bytes, at } = await nonAsciiPack();
+  Buffer.from('ä-b.csv', 'utf8').copy(bytes, at[0]);
+  const r = duplicateEntryNames(bytes);
+  expect(r.counted).toBe(false);
+  expect(r.why).toContain('local header');
+});

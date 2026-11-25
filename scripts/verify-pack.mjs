@@ -437,6 +437,32 @@ function archiveEntryLimitDefect(buffer, limit = PACK_LIMITS.entries) {
   return null;
 }
 
+/**
+ * Whether a central-directory record names its file a second way: a Unicode Path extra field (0x7075, which JSZip
+ * prefers) or a local header that disagrees with the raw name. Same rule as `secondNameOf` in
+ * `lib/audit-pack-verify.ts`.
+ */
+function secondNameOf(b, offset, nameLength, extraLength, name) {
+  const extraStart = offset + 46 + nameLength;
+  const extraEnd = extraStart + extraLength;
+  if (extraEnd > b.length) return 'a central-directory record runs beyond the end of the archive';
+  for (let at = extraStart; at + 4 <= extraEnd; ) {
+    const id = b.readUInt16LE(at);
+    const size = b.readUInt16LE(at + 2);
+    if (at + 4 + size > extraEnd) return 'a central-directory record carries an extra field that runs beyond it';
+    if (id === 0x7075 && (size < 5 || zipKey(b.subarray(at + 9, at + 4 + size).toString('utf8')) !== name)) {
+      return 'a central-directory record names its file a second, different way (Unicode Path field)';
+    }
+    at += 4 + size;
+  }
+  const local = b.readUInt32LE(offset + 42);
+  if (local + 30 > b.length || b.readUInt32LE(local) !== 0x04034b50) return 'a central-directory record points at no local file header';
+  const localNameLength = b.readUInt16LE(local + 26);
+  if (local + 30 + localNameLength > b.length) return 'a local file header names a file beyond the end of the archive';
+  const same = localNameLength === nameLength && b.subarray(local + 30, local + 30 + nameLength).equals(b.subarray(offset + 46, offset + 46 + nameLength));
+  return same ? null : 'a file is named differently in its local header and in the central directory';
+}
+
 function duplicateEntryNames(buffer) {
   const unchecked = (why) => ({ duplicates: [], counted: false, why });
   const b = Buffer.from(buffer);
@@ -491,6 +517,8 @@ function duplicateEntryNames(buffer) {
       return unchecked('a central-directory record names a file beyond the end of the archive');
     }
     const name = zipKey(b.subarray(offset + 46, offset + 46 + nameLength).toString('utf8'));
+    const second = secondNameOf(b, offset, nameLength, extraLength, name);
+    if (second) return unchecked(second);
     if (seen.has(name)) duplicates.add(name);
     seen.add(name);
     offset += 46 + nameLength + extraLength + commentLength;

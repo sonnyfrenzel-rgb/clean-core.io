@@ -232,6 +232,8 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
     }
     const raw = decoder.decode(bytes.subarray(offset + 46, offset + 46 + nameLength));
     const name = zipKey(raw);
+    const second = secondNameOf(bytes, view, offset, nameLength, extraLength, name);
+    if (second) return unchecked(second);
     if (seen.has(name)) duplicates.add(name);
     seen.add(name);
     offset += 46 + nameLength + extraLength + commentLength;
@@ -244,6 +246,40 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
   }
   if (offset !== eocd) return unchecked('the central directory does not run up to the end record');
   return { duplicates: [...duplicates].sort(), counted: true };
+}
+
+/**
+ * Whether the central-directory record at `offset` names its file a second way, and how (null when it does not).
+ *
+ * JSZip takes an entry's name from the Info-ZIP Unicode Path extra field (0x7075) when that field is present, and
+ * other tools take the raw name, or the one in the file's local header. A record whose names disagree is read as
+ * one file here and as another there — so two entries can collapse into one in the verifier's map while an
+ * extractor still shows both. The issuer writes one name per file: its raw name, the same in the local header, and
+ * a Unicode Path field (only for a non-ASCII name) that repeats it.
+ */
+function secondNameOf(bytes: Uint8Array, view: DataView, offset: number, nameLength: number, extraLength: number, name: string): string | null {
+  const decoder = new TextDecoder();
+  const extraStart = offset + 46 + nameLength;
+  const extraEnd = extraStart + extraLength;
+  if (extraEnd > bytes.byteLength) return 'a central-directory record runs beyond the end of the archive';
+  for (let at = extraStart; at + 4 <= extraEnd; ) {
+    const id = view.getUint16(at, true);
+    const size = view.getUint16(at + 2, true);
+    if (at + 4 + size > extraEnd) return 'a central-directory record carries an extra field that runs beyond it';
+    if (id === 0x7075 && (size < 5 || zipKey(decoder.decode(bytes.subarray(at + 9, at + 4 + size))) !== name)) {
+      return 'a central-directory record names its file a second, different way (Unicode Path field)';
+    }
+    at += 4 + size;
+  }
+  const local = view.getUint32(offset + 42, true);
+  if (local + 30 > bytes.byteLength || view.getUint32(local, true) !== 0x04034b50) {
+    return 'a central-directory record points at no local file header';
+  }
+  const localNameLength = view.getUint16(local + 26, true);
+  if (local + 30 + localNameLength > bytes.byteLength) return 'a local file header names a file beyond the end of the archive';
+  const same =
+    localNameLength === nameLength && bytes.subarray(local + 30, local + 30 + nameLength).every((b, i) => b === bytes[offset + 46 + i]);
+  return same ? null : 'a file is named differently in its local header and in the central directory';
 }
 
 /** The fields of the end-of-central-directory record at `at`, and whether any of them is a ZIP64 marker. */

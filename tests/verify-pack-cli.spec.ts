@@ -413,3 +413,19 @@ test('an archive over the entry limit is refused before it is unpacked here too 
   expect(out).toContain('more than 1000 entries');
   expect(code).toBe(2);
 });
+
+test('a file named one way in the directory and another in its local header fails the pack here too', async () => {
+  // The same rule as `duplicateEntryNames` in lib/audit-pack-verify.ts: one file, one name, wherever it is read.
+  const kp = keyPair();
+  const bytes = readFileSync(await buildPack({ signWith: kp.privateKey }));
+  const name = Buffer.from('00-executive-summary.md', 'utf8');
+  const local = bytes.indexOf(name);
+  expect(local, 'the local header name was not found').toBeGreaterThan(0);
+  Buffer.from('zz-executive-summary.md', 'utf8').copy(bytes, local);
+  const packPath = join(mkdtempSync(join(tmpdir(), 'verify-pack-')), 'pack.zip');
+  writeFileSync(packPath, bytes);
+  const { code, out } = run([packPath, '--key', kp.rawPublicBase64]);
+  expect(out).toContain('local header');
+  expect(out).toContain('NOT verified');
+  expect(code).toBe(1);
+});
