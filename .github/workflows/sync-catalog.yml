@@ -35,6 +35,9 @@ concurrency:
 
 jobs:
   sync:
+    # Only the default branch: a manual run on any other branch would run that branch's code with the
+    # permissions and identity of this workflow.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     outputs:
       changed: ${{ steps.sync.outputs.changed }}
