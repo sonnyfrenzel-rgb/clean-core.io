@@ -1662,6 +1662,28 @@
       }
     },
     {
+      "path": "docs/design/mcp-beta.md",
+      "kind": "reference",
+      "purpose": "How the MCP beta on dev works: the three read-only engine tools, limits, what is logged, connecting it in Claude, switching it off",
+      "audience": "Sonny, developers",
+      "saysToday": "Beta on dev only, off until MCP_BETA_KEY is set; production answers 404.",
+      "wrongWith30": [],
+      "decision": "keep",
+      "reason": "Runbook of a running beta; replaced by the connector documentation when OAuth and the listing come.",
+      "effort": "none",
+      "guard": {
+        "removed": "check",
+        "terms": "check"
+      },
+      "referencedBy": [
+        "SECURITY.md",
+        "CHANGELOG.md"
+      ],
+      "measured": {
+        "lines": 183
+      }
+    },
+    {
       "path": "docs/design/analyze-business-first-plan.md",
       "kind": "plan",
       "purpose": "Build plan for the Analyze business-first rebuild along the accepted mockup v4.1 and the home page mockup v2: target picture, owner decisions, engine prerequisites, work packages AB-0 to AB-14 in the releases 3.0.22, 3.0.23 and 3.5.0, migration, tests and risks",
