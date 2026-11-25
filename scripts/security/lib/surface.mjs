@@ -205,13 +205,18 @@ export function readDependencyAudit(stdout) {
   };
 }
 
-export function dependencyAudit() {
+function auditIn(cwd) {
   try {
-    return readDependencyAudit(execFileSync('npm', ['audit', '--package-lock-only', '--json'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], shell: process.platform === 'win32' }));
+    return readDependencyAudit(execFileSync('npm', ['audit', '--package-lock-only', '--json'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], shell: process.platform === 'win32' }));
   } catch (err) {
     // npm audit exits non-zero when it finds something; the JSON is still on stdout.
     return readDependencyAudit(err.stdout);
   }
+}
+
+/** The app's lockfile and the isolated runner's own (runner/), which ships in a separate image. */
+export function dependencyAudit() {
+  return { ...auditIn(undefined), runner: auditIn('runner') };
 }
 
 export function surfaceMap() {
@@ -244,7 +249,7 @@ export function surfaceMap() {
  *
  * Pure, so the guard can feed it lists; `changedSince` and `deletedSince` ask git.
  */
-export const DEPENDENCY_MANIFESTS = ['package.json', 'package-lock.json'];
+export const DEPENDENCY_MANIFESTS = ['package.json', 'package-lock.json', 'runner/package.json', 'runner/package-lock.json'];
 
 export function auditScope({ list, base = null, changed = null, deleted = [] }) {
   if (!base || !Array.isArray(changed)) return { mode: 'full', base: null, files: list, deleted: [] };

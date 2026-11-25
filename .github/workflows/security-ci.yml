@@ -55,6 +55,11 @@ jobs:
       # a rationale + review date in audit-ci.jsonc (no blanket lowering of the gate).
       - name: Dependency audit (high+, reviewed allowlist)
         run: npx --yes audit-ci@7.1.0 --config audit-ci.jsonc
+      # The isolated test runner has its own package and lockfile (runner/) and ships in its own image:
+      # audited from its lockfile alone, with the same gate.
+      - name: Dependency audit of the test runner (high+)
+        working-directory: runner
+        run: npm audit --package-lock-only --omit=dev --audit-level=high
 
   sbom:
     name: SBOM (CycloneDX)
@@ -71,11 +76,17 @@ jobs:
       - run: npm ci --ignore-scripts || { npm cache verify && npm ci --ignore-scripts; }
       - name: Generate CycloneDX SBOM
         run: npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --output-file sbom.json
+      - name: Generate CycloneDX SBOM of the test runner
+        run: |
+          npm ci --ignore-scripts --prefix runner
+          npx --yes @cyclonedx/cyclonedx-npm@6.0.1 --output-file sbom-runner.json runner/package.json
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sbom
-          path: sbom.json
+          path: |
+            sbom.json
+            sbom-runner.json
           if-no-files-found: error
 
   # A red scheduled run used to notify nobody. On 7 September the Monday run

@@ -1552,6 +1552,16 @@ test.describe('a release is audited as its delta (owner decision, 06.10.2026)', 
     expect(auditScope({ list, base: 'abc1234', changed: ['README.md', 'docs/x.md'] }).mode).toBe('unchanged');
     // A dependency change is a delta even without code: the dependency audit belongs to the report.
     expect(auditScope({ list, base: 'abc1234', changed: ['package-lock.json'] })).toMatchObject({ mode: 'delta', dependencies: true });
+    // So is a change to the isolated runner's own package, which ships in its own image.
+    for (const p of ['runner/package.json', 'runner/package-lock.json']) {
+      expect(auditScope({ list, base: 'abc1234', changed: [p] }), p).toMatchObject({ mode: 'delta', dependencies: true });
+    }
+    // Its lockfile is audited by the agent's map and by Security CI, with an SBOM of its own.
+    expect(read('scripts/security/lib/surface.mjs')).toMatch(/runner: auditIn\('runner'\)/);
+    const ci = read('.github/workflows/security-ci.yml');
+    expect(ci).toMatch(/working-directory: runner\n\s+run: npm audit --package-lock-only --omit=dev --audit-level=high/);
+    expect(ci).toContain('npm ci --ignore-scripts --prefix runner');
+    expect(ci).toContain('--output-file sbom-runner.json runner/package.json');
     // A release that only deletes code is not unchanged: a removed route or check is named in the report
     // (QA review of 6e61722f9e7d, ff65a95a72e4). Deleted prose is still nothing.
     expect(auditScope({ list, base: 'abc1234', changed: [], deleted: ['app/api/old/route.ts'] })).toMatchObject({ mode: 'delta', files: [], deleted: ['app/api/old/route.ts'] });
