@@ -109,6 +109,15 @@ test.describe('MCP beta — tools', () => {
     expect(s.process.steps.length).toBeGreaterThan(0);
     expect(s.business_rules.length).toBeGreaterThan(0);
     expect(Array.isArray(s.not_determined.unassessed)).toBe(true);
+    // Every field that carries text copied from the source says so in its name, as the instructions promise.
+    expect(Array.isArray(s.process.entries_quoted)).toBe(true);
+    expect(s.process.entries).toBeUndefined();
+    const params = s.business_rules.flatMap((b: any) => b.parameters);
+    expect(params.length).toBeGreaterThan(0);
+    for (const p of params) {
+      expect(p).not.toHaveProperty('operator');
+      expect(typeof p.operator_quoted).toBe('string');
+    }
     expect(JSON.parse(r.content[0].text)).toEqual(s);
   });
 

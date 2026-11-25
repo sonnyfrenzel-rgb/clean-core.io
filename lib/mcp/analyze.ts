@@ -227,7 +227,7 @@ export function analyzeAbap(args: AnalyzeArgs) {
     const laneOf = new Map<string, string>();
     for (const lane of skeleton.lanes) for (const id of lane.nodeIds) if (!laneOf.has(id)) laneOf.set(id, lane.id);
     result.process = {
-      entries: skeleton.entries.map((e) => quoteSource(e)),
+      entries_quoted: skeleton.entries.map((e) => quoteSource(e)),
       lanes: skeleton.lanes.map((l) => ({ id: l.id, kind: l.kind, name_quoted: quoteSource(l.name) })),
       steps: kept.map((n) => ({
         id: n.id,
@@ -276,7 +276,7 @@ export function analyzeAbap(args: AnalyzeArgs) {
         lines,
         parameters: r.parameters.slice(0, 10).map((p) => ({
           ...(p.subject ? { subject_quoted: quoteSource(p.subject, 80) } : {}),
-          operator: quoteSource(p.operator, 20),
+          operator_quoted: quoteSource(p.operator, 20),
           value_quoted: quoteSource(p.literal, 80),
           lines: span(p.lineStart, p.lineEnd),
         })),
