@@ -7,7 +7,7 @@ import { readUploadedFile } from '../lib/own-code-zip';
 import { portfolioAccessOf, millisOfStored } from '../lib/portfolio/access';
 import { abapGitNameOf, splitIntoPrograms } from '../lib/portfolio/batch-split';
 import { isClaimable, nextClaims, outcomeOfRun, programsInWindow, progressOf } from '../lib/portfolio/batch-model';
-import { checkBatchHeader, checkUploadedProgram, stepBatch, appendPrograms, BatchRefusal, createBatchWithPrograms, deleteBatchRecord } from '../lib/portfolio/batch-store';
+import { checkBatchHeader, checkUploadedProgram, stepBatch, appendPrograms, BatchRefusal, createBatchWithPrograms, deleteBatchRecord, PORTFOLIO_QUOTA_COLLECTION } from '../lib/portfolio/batch-store';
 import { inviterAddressConfirmed } from '../lib/portfolio/access-server';
 import { INVITATION_SEND_DAILY_LIMIT, invitationDailyRefusal } from '../lib/invitation-owner-gate';
 import { portfolioStepFor, runInPortfolioStep } from '../lib/portfolio/run-context';
@@ -737,5 +737,7 @@ test('account erasure takes the portfolio with it', () => {
   expect(erasure).toContain("['portfolio_batches', 'userId']");
   expect(erasure).toContain("['portfolio_selections', 'ownerId']");
   expect(erasure).toContain("where('readers', 'array-contains', uid)");
+  // The daily ledger is keyed by the uid, so it goes too, under the name the batch store writes it.
+  expect(erasure).toContain(`await db.collection('${PORTFOLIO_QUOTA_COLLECTION}').doc(uid).delete();`);
   expect(read('lib/portfolio/selection-invitations.ts')).toContain("export const SELECTION_INVITATIONS = 'invitations';");
 });

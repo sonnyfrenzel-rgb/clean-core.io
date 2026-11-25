@@ -7,7 +7,9 @@ import type { FieldValue, Firestore } from 'firebase-admin/firestore';
  *   - the account's batches, with every queued source still in them;
  *   - the account's named selections, with their invitations;
  *   - the account's uid in `readers` of selections other owners shared with it,
- *     and its entry in their `readerScopes`.
+ *     and its entry in their `readerScopes`;
+ *   - the account's ledger of batch programs, `portfolio_quota/{uid}` (`PORTFOLIO_QUOTA_COLLECTION` in
+ *     `lib/portfolio/batch-store.ts`), keyed by its uid.
  *
  * Invitations *addressed to* the account in other owners' selections are
  * already taken by the erasure's collection-group sweep of `invitations` by
@@ -45,4 +47,5 @@ export async function erasePortfolioOf(db: Firestore, fieldValue: typeof FieldVa
     await batch.commit();
     snapshot = await shared.get();
   }
+  await db.collection('portfolio_quota').doc(uid).delete();
 }
