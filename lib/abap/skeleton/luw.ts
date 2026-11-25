@@ -11,15 +11,15 @@ import type { SkeletonGraph } from './graph';
  *
  * Reads: the facts of 2.1/2.2 (`luw-states.ts` reads them itself) and the nodes. Writes: `detail.effectState`,
  * `effectOutcomes`, `effectEnd` and `updateMode` on the node each registration was drawn as. Returns
- * `ProcessSkeleton.luw`. Reading: `reads352` (`IN PROGRAM` read outside literals, `luw-states.ts`).
+ * `ProcessSkeleton.luw`. Reading: `reads352Fixes` (`IN PROGRAM` read outside literals, `luw-states.ts`).
  */
 export interface LuwInput {
   statements: AbapStatement[];
   structure: BlockStructure;
   control: ControlFlowReport;
   calls: CallGraphReport;
-  /** Engine 3.5.2 (`engine-reads-352-gate.ts`). */
-  reads352?: boolean;
+  /** Engine 3.5.2 (`engine-reads-352-fixes-gate.ts`). */
+  reads352Fixes?: boolean;
 }
 
 /**
@@ -34,7 +34,7 @@ export function attachLuwStates(graph: SkeletonGraph, input: LuwInput): Skeleton
     structure: input.structure,
     control: input.control,
     calls: input.calls,
-  }, { reads352: input.reads352 === true });
+  }, { reads352Fixes: input.reads352Fixes === true });
   const registrations = model.registrations.map((registration) => {
     const node = graph.nodes.find((n) => n.anchor?.statementIndex === registration.statementIndex
       && n.kind !== 'error-boundary');

@@ -1668,7 +1668,7 @@
         "tests/documentation-sd-review.spec.ts",
         "tests/dsag-citations.spec.ts",
         "tests/engine-340-class-gap.spec.ts",
-        "tests/engine-352-skeleton-readings.spec.ts",
+        "tests/engine-352-fixes-skeleton-readings.spec.ts",
         "tests/engine-guideline-checks.spec.ts",
         "tests/engine-precision-fixes.spec.ts",
         "tests/engine-reads-3021.spec.ts",

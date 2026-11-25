@@ -5,10 +5,10 @@ import { readLuwStates } from '../lib/abap/luw-states';
 import { buildBusinessStatements } from '../lib/abap/business-statement';
 import { collapseSmallRegions } from '../lib/abap/skeleton/collapse';
 import type { SkeletonGraph } from '../lib/abap/skeleton/graph';
-import { ENGINE_READS_352_FROM, engineReads352Apply } from '../lib/abap/engine-reads-352-gate';
+import { ENGINE_READS_352_FIXES_FROM, engineReads352FixesApply } from '../lib/abap/engine-reads-352-fixes-gate';
 
 /**
- * Engine 3.5.2 (gated by `ENGINE_READS_352_FROM`, `lib/abap/engine-reads-352-gate.ts`): two corrections of the
+ * Engine 3.5.2 (gated by `ENGINE_READS_352_FIXES_FROM`, `lib/abap/engine-reads-352-fixes-gate.ts`): two corrections of the
  * skeleton's reading. Each case is a repro: what engine 3.5.0 reads (and a signed run of it keeps) and what 3.5.2
  * reads. Server-free.
  */
@@ -16,10 +16,10 @@ const OLD = 'v3.5.0';
 const NEW = 'v3.5.2';
 
 test('the gate opens at 3.5.2 and not before', () => {
-  expect(ENGINE_READS_352_FROM).toBe('3.5.2');
-  expect(engineReads352Apply('v3.5.1')).toBe(false);
-  expect(engineReads352Apply('v3.5.2')).toBe(true);
-  expect(engineReads352Apply(null)).toBe(false);
+  expect(ENGINE_READS_352_FIXES_FROM).toBe('3.5.2');
+  expect(engineReads352FixesApply('v3.5.1')).toBe(false);
+  expect(engineReads352FixesApply('v3.5.2')).toBe(true);
+  expect(engineReads352FixesApply(null)).toBe(false);
 });
 
 test.describe('a call site that only turns collapsed re-opens the routine above it', () => {
@@ -46,7 +46,7 @@ test.describe('a call site that only turns collapsed re-opens the routine above 
 
   test('before 3.5.2 the pass stopped and P stayed a phase around a step', () => {
     const g = graph();
-    collapseSmallRegions(g, { reads310: true, reads352: false });
+    collapseSmallRegions(g, { reads310: true, reads352Fixes: false });
     expect(g.nodes.find((n) => n.id === 'call-c')!.collapsed).toBe(true);
     expect(callP(g).kind).toBe('sub-process');
     expect(callP(g).collapsed).not.toBe(true);
@@ -54,7 +54,7 @@ test.describe('a call site that only turns collapsed re-opens the routine above 
 
   test('from 3.5.2 the pass runs again and P folds onto its write', () => {
     const g = graph();
-    collapseSmallRegions(g, { reads310: true, reads352: true });
+    collapseSmallRegions(g, { reads310: true, reads352Fixes: true });
     expect(callP(g).kind).toBe('write');
     expect(callP(g).collapsed).toBe(true);
   });
@@ -76,7 +76,7 @@ ENDFORM.
   test('the unit-of-work reader follows the local PERFORM to its COMMIT WORK from 3.5.2', () => {
     const facts = buildProcessFacts(source);
     expect(readLuwStates(facts).registrations.map((r) => r.unresolved?.state ?? null)).toEqual(['not-determined']);
-    expect(readLuwStates(facts, { reads352: true }).registrations.map((r) => r.unresolved?.state ?? null)).toEqual([null]);
+    expect(readLuwStates(facts, { reads352Fixes: true }).registrations.map((r) => r.unresolved?.state ?? null)).toEqual([null]);
   });
 
   test('the map and the business statements of 3.5.0 keep their reading; 3.5.2 reads the commit', () => {
@@ -89,8 +89,8 @@ ENDFORM.
 
   test('a real IN PROGRAM stays external at every engine', () => {
     const external = source.replace("PERFORM post USING 'IN PROGRAM'.", 'PERFORM post IN PROGRAM zother.');
-    for (const reads352 of [false, true]) {
-      expect(readLuwStates(buildProcessFacts(external), { reads352 }).registrations.map((r) => r.unresolved?.state ?? null)).toEqual(['not-determined']);
+    for (const reads352Fixes of [false, true]) {
+      expect(readLuwStates(buildProcessFacts(external), { reads352Fixes }).registrations.map((r) => r.unresolved?.state ?? null)).toEqual(['not-determined']);
     }
   });
 });

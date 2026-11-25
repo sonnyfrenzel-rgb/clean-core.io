@@ -466,7 +466,7 @@ class LuwReader {
    * `PERFORM f USING 'IN PROGRAM'.` stays a local call; before, the words inside the literal made it external.
    */
   private qualifierText(statement: AbapStatement): string {
-    return this.options.reads352 ? maskLiterals(statement.text) : statement.text;
+    return this.options.reads352Fixes ? maskLiterals(statement.text) : statement.text;
   }
 
   private formAround(index: number): string | null {
@@ -588,8 +588,8 @@ function dedupe(outcomes: OutcomeAtEvent[]): OutcomeAtEvent[] {
 
 /** The gated readings of the unit-of-work reader. */
 export interface LuwReadOptions {
-  /** Engine 3.5.2 (`engine-reads-352-gate.ts`): `IN PROGRAM` of a `PERFORM` is read outside its literals. */
-  reads352?: boolean;
+  /** Engine 3.5.2 (`engine-reads-352-fixes-gate.ts`): `IN PROGRAM` of a `PERFORM` is read outside its literals. */
+  reads352Fixes?: boolean;
 }
 
 export function readLuwStates(facts: ProcessFacts, options: LuwReadOptions = {}): LuwModel {

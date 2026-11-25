@@ -6,7 +6,7 @@ import type { SkeletonGraph, SkeletonReadings } from './graph';
  *
  * Reads: the graph's nodes and regions. Writes: `kind`, `collapsed` and `detail.collapsedFrom` of call-site nodes,
  * nothing else — no node or edge is added or dropped. Readings: `reads310` (AB-15a, a phase inside keeps the routine
- * a phase), `reads352` (a call site whose `collapsed` state alone changed is a move, so the pass runs again).
+ * a phase), `reads352Fixes` (a call site whose `collapsed` state alone changed is a move, so the pass runs again).
  */
 
 /**
@@ -25,7 +25,7 @@ export const DOMINANT_ORDER: SkeletonNodeKind[] = [
 
 export function collapseSmallRegions(
   graph: SkeletonGraph,
-  readings: Pick<SkeletonReadings, 'reads310'> & Partial<Pick<SkeletonReadings, 'reads352'>>,
+  readings: Pick<SkeletonReadings, 'reads310'> & Partial<Pick<SkeletonReadings, 'reads352Fixes'>>,
 ): void {
   // A routine that collapses changes the kind of the call site inside the
   // routine above it, so one pass settles the innermost level only: `reject`
@@ -56,7 +56,7 @@ export function collapseSmallRegions(
     // Engine 3.5.2: a call site that only turns collapsed (or back) is a move as well. A routine calling itself keeps
     // the kind `sub-process` when it folds, and the routine above it, visited first, still saw an open phase inside.
     const fold = (caller: SkeletonNode, collapsed: boolean) => {
-      if (readings.reads352 && caller.collapsed !== collapsed) changed = true;
+      if (readings.reads352Fixes && caller.collapsed !== collapsed) changed = true;
       caller.collapsed = collapsed;
     };
     for (const region of graph.regions) {

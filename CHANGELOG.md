@@ -27,12 +27,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that serves it, verifies, and stops verifying when the digest is changed or dropped
   (`tests/assessment-profile-wiring.spec.ts`; QA `ceff928e4e83`, `f02c00e605e0`, `1e8290b1e58b`, `1d049b79a3fc`,
   `b7fa4778ad39`).
-- Engine 3.5.2 (gated, `ENGINE_READS_352_FROM`, `lib/abap/engine-reads-352-gate.ts`; maps and business statements
+- Engine 3.5.2 (gated, `ENGINE_READS_352_FIXES_FROM`, `lib/abap/engine-reads-352-fixes-gate.ts`; maps and business statements
   of earlier runs stay as they were): the small-region collapse runs again when a call site only turns collapsed, so a
   routine above a self-calling routine no longer stays a phase around a single step (`lib/abap/skeleton/collapse.ts`;
   QA `bb86e2693aa2`, `923c7582a6ef`); and `PERFORM f USING 'IN PROGRAM'.` is a local call for the unit-of-work
   reading, which used to take the words inside the literal for the external form (`lib/abap/luw-states.ts`;
-  QA `5f9333754909`). Repro: `tests/engine-352-skeleton-readings.spec.ts`.
+  QA `5f9333754909`). Repro: `tests/engine-352-fixes-skeleton-readings.spec.ts`.
 - Tests: the CSP spec checks that `next.config.mjs` and the route classifier both name Re-design and the
   requirements page (`tests/csp-report-only.spec.ts`; QA `3ae77275d7ec`).
 - My workspace: the own-rows read and a run started from a row are functions of what they call
