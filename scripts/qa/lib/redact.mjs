@@ -14,7 +14,9 @@ const PATTERNS = [
   { kind: 'OpenRouter key', re: /\bsk-or-v1-[0-9a-f]{64}\b/g },
   { kind: 'OpenAI-style key', re: /\bsk-(?:proj-)?[A-Za-z0-9_-]{32,}\b/g },
   { kind: 'xAI key', re: /\bxai-[A-Za-z0-9]{40,}\b/g },
-  { kind: 'Resend key', re: /\bre_[A-Za-z0-9]{8,}_[A-Za-z0-9]{16,}\b/g },
+  // Resend keys carry one underscore or none after the prefix; the lookaheads keep plain `re_snake_case` names out.
+  { kind: 'Resend key', re: /\bre_(?=[A-Za-z0-9_]*[0-9])(?=[A-Za-z0-9_]*[A-Z])[A-Za-z0-9_]{20,}\b/g },
+  { kind: 'webhook signing secret', re: /\bwhsec_[A-Za-z0-9+/=]{24,}/g },
   { kind: 'GitHub token', re: /\b(?:ghp|gho|ghs|ghu|ghr)_[A-Za-z0-9]{36}\b|\bgithub_pat_[A-Za-z0-9_]{60,}\b/g },
   { kind: 'AWS access key', re: /\bAKIA[0-9A-Z]{16}\b/g },
   { kind: 'Slack token', re: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/g },
@@ -25,7 +27,15 @@ const PATTERNS = [
     // encryption keys, which carry no provider prefix to recognise them by (QA
     // review of 2f9b128bafd4, finding a87199ab8c9e). Written without the literal
     // names: gitleaks read the list as an assignment (Security CI, 15.09.2026).
-    re: /\b([A-Za-z0-9_]*(?:SECRET|PASSWORD|PASSWD|TOKEN|API_?KEY|PRIVATE_?KEY|PEPPER|[A-Z0-9]_KEY)[A-Za-z0-9_]*)\s*[:=]\s*(['"`])(?!test-|dummy|example|placeholder|your-|<)([^'"`\s]{24,})\2/gi,
+    // The optional quote after the name is a JSON key (`"API_KEY": "…"`).
+    re: /\b([A-Za-z0-9_]*(?:SECRET|PASSWORD|PASSWD|TOKEN|API_?KEY|PRIVATE_?KEY|PEPPER|[A-Z0-9]_KEY)[A-Za-z0-9_]*)["']?\s*[:=]\s*(['"`])(?!test-|dummy|example|placeholder|your-|<)([^'"`\s]{24,})\2/gi,
+  },
+  {
+    // The same names with an unquoted value at the start of a line: `.env` and YAML. Only a value that carries key
+    // material counts (checked in redactSecrets), so `apiKey: computeTheKey(x)` in code is left alone.
+    kind: 'secret-named literal',
+    re: /^[ \t]*(?:export[ \t]+|-[ \t]+)?["']?([A-Za-z0-9_]*(?:SECRET|PASSWORD|PASSWD|TOKEN|API_?KEY|PRIVATE_?KEY|PEPPER|[A-Z0-9]_KEY)[A-Za-z0-9_]*)["']?[ \t]*[:=][ \t]*()(?!['"`]|test-|dummy|example|placeholder|your-|<|\$)([^\s'"`#,;]{24,})/gim,
+    unquoted: true,
   },
 ];
 
@@ -70,11 +80,11 @@ const PATTERNS = [
  * digits and is not a plain word-and-number name like `release-2026-10`.
  */
 const carriesKeyMaterial = (value) =>
-  (value.match(/[A-Za-z0-9+_=-]{20,}/g) ?? []).some(
+  (value.match(/[A-Za-z0-9+/_=-]{20,}/g) ?? []).some(
     (run) =>
       /[A-Za-z]/.test(run) &&
       /[0-9]/.test(run) &&
-      !run.split(/[_-]/).every((segment) => /^[A-Za-z]*$/.test(segment) || /^[0-9]*$/.test(segment)),
+      !run.split(/[_/-]/).every((segment) => /^[A-Za-z]*$/.test(segment) || /^[0-9]*$/.test(segment)),
   );
 const hasUserInfo = (value) => /^[a-z][a-z0-9+.-]*:\/\/[^/?#]*@/i.test(value);
 const isInterpolatedTemplate = (value) => value.includes('${') && !carriesKeyMaterial(value.replace(/\$\{[^}]*\}/g, ' '));
@@ -97,9 +107,10 @@ export const namesSomethingRatherThanHoldingIt = (value) =>
 export function redactSecrets(text, publicValues = new Set()) {
   let out = String(text ?? '');
   const hits = [];
-  for (const { kind, re } of PATTERNS) {
+  for (const { kind, re, unquoted } of PATTERNS) {
     let count = 0;
     out = out.replace(re, (match, name, _quote, value) => {
+      if (unquoted && !carriesKeyMaterial(value)) return match;
       // A name that says it holds a path or a file name holds a location, not a secret: `AUDIT_PUBLIC_KEY_PATH`
       // was redacted and reported as a committed credential (Sonny, 15.09.2026). A real key assigned to such a
       // name is still caught by the provider patterns above, which do not look at names.
@@ -108,6 +119,7 @@ export function redactSecrets(text, publicValues = new Set()) {
       if (kind === 'secret-named literal' && namesSomethingRatherThanHoldingIt(value)) return match;
       if (publicValues.has(match)) return `[REDACTED:${kind}]`;
       count++;
+      if (unquoted) return `${match.slice(0, match.length - value.length)}[REDACTED:${kind}]`;
       return kind === 'secret-named literal' ? `${name}=[REDACTED:${kind}]` : `[REDACTED:${kind}]`;
     });
     if (count) hits.push({ kind, count });

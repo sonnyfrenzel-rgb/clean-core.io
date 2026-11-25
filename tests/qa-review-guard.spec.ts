@@ -99,6 +99,31 @@ test.describe('nothing security-relevant is exposed', () => {
     }
   });
 
+  test('JSON keys, unquoted .env and YAML values, Resend keys, webhook secrets and base64 with slashes are redacted', async () => {
+    const { redactSecrets } = await lib('redact.mjs');
+    const b64 = 'aB3/xY9+kLm2/Qr7Tz8w/Uv5Nn1pQ==';
+    const hex = 'f3a9c1d07b2e4a6f8c5d3b1e9a7f2c4d';
+    // Built at run time, so this spec is not itself a committed key to the scanners.
+    const resend = ['re', 'Ab3dEf9hJk2mNp4qRs6tUv8w'].join('_');
+    const lines = [
+      `{ "OPENROUTER_API_KEY": "${hex}" }`,
+      `RESEND_API_KEY=${hex}`,
+      `export AUDIT_SIGNING_KEY=${b64}`,
+      `  apiToken: ${hex}`,
+      `const k = '${resend}';`,
+      `const w = 'whsec_${b64}';`,
+    ];
+    for (const line of lines) {
+      const { text, hits } = redactSecrets(line);
+      for (const secret of [b64, hex, resend])expect(text, line).not.toContain(secret);
+      expect(hits.length, line).toBeGreaterThan(0);
+    }
+    // Code that names a key without holding one stays as it is.
+    for (const line of ['  apiKey: computeTheKeyFromSettings(x),', 'TOKEN_FILE=/var/run/secrets/token', 'const re_parse_the_long_name_here = 1;']) {
+      expect(redactSecrets(line).hits, line).toEqual([]);
+    }
+  });
+
   test('credential-shaped files are never read', async () => {
     const { isReviewable } = await lib('git-delta.mjs');
     for (const p of ['.env.local', '.env', 'certs/server.pem', 'firebase-adminsdk-abc.json', 'config/service-account.json']) expect(isReviewable(p)).toBe(false);
