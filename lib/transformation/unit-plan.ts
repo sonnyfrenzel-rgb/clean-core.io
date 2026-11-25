@@ -653,13 +653,26 @@ interface Routine {
   owner: string | null;
 }
 
-const EVENT_FOR_SELECTION = /^(AT SELECTION-SCREEN|INITIALIZATION)/i;
+/**
+ * The fallback name of the program (a project's name, when the source names none) as the engine writes it into
+ * comments, labels and string constants of its own files. The name the source declares is an ABAP identifier
+ * (`[\w/]+`); this one is free text, so control and format characters, line breaks, quotes, backslash, `*`,
+ * braces, `$`, `;`, `|` and angle brackets become a space — nothing that could end a comment, a label or a string
+ * the engine writes. A name without them reads exactly as it was given.
+ */
+export function programLabel(name: string | null | undefined): string | null {
+  if (typeof name !== 'string') return null;
+  const clean = name.replace(/[\p{C}\p{Zl}\p{Zp}'"`\\*{}$;|<>]+/gu, ' ');
+  return name === '' || clean.trim() ? clean : null;
+}
+
+const EVENT_FOR_SELECTION =/^(AT SELECTION-SCREEN|INITIALIZATION)/i;
 
 /** One unit per reachable routine, the orchestrator, the rules and guards placed — see the file comment. */
 export function planUnits(source: string, input: PlanInput = {}, given?: EngineFacts): UnitPlan {
   const facts = given ?? readEngineFacts(source, input.engineVersion);
   const { lines, statements, blocks, graph, contract, ruleSet, material } = facts;
-  const program = ruleSet.program ?? input.program ?? null;
+  const program = ruleSet.program ?? programLabel(input.program);
   const decisions = new Map((input.decisions ?? []).map((d) => [d.id, d]));
   const decision = (id: string | null): RuleDecision => (id ? decisionOf(decisions.get(id)?.answer) : 'keep');
 
