@@ -252,12 +252,12 @@
 
   /* trust and IT */
   /* one line of trust, each title with its source (since 3.5.2; the full sentences are in the FAQ and on /trust) */
-  .lp35 .trust-row { list-style: none; margin: 0 auto 20px; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 8px 28px; justify-content: center; background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: var(--cc-radius-card); font-size: 15px; }
+  .lp35 .trust-row { list-style: none; margin: 0 auto 20px; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 8px 22px; justify-content: center; background: var(--cc-surface); border: 1px solid var(--cc-line); border-radius: var(--cc-radius-card); font-size: 15px; }
   .lp35 .trust-row li { display: grid; grid-template-columns: auto auto; column-gap: 8px; align-items: baseline; }
   .lp35 .trust-row li a { grid-column: 2; font-size: 13px; }
   @media (max-width: 699px) { .lp35 .trust-row { flex-direction: column; } .lp35 .trust-row li { grid-template-columns: auto 1fr; } }
   @media (min-width: 700px) { .lp35 .trust-row li { display: flex; gap: 8px; } }
-  .lp35 .trust-row .ok { color: var(--cc-brand-strong); width: 16px; height: 16px; flex: none; align-self: center; }
+  .lp35 .trust-row .ok { color: var(--cc-brand-strong); width: 14px; height: 14px; flex: none; align-self: center; }
   .lp35 .facts2 { display: grid; gap: 0 28px; margin: 0; }
   @media (min-width: 900px) { .lp35 .facts2 { grid-template-columns: 1fr 1fr; } }
   .lp35 .fx { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 10px; padding: 9px 0; border-top: 1px solid var(--cc-line); font-size: 14px; line-height: 1.45; }
