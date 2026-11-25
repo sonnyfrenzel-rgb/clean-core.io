@@ -67,6 +67,8 @@ export const NONCE_ROUTE_SOURCES = [
   '/project/:projectId/:stage(analyze|delivery|design|documentation|redesign|tco|testing|transformation)',
   '/project/:projectId/design/requirements',
   '/invitation/:projectId/:invitationId',
+  '/portfolio/invitation/:selectionId/:invitationId',
+  '/portfolio/shared/:selectionId',
   '/auth/action',
   '/survey/:token',
   '/unsubscribe',
