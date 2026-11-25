@@ -62,6 +62,7 @@ import { readStatements, withParsedSource, type AbapStatement, type SourceRange 
 import { genitivePhrase, isKnownField, nounPhrase, tableTerm, termFor, type BusinessTerm } from './business-glossary';
 import { buildProcessFacts } from './process-facts';
 import { readLuwStates, type LuwModel } from './luw-states';
+import { engineReads352Apply } from './engine-reads-352-gate';
 import { readReferenceTypes, resolveMethodTarget, type ClassModel, type MethodTarget } from './method-resolution';
 import { readBatchInputFrom, type BatchInputCall } from './batch-input';
 import { containerAt, readBlocks, type Block as NestingBlock } from './block-structure';
@@ -3240,14 +3241,16 @@ export function buildBusinessStatements(source: string, options: { engineVersion
   // source is read as given, as every release before 3.4.0 and the frozen business digests read it.
   const read = options.engineVersion === undefined ? source : sourceForEngine(source, options.engineVersion);
   // Parse once (3.5.0, ADR-133): one reading of `source` for the statements and the facts below.
-  return withParsedSource(() => buildBusinessStatementsRead(read));
+  // Engine 3.5.2 (`engine-reads-352-gate.ts`): the unit-of-work reading of the skeleton of that engine.
+  const reads352 = options.engineVersion !== undefined && engineReads352Apply(options.engineVersion);
+  return withParsedSource(() => buildBusinessStatementsRead(read, reads352));
 }
 
-function buildBusinessStatementsRead(source: string): BusinessStatement[] {
+function buildBusinessStatementsRead(source: string, reads352: boolean): BusinessStatement[] {
   const statements = readStatements(source);
   // The same reading as in the skeleton: the sentence condenses the model's
   // effect status (2.12); it does not form one of its own.
-  const luw = readLuwStates(buildProcessFacts(source));
+  const luw = readLuwStates(buildProcessFacts(source), { reads352 });
   const loops = selectLoops(statements);
   const stacks = blockStacks(statements, loops);
   const origins = originMap(statements);

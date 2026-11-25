@@ -3,6 +3,8 @@ import { containerAt, type Block } from '@/lib/abap/block-structure';
 import type { AbapStatement, SourceRange } from '@/lib/abap/statement-reader';
 import type { Branch } from '@/lib/abap/control-flow';
 import { readLuwStates } from '@/lib/abap/luw-states';
+import { engineReads352Apply } from '@/lib/abap/engine-reads-352-gate';
+import { APP_VERSION } from '@/lib/version';
 import { readTableDependencies } from '@/lib/abap/table-dependencies';
 import { conditionToPhrase, humaniseRoutine, plainContext, type PlainContext } from '@/lib/abap/plain-language';
 import {
@@ -828,7 +830,8 @@ function errors(ctx: Ctx, out: Out, claimed: Claimed, messages: MessageUse[]): v
     }
   }
   // Commit and rollback.
-  const luw = readLuwStates(ctx.facts);
+  // The release's own engine reads the unit of work (3.5.2 gate: `IN PROGRAM` outside literals).
+  const luw = readLuwStates(ctx.facts, { reads352: engineReads352Apply(APP_VERSION) });
   const events = luw.events.filter((e) => reached(ctx, e.lineStart, 'errors', e.token));
   const paired = new Set<number>();
   for (const commit of events.filter((e) => e.kind === 'commit')) {
