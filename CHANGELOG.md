@@ -39,6 +39,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`lib/workspace-row-flow.ts`), so their order of answers is played through in a test: an older rows answer or
   failure arriving after a newer one changes nothing, and Cancel while the project is read starts no run and shows no
   stage (`tests/workspace-row-flow.spec.ts`; behaviour unchanged; QA `22bebcbecde1`, `51aefff9ec2b`, `b719ddf860e5`).
+- Tests (rendered, need the emulators and a server): a Ctrl/Cmd-click on a later tool before the walk-through opens
+  it in a new tab with no soft-gate note (`tests/analyze-endings.spec.ts`; QA `eef17812d68e`); the walk-through on
+  the real Analyze page at 1024 px — two stations fit with the card above, Pause hands the focus back and resumes
+  there (`tests/analyze-tour-inline.spec.ts`; QA `32a2ea8122b9`, `477bceee0676`); the text around the map reaches
+  `ready` while every naming read is held (`tests/around-the-map-naming-held.spec.ts`; QA `a4390fb823a1`,
+  `6ef1368e30be`); a refused run (source or profile moved) leaves no "In short" and no summary, a committed one
+  writes both for its run (`tests/conservative-invalidity.spec.ts`, `tests/assessment-profile-wiring.spec.ts`;
+  QA `2e419e6ecb2c`).
 
 ### Changed
 

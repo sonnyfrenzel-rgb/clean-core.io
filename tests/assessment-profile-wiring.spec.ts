@@ -456,6 +456,10 @@ test.describe('7.10 — the routes', () => {
     const withoutDigest = { ...run.model };
     delete withoutDigest.engineDigest;
     expect(verifyRunIntegrity({ ...run, model: withoutDigest }, key).valid, 'a dropped digest still verifies').toBe(false);
+    // The display-only writers ran once the run had committed, each bound to this run (refusals: conservative-invalidity).
+    const project = await read(`projects/${PROJECT_ID}`);
+    expect(project.inShort?.runId, '"In short" of the committed run').toBe(publicRunId);
+    expect(project.summary?.runId, 'the summary of the committed run').toBe(publicRunId);
   });
 
   test('the same source under another profile is a new subject, and the standing sign-off goes stale', async ({ request }) => {
