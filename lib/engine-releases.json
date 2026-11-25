@@ -16,6 +16,11 @@
       "digest": "6b3bec7e8cd2524ea3cc33e01f003d0e5637ff682a939094c1d77361c224adbe",
       "commit": "653cff96",
       "captured": "2026-11-24"
+    },
+    "v3.5.2": {
+      "digest": "6b3bec7e8cd2524ea3cc33e01f003d0e5637ff682a939094c1d77361c224adbe",
+      "commit": "e952430d",
+      "captured": "2026-11-25"
     }
   }
 }
