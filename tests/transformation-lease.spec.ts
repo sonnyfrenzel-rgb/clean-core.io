@@ -20,6 +20,8 @@ import {
   LEASE_WINDOW_COLLECTION,
   LEASE_WINDOW_MS,
   LEASES_PER_WINDOW,
+  LEASES_PER_DAY,
+  LEASE_DAY_MS,
   LEASE_SLOT_STALE_MS,
   decideLeaseCall,
   decideLeaseClose,
@@ -39,6 +41,7 @@ import { acquireLeaseCall, closeLease, confirmLeaseCharge, issueLease, peekLease
 import { MODEL_CALL_DEADLINE_MS } from '../lib/model-deadline';
 import { FILL_PROMPT_MAX_CHARS, LEASED_PROMPT_MAX_CHARS } from '../lib/transformation/fill-prompt';
 import { serverCountedCall } from '../lib/transformation/error-codes';
+import { DEFAULT_PLATFORM_MODEL_DAILY_CALLS } from '../lib/platform-model-budget';
 
 /**
  * The generation lease (design §11; owner decision 12.10.2026: one generation
@@ -147,13 +150,30 @@ test.describe('the decisions', () => {
     expect(fourth.kind === 'refuse' && fourth.retryAfterSeconds).toBe(Math.ceil((LEASE_WINDOW_MS - 30) / 1000));
     expect(LEASES_PER_WINDOW).toBe(3);
 
-    // An hour later the first leaves the window.
+    // An hour later the first leaves the hourly window; the record keeps the day for the daily cap.
     const later = decideLeaseIssue({ uid: 'owner', generationToken: 'tok-3', plannedCalls: 9, now: T0 + LEASE_WINDOW_MS + 1, open: [], windowIssued: window });
-    expect(later).toMatchObject({ kind: 'issue', window: [T0 + 10, T0 + 20, T0 + LEASE_WINDOW_MS + 1] });
+    expect(later).toMatchObject({ kind: 'issue', window: [T0, T0 + 10, T0 + 20, T0 + LEASE_WINDOW_MS + 1] });
 
     // An expired or used-up lease of the same token is not handed back.
     expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', plannedCalls: 9, now: lease().expiresAt, open, windowIssued: [] }).kind).toBe('issue');
     expect(decideLeaseIssue({ uid: 'owner', generationToken: 'tok-1', plannedCalls: 9, now: T0 + 5, open: [lease({ used: 26 })], windowIssued: [] }).kind).toBe('issue');
+  });
+
+  test('an account starts at most LEASES_PER_DAY leases in 24 hours, however the hours are spread', () => {
+    const hour = LEASE_WINDOW_MS;
+    // Ten leases, two hours apart: every hour had room, the day does not.
+    const day = Array.from({ length: LEASES_PER_DAY }, (_, i) => T0 + i * 2 * hour);
+    const now = T0 + (LEASES_PER_DAY * 2 - 1) * hour;
+    const refused = decideLeaseIssue({ uid: 'owner', generationToken: 'tok-d', plannedCalls: 9, now, open: [], windowIssued: day });
+    expect(refused).toMatchObject({ kind: 'refuse', status: 429, code: LEASE_CODES.daily });
+    // Free again once the oldest of the day is 24 hours old, and the record then drops it.
+    expect(refused.kind === 'refuse' && refused.retryAfterSeconds).toBe(Math.ceil((T0 + LEASE_DAY_MS - now) / 1000));
+    const next = decideLeaseIssue({ uid: 'owner', generationToken: 'tok-d', plannedCalls: 9, now: T0 + LEASE_DAY_MS + 1, open: [], windowIssued: day });
+    expect(next).toMatchObject({ kind: 'issue' });
+    expect(next.kind === 'issue' && next.window).toEqual([...day.slice(1), T0 + LEASE_DAY_MS + 1]);
+    // One account cannot reach the platform key's daily budget through leases.
+    expect(LEASES_PER_DAY * LEASE_MAX_CALLS_PER_GENERATION).toBeLessThan(DEFAULT_PLATFORM_MODEL_DAILY_CALLS / 2);
+    expect(serverCountedCall(LEASE_CODES.shape, 400)).toBe(false);
   });
 
   test('every click is its own run: a restart never reuses the cancelled run\'s lease or its slots (13.10.2026)', () => {

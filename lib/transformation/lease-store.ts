@@ -2,7 +2,7 @@ import type { DocumentReference, Firestore, Timestamp, Transaction } from 'fireb
 import {
   LEASE_COLLECTION,
   LEASE_WINDOW_COLLECTION,
-  LEASE_WINDOW_MS,
+  LEASE_DAY_MS,
   decideLeaseCall,
   decideLeaseClose,
   decideLeaseIssue,
@@ -118,7 +118,7 @@ export async function issueLease(
     });
     for (const id of decision.supersede) tx.update(col.doc(id), { status: 'superseded' });
     tx.create(newRef, lease as unknown as Record<string, unknown>);
-    tx.set(winRef, { issued: decision.window, expiresAt: new Date(args.now + LEASE_WINDOW_MS) });
+    tx.set(winRef, { issued: decision.window, expiresAt: new Date(args.now + LEASE_DAY_MS) });
     return { kind: 'issued', lease, superseded: decision.supersede };
   });
 }

@@ -294,6 +294,16 @@ export async function POST(request: NextRequest) {
             { status: 400 },
           );
         }
+        // A leased call is a fill call: a JSON answer in the fill shape, so the fill schema and the low thinking
+        // level apply (`lib/model-thinking.ts`). Anything else would spend the lease's calls at the stage's full
+        // reasoning and output — refused before the lease is read.
+        const shaped = body as { jsonResponse?: unknown; responseShape?: unknown };
+        if (shaped.jsonResponse !== true || shaped.responseShape !== 'transformation-fill') {
+          return NextResponse.json(
+            { error: 'A generation lease pays only for fill calls with a JSON answer in the fill shape.', code: LEASE_CODES.shape },
+            { status: 400 },
+          );
+        }
         if (typeof leased.prompt !== 'string' || !leased.prompt || leased.prompt.length > MAX_PROMPT_LENGTH) {
           return NextResponse.json(
             { error: `The prompt must be a single string of 1 to ${MAX_PROMPT_LENGTH.toLocaleString()} characters.` },

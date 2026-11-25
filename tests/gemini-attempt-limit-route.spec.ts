@@ -138,7 +138,7 @@ test('an unknown lease: 403 lease-invalid until the allowance, then attempt-limi
   const a = await account('unknown-lease');
   await loopUntilLimited(
     request,
-    () => post(request, a, { prompt: 'x', stage: 'transformation', lease: { projectId: PROJECT, leaseId: 'noSuchLease001' } }),
+    () => post(request, a, { prompt: 'x', stage: 'transformation', jsonResponse: true, responseShape: 'transformation-fill', lease: { projectId: PROJECT, leaseId: 'noSuchLease001' } }),
     { status: 403, code: LEASE_CODES.invalid },
   );
 });

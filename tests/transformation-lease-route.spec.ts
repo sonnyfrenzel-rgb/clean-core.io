@@ -80,6 +80,8 @@ const unit: FillRequestUnit = {
   available: { helpers: [], callees: [] },
 };
 const FILL_PROMPT = bundleFills([unit], { track: 'node', program: 'Z', context: 'Route: side-by-side.' })[0].prompt;
+/** What every leased call sends (lib/transformation/lease-client.ts): a JSON answer in the fill shape. */
+const FILL_SHAPE = { jsonResponse: true, responseShape: 'transformation-fill' } as const;
 
 const gemini = (request: APIRequestContext, data: Record<string, unknown>, as = owner.token) =>
   request.post('/api/gemini', { headers: headers(as), data });
@@ -145,7 +147,7 @@ test('a call without a lease is unchanged; a leased fill call is answered and co
 });
 
 test('another account\'s lease, a lease spent on another stage, a malformed lease: refused before the provider', async ({ request }) => {
-  const other = await gemini(request, { prompt: FILL_PROMPT, stage: 'transformation', lease: { projectId: P1, leaseId } }, stranger.token);
+  const other = await gemini(request, { prompt: FILL_PROMPT, stage: 'transformation', ...FILL_SHAPE, lease: { projectId: P1, leaseId } }, stranger.token);
   expect(other.status()).toBe(403);
   expect((await other.json()).code).toBe('lease-invalid');
   const stage = await gemini(request, { prompt: 'x', stage: 'design', lease: { projectId: P1, leaseId } });
@@ -153,11 +155,17 @@ test('another account\'s lease, a lease spent on another stage, a malformed leas
   expect((await stage.json()).code).toBe('lease-stage');
   const bad = await gemini(request, { prompt: 'x', stage: 'transformation', lease: { projectId: '../x', leaseId } });
   expect(bad.status()).toBe(400);
+  // Not a fill call (no JSON answer in the fill shape): refused before the lease is read, nothing counted.
+  for (const shape of [{}, { jsonResponse: true }, { responseShape: 'transformation-fill' }, { jsonResponse: 'true', responseShape: 'transformation-fill' }]) {
+    const unshaped = await gemini(request, { prompt: FILL_PROMPT, stage: 'transformation', ...shape, lease: { projectId: P1, leaseId } });
+    expect(unshaped.status()).toBe(400);
+    expect((await unshaped.json()).code).toBe('lease-shape');
+  }
   expect((await adminGetDoc(`projects/${P1}/${LEASE_COLLECTION}`, leaseId))?.used).toBe(1);
 });
 
 test('the 5th call in flight, the call past the budget and a call after expiry are refused', async ({ request }) => {
-  const call = () => gemini(request, { prompt: FILL_PROMPT, stage: 'transformation', lease: { projectId: P1, leaseId } });
+  const call = () => gemini(request, { prompt: FILL_PROMPT, stage: 'transformation', ...FILL_SHAPE, lease: { projectId: P1, leaseId } });
   // Four live slots (13.10.2026: a lease counts its in-flight calls by their slot times).
   const now = Date.now();
   await adminMergeDoc(`projects/${P1}/${LEASE_COLLECTION}`, leaseId, { inFlight: 4, slots: [now, now, now, now] });
@@ -174,6 +182,16 @@ test('the 5th call in flight, the call past the budget and a call after expiry a
   const expired = await call();
   expect(expired.status()).toBe(403);
   expect((await expired.json()).code).toBe('lease-expired');
+});
+
+test('the 11th lease in a day is refused, though the hour has room', async ({ request }) => {
+  const now = Date.now();
+  const hour = 3_600_000;
+  const day = Array.from({ length: 10 }, (_, i) => now - (2 + 2 * i) * hour);
+  await adminSetDoc(LEASE_WINDOW_COLLECTION, owner.uid, { issued: day, expiresAt: new Date(now + 24 * hour) });
+  const res = await lease(request, P2, await tokenOf(request, P2));
+  expect(res.status()).toBe(429);
+  expect((await res.json()).code).toBe('lease-daily-limit');
 });
 
 test('the 4th lease in an hour is refused', async ({ request }) => {

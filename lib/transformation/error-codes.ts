@@ -23,7 +23,7 @@
  */
 
 import { MODEL_CALL_DEADLINE_MS } from '../model-deadline';
-import { LEASES_PER_WINDOW, LEASE_MAX_IN_FLIGHT } from './lease';
+import { LEASES_PER_DAY, LEASES_PER_WINDOW, LEASE_MAX_IN_FLIGHT } from './lease';
 
 export type CodeAction = 'wait' | 'restart' | 'nothing' | 'change' | 'reload' | 'settings';
 
@@ -82,6 +82,13 @@ export const TRANSFORMATION_CODES = {
   'lease-stage': {
     title: 'wrong stage',
     explain: 'A generation lease pays only for calls of the Transformation stage.',
+    action: 'Reload the page and start the generation again.',
+    kind: 'reload',
+    counted: false,
+  },
+  'lease-shape': {
+    title: 'not a fill call',
+    explain: 'A generation lease pays only for fill calls that ask for a JSON answer in the fill shape.',
     action: 'Reload the page and start the generation again.',
     kind: 'reload',
     counted: false,
@@ -178,6 +185,13 @@ export const TRANSFORMATION_CODES = {
     explain: `An account can start at most ${LEASES_PER_WINDOW} code generations per hour.`,
     action: 'Wait until the next generation of the hour is free.',
     kind: 'wait',
+  },
+  'lease-daily-limit': {
+    title: 'generations per day used',
+    explain: `An account can start at most ${LEASES_PER_DAY} code generations a day on the community model key.`,
+    action: 'Wait until a generation of the last 24 hours is free again.',
+    kind: 'wait',
+    counted: false,
   },
   'model-hourly-limit': {
     title: 'model calls per hour used',

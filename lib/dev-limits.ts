@@ -10,7 +10,7 @@
  *   - the Firestore database is not production's `clean-core-eu`.
  * In a browser bundle none of these exist, so a client reading of a limit always shows the community value.
  *
- * What it lifts: the hourly generation leases (`lib/transformation/lease.ts`) and the hourly model-call limit
+ * What it lifts: the hourly and daily generation leases (`lib/transformation/lease.ts`) and the hourly model-call limit
  * (`lib/model-hourly-limit.ts`). Nothing else — the run quota, the in-memory attempt limiter, the lease budget
  * of one generation and every check of the trust chain stay as they are.
  */
@@ -22,6 +22,8 @@ const PRODUCTION_DB = 'clean-core-eu';
 
 /** Generation leases an hour while the switch holds. */
 export const DEV_LEASES_PER_WINDOW = 100;
+/** Generation leases a day while the switch holds. */
+export const DEV_LEASES_PER_DAY = DEV_LEASES_PER_WINDOW * 24;
 /** Model calls an hour while the switch holds. */
 export const DEV_MODEL_CALLS_PER_HOUR = 2000;
 

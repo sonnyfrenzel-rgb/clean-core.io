@@ -51,7 +51,7 @@
  * Pure: no Firestore, no Next. The store and the specs call these functions.
  */
 
-import { DEV_LEASES_PER_WINDOW, devLimitsLifted } from '../dev-limits';
+import { DEV_LEASES_PER_DAY, DEV_LEASES_PER_WINDOW, devLimitsLifted } from '../dev-limits';
 import { MODEL_CALL_DEADLINE_MS } from '../model-deadline';
 
 export const LEASE_RECORD_VERSION = 1;
@@ -85,6 +85,18 @@ export const LEASE_SLOT_STALE_MS = MODEL_CALL_DEADLINE_MS + 30_000;
 /** Leases per account and window. */
 export const LEASES_PER_WINDOW = 3;
 export const LEASE_WINDOW_MS = 60 * 60 * 1000;
+/**
+ * Leases per account and day (24 hours, sliding). The hourly window alone let one account start a lease every
+ * twenty minutes around the clock — 72 a day, up to 64 calls each — far beyond the platform key's whole daily
+ * budget (`DEFAULT_PLATFORM_MODEL_DAILY_CALLS`). Ten generations a day, at most 640 calls, keeps one account well
+ * below that budget; the per-call caps (budget, gate-repair calls, prompt size) are unchanged.
+ */
+export const LEASES_PER_DAY = 10;
+export const LEASE_DAY_MS = 24 * 60 * 60 * 1000;
+/** The leases an account may start in a day: `LEASES_PER_DAY`, or more on the dev service only (`lib/dev-limits.ts`). */
+export function leasesPerDay(): number {
+  return devLimitsLifted() ? DEV_LEASES_PER_DAY : LEASES_PER_DAY;
+}
 /** The leases an account may start this hour: `LEASES_PER_WINDOW`, or more on the dev service only (`lib/dev-limits.ts`). */
 export function leasesPerWindow(): number {
   return devLimitsLifted() ? DEV_LEASES_PER_WINDOW : LEASES_PER_WINDOW;
@@ -115,6 +127,10 @@ export const LEASE_CODES = {
   /** A call marked `gateRepair` whose prompt is not a repair of gate errors (`isGateRepairPrompt`): refused, the lease is not touched. */
   gateRepair: 'lease-gate-repair-invalid',
   hourly: 'lease-hourly-limit',
+  /** More than `LEASES_PER_DAY` leases of one account in 24 hours (the lease route's refusal, like `hourly`). */
+  daily: 'lease-daily-limit',
+  /** A leased call that is not a fill call (JSON answer in the `transformation-fill` shape): refused, the lease is not touched. */
+  shape: 'lease-shape',
 } as const;
 
 export type LeaseStatus = 'open' | 'superseded' | 'closed';
@@ -370,10 +386,11 @@ export function decideLeaseIssue(input: {
     }
   } else if (same) return { kind: 'reuse', lease: same };
 
-  const recent = input.windowIssued
+  const today = input.windowIssued
     .filter((t): t is number => typeof t === 'number' && Number.isFinite(t))
-    .filter((t) => t > input.now - LEASE_WINDOW_MS)
+    .filter((t) => t > input.now - LEASE_DAY_MS)
     .sort((a, b) => a - b);
+  const recent = today.filter((t) => t > input.now - LEASE_WINDOW_MS);
   const perWindow = leasesPerWindow();
   if (recent.length >= perWindow) {
     const retryAfterSeconds = Math.max(1, Math.ceil((recent[0] + LEASE_WINDOW_MS - input.now) / 1000));
@@ -385,11 +402,23 @@ export function decideLeaseIssue(input: {
       retryAfterSeconds,
     };
   }
+  const perDay = leasesPerDay();
+  if (today.length >= perDay) {
+    const retryAfterSeconds = Math.max(1, Math.ceil((today[today.length - perDay] + LEASE_DAY_MS - input.now) / 1000));
+    return {
+      kind: 'refuse',
+      status: 429,
+      code: LEASE_CODES.daily,
+      error: `At most ${perDay} code generations a day on the community key. Try again in about ${Math.ceil(retryAfterSeconds / 3600)} hours.`,
+      retryAfterSeconds,
+    };
+  }
   return {
     kind: 'issue',
     budget: leaseBudget(input.plannedCalls),
     supersede: usable.map((l) => l.leaseId),
-    window: [...recent, input.now],
+    // A day of issue times: the hourly check reads the last hour of it, the daily check all of it.
+    window: [...today, input.now],
   };
 }
 
