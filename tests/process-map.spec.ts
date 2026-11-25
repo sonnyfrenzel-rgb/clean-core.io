@@ -14,7 +14,9 @@ import {
   buildProcessMapModel,
   codeCardLines,
   parseBpmn,
+  quoteOfActiveRun,
   traceabilityOf,
+  type ProcessMapRecord,
 } from '../lib/process-map';
 import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
@@ -82,6 +84,17 @@ function fixtureModel() {
 /* ------------------------------------------------------------------ *
  * The model — read out of the file, not decided beside it.
  * ------------------------------------------------------------------ */
+
+test('a stored quote is the active runʼs only — the same source analysed again under another engine is another map', () => {
+  const record = { runId: 'run-1', sourceSha256: sha256Hex(FIXTURE) } as ProcessMapRecord;
+  expect(quoteOfActiveRun(record, 'run-1')).toBe(record);
+  expect(quoteOfActiveRun(record, 'run-2'), 'a quote of an earlier run is handed out as this one').toBeNull();
+  expect(quoteOfActiveRun({ ...record, runId: null }, 'run-1')).toBeNull();
+  expect(quoteOfActiveRun(record, undefined)).toBeNull();
+  expect(quoteOfActiveRun(null, 'run-1')).toBeNull();
+  const route = fs.readFileSync(path.resolve(__dirname, '..', 'app', 'api', 'projects', '[projectId]', 'process-map', 'route.ts'), 'utf8');
+  expect(route).toContain('quoteOfActiveRun(record, gate.project.activeRunId)');
+});
 
 test.describe('the map reads the file roadmap 2.6 writes', () => {
   test('it reads the namespace 2.6 writes, and the file declares it', () => {
