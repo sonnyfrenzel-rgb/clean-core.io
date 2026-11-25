@@ -186,7 +186,17 @@ export function repairTarget(opts: {
 export function unsafeBundlePath(entry: unknown): string | null {
   if (typeof entry !== 'string' || entry.trim() === '') return 'the entry has no name';
   for (let i = 0; i < entry.length; i++) {
-    if (entry.charCodeAt(i) < 0x20 || entry.charCodeAt(i) === 0x7f) return 'the name carries a control character';
+    const c = entry.charCodeAt(i);
+    if (c < 0x20 || (c >= 0x7f && c <= 0x9f)) return 'the name carries a control character';
+    // Direction marks and isolates make a name read differently from what it is.
+    if ((c >= 0x200e && c <= 0x200f) || (c >= 0x202a && c <= 0x202e) || (c >= 0x2066 && c <= 0x2069)) {
+      return 'the name carries a text-direction character, so it does not read as what it is';
+    }
+  }
+  // A `.git` directory in the archive would land in the reader's repository metadata (hooks, config) when the
+  // bundle is unpacked into a working copy. Compared as Windows does: any case, trailing dots and spaces dropped.
+  if (entry.split('/').some((segment) => segment.replace(/[. ]+$/, '').toLowerCase() === '.git')) {
+    return 'the name writes into a .git directory';
   }
   if (entry.includes('\\')) return 'the name carries a backslash, which some unpackers read as a directory separator';
   if (/^[A-Za-z]:/.test(entry)) return 'the name starts with a drive letter, so it is an absolute path';
