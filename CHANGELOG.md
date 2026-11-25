@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security (external audit 25.11.2026)
+
+An outside review of v3.5.2 was checked finding by finding; the public IDs are `EXT-2511-NNN` in
+`docs/ROADMAP.md` §12. What changed:
+
+- **Pipeline health at session start** counts only runs of push, schedule or dispatch on `main`/`dev`; a pull
+  request's run neither turns it red nor reaches the session. Log text is flattened, fenced and left out of the
+  session-start note.
+- **Generation leases:** at most ten per account in 24 hours (three an hour as before), and a call under a lease
+  must be a fill call (JSON answer in the fill shape), refused before the lease is read.
+- **Candidate type check** reads only TypeScript's library, `@types` and what `@types/node` depends on outside the
+  candidate; its library cache is capped, a candidate above 400 files or 2 MB is not checked, and the check stops
+  at a 20 s budget and says it did not finish.
+- **Accounts:** erasure deletes other owners' invitations to the account's address only when that address is
+  confirmed; suspension also removes the admin claim in Firebase Auth; delete, withdraw and the second-factor
+  routes check that the token was not revoked; reading the content-hold list needs the admin step-up; the second
+  factor is removed only after a stored own model key; S/4 credentials never write a deleted profile back and
+  their save reads a bounded body.
+- **Mail:** a provider's diagnostic text is cut to 500 characters before addresses are removed; one address
+  receives at most three invitation mails a day across all senders; proof records found twice are one record.
+- **Receipts and packs:** a narrative receipt is claimed for its project in `runs/create`; a repeated store under
+  one receipt counts as a retry only with the same content; both pack verifiers refuse an archive entry whose
+  name differs between directory, Unicode path field and local header.
+- **CI and agents:** the runner relay keeps every path under the run's capability and reads answers with a byte
+  limit; secret redaction covers JSON keys, unquoted `.env`/YAML values and more key formats; the sync and
+  usage-report workflows run only on `main`; the runner's own package is audited and gets an SBOM; only a
+  complete security audit becomes the next delta's base.
+- **Pages and data:** the portfolio invitation and shared-view pages get the enforced CSP; project commands read a
+  bounded body and replace the fields they change; the workspace list reads projects page by page; the
+  portfolio's daily program count lives in a per-account ledger, erased with the account; the ABAP input check
+  matches a horizontal indent only.
+- **MCP beta:** every result field copied from the source ends in `_quoted` (`entries_quoted`, `operator_quoted`).
+- **Rules** (deployed by hand): the model's artefacts on a project (`generatedCode`, `documentation`,
+  `businessDocumentation`, `testSuite`, `coverageEstimate`) leave the client update allowlist; only the server
+  writes them.
+- **Generated code and packages:** the call-contract check reads export lists in one linear pass; the node:test
+  runner writes its verdicts with primitives captured before the suite loads and ends with a finish mark; a
+  generated `package.json` keeps registry versions and known fields only, entry paths are quoted; bundle
+  entries may not write into `.git` or carry C1 or text-direction characters; the project-name fallback for the
+  program name is cleaned before it reaches comments and labels.
+
 ### MCP beta on dev only (owner decision 25.11.2026)
 
 - A remote MCP server inside the app, for a private beta with one user on the `dev` service: `/api/mcp/<key>`

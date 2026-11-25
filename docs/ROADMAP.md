@@ -1780,6 +1780,53 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-984 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 | SEC-2026-985 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 
+**External audit of v3.5.2 (`e952430`), 25.11.2026** — an outside review, not the security agent, so its
+findings carry `EXT-2511-NNN` IDs and are not in the sealed register; the mapping to the report stays
+outside the repository. Every finding was checked against the code; the medium and high ones are decided
+below, refuted ones are not listed, and the low and info findings follow in a second pass.
+
+| ID | Severity | Priority | Roadmap step | Status |
+|---|---|---|---|---|
+| EXT-2511-001 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-002 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-003 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-004 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-010 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-011 | low | — | needs Sonny's decision | open |
+| EXT-2511-012 | low | — | needs Sonny's decision (with EXT-2511-011) | open |
+| EXT-2511-021 | high | P1 | own step later, owner decision 25.11.2026 | scheduled |
+| EXT-2511-022 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-023 | high | P1 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-024 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-025 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-026 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-027 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-031 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-040 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-041 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-042 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-046 | low | — | needs Sonny's decision | open |
+| EXT-2511-054 | medium | P2 | 3.5.3 · external audit, rules deploy by hand | fixed, awaiting release |
+| EXT-2511-055 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-056 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-057 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-066 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-067 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-069 | low | P3 | with the low findings of this audit | scheduled |
+| EXT-2511-072 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-073 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-076 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-077 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-079 | medium | P2 | 3.5.3 · external audit; the rest needs Sonny's decision | fixed in part, awaiting release |
+| EXT-2511-082 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-083 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-103 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-114 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-130 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-136 | low | — | needs Sonny's decision | open |
+| EXT-2511-137 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-176 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+
 **Audit of v3.4.0 (`51f61c0`), 23.11.2026: 0 critical, 0 high, 0 medium, 2 low, 4 info — all 45 candidates verified by the agent, all 6 findings checked by hand.** SEC-2026-1010 joins the scheduled nonce-CSP step; SEC-2026-1014 and -1015 (comment wording) go to 3.5.0; three refuted (SEC-2026-1011, -1012, -1013). SEC-2026-1003 is not raised again and is recorded fixed (de83a0230).
 
 **Audit of v3.3.0 (`35f5c34`), 23.11.2026: 0 critical, 1 high, 2 medium, 2 low, 2 info — all 28 candidates verified by the agent, all 7 findings checked by hand, $0.22.** SEC-2026-1003 (P1) is fixed on its own branch and goes to `dev` and then `main` on Sonny's go; SEC-2026-1004 and -1005 (P2) go to the 3.5.0 engine step; SEC-2026-1006 and -1008 (P3) to a secret-scan hardening step in 3.5.1; SEC-2026-1007 is the same as the scheduled SEC-2026-1001 and goes with it. One refuted (SEC-2026-1009, as SEC-2026-998).

@@ -8,6 +8,10 @@
 > - The consultants read only the inventory files changed since the last release whose audit succeeded
 >   (`scripts/security/scope.mjs`, `auditScope` in `lib/surface.mjs`); the map and the dependency audit stay
 >   whole. No usable base: everything. Nothing in scope changed: no model call, no report — `inbox.mjs` exits 0.
+>   Since 25.11.2026 only a *complete* audit (every planned file read, every candidate verified) becomes a base:
+>   it uploads a `security-audit-complete-<sha>-<attempt>` marker, and the scope job takes the newest successful
+>   run that has one (the last successful run only while none of the last 20 has a marker). The runner's own
+>   `runner/package*.json` count as dependency manifests.
 > - The scope job waits up to 30 minutes for the QA run of the same release (one agent at a time on the key).
 > Passages below that describe the Auto Router, its cost tiers and price ceilings record the week of
 > 01.–06.10.2026 and no longer apply.
