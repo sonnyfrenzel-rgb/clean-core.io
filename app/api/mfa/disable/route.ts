@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyRequestAuth, getAdminAuth, assertMfaStepUp, assertRecentAuth, QuotaError } from '@/lib/firebase-admin';
+import { verifyRequestAuth, getAdminAuth, getAdminDb, assertMfaStepUp, assertRecentAuth, QuotaError } from '@/lib/firebase-admin';
+import { mfaRemovalBlockedByOwnKey } from '@/lib/mfa-gate';
 import { retireSecondFactor } from '@/lib/mfa-disable';
 
 /**
@@ -45,6 +46,14 @@ export async function POST(request: NextRequest) {
       const status = err instanceof QuotaError ? err.status : 403;
       const message = err instanceof Error ? err.message : 'Recent MFA step-up verification required.';
       return NextResponse.json({ error: message }, { status });
+    }
+
+    // A stored own model key keeps the factor (lib/mfa-gate.ts): it is removed first, with the factor still on.
+    // Only when Firebase Auth holds a factor — a flag without one could not remove the key either.
+    if (hasFactor) {
+      const { db } = await getAdminDb();
+      const blocked = mfaRemovalBlockedByOwnKey((await db.collection('users').doc(uid).get()).data());
+      if (blocked) return NextResponse.json({ error: blocked.message, code: 'own-key-stored' }, { status: blocked.status });
     }
 
     // The factor first, the flag second — and what a failure of either leaves

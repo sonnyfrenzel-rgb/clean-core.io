@@ -116,3 +116,18 @@ export const BYOK_MFA_ENROLMENT_REQUIRED: GateRefusal = {
 export function byokRequiresEnrolment(mfaEnabled: boolean): GateRefusal | null {
   return mfaEnabled ? null : BYOK_MFA_ENROLMENT_REQUIRED;
 }
+
+export const OWN_KEY_BLOCKS_MFA_REMOVAL: GateRefusal = {
+  status: 409,
+  message:
+    'Your own model key is stored on this account, and it may only be kept with multi-factor authentication. Remove the key under Settings first, then turn off the authenticator.',
+};
+
+/**
+ * An own model key is held only with the second factor (`byokRequiresEnrolment`), and removing the key needs the
+ * factor too. Turning the factor off while a key is stored would leave a key that is used on every call and that
+ * the account could no longer remove — so the factor goes only after the key.
+ */
+export function mfaRemovalBlockedByOwnKey(profile: { byokConfigured?: unknown } | null | undefined): GateRefusal | null {
+  return profile?.byokConfigured === true ? OWN_KEY_BLOCKS_MFA_REMOVAL : null;
+}
