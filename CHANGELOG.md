@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### MCP beta on dev only (owner decision 25.11.2026)
+
+- A remote MCP server inside the app, for a private beta with one user on the `dev` service: `/api/mcp/<key>`
+  (the key as the last path segment, the form a Claude custom connector without OAuth can take) and `/api/mcp`
+  with `Authorization: Bearer <key>`. Streamable HTTP, stateless, protocol revisions 2025-11-25, 2025-06-18 and
+  2025-03-26; no new dependency (`lib/mcp/`).
+- Three read-only, deterministic tools: `analyze_abap` (process steps with line ranges, business rules, clean core
+  findings with the level A to D of each SAP object, places where nothing is processed, what the engine could not
+  assess, and the SHA-256, line count and first code line of the source received), `lookup_sap_object_level` (the
+  catalog lookup of `/api/abcd-classify`) and `export_bpmn` (the engine's process map as BPMN 2.0 XML, engine
+  labels only). Same pre-checks and engine calls as `runs/create`; default edition `private`. Every result says
+  `origin: "engine"` and `ai_generated: false`. No model call, no project, no run, nothing stored; the log line
+  holds the method, tool, outcome, size bucket and duration only.
+- Comment text of the source is never returned; literals are capped; control, zero-width and bidi characters are
+  removed and markdown image or link syntax is broken up (`lib/mcp/sanitize.ts`).
+- Off unless `MCP_BETA_KEY` (at least 32 characters) is set and the deployment is not production; production
+  answers 404 even with the key set. 60 tool calls an hour in total. How to connect it in Claude and how to switch
+  it off: `docs/design/mcp-beta.md`; threat model: `SECURITY.md` §17. Privacy policy and terms are unchanged.
+- Tests: `tests/mcp-beta.spec.ts` (server-free) and `tests/mcp-beta-route.spec.ts` (routes of a running build).
+
 ## [v3.5.2] — 2026-11-25
 
 The landing page says what comes after the analysis, "Clean core explained" is brought up to date, the privacy

@@ -138,6 +138,8 @@ const NEW_RUN = new Set([
   // 3.0.20 (`deriveBusinessRules`, `readSource`): readings of a source no run has signed, by this engine.
   'scripts/transformation/reach.ts#runChecks', // the reach diagnostic over a corpus source
   'lib/landing-process.ts#landingHero', // the landing page's shipped example
+  // MCP beta (docs/design/mcp-beta.md): a source handed over by another assistant, read by this engine, never stored.
+  'lib/mcp/analyze.ts#analyzeAbap',
   'components/demo/DemoWalkThrough.tsx#DemoWalkThrough', // the demo's tour
   'components/demo/DemoRequirements.tsx#DemoRequirements', // the demo's requirements
   'scripts/transformation/measure.ts#documentation', // the measure diagnostic over a corpus source
