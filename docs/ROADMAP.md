@@ -1771,8 +1771,9 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-1017 | low | P3 | 3.5.1 · fixed cf003123a on integrate/3.5.0 | fixed |
 | SEC-2026-1018 | info | P3 | 3.5.1 · fixed cf003123a on integrate/3.5.0 | fixed |
 | SEC-2026-1019 | info | P3 | 3.5.1 · comment wording, fixed cf003123a | fixed |
-| SEC-2026-1026 | low | P3 | 3.5.2 | scheduled |
-| SEC-2026-1027 | low | P3 | 3.5.2 | scheduled |
+| SEC-2026-1026 | low | P3 | 3.5.3 | scheduled |
+| SEC-2026-1027 | low | P3 | 3.5.3 | scheduled |
+| SEC-2026-1028 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 | SEC-2026-981 | medium | P3 | with SEC-2026-763 | scheduled |
 | SEC-2026-982 | low | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 | SEC-2026-983 | low | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
