@@ -7,7 +7,7 @@ import { readUploadedFile } from '../lib/own-code-zip';
 import { portfolioAccessOf, millisOfStored } from '../lib/portfolio/access';
 import { abapGitNameOf, splitIntoPrograms } from '../lib/portfolio/batch-split';
 import { isClaimable, nextClaims, outcomeOfRun, programsInWindow, progressOf } from '../lib/portfolio/batch-model';
-import { checkBatchHeader, checkUploadedProgram, stepBatch, appendPrograms, BatchRefusal, createBatchWithPrograms } from '../lib/portfolio/batch-store';
+import { checkBatchHeader, checkUploadedProgram, stepBatch, appendPrograms, BatchRefusal, createBatchWithPrograms, deleteBatchRecord } from '../lib/portfolio/batch-store';
 import { inviterAddressConfirmed } from '../lib/portfolio/access-server';
 import { INVITATION_SEND_DAILY_LIMIT, invitationDailyRefusal } from '../lib/invitation-owner-gate';
 import { portfolioStepFor, runInPortfolioStep } from '../lib/portfolio/run-context';
@@ -20,6 +20,7 @@ import { INVITATION_SCOPE_SENTENCE_RECIPIENT } from '../lib/invitations';
 import { safeReturnPath } from '../lib/return-path';
 import {
   PORTFOLIO_BATCH_MAX_PROGRAMS,
+  PORTFOLIO_DAILY_MAX_PROGRAMS,
   PORTFOLIO_STALE_CLAIM_MS,
   PORTFOLIO_STEP_MAX_ITEMS,
 } from '../lib/portfolio/limits';
@@ -252,8 +253,12 @@ class FakeDb {
       get: (r: { get: () => Promise<unknown> }) => r.get(),
       update: (r: FakeDoc, d: Record<string, unknown>) => r.applyUpdate(d),
       create: (r: FakeDoc, d: Record<string, unknown>) => r.applyCreate(d),
+      set: (r: FakeDoc, d: Record<string, unknown>) => void this.docs.set(r.path, { ...d }),
     };
     return fn(tx);
+  }
+  async recursiveDelete(r: FakeDoc) {
+    for (const k of [...this.docs.keys()]) if (k === r.path || k.startsWith(`${r.path}/`)) this.docs.delete(k);
   }
   batch() {
     const ops: (() => void)[] = [];
@@ -348,6 +353,19 @@ test.describe('a batch whose first programs are not stored does not stay behind'
     const retried = await createBatchWithPrograms(db as never, 'u1', header, [program]);
     expect(retried.appended).toBe(1);
     expect(batches(db)).toEqual([`portfolio_batches/${retried.batchId}`]);
+  });
+
+  test('deleting a batch record does not give its programs back to the day', async () => {
+    const db = new FakeDb();
+    const full = { ...header, total: PORTFOLIO_BATCH_MAX_PROGRAMS };
+    for (let i = 0; i < PORTFOLIO_DAILY_MAX_PROGRAMS / PORTFOLIO_BATCH_MAX_PROGRAMS; i++) {
+      const { batchId } = await createBatchWithPrograms(db as never, 'u1', full, []);
+      await deleteBatchRecord(db as never, 'u1', batchId);
+    }
+    expect(batches(db)).toEqual([]);
+    await expect(createBatchWithPrograms(db as never, 'u1', full, [])).rejects.toMatchObject({ code: 'batch-daily-limit' });
+    // Another account has its own day.
+    await expect(createBatchWithPrograms(db as never, 'u2', full, [])).resolves.toMatchObject({ appended: 0 });
   });
 
   test('the upload route creates through it', () => {

@@ -49,6 +49,34 @@ type FieldValueT = typeof FieldValue;
 
 export const BATCH_COLLECTION = 'portfolio_batches';
 export const BATCH_ITEMS = 'items';
+/**
+ * The account's ledger of batch programs in the last day: `portfolio_quota/{uid}`, Admin SDK only (no rule opens
+ * it). The daily limit is counted here and not from the batches, so deleting a batch record does not give its
+ * programs back; it holds batch ids, times and counts, nothing of a program.
+ */
+export const PORTFOLIO_QUOTA_COLLECTION = 'portfolio_quota';
+
+interface LedgerEntry {
+  batchId: string;
+  at: number;
+  total: number;
+}
+
+/** The ledger's entries of the last day; anything malformed is dropped. */
+export function ledgerEntries(stored: unknown, now: number): LedgerEntry[] {
+  if (!Array.isArray(stored)) return [];
+  return stored.filter(
+    (e): e is LedgerEntry =>
+      !!e &&
+      typeof e === 'object' &&
+      typeof (e as LedgerEntry).batchId === 'string' &&
+      typeof (e as LedgerEntry).at === 'number' &&
+      Number.isFinite((e as LedgerEntry).at) &&
+      typeof (e as LedgerEntry).total === 'number' &&
+      Number.isFinite((e as LedgerEntry).total) &&
+      now - (e as LedgerEntry).at < PORTFOLIO_DAY_MS,
+  );
+}
 
 /** One program as the upload sends it. */
 export interface UploadedProgram {
@@ -195,12 +223,22 @@ export async function createBatch(
     const items = await itemsOf(db, b.id);
     if (isOpenBatch(b, progressOf(items, b))) throw new BatchRefusal(M.oneAtATime, 409, 'batch-open');
   }
-  const used = programsInWindow(existing, now, PORTFOLIO_DAY_MS);
-  if (used + header.total > PORTFOLIO_DAILY_MAX_PROGRAMS) {
-    throw new BatchRefusal(M.overDailyLimit(PORTFOLIO_DAILY_MAX_PROGRAMS, Math.max(0, PORTFOLIO_DAILY_MAX_PROGRAMS - used)), 429, 'batch-daily-limit');
-  }
   const ref = db.collection(BATCH_COLLECTION).doc();
-  await ref.create({ userId: uid, name: header.name, edition: header.edition, release: header.release, total: header.total, appended: 0, status: 'queued', createdAt: now });
+  const ledgerRef = db.collection(PORTFOLIO_QUOTA_COLLECTION).doc(uid);
+  // The day's count and the new batch in one transaction on the account's ledger: two creates at once are counted
+  // one after the other, and a deleted batch record still counts.
+  await db.runTransaction(async (tx: Transaction) => {
+    const snap = await tx.get(ledgerRef);
+    const entries = ledgerEntries(snap.exists ? (snap.data() || {}).issued : undefined, now);
+    const known = new Set(entries.map((e) => e.batchId));
+    // Batches made before the ledger existed still count while they are in the window.
+    const used = entries.reduce((n, e) => n + e.total, 0) + programsInWindow(existing.filter((b) => !known.has(b.id)), now, PORTFOLIO_DAY_MS);
+    if (used + header.total > PORTFOLIO_DAILY_MAX_PROGRAMS) {
+      throw new BatchRefusal(M.overDailyLimit(PORTFOLIO_DAILY_MAX_PROGRAMS, Math.max(0, PORTFOLIO_DAILY_MAX_PROGRAMS - used)), 429, 'batch-daily-limit');
+    }
+    tx.set(ledgerRef, { issued: [...entries, { batchId: ref.id, at: now, total: header.total }], expiresAt: new Date(now + PORTFOLIO_DAY_MS) });
+    tx.create(ref, { userId: uid, name: header.name, edition: header.edition, release: header.release, total: header.total, appended: 0, status: 'queued', createdAt: now });
+  });
   return ref.id;
 }
 
@@ -224,8 +262,22 @@ export async function createBatchWithPrograms(
     return { batchId, appended: await appendPrograms(db, uid, batchId, programs) };
   } catch (err) {
     await db.collection(BATCH_COLLECTION).doc(batchId).delete().catch(() => undefined);
+    // Its id was never handed out and nothing of it ran: its programs go back to the day.
+    await releaseLedgerEntry(db, uid, batchId).catch(() => undefined);
     throw err;
   }
+}
+
+/** Take a batch that never started out of the account's ledger again. */
+async function releaseLedgerEntry(db: AdminDb, uid: string, batchId: string): Promise<void> {
+  const ledgerRef = db.collection(PORTFOLIO_QUOTA_COLLECTION).doc(uid);
+  await db.runTransaction(async (tx: Transaction) => {
+    const snap = await tx.get(ledgerRef);
+    if (!snap.exists) return;
+    const stored = (snap.data() || {}).issued;
+    if (!Array.isArray(stored)) return;
+    tx.update(ledgerRef, { issued: stored.filter((e) => !(e && typeof e === 'object' && (e as LedgerEntry).batchId === batchId)) });
+  });
 }
 
 /** Cancel: nothing queued is taken any more; queued programs fail as cancelled and drop their source. */
