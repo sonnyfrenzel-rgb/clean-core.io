@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v3.5.2] — 2026-11-25
+
+The landing page says what comes after the analysis, "Clean core explained" is brought up to date, the privacy
+policy 1.5 of the lawyer's statement 22c takes effect, and the QA agent reads code again. It also carries what
+went live on 25 November 2026 under the 3.5.0 label (main 7f6e7d937, never tagged on its own): Economics with one
+click of typical assumptions, Re-design that ends after Retire, Keep or SAP standard, the test-script fix of the
+purchase order example, the phone fixes and shorter texts. Engine 4 is not part of this release: its switch is
+gated from 3.6.0 (`docs/design/engine4-go-live.md` on `build/engine4-live`). The reading of every run signed
+before 3.5.2 stays as it was signed; two corrections of the process skeleton apply from engine 3.5.2
+(`lib/abap/engine-reads-352-fixes-gate.ts`, see "Fixed" below). How runs are signed and what the audit pack holds
+do not change.
+
 ### 3.5.2: the landing page says what comes after the analysis; "Clean core explained" brought up to date (owner approval 25.11.2026)
 
 - Landing page (ADR-122, amended 25.11.2026): the hero text stays word for word. The reader row under it becomes
@@ -66,6 +78,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Roadmap: statement 22c recorded in §9; Economics AI proposals (ECO-N6) scheduled with the lawyer's conditions
   (§7, "after 3.5.2 — with the next privacy policy version"); the Anthropic label tests before the key switch on
   23.12.2026. The two-stage registration (L6) is not built for now (owner decision 25.11.2026).
+
 ### Fixed (QA agent)
 - The QA delta review starts from `main` when its last checkpoint lies behind `main`. Since 24.11.2026 the checkpoint
   sat behind the 3.5.0 and 3.5.1 releases, the range no longer fit one call, and every push to `dev` came back
