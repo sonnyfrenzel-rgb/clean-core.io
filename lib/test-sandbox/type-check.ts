@@ -54,6 +54,13 @@ export type TypeCheckResult =
   | { ran: false; reason: string };
 
 export const TYPE_FINDINGS_MAX = 200;
+/** The most a candidate may bring to the type check: it runs in the app's own process, so it is bounded before it starts. */
+export const TYPE_CHECK_MAX_FILES = 400;
+export const TYPE_CHECK_MAX_BYTES = 2 * 1024 * 1024;
+/** The compiler's time budget: past it, the check stops at the next declaration and reports that it did not finish. */
+export const TYPE_CHECK_BUDGET_MS = 20_000;
+/** Library files kept parsed between calls — the standard library and `@types/node` are a few hundred; never more. */
+export const TYPE_CHECK_LIB_CACHE_MAX = 1_000;
 
 /** The compiler options of the scaffold's `tsconfig.json` (`scaffold-node.ts` `TSCONFIG`; a spec holds them equal). */
 export const CANDIDATE_TS_OPTIONS = {
@@ -80,6 +87,8 @@ const norm = (p: string) => p.replace(/\\/g, '/').replace(/^\.\//, '').replace(/
 interface Loaded {
   ts: typeof TS;
   typeRoots: string;
+  /** The only directories outside the candidate the compiler may read: TypeScript's own `lib`, `@types` and what `@types/node` depends on. */
+  readable: string[];
 }
 
 let loaded: Loaded | null | undefined;
@@ -92,7 +101,11 @@ function load(): Loaded | null {
     const req = serverRequire();
     const ts = req('typescript') as typeof TS;
     const nodeTypes = path.dirname(req.resolve('@types/node/package.json'));
-    loaded = { ts, typeRoots: path.dirname(nodeTypes) };
+    const typeRoots = path.dirname(nodeTypes);
+    const deps = Object.keys((req('@types/node/package.json') as { dependencies?: Record<string, string> }).dependencies || {});
+    const depDirs = deps.map((d) => path.dirname(req.resolve(`${d}/package.json`, { paths: [nodeTypes] })));
+    const tsLib = path.dirname(ts.getDefaultLibFilePath({}));
+    loaded = { ts, typeRoots, readable: [tsLib, typeRoots, ...depDirs].map((d) => d.replace(/\\/g, '/').replace(/\/$/, '')) };
   } catch (err) {
     loadError = err instanceof Error ? err.message : String(err);
     loaded = null;
@@ -102,6 +115,14 @@ function load(): Loaded | null {
 
 /** Library files parsed once per process: the standard library and `@types/node` never change between calls. */
 const libCache = new Map<string, TS.SourceFile>();
+
+/** Whether `p` lies inside one of `roots` once `.` and `..` are resolved — the test the host applies to every path outside the candidate. */
+export function insideReadable(p: string, roots: readonly string[]): boolean {
+  // Windows paths compare without case (a drive letter comes back as `c:` or `C:`).
+  const fold = (s: string) => (process.platform === 'win32' ? s.toLowerCase() : s);
+  const n = fold(path.posix.normalize(p.replace(/\\/g, '/')));
+  return roots.some((r) => n === fold(r) || n.startsWith(`${fold(r)}/`));
+}
 
 /**
  * Type-check a Node candidate. Never throws: a compiler that cannot be loaded
@@ -115,6 +136,10 @@ export function typeCheckCandidate(files: ReadonlyArray<{ path: string; content:
   const { ts } = lib;
   const roots = typeCheckedPaths(files);
   if (roots.length === 0) return { ran: false, reason: 'Type check not run: the candidate has no TypeScript file under srv/ or test/.' };
+  const bytes = files.reduce((n, f) => n + Buffer.byteLength(String(f.content ?? ''), 'utf8'), 0);
+  if (files.length > TYPE_CHECK_MAX_FILES || bytes > TYPE_CHECK_MAX_BYTES) {
+    return { ran: false, reason: `Type check not run: the candidate is larger than the check takes (${TYPE_CHECK_MAX_FILES} files, ${TYPE_CHECK_MAX_BYTES / 1024 / 1024} MB).` };
+  }
 
   // A directory that does not exist, outside the project: the candidate's imports resolve only among its own files.
   const base = path.join(os.tmpdir(), 'cc-type-check-candidate').replace(/\\/g, '/');
@@ -125,6 +150,9 @@ export function typeCheckCandidate(files: ReadonlyArray<{ path: string; content:
   for (const f of files) virtual.set(`${base}/${norm(f.path)}`, f.content);
   const key = (p: string) => p.replace(/\\/g, '/');
   const inVirtual = (p: string) => key(p).startsWith(`${base}/`) || key(p) === base;
+  // Outside the candidate the compiler reads library files and nothing else: a relative import, an absolute path or
+  // a triple-slash reference to anywhere else on the server is "not there", never a read of the server's disk.
+  const readable = (p: string) => insideReadable(key(p), lib.readable);
 
   const converted = ts.convertCompilerOptionsFromJson({ ...CANDIDATE_TS_OPTIONS, lib: [...CANDIDATE_TS_OPTIONS.lib], types: [...CANDIDATE_TS_OPTIONS.types] }, base);
   const options: TS.CompilerOptions = { ...converted.options, typeRoots: [lib.typeRoots], noEmit: true };
@@ -133,13 +161,18 @@ export function typeCheckCandidate(files: ReadonlyArray<{ path: string; content:
   const realFileExists = host.fileExists.bind(host);
   const realReadFile = host.readFile.bind(host);
   const realDirectoryExists = host.directoryExists?.bind(host);
-  host.fileExists = (p) => (inVirtual(p) ? virtual.has(key(p)) : realFileExists(p));
-  host.readFile = (p) => (inVirtual(p) ? virtual.get(key(p)) : realReadFile(p));
+  const realGetDirectories = host.getDirectories?.bind(host);
+  const realRealpath = host.realpath?.bind(host);
+  host.fileExists = (p) => (inVirtual(p) ? virtual.has(key(p)) : readable(p) && realFileExists(p));
+  host.readFile = (p) => (inVirtual(p) ? virtual.get(key(p)) : readable(p) ? realReadFile(p) : undefined);
+  host.getDirectories = (d) => (!inVirtual(d) && readable(d) && realGetDirectories ? realGetDirectories(d) : []);
+  host.realpath = (p) => (!inVirtual(p) && readable(p) && realRealpath ? realRealpath(p) : p);
   host.directoryExists = (d) => {
     if (inVirtual(d)) {
       const prefix = `${key(d).replace(/\/$/, '')}/`;
       return key(d) === base || [...virtual.keys()].some((k) => k.startsWith(prefix));
     }
+    if (!readable(d)) return false;
     return realDirectoryExists ? realDirectoryExists(d) : true;
   };
   host.getCurrentDirectory = () => base;
@@ -148,18 +181,31 @@ export function typeCheckCandidate(files: ReadonlyArray<{ path: string; content:
       const text = virtual.get(key(fileName));
       return text === undefined ? undefined : ts.createSourceFile(fileName, text, languageVersion, true);
     }
+    if (!readable(fileName)) return undefined;
     const cacheKey = `${key(fileName)}|${typeof languageVersion === 'object' ? languageVersion.languageVersion : languageVersion}`;
     const hit = libCache.get(cacheKey);
     if (hit) return hit;
     const sf = realGetSourceFile(fileName, languageVersion, onError, shouldCreate);
-    if (sf) libCache.set(cacheKey, sf);
+    if (sf && libCache.size < TYPE_CHECK_LIB_CACHE_MAX) libCache.set(cacheKey, sf);
     return sf;
   };
   host.writeFile = () => {};
 
   try {
     const program = ts.createProgram({ rootNames: roots.map((p) => `${base}/${p}`), options, host });
-    const diagnostics = [...program.getOptionsDiagnostics(), ...program.getGlobalDiagnostics(), ...program.getSyntacticDiagnostics(), ...program.getSemanticDiagnostics()].filter(
+    // The checker asks this token at every declaration: past the budget it stops there, and the result says so.
+    const budget: TS.CancellationToken = {
+      isCancellationRequested: () => now() - t0 > TYPE_CHECK_BUDGET_MS,
+      throwIfCancellationRequested: () => {
+        if (now() - t0 > TYPE_CHECK_BUDGET_MS) throw new ts.OperationCanceledException();
+      },
+    };
+    const diagnostics = [
+      ...program.getOptionsDiagnostics(),
+      ...program.getGlobalDiagnostics(),
+      ...program.getSyntacticDiagnostics(undefined, budget),
+      ...program.getSemanticDiagnostics(undefined, budget),
+    ].filter(
       (d) => d.category === ts.DiagnosticCategory.Error,
     );
     const findings: TypeFinding[] = [];
@@ -182,6 +228,9 @@ export function typeCheckCandidate(files: ReadonlyArray<{ path: string; content:
       ms: Math.max(0, now() - t0),
     };
   } catch (err) {
+    if (err instanceof ts.OperationCanceledException) {
+      return { ran: false, reason: `Type check not finished: it took longer than its ${TYPE_CHECK_BUDGET_MS / 1000} s budget.` };
+    }
     return { ran: false, reason: `Type check not run: the compiler failed on this candidate (${(err instanceof Error ? err.message : String(err)).slice(0, 200)}).` };
   }
 }
