@@ -235,7 +235,7 @@ class LuwReader {
   private branchAt = new Map<number, Branch>();
   private performSites = new Map<string, AbapStatement[]>();
 
-  constructor(private facts: ProcessFacts) {
+  constructor(private facts: ProcessFacts, private options: LuwReadOptions = {}) {
     for (const branch of facts.control.branches) {
       if (!this.branchAt.has(branch.openIndex)) this.branchAt.set(branch.openIndex, branch);
     }
@@ -436,7 +436,7 @@ class LuwReader {
       }
       if (statement.keyword === 'PERFORM' && depth < 8) {
         const target = /^PERFORM\s+([\w/]+)/i.exec(maskLiterals(statement.text))?.[1]?.toUpperCase();
-        const form = target && !/\bIN\s+PROGRAM\b/i.test(statement.text) ? this.forms.get(target) : undefined;
+        const form = target && !/\bIN\s+PROGRAM\b/i.test(this.qualifierText(statement)) ? this.forms.get(target) : undefined;
         if (form && target && !visitedForms.has(target)) {
           const inner = this.scan(form.openIndex + 1, form.closeIndex - 1, false,
             new Set(visitedForms).add(target), depth + 1);
@@ -456,9 +456,17 @@ class LuwReader {
     if (known) return known;
     const sites = this.facts.statements.filter((s) => s.keyword === 'PERFORM'
       && /^PERFORM\s+([\w/]+)/i.exec(maskLiterals(s.text))?.[1]?.toUpperCase() === form
-      && !/\bIN\s+PROGRAM\b/i.test(s.text));
+      && !/\bIN\s+PROGRAM\b/i.test(this.qualifierText(s)));
     this.performSites.set(form, sites);
     return sites;
+  }
+
+  /**
+   * The text a `PERFORM`'s `IN PROGRAM` is looked for in. Engine 3.5.2: with its literals masked, so
+   * `PERFORM f USING 'IN PROGRAM'.` stays a local call; before, the words inside the literal made it external.
+   */
+  private qualifierText(statement: AbapStatement): string {
+    return this.options.reads352Fixes ? maskLiterals(statement.text) : statement.text;
   }
 
   private formAround(index: number): string | null {
@@ -578,6 +586,12 @@ function dedupe(outcomes: OutcomeAtEvent[]): OutcomeAtEvent[] {
   return [...byEvent.values()].sort((a, b) => a.eventIndex - b.eventIndex);
 }
 
-export function readLuwStates(facts: ProcessFacts): LuwModel {
-  return new LuwReader(facts).read();
+/** The gated readings of the unit-of-work reader. */
+export interface LuwReadOptions {
+  /** Engine 3.5.2 (`engine-reads-352-fixes-gate.ts`): `IN PROGRAM` of a `PERFORM` is read outside its literals. */
+  reads352Fixes?: boolean;
+}
+
+export function readLuwStates(facts: ProcessFacts, options: LuwReadOptions = {}): LuwModel {
+  return new LuwReader(facts, options).read();
 }

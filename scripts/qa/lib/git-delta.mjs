@@ -96,8 +96,14 @@ export function chooseBase({ head, overrideBase, checkpoint, isAncestorOf, mainB
   if (checkpoint && checkpoint === head) return { base: head, reason: 'head already reviewed — nothing since the checkpoint' };
   const usable = checkpoint && checkpoint !== head && isAncestorOf(checkpoint, head);
   const tooFar = usable && commitsBetween(checkpoint, head) > maxCommits;
-  if (usable && !tooFar) return { base: checkpoint, reason: 'last reviewed checkpoint' };
   const mb = mainBase(head);
+  // A checkpoint that main has already passed is not a narrower delta than "everything not yet on main" but a wider
+  // one: it re-reads released commits on every push. From 24.11.2026 the checkpoint sat at e15da34d3301, behind the
+  // 3.5.0 and 3.5.1 releases; the range no longer fit one call beside its shared part, every push came back
+  // `no_review` with no model call, and the checkpoint could never move. Main's merge base is then the base.
+  const behindMain = usable && !tooFar && mb && mb !== head && mb !== checkpoint && isAncestorOf(checkpoint, mb);
+  if (usable && !tooFar && !behindMain) return { base: checkpoint, reason: 'last reviewed checkpoint' };
+  if (behindMain) return { base: mb, reason: 'checkpoint behind main — everything not yet on main' };
   if (!mb) throw new Error('No usable review base: the checkpoint is not an ancestor of head and head shares no history with main. Re-run with a base given.');
   if (mb !== head) return { base: mb, reason: tooFar ? `checkpoint more than ${maxCommits} commits back — everything not yet on main` : checkpoint ? 'checkpoint unusable (rewritten history) — everything not yet on main' : 'no reviewed checkpoint — everything not yet on main' };
   return { base: null, reason: 'head is on main — reviewing the head commit only' };

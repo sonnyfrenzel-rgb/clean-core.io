@@ -89,13 +89,16 @@ function tablesOf(node: SkeletonNode): string[] {
 
 /* ------------------------------------------------------------------ the checker (H6) */
 
-/** Words that carry no business claim: function words, and the few nouns every step may use. */
+/**
+ * Words that carry no business claim: function words, and the few nouns every step may use. An outcome or a state —
+ * successful, failed, valid, invalid — is a claim, and stands in a name only where the evidence says it.
+ */
 const FREE = new Set(('a an the and or of to in on at by for with from into onto per via as is are be been was were has have had it its this that '
   + 'these those their there which what when where whether if then than not no nor any all each every both either more most other another '
   + 'one two three first last next new same own some only also still yet just up out off over under after before until while '
   + 'yes done step steps process data list lists result results entry entries record records detail details information value values '
   + 'case cases run runs error errors message messages item items line lines start end stop stops stopped ends ending finish found '
-  + 'given set missing exists exist present empty valid invalid ok okay successful success failed fails failure').split(' '));
+  + 'given set missing exists exist present empty ok okay').split(' '));
 
 /** Verbs that describe what a step does to what the facts name — they add no object of their own. */
 const VERBS = new Set(('check checks checking verify verifies validate validates confirm confirms read reads reading get gets fetch fetches '
@@ -112,7 +115,31 @@ function words(text: string): string[] {
   return (text.toLowerCase().match(/[a-zäöüß]+/g) ?? []).filter((w) => w.length >= 2);
 }
 
-const stem = (w: string) => w.replace(/(?:ies|es|s|ed|ing|ion|ions|ation|ations)$/, '').slice(0, 6);
+/**
+ * The forms of a word that count as the same word: the word itself, its singular (`-s`, `-es`, `-ies` → `-y`), and of
+ * each of those the stem before one of a few named suffixes (`-ed`, `-d`, `-ing`, `-ion`, `-ation`, `-al`, `-ment`),
+ * with and without a final `e` — `creation`, `created` and `creating` meet `create`, `approval` meets `approve`. Two
+ * words are one when their forms share one. Nothing is cut to a fixed length: `customs` is not `customer`.
+ */
+function forms(w: string): string[] {
+  const singular = new Set([w]);
+  if (w.endsWith('ies') && w.length > 4) singular.add(`${w.slice(0, -3)}y`);
+  if (w.endsWith('es') && w.length > 3) singular.add(w.slice(0, -2));
+  if (w.endsWith('s') && !w.endsWith('ss') && w.length > 3) singular.add(w.slice(0, -1));
+  const out = new Set(singular);
+  for (const base of singular) {
+    for (const suffix of ['ation', 'ment', 'ing', 'ion', 'ed', 'al', 'd']) {
+      if (!base.endsWith(suffix) || base.length - suffix.length < 3) continue;
+      const root = base.slice(0, -suffix.length);
+      out.add(root);
+      out.add(`${root}e`);
+    }
+  }
+  // One family the suffixes cannot reach: ABAP's `AUTHORITY-CHECK` checks an authorization, and the step that asks
+  // it is "Authorized?" — authority, authorize, authorized, authorization are one word here.
+  if (/^authori(?:t|s|z)/.test(w)) out.add('authority');
+  return [...out];
+}
 
 /**
  * The content words of a name that no evidence covers. Empty means the name may stand. Evidence is the node's facts,
@@ -121,12 +148,9 @@ const stem = (w: string) => w.replace(/(?:ies|es|s|ed|ing|ion|ions|ation|ations)
 export function uncoveredWords(name: string, evidence: readonly string[]): string[] {
   const have = new Set<string>();
   for (const text of evidence) {
-    for (const w of words(text.replace(/[_-]+/g, ' '))) {
-      have.add(w);
-      have.add(stem(w));
-    }
+    for (const w of words(text.replace(/[_-]+/g, ' '))) for (const form of forms(w)) have.add(form);
   }
-  return [...new Set(words(name))].filter((w) => !FREE.has(w) && !VERBS.has(w) && !have.has(w) && !have.has(stem(w)));
+  return [...new Set(words(name))].filter((w) => !FREE.has(w) && !VERBS.has(w) && !forms(w).some((form) => have.has(form)));
 }
 
 /** Negation in a text: "not", "no", "none", "never", "n't", "nothing", "without", "missing". */

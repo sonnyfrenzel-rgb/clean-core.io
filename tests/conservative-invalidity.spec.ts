@@ -327,6 +327,9 @@ test.describe('server side', () => {
     const after = (await db.doc(`projects/${RACE_ID}`).get()).data()!;
     expect(after.legacyCode, 'the newer source was overwritten').toBe(LATER);
     expect(after.activeRunId, 'the late run became the current state').toBeUndefined();
+    // The display-only writers run only after a committed run: a refused one leaves no "In short" and no summary.
+    expect(after.inShort, 'a refused run wrote "In short"').toBeUndefined();
+    expect(after.summary, 'a refused run wrote the project summary').toBeUndefined();
     // Nothing was recorded, so nothing was charged.
     const user = (await db.doc(`users/${uid}`).get()).data() || {};
     expect(user.chargedInputs?.[fingerprint]).toBeFalsy();
@@ -367,6 +370,8 @@ test.describe('server side', () => {
     expect(after.s4Deployment, 'the newer target was overwritten').toBe('private');
     expect(after.assessmentTarget).toEqual({ release: '2023 FPS03' });
     expect(after.activeRunId, 'the late run became the current state').toBeUndefined();
+    expect(after.inShort, 'a refused run wrote "In short"').toBeUndefined();
+    expect(after.summary, 'a refused run wrote the project summary').toBeUndefined();
     const user = (await db.doc(`users/${uid}`).get()).data() || {};
     expect(user.chargedInputs?.[fingerprint]).toBeFalsy();
   });

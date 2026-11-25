@@ -17,6 +17,7 @@ import { APP_VERSION } from '@/lib/version';
 import {
   PROCESS_MAP_FORMAT_VERSION,
   isProcessMapRecord,
+  quoteOfActiveRun,
   parseBpmn,
   type ProcessMapRecord,
 } from '@/lib/process-map';
@@ -224,7 +225,8 @@ export async function GET(
     };
     // A document of another format version is not a quote this build can read.
     // Saying "none" is true; handing it over as one is not.
-    return NextResponse.json({ record: isProcessMapRecord(record) ? record : null });
+    // A quote of another run measured another map (`quoteOfActiveRun`).
+    return NextResponse.json({ record: isProcessMapRecord(record) ? quoteOfActiveRun(record, gate.project.activeRunId) : null });
   } catch (err: unknown) {
     logger.error('process-map read failed', { route: 'api/projects/process-map', error: errMessage(err) });
     return NextResponse.json({ error: 'Could not read the traceability quote.' }, { status: 500 });

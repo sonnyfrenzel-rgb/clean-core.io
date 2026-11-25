@@ -6,7 +6,7 @@ import type { SkeletonGraph, SkeletonReadings } from './graph';
  *
  * Reads: the graph's nodes and regions. Writes: `kind`, `collapsed` and `detail.collapsedFrom` of call-site nodes,
  * nothing else — no node or edge is added or dropped. Readings: `reads310` (AB-15a, a phase inside keeps the routine
- * a phase).
+ * a phase), `reads352Fixes` (a call site whose `collapsed` state alone changed is a move, so the pass runs again).
  */
 
 /**
@@ -23,7 +23,10 @@ export const DOMINANT_ORDER: SkeletonNodeKind[] = [
   'sub-process',
 ];
 
-export function collapseSmallRegions(graph: SkeletonGraph, readings: Pick<SkeletonReadings, 'reads310'>): void {
+export function collapseSmallRegions(
+  graph: SkeletonGraph,
+  readings: Pick<SkeletonReadings, 'reads310'> & Partial<Pick<SkeletonReadings, 'reads352Fixes'>>,
+): void {
   // A routine that collapses changes the kind of the call site inside the
   // routine above it, so one pass settles the innermost level only: `reject`
   // performs `log_approval`, and until `log_approval` is a write, `reject`
@@ -50,6 +53,12 @@ export function collapseSmallRegions(graph: SkeletonGraph, readings: Pick<Skelet
 
   for (let pass = 0; pass <= graph.regions.length; pass++) {
     let changed = false;
+    // Engine 3.5.2: a call site that only turns collapsed (or back) is a move as well. A routine calling itself keeps
+    // the kind `sub-process` when it folds, and the routine above it, visited first, still saw an open phase inside.
+    const fold = (caller: SkeletonNode, collapsed: boolean) => {
+      if (readings.reads352Fixes && caller.collapsed !== collapsed) changed = true;
+      caller.collapsed = collapsed;
+    };
     for (const region of graph.regions) {
       if (region.kind !== 'sub-process') continue;
       // Roadmap 2.17 (b): the body of a `LOOP AT` is a region, but it is not a
@@ -80,11 +89,11 @@ export function collapseSmallRegions(graph: SkeletonGraph, readings: Pick<Skelet
       // a whole iteration into one box. The marker is what says there are
       // many: a region holding one is never one step.
       if (inner.some((n) => n.detail?.multiInstance === true)) {
-        for (const caller of callers) caller.collapsed = false;
+        for (const caller of callers) fold(caller, false);
         continue;
       }
       if (callers[0].kind === 'business-rule-task') {
-        for (const caller of callers) caller.collapsed = inner.length <= 3;
+        for (const caller of callers) fold(caller, inner.length <= 3);
         continue;
       }
       // Engine 3.1.0 (AB-15a): a routine that calls a phase of its own is not one step. `main` creating the object
@@ -104,7 +113,7 @@ export function collapseSmallRegions(graph: SkeletonGraph, readings: Pick<Skelet
       }
       const steps = inner.filter((n) => DOMINANT_ORDER.includes(n.kind));
       if (!inner.length || inner.length > 3 || !steps.length) {
-        for (const caller of callers) caller.collapsed = false;
+        for (const caller of callers) fold(caller, false);
         continue;
       }
       const dominant = [...steps].sort(
@@ -113,7 +122,7 @@ export function collapseSmallRegions(graph: SkeletonGraph, readings: Pick<Skelet
       for (const caller of callers) {
         if (caller.kind !== dominant.kind) changed = true;
         caller.kind = dominant.kind;
-        caller.collapsed = true;
+        fold(caller, true);
         caller.detail = { ...(caller.detail ?? {}), collapsedFrom: dominant.label };
       }
     }

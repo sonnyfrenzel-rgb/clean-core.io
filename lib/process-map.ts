@@ -1015,6 +1015,16 @@ export function isProcessMapRecord(value: unknown): value is ProcessMapRecord {
     && typeof record.statuses === 'object' && record.statuses !== null;
 }
 
+/**
+ * The stored quote, if it measured the map of the project's active run. The map is drawn with the engine that run
+ * signed (`engineVersionOfProject`), so a quote of an earlier run — the same source analysed again under another
+ * engine — is a count of another map, even with the same source digest. Null then, and the next measurement replaces it.
+ */
+export function quoteOfActiveRun(record: ProcessMapRecord | null, activeRunId: unknown): ProcessMapRecord | null {
+  if (!record || typeof activeRunId !== 'string' || record.runId !== activeRunId) return null;
+  return record;
+}
+
 /** The namespace a trace must be in for this module to read it. Held to 2.6 by `tests/process-map.spec.ts`. */
 export const RECONSTRUCTION_NAMESPACE = CC_NAMESPACE;
 

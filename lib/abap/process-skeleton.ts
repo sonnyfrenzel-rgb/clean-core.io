@@ -9,6 +9,7 @@ import { type BatchInputCall } from './batch-input';
 import { engineReads310Apply } from './engine-reads-310-gate';
 import { engineReads320Apply } from './engine-reads-320-gate';
 import { engineReads350Apply } from './engine-reads-350-gate';
+import { engineReads352FixesApply } from './engine-reads-352-fixes-gate';
 import { APP_VERSION } from '../version';
 import { SkeletonGraph, type SkeletonReadings } from './skeleton/graph';
 import { buildLanes } from './skeleton/lanes';
@@ -511,6 +512,7 @@ export function buildProcessSkeletonFrom(facts: ProcessFacts, options: SkeletonB
     reads.reads310,
     reads.reads320,
     reads.reads350,
+    reads.reads352Fixes,
   ).build());
   readFor.set(skeleton, reads);
   return skeleton;
@@ -523,11 +525,12 @@ function readsOf(engineVersion: string | null | undefined): SkeletonReadings {
     reads310: engineReads310Apply(version),
     reads320: engineReads320Apply(version),
     reads350: engineReads350Apply(version),
+    reads352Fixes: engineReads352FixesApply(version),
   };
 }
 
 function sameReadings(a: SkeletonReadings, b: SkeletonReadings): boolean {
-  return a.reads310 === b.reads310 && a.reads320 === b.reads320 && a.reads350 === b.reads350;
+  return a.reads310 === b.reads310 && a.reads320 === b.reads320 && a.reads350 === b.reads350 && a.reads352Fixes === b.reads352Fixes;
 }
 
 /** The readings each skeleton built here was drawn with — kept beside it, so the skeleton's own shape is unchanged. */
@@ -652,11 +655,16 @@ class SkeletonBuilder {
      * run of an older engine, whose map stays as it was.
      */
     private reads350 = false,
+    /**
+     * Engine 3.5.2 (`ENGINE_READS_352_FIXES_FROM`): the skeleton readings listed in `engine-reads-352-fixes-gate.ts`. False for a
+     * run of an older engine, whose map stays as it was.
+     */
+    private reads352Fixes = false,
   ) {}
 
   /** The gated readings of this build, as the passes take them. */
   private readings(): SkeletonReadings {
-    return { reads310: this.reads310, reads320: this.reads320, reads350: this.reads350 };
+    return { reads310: this.reads310, reads320: this.reads320, reads350: this.reads350, reads352Fixes: this.reads352Fixes };
   }
 
   build(): ProcessSkeleton {
@@ -764,7 +772,7 @@ class SkeletonBuilder {
       regionLast: this.walk.regionLast,
       runEntryRanks: this.runEntries.map((e) => e.rank),
     });
-    collapseSmallRegions(this.graph, { reads310: this.reads310 });
+    collapseSmallRegions(this.graph, { reads310: this.reads310, reads352Fixes: this.reads352Fixes });
     applyGuards(this.graph);
     // Roadmap 2.15: after the guards, so a folded run switch is already on its
     // flow when the conditions of a gateway are read — and before the notes,
@@ -786,6 +794,7 @@ class SkeletonBuilder {
     // Roadmap 2.12, after every pass that can still drop a node.
     const luw = attachLuwStates(this.graph, {
       statements: this.statements, structure: this.structure, control: this.control, calls: this.calls,
+      reads352Fixes: this.reads352Fixes,
     });
 
     return {

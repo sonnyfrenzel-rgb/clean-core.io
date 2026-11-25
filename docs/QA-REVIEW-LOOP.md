@@ -222,7 +222,10 @@ rest is in the step report.
   raising before it, not to a later one. If the reviewer raises it again after a regression,
   it stays open and marked until it is fixed or refuted anew.
 - **The starting point of a review** is the last reviewed checkpoint if it is an
-  ancestor of the head — otherwise everything that is not yet on `main`. The `before`
+  ancestor of the head and `main` has not already passed it — otherwise everything that is
+  not yet on `main`. A checkpoint behind `main` re-read released commits on every push: from
+  24.11.2026 it sat at `e15da34d3301`, behind 3.5.0 and 3.5.1, the range no longer fit one
+  call, and every push came back `no_review` without a model call (fixed 25.11.2026). The `before`
   of the push is never taken; only a manual run may specify a base.
 - **What moves the checkpoint** (since 10.10.2026, `scripts/qa/lib/checkpoint.mjs`). The
   checkpoint comes from the last *push* review only (`--event push`, the 06.10.2026 fix

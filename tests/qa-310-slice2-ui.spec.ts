@@ -52,8 +52,11 @@ test('a failure of an earlier own-list subscription does not pass the workspace 
   const reset = effect.indexOf('setOwnFailedFor(null);');
   expect(reset).toBeGreaterThan(0);
   expect(reset).toBeLessThan(effect.indexOf('void refresh(user);'));
-  const refresh = src.slice(src.indexOf('const refresh = useCallback(async (u: User) => {'), src.indexOf('// Read on arrival'));
-  expect(refresh.indexOf('setOwnFailedFor(uid);')).toBeGreaterThan(refresh.indexOf("fetch('/api/workspace-rows'"));
+  // A failed read of its own: the reader's `failed`, only for the newest request (`ownRowsReader`, played through in
+  // tests/workspace-row-flow.spec.ts).
+  expect(src).toContain('failed: (uid) => setOwnFailedFor(uid),');
+  const flow = read('lib/workspace-row-flow.ts');
+  expect(flow.indexOf('apply.failed(uid);')).toBeGreaterThan(flow.indexOf('const res = await request();'));
 });
 
 test('the process tour draws the names the main map shows, also while names arrive', () => {

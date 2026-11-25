@@ -407,8 +407,19 @@ test.describe('rendered: the endings and the soft gate in Analyze, Business (nee
     await levelLookup;
     await expect(page.locator('[data-stage-tools-note]')).toHaveText('Best after the business walk-through');
 
+    // A modified click is never held: Ctrl/Cmd-click opens Design in a new tab, as the browser does it, and no note
+    // stands on the page (the gate's handler returns before `preventDefault` on any modifier).
+    const designLink = page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]');
+    const newTab = page.context().waitForEvent('page', { timeout: 30_000 });
+    await designLink.click({ modifiers: ['ControlOrMeta'] });
+    const opened = await newTab;
+    await opened.waitForURL(new RegExp(`/project/${seeded.po}/design`), { waitUntil: 'commit', timeout: 60_000 });
+    await opened.close();
+    await expect(page.locator('[data-analyze-soft-gate]')).toHaveCount(0);
+    expect(new URL(page.url()).pathname).toBe(`/project/${seeded.po}/analyze`);
+
     // State 10: Design clicked before the walk-through — one calm note, the page stays.
-    await page.locator('[data-stage-tools="open"] a[data-workspace-tool="design"]').click();
+    await designLink.click();
     const note = page.locator('[data-analyze-soft-gate]');
     await expect(note).toBeVisible();
     await expect(note).toBeFocused();

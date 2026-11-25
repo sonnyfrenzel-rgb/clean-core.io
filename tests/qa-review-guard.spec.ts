@@ -514,6 +514,14 @@ test.describe('spend is capped and only the delta is reviewed', () => {
     const far = base({ checkpoint: 'cp', commitsBetween: () => MAX_CHECKPOINT_COMMITS + 1 });
     expect(far.base).toBe('main-base');
     expect(far.reason).toMatch(/commits back — everything not yet on main/);
+    // A checkpoint main has already passed re-reads released commits on every push (24./25.11.2026: e15da34d3301
+    // behind 3.5.0 and 3.5.1, every push `no_review`): main's merge base instead.
+    ancestors.add('old>head').add('old>main-base');
+    const behind = base({ checkpoint: 'old' });
+    expect(behind.base).toBe('main-base');
+    expect(behind.reason).toMatch(/checkpoint behind main/);
+    // ...but not when head itself is on main: then the checkpoint still names what is new.
+    expect(base({ checkpoint: 'old', mainBase: () => 'head' }).base).toBe('old');
     expect(read('scripts/qa/review.mjs')).toMatch(/commitsBetween: \(from, to\) => Number\(git\(\['rev-list', '--count', `\$\{from\}\.\.\$\{to\}`\]\)\),/);
     // Only push runs can be the previous review.
     expect(read('.github/workflows/qa-review.yml')).toMatch(/gh run list --workflow qa-review\.yml --branch dev --event push --limit 50/);

@@ -443,4 +443,47 @@ test.describe('rendered: the walk-through in Analyze, Business (needs the emulat
     await expect(tour.locator('[data-analyze-endings="compact"]')).toBeVisible();
     await expect(tour.locator('[data-analyze-ending-open]').first()).toHaveAttribute('data-cc-button', 'secondary');
   });
+
+  // The real page, not the harness above: at 1024 px the card stands above the map and two stations fit; Pause hands
+  // the focus back to "Walk me through it" by the page's own effect, and the next walk opens at the paused station.
+  test('at 1024 px two stations fit with the card above; Pause returns the focus and resumes at the station', async ({ page }) => {
+    test.setTimeout(360_000);
+    const seeded = await seedLayoutProject('ab4-tour-1024');
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await signInThroughForm(page, seeded);
+    await page.goto(`/project/${seeded.po}/analyze`, { waitUntil: 'domcontentloaded' });
+    const walk = page.locator('[data-analyze-walk=""]');
+    await expect(walk).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-around-the-map="ready"]')).toBeVisible({ timeout: 120_000 });
+    await walk.click();
+    const tour = page.locator('[data-process-tour][data-tour-mode="inline"]');
+    await expect(tour).toBeVisible({ timeout: 60_000 });
+    for (const at of ['1', '2']) {
+      await page.keyboard.press('ArrowRight');
+      await expect(tour).toHaveAttribute('data-tour-at', at);
+      await page.waitForTimeout(80);
+      const m = await page.evaluate(() => {
+        const box = (sel: string) => {
+          const r = document.querySelector(sel)?.getBoundingClientRect();
+          return r ? { left: r.left, top: r.top, right: r.right, bottom: r.bottom } : null;
+        };
+        return {
+          element: box('[data-process-tour-map] .cc-tour-here .djs-visual'),
+          map: box('[data-tour-inline-map]'),
+          card: box('[data-tour-sheet]'),
+          scrollWidth: document.documentElement.scrollWidth,
+          width: window.innerWidth,
+        };
+      });
+      expect(m.element && m.map && within(m.element, m.map), `station ${at}: the element left the map`).toBe(true);
+      expect(m.card!.bottom, `station ${at}: the card is not above the map`).toBeLessThanOrEqual(m.map!.top + 1);
+      expect(m.scrollWidth, `station ${at}: the page scrolls sideways`).toBeLessThanOrEqual(m.width);
+    }
+    await page.locator('[data-tour-pause]').focus();
+    await page.keyboard.press('Enter');
+    await expect(tour).toHaveCount(0);
+    await expect(walk).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(tour).toHaveAttribute('data-tour-at', '2', { timeout: 30_000 });
+  });
 });

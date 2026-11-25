@@ -66,6 +66,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Roadmap: statement 22c recorded in §9; Economics AI proposals (ECO-N6) scheduled with the lawyer's conditions
   (§7, "after 3.5.2 — with the next privacy policy version"); the Anthropic label tests before the key switch on
   23.12.2026. The two-stage registration (L6) is not built for now (owner decision 25.11.2026).
+### Fixed (QA agent)
+- The QA delta review starts from `main` when its last checkpoint lies behind `main`. Since 24.11.2026 the checkpoint
+  sat behind the 3.5.0 and 3.5.1 releases, the range no longer fit one call, and every push to `dev` came back
+  `no_review` without reading any code (`scripts/qa/lib/git-delta.mjs`, `tests/qa-review-guard.spec.ts`).
+
+### Fixed (QA review of 3645b6175)
+- Naming check: a word of a model's name is covered by its own forms only (plural, `-ed`, `-ing`, `-ion`, `-ation`,
+  `-al`, `-ment`, and the authority/authorized family), no longer by sharing its first six letters, and an outcome
+  word (`successful`, `failed`, …) is no longer free. Measured without a model on the 7 starters and the 150 LEARN
+  cases (candidate names: every engine label of the program, plus "Successful …"/"… failed" per node): outcome
+  candidates accepted 1,040 → 4 (starters) and 11,632 → 90 (LEARN); other candidates newly refused in 3 starters
+  (40) and 41 LEARN cases (424), most of them "Authorized?" that passed on "Author's comment" (`lib/naming-facts.ts`,
+  QA `488a6df8ebda`, `0a3edfe44f0b`).
+- Naming check: `valid` and `invalid` are no longer free either; a state needs evidence like an outcome. Measured the
+  same way: 57 more candidate pairs refused in LEARN cases, none in the starters (`lib/naming-facts.ts`;
+  QA `7ec92b0dee99`). `ok`/`okay` stay free for now: refusing them would refuse 1,669 more pairs, mostly borrowed
+  "… OK?" questions — left for the owner.
+- The map's "measured and kept with this model" date belongs to the active run only. A quote measured for an earlier
+  run of the same source (another engine draws another map) is no longer handed out; the next measurement replaces
+  it (`quoteOfActiveRun`, `lib/process-map.ts`, `app/api/projects/[projectId]/process-map/route.ts`; QA `854742965114`).
+- Tests: the engine digest is checked through the run route itself — the created run carries the digest of the build
+  that serves it, verifies, and stops verifying when the digest is changed or dropped
+  (`tests/assessment-profile-wiring.spec.ts`; QA `ceff928e4e83`, `f02c00e605e0`, `1e8290b1e58b`, `1d049b79a3fc`,
+  `b7fa4778ad39`).
+- Engine 3.5.2 (gated, `ENGINE_READS_352_FIXES_FROM`, `lib/abap/engine-reads-352-fixes-gate.ts`; maps and business statements
+  of earlier runs stay as they were): the small-region collapse runs again when a call site only turns collapsed, so a
+  routine above a self-calling routine no longer stays a phase around a single step (`lib/abap/skeleton/collapse.ts`;
+  QA `bb86e2693aa2`, `923c7582a6ef`); and `PERFORM f USING 'IN PROGRAM'.` is a local call for the unit-of-work
+  reading, which used to take the words inside the literal for the external form (`lib/abap/luw-states.ts`;
+  QA `5f9333754909`). Repro: `tests/engine-352-fixes-skeleton-readings.spec.ts`.
+- Tests: the CSP spec checks that `next.config.mjs` and the route classifier both name Re-design and the
+  requirements page (`tests/csp-report-only.spec.ts`; QA `3ae77275d7ec`).
+- My workspace: the own-rows read and a run started from a row are functions of what they call
+  (`lib/workspace-row-flow.ts`), so their order of answers is played through in a test: an older rows answer or
+  failure arriving after a newer one changes nothing, and Cancel while the project is read starts no run and shows no
+  stage (`tests/workspace-row-flow.spec.ts`; behaviour unchanged; QA `22bebcbecde1`, `51aefff9ec2b`, `b719ddf860e5`).
+  The same spec now also holds that `truncated: true` reaches the list, and that a stage reported after the row was
+  lost is not shown (QA `a07ec67fb046`, `23f078263d72`).
+- Tests (rendered, need the emulators and a server): a Ctrl/Cmd-click on a later tool before the walk-through opens
+  it in a new tab with no soft-gate note (`tests/analyze-endings.spec.ts`; QA `eef17812d68e`); the walk-through on
+  the real Analyze page at 1024 px — two stations fit with the card above, Pause hands the focus back and resumes
+  there (`tests/analyze-tour-inline.spec.ts`; QA `32a2ea8122b9`, `477bceee0676`); the text around the map reaches
+  `ready` while every naming read is held (`tests/around-the-map-naming-held.spec.ts`; QA `a4390fb823a1`,
+  `6ef1368e30be`); a refused run (source or profile moved) leaves no "In short" and no summary, a committed one
+  writes both for its run (`tests/conservative-invalidity.spec.ts`, `tests/assessment-profile-wiring.spec.ts`;
+  QA `2e419e6ecb2c`).
+- Tests (Firestore and Auth emulators): a signed-in browser can neither create its profile with the usage-report
+  objection marker nor set, move or clear it; each refusal is paired with the same call without the marker succeeding
+  (`tests/usage-report-objection-rules.spec.ts`; QA `99c8e1d82624`).
 
 ### Changed
 
