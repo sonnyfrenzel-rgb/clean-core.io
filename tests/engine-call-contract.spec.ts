@@ -629,3 +629,14 @@ test.describe('the engine pass runs through the execution core the isolated runn
     expect(planEngineRun(cases, [{ path: 'srv/service.ts', content: '' }], null)).toEqual({ kind: 'no-contract', reason: 'no srv/engine-contract module' });
   });
 });
+
+test('the presence check reads export lists in linear time, and still finds a name in one', () => {
+  // Many unclosed lists with a contract name in them: a pattern over the whole file backtracked for minutes here.
+  const hostile = 'export { CONTRACT '.repeat(4000);
+  const started = Date.now();
+  expect(callContractPresence([{ path: 'srv/engine-contract.ts', content: hostile }]).present).toBe(false);
+  expect(Date.now() - started).toBeLessThan(1000);
+  const listed = 'const CONTRACT = 1, validate = 2;\nexport { CONTRACT, validate };\nexport {\n  simulate,\n  getRun as getRun, compute };\n';
+  expect(callContractPresence([{ path: 'srv/engine-contract.ts', content: listed }])).toEqual({ present: true, path: 'srv/engine-contract.ts', missing: [] });
+  expect(callContractPresence([{ path: 'srv/engine-contract.ts', content: 'export { CONTRACT, validate }' }]).missing).toEqual(['simulate', 'getRun', 'compute']);
+});
