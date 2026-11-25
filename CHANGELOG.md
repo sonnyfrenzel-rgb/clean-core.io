@@ -44,6 +44,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `dateModified` from `lib/content-dates.ts`, the date the sitemap uses. Both PDFs (guide and whitepaper)
   re-rendered.
 
+### 3.5.2: the lawyer's statement 22c (owner approval 25.11.2026)
+
+- Privacy policy **1.5** (`/datenschutz/versions/1.5`, German at `/de`): section 7 no longer names the two browser
+  entries the interface stopped writing with 3.5.0, `cc.workspace.coachMarks.dismissed` and
+  `cc:design-skip-questions:…`; the change note at the top is the one drafted in document 22, question 1. Nothing
+  else changes, and there is no notice mail (statement 22c, 1). Its date is the 3.5.2 release day
+  (`PRIVACY_15_DATE_ISO`, provisionally 25.11.2026). The sign-up box and the consent record name 1.5.
+- A signed-in visit removes the leftover `cc.workspace.coachMarks.dismissed` from local storage once per page load
+  (`lib/storage-cleanup.ts`). `lib/storage-keys.ts` keeps it on `STORAGE_CLEANUPS`, not as a named entry, and
+  `tests/storage-keys-register.spec.ts` now also checks text → register: every key section 7 names must be a named
+  entry of the register, so a key nothing writes any more cannot stay in the policy unnoticed.
+- Documentation: the button that asks for the business sentences names where the code goes, as *Generate draft*
+  does — "Propose business sentences (sends code to Google)", "Ask the model again (sends code to …)" — with the
+  provider of the key actually used (Anthropic once own Claude keys are on). The waiting sentence of the progress
+  card ("… nothing is sent before"), not shown since 3.5.0, is removed.
+- Onboarding: the quota line says what Terms section 6 says — "5 free analysis runs; every tool after the analysis
+  is included, its model calls within the fair-use rate limit (the hourly limit on model calls)".
+- `tests/legal-22c.spec.ts`: both sign-up forms carry the button name the contract notice C1 cites, and the quota
+  line agrees with the Terms and the Trust page.
+- Roadmap: statement 22c recorded in §9; Economics AI proposals (ECO-N6) scheduled with the lawyer's conditions
+  (§7, "after 3.5.2 — with the next privacy policy version"); the Anthropic label tests before the key switch on
+  23.12.2026. The two-stage registration (L6) is not built for now (owner decision 25.11.2026).
+
 ### Changed
 
 - Economics: one click on **Use typical assumptions** (3.5.1, ADR-144; owner 24.11.2026) fills every figure still
