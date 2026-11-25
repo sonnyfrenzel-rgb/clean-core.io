@@ -132,7 +132,7 @@ test.describe('firestore.rules keeps a view off the project and the account', ()
     ).rejects.toThrow(/permission|PERMISSION_DENIED/i);
 
     await expect(
-      updateDoc(doc(clientDb, 'projects', PROJECT_ID), { businessDocumentation: '# SOP', workspaceView: 'it' }),
+      updateDoc(doc(clientDb, 'projects', PROJECT_ID), { presentation: '# Deck', workspaceView: 'it' }),
       'a view attribute was smuggled in beside a legitimately allowed field',
     ).rejects.toThrow(/permission|PERMISSION_DENIED/i);
 
@@ -149,7 +149,7 @@ test.describe('firestore.rules keeps a view off the project and the account', ()
   });
 
   test('an allowed field on the same project still updates cleanly — the rejections above are not a blanket deny', async () => {
-    await expect(updateDoc(doc(clientDb, 'projects', PROJECT_ID), { businessDocumentation: '# SOP' })).resolves.toBeUndefined();
+    await expect(updateDoc(doc(clientDb, 'projects', PROJECT_ID), { presentation: '# Deck' })).resolves.toBeUndefined();
   });
 });
 
