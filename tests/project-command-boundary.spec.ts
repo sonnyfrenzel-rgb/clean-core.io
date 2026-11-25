@@ -129,7 +129,7 @@ test.describe('client, server, index and export name the same six fields', () =>
     // only after the owner check (roadmap 3.0.14, item 9).
     expect(route.indexOf('stored.userId !== decodedToken.uid')).toBeGreaterThan(route.indexOf('assertMfaSatisfied('));
     expect(route.indexOf('withStoredArtefacts(tx, ref, stored)')).toBeGreaterThan(route.indexOf('stored.userId !== decodedToken.uid'));
-    expect(route.indexOf('tx.set(ref,'), 'nothing is written before the owner check').toBeGreaterThan(
+    expect(route.indexOf('tx.update(ref,'), 'nothing is written before the owner check').toBeGreaterThan(
       route.indexOf('stored.userId !== decodedToken.uid'),
     );
 
@@ -146,7 +146,7 @@ test.describe('client, server, index and export name the same six fields', () =>
     // whose active run was B (QA full review of a19945ef01dc). The project read,
     // `validateProjectCommand` and both writes are inside one transaction body.
     expect(route, 'the command is not read, decided and written in one transaction').toMatch(
-      /db\.runTransaction\([\s\S]*tx\.get\(ref\)[\s\S]*validateProjectCommand\([\s\S]*tx\.set\(ref,[\s\S]*audit_events[\s\S]*\}\,?\s*\)\;/,
+      /db\.runTransaction\([\s\S]*tx\.get\(ref\)[\s\S]*validateProjectCommand\([\s\S]*tx\.update\(ref,[\s\S]*audit_events[\s\S]*\}\,?\s*\)\;/,
     );
     expect(route, 'the project is read outside the transaction').not.toMatch(/await ref\.get\(\)/);
     // And no second, separate write that could succeed or fail on its own.

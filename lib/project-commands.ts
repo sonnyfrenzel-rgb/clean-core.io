@@ -153,6 +153,16 @@ export function recommendationOfRoute(report: {
 
 /* ------------------------------------------------------------- usage report */
 
+/** How long an imported usage or ATC report is kept (the parsers' 90 days), counted by the server from the import. */
+export const IMPORT_RETENTION_DAYS = 90;
+export function retentionFrom(nowIso: string): string {
+  const t = Date.parse(nowIso);
+  return new Date((Number.isFinite(t) ? t : Date.now()) + IMPORT_RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+}
+/** Warnings of one import: what the reader is shown, never a second payload. */
+export const IMPORT_WARNINGS_MAX = 200;
+export const IMPORT_WARNING_MAX_CHARS = 500;
+
 /** Top-level keys of a `UsageReport` the server stores; anything else is dropped. */
 const USAGE_REPORT_KEYS = [
   'records',
@@ -214,6 +224,10 @@ export function normaliseUsageReport(
   for (const key of USAGE_REPORT_KEYS) {
     if (value[key] !== undefined) report[key] = value[key];
   }
+  report.warnings = (value.warnings as unknown[])
+    .filter((w): w is string => typeof w === 'string')
+    .slice(0, IMPORT_WARNINGS_MAX)
+    .map((w) => w.slice(0, IMPORT_WARNING_MAX_CHARS));
   return { ok: true, report };
 }
 
@@ -823,13 +837,13 @@ export function validateProjectCommand(
   if (command === 'record-usage-report') {
     const usage = normaliseUsageReport(body.usageReport);
     if (!usage.ok) return refuse(400, 'malformed-usage-report', usage.error);
-    return { ok: true, action: 'PROJECT_USAGE_REPORT_RECORDED', fields: { usageReport: usage.report } };
+    return { ok: true, action: 'PROJECT_USAGE_REPORT_RECORDED', fields: { usageReport: { ...usage.report, retentionExpiresAt: retentionFrom(actor.now) } } };
   }
 
   if (command === 'record-atc-report') {
     const atc = normaliseAtcReport(body.atcReport);
     if (!atc.ok) return refuse(400, 'malformed-atc-report', atc.error);
-    return { ok: true, action: 'PROJECT_ATC_REPORT_RECORDED', fields: { atcReport: atc.report } };
+    return { ok: true, action: 'PROJECT_ATC_REPORT_RECORDED', fields: { atcReport: { ...atc.report, retentionExpiresAt: retentionFrom(actor.now) } } };
   }
 
   /* ------------------------------------------------------- roadmap 8.4 */

@@ -16,6 +16,10 @@ import { deriveProjectDecision } from '@/lib/decision-facts';
 import type { EvidenceChange } from '@/lib/run-evidence-digest';
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { isFirestoreId } from '@/lib/firestore-id';
+import { readBoundedRequestJson } from '@/lib/url-validation';
+
+/** A command body: at most an import report, which has to fit one project document (1 MiB) as stored. */
+const PROJECT_COMMAND_BODY_LIMITS = { maxBytes: 4 * 1024 * 1024, timeoutMs: 20_000 };
 import { catalogSnapshotRefForProject } from '@/lib/abap/catalog-snapshots';
 import { profileDrift, recordedProfileOf } from '@/lib/assessment-target';
 import { logger, errMessage } from '@/lib/logger';
@@ -181,7 +185,12 @@ export async function POST(
 
     const { db } = await getAdminDb();
     const ref: DocumentReference = db.collection('projects').doc(projectId);
-    const body = await req.json().catch(() => null);
+    // Bounded before it is parsed: the largest command (an import report) must fit one project document anyway.
+    const read = await readBoundedRequestJson(req, PROJECT_COMMAND_BODY_LIMITS);
+    if (read.tooLarge) {
+      return NextResponse.json({ error: 'This request is larger than a project command can carry.', code: 'too-large' }, { status: 413 });
+    }
+    const body = read.body;
     const email = typeof decodedToken.email === 'string' ? decodedToken.email : '';
     // Resolved before the transaction: it reads a different document, and a
     // transaction's reads all have to happen before its first write.
@@ -357,7 +366,10 @@ export async function POST(
         // The command still writes exactly the fields `validateProjectCommand`
         // returns and no others — the transaction changes when they are written,
         // not what.
-        tx.set(ref, { ...decision.fields, updatedAt: new Date() }, { merge: true });
+        // `update`, not a merging `set`: every field is the command's complete new value, and a merge would keep
+        // keys the command removed (a reopened answer, an optional report field) inside nested maps. The
+        // project's existence was read in this transaction.
+        tx.update(ref, { ...decision.fields, updatedAt: new Date() });
         tx.set(db.collection('audit_events').doc(), {
           actorUid: decodedToken.uid,
           action: `${decision.action}:${projectId}`,
