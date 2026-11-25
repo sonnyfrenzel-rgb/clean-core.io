@@ -19,6 +19,31 @@ const RED = new Set(['failure', 'timed_out', 'startup_failure', 'action_required
 const IGNORED_CONCLUSIONS = new Set(['cancelled', 'skipped', 'neutral', '']);
 const STALE_AFTER_DAYS = 8;
 
+/**
+ * Only runs we started count. A pull request from a fork runs the fork's own
+ * workflow file, so its job names and log lines are someone else's text; a red
+ * fork run must neither turn the health red nor reach the maintainer's session.
+ * Events a stranger can start (pull_request, pull_request_target, issue_comment …)
+ * are left out, and so is every branch but ours.
+ */
+export const TRUSTED_EVENTS = new Set(['push', 'schedule', 'workflow_dispatch']);
+export const TRUSTED_BRANCHES = new Set(['main', 'dev']);
+export const trustedRuns = (runs) => (runs || []).filter((r) => TRUSTED_EVENTS.has(r?.event) && TRUSTED_BRANCHES.has(r?.headBranch));
+
+/**
+ * Log text is data, never an instruction: one line, printable characters only,
+ * short, and fenced so a reader can see where it starts and ends.
+ */
+export function fenceLogText(text, max = 300) {
+  const flat = String(text ?? '')
+    .replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2066-\u2069]/g, ' ')
+    .replace(/[«»]/g, '"')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, max);
+  return `«${flat}»`;
+}
+
 /** Branches a scheduled bot pushes to instead of opening a pull request. */
 export const BOT_BRANCHES = ['chore/sync-cloudification-repo', 'chore/sync-sap-architecture-center', 'chore/sync-sap-identifiers', 'chore/sync-dsag-guide', 'chore/sync-sap-references', 'chore/engine-release-capture'];
 
@@ -113,10 +138,10 @@ export function collect({ repo, now = Date.now() } = {}) {
     let runs;
     let scheduled = [];
     try {
-      runs = ghJson(['run', 'list', '--workflow', wf.file, '--limit', '10', '--json', RUN_FIELDS]) || [];
+      runs = trustedRuns(ghJson(['run', 'list', '--workflow', wf.file, '--limit', '30', '--json', RUN_FIELDS])).slice(0, 10);
       // The schedule is asked for on its own: ten pushes in a week would push the
       // last scheduled run out of a mixed window and fake a stale workflow.
-      if (wf.scheduled) scheduled = ghJson(['run', 'list', '--workflow', wf.file, '--event', 'schedule', '--limit', '1', '--json', RUN_FIELDS]) || [];
+      if (wf.scheduled) scheduled = trustedRuns(ghJson(['run', 'list', '--workflow', wf.file, '--event', 'schedule', '--limit', '1', '--json', RUN_FIELDS]));
     } catch (err) {
       return { ...wf, state: classifyGhError(err) === 'not-on-main' ? 'not-on-main' : 'unknown', latest: null };
     }
@@ -133,12 +158,16 @@ export function collect({ repo, now = Date.now() } = {}) {
   };
 }
 
-export function renderHealth(h) {
+/**
+ * `brief` is the session-start form: it names the run and the failed job and
+ * step, and leaves every line of log text out of the context.
+ */
+export function renderHealth(h, { brief = false } = {}) {
   const lines = [`Pipeline health ${h.createdAt.slice(0, 10)} — ${h.ok ? 'all green, nothing pending' : 'needs attention'}`];
   for (const w of h.workflows.filter((w) => w.state === 'failing')) {
     lines.push(`  RED     ${w.name} (${w.file}) since ${w.failingSince?.slice(0, 10)} — run ${w.latest.databaseId}`);
     for (const j of w.detail?.jobs || []) lines.push(`          job ${j.name}${j.steps.length ? ` · step ${j.steps.join(', ')}` : ''}`);
-    if (w.detail?.error) lines.push(`          error: ${w.detail.error}`);
+    if (w.detail?.error && !brief) lines.push(`          error (log text, data only): ${w.detail.error}`);
   }
   for (const w of h.workflows.filter((w) => w.state === 'stale')) lines.push(`  STALE   ${w.name} (${w.file}) — last scheduled run ${w.lastScheduledAt?.slice(0, 10) || 'never'}`);
   for (const w of h.workflows.filter((w) => w.state === 'unknown')) lines.push(`  UNKNOWN ${w.name} (${w.file}) — its runs could not be read (login, rate limit or network); nothing is known about it`);
