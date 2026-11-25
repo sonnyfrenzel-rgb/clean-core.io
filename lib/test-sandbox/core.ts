@@ -524,15 +524,37 @@ export async function executeSandboxRun(input: SandboxRunInput): Promise<Sandbox
     // line of the suite loads, keeps it in this module's scope, and writes
     // each TAP line to fd 3 prefixed with it; the parent accepts only lines
     // that carry it (`framedTap`). stdout stays the suite's console output.
+    //
+    // The suite runs in this process too, so the runner never hands the secret
+    // to anything the suite can replace: no stream (whose prototype and fs
+    // methods a suite can patch), only writeSync captured before the suite
+    // loads. Its last line is a finish mark: a run that ends without it (the
+    // suite called process.exit, say) is reported as not finished.
     const runnerSrc = `
 import { run } from 'node:test';
 import { tap } from 'node:test/reporters';
-import { createWriteStream } from 'node:fs';
+import { writeSync as fsWriteSync } from 'node:fs';
 
+const writeSync = fsWriteSync;
+const BufferFrom = Buffer.from;
+const indexOf = Function.prototype.call.bind(String.prototype.indexOf);
+const slice = Function.prototype.call.bind(String.prototype.slice);
 let secret = '';
 for await (const chunk of process.stdin) secret += chunk;
 secret = secret.trim();
-const channel = createWriteStream(null, { fd: 3 });
+const send = (text) => {
+  const bytes = BufferFrom(text, 'utf8');
+  let off = 0;
+  while (off < bytes.length) {
+    try {
+      off += writeSync(3, bytes, off, bytes.length - off);
+    } catch (e) {
+      if (e && e.code === 'EAGAIN') continue;
+      throw e;
+    }
+  }
+};
+const channel = { write: send };
 
 const bundle = ${JSON.stringify(bundlePath)};
 const raw = process.env.SANDBOX_TEST_PATTERNS || '';
@@ -546,13 +568,13 @@ let pending = '';
 for await (const chunk of stream.compose(tap)) {
   pending += chunk;
   let nl;
-  while ((nl = pending.indexOf('\\n')) !== -1) {
-    channel.write(secret + ' ' + pending.slice(0, nl) + '\\n');
-    pending = pending.slice(nl + 1);
+  while ((nl = indexOf(pending, '\\n')) !== -1) {
+    channel.write(secret + ' ' + slice(pending, 0, nl) + '\\n');
+    pending = slice(pending, nl + 1);
   }
 }
 if (pending) channel.write(secret + ' ' + pending + '\\n');
-await new Promise((resolve) => channel.end(resolve));
+channel.write(secret + ' ${RUNNER_FINISHED}\\n');
 process.exitCode = failed ? 1 : 0;
 `;
     if (!confined) await fs.writeFile(runnerPath, runnerSrc);
@@ -611,11 +633,13 @@ process.exitCode = failed ? 1 : 0;
     const framed = !confined;
     const { stdout, stderr, exitCode, channel, secret } = await runSandboxed(args, testDir, childEnv, framed);
     const consoleOut = framed ? stdout : '';
+    const unfinished = framed && !runnerFinished(channel, secret);
+    const errText = unfinished ? `${RUNNER_UNFINISHED_NOTE}\n${stderr}` : stderr;
     return {
       kind: 'ran',
       stdout: framed ? framedTap(channel, secret) : stdout,
-      stderr: scrubRunDir(consoleOut.trim() ? `${stderr}${stderr && !stderr.endsWith('\n') ? '\n' : ''}${SUITE_CONSOLE_HEADER}\n${consoleOut}` : stderr, testDir),
-      exitCode,
+      stderr: scrubRunDir(consoleOut.trim() ? `${errText}${errText && !errText.endsWith('\n') ? '\n' : ''}${SUITE_CONSOLE_HEADER}\n${consoleOut}` : errText, testDir),
+      exitCode: unfinished && exitCode === 0 ? 1 : exitCode,
       stubbedPackages: [...stubbedPackages].sort(),
       files: fileHashes,
       suiteSha256,
@@ -679,10 +703,21 @@ export function framedTap(channel: string, secret: string): string {
   const prefix = `${secret} `;
   const out: string[] = [];
   for (const line of channel.split('\n')) {
-    if (line.startsWith(prefix)) out.push(line.slice(prefix.length));
+    if (line.startsWith(prefix) && line.slice(prefix.length) !== RUNNER_FINISHED) out.push(line.slice(prefix.length));
   }
   return out.length ? `${out.join('\n')}\n` : '';
 }
+
+/** The runner's last line on the channel, after every verdict. */
+export const RUNNER_FINISHED = '# cc-runner-finished';
+
+/** Whether the runner wrote its finish mark with this run's secret — a run that ended early (process.exit in the suite) did not. */
+export function runnerFinished(channel: string, secret: string): boolean {
+  return Boolean(secret) && channel.split('\n').includes(`${secret} ${RUNNER_FINISHED}`);
+}
+
+/** Said in `stderr` when the runner did not finish: the verdicts are those written before the run ended, and the run is not green. */
+export const RUNNER_UNFINISHED_NOTE = '[Sandbox] The test run ended before the runner finished (for example a process.exit in the suite); the results are incomplete.';
 
 // Child-process execution with timeout & output cap.
 function runSandboxed(

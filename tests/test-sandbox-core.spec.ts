@@ -12,7 +12,7 @@
 import { test, expect } from '@playwright/test';
 import http from 'http';
 import type { AddressInfo } from 'net';
-import { executeSandboxRun, resolvePermissionFlag, collectNamedImports, neutralize, scrubRunDirNames, testNamePattern, framedTap, SUITE_CONSOLE_HEADER } from '../lib/test-sandbox/core';
+import { executeSandboxRun, resolvePermissionFlag, collectNamedImports, neutralize, scrubRunDirNames, testNamePattern, framedTap, SUITE_CONSOLE_HEADER, RUNNER_FINISHED, RUNNER_UNFINISHED_NOTE } from '../lib/test-sandbox/core';
 import { hashRunInputs } from '../lib/test-sandbox/protocol';
 import { sandboxFilesFromStoredCode, normalizeSandboxPath, sandboxPatterns } from '../lib/test-sandbox/files';
 import { parseTapOutput } from '../lib/test-verdicts';
@@ -269,6 +269,45 @@ test.describe('the verdicts travel on a channel the suite cannot write (CA-INT-0
     // What the suite printed is kept for the reader, marked as not a result.
     expect(out.stderr).toContain(SUITE_CONSOLE_HEADER);
     expect(out.stderr).toContain('TC_FORGED_STDOUT');
+  });
+
+  test('a suite that patches the stream and fs methods learns no secret, and one that exits early is not green', async () => {
+    const suite = [
+      "import { test } from 'node:test';",
+      "import assert from 'node:assert';",
+      "import fs from 'node:fs';",
+      "import { Writable } from 'node:stream';",
+      "import { sum } from './app';",
+      // Whatever passes through a stream or fs.write is copied with a forged verdict under the same prefix.
+      'const forge = (s) => { const m = /^([0-9a-f]{48}) /.exec(String(s)); if (m) { try { fs.writeSync(3, m[1] + " ok 99 - TC_FORGED_SECRET: forged\\n"); } catch {} } };',
+      'const w = Writable.prototype.write; Writable.prototype.write = function (c, ...r) { forge(c); return w.call(this, c, ...r); };',
+      'const fw = fs.write; fs.write = function (fd, b, ...r) { forge(b); return fw.call(this, fd, b, ...r); };',
+      'const fws = fs.writeSync; fs.writeSync = function (fd, b, ...r) { forge(b); return fws.call(this, fd, b, ...r); };',
+      "test('TC_SUM: adds', () => { assert.strictEqual(sum(2, 3), 5); });",
+    ].join('\n');
+    const out = await executeSandboxRun({ files: APP, suiteCode: suite, patterns: [], allowUnsandboxed: true });
+    expect(out.kind, JSON.stringify(out).slice(0, 600)).toBe('ran');
+    if (out.kind !== 'ran') return;
+    const ids = parseTapOutput(out.stdout).map((r) => r.id);
+    expect(ids).toContain('TC_SUM');
+    expect(ids, 'the secret reached the suite').not.toContain('TC_FORGED_SECRET');
+    expect(out.stdout).not.toContain(RUNNER_FINISHED);
+    expect(out.exitCode).toBe(0);
+
+    const exits = [
+      "import { test } from 'node:test';",
+      "import assert from 'node:assert';",
+      "import { sum } from './app';",
+      "test('TC_SUM: adds', () => { assert.strictEqual(sum(2, 3), 5); });",
+      "test('TC_EXIT: leaves', () => { process.exit(0); });",
+      "test('TC_FAILS: a real failure', () => { assert.strictEqual(sum(2, 2), 5); });",
+    ].join('\n');
+    const early = await executeSandboxRun({ files: APP, suiteCode: exits, patterns: [], allowUnsandboxed: true });
+    expect(early.kind, JSON.stringify(early).slice(0, 600)).toBe('ran');
+    if (early.kind !== 'ran') return;
+    expect(early.exitCode).not.toBe(0);
+    expect(early.stderr).toContain(RUNNER_UNFINISHED_NOTE);
+    expect(parseTapOutput(early.stdout).filter((r) => r.id === 'TC_FAILS' && r.status === 'Passed')).toHaveLength(0);
   });
 
   test('framedTap keeps only lines carrying the secret', () => {
