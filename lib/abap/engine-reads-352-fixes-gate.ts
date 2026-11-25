@@ -3,7 +3,7 @@ import { engineVersionAtLeast } from '../score-rule';
 /**
  * The engine version gate of release 3.5.2 for two QA fixes, named apart from the engine 4 switch that the engine 4
  * strand gates at the same release (`engine-reads-352-gate.ts` there): two corrections of the process skeleton's
- * reading found by the QA review of 3645b6175. Both change the map, the rules and the story read off it, never a signed finding:
+ * reading. Both change the map, the rules and the story read off it, never a signed finding:
  *
  *   - **a call site that only becomes collapsed re-opens the routine above it** (`collapseSmallRegions`,
  *     `skeleton/collapse.ts`): the pass repeats until nothing moves, and a call site whose `collapsed` state changed
