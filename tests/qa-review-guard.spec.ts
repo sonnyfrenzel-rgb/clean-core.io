@@ -355,8 +355,18 @@ test.describe('the reviewer', () => {
     const { callReviewer } = await lib('openrouter.mjs');
     const sentinel = 'PRIVATE-REVIEW-SENTINEL';
     const notJson = async () => new Response(`${sentinel} this is not json`, { status: 200 });
-    const error = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: notJson }).catch((e: Error) => e);
+    const error = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: notJson, retries: 0 }).catch((e: Error) => e);
     expect(String(error.message)).toBe('OpenRouter returned a response that is not JSON.');
+    // A body that is not JSON after a 200 is retried like a 5xx; only the last attempt gives up (25.11.2026: the
+    // 3.5.2 delta review failed twice on it with no retry).
+    let cut = 0;
+    const cutTwice = async () => {
+      cut++;
+      return new Response(`${sentinel} cut`, { status: 200 });
+    };
+    const error0 = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: cutTwice, retries: 2, retryDelayMs: () => 10 }).catch((e: Error) => e);
+    expect(String(error0.message)).toBe('OpenRouter returned a response that is not JSON.');
+    expect(cut, 'a body that is not JSON is tried again').toBe(3);
     const emptyContent = async () => new Response(JSON.stringify({ choices: [{ finish_reason: sentinel, message: { content: '' } }], usage: { completion_tokens: sentinel } }), { status: 200 });
     const error2 = await callReviewer({ apiKey: 'k', system: 's', user: 'u', schema: {}, effort: 'medium', fetchImpl: emptyContent }).catch((e: Error) => e);
     expect(String(error2.message)).toMatch(/^OpenRouter returned no review content/);

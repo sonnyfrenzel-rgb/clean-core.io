@@ -207,6 +207,13 @@ export async function callReviewer({ apiKey, system, user, schema, effort, model
         json = await res.json();
       } catch {
         // A SyntaxError from the parser quotes part of the input — never let it through.
+        // A body that is not JSON after a 200 is a cut connection or a keep-alive-only stream, not a refusal: on
+        // 25.11.2026 the 3.5.2 delta review failed twice in a row on it, with no finding read. It is retried like a
+        // 5xx; only the last attempt gives up.
+        if (attempt < retries) {
+          await sleep(retryDelayMs(attempt));
+          continue;
+        }
         throw new Error('OpenRouter returned a response that is not JSON.');
       }
 

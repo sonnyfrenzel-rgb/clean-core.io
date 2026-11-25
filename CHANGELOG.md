@@ -80,6 +80,9 @@ do not change.
   23.12.2026. The two-stage registration (L6) is not built for now (owner decision 25.11.2026).
 
 ### Fixed (QA agent)
+- A response from OpenRouter that is not JSON after a 200 (a cut connection) is retried like a 5xx instead of
+  ending the review: the 3.5.2 delta review failed on it twice in a row without reading a line
+  (`scripts/qa/lib/openrouter.mjs`, `tests/qa-review-guard.spec.ts`).
 - The QA delta review starts from `main` when its last checkpoint lies behind `main`. Since 24.11.2026 the checkpoint
   sat behind the 3.5.0 and 3.5.1 releases, the range no longer fit one call, and every push to `dev` came back
   `no_review` without reading any code (`scripts/qa/lib/git-delta.mjs`, `tests/qa-review-guard.spec.ts`).
