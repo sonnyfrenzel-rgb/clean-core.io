@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (QA agent)
+- The QA delta review starts from `main` when its last checkpoint lies behind `main`. Since 24.11.2026 the checkpoint
+  sat behind the 3.5.0 and 3.5.1 releases, the range no longer fit one call, and every push to `dev` came back
+  `no_review` without reading any code (`scripts/qa/lib/git-delta.mjs`, `tests/qa-review-guard.spec.ts`).
+
 ### Changed
 
 - Economics: one click on **Use typical assumptions** (3.5.1, ADR-144; owner 24.11.2026) fills every figure still
