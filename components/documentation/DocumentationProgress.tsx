@@ -220,7 +220,7 @@ export default function DocumentationProgress({
           {total}
         </span>
       </div>
-      {end.kind !== 'running' ? (
+      {'text' in end ? (
         <div
           data-doc-progress-end-text=""
           className={cn(
@@ -245,7 +245,7 @@ export default function DocumentationProgress({
         list
       )}
       <span aria-live="polite" data-doc-progress-live="" className="sr-only">
-        {end.kind === 'running' ? (runningStage ? runningStage.label : '') : end.text}
+        {end.kind === 'running' ? (runningStage ? runningStage.label : '') : 'text' in end ? end.text : ''}
       </span>
     </section>
   );

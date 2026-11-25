@@ -1077,8 +1077,10 @@ export default function DocumentationPage() {
             ? wt('doc.otherTab')
             : progressBlockers.length > 0
               ? progressBlockers.join(' ')
-              // Nothing starts it on opening (3.0.21, item 1): not "starting the model call" — it waits for the button.
-              : wt('doc.businessWaitsForClick');
+              : null;
+  // Nothing starts it on opening (3.0.21, item 1): with nothing in the way it waits for the button, not "starting the
+  // model call" — and says nothing of its own (statement 22c, 4: the button names the recipient).
+  const businessWaitsForClick = !!project && isOwner && !modelAvailability.loading && businessAbsence === null;
   const progress = documentationProgress({
     loading,
     loadError: loadError || null,
@@ -1099,7 +1101,7 @@ export default function DocumentationPage() {
       failedAt: businessFailedAt,
       onRecord: Boolean(parsedBusinessDoc),
       absence: businessAbsence,
-      waitsForClick: businessAbsence === wt('doc.businessWaitsForClick'),
+      waitsForClick: businessWaitsForClick,
       availabilityLoading: modelAvailability.loading,
       expected: businessExpected,
       plan: businessPlanLine,
@@ -1194,6 +1196,8 @@ export default function DocumentationPage() {
     byok: modelAvailability.keySource === 'byok',
     // 13.11.2026 — the deployment rewords the draft for a business reader: two calls, and the line says so.
     rewording: modelAvailability.statementsRewording,
+    // Statement 22c, 4: the button that asks for the business sentences names the recipient, as "Generate draft" does.
+    company: modelAvailability.known ? providerCompanyOf(modelAvailability.provider) : null,
     requesting: statementProposal.requesting,
     message: statementProposal.message,
     onRequest: statementProposal.request,

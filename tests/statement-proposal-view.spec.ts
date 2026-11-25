@@ -89,8 +89,8 @@ function docOf(source: string): ProcessDocumentation {
   return buildProcessDocumentation({ source, map });
 }
 
-const panel = (view: ProposalView | null, canRequest: boolean): StatementProposalPanelProps => ({
-  view, canRequest, byok: false, requesting: false, message: null, onRequest: () => {},
+const panel = (view: ProposalView | null, canRequest: boolean, company: string | null = 'Google'): StatementProposalPanelProps => ({
+  view, canRequest, byok: false, company, requesting: false, message: null, onRequest: () => {},
 });
 
 const render = (doc: ProcessDocumentation, proposal?: StatementProposalPanelProps) =>
@@ -127,7 +127,8 @@ test('without a proposal the page is what it was, and a reader sees nothing to p
 test('the owner gets one button, with what it costs said before the click', () => {
   const html = render(docOf(SOURCE), panel(applyStatementProposal(SOURCE, null), true));
   expect(html).toContain('data-statement-proposal-panel="not-requested"');
-  expect(html).toContain('Propose business sentences');
+  // Statement 22c, 4: the button names the recipient, as "Generate draft" does.
+  expect(html).toContain('Propose business sentences (sends code to Google)');
   expect(html).toContain(STATEMENT_COST_LINE);
   expect(html).not.toMatch(/data-statement-pair/);
 });
@@ -148,7 +149,17 @@ test('proposal on top, evidence beneath — at the element and in the list', () 
   for (const statement of doc.statements) expect(list).toContain(statement.text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/'/g, '&#x27;'));
   expect(list).toContain(B_READ);
   expect(list.indexOf(B_READ)).toBeLessThan(list.indexOf(doc.statements.find((s) => s.anchors.some((r) => r.lineStart === 3))!.text.slice(0, 20)));
-  expect(html).toContain('Ask the model again');
+  expect(html).toContain('Ask the model again (sends code to Google)');
+});
+
+test('statement 22c, 4: the button names the provider of the key actually used — Anthropic too, never a guess', () => {
+  const view = applyStatementProposal(SOURCE, null);
+  expect(render(docOf(SOURCE), panel(view, true, 'Anthropic'))).toContain('Propose business sentences (sends code to Anthropic)');
+  const unknown = render(docOf(SOURCE), panel(view, true, null));
+  expect(unknown).toContain('Propose business sentences (sends code to the AI provider)');
+  expect(unknown).not.toMatch(/sends code to (Google|Anthropic)/);
+  const again = render(docOf(SOURCE), panel(applyStatementProposal(SOURCE, recordFor(SOURCE)), true, 'Anthropic'));
+  expect(again).toContain('Ask the model again (sends code to Anthropic)');
 });
 
 test('a contradiction is marked with words and a reason, and is not a chip', () => {

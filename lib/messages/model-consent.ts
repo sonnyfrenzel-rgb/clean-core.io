@@ -42,6 +42,16 @@ export function regenerateDraftLabel(company: string | null, lang: UiLanguage = 
   return `Regenerate draft (sends code to ${company ?? 'the AI provider'})`;
 }
 
+/**
+ * Statement 22c, 4 — the second trigger of Documentation: the button that asks for the business sentences ("only when
+ * asked for") names the recipient as `generateDraftLabel` does, with the provider of the key actually used; before
+ * the key is known, the generic provider. `again`: a proposal is on record and the owner asks once more.
+ */
+export function proposeSentencesLabel(company: string | null, again = false, lang: UiLanguage = UI_LANGUAGE): string {
+  if (lang === 'de') return `${again ? 'Modell erneut fragen' : 'Fachsätze vorschlagen'} (sendet Code an ${company ?? 'den KI-Anbieter'})`;
+  return `${again ? 'Ask the model again' : 'Propose business sentences'} (sends code to ${company ?? 'the AI provider'})`;
+}
+
 /** Item 2 — the help line under the main switch "Automatic AI steps" in Settings. */
 export function autoModelStepsHelp(lang: UiLanguage = UI_LANGUAGE): string {
   if (lang === 'de') {

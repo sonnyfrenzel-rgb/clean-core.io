@@ -58,11 +58,10 @@ export const DOCUMENTATION_MESSAGES = {
   'doc.businessOfferLead':
     'Who does what at each step, who is accountable, and the controls — proposed by a language model from the process documentation read from your code. The steps and their lines stay the code reading.',
   'doc.businessGenerate': 'Generate the business SOP & RACI',
-  // Nothing writes the layer on opening (legal review 06.11.2026, 3.0.21, item 1): the progress card says it waits.
-  'doc.businessWaitsForClick': 'Waits for your click on Generate draft below; nothing is sent before.',
-  // The end of the progress card while the layer waits for that click — one sentence, not "Nothing more to write — Not
-  // written yet." (UX review 22.11.2026, Q4).
-  'doc.endWaitsForClick': 'The process description is done. The SOP and the RACI wait for your click on Generate draft below; nothing is sent before.',
+  // Nothing writes the layer on opening (legal review 06.11.2026, 3.0.21, item 1). The wait for the click has no
+  // sentence of its own: the progress card is not shown then (ADR-107 (1)), the button names the recipient and the cost
+  // line says opening calls no model — the waiting sentence of the progress card was never shown and is gone
+  // (legal review, document 22, question 4; statement 22c, 4).
   'doc.businessBlockedTitle': 'Not yet possible',
   'doc.businessNeedsDocumentation':
     'The business layer is written from the process documentation, and none is saved yet. Read it from the code first; that takes no model call.',

@@ -5,6 +5,7 @@ import CcButton from '@/components/cc/Button';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { anchorsWords } from '@/lib/process-documentation';
 import { CONTRADICTION_LABEL, type StatementContradiction } from '@/lib/statement-contradiction';
+import { proposeSentencesLabel } from '@/lib/messages/model-consent';
 import {
   statementCostLine,
   type CheckedProposal,
@@ -101,6 +102,11 @@ export interface StatementProposalPanelProps {
   byok: boolean;
   /** 13.11.2026 — the deployment rewords the draft for a business reader: two calls, and the line says so. */
   rewording?: boolean;
+  /**
+   * The company the code goes to with the key actually used (`providerCompanyOf`), `null` while the key is not known —
+   * the button names it (statement 22c, 4).
+   */
+  company: string | null;
   requesting: boolean;
   message: string | null;
   onRequest: () => void;
@@ -122,7 +128,7 @@ function summaryOf(view: ProposalView): string {
   return parts.join(' · ');
 }
 
-export function StatementProposalPanel({ view, canRequest, byok, rewording = false, requesting, message, onRequest, costLine = true }: StatementProposalPanelProps) {
+export function StatementProposalPanel({ view, canRequest, byok, rewording = false, company, requesting, message, onRequest, costLine = true }: StatementProposalPanelProps) {
   const proposed = view?.state === 'proposed';
   // A reader with nothing stored sees nothing at all: there is no action for
   // them here, and an absence is not news.
@@ -135,7 +141,7 @@ export function StatementProposalPanel({ view, canRequest, byok, rewording = fal
       {canRequest && (
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <CcButton variant={proposed ? 'ghost' : 'secondary'} busy={requesting} onClick={onRequest}>
-            {proposed ? 'Ask the model again' : 'Propose business sentences'}
+            {proposeSentencesLabel(company, proposed)}
           </CcButton>
           {costLine ? (
             <span data-statement-cost="" className="text-[12px] text-cc-ink-muted">

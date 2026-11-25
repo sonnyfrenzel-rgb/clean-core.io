@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { leasedFillModel } from '../lib/transformation/lease-client';
-import { generateDraftLabel, providerCompanyOf, regenerateDraftLabel } from '../lib/messages/model-consent';
+import { generateDraftLabel, proposeSentencesLabel, providerCompanyOf, regenerateDraftLabel } from '../lib/messages/model-consent';
 
 /**
  * Release 3.0.21, legal review of 06.11.2026, item 1: Transformation and
@@ -43,6 +43,28 @@ test.describe('the button names where the code goes', () => {
     // Never a guessed provider before the key is known.
     expect(generateDraftLabel(null)).toBe('Generate draft (sends code to the AI provider)');
     expect(generateDraftLabel(null, 'de')).toBe('Entwurf erzeugen (sendet Code an den KI-Anbieter)');
+  });
+});
+
+test.describe('the business sentences name where the code goes (statement 22c, 4)', () => {
+  test('"Propose business sentences (sends code to {provider})", with the provider of the key actually used', () => {
+    // Derived from the key, never written in: a Google key and an Anthropic key (own Claude key from 23.12.2026).
+    expect(proposeSentencesLabel(providerCompanyOf('gemini'))).toBe('Propose business sentences (sends code to Google)');
+    expect(proposeSentencesLabel(providerCompanyOf('anthropic'))).toBe('Propose business sentences (sends code to Anthropic)');
+    expect(proposeSentencesLabel(providerCompanyOf('anthropic'), true)).toBe('Ask the model again (sends code to Anthropic)');
+    expect(proposeSentencesLabel(providerCompanyOf('anthropic'), false, 'de')).toBe('Fachsätze vorschlagen (sendet Code an Anthropic)');
+    expect(proposeSentencesLabel(null)).toBe('Propose business sentences (sends code to the AI provider)');
+    // The SOP and RACI button, for the same Anthropic key, in the interface language (statement 22c, 4 (3)).
+    expect(generateDraftLabel(providerCompanyOf('anthropic'))).toBe('Generate draft (sends code to Anthropic)');
+    expect(regenerateDraftLabel(providerCompanyOf('anthropic'))).toBe('Regenerate draft (sends code to Anthropic)');
+  });
+
+  test('the panel takes the provider from the key the page reports, and its button reads the label', () => {
+    const page = code(DOCUMENTATION);
+    expect(page).toContain('company: modelAvailability.known ? providerCompanyOf(modelAvailability.provider) : null,');
+    const panel = code('components/documentation/StatementProposal.tsx');
+    expect(panel).toContain('{proposeSentencesLabel(company, proposed)}');
+    expect(panel).not.toMatch(/'Propose business sentences'|'Ask the model again'/);
   });
 });
 
@@ -120,8 +142,11 @@ test.describe('Documentation', () => {
     const src = code(DOCUMENTATION);
     expect(src).toMatch(/data-generate-business-layer\s*>\s*<span className="min-w-0 text-left leading-snug whitespace-normal">\{generateDraftLabel\(modelAvailability\.known \? providerCompanyOf\(modelAvailability\.provider\) : null\)\}<\/span>\s*<\/CcButton>/);
     const absence = src.slice(src.indexOf('const businessAbsence = !project'), src.indexOf('const progress = documentationProgress('));
-    expect(absence).toContain(": wt('doc.businessWaitsForClick');");
-    expect(read('lib/messages/documentation.ts')).toContain("'doc.businessWaitsForClick':");
+    // Statement 22c, 4: "nothing is sent before" was never shown in 3.5.0 (no card while waiting, ADR-107 (1)) and is
+    // gone; the button names the recipient and the cost line says opening calls no model.
+    expect(absence).toContain('const businessWaitsForClick = !!project && isOwner && !modelAvailability.loading && businessAbsence === null;');
+    expect(read('lib/messages/documentation.ts')).not.toMatch(/nothing is sent before|WaitsForClick'/);
+    expect(read('lib/messages/documentation.ts')).toContain('Opening Documentation calls no model');
   });
 });
 

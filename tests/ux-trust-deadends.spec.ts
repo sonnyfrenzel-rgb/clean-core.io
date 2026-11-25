@@ -127,17 +127,19 @@ test.describe('Q4 — no dead ends', () => {
     wrote: { description: true, business: false },
   };
 
-  test('Documentation: a layer that waits for the click says so in one sentence', () => {
+  test('Documentation: a layer that waits for the click is neither a stop nor "nothing more to write"', () => {
     const { end, stages } = documentationProgress({
       ...base,
-      business: { ...base.business, absence: DOCUMENTATION_MESSAGES['doc.businessWaitsForClick'], waitsForClick: true },
+      business: { ...base.business, absence: null, waitsForClick: true },
     });
-    expect(end.kind).toBe('nothing');
-    if (end.kind !== 'nothing') return;
-    expect(end.text).not.toContain('Nothing more to write');
-    expect(end.text).not.toMatch(/Not written yet/);
-    expect(end.text).toBe(DOCUMENTATION_MESSAGES['doc.endWaitsForClick']);
-    expect(stages.find((s) => s.key === 'business')!.detail).not.toMatch(/Not written yet/);
+    // Statement 22c, 4: the wait has no sentence of its own — the page shows no card then (ADR-107 (1)), the button
+    // names the recipient. The business stage stays pending.
+    expect(end.kind).toBe('waiting');
+    expect('text' in end).toBe(false);
+    const business = stages.find((s) => s.key === 'business')!;
+    expect(business.state).toBe('pending');
+    expect(business.detail).toBeNull();
+    expect(Object.values(DOCUMENTATION_MESSAGES).join('\n')).not.toContain('nothing is sent before');
     // A real stop keeps its sentence.
     const off = documentationProgress({ ...base, business: { ...base.business, absence: 'The model is switched off for Documentation in your settings.' } });
     expect(off.end.kind === 'nothing' && off.end.text).toBe('Nothing more to write — The model is switched off for Documentation in your settings.');

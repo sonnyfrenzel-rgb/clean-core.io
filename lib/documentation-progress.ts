@@ -57,7 +57,10 @@ export interface DocProgressInput {
     onRecord: boolean;
     /** Why the layer is not written on this visit — model off, a reader, another tab, a blocker. Null: it will be. */
     absence: string | null;
-    /** The absence is only the wait for *Generate draft* — nothing stopped, the reader's click is next. */
+    /**
+     * Nothing stands in the way and nothing is on record: the layer waits for *Generate draft* — nothing stopped, the
+     * owner's click is next. The end is `waiting`, without a sentence (statement 22c, 4).
+     */
     waitsForClick?: boolean;
     /** The model availability is still being asked for. */
     availabilityLoading: boolean;
@@ -86,7 +89,9 @@ export type DocProgressEnd =
   | { kind: 'written'; text: string }
   | { kind: 'up-to-date'; text: string }
   | { kind: 'failed'; stage: DocStageKey; reason: string; text: string }
-  | { kind: 'nothing'; reason: string; text: string };
+  | { kind: 'nothing'; reason: string; text: string }
+  /** The SOP and RACI wait for the owner's click; the page shows no card for it (ADR-107 (1)), so there is no text. */
+  | { kind: 'waiting' };
 
 const LABEL: Record<DocStageKey, { label: string; note: string }> = {
   run: { label: M['doc.stage.run'], note: M['doc.stage.runNote'] },
@@ -186,11 +191,12 @@ export function documentationProgress(input: DocProgressInput): { stages: DocSta
       ? { stages: view(), end: { kind: 'written', text: M['doc.endWritten'] } }
       : { stages: view(), end: { kind: 'up-to-date', text: M['doc.endUpToDate'] } };
   }
-  if (b.absence) {
-    const end = nothing('business', b.absence);
-    // Waiting for the click is not "nothing more to write": the end says what comes next, in one sentence.
-    return b.waitsForClick ? { ...end, end: { ...end.end, text: M['doc.endWaitsForClick'] } } : end;
+  // Waiting for the click is not "nothing more to write" and not a stop: the business stage stays pending.
+  if (b.waitsForClick && !b.absence) {
+    s.business = { state: 'pending', detail: null, facts: planFacts };
+    return { stages: view(), end: { kind: 'waiting' } };
   }
+  if (b.absence) return nothing('business', b.absence);
   // Nothing in the way and nothing on record: the call is about to start.
   s.business = {
     state: 'active',
