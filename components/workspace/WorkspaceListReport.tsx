@@ -34,7 +34,6 @@ import {
   attentionRows,
   filterHomeRows,
   homeFilterActive,
-  homeRowsOf,
   homeStatusOptions,
   sortHomeRows,
   toHomeRow,
@@ -51,6 +50,7 @@ import { ROW_LEVELS, rowHasLevel, type RowFacts, type RowLevels } from '@/lib/wo
 // fetched when Run is confirmed, not with the list.
 import { AnalysisRunCancelled, runScope } from '@/lib/analysis-run-basics';
 import type { AnalysisRunStage } from '@/lib/analysis-run';
+import { ownRowsReader, runRowSteps } from '@/lib/workspace-row-flow';
 import { sourceFileName } from '@/lib/source-file-name';
 import { declaredTargetOf } from '@/lib/assessment-target';
 import type { Project } from '@/lib/types';
@@ -222,27 +222,19 @@ export default function WorkspaceListReport(_props: {
   // The own projects, every one of them, as lean rows from the server (H-O9).
   // Only the newest answer is shown: an older one arriving after a newer one
   // would put back rows the newer one had already corrected.
-  const seq = useRef(0);
+  // (`ownRowsReader`, `lib/workspace-row-flow.ts`: one reader for the page's life, so its sequence is shared.)
+  const [readOwnRows] = useState(() => ownRowsReader({
+    rows: (uid, rows, truncated) => {
+      setOwnFailedFor(null);
+      setLoaded({ uid, rows, truncated });
+    },
+    failed: (uid) => setOwnFailedFor(uid),
+  }));
   const lastRead = useRef(0);
   const refresh = useCallback(async (u: User) => {
-    const mine = ++seq.current;
     lastRead.current = Date.now();
-    const uid = u.uid;
-    try {
-      const res = await fetch('/api/workspace-rows', { headers: await bearer(u), cache: 'no-store' });
-      const body = (await res.json().catch(() => null)) as { truncated?: unknown } | null;
-      const rows = res.ok ? homeRowsOf(body) : null;
-      if (mine !== seq.current) return;
-      if (!rows) {
-        setOwnFailedFor(uid);
-        return;
-      }
-      setOwnFailedFor(null);
-      setLoaded({ uid, rows, truncated: body?.truncated === true });
-    } catch {
-      if (mine === seq.current) setOwnFailedFor(uid);
-    }
-  }, []);
+    await readOwnRows(u.uid, async () => fetch('/api/workspace-rows', { headers: await bearer(u), cache: 'no-store' }));
+  }, [readOwnRows]);
 
   // Read on arrival, and again whenever the page comes back into view: a run,
   // a design or a delete made in another tab shows here without a reload.
@@ -382,39 +374,44 @@ export default function WorkspaceListReport(_props: {
       const owns = () => controllers.current[row.id] === controller;
       setRuns((prev) => ({ ...prev, [row.id]: { phase: 'running', stages: [], scope: null } }));
       try {
-        // The row carries no source (H-O9): the project is read whole now, through the rules.
-        const project = await readOwnProject(row.id);
-        // Cancelled, or the list left, while the project was read: nothing more is set up.
-        if (!owns() || controller.signal.aborted) return;
-        if (!project || typeof project.legacyCode !== 'string' || !project.legacyCode.trim()) {
-          throw new Error(wt('homeList.runNoSource'));
-        }
-        const scope = runScope(project.legacyCode);
-        if (owns()) {
-          setRuns((prev) => {
-            const cell = prev[row.id];
-            return cell && cell.phase === 'running' ? { ...prev, [row.id]: { ...cell, scope } } : prev;
-          });
-        }
-        const { runAnalysis } = await import('@/lib/analysis-run');
-        await runAnalysis({
-          projectId: row.id,
-          legacyCode: project.legacyCode,
-          fileName: sourceFileName(project) || 'main.abap',
-          deployment: targetEditionOf(project.s4Deployment),
-          // Roadmap 7.10 - the declaration the project's last run was made under.
-          targetProfile: declaredTargetOf(project),
-          callModel,
+        // The row carries no source (H-O9): the project is read whole now, through the rules. Cancelled, or the list
+        // left, while it was read: nothing more is set up (`runRowSteps`, `lib/workspace-row-flow.ts`).
+        const ran = await runRowSteps({
+          read: () => readOwnProject(row.id),
+          owns,
           signal: controller.signal,
-          onStages: (stages) => {
-            if (!owns()) return;
+          sourceOf: (project) => (typeof project.legacyCode === 'string' ? project.legacyCode : null),
+          noSource: () => new Error(wt('homeList.runNoSource')),
+          scope: (source) => {
+            const scope = runScope(source);
+            setRuns((prev) => {
+              const cell = prev[row.id];
+              return cell && cell.phase === 'running' ? { ...prev, [row.id]: { ...cell, scope } } : prev;
+            });
+          },
+          stages: (stages: AnalysisRunStage[]) => {
             setRuns((prev) => {
               const cell = prev[row.id];
               if (!cell || cell.phase !== 'running') return prev;
               return { ...prev, [row.id]: { ...cell, stages } };
             });
           },
+          run: async (project, source, onStages) => {
+            const { runAnalysis } = await import('@/lib/analysis-run');
+            await runAnalysis({
+              projectId: row.id,
+              legacyCode: source,
+              fileName: sourceFileName(project) || 'main.abap',
+              deployment: targetEditionOf(project.s4Deployment),
+              // Roadmap 7.10 - the declaration the project's last run was made under.
+              targetProfile: declaredTargetOf(project),
+              callModel,
+              signal: controller.signal,
+              onStages,
+            });
+          },
         });
+        if (ran === 'cancelled') return;
         if (owns()) setRuns((prev) => ({ ...prev, [row.id]: undefined }));
         if (user) void refresh(user);
       } catch (err) {

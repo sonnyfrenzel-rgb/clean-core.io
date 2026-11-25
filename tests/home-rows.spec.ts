@@ -286,9 +286,10 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
     expect(list).not.toMatch(/limit\(\s*25\s*\)/);
     expect(list).not.toMatch(/where\('userId'/);
     expect(list).toContain("fetch('/api/workspace-rows'");
-    expect(list).toContain('homeRowsOf(body)');
-    // Only the newest answer is shown.
-    expect(list).toMatch(/if \(mine !== seq\.current\) return;/);
+    // Only the newest answer is shown (`ownRowsReader`, played through in tests/workspace-row-flow.spec.ts).
+    const flow = code('lib/workspace-row-flow.ts');
+    expect(flow).toContain('homeRowsOf(body)');
+    expect(flow).toMatch(/if \(mine !== seq\) return;/);
   });
 
   test('a full-list read is budgeted: 120 an hour per account, and coming back into view reads again at most every 30 s', () => {
@@ -297,7 +298,7 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
     const list = code('components/workspace/WorkspaceListReport.tsx');
     expect(list).toContain('const REVISIT_MS = 30_000;');
     expect(list).toContain("if (document.visibilityState === 'visible' && Date.now() - lastRead.current >= REVISIT_MS) void refresh(user);");
-    expect(list).toMatch(/const mine = \+\+seq\.current;\s*lastRead\.current = Date\.now\(\);/);
+    expect(list).toMatch(/const refresh = useCallback\(async \(u: User\) => \{\s*lastRead\.current = Date\.now\(\);\s*await readOwnRows\(/);
   });
 
   test('the cap of the list is said, never silent: the route answers `truncated` past MAX_ROWS and the list prints it', () => {
@@ -306,7 +307,8 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
     expect(route).toContain('.limit(MAX_ROWS + 1)');
     expect(route).toContain('truncated: snap.docs.length > MAX_ROWS');
     const list = code('components/workspace/WorkspaceListReport.tsx');
-    expect(list).toContain('truncated: body?.truncated === true');
+    expect(read('lib/workspace-row-flow.ts')).toContain('apply.rows(uid, rows, body?.truncated === true);');
+    expect(list).toContain('setLoaded({ uid, rows, truncated });');
     expect(list).toMatch(/\{loaded\?\.truncated \? \(\s*<p[^>]*data-home-truncated=""[^>]*>\{homeTruncated\(projects\.length\)\}<\/p>/);
     expect(read('CHANGELOG.md')).toContain('My workspace lists every project up to 2,000');
   });
@@ -315,9 +317,11 @@ test.describe('the row source — app/api/workspace-rows/route.ts and the list',
     // The row hands `runAnalysis` its controller's signal after the read; Cancel has aborted it by then.
     const list = code('components/workspace/WorkspaceListReport.tsx');
     expect(list).toContain('signal: controller.signal,');
-    // Cancelled or unmounted during the read: the row stops right after it, before anything else is set up.
-    expect(list).toMatch(/const project = await readOwnProject\(row\.id\);\s*if \(!owns\(\) \|\| controller\.signal\.aborted\) return;/);
-    expect(list).toMatch(/onStages: \(stages\) => \{\s*if \(!owns\(\)\) return;/);
+    // Cancelled or unmounted during the read: the row stops right after it, before anything else is set up
+    // (`runRowSteps`, played through with a held read in tests/workspace-row-flow.spec.ts).
+    const flow = code('lib/workspace-row-flow.ts');
+    expect(flow).toMatch(/const project = await steps\.read\(\);\s*if \(!steps\.owns\(\) \|\| steps\.signal\.aborted\) return 'cancelled';/);
+    expect(flow).toMatch(/await steps\.run\(project, source, \(stages\) => \{\s*if \(steps\.owns\(\)\) steps\.stages\(stages\);/);
     const requests: string[] = [];
     const before = globalThis.fetch;
     globalThis.fetch = (async (url: unknown) => {

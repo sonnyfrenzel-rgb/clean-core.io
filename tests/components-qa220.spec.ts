@@ -127,10 +127,13 @@ test.describe('state and ordering', () => {
     // AB-14b (H-O9): the own rows come from GET /api/workspace-rows, read on
     // arrival and whenever the page comes back into view. The rule of the
     // finding holds for those answers: only the newest request may write.
+    // Since 3.5.2 the reader is `ownRowsReader` (`lib/workspace-row-flow.ts`), played through with answers in both
+    // orders in `tests/workspace-row-flow.spec.ts`; here, that the list reads through one reader for the page.
     const src = code('components/workspace/WorkspaceListReport.tsx');
-    expect(src).toContain('const mine = ++seq.current;');
-    expect(src).toMatch(/if \(mine !== seq\.current\) return;\s*if \(!rows\)/);
-    expect(src).toContain('if (mine === seq.current) setOwnFailedFor(uid);');
+    expect(src).toContain('const [readOwnRows] = useState(() => ownRowsReader({');
+    const flow = code('lib/workspace-row-flow.ts');
+    expect(flow).toMatch(/if \(mine !== seq\) return;\s*if \(!rows\)/);
+    expect(flow).toContain('if (mine === seq) apply.failed(uid);');
   });
 
   test('1db57c2cad09 · rows are shown only to the account that loaded them', () => {

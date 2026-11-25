@@ -35,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   QA `5f9333754909`). Repro: `tests/engine-352-skeleton-readings.spec.ts`.
 - Tests: the CSP spec checks that `next.config.mjs` and the route classifier both name Re-design and the
   requirements page (`tests/csp-report-only.spec.ts`; QA `3ae77275d7ec`).
+- My workspace: the own-rows read and a run started from a row are functions of what they call
+  (`lib/workspace-row-flow.ts`), so their order of answers is played through in a test: an older rows answer or
+  failure arriving after a newer one changes nothing, and Cancel while the project is read starts no run and shows no
+  stage (`tests/workspace-row-flow.spec.ts`; behaviour unchanged; QA `22bebcbecde1`, `51aefff9ec2b`, `b719ddf860e5`).
 
 ### Changed
 
