@@ -43,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`lib/workspace-row-flow.ts`), so their order of answers is played through in a test: an older rows answer or
   failure arriving after a newer one changes nothing, and Cancel while the project is read starts no run and shows no
   stage (`tests/workspace-row-flow.spec.ts`; behaviour unchanged; QA `22bebcbecde1`, `51aefff9ec2b`, `b719ddf860e5`).
+  The same spec now also holds that `truncated: true` reaches the list, and that a stage reported after the row was
+  lost is not shown (QA `a07ec67fb046`, `23f078263d72`).
 - Tests (rendered, need the emulators and a server): a Ctrl/Cmd-click on a later tool before the walk-through opens
   it in a new tab with no soft-gate note (`tests/analyze-endings.spec.ts`; QA `eef17812d68e`); the walk-through on
   the real Analyze page at 1024 px — two stations fit with the card above, Pause hands the focus back and resumes

@@ -25,8 +25,8 @@ function deferred<T>() {
 }
 
 const rowOf = (id: string): HomeRow => toHomeRow({ id, name: id } as Project & { id: string });
-const answer = (rows: HomeRow[], status = 200) =>
-  new Response(JSON.stringify({ rows, truncated: false }), { status, headers: { 'content-type': 'application/json' } });
+const answer = (rows: HomeRow[], status = 200, truncated = false) =>
+  new Response(JSON.stringify({ rows, truncated }), { status, headers: { 'content-type': 'application/json' } });
 
 test.describe('the own rows: only the newest request writes', () => {
   const reader = () => {
@@ -64,6 +64,14 @@ test.describe('the own rows: only the newest request writes', () => {
       expect(shown).toEqual([['new-1']]);
       expect(failed).toEqual([]);
     }
+  });
+
+  test('the cap is carried: an answer with `truncated: true` reaches the list as true, any other as false', async () => {
+    const seen: boolean[] = [];
+    const read = ownRowsReader({ rows: (_uid, _rows, truncated) => seen.push(truncated), failed: () => {} });
+    await read('u1', async () => answer([rowOf('a')], 200, true));
+    await read('u1', async () => answer([rowOf('a')]));
+    expect(seen).toEqual([true, false]);
   });
 
   test('the newest request failing is said, for the account that asked', async () => {
@@ -135,6 +143,34 @@ test.describe('a run from a row, cancelled while the project is read', () => {
     await expect(done).resolves.toBe('ran');
     expect(runs).toEqual(['p1']);
     expect(scopes).toEqual(['REPORT z.']);
+    expect(stages).toEqual([['evidence']]);
+  });
+
+  test('a stage reported after the row was lost is not shown; one reported before it is', async () => {
+    const owned = { value: true };
+    const stages: string[][] = [];
+    let report!: (s: string[]) => void;
+    const running = deferred<void>();
+    const done = runRowSteps<P, string[]>({
+      read: async () => ({ id: 'p1', legacyCode: 'REPORT z.' }),
+      owns: () => owned.value,
+      signal: new AbortController().signal,
+      sourceOf: (p) => p.legacyCode ?? null,
+      noSource: () => new Error('no source'),
+      scope: () => {},
+      stages: (s) => stages.push(s),
+      run: async (_p, _source, onStages) => {
+        report = onStages;
+        await running.promise;
+      },
+    });
+    await expect.poll(() => typeof report).toBe('function');
+    report(['evidence']);
+    // Cancel (or a second start) takes the row while the run is still going; its later stages belong to no row.
+    owned.value = false;
+    report(['evidence', 'model']);
+    running.resolve();
+    await expect(done).resolves.toBe('ran');
     expect(stages).toEqual([['evidence']]);
   });
 
