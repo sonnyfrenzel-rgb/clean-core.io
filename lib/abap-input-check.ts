@@ -14,23 +14,27 @@
 
 import { readStatements, type AbapStatement } from './abap/statement-reader';
 
-/** Top-level constructs. One of them appearing at the start of a line is ABAP. */
+/**
+ * Top-level constructs. One of them appearing at the start of a line is ABAP.
+ * The indent is horizontal whitespace only: `^` already anchors at every line, and an indent that could also
+ * cross line breaks made each pattern retry every run of blank lines from each of its lines (quadratic).
+ */
 const CONSTRUCTS = [
-  /^\s*REPORT\b/im,
-  /^\s*PROGRAM\b/im,
-  /^\s*(?:TYPE-POOL|TYPE-POOLS)\b/im,
-  /^\s*INCLUDE\b/im,
-  /^\s*FUNCTION\b/im,
-  /^\s*FORM\b/im,
-  /^\s*MODULE\b/im,
-  /^\s*(?:CLASS|INTERFACE)\s+\S+\s+(?:DEFINITION|IMPLEMENTATION)\b/im,
-  /^\s*METHOD\b/im,
-  /^\s*START-OF-SELECTION\b/im,
-  /^\s*(?:INITIALIZATION|AT SELECTION-SCREEN|END-OF-SELECTION|TOP-OF-PAGE)\b/im,
-  /^\s*(?:DATA|TYPES|CONSTANTS|FIELD-SYMBOLS|STATICS|PARAMETERS|SELECT-OPTIONS|TABLES)\b/im,
-  /^\s*SELECT\b/im,
-  /^\s*(?:LOOP\s+AT|READ\s+TABLE|CALL\s+FUNCTION|CALL\s+METHOD|PERFORM|WRITE|MOVE-CORRESPONDING|MODIFY|INSERT|UPDATE|DELETE)\b/im,
-  /^\s*(?:DEFINE\s+VIEW|@AbapCatalog|@EndUserText)\b/im,
+  /^[^\S\r\n]*REPORT\b/im,
+  /^[^\S\r\n]*PROGRAM\b/im,
+  /^[^\S\r\n]*(?:TYPE-POOL|TYPE-POOLS)\b/im,
+  /^[^\S\r\n]*INCLUDE\b/im,
+  /^[^\S\r\n]*FUNCTION\b/im,
+  /^[^\S\r\n]*FORM\b/im,
+  /^[^\S\r\n]*MODULE\b/im,
+  /^[^\S\r\n]*(?:CLASS|INTERFACE)\s+\S+\s+(?:DEFINITION|IMPLEMENTATION)\b/im,
+  /^[^\S\r\n]*METHOD\b/im,
+  /^[^\S\r\n]*START-OF-SELECTION\b/im,
+  /^[^\S\r\n]*(?:INITIALIZATION|AT SELECTION-SCREEN|END-OF-SELECTION|TOP-OF-PAGE)\b/im,
+  /^[^\S\r\n]*(?:DATA|TYPES|CONSTANTS|FIELD-SYMBOLS|STATICS|PARAMETERS|SELECT-OPTIONS|TABLES)\b/im,
+  /^[^\S\r\n]*SELECT\b/im,
+  /^[^\S\r\n]*(?:LOOP\s+AT|READ\s+TABLE|CALL\s+FUNCTION|CALL\s+METHOD|PERFORM|WRITE|MOVE-CORRESPONDING|MODIFY|INSERT|UPDATE|DELETE)\b/im,
+  /^[^\S\r\n]*(?:DEFINE\s+VIEW|@AbapCatalog|@EndUserText)\b/im,
 ];
 
 export function looksLikeAbap(code: string | null | undefined): boolean {
