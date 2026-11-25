@@ -300,21 +300,23 @@ test('client-writable project fields keep their type and size', async () => {
     manualTestingRequirements: [],
     status: 'testing',
   })), 'testing from the browser').toBe(true);
+  // 3.5.3: the artefact fields are the server routes' (artefacts, contract) — the browser writes none of them.
   expect(await denied(() => updateDoc(ref, {
     testSuite: { code: 'CLASS ltc DEFINITION FOR TESTING.' },
     coverageEstimate: { percentage: 0, explanation: 'n/a', missingCoverage: 'N/A' },
-  })), 'testing: the typed suite fields').toBe(false);
+  })), 'testing: the typed suite fields from the browser').toBe(true);
   expect(await denied(() => setDoc(ref, { s4Environment: 'live' }, { merge: true })), 'testing: environment').toBe(false);
   expect(await denied(() => updateDoc(ref, {
     businessDocumentation: '{"summary":"x"}', generatedCode: '[]',
-  })), 'documentation: business').toBe(false);
+  })), 'documentation: business from the browser').toBe(true);
   // 3.0.21: 'documented' is the artefacts route's label, not the browser's.
   expect(await denied(() => updateDoc(ref, {
     documentation: '# Process', generatedCode: '[]', status: 'documented',
   })), 'documentation with its label').toBe(true);
   expect(await denied(() => updateDoc(ref, {
     documentation: '# Process', generatedCode: '[]',
-  })), 'documentation').toBe(false);
+  })), 'documentation from the browser').toBe(true);
+  expect(await denied(() => updateDoc(ref, { generatedCode: '[]' })), 'generated code from the browser').toBe(true);
 
   // Exports: the browser only removes stale entries (Analyze and Design do).
   expect(await denied(() => updateDoc(ref, { 'exports.added_by_browser': 'x' })), 'exports: an added entry').toBe(true);

@@ -472,10 +472,12 @@ service cloud.firestore {
                       // `testCases` and `manualTestingRequirements` followed in 3.0.21
                       // (SEC-2026-889/-890): POST /api/projects/{projectId}/artefacts
                       // writes them since 3.0.14, and no stage writes them from the browser.
+                      // `generatedCode`, `documentation`, `businessDocumentation`, `testSuite` and
+                      // `coverageEstimate` followed in 3.5.3: the artefact and contract routes write them
+                      // (with their checks, digests and AI marking), and no stage writes them from the browser.
                       request.resource.data.diff(resource.data).affectedKeys().hasOnly([
                         'status', 'legacyCode', 's4Deployment', 'solutionDesign',
-                        'generatedCode', 'documentation', 'businessDocumentation', 'presentation',
-                        'testSuite', 'coverageEstimate',
+                        'presentation',
                         'exports', 'updatedAt', 's4Environment',
                         'nonFunctionalRequirements'
                       ])

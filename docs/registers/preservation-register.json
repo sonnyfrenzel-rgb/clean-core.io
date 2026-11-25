@@ -38,7 +38,7 @@
     },
     "rules": {
       "file": "firestore.rules",
-      "sha256OfLfNormalisedText": "91559a6078a48019a9e0f84bae1189e14085f93cae560dfb3ee89ec81d85af9b",
+      "sha256OfLfNormalisedText": "1d16db07ee3aed4c5bb1051cf91ed330a35c53e3d8dbfdc33c0d47f8ab200017",
       "deploymentRecord": "docs/registers/rules-deployment.json",
       "note": "Hashed after normalising CRLF to LF so the value is the same on Windows and on CI.",
       "projectDocument": {
@@ -50,12 +50,7 @@
           "legacyCode",
           "s4Deployment",
           "solutionDesign",
-          "generatedCode",
-          "documentation",
-          "businessDocumentation",
           "presentation",
-          "testSuite",
-          "coverageEstimate",
           "exports",
           "updatedAt",
           "s4Environment",
@@ -189,15 +184,10 @@
       "stillAttestedNotSigned": "The audit pack still lists these fields in 07-user-attested.md: they remain a self-declaration of the signed-in account. Server-validated means truthfully recorded, not official."
     },
     "clientWritableFieldsNoStageWrites": {
-      "businessDocumentation": "Written by the Documentation stage through the artefacts route. Since roadmap 3.0.14, item 9 no stage writes it from the browser: the stage hands it to POST /api/projects/{projectId}/artefacts, which stores it in projects/{id}/artefacts (lib/project-artefact-writes.ts). Still in the client allowlist because the rules are deployed by hand and this release changes none; a browser write would land on the project document, where it is read before the parts (inline wins).",
-      "documentation": "Written by the Documentation stage through the artefacts route. Since roadmap 3.0.14, item 9 no stage writes it from the browser: the stage hands it to POST /api/projects/{projectId}/artefacts, which stores it in projects/{id}/artefacts (lib/project-artefact-writes.ts). Still in the client allowlist because the rules are deployed by hand and this release changes none; a browser write would land on the project document, where it is read before the parts (inline wins).",
-      "testSuite": "Written by POST /api/projects/{projectId}/contract (Transformation) and by the Testing stage through the artefacts route. Since roadmap 3.0.14, item 9 no stage writes it from the browser: the Testing stage hands it, with the test cases, to POST /api/projects/{projectId}/artefacts, which writes it onto the project document (lib/project-artefact-writes.ts). Still in the client allowlist because the rules are deployed by hand and this release changes none.",
-      "coverageEstimate": "Written by the Testing stage through the artefacts route. Since roadmap 3.0.14, item 9 no stage writes it from the browser: the Testing stage hands it, with the test cases, to POST /api/projects/{projectId}/artefacts, which writes it onto the project document (lib/project-artefact-writes.ts). Still in the client allowlist because the rules are deployed by hand and this release changes none.",
       "legacyCode": "Reaches the project through POST /api/runs/create and through the dashboard's project creation. Client-writable by the rules, which is precisely why staleness().sourceChanged exists.",
       "s4Deployment": "Written by POST /api/runs/create from the deployment the reader chose on Analyze.",
       "updatedAt": "Written by POST /api/runs/create.",
       "s4Environment": "Written by nothing since the Testing stage became one guided flow (owner 02.10.2026): the tenant tab no longer stores it. Still in the client allowlist and read once by the Testing page, so a project an earlier build left on 'live' opens the tenant section; the run is always against mocks.",
-      "generatedCode": "Written by POST /api/projects/{projectId}/contract (Transformation), and stored beside the project since roadmap 3.0.14, item 9. The Documentation stage's cleanup of the two Markdown files an earlier build put into the package runs inside its server write (documentationPackageCleanup, lib/project-artefact-writes.ts). Still in the client allowlist; the rules are unchanged by this release.",
       "presentation": "Written by nothing. Declared on the Project type, size-validated in firestore.rules and in the client-writable allowlist, and no stage or route sets it (see knownLimit L-09)."
     },
     "generationBlockerTargets": [

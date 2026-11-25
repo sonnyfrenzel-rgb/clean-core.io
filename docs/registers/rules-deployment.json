@@ -35,5 +35,20 @@
       "updatedAt"
     ],
     "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));"
+  },
+  "pending": {
+    "sha256OfLfNormalisedText": "1d16db07ee3aed4c5bb1051cf91ed330a35c53e3d8dbfdc33c0d47f8ab200017",
+    "recordedAt": "2026-11-25",
+    "recordedFor": "the artefact fields generatedCode, documentation, businessDocumentation, testSuite and coverageEstimate are written by the server routes only; nothing in the app writes them from the browser",
+    "addsToClient": [],
+    "removesFromClient": [
+      "businessDocumentation",
+      "coverageEstimate",
+      "documentation",
+      "generatedCode",
+      "testSuite"
+    ],
+    "projectDocumentReadRule": "allow read: if isAuthenticated() && resource != null && ((resource.data.userId == request.auth.uid && accountActive()) || invitedReader(resource.data));",
+    "note": "Until the deploy, the old rules are live. `npm run deploy:rules` rolls out and deletes this block."
   }
 }
