@@ -334,11 +334,16 @@ export async function runAudit({ apiKey, callReviewer = openRouterReviewer, surf
     report,
   };
 
+  // Complete: every planned file read and every candidate verified. Only a complete audit becomes the base the next
+  // release's delta starts from; after a partial one the next delta still covers what this one left unread or
+  // unverified. The flag is a boolean beside the counts the public line already shows — no finding, no path.
+  payload.complete = notRead.length === 0 && notVerified.length === 0;
+
   const sealed = sealFor(payload, publicKeyPem);
 
   // Only metadata reaches the public log: counts and cost, never a finding.
   const line = `Security audit ${surface.head.slice(0, 12)}: completed, sealed · scope=${payload.scope.mode}${reading.base ? ` since ${reading.base.slice(0, 12)}` : ''} files=${filesInScope} · calls=${payload.calls} failed=${payload.failedCalls} candidates=${candidateCount} verified=${verifiedCount} notVerified=${notVerified.length} cost=$${costUsd ?? 'unknown'} models=${payload.models.join(',') || 'none'}`;
-  return { payload, sealed, line };
+  return { payload, sealed, line: `${line} complete=${payload.complete}` };
 }
 
 async function main() {
@@ -355,8 +360,11 @@ async function main() {
     // The scope job skips the audit in this case; reaching it here means the two disagree — fail loudly.
     throw new Error(`nothing in the audit scope changed since ${base.slice(0, 12)}, but the audit was started`);
   }
-  const { sealed, line } = await runAudit({ apiKey, surface, scope });
+  const { payload, sealed, line } = await runAudit({ apiKey, surface, scope });
   writeFileSync(join(OUT, 'security-audit.enc.json'), JSON.stringify(sealed));
+  // The workflow uploads this marker as its own artifact; the next release's scope job takes as its base only a
+  // run that carries one (.github/workflows/security-audit.yml).
+  if (payload.complete) writeFileSync(join(OUT, 'complete'), `${surface.head}\n`);
   console.log(line);
   if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `### Security audit\n\n${line}\n\nThe report is sealed and goes to the owner by mail.\n`);
 }

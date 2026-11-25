@@ -1450,6 +1450,9 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
       expect(payload.report.findings).toHaveLength(45);
       expect(payload.calls).toBe(5);
       expect(line).toContain('calls=5 failed=0 candidates=45 verified=45 notVerified=0');
+      // Everything read and verified: this run may be the next delta's base.
+      expect(payload.complete).toBe(true);
+      expect(line).toContain('complete=true');
       expect(mail.subject).toBe('Security-Audit v9.9.9 (abcdef0) — Risiko mittel: 0 kritisch · 45 hoch · 0 mittel · 0 niedrig');
       expect(mail.text).toContain('Alle 45 Kandidaten am Code verifiziert.');
       expect(mail.text).not.toContain('NICHT VERIFIZIERT');
@@ -1490,6 +1493,9 @@ test.describe('the CISO verifies in batches, and says what it did not verify', (
       expect(payload.costUsd).toBeNull();
       expect(payload.report.coverage.deep_read, 'no file went unread').toBe(2);
       expect(line).toContain('failed=1 candidates=45 verified=25 notVerified=20');
+      // Not complete: the next delta must not start after it, or these twenty are never verified.
+      expect(payload.complete).toBe(false);
+      expect(line).toContain('complete=false');
       expect(mail.subject).toBe('Security-Audit v9.9.9 (abcdef0) — nicht vollständig geprüft: 25 von 45 Kandidaten verifiziert, 20 nicht · 0 kritisch · 25 hoch · 0 mittel · 0 niedrig');
       expect(mail.text).toContain('NICHT VERIFIZIERT (20)');
       expect(mail.text).toContain('Prüfaufruf fehlgeschlagen (timeout)');
@@ -1636,6 +1642,10 @@ test.describe('a release is audited as its delta (owner decision, 06.10.2026)', 
     const scopeJob = wf.slice(wf.indexOf('  scope:'), wf.indexOf('  audit:'));
     expect(scopeJob).not.toMatch(/secrets\./);
     expect(scopeJob).toMatch(/gh run list --workflow security-audit\.yml --branch main --status success/);
+    // Only a complete audit is a base: the scope job looks for the marker the audit job uploads only then.
+    expect(scopeJob).toContain("grep -q '^security-audit-complete-'");
+    expect(wf).toMatch(/name: security-audit-complete-\$\{\{ github\.sha \}\}-\$\{\{ github\.run_attempt \}\}\n\s+path: \.security-audit\/out\/complete\n[\s\S]{0,60}if-no-files-found: ignore/);
+    expect(read('scripts/security/audit.mjs')).toMatch(/if \(payload\.complete\) writeFileSync\(join\(OUT, 'complete'\)/);
     expect(scopeJob).toMatch(/SECURITY_AUDIT_BASE="\$base" node scripts\/security\/scope\.mjs/);
     expect(scopeJob).toMatch(/base: \$\{\{ steps\.decide\.outputs\.base \}\}/);
     const auditJob = wf.slice(wf.indexOf('  audit:'), wf.indexOf('  deliver:'));
