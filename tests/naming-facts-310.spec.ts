@@ -65,6 +65,23 @@ test('the checker: verbs and function words are free, a business noun is not', (
   expect(uncoveredWords('Notify the cost center owner', ['Send mail'])).toEqual(['cost', 'center', 'owner']);
 });
 
+test('the checker: a word is covered by its own forms, never by a shared prefix', () => {
+  // Before 3.5.2 every word was cut to six letters: "customs" passed on "customer", "authorized" on "Author's comment".
+  expect(uncoveredWords('Check customs', ['Read customer'])).toEqual(['customs']);
+  expect(uncoveredWords('Authorized?', ['Author’s comment (line 94): “Plant 1000”'])).toEqual(['authorized']);
+  // The named forms still meet: plural, -ies, -ed, -ing, -ion, -ation, -al, -ment, and AUTHORITY-CHECK's family.
+  expect(uncoveredWords('Created entries for categories', ['CREATE_ENTRY', 'Category'])).toEqual([]);
+  expect(uncoveredWords('Creation of the approval', ['create', 'approve'])).toEqual([]);
+  expect(uncoveredWords('Processes the payments', ['PROCESS_PAYMENT'])).toEqual([]);
+  expect(uncoveredWords('Authorized?', ['Check authority', 'CHECK_AUTHORITY'])).toEqual([]);
+});
+
+test('the checker: an outcome is a claim — "successful" or "failed" stands only where the evidence says it', () => {
+  expect(uncoveredWords('Successful payment', ['Create payment'])).toEqual(['successful']);
+  expect(uncoveredWords('Payment failed', ['Create payment'])).toEqual(['failed']);
+  expect(uncoveredWords('Payment failed', ['Create payment', 'Call failed'])).toEqual([]);
+});
+
 test('H6: a name that changes the kind of statement is dropped — a lost question, a "not" turned, a normal end as a stop', () => {
   const ctx = namingContextOf(SRC, { engineVersion: '3.1.0', facts: true });
   const say = (id: string, name: string) => {

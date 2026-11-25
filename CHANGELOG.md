@@ -12,6 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   sat behind the 3.5.0 and 3.5.1 releases, the range no longer fit one call, and every push to `dev` came back
   `no_review` without reading any code (`scripts/qa/lib/git-delta.mjs`, `tests/qa-review-guard.spec.ts`).
 
+### Fixed (QA review of 3645b6175)
+- Naming check: a word of a model's name is covered by its own forms only (plural, `-ed`, `-ing`, `-ion`, `-ation`,
+  `-al`, `-ment`, and the authority/authorized family), no longer by sharing its first six letters, and an outcome
+  word (`successful`, `failed`, …) is no longer free. Measured without a model on the 7 starters and the 150 LEARN
+  cases (candidate names: every engine label of the program, plus "Successful …"/"… failed" per node): outcome
+  candidates accepted 1,040 → 4 (starters) and 11,632 → 90 (LEARN); other candidates newly refused in 3 starters
+  (40) and 41 LEARN cases (424), most of them "Authorized?" that passed on "Author's comment" (`lib/naming-facts.ts`,
+  QA `488a6df8ebda`, `0a3edfe44f0b`).
+
 ### Changed
 
 - Economics: one click on **Use typical assumptions** (3.5.1, ADR-144; owner 24.11.2026) fills every figure still
