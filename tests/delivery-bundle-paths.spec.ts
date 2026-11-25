@@ -63,6 +63,12 @@ test('every shape an unpacker disagrees about is refused', () => {
     'srv\\..\\..\\x.ts',
     'srv\\app.ts',
     'app.ts\u0000.png',
+    '.git/hooks/post-checkout',
+    'srv/.GIT/config',
+    '.git./config',
+    'srv/order‮sct.ts',
+    'srv/a⁦b.ts',
+    'srv/a\u0085b.ts',
     '',
     '   ',
   ]) {
