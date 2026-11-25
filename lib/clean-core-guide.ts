@@ -117,7 +117,7 @@ export const GUIDE_PARTS: Part[] = [
         lede:
           'Three things: upgrades become expensive, cloud migration becomes impossible, and nobody can say which risk is real.',
         paragraphs: [
-          'The first is upgrade cost, described above. The second is sharper: SAP\'s cloud offerings simply do not permit the old techniques. Code that reads a standard table directly, writes files to the application server, or calls an unpublished function will not run there. It is not discouraged — it does not compile.',
+          'The first is upgrade cost, described above. The second is sharper. SAP S/4HANA Cloud Public Edition and ABAP Cloud do not permit the old techniques at all. Direct reads of a standard table, files written to the application server and calls to unpublished functions will not run there, because in ABAP Cloud such code does not even compile.',
           'The third problem is the quiet one. A system with 40,000 custom objects contains some that are business-critical, some that nobody has executed since 2014, and no reliable way to tell them apart without looking. Programmes stall here, not on the technology.',
         ],
         notes: [
@@ -344,7 +344,7 @@ export const GUIDE_PARTS: Part[] = [
           'Every custom object lands in one of four grades, and the grade tells you what to do with it.',
         paragraphs: [
           'The grades describe what an object depends on, not how well it is written. A beautifully engineered report that writes directly to a standard table is still grade D, because the dependency is what breaks in the cloud — not the code quality.',
-          'This matters for estimating. Grades A and B need review; grade C needs an interface; grade D needs a decision about whether the object should exist at all. Treating them as one bucket is how modernisation budgets go wrong.',
+          'This matters for estimating. Grade A is done, grade B wants a plan for released successors, grade C a check before each upgrade, and grade D a decision about whether the object should exist at all. Treating them as one bucket is how modernisation budgets go wrong.',
         ],
         table: {
           caption: 'The four grades and the work each implies',
@@ -352,8 +352,8 @@ export const GUIDE_PARTS: Part[] = [
           rows: [
             ['A', 'Released SAP APIs and extension points', 'Nothing — this is where you want to be. Build here.', 'None'],
             ['B', 'Classic SAP APIs, still SAP-recommended', 'Keep, and plan for released successors over time.', 'Low'],
-            ['C', 'Internal SAP APIs — conditionally clean', 'Wrap behind a clean interface, verify each release.', 'Medium'],
-            ['D', 'Direct writes to standard tables, unreleased dependencies, classic screen programs, low-level kernel calls', 'Replace or re-architect. These are the upgrade blockers.', 'High'],
+            ['C', 'Internal SAP APIs — conditionally clean', "Check the objects it uses against SAP's changelog before each upgrade, and replace them where a released successor exists.", 'Medium'],
+            ['D', 'Modifications, implicit enhancements, direct writes to SAP tables, access to objects SAP does not release', 'Replace or re-architect. These are the upgrade blockers.', 'High'],
           ],
         },
         notes: [
@@ -367,13 +367,13 @@ export const GUIDE_PARTS: Part[] = [
             kind: 'advanced',
             title: 'The grades line up with ATC priorities',
             text:
-              'They are not a parallel universe. The A–D grades map onto ABAP Test Cockpit priorities, so a classification exercise and an ATC run should broadly agree — and where they disagree, that disagreement is itself worth looking at.',
+              "SAP's level concept maps each level to an ABAP Test Cockpit priority. An object without a finding is A, an information message means B, a warning C and an error D. Clean-Core.io shows the ATC message it expects beside each level, but that mapping has not yet been checked in an SAP system. Where your own ATC run disagrees, your ATC run is the reference.",
           },
           {
             kind: 'warning',
             title: 'Where our level comes from, and where it stops',
             text:
-              "For an SAP object, Clean-Core.io's level is a lookup in SAP's published Cloudification Repository files; an SAP object neither file lists is level C. For your own Z/Y code, the level is derived from what the code uses, as read from the source — our reading, not an SAP ATC result. Either way it is an orientation aid, not evidence: confirm with SAP ADT and ATC for your target release before acting on it.",
+              "For an SAP object, Clean-Core.io's level is a lookup in SAP's published Cloudification Repository files. An SAP object that neither file lists is level C, and an object the engine cannot place reads Unknown instead of a guessed level. For your own Z/Y code, the level comes from what the code uses, as read from the source: our reading, not an SAP ATC result. Either way it is an orientation aid, not evidence. Confirm with SAP ADT and ATC for your target release before acting on it.",
           },
         ],
       },
@@ -411,7 +411,7 @@ export const GUIDE_FAQ: { question: string; answer: string }[] = [
   {
     question: 'Why is Clean Core suddenly important?',
     answer:
-      'Because SAP\'s cloud offerings do not permit the older techniques. Code that reads standard tables directly, writes to the application server, or calls unpublished functions does not run there — so the move to S/4HANA in the cloud forces the question that on-premise systems allowed organisations to defer.',
+      'Because the cloud editions do not permit the older techniques. Direct reads of standard tables, files written to the application server and calls to unpublished functions do not run in SAP S/4HANA Cloud Public Edition, part of SAP Cloud ERP. SAP Cloud ERP Private still runs them, at the price of harder upgrades. A move to the cloud forces the question that on-premise systems allowed organisations to defer.',
   },
   {
     question: 'What is the difference between in-app and side-by-side extensibility?',
@@ -426,7 +426,7 @@ export const GUIDE_FAQ: { question: string; answer: string }[] = [
   {
     question: 'How do I know which of my objects are the problem?',
     answer:
-      'By analyzing them against the Clean Core criteria — which interfaces they use, how they touch data, and whether the patterns they rely on exist in the cloud at all. That analysis is what Clean-Core.io automates, producing evidence per object rather than an overall impression.',
+      "Check each object against the clean core criteria. Look at the interfaces it uses, at how it touches data, and at whether the patterns it relies on exist in the cloud at all. Clean-Core.io does this for one program at a time. It grades each SAP object the code uses Level A to D, or Unknown where SAP's published data doesn't answer, and names the line each grade comes from.",
   },
   {
     question: 'Is Clean-Core.io free?',

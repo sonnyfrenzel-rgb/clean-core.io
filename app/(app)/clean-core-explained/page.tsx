@@ -5,14 +5,14 @@ import Link from 'next/link';
 import BackLink from '@/components/BackLink';
 import {
   ArrowRight, BookOpen, Lightbulb, AlertTriangle, GraduationCap,
-  MessageSquareQuote, PlayCircle, ExternalLink, Check, Clock, Ban,
+  MessageSquareQuote, PlayCircle, ExternalLink,
 } from 'lucide-react';
 import GuideShareBar from '@/components/GuideShareBar';
 import SectionHeader from '@/components/SectionHeader';
 import { publicButton } from '@/components/landing/public-button';
-import { CcTag } from '@/components/cc/Tag';
 import { GUIDE_PARTS, GUIDE_FAQ, NOTE_LABELS, type NoteKind } from '@/lib/clean-core-guide';
-import { CAPABILITIES, HONEST_SCOPE } from '@/lib/clean-core-capabilities';
+import { HONEST_SCOPE } from '@/lib/clean-core-capabilities';
+import { CONTENT_LAST_MODIFIED } from '@/lib/content-dates';
 import { CONTACT_EMAIL } from '@/lib/constants';
 import { BTP, BTP_FIRST } from '@/lib/sap-naming';
 
@@ -119,10 +119,23 @@ const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visi
 const TOC_LINK = `group flex items-baseline gap-3 rounded-cc-row ${FOCUS}`;
 const TOC_EYEBROW = 'cc-text-label w-14 shrink-0 text-cc-ink-muted';
 const TOC_TITLE = 'text-sm font-bold text-cc-ink transition-colors group-hover:text-cc-brand-strong';
-const FACET_LABEL = 'cc-text-label mb-2 flex items-center gap-2';
 const READ_CARD = `group block rounded-2xl border border-cc-line p-5 transition-colors hover:border-cc-brand-strong ${FOCUS}`;
 const READ_TITLE = 'mb-2 font-bold leading-snug text-cc-ink transition-colors group-hover:text-cc-brand-strong';
 const READ_MORE = 'inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-cc-brand-strong';
+
+/**
+ * First published 20.08.2026 (the first commit of this page). The last change
+ * is the date `lib/content-dates.ts` holds for the route, the same date the
+ * sitemap states, so the page, its JSON-LD and the sitemap cannot disagree.
+ */
+const DATE_PUBLISHED = '2026-08-20';
+const DATE_MODIFIED = CONTENT_LAST_MODIFIED['/clean-core-explained'];
+const DATE_MODIFIED_TEXT = new Date(`${DATE_MODIFIED}T00:00:00Z`).toLocaleDateString('en-US', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
 
 export default function CleanCoreExplainedPage() {
   const schema = {
@@ -135,6 +148,8 @@ export default function CleanCoreExplainedPage() {
         author: { '@type': 'Organization', name: 'Clean-Core.io' },
         publisher: { '@type': 'Organization', name: 'Clean-Core.io' },
         mainEntityOfPage: 'https://clean-core.io/clean-core-explained',
+        datePublished: DATE_PUBLISHED,
+        dateModified: DATE_MODIFIED,
         articleSection: GUIDE_PARTS.map((p) => p.title),
       },
       {
@@ -149,7 +164,7 @@ export default function CleanCoreExplainedPage() {
   };
 
   return (
-    <div className="space-y-10 text-cc-ink">
+    <div className="mx-auto max-w-4xl space-y-10 text-cc-ink">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(schema) }} />
 
       <div className="flex items-center justify-start">
@@ -159,7 +174,7 @@ export default function CleanCoreExplainedPage() {
       {/* Hero — light, with the landing page's mesh at .18 (DESIGN.md §1.4) */}
       <header className="relative overflow-hidden rounded-3xl border border-cc-line bg-cc-surface p-8 shadow-cc sm:p-14">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.18]" style={{ background: HERO_MESH }} />
-        <div className="relative max-w-3xl">
+        <div className="relative">
           <span className="inline-flex items-center gap-2 rounded-full border border-cc-line bg-cc-brand-surface px-4 py-1 text-xs font-bold uppercase tracking-[0.08em] text-cc-brand-strong">
             <BookOpen size={14} aria-hidden="true" /> The complete explainer
           </span>
@@ -177,6 +192,9 @@ export default function CleanCoreExplainedPage() {
             <span>· About 20 minutes</span>
             <span>· Every term defined before it is used</span>
             <span>· Free to share</span>
+            <span data-last-updated="">
+              · Last updated <time dateTime={DATE_MODIFIED}>{DATE_MODIFIED_TEXT}</time>
+            </span>
           </div>
         </div>
       </header>
@@ -190,7 +208,7 @@ export default function CleanCoreExplainedPage() {
           {IN_SHORT.map((item) => (
             <div key={item.q} className="py-5 first:pt-2 last:pb-0">
               <h2 className="mb-2 text-xl font-extrabold leading-snug tracking-tight text-cc-ink">{item.q}</h2>
-              <p className="max-w-3xl leading-relaxed text-cc-ink-muted">
+              <p className="leading-relaxed text-cc-ink-muted">
                 {item.a}{' '}
                 <a href={item.part} className={`font-semibold text-cc-ink underline underline-offset-4 ${FOCUS}`}>
                   More in {item.partLabel}
@@ -258,7 +276,7 @@ export default function CleanCoreExplainedPage() {
               </p>
 
               {ch.paragraphs.map((p, i) => (
-                <p key={i} className="mb-4 max-w-3xl leading-[1.75] text-cc-ink">{p}</p>
+                <p key={i} className="mb-4 leading-[1.75] text-cc-ink">{p}</p>
               ))}
 
               {ch.terms && (
@@ -332,46 +350,23 @@ export default function CleanCoreExplainedPage() {
       {/* Part 6 — the platform, concretely */}
       <section id="platform" className="scroll-mt-8 space-y-5">
         <div className={PART_HEAD}>
-          <SectionHeader align="left" eyebrow="Part 6" title="How Clean-Core.io helps, concretely">
-            Clean-Core.io works on one ABAP program at a time: it reads the process from the code as
-            BPMN, grades each SAP object Level A–D (Unknown where SAP’s published data holds no answer) and leads to one decision — keep, rebuild, move to
-            SAP standard or retire. Each step of the work is listed below with what it produces, what it
-            saves you, what it costs — and where it stops. The last column is the one worth reading.
-          </SectionHeader>
+          <SectionHeader align="left" eyebrow="Part 6" title="How Clean-Core.io helps, concretely" />
         </div>
 
-        <div className="space-y-4">
-          {CAPABILITIES.map((c) => (
-            <article key={c.stage} className={`${CARD} p-7 sm:p-8`}>
-              <div className="mb-4 flex flex-wrap items-baseline gap-3">
-                <CcTag>{c.stage}</CcTag>
-                <h3 className="text-xl font-extrabold tracking-tight text-cc-ink">{c.title}</h3>
-              </div>
-
-              <p className="mb-5 max-w-3xl font-medium leading-relaxed text-cc-ink">{c.output}</p>
-
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <div className="rounded-xl border border-cc-line bg-cc-brand-surface p-4">
-                  <p className={`${FACET_LABEL} text-cc-brand-strong`}>
-                    <Check size={12} aria-hidden="true" /> Benefit
-                  </p>
-                  <p className="text-sm leading-relaxed text-cc-ink">{c.benefit}</p>
-                </div>
-                <div className="rounded-xl border border-cc-line bg-cc-surface-muted p-4">
-                  <p className={`${FACET_LABEL} text-cc-ink-muted`}>
-                    <Clock size={12} aria-hidden="true" /> Effort
-                  </p>
-                  <p className="text-sm leading-relaxed text-cc-ink-muted">{c.effort}</p>
-                </div>
-                <div className="rounded-xl border border-cc-warning-border bg-cc-warning-bg p-4">
-                  <p className={`${FACET_LABEL} text-cc-warning`}>
-                    <Ban size={12} aria-hidden="true" /> Where it stops
-                  </p>
-                  <p className="text-sm leading-relaxed text-cc-ink">{c.limit}</p>
-                </div>
-              </div>
-            </article>
-          ))}
+        {/* Four sentences and the whitepaper since 3.5.2 (owner decision 25.11.2026): the step-by-step
+            account of the product lives in one place, /whitepaper, so this guide cannot fall behind it again.
+            The printable edition keeps its capability table, read from lib/clean-core-capabilities.ts. */}
+        <div className={`${CARD} p-7 sm:p-10`} data-guide-platform="">
+          <p className="mb-4 leading-[1.75] text-cc-ink">
+            Clean-Core.io works on one ABAP program at a time. Analyze reads the process from the code as BPMN and
+            grades each SAP object Level A–D, or Unknown where SAP’s published data doesn’t answer. Re-design then
+            prices the options on your own figures and records your decision. From there a model drafts the target
+            design, RAP or CAP code, documentation and test scenarios for a person to review, ending in a signed audit
+            pack. The whitepaper walks through every step, with what it produces and where it stops.
+          </p>
+          <Link href="/whitepaper" className={`inline-flex items-center gap-2 font-bold text-cc-brand-strong underline-offset-4 hover:underline ${FOCUS}`}>
+            Read the whitepaper <ArrowRight size={16} aria-hidden="true" />
+          </Link>
         </div>
 
         {/* Honest scope — a card on the muted surface; the product has no dark
@@ -403,7 +398,7 @@ export default function CleanCoreExplainedPage() {
             {GUIDE_FAQ.map((f) => (
               <div key={f.question} className="border-b border-cc-line py-5 last:border-0">
                 <dt className="mb-2 text-lg font-bold leading-snug text-cc-ink">{f.question}</dt>
-                <dd className="max-w-3xl leading-relaxed text-cc-ink-muted">{f.answer}</dd>
+                <dd className="leading-relaxed text-cc-ink-muted">{f.answer}</dd>
               </div>
             ))}
           </dl>
@@ -463,16 +458,16 @@ export default function CleanCoreExplainedPage() {
           Try it on one object
         </h2>
         <p className="mx-auto mb-8 max-w-2xl text-lg leading-relaxed text-cc-ink-muted">
-          Reading about Clean Core only gets you so far. Every free account has a demo project with a
-          guided tour and ready-made ABAP examples in My workspace, so you can see a full analysis
-          without extracting anything from your own system.
+          Reading about clean core only gets you so far. The public demo shows a full analysis of an example
+          program without an account. With a free account you also get starter examples whose first run is free,
+          so you can see the whole chain before you extract anything from your own system.
         </p>
         <div className="flex flex-col justify-center gap-3 sm:flex-row">
-          <Link href="/first-run" className={publicButton('primary')}>
-            <PlayCircle size={18} aria-hidden="true" /> Your first run, step by step
+          <Link href="/demo" className={publicButton('primary')}>
+            <PlayCircle size={18} aria-hidden="true" /> Try the demo, no account
           </Link>
-          <Link href="/dashboard" className={publicButton('secondary')}>
-            Open My workspace <ArrowRight size={16} aria-hidden="true" />
+          <Link href="/first-run" className={publicButton('secondary')}>
+            Your first run, step by step <ArrowRight size={16} aria-hidden="true" />
           </Link>
         </div>
         <p className="mt-8 text-sm text-cc-ink-muted">
