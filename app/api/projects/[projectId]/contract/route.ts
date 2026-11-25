@@ -418,7 +418,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     // project's transformation, never for another (`lib/model-receipt-uses.ts`).
     const model =
       receiptVerdict?.ok &&
-      (await claimReceiptUse(db, receiptVerdict.receipt, { projectId, artefact: 'transformation' }))
+      (await claimReceiptUse(db, receiptVerdict.receipt, { projectId, artefact: 'transformation', contentSha256: sha256Hex(code) }))
         ? aiModelRecordOf(receiptVerdict.receipt, APP_VERSION)
         : null;
 

@@ -20,6 +20,7 @@ import { withStoredArtefacts } from '@/lib/project-artefact-store';
 import { analysisRunInputs, buildInputManifest } from '@/lib/input-manifest';
 import type { ModelParticipation } from '@/lib/model-stages';
 import { verifyModelReceipt } from '@/lib/model-receipt';
+import { claimReceiptUse } from '@/lib/model-receipt-uses';
 import { looksLikeAbap } from '@/lib/abap-input-check';
 import { assertRateLimit } from '@/lib/rate-limit';
 import { readModelGaps, type ModelGap } from '@/lib/model-gaps';
@@ -594,7 +595,16 @@ export async function POST(req: NextRequest) {
       key: signingKey,
       stage: 'analyze',
     });
-    const attested = receiptVerdict.ok ? receiptVerdict.receipt : null;
+    // One receipt attests one project's narrative: its id is recorded on first use, and a retry of this run
+    // (same project, same text) is accepted again, another project is not (`lib/model-receipt-uses.ts`). A store
+    // that cannot be read attests nothing — the run is still created, as `narrative`.
+    const claimed = receiptVerdict.ok
+      ? await claimReceiptUse(db, receiptVerdict.receipt, { projectId, artefact: 'run-narrative', contentSha256: receiptVerdict.receipt.textSha256 }).catch(() => false)
+      : false;
+    const attested = receiptVerdict.ok && claimed ? receiptVerdict.receipt : null;
+    if (receiptVerdict.ok && !claimed) {
+      logger.warn('runs/create: a model receipt was already used for another project', { route: 'api/runs/create', projectId });
+    }
     if (!receiptVerdict.ok && receiptVerdict.refusal !== 'absent') {
       // Worth a line: `text-mismatch` and `wrong-account` are what a tampered
       // or borrowed receipt looks like, and `expired` is what a slow client

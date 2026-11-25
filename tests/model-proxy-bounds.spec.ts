@@ -14,7 +14,7 @@ import {
   type BudgetStore,
 } from '../lib/platform-model-budget';
 import { issueModelReceipt, narrativeDigest, verifyModelReceipt, verifyModelReceiptIssuer } from '../lib/model-receipt';
-import { claimReceiptUse, type ReceiptUseStore } from '../lib/model-receipt-uses';
+import { artefactContentDigest, claimReceiptUse, type ReceiptUseStore } from '../lib/model-receipt-uses';
 
 /**
  * SEC-01 (app part) and CA-INT-02 — the model proxy names its stage, bounds
@@ -193,6 +193,23 @@ test.describe('model receipts bind the prompt and are used once (CA-INT-02)', ()
     expect(await claimReceiptUse(store, r, { projectId: 'p1', artefact: 'business-layer' }), 'another artefact').toBe(false);
   });
 
+  test('a repeat under the same receipt is a retry only when it stores the same content', async () => {
+    const { store, docs } = memoryUses();
+    const r = issueModelReceipt({ uid: 'u', text: 't', provider: 'g', modelId: 'm', byok: false, stage: 'testing' }, KEY);
+    const first = artefactContentDigest({ action: 'test-suite', testSuite: { cases: ['a'] }, modelReceipt: r });
+    // The receipt is not part of the content: the same body with or without it is the same store.
+    expect(artefactContentDigest({ testSuite: { cases: ['a'] }, action: 'test-suite' })).toBe(first);
+    expect(await claimReceiptUse(store, r, { projectId: 'p1', artefact: 'test-suite', contentSha256: first })).toBe(true);
+    expect(await claimReceiptUse(store, r, { projectId: 'p1', artefact: 'test-suite', contentSha256: first }), 'a retried store').toBe(true);
+    const edited = artefactContentDigest({ action: 'test-suite', testSuite: { cases: ['a', 'edited by hand'] } });
+    expect(await claimReceiptUse(store, r, { projectId: 'p1', artefact: 'test-suite', contentSha256: edited }), 'changed content').toBe(false);
+    expect(await claimReceiptUse(store, r, { projectId: 'p1', artefact: 'test-suite' }), 'no digest named').toBe(false);
+    // A use recorded before the digest existed is still judged by project and artefact.
+    const legacy = issueModelReceipt({ uid: 'u', text: 't', provider: 'g', modelId: 'm', byok: false, stage: 'testing' }, KEY);
+    docs.set(`model_receipt_uses/${legacy.jti}`, { projectId: 'p1', artefact: 'test-suite' });
+    expect(await claimReceiptUse(store, legacy, { projectId: 'p1', artefact: 'test-suite', contentSha256: edited })).toBe(true);
+  });
+
   test('a receipt without an id marks nothing in those stores', async () => {
     const { store } = memoryUses();
     expect(await claimReceiptUse(store, { iat: Date.now() }, { projectId: 'p1', artefact: 'test-suite' })).toBe(false);
@@ -200,14 +217,27 @@ test.describe('model receipts bind the prompt and are used once (CA-INT-02)', ()
 
   test('the stores that check a receipt without its text claim its use first', () => {
     const artefacts = read('app/api/projects/[projectId]/artefacts/route.ts');
-    expect(artefacts).toContain('await claimReceiptUse(db, verdict.receipt, { projectId: gate.projectId, artefact: String(fields.action) })');
+    expect(artefacts).toContain('await claimReceiptUse(db, verdict.receipt, { projectId: gate.projectId, artefact: String(fields.action), contentSha256: artefactContentDigest(fields) })');
     const contract = read('app/api/projects/[projectId]/contract/route.ts');
-    expect(contract).toContain("await claimReceiptUse(db, receiptVerdict.receipt, { projectId, artefact: 'transformation' })");
+    expect(contract).toContain("await claimReceiptUse(db, receiptVerdict.receipt, { projectId, artefact: 'transformation', contentSha256: sha256Hex(code) })");
   });
 
   test('runs/create accepts a narrative receipt only under the analyze stage', () => {
     const runs = read('app/api/runs/create/route.ts');
     const call = runs.slice(runs.indexOf('verifyModelReceipt(body.modelReceipt'), runs.indexOf('const attested'));
     expect(call).toContain("stage: 'analyze',");
+  });
+
+  test('runs/create attests a narrative receipt for one project only: its use is claimed before it counts', async () => {
+    const runs = read('app/api/runs/create/route.ts');
+    expect(runs).toContain("await claimReceiptUse(db, receiptVerdict.receipt, { projectId, artefact: 'run-narrative', contentSha256: receiptVerdict.receipt.textSha256 })");
+    expect(runs).toContain('const attested = receiptVerdict.ok && claimed ? receiptVerdict.receipt : null;');
+    // The binding it relies on: the same receipt for a second project is refused, a retry for the first is not.
+    const { store } = memoryUses();
+    const r = issueModelReceipt({ uid: 'u', text: 'narrative', provider: 'g', modelId: 'm', byok: false, stage: 'analyze' }, KEY);
+    const bind = (projectId: string) => ({ projectId, artefact: 'run-narrative', contentSha256: r.textSha256 });
+    expect(await claimReceiptUse(store, r, bind('p1'))).toBe(true);
+    expect(await claimReceiptUse(store, r, bind('p1'))).toBe(true);
+    expect(await claimReceiptUse(store, r, bind('p2'))).toBe(false);
   });
 });

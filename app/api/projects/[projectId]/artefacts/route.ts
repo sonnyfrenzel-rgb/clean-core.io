@@ -18,7 +18,7 @@ import { storeBusinessLayer, storeDocumentation, storeTestSuite } from '@/lib/pr
 import { ARTEFACT_READ_ERROR } from '@/lib/project-artefacts';
 import { getAuditSigningKey } from '@/lib/audit-signing-key';
 import { verifyModelReceiptIssuer } from '@/lib/model-receipt';
-import { claimReceiptUse } from '@/lib/model-receipt-uses';
+import { artefactContentDigest, claimReceiptUse } from '@/lib/model-receipt-uses';
 import { aiModelRecordOf } from '@/lib/ai-marking';
 import { APP_VERSION } from '@/lib/version';
 
@@ -199,7 +199,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ pro
     // One receipt marks one artefact (CA-INT-02): accepted again only for this
     // project and this artefact, never for another (`lib/model-receipt-uses.ts`).
     const aiModel =
-      verdict?.ok && (await claimReceiptUse(db, verdict.receipt, { projectId: gate.projectId, artefact: String(fields.action) }))
+      verdict?.ok && (await claimReceiptUse(db, verdict.receipt, { projectId: gate.projectId, artefact: String(fields.action), contentSha256: artefactContentDigest(fields) }))
         ? aiModelRecordOf(verdict.receipt, APP_VERSION)
         : null;
     const outcome = await store(db, { projectId: gate.projectId, uid: gate.uid, body: fields, aiModel });
