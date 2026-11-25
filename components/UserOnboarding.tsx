@@ -283,7 +283,9 @@ export default function UserOnboarding() {
           <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-3">
             <h3 className="m-0 mb-1 cc-text-label text-cc-ink-muted">Free Community Edition</h3>
             <ul className="m-0 list-disc space-y-1 pl-5 cc-text-cell text-cc-ink">
-              <li>5 free analysis runs; every tool after the analysis is included</li>
+              {/* Statement 22c, 5: the line matches Terms section 6 (quota of analyses; later stages not counted;
+                  fair-use rate limits for every account) and the hourly limit on model calls the tools name. */}
+              <li data-onboarding-quota="">5 free analysis runs; every tool after the analysis is included, its model calls within the fair-use rate limit (the hourly limit on model calls)</li>
               <li>Community feedback &amp; collaboration</li>
               <li className="font-semibold">Active immediately — no approval step</li>
             </ul>
