@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 3.5.2: the landing page says what comes after the analysis; "Clean core explained" brought up to date (owner approval 25.11.2026)
+
+- Landing page (ADR-122, amended 25.11.2026): the hero text stays word for word. The reader row under it becomes
+  the chain "One chain of evidence, from code to handover. Free at every step." (1 · Analyze, 2 · Decide,
+  3 · Re-design). Section 3 is now "Analyze, then Re-design": six step cards (Price it, Decide, Design the target,
+  Draft the code, Document and test it, Hand it over), each with its tool name read from `PHASES` and its
+  provenance chip, and the line "Your system stays as it is. Clean-Core.io deploys nothing to it." The seven tool
+  chips and the card "What it is, and what it is not" are gone; their sentences stand in the steps and the FAQ.
+  The three trust cards are one row of checkmarks with their sources (from `lib/trust-claims.ts`), the two
+  "For IT" folds of the evidence section are one, and the process link row has five links instead of eight
+  (RAP/CAP, modernization and audit evidence moved to the Re-design row, which also links the whitepaper). The
+  footer closes like the video: "Legacy ABAP, finally explained." with the five USPs beside the two buttons.
+  The six cards stay cards on a phone.
+- FAQ: "Does Clean-Core.io only analyze, or does it rebuild too?" replaces "Is my code kept confidential?"; who can
+  open a project moved into the storage answer, now "Where is my code stored, who can open it, and what leaves
+  it?". Still ten questions; the `FAQPage` JSON-LD and `/llms-full.txt` read the same list.
+- Honest wording: the share text, the whitepaper's short USP, the site-wide default description, the social card
+  (re-rendered `public/social-card.png` and its alt text), the README and `/llms.txt` said "a reviewed, tested
+  rebuild" without qualification. They now say "a rebuild draft you review", which is what the product delivers.
+- Search and answer engines: title "SAP Clean Core Accelerator · ABAP Analysis & Re-design | Clean-Core.io", a new
+  meta description, a `featureList` entry for Re-design and a `HowTo` node with the six visible steps. `/llms.txt`
+  gains "Analyze, then Re-design", the five USPs and Economics as its own step of the chain (the decision follows it,
+  as in the product since 3.5.0). No `VideoObject` until the video is published.
+- "Clean core explained" (`/clean-core-explained`): one reading width (896 px) instead of text at 768 px inside
+  1,216 px cards. Fifteen outdated or wrong statements corrected: level D no longer lists classic screen programs
+  (Dynpro is level B), level C means a changelog check before each upgrade, the grade work plan matches the table,
+  the ATC note says the level-to-priority mapping is not yet checked in an SAP system, the level note names
+  Unknown, chapter 1.3 and the FAQ say which cloud edition drops the older techniques (SAP S/4HANA Cloud Public
+  Edition; SAP Cloud ERP Private still runs them), and the FAQ answer on finding problem objects says one program
+  at a time, level per SAP object or Unknown. Part 6 is four sentences and a link to the whitepaper; the
+  printable edition keeps its capability table, now in the product's order (Economics before the decision, which
+  is a step of Re-design) with the current Economics, Documentation and Transformation wording. The closing
+  button opens the public demo. The page shows "Last updated", and its Article JSON-LD carries `datePublished`
+  and `dateModified` from `lib/content-dates.ts`, the date the sitemap uses. Both PDFs (guide and whitepaper)
+  re-rendered.
+
 ### Changed
 
 - Economics: one click on **Use typical assumptions** (3.5.1, ADR-144; owner 24.11.2026) fills every figure still
