@@ -251,13 +251,16 @@ test.describe('CSP report-only — source', () => {
     const sources = config.NONCE_ROUTE_SOURCES.map((src) => getPathMatch(src));
     const samples = [
       '/project/p1', '/project/p1/analyze', '/project/p1/delivery', '/project/p1/design', '/project/p1/documentation',
-      '/project/p1/tco', '/project/p1/testing', '/project/p1/transformation', '/invitation/p1/i1', '/auth/action',
+      '/project/p1/tco', '/project/p1/testing', '/project/p1/transformation', '/project/p1/redesign',
+      '/project/p1/design/requirements', '/invitation/p1/i1', '/auth/action',
       '/survey/t1', '/unsubscribe', '/admin/design-system/first-render',
       '/', '/dashboard', '/verify-pack', '/catalog', '/catalog/acdoca', '/project/p1/other', '/demo/analyze', '/settings',
     ];
     for (const url of samples) {
       expect(sources.some((match) => match(url) !== false), `next.config sources vs isNonceRoute on ${url}`).toBe(isNonceRoute(url));
     }
+    // Re-design (ADR-143, 3.5.0) is in both lists, not only in the classifier.
+    expect(sources.some((match) => match('/project/p1/redesign') !== false), 'next.config sends no enforced policy on Re-design').toBe(true);
   });
 
   test('every inline <script in app/ and components/ carries a nonce or is JSON-LD through the helper', () => {

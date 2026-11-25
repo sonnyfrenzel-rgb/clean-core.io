@@ -33,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   QA `bb86e2693aa2`, `923c7582a6ef`); and `PERFORM f USING 'IN PROGRAM'.` is a local call for the unit-of-work
   reading, which used to take the words inside the literal for the external form (`lib/abap/luw-states.ts`;
   QA `5f9333754909`). Repro: `tests/engine-352-skeleton-readings.spec.ts`.
+- Tests: the CSP spec checks that `next.config.mjs` and the route classifier both name Re-design and the
+  requirements page (`tests/csp-report-only.spec.ts`; QA `3ae77275d7ec`).
 
 ### Changed
 
