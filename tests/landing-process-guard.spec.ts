@@ -50,7 +50,10 @@ test.describe('the landing page shows the phases the product has', () => {
     expect(await items.evaluateAll((els) => els.map((el) => el.getAttribute('data-landing-phase')))).toEqual(
       PHASES.map((p) => p.key),
     );
-    expect(await page.locator('#after [data-landing-phase-title]').allInnerTexts()).toEqual(PHASES.slice(1).map((p) => p.label));
+    // textContent, not innerText: the card sets the tool name in capitals through CSS.
+    expect(
+      await page.locator('#after [data-landing-phase-title]').evaluateAll((els) => els.map((el) => el.textContent?.trim())),
+    ).toEqual(PHASES.slice(1).map((p) => p.label));
     await expect(page.locator(`#readers-k ~ ul [data-landing-phase="${PHASES[0].key}"]`)).toContainText(PHASES[0].label);
     // The section says something about them, in the HTML — a bare row of names
     // would satisfy the order check.

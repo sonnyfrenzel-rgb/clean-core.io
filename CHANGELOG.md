@@ -26,7 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Honest wording: the share text, the whitepaper's short USP, the site-wide default description, the social card
   (re-rendered `public/social-card.png` and its alt text), the README and `/llms.txt` said "a reviewed, tested
   rebuild" without qualification. They now say "a rebuild draft you review", which is what the product delivers.
-- Search and answer engines: title "SAP Clean Core Accelerator · ABAP Analysis & Re-design | Clean-Core.io", a new
+- Search and answer engines: title "SAP Clean Core Accelerator · ABAP Analysis & Re-design" (the approved title
+  without " | Clean-Core.io", which would take it to 70 characters, over the 60 the snippet guard allows), a new
   meta description, a `featureList` entry for Re-design and a `HowTo` node with the six visible steps. `/llms.txt`
   gains "Analyze, then Re-design", the five USPs and Economics as its own step of the chain (the decision follows it,
   as in the product since 3.5.0). No `VideoObject` until the video is published.

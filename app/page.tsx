@@ -71,7 +71,10 @@ export const revalidate = 300;
  * approved short USP (owner decision 01.10.2026), which the whitepaper's
  * title repeats.
  */
-const HOME_TITLE = 'SAP Clean Core Accelerator · ABAP Analysis & Re-design | Clean-Core.io';
+// The approved title (owner, 25.11.2026) without the " | Clean-Core.io" suffix: with it the title is 70
+// characters, over TITLE_MAX (60, tests/seo-snippet-length-guard.spec.ts); Google shows the site name
+// above the title anyway, and og:site_name carries it.
+const HOME_TITLE = 'SAP Clean Core Accelerator · ABAP Analysis & Re-design';
 const HOME_SHARE_TITLE = 'Clean-Core.io — SAP Clean Core Accelerator for custom ABAP';
 /**
  * The share text (og:description, and the start of the JSON-LD description).
