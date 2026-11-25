@@ -47,6 +47,18 @@ test.describe('what a delivery record keeps', () => {
     expect(withoutAddresses(null)).toBeNull();
   });
 
+  test('the diagnostic is bounded before it is scanned, and an address the cut splits goes too', () => {
+    // A long run without separators: unbounded, the scan is quadratic in its length.
+    const t0 = Date.now();
+    const out = withoutAddresses('a'.repeat(200_000) + '@x');
+    expect(Date.now() - t0).toBeLessThan(1_000);
+    expect(out!.length).toBeLessThanOrEqual(500);
+    // Cut inside an address: what is left of it is not kept.
+    const cut = withoutAddresses(`${'x '.repeat(245)}reject <someone@example.org> and more`)!;
+    expect(cut).not.toContain('someone@');
+    expect(cut).not.toMatch(/@/);
+  });
+
   test('the send and the webhook write the hashes and remove a subject in clear', () => {
     const src = read('lib/email-events.ts');
     const sent = src.slice(src.indexOf('export async function recordEmailSent'));

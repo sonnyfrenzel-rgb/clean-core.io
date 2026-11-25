@@ -55,8 +55,17 @@ const ADDRESS = /[^\s<>()"',;:@]+@[^\s<>()"',;:@]+\.[^\s<>()"',;:@]+/g;
  */
 export function withoutAddresses(text: string | null | undefined): string | null {
   if (typeof text !== 'string') return null;
-  return text.replace(ADDRESS, '[address]');
+  // Bounded first: the text comes from whichever mail server answered, and the pattern is quadratic in the
+  // length of a run without separators. A diagnostic worth keeping is a sentence; an address the cut split
+  // (an `@` in the last word) goes as well.
+  return text
+    .slice(0, EMAIL_EVENT_DETAIL_MAX)
+    .replace(ADDRESS, '[address]')
+    .replace(/[^\s<>()"',;:]*@[^\s<>()"',;:]*$/, '[address]');
 }
+
+/** The most of a provider's diagnostic text an email record keeps. */
+export const EMAIL_EVENT_DETAIL_MAX = 500;
 
 /**
  * The update that brings a record written before 3.0.21 to that shape, or null
