@@ -22,3 +22,9 @@ test('the second factor is not removed while an own model key is stored', () => 
   // Only while Firebase Auth holds a factor: a flag without one could not remove the key either.
   expect(route.slice(route.lastIndexOf('if (hasFactor)', gate), gate)).toContain('if (hasFactor)');
 });
+
+test('the S/4 credentials route reads its body under a bound', () => {
+  const route = read('app/api/s4-credentials/route.ts');
+  expect(route).toContain('readBoundedRequestJson(req, S4_REQUEST_BODY_LIMITS)');
+  expect(route).not.toContain('await req.json()');
+});

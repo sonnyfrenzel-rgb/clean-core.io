@@ -125,8 +125,9 @@ export async function saveS4Credentials(uid: string, cfg: S4ConfigInput): Promis
     updatedAt: FieldValue.serverTimestamp(),
   });
 
-  // Only non-secret metadata into the (client-readable) profile; remove the plaintext field.
-  batch.set(
+  // Only non-secret metadata into the (client-readable) profile; remove the plaintext field. An update, not a
+  // merge: a profile that is gone (an erased account whose token still lives) is not written back — the batch fails.
+  batch.update(
     db.collection('users').doc(uid),
     {
       s4Meta: {
@@ -139,7 +140,6 @@ export async function saveS4Credentials(uid: string, cfg: S4ConfigInput): Promis
       s4Config: FieldValue.delete(), // Alt-Klartext entfernen
       updatedAt: FieldValue.serverTimestamp(),
     },
-    { merge: true },
   );
   await batch.commit();
 
@@ -191,14 +191,14 @@ export async function loadS4ConfigForUser(uid: string): Promise<S4ConfigResolved
  */
 export async function deleteS4Credentials(uid: string): Promise<void> {
   const { db, FieldValue } = await getAdminDb();
-  const batch = db.batch();
-  batch.delete(db.collection('s4_credentials').doc(uid));
-  batch.set(
-    db.collection('users').doc(uid),
-    { s4Meta: FieldValue.delete(), s4Config: FieldValue.delete() },
-    { merge: true },
-  );
-  await batch.commit();
+  // The vault always goes; the profile's metadata only from a profile that exists — a merge would write an
+  // erased account's profile back.
+  const userRef = db.collection('users').doc(uid);
+  await db.runTransaction(async (tx: import('firebase-admin/firestore').Transaction) => {
+    const profile = (await tx.get(userRef)) as unknown as { exists: boolean };
+    tx.delete(db.collection('s4_credentials').doc(uid));
+    if (profile.exists) tx.update(userRef, { s4Meta: FieldValue.delete(), s4Config: FieldValue.delete() });
+  });
 }
 
 /**

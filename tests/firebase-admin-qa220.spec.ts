@@ -117,7 +117,9 @@ test('the S/4 vault and the profile metadata are written in one batch', () => {
   const body = src.slice(start, src.indexOf('\n}\n', start));
   expect(body).toContain('db.batch()');
   expect(body).toMatch(/batch\.set\(db\.collection\('s4_credentials'\)\.doc\(uid\)/);
-  expect(body).toMatch(/batch\.set\(\s*db\.collection\('users'\)\.doc\(uid\)/);
+  // An update, never a merge: a profile that is gone is not written back, and the vault write fails with it.
+  expect(body).toMatch(/batch\.update\(\s*db\.collection\('users'\)\.doc\(uid\)/);
+  expect(body).not.toMatch(/merge: true/);
   expect(body.match(/await batch\.commit\(\)/g) ?? []).toHaveLength(1);
   expect(body).not.toMatch(/await db\.collection\(/);
 });
@@ -129,10 +131,11 @@ test('the S/4 vault and the profile metadata are deleted in one batch', () => {
   const src = fs.readFileSync(path.join(process.cwd(), 'lib/s4-credentials.ts'), 'utf8').replace(/\r\n/g, '\n');
   const start = src.indexOf('export async function deleteS4Credentials');
   const body = src.slice(start, src.indexOf('\n}\n', start));
-  expect(body).toContain('db.batch()');
-  expect(body).toMatch(/batch\.delete\(db\.collection\('s4_credentials'\)\.doc\(uid\)\)/);
-  expect(body).toMatch(/batch\.set\(\s*db\.collection\('users'\)\.doc\(uid\)/);
-  expect(body.match(/await batch\.commit\(\)/g) ?? []).toHaveLength(1);
+  // One transaction since 25.11.2026: the vault goes, and the profile's metadata only from a profile that exists.
+  expect(body).toContain('db.runTransaction(');
+  expect(body).toMatch(/tx\.delete\(db\.collection\('s4_credentials'\)\.doc\(uid\)\)/);
+  expect(body).toMatch(/if \(profile\.exists\) tx\.update\(userRef,/);
+  expect(body).not.toMatch(/merge: true/);
   expect(body).not.toMatch(/await db\.collection\(/);
 });
 

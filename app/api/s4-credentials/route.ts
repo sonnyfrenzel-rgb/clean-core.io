@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { verifyRequestAuth, assertS4TenantAccess, QuotaError, assertMfaSatisfied } from '@/lib/firebase-admin';
 import { saveS4Credentials, deleteS4Credentials, loadS4ConfigForUser } from '@/lib/s4-credentials';
-import { isUrlSafe } from '@/lib/url-validation';
+import { isUrlSafe, readBoundedRequestJson, S4_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 import { logger, errMessage } from '@/lib/logger';
 
 /**
@@ -26,7 +26,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'Internal server error during authorization check.' }, { status: 500 });
   }
 
-  const body = await req.json();
+  // Read under the bound of an S/4 connection request, never buffered whole first.
+  const read = await readBoundedRequestJson(req, S4_REQUEST_BODY_LIMITS);
+  if (read.tooLarge) return NextResponse.json({ error: 'Request body too large.' }, { status: 413 });
+  const body = (read.body && typeof read.body === 'object' ? read.body : null) as Record<string, any> | null;
   if (!body?.url || typeof body.url !== 'string') {
     return NextResponse.json({ error: 'URL is required.' }, { status: 400 });
   }
