@@ -944,6 +944,16 @@ async function commitInChunks(db: Firestore, writes: Array<(batch: WriteBatch) =
 /** How long the erasure marker holds: twice the life of a Firebase ID token. */
 export const ERASED_MARKER_MS = 2 * 60 * 60 * 1000;
 
+/** Whether Firebase Auth holds the account's address as confirmed. Never throws: a failed lookup is "not confirmed". */
+async function accountAddressConfirmed(uid: string, auth?: Auth): Promise<boolean> {
+  try {
+    const client = auth ?? (await getAdminAuth());
+    return (await client.getUser(uid)).emailVerified === true;
+  } catch {
+    return false;
+  }
+}
+
 export async function deleteUserDataAndAccount(
   uid: string,
   deps: { db?: Firestore; auth?: Auth; ending?: ContractEnding } = {},
@@ -1137,8 +1147,15 @@ export async function deleteUserDataAndAccount(
     const profileSnap = await db.collection('users').doc(uid).get();
     // The profile, not the Auth user: the Auth module is deliberately not loaded
     // until the last step, and this document is still here — it goes in step 5.
-    const stored = (profileSnap.data() || {}).email;
-    invitedAddress = normaliseInvitedEmail(stored);
+    const profile = (profileSnap.data() || {}) as { email?: unknown; emailVerified?: unknown };
+    const stored = profile.email;
+    // Invitations are other owners' records. They are deleted for this account's address only when the address
+    // is confirmed: a password sign-up does not confirm it, and an erasure must not delete what other people hold
+    // for an address the account merely typed (an Auth lookup that fails counts as unconfirmed). An unconfirmed
+    // account cannot have accepted one either — acceptance needs a confirmed address. The proof records below
+    // are pseudonymised, never deleted, so they still follow the profile address.
+    const confirmed = profile.emailVerified === true || (await accountAddressConfirmed(uid, deps.auth));
+    invitedAddress = confirmed ? normaliseInvitedEmail(stored) : null;
     profileAddress = typeof stored === 'string' && stored.trim() ? stored.trim() : null;
   } catch (e: any) {
     erasureErrors.push(`invitations: the account address could not be read: ${e?.message || e}`);
@@ -1745,6 +1762,13 @@ export async function adminRevokeUser(adminUid: string, targetUid: string) {
   // this comment said no rule consults `status`; that stopped being true with
   // 3.0.12.
   const auth = await getAdminAuth();
+  // The `admin` claim goes with the mirror: an approval later reinstates the account, never its administrator
+  // rights — those are an explicit grant (`setAdminClaim`).
+  const claims = { ...((await auth.getUser(targetUid)).customClaims ?? {}) } as Record<string, unknown>;
+  if ('admin' in claims) {
+    delete claims.admin;
+    await auth.setCustomUserClaims(targetUid, claims);
+  }
   await auth.revokeRefreshTokens(targetUid);
   await auth.updateUser(targetUid, { disabled: true });
 }

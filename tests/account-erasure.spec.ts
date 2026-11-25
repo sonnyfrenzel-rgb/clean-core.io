@@ -71,7 +71,7 @@ function recordingAuth() {
   const deleted: string[] = [];
   return {
     deleted,
-    client: { deleteUser: async (uid: string) => { deleted.push(uid); } } as unknown as Auth,
+    client: { deleteUser: async (uid: string) => { deleted.push(uid); }, getUser: async () => ({ emailVerified: true }) } as unknown as Auth,
   };
 }
 
@@ -217,6 +217,25 @@ test('the erasure keeps the security log rows and names the account in them by t
   } finally {
     await Promise.all(rows.map((r) => r.delete().catch(() => {})));
     await cleanUp(uid, email);
+  }
+});
+
+test('another owner\'s invitation to the address goes only when the account\'s address is confirmed', async () => {
+  const db = adminDb();
+  for (const confirmed of [false, true]) {
+    const uid = `erasure-invite-${confirmed}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+    const email = `${uid}@cleancore-test.io`;
+    const invite = db.collection('projects').doc(`${uid}-other-owner`).collection('invitations').doc('inv1');
+    try {
+      await db.collection('users').doc(uid).set({ email, status: 'approved', tier: 'pilot' });
+      await invite.set({ email, status: 'pending', invitedBy: 'someone-else' });
+      const auth = { deleteUser: async () => {}, getUser: async () => ({ emailVerified: confirmed }) } as unknown as Auth;
+      await deleteUserDataAndAccount(uid, { db, auth });
+      expect((await invite.get()).exists, `confirmed: ${confirmed}`).toBe(!confirmed);
+    } finally {
+      await invite.delete().catch(() => {});
+      await cleanUp(uid, email);
+    }
   }
 });
 

@@ -28,7 +28,7 @@ import {
  * - a4f246498f07: a failed quota refund was swallowed without a trace.
  */
 
-const noAuth = { deleteUser: async () => {} } as unknown as Auth;
+const noAuth = { deleteUser: async () => {}, getUser: async () => ({ emailVerified: true }) } as unknown as Auth;
 const uidOf = (tag: string) => `qa220-e-${tag}-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
 const geminiRef = (db: Firestore, uid: string) => db.collection('user_secrets').doc(uid).collection('providers').doc('gemini');
 

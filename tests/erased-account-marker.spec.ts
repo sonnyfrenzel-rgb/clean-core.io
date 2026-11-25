@@ -42,7 +42,7 @@ function adminDb(): Firestore {
   return adminFirestore(app, FIRESTORE_DB_ID);
 }
 
-const keepSignIn = { deleteUser: async () => {} } as unknown as Auth;
+const keepSignIn = { deleteUser: async () => {}, getUser: async () => ({ emailVerified: true }) } as unknown as Auth;
 
 async function denied(op: () => Promise<unknown>): Promise<boolean> {
   try {

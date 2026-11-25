@@ -92,6 +92,10 @@ test.describe('suspending an account ends its sessions (b97e45a2976d)', () => {
     const body = fn('adminRevokeUser');
     expect(body, 'a revoked account keeps renewing its ID token').toMatch(/revokeRefreshTokens\(targetUid\)/);
     expect(body, 'a revoked account can sign in again and mint a fresh token').toMatch(/updateUser\(targetUid, \{ disabled: true \}\)/);
+    // The admin claim is removed in Firebase Auth too, before the tokens are revoked: a later approval
+    // reinstates the account, not its administrator rights.
+    expect(body).toMatch(/delete claims\.admin;\s*await auth\.setCustomUserClaims\(targetUid, claims\)/);
+    expect(body.indexOf('auth.setCustomUserClaims(')).toBeLessThan(body.indexOf('auth.revokeRefreshTokens('));
   });
 
   test('approving re-enables it, so a revocation is not a permanent lockout', () => {
