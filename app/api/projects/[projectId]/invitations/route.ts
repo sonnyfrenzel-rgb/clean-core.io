@@ -41,7 +41,9 @@ import {
   INVITATION_SUPPRESSED_MESSAGE,
   invitationUnsubscribeUrl,
   isInvitationSuppressed,
+  invitationSuppressionKey,
 } from '@/lib/invitation-suppression';
+import { invitationRecipientRefusal } from '@/lib/portfolio/selection-invitations';
 import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 import { recordInvitationSent, type InvitationRecordDb } from '@/lib/invitation-delivery-record';
 import {
@@ -332,6 +334,9 @@ export async function POST(
     if (await isInvitationSuppressed(db, email)) {
       return NextResponse.json({ error: INVITATION_SUPPRESSED_MESSAGE, code: INVITATION_SUPPRESSED_CODE }, { status: 409 });
     }
+    // And the address's own day: what all accounts together may send to one person.
+    const recipientRefusal = await invitationRecipientRefusal(email, { key: invitationSuppressionKey, limit: assertRateLimit });
+    if (recipientRefusal) return NextResponse.json({ error: recipientRefusal.error, code: recipientRefusal.code }, { status: recipientRefusal.status });
 
     const invitedAt = new Date();
     const invitation: Invitation = {

@@ -12,7 +12,9 @@ import {
   INVITATION_SUPPRESSED_MESSAGE,
   invitationUnsubscribeUrl,
   isInvitationSuppressed,
+  invitationSuppressionKey,
 } from '@/lib/invitation-suppression';
+import { assertRateLimit } from '@/lib/rate-limit';
 import { INVITATION_SEND_RATE_LIMIT, invitationDailyRefusal } from '@/lib/invitation-owner-gate';
 import { INVITER_UNCONFIRMED_MESSAGE, inviterAddressConfirmed, openPortfolioRoute } from '@/lib/portfolio/access-server';
 import { BatchRefusal } from '@/lib/portfolio/batch-store';
@@ -21,7 +23,7 @@ import {
   portfolioInvitationLinkPath,
   PORTFOLIO_INVITATION_SUBJECT,
 } from '@/lib/portfolio/invitation-email';
-import { createSelectionInvitation, SELECTION_INVITATIONS, selectionSharing } from '@/lib/portfolio/selection-invitations';
+import { createSelectionInvitation, invitationRecipientRefusal, SELECTION_INVITATIONS, selectionSharing } from '@/lib/portfolio/selection-invitations';
 import { SELECTION_COLLECTION } from '@/lib/portfolio/selection-store';
 import { recordInvitationSent, type InvitationRecordDb } from '@/lib/invitation-delivery-record';
 import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
@@ -92,6 +94,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
     if (requested && (await isInvitationSuppressed(gate.db, requested))) {
       return NextResponse.json({ error: INVITATION_SUPPRESSED_MESSAGE, code: INVITATION_SUPPRESSED_CODE }, { status: 409 });
     }
+    // The address's own day, shared with project invitations.
+    const recipientRefusal = requested ? await invitationRecipientRefusal(requested, { key: invitationSuppressionKey, limit: assertRateLimit }) : null;
+    if (recipientRefusal) return NextResponse.json({ error: recipientRefusal.error, code: recipientRefusal.code }, { status: recipientRefusal.status });
     const invitation = await createSelectionInvitation(
       gate.db,
       { uid: gate.uid, email: gate.email, name: await inviterName(gate.db, gate.uid, gate.email) },

@@ -313,3 +313,34 @@ export async function previewSelectionInvitation(
   if (effectiveStatus(invitation as SelectionInvitation) !== 'pending') return null;
   return { invitedBy: String(invitation.invitedBy?.name ?? ''), expiresAt: invitation.expiresAt };
 }
+
+/**
+ * Invitation mails one address receives in a day, from every account, project and portfolio together. The
+ * inviter's own limits bound one account; this bounds what many accounts can send to one person. Counted by the
+ * address's keyed hash (`invitationSuppressionKey`) — no address is stored; without the pepper it is not counted.
+ */
+export const INVITATION_RECIPIENT_DAILY_LIMIT = 3;
+export const INVITATION_RECIPIENT_LIMIT_CODE = 'invitation-recipient-limit';
+
+export async function invitationRecipientRefusal(
+  email: string,
+  deps: {
+    key: (email: string) => string | null;
+    limit: (key: string, max: number, windowMs: number) => Promise<void>;
+  },
+): Promise<{ status: number; error: string; code: string } | null> {
+  const key = deps.key(email);
+  if (!key) return null;
+  try {
+    await deps.limit(`invitation-recipient:${key}`, INVITATION_RECIPIENT_DAILY_LIMIT, 24 * 60 * 60 * 1000);
+    return null;
+  } catch (err: unknown) {
+    const status = (err as { status?: unknown })?.status;
+    if (status !== 429) throw err;
+    return {
+      status: 429,
+      error: 'This address has received as many invitations today as it may. Try again tomorrow.',
+      code: INVITATION_RECIPIENT_LIMIT_CODE,
+    };
+  }
+}
