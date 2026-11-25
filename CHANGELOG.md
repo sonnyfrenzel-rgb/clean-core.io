@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   candidates accepted 1,040 → 4 (starters) and 11,632 → 90 (LEARN); other candidates newly refused in 3 starters
   (40) and 41 LEARN cases (424), most of them "Authorized?" that passed on "Author's comment" (`lib/naming-facts.ts`,
   QA `488a6df8ebda`, `0a3edfe44f0b`).
+- Naming check: `valid` and `invalid` are no longer free either; a state needs evidence like an outcome. Measured the
+  same way: 57 more candidate pairs refused in LEARN cases, none in the starters (`lib/naming-facts.ts`;
+  QA `7ec92b0dee99`). `ok`/`okay` stay free for now: refusing them would refuse 1,669 more pairs, mostly borrowed
+  "… OK?" questions — left for the owner.
 - The map's "measured and kept with this model" date belongs to the active run only. A quote measured for an earlier
   run of the same source (another engine draws another map) is no longer handed out; the next measurement replaces
   it (`quoteOfActiveRun`, `lib/process-map.ts`, `app/api/projects/[projectId]/process-map/route.ts`; QA `854742965114`).

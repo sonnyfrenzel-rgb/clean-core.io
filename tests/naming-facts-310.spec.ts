@@ -76,10 +76,14 @@ test('the checker: a word is covered by its own forms, never by a shared prefix'
   expect(uncoveredWords('Authorized?', ['Check authority', 'CHECK_AUTHORITY'])).toEqual([]);
 });
 
-test('the checker: an outcome is a claim — "successful" or "failed" stands only where the evidence says it', () => {
+test('the checker: an outcome or a state is a claim — "successful", "failed", "valid", "invalid" stand only where the evidence says it', () => {
   expect(uncoveredWords('Successful payment', ['Create payment'])).toEqual(['successful']);
   expect(uncoveredWords('Payment failed', ['Create payment'])).toEqual(['failed']);
   expect(uncoveredWords('Payment failed', ['Create payment', 'Call failed'])).toEqual([]);
+  // A state is a claim as well: "Invalid payment" where the code only creates one.
+  expect(uncoveredWords('Invalid payment', ['Create payment'])).toEqual(['invalid']);
+  expect(uncoveredWords('Valid payment', ['Create payment'])).toEqual(['valid']);
+  expect(uncoveredWords('Invalid payment', ['Create payment', 'Stop: invalid amount (E004)'])).toEqual([]);
 });
 
 test('H6: a name that changes the kind of statement is dropped — a lost question, a "not" turned, a normal end as a stop', () => {

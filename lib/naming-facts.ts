@@ -90,15 +90,15 @@ function tablesOf(node: SkeletonNode): string[] {
 /* ------------------------------------------------------------------ the checker (H6) */
 
 /**
- * Words that carry no business claim: function words, and the few nouns every step may use. An outcome — successful,
- * failed — is a claim, and stands in a name only where the evidence says it.
+ * Words that carry no business claim: function words, and the few nouns every step may use. An outcome or a state —
+ * successful, failed, valid, invalid — is a claim, and stands in a name only where the evidence says it.
  */
 const FREE = new Set(('a an the and or of to in on at by for with from into onto per via as is are be been was were has have had it its this that '
   + 'these those their there which what when where whether if then than not no nor any all each every both either more most other another '
   + 'one two three first last next new same own some only also still yet just up out off over under after before until while '
   + 'yes done step steps process data list lists result results entry entries record records detail details information value values '
   + 'case cases run runs error errors message messages item items line lines start end stop stops stopped ends ending finish found '
-  + 'given set missing exists exist present empty valid invalid ok okay').split(' '));
+  + 'given set missing exists exist present empty ok okay').split(' '));
 
 /** Verbs that describe what a step does to what the facts name — they add no object of their own. */
 const VERBS = new Set(('check checks checking verify verifies validate validates confirm confirms read reads reading get gets fetch fetches '
