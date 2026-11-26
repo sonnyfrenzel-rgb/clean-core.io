@@ -2,7 +2,7 @@ import { test, expect, type Page } from './helpers/test';
 import fs from 'fs';
 import path from 'path';
 import { build } from 'esbuild';
-import { initialCostAssumptions, takeOverPatch } from '../components/tco/OptionComparison';
+import { initialCostAssumptions, takeOverPatch, withKeyUserOption } from '../components/tco/OptionComparison';
 import { proposeEffort, proposeMaintenanceBaseline, type CostAssumptions } from '../lib/cost-assumptions';
 
 /**
@@ -162,6 +162,28 @@ test.describe('the Economics object page, rendered', () => {
     await page.locator('[data-economics-anchor="effort"]').click();
     await expect(page.locator('#economics-effort')).toHaveAttribute('data-economics-fold', 'open');
     await expect(page.locator('[data-cost-option]')).toHaveCount(4);
+  });
+
+  // Owner report 26.11.2026: after taking over the proposals the key-user option, which gets no proposed days, kept
+  // the page unpriced, and "Fill in the effort" opened a fold far below without showing it.
+  test('an untouched key-user option keeps no amount away', async ({ page }) => {
+    await open(page, withKeyUserOption(priced()), 1440, 900);
+    await expect(page.locator('[data-economics-page]')).toHaveAttribute('data-economics-page', 'priced');
+  });
+
+  test('"Fill in the effort" opens the effort fold and brings it into view', async ({ page }) => {
+    const a = withKeyUserOption(priced());
+    // A key-user option the reader started: one-off stated, per release not yet — the one gap, with no proposal for it.
+    const started = {
+      ...a,
+      options: a.options.map((o) => (o.kind === 'keyuser' ? { ...o, oneOff: { low: { devDays: 0, testDays: 2 }, high: { devDays: 0, testDays: 4 } } } : o)),
+    };
+    await open(page, started, 1440, 900);
+    await expect(page.locator('#economics-effort')).toHaveAttribute('data-economics-fold', 'closed');
+    await expect(page.locator('#economics-effort')).not.toBeInViewport();
+    await page.locator('[data-answer-next] [data-economics-next-action]').click();
+    await expect(page.locator('#economics-effort')).toHaveAttribute('data-economics-fold', 'open');
+    await expect(page.locator('#economics-effort-title')).toBeInViewport();
   });
 
   test('at 390 px: nothing scrolls sideways, open or closed', async ({ page }) => {
