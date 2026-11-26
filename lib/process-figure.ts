@@ -1,5 +1,5 @@
 import { anchorText, LABEL_FONT, ANCHOR_FONT, TASK_PADDING } from '@/lib/bpmn/layout';
-import { lineHeight, wrapText } from '@/lib/bpmn/text-metrics';
+import { lineHeight, textWidth, wrapText } from '@/lib/bpmn/text-metrics';
 import { parseBpmn, type ProcessMapModel } from '@/lib/process-map';
 
 /**
@@ -14,8 +14,11 @@ import { parseBpmn, type ProcessMapModel } from '@/lib/process-map';
  * they say — the names bpmn-js draws in Analyze. Pools, lanes, data stores and annotations are not drawn: a figure in
  * a document shows the flow; the map in Analyze shows the rest.
  *
- * `figureParts` cuts a wide figure into parts that each fit the text width of an A4 page at a readable scale, at the
- * gaps between columns of shapes, so no shape is cut (ADR-127 (3), "fit to A4 in parts").
+ * `figureParts` lays the figure out for an A4 page (ADR-127 (3), "fit to A4 in parts"; owner 26.11.2026: "im Bildumbruch
+ * nicht lesbar"). The layout wraps a long process into rows, so a figure is read row by row: a wide figure goes on a
+ * landscape page rather than shrinking below a readable size, and a tall one is cut between rows — never through a
+ * shape, a name or a flow's label — into parts read top to bottom, each with a caption that says where it continues.
+ * Only a figure too wide even for landscape is also cut between columns.
  *
  * Pure: no DOM, no I/O. Every text that reaches an SVG string goes through `escapeXml`.
  */
@@ -59,21 +62,41 @@ export interface ProcessFigure {
   box: { x: number; y: number; width: number; height: number };
 }
 
-/** One part of a figure cut for a page: the horizontal slice it shows. */
+/** One part of a figure cut for a page: the slice of the drawing it shows. */
 export interface FigurePart {
   index: number;
   count: number;
   x: number;
   width: number;
+  /** The top of the slice; the figure's own top when the figure is not cut between rows. */
+  y: number;
+  height: number;
+}
+
+/** The text area a figure is printed into, in CSS px at 96 dpi. */
+export interface FigurePage {
+  orientation: 'portrait' | 'landscape';
+  width: number;
+  height: number;
 }
 
 const MARGIN = 16;
 /** The text width of an A4 page with 2 cm margins, in CSS px (170 mm at 96 dpi). */
 export const A4_TEXT_WIDTH_PX = 642;
-/** The smallest scale at which the map's 12 px names still read on paper (about 7 pt). */
-export const A4_MIN_SCALE = 0.55;
-/** The widest slice one A4 part may show. */
-export const A4_PART_WIDTH = Math.floor(A4_TEXT_WIDTH_PX / A4_MIN_SCALE);
+/** The text area of an A4 page upright with 2 cm margins (170 × 257 mm). */
+export const A4_PORTRAIT: FigurePage = { orientation: 'portrait', width: 642, height: 971 };
+/**
+ * The text area of an A4 page on its side with 1.27 cm margins (271.6 × 184.6 mm) — the page a wide figure is printed
+ * on in Word and in print, so its names stay readable.
+ */
+export const A4_LANDSCAPE: FigurePage = { orientation: 'landscape', width: 1026, height: 697 };
+/**
+ * The smallest scale a figure is printed at: the map's 12 px names at about 6 pt, its 11 px line anchors a little
+ * under. Below it a figure is cut rather than shrunk.
+ */
+export const FIGURE_MIN_SCALE = 0.65;
+/** Room on a page for the caption under a part and the paragraph spacing around it. */
+export const FIGURE_CAPTION_ROOM = 56;
 
 const ACTIVITY = new Set(['task', 'serviceTask', 'sendTask', 'receiveTask', 'userTask', 'manualTask', 'businessRuleTask', 'scriptTask', 'callActivity', 'subProcess']);
 const GATEWAY = new Set(['exclusiveGateway', 'parallelGateway', 'inclusiveGateway', 'eventBasedGateway']);
@@ -198,11 +221,14 @@ export function processFigure(
     maxY = Math.max(maxY, y + h);
   };
   for (const s of shapes) {
-    grow(s.x, s.y, s.width, s.height);
-    if (s.labelBox) grow(s.labelBox.x, s.labelBox.y, s.labelBox.width, s.labelBox.height + lineHeight(ANCHOR_FONT) + 2);
-    else grow(s.x, s.y, s.width, s.height + lineHeight(ANCHOR_FONT));
+    const [l, t, r, b] = shapeExtent(s);
+    grow(l, t, r - l, b - t);
   }
-  for (const e of edges) for (const p of e.points) grow(p.x, p.y);
+  for (const e of edges) {
+    for (const p of e.points) grow(p.x, p.y);
+    const lb = edgeLabelExtent(e);
+    if (lb) grow(lb.x, lb.y, lb.width, lb.height);
+  }
   return {
     title: model.processName,
     shapes,
@@ -211,25 +237,50 @@ export function processFigure(
   };
 }
 
-/**
- * The figure cut for A4: one part when it fits at `A4_MIN_SCALE`, else as many as it needs, each cut in a gap
- * between columns of shapes — never through a shape or its name.
- */
-export function figureParts(figure: ProcessFigure, maxWidth: number = A4_PART_WIDTH): FigurePart[] {
+/** Where a shape draws: its outline, its name and its line anchor — [left, top, right, bottom]. */
+function shapeExtent(s: FigureShape): [number, number, number, number] {
+  if (!s.labelBox) return [s.x, s.y, s.x + s.width, s.y + s.height];
+  const anchorLine = s.anchor ? lineHeight(ANCHOR_FONT) + 2 : 0;
+  const nameHeight = Math.max(s.labelBox.height, Math.max(1, s.lines.length) * lineHeight(LABEL_FONT));
+  const wide = Math.max(s.labelBox.width, ...s.lines.map((l) => textWidth(l, LABEL_FONT)));
+  const cx = s.labelBox.x + s.labelBox.width / 2;
+  return [
+    Math.min(s.x, cx - wide / 2),
+    Math.min(s.y, s.labelBox.y),
+    Math.max(s.x + s.width, cx + wide / 2),
+    Math.max(s.y + s.height, s.labelBox.y + nameHeight + anchorLine),
+  ];
+}
+
+/** The box a flow's label is drawn in, or null for a flow without one. */
+export function edgeLabelExtent(edge: Pick<FigureEdge, 'points' | 'labelBox' | 'label'>): { x: number; y: number; width: number; height: number } | null {
+  if (!edge.label) return null;
+  const at = edgeLabelAt(edge);
+  return { x: at.x - 2, y: at.y - ANCHOR_FONT, width: textWidth(edge.label, ANCHOR_FONT) + 4, height: ANCHOR_FONT + 4 };
+}
+
+/** The page a figure is printed on: upright when it reads there at `FIGURE_MIN_SCALE` or larger, else on its side. */
+export function figurePage(figure: ProcessFigure): FigurePage {
+  return figure.box.width * FIGURE_MIN_SCALE <= A4_PORTRAIT.width ? A4_PORTRAIT : A4_LANDSCAPE;
+}
+
+/** The one scale every part of a figure is printed at — the same size of names in every part, never above 1. */
+export function figureScale(figure: ProcessFigure, page: FigurePage = figurePage(figure)): number {
+  return Math.max(FIGURE_MIN_SCALE, Math.min(1, page.width / figure.box.width));
+}
+
+/** Cuts across the x axis at the gaps between columns of shapes, parts of about equal width. */
+function columnCuts(figure: ProcessFigure, maxWidth: number): number[] {
   const { x: x0, width } = figure.box;
-  if (width <= maxWidth) return [{ index: 1, count: 1, x: x0, width }];
-  // Spans a cut may not cross: every shape with its name.
-  const spans = figure.shapes.map((s) => {
-    const left = Math.min(s.x, s.labelBox?.x ?? s.x);
-    const right = Math.max(s.x + s.width, s.labelBox ? s.labelBox.x + s.labelBox.width : s.x + s.width);
-    return [left - 4, right + 4] as const;
-  });
+  const spans = [
+    ...figure.shapes.map((s) => shapeExtent(s)).map(([l, , r]) => [l - 4, r + 4] as const),
+    ...figure.edges.map(edgeLabelExtent).filter((b): b is NonNullable<typeof b> => b !== null).map((b) => [b.x - 2, b.x + b.width + 2] as const),
+  ];
   const blocked = (x: number) => spans.some(([l, r]) => x > l && x < r);
   const end = x0 + width;
   const cuts: number[] = [];
   let start = x0;
   while (end - start > maxWidth) {
-    // Parts of about equal width: aim at an even share of what is left, then look for a gap around it.
     const left = Math.ceil((end - start) / maxWidth);
     const aim = Math.min(start + maxWidth, start + (end - start) / left);
     let cut = aim;
@@ -241,25 +292,68 @@ export function figureParts(figure: ProcessFigure, maxWidth: number = A4_PART_WI
     cuts.push(cut);
     start = cut;
   }
-  const bounds = [x0, ...cuts, end];
-  const count = bounds.length - 1;
-  return bounds.slice(0, -1).map((x, i) => ({ index: i + 1, count, x, width: bounds[i + 1] - x }));
+  return cuts;
 }
 
 /**
- * The one scale every part of a figure is printed at: the page's text width over the widest part, never above 1 —
- * so the names are the same size in every part.
+ * Cuts across the y axis between rows of shapes: each part takes as many whole rows as fit its page, the cut as low
+ * as it can stand — never through a shape, its name, its anchor or a flow's label, and off a flow running along it.
  */
-export function figureScale(figure: ProcessFigure, maxWidth: number = A4_PART_WIDTH): number {
-  const widest = Math.max(...figureParts(figure, maxWidth).map((p) => p.width));
-  return Math.min(1, A4_TEXT_WIDTH_PX / widest);
+function rowCuts(figure: ProcessFigure, maxHeight: number): number[] {
+  const { y: y0, height } = figure.box;
+  const spans = [
+    ...figure.shapes.map((s) => shapeExtent(s)).map(([, t, , b]) => [t - 4, b + 4] as const),
+    ...figure.edges.map(edgeLabelExtent).filter((b): b is NonNullable<typeof b> => b !== null).map((b) => [b.y - 2, b.y + b.height + 2] as const),
+  ];
+  // A flow running along a cut would be split lengthwise: keep the cut a few px off it.
+  const runs = figure.edges.flatMap((e) => e.points.slice(1).filter((p, i) => Math.abs(p.y - e.points[i].y) < 1).map((p) => [p.y - 6, p.y + 6] as const));
+  const blocked = (y: number) => spans.some(([t, b]) => y > t && y < b);
+  const onRun = (y: number) => runs.some(([t, b]) => y > t && y < b);
+  const end = y0 + height;
+  const cuts: number[] = [];
+  let start = y0;
+  while (end - start > maxHeight) {
+    let cut = start + maxHeight;
+    let found = false;
+    for (const avoidRuns of [true, false]) {
+      for (let y = start + maxHeight; y > start + maxHeight / 4; y -= 2) {
+        if (!blocked(y) && !(avoidRuns && onRun(y))) { cut = y; found = true; break; }
+      }
+      if (found) break;
+    }
+    // No gap in reach: the cut stands at the page's height; a row is split across two parts rather than lost.
+    cuts.push(cut);
+    start = cut;
+  }
+  return cuts;
+}
+
+/**
+ * The figure laid out for its page (`figurePage`): one part when it fits at `figureScale`, else parts read top to
+ * bottom (and, only for a figure too wide even on its side, left to right within a band of rows).
+ */
+export function figureParts(figure: ProcessFigure, page: FigurePage = figurePage(figure)): FigurePart[] {
+  const scale = figureScale(figure, page);
+  const { x: x0, y: y0, width, height } = figure.box;
+  const xs = [x0, ...columnCuts(figure, page.width / scale), x0 + width];
+  const ys = [y0, ...rowCuts(figure, (page.height - FIGURE_CAPTION_ROOM) / scale), y0 + height];
+  const slices: Array<Omit<FigurePart, 'index' | 'count'>> = [];
+  for (let r = 0; r < ys.length - 1; r += 1) {
+    for (let c = 0; c < xs.length - 1; c += 1) slices.push({ x: xs[c], width: xs[c + 1] - xs[c], y: ys[r], height: ys[r + 1] - ys[r] });
+  }
+  return slices.map((p, i) => ({ ...p, index: i + 1, count: slices.length }));
 }
 
 /** The figure's caption: "Figure 1 · Order approval · 29 elements" — with the part when it is cut. */
 export function figureCaption(figure: ProcessFigure, part?: Pick<FigurePart, 'index' | 'count'>): string {
   const n = figure.shapes.length;
   const base = `Figure 1 · ${figure.title || 'Process map'} · ${n} ${n === 1 ? 'element' : 'elements'} on the top level`;
-  return part && part.count > 1 ? `${base} · part ${part.index} of ${part.count}` : base;
+  if (!part || part.count <= 1) return base;
+  const where = [
+    part.index > 1 ? `continued from part ${part.index - 1}` : '',
+    part.index < part.count ? `continues in part ${part.index + 1}` : '',
+  ].filter(Boolean).join(', ');
+  return `${base} · part ${part.index} of ${part.count} (${where})`;
 }
 
 /* ------------------------------------------------------------------ the SVG text */
@@ -332,7 +426,8 @@ export function edgeLabelAt(edge: Pick<FigureEdge, 'points' | 'labelBox'>): { x:
 export function processFigureSvg(figure: ProcessFigure, part?: FigurePart, width?: number): string {
   const x = part ? part.x : figure.box.x;
   const w = part ? part.width : figure.box.width;
-  const { y, height: h } = figure.box;
+  const y = part ? part.y : figure.box.y;
+  const h = part ? part.height : figure.box.height;
   const drawWidth = Math.round(width ?? w * figureScale(figure));
   const drawHeight = Math.round((h * drawWidth) / w);
   const font = `font-family="Inter, Arial, sans-serif"`;
@@ -342,10 +437,6 @@ export function processFigureSvg(figure: ProcessFigure, part?: FigurePart, width
   for (const e of figure.edges) {
     out.push(`<path d="M${e.points.map((p) => `${p.x} ${p.y}`).join(' L')}" fill="none" stroke="${MUTED}" stroke-width="1.5"/>`);
     out.push(`<path d="${arrowHead(e.points)}" fill="${MUTED}"/>`);
-    if (e.label) {
-      const at = edgeLabelAt(e);
-      out.push(`<text x="${at.x}" y="${at.y}" font-size="${ANCHOR_FONT}" fill="${MUTED}">${escapeXml(e.label)}</text>`);
-    }
   }
   for (const s of figure.shapes) {
     const g = shapeGeometry(s);
@@ -363,6 +454,14 @@ export function processFigureSvg(figure: ProcessFigure, part?: FigurePart, width
     }
     for (const t of g.name) out.push(`<text x="${t.x}" y="${t.y}" font-size="${LABEL_FONT}" text-anchor="middle" fill="${INK}">${escapeXml(t.text)}</text>`);
     if (g.anchor) out.push(`<text x="${g.anchor.x}" y="${g.anchor.y}" font-size="${ANCHOR_FONT}" text-anchor="middle" fill="${MUTED}" font-family="Consolas, monospace">${escapeXml(g.anchor.text)}</text>`);
+  }
+  // A flow's label last, on white: a label the layout set against a line or a shape still reads.
+  for (const e of figure.edges) {
+    const box = edgeLabelExtent(e);
+    if (!box) continue;
+    const at = edgeLabelAt(e);
+    out.push(`<rect x="${box.x}" y="${box.y}" width="${box.width}" height="${box.height}" fill="#ffffff"/>`);
+    out.push(`<text x="${at.x}" y="${at.y}" font-size="${ANCHOR_FONT}" fill="${MUTED}">${escapeXml(e.label)}</text>`);
   }
   out.push('</svg>');
   return out.join('');

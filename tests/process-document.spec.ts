@@ -470,10 +470,14 @@ test.describe('ADR-084: seven sections, a title that leads with the process, rea
     const keys = new Set<string>(PROCESS_DOCUMENT_SECTIONS.map((s) => s.key));
     for (const g of o.glance.goTo) expect(keys.has(g.section)).toBe(true);
     const html = await htmlOf(doc);
-    // Every link has its target in the page.
-    for (const g of o.glance.goTo) {
-      expect(html).toContain(`href="#pd-${g.anchor ?? g.section}"`);
-      expect(html).toContain(`id="pd-${g.anchor ?? g.section}"`);
+    // Every link has its target in the page — anchored as Confluence anchors the heading (owner 26.11.2026), so the
+    // "Go to" line still jumps once the page is pasted into Confluence.
+    const anchors = [...html.matchAll(/data-doc-goto=""[\s\S]*?<\/p>/g)][0][0];
+    const targets = [...anchors.matchAll(/href="#([^"]+)"/g)].map((m) => m[1]);
+    expect(targets).toHaveLength(o.glance.goTo.length);
+    for (const t of targets) {
+      expect(t).not.toMatch(/^pd-/);
+      expect(html).toContain(`id="${t}"`);
     }
     const md = markdownOf(doc);
     expect(md).toContain(`Go to: What does it do? → ${sectionTitle('overview')} · Who acts? → ${sectionTitle('overview')}`);

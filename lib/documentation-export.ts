@@ -17,7 +17,7 @@
  * (`tests/export-escaping-guard.spec.ts` reads this file for that).
  */
 import { escapeHtml } from '@/lib/utils';
-import { EXPORT_COLORS, EXPORT_FONT_MONO, EXPORT_STYLE_ELEMENT } from '@/lib/export-style';
+import { EXPORT_COLORS, EXPORT_FONT_MONO, EXPORT_STYLE_ELEMENT, SHORT_ID } from '@/lib/export-style';
 import { NOT_DETERMINED_LABEL } from '@/lib/process-documentation';
 import {
   EMPTY_SECTION,
@@ -59,7 +59,7 @@ import {
   type PdSectionKey,
   type PdTable,
 } from '@/lib/process-document-outline';
-import { figureCaption, figureParts, processFigureSvg, type ProcessFigure } from '@/lib/process-figure';
+import { figureCaption, figurePage, figureParts, processFigureSvg, type ProcessFigure } from '@/lib/process-figure';
 import { BUSINESS_PAGE, businessPageLineText, type BusinessPage } from '@/lib/documentation-business-page';
 import { SOP_BASIS, layerFacts, sopBasisText, type SopStatement } from '@/lib/sop-provenance';
 import { readCapabilityFacts } from '@/lib/documentation-capabilities';
@@ -143,9 +143,47 @@ export const CONTROLS_FROM_THE_CODE =
  */
 function figureHtml(figure: ProcessFigure | null): string {
   if (!figure) return '';
+  // The page it was laid out for (`figurePage`): a wide figure prints on landscape pages of its own.
+  const page = figurePage(figure).orientation;
   return figureParts(figure)
-    .map((part) => `<figure class="card" data-doc-figure="${part.index}">${processFigureSvg(figure, part)}<figcaption><em>${escapeHtml(figureCaption(figure, part))}</em></figcaption></figure>`)
+    .map((part) => `<figure class="card" data-doc-figure="${part.index}" data-doc-figure-page="${page}">${processFigureSvg(figure, part)}<figcaption><em>${escapeHtml(figureCaption(figure, part))}</em></figcaption></figure>`)
     .join('');
+}
+
+/** An HTML text with its tags removed and the entities `escapeHtml` writes read back. */
+function plainText(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
+    .trim();
+}
+
+/**
+ * The anchor Confluence Cloud gives a heading: its text with every run of spaces as one hyphen, case kept
+ * (`#1.-How-the-process-works`). A pasted page loses the ids of the file; Confluence writes its own from the heading
+ * text, so a link written to this anchor still jumps after the paste (owner 26.11.2026: the "Go to" navigation must
+ * work in Confluence).
+ */
+export function confluenceHeadingAnchor(text: string): string {
+  return text.trim().replace(/\s+/g, '-');
+}
+
+/**
+ * Every section heading of the page anchored by its Confluence anchor (`confluenceHeadingAnchor`) instead of its key
+ * (`pd-<key>`), and every link into the page rewritten with it — the same jump in the browser and in Confluence.
+ * A row's anchor (`oq-…`) has no heading Confluence would anchor and is left as it is.
+ */
+export function withConfluenceAnchors(html: string): string {
+  const anchors = new Map<string, string>();
+  const used = new Set<string>();
+  const headed = html.replace(/<h([1-6])([^>]*?)\sid="(pd-[a-z0-9-]+)"([^>]*)>([\s\S]*?)<\/h\1>/g, (whole, level: string, before: string, key: string, after: string, inner: string) => {
+    const anchor = confluenceHeadingAnchor(plainText(inner));
+    if (!anchor || used.has(anchor)) return whole;
+    used.add(anchor);
+    anchors.set(key, anchor);
+    return `<h${level}${before} id="${escapeHtml(anchor)}"${after}>${inner}</h${level}>`;
+  });
+  return headed.replace(/href="#(pd-[a-z0-9-]+)"/g, (whole, key: string) => (anchors.has(key) ? `href="#${escapeHtml(anchors.get(key)!)}"` : whole));
 }
 
 /** The note a stale export opens with; empty for a current one. Our own markup, no model value. */
@@ -175,6 +213,13 @@ const PROCESS_DOC_CSS = `<style>
     .figure .value { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; margin: 0; }
     .figure .label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: ${EXPORT_COLORS.inkMuted}; margin: 0; }
     .appendix { break-before: page; }
+    /* Figure 1 (owner 26.11.2026): never wider than the page it is pasted into, never torn across two sheets in
+       print, and a wide figure on landscape sheets of its own — laid out for them by lib/process-figure.ts. */
+    figure[data-doc-figure] { margin: 12px 0; padding: 8px; break-inside: avoid; }
+    figure[data-doc-figure] svg { display: block; max-width: 100%; height: auto; margin: 0 auto; }
+    figure[data-doc-figure] figcaption { margin-top: 6px; font-size: 12px; text-align: center; }
+    @page cc-figure-landscape { size: A4 landscape; margin: 1.27cm; }
+    @media print { figure[data-doc-figure-page="landscape"] { page: cc-figure-landscape; border: 0; padding: 0; } .lead { break-after: avoid; } }
   </style>`;
 
 /**
@@ -225,7 +270,7 @@ export function buildEngineConfluenceHtml(
   // Owner review 10.10.2026: a question on several rows of a table is said once, above it.
   const tableOf = (t: PdTable | null, whole = false) => (t
     ? `${(t.shared ?? []).map((q) => `<p class="meta" data-doc-shared-question="${esc(q.action)}">${esc(sharedQuestionLead(q, t.rows.length) + ':')} <a href="#oq-${esc(q.action)}">${esc(q.title)}</a></p>`).join('')}<table><thead><tr>${[...t.head, SOURCE_COLUMN].map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead><tbody>${(whole ? t.rows : t.rows.slice(0, t.first))
-      .map((r) => `<tr${r.id ? ` id="${esc(r.id)}"` : ''}>${r.cells.map((c, i) => `<td${r.aiCell === i ? namingAttributes : ''}>${esc(c)}</td>`).join('')}<td class="src">${esc(sourceText({ tech: r.tech, anchors: r.anchors }))}${r.question ? ` <a href="#oq-${esc(r.question.action)}">${esc(`→ ${questionLinkText(r.question)}`)}</a>` : ''}</td></tr>`)
+      .map((r) => `<tr${r.id ? ` id="${esc(r.id)}"` : ''}>${r.cells.map((c, i) => `<td${r.aiCell === i ? namingAttributes : ''}>${SHORT_ID.test(c) ? `<span style="white-space:nowrap">${esc(c)}</span>` : esc(c)}</td>`).join('')}<td class="src">${esc(sourceText({ tech: r.tech, anchors: r.anchors }))}${r.question ? ` <a href="#oq-${esc(r.question.action)}">${esc(`→ ${questionLinkText(r.question)}`)}</a>` : ''}</td></tr>`)
       .join('')}</tbody></table>${t.note ? `<p class="meta">${esc(t.note)}</p>` : ''}${!whole && t.rows.length > t.first ? `<p class="meta">${esc(moreRowsLine(t))}</p>` : ''}`
     : '');
   const empty = (key: keyof typeof EMPTY_SECTION) => `<p class="muted">${esc(EMPTY_SECTION[key])}</p>`;
@@ -405,7 +450,7 @@ export function buildEngineConfluenceHtml(
     ${businessSection}
     ${appendixSection}
   </body></html>`;
-  return new Blob([engineHtml], { type: 'text/html;charset=utf-8' });
+  return new Blob([engineHtml].map(withConfluenceAnchors), { type: 'text/html;charset=utf-8' });
 }
 
 /** "4a. Check vendor" — a SOP step as a file names it: its reference on the main path, else its number, and its name. */

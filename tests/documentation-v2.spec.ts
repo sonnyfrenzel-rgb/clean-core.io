@@ -10,7 +10,7 @@ import { buildProcessDocument } from '../lib/process-document-build';
 import { readProcess, readRules } from '../lib/first-look';
 import { aroundTheMap } from '../lib/around-the-map';
 import { documentationPage, documentationAnchors, DOC_CHAPTERS } from '../lib/documentation-page';
-import { figureParts, processFigure, processFigureSvg, A4_PART_WIDTH } from '../lib/process-figure';
+import { figurePage, figureParts, figureScale, processFigure, processFigureSvg, FIGURE_MIN_SCALE } from '../lib/process-figure';
 import { elementsOfPlane, processCounts } from '../lib/process-map';
 
 /**
@@ -87,14 +87,16 @@ test.describe('Figure 1 — the map, read-only (ADR-127 (2), (3))', () => {
     for (const s of numbered) expect(PAGE.steps.find((st) => st.id === s.id)?.position).toBe(s.step);
   });
 
-  test('cut for A4 in parts at gaps, every part at a readable width, together the whole figure', () => {
+  test('laid out for A4 in parts at a readable scale, together the whole figure (tests/export-figure-pages.spec.ts holds the rest)', () => {
     const figure = PAGE.figure!;
+    const page = figurePage(figure);
+    const scale = figureScale(figure, page);
+    expect(scale).toBeGreaterThanOrEqual(FIGURE_MIN_SCALE);
     const parts = figureParts(figure);
-    expect(parts.length).toBe(Math.max(1, parts.length));
-    for (const p of parts) expect(p.width).toBeLessThanOrEqual(A4_PART_WIDTH + 0.001);
-    const sum = parts.reduce((n, p) => n + p.width, 0);
-    expect(Math.abs(sum - figure.box.width)).toBeLessThan(0.01);
-    if (figure.box.width > A4_PART_WIDTH) expect(parts.length).toBeGreaterThan(1);
+    expect(parts.length).toBeGreaterThan(0);
+    for (const p of parts) expect(p.width * scale).toBeLessThanOrEqual(page.width + 0.5);
+    const area = parts.reduce((n, p) => n + p.width * p.height, 0);
+    expect(Math.abs(area - figure.box.width * figure.box.height)).toBeLessThan(1);
   });
 
   test('the SVG escapes every text and names the figure', () => {
@@ -170,6 +172,11 @@ test.describe('the one page, rendered (static markup)', () => {
     expect(html.match(/data-doc-step="/g)?.length).toBe(PAGE.steps.length);
     // A phone reads the steps as the list; the figure steps back for one line.
     expect(html).toContain('data-doc-figure-phone=""');
+    // Print / PDF (owner 26.11.2026): paper gets the parts the files carry, not the sideways-scrolling screen figure,
+    // which would be cut at the sheet's edge.
+    expect(html).toContain(`data-doc-figure-print="${figurePage(PAGE.figure!).orientation}"`);
+    expect(html.match(/data-doc-figure-print-part="/g)?.length).toBe(figureParts(PAGE.figure!).length);
+    expect(html).toMatch(/class="[^"]*overflow-x-auto[^"]*print:hidden/);
   });
 
   test('no inputs, no editor, no view switch; no dead end ("Nothing more to write")', async () => {

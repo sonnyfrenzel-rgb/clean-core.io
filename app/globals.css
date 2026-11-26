@@ -700,6 +700,20 @@ html:has([data-page-anchors]) {
   margin: 0;
 }
 
+/* Documentation, Figure 1 in Print / PDF (owner 26.11.2026): a figure too wide
+   for an upright sheet prints on landscape sheets of its own, with the margins
+   lib/process-figure.ts laid its parts out for (A4_LANDSCAPE). */
+@page cc-figure-landscape {
+  size: A4 landscape;
+  margin: 1.27cm;
+}
+
+@media print {
+  [data-doc-figure-print='landscape'] {
+    page: cc-figure-landscape;
+  }
+}
+
 @media print {
   [data-cc-form] {
     background: #fff !important;

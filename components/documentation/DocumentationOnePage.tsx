@@ -24,7 +24,7 @@ import {
   type DocStep,
   type DocumentationPage,
 } from '@/lib/documentation-page';
-import { arrowHead, edgeLabelAt, figureCaption, shapeGeometry, type ProcessFigure } from '@/lib/process-figure';
+import { arrowHead, edgeLabelAt, figureCaption, figurePage, figureParts, processFigureSvg, shapeGeometry, type ProcessFigure } from '@/lib/process-figure';
 
 /**
  * Documentation, one page for every reader in the order of the Word file — ADR-127, built as
@@ -189,7 +189,18 @@ export function DocFigure({ figure, open, onStep }: { figure: ProcessFigure; ope
   const { x, y, width, height } = figure.box;
   return (
     <figure data-doc-figure="" className="m-0">
-      <div className="overflow-x-auto rounded-cc-row border border-cc-line bg-cc-surface max-sm:hidden">
+      {/* Print / PDF (owner 26.11.2026, "im Bildumbruch nicht lesbar"): the screen figure scrolls sideways and would be
+          cut at the sheet's edge, so paper gets the parts the files carry — whole rows, a wide figure on landscape
+          sheets (`figureParts`, `figurePage`). Our own markup: every text in it is escaped by `processFigureSvg`. */}
+      <div data-doc-figure-print={figurePage(figure).orientation} className="hidden print:block">
+        {figureParts(figure).map((part) => (
+          <div key={part.index} data-doc-figure-print-part={part.index} className="break-inside-avoid">
+            <div className="[&>svg]:mx-auto [&>svg]:block [&>svg]:h-auto [&>svg]:max-w-full" dangerouslySetInnerHTML={{ __html: processFigureSvg(figure, part) }} />
+            <p className="m-0 mt-1 text-center cc-text-cell italic">{figureCaption(figure, part)}</p>
+          </div>
+        ))}
+      </div>
+      <div className="overflow-x-auto rounded-cc-row border border-cc-line bg-cc-surface max-sm:hidden print:hidden">
         <svg
           role="img"
           aria-label={figureCaption(figure)}
@@ -274,7 +285,7 @@ export function DocFigure({ figure, open, onStep }: { figure: ProcessFigure; ope
           })}
         </svg>
       </div>
-      <figcaption className="mt-2 cc-text-cell text-cc-ink-muted max-sm:hidden">
+      <figcaption className="mt-2 cc-text-cell text-cc-ink-muted max-sm:hidden print:hidden">
         <strong className="text-cc-ink">Figure 1</strong> · {figureCaption(figure).replace(/^Figure 1 · /, '')} · the same picture as in Analyze and in every file
       </figcaption>
       <p data-doc-figure-phone="" className="m-0 hidden items-start gap-2 rounded-cc-row border border-cc-line bg-cc-surface-muted p-3 cc-text-cell text-cc-ink-muted max-sm:flex">

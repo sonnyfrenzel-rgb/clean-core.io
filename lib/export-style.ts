@@ -55,6 +55,12 @@ export const EXPORT_COLORS = {
 export const EXPORT_FONT = 'Inter, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
 
 /** `--cc-font-mono`. */
+/**
+ * A short identifier — `FR-001`, `BR-009`, `NFR-12` — that a narrow table column would break at its hyphen ("FR-" over
+ * "001"). Every export keeps it on one line: `white-space:nowrap` in HTML, a non-breaking hyphen in Word.
+ */
+export const SHORT_ID = /^[A-Z][A-Z0-9]{0,5}-\d{1,5}$/;
+
 export const EXPORT_FONT_MONO = 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
 
 /** The five semantic states of §1.1, as the class names the stylesheet defines. */

@@ -10,6 +10,7 @@ import {
   type NonFunctionalRequirement,
 } from '@/lib/non-functional-requirements';
 import { parseRich, richHtml, richMarkdown, type RichInline } from '@/lib/rich-text';
+import { SHORT_ID } from '@/lib/export-style';
 import {
   BASIS_LABEL,
   PRIORITY_LABEL,
@@ -179,6 +180,7 @@ const esc = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
  * a `<span>` around its part when the cell opens with the engine's or the account's text (`from`).
  */
 function htmlCell(td: string, text: string, cell: DocCellAi | null): string {
+  if (!cell && SHORT_ID.test(text)) return `<td ${td}><span style="white-space:nowrap">${esc(text)}</span></td>`;
   if (!cell) return `<td ${td}>${esc(text)}</td>`;
   if (!splitSpan(text, cell)[0]) return `<td ${td}${aiOriginHtmlAttributes(cell.ai)}>${esc(text)}</td>`;
   return `<td ${td}>${htmlSpan(text, cell)}</td>`;
@@ -282,14 +284,19 @@ function para(content: string, style?: string): string {
 }
 
 function docxTable(head: string[], rows: string[][], muted: readonly number[] = [], cellAi: ReadonlyArray<DocCellAi | null> = [], ai?: DocBlockAi | null): string {
-  const text = (t: string, header: boolean, grey: boolean) => (grey && !header ? mutedRun(t) : run(t, { bold: header }));
+  const text = (t: string, header: boolean, grey: boolean) => {
+    const runs = grey && !header ? mutedRun(t) : run(t, { bold: header });
+    // `SHORT_ID`: an identifier stays on one line — its hyphen a non-breaking one.
+    return SHORT_ID.test(t) ? runs.replace('-', '</w:t><w:noBreakHyphen/><w:t xml:space="preserve">') : runs;
+  };
   const cell = (t: string, header: boolean, grey: boolean, model: DocCellAi | null = null) => {
     let runs = text(t, header, grey);
     if (model) {
       const [before, written] = splitSpan(t, model);
       runs = before ? text(before, header, grey) + runSdt(model.ai, text(written, header, grey)) : runSdt(model.ai, runs);
     }
-    return `<w:tc><w:tcPr>${header ? '<w:shd w:val="clear" w:color="auto" w:fill="F1F5F9"/>' : ''}</w:tcPr>${para(runs)}</w:tc>`;
+    // A header cell's paragraph keeps with the next row: a table never starts with its header alone at a page's foot.
+    return `<w:tc><w:tcPr>${header ? '<w:shd w:val="clear" w:color="auto" w:fill="F1F5F9"/>' : ''}</w:tcPr>${header ? `<w:p><w:pPr><w:keepNext/></w:pPr>${runs}</w:p>` : para(runs)}</w:tc>`;
   };
   // A header row of empty cells (a key–value table) is left out.
   const headRow = head.some((h) => h.trim())
@@ -358,7 +365,7 @@ function documentXml(set: RequirementSet, meta: RequirementsExportMeta): string 
   b.push(docxTable(['Process step', 'Requirements', 'SAP objects'], set.steps
     .filter((s) => s.requirementIds.length || s.objects.length)
     .map((s) => [`${s.number}. ${s.label}`, s.requirementIds.join(', ') || '0', s.objects.map((o) => `${o.name}${o.custom ? '' : o.level ? ` (${o.level})` : ''}`).join(', ') || 'none'])));
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${b.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${b.join('')}${SECTION_PORTRAIT}</w:body></w:document>`;
 }
 
 const STYLES = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Calibri" w:hAnsi="Calibri"/><w:sz w:val="21"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="80"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style><w:style w:type="paragraph" w:styleId="Title"><w:name w:val="Title"/><w:basedOn w:val="Normal"/><w:pPr><w:spacing w:after="160"/></w:pPr><w:rPr><w:b/><w:sz w:val="36"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading1"><w:name w:val="heading 1"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="320" w:after="120"/><w:outlineLvl w:val="0"/></w:pPr><w:rPr><w:b/><w:sz w:val="30"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading2"><w:name w:val="heading 2"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="240" w:after="80"/><w:outlineLvl w:val="1"/></w:pPr><w:rPr><w:b/><w:sz w:val="26"/></w:rPr></w:style><w:style w:type="paragraph" w:styleId="Heading3"><w:name w:val="heading 3"/><w:basedOn w:val="Normal"/><w:pPr><w:keepNext/><w:spacing w:before="200" w:after="60"/><w:outlineLvl w:val="2"/></w:pPr><w:rPr><w:b/><w:sz w:val="22"/></w:rPr></w:style><w:style w:type="table" w:styleId="Grid"><w:name w:val="Table Grid"/><w:tblPr><w:tblBorders><w:top w:val="single" w:sz="4" w:color="CBD5E1"/><w:left w:val="single" w:sz="4" w:color="CBD5E1"/><w:bottom w:val="single" w:sz="4" w:color="CBD5E1"/><w:right w:val="single" w:sz="4" w:color="CBD5E1"/><w:insideH w:val="single" w:sz="4" w:color="CBD5E1"/><w:insideV w:val="single" w:sz="4" w:color="CBD5E1"/></w:tblBorders><w:tblCellMar><w:left w:w="80" w:type="dxa"/><w:right w:w="80" w:type="dxa"/></w:tblCellMar></w:tblPr></w:style></w:styles>`;
@@ -625,15 +632,26 @@ export function docxFigureMedia(blocks: readonly DocBlock[]): Array<{ name: stri
   return out;
 }
 
+/**
+ * The page geometry of the Word file, in twentieths of a point: A4 upright with 2 cm margins for the text, and A4 on
+ * its side with 1.27 cm margins for a figure wider than the upright text width (`lib/process-figure.ts`, `figurePage`)
+ * — the same text areas the figure was laid out for, so a part is never shrunk or cut by Word.
+ */
+const SECTION_PORTRAIT = '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr>';
+const SECTION_LANDSCAPE = '<w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720" w:header="360" w:footer="360" w:gutter="0"/></w:sectPr>';
+/** The text width of each, in CSS px (96 dpi): 170 mm and 271.6 mm. */
+export const DOCX_TEXT_WIDTH_PX = { portrait: 642, landscape: 1026 } as const;
+
 /** A picture of the document, inline in its own centred paragraph; `png` says a raster stands beside the SVG. */
-function docxPicture(id: number, media: { name: string; caption: string; width: number; height: number }, png: boolean): string {
-  // The A4 text width at most (170 mm); 9525 EMU to the CSS pixel.
-  const scale = Math.min(1, 642 / media.width);
+function docxPicture(id: number, media: { name: string; caption: string; width: number; height: number }, png: boolean, pageWidth: number = DOCX_TEXT_WIDTH_PX.portrait): string {
+  // The text width of the page it stands on at most; 9525 EMU to the CSS pixel.
+  const scale = Math.min(1, pageWidth / media.width);
   const cx = Math.round(media.width * scale * 9525);
   const cy = Math.round(media.height * scale * 9525);
   const svgRel = `rId${media.name}s`;
   const main = png ? `rId${media.name}p` : svgRel;
-  return `<w:p><w:pPr><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="${xAttr(media.name)}" descr="${xAttr(media.caption)}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="${xAttr(media.name)}" descr="${xAttr(media.caption)}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${main}"><a:extLst><a:ext uri="{96DAC541-7B7A-43D3-8B79-37D633B846F1}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="${svgRel}"/></a:ext></a:extLst></a:blip><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
+  // Kept with its caption: a picture never stands at the foot of a page with its caption on the next.
+  return `<w:p><w:pPr><w:keepNext/><w:jc w:val="center"/></w:pPr><w:r><w:drawing><wp:inline xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" distT="0" distB="0" distL="0" distR="0"><wp:extent cx="${cx}" cy="${cy}"/><wp:docPr id="${id}" name="${xAttr(media.name)}" descr="${xAttr(media.caption)}"/><wp:cNvGraphicFramePr><a:graphicFrameLocks xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" noChangeAspect="1"/></wp:cNvGraphicFramePr><a:graphic xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:nvPicPr><pic:cNvPr id="${id}" name="${xAttr(media.name)}" descr="${xAttr(media.caption)}"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${main}"><a:extLst><a:ext uri="{96DAC541-7B7A-43D3-8B79-37D633B846F1}"><asvg:svgBlip xmlns:asvg="http://schemas.microsoft.com/office/drawing/2016/SVG/main" r:embed="${svgRel}"/></a:ext></a:extLst></a:blip><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="${cx}" cy="${cy}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r></w:p>`;
 }
 
 function blocksDocument(blocks: DocBlock[], rasters: ReadonlySet<string> = new Set()): string {
@@ -648,7 +666,7 @@ function blocksDocument(blocks: DocBlock[], rasters: ReadonlySet<string> = new S
   }
   const placed = new Set<string>();
   let bookmarkId = 0;
-  for (const block of blocks) {
+  for (const [at, block] of blocks.entries()) {
     if (block.k === 'h') {
       const name = docxBookmarkName(block.id);
       const [before, model] = block.span ? splitSpan(block.text, block.span) : [block.text, ''];
@@ -659,7 +677,11 @@ function blocksDocument(blocks: DocBlock[], rasters: ReadonlySet<string> = new S
         b.push(para(`<w:bookmarkStart w:id="${id}" w:name="${name}"/>${runs}<w:bookmarkEnd w:id="${id}"/>`, HEADING_STYLE[block.level]));
       } else b.push(para(runs, HEADING_STYLE[block.level]));
     }
-    else if (block.k === 'p') b.push(blockSdt(block.ai, para(run(block.text, { bold: block.strong, italic: block.em }))));
+    else if (block.k === 'p') {
+      const runs = run(block.text, { bold: block.strong, italic: block.em });
+      // The line that introduces a table stays on the page of the table.
+      b.push(blockSdt(block.ai, blocks[at + 1]?.k === 'table' ? `<w:p><w:pPr><w:keepNext/></w:pPr>${runs}</w:p>` : para(runs)));
+    }
     else if (block.k === 'note') b.push(para(run(block.text, { italic: true })));
     else if (block.k === 'table') b.push(docxTable(block.head, block.rows, block.muted, block.cellAi ?? [], block.ai));
     else if (block.k === 'kv') for (const [k, v] of block.items) b.push(para(run(`${k}: `, { bold: true }) + run(v, { mono: k === 'Lines' })));
@@ -679,12 +701,18 @@ function blocksDocument(blocks: DocBlock[], rasters: ReadonlySet<string> = new S
     }
     else if (block.k === 'pagebreak') b.push('<w:p><w:r><w:br w:type="page"/></w:r></w:p>');
     else if (block.k === 'figure') {
+      // A figure wider than the upright text width stands in a section of its own on landscape pages: the paragraph
+      // before it closes the upright section, the one after it closes the landscape one.
+      const own = media.slice(mediaAt, mediaAt + block.parts.length);
+      const landscape = own.some((m) => m.width > DOCX_TEXT_WIDTH_PX.portrait + 0.5);
+      if (landscape) b.push(`<w:p><w:pPr>${SECTION_PORTRAIT}</w:pPr></w:p>`);
       for (const part of block.parts) {
         const m = media[mediaAt];
         mediaAt += 1;
-        b.push(docxPicture(mediaAt, m, rasters.has(m.name)));
-        b.push(para(run(part.caption, { italic: true })));
+        b.push(docxPicture(mediaAt, m, rasters.has(m.name), landscape ? DOCX_TEXT_WIDTH_PX.landscape : DOCX_TEXT_WIDTH_PX.portrait));
+        b.push(`<w:p><w:pPr><w:jc w:val="center"/></w:pPr>${run(part.caption, { italic: true })}</w:p>`);
       }
+      if (landscape) b.push(`<w:p><w:pPr>${SECTION_LANDSCAPE}</w:pPr></w:p>`);
     }
     else if (block.k === 'code') {
       for (const a of block.items) {
@@ -701,7 +729,7 @@ function blocksDocument(blocks: DocBlock[], rasters: ReadonlySet<string> = new S
       for (const item of block.items) b.push(`<w:p><w:pPr><w:ind w:left="${item.level === 2 ? 440 : 0}"/></w:pPr>${run(item.text)}</w:p>`);
     }
   }
-  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${b.join('')}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="709" w:footer="709" w:gutter="0"/></w:sectPr></w:body></w:document>`;
+  return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><w:body>${b.join('')}${SECTION_PORTRAIT}</w:body></w:document>`;
 }
 
 const STYLES_WITH_H4 = STYLES.replace(

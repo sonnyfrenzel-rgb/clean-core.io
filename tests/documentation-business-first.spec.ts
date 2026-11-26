@@ -473,8 +473,9 @@ test.describe('the exports follow the reader order', () => {
     const html = await buildEngineConfluenceHtml(doc, enrichBusinessLayer(reviewedLayer(engine), sopStepInfos(engine), engine.facts ?? null), { processSteps: processStepsOf(engine.steps) }).text();
     expect(html.indexOf('data-business-page')).toBeGreaterThan(html.indexOf('data-doc-cover'));
     expect(html.indexOf('data-business-page')).toBeLessThan(html.indexOf('data-glance-export'));
-    expect(html).toContain('<a href="#pd-data">Why is an item missing?</a>');
-    expect(html).toContain('id="pd-data"');
+    // Anchored as Confluence Cloud anchors the heading "Data it reads" (owner 26.11.2026).
+    expect(html).toContain('<a href="#Data-it-reads">Why is an item missing?</a>');
+    expect(html).toContain('id="Data-it-reads"');
     expect(html).toContain('data-sop-statement="not-in-program"');
     expect(html).toContain('data-sop-statement="reconstructed"');
     expect(html).not.toMatch(/<td>[^<]*cross-checked against company ledger control totals[^<]*<\/td>/);
