@@ -25,6 +25,7 @@ import { IT_SECTION_IDS } from '../lib/it-sections';
 import { BUSINESS_MAP_ID } from '../lib/business-layers';
 import { decisionTodoCount } from '../lib/messages/workspace';
 import { deriveProjectDecision } from '../lib/decision-facts';
+import { decisionUnblockSteps } from '../lib/decision-manager';
 import { PROCESS_STATE_COLLECTION } from '../lib/process-states';
 import { PROCESS_REVISION_COLLECTION } from '../lib/process-revisions';
 import { WORKSPACE_MESSAGES } from '../lib/workspace-messages';
@@ -1007,5 +1008,28 @@ test.describe('the decision as a manager reads it (owner, 03.10.2026)', () => {
     expect(JSON.stringify(draft)).toBe(before);
     const card = fs.readFileSync(path.resolve(__dirname, '..', 'lib/decision-manager.ts'), 'utf8');
     expect(card).not.toMatch(/from '\.\/(architecture-contract|contract-build|project-decision-build|decision-draft)'|from '\.\/abap\//);
+  });
+});
+
+/* Owner 26.11.2026: a decision that cannot be confirmed leads to the place that lifts the block. */
+test.describe('a blocked confirmation names where to go', () => {
+  test('no contract and no sign-off: the target is signed off in Design, in its Management view', () => {
+    const { draft } = deriveDecisionDraft(facts({ contract: null, signedOffArchitecture: null, signOff: null }));
+    expect(decisionCoverage(draft).state).toBe('blocked');
+    const steps = decisionUnblockSteps(draft);
+    expect(steps.map((s) => s.path)).toContain('design?view=management');
+    expect(steps.every((s) => s.label.length > 0)).toBe(true);
+  });
+
+  test('a confirmable draft has nowhere to be sent', () => {
+    const { draft } = deriveDecisionDraft(facts());
+    if (decisionCoverage(draft).state !== 'blocked') expect(decisionUnblockSteps(draft)).toEqual([]);
+  });
+
+  test('the card turns a blocked confirm into a way there, never a dead button', () => {
+    const card = fs.readFileSync(path.join(__dirname, '..', 'components', 'workspace', 'DecisionCard.tsx'), 'utf8');
+    expect(card).toContain('decisionUnblockSteps(shown)');
+    expect(card).toContain('data-decision-unblock-step');
+    expect(card).toContain("title={view.confirmable ? undefined : (m.readiness || undefined)}");
   });
 });

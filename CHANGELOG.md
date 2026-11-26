@@ -70,6 +70,15 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
 
 ### Fixed
 
+- **A decision that cannot be confirmed leads to what blocks it.** "Confirm decision" says why on hover, and a click
+  goes to the first place that lifts the block: the analysis, the choice of an option, or the target's sign-off in
+  Design's Management view; the places stand as links under the reason (`decisionUnblockSteps` in
+  `lib/decision-manager.ts`). "Sign off the route in Design" opens Design's Management view, where the sign-off stands.
+- **The "On this page" bar is flush** with the frame and its cards on every tool; it no longer reaches into the gutter.
+- **Design's next step speaks to the one reader.** The three views are places to look, not IT or Management acting:
+  "See what Management still needs" and "IT reads it in the IT view; Management confirms the target" are gone.
+- **Documentation:** an SOP and RACI written on request stay open and come into view when they are done. The business
+  sentences say why one would ask for them and how long it takes, and show the time running while they are written.
 - **Economics no longer stops the way to Design after "take over the proposals".** Where the run offered the
   key-user option, Clean-Core.io proposes no days for it, so it was the one gap left: Economics never counted as
   priced, Re-design kept sending the reader back to Economics, and "Fill in the effort" opened a section far down the

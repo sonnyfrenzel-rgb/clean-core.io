@@ -15,6 +15,7 @@ import { CommandAnswerLostError, runProjectCommand } from '@/lib/project-command
 import { CONDITION_STATUS_LABEL, decisionCardView, type CardBinding } from '@/lib/decision-card';
 import {
   decisionManagerView,
+  decisionUnblockSteps,
   withoutSourcePaths,
   type DecisionFoundation,
   type DecisionPlace,
@@ -274,6 +275,9 @@ export default function DecisionCard({
   const reasons = outdatedReasonsOfAnswer(answer);
   const moved = reasons.length > 0;
   const blocked = view.coverage.state === 'blocked';
+  // Where each blocking gap is lifted: a page of the project, or a place on this one (`#decide`).
+  const unblock = shown.status === 'draft' ? decisionUnblockSteps(shown) : [];
+  const unblockHref = (path: string) => (path.startsWith('#') ? path : `/project/${encodeURIComponent(projectId)}/${path}`);
 
   return (
     <div
@@ -364,10 +368,21 @@ export default function DecisionCard({
               // Primary only when it can be done: a blocked decision leaves the
               // page's one primary to the step that unblocks it.
               variant={view.confirmable ? 'primary' : 'secondary'}
-              onClick={() => setAsking('confirm')}
-              disabled={busy || !view.confirmable}
+              // Owner 26.11.2026: a blocked confirmation is not a dead button. Hover says why (the title), a click
+              // goes to the first place that lifts the block.
+              onClick={() => {
+                if (view.confirmable) {
+                  setAsking('confirm');
+                  return;
+                }
+                const first = unblock[0];
+                if (first) window.location.assign(unblockHref(first.path));
+              }}
+              disabled={busy || (!view.confirmable && unblock.length === 0)}
               aria-describedby={view.confirmable ? undefined : 'decision-blocked-reason'}
+              title={view.confirmable ? undefined : (m.readiness || undefined)}
               data-decision-confirm=""
+              data-decision-confirm-blocked={view.confirmable ? undefined : ''}
             >
               {wt('decision.confirmEllipsis')}
             </CcButton>
@@ -382,6 +397,15 @@ export default function DecisionCard({
           className={cn('m-0 mt-2 text-[12px] leading-snug', blocked ? 'font-semibold text-cc-ink' : 'font-medium text-cc-ink-muted')}
         >
           {m.readiness}
+        </p>
+      ) : null}
+      {!view.confirmable && unblock.length > 0 ? (
+        <p data-decision-unblock="" className="m-0 mt-1 flex flex-wrap gap-x-4 gap-y-1 text-[12px] leading-snug">
+          {unblock.map((u) => (
+            <a key={u.path} href={unblockHref(u.path)} data-decision-unblock-step={u.path} className="font-semibold text-cc-information underline-offset-2 hover:underline">
+              {u.label} →
+            </a>
+          ))}
         </p>
       ) : null}
 

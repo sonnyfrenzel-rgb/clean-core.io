@@ -547,6 +547,39 @@ const BLOCKING_WORDS: Partial<Record<DecisionGapCode, string>> = {
   'option-not-chosen': 'no option is chosen yet',
 };
 
+/**
+ * Where each blocking gap is resolved (owner 26.11.2026: a decision that cannot be confirmed says why on hover and on
+ * click, and leads straight to the place that lifts the block — the platform must not just bar the way). One entry per
+ * place, in the order the gaps are met in the process: the run, the option, the target's sign-off.
+ */
+export interface DecisionUnblockStep {
+  /** What the reader does there, as a link label. */
+  label: string;
+  /** Under the project (`analyze`, `design?view=management`) or on this page (`#decide`). */
+  path: string;
+}
+
+const UNBLOCK_OF: Partial<Record<DecisionGapCode, DecisionUnblockStep>> = {
+  'run-not-bound': { label: 'Run the analysis in Analyze', path: 'analyze' },
+  'option-not-chosen': { label: 'Choose one of the four options', path: '#decide' },
+  'contract-not-bound': { label: 'Sign off the target in Design', path: 'design?view=management' },
+  'sign-off-not-current': { label: 'Sign off the target in Design again', path: 'design?view=management' },
+  'contract-blocked': { label: 'Review the target in Design', path: 'design?view=management' },
+};
+
+const UNBLOCK_ORDER: readonly DecisionGapCode[] = ['run-not-bound', 'option-not-chosen', 'contract-not-bound', 'sign-off-not-current', 'contract-blocked'];
+
+/** The places that lift what blocks a confirmation, first one first; empty when nothing blocks. */
+export function decisionUnblockSteps(decision: ProjectDecision): DecisionUnblockStep[] {
+  const codes = new Set(decisionCoverage(decision).gaps.filter((g) => g.severity === 'blocks').map((g) => g.code));
+  const out: DecisionUnblockStep[] = [];
+  for (const code of UNBLOCK_ORDER) {
+    const step = UNBLOCK_OF[code];
+    if (codes.has(code) && step && !out.some((s) => s.path === step.path)) out.push(step);
+  }
+  return out;
+}
+
 export function decisionManagerView(
   decision: ProjectDecision,
   stored: StoredCostScenario | null = null,
