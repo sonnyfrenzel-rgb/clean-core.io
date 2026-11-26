@@ -212,7 +212,7 @@ export default function DemoDesign({
             answer: confirmed ? 'The target is confirmed, in this browser only.' : 'Not ready on a real project: the business answers and the written design are missing.',
             condition: `The demo designs a rebuild: ${label}.`,
             facets: [
-              { id: 'decision', label: 'Decision and cost', value: 'Not taken yet', note: 'Economics prices, Management decides' },
+              { id: 'decision', label: 'Decision and cost', value: 'Not taken yet', note: 'priced in Economics, decided in Re-design' },
               { id: 'target', label: 'Target', value: route, note: targetLine },
               { id: 'fit', label: 'Fit to clean core', value: `${objects.withSuccessor} of ${sapObjects}`, note: 'SAP objects on a released path' },
               { id: 'confirmed', label: 'Target confirmed', value: confirmed ? 'Here only' : 'No', note: 'a switch in this browser' },
@@ -317,7 +317,7 @@ export default function DemoDesign({
           <DesignSection id="design-checklist" title="Before sign-off" lead="What stands between the decision and the confirmed target.">
             <DesignChecklist rows={checklist.rows} />
           </DesignSection>
-          <DesignSection id="design-options" title="The four options" lead="From Management. The demo has no decision; Design designs a rebuild meanwhile.">
+          <DesignSection id="design-options" title="The four options" lead="Decided in Re-design. The demo has no decision; Design designs a rebuild meanwhile.">
             <DesignOptions decided="none" />
           </DesignSection>
         </>

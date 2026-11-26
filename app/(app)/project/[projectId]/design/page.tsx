@@ -1423,7 +1423,7 @@ ${DESIGN_ANSWER_REMINDER}`;
       <p className="m-0 cc-text-cell text-cc-ink-muted" data-design-written="">
         {designStale
           ? 'The design on record was written before the answers or the analysis changed. Regenerate it from the header.'
-          : 'The design is written from your answers. IT reads it in the IT view; Management confirms the target.'}
+          : 'The design is written from your answers. The technical design is in the IT view; you confirm the target in the Management view.'}
       </p>
     </div>
   );
@@ -1963,7 +1963,7 @@ ${DESIGN_ANSWER_REMINDER}`;
             </DesignSection>
           ) : null}
           {view === 'management' ? (
-            <DesignSection id="design-options" title="The four options" lead="From Management. Design shows what the chosen one looks like.">
+            <DesignSection id="design-options" title="The four options" lead="Decided in Re-design. Design shows what the chosen one looks like.">
               <DesignOptions decided={dcase} />
             </DesignSection>
           ) : null}
@@ -1991,13 +1991,14 @@ ${DESIGN_ANSWER_REMINDER}`;
               <DesignCard>
                 <p className="m-0 cc-text-body text-cc-ink">
                   {design ? 'The design is written from your answers. ' : 'Once the answers are in, the design is written from them (two model calls, not counted against your analysis runs). '}
-                  IT builds it from the technical design.{' '}
+                  Then you confirm the target, and Transformation builds the code from the technical design. The technical design
+                  is in the{' '}
                   <Link href={viewHref('it')} className="font-semibold text-cc-information underline-offset-2 hover:underline">
                     IT view
                   </Link>
-                  . Management confirms the target before the build starts.{' '}
+                  ; what stands before the confirmation is in the{' '}
                   <Link href={viewHref('management')} className="font-semibold text-cc-information underline-offset-2 hover:underline">
-                    See what Management still needs
+                    Management view
                   </Link>
                   .
                 </p>
