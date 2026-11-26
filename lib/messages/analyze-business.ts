@@ -74,7 +74,7 @@ export const ANALYZE_BUSINESS_MESSAGES = {
   'around.questionsTitle': 'Questions to settle with the business',
   'around.questionsWaiting': 'Collecting the questions the code cannot answer …',
   'around.questionsNone': 'The code raises no question for the business that the engine can name.',
-  'around.questionsFor': 'For the process owner. IT has its own questions in the IT view.',
+  'around.questionsFor': 'The technical questions are in the IT view.',
   'around.failed': 'The text around the map could not be read from this source. The map above is not affected.',
   'around.modelNote': 'Worded by the model from the code’s facts and checked against them',
 } as const;

@@ -195,7 +195,8 @@ test.describe('the header of the family', () => {
       delivery: 'one-page',
     });
     expect(familyViewMode(null)).toBe('none');
-    expect(ONE_PAGE_NOTE).toMatch(/^One page for every reader/);
+    // Names the views, never readers or departments (owner 26.11.2026: the views are perspectives of one user).
+    expect(ONE_PAGE_NOTE).toBe('One page for all three views');
     expect(ONE_PAGE_NOTE).not.toContain('—');
   });
 

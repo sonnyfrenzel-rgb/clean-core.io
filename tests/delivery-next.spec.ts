@@ -92,9 +92,11 @@ test.describe('the answer (L2, L4)', () => {
     const f = factsOf(p, { ...NO_PARTS, code: true, documentation: true });
     const a = handoverAnswer(p, f);
     expect(a.verdict).toBe('not-yet');
-    expect(a.answer).toMatch(/^Not yet\. The package holds code and documentation as a review version, but /);
-    expect(a.answer).toContain('the decision is not confirmed');
-    expect(a.answer).toContain('the audit pack is not sealed');
+    // More than two missing: a count and the first in the answer, the rest under it (journey review 26.11.2026).
+    expect(a.answer).toMatch(/^Not yet\. The package holds code and documentation as a review version; \d+ things still block the handover\. First: /);
+    expect(`${a.answer} ${a.condition}`).toContain('the decision is not confirmed');
+    expect(a.condition).toContain('the audit pack is not sealed');
+    expect(a.condition).toMatch(/^Then: /);
     expect(a.condition).toContain('signed by the server');
   });
 

@@ -8,7 +8,6 @@ import CcAnchor from '@/components/cc/Anchor';
 import CcDisclosure from '@/components/cc/Disclosure';
 import CcTextarea from '@/components/cc/Textarea';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
-import { CcTag } from '@/components/cc/Tag';
 import {
   OPEN_ANSWER_MAX_CHARS,
   OPEN_QUESTIONS_ID,
@@ -25,7 +24,7 @@ import type { WorkspaceView } from '@/lib/workspace-model';
 import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { RULE_QUESTIONS_ID } from '@/lib/rule-questions';
 import { lineAnchorWords } from '@/lib/analyze-it';
-import { oqAnswerBy, oqAnswerQuote, oqCount, oqLinesTitle, oqOwner, wt } from '@/lib/workspace-messages';
+import { oqAnswerBy, oqAnswerQuote, oqCount, oqLinesTitle, wt } from '@/lib/workspace-messages';
 
 /** What this page wrote since the project was read; `null` for an answer it removed. */
 export type OpenAnswerOverlay = Partial<Record<OpenQuestionAction, StoredOpenAnswer | null>>;
@@ -255,7 +254,6 @@ function Group({
         <span data-open-question-count="" className="text-[12px] font-semibold text-cc-ink-muted">
           {oqCount(group.count)}
         </span>
-        <CcTag>{oqOwner(group.owner)}</CcTag>
         {isOpen && group.blocksDecision ? (
           <span data-open-question-blocks="" className="text-[12px] font-semibold text-cc-ink">
             {wt('oq.blocks')}

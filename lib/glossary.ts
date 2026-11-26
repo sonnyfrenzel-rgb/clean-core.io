@@ -584,7 +584,7 @@ const ENTRIES: Record<string, GlossaryEntry> = {
     exactOnly: true,
     aliases: ['Your decision'],
     definition: 'What happens to this program: keep, rebuild, move to SAP standard, or retire.',
-    cleanCoreImplication: 'A person takes it and confirms it in the Management view; the engine only recommends, and a decision point in the code is something else.',
+    cleanCoreImplication: 'A person takes it and confirms it in Re-design; the engine only recommends, and a decision point in the code is something else.',
   },
 };
 

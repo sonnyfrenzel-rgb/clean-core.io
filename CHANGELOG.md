@@ -70,6 +70,21 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
 
 ### Fixed
 
+- **No page ends without a way on (walk-through 26.11.2026).**
+  - Design's Management view no longer says "Ready for your confirmation" over a closed button. When every check is
+    done but the design on record is the older text form with no target to confirm, it says so, and its one action
+    writes the design again.
+  - Analyze IT carries "Re-design this program" as its primary, as the Management view does.
+  - Analyze Business without a map leads the owner to the re-run in My workspace instead of a sentence alone.
+  - Re-design reads Economics as "Not started" until a figure is stored. Its answer names work built ahead of the
+    decision instead of "Not started" above steps marked Done.
+  - Delivery's answer names how many things block the handover and the first one; the rest stand under it.
+  - One destination, one label: the decision is "Open the decision" in Design and Economics.
+- **The views are perspectives, not people.**
+  - Removed copy that addressed a department or a role: "IT checks…", "Owner · IT" on open questions, "decided in
+    Management", "One page for every reader: business, IT and management", "Back to Analyze, Management".
+  - Pointers that still sent the decision to the Management view now name Re-design, where it is taken.
+  - `tests/journey-dead-ends.spec.ts` holds the line.
 - **One next step on every tool.** A bar at the foot of the window names the one next step with one button, worked out
   by Re-design's own rule (`lib/journey-next.ts`, decision included), and the tool row's "Next" tag reads the same
   source — the two can no longer point to different places. On the page that is the next step, the bar names the step

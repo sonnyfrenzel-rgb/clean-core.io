@@ -134,7 +134,7 @@ export default function RedesignView({
             </p>
             <div className="mt-3">
               <CcLinkButton href={backToAnalyzeHref} variant="ghost" data-redesign-back-to-analyze="">
-                Back to Analyze, Management
+                Back to Analyze
               </CcLinkButton>
             </div>
           </div>

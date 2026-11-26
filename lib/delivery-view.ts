@@ -150,11 +150,20 @@ export function handoverAnswer(project: HandoverProject, facts: DeliveryFacts): 
       condition: `${signedLine} Activation, transport and go-live happen in your system.`,
     };
   }
-  const missing = facts.stillNeeded.map((s) => MISSING_WORDS[s.key] ?? s.text.toLowerCase());
+  const missing = [...new Set(facts.stillNeeded.map((s) => MISSING_WORDS[s.key] ?? s.text.toLowerCase()))];
+  // Up to two are said in the answer; more become a count and the first one, with the rest under it, so the answer
+  // stays one line a reader takes in (journey review 26.11.2026: six blockers in one bold sentence).
+  if (missing.length <= 2) {
+    return {
+      verdict: 'not-yet',
+      answer: `Not yet. The package holds ${list(made)} as a review version, but ${list(missing)}.`,
+      condition: signedLine,
+    };
+  }
   return {
     verdict: 'not-yet',
-    answer: `Not yet. The package holds ${list(made)} as a review version, but ${list([...new Set(missing)])}.`,
-    condition: signedLine,
+    answer: `Not yet. The package holds ${list(made)} as a review version; ${missing.length} things still block the handover. First: ${missing[0]}.`,
+    condition: `Then: ${list(missing.slice(1))}. ${signedLine}`,
   };
 }
 

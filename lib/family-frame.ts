@@ -18,7 +18,7 @@ export function familyViewMode(tool: PhaseKey | null | undefined): 'switch' | 'o
 }
 
 /** The quiet note in the switch's place (ADR-126 (1)), as the mock-ups word it. */
-export const ONE_PAGE_NOTE = 'One page for every reader: business, IT and management';
+export const ONE_PAGE_NOTE = 'One page for all three views';
 
 /**
  * Content widths (ADR-140 W1, UX review Q9): tools 1536 px, lists and reading pages 1280 px, both with the same

@@ -1616,7 +1616,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         condition: (
           <>
             {contractNow ? `${sapNamesForDisplay(contractNow.summary)} ` : ''}Target: {targetLine}.
-            {signOffCurrent ? ' The target is confirmed (Management view).' : ' The target is confirmed in the Management view.'}
+            {signOffCurrent ? ' The target is confirmed.' : ' You confirm the target when you sign off the route.'}
           </>
         ),
         action: decisionBox,
@@ -1657,11 +1657,16 @@ ${DESIGN_ANSWER_REMINDER}`;
         ],
       };
     } else {
+      // Every check can be done while the design on record is an older, unstructured text that carries no target to
+      // confirm: then the answer says so and the one action writes it again, instead of "ready" beside a closed button.
+      const olderForm = !outside && !signOffCurrent && checklist.ready && !canSignOff && Boolean(design);
       const head = outside
         ? 'Stop: the design no longer matches what was priced.'
         : signOffCurrent
           ? 'The target is confirmed.'
-          : checklist.ready
+          : olderForm
+            ? 'Not ready: this design was written in an older form that has no target to confirm. Write it again.'
+            : checklist.ready
             ? 'Ready for your confirmation.'
             : openQ
               ? `Not ready: ${plural(openQ, 'business answer is', 'business answers are')} missing.`
@@ -1682,6 +1687,18 @@ ${DESIGN_ANSWER_REMINDER}`;
           </CcLinkButton>
         ) : !isOwner && project ? (
           <OwnerOnlyNote />
+        ) : olderForm ? (
+          <CcButton
+            variant="primary"
+            icon={<RefreshCw size={16} aria-hidden={true} />}
+            busy={generating}
+            disabled={!designAvailable || stale.sourceChanged || elsewhereSince !== null || !designWriteEnabled(writeGate)}
+            aria-describedby={writeGate.kind === 'ready' ? 'design-confirm-note' : 'design-regenerate-reason'}
+            data-design-rewrite-older=""
+            onClick={askRegenerate}
+          >
+            Write the design again
+          </CcButton>
         ) : (
           <DesignConfirmTarget
             label={architectureOptionLabel(recommendation) ?? recommendation}
@@ -1694,7 +1711,11 @@ ${DESIGN_ANSWER_REMINDER}`;
         ),
         actionNote: outside ? null : (
           <span id="design-confirm-note">
-            {canConfirm ? 'A self-declaration of your account, bound to the run you read.' : 'Possible once every check below is done.'}
+            {canConfirm
+              ? 'A self-declaration of your account, bound to the run you read.'
+              : olderForm
+                ? 'Every check is done. Confirming needs the design in its current form, with its target.'
+                : 'Possible once every check below is done.'}
           </span>
         ),
         moreActions: (

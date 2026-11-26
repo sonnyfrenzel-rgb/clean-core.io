@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { redesignHref, redesignModel, REDESIGN_DECIDE_ID, type RedesignDecision } from '../lib/redesign';
 import { managementLevelMix, managementRisks, MANAGEMENT_PAGE_IDS } from '../lib/analyze-management';
-import { PHASES, type PhaseKey, type PhaseState, type RailStep } from '../lib/workflow-steps';
+import { ECONOMICS_NOTHING_STORED, PHASES, type PhaseKey, type PhaseState, type RailStep } from '../lib/workflow-steps';
 import type { ItFindingRow } from '../lib/it-findings';
 
 /**
@@ -24,6 +24,20 @@ function rail(states: Partial<Record<PhaseKey, PhaseState>>): RailStep[] {
 const none: RedesignDecision = { stage: 'not-decided', option: null, indicated: 'rebuild' };
 
 test.describe('the Re-design model', () => {
+  test('a signed run with no figures stored reads Not started, and Start with Economics (journey review 26.11.2026)', () => {
+    const steps = rail({ analyze: 'done', tco: 'partial' }).map((s) => (s.key === 'tco' ? { ...s, badge: ECONOMICS_NOTHING_STORED } : s));
+    const m = redesignModel(steps, none);
+    expect(m.steps.find((s) => s.key === 'tco')).toMatchObject({ state: 'open', stateWords: 'Not started' });
+    expect(m.next?.label).toBe('Start with Economics: price the options');
+  });
+
+  test('work built ahead of the decision is named in the answer, never Not started above a Done', () => {
+    const m = redesignModel(rail({ analyze: 'done', transformation: 'done', documentation: 'done', design: 'partial' }), none);
+    expect(m.answer).toMatch(/^Built ahead of the decision: Design, Transformation, Documentation\. /);
+    expect(m.answer).not.toContain('Not started');
+    expect(redesignModel(rail({ analyze: 'done' }), none).answer).toMatch(/^Not started\./);
+  });
+
   test('the six tools in PHASES order with the decision as step 2, between Economics and Design', () => {
     const m = redesignModel(rail({ analyze: 'done' }), none);
     expect(m.steps.map((s) => s.key)).toEqual(['tco', 'decide', 'design', 'transformation', 'documentation', 'testing', 'delivery']);

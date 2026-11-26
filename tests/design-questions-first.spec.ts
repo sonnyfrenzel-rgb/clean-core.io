@@ -287,7 +287,7 @@ test.describe('4. the architecture options for IT live in the IT view', () => {
     expect(html).not.toContain('data-architecture-take=');
     expect(html).not.toContain('Architecture options for IT');
     expect(html).toContain('data-architecture-pointer=""');
-    expect(html).toContain('IT checks where these values live:');
+    expect(html).toContain('Where these values live:');
     const pointer = html.slice(html.indexOf('data-architecture-pointer=""'), html.indexOf('</p>', html.indexOf('data-architecture-pointer=""')));
     const link = pointer.slice(pointer.lastIndexOf('<a', pointer.indexOf('data-architecture-pointer-link=""')));
     expect(link).toContain('href="/project/p1?view=it#business-rules"');

@@ -30,7 +30,7 @@ export default function EconomicsGuardRail({
   const link =
     rail.state === 'no-decision' && managementHref ? (
       <CcLinkButton href={managementHref} variant="secondary">
-        Take the decision in Re-design
+        Open the decision
       </CcLinkButton>
     ) : (
       <CcLinkButton href={economicsHref} variant={outside ? 'primary' : 'secondary'}>

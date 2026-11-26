@@ -557,7 +557,7 @@ test.describe('the questions in Design, rendered', () => {
     expect(html).not.toContain(`data-question="${tolerance.id}"`);
     // Owner decision 22.10.2026: the options left Design for the rule register of the IT view.
     expect(html).not.toContain('data-architecture-option="configure"');
-    expect(html).toContain('IT checks where these values live:');
+    expect(html).toContain('Where these values live:');
     expect(html).toContain('1 proposal in the IT view');
   });
 

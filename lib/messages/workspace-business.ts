@@ -15,7 +15,8 @@ export const WORKSPACE_BUSINESS_MESSAGES = {
   'biz.mapNoRun':
     'The map is drawn from the source a signed analysis read. This project has source but no analysis yet, so nothing has been drawn.',
   'biz.mapChanged':
-    'The map is drawn only from the source the active analysis signed. The source on this project no longer matches it, or the analysis did not record it, so no map is drawn rather than one with wrong line anchors. Run the analysis again to draw it.',
+    'The map is drawn only from the source the active analysis signed. The source on this project no longer matches it, or the analysis did not record it, so no map is drawn rather than one with wrong line anchors. Run the analysis again to draw it: My workspace offers it on this program’s row.',
+  'biz.runAgainInList': 'Run the analysis again',
   'biz.openAnalyze': 'Open Analyze',
   'biz.mapSignTitle': 'Your full process map',
   'biz.mapSigning':

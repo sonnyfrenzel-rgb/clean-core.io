@@ -148,7 +148,11 @@ test.describe('Q4 — no dead ends', () => {
   test('Analyze: the map\'s empty state on Analyze links nowhere back to Analyze', () => {
     const src = read('components/workspace/WorkspaceProcess.tsx');
     const absent = src.slice(src.indexOf("wt('biz.mapNoRun') : wt('biz.mapChanged')"), src.indexOf('/* --------------------------------------------------------- the column */'));
-    expect(absent).toContain('codeOnClick ? undefined');
+    // On Analyze (`codeOnClick`) the one action is the way to the re-run in My workspace, never "Open Analyze"
+    // (journey review 26.11.2026); "Open Analyze" stands only where the map is shown outside Analyze.
+    const onAnalyze = absent.slice(absent.indexOf('codeOnClick ? ('), absent.indexOf(') : (', absent.indexOf('codeOnClick ? (')));
+    expect(onAnalyze).toContain('href={myWorkspaceHref()}');
+    expect(onAnalyze).not.toContain('analyzeHref');
   });
 
   test('Transformation: Copy Code stands only where there is code', () => {
@@ -292,7 +296,9 @@ test.describe('on screen', () => {
     await expect(absent).toBeVisible({ timeout: 90_000 });
     await shoot(page, 'analyze-nomap', absent);
     await expect(absent.getByRole('link', { name: 'Open Analyze' })).toHaveCount(0);
-    await expect(absent.getByRole('link')).toHaveCount(0);
+    // Its one way on is the re-run in My workspace (journey review 26.11.2026), and nothing else.
+    await expect(absent.getByRole('link')).toHaveCount(1);
+    await expect(absent.getByRole('link', { name: 'Run the analysis again' })).toHaveAttribute('href', '/dashboard');
   });
 
   test('Analyze: the big example opens readable on a desktop, and at 40 % or more on a phone', async ({ page }) => {

@@ -749,7 +749,7 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
             {/* Priced, the answer's primary action is this link already; once is enough. */}
             {props.managementHref && !priced ? (
               <div className="mt-2 cc-no-print">
-                <CcLinkButton href={props.managementHref}>Open the decision in Re-design</CcLinkButton>
+                <CcLinkButton href={props.managementHref}>Open the decision</CcLinkButton>
               </div>
             ) : null}
           </div>

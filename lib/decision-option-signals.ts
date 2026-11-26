@@ -263,7 +263,7 @@ function standardSignal(): Pick<OptionCard, 'signal' | 'reason' | 'provenance' |
   return {
     signal: 'not-determined',
     reason:
-      'Whether SAP standard does what this program does is a business question the code cannot answer. The fit-to-standard check in the IT view shows where the program touches SAP standard and prepares your workshop.',
+      'Whether SAP standard does what this program does is a business question the code cannot answer. The fit-to-standard check shows where the program touches SAP standard and prepares your workshop.',
     provenance: 'not-determined',
     place: 'standard-check',
   };

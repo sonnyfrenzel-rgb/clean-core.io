@@ -19,6 +19,8 @@ import StandardTouchCard from '@/components/workspace/StandardTouchCard';
 import FitCheckPanel from '@/components/workspace/FitCheckPanel';
 import { DdicTypesCard } from '@/components/workspace/ItAnswers';
 import { useIsOwner } from '@/components/workspace/BusinessRulesEditor';
+import CcLinkButton from '@/components/cc/LinkButton';
+import { redesignHref as redesignPageHref } from '@/lib/redesign';
 import { useItFindings } from '@/hooks/useItFindings';
 import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import { useSourceReading } from '@/hooks/useSourceReading';
@@ -289,7 +291,7 @@ export default function AnalyzeIt({
       id: 'route',
       label: 'Recommended route',
       value: shortRoute(route) ?? 'Not determined',
-      note: routeChosenByReader ? 'stored by an earlier build; the rules recommended the other route' : 'fixed rules · decided in Management',
+      note: routeChosenByReader ? 'stored by an earlier build; the rules recommended the other route' : 'fixed rules · decided in Re-design',
       href: `#${ANALYZE_IT_IDS.route}`,
     },
     {
@@ -439,8 +441,15 @@ export default function AnalyzeIt({
           }
           action={scoreBox}
           moreActions={
-            addEvidence || exportMenu ? (
+            // The way on from the code, as the Management view's card has it (journey review 26.11.2026): one primary
+            // for the owner of an analysed program, so the IT view never ends on a list with no way on.
+            (owner && hasRun) || addEvidence || exportMenu ? (
               <>
+                {owner && hasRun ? (
+                  <CcLinkButton href={redesignPageHref(projectId)} variant="primary" data-analyze-it-redesign="">
+                    Re-design this program
+                  </CcLinkButton>
+                ) : null}
                 {addEvidence}
                 {exportMenu}
               </>

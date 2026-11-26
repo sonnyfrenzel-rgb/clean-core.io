@@ -14,7 +14,7 @@
  */
 
 import { DECISION_OPTION_LABELS, type DecisionOption } from './decision-options';
-import { inToolOrder, type PhaseKey, type PhaseState, type RailStep } from './workflow-steps';
+import { ECONOMICS_NOTHING_STORED, inToolOrder, type PhaseKey, type PhaseState, type RailStep } from './workflow-steps';
 import { modelAbsenceReason, modelStageEnabled, type ModelStage, type ModelStageSubject } from './model-stages';
 
 /** The route segment under `/project/{id}/`. */
@@ -131,8 +131,10 @@ const MODEL_STAGE_OF: Partial<Record<PhaseKey, ModelStage>> = {
   testing: 'testing',
 };
 
-function phaseStateWords(state: PhaseState, key: PhaseKey): { state: RedesignStepState; words: string } {
+function phaseStateWords(state: PhaseState, key: PhaseKey, badge?: string): { state: RedesignStepState; words: string } {
   if (state === 'done') return { state: 'done', words: 'Done' };
+  // A signed run and no figures stored: nothing in Economics was started, whatever the rail calls it.
+  if (key === 'tco' && state === 'partial' && badge === ECONOMICS_NOTHING_STORED) return { state: 'open', words: 'Not started' };
   if (state === 'stale') return { state: 'stale', words: 'Out of date' };
   // Economics' `partial` is figures stored with a step still open (`toolOnRecord`): started, not priced.
   if (state === 'partial') return { state: 'started', words: key === 'tco' ? 'Started, not priced yet' : 'Started' };
@@ -195,7 +197,7 @@ export function redesignModel(
     const notNeeded = buildsNothing && NOT_NEEDED_STEPS.includes(phase.key) && phase.state === 'empty';
     const read = notNeeded
       ? { state: 'not-needed' as const, words: notNeededWords(decision.option as DecisionOption, recorded) }
-      : phaseStateWords(phase.state, phase.key);
+      : phaseStateWords(phase.state, phase.key, phase.badge);
     const stage = MODEL_STAGE_OF[phase.key];
     const blocked =
       stage !== undefined && !notNeeded && phase.state === 'empty' && !modelStageEnabled(account ?? null, stage)
@@ -254,6 +256,10 @@ export function redesignModel(
   }
 
   const priced = out.find((s) => s.key === 'tco');
+  // Tools after the decision already hold work (built ahead of it): the answer names them instead of "Not started"
+  // above a list that says Done (journey review 26.11.2026).
+  const ahead = out.filter((s) => s.key !== 'tco' && s.key !== 'decide' && (s.state === 'done' || s.state === 'started'));
+  const aheadLine = ahead.length ? `Built ahead of the decision: ${ahead.map((s) => s.label).join(', ')}. ` : '';
   const answer = !analysed
     ? 'Not started. Re-design builds on a signed analysis run, and there is none yet.'
     : decided
@@ -267,8 +273,10 @@ export function redesignModel(
           ? `Decided: Rebuild. Next: ${next.key === 'decide' ? DECIDE_LABEL : out.find((s) => s.key === next?.key)?.label ?? ''}.`
           : 'Decided: Rebuild. Every step is on record.'
       : priced && priced.state === 'done'
-        ? 'The options are priced. The decision is next: keep, rebuild, move to SAP standard or retire.'
-        : 'Not started. First the four options are priced with your figures; then you decide; the decided option is built in the tools after it.';
+        ? `${aheadLine}The options are priced. The decision is next: keep, rebuild, move to SAP standard or retire.`
+        : ahead.length
+          ? `${aheadLine}Not decided yet: the four options are priced with your figures, then you decide.`
+          : 'Not started. First the four options are priced with your figures; then you decide; the decided option is built in the tools after it.';
 
   return { steps: out, next, answer, analysed };
 }

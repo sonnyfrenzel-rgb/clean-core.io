@@ -76,6 +76,12 @@ export type PhaseKey =
  */
 export type PhaseState = 'empty' | 'partial' | 'done' | 'stale';
 
+/**
+ * Economics' badge with a signed run and no figures stored: `partial` for the rail and the tool row (the baseline is
+ * there), but nothing was started — Re-design reads it as "Not started" (journey review 26.11.2026).
+ */
+export const ECONOMICS_NOTHING_STORED = 'Not priced yet';
+
 export interface RailStep {
   /** 1-based position in the canonical order. */
   n: number;
@@ -1204,7 +1210,7 @@ export function workflowSteps(project: Project | null, context: { keyUserList?: 
     : hasRun
     ? phase('tco', {
         state: 'partial',
-        badge: 'Not priced yet',
+        badge: ECONOMICS_NOTHING_STORED,
         // No cost figures are stored for this project, so nothing has been priced.
         detail: 'The signed run is the baseline. Nothing is priced yet: the options are priced from your own figures, and nothing has a default.',
       })

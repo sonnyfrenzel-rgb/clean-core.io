@@ -46,7 +46,7 @@ export const RULE_QUESTION_MESSAGES = {
   'questions.undeterminedTag': 'Not determined',
   'questions.recommended': 'Recommended',
   'questions.recommendedReason': 'Why recommended:',
-  'questions.itPointer': 'IT checks where these values live:',
+  'questions.itPointer': 'Where these values live:',
   'design.generate': 'Generate the design',
   'design.tryAgain': 'Try again',
   'design.writeWithoutOpen': 'Write it without the open answers',

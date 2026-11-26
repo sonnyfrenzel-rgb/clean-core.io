@@ -268,11 +268,11 @@ test.describe('rendered (static markup)', () => {
     expect(withoutChip(top), 'a sentence above the map without its line chip').toEqual([]);
     const said = plainOf(html + top);
     for (const s of everySentence(text)) expect(said, s.text).toContain(s.text);
-    // The fixed caution, the basket line into Design, and the note that IT has its own questions.
+    // The fixed caution, the basket line into Design, and the note where the technical questions are.
     expect(html).toContain(WHY_CAUTION);
     expect(html).toContain('data-rule-basket-line=""');
     expect(html).toContain('href="/project/p/design#rule-questions"');
-    expect(html).toContain('IT has its own questions in the IT view.');
+    expect(html).toContain('The technical questions are in the IT view.');
   });
 
   test('every sentence on the page carries its line chip — every example, engine, reworded and model text', async () => {

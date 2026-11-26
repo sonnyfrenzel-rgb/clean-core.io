@@ -72,7 +72,7 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.fix.target': 'Confirm in Design',
   'transformation.fix.requirements': 'Review in Design',
   'transformation.fix.requirementsStart': 'Open the requirements',
-  'transformation.fix.decision': 'Decide in the Management view',
+  'transformation.fix.decision': 'Decide in Re-design',
   'transformation.insights.noPurpose': 'What the program is for could not be read from the code.',
   'transformation.rules.none': 'The engine read the source and found no business rule in it.',
   'transformation.design.none': 'No solution design on record.',

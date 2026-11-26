@@ -104,5 +104,5 @@ test('after Confirm target on a real run, the Design page says confirmed — and
   await expect(page.locator('#design-answer [data-answer]')).toHaveText(CONFIRMED, { timeout: 120_000 });
   // The IT view shows the state (G8).
   await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#design-answer [data-answer-condition]')).toContainText('The target is confirmed (Management view).', { timeout: 120_000 });
+  await expect(page.locator('#design-answer [data-answer-condition]')).toContainText('The target is confirmed.', { timeout: 120_000 });
 });

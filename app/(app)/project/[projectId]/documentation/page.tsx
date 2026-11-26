@@ -1476,7 +1476,7 @@ export default function DocumentationPage() {
       {/* The family frame (DESIGN.md §2.12): one page for every reader, so the head row shows the quiet note in
           the switch's place (ADR-126 (1), ADR-127; `familyViewMode`). The exports stand beside the answer. */}
       <StageHeader tools={{ steps: phases, current: 'documentation' }} stage="documentation" project={project} view="one-page">
-        The process description of this program, read from its code: for the business, the manager and the developer alike, and ready for your own standard.
+        The process description of this program, read from its code in plain words, and ready for your own standard.
       </StageHeader>
 
       {statusLine}

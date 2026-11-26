@@ -59,7 +59,7 @@ import { ensureProcessBaseline, fetchLatestRevision, revisionOutcomeSentence, sa
 import { newerBase, revisionLine } from '@/lib/process-revisions';
 import type { OpenedRevision } from '@/components/process-map/BpmnEditor';
 import { signedSourceAbsence, signedSourceOf } from '@/lib/signed-source';
-import { stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
+import { myWorkspaceHref, stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import type { NotDetermined, WorkspaceView } from '@/lib/workspace-model';
 import { bizLinesLabel, bizShowingLines, namesWaitForNoticeNote, wt } from '@/lib/workspace-messages';
 import type { Project } from '@/lib/types';
@@ -722,8 +722,17 @@ export default function WorkspaceProcess({
           // On Analyze itself "Open Analyze" only opened the page the reader was on (UX review 22.11.2026, Q4), and
           // Analyze has no re-run of its own for a signed project: the sentence says what draws the map, no button
           // pretends to do it.
+          //
+          // A changed source is run again from the program's row in My workspace, so the way there is the one action
+          // (journey review 26.11.2026: an empty state with no way on).
           action={
-            codeOnClick ? undefined : (
+            codeOnClick ? (
+              absence === 'no-run' || !owner ? undefined : (
+                <CcLinkButton href={myWorkspaceHref()} variant="primary" data-workspace-process-rerun="">
+                  {wt('biz.runAgainInList')}
+                </CcLinkButton>
+              )
+            ) : (
               <CcLinkButton href={analyzeHref} variant="ghost">
                 {wt('biz.openAnalyze')}
               </CcLinkButton>

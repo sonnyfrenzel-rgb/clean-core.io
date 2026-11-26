@@ -674,11 +674,6 @@ export function oqCount(n: number): string {
   return `${n} ${n === 1 ? 'question' : 'questions'}`;
 }
 
-/** OpenQuestions — who acts on a group: a role, never an account. */
-export function oqOwner(role: string): string {
-  return `Owner · ${role}`;
-}
-
 /** OpenQuestions — a stored answer, quoted as it was written. */
 export function oqAnswerQuote(text: string): string {
   return `“${text}”`;
