@@ -286,8 +286,9 @@ function para(content: string, style?: string): string {
 function docxTable(head: string[], rows: string[][], muted: readonly number[] = [], cellAi: ReadonlyArray<DocCellAi | null> = [], ai?: DocBlockAi | null): string {
   const text = (t: string, header: boolean, grey: boolean) => {
     const runs = grey && !header ? mutedRun(t) : run(t, { bold: header });
-    // `SHORT_ID`: an identifier stays on one line — its hyphen a non-breaking one.
-    return SHORT_ID.test(t) ? runs.replace('-', '</w:t><w:noBreakHyphen/><w:t xml:space="preserve">') : runs;
+    // An identifier keeps its plain hyphen in Word: a non-breaking one would make "TBD-01" unfindable by the reader's
+    // own search (and by every copy of the text); HTML keeps it on one line with `white-space: nowrap` instead.
+    return runs;
   };
   const cell = (t: string, header: boolean, grey: boolean, model: DocCellAi | null = null) => {
     let runs = text(t, header, grey);

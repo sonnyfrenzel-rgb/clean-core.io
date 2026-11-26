@@ -2,9 +2,9 @@
 
 import React, { useState } from 'react';
 import FamilyChip from '@/components/family/FamilyChip';
-import { CcTag } from '@/components/cc/Tag';
 import CcButton from '@/components/cc/Button';
 import CcDialog from '@/components/cc/Dialog';
+import CcTable from '@/components/cc/Table';
 import { SapCheckedText } from '@/components/SapIdentifierCheck';
 import {
   COMPARED_OPTION_LABELS,
@@ -85,7 +85,7 @@ export default function OptionComparison({ design, keyUser = null, keyUserChosen
             <div data-option-reason="" className="grid min-w-0 grid-cols-1 gap-3 min-[900px]:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
               <div className="flex min-w-0 flex-col gap-1 rounded-cc-row border-2 border-cc-ink px-4 py-3">
                 <span className="cc-text-label text-cc-ink-muted">Proposed</span>
-                <b className="text-[18px] font-bold leading-snug text-cc-ink">{COMPARED_OPTION_LABELS[view.recommended]}</b>
+                <b className="text-[15px] font-bold leading-snug text-cc-ink">{COMPARED_OPTION_LABELS[view.recommended]}</b>
                 <p className="m-0 text-[14px] text-cc-ink [overflow-wrap:anywhere]"><SapCheckedText text={view.reason.text} /></p>
               </div>
               <div className="flex min-w-0 flex-col gap-1 rounded-cc-row border border-cc-line bg-cc-surface-muted px-4 py-3">
@@ -99,55 +99,28 @@ export default function OptionComparison({ design, keyUser = null, keyUserChosen
             </p>
           )}
 
-          {/* The matrix: each option on each aspect, a level and one short line; the full text one click away. */}
-          <div className="min-w-0 overflow-x-auto" data-option-matrix="">
-            <table className="w-full min-w-[760px] border-collapse text-[14px] leading-5">
-              <thead>
-                <tr>
-                  <th scope="col" className="w-[150px] border-b border-cc-line px-3 py-2 text-left max-[720px]:w-[104px]">
-                    <span className="sr-only">Aspect</span>
-                  </th>
-                  {view.options.map((o) => (
-                    <th
-                      key={o.option}
-                      scope="col"
-                      data-option={o.option}
-                      className={cn(
-                        'px-3 py-2 text-left font-bold text-cc-ink',
-                        recommended === o.option ? 'border-b-2 border-cc-ink bg-cc-surface-muted' : 'border-b border-cc-line',
-                      )}
-                    >
-                      <span className="inline-flex flex-wrap items-center gap-2">
-                        {SHORT_LABELS[o.option]}
-                        {recommended === o.option ? <CcTag>Proposed</CcTag> : null}
-                      </span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {MATRIX_ASPECTS.map((a, i) => {
-                  const ruled = i < MATRIX_ASPECTS.length - 1;
-                  return (
-                    <tr key={a}>
-                      <th scope="row" className={cn('px-3 py-3 text-left align-top font-semibold text-cc-ink', ruled && 'border-b border-cc-line')}>
-                        {MATRIX_ASPECT_LABELS[a]}
-                      </th>
-                      {view.options.map((o) => {
+          {/* The matrix: each option on each aspect, a level and one short line; the full text one click away. The
+              family's table (DESIGN.md §2.4): on a phone each aspect becomes a card with the options as labelled lines. */}
+          <div className="min-w-0" data-option-matrix="">
+            <CcTable
+              caption={title}
+              columns={[
+                { key: 'aspect', label: 'Aspect', width: '150px' },
+                ...view.options.map((o) => ({ key: o.option, label: recommended === o.option ? `${SHORT_LABELS[o.option]} · proposed` : SHORT_LABELS[o.option] })),
+              ]}
+              rows={[
+                ...MATRIX_ASPECTS.map((a) => ({
+                  key: a,
+                  cells: {
+                    aspect: <b className="font-semibold text-cc-ink">{MATRIX_ASPECT_LABELS[a]}</b>,
+                    ...Object.fromEntries(
+                      view.options.map((o) => {
                         const cell = o.cells[a];
-                        return (
-                          <td
-                            key={o.option}
-                            data-option-aspect={a}
-                            data-option-of={o.option}
-                            className={cn('px-3 py-3 align-top', ruled && 'border-b border-cc-line', recommended === o.option && 'bg-cc-surface-muted')}
-                          >
+                        return [
+                          o.option,
+                          <span key={o.option} data-option-aspect={a} data-option-of={o.option} className="block">
                             {cell.level ? (
-                              <span
-                                data-cc-value-state={VALUE_STATE[cell.level]}
-                                data-option-level={cell.level}
-                                className={cn('block font-bold', LEVEL_CLASS[cell.level])}
-                              >
+                              <span data-cc-value-state={VALUE_STATE[cell.level]} data-option-level={cell.level} className={cn('block font-bold', LEVEL_CLASS[cell.level])}>
                                 <span aria-hidden={true}>{LEVEL_MARK[cell.level]} </span>
                                 {RATING_WORDS[a][cell.level]}
                               </span>
@@ -155,31 +128,37 @@ export default function OptionComparison({ design, keyUser = null, keyUserChosen
                             <span className="block text-cc-ink-muted [overflow-wrap:anywhere]">
                               <SapCheckedText text={cell.short} />
                             </span>
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  );
-                })}
-                <tr>
-                  <td />
-                  {view.options.map((o) => (
-                    <td key={o.option} className={cn('px-3 pb-2 pt-1', recommended === o.option && 'bg-cc-surface-muted')}>
-                      <button
-                        type="button"
-                        data-option-details={o.option}
-                        aria-haspopup="dialog"
-                        onClick={() => setDetail(o.option)}
-                        className="min-h-11 cursor-pointer border-0 bg-transparent p-0 text-left text-[14px] font-semibold text-cc-information underline underline-offset-2"
-                      >
-                        Details
-                        <span className="sr-only"> of {COMPARED_OPTION_LABELS[o.option]}</span>
-                      </button>
-                    </td>
-                  ))}
-                </tr>
-              </tbody>
-            </table>
+                          </span>,
+                        ];
+                      }),
+                    ),
+                  },
+                })),
+                {
+                  key: 'details',
+                  cells: {
+                    aspect: <span className="sr-only">Details</span>,
+                    ...Object.fromEntries(
+                      view.options.map((o) => [
+                        o.option,
+                        <span key={o.option} data-option={o.option}>
+                          <button
+                            type="button"
+                            data-option-details={o.option}
+                            aria-haspopup="dialog"
+                            onClick={() => setDetail(o.option)}
+                            className="min-h-11 cursor-pointer border-0 bg-transparent p-0 text-left text-[14px] font-semibold text-cc-information underline underline-offset-2"
+                          >
+                            Details
+                            <span className="sr-only"> of {COMPARED_OPTION_LABELS[o.option]}</span>
+                          </button>
+                        </span>,
+                      ]),
+                    ),
+                  },
+                },
+              ]}
+            />
           </div>
           <p data-option-legend="" className="m-0 text-[13px] text-cc-ink-muted">
             {LEVEL_MARK.good} fits · {LEVEL_MARK.partial} partly · {LEVEL_MARK.poor} does not fit · {LEVEL_MARK.open} not determined — the

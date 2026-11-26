@@ -90,7 +90,7 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
   page, a long one is cut between rows (not through a step, a name or a flow label, unless one of them is taller than a whole page) with "part 1 of 2 (continues in
   part 2)", labels are drawn on top, and an SVG never overflows its page. The Confluence page's chapter links point
   at the anchors Confluence Cloud gives its headings (Data Center prefixes the page title and is not covered); IDs
-  such as `BR-009` no longer break at the hyphen; a Word table's header keeps with its first row.
+  such as `BR-009` no longer break at the hyphen in the Confluence and HTML exports (Word keeps a plain hyphen so the ID stays findable); a Word table's header keeps with its first row.
 - **One "Next" on the tool row.** The row never marks the tool the reader is on as next, the demo reads the way on as
   its Re-design page does (the row said "Analyze · Next" while Re-design said "Start with Economics"), and the six
   tools after Analyze stand in the "Re-design ›" group on every tool, not only on Analyze. The demo's Transformation

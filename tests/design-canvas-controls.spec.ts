@@ -66,6 +66,9 @@ const drawnWidth = (page: Page) => page.locator('svg[data-architecture-canvas]')
 
 /** The control is what a pointer at its centre hits — nothing lies on top of it. */
 async function expectOnTop(page: Page, selector: string) {
+  // Scrolled to as a reader would reach it: a control at the foot of the window stops above the next-step bar there
+  // (`scroll-padding-bottom`, journey review 26.11.2026), and nothing may lie on top of it then.
+  await page.locator(selector).scrollIntoViewIfNeeded();
   const hit = await page.locator(selector).evaluate((el) => {
     const r = el.getBoundingClientRect();
     const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);

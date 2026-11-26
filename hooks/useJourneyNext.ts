@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { getAuth } from '@/lib/firebase';
+import { getAuthIfStarted } from '@/lib/firebase';
 import { decisionOfRead, journeyNext, type JourneyNext } from '@/lib/journey-next';
 import type { DecisionRead } from '@/lib/management-overview';
 import type { RedesignDecision } from '@/lib/redesign';
@@ -29,8 +29,8 @@ export function useJourneyNext({
   loaded: boolean;
 }): JourneyNext | null {
   const hasRun = Boolean(steps?.some((s) => s.key === 'analyze' && s.state !== 'empty'));
-  // The read is bound to the project it was made for: a read of the previous project never drives this one's way on
-  // (QA 4f9a2e8bc37e). `failed` is not "no decision": no decision-dependent step is named from it (QA 31b5b4ac6701).
+  // The read is bound to the project it was made for: a read of the previous project never drives this one's way on.
+  // `failed` is not "no decision": no step that depends on the decision is named from it.
   const [read, setRead] = useState<{ projectId: string; state: 'ready' | 'failed'; value: DecisionRead | null } | null>(null);
   const { profile } = useUserProfile();
 
@@ -39,7 +39,9 @@ export function useJourneyNext({
     let cancelled = false;
     void (async () => {
       try {
-        const token = await getAuth().currentUser?.getIdToken();
+        // `getAuthIfStarted`: this hook stands in every tool's header, the public demo's too, and must never be the one
+        // that starts Auth (public-no-google-before-signin-guard); on a project the shell has started it already.
+        const token = await getAuthIfStarted()?.currentUser?.getIdToken();
         if (!token) {
           if (!cancelled) setRead({ projectId, state: 'failed', value: null });
           return;

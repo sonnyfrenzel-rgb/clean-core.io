@@ -11,6 +11,7 @@ import CcTable from '@/components/cc/Table';
 import { FlowItem, LevelMix, NumberedItem, Section } from '@/components/analyze/ManagementParts';
 import { scoreBand } from '@/lib/clean-core-score';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
+import { APP_VERSION } from '@/lib/version';
 import { managementInShort, programSummary } from '@/lib/program-summary-text';
 import { anchorLabel } from '@/lib/first-look';
 import { decisionOptionsView, OPTION_SIGNAL_WORDS } from '@/lib/decision-option-signals';
@@ -46,7 +47,7 @@ export default function DemoAnalyzeManagement({
   const inShort = useMemo(() => {
     if (!source.trim()) return null;
     try {
-      const facts = programSummaryFactsOf(source);
+      const facts = programSummaryFactsOf(source, { engineVersion: APP_VERSION });
       const summary = programSummary(facts);
       const purpose = summary.lines.find((l) => l.key === 'purpose')?.text ?? '';
       const full = managementInShort(summary, facts, { level: false });

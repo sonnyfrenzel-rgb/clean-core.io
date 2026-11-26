@@ -92,7 +92,7 @@ const STEPS: Step[] = [
     // (`components/analyze/AnalyzeBusiness.tsx`). `tests/first-run-today.spec.ts` holds the line.
     detail:
       'Every project opens in Analyze, in the Business view. "What this program does" says it in one sentence, and under it stands the process as a BPMN map reconstructed from the code. "Walk me through it" takes you through it step by step, or choose "I\'ll look around myself". Click a step or a line number and its ABAP lines open beside the map. Under the map: how it runs, why it exists, who is involved, and the questions to settle.',
-    see: 'The process map with a line anchor on every element, and the view switch — Business, IT, Management — at the top right. Each view is a way of reading the same project; you switch between them yourself.',
+    see: 'The process map with its line anchors, and the view switch — Business, IT, Management — at the top right. Each view is a way of reading the same project; you switch between them yourself.',
   },
   {
     n: 5,

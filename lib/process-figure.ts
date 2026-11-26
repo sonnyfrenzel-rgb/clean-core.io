@@ -322,7 +322,7 @@ function rowCuts(figure: ProcessFigure, maxHeight: number): number[] {
       if (found) break;
     }
     // No gap in reach (one shape or name taller than a whole part): the cut stands at the page's height, so that one
-    // item is split across two parts rather than lost — the one case a cut goes through a shape (QA dcd327b64308).
+    // item is split across two parts rather than lost — the one case a cut goes through a shape.
     cuts.push(cut);
     start = cut;
   }
