@@ -1445,3 +1445,14 @@ html:has([data-page-anchors]) {
     inset: -8px -2px;
   }
 }
+
+/* The next-step bar stands fixed at the foot of every tool (journey review 26.11.2026, M2): the page keeps room under its
+   last section so the bar never covers it. */
+main:has([data-next-step-bar]) {
+  padding-bottom: 5rem;
+}
+/* And a control scrolled into view stops above the bar, never under it (design-canvas-fit: "nothing covers Confirm
+   target"). */
+html:has([data-next-step-bar]) {
+  scroll-padding-bottom: 5rem;
+}

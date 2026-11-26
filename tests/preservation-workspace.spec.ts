@@ -553,7 +553,12 @@ test.describe('the reference cases, opened in the workspace', () => {
         // A fresh browser that has only analysed sees no "Next" tag until a later tool was opened once (plan AB-4,
         // `nextTagShown`); every other case names the register's next tool.
         const tools = register.stages.map((st) => ({ key: st.key, state: rc.expect.phaseStates[st.key as PhaseKey] }));
-        if (nextTagShown(tools, rc.workspace.nextStep, false)) {
+        if (rc.workspace.nextStep === 'analyze') {
+          // The workspace address lands on Analyze: the reader stands on the next step, and the row tags no tool it is
+          // on (journey review 26.11.2026, Q3) — the page itself is the way on.
+          await expect(bar.locator('a[data-workspace-tool="analyze"]'), `${rc.id}: Analyze is current`).toHaveAttribute('aria-current', 'page');
+          await expect(bar.locator('a[data-workspace-tool-next]'), `${rc.id}: no Next tag on the current tool`).toHaveCount(0);
+        } else if (nextTagShown(tools, rc.workspace.nextStep, false)) {
           await expect(bar.locator('a[data-workspace-tool-next]'), `${rc.id}: the next tool`).toHaveAttribute(
             'data-workspace-tool',
             rc.workspace.nextStep,

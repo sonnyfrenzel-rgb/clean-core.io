@@ -230,11 +230,13 @@ test.describe('the Business view of a real project (Analyze, Business; mockup st
     await expect(page.locator('[data-analyze-business="ready"]')).toHaveCount(0);
     await expect(page.locator('[data-process-map]')).toHaveCount(0);
     await expect(page.locator('[data-first-look], [data-around-the-map]')).toHaveCount(0);
-    // The tool row still says what is open: Analyze is the next step (the workspace's Next step card retired with 3.5.0).
+    // The tool row says where the reader is: Analyze is the step, and the reader stands on it — so no "Next" tag on the
+    // current tool (journey review 26.11.2026, Q3); the page itself is the way on (its upload and start path).
     await page.goto(`/project/${empty}?view=it`, { waitUntil: 'domcontentloaded' });
     const bar = page.locator('[data-stage-tools="open"]');
     await expect(bar).toBeVisible({ timeout: 90_000 });
-    await expect(bar.locator('a[data-workspace-tool-next]')).toHaveAttribute('data-workspace-tool', 'analyze');
+    await expect(bar.locator('a[data-workspace-tool="analyze"]')).toHaveAttribute('aria-current', 'page');
+    await expect(bar.locator('a[data-workspace-tool-next]')).toHaveCount(0);
   });
 
   test('on a phone the map opens as the map, at 40 % or more, with full screen — and nothing scrolls sideways (ADR-072)', async ({ browser }) => {

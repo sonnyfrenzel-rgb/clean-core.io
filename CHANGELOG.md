@@ -70,6 +70,13 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
 
 ### Fixed
 
+- **One next step on every tool.** A bar at the foot of the window names the one next step with one button, worked out
+  by Re-design's own rule (`lib/journey-next.ts`, decision included), and the tool row's "Next" tag reads the same
+  source — the two can no longer point to different places. On the page that is the next step, the bar names the step
+  after it ("After this page: Decide"). It waits until the project and the decision are read, stands on every tool
+  after Analyze (Analyze keeps its walk-through and its own way on, plan AB-4) and not on Re-design, which is the step
+  list; once a later tool holds a record it no longer sends the reader back to Economics or the decision. A control
+  scrolled into view stops above the bar. A browser that refuses storage still reaches the demo through sign-in.
 - **Words that sent the reader to someone else are gone.** The landing page and the demo's last screen offer one
   "Share the demo link" instead of "Send to your IT colleague / your manager"; the sign-up dialog and the first-run
   guide describe today's product (My workspace, the Business view's map and walk-through, the rules answered in Design)

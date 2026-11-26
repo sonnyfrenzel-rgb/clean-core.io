@@ -175,7 +175,7 @@ test.describe('the mark is the stepper\'s reading of the phase', () => {
     expect(bar).toMatch(/if \(current && current !== 'analyze'\) markLaterToolOpened\(\);/);
     // Journey review 26.11.2026 (Q3): never "Next" on the tool the reader is on, and the demo reads the way on as its
     // Re-design page does — the bar said "Analyze · Next" while Re-design said "Start with Economics".
-    expect(bar).toContain('const next = shownNext === current ? null : shownNext;');
+    expect(bar).toContain('const next = ruled === current ? null : ruled;');
     expect(bar).toContain("readKey === 'demo' ? tools.map((t) => (t.key === 'analyze' ? { ...t, state: 'done' as const } : t)) : tools");
     // Q7: the Re-design group stands on every tool, not only on Analyze.
     expect(read('components/StageHeader.tsx')).toContain('(projectId || demo) && (onRedesign || Boolean(toolCurrent))');

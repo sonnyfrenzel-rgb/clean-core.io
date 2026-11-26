@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
+import { signInLinkFor } from '@/lib/return-path';
 import { useRouter } from 'next/navigation';
 import { Play, RotateCcw, X } from 'lucide-react';
 import StageFrame from '@/components/StageFrame';
@@ -46,6 +47,7 @@ import {
   DEMO_TAG,
   DEMO_UNSIGNED_NOTICE,
   DEMO_SIGNED_OUT_ROUTE,
+  storageReadable,
   DEMO_WORKSPACE_ROUTE,
 } from '@/lib/demo-marks';
 import {
@@ -123,7 +125,7 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
   const { profile, loading: profileLoading } = useUserProfile();
   const enabled = profile != null;
   useEffect(() => {
-    if (!profileLoading && !enabled) router.replace(DEMO_SIGNED_OUT_ROUTE);
+    if (!profileLoading && !enabled) router.replace(storageReadable() ? DEMO_SIGNED_OUT_ROUTE : signInLinkFor(DEMO_WORKSPACE_ROUTE));
   }, [profileLoading, enabled, router]);
 
   /* ------------------------------------------------------ the reader's state */

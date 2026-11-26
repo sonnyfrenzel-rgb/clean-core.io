@@ -238,7 +238,14 @@ function ToolsNav({
   compact: compactStage = false,
   onTool,
   group = null,
+  journeyNextKey,
 }: {
+  /**
+   * The journey's one next step (`useJourneyNext`, journey review 26.11.2026): when the header knows it, the "Next"
+   * tag follows it — `null` marks no tool (the decision is next, or nothing) — instead of `nextPhaseKey`, which does
+   * not know the decision. `undefined`: not known here, the phase rule as before.
+   */
+  journeyNextKey?: PhaseKey | null;
   tools: WorkspaceTool[];
   /** The six tools after Analyze grouped under "Re-design ›" (stage surface only, ADR-143). */
   group?: ToolGroup | null;
@@ -305,7 +312,11 @@ function ToolsNav({
   const phaseNext = nextPhaseKey(wayTools);
   // Never on the tool the reader is on: the page itself is that step.
   const shownNext = nextTagShown(tools, phaseNext, progress.laterToolOpened) ? phaseNext : null;
-  const next = shownNext === current ? null : shownNext;
+  // The journey's step when the header knows it, under the same rule as before: an analysis-only reader sees no tag
+  // until a tool after Analyze was opened once (`nextTagShown`, plan AB-4).
+  const ruled =
+    journeyNextKey === undefined ? shownNext : nextTagShown(tools, journeyNextKey, progress.laterToolOpened) ? journeyNextKey : null;
+  const next = ruled === current ? null : ruled;
   // Not on Analyze itself: the stage marks it read as it opens.
   const analysisRead = useAnalysisRead(readKey);
   const ready = (tool: WorkspaceTool) => tool.key !== current && resultReadyTag(tool, analysisRead);
@@ -634,7 +645,10 @@ export function StageToolBar({
   compact = false,
   onTool,
   group = null,
+  journeyNextKey,
 }: {
+  /** The journey's one next step as a tool, `null` for none, or `undefined` when the page does not know it. */
+  journeyNextKey?: PhaseKey | null;
   /** `workflowSteps(project)` — or the demo's rail, which is assignable to it. */
   steps: WorkspaceTool[];
   /** The tool the reader is on; none on the Re-design page, which is not a tool. */
@@ -665,6 +679,7 @@ export function StageToolBar({
       compact={compact}
       onTool={onTool}
       group={group}
+      journeyNextKey={journeyNextKey}
       readKey={analysisKeyOfBase(base)}
       link={{ base, view: params.get('view'), from, layer: params.get('layer') }}
     />

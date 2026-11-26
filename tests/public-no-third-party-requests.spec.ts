@@ -183,7 +183,7 @@ test.describe('a signed-out visit contacts only its own origin', () => {
   // the same gate as the demo workspace; both send the reader back to the demo workspace after the sign-in.
   // `/demo` with them while its first stage is Analyze: the redirect is the same visit.
   for (const address of [...SIGN_IN_FIRST]) {
-    test(`${address} sends a visitor without the hint to sign in, and asks nobody on the way`, async ({ browser, baseURL }) => {
+    test(`${address} sends a visitor without the hint to the public demo, and asks nobody on the way`, async ({ browser, baseURL }) => {
       // It needs an account (components/demo/DemoWorkspaceShell.tsx, DemoAnalyzeBusiness.tsx). Without the
       // hint the shell reports "signed out" without starting Auth, and the page
       // moves on to the sign-in dialog — which starts Auth by design, so only
@@ -201,12 +201,13 @@ test.describe('a signed-out visit contacts only its own origin', () => {
           if (isDemoPath(new URL(page.url()).pathname)) foreign.push(`${request.resourceType()} ${target.split('?')[0]}`);
         });
         await page.goto(address, { waitUntil: 'load' });
-        await expect.poll(() => new URL(page.url()).searchParams.get('auth'), { timeout: 20000 }).toBe('signin');
-        expect(new URL(page.url()).searchParams.get('next')).toBe('/demo/workspace');
+        // Owner go 26.11.2026 (Q8): a visitor without an account lands on the public demo, never on sign-in.
+        await expect.poll(() => new URL(page.url()).pathname, { timeout: 20000 }).toBe('/demo');
+        expect(new URL(page.url()).searchParams.get('auth')).toBeNull();
       } finally {
         await context.close();
       }
-      expect(foreign, `${address} asked someone other than its own origin before it sent the visitor to sign in`).toEqual([]);
+      expect(foreign, `${address} asked someone other than its own origin before it sent the visitor to the public demo`).toEqual([]);
     });
   }
 

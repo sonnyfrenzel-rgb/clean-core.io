@@ -3,6 +3,7 @@
 import { viewSwitchHash } from '@/lib/view-switch';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { signInLinkFor } from '@/lib/return-path';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronRight, RotateCcw } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
@@ -57,6 +58,7 @@ import {
   DEMO_TAG,
   DEMO_UNSIGNED_NOTICE,
   DEMO_SIGNED_OUT_ROUTE,
+  storageReadable,
   DEMO_WORKSPACE_ROUTE,
 } from '@/lib/demo-marks';
 import {
@@ -145,7 +147,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   // to this page, and the showcase is no dead end — it offers the sign-in.
   const enabled = profile != null;
   useEffect(() => {
-    if (!profileLoading && !enabled) router.replace(DEMO_SIGNED_OUT_ROUTE);
+    if (!profileLoading && !enabled) router.replace(storageReadable() ? DEMO_SIGNED_OUT_ROUTE : signInLinkFor(DEMO_WORKSPACE_ROUTE));
   }, [profileLoading, enabled, router]);
 
   const view = viewFromParam(searchParams?.get('view'));

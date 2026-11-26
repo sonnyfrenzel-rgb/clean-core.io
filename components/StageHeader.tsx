@@ -2,6 +2,8 @@
 
 import React from 'react';
 import Link from 'next/link';
+import NextStepBar from '@/components/NextStepBar';
+import { useJourneyNext } from '@/hooks/useJourneyNext';
 import dynamic from 'next/dynamic';
 import { useParams } from 'next/navigation';
 import {
@@ -180,6 +182,18 @@ export default function StageHeader({
   const eyebrowTool = toolLabel ?? (toolCurrent ? PHASES.find((p) => p.key === toolCurrent)?.label : undefined);
   const ToolIcon = onRedesign ? Route : toolCurrent ? TOOL_ICONS[toolCurrent] : null;
   // The "Re-design ›" group: on Analyze and on the Re-design page, of a project and of the demo (`/demo/redesign`).
+  // One next step for the tool row's tag and the bar at the foot (journey review 26.11.2026): one source, never two.
+  const journey = useJourneyNext({
+    steps: tools?.steps ?? null,
+    here: onRedesign ? 'redesign' : toolCurrent ?? null,
+    projectId,
+    demo,
+    loaded: demo || Boolean(project),
+  });
+  // The tag names the next step itself, never the one after it: standing on that step, the row shows no tag (Q3);
+  // a stale analysis keeps Analyze as the step, not the tool past it (preservation RC-delivery-blocked-source-changed).
+  const wayKey = journey?.next?.key ?? null;
+  const journeyNextKey: PhaseKey | null | undefined = journey === null ? undefined : wayKey && wayKey !== 'decide' ? wayKey : null;
   const group: ToolGroup | null =
     // The same row on every tool (journey review 26.11.2026, Q7): the six tools after Analyze always stand in the group.
     (projectId || demo) && (onRedesign || Boolean(toolCurrent))
@@ -231,8 +245,12 @@ export default function StageHeader({
         </div>
       )}
 
+      {/* The one next step of the journey, at the foot of the window on every tool after Analyze (journey review
+          26.11.2026, M2). Not on Re-design: that page is the step list and carries the step as its own action. Not on
+          Analyze: there the walk-through leads first and the way on stands in the page (plan AB-4, ADR-099). */}
+      {tools && toolCurrent && toolCurrent !== 'analyze' && !onRedesign && toolBase ? <NextStepBar way={journey} base={toolBase} /> : null}
       {tools && (toolCurrent || onRedesign) && toolBase && (
-        <div data-stage-toolbar="" className="cc-no-print mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <div data-stage-toolbar=""className="cc-no-print mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
           <div className="min-w-0 flex-1 basis-[36rem]">
             <StageToolBar
               steps={tools.steps}
@@ -241,6 +259,7 @@ export default function StageHeader({
               compact={toolsCompact ?? true}
               onTool={onTool}
               group={group}
+              journeyNextKey={journeyNextKey}
             />
           </div>
           {toolsNote ? (

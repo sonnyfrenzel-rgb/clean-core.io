@@ -44,6 +44,21 @@ export const DEMO_ROUTE = '/demo';
 export const DEMO_SIGNED_OUT_ROUTE = DEMO_ROUTE;
 
 /**
+ * Whether this browser lets a page read its storage. Where it refuses, a page cannot read the sign-in hint and cannot
+ * tell a signed-out visitor from a signed-in one; the sign-in dialog finds out (and leads a signed-in reader straight
+ * back), the public showcase would strand them (pre-push run 26.11.2026, demo-workspace-tour "refuses storage").
+ */
+export function storageReadable(): boolean {
+  try {
+    if (typeof window === 'undefined') return false;
+    window.localStorage.getItem('cc-storage-probe');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Whether a path is one of the demo's screens — `/demo` and everything under it.
  *
  * The shell assistant lives in the layout and is mounted on every page,

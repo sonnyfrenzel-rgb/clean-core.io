@@ -118,13 +118,14 @@ test.describe('Q8 · the demo', () => {
     expect(w).toMatch(/stage === 'analyze' && management && \(\s*<DemoAnalyzeManagement/);
   });
 
-  test('a visitor without an account goes from a demo page to the public showcase, never to sign-in', () => {
+  test('a visitor without an account goes from a demo page to the public showcase; only a browser that refuses storage goes through sign-in', () => {
     expect(DEMO_SIGNED_OUT_ROUTE).toBe(DEMO_ROUTE);
     for (const rel of ['components/demo/DemoAnalyzeBusiness.tsx', 'components/demo/DemoWorkspaceShell.tsx']) {
       const s = code(rel);
-      expect(s, `${rel} still sends a visitor to sign in`).not.toContain('signInLinkFor');
       expect(s, `${rel} still sends a visitor to sign in`).not.toContain('auth=signin');
-      expect(s).toContain('if (!profileLoading && !enabled) router.replace(DEMO_SIGNED_OUT_ROUTE);');
+      // Where storage is refused the sign-in hint cannot be read, so a signed-in reader looks signed out: the sign-in
+      // dialog tells them apart and leads them straight back (pre-push run 26.11.2026).
+      expect(s).toContain('if (!profileLoading && !enabled) router.replace(storageReadable() ? DEMO_SIGNED_OUT_ROUTE : signInLinkFor(DEMO_WORKSPACE_ROUTE));');
     }
     // No other page under /demo sends anyone to sign in.
     const files: string[] = [];
@@ -140,6 +141,8 @@ test.describe('Q8 · the demo', () => {
     for (const rel of files) {
       const s = code(rel);
       expect(s, `${rel} sends a visitor to sign in`).not.toMatch(/router\.(replace|push)\(signInLinkFor|redirect\([^)]*auth=signin/);
+      // The one sign-in way: behind storageReadable() only.
+      for (const m of s.matchAll(/signInLinkFor\(/g)) expect(s.slice(Math.max(0, (m.index ?? 0) - 60), m.index), rel).toContain('storageReadable() ?');
     }
   });
 
