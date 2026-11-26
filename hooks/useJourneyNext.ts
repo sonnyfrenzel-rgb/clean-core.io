@@ -29,7 +29,9 @@ export function useJourneyNext({
   loaded: boolean;
 }): JourneyNext | null {
   const hasRun = Boolean(steps?.some((s) => s.key === 'analyze' && s.state !== 'empty'));
-  const [read, setRead] = useState<{ state: 'loading' | 'ready' | 'absent'; value: DecisionRead | null }>({ state: 'loading', value: null });
+  // The read is bound to the project it was made for: a read of the previous project never drives this one's way on
+  // (QA 4f9a2e8bc37e). `failed` is not "no decision": no decision-dependent step is named from it (QA 31b5b4ac6701).
+  const [read, setRead] = useState<{ projectId: string; state: 'ready' | 'failed'; value: DecisionRead | null } | null>(null);
   const { profile } = useUserProfile();
 
   useEffect(() => {
@@ -39,14 +41,14 @@ export function useJourneyNext({
       try {
         const token = await getAuth().currentUser?.getIdToken();
         if (!token) {
-          if (!cancelled) setRead({ state: 'absent', value: null });
+          if (!cancelled) setRead({ projectId, state: 'failed', value: null });
           return;
         }
         const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/decision`, { headers: { Authorization: `Bearer ${token}` } });
         const json = (await res.json().catch(() => null)) as DecisionRead | null;
-        if (!cancelled) setRead(res.ok && json && json.draft ? { state: 'ready', value: json } : { state: 'absent', value: null });
+        if (!cancelled) setRead(res.ok && json && json.draft ? { projectId, state: 'ready', value: json } : { projectId, state: 'failed', value: null });
       } catch {
-        if (!cancelled) setRead({ state: 'absent', value: null });
+        if (!cancelled) setRead({ projectId, state: 'failed', value: null });
       }
     })();
     return () => {
@@ -58,8 +60,10 @@ export function useJourneyNext({
     if (!steps || !loaded) return null;
     // The demo reads the way on as if its reading were signed, as its Re-design page does (`DemoRedesign`).
     const ways = demo ? steps.map((s) => (s.key === 'analyze' ? { ...s, state: 'done' as const, done: true } : s)) : steps;
-    if (!demo && hasRun && read.state === 'loading') return null;
-    const decision: RedesignDecision = demo || !hasRun ? { stage: 'not-decided', option: null, indicated: null } : decisionOfRead(read.value, false);
+    const own = read && read.projectId === projectId ? read : null;
+    // Not read yet for this project, or the read failed: no step that depends on the decision is named.
+    if (!demo && hasRun && (!own || own.state === 'failed')) return null;
+    const decision: RedesignDecision = demo || !hasRun ? { stage: 'not-decided', option: null, indicated: null } : decisionOfRead(own?.value ?? null, false);
     return journeyNext(ways, decision, here, profile);
-  }, [steps, loaded, demo, hasRun, read, here, profile]);
+  }, [steps, loaded, demo, hasRun, read, projectId, here, profile]);
 }

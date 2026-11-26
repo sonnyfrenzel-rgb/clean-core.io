@@ -430,7 +430,9 @@ function cellOf(raw: unknown, full: string): OptionCell {
   const r = isObj(raw) ? raw : {};
   const level = typeof r.level === 'string' && (RATING_LEVELS as readonly string[]).includes(r.level) ? (r.level as RatingLevel) : null;
   const own = text(r.short, 120);
-  const short = own && !containsAmount(own) ? shortened(own) : shortened(firstSentence(full));
+  const fallback = shortened(firstSentence(full));
+  // Neither the model's line nor the fallback may carry an amount (QA 70a5d401dcda): the cell then points to the details.
+  const short = own && !containsAmount(own) ? shortened(own) : containsAmount(fallback) ? 'See the details.' : fallback;
   return { level, short };
 }
 

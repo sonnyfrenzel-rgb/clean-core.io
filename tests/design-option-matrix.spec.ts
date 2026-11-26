@@ -86,7 +86,12 @@ test.describe('the option comparison as a matrix', () => {
     expect(old.cells.fitGap.short.startsWith('rap covers the approval limits')).toBe(true);
   });
 
-  test('an amount never stands in a cell', () => {
+  test('an amount never stands in a cell, not even through the fallback sentence', () => {
+    const fallback = design(false);
+    (fallback.optionComparison.options[2] as { fitGap: string }).fitGap = 'Costs about EUR 40,000 to build. Covers all five parts.';
+    const viewF = readOptionComparison(fallback);
+    if (viewF.state !== 'ready') throw new Error('not ready');
+    expect(viewF.options.find((o) => o.option === 'rap')!.cells.fitGap.short).not.toMatch(/EUR|40,000/);
     const d = design();
     (d.optionComparison.options[2] as ReturnType<typeof rated>).ratings.runningCost.short = 'About EUR 12,000 a year';
     const view = readOptionComparison(d);
@@ -102,6 +107,8 @@ test.describe('the option comparison as a matrix', () => {
     expect(html).toContain('data-option-reason=""');
     expect(html).toContain('What the others miss');
     expect(html.match(/data-option-aspect="/g)?.length).toBe(4 * 5);
+    // Five aspects for each option, not only twenty in all (QA 61ee8aadc337).
+    for (const o of ['standard', 'keyuser', 'rap', 'cap']) expect(html.match(new RegExp(`data-option-aspect="[a-zA-Z]+" data-option-of="${o}"`, 'g'))?.length, o).toBe(5);
     expect(html.match(/data-option-details="/g)?.length).toBe(4);
     expect(html).toContain('data-option-of="rap"');
     expect(html).toContain('data-cc-value-state="success"');

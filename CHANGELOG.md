@@ -87,7 +87,7 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
   says its three lines in one row under the notice.
 - **Exports: the process figure reads whole.** In Word, the Confluence page and print, Figure 1 was cut into a left
   and a right half, so no row could be read through. A figure too small for an upright page now gets a landscape
-  page, a long one is cut between rows (never through a step, a name or a flow label) with "part 1 of 2 (continues in
+  page, a long one is cut between rows (not through a step, a name or a flow label, unless one of them is taller than a whole page) with "part 1 of 2 (continues in
   part 2)", labels are drawn on top, and an SVG never overflows its page. The Confluence page's chapter links point
   at the anchors Confluence Cloud gives its headings (Data Center prefixes the page title and is not covered); IDs
   such as `BR-009` no longer break at the hyphen; a Word table's header keeps with its first row.

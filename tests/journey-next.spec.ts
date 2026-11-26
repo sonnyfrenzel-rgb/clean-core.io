@@ -61,7 +61,8 @@ test.describe('the one next step', () => {
     expect(bar.match(/<CcLinkButton /g)?.length).toBe(1);
     expect(bar).toContain('if (!way) return null;');
     const hook = fs.readFileSync(path.join(ROOT, 'hooks/useJourneyNext.ts'), 'utf8');
-    expect(hook).toContain("if (!demo && hasRun && read.state === 'loading') return null;");
+    expect(hook).toContain("if (!demo && hasRun && (!own || own.state === 'failed')) return null;");
+    expect(hook).toContain('const own = read && read.projectId === projectId ? read : null;');
     const row = fs.readFileSync(path.join(ROOT, 'components/workspace/ToolBar.tsx'), 'utf8');
     expect(row).toContain('journeyNextKey === undefined ? shownNext : nextTagShown(tools, journeyNextKey, progress.laterToolOpened) ? journeyNextKey : null;');
   });
