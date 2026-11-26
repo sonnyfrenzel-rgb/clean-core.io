@@ -50,7 +50,7 @@ test.describe('Design, rendered — standard, RAP and CAP compared', () => {
     await expect(section).toHaveAttribute('data-option-comparison', 'ready');
     await expect(section.locator('[data-option]')).toHaveCount(3);
     await expect(section.locator('[data-option]').first()).toHaveAttribute('data-option', 'standard');
-    await expect(section.locator('[data-option="rap"] [data-option-aspect]')).toHaveCount(5);
+    await expect(section.locator('[data-option-aspect][data-option-of="rap"]')).toHaveCount(5);
     await expect(section.locator('[data-option-reason]')).toContainText('An allocation key per plant that the standard cycle cannot express.');
     // The model's comparison is labelled as such: "AI-generated" since owner
     // decision 22.10.2026 (it replaced "Model proposal" on the face, 3.0.21).

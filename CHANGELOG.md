@@ -70,6 +70,13 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
 
 ### Fixed
 
+- **Design's option comparison reads at a glance** (IT view; owner 26.11.2026, mock-up accepted the same day). The
+  answer first — the proposed option with its reason, beside what the others miss — then a matrix: SAP standard, key
+  user, in-app RAP and side-by-side CAP against coverage, effort, running cost, data and target release, each cell a
+  level (fits / partly / does not fit / not determined) and one short line. Each option's full text opens in a details
+  panel beside the page, as "Cloud service integrations" does. The model now writes a level and a line of at most
+  eight words per aspect; a comparison stored before shows the first sentence, shortened, and no invented level. The
+  levels are value states, not proof: the section keeps its AI-generated mark.
 - **A decision that cannot be confirmed leads to what blocks it.** "Confirm decision" says why on hover, and a click
   goes to the first place that lifts the block: the analysis, the choice of an option, or the target's sign-off in
   Design's Management view; the places stand as links under the reason (`decisionUnblockSteps` in

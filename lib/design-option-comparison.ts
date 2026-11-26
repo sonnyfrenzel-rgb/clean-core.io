@@ -74,6 +74,35 @@ export const COMPARISON_ASPECT_LABELS: Readonly<Record<ComparisonAspect, string>
   dataContract: 'Data contract',
 });
 
+/**
+ * Owner 26.11.2026 (mock-up "Design IT: option comparison"): the comparison is read as a matrix — each option on each
+ * aspect a level and one short line, the full sentence one click away in a details panel. The level is the model's,
+ * like every word of the comparison, and is shown as such.
+ */
+export const RATING_LEVELS = ['good', 'partial', 'poor', 'open'] as const;
+export type RatingLevel = (typeof RATING_LEVELS)[number];
+
+/** The level in the aspect's own words: "Fully" covers the program, "Low" effort, data "In place". */
+export const RATING_WORDS: Readonly<Record<ComparisonAspect, Readonly<Record<RatingLevel, string>>>> = Object.freeze({
+  fitGap: { good: 'Fully', partial: 'Partly', poor: 'Not covered', open: 'Open' },
+  effort: { good: 'Low', partial: 'Medium', poor: 'High', open: 'Open' },
+  runningCost: { good: 'Low', partial: 'Medium', poor: 'High', open: 'Open' },
+  dataContract: { good: 'In place', partial: 'Partly moved', poor: 'Copied', open: 'Open' },
+  targetRelease: { good: 'Fits', partial: 'Conditional', poor: 'Not supported', open: 'Open' },
+});
+
+/** The matrix rows, in the order a reader weighs them (the mock-up's): coverage first, the release last. */
+export const MATRIX_ASPECTS: readonly ComparisonAspect[] = ['fitGap', 'effort', 'runningCost', 'dataContract', 'targetRelease'];
+
+/** The row names of the matrix. */
+export const MATRIX_ASPECT_LABELS: Readonly<Record<ComparisonAspect, string>> = Object.freeze({
+  fitGap: 'Covers the program',
+  effort: 'Effort',
+  runningCost: 'Running cost',
+  dataContract: 'Data',
+  targetRelease: 'Target release',
+});
+
 /* ------------------------------------------------------- the data contract */
 
 /** One row of the release-bound source matrix: which figure comes from where, on which condition. */
@@ -270,6 +299,12 @@ export const OPTION_COMPARISON_SCHEMA = `  optionComparison: {
       effort: string; // qualitative: what has to be built or configured; no person-days unless the facts give them
       runningCost: string; // qualitative only (runtime, operations, licences to check) — NEVER an amount of money
       dataContract: string; // where each figure comes from on the target, per the DATA CONTRACT rows: actuals, plan, statistical key figures, currency
+      ratings: { // the same five aspects as a level and a short line for a matrix; the long fields above stay the full text
+        [aspect in 'fitGap' | 'effort' | 'runningCost' | 'dataContract' | 'targetRelease']: {
+          level: 'good' | 'partial' | 'poor' | 'open'; // fitGap: good = covers all of it; effort and runningCost: good = low; dataContract: good = read in place; targetRelease: good = fits; open = not determined
+          short: string; // at most 8 words, no full sentence, no amount of money
+        };
+      };
     }>;
     recommended: 'standard' | 'keyuser' | 'rap' | 'cap'; // must agree with the design you write below
     decisionReason: string; // why this option over the others — names the requirement the others miss; never "because the target/route is X"
@@ -281,7 +316,8 @@ export const OPTION_COMPARISON_PROMPT_RULE =
   + 'Key-user extensibility is grounded only in the engine\u2019s key-user candidates and their limits; never name a key-user BAdI, business context or view the facts do not name. '
   + 'Ground each option in the OPTION FACTS of the engine evidence; where they are silent, write "not determined" and what would decide it. '
   + 'A frontend file upload or download alone never justifies side-by-side. Plan and actual are never both read from ACDOCA. '
-  + 'Running cost is qualitative — no amounts. The decisionReason must name the requirement the other options miss; '
+  + 'Running cost is qualitative — no amounts. Give every option its ratings: a level per aspect and a short line of at most 8 words, consistent with the full text. '
+  + 'The decisionReason must name the requirement the other options miss, in one sentence; '
   + 'a reason that only restates the route or the target ("CAP because the target architecture is CAP") is refused.';
 
 /* -------------------------------------------------------- the circular check */
@@ -325,8 +361,17 @@ export function circularReason(reason: string | null | undefined): string | null
 
 /* ------------------------------------------------------ reading the answer */
 
+export interface OptionCell {
+  /** The model's level, or `null` for a comparison stored before 26.11.2026 (no levels then). */
+  level: RatingLevel | null;
+  /** One short line for the matrix: the model's, or the first sentence of the full text, shortened. */
+  short: string;
+}
+
 export interface OptionAssessment {
   option: ComparedOption;
+  /** The matrix cell per aspect (owner 26.11.2026). */
+  cells: Record<ComparisonAspect, OptionCell>;
   targetRelease: string;
   fitGap: string;
   effort: string;
@@ -363,6 +408,32 @@ const text = (v: unknown, max = 1200): string => (typeof v === 'string' ? v.repl
 const isOption = (v: unknown): v is ComparedOption => typeof v === 'string' && (COMPARED_OPTIONS as readonly string[]).includes(v);
 
 
+/** At most `max` characters, cut at a word, with an ellipsis when cut. */
+function shortened(sentence: string, max = 60): string {
+  if (sentence.length <= max) return sentence;
+  const cut = sentence.slice(0, max);
+  const at = cut.lastIndexOf(' ');
+  return `${(at > 20 ? cut.slice(0, at) : cut).replace(/[\s,;:.—-]+$/, '')}…`;
+}
+
+/** The first sentence of a full text, without its final full stop. */
+function firstSentence(full: string): string {
+  const m = /^(.+?[.!?])(\s|$)/.exec(full);
+  return (m ? m[1] : full).replace(/[.]$/, '');
+}
+
+/**
+ * One matrix cell: the model's level and short line when it wrote them, else no level and the full text's first
+ * sentence, shortened. An amount of money never stands in a cell (`containsAmount`), as in the full text.
+ */
+function cellOf(raw: unknown, full: string): OptionCell {
+  const r = isObj(raw) ? raw : {};
+  const level = typeof r.level === 'string' && (RATING_LEVELS as readonly string[]).includes(r.level) ? (r.level as RatingLevel) : null;
+  const own = text(r.short, 120);
+  const short = own && !containsAmount(own) ? shortened(own) : shortened(firstSentence(full));
+  return { level, short };
+}
+
 /**
  * The stored design's comparison, read for a reader: shape checked, options
  * in the order standard · RAP · CAP, a circular reason refused with why, and
@@ -377,14 +448,18 @@ export function readOptionComparison(design: unknown): OptionComparisonView {
   for (const entry of raw.options) {
     if (!isObj(entry) || !isOption(entry.option) || byOption.has(entry.option)) continue;
     const running = text(entry.runningCost);
-    byOption.set(entry.option, {
-      option: entry.option,
+    const full: Record<ComparisonAspect, string> = {
       targetRelease: text(entry.targetRelease) || 'Not determined.',
       fitGap: text(entry.fitGap) || 'Not determined.',
       effort: text(entry.effort) || 'Not determined.',
       runningCost: containsAmount(running) ? 'Not stated here — an amount needs approved cost assumptions (Economics).' : running || 'Not determined.',
       dataContract: text(entry.dataContract) || 'Not determined.',
-    });
+    };
+    const ratings = isObj(entry.ratings) ? entry.ratings : {};
+    const cells = Object.fromEntries(
+      COMPARISON_ASPECTS.map((a) => [a, cellOf(ratings[a], full[a])]),
+    ) as Record<ComparisonAspect, OptionCell>;
+    byOption.set(entry.option, { option: entry.option, cells, ...full });
   }
   if (byOption.size === 0) return { state: 'malformed', why: 'The comparison names none of the options.' };
   if (!isOption(raw.recommended)) return { state: 'malformed', why: 'The comparison recommends no option.' };

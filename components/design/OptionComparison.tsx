@@ -1,27 +1,40 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import FamilyChip from '@/components/family/FamilyChip';
 import { CcTag } from '@/components/cc/Tag';
+import CcButton from '@/components/cc/Button';
+import CcDialog from '@/components/cc/Dialog';
 import { SapCheckedText } from '@/components/SapIdentifierCheck';
 import {
   COMPARED_OPTION_LABELS,
-  COMPARISON_ASPECTS,
-  COMPARISON_ASPECT_LABELS,
+  MATRIX_ASPECTS,
+  MATRIX_ASPECT_LABELS,
+  RATING_WORDS,
   readOptionComparison,
+  type ComparedOption,
+  type ComparisonAspect,
   type OptionComparisonView,
+  type RatingLevel,
 } from '@/lib/design-option-comparison';
 import { cn } from '@/lib/utils';
 import { KEY_USER_COMPANY_POLICY, keyUserLevelSentence, type KeyUserStepList } from '@/lib/key-user-steps';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 
 /**
- * The SAP standard, an in-app RAP extension and a side-by-side CAP application,
- * compared before the design rules the standard out (roadmap 3.0.12; CO review
- * F14, F15). The comparison is the model's, grounded in the engine's option
- * facts, and is marked as a proposal once for the section. A reason that only
- * restates the route ("CAP because the target is CAP") is not shown as a
- * reason: the section says it was refused and why (`readOptionComparison`).
+ * The SAP standard, key-user extensibility, an in-app RAP extension and a
+ * side-by-side CAP application, compared before the design rules the standard
+ * out (roadmap 3.0.12; CO review F14, F15). The comparison is the model's,
+ * grounded in the engine's option facts, and is marked as a proposal once for
+ * the section. A reason that only restates the route ("CAP because the target
+ * is CAP") is not shown as a reason: the section says it was refused and why
+ * (`readOptionComparison`).
+ *
+ * Owner 26.11.2026 (mock-up "Design IT: option comparison", accepted): it was one
+ * of the weakest parts — four cards of five paragraphs each. Now the answer
+ * first (the proposed option and what the others miss), then a matrix with a
+ * level and one short line per option and aspect, and each option's full text
+ * in a details panel beside the page, as "Cloud service integrations" does.
  */
 export default function OptionComparison({ design, keyUser = null, keyUserChosen = false }: {
   design: unknown;
@@ -39,17 +52,21 @@ export default function OptionComparison({ design, keyUser = null, keyUserChosen
   keyUserChosen?: boolean;
 }) {
   const view = readOptionComparison(design);
+  const [detail, setDetail] = useState<ComparedOption | null>(null);
   const fourOptions = view.state === 'ready' && view.options.some((o) => o.option === 'keyuser');
   const limitsShown = keyUserLimitsShown({ view, keyUser, chosen: keyUserChosen });
+  const title = fourOptions || keyUser ? 'Which way fits: SAP standard, key user, RAP or CAP?' : 'Which way fits: SAP standard, RAP or CAP?';
+  const open = view.state === 'ready' && detail ? view.options.find((o) => o.option === detail) ?? null : null;
+  const recommended = view.state === 'ready' ? view.recommended : null;
   return (
     <section
       aria-labelledby="design-options-title"
       data-design-section="options"
       data-option-comparison={view.state}
-      className="flex min-w-0 flex-col gap-3 rounded-cc-card border border-cc-line bg-cc-surface p-4 sm:p-5"
+      className="flex min-w-0 flex-col gap-4 rounded-cc-card border border-cc-line bg-cc-surface p-4 sm:p-6"
     >
       <div className="flex flex-wrap items-center gap-2">
-        <h3 id="design-options-title" className="m-0 cc-text-h3 text-cc-ink">{fourOptions || keyUser ? 'Standard, key user, RAP and CAP compared' : 'Standard, RAP and CAP compared'}</h3>
+        <h3 id="design-options-title" className="m-0 cc-text-h3 text-cc-ink">{title}</h3>
         {/* Only over a comparison the model wrote: an absent or unreadable one proposes nothing (QA 5a559787: 9af97544d758). */}
         {view.state === 'absent' || view.state === 'malformed' ? null : <FamilyChip value="proposed" />}
       </div>
@@ -63,35 +80,112 @@ export default function OptionComparison({ design, keyUser = null, keyUserChosen
         </p>
       ) : (
         <>
-          <p className="m-0 text-[13px] text-cc-ink-muted">
-            Each option on target release, fit-gap, effort, running cost and data contract — the model&apos;s comparison on the engine&apos;s facts. Running cost is qualitative: amounts come only from approved cost assumptions in Economics.
-          </p>
-          <div className={cn('grid min-w-0 grid-cols-1 gap-3', fourOptions ? 'min-[1000px]:grid-cols-2 min-[1400px]:grid-cols-4' : 'min-[1000px]:grid-cols-3')}>
-            {view.options.map((o) => (
-              <article
-                key={o.option}
-                data-option={o.option}
-                aria-label={COMPARED_OPTION_LABELS[o.option]}
-                className={cn(
-                  'flex min-w-0 flex-col gap-2 rounded-cc-row border bg-cc-surface p-3',
-                  view.recommended === o.option ? 'border-2 border-cc-ink' : 'border-cc-line',
-                )}
-              >
-                <span className="flex flex-wrap items-center gap-2">
-                  <b className="text-[14px] font-bold text-cc-ink">{COMPARED_OPTION_LABELS[o.option]}</b>
-                  {view.recommended === o.option ? <CcTag>Proposed</CcTag> : null}
-                </span>
-                <dl className="m-0 grid gap-2">
-                  {COMPARISON_ASPECTS.map((a) => (
-                    <div key={a} data-option-aspect={a} className="min-w-0">
-                      <dt className="text-[12px] font-semibold uppercase tracking-[0.08em] text-cc-ink-muted">{COMPARISON_ASPECT_LABELS[a]}</dt>
-                      <dd className="m-0 text-[13px] text-cc-ink [overflow-wrap:anywhere]"><SapCheckedText text={o[a]} /></dd>
-                    </div>
+          {/* The answer first: the proposed option with its reason, beside what the others miss. */}
+          {view.reason ? (
+            <div data-option-reason="" className="grid min-w-0 grid-cols-1 gap-3 min-[900px]:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]">
+              <div className="flex min-w-0 flex-col gap-1 rounded-cc-row border-2 border-cc-ink px-4 py-3">
+                <span className="cc-text-label text-cc-ink-muted">Proposed</span>
+                <b className="text-[18px] font-bold leading-snug text-cc-ink">{COMPARED_OPTION_LABELS[view.recommended]}</b>
+                <p className="m-0 text-[14px] text-cc-ink [overflow-wrap:anywhere]"><SapCheckedText text={view.reason.text} /></p>
+              </div>
+              <div className="flex min-w-0 flex-col gap-1 rounded-cc-row border border-cc-line bg-cc-surface-muted px-4 py-3">
+                <span className="cc-text-label text-cc-ink-muted">What the others miss</span>
+                <p className="m-0 text-[14px] text-cc-ink [overflow-wrap:anywhere]"><SapCheckedText text={view.reason.requirement} /></p>
+              </div>
+            </div>
+          ) : (
+            <p data-option-reason-refused="" className="m-0 rounded-cc-row border border-cc-warning-border bg-cc-warning-bg px-3 py-2 text-[13px] font-medium text-cc-ink">
+              The model&apos;s reason for {COMPARED_OPTION_LABELS[view.recommended]} is not shown: {view.refused} A decision needs the requirement the other options miss — regenerate, or record the reason in the decision.
+            </p>
+          )}
+
+          {/* The matrix: each option on each aspect, a level and one short line; the full text one click away. */}
+          <div className="min-w-0 overflow-x-auto" data-option-matrix="">
+            <table className="w-full min-w-[760px] border-collapse text-[14px] leading-5">
+              <thead>
+                <tr>
+                  <th scope="col" className="w-[150px] border-b border-cc-line px-3 py-2 text-left max-[720px]:w-[104px]">
+                    <span className="sr-only">Aspect</span>
+                  </th>
+                  {view.options.map((o) => (
+                    <th
+                      key={o.option}
+                      scope="col"
+                      data-option={o.option}
+                      className={cn(
+                        'px-3 py-2 text-left font-bold text-cc-ink',
+                        recommended === o.option ? 'border-b-2 border-cc-ink bg-cc-surface-muted' : 'border-b border-cc-line',
+                      )}
+                    >
+                      <span className="inline-flex flex-wrap items-center gap-2">
+                        {SHORT_LABELS[o.option]}
+                        {recommended === o.option ? <CcTag>Proposed</CcTag> : null}
+                      </span>
+                    </th>
                   ))}
-                </dl>
-              </article>
-            ))}
+                </tr>
+              </thead>
+              <tbody>
+                {MATRIX_ASPECTS.map((a, i) => {
+                  const ruled = i < MATRIX_ASPECTS.length - 1;
+                  return (
+                    <tr key={a}>
+                      <th scope="row" className={cn('px-3 py-3 text-left align-top font-semibold text-cc-ink', ruled && 'border-b border-cc-line')}>
+                        {MATRIX_ASPECT_LABELS[a]}
+                      </th>
+                      {view.options.map((o) => {
+                        const cell = o.cells[a];
+                        return (
+                          <td
+                            key={o.option}
+                            data-option-aspect={a}
+                            data-option-of={o.option}
+                            className={cn('px-3 py-3 align-top', ruled && 'border-b border-cc-line', recommended === o.option && 'bg-cc-surface-muted')}
+                          >
+                            {cell.level ? (
+                              <span
+                                data-cc-value-state={VALUE_STATE[cell.level]}
+                                data-option-level={cell.level}
+                                className={cn('block font-bold', LEVEL_CLASS[cell.level])}
+                              >
+                                <span aria-hidden={true}>{LEVEL_MARK[cell.level]} </span>
+                                {RATING_WORDS[a][cell.level]}
+                              </span>
+                            ) : null}
+                            <span className="block text-cc-ink-muted [overflow-wrap:anywhere]">
+                              <SapCheckedText text={cell.short} />
+                            </span>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+                <tr>
+                  <td />
+                  {view.options.map((o) => (
+                    <td key={o.option} className={cn('px-3 pb-2 pt-1', recommended === o.option && 'bg-cc-surface-muted')}>
+                      <button
+                        type="button"
+                        data-option-details={o.option}
+                        aria-haspopup="dialog"
+                        onClick={() => setDetail(o.option)}
+                        className="min-h-11 cursor-pointer border-0 bg-transparent p-0 text-left text-[14px] font-semibold text-cc-information underline underline-offset-2"
+                      >
+                        Details
+                        <span className="sr-only"> of {COMPARED_OPTION_LABELS[o.option]}</span>
+                      </button>
+                    </td>
+                  ))}
+                </tr>
+              </tbody>
+            </table>
           </div>
+          <p data-option-legend="" className="m-0 text-[13px] text-cc-ink-muted">
+            {LEVEL_MARK.good} fits · {LEVEL_MARK.partial} partly · {LEVEL_MARK.poor} does not fit · {LEVEL_MARK.open} not determined — the
+            model&apos;s reading of the engine&apos;s facts. Running cost in words only; amounts are in Economics.
+          </p>
+
           {view.missing.length ? (
             <p data-option-missing="" className="m-0 text-[13px] text-cc-ink-muted">
               Not compared by the model: {view.missing.map((m) => COMPARED_OPTION_LABELS[m]).join(', ')}.
@@ -102,33 +196,99 @@ export default function OptionComparison({ design, keyUser = null, keyUserChosen
               Key-user extensibility is not compared in this design — it was written before the engine read key-user candidates, or the model left it out. Regenerate the design to compare it{limitsShown ? '; its engine limits are below' : ''}.
             </p>
           ) : null}
-          {view.reason ? (
-            <div data-option-reason="" className="flex min-w-0 flex-col gap-1">
-              <p className="m-0 text-[14px] text-cc-ink [overflow-wrap:anywhere]">
-                <b className="font-semibold">Why {COMPARED_OPTION_LABELS[view.recommended]}:</b> <SapCheckedText text={view.reason.text} />
-              </p>
-              <p className="m-0 text-[14px] text-cc-ink [overflow-wrap:anywhere]">
-                <b className="font-semibold">The requirement the other options miss:</b> <SapCheckedText text={view.reason.requirement} />
-              </p>
-            </div>
-          ) : (
-            <p data-option-reason-refused="" className="m-0 rounded-cc-row border border-cc-warning-border bg-cc-warning-bg px-3 py-2 text-[13px] font-medium text-cc-ink">
-              The model&apos;s reason for {COMPARED_OPTION_LABELS[view.recommended]} is not shown: {view.refused} A decision needs the requirement the other options miss — regenerate, or record the reason in the decision.
-            </p>
-          )}
+          {/* Key user is the way in question (proposed, recommended or chosen): its engine limits stand under the matrix. */}
+          {keyUser && limitsShown ? <KeyUserLimits list={keyUser} /> : null}
         </>
       )}
-      {keyUser && limitsShown ? <KeyUserLimits list={keyUser} /> : null}
+      {keyUser && limitsShown && view.state !== 'ready' ? <KeyUserLimits list={keyUser} /> : null}
+
+      <CcDialog
+        open={Boolean(open)}
+        title={open ? COMPARED_OPTION_LABELS[open.option] : ''}
+        lead={open && recommended === open.option ? 'Proposed · the option in detail' : 'The option in detail'}
+        size="wide"
+        placement="side"
+        onClose={() => setDetail(null)}
+        actions={
+          <CcButton variant="ghost" onClick={() => setDetail(null)}>
+            Close
+          </CcButton>
+        }
+      >
+        {open ? (
+          <div data-option-detail={open.option} className="flex flex-col gap-5">
+            <span className="self-start">
+              <FamilyChip value="proposed" />
+            </span>
+            <dl className="m-0 grid grid-cols-2 gap-2">
+              {MATRIX_ASPECTS.filter((a) => a !== 'targetRelease').map((a) => {
+                const cell = open.cells[a];
+                return (
+                  <div key={a} className="rounded-cc-row border border-cc-line px-3 py-2">
+                    <dt className="text-[12px] text-cc-ink-muted">{MATRIX_ASPECT_LABELS[a]}</dt>
+                    <dd
+                      className={cn('m-0 font-bold', cell.level ? LEVEL_CLASS[cell.level] : 'text-cc-ink')}
+                      data-cc-value-state={cell.level ? VALUE_STATE[cell.level] : undefined}
+                    >
+                      {cell.level ? `${LEVEL_MARK[cell.level]} ${RATING_WORDS[a][cell.level]}` : 'Not rated'}
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+            {DETAIL_ASPECTS.map(([a, heading]) => (
+              <section key={a} data-option-detail-aspect={a} className="flex flex-col gap-1">
+                <h4 className="m-0 cc-text-label text-cc-ink-muted">{heading}</h4>
+                <p className="m-0 text-[14px] leading-[21px] text-cc-ink [overflow-wrap:anywhere]">
+                  <SapCheckedText text={open[a]} />
+                </p>
+              </section>
+            ))}
+            <p className="m-0 border-t border-cc-line pt-3 text-[13px] text-cc-ink-muted">
+              The words and levels are the model&apos;s, written on the engine&apos;s facts. Amounts are only in Economics.
+            </p>
+          </div>
+        ) : null}
+      </CcDialog>
     </section>
   );
 }
+
+/** The column heads, short; the full names stand in the details panel and for screen readers. */
+const SHORT_LABELS: Readonly<Record<ComparedOption, string>> = {
+  standard: 'SAP standard',
+  keyuser: 'Key user',
+  rap: 'In-app RAP',
+  cap: 'Side-by-side CAP',
+};
+
+const LEVEL_MARK: Readonly<Record<RatingLevel, string>> = { good: '●', partial: '◐', poor: '○', open: '?' };
+
+/** A level is a value state (SAP Fiori semantics, DESIGN.md §1.1): green here says "a good value", never "proven". */
+const VALUE_STATE: Readonly<Record<RatingLevel, string>> = { good: 'success', partial: 'warning', poor: 'error', open: 'none' };
+
+const LEVEL_CLASS: Readonly<Record<RatingLevel, string>> = {
+  good: 'text-cc-success',
+  partial: 'text-cc-warning',
+  poor: 'text-cc-error',
+  open: 'text-cc-ink-muted',
+};
+
+/** The details panel's sections, each the model's full sentence. */
+const DETAIL_ASPECTS: ReadonlyArray<readonly [ComparisonAspect, string]> = [
+  ['fitGap', 'What it covers, and the gap'],
+  ['effort', 'What is built or configured'],
+  ['dataContract', 'Where each figure comes from'],
+  ['runningCost', 'Running cost'],
+  ['targetRelease', 'Target release'],
+];
 
 /**
  * Whether the key-user limits stand under the comparison (owner decision
  * 22.10.2026): only where key-user extensibility is the option in question —
  * the comparison proposes it, the engine recommends it, or the owner chose it
  * as the target. Otherwise the block and its company-policy note are left out;
- * the key-user option's card in the comparison keeps its own sentences.
+ * the key-user option's details keep its own sentences.
  */
 export function keyUserLimitsShown({ view, keyUser, chosen }: {
   view: OptionComparisonView;
