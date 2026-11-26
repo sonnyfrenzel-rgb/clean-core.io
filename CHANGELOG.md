@@ -76,7 +76,7 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
   page without showing it. An untouched key-user option is now left out of the comparison (`optionLeftOpen` in
   `lib/cost-assumptions.ts`), so taking over the proposals prices the options and the next action is the decision,
   then Design. Any figure typed into the key-user option brings it back with all of its rules. "Fill in the effort"
-  now scrolls to the section and focuses its first empty field. Guard: `tests/economics-keyuser-left-open.spec.ts`.
+  now opens the cards still missing effort, scrolls to the section and focuses its first empty field. Guard: `tests/economics-keyuser-left-open.spec.ts`.
 
 ## [v3.5.2] — 2026-11-25
 

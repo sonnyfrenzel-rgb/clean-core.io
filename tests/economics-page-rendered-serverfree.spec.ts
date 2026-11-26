@@ -189,6 +189,26 @@ test.describe('the Economics object page, rendered', () => {
     await expect(page.locator('#economics-effort input:focus')).toHaveValue('');
   });
 
+  test('"Fill in the effort" with several gaps opens every card still missing effort, not the untouched key-user one', async ({ page }) => {
+    const a = withKeyUserOption(priced());
+    // Rebuild and Move to SAP standard: one-off stated, per release not yet — two gaps with no proposal left to take.
+    const gaps = new Set(['rebuild', 'standard']);
+    const twoGaps = { ...a, options: a.options.map((o) => (gaps.has(o.kind) ? { ...o, perRelease: null, effortSource: 'stated' as const } : o)) };
+    await open(page, twoGaps, 1440, 900);
+    await page.locator('[data-answer-next] [data-economics-next-action]').click();
+    await expect(page.locator('#economics-effort')).toHaveAttribute('data-economics-fold', 'open');
+    const ids = twoGaps.options.filter((o) => gaps.has(o.kind)).map((o) => o.id);
+    for (const id of ids) await expect(page.locator(`[data-cost-option-edit="${id}"]`)).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('[data-cost-option-edit="keyuser"]')).toHaveAttribute('aria-expanded', 'false');
+    // The focus is on the first empty field of the fold, in reading order.
+    const first = await page.evaluate(() => {
+      const empty = Array.from(document.querySelectorAll<HTMLInputElement>('#economics-effort input:not([type=checkbox])')).find((i) => i.value === '');
+      return { isFocused: Boolean(empty) && document.activeElement === empty, inCard: empty?.closest('[data-cost-option]')?.getAttribute('data-cost-option') ?? null };
+    });
+    expect(first.isFocused).toBe(true);
+    expect(first.inCard).toBe(ids[0]);
+  });
+
   test('at 390 px: nothing scrolls sideways, open or closed', async ({ page }) => {
     await open(page, priced(), 390, 844);
     expect(await overflow(page), 'priced').toBeLessThanOrEqual(0);
