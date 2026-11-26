@@ -16,7 +16,8 @@
  * routes from the files and fails on a page in neither list or in both.
  *
  * `/demo/workspace` is public although it needs an account: without the hint
- * it sends the visitor to the sign-in dialog without starting Auth on the way
+ * it sends the visitor to the public demo showcase (`/demo`, never the sign-in
+ * dialog, owner go 26.11.2026) without starting Auth on the way
  * (components/demo/DemoWorkspaceShell.tsx). `/demo/analyze` is the same in its
  * Business view, where the demo opens since 3.1.0
  * (components/demo/DemoAnalyzeBusiness.tsx); its IT and Management views are

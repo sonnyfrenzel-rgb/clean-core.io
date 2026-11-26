@@ -6,8 +6,8 @@ import { DEMO_PROJECT_TITLE, DEMO_STRIP_NOTICE } from '@/lib/demo-marks';
 /**
  * The demo's Analyze — where the demo opens, like a project (plan
  * `docs/design/analyze-business-first-plan.md` §4.1, AB-2, O10;
- * `DESIGN.md` §6.1.2): Business is the map page, IT and Management the demo's
- * Analyze stage as before (`components/demo/DemoAnalyzeRoute.tsx`).
+ * `DESIGN.md` §6.1.2): Business is the map page, IT the demo's Analyze stage,
+ * Management the management answer (`components/demo/DemoAnalyzeRoute.tsx`).
  *
  * Built on the server from the example file by the engine of this release and
  * identical for every account, as `/demo/workspace` and `/demo/{stage}` are.

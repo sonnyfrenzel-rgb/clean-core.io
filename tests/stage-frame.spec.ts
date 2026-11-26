@@ -297,9 +297,9 @@ test.describe('a stage as a tool, rendered', () => {
     await expect(page.locator('[data-stage-back]')).toBeVisible();
     await expect(page.locator('[data-stage-back]')).toHaveAttribute('href', '/demo/workspace');
 
-    // Signed out, the demo workspace asks for an account and returns there.
+    // Signed out, the demo workspace leads to the public demo showcase, never to sign-in.
     await page.locator('[data-stage-back]').click();
-    await page.waitForURL(/auth=signin&next=%2Fdemo%2Fworkspace/, { timeout: 60000 });
+    await page.waitForURL((url) => url.pathname === '/demo' && !url.search.includes('auth='), { timeout: 60000 });
   });
 
   test('from the demo workspace into a demo stage and back, in the same view', async ({ page }) => {

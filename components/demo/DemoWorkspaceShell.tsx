@@ -56,9 +56,9 @@ import {
   DEMO_STRIP_NOTICE,
   DEMO_TAG,
   DEMO_UNSIGNED_NOTICE,
+  DEMO_SIGNED_OUT_ROUTE,
   DEMO_WORKSPACE_ROUTE,
 } from '@/lib/demo-marks';
-import { signInLinkFor } from '@/lib/return-path';
 import {
   TOUR_INVITATION_HREF,
   nextStep,
@@ -140,12 +140,12 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
   const searchParams = useSearchParams();
   const { profile, loading: profileLoading } = useUserProfile();
   // Every signed-in account since roadmap 3.0.1. A visitor without an account
-  // is sent to sign in and returned here (`lib/return-path.ts`): the public
-  // demo stages lead back to this page, and a 404 at the end of "Back to
-  // workspace" would be a dead end (owner 02.10.2026).
+  // is sent to the public demo showcase (`DEMO_SIGNED_OUT_ROUTE`), never to the
+  // sign-in dialog (owner go 26.11.2026, Q8): the public demo stages lead back
+  // to this page, and the showcase is no dead end — it offers the sign-in.
   const enabled = profile != null;
   useEffect(() => {
-    if (!profileLoading && !enabled) router.replace(signInLinkFor(DEMO_WORKSPACE_ROUTE));
+    if (!profileLoading && !enabled) router.replace(DEMO_SIGNED_OUT_ROUTE);
   }, [profileLoading, enabled, router]);
 
   const view = viewFromParam(searchParams?.get('view'));
@@ -155,8 +155,7 @@ export default function DemoWorkspaceShell({ data }: { data: DemoWorkspaceData }
    * project. `replace`, so Back does not bounce into the redirect again.
    */
   const toAnalyze = view === 'business';
-  // Only once signed in: a visitor without an account is sent to sign in from
-  // this address first, and comes back here (`lib/return-path.ts`). The map's
+  // Only once signed in: a visitor without an account goes to the showcase. The map's
   // place goes along — `#process-map`, or an old layer address whose content
   // is the map (`#need`) — as a project's Business address keeps it.
   useEffect(() => {

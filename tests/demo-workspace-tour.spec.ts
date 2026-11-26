@@ -103,10 +103,10 @@ test('a community account opens the demo workspace and its tour, and has "Show t
   await expect(page.locator('[data-show-tips-again]')).toHaveCount(1);
 });
 
-test('a visitor without an account is sent through sign-in and back, not to a 404', async ({ page }) => {
+test('a visitor without an account lands on the public demo showcase, not on sign-in or a 404', async ({ page }) => {
   test.setTimeout(120 * 1000);
   await page.goto('/demo/workspace', { waitUntil: 'domcontentloaded' });
-  await page.waitForURL(/[?&]auth=signin&next=%2Fdemo%2Fworkspace/, { timeout: 60000 });
+  await page.waitForURL((url) => url.pathname === '/demo' && !url.search.includes('auth='), { timeout: 60000 });
   await expect(page.locator('[data-demo-workspace]')).toHaveCount(0);
 });
 

@@ -55,7 +55,7 @@ const STEPS: Step[] = [
     where: 'clean-core.io',
     action: 'Sign in with the account you registered',
     detail:
-      'Use "Start free" in the top right. Registering activates the account immediately — there is nothing to approve and no waiting list — and you land on the dashboard.',
+      'Use "Start free" in the top right. Registering activates the account immediately — there is nothing to approve and no waiting list — and you land on My workspace.',
     // Roadmap 0.2 (UX-084). This line quoted the header as "0 / 5
     // Transformations" — used-of-total — while the header itself has said
     // remaining-of-total since the dashboard and the transformation stage were
@@ -63,7 +63,7 @@ const STEPS: Step[] = [
     // reader is working out what the thing costs. The wording is the header's
     // own, and `tests/claims-honesty-guard.spec.ts` reads both from the
     // rendered pages so the two cannot drift apart again.
-    see: 'The dashboard, with your analysis runs shown in the header — "5 of 5 runs left" on a fresh account.',
+    see: 'My workspace, with your analysis runs shown in the header — "5 of 5 runs left" on a fresh account.',
   },
   {
     n: 2,
@@ -85,16 +85,19 @@ const STEPS: Step[] = [
   },
   {
     n: 4,
-    where: 'Workspace — Business view',
-    action: 'Decide on the rules',
+    where: 'Analyze — Business view',
+    action: 'Walk through the process',
+    // Owner go 26.11.2026 (Q6): this step said the Business view opens with "Decide on n rules". The rules have been
+    // answered in Design since 21.10.2026; the Business view is the process map with the text around it
+    // (`components/analyze/AnalyzeBusiness.tsx`). `tests/first-run-today.spec.ts` holds the line.
     detail:
-      'The Business view opens with one next step — "Decide on n rules" — then the process as numbered steps in plain words, what it decides and what it changes. For each rule the program hard-codes, answer Keep, Change, Drop or Clarify; a Clarify names the question and who should answer it.',
-    see: 'The business rules, unanswered first, and the next step moving on once every rule has an answer.',
+      'Every project opens in Analyze, in the Business view. "What this program does" says it in one sentence, and under it stands the process as a BPMN map reconstructed from the code. "Walk me through it" takes you through it step by step, or choose "I\'ll look around myself". Click a step or a line number and its ABAP lines open beside the map. Under the map: how it runs, why it exists, who is involved, and the questions to settle.',
+    see: 'The process map with a line anchor on every element, and the view switch — Business, IT, Management — at the top right. Each view is a way of reading the same project; you switch between them yourself.',
   },
   {
     n: 5,
-    where: 'Analyze',
-    action: 'Open Analyze and read the findings',
+    where: 'Analyze — IT view',
+    action: 'Switch to IT and read the findings',
     detail:
       'Each finding names the offending construct, where it sits, and what to do instead. This is the part worth judging the platform on — if the findings do not match what you know about the object, tell us.',
     see: `A Clean Core Score, a worklist of findings, each with a severity, a location and a recommendation, and a recommended route: in-app ABAP Cloud (RAP) or side-by-side CAP on ${BTP_FIRST}.`,
@@ -102,10 +105,10 @@ const STEPS: Step[] = [
   {
     n: 6,
     where: 'Stages 2 to 7',
-    action: 'Open the other tools from the workspace',
+    action: 'Open the other tools from the tool bar',
     detail:
-      'Design drafts the target architecture against released APIs when it opens. Transformation generates the RAP or CAP implementation next to the original. Documentation writes a process description from the code when it opens, with BPMN 2.0 beside it. Testing generates test cases: on the CAP route it runs them against mocks, never in your system; on the ABAP Cloud route you record the ABAP Unit result from your own SAP system. Economics models the upgrade cost on assumptions you enter. Delivery hands you the package.',
-    see: 'The tools bar of the workspace and of every tool, from Analyze through to Delivery — a check where a phase is done, its own mark where work has started, amber where something on record is out of date.',
+      'Design drafts the target architecture against released APIs when it opens, and it is where you answer the business rules the program hard-codes: Keep, Change, Drop or Clarify for each. Transformation generates the RAP or CAP implementation next to the original. Documentation writes a process description from the code when it opens, with BPMN 2.0 beside it. Testing generates test cases: on the CAP route it runs them against mocks, never in your system; on the ABAP Cloud route you record the ABAP Unit result from your own SAP system. Economics models the upgrade cost on assumptions you enter. Delivery hands you the package.',
+    see: 'The tool bar of every tool, from Analyze through to Delivery — a check where a phase is done, its own mark where work has started, amber where something on record is out of date.',
   },
   {
     n: 7,
@@ -113,7 +116,7 @@ const STEPS: Step[] = [
     action: 'Download the package',
     detail:
       'An abapGit-compatible ZIP with the generated sources and tests, plus the audit evidence pack — a signed record of what was analyzed, by which engine and catalog version, and what it concluded. That signature is verifiable later, which is the point of it.',
-    see: 'Your download, and the project on the dashboard with the state of each phase, to return to at any time.',
+    see: 'Your download, and the project in My workspace with the state of each phase, to return to at any time.',
   },
 ];
 
@@ -160,7 +163,7 @@ export default function FirstRunPage() {
           <p className="text-lg text-cc-ink-muted leading-relaxed font-medium">
             Seven steps from signing in to a downloadable package. You do not need an SAP connection,
             you do not need credentials, and you do not need any code of your own — there are examples
-            waiting on the dashboard.
+            waiting in My workspace.
           </p>
         </div>
       </div>

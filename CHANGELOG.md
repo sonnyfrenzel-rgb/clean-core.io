@@ -70,6 +70,14 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
 
 ### Fixed
 
+- **Words that sent the reader to someone else are gone.** The landing page and the demo's last screen offer one
+  "Share the demo link" instead of "Send to your IT colleague / your manager"; the sign-up dialog and the first-run
+  guide describe today's product (My workspace, the Business view's map and walk-through, the rules answered in Design)
+  instead of the old dashboard and "Decide on n rules".
+- **Demo:** the Management view of Analyze is a management page of its own (the decision in short, four facets, the
+  four options, risks with line anchors, the way on to Re-design) instead of a copy of the IT view; no `/demo/*` page
+  ends in a sign-in redirect any more — a signed-out reader lands on the public demo; the strip above every demo tool
+  says its three lines in one row under the notice.
 - **Exports: the process figure reads whole.** In Word, the Confluence page and print, Figure 1 was cut into a left
   and a right half, so no row could be read through. A figure too small for an upright page now gets a landscape
   page, a long one is cut between rows (never through a step, a name or a flow label) with "part 1 of 2 (continues in

@@ -8,6 +8,8 @@ import StageFrame from '@/components/StageFrame';
 import DemoTesting from '@/components/demo/DemoTesting';
 import DemoAbout from '@/components/demo/DemoAbout';
 import DemoAnalyze from '@/components/demo/DemoAnalyze';
+import DemoAnalyzeManagement, { DEMO_MANAGEMENT_LEAD } from '@/components/demo/DemoAnalyzeManagement';
+import type { ItFindingsSource } from '@/lib/it-findings';
 import CcButton from '@/components/cc/Button';
 import CcLinkButton from '@/components/cc/LinkButton';
 import CcAnchor from '@/components/cc/Anchor';
@@ -104,6 +106,7 @@ export default function DemoWorkspace({
   design = null,
   source = null,
   sub = null,
+  management = null,
 }: {
   demo: DemoProject;
   stage: PhaseKey;
@@ -113,6 +116,11 @@ export default function DemoWorkspace({
   source?: string | null;
   /** A page under the stage — the Design tool's requirements workspace (ADR-078). */
   sub?: 'requirements' | null;
+  /**
+   * Analyze in the Management view (owner go 26.11.2026, Q8): the management answer from the demo's own reading
+   * (`DemoAnalyzeManagement`), not a copy of the IT view. `null` everywhere else.
+   */
+  management?: { source: string; itFindings: ItFindingsSource } | null;
 }) {
   const [state, setState] = useState<DemoState>(EMPTY_STATE);
   const [hydrated, setHydrated] = useState(false);
@@ -183,14 +191,17 @@ export default function DemoWorkspace({
           </>
         }
       >
-        {sub === 'requirements'
+        {stage === 'analyze' && management
+          ? DEMO_MANAGEMENT_LEAD
+          : sub === 'requirements'
           ? 'The functional and non-functional requirements of the new solution, as one document an external implementer can build from — the engine’s draft of the example, read-only.'
           : current.detail}
       </StageHeader>
 
       <div data-testid={`demo-stage-${stage}`} className="space-y-6">
-        {stage === 'analyze' && (
-          <DemoAnalyze demo={demo} />
+        {stage === 'analyze' && !management && <DemoAnalyze demo={demo} />}
+        {stage === 'analyze' && management && (
+          <DemoAnalyzeManagement demo={demo} source={management.source} itFindings={management.itFindings} />
         )}
         {stage === 'design' && sub === 'requirements' && <DemoRequirements demo={demo} data={design} />}
         {stage === 'design' && sub !== 'requirements' && <Design demo={demo} data={design} state={state} patch={patch} />}
@@ -233,18 +244,20 @@ function DemoStrip({ onReset }: { onReset: () => void }) {
           </CcButton>
         }
       >
-        <span data-testid="demo-unsigned" className="mt-1 block">
-          {DEMO_UNSIGNED_NOTICE}
+        {/* One line under the notice (journey review 26.11.2026, Q1): it stood in four and pushed every tool's answer
+            down by a third of the screen. "About the demo" still opens below. */}
+        <span data-demo-strip-line="" className="mt-1 flex flex-wrap items-start gap-x-4 gap-y-1">
+          <span data-testid="demo-unsigned">{DEMO_UNSIGNED_NOTICE}</span>
+          <Link
+            href="/dashboard"
+            data-demo-invitation
+            data-testid="demo-invitation"
+            className="inline-flex items-center gap-1 font-semibold text-cc-ink underline underline-offset-2"
+          >
+            {DEMO_INVITATION} <ArrowRight size={14} aria-hidden={true} />
+          </Link>
         </span>
         <DemoAbout />
-        <Link
-          href="/dashboard"
-          data-demo-invitation
-          data-testid="demo-invitation"
-          className="mt-2 inline-flex items-center gap-1 font-semibold text-cc-ink underline underline-offset-2"
-        >
-          {DEMO_INVITATION} <ArrowRight size={14} aria-hidden={true} />
-        </Link>
       </CcMessageStrip>
     </div>
   );

@@ -692,17 +692,6 @@ export function EndScreen({
   onBack: () => void;
   onCopy: (lens: ShowcaseLens) => void;
 }) {
-  const share: Array<[ShowcaseLens, string]> =
-    lens === 'business'
-      ? [['it', 'Send this to your IT colleague']]
-      : lens === 'it'
-        ? [['management', 'Send this to your manager']]
-        : lens === 'management'
-          ? [['it', 'Send this to your IT colleague']]
-          : [
-              ['it', 'Send to your IT colleague'],
-              ['management', 'Send to your manager'],
-            ];
   return (
     <div className="endwrap">
       <article className="end" aria-labelledby="showcase-end-title" data-showcase-end="">
@@ -731,13 +720,12 @@ export function EndScreen({
               </li>
             ))}
           </ol>
+          {/* One user at the screen (owner go 26.11.2026, Q6): the demo is shared as a link, never handed to a
+              colleague or a manager. The link opens the demo at its start. */}
           <div className="share">
-            <span>Not your decision alone?</span>
-            {share.map(([target, label]) => (
-              <button key={target} type="button" className="btn ghost" data-showcase-share={target} onClick={() => onCopy(target)}>
-                {label}
-              </button>
-            ))}
+            <button type="button" className="btn ghost" data-showcase-share="link" onClick={() => onCopy('all')}>
+              Share the demo link
+            </button>
             <button type="button" className="btn ghost" onClick={() => window.print()}>
               Print the story
             </button>

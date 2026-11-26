@@ -416,11 +416,6 @@ export default function Home() {
     ],
   };
 
-  const shareBody = (lens: string) =>
-    `mailto:?subject=${encodeURIComponent(lens === 'it' ? 'Clean-Core.io — what a Z program does' : 'Clean-Core.io — a decision basis for custom code')}&body=${encodeURIComponent(
-      `A 4-minute demo, no account needed: https://clean-core.io${SHOWCASE}#lens=${lens}`,
-    )}`;
-
   return (
     <div className="lp35 min-h-screen">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLdHtml(schemaJson) }} />
@@ -994,7 +989,7 @@ export default function Home() {
             <ForYou
               business="Bring the Z program nobody can explain any more."
               it="A file, pasted code or an abapGit package; your own key after five runs."
-              management="No contract and no payment; or send the demo to IT."
+              management="No contract, no payment and no sales call."
             />
             <div className="start">
               <ol className="card steps">
@@ -1072,19 +1067,14 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            {/* mailto links and a copy button: nothing goes to our server. */}
-            <div className="share">
+            {/* A copy button: nothing goes to our server. One user at the screen (owner go 26.11.2026, Q6): the demo
+                link is shared as a link, never as a handoff to a colleague or a manager. */}
+            <div className="share" data-landing-share="">
               <p>
-                <b>Not your decision alone?</b> Send the demo on; it needs no account.
+                <b>Share the demo link.</b> It needs no account.
               </p>
               <div className="acts">
-                <a className={publicButton('secondary', 'sm')} href={shareBody('it')}>
-                  Send to your IT colleague
-                </a>
-                <a className={publicButton('secondary', 'sm')} href={shareBody('management')}>
-                  Send to your manager
-                </a>
-                <CopyLinkButton url={`https://clean-core.io${SHOWCASE}`}>Copy the link</CopyLinkButton>
+                <CopyLinkButton url={`https://clean-core.io${SHOWCASE}`}>Copy the demo link</CopyLinkButton>
               </div>
             </div>
           </div>

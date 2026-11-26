@@ -35,6 +35,15 @@
 export const DEMO_ROUTE = '/demo';
 
 /**
+ * Where a visitor without an account goes from a demo page that needs one (the
+ * demo workspace, the demo's Analyze in the Business view): the public demo
+ * showcase, never the sign-in dialog (owner go 26.11.2026, Q8). Every other demo
+ * tool page renders for anyone, so no `/demo/*` address ends in a sign-in
+ * redirect; the showcase itself offers the sign-in.
+ */
+export const DEMO_SIGNED_OUT_ROUTE = DEMO_ROUTE;
+
+/**
  * Whether a path is one of the demo's screens — `/demo` and everything under it.
  *
  * The shell assistant lives in the layout and is mounted on every page,
@@ -54,8 +63,8 @@ export const DEMO_ASSISTANT_NOTICE =
 
 /**
  * The same demo in the 3.0 workspace, with its tour (roadmap 3.0.7). Every
- * signed-in account's since roadmap 3.0.1, and where the public pages' "Explore
- * the demo" leads, through sign-in (`lib/return-path.ts` allows it).
+ * signed-in account's since roadmap 3.0.1; a visitor without an account who
+ * opens it lands on the public showcase (`DEMO_SIGNED_OUT_ROUTE`).
  */
 export const DEMO_WORKSPACE_ROUTE = '/demo/workspace';
 

@@ -35,7 +35,6 @@ import { catalogLookupTargetOf } from '@/lib/assessment-target';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { revealedRules } from '@/lib/first-look';
 import { editorRules } from '@/lib/rules-editor';
-import { signInLinkFor } from '@/lib/return-path';
 import { myWorkspaceHref, stageHref, WORKSPACE_RETURN } from '@/lib/workspace-back-href';
 import { useAnalyzeProgress } from '@/hooks/useAnalyzeProgress';
 import { softGateShown, whatNextShown } from '@/lib/analyze-progress';
@@ -46,6 +45,7 @@ import {
   DEMO_STRIP_NOTICE,
   DEMO_TAG,
   DEMO_UNSIGNED_NOTICE,
+  DEMO_SIGNED_OUT_ROUTE,
   DEMO_WORKSPACE_ROUTE,
 } from '@/lib/demo-marks';
 import {
@@ -112,8 +112,9 @@ function Place({ place, children, className }: { place: TourPlace; children: Rea
  * content is IT's Run & trust (ADR-096, plan §1.1).
  *
  * For every signed-in account, like the demo workspace: without one the reader
- * is sent to sign in and returned (`lib/return-path.ts`) before anything below
- * renders — the same gate the demo workspace's lookups rely on
+ * is sent to the public demo showcase (`DEMO_SIGNED_OUT_ROUTE`, owner go
+ * 26.11.2026, Q8 — no `/demo/*` page ends in a sign-in redirect) before
+ * anything below renders — the same gate the demo workspace's lookups rely on
  * (`tests/public-no-google-before-signin-guard.spec.ts`).
  */
 export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData }) {
@@ -122,7 +123,7 @@ export default function DemoAnalyzeBusiness({ data }: { data: DemoWorkspaceData 
   const { profile, loading: profileLoading } = useUserProfile();
   const enabled = profile != null;
   useEffect(() => {
-    if (!profileLoading && !enabled) router.replace(signInLinkFor(DEMO_WORKSPACE_ROUTE));
+    if (!profileLoading && !enabled) router.replace(DEMO_SIGNED_OUT_ROUTE);
   }, [profileLoading, enabled, router]);
 
   /* ------------------------------------------------------ the reader's state */

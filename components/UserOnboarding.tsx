@@ -389,7 +389,7 @@ export default function UserOnboarding() {
       >
         <div className="rounded-cc-row border border-cc-line bg-cc-surface-muted p-4">
           <p className="m-0 mb-1 cc-text-h3 text-cc-ink">What&apos;s next</p>
-          <p className="m-0 cc-text-cell text-cc-ink-muted">A welcome email is on its way to {user.email} with the first-run guide and the security details your IT department will ask for. Or start right now — the dashboard has ready-made ABAP examples, so you need no system connection and no code of your own.</p>
+          <p className="m-0 cc-text-cell text-cc-ink-muted">A welcome email is on its way to {user.email} with the first-run guide and the security details of the platform. Or start right now — My workspace has ready-made ABAP examples, so you need no system connection and no code of your own.</p>
         </div>
       </CcDialog>
 
