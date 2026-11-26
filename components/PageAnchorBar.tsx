@@ -159,9 +159,10 @@ export default function PageAnchorBar({
       data-page-anchors=""
       {...{ [`data-${plural}`]: '' }}
       className={cn(
-        'cc-no-print sticky top-14 z-cc-sticky my-6 flex h-12 items-center gap-3 border-b border-cc-line bg-cc-surface',
-        // To the edges of the frame, gutter included: the main column's padding, given back as the bar's own.
-        '-mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 shadow-[var(--cc-shadow-strip)] max-sm:pr-0',
+        'cc-no-print sticky top-14 z-cc-sticky my-6 flex h-12 items-center gap-3 rounded-cc-card border border-cc-line bg-cc-surface',
+        // Flush with the frame and the cards in it (owner 26.11.2026): no bleed into the gutter any more (ADR-126 (3)
+        // drew the strip over the gutter); the bar's own padding keeps its text off its edge.
+        'px-4 sm:px-5 shadow-[var(--cc-shadow-strip)] max-sm:pr-0',
         className,
       )}
     >

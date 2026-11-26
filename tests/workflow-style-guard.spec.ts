@@ -344,11 +344,9 @@ test.describe('the "On this page" bar stands in the same place on every tool', (
         const targets = Array.from(bar.querySelectorAll('a[href^="#"]')).map((a) => (a.getAttribute('href') || '').slice(1));
         const missing = targets.filter((id) => !document.getElementById(id));
         const tops = targets.map((id) => document.getElementById(id)?.getBoundingClientRect().top ?? Infinity);
-        // ADR-126 (3): the strip reaches over the frame's gutter; its content box is the frame.
-        const padL = parseFloat(s.paddingLeft) || 0;
-        const padR = parseFloat(s.paddingRight) || 0;
+        // Owner 26.11.2026: the bar is flush with the frame, outer edge on the frame's edge (no bleed into the gutter).
         return {
-          left: b.left + padL, width: b.width - padL - padR, frameLeft: f.left, frameWidth: f.width, height: b.height,
+          left: b.left, width: b.width, frameLeft: f.left, frameWidth: f.width, height: b.height,
           position: s.position, top: s.top, text: bar.textContent || '', missing, targets,
           aboveAll: tops.every((top) => top >= b.bottom - 1),
         };
