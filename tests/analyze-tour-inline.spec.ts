@@ -458,6 +458,9 @@ test.describe('rendered: the walk-through in Analyze, Business (needs the emulat
     await walk.click();
     const tour = page.locator('[data-process-tour][data-tour-mode="inline"]');
     await expect(tour).toBeVisible({ timeout: 60_000 });
+    // The arrow keys act where the focus is: wait until the tour has taken it (its heading, by its own effect). In CI
+    // on 26.11.2026 a key pressed right after the open did not move it (likely before the focus moved, not proven).
+    await expect.poll(() => tour.evaluate((el) => el.contains(document.activeElement)), { timeout: 10_000 }).toBe(true);
     for (const at of ['1', '2']) {
       await page.keyboard.press('ArrowRight');
       await expect(tour).toHaveAttribute('data-tour-at', at);

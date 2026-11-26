@@ -95,9 +95,15 @@ async function expectFits(page: Page, width: number, height: number, name: strin
   }
 }
 
-/** Confirm target is reached and nothing covers it. */
+/**
+ * The Management card's action: Confirm target, or, over a design stored in the older text form with every check done,
+ * "Write the design again" in its place (journey review 26.11.2026) — the seeded project's design is that older form.
+ */
+const CARD_ACTION = '[data-design-confirm], [data-design-rewrite-older]';
+
+/** The card's action is reached and nothing covers it. */
 async function expectReachable(page: Page, width: number, height: number) {
-  const confirm = page.locator('[data-design-confirm]');
+  const confirm = page.locator(CARD_ACTION).first();
   await confirm.scrollIntoViewIfNeeded();
   const box = await confirm.boundingBox();
   expect(box, 'Confirm target is laid out').not.toBeNull();
@@ -145,7 +151,7 @@ test.describe('the Design stage keeps its proportions', () => {
     for (const [w, h] of WIDTHS) await expectFits(page, w, h, 'project', { confirm: false, panelMin: 340 });
 
     await page.goto(`/project/${seeded.projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-design-view="management"] [data-design-confirm]')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-design-view="management"]').locator(CARD_ACTION).first()).toBeVisible({ timeout: 120_000 });
     await expectConfirmFits(page);
   });
 
