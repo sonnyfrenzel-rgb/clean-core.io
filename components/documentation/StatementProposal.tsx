@@ -1,9 +1,11 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { CircleAlert } from 'lucide-react';
 import CcButton from '@/components/cc/Button';
 import CcProvenanceChip from '@/components/cc/ProvenanceChip';
 import { anchorsWords } from '@/lib/process-documentation';
+import { formatElapsed } from '@/lib/generation-progress';
 import { CONTRADICTION_LABEL, type StatementContradiction } from '@/lib/statement-contradiction';
 import { proposeSentencesLabel } from '@/lib/messages/model-consent';
 import {
@@ -128,6 +130,32 @@ function summaryOf(view: ProposalView): string {
   return parts.join(' · ');
 }
 
+/** Why a reader would ask for the business sentences (owner 26.11.2026). */
+export const STATEMENT_WHY =
+  'Rewords the sentences read from the code for a business reader, each still checked against the code. Worth it before you export or share the description.';
+
+/** How long it takes, said before the button: one model call, or two when the draft is reworded. */
+export function statementDuration(rewording: boolean): string {
+  return rewording
+    ? 'It takes two model calls and can run for several minutes.'
+    : 'It takes one model call and can run for a few minutes.';
+}
+
+/** The time since the request started, ticking every second while it runs. */
+function Elapsed() {
+  const [start] = useState(() => Date.now());
+  const [now, setNow] = useState(start);
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <span role="status" data-statement-elapsed="" className="text-[12px] text-cc-ink-muted tabular-nums">
+      Running for {formatElapsed(now - start)}
+    </span>
+  );
+}
+
 export function StatementProposalPanel({ view, canRequest, byok, rewording = false, company, requesting, message, onRequest, costLine = true }: StatementProposalPanelProps) {
   const proposed = view?.state === 'proposed';
   // A reader with nothing stored sees nothing at all: there is no action for
@@ -138,11 +166,19 @@ export function StatementProposalPanel({ view, canRequest, byok, rewording = fal
       {proposed && view && <p className="text-[13px] text-cc-ink">{summaryOf(view)}</p>}
       {view?.notice && <p className="text-[13px] text-cc-ink-muted">{view.notice}</p>}
       {message && <p data-statement-proposal-message="" className="text-[13px] text-cc-ink-muted">{message}</p>}
+      {canRequest && !proposed ? (
+        // Owner 26.11.2026: why one would run it, and how long it takes, before the button — it was easy to miss and
+        // ran a long time without a word.
+        <p data-statement-why="" className="m-0 text-[13px] text-cc-ink">
+          {STATEMENT_WHY} {statementDuration(rewording)}
+        </p>
+      ) : null}
       {canRequest && (
         <div className="mt-2 flex flex-wrap items-center gap-3">
-          <CcButton variant={proposed ? 'ghost' : 'secondary'} busy={requesting} onClick={onRequest}>
+          <CcButton variant="secondary" busy={requesting} onClick={onRequest}>
             {proposeSentencesLabel(company, proposed)}
           </CcButton>
+          {requesting ? <Elapsed /> : null}
           {costLine ? (
             <span data-statement-cost="" className="text-[12px] text-cc-ink-muted">
               {statementCostLine(byok, rewording)}

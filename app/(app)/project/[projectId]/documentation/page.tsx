@@ -189,6 +189,20 @@ export default function DocumentationPage() {
    */
   const [replaceAsk, setReplaceAsk] = useState<'doc' | 'sop' | null>(null);
   const [isGeneratingBusinessDoc, setIsGeneratingBusinessDoc] = useState(false);
+  // Owner 26.11.2026: an SOP and RACI written on request stay open when they are done and come into view, instead of
+  // folding away the moment they arrive. Only for this visit: a page opened later keeps the proposal folded.
+  const [businessWrittenHere, setBusinessWrittenHere] = useState(false);
+  const businessWasWriting = useRef(false);
+  useEffect(() => {
+    if (isGeneratingBusinessDoc) {
+      businessWasWriting.current = true;
+      return;
+    }
+    if (!businessWasWriting.current) return;
+    businessWasWriting.current = false;
+    setBusinessWrittenHere(true);
+    window.setTimeout(() => document.getElementById('model-proposals')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 0);
+  }, [isGeneratingBusinessDoc]);
   const [businessDocError, setBusinessDocError] = useState('');
 
   // Fetch Project Data
@@ -1357,10 +1371,10 @@ export default function DocumentationPage() {
       aria-busy={isGeneratingBusinessDoc ? true : undefined}
       className="cc-no-print"
     >
-      {/* Open while there is nothing on record, so the offer (and the AI notice it carries) is in view; folded once a proposal stands. */}
+      {/* Open while there is nothing on record, so the offer (and the AI notice it carries) is in view, and right after a proposal was written here; folded once a proposal stands on a later visit. */}
       <DocFold
         id="model-proposals"
-        open={!parsedBusinessDoc || isGeneratingBusinessDoc}
+        open={!parsedBusinessDoc || isGeneratingBusinessDoc || businessWrittenHere}
         title={<span className="inline-flex flex-wrap items-center gap-2">{wt('doc.proposalsTitle')} <FamilyChip kind="ai" /></span>}
         count={parsedBusinessDoc ? 'proposal on record' : 'none yet'}
       >
