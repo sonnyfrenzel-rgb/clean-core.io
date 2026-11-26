@@ -43,6 +43,7 @@ import {
   TYPICAL_PARTS,
   costAssumptionsRevision,
   optionCost,
+  optionLeftOpen,
   type CostAssumptions,
   type CostOption,
   type EffortDays,
@@ -514,7 +515,9 @@ export function recordProgress(record: EconomicsRecord, context: { sourceLoc: nu
 /** How many options a stored record prices, and of how many — for the views that may not show an amount. */
 export function pricedOptions(record: EconomicsRecord): { priced: number; total: number } {
   const a = restoreAssumptions(record.assumptions);
-  return { priced: a.options.filter((o) => optionCost(a, o).total !== null).length, total: a.options.length };
+  // An untouched key-user option is not one of the options to price (`optionLeftOpen`).
+  const counted = a.options.filter((o) => !optionLeftOpen(o));
+  return { priced: counted.filter((o) => optionCost(a, o).total !== null).length, total: counted.length };
 }
 
 /**

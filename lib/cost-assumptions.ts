@@ -674,8 +674,19 @@ export function costAssumptionsCoverage(a: CostAssumptions | null | undefined): 
   if (!options.some((o) => o.kind === COMPARISON_KIND)) {
     gaps.push(gap('comparison-option-missing', 'rejects', null));
   }
-  for (const o of options) gaps.push(...optionGaps(o));
+  for (const o of options) if (!optionLeftOpen(o)) gaps.push(...optionGaps(o));
   return coverageOf(gaps);
+}
+
+/**
+ * A key-user option nobody has started (owner report 26.11.2026). Clean-Core.io proposes no days for it, so after
+ * "take over the proposals" it was the one gap left, and Economics never counted as priced: Re-design sent the reader
+ * back to Economics, and Design stayed out of reach. It is an extra option, not one of the four answers of the program
+ * decision, so while it holds nothing it is left out of the comparison and keeps no amount away. Any figure typed into
+ * it brings it back with every rule of its own (`option-keyuser-dev-days`, `option-keyuser-proposal`).
+ */
+export function optionLeftOpen(o: CostOption): boolean {
+  return o.kind === 'keyuser' && o.oneOff == null && o.perRelease == null && o.maintenanceBaselinePerYear == null;
 }
 
 /**

@@ -68,6 +68,16 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
   it off: `docs/design/mcp-beta.md`; threat model: `SECURITY.md` §17. Privacy policy and terms are unchanged.
 - Tests: `tests/mcp-beta.spec.ts` (server-free) and `tests/mcp-beta-route.spec.ts` (routes of a running build).
 
+### Fixed
+
+- **Economics no longer stops the way to Design after "take over the proposals".** Where the run offered the
+  key-user option, Clean-Core.io proposes no days for it, so it was the one gap left: Economics never counted as
+  priced, Re-design kept sending the reader back to Economics, and "Fill in the effort" opened a section far down the
+  page without showing it. An untouched key-user option is now left out of the comparison (`optionLeftOpen` in
+  `lib/cost-assumptions.ts`), so taking over the proposals prices the options and the next action is the decision,
+  then Design. Any figure typed into the key-user option brings it back with all of its rules. "Fill in the effort"
+  now scrolls to the section and focuses its first empty field. Guard: `tests/economics-keyuser-left-open.spec.ts`.
+
 ## [v3.5.2] — 2026-11-25
 
 The landing page says what comes after the analysis, "Clean core explained" is brought up to date, the privacy

@@ -13,6 +13,7 @@ import {
   COMPARISON_KIND,
   KEEPS_FUNCTION_KINDS,
   cheapestAmong,
+  optionLeftOpen,
   type AmountRange,
   type CostAssumptions,
   type CostComparison,
@@ -49,6 +50,8 @@ export interface EconomicsAnswer {
   missing: string[];
   /** Options a proposal from the code size waits on — "your go on the proposed effort". */
   pending: number;
+  /** Options that still keep an amount away — an untouched key-user option is not one (`optionLeftOpen`). */
+  unpriced: number;
   /** The comparison over every option — "lowest overall". */
   all: CostComparison;
   /** The comparison over the options that keep what the program does (ADR-128 (1), mock-up E3). */
@@ -80,13 +83,17 @@ export function economicsAnswer(a: CostAssumptions, all: CostComparison, pending
   const keeps = cheapestAmong(a, KEEPS_FUNCTION_KINDS);
   const keepOption = (a.options || []).find((o) => o.kind === COMPARISON_KIND) ?? null;
   const keep = keepOption ? all.costs.find((c) => c.optionId === keepOption.id) ?? null : null;
-  const priced = all.costs.length > 0 && all.costs.every((c) => c.total !== null);
+  // An untouched key-user option is left out of the comparison (`optionLeftOpen`): it keeps no amount away.
+  const leftOpen = new Set((a.options || []).filter(optionLeftOpen).map((o) => o.id));
+  const counted = all.costs.filter((c) => !leftOpen.has(c.optionId));
+  const unpriced = counted.filter((c) => c.total === null).length;
+  const priced = counted.length > 0 && unpriced === 0;
   const state: EconomicsAnswerState = priced
     ? 'priced'
     : missing.length >= 5 && !(a.options || []).some((o) => o.oneOff || o.perRelease)
       ? 'first-visit'
       : 'needs-figures';
-  return { state, missing, pending, all, keeps, keep, currency: a.currency, years: a.horizonYears };
+  return { state, missing, pending, unpriced, all, keeps, keep, currency: a.currency, years: a.horizonYears };
 }
 
 /** "5 years", "1 year", or "your period". */
@@ -167,7 +174,7 @@ export function notPricedSentence(ans: EconomicsAnswer, lines: number | null): s
   const needs: string[] = [];
   if (ans.missing.length > 0) needs.push(`${listWords(ans.missing)} from you`);
   if (ans.pending > 0) needs.push(`your go on the effort${from}`);
-  const incomplete = ans.all.costs.filter((c) => c.total === null).length;
+  const incomplete = ans.unpriced;
   if (needs.length === 0 && incomplete > 0) needs.push(`the effort of ${incomplete === 1 ? 'one option' : `${incomplete} options`} under "Effort in days"`);
   return `Not determined yet. The costs need ${listWords(needs)}.`;
 }

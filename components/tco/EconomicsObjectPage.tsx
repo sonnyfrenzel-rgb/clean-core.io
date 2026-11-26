@@ -195,7 +195,17 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
     const open = new Set(pending.map((o) => o.id));
     onPatch({ options: a.options.map((o) => (open.has(o.id) ? { ...o, ...takeOverPatch(o, proposals) } : o)) });
   };
-  const openFold = (key: 'firm' | 'effort' | 'how' | 'model') => setFolds((f) => ({ ...f, [key]: true }));
+  // Opening a fold far down the page is not enough: the reader saw nothing happen (owner report 26.11.2026). The fold
+  // is brought into view, and its first empty field takes the focus.
+  const openFold = (key: 'firm' | 'effort' | 'how' | 'model') => {
+    setFolds((f) => ({ ...f, [key]: true }));
+    window.setTimeout(() => {
+      const box = document.getElementById(`economics-${key}`);
+      box?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      const empty = Array.from(box?.querySelectorAll<HTMLInputElement>('input:not([type=checkbox])') ?? []).find((i) => i.value === '');
+      empty?.focus({ preventScroll: true });
+    }, 0);
+  };
 
   /* ------------------------------------------------------------ the answer */
   const fromLines = loc !== null ? ` proposed from the ${formatLines(loc)} lines` : '';
