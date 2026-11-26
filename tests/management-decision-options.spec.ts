@@ -318,7 +318,7 @@ test.describe('ADR-079 rendered — choosing an option in Management', () => {
     // Never green: no option reading claims proof.
     await expect(page.locator('[data-decision-options] [data-provenance="proven"]')).toHaveCount(0);
     // Rebuild goes through Design; the other three are chosen here.
-    await expect(page.locator('[data-decision-option="rebuild"] [data-option-choose-design]')).toHaveAttribute('href', /\/design/);
+    await expect(page.locator('[data-decision-option="rebuild"] [data-option-choose-design]')).toHaveAttribute('href', /\/design\?view=management$/);
 
     await page.locator('[data-option-choose="keep"]').click();
     const box = page.getByRole('dialog');

@@ -247,7 +247,9 @@ export default function DecisionOptions({
     if (card.choice === 'design') {
       return (
         <a
-          href={hrefFor('design')}
+          // The sign-off stands in Design's Management view (owner 26.11.2026): the link opens it there, not in the
+          // Business view a bare address falls back to.
+          href={`${hrefFor('design')}?view=management`}
           data-option-choose-design=""
           className="text-[12px] font-semibold text-cc-ink underline underline-offset-2"
         >
