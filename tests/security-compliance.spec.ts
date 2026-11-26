@@ -587,7 +587,10 @@ test.describe('Clean-Core.io Security, Compliance & Onboarding Gates E2E Tests',
     const readerUid = readerCred.user.uid;
     const readerToken = await readerCred.user.getIdToken();
 
+    // A reader who accepted an invitation has a confirmed address (acceptance needs one); the erasure deletes
+    // invitations only for a confirmed address.
     await adminSetDoc('users', readerUid, {
+      emailVerified: true,
       firstName: 'Invited', lastName: 'Reader', email: readerEmail, tier: 'pilot', status: 'approved', termsVersionAccepted: TERMS_VERSION,
       isAdmin: false, transformationsUsed: 0, transformationsLimit: 5, maxTeamMembers: 1,
       s4TenantAccessAllowed: false, s4TenantAccessRequested: false, mfaEnabled: false, createdAt: new Date(),

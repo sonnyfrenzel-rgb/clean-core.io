@@ -115,6 +115,10 @@ class FakeDoc {
     const d = this.db.docs.get(this.path);
     return { exists: Boolean(d), id: this.id, ref: this, data: () => (d ? structuredClone(d) : undefined) };
   }
+  // A plain delete, as the erasure deletes the account's daily batch ledger (`portfolio_quota/{uid}`).
+  async delete() {
+    this.db.docs.delete(this.path);
+  }
   applyCreate(d: Doc) {
     if (this.db.docs.has(this.path)) throw new Error(`exists: ${this.path}`);
     this.db.docs.set(this.path, structuredClone(d));

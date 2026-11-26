@@ -330,9 +330,10 @@ test.describe('a changed source never stands under the old summary (lawyer, stat
     // `summary` stays off the client allowlist, so a browser can neither set nor remove it.
     const allowlist = /affectedKeys\(\)\.hasOnly\(\[([\s\S]*?)\]\)/g;
     for (const m of rules.matchAll(allowlist)) expect(m[1]).not.toContain("'summary'");
-    // The record says the tightening is pending and goes live before the code.
+    // The tightening went live with the 3.3.0 rules (deployed 22.11.2026): the deployed record names their text, and a
+    // later pending block is another change, never a reason to read this one as not live.
     const record = JSON.parse(read('docs/registers/rules-deployment.json'));
-    if (record.pending) expect(record.pending.recordedFor).toContain('BEFORE the 3.3.0 code');
+    expect(String(record.deployed.deployedAt) >= '2026-11-22').toBe(true);
   });
 
   test('no browser path writes the source of an existing project', () => {

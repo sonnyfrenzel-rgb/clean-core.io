@@ -2,6 +2,8 @@ import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { mfaRemovalBlockedByOwnKey, OWN_KEY_BLOCKS_MFA_REMOVAL } from '../lib/mfa-gate';
+// Static, not `await import(...)` in the test: the dynamic import did not resolve the module's `@/` imports in CI.
+import { invitationRecipientRefusal, INVITATION_RECIPIENT_DAILY_LIMIT } from '../lib/portfolio/selection-invitations';
 
 /**
  * Gates around an account's stored secrets (25.11.2026): an own model key is held only with the second factor,
@@ -30,7 +32,6 @@ test('the S/4 credentials route reads its body under a bound', () => {
 });
 
 test('one address receives at most three invitation mails a day, whoever sends them', async () => {
-  const { invitationRecipientRefusal, INVITATION_RECIPIENT_DAILY_LIMIT } = await import('../lib/portfolio/selection-invitations');
   const counts = new Map<string, number>();
   const limit = async (key: string, max: number) => {
     const n = (counts.get(key) ?? 0) + 1;

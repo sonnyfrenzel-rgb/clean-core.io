@@ -353,7 +353,9 @@ test.describe('a test result belongs to the project it is reported for', () => {
       allowlist.indexOf("'status', 'legacyCode'"),
       allowlist.indexOf('])', allowlist.indexOf("'status', 'legacyCode'")),
     );
-    expect(projectUpdate, 'the project update allowlist moved — this guard names it').toContain("'testSuite'");
+    // `solutionDesign` names the list this guard reads; `testSuite` left it with the artefact fields (server routes only).
+    expect(projectUpdate, 'the project update allowlist moved — this guard names it').toContain("'solutionDesign'");
+    expect(projectUpdate, 'a client may write the test suite again').not.toContain("'testSuite'");
     expect(projectUpdate, 'a client may write test verdicts again (SEC-2026-889/-890)').not.toContain("'testCases'");
     expect(projectUpdate, 'a client may write an execution receipt now').not.toContain('testRunReceipt');
   });

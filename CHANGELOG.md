@@ -84,7 +84,14 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
   - Removed copy that addressed a department or a role: "IT checks…", "Owner · IT" on open questions, "decided in
     Management", "One page for every reader: business, IT and management", "Back to Analyze, Management".
   - Pointers that still sent the decision to the Management view now name Re-design, where it is taken.
-  - `tests/journey-dead-ends.spec.ts` holds the line.
+  - `tests/journey-dead-ends.spec.ts` holds the line, and `tests/journey-dead-ends-rendered.spec.ts` renders it on a
+    real run.
+- **CI: six specs follow the audit fixes of 25.11.2026.** They describe what is now the case:
+  - The deployed 3.3.0 rules carry the write ceiling.
+  - The artefact fields are off the client allowlist.
+  - Erasure deletes invitations only for a confirmed address.
+  - Erasure deletes the daily batch ledger.
+  - The selection-invitation limit is imported statically.
 - **One next step on every tool.** A bar at the foot of the window names the one next step with one button, worked out
   by Re-design's own rule (`lib/journey-next.ts`, decision included), and the tool row's "Next" tag reads the same
   source — the two can no longer point to different places. On the page that is the next step, the bar names the step
