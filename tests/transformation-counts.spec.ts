@@ -90,7 +90,10 @@ test('the demo counts its distinct findings wherever it counts findings, never i
   const withTarget = DEMO_FINDINGS_WITH_TARGET;
   await page.goto('/demo/transformation', { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-transformation-object-page]')).toBeVisible({ timeout: 120_000 });
-  await expect(page.getByText(`${withTarget} findings with a target route`)).toBeVisible();
+  // One number for the findings on the page (journey review 26.11.2026, Q2): the answer card's "of its 24 findings";
+  // the lead no longer counts the 23 with a target route beside it.
+  await expect(page.getByText(`of its ${DEMO_DISTINCT_FINDINGS} findings`).first()).toBeVisible();
+  await expect(page.locator('body')).not.toContainText(`${withTarget} findings with a target route`);
   await expect(page.locator('body')).not.toContainText(`${places} findings`);
 
   await page.goto('/demo/delivery', { waitUntil: 'domcontentloaded' });

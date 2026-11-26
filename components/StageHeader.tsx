@@ -181,7 +181,8 @@ export default function StageHeader({
   const ToolIcon = onRedesign ? Route : toolCurrent ? TOOL_ICONS[toolCurrent] : null;
   // The "Re-design ›" group: on Analyze and on the Re-design page, of a project and of the demo (`/demo/redesign`).
   const group: ToolGroup | null =
-    (projectId || demo) && (onRedesign || toolCurrent === 'analyze')
+    // The same row on every tool (journey review 26.11.2026, Q7): the six tools after Analyze always stand in the group.
+    (projectId || demo) && (onRedesign || Boolean(toolCurrent))
       ? { href: demo ? demoRedesignHref() : redesignHref(projectId), label: `${REDESIGN_LABEL}`, current: onRedesign }
       : null;
 

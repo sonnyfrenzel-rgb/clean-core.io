@@ -149,8 +149,8 @@ test.describe('the hint is an addition, never a phase state (source)', () => {
     expect(bar).toContain('resultReadyTag(tool, analysisRead)');
     // The phase contract still names the next tool; since 3.2.0 (plan AB-4, O8) its tag is held back for an
     // analysis-only reader until a later tool was opened — a rule of its own, not this hint's.
-    expect(bar).toContain('const phaseNext = nextPhaseKey(tools);');
-    expect(bar).toContain('const next = nextTagShown(tools, phaseNext, progress.laterToolOpened) ? phaseNext : null;');
+    expect(bar).toContain('const phaseNext = nextPhaseKey(wayTools);');
+    expect(bar).toContain('const shownNext = nextTagShown(tools, phaseNext, progress.laterToolOpened) ? phaseNext : null;');
     expect(bar).not.toMatch(/nextTagShown\([^)]*analysisRead/);
     expect(bar).toContain('readKey={projectId}');
     expect(bar).toContain('readKey={analysisKeyOfBase(base)}');

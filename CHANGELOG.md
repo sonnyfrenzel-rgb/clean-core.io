@@ -70,6 +70,16 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
 
 ### Fixed
 
+- **Exports: the process figure reads whole.** In Word, the Confluence page and print, Figure 1 was cut into a left
+  and a right half, so no row could be read through. A figure too small for an upright page now gets a landscape
+  page, a long one is cut between rows (never through a step, a name or a flow label) with "part 1 of 2 (continues in
+  part 2)", labels are drawn on top, and an SVG never overflows its page. The Confluence page's chapter links point
+  at the anchors Confluence Cloud gives its headings (Data Center prefixes the page title and is not covered); IDs
+  such as `BR-009` no longer break at the hyphen; a Word table's header keeps with its first row.
+- **One "Next" on the tool row.** The row never marks the tool the reader is on as next, the demo reads the way on as
+  its Re-design page does (the row said "Analyze · Next" while Re-design said "Start with Economics"), and the six
+  tools after Analyze stand in the "Re-design ›" group on every tool, not only on Analyze. The demo's Transformation
+  lead no longer counts the findings a second way under the answer card.
 - **Design's option comparison reads at a glance** (IT view; owner 26.11.2026, mock-up accepted the same day). The
   answer first — the proposed option with its reason, beside what the others miss — then a matrix: SAP standard, key
   user, in-app RAP and side-by-side CAP against coverage, effort, running cost, data and target release, each cell a

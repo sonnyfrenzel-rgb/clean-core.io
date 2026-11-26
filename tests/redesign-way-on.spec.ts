@@ -209,12 +209,13 @@ test.describe('the way on leads through Re-design (ADR-143)', () => {
     expect(code('components/analyze/RouteCard.tsx')).toContain('Decide in Re-design');
   });
 
-  test('the tool row of Analyze groups the six tools under "Re-design ›"; the Re-design page is its current item', () => {
+  test('the tool row of every tool groups the six tools under "Re-design ›"; the Re-design page is its current item', () => {
     const bar = code('components/workspace/ToolBar.tsx');
     expect(bar).toContain('data-stage-tools-group="redesign"');
     expect(bar).toContain("aria-current={group.current ? 'page' : undefined}");
     const header = code('components/StageHeader.tsx');
-    expect(header).toMatch(/\(projectId \|\| demo\) && \(onRedesign \|\| toolCurrent === 'analyze'\)/);
+    // Journey review 26.11.2026 (Q7): the same row on every tool, not only on Analyze.
+    expect(header).toContain('(projectId || demo) && (onRedesign || Boolean(toolCurrent))');
     expect(header).toContain('demo ? demoRedesignHref() : redesignHref(projectId)');
     const route = code('app/(app)/project/[projectId]/redesign/page.tsx');
     expect(route).toContain('<RedesignPage');

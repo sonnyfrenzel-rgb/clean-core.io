@@ -299,8 +299,13 @@ function ToolsNav({
   useEffect(() => {
     if (current && current !== 'analyze') markLaterToolOpened();
   }, [current, markLaterToolOpened]);
-  const phaseNext = nextPhaseKey(tools);
-  const next = nextTagShown(tools, phaseNext, progress.laterToolOpened) ? phaseNext : null;
+  // The demo reads the way on as if its reading were signed, as its Re-design page does (`DemoRedesign`): otherwise
+  // the bar said "Analyze · Next" while Re-design said "Start with Economics" (owner 26.11.2026, journey review Q3).
+  const wayTools = readKey === 'demo' ? tools.map((t) => (t.key === 'analyze' ? { ...t, state: 'done' as const } : t)) : tools;
+  const phaseNext = nextPhaseKey(wayTools);
+  // Never on the tool the reader is on: the page itself is that step.
+  const shownNext = nextTagShown(tools, phaseNext, progress.laterToolOpened) ? phaseNext : null;
+  const next = shownNext === current ? null : shownNext;
   // Not on Analyze itself: the stage marks it read as it opens.
   const analysisRead = useAnalysisRead(readKey);
   const ready = (tool: WorkspaceTool) => tool.key !== current && resultReadyTag(tool, analysisRead);

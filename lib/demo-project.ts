@@ -309,7 +309,9 @@ function buildRail(demo: Omit<DemoProject, 'rail'>): DemoRailStep[] {
       'Plan only',
       // Findings as everywhere else — one per pattern and object — not the
       // plan's lines, which are one per place in the code.
-      `${findingRows(demo.analyze.findings).filter((r) => (r.finding.targetOptions ?? []).length > 0).length} findings with a target route. The transformed code is a model's work and the demo has none.`,
+      // No count of its own (journey review 26.11.2026, Q2): it stood under the answer card's "11 of its 24 findings"
+      // as "23 findings with a target route", a second number for the same findings.
+      "The plan is the engine's; the transformed code is a model's work, and the demo has none.",
     ),
     railStep(
       'documentation',
