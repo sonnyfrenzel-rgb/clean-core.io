@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import {
   PROPOSED_DAYS_BY_KIND,
   effortProposalFor,
+  optionLeftOpen,
   type CostAssumptions,
   type CostComparison,
   type CostOption,
@@ -197,6 +198,14 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
   };
   // Opening a fold far down the page is not enough: the reader saw nothing happen (owner report 26.11.2026). The fold
   // is brought into view, and its first empty field takes the focus.
+  // "Fill in the effort": the cards of the options still without an amount open too, so the first empty field is
+  // one the reader can type into. An untouched key-user option is not one of them (`optionLeftOpen`).
+  const fillEffort = () => {
+    const unpriced = new Set(comparison.costs.filter((c) => c.total === null).map((c) => c.optionId));
+    const ids = a.options.filter((o) => unpriced.has(o.id) && !optionLeftOpen(o)).map((o) => o.id);
+    setEditingOptions((s) => new Set([...s, ...ids]));
+    openFold('effort');
+  };
   const openFold = (key: 'firm' | 'effort' | 'how' | 'model') => {
     setFolds((f) => ({ ...f, [key]: true }));
     window.setTimeout(() => {
@@ -280,7 +289,7 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
       moreActions = canFill ? typicalButton('secondary') : null;
     } else {
       action = (
-        <CcButton variant="primary" data-economics-next-action="" onClick={() => openFold('effort')}>
+        <CcButton variant="primary" data-economics-next-action="" onClick={fillEffort}>
           Fill in the effort
         </CcButton>
       );

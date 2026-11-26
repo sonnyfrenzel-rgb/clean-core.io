@@ -184,6 +184,9 @@ test.describe('the Economics object page, rendered', () => {
     await page.locator('[data-answer-next] [data-economics-next-action]').click();
     await expect(page.locator('#economics-effort')).toHaveAttribute('data-economics-fold', 'open');
     await expect(page.locator('#economics-effort-title')).toBeInViewport();
+    // The first empty field of the fold takes the focus: the key-user option's per-release days, the one gap.
+    await expect(page.locator('#economics-effort input:focus')).toHaveCount(1);
+    await expect(page.locator('#economics-effort input:focus')).toHaveValue('');
   });
 
   test('at 390 px: nothing scrolls sideways, open or closed', async ({ page }) => {
