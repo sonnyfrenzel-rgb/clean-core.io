@@ -33,6 +33,7 @@ import { OWN_KEY_TEST_STUB_REFUSED, testOwnModelKey } from '../lib/own-key-test'
 import { ownKeyCounts, quotaExhausted, runsAreSelfFunded } from '../lib/run-quota-rule';
 import { askModeOf } from '../lib/auto-steps';
 import { aiAssistantNotice, aiAssistantNoticeDe } from '../lib/ai-assistant-notice';
+import { finishProductAnswer } from '../lib/assistant-answer';
 import { OwnModelKeyBlockedError, OwnModelKeyMissingError, OWN_KEY_BLOCKED_CODE, recordHoldsKey, sealByokSecret } from '../lib/byok-key';
 import { saveOwnModelKey } from '../lib/firebase-admin';
 
@@ -326,8 +327,10 @@ test.describe('the glossary assistant says it is an AI system (Art. 50(1) AI Act
     const notice = src.indexOf('data-chatbot-ai-notice=""');
     expect(notice).toBeGreaterThan(-1);
     expect(notice).toBeLessThan(src.indexOf('{/* Message input */}'));
-    expect(src).toContain("...(responseText ? { provenance: 'proposed' as const } : {}),");
     expect(src).not.toMatch(/Model proposal/);
+    // Outside a project as inside one (`lib/assistant-answer.ts`): a model's answer is AI-generated, a sentence of ours is not.
+    expect(finishProductAnswer('Every project opens in Analyze.', 'every project opens in analyze').provenance).toBe('proposed');
+    expect(finishProductAnswer('', '').provenance).toBe('not-determined');
   });
 });
 
