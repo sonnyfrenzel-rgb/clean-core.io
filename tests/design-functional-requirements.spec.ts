@@ -206,7 +206,10 @@ test.describe('a real project', () => {
     await expect(worded.locator('[data-fr-statement]')).toHaveText(WORDED);
     // Since 3.5.0 the family's chips (lib/family-chips.ts): "proposed" is AI-generated, "reconstructed" From the engine.
     await expect(worded.locator('[data-fr-statement-provenance] [data-family-chip="ai"]')).toBeVisible();
-    await expect(worded.locator('[data-fr-engine-wording] [data-family-chip="engine"]')).toBeVisible();
+    // The engine's sentence says so in words ("Engine wording"); its chip is the page's one "From the engine" in the
+    // head (3.5.4, Q5), not drawn again on the line.
+    await expect(worded.locator('[data-fr-engine-wording]')).toContainText('Engine wording:');
+    await expect(worded.locator('[data-fr-engine-wording] [data-family-chip="engine"]')).toBeHidden();
     await expect(worded.locator('[data-fr-engine-wording] [data-family-chip="ai"]')).toHaveCount(0);
     // The wording proposal is a button with its cost said beside it, never a call on opening.
     await expect(section.locator('[data-fr-wording-cost]')).toContainText('model call');

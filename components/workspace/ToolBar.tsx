@@ -179,13 +179,14 @@ export function ResultReadyTag() {
  * of the phone menu. All three entries always, so the legend does not change
  * shape with the project.
  */
-function ToolsLegend({ inMenu, place }: { inMenu?: boolean; place?: 'head' }) {
+function ToolsLegend({ inMenu, place }: { inMenu?: boolean; place?: 'head' | 'request' }) {
   return (
     <p
       data-tools-legend={inMenu ? 'menu' : place ?? 'bar'}
       className={cn(
-        'flex items-center gap-3 text-[11px] leading-4 text-cc-ink-muted',
+        'm-0 flex items-center gap-3 text-[11px] leading-4 text-cc-ink-muted',
         inMenu && 'border-b border-cc-line pb-2',
+        place === 'request' && 'flex-wrap text-[12px] font-medium',
       )}
     >
       <span className="sr-only">{wt('tools.legend.label')}</span>
@@ -511,9 +512,9 @@ function groupedItems(tools: readonly WorkspaceTool[], items: readonly React.Rea
  * The tool row of the tools' family (mock-ups of 15.11.2026, ADR-140; UX review 22.11.2026, Q9, Q12, L5): the same
  * row on every tool, at every width — no menu, no second navigation, no hint line under it.
  *
- *   - **One row.** "Tools", the seven tools with their marks, and the legend at the end. When the row does not fit,
- *     the legend steps back (below 1280 px; each mark keeps its words for a screen reader) and the row scrolls
- *     sideways with a fade on the edge where more tools wait, the current tool scrolled into view.
+ *   - **One row.** "Tools", the seven tools with their marks, and at the end an "i" that opens the legend on request
+ *     (release 3.5.4, Q4; `DESIGN.md` §2.12 "Legends only on demand"). When the row does not fit it scrolls sideways
+ *     with a fade on the edge where more tools wait, the current tool scrolled into view.
  *   - **On a phone, "2 of 7"** (L5) stands where "Tools" stands: where the reader is in the seven, with the state marks
  *     on every tool in the strip — the old "Tools" menu hid both.
  *   - **44 px touch targets** (Q12): every tool link is 44 px high on a touch screen and on a phone.
@@ -585,9 +586,13 @@ function FamilyToolStrip({
       >
         {items}
       </div>
-      <div className="ml-auto shrink-0 max-xl:hidden">
-        <ToolsLegend />
-      </div>
+      {/* The legend on request (release 3.5.4, Q4): a quiet "i" at the end of the row on every width, the key itself
+          only when asked for. Each mark keeps its words in the link's name for a screen reader. */}
+      <span data-stage-tools-legend-toggle="" className="ml-auto inline-flex shrink-0 items-center">
+        <InfoPopover subject={wt('tools.legend.subject')} hook="tools-legend" align="right">
+          <ToolsLegend place="request" />
+        </InfoPopover>
+      </span>
     </nav>
   );
 }

@@ -54,6 +54,7 @@ export const WORKSPACE_SHELL_MESSAGES = {
   'tools.mark.staleHint': 'Out of date — inputs changed since',
   // The legend beside "Tools" and at the top of the phone menu.
   'tools.legend.label': 'What the marks mean:',
+  'tools.legend.subject': 'the marks on the tools',
   'tools.legend.done': 'done',
   'tools.legend.started': 'started',
   'tools.legend.stale': 'out of date',
