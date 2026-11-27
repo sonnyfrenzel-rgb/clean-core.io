@@ -287,6 +287,28 @@ test('the whole erasure, through the route: the survey answers and the sign-in g
  * (with the uid) and as it wrote it before (without), and one about somebody
  * else, which has to stay.
  */
+test('a sign-in that could not be deleted keeps no administrator\'s right: the claim goes and its tokens are revoked', async () => {
+  const db = adminDb();
+  const uid = `erasure-admin-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const email = `${uid}@cleancore-test.io`;
+  const calls: string[] = [];
+  const auth = {
+    deleteUser: async () => { calls.push('deleteUser'); throw Object.assign(new Error('simulated Auth outage'), { code: 'auth/internal-error' }); },
+    setCustomUserClaims: async (u: string, claims: unknown) => { calls.push(`claims:${u}:${JSON.stringify(claims)}`); },
+    revokeRefreshTokens: async (u: string) => { calls.push(`revoke:${u}`); },
+    getUser: async () => ({ emailVerified: true }),
+  } as unknown as Auth;
+  try {
+    await seedOwnedData(uid, email);
+    await expect(deleteUserDataAndAccount(uid, { db, auth })).rejects.toThrow(/auth-user/);
+    // Without it, the erasure marker withdrew the claim only until it ran out; after that the surviving sign-in's
+    // fresh token passed as an administrator's.
+    expect(calls).toEqual(['deleteUser', `claims:${uid}:null`, `revoke:${uid}`]);
+  } finally {
+    await cleanUp(uid, email);
+  }
+});
+
 test('the operator notification about the signup goes with the account, in both record shapes', async () => {
   const db = adminDb();
   const uid = `erasure-signup-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;

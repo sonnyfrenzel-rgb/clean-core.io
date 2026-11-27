@@ -1358,6 +1358,15 @@ export async function deleteUserDataAndAccount(
     await auth.deleteUser(uid);
   } catch (e: any) {
     if (e?.code !== 'auth/user-not-found') {
+      // The sign-in stays until a retry, but no administrator's right stays with it: the erasure marker of step 5
+      // withdraws the claim only until it runs out, so the claim itself goes now and the tokens that carry it are
+      // revoked. Best effort — the erasure still reports itself incomplete either way.
+      try {
+        await auth.setCustomUserClaims(uid, null);
+        await auth.revokeRefreshTokens(uid);
+      } catch (claimErr: any) {
+        console.error(`[erasure] admin claim of ${uid} could not be withdrawn:`, claimErr?.code || claimErr?.message || claimErr);
+      }
       throw new Error(`Account erasure incomplete for ${uid}: auth-user: ${e?.message || e}`);
     }
   }
