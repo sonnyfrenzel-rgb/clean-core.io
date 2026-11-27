@@ -632,6 +632,7 @@ export default function WorkspaceTiles({
   const router = useRouter();
   const [filter, setFilter] = useState<TileFilter>('all');
   const [startOpen, setStartOpen] = useState(false);
+  const [redesignOpen, setRedesignOpen] = useState(false);
   const [sharingOpen, setSharingOpen] = useState(false);
   const counts = useMemo(() => tileCounts(tiles), [tiles]);
   const shown = useMemo(
@@ -642,20 +643,33 @@ export default function WorkspaceTiles({
   const press = (f: TileFilter) => setFilter((cur) => (cur === f || f === 'all' ? 'all' : f));
 
   const openStart = () => {
+    setRedesignOpen(false);
     setStartOpen(true);
     requestAnimationFrame(() => document.getElementById('ws-start-panel')?.scrollIntoView({ block: 'nearest' }));
   };
 
-  // "Re-design a program": the one program a re-design waits on, or the analysed ones to choose from.
+  // "Re-design a program": the one program a re-design waits on opens directly; with several, or none, a panel opens
+  // that names them (or says to analyse first). Filtering the list silently looked like nothing happened (owner
+  // 27.11.2026).
+  const redesignCandidates = useMemo(
+    () =>
+      tiles
+        .filter((t) => t.access === 'own' && (t.redesign.kind === 'step' || t.redesign.kind === 'not-started'))
+        .sort((a, b) => b.sortKey.localeCompare(a.sortKey)),
+    [tiles],
+  );
   const redesignProgram = () => {
-    const candidates = tiles.filter((t) => t.access === 'own' && (t.redesign.kind === 'step' || t.redesign.kind === 'not-started'));
-    if (candidates.length === 1) {
-      const t = candidates[0];
-      router.push(redesignHref(t));
+    if (redesignCandidates.length === 1) {
+      router.push(redesignHref(redesignCandidates[0]));
       return;
     }
-    setFilter('analysed');
-    requestAnimationFrame(() => document.getElementById('ws-programs-title')?.scrollIntoView({ block: 'start' }));
+    if (redesignOpen) {
+      setRedesignOpen(false);
+      return;
+    }
+    setStartOpen(false);
+    setRedesignOpen(true);
+    requestAnimationFrame(() => document.getElementById('ws-redesign-panel')?.scrollIntoView({ block: 'nearest' }));
   };
 
   return (
@@ -678,7 +692,15 @@ export default function WorkspaceTiles({
             <span className="max-[600px]:hidden">{wt('ws.analyseAnother')}</span>
             <span className="min-[601px]:hidden">{wt('ws.analyseAnotherShort')}</span>
           </CcButton>
-          <CcButton variant="secondary" density="cozy" icon={<Wrench size={14} aria-hidden={true} />} onClick={redesignProgram} data-ws-redesign-program="">
+          <CcButton
+            variant="secondary"
+            density="cozy"
+            icon={<Wrench size={14} aria-hidden={true} />}
+            onClick={redesignProgram}
+            aria-expanded={redesignCandidates.length === 1 ? undefined : redesignOpen}
+            aria-controls={redesignCandidates.length === 1 ? undefined : 'ws-redesign-panel'}
+            data-ws-redesign-program=""
+          >
             {wt('ws.redesignProgram')}
           </CcButton>
         </div>
@@ -697,6 +719,48 @@ export default function WorkspaceTiles({
           <div className="min-w-0 border-t border-cc-line px-4 py-3 min-[601px]:px-5 min-[601px]:py-4 min-[901px]:border-t-0 min-[901px]:border-l">
             <OwnCodeWay profile={profile} idPrefix="ws" />
           </div>
+        </section>
+      ) : null}
+
+      {redesignOpen ? (
+        <section
+          id="ws-redesign-panel"
+          aria-labelledby="ws-redesign-panel-title"
+          data-ws-redesign-panel=""
+          className="rounded-cc-card border border-cc-line bg-cc-surface px-4 py-3 shadow-cc min-[601px]:px-5 min-[601px]:py-4"
+        >
+          <h2 id="ws-redesign-panel-title" className="m-0 text-[15px] font-bold text-cc-ink">
+            {wt('ws.redesignPanel')}
+          </h2>
+          {redesignCandidates.length === 0 ? (
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+              <p className="m-0 text-[13px] font-medium text-cc-ink-muted" data-ws-redesign-none="">
+                {wt('ws.redesignPanel.none')}
+              </p>
+              <CcButton variant="secondary" density="cozy" icon={<Workflow size={14} aria-hidden={true} />} onClick={openStart} data-ws-redesign-analyse="">
+                {wt('ws.analyseAnotherShort')}
+              </CcButton>
+            </div>
+          ) : (
+            <>
+              <p className="mt-1 mb-2 text-[13px] font-medium text-cc-ink-muted">{wt('ws.redesignPanel.lead')}</p>
+              <ul className="m-0 flex list-none flex-col divide-y divide-cc-line p-0">
+                {redesignCandidates.map((tile) => (
+                  <li key={tile.id} className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 py-2" data-ws-redesign-candidate={tile.id}>
+                    <span className="min-w-0">
+                      <span className="block truncate text-[14px] font-semibold text-cc-ink">{tile.title}</span>
+                      <span className="block text-[12px] font-medium text-cc-ink-muted">
+                        {tile.redesign.kind === 'step' ? TOOL_LABEL[tile.redesign.key] : wt('ws.redesignPanel.notStarted')}
+                      </span>
+                    </span>
+                    <ActionLink href={redesignHref(tile)} data-ws-redesign-open={tile.id}>
+                      {wt('ws.redesignPanel.open')}
+                    </ActionLink>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </section>
       ) : null}
 

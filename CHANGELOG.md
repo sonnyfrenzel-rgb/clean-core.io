@@ -80,6 +80,11 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
     decision instead of "Not started" above steps marked Done.
   - Delivery's answer names how many things block the handover and the first one; the rest stand under it.
   - One destination, one label: the decision is "Open the decision" in Design and Economics.
+  - My workspace: "Re-design a program" with several analysed programs opens a choice that names each one and leads
+    to its Re-design; before, it filtered the list silently and looked as if nothing happened. With none analysed it
+    says to analyse first and offers it. One program still opens directly.
+  - The public pages (Knowledge, the dated paragraph of llms.txt and /facts) say the decision is taken in Re-design,
+    once Economics has priced the options, no longer "in the Management view".
 - **The views are perspectives, not people.**
   - Removed copy that addressed a department or a role: "IT checks…", "Owner · IT" on open questions, "decided in
     Management", "One page for every reader: business, IT and management", "Back to Analyze, Management".

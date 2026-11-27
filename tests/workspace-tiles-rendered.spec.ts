@@ -360,6 +360,25 @@ test.describe('a returning account: next step, counts, tiles', () => {
     await page.locator('[data-ws-analyse-another]').click();
     await expect(page.locator('[data-ws-start-panel] [data-home-way]')).toHaveCount(2);
     await shot(page, 'returning-1440-start-open');
+
+    // "Re-design a program" with several analysed programs opens a choice, never a silent filter (owner 27.11.2026):
+    // the start panel closes, each program leads to its own Re-design, and a second press closes the choice.
+    const redesignButton = page.locator('[data-ws-redesign-program]');
+    await redesignButton.click();
+    const choice = page.locator('[data-ws-redesign-panel]');
+    await expect(choice).toBeVisible();
+    await expect(redesignButton).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('[data-ws-start-panel]')).toHaveCount(0);
+    const offered = choice.locator('[data-ws-redesign-open]');
+    expect(await offered.count()).toBeGreaterThanOrEqual(2);
+    await expect(choice.locator(`[data-ws-redesign-open="${programs[0].id}"]`)).toHaveAttribute('href', `/project/${programs[0].id}/redesign`);
+    await expect(choice.locator(`[data-ws-redesign-open="${programs[4].id}"]`)).toHaveCount(0); // not analysed: nothing to re-design yet
+    await shot(page, 'returning-1440-redesign-choice');
+    await redesignButton.click();
+    await expect(choice).toHaveCount(0);
+    await redesignButton.click();
+    await choice.locator(`[data-ws-redesign-open="${programs[0].id}"]`).click();
+    await expect(page).toHaveURL(new RegExp(`/project/${programs[0].id}/redesign`), { timeout: 120_000 });
   });
 
   test('at 390 the list opens first (Q12), its rows are 44 px touch targets, and the switch leads to the tiles and back', async ({ page }) => {
