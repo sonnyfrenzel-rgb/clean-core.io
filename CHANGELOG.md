@@ -70,6 +70,19 @@ An outside review of v3.5.2 was checked finding by finding; the public IDs are `
 
 ### Fixed
 
+- **Carried review findings closed.**
+  - The security audit runs in full when no earlier audit is marked complete, instead of starting after a run that
+    may have been partial.
+  - Both audit-pack verifiers (web page and command line) also check the file name in a local header's Unicode
+    Path field, so one file cannot carry two names there.
+  - An own model key can no longer be stored while the second factor is being turned off: the removal reserves
+    itself on the profile, and the key save checks the reservation, the flag and the factor in one transaction.
+  - The test-run relay refuses a path that hides a `..` segment behind an encoded slash or backslash.
+  - Pipeline health asks for our own runs directly, so a burst of fork pull requests cannot push them out of view.
+  - The guard on deleting S/4 credentials now requires the deletion's transaction to be awaited.
+  - The engine 4 call graph no longer loops forever on a class hierarchy that inherits from itself, and it types a
+    receiver by an attribute the class inherits before it guesses from an unrelated class.
+  - The engine 4 source header now names the two product paths that already read it.
 - **No page ends without a way on (walk-through 26.11.2026).**
   - Design's Management view no longer says "Ready for your confirmation" over a closed button. When every check is
     done but the design on record is the older text form with no target to confirm, it says so, and its one action
