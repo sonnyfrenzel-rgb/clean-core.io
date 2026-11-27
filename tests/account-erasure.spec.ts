@@ -8,7 +8,7 @@ import type { Auth } from 'firebase-admin/auth';
 import firebaseConfig from '../firebase-config.json';
 import { FIRESTORE_DB_ID, TERMS_VERSION } from '../lib/constants';
 import { adminSetDoc } from './helpers/admin-seed';
-import { deleteUserDataAndAccount } from '../lib/firebase-admin';
+import { deleteUserDataAndAccount, withoutWithdrawnAdminClaim } from '../lib/firebase-admin';
 import { suppressionId } from '../lib/unsubscribe-token';
 import { accountHashOf } from '../lib/pseudonym';
 import { ADMIN_SIGNUP_MAIL_KIND, buildAdminSignupSubject, legacyAdminSignupSubject } from '../lib/admin-signup-email';
@@ -304,10 +304,29 @@ test('a sign-in that could not be deleted keeps no administrator\'s right: the c
     // Without it, the erasure marker withdrew the claim only until it ran out; after that the surviving sign-in's
     // fresh token passed as an administrator's.
     expect(calls).toEqual(['deleteUser', `claims:${uid}:null`, `revoke:${uid}`]);
-    // And the marker no longer runs out: without an expiry it holds until a retry writes it again.
+    // And the marker does not run out: it was written without an expiry and keeps none while the sign-in survives.
     const marker = (await db.collection('erased_accounts').doc(uid).get()).data();
-    expect(marker?.expiresAt, 'the marker still runs out').toBeUndefined();
-    expect(marker?.authDeletionFailedAt).toBeTruthy();
+    expect(marker?.expiresAt, 'the marker runs out while the sign-in survives').toBeUndefined();
+    expect(marker?.erasureStartedAt).toBeTruthy();
+    // The admin check itself, on the stored marker: the surviving sign-in's token is no administrator's.
+    const checked = await withoutWithdrawnAdminClaim({ uid, admin: true });
+    expect((checked as { admin?: unknown }).admin, 'an erased administrator kept the claim').toBeUndefined();
+  } finally {
+    await db.collection('erased_accounts').doc(uid).delete().catch(() => {});
+    await cleanUp(uid, email);
+  }
+});
+
+test('a completed erasure gives the marker its expiry, so it runs out after the sign-in is gone', async () => {
+  const db = adminDb();
+  const uid = `erasure-expiry-${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+  const email = `${uid}@cleancore-test.io`;
+  try {
+    await seedOwnedData(uid, email);
+    await deleteUserDataAndAccount(uid, { db, auth: recordingAuth().client });
+    const marker = (await db.collection('erased_accounts').doc(uid).get()).data();
+    expect(marker?.erasureStartedAt).toBeTruthy();
+    expect(marker?.expiresAt?.toDate().getTime()).toBeGreaterThan(Date.now());
   } finally {
     await db.collection('erased_accounts').doc(uid).delete().catch(() => {});
     await cleanUp(uid, email);
@@ -332,9 +351,10 @@ test('when the claim cannot be removed either, the marker without an expiry stil
     const marker = (await db.collection('erased_accounts').doc(uid).get()).data();
     expect(marker).toBeTruthy();
     expect(marker?.expiresAt).toBeUndefined();
-    // The admin check reads a marker without an expiry as "withdrawn" (lib/firebase-admin.ts, withoutWithdrawnAdminClaim).
-    const src = fs.readFileSync(path.join(__dirname, '..', 'lib', 'firebase-admin.ts'), 'utf8');
-    expect(src).toContain('withdrawn = marker.exists && (until === null || until > Date.now());');
+    const checked = await withoutWithdrawnAdminClaim({ uid, admin: true });
+    expect((checked as { admin?: unknown }).admin, 'an erased administrator kept the claim').toBeUndefined();
+    // Even a long time later: nothing about the marker runs out.
+    expect(marker?.erasureStartedAt).toBeTruthy();
   } finally {
     await db.collection('erased_accounts').doc(uid).delete().catch(() => {});
     await cleanUp(uid, email);

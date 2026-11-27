@@ -89,7 +89,8 @@ test('an erased account cannot create its profile again with the token it still 
     expect((await db.collection('users').doc(uid).get()).exists, 'the erasure deleted the profile').toBe(false);
 
     const marker = (await db.collection('erased_accounts').doc(uid).get()).data();
-    expect(Object.keys(marker ?? {}), 'the marker holds its expiry and nothing else').toEqual(['expiresAt']);
+    // Its start and, once the sign-in is gone, its expiry — nothing else.
+    expect(Object.keys(marker ?? {}).sort(), 'the marker holds its start and its expiry and nothing else').toEqual(['erasureStartedAt', 'expiresAt']);
     const until = marker!.expiresAt.toDate().getTime();
     expect(until - Date.now()).toBeGreaterThan(ERASED_MARKER_MS - 60_000);
     expect(ERASED_MARKER_MS, 'the marker outlives an ID token').toBeGreaterThan(60 * 60 * 1000);

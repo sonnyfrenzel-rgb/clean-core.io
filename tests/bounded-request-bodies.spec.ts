@@ -45,8 +45,8 @@ test.describe('readBoundedRequestJson', () => {
 
   test('a streamed body without a Content-Length is cut off at the bound, not read to the end', async () => {
     let pulled = 0;
-    const chunk = new TextEncoder().encode('a'.repeat(1024));
-    const stream = new ReadableStream<Uint8Array>({
+    const chunk: Uint8Array<ArrayBuffer> = new Uint8Array(1024).fill(97); // 'a'
+    const stream = new ReadableStream<Uint8Array<ArrayBuffer>>({
       pull(controller) {
         pulled += 1;
         if (pulled > 4096) controller.close(); // 4 MB, far past the bound
@@ -57,7 +57,7 @@ test.describe('readBoundedRequestJson', () => {
     expect(await readBoundedRequestJson(streamed, SMALL_REQUEST_BODY_LIMITS)).toEqual({ tooLarge: true });
     expect(pulled, 'the reader went on past the bound').toBeLessThan(64);
     // The bound the public verify and survey routes use holds the same way.
-    const again = new ReadableStream<Uint8Array>({ start(c) { for (let i = 0; i < 200; i++) c.enqueue(chunk); c.close(); } });
+    const again = new ReadableStream<Uint8Array<ArrayBuffer>>({ start(c) { for (let i = 0; i < 200; i++) c.enqueue(chunk); c.close(); } });
     expect(await readBoundedRequestJson({ headers: new Headers(), body: again }, { maxBytes: 64 * 1024, timeoutMs: 10_000 })).toEqual({ tooLarge: true });
   });
 

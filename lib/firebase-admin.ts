@@ -151,7 +151,7 @@ export async function verifyIdToken(idToken: string, checkRevoked = false) {
  * `admin: true` — the same bargain `verifyIdToken` already makes above for the
  * revocation lookup.
  */
-async function withoutWithdrawnAdminClaim<T extends { uid: string }>(decoded: T): Promise<T> {
+export async function withoutWithdrawnAdminClaim<T extends { uid: string }>(decoded: T): Promise<T> {
   if ((decoded as { admin?: unknown }).admin !== true) return decoded;
 
   let withdrawn: boolean;
@@ -1325,7 +1325,9 @@ export async function deleteUserDataAndAccount(
   //    expiry, and a TTL policy on `expiresAt` removes it.
   await tryDelete('users', () => {
     const batch = db.batch();
-    batch.set(db.collection('erased_accounts').doc(uid), { expiresAt: new Date(Date.now() + ERASED_MARKER_MS) });
+    // Without an expiry until the sign-in is gone (step 6 sets it): a marker that could run out while the sign-in
+    // and its administrator claim survive a failed step 6 would hand the claim back.
+    batch.set(db.collection('erased_accounts').doc(uid), { erasureStartedAt: new Date() });
     batch.delete(db.collection('registration_requests').doc(uid));
     for (const provider of MODEL_KEY_PROVIDERS) batch.delete(db.collection('user_secrets').doc(uid).collection('providers').doc(provider));
     batch.delete(db.collection('users').doc(uid));
@@ -1358,12 +1360,11 @@ export async function deleteUserDataAndAccount(
     await auth.deleteUser(uid);
   } catch (e: any) {
     if (e?.code !== 'auth/user-not-found') {
-      // The sign-in stays until a retry, but no administrator's right stays with it. First the marker of step 5
-      // loses its expiry: a marker without `expiresAt` holds until a retry writes it again with one (the admin
-      // check reads it as withdrawn, the rules as erased, and the TTL policy leaves it). Then the claim itself goes
-      // and the tokens are revoked, each on its own, best effort — the erasure reports itself incomplete either way.
+      // The sign-in stays until a retry. The marker of step 5 has no expiry, so it withdraws any administrator claim
+      // until then (the admin check reads it as withdrawn, the rules as erased, the TTL policy leaves it). The claim
+      // itself goes too and the tokens are revoked, each on its own, best effort — the erasure reports itself
+      // incomplete either way.
       const steps: Array<[string, () => Promise<unknown>]> = [
-        ['marker', () => db.collection('erased_accounts').doc(uid).set({ authDeletionFailedAt: new Date() })],
         ['claims', () => auth.setCustomUserClaims(uid, null)],
         ['revoke', () => auth.revokeRefreshTokens(uid)],
       ];
@@ -1377,6 +1378,13 @@ export async function deleteUserDataAndAccount(
       throw new Error(`Account erasure incomplete for ${uid}: auth-user: ${e?.message || e}`);
     }
   }
+  // The sign-in is gone: the marker may now run out. It still has to hold for the hour an ID token outlives the
+  // sign-in. If this write fails, the marker simply stays without an expiry — the uid is erased either way.
+  await db
+    .collection('erased_accounts')
+    .doc(uid)
+    .set({ expiresAt: new Date(Date.now() + ERASED_MARKER_MS) }, { merge: true })
+    .catch((err: unknown) => console.error(`[erasure] marker expiry for ${uid} not set:`, err instanceof Error ? err.message : err));
 }
 
 // `approveUserWithToken` lived here. It backed two HMAC-signed links in the
