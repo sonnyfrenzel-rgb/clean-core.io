@@ -439,28 +439,40 @@ function archiveEntryLimitDefect(buffer, limit = PACK_LIMITS.entries) {
 
 /**
  * Whether a central-directory record names its file a second way: a Unicode Path extra field (0x7075, which JSZip
- * prefers) or a local header that disagrees with the raw name. Same rule as `secondNameOf` in
+ * prefers) in the record or in its local header, or a local header that disagrees with the raw name. Same rule as `secondNameOf` in
  * `lib/audit-pack-verify.ts`.
  */
 function secondNameOf(b, offset, nameLength, extraLength, name) {
   const extraStart = offset + 46 + nameLength;
   const extraEnd = extraStart + extraLength;
   if (extraEnd > b.length) return 'a central-directory record runs beyond the end of the archive';
-  for (let at = extraStart; at + 4 <= extraEnd; ) {
-    const id = b.readUInt16LE(at);
-    const size = b.readUInt16LE(at + 2);
-    if (at + 4 + size > extraEnd) return 'a central-directory record carries an extra field that runs beyond it';
-    if (id === 0x7075 && (size < 5 || zipKey(b.subarray(at + 9, at + 4 + size).toString('utf8')) !== name)) {
-      return 'a central-directory record names its file a second, different way (Unicode Path field)';
-    }
-    at += 4 + size;
-  }
+  const central = unicodePathDefect(b, extraStart, extraEnd, name, 'a central-directory record');
+  if (central) return central;
   const local = b.readUInt32LE(offset + 42);
   if (local + 30 > b.length || b.readUInt32LE(local) !== 0x04034b50) return 'a central-directory record points at no local file header';
   const localNameLength = b.readUInt16LE(local + 26);
   if (local + 30 + localNameLength > b.length) return 'a local file header names a file beyond the end of the archive';
   const same = localNameLength === nameLength && b.subarray(local + 30, local + 30 + nameLength).equals(b.subarray(offset + 46, offset + 46 + nameLength));
-  return same ? null : 'a file is named differently in its local header and in the central directory';
+  if (!same) return 'a file is named differently in its local header and in the central directory';
+  // The local header's own extra fields: an extractor reading it takes its Unicode Path field, so that repeats the name too.
+  const localExtraStart = local + 30 + localNameLength;
+  const localExtraEnd = localExtraStart + b.readUInt16LE(local + 28);
+  if (localExtraEnd > b.length) return 'a local file header runs beyond the end of the archive';
+  return unicodePathDefect(b, localExtraStart, localExtraEnd, name, 'a local file header');
+}
+
+/** Whether the extra fields between `start` and `end` hold a Unicode Path field (0x7075) that names a file other than `name`. */
+function unicodePathDefect(b, start, end, name, where) {
+  for (let at = start; at + 4 <= end; ) {
+    const id = b.readUInt16LE(at);
+    const size = b.readUInt16LE(at + 2);
+    if (at + 4 + size > end) return `${where} carries an extra field that runs beyond it`;
+    if (id === 0x7075 && (size < 5 || zipKey(b.subarray(at + 9, at + 4 + size).toString('utf8')) !== name)) {
+      return `${where} names its file a second, different way (Unicode Path field)`;
+    }
+    at += 4 + size;
+  }
+  return null;
 }
 
 function duplicateEntryNames(buffer) {

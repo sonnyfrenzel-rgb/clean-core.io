@@ -596,3 +596,13 @@ test('a local header that names the file differently is not counted', async () =
   expect(r.counted).toBe(false);
   expect(r.why).toContain('local header');
 });
+
+test("a Unicode Path field in the local header that names the file differently is not counted", async () => {
+  // The local header carries its own extra fields; an extractor reading the local header takes its Unicode Path name.
+  const { bytes, at } = await nonAsciiPack();
+  Buffer.from('ä-b.csv', 'utf8').copy(bytes, at[1]);
+  const r = duplicateEntryNames(bytes);
+  expect(r.counted).toBe(false);
+  expect(r.why).toContain('local file header');
+  expect(r.why).toContain('Unicode Path');
+});
