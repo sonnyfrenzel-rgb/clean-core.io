@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v3.5.3] — 2026-11-27
+
+The fixes of the external audit of 25 November 2026, every page with a way on (the walk-through of 26 November),
+one next step at the foot of every tool, the views read as perspectives rather than people, Design's option
+comparison at a glance, exports whose process figure reads whole, and the review findings carried since 3.5.0
+closed. The model's artefacts on a project are written by the server only; that rule takes effect with the rules
+deploy that follows this release. The MCP beta is in the code but stays off outside `dev`. The engine reads every
+program as 3.5.2 did; runs signed before keep their reading.
+
 ### Security (external audit 25.11.2026)
 
 An outside review of v3.5.2 was checked finding by finding; the public IDs are `EXT-2511-NNN` in
