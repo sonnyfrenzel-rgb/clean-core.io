@@ -1644,6 +1644,11 @@ test.describe('a release is audited as its delta (owner decision, 06.10.2026)', 
     expect(scopeJob).toMatch(/gh run list --workflow security-audit\.yml --branch main --status success/);
     // Only a complete audit is a base: the scope job looks for the marker the audit job uploads only then.
     expect(scopeJob).toContain("grep -q '^security-audit-complete-'");
+    // Fail closed: without a marked run there is no base (a full audit), never the last unmarked success.
+    expect(scopeJob).not.toMatch(/latest=/);
+    expect(scopeJob).not.toMatch(/base="\$latest"/);
+    expect(scopeJob).toMatch(/base=""\n\s+while read -r id sha; do/);
+    expect(scopeJob.match(/base="\$sha"/g)).toHaveLength(1);
     expect(wf).toMatch(/name: security-audit-complete-\$\{\{ github\.sha \}\}-\$\{\{ github\.run_attempt \}\}\n\s+path: \.security-audit\/out\/complete\n[\s\S]{0,60}if-no-files-found: ignore/);
     expect(read('scripts/security/audit.mjs')).toMatch(/if \(payload\.complete\) writeFileSync\(join\(OUT, 'complete'\)/);
     expect(scopeJob).toMatch(/SECURITY_AUDIT_BASE="\$base" node scripts\/security\/scope\.mjs/);
