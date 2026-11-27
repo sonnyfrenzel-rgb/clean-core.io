@@ -11,7 +11,7 @@ import { getAuthIfStarted } from '@/lib/firebase';
 import { buildKnowledgeBase } from '@/lib/chatbot-knowledge';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
-import { renderMarkdownSafe } from '@/lib/sanitize-html';
+import AssistantAnswer, { AnswerAnchor } from '@/components/AssistantAnswer';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
 import { readSource, decisionLines } from '@/lib/first-look';
@@ -24,6 +24,10 @@ import {
   type AssistantReply,
   type CaseEvidence,
 } from '@/lib/assistant-answer';
+import { readerPlace, readerPlaceHint, recordFacts, type DecisionRecordRead } from '@/lib/assistant-context';
+import type { CaseFact } from '@/lib/case-answer';
+import type { ItFindingRow } from '@/lib/it-findings';
+import type { Project } from '@/lib/types';
 import { provenance } from '@/lib/provenance';
 import { aiAssistantNotice } from '@/lib/ai-assistant-notice';
 import { OWN_CLAUDE_MODEL, PROVIDER_LABEL } from '@/lib/model-providers';
@@ -71,6 +75,42 @@ const INDEPENDENT_QUESTION_NOTE =
  * not be loaded (or that this account may not read it), and never falls back
  * to general SAP knowledge — that is exactly the boundary this step draws.
  */
+/**
+ * One of the project's own read routes (`/api/projects/<id>/<path>`), with the signed-in account's token — the same
+ * GETs Re-design and Analyze make (`hooks/useProgramDecision.ts`). `null` on any failure: a record that could not be
+ * read is simply not offered as a fact, and the answer rests on the code alone.
+ */
+async function readProjectRoute(projectId: string, path: 'decision' | 'findings'): Promise<unknown> {
+  try {
+    const token = await getAuthIfStarted()?.currentUser?.getIdToken();
+    if (!token) return null;
+    const res = await fetch(`/api/projects/${encodeURIComponent(projectId)}/${path}`, { headers: { Authorization: `Bearer ${token}` } });
+    return res.ok ? await res.json().catch(() => null) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The program decision, the route and the Level A–D of named objects, as anchored facts (roadmap 3.5.4 item 6).
+ * Read, never written: nothing here stores anything.
+ */
+async function loadRecordFacts(projectId: string, project: Project): Promise<CaseFact[]> {
+  if (!project.activeRunId) return recordFacts({ route: project.extensibilityRoute ?? null });
+  const [decision, findings] = await Promise.all([
+    readProjectRoute(projectId, 'decision'),
+    readProjectRoute(projectId, 'findings'),
+  ]);
+  const rows = findings && typeof findings === 'object' && Array.isArray((findings as { rows?: unknown }).rows)
+    ? ((findings as { rows: ItFindingRow[] }).rows)
+    : null;
+  return recordFacts({
+    decision: decision && typeof decision === 'object' ? (decision as DecisionRecordRead) : null,
+    route: project.extensibilityRoute ?? null,
+    findings: rows,
+  });
+}
+
 async function loadCaseContext(projectId: string): Promise<CaseEvidence> {
   const empty = (unreadable: string | null): CaseEvidence => ({
     projectId, legacyCode: '', index: [], decisions: [], unreadable,
@@ -87,6 +127,7 @@ async function loadCaseContext(projectId: string): Promise<CaseEvidence> {
     index: buildWorkspaceSearchIndex({ projectId, project, reading }),
     decisions: reading ? decisionLines(reading.skeleton) : [],
     unreadable: reading ? null : 'No source has been staged in this project, so there is nothing to read an answer out of.',
+    records: reading ? await loadRecordFacts(projectId, project) : [],
   };
 }
 
@@ -386,6 +427,8 @@ export default function GlossaryChatbot() {
           signedIn: Boolean(getAuthIfStarted()?.currentUser),
           modelOff: assistantOff,
           inDemo,
+          // Read at the moment of asking and handed on, never kept (item 6: context, never storage).
+          place: readerPlaceHint(readerPlace(pathname, window.location.search)),
         },
         {
           loadCase: ensureCase,
@@ -602,10 +645,7 @@ export default function GlossaryChatbot() {
                     )}
                   >
                     {isBot ? (
-                      <div
-                        className="chat-answer"
-                        dangerouslySetInnerHTML={{ __html: renderMarkdownSafe(msg.text) }}
-                      />
+                      <AssistantAnswer text={msg.text} anchors={msg.anchors ?? []} projectId={projectId} />
                     ) : msg.text}
                   </div>
                   {/* Roadmap 6.8 — inside a project every answer carries the
@@ -626,7 +666,9 @@ export default function GlossaryChatbot() {
                         {msg.anchors && msg.anchors.length > 0 ? (
                           <>
                             {' · '}
-                            <span data-chatbot-anchors="">{msg.anchors.join(' · ')}</span>
+                            <span data-chatbot-anchors="" className="inline-flex flex-wrap gap-1 align-middle">
+                              {msg.anchors.map((a) => <AnswerAnchor key={a} anchor={a} projectId={projectId} />)}
+                            </span>
                           </>
                         ) : null}
                       </p>
@@ -634,7 +676,7 @@ export default function GlossaryChatbot() {
                         <ul className="m-0 space-y-1 p-0 text-[12px] font-medium text-cc-ink-muted list-none" data-chatbot-evidence="">
                           {msg.evidence.map((fact) => (
                             <li key={fact.id}>
-                              <span className="font-cc-mono">{fact.anchor}</span>
+                              <AnswerAnchor anchor={fact.anchor} projectId={projectId} />
                               {` — ${fact.title}`}
                             </li>
                           ))}

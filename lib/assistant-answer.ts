@@ -116,6 +116,11 @@ export interface CaseEvidence {
   decisions: DecisionLine[];
   /** Why there is no evidence, when there is none — said instead of silence. */
   unreadable: string | null;
+  /**
+   * The project's records as anchored facts — the program decision, the route, the Level A–D of named objects
+   * (`recordFacts` in `lib/assistant-context.ts`). Read for the panel's opening; never written anywhere.
+   */
+  records?: CaseFact[];
 }
 
 export interface AssistantQuestion {
@@ -128,6 +133,11 @@ export interface AssistantQuestion {
   modelOff: boolean;
   /** The demo: no model call on any screen. */
   inDemo: boolean;
+  /**
+   * Where the reader asks from — "Analyze, IT view" (`readerPlaceHint`). Inside a project it goes into the prompt
+   * as a hint for what to put first, said not to be evidence; it is not stored and not part of any answer's facts.
+   */
+  place?: string | null;
 }
 
 export interface AssistantDeps {
@@ -263,6 +273,24 @@ const ABSENT_PLACES: readonly RegExp[] = [
 
 const NEGATION = /\b(?:no|not|never|none|without|isn't|aren't|doesn't|don't|cannot|can't)\b/i;
 
+/** Where one clause ends and the next begins: a negation in one clause says nothing about the next. */
+const CLAUSE_SPLIT = /[;:,]|\s(?:but|and|or|however|while|whereas|yet)\s/i;
+
+/**
+ * Whether a sentence presents a place the product does not have as if it existed. The negation has to stand in the
+ * same clause, before the place: "There is no sidebar and no Live Tenant tab" says both are absent; "There is no
+ * sidebar, but open the Live Tenant tab" points the reader at one.
+ */
+export function presentsAbsentPlace(sentence: string): boolean {
+  for (const clause of sentence.split(CLAUSE_SPLIT)) {
+    for (const place of ABSENT_PLACES) {
+      const hit = place.exec(clause);
+      if (hit && !NEGATION.test(clause.slice(0, hit.index))) return true;
+    }
+  }
+  return false;
+}
+
 export interface GuardedProductAnswer {
   outcome: 'shown' | 'refused';
   text: string;
@@ -295,7 +323,7 @@ export function guardProductAnswer(text: string, knowledgeBase: string): Guarded
     if (figures.some((f) => !kbCompact.includes(f))) return true;
     const paths = [...lower.matchAll(/(?<![\w.:/])\/([a-z][a-z0-9-]*)/g)].map((m) => m[1]);
     if (paths.some((first) => !kb.includes(`/${first}`))) return true;
-    return !NEGATION.test(sentence) && ABSENT_PLACES.some((p) => p.test(sentence));
+    return presentsAbsentPlace(sentence);
   };
 
   // Line by line, so a list the model wrote keeps its lines.
@@ -423,13 +451,24 @@ async function answerFromCase(
   }
   if (stale()) return null;
 
-  const decision = answerCase(context.index, { projectId, legacyCode: context.legacyCode }, ask.question, context.decisions);
+  const decision = answerCase(
+    context.index,
+    { projectId, legacyCode: context.legacyCode },
+    ask.question,
+    context.decisions,
+    { records: context.records ?? [], hint: ask.place ?? null },
+  );
 
   if (decision.mode === 'no-evidence') {
     return { text: context.unreadable ?? decision.text, anchors: [], provenance: 'not-determined', noModelCall: true };
   }
   if (decision.mode === 'deterministic') {
-    return { text: decision.text, anchors: [...decision.anchors], provenance: 'reconstructed', noModelCall: true };
+    return {
+      text: decision.text,
+      anchors: [...decision.anchors],
+      provenance: decision.provenance ?? 'reconstructed',
+      noModelCall: true,
+    };
   }
 
   // Grounded: the question needs prose, and prose needs the model.
