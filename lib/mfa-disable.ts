@@ -3,8 +3,11 @@ import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
 import { randomUUID } from 'crypto';
 import {
   MFA_REMOVAL_ALREADY_RUNNING,
+  MFA_REMOVAL_CALL_TIMEOUT_MS,
   MFA_REMOVAL_MARKER,
   MFA_REMOVAL_MAX_START_MS,
+  OWN_KEY_KEEPS_MFA_REQUIREMENT,
+  mfaRemovalBlockedByOwnKey,
   mfaRemovalInProgress,
   mfaRemovalReservationOf,
   type GateRefusal,
@@ -59,13 +62,30 @@ export const PRODUCTION_MFA_RETIRE_DEPS: MfaRetireDeps = {
 
 export type MfaRetireOutcome =
   | { ok: true; removedFactor: boolean }
-  | { ok: false; status: number; error: string };
+  /**
+   * `reservationHeld`: the removal call did not answer within MFA_REMOVAL_CALL_TIMEOUT_MS and may still land, so the
+   * caller keeps its reservation in place until it runs out instead of lifting it.
+   */
+  | { ok: false; status: number; error: string; reservationHeld?: true };
 
 export const FACTOR_REMOVAL_FAILED =
   'The authenticator could not be removed from your account. Nothing changed — try again in a moment.';
 
 export const FACTOR_PRESENT =
   'An authenticator is set up on this account. Removing it needs a code from the authenticator app.';
+
+/** Whether `p` settles within `ms`; a rejection before then is passed on. */
+async function settlesWithin(p: Promise<unknown>, ms: number): Promise<boolean> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<false>((resolve) => {
+    timer = setTimeout(() => resolve(false), ms);
+  });
+  try {
+    return await Promise.race([p.then(() => true as const), timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 /**
  * Removes the factor (when there is one) and then clears the profile flag.
@@ -80,19 +100,25 @@ export async function retireSecondFactor(
   uid: string,
   hasFactor: boolean,
   deps: MfaRetireDeps = PRODUCTION_MFA_RETIRE_DEPS,
-  fence?: { reservedAtMs: number; now?: () => number },
+  fence?: { reservedAtMs: number; now?: () => number; callTimeoutMs?: number },
 ): Promise<MfaRetireOutcome> {
   if (hasFactor) {
     try {
       const auth = await deps.adminAuth();
       // A removal that did not start within MFA_REMOVAL_MAX_START_MS of its reservation does not start at all: by the
       // time the reservation runs out, no request that took it can still remove the factor. Checked here, after the
-      // last await before the removal call, so nothing awaited lies between the check and the call. What it cannot
-      // bound is the removal call itself taking longer than the TTL less this window.
+      // last await before the removal call, so nothing awaited lies between the check and the call.
       if (fence && (fence.now ?? Date.now)() - fence.reservedAtMs > MFA_REMOVAL_MAX_START_MS) {
         return { ok: false, status: 503, error: FACTOR_REMOVAL_FAILED };
       }
-      await auth.updateUser(uid, { multiFactor: { enrolledFactors: null } });
+      const removal = auth.updateUser(uid, { multiFactor: { enrolledFactors: null } });
+      // The call itself is bounded too (MFA_REMOVAL_CALL_TIMEOUT_MS). One that has not answered may still land, so
+      // the reservation stays; and should it land after the reservation ran out, the flag below is not cleared while
+      // an own key is stored.
+      if (!(await settlesWithin(removal, fence?.callTimeoutMs ?? MFA_REMOVAL_CALL_TIMEOUT_MS))) {
+        console.error('[mfa/disable] factor removal did not answer in time; the reservation stays until it runs out');
+        return { ok: false, status: 503, error: FACTOR_REMOVAL_FAILED, reservationHeld: true };
+      }
     } catch (removeErr) {
       // Nothing has changed: the factor is still there and the flag still requires it.
       console.error('[mfa/disable] factor removal failed:', removeErr);
@@ -110,11 +136,18 @@ export async function retireSecondFactor(
   // factor is seen here), or it conflicts with this transaction and lands
   // after the clear.
   const { db, FieldValue } = await deps.adminDb();
-  const userRef = db.collection('users').doc(uid);
-  const cleared = await db.runTransaction(async (tx: Transaction) => {
-    await tx.get(userRef);
+  const userRef: DocumentReference = db.collection('users').doc(uid);
+  //
+  // Nor is the flag cleared while an own key is stored. The key save refuses while the reservation stands and while
+  // Firebase Auth shows no factor, but a removal call that lands only after its reservation has run out can come after
+  // a save that saw the factor still there. Decided here, on the profile this transaction holds, the key never ends
+  // up on an account whose requirement is off: the flag stays, every gated route keeps asking for the factor, and the
+  // account sets the authenticator up again before the key can be used or removed.
+  const cleared = await db.runTransaction(async (tx: Transaction): Promise<'cleared' | 'factor' | 'own-key'> => {
+    const profile = (await tx.get(userRef)).data();
     const record = await (await deps.adminAuth()).getUser(uid);
-    if ((record.multiFactor?.enrolledFactors ?? []).length > 0) return false;
+    if ((record.multiFactor?.enrolledFactors ?? []).length > 0) return 'factor';
+    if (mfaRemovalBlockedByOwnKey(profile)) return 'own-key';
     tx.set(
       userRef,
       {
@@ -127,9 +160,10 @@ export async function retireSecondFactor(
       },
       { merge: true },
     );
-    return true;
+    return 'cleared';
   });
-  if (!cleared) return { ok: false, status: 409, error: FACTOR_PRESENT };
+  if (cleared === 'factor') return { ok: false, status: 409, error: FACTOR_PRESENT };
+  if (cleared === 'own-key') return { ok: false, status: OWN_KEY_KEEPS_MFA_REQUIREMENT.status, error: OWN_KEY_KEEPS_MFA_REQUIREMENT.message };
   // Not absorbed either: a swallowed failure here
   // answered "disabled" with the stored MFA material still in place. It now
   // reaches the route's handler like the flag write above, and the same call
