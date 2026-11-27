@@ -78,6 +78,7 @@ function acceptDecision(j: unknown): DecisionRead | null {
         canDecide: d.canDecide === true,
         signOff: d.signOff ?? null,
         engineRoute: d.engineRoute ?? null,
+        contractRoute: d.contractRoute ?? null,
       }
     : null;
 }

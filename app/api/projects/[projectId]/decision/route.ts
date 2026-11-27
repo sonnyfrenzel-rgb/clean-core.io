@@ -7,6 +7,7 @@ import { assertRateLimit } from '@/lib/rate-limit';
 import { deriveProjectDecision, DECISION_MAX_SOURCE_BYTES } from '@/lib/decision-facts';
 import { isFirestoreId } from '@/lib/firestore-id';
 import { recommendedArchitecture } from '@/lib/project-commands';
+import { recommendationOfProject } from '@/lib/contract-build';
 import { toDate } from '@/lib/format';
 
 /**
@@ -115,6 +116,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
             }
           : null,
       engineRoute: recommendedArchitecture(data),
+      // ADR-145: the route the Decide page names for a Rebuild is the architecture contract's, the one `decide` checks
+      // a departure against (`recommendationOfProject`), not the stored value; `null` when no contract is derived.
+      contractRoute: recommendationOfProject(data),
     });
   } catch (err: unknown) {
     logger.error('project decision read failed', {
