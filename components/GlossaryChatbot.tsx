@@ -20,6 +20,7 @@ import { preAnsweredDecisionAnswer, PRE_ANSWERED_QUESTION } from '@/lib/case-ans
 import {
   answerAssistantQuestion,
   assistantProjectId,
+  ASSISTANT_CHIPS,
   type AssistantReply,
   type CaseEvidence,
 } from '@/lib/assistant-answer';
@@ -109,7 +110,7 @@ function clockNow(): string {
 
 const greeting = (): Message => ({
   sender: 'bot',
-  text: `Hello. I am the Clean-Core.io Assistant. I help with Clean-Core.io — its stages, views and results — and with the clean core concepts it works with: clean core levels A–D, in-app extensions (RAP), side-by-side CAP extensions on ${BTP_FIRST}, released standard APIs and abapGit handovers. I am not SAP product support. What would you like to know?`,
+  text: `Hello. I am the Clean-Core.io Assistant. I help with Clean-Core.io — its tools, views and results — and with the clean core concepts it works with: clean core levels A–D, in-app extensions (RAP), side-by-side CAP extensions on ${BTP_FIRST}, released standard APIs and abapGit handovers. I am not SAP product support. What would you like to know?`,
   timestamp: clockNow(),
 });
 
@@ -349,14 +350,7 @@ export default function GlossaryChatbot() {
         ...(hasPreAnswer ? [PRE_ANSWERED_QUESTION] : []),
         'What is Clean Core?',
       ]
-    : [
-        'Explain RAP vs CAP',
-        'How do I set up S/4 Live Tenant?',
-        'Walk me through the platform',
-        'What is Clean Core?',
-        'How does TCO analysis work?',
-        'What is BYOK?'
-      ];
+    : ASSISTANT_CHIPS;
 
   /**
    * One question, answered by `answerAssistantQuestion` (`lib/assistant-answer.ts`)

@@ -75,6 +75,21 @@ export function assistantProjectId(pathname: string | null | undefined): string 
   }
 }
 
+/**
+ * The questions offered outside a project, against the product as it is in
+ * 3.5 (`lib/chatbot-knowledge.ts`, `PRODUCT_LAYOUT`): where things are, the
+ * decision, sharing, the own key, the tenant connection — and one glossary
+ * term, answered from its entry without a model.
+ */
+export const ASSISTANT_CHIPS: readonly string[] = [
+  'Walk me through the seven tools',
+  'Where do I decide keep, rebuild or retire?',
+  'How do I share a project?',
+  'Where do I add my own model key?',
+  'Where do I connect my SAP test system?',
+  'What is Clean Core?',
+];
+
 /* ------------------------------------------------------------------ shapes */
 
 /** One answer of the assistant, as the panel shows it. */

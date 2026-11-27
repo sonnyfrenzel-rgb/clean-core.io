@@ -825,10 +825,10 @@ first insights in their end state as soon as the engine's readings are in, and s
   mark invites it: *"Select the decision point."*
 - **One question is already answered.** *"Ask this case"* shows, when first opened, an asked question with answer and
   anchors (*"What happens when the limit is exceeded?"*) — **derived from the branches of the code** (roadmap 2.1,
-  chip *Reconstructed*), without a model call and without touching the user's quota. **Since 3.0.21 it stands in the
-  IT view, not in Business** (owner decision 22.10.2026, ADR-103): its question names a decision point the first
-  insights and the walk-through already show the business reader. The assistant of the same name stays in Help in
-  every view.
+  chip *Reconstructed*), without a model call and without touching the user's quota. **It is not in Business**
+  (owner decision 22.10.2026, ADR-103): its question names a decision point the first insights and the walk-through
+  already show the business reader. The IT card that carried it from 3.0.21 went with the 3.5 rebuild; since 3.5.4
+  the question is the first suggestion of the assistant of the same name, which stays in Help in every view.
 - **Standard fit as the second surprise**, one level deeper: *"2 of 7 rules have a standard candidate (scope item … —
   to verify)"* with evidence level (roadmap 7.2). Never "the standard covers it" as long as the level does not carry that.
 - **Take-away:** "Export PNG" and "Export PDF" of the process map with provenance chips and anchors. **No public
