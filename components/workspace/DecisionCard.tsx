@@ -29,6 +29,7 @@ import { outdatedReasonsOfAnswer, type DecisionCostBasis, type DecisionCostCheck
 import { stageHref } from '@/lib/workspace-back-href';
 import { workspaceRedirectHref } from '@/lib/workspace-redirect';
 import { cn } from '@/lib/utils';
+import { focusInPageTarget } from '@/lib/in-page-target';
 import InfoPopover from './InfoPopover';
 import type { ObjectStatusValue } from '@/lib/object-status';
 import {
@@ -376,7 +377,11 @@ export default function DecisionCard({
                   return;
                 }
                 const first = unblock[0];
-                if (first) window.location.assign(unblockHref(first.path));
+                if (!first) return;
+                // A place on this page is scrolled to and its first choice focused (lib/in-page-target.ts);
+                // anywhere else is navigated to.
+                if (focusInPageTarget(first.path, document)) return;
+                window.location.assign(unblockHref(first.path));
               }}
               disabled={busy || (!view.confirmable && unblock.length === 0)}
               aria-describedby={view.confirmable ? undefined : 'decision-blocked-reason'}

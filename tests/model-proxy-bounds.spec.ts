@@ -54,7 +54,8 @@ test.describe('the stage of a call (SEC-01)', () => {
     expect(call.match(/maxOutputTokens,/g) ?? [], 'both config branches carry the bound').toHaveLength(2);
     // The browser names a stage on every call, the help chatbot included.
     expect(read('lib/gemini.ts')).toMatch(/\n {2}stage: ModelCallStage,/);
-    expect(read('components/GlossaryChatbot.tsx').match(/callGemini\([^)]*'glossary'\)/g) ?? []).toHaveLength(2);
+    // One call site since 3.5.4: both places hand it to `lib/assistant-answer.ts`.
+    expect(read('components/GlossaryChatbot.tsx').match(/callGemini\([^)]*'glossary'\)/g) ?? []).toHaveLength(1);
   });
 });
 

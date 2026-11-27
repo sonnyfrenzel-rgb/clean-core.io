@@ -7,19 +7,22 @@
  * nothing but that project's own anchored evidence (`lib/case-answer.ts`).
  * Handing this file to a question asked about somebody's ABAP is precisely the
  * failure that step exists to prevent — a confident SAP generality standing
- * where a line number should be. The component's in-project branch therefore
- * returns before `buildKnowledgeBase()` is ever reached, including on its own
- * error paths, and `tests/ask-this-case.spec.ts` holds that order.
- * 
- * This module consolidates ALL platform content into structured knowledge
- * that is injected into the chatbot's system prompt. This ensures the AI
- * can answer questions about any part of the platform accurately.
- * 
+ * where a line number should be. The assistant's pipeline
+ * (`lib/assistant-answer.ts`) therefore never builds this inside a project, on
+ * the answer path or on any failure path, and `tests/ask-pipeline.spec.ts`
+ * walks every one of them.
+ *
+ * This module consolidates the platform content into structured knowledge
+ * that is injected into the assistant's prompt outside a project. A product
+ * answer is read back against it (`guardProductAnswer`): a place, figure or
+ * offer it does not carry is removed before the reader sees it.
+ *
  * Sources:
- * - Knowledge Hub (/knowledge) — FAQs, glossary, RAP vs CAP comparison
- * - How-To (/how-to) — the seven-phase walkthrough, read from `lib/how-to-content.ts`
- * - Platform pages — Analyze, Economics, Design, Transformation, Documentation, Testing, Delivery
- * - Settings — BYOK, S/4HANA tenant configuration
+ * - The product's layout in 3.5 — My workspace, Analyze with its three views,
+ *   the seven tools in the tool bar's order, Re-design, sharing and Settings —
+ *   read from the modules that draw it (`PRODUCT_LAYOUT` below)
+ * - Knowledge (/knowledge) — FAQs, glossary, RAP vs CAP comparison
+ * - How-To (/how-to) — the walkthrough of the seven tools, read from `lib/how-to-content.ts`
  *
  * Roadmap 0.2, UX-102 (the follow-up in the knowledge base). This file described
  * a /how-to that stopped existing on 17.09.2026 — "Interactive Hotspots",
@@ -49,13 +52,26 @@ import {
   SAP_BTP_COCKPIT,
 } from './sap-naming';
 import { SCORE_BANDS_SOURCE, scoreBandsProse, scoreDeductionsProse } from './clean-core-score';
+import { PHASES, PHASE_PURPOSE } from './workflow-steps';
+import { WORKSPACE_VIEWS, VIEW_LABELS, VIEW_QUESTIONS } from './workspace-model';
+import { REDESIGN_LABEL, REDESIGN_SEGMENT } from './redesign';
+import { DECISION_OPTION_LABELS } from './decision-options';
+import { INVITATION_DEFAULT_DAYS, INVITATION_MAX_DAYS } from './invitations';
+import { COMMUNITY_QUOTA_FALLBACK } from './run-quota-rule';
+import { ANTHROPIC_OWN_KEY_OFFERED, ANTHROPIC_OWN_KEY_STATUS } from './model-providers';
+
+/** The four options of the program decision, in their order: "Keep, Rebuild, Move to SAP standard or Retire". */
+const DECISION_OPTIONS_LINE = (() => {
+  const labels = Object.values(DECISION_OPTION_LABELS);
+  return `${labels.slice(0, -1).join(', ')} or ${labels[labels.length - 1]}`;
+})();
 
 // ─────────────────────────────────────────────────────────────────────────────
-// KNOWLEDGE HUB CONTENT
+// KNOWLEDGE PAGE CONTENT (/knowledge)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const KNOWLEDGE_HUB_FAQS = `
-## KNOWLEDGE HUB — FREQUENTLY ASKED QUESTIONS
+## KNOWLEDGE PAGE (/knowledge) — FREQUENTLY ASKED QUESTIONS
 
 ### Q: What is the SAP S/4HANA Clean Core strategy?
 A: The Clean Core strategy is an architectural design principle that keeps the SAP standard ERP core software free of custom modifications. Custom extensions are developed either "in-app" using key-user extensibility or "side-by-side" on ${BTP_FIRST}. This decoupling lowers upgrade risk and technical debt: extensions built on released interfaces are far less likely to break on an upgrade, though each upgrade still needs its compatibility and regression testing.
@@ -67,10 +83,10 @@ A: In-App RAP (ABAP RESTful Application Programming Model) runs directly within 
 A: Clean-Core.io does not configure anything in your SAP BTP subaccount or S/4HANA tenant. The usual security pattern for a side-by-side extension is JSON Web Tokens (JWT) validated by the SAP XSUAA (Extended Services for User Account and Authentication) service for stateless API calls with role-based access control (RBAC), and the SAP Connectivity and Destination services routing RFC and OData traffic via SAP Cloud Connector without exposing internal endpoints. Setting that up in your tenant is your team's work; the app provides analysis, design drafts and a read-only connection check, not the deployment.
 
 ### Q: What is the BYOT (Bring Your Own Tenant) connectivity model?
-A: BYOT lets a developer connect their own NON-PRODUCTION S/4HANA sandbox to check the connection and read the OData metadata of one service ($metadata, schema only). ${LIVE_TEST_EXECUTION.userNotice} It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier.
+A: BYOT lets a developer connect their own NON-PRODUCTION S/4HANA sandbox, in Settings under "Your SAP test system", to check the connection and read the OData metadata of one service ($metadata, schema only). ${LIVE_TEST_EXECUTION.userNotice} It is read-only, credentials are encrypted at rest (AES-256-GCM) in a server-only store, production endpoints are blocked, and every connection is admin-gated (manually reviewed and approved) before activation. Clean-Core.io does not host or persist your ERP data — SAP transaction data is processed statelessly in memory. The feature is free; access is granted by an administrator, not by paying for a tier.
 
 ### Q: How does Clean-Core.io help modernize legacy ABAP?
-A: A deterministic ABAP evidence engine parses the custom code FIRST (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. On the Transformation stage the engine then writes the target package's skeleton itself — types, guards, the input contract and one function stub per routine with its ABAP lines — and Google Gemini writes only the business logic inside each function: ABAP Cloud artefacts on the RAP track, a Node.js (TypeScript) project on the CAP track. The process documentation and its BPMN 2.0 XML are reconstructed from the code by the engine, with no model; a draft test suite is generated for the code. All AI output is a DRAFT for architect review — it accelerates the assessment; it does not replace human judgment or SAP's own upgrade tooling.
+A: A deterministic ABAP evidence engine parses the custom code FIRST (classes, reports, function modules, custom Z-tables, SQL) and produces auditable facts — a code inventory, findings, complexity/criticality scores, and a RAP-vs-CAP routing recommendation. On the Transformation tool the engine then writes the target package's skeleton itself — types, guards, the input contract and one function stub per routine with its ABAP lines — and Google Gemini writes only the business logic inside each function: ABAP Cloud artefacts on the RAP track, a Node.js (TypeScript) project on the CAP track. The process documentation and its BPMN 2.0 XML are reconstructed from the code by the engine, with no model; a draft test suite is generated for the code. All AI output is a DRAFT for architect review — it accelerates the assessment; it does not replace human judgment or SAP's own upgrade tooling.
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -128,16 +144,16 @@ export const RAP_VS_CAP_COMPARISON = `
 const HOW_TO_STEPS = howToSteps();
 
 export const HOWTO_WALKTHROUGH = `
-## HOW-TO WALKTHROUGH — THE PHASES OF A PROJECT (/how-to)
+## HOW-TO WALKTHROUGH — THE SEVEN TOOLS OF A PROJECT (/how-to)
 
 ### Introduction
 Custom core modifications are one of the biggest barriers to S/4HANA upgrades. Clean-Core.io is a free, community-built assistant that helps SAP architects and developers assess custom ABAP and draft an in-app extension on the RAP track or a side-by-side service on the CAP track, keeping the SAP core clean. It is complementary to SAP's own tools (ADT, ATC, Readiness Check, Signavio), not a replacement, and is not affiliated with or certified by SAP. Every analysis is captured as an immutable, signed evidence Run.
 
-The phases below are the phases the product has, in the order it shows them, in the words /how-to uses. There is no other walkthrough: never describe a phase this list does not name, and never reorder them.
+The tools below are the tools the product has, in the order of the tool bar, in the words /how-to uses. There is no other walkthrough: never describe a tool this list does not name, and never reorder them.
 ${HOW_TO_STEPS
   .map((step) =>
     [
-      `### Phase ${step.n} of ${HOW_TO_STEPS.length}: ${step.title} (/project/{id}/${step.key})`,
+      `### Tool ${step.n} of ${HOW_TO_STEPS.length}: ${step.title} (/project/{id}/${step.key})`,
       step.summary,
       ...step.details.map((detail) => `- ${detail}`),
       ...step.questions.map((q) => `- **${q.question}** ${q.answer}`),
@@ -147,116 +163,133 @@ ${HOW_TO_STEPS
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PLATFORM NAVIGATION & FEATURES GUIDE
+// HOW THE PRODUCT IS LAID OUT (3.5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * The shape of the product, read from the modules that draw it: the tool order
+ * and each tool's sentence from `lib/workflow-steps.ts` (`PHASES`,
+ * `PHASE_PURPOSE` — the tool bar uses the same words), the three views from
+ * `lib/workspace-model.ts`, Re-design and its four options from `lib/redesign.ts`
+ * and `lib/decision-options.ts`, the invitation terms from `lib/invitations.ts`,
+ * the free runs from `lib/run-quota-rule.ts` and the Claude key's state from
+ * `lib/model-providers.ts`. A tool renamed or moved there reaches the assistant
+ * in the same release.
+ */
+export const PRODUCT_LAYOUT = `
+## HOW THE PRODUCT IS LAID OUT
+
+### My workspace (/dashboard)
+The list of the account's projects: create a project, open one, invite a reader to one. There is no sidebar: the shell bar at the top carries help (this assistant among it) and the account menu with Settings.
+
+### Every project opens in Analyze (/project/{id}/analyze)
+Analyze is one tool with three views of the same program, switched at the top of the page. A view is a perspective, never a permission, and it is never stored:
+${WORKSPACE_VIEWS.map((v) => `- **${VIEW_LABELS[v]}** (${v === 'business' ? 'the default view' : `?view=${v}`}): ${VIEW_QUESTIONS[v]}`).join('\n')}
+The Business view leads: the process reconstructed from the ABAP code as a BPMN map, every element with the source lines it stands on, editable, and exchanged with SAP Signavio as BPMN 2.0 XML files (there is no Signavio API connection). The IT view puts the code first. The Management view carries the risk and shows the program decision. The old workspace address /project/{id} opens Analyze.
+
+### The seven tools, in the tool bar's order
+${PHASES.map((p) => `${p.n}. **${p.label}** (/project/{id}/${p.key}): ${PHASE_PURPOSE[p.key]}`).join('\n')}
+The order is orientation, not a waterfall: any tool can be opened at any time from the tool bar. Never name a tool this list does not have, and never reorder them.
+
+### ${REDESIGN_LABEL} (/project/{id}/${REDESIGN_SEGMENT})
+The way on from Analyze into the six other tools: every "go on" link of Analyze leads here. It lists the steps in the tool order, each state read from the project, with one primary action — the next step. Its step 2, after Economics has priced the options and before Design, is the program decision: ${DECISION_OPTIONS_LINE}. The decision is recorded by the signed-in account as a self-declaration, not an organisational approval; Analyze's Management view shows it read-only.
+
+### Sharing — read access by invitation
+The project's owner invites a reader with "Invite to view" (in the header of every tool, and in My workspace). An invitation is a link bound to one confirmed e-mail address; the reader signs in with an account of that address. It gives read access only — source code included — and nothing else: no editing rights, no roles, no guest access. It expires (${INVITATION_DEFAULT_DAYS} days unless the owner chooses otherwise, at most ${INVITATION_MAX_DAYS}) and the owner can revoke it at any time.
+
+### Settings (/settings)
+- **AI model**: which key pays for the AI steps, and which steps may call a model. The findings, the extensibility route and the Clean Core Score never use a model.
+- **Your own model key (BYOK)**: a Google Gemini API key of your own. With it the limit of ${COMMUNITY_QUOTA_FALLBACK} free analysis runs no longer applies, and every model call of the account runs on your key and your contract with Google. The key is stored encrypted on the server, used only there, and never returned to the browser. ${ANTHROPIC_OWN_KEY_OFFERED ? 'An own Anthropic Claude key can be stored there as well.' : `An own Anthropic Claude key: ${ANTHROPIC_OWN_KEY_STATUS}`}
+- **All automatic AI steps**: one switch. With it off, the product calls no model for the account by itself, and this assistant answers only what needs no model (glossary terms, and inside a project the answers read straight from the code).
+- **Your SAP test system**: the tenant connection — a non-productive S/4HANA Cloud or on-premise system, for a connection check and the OData metadata of one service. Read-only, non-production only, granted by an administrator on request. The Testing tool points here; it has no tenant tab of its own.
+- **Mail and assistant**: community mail consent, and whether the floating assistant button shows on a desktop.
+
+### Portfolio (/portfolio)
+Many programs analysed in one read-only batch and read together (score bands, levels, buckets, what recurs). Open only to an account whose own model key is stored and tested. Every program stays its own project with its own signed run; nothing aggregated is signed.
+
+### Knowledge (/knowledge) and the How-to guide (/how-to)
+The knowledge pages: FAQ, glossary and the RAP vs CAP comparison. The How-to guide walks the seven tools in the order above, readable without an account, with a link into the demo from every slide. /first-run is the click-by-click guide from signing in to a downloadable package.
+
+### This assistant
+Outside a project it answers from this knowledge base. Inside a project ("Ask this case") it answers only from that project's evidence, every sentence with the source line it rests on, or says that the evidence does not answer. An explicit "What is …?" about a glossary term is answered from the glossary entry, without a model.
+`;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WHAT EACH TOOL SHOWS
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const PLATFORM_NAVIGATION = `
-## PLATFORM NAVIGATION & FEATURES
+## WHAT EACH TOOL SHOWS
 
-### Dashboard (/dashboard)
-The central workspace showing all projects. Users can create new projects, view existing ones, and access global settings.
-- **Project Cards**: Each project shows its name, description, creation date, and progress across stages.
-- **Quick Actions**: Create new project, access Knowledge Hub, the how-to guide, and Profile settings.
-- **Navigation**: The sidebar provides access to all platform areas.
+### Analyze (/project/{id}/analyze)
+Custom ABAP is brought in, and the deterministic engine reads it before any model runs.
+- **Clean Core Score**: a 5–100 grade of how far custom code is decoupled from the standard core, computed deterministically from released vs. unreleased SAP interfaces. **Higher is better.** It is not SAP's "Technical Debt Score" in the RISE with SAP methodology dashboard (SAP Cloud ALM), where a higher value means *more* technical debt — the two point in opposite directions, and SAP has no metric of this name.
+- **Findings and the extensibility route**: what stands between the program and a clean core, each finding with its lines, and the route the engine recommends.
+- **The signed run**: each analysis is frozen as an immutable, server-signed run; every other figure in the product starts from it.
 
-### Analysis Stage (/project/[id]/analyze)
-Upload and analyze legacy SAP ABAP customizations. The static analysis engine provides deep insights into code quality and Clean Core compliance.
-- **File Upload**: Drag-and-drop or browse to upload ABAP source files (.clas, .prog, .fugr, etc.)
-- **Parsing Engine**: Automatically detects ABAP patterns (SELECT statements, MODIFY, CALL FUNCTION, custom Z-tables)
-- **Clean Core Score**: A 0-100 grade of how far custom code is decoupled from the standard core, computed deterministically from released vs. unreleased SAP interfaces. **Higher is better.** It is not SAP's "Technical Debt Score" in the RISE with SAP methodology dashboard (SAP Cloud ALM), where a higher value means *more* technical debt — the two point in opposite directions, and SAP has no metric of this name.
-- **Dependency Map**: Visual map of database table dependencies, function module calls, and custom object references
-- **Risk Assessment**: Highlights high-risk patterns like direct table modifications, unreleased API usage, and hardcoded values
-
-### Solution Design Stage (/project/[id]/design)
-A model drafts the target architecture for the route on the project, and the user records which target they accept. The draft follows the track: on the RAP track a RAP design inside SAP S/4HANA, on the CAP track a SAP CAP design on ${BTP}. Never describe the CAP draft as if it were the product's only output.
-- **Architecture Blueprint**: project structure, service endpoints, data consistency, security requirements and a phased roadmap
-- **CAP track only**: the drafted layout names CDS schema files, service handlers and a Dockerfile, and the security requirements are written in ${BTP} terms (XSUAA/JWT). These are words in a model-written draft — the product does not create a destination, a trust configuration or an XSUAA binding for anyone, and it never connects to ${BTP}.
-- **Accepting a target** records the target, the account and the time on the server: a self-declaration, not an organisational approval
-- **Stale drafts**: a design or an acceptance given for a previous source is marked stale, and code is not generated from it
-- **Requirements specification** (/project/[id]/design/requirements): one module of the Design tool with a workspace of its own. On request the engine drafts the functional requirements (\"The system shall …\", with Given/When/Then criteria, Must · Should · Could and the code lines) and the non-functional requirements (each with a target value and how it is measured) from the signed source — no model call. What the code cannot answer (service levels, retention, roles, cutover, business rules marked Clarify or Change) becomes a decision with suggested answers; suggested answers are not read from the code. The owner edits, decides and exports it (Word, Markdown, Confluence, print); invited readers read it. It is not evidence and not part of the signed audit pack
-
-### Transformation Stage (/project/[id]/transformation)
-Side-by-side code conversion from legacy ABAP to modern cloud-native code.
-- **Dual-Pane Viewer**: Scroll-synchronized comparison of legacy ABAP (left) and modern TypeScript/ABAP Cloud (right)
-- **AI Transformation**: Gemini-powered code transformation engine
-- **Code Quality Annotations**: Inline remarks for security, performance, and best practices
-- **Target Selection**: Choose between ABAP Cloud RAP (in-app) or CAP Node.js (side-by-side) transformation targets
-
-### Testing Stage (/project/[id]/testing)
-Test scenarios for the generated code, and the result that is on record for them.
-- **Test Case Generation**: AI generates comprehensive test cases covering data models, validation rules, and API endpoints
-- **Mock Environment** (CAP track): Run tests without an S/4HANA tenant, against mocks in a restricted Node process
-- **Result from your SAP system** (ABAP Cloud / RAP track): nothing here runs ABAP Unit. Upload the ABAP Unit result (JUnit XML or the ADT run result), marked Imported, or confirm the result without a file, marked Confirmed as a self-declaration — never Proven
-- **Tenant Environment**: Connect a real S/4HANA sandbox to check the connection and read OData metadata (requires BYOT setup). Running tests against it is locked.
-- **S/4HANA Live Tenant Bridge**: Configure connection to your S/4HANA system with Basic Auth, OAuth 2.0, SAP API Hub Key, or SAP Destination service JSON
-- **Test Results Dashboard**: TAP-formatted logs with pass/fail status, execution time, and model-written explanations
-
-### Documentation Stage (/project/[id]/documentation)
-Process documentation read out of the whole analyzed source by the engine, with no model involved.
-- **Process Documentation**: a process description written from the code when the stage opens - a one-page summary first (what it does, key figures, the rules and risks to know, the main path), then how the process works (how a run starts, the steps and who acts at each), decision points and rules, exceptions, what it changes, systems and data (data read, integrations, controls), open questions - with the element-by-element details and evidence as an appendix, every statement with its line numbers; owner, KPIs and duration are open questions because the code does not contain them
-- **Business Process Documentation**: BPMN 2.0 process diagrams as XML (import into SAP Signavio has not been verified yet)
-- **RACI Matrix** (model-written business layer, on request): responsibility assignment matrix
-- **Standard Operating Procedures (SOPs)** (model-written business layer, on request): step-by-step procedures with exception handling
-- **Risk & Control Framework**: Audit-ready control objectives and risk assessments
-- **Export Options**: BPMN 2.0 XML, and the process description as Confluence HTML, Markdown or Word, and nothing else — the page offers no PDF export
-
-### Delivery Stage (/project/[id]/delivery)
-What is on record for handover, and the downloads that follow from it. The page shows the next step, the evidence chain, what a real handover still needs and the artefacts below, and nothing else — there is no sprint backlog, no go-live checklist, no deployment guide and no separate board presentation on it; never offer one.
-- **Audit evidence pack**: the page's main download, signed by the server over the signed run, with no model call; blocked while anything was built for a previous source, and checkable afterwards on the Verify Pack page
-- **Evidence chain**: requirement → decision → receipt → artefact, link by link — generated code is reported as not compiled or tested, never as ready to deploy, and test coverage as an estimate
-- **Delivery Bundle**: a ZIP with the generated code, the test suite and the documentation, with STATUS.md and a manifest that say what is decided, tested and only proposed; a review version, not signed
-- **Requirements specification**: the one drafted in the Design tool, opened from here
-- **Stakeholder briefing**: seven slides from the signed run and the engine's findings — no model wrote them, and they carry no savings figure
-- **Business documentation** and **Developer guide**: the operating procedures, roles and controls the model wrote on the Documentation stage, when they were generated, and the rules for the chosen route with the SAP standard tables the program uses, read from the engine's findings
-- **Process as BPMN 2.0 XML** and **Test scenarios**: the process reconstructed from the code the signed run read, every element with its lines, and the generated test scenarios
-
-### TCO Analysis (/project/[id]/tco)
-A cost model for your modernization project — priced only with figures you enter.
+### Economics (/project/{id}/tco)
+A cost model for the options — priced only with figures you enter.
 - **Your figures first**: developer rate, key-user rate and one-time investment start empty; nothing is computed until all three are entered
 - **Assumptions named**: effort coefficients, the test effect and the target score are assumptions, not observed effort
 - **Comparison View**: legacy vs. modernized annual effort cost, from your figures
 - **No money elsewhere**: the analysis itself puts no cost, savings or ROI figure on the code
 
-### Settings (/settings)
-Global platform configuration.
-- **Profile**: User profile management (name, email, company)
-- **Gemini API Key (BYOK)**: Bring Your Own Key — enter your personal Google Gemini API key (encrypted server-side with AES-256-GCM, used only via the backend proxy) for unlimited analysis runs. Without a key you get 5 free analysis runs on the shared platform key; the header shows them as "4 of 5 runs left", and Settings lists them under "Analysis runs".
-- **S/4HANA Live Tenant Integration**: Configure your S/4HANA sandbox connection for connection checks and metadata reads (same as the Testing page configuration, but global). Read-only, non-production only, admin-gated. Running tests against the tenant is locked.
-- **Access & Usage**: Clean-Core.io is 100% free. Every user has the Free Community Edition with full feature access and 5 free analysis runs; add your own Gemini key for unlimited runs. There are no paid, premium, or purchasable tiers.
+### Design (/project/{id}/design)
+A model drafts the target architecture for the route on the project, and the user records which target they accept. The draft follows the track: on the RAP track a RAP design inside SAP S/4HANA, on the CAP track a SAP CAP design on ${BTP}. Never describe the CAP draft as if it were the product's only output.
+- **Business questions first**, then the solution design, written with the model on your click
+- **CAP track only**: the drafted layout names CDS schema files, service handlers and a Dockerfile, and the security requirements are written in ${BTP} terms (XSUAA/JWT). These are words in a model-written draft — the product does not create a destination, a trust configuration or an XSUAA binding for anyone, and it never connects to ${BTP}.
+- **Accepting a target** records the target, the account and the time on the server: a self-declaration, not an organisational approval
+- **Stale drafts**: a design or an acceptance given for a previous source is marked stale, and code is not generated from it
+- **Requirements specification** (/project/{id}/design/requirements): one module of the Design tool with a workspace of its own. On request the engine drafts the functional requirements ("The system shall …", with Given/When/Then criteria, Must · Should · Could and the code lines) and the non-functional requirements (each with a target value and how it is measured) from the signed source — no model call. What the code cannot answer (service levels, retention, roles, cutover, business rules marked Clarify or Change) becomes a decision with suggested answers; suggested answers are not read from the code. The owner edits, decides and exports it (Word, Markdown, Confluence, print); invited readers read it. It is not evidence and not part of the signed audit pack
 
-### Knowledge Hub (/knowledge)
-Reference library for SAP Clean Core architecture and ${BTP} extensibility patterns.
-- **FAQ Section**: Detailed answers to common architecture questions
-- **Glossary**: Key SAP, ${BTP}, and Cloud Extensibility terms with Clean Core implications
-- **RAP vs CAP Comparison Table**: Decision framework for choosing the right extensibility paradigm
-- **Clean Core Alignment**: How findings map to SAP's Clean Core extensibility guidance. Clean-Core.io is not affiliated with or certified by SAP — it complements SAP's own tools (ADT, ATC, Readiness Check).
+### Transformation (/project/{id}/transformation)
+The target code, written for the accepted design.
+- **Engine first**: the engine writes the target package's skeleton — types, guards, the input contract and one function stub per routine with its ABAP lines — and the model writes only the business logic inside each function: ABAP Cloud artefacts on the RAP track, a Node.js (TypeScript) project on the CAP track
+- Generated code is a draft for review: it is reported as not compiled or tested until a check says otherwise
 
-### How-to guide (/how-to)
-A walkthrough of the seven phases in the product's order (${HOW_TO_STEPS.map((s) => s.title).join(' → ')}), readable without an account.
-- **One slide per phase**: what the phase does, what it does not do, and the questions a reader has at that point — the text in the HOW-TO WALKTHROUGH section above, word for word
-- **A phase index** beside the deck, and arrow keys while the deck has focus; it can be shown fullscreen
-- **A link into the demo project** from every slide, so the reader sees the phase in the product instead of a picture of it
-- **No screenshots, no narration scripts and no architecture cards**: the pictures showed a workflow the product no longer has, and the three "Core Architecture Concepts" cards (CAP/CDS, destinations, JWT/XSUAA) described configuration this product never performs. All of it was removed on 17.09.2026 — do not offer any of it.
-- **Getting started instead**: /first-run is the click-by-click guide from signing in to a downloadable package.
+### Documentation (/project/{id}/documentation)
+Process documentation read out of the whole analyzed source by the engine, with no model involved.
+- **Process Documentation**: a process description written from the code when the tool opens - a one-page summary first (what it does, key figures, the rules and risks to know, the main path), then how the process works (how a run starts, the steps and who acts at each), decision points and rules, exceptions, what it changes, systems and data (data read, integrations, controls), open questions - with the element-by-element details and evidence as an appendix, every statement with its line numbers; owner, KPIs and duration are open questions because the code does not contain them
+- **Business Process Documentation**: BPMN 2.0 process diagrams as XML (import into SAP Signavio has not been verified yet)
+- **RACI Matrix** and **Standard Operating Procedures** (model-written business layer, on request)
+- **Export Options**: BPMN 2.0 XML, and the process description as Confluence HTML, Markdown or Word, and nothing else — the page offers no PDF export
+
+### Testing (/project/{id}/testing)
+Test scenarios for the generated code, and the result that is on record for them.
+- **Test Case Generation**: the model drafts test cases covering data models, validation rules and API endpoints
+- **Here** (CAP track): the generated JavaScript/TypeScript tests run against SAP mocks in the product's own restricted test runner
+- **Your SAP system** (ABAP Cloud / RAP track): nothing here runs ABAP Unit. Upload the ABAP Unit result (JUnit XML or the ADT run result), marked Imported, or confirm the result without a file, marked Confirmed as a self-declaration — never Proven
+- **Your tenant, from here**: locked. The connection check lives in Settings, "Your SAP test system"; the Testing tool has no tenant tab
+
+### Delivery (/project/{id}/delivery)
+What is on record for handover, and the downloads that follow from it. The page shows the next step, the evidence chain, what a real handover still needs and the artefacts below, and nothing else — there is no sprint backlog, no go-live checklist, no deployment guide and no separate board presentation on it; never offer one.
+- **Audit evidence pack**: the page's main download, signed by the server over the signed run, with no model call; blocked while anything was built for a previous source, and checkable afterwards on the Verify Pack page (/verify-pack)
+- **Evidence chain**: requirement → decision → receipt → artefact, link by link — generated code is reported as not compiled or tested, never as ready to deploy, and test coverage as an estimate
+- **Delivery Bundle**: a ZIP with the generated code, the test suite and the documentation, with STATUS.md and a manifest that say what is decided, tested and only proposed; a review version, not signed
+- **Requirements specification**: the one drafted in the Design tool, opened from here
+- **Stakeholder briefing**: seven slides from the signed run and the engine's findings — no model wrote them, and they carry no savings figure
+- **Business documentation** and **Developer guide**: the operating procedures, roles and controls the model wrote in the Documentation tool, when they were generated, and the rules for the chosen route with the SAP standard tables the program uses, read from the engine's findings
+- **Process as BPMN 2.0 XML** and **Test scenarios**: the process reconstructed from the code the signed run read, every element with its lines, and the generated test scenarios
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// S/4HANA LIVE TENANT BRIDGE SETUP
+// THE TENANT CONNECTION (SETTINGS, "YOUR SAP TEST SYSTEM")
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const S4HANA_BRIDGE_GUIDE = `
-## S/4HANA LIVE TENANT BRIDGE — COMPLETE SETUP GUIDE
+## THE TENANT CONNECTION — SETTINGS, "YOUR SAP TEST SYSTEM"
 
-Clean-Core.io supports connecting non-productive S/4HANA Cloud or On-Premise tenants for OData connection checks and metadata reads. ${LIVE_TEST_EXECUTION.userNotice}
+Clean-Core.io can connect a non-productive S/4HANA Cloud or on-premise system for an OData connection check and a metadata read. ${LIVE_TEST_EXECUTION.userNotice} The connection lives in Settings under "Your SAP test system" (/settings#sap-test-system). No tool has a tenant tab of its own.
 
 ### Prerequisites
-- Admin-approved S/4HANA sandbox access. The live-connection feature is admin-gated — request it from the Testing page; an administrator reviews and grants it. It is free (there is no paid tier).
-- Access to a non-productive S/4HANA system (Development, Quality, or Sandbox)
-- A technical communication user with appropriate OData service authorizations
+- Access granted by an administrator: request it in Settings, "Your SAP test system"; an administrator reviews and grants it. It is free (there is no paid tier).
+- A non-productive S/4HANA system (Development, Quality, or Sandbox)
+- A technical communication user with the OData service authorizations needed
 
-### Setup Steps
-1. Navigate to the Testing page of your project and switch to the "Live Tenant" environment tab.
-2. Provide the HTTPS endpoint of your S/4HANA system (e.g. https://my-s4.example.com:443/sap/opu/odata/sap/API_BUSINESS_PARTNER).
+### Setting it up
+1. Open Settings and go to "Your SAP test system".
+2. Provide the HTTPS endpoint of the OData service (e.g. https://my-s4.example.com:443/sap/opu/odata/sap/API_BUSINESS_PARTNER).
+3. Choose one of the authentication methods below and enter its values.
 
 ### Authentication Methods
 
@@ -264,19 +297,16 @@ Clean-Core.io supports connecting non-productive S/4HANA Cloud or On-Premise ten
 Enter a technical communication user and password configured in your S/4HANA system.
 - **Username**: A technical communication user (e.g. CC_INTEGRATOR, CLEANCORE_API). Create this in SAP transaction SU01.
 - **Password**: The password for the technical user. Find/reset it via SU01 > User > Change Password.
-- **Where to find**: SAP GUI > Transaction SU01 > Enter username > Change tab > Set password.
 
 #### b) OAuth 2.0 Client Credentials
 For systems configured with OAuth 2.0 authentication.
 - **Token URL**: Your OAuth token endpoint (e.g. https://<subdomain>.authentication.<region>.hana.ondemand.com/oauth/token). Find it in the ${SAP_BTP_COCKPIT} > Security > Trust Configuration.
-- **Client ID**: The OAuth client ID (e.g. sb-clone-...). Find it in the ${SAP_BTP_COCKPIT} > Service Instances > View Credentials.
-- **Client Secret**: The OAuth client secret. Find it in the ${SAP_BTP_COCKPIT} > Service Instances > View Credentials.
+- **Client ID** and **Client Secret**: Find them in the ${SAP_BTP_COCKPIT} > Service Instances > View Credentials.
 - Clean-Core.io exchanges these for a Bearer token before calling the S/4 endpoint.
 
 #### c) SAP API Hub Sandbox Key
 For testing against SAP's public sandbox APIs at api.sap.com.
 - **API Key**: Your api.sap.com API key. Get it at api.sap.com > Log In > Show API Key.
-- Best for: Quick prototyping, exploring standard API schemas without a real S/4HANA system.
 
 #### d) SAP Destination service (JSON)
 Paste the full JSON export of your destination from the ${SAP_BTP_COCKPIT}.
@@ -284,18 +314,14 @@ Paste the full JSON export of your destination from the ${SAP_BTP_COCKPIT}.
 - **Where to find**: ${SAP_BTP_COCKPIT} > Connectivity > Destinations > Select destination > Export as JSON.
 
 ### Connection Testing
-- Click "Test the connection" (Settings) or "Check connection" (Testing) for a live check that asks only for one OData service's description ($metadata) and verifies:
-  - Endpoint reachability (DNS resolution, TLS certificate validity)
-  - Authentication status (credential verification)
-  - That the OData service exists
+- "Test the connection" in Settings asks only for one OData service's description ($metadata) and verifies endpoint reachability (DNS, TLS certificate), the credentials, and that the OData service exists.
 - The connection check reads no business record, only the service metadata.
-- Click "Save Connection" to persist the configuration.
 
 ### Security
-- All credentials are stored server-side in encrypted Firestore documents.
+- All credentials are stored server-side, encrypted.
 - Passwords and secrets are never exposed in client-side code or logs.
 - TLS is enforced for all outbound connections.
-- Production endpoints (.sap.com, .hana.ondemand.com) are blocked — only non-productive systems are supported.
+- Production endpoints are blocked — only non-productive systems are supported.
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -311,14 +337,15 @@ Clean-Core.io is a **free, community-built** SAP Clean Core modernization assist
 Individual SAP architects, developers, and modernization decision-makers. It is a community tool, not a multi-user enterprise procurement product (SSO/SAML, org/role management, DPA/TOMs and a commissioned external pentest are deliberately on the backlog).
 
 ### What every user gets (Free Community Edition)
-- The FULL 7-stage workflow and every feature — nothing is locked behind a paywall: analysis, solution design, code transformation, documentation (BPMN/Confluence), testing, TCO, delivery (ZIP bundle), and the server-signed audit evidence pack.
-- 5 free analysis runs on the shared platform Gemini key. Only the analysis is counted; the six tools after it are included.
+- All seven tools and every feature — nothing is locked behind a paywall: Analyze, Economics, Design, Transformation, Documentation (BPMN/Confluence), Testing, Delivery (ZIP bundle), and the server-signed audit evidence pack.
+- ${COMMUNITY_QUOTA_FALLBACK} free analysis runs on the shared platform Gemini key. Only the analysis is counted; the six tools after it are included.
 
 ### BYOK (Bring Your Own Key) — unlimited, still free
-- Add your own Google Gemini API key in Settings for UNLIMITED analysis runs. Your key is encrypted at rest (AES-256-GCM) in a server-only store and used exclusively via the secure backend proxy — it is never returned to the client. Usage is billed by Google to your key; Clean-Core.io charges no platform fee.
+- Add your own Google Gemini API key in Settings (AI model, "Your own model key") for UNLIMITED analysis runs. Your key is encrypted at rest (AES-256-GCM) in a server-only store and used exclusively via the secure backend proxy — it is never returned to the client. Usage is billed by Google to your key; Clean-Core.io charges no platform fee.
+- ${ANTHROPIC_OWN_KEY_OFFERED ? 'An own Anthropic Claude key can be stored in the same place.' : `An own Anthropic Claude key: ${ANTHROPIC_OWN_KEY_STATUS}`}
 
-### Live S/4HANA sandbox (developer, admin-gated)
-- Connecting a real, NON-PRODUCTION S/4HANA sandbox for OData connection checks is opt-in, read-only, encrypted, and admin-gated (manually approved). Running tests against it is locked. It is free — approval is granted by an administrator, not purchased.
+### S/4HANA sandbox connection (developer, admin-gated)
+- Connecting a NON-PRODUCTION S/4HANA sandbox for OData connection checks (Settings, "Your SAP test system") is opt-in, read-only, encrypted, and admin-gated (manually approved). Running tests against it is locked. It is free — approval is granted by an administrator, not purchased.
 
 ### Positioning (state honestly)
 - COMPLEMENTARY to SAP's own tools (ADT, ATC, Readiness Check, Signavio) — it does not replace them.
@@ -428,6 +455,7 @@ export const HONEST_LIMITATIONS = `
 export function buildKnowledgeBase(): string {
   return [
     FREE_COMMUNITY_MODEL,
+    PRODUCT_LAYOUT,
     TRUST_CHAIN_AND_EVIDENCE,
     SCORE_NAMING_AND_SAP_FIGURES,
     KNOWLEDGE_HUB_FAQS,

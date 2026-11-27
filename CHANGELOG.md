@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Ask this case (3.5.4, items 1–4 and 8)
+
+- "Ask this case" answers a glossary term only when asked "What is …?" / "What does … mean?" or given the bare
+  term; "Explain RAP vs CAP", "How does TCO analysis work?" and case questions that mention a term are answered
+  from the case.
+- Outside a project the assistant's model answer goes through the same output pipeline as inside one: Markdown
+  cleaned, checked against the product knowledge base (made-up figures, places and offers removed), sensitive text
+  masked, marked AI-generated.
+- Glossary, decision and no-evidence answers need no model and are given with "All automatic AI steps" off;
+  signed-out visitors are asked to sign in; rate limit, timeout, refused own key, unreachable model and a failed
+  evidence read each say what happened.
+- The assistant's knowledge base and suggested questions describe the product as it is in 3.5: Analyze with three
+  views, the seven tools in tool-bar order, the program decision, sharing by invitation, own model key and the SAP
+  test system in Settings; no Live Tenant tab, no sidebar.
+- Tests: the assistant's answer path is tested end to end without a server (mocked model, every error, project
+  detection on all tool routes and Re-design); a check that could not fail was replaced.
+
 ### Security (audit of v3.5.3)
 
 - Five findings of the security audit of v3.5.3 fixed (IDs in `docs/ROADMAP.md` §12), and an account erasure whose
@@ -20,6 +37,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   its tokens are revoked, each on its own, so one failing does not skip the other. The erasure marker is written
   without an expiry and is given one only once the sign-in is really gone, so an administrator check keeps refusing
   that account for as long as the sign-in survives (QA reviews of the v3.5.3 release, 27.11.2026).
+
+- Turning off the authenticator waits a bounded time for Firebase Auth. If it gets no answer, own-key saves stay
+  blocked until the reservation runs out, and the profile flag is never cleared while an own model key is stored, so
+  a key cannot end up on an account whose factor requirement is off.
+- The catalog level lookup reads its request body under a size bound (413 above it) and skips entries whose name is
+  over 120 characters, so one entry cannot cause unbounded work.
+- An invitation to a project or a portfolio whose mail cannot be prepared is withdrawn in the same request and
+  reported as not sent, like one the mail provider refused.
+- The test-account cleanup script refuses a `--limit` that is not a positive whole number, and it reports the real
+  accounts it keeps as a count instead of listing their addresses.
+- On the decision, "Confirm decision…" with no option chosen yet scrolls to the four options and puts the focus there;
+  before, it set the address the page already had and nothing visible happened.
+
+### Tests
+
+- Route-level tests: the public verify and survey routes, the own-key routes, model stages, the catalog lookup and two
+  project routes answer an oversized request body with 413, both with a declared length and with a streamed body
+  that has none, and read no further than the bound.
 
 ### Docs
 

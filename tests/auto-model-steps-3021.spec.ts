@@ -13,6 +13,8 @@ import { startCallsModel } from '../lib/start-run-model';
 import { runModelCallNotice } from '../lib/legal/run-notice';
 import { describeRunCost } from '../lib/run-cost';
 import { modelStagesOf, type ModelStage } from '../lib/model-stages';
+import { answerAssistantQuestion } from '../lib/assistant-answer';
+import { assistantOffNote } from '../lib/messages/model-consent';
 // Static on purpose, as in qa-full-v306.spec.ts: a run-time `await import('../lib/gemini')`
 // loads the module outside Playwright's tsconfig path mapping on the Linux runner, and its
 // `@/lib/firebase` import fails with "Cannot find module" (CI run 42267572937, shard 4).
@@ -229,13 +231,26 @@ test.describe('N2 — the first run', () => {
 });
 
 test.describe('Terms 5.4 — with the main switch off the assistant calls no model either', () => {
-  test('the panel is shown disabled with one sentence, and the proxy refuses the glossary stage', () => {
+  test('the panel says so in one sentence, calls no model, and the proxy refuses the glossary stage', async () => {
     const bot = read('components/GlossaryChatbot.tsx');
     expect(bot).toContain('const assistantOff = !inDemo && keyInfo.known && !keyInfo.autoModelSteps;');
-    expect(bot).toContain('if (assistantOff) return;');
-    expect(bot).toContain('disabled={loading || assistantOff || !inputValue.trim()}');
+    expect(bot).toContain('modelOff: assistantOff,');
     expect(bot).toContain('{assistantOffNote()}');
     expect(read('app/api/gemini/route.ts')).toContain("if ((automatic || startNarrative || stage === 'glossary') && !autoModelStepsOn(");
+    // Roadmap 3.5.4 (3): the input stays open — a glossary term and an answer
+    // read from the code need no model — but no question reaches one.
+    let called = false;
+    const deps = {
+      loadCase: async () => { throw new Error('not read outside a project'); },
+      callModel: async () => { called = true; return 'x'; },
+      knowledgeBase: () => '',
+    };
+    const reply = await answerAssistantQuestion(
+      { question: 'How do I share a project?', projectId: null, signedIn: true, modelOff: true, inDemo: false },
+      deps,
+    );
+    expect(reply?.text).toBe(assistantOffNote());
+    expect(called).toBe(false);
   });
 
   test('Settings shows the one main switch under its consent label', () => {

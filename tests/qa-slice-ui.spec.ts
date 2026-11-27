@@ -65,14 +65,13 @@ test('2b1101d8e13e — a new place clears the draft and the busy state, and drop
   // 5ee5ab25f097: both refs follow the render in a layout effect, so no event can see the old values.
   expect(src).toMatch(/const conversationRef = useRef\(conversation\);\s*useLayoutEffect\(/);
   expect(src).toMatch(/const currentProjectRef = useRef<string \| null>\(projectId\);\s*useLayoutEffect\(/);
-  expect(send).toContain('await answerInProject(projectId, text, asked);');
-  expect(send.match(/if \(!superseded\(\)\) setLoading\(false\);/g), 'a finally clears the next question\'s busy state').toHaveLength(2);
+  // Since 3.5.4 both places run one pipeline (`lib/assistant-answer.ts`), which
+  // checks `stale` after each of its waits (walked in `tests/ask-pipeline.spec.ts`);
+  // the panel hands it the check and asks it once more before it writes.
+  expect(send).toContain('const moved = () => superseded() || currentProjectRef.current !== askedIn;');
+  expect(send).toContain('stale: moved,');
+  expect(send).toMatch(/if \(reply && !moved\(\)\) \{/);
+  expect(send.match(/if \(!superseded\(\)\) setLoading\(false\);/g), 'a finally clears the next question\'s busy state').toHaveLength(1);
   expect(send, 'an unconditional setLoading(false) is back').not.toMatch(/^\s*setLoading\(false\);/m);
-  expect(send.match(/if \(currentProjectRef\.current !== null \|\| superseded\(\)\) return;/g), 'a late product answer or failure lands in a new conversation').toHaveLength(2);
-  expect(send).toContain('if (currentProjectRef.current !== projectId || superseded()) return;');
-
-  const inProject = src.slice(src.indexOf('const answerInProject = async'), src.indexOf('const handleSend = async'));
-  expect(inProject).toContain('const moved = () => currentProjectRef.current !== id || conversationRef.current !== asked;');
-  expect(inProject.match(/if \(moved\(\)\) return;/g), 'an await in the case answer is not followed by the check').toHaveLength(2);
-  expect(inProject.match(/\bawait\b/g)).toHaveLength(2);
+  expect(send.match(/\bawait\b/g), 'a second wait in the panel is not covered by the pipeline\'s checks').toHaveLength(1);
 });

@@ -4,6 +4,9 @@ import path from 'path';
 import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '../lib/url-validation';
 import { QuotaError, mfaRefusal } from '../lib/firebase-admin';
 import { PORTFOLIO_SELECTION_BODY_LIMITS, PORTFOLIO_SELECTION_MAX_PROJECTS } from '../lib/portfolio/limits';
+import { oversizedRequests } from './helpers/oversized-request';
+import { POST as exportVerifyPOST } from '../app/api/export/verify/route';
+import { POST as surveyVotePOST } from '../app/api/survey/vote/route';
 
 /**
  * Request bodies are read under a byte bound before they are parsed, and an MFA
@@ -87,6 +90,8 @@ test('the named routes no longer parse a request body without a bound', () => {
     'app/api/survey/vote/route.ts',
     'app/api/secrets/gemini/route.ts',
     'app/api/secrets/gemini/test/route.ts',
+    // And the catalog lookup.
+    'app/api/abcd-classify/route.ts',
   ];
   for (const rel of routes) {
     const src = read(rel).replace(/\r\n/g, '\n');
@@ -108,6 +113,26 @@ test('the named routes no longer parse a request body without a bound', () => {
         new RegExp(`^\\s*if \\(${name} === null\\b[^\\n{]*\\)\\s*(?:\\{\\s*\\n\\s*)?return (?:NextResponse\\.json\\([^;]*\\{ status: 413 \\}\\)|bad\\([^;]*, 413\\));$`),
       );
     }
+  }
+});
+
+// The two public routes, run as handlers in this process (no server, no emulator: the rate limit is off under the
+// emulator flag the config sets, and both refuse before any database call). The signed-in routes are in
+// tests/bounded-request-bodies-routes.spec.ts, which needs the emulators for the account they gate on.
+test.describe('the public routes answer an oversized body with 413', () => {
+  const routes = [
+    ['POST /api/export/verify', exportVerifyPOST, 'http://localhost/api/export/verify'],
+    ['POST /api/survey/vote', surveyVotePOST, 'http://localhost/api/survey/vote'],
+  ] as const;
+  for (const [name, handler, url] of routes) {
+    test(`${name}: a declared length and a stream without one`, async () => {
+      for (const { kind, request: make, pulled, maxPulls } of oversizedRequests(url, 64 * 1024)) {
+        const res = await handler(make());
+        expect(res.status, `${name}, ${kind}`).toBe(413);
+        expect(await res.json(), `${name}, ${kind}`).toMatchObject({ code: 'too-large' });
+        expect(pulled(), `${name}, ${kind}: the body was read past the bound`).toBeLessThanOrEqual(maxPulls);
+      }
+    });
   }
 });
 

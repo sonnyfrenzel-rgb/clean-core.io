@@ -7,65 +7,42 @@ import CcIconButton from '@/components/cc/IconButton';
 import CcField from '@/components/cc/Field';
 import { usePathname } from 'next/navigation';
 import { callGemini } from '@/lib/gemini';
-import { GLOSSARY_ITEMS } from '@/lib/glossary';
-import { glossaryAnswerFor } from '@/lib/glossary-lookup';
+import { getAuthIfStarted } from '@/lib/firebase';
 import { buildKnowledgeBase } from '@/lib/chatbot-knowledge';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { cn } from '@/lib/utils';
 import { renderMarkdownSafe } from '@/lib/sanitize-html';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { engineVersionOfProject } from '@/lib/run-engine-version';
-import { readSource, decisionLines, type DecisionLine } from '@/lib/first-look';
-import { buildWorkspaceSearchIndex, type SearchResult } from '@/lib/workspace-search';
+import { readSource, decisionLines } from '@/lib/first-look';
+import { buildWorkspaceSearchIndex } from '@/lib/workspace-search';
+import { preAnsweredDecisionAnswer, PRE_ANSWERED_QUESTION } from '@/lib/case-answer';
 import {
-  answerCase,
-  droppedSentencesNote,
-  guardCaseAnswer,
-  preAnsweredDecisionAnswer,
-  PRE_ANSWERED_QUESTION,
-  refusedProposalText,
-  type CaseFact,
-} from '@/lib/case-answer';
-import { screenSensitiveText, sensitiveTextNote } from '@/lib/sensitive-text';
-import { cleanModelText } from '@/lib/model-text';
-import { provenance, type ProvenanceValue } from '@/lib/provenance';
+  answerAssistantQuestion,
+  assistantProjectId,
+  ASSISTANT_CHIPS,
+  type AssistantReply,
+  type CaseEvidence,
+} from '@/lib/assistant-answer';
+import { provenance } from '@/lib/provenance';
 import { aiAssistantNotice } from '@/lib/ai-assistant-notice';
 import { OWN_CLAUDE_MODEL, PROVIDER_LABEL } from '@/lib/model-providers';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { assistantOffNote } from '@/lib/messages/model-consent';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { BTP_FIRST } from '@/lib/sap-naming';
-import { isDemoPath, DEMO_ASSISTANT_NOTICE } from '@/lib/demo-marks';
+import { isDemoPath } from '@/lib/demo-marks';
 
-interface Message {
+/**
+ * One message of the conversation. A bot message is an `AssistantReply`
+ * (`lib/assistant-answer.ts`): the glossary mark and its source, the line
+ * anchors and evidence of an in-project answer, the provenance row and
+ * "No model call" where they are true — and nothing where they are not, so a
+ * badge appears only where it holds. The greeting carries none of them.
+ */
+interface Message extends AssistantReply {
   sender: 'user' | 'bot';
-  text: string;
   timestamp: string;
-  /**
-   * Set when this message was answered from the glossary rather than a model
-   * call — roadmap 6.6, `DESIGN.md` §6.1: *"a question 'What is …?' about a
-   * glossary term is answered by the entry itself … the answer states when it
-   * comes from the glossary"*. Undefined on every other message, including the
-   * greeting, so the badge appears only where it is true.
-   */
-  source?: 'glossary';
-  /** The SAP source the entry names, when it has one (ADR-034). */
-  glossarySource?: string;
-  /**
-   * Roadmap 6.8 — inside a project every statement is bound to the code it
-   * rests on. These are the line anchors of the evidence the answer was built
-   * from; for a model proposal they are the anchors the proposal *itself*
-   * cited, not the ones it was offered, because the offer is not the claim.
-   * An in-project bot message with none of these is by construction one of the
-   * two "nothing to show" answers — never an assertion about the code.
-   */
-  anchors?: string[];
-  /** The evidence itself, listed under an answer that has to show its working. */
-  evidence?: readonly CaseFact[];
-  /** Which row of `lib/provenance.ts` this answer is. Absent outside a project. */
-  provenance?: ProvenanceValue;
-  /** True when no model was called for this message — the glossary and case paths. */
-  noModelCall?: boolean;
 }
 
 /**
@@ -73,6 +50,13 @@ interface Message {
  * question, never the conversation so far (owner decision 30.09.2026), so a
  * follow-up has to carry its own context.
  */
+/**
+ * Said beside the "assistant is off" note: with the account's automatic AI
+ * steps off no model is called, but what needs none is still answered.
+ */
+const ANSWERS_WITHOUT_MODEL_NOTE =
+  'Glossary terms, and inside a project the answers read straight from the code, still come without a model.';
+
 const INDEPENDENT_QUESTION_NOTE =
   'Each question is answered on its own, without the earlier messages — include the context you need.';
 
@@ -82,57 +66,30 @@ const INDEPENDENT_QUESTION_NOTE =
  * The index is the one roadmap 6.6 already built (`lib/workspace-search.ts`),
  * read off the same reading of the source the workspace itself renders, so a
  * question and the ⌘K dialog cannot disagree about what is in this code.
+ *
+ * A failed read throws: `answerAssistantQuestion` says that the evidence could
+ * not be loaded (or that this account may not read it), and never falls back
+ * to general SAP knowledge — that is exactly the boundary this step draws.
  */
-interface CaseContext {
-  projectId: string;
-  legacyCode: string;
-  index: SearchResult[];
-  decisions: DecisionLine[];
-  /** Why there is no evidence, when there is none — shown instead of silence. */
-  unreadable: string | null;
-}
-
-async function loadCaseContext(projectId: string): Promise<CaseContext> {
-  const empty = (unreadable: string | null): CaseContext => ({
+async function loadCaseContext(projectId: string): Promise<CaseEvidence> {
+  const empty = (unreadable: string | null): CaseEvidence => ({
     projectId, legacyCode: '', index: [], decisions: [], unreadable,
   });
 
-  try {
-    const project = await loadProjectAndHydrate(projectId);
-    if (!project) return empty('This project could not be read, so there is no evidence to answer from.');
+  const project = await loadProjectAndHydrate(projectId);
+  if (!project) return empty('This project could not be read, so there is no evidence to answer from.');
 
-    const legacyCode = typeof project.legacyCode === 'string' ? project.legacyCode : '';
-    const reading = legacyCode.trim() ? readSource(legacyCode, engineVersionOfProject(project)) : null;
-    return {
-      projectId,
-      legacyCode,
-      index: buildWorkspaceSearchIndex({ projectId, project, reading }),
-      decisions: reading ? decisionLines(reading.skeleton) : [],
-      unreadable: reading ? null : 'No source has been staged in this project, so there is nothing to read an answer out of.',
-    };
-  } catch {
-    // A failed read is not a reason to fall back to general SAP knowledge —
-    // that is exactly the boundary this step draws. An empty index makes every
-    // question end in "no evidence", which is the honest outcome.
-    return empty('The evidence of this project could not be loaded, so nothing can be answered from it.');
-  }
+  const legacyCode = typeof project.legacyCode === 'string' ? project.legacyCode : '';
+  const reading = legacyCode.trim() ? readSource(legacyCode, engineVersionOfProject(project)) : null;
+  return {
+    projectId,
+    legacyCode,
+    index: buildWorkspaceSearchIndex({ projectId, project, reading }),
+    decisions: reading ? decisionLines(reading.skeleton) : [],
+    unreadable: reading ? null : 'No source has been staged in this project, so there is nothing to read an answer out of.',
+  };
 }
 
-/**
- * The glossary in the prompt: the names, not the definitions.
- *
- * It used to be `JSON.stringify(GLOSSARY_ITEMS, null, 2)` — every entry, indented,
- * in the system prompt of **every** model call. Measured on 23.09.2026 after 6.6
- * grew the glossary from 13 entries to 45: **30,044 characters, about 8,584
- * tokens, on every single call.** The names alone are 308.
- *
- * What makes the definitions unnecessary is a change one step earlier: since 6.6
- * and 6.8 a glossary question is answered *from the entry*, without a model
- * (`glossaryAnswerFor`, and the case branch in `handleSend` returns before any
- * call). The model was carrying the text of answers it no longer gives. What it
- * still needs is to know which terms are spoken for, so it does not define one
- * differently in passing — and that is a list of names.
- */
 /**
  * The time a message was written, on the reader's clock, 24-hour and with the
  * zone — `DESIGN.md` §3 ("times with time zone"), e.g. "14:05 GMT+2". It used
@@ -151,14 +108,9 @@ function clockNow(): string {
   return `${part('hour')}:${part('minute')}${zone ? ` ${zone === 'GMT' ? 'UTC' : zone}` : ''}`;
 }
 
-const glossaryTermList = (): string =>
-  Object.values(GLOSSARY_ITEMS)
-    .map((item) => item.term)
-    .join(', ');
-
 const greeting = (): Message => ({
   sender: 'bot',
-  text: `Hello. I am the Clean-Core.io Assistant. I help with Clean-Core.io — its stages, views and results — and with the clean core concepts it works with: clean core levels A–D, in-app extensions (RAP), side-by-side CAP extensions on ${BTP_FIRST}, released standard APIs and abapGit handovers. I am not SAP product support. What would you like to know?`,
+  text: `Hello. I am the Clean-Core.io Assistant. I help with Clean-Core.io — its tools, views and results — and with the clean core concepts it works with: clean core levels A–D, in-app extensions (RAP), side-by-side CAP extensions on ${BTP_FIRST}, released standard APIs and abapGit handovers. I am not SAP product support. What would you like to know?`,
   timestamp: clockNow(),
 });
 
@@ -219,10 +171,7 @@ export default function GlossaryChatbot() {
    * source of truth, not a provider tree).
    */
   const pathname = usePathname();
-  const projectId = useMemo(() => {
-    const match = /^\/project\/([^/]+)/.exec(pathname ?? '');
-    return match ? decodeURIComponent(match[1]) : null;
-  }, [pathname]);
+  const projectId = useMemo(() => assistantProjectId(pathname), [pathname]);
 
   /**
    * One name for the assistant, derived from the one thing that decides what it
@@ -261,8 +210,8 @@ export default function GlossaryChatbot() {
   const assistantLabel = projectId ? 'Ask this case' : 'Ask the assistant';
   const inDemo = isDemoPath(pathname);
 
-  const [caseContext, setCaseContext] = useState<CaseContext | null>(null);
-  const caseContextRef = useRef<Promise<CaseContext> | null>(null);
+  const [caseContext, setCaseContext] = useState<CaseEvidence | null>(null);
+  const caseContextRef = useRef<Promise<CaseEvidence> | null>(null);
   const caseProjectRef = useRef<string | null>(null);
 
   /**
@@ -284,13 +233,20 @@ export default function GlossaryChatbot() {
     currentProjectRef.current = projectId;
   }, [projectId]);
 
-  const ensureCase = (id: string): Promise<CaseContext> => {
+  const ensureCase = (id: string): Promise<CaseEvidence> => {
     if (caseProjectRef.current !== id || !caseContextRef.current) {
       caseProjectRef.current = id;
-      caseContextRef.current = loadCaseContext(id).then((ctx) => {
+      const reading = loadCaseContext(id).then((ctx) => {
         setCaseContext(ctx);
         return ctx;
       });
+      // A failed read is not kept: the next question reads again. The warm-up
+      // below does not wait for it, so the failure is marked handled here and
+      // said by the question that awaits it.
+      reading.catch(() => {
+        if (caseContextRef.current === reading) caseContextRef.current = null;
+      });
+      caseContextRef.current = reading;
     }
     return caseContextRef.current;
   };
@@ -394,222 +350,53 @@ export default function GlossaryChatbot() {
         ...(hasPreAnswer ? [PRE_ANSWERED_QUESTION] : []),
         'What is Clean Core?',
       ]
-    : [
-        'Explain RAP vs CAP',
-        'How do I set up S/4 Live Tenant?',
-        'Walk me through the platform',
-        'What is Clean Core?',
-        'How does TCO analysis work?',
-        'What is BYOK?'
-      ];
-
-    const say = (message: Omit<Message, 'sender' | 'timestamp'>) =>
-    setMessages((prev) => [...prev, { sender: 'bot', timestamp: clockNow(), ...message }]);
+    : ASSISTANT_CHIPS;
 
   /**
-   * The in-project half — roadmap 6.8. Everything it can say comes out of
-   * `lib/case-answer.ts`, and there are exactly three outcomes:
+   * One question, answered by `answerAssistantQuestion` (`lib/assistant-answer.ts`)
+   * — the same order in both places: the glossary for an explicit "What is …?",
+   * the demo's no-model notice, inside a project the project's own evidence
+   * (roadmap 6.8: never the knowledge base, on any path), outside one the
+   * knowledge base and the model. Glossary, decision and no-evidence answers
+   * need no model and are given with the account's automatic AI steps off;
+   * every model answer goes through the same output pipeline.
    *
-   *   - **no evidence** — no model call at all, and the reader is told that
-   *     nothing in this project matched. This is the outcome the step is
-   *     really about: the assistant does not fall back on general SAP
-   *     knowledge to have *something* to say.
-   *   - **answered from the evidence** — the pre-answered decision question of
-   *     roadmap 2.7. Also no model call; marked *Reconstructed*, because that
-   *     is what a statement read off the code is (`DESIGN.md` §4).
-   *   - **a model proposal, grounded** — the model sees the anchored evidence
-   *     and nothing else, and only the sentences of the reply that cite one of
-   *     those anchors are shown (`guardCaseAnswer`). Marked *AI-generated*.
+   * The assistant names no workflow stage — `'glossary'` is the assistant's
+   * own — so it charges no analysis quota.
    */
-  const answerInProject = async (id: string, text: string, asked: number): Promise<void> => {
-    const moved = () => currentProjectRef.current !== id || conversationRef.current !== asked;
-    const context = await ensureCase(id);
-    if (moved()) return;
-    const decision = answerCase(
-      context.index,
-      { projectId: id, legacyCode: context.legacyCode },
-      text,
-      context.decisions,
-    );
-
-    if (decision.mode === 'no-evidence') {
-      say({
-        text: context.unreadable ?? decision.text,
-        anchors: [],
-        provenance: 'not-determined',
-        noModelCall: true,
-      });
-      return;
-    }
-
-    if (decision.mode === 'deterministic') {
-      say({
-        text: decision.text,
-        anchors: [...decision.anchors],
-        provenance: 'reconstructed',
-        noModelCall: true,
-      });
-      return;
-    }
-
-    const raw = await callGemini(decision.prompt, PRODUCT_GEMINI_MODEL, false, 'glossary');
-    if (moved()) return;
-    // §3.1 — what the model wrote appears like every other text here. The chip
-    // says where it came from; the prose must not.
-    const { text: cleaned } = cleanModelText(raw ?? '', 'screen');
-    // Roadmap 3.0.18 item 9 — read back sentence by sentence: a sentence
-    // without an offered anchor is dropped, an invented anchor refuses the
-    // whole reply, and personal data or a secret in what is left is masked.
-    const guarded = guardCaseAnswer(cleaned, decision.facts, context.legacyCode);
-
-    if (guarded.outcome === 'refused') {
-      say({
-        text: refusedProposalText(guarded.reason),
-        anchors: [],
-        evidence: decision.facts,
-        provenance: 'not-determined',
-      });
-      return;
-    }
-
-    const screened = screenSensitiveText(guarded.text);
-    const notes = [
-      ...(guarded.dropped > 0 ? [droppedSentencesNote(guarded.dropped)] : []),
-      ...(screened.findings.length > 0 ? [sensitiveTextNote(screened.findings)] : []),
-    ];
-    say({
-      text: [screened.text, ...notes].join('\n\n'),
-      anchors: guarded.anchors,
-      evidence: decision.facts,
-      provenance: 'proposed',
-    });
-  };
-
   const handleSend = async (text: string) => {
     if (!text.trim() || loading) return;
-    // Legal review 06.11.2026 (Terms 5.4): with "All automatic AI steps" off the
-    // assistant calls no model for this account; the proxy refuses it as well.
-    if (assistantOff) return;
 
-    const userMessage: Message = {
-      sender: 'user',
-      text,
-      timestamp: clockNow()
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => [...prev, { sender: 'user', text, timestamp: clockNow() }]);
     setInputValue('');
-
-    // Roadmap 6.6 / `DESIGN.md` §6.1 — a question that names a glossary term is
-    // answered from that entry, never by asking Gemini to restate it. Checked
-    // and answered before `setLoading(true)` and before anything below reaches
-    // `callGemini`, so a test can prove the absence of a model call by watching
-    // the network rather than trusting this comment.
-    const glossary = glossaryAnswerFor(text);
-    if (glossary) {
-      const botMessage: Message = {
-        sender: 'bot',
-        text: glossary.answer,
-        timestamp: clockNow(),
-        source: 'glossary',
-        glossarySource: glossary.item.source,
-      };
-      setMessages((prev) => [...prev, botMessage]);
-      return;
-    }
-
-    // The demo promises no model call on every
-    // screen, and this panel is on every screen. Past the glossary there is
-    // nothing it may answer there without one, so it says that and stops.
-    if (inDemo) {
-      setMessages((prev) => [
-        ...prev,
-        { sender: 'bot', text: DEMO_ASSISTANT_NOTICE, timestamp: clockNow(), noModelCall: true, provenance: 'not-determined' },
-      ]);
-      return;
-    }
-
     setLoading(true);
-    // The conversation this question belongs to; see the reset above.
-    const asked = conversationRef.current;
-    const superseded = () => conversationRef.current !== asked;
 
-    // Roadmap 6.8 — inside a project the knowledge base below is not consulted
-    // at all. This branch returns in every case, including its own failures:
-    // falling through to the product assistant would be the boundary breaking
-    // in exactly the place nobody would notice it.
-    if (projectId) {
-      try {
-        await answerInProject(projectId, text, asked);
-      } catch (error) {
-        console.error('Ask this case error:', error);
-        if (currentProjectRef.current !== projectId || superseded()) return;
-        say({
-          text: 'The evidence of this project could not be read just now, so there is no grounded answer. Reload the project page and ask again.',
-          provenance: 'not-determined',
-        });
-      } finally {
-        if (!superseded()) setLoading(false);
-      }
-      return;
-    }
+    // The conversation and the place this question belongs to; see the reset
+    // above. An answer that arrives after the reader moved on is dropped.
+    const asked = conversationRef.current;
+    const askedIn = projectId;
+    const superseded = () => conversationRef.current !== asked;
+    const moved = () => superseded() || currentProjectRef.current !== askedIn;
 
     try {
-      // Build comprehensive system prompt with full platform knowledge base
-      const knowledgeBase = buildKnowledgeBase();
-
-      const systemPrompt = `You are the Clean-Core.io Assistant. You help the people who use Clean-Core.io — business readers, SAP architects and developers — with the product itself (its stages, views, results and limits) and with the clean core method and concepts it works with. You are NOT SAP product support: for how an SAP product, a release, a licence, an SAP note or a system configuration works, say that this is a question for SAP or the reader's SAP team, and answer only what Clean-Core.io itself does with it.
-
-ABOUT CLEAN-CORE.IO (positioning — always represent it honestly):
-- It is a FREE, community-built assessment & modernization assistant. Every feature is available to every user; the only limit is 5 free analysis runs (bring your own Google Gemini API key for unlimited runs). There are no paid, premium, or "pilot" tiers to buy.
-- It is COMPLEMENTARY to SAP's own tooling (ADT, ATC, Readiness Check, Signavio) — it does not replace them, and it is NOT affiliated with, endorsed by, or certified by SAP SE. Never claim SAP certification or approval.
-- AI output (transformed code, narratives, estimates) is a DRAFT for human review — never present it as production-ready or as formal SAP/legal/security advice. Be honest about limitations.
-- The live S/4HANA sandbox connection is read-only, encrypted, non-production only, and admin-gated.
-Do not invent features, metrics, or success percentages that are not in the knowledge base below.
-
-You have access to the Clean-Core.io platform knowledge base below. Use it to answer questions about any part of the platform accurately and in detail.
-
-## GLOSSARY TERMS THIS PRODUCT DEFINES
-These are answered from the glossary itself, without you. Do not contradict them,
-and do not define them yourself — if one is asked about plainly, the entry has
-already answered before this prompt was built.
-${glossaryTermList()}
-
-${knowledgeBase}
-
-CRITICAL GUARDRAILS AND SAFETY RULES:
-- You must under no circumstances be used or "abused" for general-purpose questions unrelated to Clean-Core.io or the clean core concepts it works with (clean core, its levels, extensibility routes, released APIs).
-- If the user asks about unrelated topics (e.g. cooking recipes, general Python/Java coding outside of SAP contexts, writing stories/poetry, weather, non-SAP history, pop culture, sports), you must politely but firmly refuse to answer. You should reply EXACTLY in this tone:
-"My apologies, but as the Clean-Core.io Assistant I only help with Clean-Core.io and the clean core concepts it works with. I am not SAP product support. Please ask a question about Clean-Core.io or clean core."
-- Keep your answers highly professional, factual, and technically accurate. Use clear corporate English (or German if the user initiates the conversation in German). Use markdown formatting for structures, code snippets, or bullet points. Avoid marketing fluff.
-- When referencing platform pages, mention the navigation path (e.g. "Go to Testing > Live Tenant tab") to help users find features quickly.`;
-
-      const promptContext = `${systemPrompt}\n\nUser Question: ${text}\nAssistant Response:`;
-
-      const responseText = await callGemini(promptContext, PRODUCT_GEMINI_MODEL, false, 'glossary');
-      // Asked outside a project; the reader has since opened one, where this
-      // panel answers from that project's evidence only.
-      if (currentProjectRef.current !== null || superseded()) return;
-
-      const botMessage: Message = {
-        sender: 'bot',
-        text: responseText || 'My apologies, I could not compile a response. Please rephrase your question.',
-        timestamp: clockNow(),
-        // 3.0.21: a model's answer carries the AI-generated provenance, outside a
-        // project as inside one; a fallback sentence of ours is not a model's.
-        ...(responseText ? { provenance: 'proposed' as const } : {}),
-      };
-
-      setMessages((prev) => [...prev, botMessage]);
-    } catch (error) {
-      console.error('Chatbot error:', error);
-      if (currentProjectRef.current !== null || superseded()) return;
-      const botMessage: Message = {
-        sender: 'bot',
-        text: 'The assistant could not answer just now. Ask again in a moment; if you use your own Gemini API key, check it in Settings.',
-        timestamp: clockNow()
-      };
-      setMessages((prev) => [...prev, botMessage]);
+      const reply = await answerAssistantQuestion(
+        {
+          question: text,
+          projectId,
+          signedIn: Boolean(getAuthIfStarted()?.currentUser),
+          modelOff: assistantOff,
+          inDemo,
+        },
+        {
+          loadCase: ensureCase,
+          callModel: (prompt) => callGemini(prompt, PRODUCT_GEMINI_MODEL, false, 'glossary'),
+          knowledgeBase: () => buildKnowledgeBase(),
+          stale: moved,
+        },
+      );
+      if (reply && !moved()) {
+        setMessages((prev) => [...prev, { sender: 'bot', timestamp: clockNow(), ...reply }]);
+      }
     } finally {
       if (!superseded()) setLoading(false);
     }
@@ -909,7 +696,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                 <CcButton
                   variant="ghost"
                   onClick={() => handleSend(chip)}
-                  disabled={loading || assistantOff}
+                  disabled={loading}
                 >
                   {chip}
                 </CcButton>
@@ -933,7 +720,8 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
               role="status"
               className="m-0 shrink-0 border-t border-cc-line bg-cc-surface px-4 pt-2 text-[12px] leading-snug font-semibold text-cc-ink"
             >
-              {assistantOffNote()}
+              {assistantOffNote()}{' '}
+              <span className="font-medium text-cc-ink-muted">{ANSWERS_WITHOUT_MODEL_NOTE}</span>
             </p>
           ) : null}
 
@@ -962,7 +750,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
                     placeholder={projectId ? 'Ask about this case…' : 'Ask about Clean-Core.io or clean core…'}
                     value={inputValue}
                     onChange={(e) => setInputValue(e.target.value)}
-                    disabled={loading || assistantOff}
+                    disabled={loading}
                     className={className}
                   />
                 )}
@@ -971,7 +759,7 @@ CRITICAL GUARDRAILS AND SAFETY RULES:
             <CcButton
               type="submit"
               variant="primary"
-              disabled={loading || assistantOff || !inputValue.trim()}
+              disabled={loading || !inputValue.trim()}
               icon={<Send size={16} aria-hidden />}
             >
               Send

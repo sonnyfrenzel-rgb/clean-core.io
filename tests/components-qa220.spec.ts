@@ -95,15 +95,16 @@ test.describe('state and ordering', () => {
 
   test('f7d0c940e9ab · an answer for a project the reader has left is dropped', () => {
     const src = code('components/GlossaryChatbot.tsx');
-    const helper = src.slice(src.indexOf('const answerInProject'), src.indexOf('const handleSend'));
-    // After each wait — the evidence read and the model call — before anything is said.
-    // The check also drops an answer for an earlier conversation in the same
-    // project (2b1101d8e13e), so it is `moved()` rather than the bare comparison.
-    expect(helper).toContain('const moved = () => currentProjectRef.current !== id ||');
-    expect(helper.match(/if \(moved\(\)\) return;/g)?.length).toBe(2);
     const send = src.slice(src.indexOf('const handleSend'));
-    expect(send).toMatch(/console\.error\('Ask this case error:', error\);\s*if \(currentProjectRef\.current !== projectId \|\| superseded\(\)\) return;/);
-    expect(send).toMatch(/callGemini\(promptContext[^;]*;\s*if \(currentProjectRef\.current !== null \|\| superseded\(\)\) return;/);
+    // The place and the conversation the question was asked in. The check also
+    // drops an answer for an earlier conversation in the same project
+    // (2b1101d8e13e), so it is `moved()` rather than the bare comparison.
+    expect(send).toContain('const moved = () => superseded() || currentProjectRef.current !== askedIn;');
+    // Handed to the pipeline, which checks it after each wait (`tests/ask-pipeline.spec.ts`), and checked once more before anything is said.
+    expect(send).toContain('stale: moved,');
+    expect(send).toMatch(/if \(reply && !moved\(\)\) \{/);
+    const lib = code('lib/assistant-answer.ts');
+    expect(lib.match(/if \(stale\(\)\) return null;/g)?.length).toBeGreaterThanOrEqual(4);
   });
 
   test('e62f8d0d8462 · an older diagram render does not overwrite a newer one', () => {

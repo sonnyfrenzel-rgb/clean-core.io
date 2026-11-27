@@ -337,10 +337,12 @@ test.describe('where model text is accepted', () => {
   const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8').split('\r\n').join('\n');
 
   test('"Ask this case" reads the reply back with the sentence guard and screens what it shows', () => {
-    const src = read('components/GlossaryChatbot.tsx');
-    expect(src).toContain('guardCaseAnswer(cleaned, decision.facts, context.legacyCode)');
+    // The pipeline the panel runs (`lib/assistant-answer.ts`); walked end to end in `tests/ask-pipeline.spec.ts`.
+    const src = read('lib/assistant-answer.ts');
+    expect(src).toContain('guardCaseAnswer(cleaned, facts, legacyCode)');
     expect(src).toContain('screenSensitiveText(guarded.text)');
     expect(src).not.toMatch(/citedAnchors\(cleaned/);
+    expect(read('components/GlossaryChatbot.tsx')).not.toContain('guardCaseAnswer(');
   });
 
   test('the documentation stores the business layer screened', () => {

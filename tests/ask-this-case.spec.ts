@@ -44,9 +44,8 @@ import { TERMS_VERSION } from '../lib/constants';
  *      without an anchor never becomes a fact; a model reply that cites none
  *      of the anchors it was handed is dropped rather than shown.
  *   3. **The knowledge base of `lib/chatbot-knowledge.ts` is out of reach
- *      inside a project.** Source-level, because the defect would be an
- *      ordering one: a branch that falls through on its own error path would
- *      answer from general SAP knowledge exactly when nobody is watching.
+ *      inside a project**, on the answer path and on every failure path —
+ *      walked as behaviour with mocks in `tests/ask-pipeline.spec.ts`.
  *   4. **Roadmap 6.6 still holds.** The glossary answer is still reached before
  *      anything else and still costs no model call — this step added a path in
  *      front of the model, and had to not add one in front of the glossary.
@@ -265,75 +264,32 @@ test.describe('the fixed wordings pass the §3.1 filter', () => {
 
 test.describe('no model call and no knowledge base, by construction', () => {
   const ROOT = path.resolve(__dirname, '..');
-  // Normalised to LF: the working copies here are CRLF on Windows and LF in
-  // CI, and a guard that asserts on the order of two lines must not depend on
-  // which of the two checked it out.
   const read = (rel: string) =>
     fs.readFileSync(path.join(ROOT, rel), 'utf8').split('\r\n').join('\n');
 
-  test('lib/case-answer.ts imports neither the Gemini proxy nor `fetch`', () => {
-    const src = read('lib/case-answer.ts');
-    expect(src).not.toMatch(/from ['"]\.\/gemini['"]/);
-    expect(src).not.toMatch(/from ['"]@\/lib\/gemini['"]/);
-    expect(src).not.toMatch(/\bfetch\(/);
-  });
+  for (const file of ['lib/case-answer.ts', 'lib/assistant-answer.ts']) {
+    test(`${file} imports neither the Gemini proxy, Firebase nor \`fetch\``, () => {
+      const src = read(file);
+      expect(src).not.toMatch(/from ['"](?:\.\/|@\/lib\/)gemini['"]/);
+      expect(src).not.toMatch(/from ['"](?:\.\/|@\/lib\/)firebase['"]/);
+      expect(src).not.toMatch(/\bfetch\(/);
+    });
+  }
 
-  test('the in-project branch returns before the knowledge base is ever built', () => {
+  // What used to stand here read the component's source for the order of its
+  // branches, and one check ("names no model stage") could not fail: every call
+  // names a stage, and `'glossary'` never contains the word. The order is now
+  // walked as behaviour in `tests/ask-pipeline.spec.ts` — inside a project the
+  // knowledge base is never built, on the answer path and on every failure path.
+  test('the panel runs the one pipeline, and hands it the assistant stage', () => {
     const src = read('components/GlossaryChatbot.tsx');
-    const branchAt = src.indexOf('if (projectId) {\n      try {');
-    const knowledgeAt = src.indexOf('buildKnowledgeBase()');
-    // A missing anchor is one of two things, and only reading the component says
-    // which: the code was reformatted (move the anchor), or the branch that keeps
-    // a question about this project out of general knowledge was removed (a
-    // regression). The message must not settle it for the reader (QA full
-    // review of fc787674705f, a11b6ba6a939).
-    expect(
-      branchAt,
-      'the in-project branch was not found in components/GlossaryChatbot.tsx: either it was reformatted, or ' +
-        'in-project questions can now reach the general knowledge base',
-    ).toBeGreaterThan(-1);
-    expect(
-      knowledgeAt,
-      'buildKnowledgeBase() was not found in components/GlossaryChatbot.tsx: either it was renamed, or the ' +
-        'order this test holds can no longer be checked',
-    ).toBeGreaterThan(-1);
-    expect(branchAt).toBeLessThan(knowledgeAt);
-    // And it returns on every path, including its own `catch`: falling through
-    // would answer a question about somebody's ABAP out of general SAP
-    // knowledge exactly when something had already gone wrong.
-    const branch = src.slice(branchAt, knowledgeAt);
-    expect(branch).toMatch(/\}\s*\n\s*return;\n\s*\}/);
-  });
-
-  test('roadmap 6.6 still stands: the glossary is checked before anything else', () => {
-    const src = read('components/GlossaryChatbot.tsx');
-    const glossaryAt = src.indexOf('glossaryAnswerFor(text)');
-    const projectBranchAt = src.indexOf('if (projectId) {\n      try {');
-    const knowledgeAt = src.indexOf('buildKnowledgeBase()');
-    expect(glossaryAt).toBeGreaterThan(-1);
-    // Both paths this step touched sit behind the glossary check, and the
-    // glossary branch returns before either can run. Measured against the two
-    // branches rather than the first `callGemini(` in the file: that one now
-    // lives in the in-project helper, which is declared above `handleSend`
-    // and says nothing about the order things run in.
-    expect(glossaryAt).toBeLessThan(projectBranchAt);
-    expect(glossaryAt).toBeLessThan(knowledgeAt);
-    expect(src.slice(glossaryAt, projectBranchAt)).toMatch(/return;/);
-  });
-
-  test('the assistant names no model stage — so it charges no quota', () => {
-    // `app/api/gemini/route.ts` honours the per-stage switch and the run route
-    // does the metering; a caller that names no stage spends nothing. Roadmap
-    // 6.8: "does not count against the quota."
-    const src = read('components/GlossaryChatbot.tsx');
-    for (const call of src.match(/callGemini\([^;]*?\);/g) ?? []) {
-      expect(call, 'the assistant started naming a model stage — that would charge the quota').not.toMatch(/stage/);
+    expect(src).toContain('answerAssistantQuestion(');
+    expect(src.match(/callGemini\(/g) ?? []).toHaveLength(1);
+    expect(src).toMatch(/callGemini\(prompt, PRODUCT_GEMINI_MODEL, false, 'glossary'\)/);
+    // Nothing the pipeline decides is decided a second time in the panel.
+    for (const name of ['glossaryAnswerFor(', 'answerCase(', 'guardCaseAnswer(', 'cleanModelText(']) {
+      expect(src, `${name} is called in the panel as well as in lib/assistant-answer.ts`).not.toContain(name);
     }
-  });
-
-  test('model text reaches the screen through lib/model-text.ts', () => {
-    const src = read('components/GlossaryChatbot.tsx');
-    expect(src).toMatch(/cleanModelText\(/);
   });
 });
 

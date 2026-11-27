@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
     if (!outcome.ok) {
       // Nothing was removed, or a factor is back: this request's reservation goes, and only that one. A failure to
       // lift it is over-strict (own-key saves wait for MFA_REMOVAL_MARKER_TTL_MS) and does not change the answer.
-      if (reservation) await releaseFactorRemoval(uid, reservation.token).catch((err) => console.error('[mfa/disable] reservation not lifted:', err));
+      if (reservation && !outcome.reservationHeld) await releaseFactorRemoval(uid, reservation.token).catch((err) => console.error('[mfa/disable] reservation not lifted:', err));
+      // Not lifted after a removal call that did not answer (`reservationHeld`): it may still land.
       return NextResponse.json({ error: outcome.error }, { status: outcome.status });
     }
 

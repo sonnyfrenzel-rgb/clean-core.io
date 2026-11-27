@@ -4,7 +4,7 @@ import { logger, errMessage } from '@/lib/logger';
 import { escapeHtml } from '@/lib/utils';
 import { APP_BASE_URL } from '@/lib/constants';
 import { wrapEmailDocument } from '@/lib/email-layout';
-import { sendTransactionalMail } from '@/lib/transactional-mail';
+import { mailOrNotSent, sendTransactionalMail } from '@/lib/transactional-mail';
 import { invitationNotSentMessage, normaliseInvitedEmail } from '@/lib/invitations';
 import { inviterNameForMail } from '@/lib/invitation-email';
 import {
@@ -104,7 +104,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
       body,
     );
 
-    const outcome = await sendTransactionalMail({
+    // Built inside `mailOrNotSent`: a mail that cannot be built is one that was not sent, and the invitation is
+    // withdrawn below.
+    const outcome = await mailOrNotSent(() => sendTransactionalMail({
       to: invitation.email,
       subject: PORTFOLIO_INVITATION_SUBJECT,
       label: 'portfolio invitation',
@@ -130,7 +132,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sel
         }),
         'Clean-Core.io — invitation',
       ),
-    });
+    }));
     if (!outcome.delivered) {
       const withdrawn = await gate.db
         .collection(SELECTION_COLLECTION)
