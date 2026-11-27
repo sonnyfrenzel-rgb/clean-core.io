@@ -263,6 +263,24 @@ const ABSENT_PLACES: readonly RegExp[] = [
 
 const NEGATION = /\b(?:no|not|never|none|without|isn't|aren't|doesn't|don't|cannot|can't)\b/i;
 
+/** Where one clause ends and the next begins: a negation in one clause says nothing about the next. */
+const CLAUSE_SPLIT = /[;:,]|\s(?:but|and|or|however|while|whereas|yet)\s/i;
+
+/**
+ * Whether a sentence presents a place the product does not have as if it existed. The negation has to stand in the
+ * same clause, before the place: "There is no sidebar and no Live Tenant tab" says both are absent; "There is no
+ * sidebar, but open the Live Tenant tab" points the reader at one.
+ */
+export function presentsAbsentPlace(sentence: string): boolean {
+  for (const clause of sentence.split(CLAUSE_SPLIT)) {
+    for (const place of ABSENT_PLACES) {
+      const hit = place.exec(clause);
+      if (hit && !NEGATION.test(clause.slice(0, hit.index))) return true;
+    }
+  }
+  return false;
+}
+
 export interface GuardedProductAnswer {
   outcome: 'shown' | 'refused';
   text: string;
@@ -295,7 +313,7 @@ export function guardProductAnswer(text: string, knowledgeBase: string): Guarded
     if (figures.some((f) => !kbCompact.includes(f))) return true;
     const paths = [...lower.matchAll(/(?<![\w.:/])\/([a-z][a-z0-9-]*)/g)].map((m) => m[1]);
     if (paths.some((first) => !kb.includes(`/${first}`))) return true;
-    return !NEGATION.test(sentence) && ABSENT_PLACES.some((p) => p.test(sentence));
+    return presentsAbsentPlace(sentence);
   };
 
   // Line by line, so a list the model wrote keeps its lines.
