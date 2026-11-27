@@ -16,7 +16,8 @@ import {
 } from '../lib/workspace-tiles';
 import { parseMapThumb, thumbDisplayViewBox, THUMB_MIN_VIEW } from '../lib/project-summary';
 import { WORKSPACE_PAGE_MESSAGES, homeAnalyseCostLine, wsQuotaLine } from '../lib/messages/workspace';
-import { PRIVACY_PENDING_STORAGE_KEYS, WORKSPACE_LENS_KEY, WORKSPACE_MODE_KEY } from '../lib/workspace-prefs';
+import { PRIVACY_PENDING_STORAGE_KEYS, WORKSPACE_MODE_KEY } from '../lib/workspace-prefs';
+import { RETIRED_WORKSPACE_LENS_KEY, STORAGE_CLEANUPS, STORAGE_KEYS } from '../lib/storage-keys';
 
 /**
  * 3.3.0, step 3a (ADR-123 (4)): a returning account's programs as tiles —
@@ -223,39 +224,63 @@ test.describe('the page', () => {
     }
     // The table's per-row reads run in list mode only.
     expect(code('components/workspace/WorkspaceListReport.tsx')).toContain("const ids = mode !== 'list' ? [] :");
-    // The lens and the mode live in this browser, never in Firestore.
+    // The mode lives in this browser, never in Firestore.
     const prefs = code('lib/workspace-prefs.ts');
-    expect(prefs).toContain("'cc.workspace.lens'");
+    expect(prefs).toContain("'cc.workspace.mode'");
     expect(prefs).not.toMatch(/firestore|updateDoc|setDoc/i);
   });
 
-  test('browser storage: the two keys are registered for the Privacy Policy\'s list until its text names them (ADR-123 (7)(i))', () => {
-    // Owner decision 14.11.2026: keep both; the lawyer's text is prepared separately. The register is the list that
-    // text has to add — a key leaves it once the published privacy texts name it, and never stands in both.
-    expect([WORKSPACE_LENS_KEY, WORKSPACE_MODE_KEY]).toEqual(['cc.workspace.lens', 'cc.workspace.mode']);
+  test('browser storage: the mode key is registered for the Privacy Policy\'s list until its text names them (ADR-123 (7)(i))', () => {
+    // The register is the list that text has to add — a key leaves it once the published privacy texts name it, and
+    // never stands in both.
+    expect(WORKSPACE_MODE_KEY).toBe('cc.workspace.mode');
     const privacy = ['lib/legal/texts/privacy.en.ts', 'lib/legal/texts/privacy.de.ts'].map((f) => fs.readFileSync(path.join(ROOT, f), 'utf8'));
-    for (const key of [WORKSPACE_LENS_KEY, WORKSPACE_MODE_KEY]) {
+    for (const key of [WORKSPACE_MODE_KEY]) {
       const named = privacy.every((text) => text.includes(key));
       expect(named || PRIVACY_PENDING_STORAGE_KEYS.includes(key), `${key} is neither in the privacy texts nor in the register`).toBe(true);
       expect(named && PRIVACY_PENDING_STORAGE_KEYS.includes(key), `${key} is named in the privacy texts: take it off the register`).toBe(false);
     }
-    // What they hold: an enum each, written by this module only.
+    // What it holds: an enum, written by this module only — and nothing else of My workspace is stored.
     const prefs = code('lib/workspace-prefs.ts');
-    expect(prefs.match(/localStorage\.setItem\(/g) ?? []).toHaveLength(2);
-    expect(prefs).toContain('localStorage.setItem(WORKSPACE_LENS_KEY, lens)');
+    expect(prefs.match(/localStorage\.setItem\(/g) ?? []).toHaveLength(1);
     expect(prefs).toContain('localStorage.setItem(WORKSPACE_MODE_KEY, mode)');
   });
 
-  test('the stored lens, mode and demo mark are read hydration-safe — never in a useState initialiser (14.11.2026)', () => {
+  test('one view in My workspace (owner decision 27.11.2026): no lens, no highlighted fact, the stored lens removed once', () => {
+    const list = code('components/workspace/WorkspaceListReport.tsx');
+    const prefs = code('lib/workspace-prefs.ts');
+    // No view switch on the page: no "Read as", no lens prop, no lens option, no highlighted fact.
+    for (const [name, src] of [['WorkspaceTiles.tsx', page], ['WorkspaceListReport.tsx', list], ['workspace-prefs.ts', prefs]] as const) {
+      expect(src, name).not.toMatch(/WorkspaceLens|\blens\b|onLens|data-lens|ws\.readAs|ws\.lens\.|cc\.workspace\.lens/);
+    }
+    expect(page).not.toMatch(/dataName="lens"|bg-cc-surface-muted shadow-\[inset_0_-2px_0_var\(--cc-ink\)\]/);
+    // The three facts stand alike, named by what they are, not by a view.
+    for (const fact of ['steps', 'score', 'decision']) expect(page).toMatch(new RegExp(`cell\\(\\s*'${fact}',`));
+    // The one switch left is tiles or list.
+    expect(page.match(/<Segmented</g) ?? []).toHaveLength(1);
+    expect(page).toContain('dataName="mode"');
+    // The messages of the lens are gone.
+    for (const key of ['ws.readAs', 'ws.lens.business', 'ws.lens.it', 'ws.lens.management']) {
+      expect(Object.keys(WORKSPACE_PAGE_MESSAGES), key).not.toContain(key);
+    }
+    // The key is no longer an entry but a clean-up, removed once at a signed-in visit.
+    expect(RETIRED_WORKSPACE_LENS_KEY).toBe('cc.workspace.lens');
+    expect(STORAGE_KEYS.map((e) => e.key)).not.toContain('cc.workspace.lens');
+    expect(STORAGE_CLEANUPS.map((e) => e.key)).toContain('cc.workspace.lens');
+    const cleanupSrc = code('lib/storage-cleanup.ts');
+    expect(cleanupSrc).toContain('window.localStorage.removeItem(RETIRED_WORKSPACE_LENS_KEY);');
+    expect(cleanupSrc).toMatch(/try \{[\s\S]*removeItem\(RETIRED_WORKSPACE_LENS_KEY\)[\s\S]*\} catch/);
+  });
+
+  test('the stored mode and demo mark are read hydration-safe — never in a useState initialiser (14.11.2026)', () => {
     // A storage read in an initialiser gives a server render and its hydration two different trees. The shell renders
     // these views in the browser only, but they no longer depend on it.
     for (const f of ['components/workspace/WorkspaceListReport.tsx', 'components/workspace/HomeFirstView.tsx', 'components/workspace/WorkspaceTiles.tsx']) {
       expect(code(f), f).not.toMatch(/useState(?:<[^>]*>)?\(\s*(?:read\w*|seenTheDemo)\s*\)/);
     }
-    expect(code('components/workspace/WorkspaceListReport.tsx')).toContain('useStoredWorkspaceLens()');
+    expect(code('components/workspace/WorkspaceListReport.tsx')).toContain('useStoredWorkspaceMode()');
     expect(code('components/workspace/HomeFirstView.tsx')).toContain('useSyncExternalStore(noSubscription, seenTheDemo, notSeenOnTheServer)');
     const prefs = code('lib/workspace-prefs.ts');
-    expect(prefs).toContain("useSyncExternalStore(noSubscription, readWorkspaceLens, () => 'business' as const)");
     expect(prefs).toContain("useSyncExternalStore(noSubscription, readWorkspaceMode, () => 'tiles' as const)");
   });
 

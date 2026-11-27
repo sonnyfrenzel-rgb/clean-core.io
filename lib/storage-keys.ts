@@ -110,18 +110,9 @@ export const STORAGE_KEYS: readonly StorageKeyEntry[] = Object.freeze([
     writtenFor: 'signed-in',
     namedInPolicy: true,
   },
-  // My workspace (3.3.0, ADR-123 (W9), `lib/workspace-prefs.ts`; owner decision 14.11.2026: keep both). Section 7
-  // names them since privacy policy 1.4 (lawyer, statement 20c E1, in the wording of document 20, 2.1/2.2).
-  {
-    key: 'cc.workspace.lens',
-    match: 'exact',
-    area: 'local',
-    holds: '"business", "it" or "management"',
-    purpose: 'the view the tiles of My workspace are read in',
-    lifetime: 'until cleared site data',
-    writtenFor: 'signed-in',
-    namedInPolicy: true,
-  },
+  // My workspace (3.3.0, ADR-123 (W9), `lib/workspace-prefs.ts`). Section 7 names it since privacy policy 1.4 (lawyer,
+  // statement 20c E1, in the wording of document 20, 2.1/2.2). Its sibling `cc.workspace.lens` is a clean-up since
+  // the owner removed the lens on 27.11.2026 (STORAGE_CLEANUPS below).
   {
     key: 'cc.workspace.mode',
     match: 'exact',
@@ -258,6 +249,9 @@ export interface StorageCleanupEntry {
 /** The dismissed coach marks of the old workspace page, gone with 3.5.0 (statement 22c, 1). */
 export const RETIRED_COACH_MARKS_KEY = 'cc.workspace.coachMarks.dismissed';
 
+/** The lens "Read as Business · IT · Management" of My workspace, gone with 3.5.4 (owner decision 27.11.2026). */
+export const RETIRED_WORKSPACE_LENS_KEY = 'cc.workspace.lens';
+
 export const STORAGE_CLEANUPS: readonly StorageCleanupEntry[] = Object.freeze([
   {
     key: RETIRED_COACH_MARKS_KEY,
@@ -266,5 +260,13 @@ export const STORAGE_CLEANUPS: readonly StorageCleanupEntry[] = Object.freeze([
     held: 'the ids of the coach marks dismissed on the workspace page',
     why:
       'the workspace page and its coach marks are gone since 3.5.0 (register entry removed in f296dce9); browsers that had it keep a leftover until it is removed once at the next signed-in visit (lib/storage-cleanup.ts; privacy policy 1.5 no longer names it, statement 22c, 1)',
+  },
+  {
+    key: RETIRED_WORKSPACE_LENS_KEY,
+    match: 'exact',
+    area: 'local',
+    held: '"business", "it" or "management" — the view the tiles of My workspace were read in',
+    why:
+      'My workspace shows one view for everyone since 3.5.4 (owner decision 27.11.2026): the lens and its key are gone; a value a browser kept is removed once at the next signed-in visit (lib/storage-cleanup.ts). Privacy policy 1.5, section 7 still names the key — taking it out needs a new version (owner and lawyer)',
   },
 ]);

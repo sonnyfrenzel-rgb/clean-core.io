@@ -308,7 +308,7 @@ test.describe('a returning account: next step, counts, tiles', () => {
     });
   }
 
-  test('the counts filter, the lens marks one fact and is remembered, the list is one click away', async ({ page }) => {
+  test('the counts filter, one view for everyone (no lens), the list is one click away', async ({ page }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1440, height: 900 });
     await signInViaLanding(page, RET_EMAIL, PASSWORD);
@@ -321,27 +321,40 @@ test.describe('a returning account: next step, counts, tiles', () => {
     await page.locator('[data-kpi="attention"]').click();
     await expect(page.locator('[data-program-tile]')).toHaveCount(programs.length);
 
-    await expect(page.locator('[data-tile-fact="business"][data-lens-on="true"]').first()).toBeVisible();
-    await page.locator('[data-lens="it"]').click();
-    await expect(page.locator('[data-tile-fact="it"][data-lens-on="true"]')).toHaveCount(programs.length);
-    await expect(page.locator('[data-tile-action="open-analysis"]').first()).toHaveAttribute('href', /\/analyze$/); // the lens highlights a fact only (privacy 1.4, 20c E2)
-    await shot(page, 'returning-1440-lens-it');
-    await page.reload();
-    await expect(page.locator('[data-lens="it"]')).toHaveAttribute('aria-checked', 'true', { timeout: 120_000 });
-    // A radio group answers the arrow keys, with one tab stop on the chosen option (QA review 9c44faece6d3).
-    const lensIt = page.locator('[data-lens="it"]');
-    const lensMgmt = page.locator('[data-lens="management"]');
-    await expect(lensIt).toHaveAttribute('tabindex', '0');
-    await expect(page.locator('[data-lens="business"]')).toHaveAttribute('tabindex', '-1');
-    await lensIt.focus();
-    await page.keyboard.press('ArrowRight');
-    await expect(lensMgmt).toHaveAttribute('aria-checked', 'true');
-    await expect(lensMgmt).toBeFocused();
-    await page.keyboard.press('ArrowLeft');
-    await expect(lensIt).toHaveAttribute('aria-checked', 'true');
-    await expect(lensIt).toBeFocused();
+    // One view for everyone (owner decision 27.11.2026): no "Read as" switch, every tile shows its three facts alike,
+    // none highlighted, and the analysis opens as always.
+    await expect(page.locator('[data-lens]')).toHaveCount(0);
+    await expect(page.locator('[data-lens-on]')).toHaveCount(0);
+    await expect(page.locator('[data-workspace-projects]')).not.toContainText('Read as');
+    for (const fact of ['steps', 'score', 'decision']) {
+      await expect(page.locator(`[data-program-tile] [data-tile-fact="${fact}"]`)).toHaveCount(programs.length);
+    }
+    await expect(page.locator('[data-tile-action="open-analysis"]').first()).toHaveAttribute('href', /\/analyze$/);
+    await shot(page, 'returning-1440-one-view');
 
-    await page.locator('[data-mode="list"]').click();
+    // A lens a browser kept from before 3.5.4 is removed once at the signed-in visit, and nothing writes it again.
+    await page.evaluate(() => window.localStorage.setItem('cc.workspace.lens', 'it'));
+    await page.reload();
+    await expect(page.locator('[data-program-tile]').first()).toBeVisible({ timeout: 120_000 });
+    await expect.poll(() => page.evaluate(() => window.localStorage.getItem('cc.workspace.lens')), { timeout: 30_000 }).toBeNull();
+
+    // The tiles-or-list switch is a radio group that answers the arrow keys, with one tab stop on the chosen option
+    // (QA review 9c44faece6d3 — held on the lens until 27.11.2026, on the switch that stays since).
+    const modeTiles = page.locator('[data-mode="tiles"]');
+    const modeList = page.locator('[data-mode="list"]');
+    await expect(modeTiles).toHaveAttribute('aria-checked', 'true');
+    await expect(modeTiles).toHaveAttribute('tabindex', '0');
+    await expect(modeList).toHaveAttribute('tabindex', '-1');
+    await modeTiles.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(modeList).toHaveAttribute('aria-checked', 'true');
+    await expect(modeList).toBeFocused();
+    await expect(page.locator('[data-workspace-list] table')).toBeVisible({ timeout: 30_000 });
+    await page.keyboard.press('ArrowLeft');
+    await expect(modeTiles).toHaveAttribute('aria-checked', 'true');
+    await expect(modeTiles).toBeFocused();
+
+    await modeList.click();
     await expect(page.locator('[data-workspace-list] table')).toBeVisible({ timeout: 30_000 });
     // Owner decisions 22.11.2026: "Needs your attention" counts what the count tile counts (the changed and the
     // staged program), and each row's next step is its tile's.
@@ -355,7 +368,6 @@ test.describe('a returning account: next step, counts, tiles', () => {
     await expect(page.locator(`#home-panel-mine [data-cc-table-row="${programs[0].id}"] [data-home-next]`)).toContainText('Re-design this program');
     await shot(page, 'returning-1440-list');
     await page.locator('[data-mode="tiles"]').click();
-    await page.locator('[data-lens="business"]').click();
 
     await page.locator('[data-ws-analyse-another]').click();
     await expect(page.locator('[data-ws-start-panel] [data-home-way]')).toHaveCount(2);

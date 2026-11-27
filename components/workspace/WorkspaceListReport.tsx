@@ -76,14 +76,7 @@ import { HomeNextCell, HomeStatusBlock } from './HomeStatusCell';
 import WorkspaceTiles from './WorkspaceTiles';
 import WorkspaceSkeleton from './WorkspaceSkeleton';
 import { attentionOf, programNextLink, type ProgramTile } from '@/lib/workspace-tiles';
-import {
-  useStoredWorkspaceLens,
-  useStoredWorkspaceMode,
-  rememberWorkspaceLens,
-  rememberWorkspaceMode,
-  type WorkspaceLens,
-  type WorkspaceMode,
-} from '@/lib/workspace-prefs';
+import { useStoredWorkspaceMode, rememberWorkspaceMode, type WorkspaceMode } from '@/lib/workspace-prefs';
 import { aiAuthorshipFactsOf, withProjectExportAiGeneration } from '@/lib/ai-authorship';
 import { isEngineDocumentation } from '@/lib/process-documentation';
 import { APP_VERSION } from '@/lib/version';
@@ -200,18 +193,12 @@ export default function WorkspaceListReport(_props: {
   /** The own list could not be read: the list page stands with a notice, never the first view. */
   const [ownFailedFor, setOwnFailedFor] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
-  // ADR-123 (W9): the lens and tiles-or-list, remembered by this browser only (`lib/workspace-prefs.ts`).
-  // Read hydration-safe (`useStoredWorkspaceLens`); a choice made here wins over what was stored.
-  const storedLens = useStoredWorkspaceLens();
+  // ADR-123 (W9): tiles or list, remembered by this browser only (`lib/workspace-prefs.ts`). One view for everyone:
+  // the lens "Read as Business · IT · Management" is gone (owner decision 27.11.2026).
+  // Read hydration-safe (`useStoredWorkspaceMode`); a choice made here wins over what was stored.
   const storedMode = useStoredWorkspaceMode();
-  const [chosenLens, setLens] = useState<WorkspaceLens | null>(null);
   const [chosenMode, setMode] = useState<WorkspaceMode | null>(null);
-  const lens = chosenLens ?? storedLens;
   const mode = chosenMode ?? storedMode;
-  const chooseLens = useCallback((next: WorkspaceLens) => {
-    setLens(next);
-    rememberWorkspaceLens(next);
-  }, []);
   const chooseMode = useCallback((next: WorkspaceMode) => {
     setMode(next);
     rememberWorkspaceMode(next);
@@ -1009,8 +996,6 @@ export default function WorkspaceListReport(_props: {
         tiles={tiles}
         sharedCount={sharedRows.length}
         openInvitations={null}
-        lens={lens}
-        onLens={chooseLens}
         mode={mode}
         onMode={chooseMode}
         list={listSection}

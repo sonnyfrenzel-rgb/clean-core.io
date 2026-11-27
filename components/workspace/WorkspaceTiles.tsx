@@ -24,7 +24,7 @@ import {
   type TileFilter,
   type TrackMark,
 } from '@/lib/workspace-tiles';
-import type { WorkspaceLens, WorkspaceMode } from '@/lib/workspace-prefs';
+import type { WorkspaceMode } from '@/lib/workspace-prefs';
 import {
   homeExampleLines,
   wsAlsoWaiting,
@@ -73,10 +73,11 @@ import { REDESIGN_DECIDE_ID, REDESIGN_SEGMENT } from '@/lib/redesign';
  *      "since your last visit", which would need an account field.
  *   3. **Your programs** — one tile per program, all one size: its map as a
  *      thumbnail, three facts (steps, clean core score, decision), and a line per
- *      product, Analyse and Re-design, each with one action. The lens
- *      "Read as Business · IT · Management" only marks one fact (W9); the
- *      analysis opens as always (privacy policy 1.4, section 7). The table, direction B, is the list mode one
- *      click away; the last tile starts the next analysis.
+ *      product, Analyse and Re-design, each with one action. One view for
+ *      everyone: no fact is highlighted — the lens "Read as Business · IT ·
+ *      Management" (W9) was removed by owner decision 27.11.2026. The table,
+ *      direction B, is the list mode one click away; the last tile starts the
+ *      next analysis.
  *
  * Every figure is read from the project list and the server-written summary on
  * each project (`lib/workspace-tiles.ts`) — no request per tile, no bpmn-js.
@@ -92,8 +93,6 @@ const toolHref = (tile: ProgramTile, key: PhaseKey) => `${tile.href}/${key}`;
  * continue and the decision. `tile.href` is `/project/{id}`; the decision is Re-design's step 2 (`#decide`).
  */
 const redesignHref = (tile: ProgramTile, decide = false) => `${tile.href}/${REDESIGN_SEGMENT}${decide ? `#${REDESIGN_DECIDE_ID}` : ''}`;
-// The lens only decides which fact a tile highlights; the analysis opens as it always does. Privacy policy 1.4,
-// section 7 (lawyer, statement 20c E2): the view "only decides which figure the tiles highlight".
 const analysisHref = (tile: ProgramTile) => `${tile.href}/analyze`;
 
 function Dot({ tone }: { tone: 'waiting' | 'moving' | 'outdated' }) {
@@ -244,16 +243,10 @@ function ProductRow({
   );
 }
 
-function Facts({ tile, lens }: { tile: ProgramTile; lens: WorkspaceLens }) {
-  const cell = (key: WorkspaceLens, value: React.ReactNode, label: React.ReactNode) => (
-    <div
-      data-tile-fact={key}
-      data-lens-on={lens === key ? 'true' : undefined}
-      className={
-        'min-w-0 px-2 py-2 first:rounded-l-[8px] last:rounded-r-[8px] [&+&]:border-l [&+&]:border-cc-line ' +
-        (lens === key ? 'bg-cc-surface-muted shadow-[inset_0_-2px_0_var(--cc-ink)]' : '')
-      }
-    >
+/** Three facts side by side, all alike — none is highlighted (owner decision 27.11.2026: one view for everyone). */
+function Facts({ tile }: { tile: ProgramTile }) {
+  const cell = (key: 'steps' | 'score' | 'decision', value: React.ReactNode, label: React.ReactNode) => (
+    <div data-tile-fact={key} className="min-w-0 px-2 py-2 [&+&]:border-l [&+&]:border-cc-line">
       <div className="text-[15px] leading-[1.3] font-bold break-words text-cc-ink tabular-nums">{value}</div>
       <div className="text-[12px] leading-[1.3] font-medium break-words text-cc-ink-muted">{label}</div>
     </div>
@@ -261,9 +254,9 @@ function Facts({ tile, lens }: { tile: ProgramTile; lens: WorkspaceLens }) {
   const d = tile.decision;
   return (
     <div className="mx-4 mt-3 grid grid-cols-[minmax(0,.85fr)_minmax(0,.8fr)_minmax(0,1.35fr)] rounded-cc-row border border-cc-line">
-      {cell('business', tile.steps === null ? wt('ws.fact.pending') : wsSteps(tile.steps), wt('ws.fact.steps'))}
+      {cell('steps', tile.steps === null ? wt('ws.fact.pending') : wsSteps(tile.steps), wt('ws.fact.steps'))}
       {cell(
-        'it',
+        'score',
         tile.score === null ? (
           wt('ws.fact.pending')
         ) : (
@@ -275,7 +268,7 @@ function Facts({ tile, lens }: { tile: ProgramTile; lens: WorkspaceLens }) {
         wt('ws.fact.score'),
       )}
       {cell(
-        'management',
+        'decision',
         d ? DECISION_OPTION_LABELS[d.option] : wt('ws.fact.noDecision'),
         d ? (
           <>
@@ -290,7 +283,7 @@ function Facts({ tile, lens }: { tile: ProgramTile; lens: WorkspaceLens }) {
   );
 }
 
-function ProgramTileCard({ tile, lens, actions }: { tile: ProgramTile; lens: WorkspaceLens; actions?: RowActionHandlers }) {
+function ProgramTileCard({ tile, actions }: { tile: ProgramTile; actions?: RowActionHandlers }) {
   const titleId = `tile-${tile.id}`;
   return (
     <article
@@ -328,7 +321,7 @@ function ProgramTileCard({ tile, lens, actions }: { tile: ProgramTile; lens: Wor
         </div>
       </div>
       <MapThumb thumb={tile.thumb} objectName={tile.objectName ?? tile.title} steps={tile.steps} className="mx-4 mt-1 h-[96px] min-[601px]:h-[118px]" />
-      <Facts tile={tile} lens={lens} />
+      <Facts tile={tile} />
       <div className="mt-3 border-t border-cc-line">
         <AnalyseLine tile={tile} />
         <RedesignLine tile={tile} />
@@ -414,14 +407,12 @@ function CountTile({
 
 function Segmented<T extends string>({
   label,
-  labelledBy,
   value,
   options,
   onChange,
   dataName,
 }: {
-  label?: string;
-  labelledBy?: string;
+  label: string;
   value: T;
   options: ReadonlyArray<{ value: T; label: React.ReactNode }>;
   onChange: (v: T) => void;
@@ -447,7 +438,6 @@ function Segmented<T extends string>({
     <span
       role="radiogroup"
       aria-label={label}
-      aria-labelledby={labelledBy}
       className="inline-flex rounded-cc-row border border-cc-field-border bg-cc-surface p-0.5"
     >
       {options.map((o, i) => (
@@ -599,8 +589,6 @@ export default function WorkspaceTiles({
   tiles,
   sharedCount,
   openInvitations,
-  lens,
-  onLens,
   mode,
   onMode,
   list,
@@ -616,8 +604,6 @@ export default function WorkspaceTiles({
   sharedCount: number;
   /** Invitations this account sent that nobody answered yet; `null` while unknown. */
   openInvitations: number | null;
-  lens: WorkspaceLens;
-  onLens: (lens: WorkspaceLens) => void;
   mode: WorkspaceMode;
   onMode: (mode: WorkspaceMode) => void;
   /** The list mode (direction B's table), rendered by the page only when it is chosen. */
@@ -839,20 +825,6 @@ export default function WorkspaceTiles({
             </span>
           </div>
           <div className="flex flex-wrap items-center gap-2 min-[601px]:gap-3">
-            <span id="ws-lens-label" className="text-[12px] font-semibold text-cc-ink-muted">
-              {wt('ws.readAs')}
-            </span>
-            <Segmented<WorkspaceLens>
-              labelledBy="ws-lens-label"
-              value={lens}
-              onChange={onLens}
-              dataName="lens"
-              options={[
-                { value: 'business', label: wt('ws.lens.business') },
-                { value: 'it', label: wt('ws.lens.it') },
-                { value: 'management', label: wt('ws.lens.management') },
-              ]}
-            />
             {/* Shown at every width: on a phone the list is the default (Q12, `lib/workspace-prefs.ts`), and the tiles
                 chosen there need their way back to it as much as a list chosen in a wider window does. */}
             <span data-ws-mode-switch="">
@@ -876,7 +848,7 @@ export default function WorkspaceTiles({
         ) : (
           <div className="grid grid-cols-1 gap-3 min-[601px]:grid-cols-2 min-[601px]:gap-4 min-[1181px]:grid-cols-3" data-ws-tiles="">
             {shown.map((tile) => (
-              <ProgramTileCard key={tile.id} tile={tile} lens={lens} actions={actionsFor(tile)} />
+              <ProgramTileCard key={tile.id} tile={tile} actions={actionsFor(tile)} />
             ))}
             {filter === 'all' ? <StartTile userId={userId} profile={profile} onMore={openStart} /> : null}
           </div>
