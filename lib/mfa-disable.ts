@@ -1,5 +1,6 @@
-import type { Transaction } from 'firebase-admin/firestore';
+import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
+import { MFA_REMOVAL_MARKER, type GateRefusal } from '@/lib/mfa-gate';
 
 /**
  * Retiring the second factor: two systems, no transaction, one fixed order.
@@ -105,6 +106,7 @@ export async function retireSecondFactor(
         mfaFactor: FieldValue.delete(),
         mfaSecret: FieldValue.delete(),
         mfaBackupCodes: FieldValue.delete(),
+        [MFA_REMOVAL_MARKER]: FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true },
@@ -122,4 +124,36 @@ export async function retireSecondFactor(
   ]);
 
   return { ok: true, removedFactor: hasFactor };
+}
+
+/**
+ * Reserves the removal of the factor before Firebase Auth is touched: one transaction on the profile that asks
+ * `blockedBy` (the route passes the stored-own-key gate) and, when nothing blocks, sets `MFA_REMOVAL_MARKER`.
+ *
+ * The own-key save reads the same profile in its own transaction and refuses while the marker stands
+ * (`ownKeySaveRefusal` in lib/mfa-gate.ts). Without the reservation the key check and the factor removal were two
+ * separate steps, and a key saved between them was left on an account without a factor. A missing profile is not
+ * recreated; nothing can be saved to it either.
+ */
+export async function reserveFactorRemoval(
+  uid: string,
+  blockedBy: (profile: Record<string, unknown> | undefined) => GateRefusal | null,
+  deps: MfaRetireDeps = PRODUCTION_MFA_RETIRE_DEPS,
+  nowMs: number = Date.now(),
+): Promise<GateRefusal | null> {
+  const { db } = await deps.adminDb();
+  const userRef: DocumentReference = db.collection('users').doc(uid);
+  return db.runTransaction(async (tx: Transaction) => {
+    const profile = await tx.get(userRef);
+    const blocked = blockedBy(profile.data());
+    if (blocked) return blocked;
+    if (profile.exists) tx.set(userRef, { [MFA_REMOVAL_MARKER]: nowMs }, { merge: true });
+    return null;
+  });
+}
+
+/** Lifts the reservation after a removal that did not go through (the factor is still there, or back). */
+export async function releaseFactorRemoval(uid: string, deps: MfaRetireDeps = PRODUCTION_MFA_RETIRE_DEPS): Promise<void> {
+  const { db, FieldValue } = await deps.adminDb();
+  await db.collection('users').doc(uid).set({ [MFA_REMOVAL_MARKER]: FieldValue.delete() }, { merge: true });
 }

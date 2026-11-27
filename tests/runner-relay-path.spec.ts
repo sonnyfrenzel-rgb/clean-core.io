@@ -16,6 +16,11 @@ test('a path stays under the capability; dot segments, encoded dots and backslas
   for (const bad of ['/../admin', '/sap/../../x', '/%2e%2e/x', '/%2E%2e/x', '/./x', '/sap\\..\\x', '//evil.example/x', 'x', `/${'a'.repeat(6001)}`]) {
     expect(relayTarget(BASE, CAP, bad), bad).toBeNull();
   }
+  // An encoded separator makes a dot segment once a server behind the proxy decodes the path.
+  for (const bad of ['/%2e%2e%2foutside', '/%2E%2E%2Foutside', '/sap/..%2f..%2fx', '/sap/%2e%2e%5cx', '/sap/x%2f..', '/sap/.%2Fx', '/sap/%2e%2e%5C', '/sap/%E0%A4%A']) {
+    expect(relayTarget(BASE, CAP, bad), bad).toBeNull();
+  }
+  expect(relayTarget(BASE, CAP, "/sap/Entity('..A%2FB')")).toBe(`${BASE}/${CAP}/sap/Entity('..A%2FB')`);
   // A query may carry dots; it never moves the path.
   expect(relayTarget(BASE, CAP, '/sap/x?$filter=a eq \'../..\'')).not.toBeNull();
 });

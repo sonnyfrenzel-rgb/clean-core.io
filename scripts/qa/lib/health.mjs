@@ -133,15 +133,37 @@ export function pendingBranch(repo, branch) {
 
 const RUN_FIELDS = 'databaseId,status,conclusion,createdAt,event,headBranch';
 
+/**
+ * The `gh run list` calls that find a workflow's trusted runs: each asks for one trusted event (pushes once per
+ * trusted branch), so runs a stranger can start never take a place in the window. One mixed list of the last thirty
+ * runs could be filled by fork pull requests, and then held none of ours.
+ */
+export function trustedRunQueries(file, limit = 10) {
+  const list = (...filter) => ['run', 'list', '--workflow', file, ...filter, '--limit', String(limit), '--json', RUN_FIELDS];
+  return {
+    recent: [...[...TRUSTED_BRANCHES].map((branch) => list('--branch', branch, '--event', 'push')), list('--event', 'workflow_dispatch')],
+    schedule: list('--event', 'schedule'),
+  };
+}
+
+/** The trusted runs of several lists as one: no run twice, newest first, at most `max`. */
+export function mergeTrustedRuns(lists, max = 10) {
+  const byId = new Map();
+  for (const r of trustedRuns(lists.flat())) byId.set(r.databaseId, r);
+  return [...byId.values()].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)).slice(0, max);
+}
+
 export function collect({ repo, now = Date.now() } = {}) {
   const workflows = workflowFiles().map((wf) => {
     let runs;
     let scheduled = [];
     try {
-      runs = trustedRuns(ghJson(['run', 'list', '--workflow', wf.file, '--limit', '30', '--json', RUN_FIELDS])).slice(0, 10);
-      // The schedule is asked for on its own: ten pushes in a week would push the
+      const queries = trustedRunQueries(wf.file);
+      const scheduleRuns = ghJson(queries.schedule);
+      runs = mergeTrustedRuns([...queries.recent.map((args) => ghJson(args)), scheduleRuns]);
+      // The schedule is kept on its own: ten pushes in a week would push the
       // last scheduled run out of a mixed window and fake a stale workflow.
-      if (wf.scheduled) scheduled = trustedRuns(ghJson(['run', 'list', '--workflow', wf.file, '--event', 'schedule', '--limit', '1', '--json', RUN_FIELDS]));
+      if (wf.scheduled) scheduled = mergeTrustedRuns([scheduleRuns], 1);
     } catch (err) {
       return { ...wf, state: classifyGhError(err) === 'not-on-main' ? 'not-on-main' : 'unknown', latest: null };
     }

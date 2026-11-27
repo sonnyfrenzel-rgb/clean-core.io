@@ -429,3 +429,30 @@ test('a file named one way in the directory and another in its local header fail
   expect(out).toContain('NOT verified');
   expect(code).toBe(1);
 });
+
+test('a Unicode Path field in a local header that names another file fails the pack here too', async () => {
+  // Same rule as lib/audit-pack-verify.ts: the local header's extra fields have to repeat the file's one name.
+  const kp = keyPair();
+  const packPath = await buildPack({ signWith: kp.privateKey, attested: { 'ä-attested.md': 'X' } });
+  const genuine = run([packPath, '--key', kp.rawPublicBase64]);
+  expect(genuine.out).toContain('Verified.');
+  expect(genuine.code).toBe(0);
+  const bytes = readFileSync(packPath);
+  const name = Buffer.from('ä-attested.md', 'utf8');
+  // The file's local header (signature, then the name at offset 30) and the Unicode Path field in its extra area.
+  let local = -1;
+  for (let i = bytes.indexOf(name); i !== -1; i = bytes.indexOf(name, i + 1)) {
+    if (i >= 30 && bytes.readUInt32LE(i - 30) === 0x04034b50) { local = i - 30; break; }
+  }
+  expect(local, 'the local header was not found').toBeGreaterThanOrEqual(0);
+  const extra = local + 30 + bytes.readUInt16LE(local + 26);
+  const field = bytes.indexOf(name, extra);
+  expect(field, 'JSZip wrote no Unicode Path field in the local header; the check below would be vacuous')
+    .toBeLessThan(extra + bytes.readUInt16LE(local + 28));
+  Buffer.from('ä-attestee.md', 'utf8').copy(bytes, field);
+  writeFileSync(packPath, bytes);
+  const { code, out } = run([packPath, '--key', kp.rawPublicBase64]);
+  expect(out).toContain('Unicode Path');
+  expect(out).toContain('NOT verified');
+  expect(code).toBe(1);
+});

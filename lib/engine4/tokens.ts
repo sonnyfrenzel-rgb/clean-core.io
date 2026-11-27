@@ -2,8 +2,13 @@
  * Engine 4.0, layer L0: the vocabulary the lexer hands upward.
  *
  * Pure: no imports. This module tree (`lib/engine4/`) imports nothing from
- * `lib/abap/`, and nothing there imports it (ADR-125); it is wired into no run,
- * route or page until engine 4.0.0 is switched on behind its gate.
+ * `lib/abap/` (ADR-125). Two product paths read it, and no others: the
+ * parse-once reader (`lib/abap/statement-reader.ts` → `parsed-source`, which
+ * runs this tree's lexer, statements, blocks and compat layer; ADR-133) and the
+ * class gap (`lib/abap/sap-class-references.ts` → `references`; ADR-141).
+ * `tests/engine4-layer-guard.spec.ts` holds that list. The rest of the tree —
+ * the call graph among it — is wired into no run, route or page until engine
+ * 4.0.0 is switched on behind its gate.
  *
  * Every token stands on one line. A construct that spans lines — a string
  * template whose embedded expression breaks across lines, a native SQL body —

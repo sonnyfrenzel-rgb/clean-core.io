@@ -133,6 +133,11 @@ test('the S/4 vault and the profile metadata are deleted in one batch', () => {
   const body = src.slice(start, src.indexOf('\n}\n', start));
   // One transaction since 25.11.2026: the vault goes, and the profile's metadata only from a profile that exists.
   expect(body).toContain('db.runTransaction(');
+  // Awaited (or returned): a transaction left floating resolves the call before the vault is gone, and its failure
+  // reaches no caller.
+  const transactions = body.match(/db\.runTransaction\(/g) ?? [];
+  expect(transactions).toHaveLength(1);
+  expect(body).toMatch(/(?:^|\n)\s*(?:await|return) db\.runTransaction\(/);
   expect(body).toMatch(/tx\.delete\(db\.collection\('s4_credentials'\)\.doc\(uid\)\)/);
   expect(body).toMatch(/if \(profile\.exists\) tx\.update\(userRef,/);
   expect(body).not.toMatch(/merge: true/);

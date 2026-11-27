@@ -147,3 +147,34 @@ test('a receiver that is a class attribute resolves to its own class\'s attribut
   expect(edgesAt(g, 31)).toEqual(['static METHOD ZCL_X=>RUN']);
   expect(edgesAt(g, 36)).toEqual(['static METHOD ZCL_Y=>RUN']);
 });
+
+test('an inherited attribute types the receiver before an unrelated class\'s attribute of the same name', () => {
+  const src = [
+    'CLASS zcl_t DEFINITION.', '  PUBLIC SECTION.', '    METHODS go.', 'ENDCLASS.',
+    'CLASS zcl_u DEFINITION.', '  PUBLIC SECTION.', '    METHODS go.', 'ENDCLASS.',
+    'CLASS lcl_other DEFINITION.', '  PUBLIC SECTION.', '    DATA mo TYPE REF TO zcl_u.', 'ENDCLASS.',
+    'CLASS lcl_parent DEFINITION.', '  PROTECTED SECTION.', '    DATA mo TYPE REF TO zcl_t.', 'ENDCLASS.',
+    'CLASS lcl_child DEFINITION INHERITING FROM lcl_parent.', '  PUBLIC SECTION.', '    METHODS run.', 'ENDCLASS.',
+    'CLASS zcl_t IMPLEMENTATION.', '  METHOD go.', '  ENDMETHOD.', 'ENDCLASS.',
+    'CLASS zcl_u IMPLEMENTATION.', '  METHOD go.', '  ENDMETHOD.', 'ENDCLASS.',
+    'CLASS lcl_child IMPLEMENTATION.', '  METHOD run.', '    mo->go( ).', '  ENDMETHOD.', 'ENDCLASS.',
+  ].join('\n');
+  expect(edgesAt(graph(src), 31)).toEqual(['static METHOD ZCL_T=>GO']);
+  // A private attribute of the superclass is not the subclass's: the receiver falls back as before.
+  const priv = src.replace('  PROTECTED SECTION.\n    DATA mo TYPE REF TO zcl_t.', '  PRIVATE SECTION.\n    DATA mo TYPE REF TO zcl_t.');
+  expect(priv).not.toBe(src);
+  expect(edgesAt(graph(priv), 31)).toEqual(['static METHOD ZCL_U=>GO']);
+});
+
+test('cyclic inheritance does not hang the call graph', () => {
+  const src = [
+    'CLASS lcl_x DEFINITION INHERITING FROM lcl_y.', '  PUBLIC SECTION.', '    METHODS run.', 'ENDCLASS.',
+    'CLASS lcl_y DEFINITION INHERITING FROM lcl_x.', '  PUBLIC SECTION.', 'ENDCLASS.',
+    'CLASS lcl_main DEFINITION.', '  PUBLIC SECTION.', '    METHODS go.', 'ENDCLASS.',
+    'CLASS lcl_main IMPLEMENTATION.', '  METHOD go.', '    DATA lo TYPE REF TO lcl_y.', '    lo->stop( ).', '    lo->run( ).', '  ENDMETHOD.', 'ENDCLASS.',
+    'CLASS lcl_x IMPLEMENTATION.', '  METHOD run.', '  ENDMETHOD.', 'ENDCLASS.',
+  ].join('\n');
+  const g = graph(src);
+  expect(edgesAt(g, 15)).toHaveLength(1);
+  expect(edgesAt(g, 16).length).toBeGreaterThan(0);
+});

@@ -124,9 +124,9 @@ test.describe('retiring the second factor', () => {
     expect(r.userWrites).toHaveLength(1);
     expect(r.userWrites[0]).toMatchObject({ mfaEnabled: false });
     expect(r.userWrites[0].mfaEnabled, 'the flag was set, not cleared').not.toBe(true);
-    // The leftovers of the application-level TOTP go with it (roadmap 0.13).
+    // The leftovers of the application-level TOTP go with it (roadmap 0.13), and the removal's reservation.
     expect(Object.keys(r.userWrites[0]).sort()).toEqual(
-      ['mfaBackupCodes', 'mfaEnabled', 'mfaFactor', 'mfaSecret', 'updatedAt'],
+      ['mfaBackupCodes', 'mfaEnabled', 'mfaFactor', 'mfaRemovalStartedAt', 'mfaSecret', 'updatedAt'],
     );
     expect(r.deleted.sort()).toEqual(['mfa_pending', 'mfa_secrets']);
   });

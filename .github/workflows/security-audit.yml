@@ -102,17 +102,15 @@ jobs:
           # it is not an ancestor of this release (a rewritten history).
           runs=$(gh run list --workflow security-audit.yml --branch main --status success --limit 20 --json databaseId,headSha --jq ".[] | select(.databaseId != $RUN_ID) | \"\(.databaseId) \(.headSha)\"")
           base=""
-          latest=""
           while read -r id sha; do
             [ -z "$id" ] && continue
-            [ -z "$latest" ] && latest="$sha"
             if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$id/artifacts" --jq '.artifacts[].name' | grep -q '^security-audit-complete-'; then
               base="$sha"
               break
             fi
           done <<< "$runs"
-          # No marked run in the window (before the first marked audit, or markers expired): the last success, as before.
-          if [ -z "$base" ]; then base="$latest"; fi
+          # No marked run in the window (markers expired, or only partial audits): no base, so scope.mjs audits
+          # everything. A success without the marker may have left files unread; starting a delta after it would skip them.
           # A base given by hand wins; scope.mjs accepts only a commit id that is an ancestor of this release.
           if [ -n "$INPUT_BASE" ]; then base="$INPUT_BASE"; fi
           SECURITY_AUDIT_BASE="$base" node scripts/security/scope.mjs | tee -a "$GITHUB_OUTPUT"

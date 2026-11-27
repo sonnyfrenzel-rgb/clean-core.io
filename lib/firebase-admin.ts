@@ -7,7 +7,7 @@ import { ownKeyCounts } from './run-quota-rule';
 import { byokAddendumSha256, type ByokAddendumAcceptance, type ByokAgreementEnding, type ByokAgreementEvent } from './byok-addendum';
 import { MODEL_KEY_PROVIDERS, ownKeyProviderOf, storedKeyProviderOf, type ModelKeyProvider } from './model-providers';
 import { logger, providerErrorShape } from './logger';
-import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, s4AccessRequiresEnrolment } from './mfa-gate';
+import { hasSecondFactor as tokenHasSecondFactor, mfaSatisfied, mfaSteppedUp, ownKeySaveRefusal, s4AccessRequiresEnrolment } from './mfa-gate';
 import { starterExampleForFingerprint } from './starter-example-fingerprints';
 import { INVITATION_COLLECTION, PROJECT_READERS_FIELD, normaliseInvitedEmail } from './invitations';
 import { suppressionId } from './unsubscribe-token';
@@ -1934,6 +1934,14 @@ export async function saveOwnModelKey(
   await db.runTransaction(async (tx: Transaction) => {
     const profile = await tx.get(profileRef);
     if (!profile.exists) throw new QuotaError(PROFILE_GONE, 404);
+    // The factor is checked again here, on the profile this transaction holds: the route's gate ran before the
+    // provider test, and POST /api/mfa/disable may have reserved or finished a removal since (lib/mfa-gate.ts,
+    // MFA_REMOVAL_MARKER). Firebase Auth is read inside the transaction, after the profile.
+    const factorEnrolled = process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true'
+      ? 'unchecked'
+      : ((await (await getAdminAuth()).getUser(uid)).multiFactor?.enrolledFactors ?? []).length > 0;
+    const mfaRefusal = ownKeySaveRefusal(profile.data(), factorEnrolled, Date.now());
+    if (mfaRefusal) throw new QuotaError(mfaRefusal.message, mfaRefusal.status);
     const before = ownKeyProviderOf(profile.data() as { byokConfigured?: unknown; byokProvider?: unknown });
     agreementReplaced = before === 'anthropic' && provider !== 'anthropic';
     // A new record, whole: a new key starts with automatic steps off (3.0.21,

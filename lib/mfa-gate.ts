@@ -131,3 +131,42 @@ export const OWN_KEY_BLOCKS_MFA_REMOVAL: GateRefusal = {
 export function mfaRemovalBlockedByOwnKey(profile: { byokConfigured?: unknown } | null | undefined): GateRefusal | null {
   return profile?.byokConfigured === true ? OWN_KEY_BLOCKS_MFA_REMOVAL : null;
 }
+
+/**
+ * The profile field POST /api/mfa/disable sets, in a transaction that also checks for a stored own key, before it
+ * removes the factor from Firebase Auth (`reserveFactorRemoval` in `lib/mfa-disable.ts`). Written through the Admin
+ * SDK only; the client update allowlist in firestore.rules does not name it. The key save reads it in its own
+ * transaction on the same profile, so the two serialise: either the key is stored first and the removal is refused,
+ * or the removal is reserved first and the save is refused. A milliseconds timestamp.
+ */
+export const MFA_REMOVAL_MARKER = 'mfaRemovalStartedAt';
+
+/** How long a reservation holds when the call that set it never finished (a crash between the two systems). */
+export const MFA_REMOVAL_MARKER_TTL_MS = 15 * 60 * 1000;
+
+export const OWN_KEY_SAVE_DURING_MFA_REMOVAL: GateRefusal = {
+  status: 409,
+  message:
+    'The authenticator on this account is being turned off, and an own model key may only be kept with multi-factor authentication. Set the authenticator up again, then store the key.',
+};
+
+/** Whether the profile carries a removal reservation that has not run out. */
+export function mfaRemovalInProgress(profile: Record<string, unknown> | null | undefined, nowMs: number): boolean {
+  const at = profile?.[MFA_REMOVAL_MARKER];
+  return typeof at === 'number' && Number.isFinite(at) && nowMs - at < MFA_REMOVAL_MARKER_TTL_MS;
+}
+
+/**
+ * The decision the own-key save takes inside its transaction, on the profile it read there and the factors Firebase
+ * Auth reported there: no key while the factor is being removed, and none without the flag and a factor.
+ * `'unchecked'` is the Firebase emulator, which cannot enrol a factor (the same exemption `assertMfaSatisfied` makes).
+ */
+export function ownKeySaveRefusal(
+  profile: Record<string, unknown> | null | undefined,
+  factorEnrolled: boolean | 'unchecked',
+  nowMs: number,
+): GateRefusal | null {
+  if (mfaRemovalInProgress(profile, nowMs)) return OWN_KEY_SAVE_DURING_MFA_REMOVAL;
+  if (factorEnrolled === 'unchecked') return null;
+  return profile?.mfaEnabled === true && factorEnrolled ? null : BYOK_MFA_ENROLMENT_REQUIRED;
+}

@@ -258,19 +258,11 @@ export function duplicateEntryNames(data: unknown): { duplicates: string[]; coun
  * a Unicode Path field (only for a non-ASCII name) that repeats it.
  */
 function secondNameOf(bytes: Uint8Array, view: DataView, offset: number, nameLength: number, extraLength: number, name: string): string | null {
-  const decoder = new TextDecoder();
   const extraStart = offset + 46 + nameLength;
   const extraEnd = extraStart + extraLength;
   if (extraEnd > bytes.byteLength) return 'a central-directory record runs beyond the end of the archive';
-  for (let at = extraStart; at + 4 <= extraEnd; ) {
-    const id = view.getUint16(at, true);
-    const size = view.getUint16(at + 2, true);
-    if (at + 4 + size > extraEnd) return 'a central-directory record carries an extra field that runs beyond it';
-    if (id === 0x7075 && (size < 5 || zipKey(decoder.decode(bytes.subarray(at + 9, at + 4 + size))) !== name)) {
-      return 'a central-directory record names its file a second, different way (Unicode Path field)';
-    }
-    at += 4 + size;
-  }
+  const central = unicodePathDefect(bytes, view, extraStart, extraEnd, name, 'a central-directory record');
+  if (central) return central;
   const local = view.getUint32(offset + 42, true);
   if (local + 30 > bytes.byteLength || view.getUint32(local, true) !== 0x04034b50) {
     return 'a central-directory record points at no local file header';
@@ -279,7 +271,28 @@ function secondNameOf(bytes: Uint8Array, view: DataView, offset: number, nameLen
   if (local + 30 + localNameLength > bytes.byteLength) return 'a local file header names a file beyond the end of the archive';
   const same =
     localNameLength === nameLength && bytes.subarray(local + 30, local + 30 + nameLength).every((b, i) => b === bytes[offset + 46 + i]);
-  return same ? null : 'a file is named differently in its local header and in the central directory';
+  if (!same) return 'a file is named differently in its local header and in the central directory';
+  // The local header carries extra fields of its own, and an extractor that reads the local header takes its
+  // Unicode Path field: it has to repeat the same name too.
+  const localExtraStart = local + 30 + localNameLength;
+  const localExtraEnd = localExtraStart + view.getUint16(local + 28, true);
+  if (localExtraEnd > bytes.byteLength) return 'a local file header runs beyond the end of the archive';
+  return unicodePathDefect(bytes, view, localExtraStart, localExtraEnd, name, 'a local file header');
+}
+
+/** Whether the extra fields between `start` and `end` hold a Unicode Path field (0x7075) that names a file other than `name`. */
+function unicodePathDefect(bytes: Uint8Array, view: DataView, start: number, end: number, name: string, where: string): string | null {
+  const decoder = new TextDecoder();
+  for (let at = start; at + 4 <= end; ) {
+    const id = view.getUint16(at, true);
+    const size = view.getUint16(at + 2, true);
+    if (at + 4 + size > end) return `${where} carries an extra field that runs beyond it`;
+    if (id === 0x7075 && (size < 5 || zipKey(decoder.decode(bytes.subarray(at + 9, at + 4 + size))) !== name)) {
+      return `${where} names its file a second, different way (Unicode Path field)`;
+    }
+    at += 4 + size;
+  }
+  return null;
 }
 
 /** The fields of the end-of-central-directory record at `at`, and whether any of them is a ZIP64 marker. */
