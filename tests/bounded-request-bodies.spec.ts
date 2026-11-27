@@ -43,6 +43,24 @@ test.describe('readBoundedRequestJson', () => {
     expect((await readBoundedRequestJson(request('"' + 'a'.repeat(1024 * 1024) + '"'), PORTFOLIO_SELECTION_BODY_LIMITS)).tooLarge).toBe(true);
   });
 
+  test('a streamed body without a Content-Length is cut off at the bound, not read to the end', async () => {
+    let pulled = 0;
+    const chunk = new TextEncoder().encode('a'.repeat(1024));
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulled += 1;
+        if (pulled > 4096) controller.close(); // 4 MB, far past the bound
+        else controller.enqueue(chunk);
+      },
+    });
+    const streamed = { headers: new Headers({ 'content-type': 'application/json' }), body: stream };
+    expect(await readBoundedRequestJson(streamed, SMALL_REQUEST_BODY_LIMITS)).toEqual({ tooLarge: true });
+    expect(pulled, 'the reader went on past the bound').toBeLessThan(64);
+    // The bound the public verify and survey routes use holds the same way.
+    const again = new ReadableStream<Uint8Array>({ start(c) { for (let i = 0; i < 200; i++) c.enqueue(chunk); c.close(); } });
+    expect(await readBoundedRequestJson({ headers: new Headers(), body: again }, { maxBytes: 64 * 1024, timeoutMs: 10_000 })).toEqual({ tooLarge: true });
+  });
+
   test('the small bound fits an invitation and refuses a megabyte', async () => {
     expect((await readBoundedRequestJson(request(JSON.stringify({ email: 'a@b.example', expiresInDays: 7 })), SMALL_REQUEST_BODY_LIMITS)).tooLarge).toBe(false);
     expect((await readBoundedRequestJson(request('"' + 'a'.repeat(1024 * 1024) + '"'), SMALL_REQUEST_BODY_LIMITS)).tooLarge).toBe(true);

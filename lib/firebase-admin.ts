@@ -1358,14 +1358,21 @@ export async function deleteUserDataAndAccount(
     await auth.deleteUser(uid);
   } catch (e: any) {
     if (e?.code !== 'auth/user-not-found') {
-      // The sign-in stays until a retry, but no administrator's right stays with it: the erasure marker of step 5
-      // withdraws the claim only until it runs out, so the claim itself goes now and the tokens that carry it are
-      // revoked. Best effort — the erasure still reports itself incomplete either way.
-      try {
-        await auth.setCustomUserClaims(uid, null);
-        await auth.revokeRefreshTokens(uid);
-      } catch (claimErr: any) {
-        console.error(`[erasure] admin claim of ${uid} could not be withdrawn:`, claimErr?.code || claimErr?.message || claimErr);
+      // The sign-in stays until a retry, but no administrator's right stays with it. First the marker of step 5
+      // loses its expiry: a marker without `expiresAt` holds until a retry writes it again with one (the admin
+      // check reads it as withdrawn, the rules as erased, and the TTL policy leaves it). Then the claim itself goes
+      // and the tokens are revoked, each on its own, best effort — the erasure reports itself incomplete either way.
+      const steps: Array<[string, () => Promise<unknown>]> = [
+        ['marker', () => db.collection('erased_accounts').doc(uid).set({ authDeletionFailedAt: new Date() })],
+        ['claims', () => auth.setCustomUserClaims(uid, null)],
+        ['revoke', () => auth.revokeRefreshTokens(uid)],
+      ];
+      for (const [step, run] of steps) {
+        try {
+          await run();
+        } catch (stepErr: any) {
+          console.error(`[erasure] ${step} for ${uid} failed after the sign-in could not be deleted:`, stepErr?.code || stepErr?.message || stepErr);
+        }
       }
       throw new Error(`Account erasure incomplete for ${uid}: auth-user: ${e?.message || e}`);
     }
