@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   blocked until the reservation runs out, and the profile flag is never cleared while an own model key is stored, so
   a key cannot end up on an account whose factor requirement is off.
 - The catalog level lookup reads its request body under a size bound (413 above it) and skips entries whose name is
-  longer than any SAP object name can be.
+  over 120 characters, so one entry cannot cause unbounded work.
 - An invitation to a project or a portfolio whose mail cannot be prepared is withdrawn in the same request and
   reported as not sent, like one the mail provider refused.
 - The test-account cleanup script refuses a `--limit` that is not a positive whole number, and it reports the real
