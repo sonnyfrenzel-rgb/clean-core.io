@@ -28,6 +28,7 @@ import {
   assistantProjectId,
   evidenceFailureText,
   guardProductAnswer,
+  presentsAbsentPlace,
   productAssistantPrompt,
   ASSISTANT_FAILED,
   ASSISTANT_OFFLINE,
@@ -302,10 +303,45 @@ test.describe('the evidence read', () => {
     expect(reply?.text).toBe('No source has been staged.');
   });
 
-  test('an answer for a place the reader has left is dropped', async () => {
-    const { deps } = mocks('The program checks lv_amount [L7].');
-    const reply = await answerAssistantQuestion(inProject('What does the program do with lv_amount?'), { ...deps, stale: () => true });
-    expect(reply).toBeNull();
+  test('an answer for a place the reader has left while the model was writing it is dropped', async () => {
+    // The reader is still there when the evidence is read and the model is asked; they leave while the model
+    // writes. Only the check after the model call can drop this answer.
+    let left = false;
+    let answer: (text: string) => void = () => undefined;
+    const { deps, calls } = mocks(null);
+    const pending = answerAssistantQuestion(inProject('What does the program do with lv_amount?'), {
+      ...deps,
+      callModel: (prompt) => {
+        calls.model.push(prompt);
+        return new Promise<string>((resolve) => {
+          answer = resolve;
+        });
+      },
+      stale: () => left,
+    });
+    await expect.poll(() => calls.model.length).toBe(1);
+    expect(calls.loads).toBe(1);
+    left = true;
+    answer('The program checks lv_amount against 5000 [L7].');
+    expect(await pending).toBeNull();
+  });
+
+  test('the same answer is shown when the reader stays', async () => {
+    let answer: (text: string) => void = () => undefined;
+    const { deps, calls } = mocks(null);
+    const pending = answerAssistantQuestion(inProject('What does the program do with lv_amount?'), {
+      ...deps,
+      callModel: (prompt) => {
+        calls.model.push(prompt);
+        return new Promise<string>((resolve) => {
+          answer = resolve;
+        });
+      },
+      stale: () => false,
+    });
+    await expect.poll(() => calls.model.length).toBe(1);
+    answer('The program checks lv_amount against 5000 [L7].');
+    expect((await pending)?.provenance).toBe('proposed');
   });
 });
 
@@ -350,6 +386,28 @@ test.describe('outside a project: the same output pipeline', () => {
     const { deps } = mocks('   ');
     const reply = await answerAssistantQuestion(outside('Anything?'), deps);
     expect(reply?.text).toBe(MODEL_INCOMPLETE);
+  });
+
+  test('a negation binds to its own clause: a place pointed at after a negated one is dropped', () => {
+    const kb = buildKnowledgeBase();
+    expect(presentsAbsentPlace('There is no sidebar, but open the Live Tenant tab under Testing.')).toBe(true);
+    expect(presentsAbsentPlace('There is no sidebar and open the Live Tenant tab under Testing.')).toBe(true);
+    expect(presentsAbsentPlace('Open the Live Tenant tab; there is no sidebar.')).toBe(true);
+    expect(presentsAbsentPlace('There is no sidebar and no Live Tenant tab.')).toBe(false);
+    expect(presentsAbsentPlace('It is not SAP-certified.')).toBe(false);
+    // A negation after the place, as its predicate, says it is absent too.
+    expect(presentsAbsentPlace('The Live Tenant tab is not available.')).toBe(false);
+    expect(presentsAbsentPlace("The sidebar doesn't exist any more.")).toBe(false);
+    expect(presentsAbsentPlace('The Live Tenant tab was removed in 3.5.')).toBe(false);
+    expect(presentsAbsentPlace('A sidebar no longer exists.')).toBe(false);
+    // ... but a predicate that is no negation still points the reader at it.
+    expect(presentsAbsentPlace('The Live Tenant tab is where you connect the system.')).toBe(true);
+    expect(presentsAbsentPlace('Use the Live Tenant tab, not Settings.')).toBe(true);
+    expect(presentsAbsentPlace('The Live Tenant tab is not only available but also required.')).toBe(true);
+    expect(presentsAbsentPlace("The sidebar isn't just optional.")).toBe(true);
+    const guarded = guardProductAnswer('There is no sidebar, but open the Live Tenant tab under Testing. Settings holds the connection.', kb);
+    expect(guarded.dropped).toBe(1);
+    expect(guarded.text).not.toContain('Live Tenant');
   });
 
   test('a sentence that says a place does not exist is kept', () => {

@@ -168,12 +168,22 @@ export default function AnalyzeIt({
   // A link to a place on this page (`#not-determined`, `#it-trust`) waits for it and brings it into view (ADR-085).
   useFollowHash();
 
-  // `#L42` / `#L40-48`: the code at that line, as on the Business page.
+  // `#L42` / `#L40-48`: the code at that line, as on the Business page — on arrival, and whenever the fragment
+  // changes on this page (an anchor in "Ask this case", roadmap 3.5.4 item 5).
   useEffect(() => {
-    const lines = analyzeLinesFromHash(window.location.hash);
-    if (!lines) return;
-    const frame = window.requestAnimationFrame(() => openSourceLine(lines.lineStart));
-    return () => window.cancelAnimationFrame(frame);
+    let frame = 0;
+    const read = () => {
+      const lines = analyzeLinesFromHash(window.location.hash);
+      if (!lines) return;
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => openSourceLine(lines.lineStart));
+    };
+    read();
+    window.addEventListener('hashchange', read);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('hashchange', read);
+    };
   }, []);
 
   const hasSource = source.trim().length > 0;
