@@ -219,7 +219,7 @@ test.describe('the way on leads through Re-design (ADR-143)', () => {
     for (const action of ['open-decision', 'start-redesign', 'continue']) {
       expect(tiles, action).toMatch(new RegExp(`<ActionLink href=\\{redesignHref\\(tile(, true)?\\)\\} data-tile-action="${action}"`));
     }
-    expect(tiles).toContain('router.push(redesignHref(t));');
+    expect(tiles).toContain('router.push(redesignHref(redesignChoice.tile));');
     expect(code('components/analyze/RouteCard.tsx')).toContain('Decide in Re-design');
   });
 
