@@ -21,6 +21,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   without an expiry and is given one only once the sign-in is really gone, so an administrator check keeps refusing
   that account for as long as the sign-in survives (QA reviews of the v3.5.3 release, 27.11.2026).
 
+- Turning off the authenticator waits a bounded time for Firebase Auth. If it gets no answer, own-key saves stay
+  blocked until the reservation runs out, and the profile flag is never cleared while an own model key is stored, so
+  a key cannot end up on an account whose factor requirement is off.
+- The catalog level lookup reads its request body under a size bound (413 above it) and skips entries whose name is
+  longer than any SAP object name can be.
+- An invitation to a project or a portfolio whose mail cannot be prepared is withdrawn in the same request and
+  reported as not sent, like one the mail provider refused.
+- The test-account cleanup script refuses a `--limit` that is not a positive whole number, and it reports the real
+  accounts it keeps as a count instead of listing their addresses.
+- On the decision, "Confirm decision…" with no option chosen yet scrolls to the four options and puts the focus there;
+  before, it set the address the page already had and nothing visible happened.
+
+### Tests
+
+- Route-level tests: the public verify and survey routes, the own-key routes, model stages, the catalog lookup and two
+  project routes answer an oversized request body with 413, both with a declared length and with a streamed body
+  that has none, and read no further than the bound.
+
 ### Docs
 
 - `docs/ROADMAP.md`: 3.5.4 opens with the rework of "Ask this case" (eight items, owner request 27.11.2026), followed
