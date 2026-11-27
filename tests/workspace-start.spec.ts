@@ -160,17 +160,16 @@ test.describe('a project starts on its full map (ADR-072)', () => {
     // lands on the map in Business too. Its process is one line in the
     // decision's Need row — what the map holds, not "empty", not "nothing on
     // record", counted as the map counts — and the row's action leads to Business.
-    // The decision is Re-design's step since ADR-143.
+    // Since ADR-145 the decision is the Decide page, and the line stands with a Rebuild's business questions.
     await page.goto(`${here.pathname}?view=management#need`, { waitUntil: 'domcontentloaded' });
     await page.waitForURL(/\/analyze(\?view=business)?#process-map$/, { timeout: 60000 });
     await page.goto(`${here.pathname}/redesign`, { waitUntil: 'domcontentloaded' });
-    const need = page.locator('[data-decision-pillar="need"]');
-    await expect(need).toBeVisible({ timeout: 90000 });
-    const line = need.locator('[data-decision-need-process]');
+    await page.locator('[data-decide-option="rebuild"]').click({ timeout: 90000 });
+    const line = page.locator('[data-decide-need-process]');
     await expect(line).toContainText(`${steps} step`, { timeout: 30000 });
     await expect(line).toContainText(`${decisions} decision point`);
-    await expect(need).not.toContainText('Nothing on record');
-    await expect(need.locator('[data-decision-pillar-action]')).toHaveAttribute('href', /\/analyze(\?view=business)?#process-map$|\/design\?[^#]*#rule-questions$/);
+    await expect(line).not.toContainText('Nothing on record');
+    await expect(line.getByRole('link', { name: 'Open the map' })).toHaveAttribute('href', /\/analyze(\?view=business)?#process-map$/);
     await expect(page.locator('[data-workspace-layers]')).toHaveCount(0);
   });
 

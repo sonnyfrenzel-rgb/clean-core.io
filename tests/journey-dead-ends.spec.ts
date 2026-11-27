@@ -32,7 +32,7 @@ test.describe('every page has a way on', () => {
     // Undecided: the way to the decision; decided and unwritten: the way to write it; "Change target" only for a route on record.
     expect(src).toContain('data-design-decide=""');
     expect(src).toContain('data-design-write-link=""');
-    expect(src).toMatch(/recorded && isOwner && !outside && dcase === 'rebuild' \? \(\s*<DesignConfirmTarget[\s\S]*?locked=\{true\}/);
+    expect(src).toMatch(/recorded && isOwner && !outside && optionOfArchitecture\(project\?\.targetArchitecture\) === 'rebuild' \? \(\s*<DesignConfirmTarget[\s\S]*?locked=\{true\}/);
     expect(src).not.toContain("'Ready for your confirmation.'");
     expect(src).not.toContain('designSignOffChecklist(');
     expect(src).not.toContain('<DesignOptions');

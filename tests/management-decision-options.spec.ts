@@ -325,7 +325,7 @@ test.describe('ADR-079 rendered — choosing an option in Management', () => {
     await expect(box).toContainText('self-declaration');
     await box.getByRole('button', { name: 'Record the decision', exact: true }).click();
 
-    await expect(page.locator('[data-decide-state="decided"][data-decide-option="keep"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-decide-state="decided"][data-decide-result-option="keep"]')).toBeVisible({ timeout: 60000 });
     await expect(page.locator('#decide-answer')).toContainText('Decided: Keep. Nothing is built.');
     await expect(page.locator('#decide-answer')).toContainText(OWNER);
     // One way to the amounts: Economics, from the cost line or the strip, never a second set of cards.

@@ -231,17 +231,24 @@ test('the one confirmation asks first: Cancel and Escape write nothing, its own 
   await expect(page.locator('[data-design-confirm]')).toHaveCount(0);
   await page.goto(`/project/${seeded.projectId}/redesign`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-decide-state="choosing"]')).toBeVisible({ timeout: 120_000 });
-  await page.locator('[data-decide-option="rebuild"]').click();
   const opener = page.locator('[data-decide-record]');
   const box = page.locator('[data-cc-message-box]');
+  // The rich fixture's contract carries a blocking limit: a Rebuild on its route cannot be confirmed, and the button
+  // says so before a click instead of offering one the server refuses (decision-blocked).
+  await page.locator('[data-decide-option="rebuild"]').click();
+  await expect(page.locator('[data-decide-bar-summary]')).toContainText('A limit of the architecture contract blocks a Rebuild on this route', { timeout: 120_000 });
+  await expect(opener).toBeDisabled();
+  // Retire, with its reason, is recordable.
+  await page.locator('[data-decide-option="retire"]').click();
+  await page.locator('[data-decide-reason] textarea').fill('The plant that ran it closed; nobody needs the report.');
   await expect(opener).toBeEnabled({ timeout: 120_000 });
 
   // Small, named, and it lists what is recorded.
   await opener.click();
   await expect(box).toBeVisible();
-  await expect(box.getByRole('heading', { name: 'Record: Rebuild?' })).toBeVisible();
+  await expect(box.getByRole('heading', { name: 'Record: Retire?' })).toBeVisible();
   await expect(box).toContainText('A self-declaration by the signed-in account, not an organisational mandate.');
-  await expect(box.locator('[data-decide-dialog-lines]')).toContainText('Rebuild as ');
+  await expect(box.locator('[data-decide-dialog-lines]')).toContainText('Retire: nothing is built');
   expect((await box.boundingBox())!.width).toBeLessThanOrEqual(520);
   if (SHOTS) await page.screenshot({ path: `${SHOTS}/decide-confirm-1440.png` });
 
@@ -273,10 +280,11 @@ test('the one confirmation asks first: Cancel and Escape write nothing, its own 
   // Only the box's own button records, through the one command.
   await opener.click();
   await box.getByRole('button', { name: 'Record the decision', exact: true }).click();
-  await expect(page.locator('[data-decide-state="decided"][data-decide-option="rebuild"]')).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator('[data-decide-state="decided"][data-decide-result-option="retire"]')).toBeVisible({ timeout: 60_000 });
   await expect(box).toHaveCount(0);
   const stored = await adminGetDoc('projects', seeded.projectId);
   expect(stored?.approvedByArchitect).toBe(true);
-  expect(stored?.architectJustifiedOverride).toBe('');
+  expect(stored?.targetArchitecture).toBe('retire');
+  expect(stored?.architectJustifiedOverride).toBe('The plant that ran it closed; nobody needs the report.');
   expect((stored?.decision as { status?: string } | undefined)?.status).toBe('confirmed');
 });

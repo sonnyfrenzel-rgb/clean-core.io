@@ -56,7 +56,7 @@ test('Analyze IT leads onto the Decide page, and Design, Management leads to the
   await page.goto(`/project/${seeded.projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
   const answer = page.locator('#design-answer [data-answer]');
   await expect(answer).toHaveText('Not decided yet. The decision is taken on the Decide page.', { timeout: 120_000 });
-  await expect(page.locator('[data-design-decide]')).toHaveAttribute('href', `/project/${seeded.projectId}/redesign`);
+  await expect(page.locator('[data-design-decide]')).toHaveAttribute('href', `/project/${seeded.projectId}/redesign#decide`);
   await expect(page.locator('[data-design-confirm]')).toHaveCount(0);
   await expect(page.locator('[data-design-checklist], #design-checklist')).toHaveCount(0);
   expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect ?? false).toBe(false);

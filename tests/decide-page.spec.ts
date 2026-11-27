@@ -188,7 +188,7 @@ test.describe('the page: no button without effect, nothing pre-selected, no mode
 
   test('nothing is pre-selected, and the one button records only when a click records something', () => {
     expect(page).toContain('const [choice, setChoice] = useState<DecisionOption | null>(null);');
-    expect(page).toMatch(/const recordable = Boolean\(choice\) && canDecide && !reading && !busy && !reasonMissing && read !== null;/);
+    expect(page).toMatch(/const recordable = Boolean\(choice\) && canDecide && !reading && !busy && !reasonMissing && !rebuildBlocked && read !== null;/);
     expect(page).toMatch(/data-decide-record=""/);
     expect(page).toMatch(/disabled=\{!recordable\}/);
     // The production bug of 3.5.3: a confirm button whose click only set the address it already had.

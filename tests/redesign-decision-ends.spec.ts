@@ -33,6 +33,8 @@ CALL FUNCTION 'BAPI_PO_CREATE1'.
 `;
 
 test.describe('Decide rendered: one choice, one dialog, and a Retire that ends the walk', () => {
+  // One owner and one project for both tests, in order: the second reads what the first left.
+  test.describe.configure({ mode: 'serial' });
   const OWNER = `${unique('decision-ends')}@cleancore-test.io`;
   const ID = unique('decision-ends');
 
@@ -89,7 +91,7 @@ test.describe('Decide rendered: one choice, one dialog, and a Retire that ends t
     await box.getByRole('button', { name: 'Record the decision', exact: true }).click();
 
     // The result: decided, nothing built, Design optional, nothing waiting.
-    await expect(page.locator('[data-decide-state="decided"][data-decide-option="retire"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-decide-state="decided"][data-decide-result-option="retire"]')).toBeVisible({ timeout: 90000 });
     await expect(page.locator('#decide-answer')).toContainText('Decided: Retire. Nothing is built.');
     await expect(page.locator('#decide-answer')).toContainText('Nothing is waiting.');
     const next = page.locator('[data-decide-next="design-optional"]');
@@ -98,7 +100,7 @@ test.describe('Decide rendered: one choice, one dialog, and a Retire that ends t
 
     // A reload reads the same from the record: nothing here is held in the page.
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-decide-state="decided"][data-decide-option="retire"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-decide-state="decided"][data-decide-result-option="retire"]')).toBeVisible({ timeout: 90000 });
 
     // Withdraw: back to choosing, and the earlier choice is named, never pre-selected.
     await page.locator('[data-decide-withdraw]').click();
@@ -108,7 +110,7 @@ test.describe('Decide rendered: one choice, one dialog, and a Retire that ends t
     await expect(page.locator('[data-decide-option][aria-checked="true"]')).toHaveCount(0);
   });
 
-  test('Rebuild: the route and the business questions come with the decision, and the dialog names them', async ({ page }) => {
+  test('Rebuild: the route and the business questions come with the decision; a contract that blocks it is said before a click', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInViaLanding(page, OWNER, PASSWORD);
@@ -117,16 +119,12 @@ test.describe('Decide rendered: one choice, one dialog, and a Retire that ends t
     await page.locator('[data-decide-option="rebuild"]').click();
     await expect(page.locator('[data-decide-needs="rebuild"] [data-decide-route]')).toBeVisible();
     await expect(page.locator('[data-decide-needs="rebuild"] [data-decide-questions]')).toBeVisible();
+    // This source writes EKPO directly: its architecture contract carries a blocking limit, so a Rebuild on the
+    // contract's route cannot be confirmed. The bar says so and the button stays closed: no click without effect, and
+    // no click the server refuses. (The Rebuild dialog's lines are held server-free in decide-page.spec.ts.)
     const record = page.locator('[data-decide-record]');
-    await expect(record).toBeEnabled({ timeout: 60000 });
-    await record.click();
-    const box = page.getByRole('dialog');
-    await expect(box).toContainText('Record: Rebuild?');
-    await expect(box.locator('[data-decide-dialog-lines]')).toContainText('Rebuild as ');
-    // No model is called by this dialog: its button records, and says nothing about a provider.
-    await expect(box.getByRole('button', { name: 'Record the decision', exact: true })).toBeVisible();
-    await expect(box).not.toContainText('Gemini');
-    await box.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.locator('[data-decide-bar-summary]')).toContainText('A limit of the architecture contract blocks a Rebuild on this route', { timeout: 60000 });
+    await expect(record).toBeDisabled();
     await expect(page.locator('[data-decide-state="choosing"]')).toBeVisible();
   });
 });

@@ -118,6 +118,8 @@ export interface DecisionRead {
   engineRoute?: string | null;
   /** ADR-145: the architecture contract's recommendation, the route `decide` checks a departure against. */
   contractRoute?: string | null;
+  /** ADR-145: whether a Rebuild on `route` would be blocked by its architecture contract (decision-blocked). */
+  rebuildContract?: { route: string | null; blocked: boolean } | null;
 }
 
 export interface OverviewSource {

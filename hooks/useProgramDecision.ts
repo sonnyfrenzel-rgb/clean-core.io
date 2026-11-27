@@ -79,6 +79,7 @@ function acceptDecision(j: unknown): DecisionRead | null {
         signOff: d.signOff ?? null,
         engineRoute: d.engineRoute ?? null,
         contractRoute: d.contractRoute ?? null,
+        rebuildContract: d.rebuildContract ?? null,
       }
     : null;
 }

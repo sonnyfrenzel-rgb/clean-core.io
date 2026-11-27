@@ -34,7 +34,8 @@ test('undecided: Management leads to the decision, with no "Confirm target", no 
   await page.goto(`/project/${seeded.projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
   await expect(page.locator('[data-design-view="management"] #design-answer')).toBeVisible({ timeout: 120_000 });
   await expect(page.locator('#design-answer [data-answer]')).toHaveText('Not decided yet. The decision is taken on the Decide page.', { timeout: 60_000 });
-  await expect(page.locator('[data-design-decide]')).toHaveAttribute('href', `/project/${seeded.projectId}/redesign`);
+  // Straight to the choice on the Decide page, not to its top.
+  await expect(page.locator('[data-design-decide]')).toHaveAttribute('href', `/project/${seeded.projectId}/redesign#decide`);
   await expect(page.locator('[data-design-confirm]')).toHaveCount(0);
   await expect(page.locator('[data-design-checklist], #design-checklist')).toHaveCount(0);
   await expect(page.locator('#design-options')).toHaveCount(0);
@@ -86,7 +87,9 @@ test('the Decide page names the contract’s route for a Rebuild, not a route sw
   const route = page.locator('[data-decide-route]');
   await expect(route).toHaveAttribute('data-decide-route', 'rap', { timeout: 60_000 });
   await expect(route).toContainText('On-stack, RAP');
-  await expect(route.locator('[data-family-chip="engine"]')).toBeVisible();
+  // The chip says whose route it is; the quieter tool head hides engine chips inside blocks by CSS, so it is attached,
+  // not drawn (feat/3.5.4-head).
+  await expect(route.locator('[data-family-chip="engine"]')).toBeAttached();
   // Following the contract's route asks for no reason.
   await expect(page.locator('[data-decide-reason]')).toHaveCount(0);
 });

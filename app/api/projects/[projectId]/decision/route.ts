@@ -8,6 +8,7 @@ import { deriveProjectDecision, DECISION_MAX_SOURCE_BYTES } from '@/lib/decision
 import { isFirestoreId } from '@/lib/firestore-id';
 import { recommendedArchitecture } from '@/lib/project-commands';
 import { recommendationOfProject } from '@/lib/contract-build';
+import { optionOfArchitecture } from '@/lib/decision-options';
 import { toDate } from '@/lib/format';
 
 /**
@@ -97,6 +98,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
       );
     }
 
+    // ADR-145: whether a Rebuild on its route can be confirmed, said before a click. The contract of that route is the
+    // draft's when a Rebuild route is signed off; otherwise it is derived once more without the sign-off (a Keep, Retire
+    // or Standard sign-off binds no contract), so the Decide page never offers a Rebuild the commands route refuses.
+    const signedCode = data.approvedByArchitect === true && typeof data.targetArchitecture === 'string' ? data.targetArchitecture : null;
+    const rebuildSigned = optionOfArchitecture(signedCode) === 'rebuild';
+    let rebuildDraft = derived.answer.draft;
+    if (signedCode && !rebuildSigned) {
+      const plain = await deriveProjectDecision(db, projectId, { ...data, approvedByArchitect: false, targetArchitecture: null }, new Date().toISOString());
+      if (plain.ok) rebuildDraft = plain.answer.draft;
+    }
+    const rebuildContractRev = rebuildDraft.bindings.find((b) => b.key === 'contract')?.revision ?? null;
+    const contractRoute = recommendationOfProject(data);
+
     return NextResponse.json({
       ...derived.answer,
       runId: derived.runId,
@@ -118,7 +132,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ proj
       engineRoute: recommendedArchitecture(data),
       // ADR-145: the route the Decide page names for a Rebuild is the architecture contract's, the one `decide` checks
       // a departure against (`recommendationOfProject`), not the stored value; `null` when no contract is derived.
-      contractRoute: recommendationOfProject(data),
+      contractRoute,
+      rebuildContract: {
+        route: rebuildSigned ? signedCode : contractRoute,
+        blocked: typeof rebuildContractRev === 'string' && rebuildContractRev.startsWith('blocked:'),
+      },
     });
   } catch (err: unknown) {
     logger.error('project decision read failed', {
