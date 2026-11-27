@@ -376,7 +376,19 @@ export default function DecisionCard({
                   return;
                 }
                 const first = unblock[0];
-                if (first) window.location.assign(unblockHref(first.path));
+                if (!first) return;
+                // A place on this page: assigning the hash the address already carries does nothing, so the button
+                // looked dead. Scroll to it and put the focus on its first choice instead.
+                if (first.path.startsWith('#')) {
+                  const target = document.getElementById(first.path.slice(1));
+                  if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    const choice = target.querySelector<HTMLElement>('[data-option-choose], [data-option-choose-design], button, a[href]');
+                    (choice ?? target).focus({ preventScroll: true });
+                    return;
+                  }
+                }
+                window.location.assign(unblockHref(first.path));
               }}
               disabled={busy || (!view.confirmable && unblock.length === 0)}
               aria-describedby={view.confirmable ? undefined : 'decision-blocked-reason'}
