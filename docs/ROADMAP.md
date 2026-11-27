@@ -1790,13 +1790,13 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-1033 | low | P3 | 3.5.4 · security audit 3.5.3 | fixed, awaiting release |
 | SEC-2026-1034 | low | P3 | 3.5.4 · security audit 3.5.3 | fixed, awaiting release |
 | SEC-2026-1035 | low | P3 | 3.5.4 · security audit 3.5.3 | fixed, awaiting release |
-| SEC-2026-1036 | low | P3 | needs Sonny's decision | scheduled |
+| SEC-2026-1036 | low | — | owner decision 27.11.2026 | accepted risk |
 | SEC-2026-1037 | info | P3 | 3.5.4 · security audit 3.5.3 | fixed, awaiting release |
 | SEC-2026-1042 | medium | — | — | accepted risk |
 | SEC-2026-1079 | medium | P2 | 3.5.4 · same as QA 7a9e501b1f55, fixed on feat/3.5.4-mfa | scheduled |
 | SEC-2026-1080 | medium | P3 | before the next Firestore migration run (with SEC-2026-1031) | scheduled |
 | SEC-2026-1081 | low | P3 | 3.5.4 · with SEC-2026-1032 | scheduled |
-| SEC-2026-1082 | low | P3 | needs Sonny's decision (with SEC-2026-1036) | scheduled |
+| SEC-2026-1082 | low | — | owner decision 27.11.2026 (with SEC-2026-1036) | accepted risk |
 | SEC-2026-1083 | low | P3 | 3.5.4 · security audit 588ee78 | scheduled |
 | SEC-2026-1084 | low | P3 | 3.5.4 · security audit 588ee78 | scheduled |
 | SEC-2026-1085 | low | P3 | 3.5.4 · with SEC-2026-1032 | scheduled |
