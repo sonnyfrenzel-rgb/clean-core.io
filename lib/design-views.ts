@@ -410,6 +410,7 @@ export function designAnchors(view: DesignView, c: DesignCase, n: { open: number
     if (c === 'standard') return [a('answer', 'Fit to standard'), a('objects', 'Candidates', n.objects)];
     return [a('answer', 'Target'), a('canvas', 'Architecture'), a('contract', 'Contract'), a('objects', 'Objects', n.objects), a('requirements', 'Requirements')];
   }
-  if (c === 'rebuild' || c === 'none') return [a('answer', 'Ready to sign off?'), a('checklist', 'Before sign-off'), a('options', 'Options')];
-  return [a('answer', c === 'retire' ? 'Ready to switch off?' : c === 'keep' ? 'What keeping means' : 'Ready to confirm?'), a('options', 'Options')];
+  // ADR-145 (4): the Management view shows the decided option; the checklist and the four options are gone.
+  if (c === 'rebuild' || c === 'none') return [a('answer', c === 'none' ? 'Not decided yet' : 'The decided option')];
+  return [a('answer', c === 'retire' ? 'Ready to switch off?' : c === 'keep' ? 'What keeping means' : 'Ready to confirm?')];
 }

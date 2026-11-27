@@ -10,11 +10,8 @@ import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 
 /**
  * Journey review 26.11.2026, rendered: on a project analysed through `/api/runs/create`, Analyze IT carries "Re-design
- * this program" into Re-design, and Design's Management view, with every check done over a design stored in the older
- * text form, says so and offers the rewrite instead of "Ready for your confirmation" over a closed button.
- *
- * `Z_SALES_ORDER_CREATOR` asks the business no question, so a design on record makes the checklist ready (as in
- * `design-signoff-real-run.spec.ts`).
+ * this program" onto the Decide page (the route keeps its segment), and Design's Management view never ends on a
+ * closed button: undecided, its one action leads to the decision (ADR-145: no "Confirm target", no checklist).
  */
 
 const EXAMPLE = 'Z_SALES_ORDER_CREATOR.txt';
@@ -42,7 +39,7 @@ async function analysedWithOlderDesign(request: import('@playwright/test').APIRe
   return seeded;
 }
 
-test('Analyze IT leads into Re-design, and an older design says what blocks the confirm and offers the rewrite', async ({ page, request }) => {
+test('Analyze IT leads onto the Decide page, and Design, Management leads to the decision while none is recorded', async ({ page, request }) => {
   test.setTimeout(420_000);
   const seeded = await analysedWithOlderDesign(request);
   await signInThroughForm(page, seeded);
@@ -54,16 +51,13 @@ test('Analyze IT leads into Re-design, and an older design says what blocks the 
   await expect(redesign).toHaveText('Re-design this program');
   await expect(redesign).toHaveAttribute('href', `/project/${seeded.projectId}/redesign`);
 
-  // Design, Management: every check done, the design in the older form.
+  // Design, Management (ADR-145): nothing decided yet, so the one action is the way to the decision, never a closed
+  // "Confirm target" or a checklist; the older design does not matter until a Rebuild is recorded.
   await page.goto(`/project/${seeded.projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-design-view="management"] [data-design-checklist]')).toBeVisible({ timeout: 120_000 });
   const answer = page.locator('#design-answer [data-answer]');
-  await expect(answer).toContainText('older form', { timeout: 120_000 });
-  await expect(answer).not.toContainText('Ready for your confirmation');
-  const rewrite = page.locator('[data-design-rewrite-older]');
-  await expect(rewrite).toBeVisible();
-  await expect(rewrite).toHaveText('Write the design again');
+  await expect(answer).toHaveText('Not decided yet. The decision is taken on the Decide page.', { timeout: 120_000 });
+  await expect(page.locator('[data-design-decide]')).toHaveAttribute('href', `/project/${seeded.projectId}/redesign`);
   await expect(page.locator('[data-design-confirm]')).toHaveCount(0);
-  await expect(page.locator('#design-confirm-note')).toContainText('Every check is done');
+  await expect(page.locator('[data-design-checklist], #design-checklist')).toHaveCount(0);
   expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect ?? false).toBe(false);
 });

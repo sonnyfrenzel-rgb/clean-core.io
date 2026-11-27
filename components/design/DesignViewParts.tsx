@@ -104,7 +104,7 @@ export function DesignDecisionBox({
     ) : null,
     managementHref ? (
       <Link key="m" href={managementHref} className={LINK} data-design-decision-link="management">
-        {none ? 'Decide in Re-design' : 'Re-design'}
+        {none ? 'Decide' : 'Open the decision'}
       </Link>
     ) : null,
   ].filter(Boolean);
@@ -121,12 +121,12 @@ export function DesignDecisionBox({
       <span className="cc-text-h3 text-cc-ink">{none ? 'Not taken yet' : decision.label}</span>
       {none ? (
         <p className="m-0 cc-text-cell text-cc-ink">
-          Keep, rebuild, move to SAP standard or retire? Economics prices the options, you decide in Re-design. Design meanwhile designs a rebuild.
+          Keep, rebuild, move to SAP standard or retire? You decide on the Decide page; it prices the options as a simulation. Design meanwhile designs a rebuild.
         </p>
       ) : (
         <>
           <p className="m-0 cc-text-cell text-cc-ink-muted">
-            {decision.confirmed ? 'Confirmed in Re-design' : 'Chosen'}
+            {decision.confirmed ? 'Recorded on the Decide page' : 'Chosen, not recorded'}
             {decision.by ? ` by ${decision.by}` : ''}
             {day ? ` on ${day}` : ''}. A self-declaration.
           </p>

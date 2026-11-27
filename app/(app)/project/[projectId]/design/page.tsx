@@ -103,12 +103,10 @@ import EconomicsGuardRail from '@/components/economics/EconomicsGuardRail';
 import { economicsGuardRail, type GuardRailProject } from '@/lib/economics-guard-rail';
 import {
   DesignCard,
-  DesignChecklist,
   DesignDecisionBox,
   DesignDependencies,
   DesignNotRead,
   DesignObjectTable,
-  DesignOptions,
   DesignSection,
   DesignTargetBoardView,
 } from '@/components/design/DesignViewParts';
@@ -124,7 +122,6 @@ import {
   designDecisionOf,
   designDependencies,
   designObjects,
-  designSignOffChecklist,
   designTargetBoard,
   outsidePricedRange,
   type RuleLines,
@@ -1265,7 +1262,10 @@ ${DESIGN_ANSWER_REMINDER}`;
         : project?.recommendationJustification
           ? sapNamesForDisplay(project.recommendationJustification)
           : `Based on the code analysis, the ${recommendation === 'cap' ? 'Side-by-Side (CAP)' : 'On-Stack (RAP)'} extensibility path was identified as the most suitable approach for this project.`;
-  const canSignOff = Boolean(design) && designIsStructured(design);
+  // ADR-145: the route is recorded with the decision on the Decide page, before any design is written, so the sign-off
+  // panel ("Change target") no longer waits for a written design (the client gate `canSignOff` is gone; the server never
+  // asked for one). Whether the design on record is the structured kind is still read, for its own wording.
+  const designStructured = Boolean(design) && designIsStructured(design);
 
   // The sign-off command, one place for both ways to it: the panel's
   // "Confirm & Lock" and the question "Confirm target" asks first.
@@ -1291,7 +1291,7 @@ ${DESIGN_ANSWER_REMINDER}`;
 
   // The sign-off, unchanged: the same panel, the same commands, the same
   // run binding (roadmap 0.7, 8.8). It sits in the Decision tab now.
-  const signOffPanel = canSignOff ? (
+  const signOffPanel = isOwner ? (
     <ArchitectSignOff
       // The two shapes `originalRecommendation` arrives in — the five
       // architecture codes and the router's own route names — are
@@ -1354,8 +1354,7 @@ ${DESIGN_ANSWER_REMINDER}`;
   const pid = encodeURIComponent(projectId as string);
   const base = `/project/${pid}`;
   const economicsHref = `${base}/tco`;
-  // The program decision is taken in Re-design, its step 2 (ADR-143, owner 23.11.2026); Analyze's Management view only
-  // shows it.
+  // The program decision is taken on the Decide page (ADR-143, ADR-145); Design shows the decided option.
   const managementHref = `${base}/redesign#decide`;
   const viewHref = (v: 'business' | 'it' | 'management', hash = '') => `${base}/design?view=${v}${hash}`;
 
@@ -1390,15 +1389,6 @@ ${DESIGN_ANSWER_REMINDER}`;
   const openQ = answersReady ? answersReady.open : null;
   const answeredQ = answersReady ? answersReady.total - answersReady.open : 0;
   const designWritten = Boolean(design) && !designStale;
-  const checklist = designSignOffChecklist({
-    answers: businessAnswers,
-    designWritten,
-    designStale: Boolean(design) && designStale,
-    targetLine,
-    targetBound,
-    outside,
-    confirmed: signOffCurrent,
-  });
   const anchors = designAnchors(view, dcase, { open: openQ, objects: view === 'it' && dcase === 'keep' ? objects.byLevel.D + objects.byLevel.C : objects.rows.length, steps: board.steps });
   const routeCode = contractNow ? ARCHITECTURE_OF_ROUTE[contractNow.route.chosen] : recommendation;
   const routeLabel = architectureOptionLabel(routeCode) ?? routeCode;
@@ -1423,7 +1413,7 @@ ${DESIGN_ANSWER_REMINDER}`;
       <p className="m-0 cc-text-cell text-cc-ink-muted" data-design-written="">
         {designStale
           ? 'The design on record was written before the answers or the analysis changed. Regenerate it from the header.'
-          : 'The design is written from your answers. The technical design is in the IT view; you confirm the target in the Management view.'}
+          : 'The design is written from your answers. The technical design is in the IT view; the target was recorded with the decision.'}
       </p>
     </div>
   );
@@ -1575,7 +1565,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         question: 'What does keeping leave in place?',
         chips: engineChip,
         answer: `The program stays classic ABAP. ${plural(objects.byLevel.D, 'Level D object', 'Level D objects')} and ${plural(objects.byLevel.C, 'Level C object', 'Level C objects')} stay.`,
-        condition: 'Keep builds nothing. Removing any of it is a change, and so a new decision in Re-design.',
+        condition: 'Keep builds nothing. Removing any of it is a change, and so a new decision on the Decide page.',
         action: decisionBox,
         facets: [
           { id: 'score', label: 'Clean Core Score', value: typeof project?.cleanCoreScore === 'number' ? String(project.cleanCoreScore) : '—', note: 'from the analysis run' },
@@ -1616,7 +1606,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         condition: (
           <>
             {contractNow ? `${sapNamesForDisplay(contractNow.summary)} ` : ''}Target: {targetLine}.
-            {signOffCurrent ? ' The target is confirmed.' : ' You confirm the target when you sign off the route.'}
+            {signOffCurrent ? ' The target is recorded with the decision.' : ' The target is recorded with the decision, on the Decide page.'}
           </>
         ),
         action: decisionBox,
@@ -1657,72 +1647,69 @@ ${DESIGN_ANSWER_REMINDER}`;
         ],
       };
     } else {
-      // Every check can be done while the design on record is an older, unstructured text that carries no target to
-      // confirm: then the answer says so and the one action writes it again, instead of "ready" beside a closed button.
-      const olderForm = !outside && !signOffCurrent && checklist.ready && !canSignOff && Boolean(design);
+      // ADR-145 (4): the route is recorded with the decision on the Decide page; this view shows the decided option and
+      // what is still in the way, never "Confirm target", a checklist or the four options again. "Change target" stays
+      // for a route on record (the sign-off panel); an older, unstructured design is written again here.
+      const olderForm = !outside && Boolean(design) && !designStructured;
+      const recorded = project?.approvedByArchitect === true;
       const head = outside
         ? 'Stop: the design no longer matches what was priced.'
-        : signOffCurrent
-          ? 'The target is confirmed.'
+        : dcase === 'none'
+          ? 'Not decided yet. The decision is taken on the Decide page.'
           : olderForm
-            ? 'Not ready: this design was written in an older form that has no target to confirm. Write it again.'
-            : checklist.ready
-            ? 'Ready for your confirmation.'
-            : openQ
-              ? `Not ready: ${plural(openQ, 'business answer is', 'business answers are')} missing.`
-              : !designWritten
-                ? 'Not ready: the design is not written yet.'
-                : 'Not ready yet.';
-      const canConfirm = canSignOff && isOwner && !outside && (checklist.ready || project?.approvedByArchitect === true);
+            ? 'This design was written in an older form that has no target. Write it again.'
+            : decision.confirmed
+              ? `Decided: Rebuild as ${routeLabel}.`
+              : 'Rebuild chosen, not recorded yet. Record it on the Decide page.';
       card = {
-        question: `${optionLabel} · is the design ready to sign off?`,
-        chips: signOffCurrent ? <FamilyChip kind="yours" note="target" /> : engineChip,
+        question: dcase === 'none' ? 'No decision yet · what do we build?' : `${optionLabel} · what is still in the way?`,
+        chips: decision.confirmed ? <FamilyChip kind="yours" note="decision" /> : engineChip,
         answer: head,
         condition: dcase === 'none'
-          ? `No program decision yet: Design designs a rebuild meanwhile, as ${routeLabel}.`
-          : `The program is rebuilt as a clean extension: ${routeLabel}. ${targetLine}.`,
+          ? `Design designs a rebuild meanwhile, as ${routeLabel}. ${targetLine}.`
+          : `The program is rebuilt as a clean extension: ${routeLabel}. ${targetLine}.${!designWritten ? ' The design is not written yet.' : ''}`,
         action: outside ? (
           <CcLinkButton href={economicsHref} variant="primary">
             Re-price in Economics
           </CcLinkButton>
         ) : !isOwner && project ? (
           <OwnerOnlyNote />
+        ) : dcase === 'none' || !decision.confirmed ? (
+          <CcLinkButton href={managementHref} variant="primary" data-design-decide="">
+            Decide
+          </CcLinkButton>
         ) : olderForm ? (
           <CcButton
             variant="primary"
             icon={<RefreshCw size={16} aria-hidden={true} />}
             busy={generating}
             disabled={!designAvailable || stale.sourceChanged || elsewhereSince !== null || !designWriteEnabled(writeGate)}
-            aria-describedby={writeGate.kind === 'ready' ? 'design-confirm-note' : 'design-regenerate-reason'}
+            aria-describedby={writeGate.kind === 'ready' ? undefined : 'design-regenerate-reason'}
             data-design-rewrite-older=""
             onClick={askRegenerate}
           >
             Write the design again
           </CcButton>
+        ) : !designWritten ? (
+          <CcLinkButton href={viewHref('business', '#design-questions')} variant="primary" data-design-write-link="">
+            Write the design
+          </CcLinkButton>
         ) : (
-          <DesignConfirmTarget
-            label={architectureOptionLabel(recommendation) ?? recommendation}
-            onConfirm={() => lockArchitecture(recommendation, '')}
-            signOffPanel={signOffPanel}
-            locked={project?.approvedByArchitect === true}
-            disabled={!canConfirm}
-            describedBy="design-confirm-note"
-          />
-        ),
-        actionNote: outside ? null : (
-          <span id="design-confirm-note">
-            {canConfirm
-              ? 'A self-declaration of your account, bound to the run you read.'
-              : olderForm
-                ? 'Every check is done. Confirming needs the design in its current form, with its target.'
-                : 'Possible once every check below is done.'}
-          </span>
-        ),
-        moreActions: (
-          <CcLinkButton href={managementHref} variant="ghost">
-            Open the decision
+          <CcLinkButton href={viewHref('it')} variant="primary" data-design-read-it="">
+            Read the technical design
           </CcLinkButton>
         ),
+        actionNote: outside || !isOwner ? null : dcase === 'none' || !decision.confirmed ? 'One page: cost, the four options, your answers, one confirmation.' : null,
+        moreActions:
+          recorded && isOwner && !outside && dcase === 'rebuild' ? (
+            <DesignConfirmTarget
+              label={architectureOptionLabel(recommendation) ?? recommendation}
+              onConfirm={() => lockArchitecture(recommendation, '')}
+              signOffPanel={signOffPanel}
+              locked={true}
+              disabled={false}
+            />
+          ) : null,
         facets: [
           decisionFacet,
           { id: 'target', label: 'Target', value: contractNow ? (contractNow.route.chosen === 'in-app-rap' ? 'In-app' : 'Side-by-side') : 'Not determined', note: targetLine },
@@ -1738,7 +1725,7 @@ ${DESIGN_ANSWER_REMINDER}`;
       ? 'What the process looks like after the change, and what you decide for it.'
       : view === 'it'
         ? 'Where it runs after the change, and on which released objects.'
-        : 'Whether the chosen option is ready to sign off, and what is still in the way.';
+        : 'The decided option, its target, and what is still in the way.';
   const questionsShown = view === 'business' && (dcase === 'none' || dcase === 'rebuild' || dcase === 'keep');
 
   return (
@@ -1893,7 +1880,7 @@ ${DESIGN_ANSWER_REMINDER}`;
                 }
                 stale={designStale || stale.signOff}
                 hasDocument={Boolean(design)}
-                canSignOff={canSignOff}
+                canSignOff={designStructured}
                 signOffPanel={null}
                 locked={project?.approvedByArchitect === true}
                 reader={Boolean(project) && !isOwner}
@@ -1978,16 +1965,6 @@ ${DESIGN_ANSWER_REMINDER}`;
           ) : null}
 
           {/* ---------------- Management ---------------- */}
-          {view === 'management' && (dcase === 'none' || dcase === 'rebuild') ? (
-            <DesignSection id="design-checklist" title="Before sign-off" lead="What stands between the decision and the confirmed target.">
-              <DesignChecklist rows={checklist.rows} />
-            </DesignSection>
-          ) : null}
-          {view === 'management' ? (
-            <DesignSection id="design-options" title="The four options" lead="Decided in Re-design. Design shows what the chosen one looks like.">
-              <DesignOptions decided={dcase} />
-            </DesignSection>
-          ) : null}
 
           {/* ---------------- the business questions (mounted in every view) ---------------- */}
           <div hidden={!questionsShown} className={questionsShown ? undefined : 'hidden'}>
@@ -2012,14 +1989,10 @@ ${DESIGN_ANSWER_REMINDER}`;
               <DesignCard>
                 <p className="m-0 cc-text-body text-cc-ink">
                   {design ? 'The design is written from your answers. ' : 'Once the answers are in, the design is written from them (two model calls, not counted against your analysis runs). '}
-                  Then you confirm the target, and Transformation builds the code from the technical design. The technical design
-                  is in the{' '}
+                  The target was recorded with the decision on the Decide page, and Transformation builds the code from the technical
+                  design, which is in the{' '}
                   <Link href={viewHref('it')} className="font-semibold text-cc-information underline-offset-2 hover:underline">
                     IT view
-                  </Link>
-                  ; what stands before the confirmation is in the{' '}
-                  <Link href={viewHref('management')} className="font-semibold text-cc-information underline-offset-2 hover:underline">
-                    Management view
                   </Link>
                   .
                 </p>
