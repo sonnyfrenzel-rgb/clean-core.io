@@ -276,10 +276,10 @@ const NEGATION = /\b(?:no|not|never|none|without|isn't|aren't|doesn't|don't|cann
 /**
  * A negation that follows the place as its predicate, within a couple of words: "the Live Tenant tab is not
  * available", "a sidebar no longer exists", "the pro plan was removed". An instruction ("open the Live Tenant tab")
- * has no such predicate and stays flagged.
+ * has no such predicate and stays flagged, and so does "not only … but also".
  */
 const NEGATED_AFTER =
-  /^(?:\s+[\w-]+){0,2}?\s+(?:(?:is|are|was|were|does|do|has|have)(?:\s+(?:not|no longer)|n't)\b|no longer\b|(?:was|were|has been|have been) (?:removed|retired|dropped)\b|is gone\b)/i;
+  /^(?:\s+[\w-]+){0,2}?\s+(?:(?:is|are|was|were|does|do|has|have)(?:\s+(?:not|no longer)|n't)\b(?!\s+(?:only|just|merely|simply)\b)|no longer\b|(?:was|were|has been|have been) (?:removed|retired|dropped)\b|is gone\b)/i;
 
 /** Where one clause ends and the next begins: a negation in one clause says nothing about the next. */
 const CLAUSE_SPLIT = /[;:,]|\s(?:but|and|or|however|while|whereas|yet)\s/i;

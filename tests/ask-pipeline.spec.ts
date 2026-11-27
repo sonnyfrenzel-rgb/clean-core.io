@@ -403,6 +403,8 @@ test.describe('outside a project: the same output pipeline', () => {
     // ... but a predicate that is no negation still points the reader at it.
     expect(presentsAbsentPlace('The Live Tenant tab is where you connect the system.')).toBe(true);
     expect(presentsAbsentPlace('Use the Live Tenant tab, not Settings.')).toBe(true);
+    expect(presentsAbsentPlace('The Live Tenant tab is not only available but also required.')).toBe(true);
+    expect(presentsAbsentPlace("The sidebar isn't just optional.")).toBe(true);
     const guarded = guardProductAnswer('There is no sidebar, but open the Live Tenant tab under Testing. Settings holds the connection.', kb);
     expect(guarded.dropped).toBe(1);
     expect(guarded.text).not.toContain('Live Tenant');
