@@ -25,8 +25,10 @@ const RETURN_HEADERS = ['content-type', 'etag', 'dataserviceversion', 'odata-ver
 /**
  * The proxy URL for a path the child asked for, or null. The capability is the
  * first path segment and stays it: a path with dot segments, encoded dots or
- * backslashes, or one whose resolved URL leaves `<baseUrl>/<capability>/` or
- * the proxy's origin, is refused before any token is fetched.
+ * backslashes, a segment that holds a dot segment once decoded (an encoded
+ * slash or backslash in front of it), or one whose resolved URL leaves
+ * `<baseUrl>/<capability>/` or the proxy's origin, is refused before any token
+ * is fetched.
  */
 export function relayTarget(baseUrl: string, capability: string, pathAndQuery: string): string | null {
   if (!pathAndQuery.startsWith('/') || pathAndQuery.startsWith('//') || pathAndQuery.length > 6_000) return null;
@@ -34,6 +36,18 @@ export function relayTarget(baseUrl: string, capability: string, pathAndQuery: s
   if (pathOnly.includes('\\')) return null;
   const dotSegment = (s: string) => ['.', '..'].includes(s.toLowerCase().replace(/%2e/g, '.'));
   if (pathOnly.split('/').some(dotSegment)) return null;
+  // Once decoded, as a server behind the proxy may decode it: an encoded separator (%2F, %5C) inside a segment must
+  // not make a dot segment of its own ('/%2e%2e%2foutside' is '../outside'). An encoded slash inside an OData key
+  // ("Entity('A%2FB')") stays allowed; a segment that does not decode is refused.
+  for (const segment of pathOnly.split('/')) {
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(segment);
+    } catch {
+      return null;
+    }
+    if (decoded.split(/[\\/]/).some((piece) => piece === '.' || piece === '..')) return null;
+  }
   let target: URL;
   try {
     target = new URL(`${baseUrl}/${capability}${pathAndQuery}`);
