@@ -1,6 +1,13 @@
 import type { DocumentReference, Transaction } from 'firebase-admin/firestore';
 import { getAdminAuth, getAdminDb } from '@/lib/firebase-admin';
-import { MFA_REMOVAL_MARKER, type GateRefusal } from '@/lib/mfa-gate';
+import { randomUUID } from 'crypto';
+import {
+  MFA_REMOVAL_ALREADY_RUNNING,
+  MFA_REMOVAL_MARKER,
+  mfaRemovalInProgress,
+  mfaRemovalReservationOf,
+  type GateRefusal,
+} from '@/lib/mfa-gate';
 
 /**
  * Retiring the second factor: two systems, no transaction, one fixed order.
@@ -140,20 +147,32 @@ export async function reserveFactorRemoval(
   blockedBy: (profile: Record<string, unknown> | undefined) => GateRefusal | null,
   deps: MfaRetireDeps = PRODUCTION_MFA_RETIRE_DEPS,
   nowMs: number = Date.now(),
-): Promise<GateRefusal | null> {
+  token: string = randomUUID(),
+): Promise<{ refusal: GateRefusal; token: null } | { refusal: null; token: string }> {
   const { db } = await deps.adminDb();
   const userRef: DocumentReference = db.collection('users').doc(uid);
   return db.runTransaction(async (tx: Transaction) => {
     const profile = await tx.get(userRef);
-    const blocked = blockedBy(profile.data());
-    if (blocked) return blocked;
-    if (profile.exists) tx.set(userRef, { [MFA_REMOVAL_MARKER]: nowMs }, { merge: true });
-    return null;
+    const data = profile.data();
+    const blocked = blockedBy(data);
+    if (blocked) return { refusal: blocked, token: null };
+    // One removal at a time: a second request while the first still runs is refused, so no request ever holds a
+    // reservation another one could lift.
+    if (mfaRemovalInProgress(data, nowMs)) return { refusal: MFA_REMOVAL_ALREADY_RUNNING, token: null };
+    if (profile.exists) tx.set(userRef, { [MFA_REMOVAL_MARKER]: { at: nowMs, token } }, { merge: true });
+    return { refusal: null, token };
   });
 }
 
-/** Lifts the reservation after a removal that did not go through (the factor is still there, or back). */
-export async function releaseFactorRemoval(uid: string, deps: MfaRetireDeps = PRODUCTION_MFA_RETIRE_DEPS): Promise<void> {
+/**
+ * Lifts the reservation after a removal that did not go through (the factor is still there, or back) — only the
+ * reservation this request took, named by its token; one taken since by another request stays.
+ */
+export async function releaseFactorRemoval(uid: string, token: string, deps: MfaRetireDeps = PRODUCTION_MFA_RETIRE_DEPS): Promise<void> {
   const { db, FieldValue } = await deps.adminDb();
-  await db.collection('users').doc(uid).set({ [MFA_REMOVAL_MARKER]: FieldValue.delete() }, { merge: true });
+  const userRef: DocumentReference = db.collection('users').doc(uid);
+  await db.runTransaction(async (tx: Transaction) => {
+    const held = mfaRemovalReservationOf((await tx.get(userRef)).data());
+    if (held && held.token === token) tx.set(userRef, { [MFA_REMOVAL_MARKER]: FieldValue.delete() }, { merge: true });
+  });
 }

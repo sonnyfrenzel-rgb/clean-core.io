@@ -150,10 +150,35 @@ export const OWN_KEY_SAVE_DURING_MFA_REMOVAL: GateRefusal = {
     'The authenticator on this account is being turned off, and an own model key may only be kept with multi-factor authentication. Set the authenticator up again, then store the key.',
 };
 
+export const MFA_REMOVAL_ALREADY_RUNNING: GateRefusal = {
+  status: 409,
+  message: 'The authenticator on this account is already being turned off. Wait a moment and reload the page.',
+};
+
+/**
+ * The reservation as stored: when it was taken and the token of the request that holds it. Only that request may
+ * lift it (`releaseFactorRemoval`), so a second, failing request cannot lift the first one's while it still runs.
+ * A bare number is read as a reservation without a token, as the first form of the field was written.
+ */
+export interface MfaRemovalReservation {
+  at: number;
+  token: string;
+}
+
+export function mfaRemovalReservationOf(profile: Record<string, unknown> | null | undefined): MfaRemovalReservation | null {
+  const v = profile?.[MFA_REMOVAL_MARKER];
+  if (typeof v === 'number' && Number.isFinite(v)) return { at: v, token: '' };
+  if (v && typeof v === 'object') {
+    const { at, token } = v as { at?: unknown; token?: unknown };
+    if (typeof at === 'number' && Number.isFinite(at)) return { at, token: typeof token === 'string' ? token : '' };
+  }
+  return null;
+}
+
 /** Whether the profile carries a removal reservation that has not run out. */
 export function mfaRemovalInProgress(profile: Record<string, unknown> | null | undefined, nowMs: number): boolean {
-  const at = profile?.[MFA_REMOVAL_MARKER];
-  return typeof at === 'number' && Number.isFinite(at) && nowMs - at < MFA_REMOVAL_MARKER_TTL_MS;
+  const r = mfaRemovalReservationOf(profile);
+  return r !== null && nowMs - r.at < MFA_REMOVAL_MARKER_TTL_MS;
 }
 
 /**

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyRequestAuth, getAdminAuth, assertMfaStepUp, assertRecentAuth, QuotaError } from '@/lib/firebase-admin';
-import { mfaRemovalBlockedByOwnKey } from '@/lib/mfa-gate';
+import { OWN_KEY_BLOCKS_MFA_REMOVAL, mfaRemovalBlockedByOwnKey } from '@/lib/mfa-gate';
 import { releaseFactorRemoval, reserveFactorRemoval, retireSecondFactor } from '@/lib/mfa-disable';
 
 /**
@@ -52,18 +52,24 @@ export async function POST(request: NextRequest) {
     // Only when Firebase Auth holds a factor — a flag without one could not remove the key either. The check and
     // the reservation are one transaction, which the own-key save reads in its own: a key cannot be stored between
     // this check and the removal (lib/mfa-disable.ts, reserveFactorRemoval).
+    // The reservation is this request's own (a token); a second request while it runs is refused.
+    let reservation: string | null = null;
     if (hasFactor) {
-      const blocked = await reserveFactorRemoval(uid, (profile) => mfaRemovalBlockedByOwnKey(profile));
-      if (blocked) return NextResponse.json({ error: blocked.message, code: 'own-key-stored' }, { status: blocked.status });
+      const reserved = await reserveFactorRemoval(uid, (profile) => mfaRemovalBlockedByOwnKey(profile));
+      if (reserved.refusal) {
+        const code = reserved.refusal === OWN_KEY_BLOCKS_MFA_REMOVAL ? 'own-key-stored' : 'removal-running';
+        return NextResponse.json({ error: reserved.refusal.message, code }, { status: reserved.refusal.status });
+      }
+      reservation = reserved.token;
     }
 
     // The factor first, the flag second — and what a failure of either leaves
     // behind. `lib/mfa-disable.ts` carries the order and the spec that runs it.
     const outcome = await retireSecondFactor(uid, hasFactor);
     if (!outcome.ok) {
-      // Nothing was removed, or a factor is back: the reservation goes. A failure to lift it is over-strict (own-key
-      // saves wait for MFA_REMOVAL_MARKER_TTL_MS) and does not change the answer.
-      if (hasFactor) await releaseFactorRemoval(uid).catch((err) => console.error('[mfa/disable] reservation not lifted:', err));
+      // Nothing was removed, or a factor is back: this request's reservation goes, and only that one. A failure to
+      // lift it is over-strict (own-key saves wait for MFA_REMOVAL_MARKER_TTL_MS) and does not change the answer.
+      if (reservation) await releaseFactorRemoval(uid, reservation).catch((err) => console.error('[mfa/disable] reservation not lifted:', err));
       return NextResponse.json({ error: outcome.error }, { status: outcome.status });
     }
 
