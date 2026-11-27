@@ -53,23 +53,23 @@ export async function POST(request: NextRequest) {
     // the reservation are one transaction, which the own-key save reads in its own: a key cannot be stored between
     // this check and the removal (lib/mfa-disable.ts, reserveFactorRemoval).
     // The reservation is this request's own (a token); a second request while it runs is refused.
-    let reservation: string | null = null;
+    let reservation: { token: string; at: number } | null = null;
     if (hasFactor) {
       const reserved = await reserveFactorRemoval(uid, (profile) => mfaRemovalBlockedByOwnKey(profile));
       if (reserved.refusal) {
         const code = reserved.refusal === OWN_KEY_BLOCKS_MFA_REMOVAL ? 'own-key-stored' : 'removal-running';
         return NextResponse.json({ error: reserved.refusal.message, code }, { status: reserved.refusal.status });
       }
-      reservation = reserved.token;
+      reservation = { token: reserved.token, at: reserved.at };
     }
 
     // The factor first, the flag second — and what a failure of either leaves
     // behind. `lib/mfa-disable.ts` carries the order and the spec that runs it.
-    const outcome = await retireSecondFactor(uid, hasFactor);
+    const outcome = await retireSecondFactor(uid, hasFactor, undefined, reservation ? { reservedAtMs: reservation.at } : undefined);
     if (!outcome.ok) {
       // Nothing was removed, or a factor is back: this request's reservation goes, and only that one. A failure to
       // lift it is over-strict (own-key saves wait for MFA_REMOVAL_MARKER_TTL_MS) and does not change the answer.
-      if (reservation) await releaseFactorRemoval(uid, reservation).catch((err) => console.error('[mfa/disable] reservation not lifted:', err));
+      if (reservation) await releaseFactorRemoval(uid, reservation.token).catch((err) => console.error('[mfa/disable] reservation not lifted:', err));
       return NextResponse.json({ error: outcome.error }, { status: outcome.status });
     }
 

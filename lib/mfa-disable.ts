@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import {
   MFA_REMOVAL_ALREADY_RUNNING,
   MFA_REMOVAL_MARKER,
+  MFA_REMOVAL_MAX_START_MS,
   mfaRemovalInProgress,
   mfaRemovalReservationOf,
   type GateRefusal,
@@ -79,8 +80,14 @@ export async function retireSecondFactor(
   uid: string,
   hasFactor: boolean,
   deps: MfaRetireDeps = PRODUCTION_MFA_RETIRE_DEPS,
+  fence?: { reservedAtMs: number; now?: () => number },
 ): Promise<MfaRetireOutcome> {
   if (hasFactor) {
+    // A removal that did not start within MFA_REMOVAL_MAX_START_MS of its reservation does not start at all: by the
+    // time the reservation runs out, no request that took it can still remove the factor.
+    if (fence && (fence.now ?? Date.now)() - fence.reservedAtMs > MFA_REMOVAL_MAX_START_MS) {
+      return { ok: false, status: 503, error: FACTOR_REMOVAL_FAILED };
+    }
     try {
       const auth = await deps.adminAuth();
       await auth.updateUser(uid, { multiFactor: { enrolledFactors: null } });
@@ -148,19 +155,19 @@ export async function reserveFactorRemoval(
   deps: MfaRetireDeps = PRODUCTION_MFA_RETIRE_DEPS,
   nowMs: number = Date.now(),
   token: string = randomUUID(),
-): Promise<{ refusal: GateRefusal; token: null } | { refusal: null; token: string }> {
+): Promise<{ refusal: GateRefusal; token: null; at: null } | { refusal: null; token: string; at: number }> {
   const { db } = await deps.adminDb();
   const userRef: DocumentReference = db.collection('users').doc(uid);
   return db.runTransaction(async (tx: Transaction) => {
     const profile = await tx.get(userRef);
     const data = profile.data();
     const blocked = blockedBy(data);
-    if (blocked) return { refusal: blocked, token: null };
+    if (blocked) return { refusal: blocked, token: null, at: null };
     // One removal at a time: a second request while the first still runs is refused, so no request ever holds a
     // reservation another one could lift.
-    if (mfaRemovalInProgress(data, nowMs)) return { refusal: MFA_REMOVAL_ALREADY_RUNNING, token: null };
+    if (mfaRemovalInProgress(data, nowMs)) return { refusal: MFA_REMOVAL_ALREADY_RUNNING, token: null, at: null };
     if (profile.exists) tx.set(userRef, { [MFA_REMOVAL_MARKER]: { at: nowMs, token } }, { merge: true });
-    return { refusal: null, token };
+    return { refusal: null, token, at: nowMs };
   });
 }
 

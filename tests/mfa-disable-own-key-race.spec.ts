@@ -5,6 +5,7 @@ import {
   BYOK_MFA_ENROLMENT_REQUIRED,
   MFA_REMOVAL_MARKER,
   MFA_REMOVAL_MARKER_TTL_MS,
+  MFA_REMOVAL_MAX_START_MS,
   OWN_KEY_BLOCKS_MFA_REMOVAL,
   MFA_REMOVAL_ALREADY_RUNNING,
   OWN_KEY_SAVE_DURING_MFA_REMOVAL,
@@ -106,7 +107,7 @@ test('a key saved between the key check and the factor removal is refused', asyn
   const now = Date.now();
   // The removal reserves first; the save that was waiting on its provider test commits after.
   const reserved = await reserveFactorRemoval(UID, gate, w.deps, now, 'req-1');
-  expect(reserved).toEqual({ refusal: null, token: 'req-1' });
+  expect(reserved).toEqual({ refusal: null, token: 'req-1', at: now });
   expect(w.state.profile[MFA_REMOVAL_MARKER]).toEqual({ at: now, token: 'req-1' });
   await expect(w.saveKey(now)).resolves.toBe(OWN_KEY_SAVE_DURING_MFA_REMOVAL);
   await expect(retireSecondFactor(UID, true, w.deps)).resolves.toEqual({ ok: true, removedFactor: true });
@@ -121,7 +122,7 @@ test('a key stored before the reservation refuses the removal, and the factor st
   const w = world({ mfaEnabled: true });
   const now = Date.now();
   await expect(w.saveKey(now)).resolves.toBeNull();
-  expect((await reserveFactorRemoval(UID, gate, w.deps, now)).refusal).toBe(OWN_KEY_BLOCKS_MFA_REMOVAL);
+  expect(await reserveFactorRemoval(UID, gate, w.deps, now)).toEqual({ refusal: OWN_KEY_BLOCKS_MFA_REMOVAL, token: null, at: null });
   expect(w.state.profile).not.toHaveProperty(MFA_REMOVAL_MARKER);
   expect(w.state.factors).toBe(1);
 });
@@ -149,8 +150,8 @@ test('two removals at once: the second is refused, and a failing one lifts only 
     reserveFactorRemoval(UID, gate, w.deps, now, 'req-1'),
     reserveFactorRemoval(UID, gate, w.deps, now, 'req-2'),
   ]);
-  expect(first).toEqual({ refusal: null, token: 'req-1' });
-  expect(second).toEqual({ refusal: MFA_REMOVAL_ALREADY_RUNNING, token: null });
+  expect(first).toEqual({ refusal: null, token: 'req-1', at: now });
+  expect(second).toEqual({ refusal: MFA_REMOVAL_ALREADY_RUNNING, token: null, at: null });
   // A request that does not hold the reservation cannot lift it — the save stays refused while the first one runs.
   await releaseFactorRemoval(UID, 'req-2', w.deps);
   expect(w.state.profile[MFA_REMOVAL_MARKER]).toEqual({ at: now, token: 'req-1' });
@@ -168,6 +169,29 @@ test('two removals at once: the second is refused, and a failing one lifts only 
   expect(mfaRemovalInProgress({ [MFA_REMOVAL_MARKER]: { at: now - MFA_REMOVAL_MARKER_TTL_MS, token: 'x' } }, now)).toBe(false);
 });
 
+test('a removal that outlived its reservation does not start: an expired reservation never belongs to a removal that can still remove the factor', async () => {
+  expect(MFA_REMOVAL_MAX_START_MS).toBeLessThan(MFA_REMOVAL_MARKER_TTL_MS / 2);
+  const w = world({ mfaEnabled: true });
+  const t0 = 1_000_000_000;
+  const first = await reserveFactorRemoval(UID, gate, w.deps, t0, 'req-1');
+  expect(first.token).toBe('req-1');
+  // Request A stalls past the TTL; B takes over the expired reservation, fails and lifts it; a key is saved.
+  const late = t0 + MFA_REMOVAL_MARKER_TTL_MS + 1;
+  const second = await reserveFactorRemoval(UID, gate, w.deps, late, 'req-2');
+  expect(second.token).toBe('req-2');
+  await releaseFactorRemoval(UID, 'req-2', w.deps);
+  await expect(w.saveKey(late)).resolves.toBeNull();
+  // A resumes: it may not remove the factor any more, so the key keeps its factor.
+  const resumed = await retireSecondFactor(UID, true, w.deps, { reservedAtMs: t0, now: () => late });
+  expect(resumed.ok).toBe(false);
+  expect(w.state.factors).toBe(1);
+  expect(w.state.profile.mfaEnabled).toBe(true);
+  // Within the start window the removal goes ahead as before.
+  const v = world({ mfaEnabled: true });
+  const r = await reserveFactorRemoval(UID, gate, v.deps, t0, 'req-3');
+  await expect(retireSecondFactor(UID, true, v.deps, { reservedAtMs: r.at ?? 0, now: () => t0 + MFA_REMOVAL_MAX_START_MS })).resolves.toEqual({ ok: true, removedFactor: true });
+});
+
 test('the route reserves before it removes and lifts the reservation when the removal fails; the save re-decides in its transaction', () => {
   const route = read('app/api/mfa/disable/route.ts');
   const reserve = route.indexOf('await reserveFactorRemoval(uid,');
@@ -176,7 +200,8 @@ test('the route reserves before it removes and lifts the reservation when the re
   expect(route.slice(reserve, reserve + 120)).toContain('mfaRemovalBlockedByOwnKey(profile)');
   expect(route, 'the key check is a plain read again, outside the reservation').not.toMatch(/\.doc\(uid\)\.get\(\)/);
   const failed = route.indexOf('if (!outcome.ok) {');
-  expect(route.slice(failed, failed + 400)).toContain('await releaseFactorRemoval(uid, reservation)');
+  expect(route.slice(failed, failed + 400)).toContain('await releaseFactorRemoval(uid, reservation.token)');
+  expect(route).toContain('await retireSecondFactor(uid, hasFactor, undefined, reservation ? { reservedAtMs: reservation.at } : undefined);');
 
   const admin = read('lib/firebase-admin.ts');
   const save = admin.slice(admin.indexOf('export async function saveOwnModelKey'), admin.indexOf('export interface OwnModelKey'));

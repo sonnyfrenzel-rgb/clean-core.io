@@ -144,6 +144,13 @@ export const MFA_REMOVAL_MARKER = 'mfaRemovalStartedAt';
 /** How long a reservation holds when the call that set it never finished (a crash between the two systems). */
 export const MFA_REMOVAL_MARKER_TTL_MS = 15 * 60 * 1000;
 
+/**
+ * The latest the factor removal may start after its reservation (`retireSecondFactor` checks it right before Firebase
+ * Auth is touched). Well below the TTL, so a reservation that has run out never belongs to a removal that can still
+ * start: a second request can take over an expired one only when the first can no longer remove the factor.
+ */
+export const MFA_REMOVAL_MAX_START_MS = 2 * 60 * 1000;
+
 export const OWN_KEY_SAVE_DURING_MFA_REMOVAL: GateRefusal = {
   status: 409,
   message:
