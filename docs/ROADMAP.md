@@ -922,6 +922,7 @@ is how Signavio handles foreign `extensionElements`** — exactly that is what 4
 | **after 3.5.2 — with the next privacy policy version** | **Economics: AI proposals for the assumptions (ECO-N6)** — approved by the lawyer with changes (statement 22c, 2.1–2.4, 25.11.2026; ADR-128 (7)); not built. Conditions: **(1)** click-started only, never automatic — C14 stays unchanged; the button reads "Fill with AI proposals (sends run facts to {provider})" and the field action "propose" names the recipient too (e.g. tooltip "Propose with AI — sends run facts to {provider}"); ADR-128 (7) is corrected in the same commit (it still says the notice on automatic steps applies). **(2)** The provider is always the one of the key actually used, as `generateDraftLabel` derives it — in the hint under the button and in the Settings row; a test for a Google and an Anthropic key. **(3)** The function is switched on only with the privacy policy version that carries the Section 3 sentence in the lawyer's wording (22c 2.3, German and English; EN begins "Economics: when you click “Fill with AI proposals”, or “propose” at a single assumption, the model of the provider whose key is used receives …" — full text in the statement). **(4)** Texts in the lawyer's wording: the card text without "every input" and without the currency (the currency is asked, the account stores no country); the hint "Sends the line count, the object names, the kinds and counts of findings and the route of the signed run to {provider} — no line of your code. One AI step, counted like the others."; the tooltip per value "AI proposal — an estimate, not market data. {reason} Range {from}–{to}."; the explanation above the answer ends "… that is taken in Re-design". Only rule, severity and count per finding plus object names are sent, no code lines. **(5)** The switch in Settings may be on by default (22c 2.4); the server refuses the call when the account switched it off. Marking per Art. 50(2): mark per value, "Priced on AI-proposed assumptions" on answer and chart, the `lib/ai-marking.ts` line in the export. | M |
 | **3.5.4 — first (urgent)** | *Owner request 27.11.2026: "Ask this case is in no good state today" — reworked before any other 3.5.4 row. Assessment of 27.11.2026 against the code (one component, `components/GlossaryChatbot.tsx`, mounted in the shell; `lib/case-answer.ts`, `lib/glossary-lookup.ts`, `lib/chatbot-knowledge.ts`).* **"Ask this case" reworked.** **(1) The glossary answers only what it is asked** (S): today any question that *contains* a term gets the glossary entry — "Explain RAP vs CAP" returns RAP, "How does TCO analysis work?" the definition, a case question about a released API the glossary instead of the project's evidence; the glossary answers an explicit "What is …?" or the bare term only. **(2) One output pipeline in both modes** (S): outside a project the answer is rendered raw — it goes through `cleanModelText`, the sensitive-text screen and a refusal check against the knowledge base, as in a project. **(3) Honest states** (S): glossary, decision and no-evidence answers need no model and work while the automatic AI steps are off; a signed-out visitor gets a sign-in line, not "check your Gemini key"; rate limit, timeout, refused key and an evidence load each say what happened. **(4) The knowledge base rewritten against 3.5** (M): the three views, Re-design and its decision, the own Claude key, sharing, the tenant connection in Settings (no "Live Tenant tab"), the seven tools in their order, no sidebar; the greeting chips renewed; `DESIGN.md` §5.3 and the 3.0.21 row above that name the removed IT card corrected. **(5) Anchors that go somewhere** (M): an anchor in an answer opens the source line in IT or selects the map element; technical terms in an answer carry the glossary popover (6.6). **(6) Context, never storage** (M): the tool and view the reader is in go into the prompt as a hint; the Re-design decision, the route and Level A–D become anchored facts; nothing is stored, a view stays a view. **(7) The panel** (M): the pre-answered question on first open (2.7), a side sheet that docks beside the content instead of covering the map or the source, answers announced (`aria-live`). **(8) Tests** (S): a grounded model answer end to end with a mocked reply, the out-of-project path and its errors, project detection on every tool route and `/redesign`; the spec that passes without testing anything replaced; `lib/ask-this-case.ts`, used only by tests since the IT card went, wired into (7) or removed. *Order: (1)–(3) and (8) first, then (4), then (5)–(7). No new provider; keys never reach the client; every model sentence keeps its anchor and its AI marking. Acceptance: a spec per item, rendered at 390/768/1440 for (7), and the three over-matching questions answered from the case.* | M/L |
 | **3.5.4 — with it** | *Owner walk-through 26.11.2026, package b leftovers; moved out of 3.5.3 on 27.11.2026 because they change the head of every tool and need the owner's look at the pictures.* **The head of a tool, quieter.** **M1** a slim head that shrinks to one line on scroll (one change in `components/StageHeader.tsx`, every tool); **Q4** the legend "done · started · out of date" on request, not always in the tool row; **Q5** provenance chips only where something departs from the normal case (AI-generated, Yours, Simulation, Not determined, Signed) — "From the engine" once per page; **Q2** the lead under the title on every tool; a density guard. *Acceptance: before/after screenshots at 390/768/1024/1440, resting and scrolled, shared parts identical across tools; the rendered specs that expect the legend in the head rewritten.* | M |
+| **3.5.4 — with it** | *QA review of the 3.5.3 release candidate, 27.11.2026; IDs only until fixed.* **Security-relevant QA findings carried from 3.5.3:** `7a9e501b1f55`, `c7e87c92fd9a` (medium), with the test gap `09626aa6f453`. Fixed with a test that fails without the fix, or refuted with `scripts/qa/refute.mjs` and evidence. | S |
 | **3.6** | *Renumbered from 3.5 (owner decision 06.11.2026: 3.5.0 is the Christmas release).* Observed effect against the frozen cost revision (screen 5 right) · multi-provider BYOK |
 | **Candidates (feedback 15.09.2026)** | Code anonymisation before the model call · CLI/API that checks pull requests against clean core rules (shift-left) · effort estimate from metrics, only with calibration from the bench |
 | **after 3.0, review** | QA 8cb85af1fee3 — grouped business rules whose occurrences mix controlling and continuing behaviour (`lib/abap/business-rule-set.ts`): review the type-per-group rule after 3.0; no code change before (owner decision 30.09.2026) |
@@ -1789,45 +1790,45 @@ below, refuted ones are not listed, and the low and info findings follow in a se
 
 | ID | Severity | Priority | Roadmap step | Status |
 |---|---|---|---|---|
-| EXT-2511-001 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-002 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-003 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-004 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-010 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-001 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-002 | low | P3 | 3.5.3 · external audit | fixed |
+| EXT-2511-003 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-004 | low | P3 | 3.5.3 · external audit | fixed |
+| EXT-2511-010 | medium | P2 | 3.5.3 · external audit | fixed |
 | EXT-2511-011 | low | — | needs Sonny's decision | open |
 | EXT-2511-012 | low | — | needs Sonny's decision (with EXT-2511-011) | open |
 | EXT-2511-021 | high | P1 | own step later, owner decision 25.11.2026 | scheduled |
-| EXT-2511-022 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-023 | high | P1 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-024 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-025 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-026 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-027 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-031 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-040 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-041 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-042 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-022 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-023 | high | P1 | 3.5.3 · external audit | fixed |
+| EXT-2511-024 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-025 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-026 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-027 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-031 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-040 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-041 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-042 | low | P3 | 3.5.3 · external audit | fixed |
 | EXT-2511-046 | low | — | needs Sonny's decision | open |
-| EXT-2511-054 | medium | P2 | 3.5.3 · external audit, rules deploy by hand | fixed, awaiting release |
-| EXT-2511-055 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-056 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-057 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-066 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-067 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-054 | medium | P2 | 3.5.3 · external audit, rules deploy by hand | fixed |
+| EXT-2511-055 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-056 | low | P3 | 3.5.3 · external audit | fixed |
+| EXT-2511-057 | low | P3 | 3.5.3 · external audit | fixed |
+| EXT-2511-066 | low | P3 | 3.5.3 · external audit | fixed |
+| EXT-2511-067 | low | P3 | 3.5.3 · external audit | fixed |
 | EXT-2511-069 | low | P3 | with the low findings of this audit | scheduled |
-| EXT-2511-072 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-073 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-076 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-077 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-072 | low | P3 | 3.5.3 · external audit | fixed |
+| EXT-2511-073 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-076 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-077 | medium | P2 | 3.5.3 · external audit | fixed |
 | EXT-2511-079 | medium | P2 | 3.5.3 · external audit; the rest needs Sonny's decision | fixed in part, awaiting release |
-| EXT-2511-082 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-083 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-103 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-114 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-130 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-082 | low | P3 | 3.5.3 · external audit | fixed |
+| EXT-2511-083 | low | P3 | 3.5.3 · external audit | fixed |
+| EXT-2511-103 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-114 | medium | P2 | 3.5.3 · external audit | fixed |
+| EXT-2511-130 | low | P3 | 3.5.3 · external audit | fixed |
 | EXT-2511-136 | low | — | needs Sonny's decision | open |
-| EXT-2511-137 | low | P3 | 3.5.3 · external audit | fixed, awaiting release |
-| EXT-2511-176 | medium | P2 | 3.5.3 · external audit | fixed, awaiting release |
+| EXT-2511-137 | low | P3 | 3.5.3 · external audit | fixed |
+| EXT-2511-176 | medium | P2 | 3.5.3 · external audit | fixed |
 
 **Audit of v3.4.0 (`51f61c0`), 23.11.2026: 0 critical, 0 high, 0 medium, 2 low, 4 info — all 45 candidates verified by the agent, all 6 findings checked by hand.** SEC-2026-1010 joins the scheduled nonce-CSP step; SEC-2026-1014 and -1015 (comment wording) go to 3.5.0; three refuted (SEC-2026-1011, -1012, -1013). SEC-2026-1003 is not raised again and is recorded fixed (de83a0230).
 
