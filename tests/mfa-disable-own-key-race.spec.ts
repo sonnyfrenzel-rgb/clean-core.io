@@ -8,6 +8,8 @@ import {
   MFA_REMOVAL_MAX_START_MS,
   OWN_KEY_BLOCKS_MFA_REMOVAL,
   MFA_REMOVAL_ALREADY_RUNNING,
+  MFA_REMOVAL_CALL_TIMEOUT_MS,
+  OWN_KEY_KEEPS_MFA_REQUIREMENT,
   OWN_KEY_SAVE_DURING_MFA_REMOVAL,
   mfaRemovalBlockedByOwnKey,
   mfaRemovalInProgress,
@@ -32,7 +34,16 @@ const ROOT = path.resolve(__dirname, '..');
 const read = (p: string) => fs.readFileSync(path.resolve(ROOT, p), 'utf8');
 
 function world(initial: Record<string, unknown>, factors = 1) {
-  const state = { profile: { ...initial } as Record<string, unknown>, factors, writes: 0 };
+  const state = { profile: { ...initial } as Record<string, unknown>, factors, writes: 0, removalCalls: 0 };
+  // A removal call Firebase Auth has not answered yet: `stallRemoval()` holds the next one until `land()` is called.
+  let stalled: Promise<void> | null = null;
+  const stallRemoval = () => {
+    let land!: () => void;
+    stalled = new Promise<void>((resolve) => {
+      land = resolve;
+    });
+    return land;
+  };
   const DELETE = Symbol('delete');
   const apply = (data: Record<string, unknown>) => {
     for (const [k, v] of Object.entries(data)) {
@@ -62,6 +73,8 @@ function world(initial: Record<string, unknown>, factors = 1) {
   };
   const auth = {
     updateUser: async () => {
+      state.removalCalls += 1;
+      if (stalled) await stalled;
       state.factors = 0;
       return {};
     },
@@ -80,7 +93,7 @@ function world(initial: Record<string, unknown>, factors = 1) {
       (tx as { set: (r: unknown, d: Record<string, unknown>) => void }).set(ref, { byokConfigured: true });
       return null;
     });
-  return { state, deps, saveKey };
+  return { state, deps, saveKey, stallRemoval };
 }
 
 const gate = (profile: Record<string, unknown> | undefined) => mfaRemovalBlockedByOwnKey(profile);
@@ -197,7 +210,7 @@ test('the start check sits after the last await before the removal call', () => 
   const body = src.slice(src.indexOf('export async function retireSecondFactor'), src.indexOf('From here on a failure'));
   const auth = body.indexOf('const auth = await deps.adminAuth();');
   const check = body.indexOf('MFA_REMOVAL_MAX_START_MS) {');
-  const call = body.indexOf('await auth.updateUser(uid,');
+  const call = body.indexOf('auth.updateUser(uid,');
   expect(auth).toBeGreaterThan(-1);
   expect(check).toBeGreaterThan(auth);
   expect(call).toBeGreaterThan(check);
@@ -231,4 +244,87 @@ test('the reservation is a server-only field: the client update allowlist does n
   const rules = read('firestore.rules');
   expect(rules).not.toContain(MFA_REMOVAL_MARKER);
   expect(rules).toMatch(/removedKeys\(\)\.hasOnly\(\[\]\)/);
+});
+
+test('a removal whose Auth client arrives only after the start window does not call Firebase Auth', async () => {
+  const t0 = 1_000_000_000;
+  for (const [arrivesAt, removes] of [[t0 + MFA_REMOVAL_MAX_START_MS + 1, false], [t0 + MFA_REMOVAL_MAX_START_MS, true]] as const) {
+    const w = world({ mfaEnabled: true });
+    const r = await reserveFactorRemoval(UID, gate, w.deps, t0, 'req-1');
+    let clock = t0;
+    let handOver!: () => void;
+    const authArrives = new Promise<void>((resolve) => {
+      handOver = resolve;
+    });
+    const deps: MfaRetireDeps = {
+      ...w.deps,
+      adminAuth: (async () => {
+        await authArrives;
+        return w.deps.adminAuth();
+      }) as MfaRetireDeps['adminAuth'],
+    };
+    const pending = retireSecondFactor(UID, true, deps, { reservedAtMs: r.at ?? 0, now: () => clock });
+    clock = arrivesAt;
+    handOver();
+    const outcome = await pending;
+    expect(outcome.ok).toBe(removes);
+    expect(w.state.removalCalls, 'a late removal reached Firebase Auth').toBe(removes ? 1 : 0);
+    expect(w.state.factors).toBe(removes ? 0 : 1);
+  }
+});
+
+test('the removal call is bounded well inside the reservation', () => {
+  expect(MFA_REMOVAL_MAX_START_MS + MFA_REMOVAL_CALL_TIMEOUT_MS).toBeLessThan(MFA_REMOVAL_MARKER_TTL_MS / 2);
+});
+
+test('a removal call that does not answer is given up, and its reservation stays until it runs out', async () => {
+  const w = world({ mfaEnabled: true });
+  const now = Date.now();
+  const r = await reserveFactorRemoval(UID, gate, w.deps, now, 'req-1');
+  const land = w.stallRemoval();
+  const outcome = await retireSecondFactor(UID, true, w.deps, { reservedAtMs: r.at ?? 0, now: () => now, callTimeoutMs: 20 });
+  expect(outcome).toMatchObject({ ok: false, status: 503, reservationHeld: true });
+  // The call may still land, so the reservation is this request's still, and a key save is refused meanwhile.
+  expect(w.state.profile[MFA_REMOVAL_MARKER]).toEqual({ at: now, token: 'req-1' });
+  await expect(w.saveKey(now)).resolves.toBe(OWN_KEY_SAVE_DURING_MFA_REMOVAL);
+  // It lands after all: the flag was never cleared, so the account still asks for the factor and no key is stored.
+  land();
+  await expect.poll(() => w.state.factors).toBe(0);
+  expect(w.state.profile.mfaEnabled).toBe(true);
+  expect(w.state.profile.byokConfigured).toBeUndefined();
+  // And once the reservation has run out, the save is refused for the missing factor.
+  await expect(w.saveKey(now + MFA_REMOVAL_MARKER_TTL_MS)).resolves.toBe(BYOK_MFA_ENROLMENT_REQUIRED);
+
+  const route = read('app/api/mfa/disable/route.ts');
+  expect(route).toContain('if (reservation && !outcome.reservationHeld) await releaseFactorRemoval(uid, reservation.token)');
+});
+
+test('a removal that lands after its reservation was taken over and a key was saved leaves the requirement on', async () => {
+  const w = world({ mfaEnabled: true });
+  const t0 = 1_000_000_000;
+  const first = await reserveFactorRemoval(UID, gate, w.deps, t0, 'req-1');
+  // Request A starts its removal in time; Firebase Auth answers only much later.
+  const land = w.stallRemoval();
+  const a = retireSecondFactor(UID, true, w.deps, { reservedAtMs: first.at ?? 0, now: () => t0, callTimeoutMs: 60 * 60 * 1000 });
+  await expect.poll(() => w.state.removalCalls).toBe(1);
+  // Meanwhile the reservation runs out; B takes it over, fails and lifts it; a key is saved while the factor stands.
+  const late = t0 + MFA_REMOVAL_MARKER_TTL_MS + 1;
+  const second = await reserveFactorRemoval(UID, gate, w.deps, late, 'req-2');
+  expect(second.token).toBe('req-2');
+  await releaseFactorRemoval(UID, 'req-2', w.deps);
+  await expect(w.saveKey(late)).resolves.toBeNull();
+  expect(w.state.profile.byokConfigured).toBe(true);
+  // A's removal lands now. The factor is gone, but the flag is not cleared under a stored key.
+  land();
+  const outcome = await a;
+  expect(outcome).toEqual({ ok: false, status: OWN_KEY_KEEPS_MFA_REQUIREMENT.status, error: OWN_KEY_KEEPS_MFA_REQUIREMENT.message });
+  expect(w.state.factors).toBe(0);
+  expect(w.state.profile.mfaEnabled, 'an own key stands on an account whose factor requirement is off').toBe(true);
+  // The recovery path (a flag without a factor) does not clear it either while the key is stored.
+  await expect(retireSecondFactor(UID, false, w.deps)).resolves.toEqual({ ok: false, status: OWN_KEY_KEEPS_MFA_REQUIREMENT.status, error: OWN_KEY_KEEPS_MFA_REQUIREMENT.message });
+  expect(w.state.profile.mfaEnabled).toBe(true);
+  // Without a key the recovery path clears the flag as before.
+  const v = world({ mfaEnabled: true }, 0);
+  await expect(retireSecondFactor(UID, false, v.deps)).resolves.toEqual({ ok: true, removedFactor: false });
+  expect(v.state.profile.mfaEnabled).toBe(false);
 });

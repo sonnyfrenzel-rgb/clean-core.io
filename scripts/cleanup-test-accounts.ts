@@ -14,22 +14,27 @@
  *   npx tsx scripts/cleanup-test-accounts.ts            # dry run
  *   npx tsx scripts/cleanup-test-accounts.ts --apply    # delete
  *   npx tsx scripts/cleanup-test-accounts.ts --apply --limit 10
+ *
+ * `--limit` takes a positive whole number; any other value stops the script before it reads anything
+ * (`scripts/lib/cleanup-limit.ts`). The accounts that are kept are counted, not listed: they are real people.
  */
 
 process.env.GOOGLE_CLOUD_PROJECT = process.env.GOOGLE_CLOUD_PROJECT || 'cleancore-491216';
 
 import { getAdminDb, deleteUserDataAndAccount } from '../lib/firebase-admin';
 import { isTestAccount } from '../lib/test-accounts';
+import { parseCleanupLimit } from './lib/cleanup-limit';
 
 const APPLY = process.argv.includes('--apply');
-const LIMIT = Number(argValue('--limit') || 0);
-
-function argValue(flag: string): string | undefined {
-  const i = process.argv.indexOf(flag);
-  return i >= 0 ? process.argv[i + 1] : undefined;
-}
 
 async function main() {
+  const parsed = parseCleanupLimit(process.argv.slice(2));
+  if (!parsed.ok) {
+    console.error(`Refusing to run: ${parsed.error}`);
+    process.exit(2);
+  }
+  const LIMIT = parsed.limit;
+
   if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATOR === 'true' || process.env.FIRESTORE_EMULATOR_HOST) {
     console.error('Refusing to run against an emulator — this script targets production.');
     process.exit(1);
@@ -39,14 +44,14 @@ async function main() {
   const users = await db.collection('users').get();
 
   const candidates: { uid: string; email: string; projects: number }[] = [];
-  const keep: string[] = [];
+  let kept = 0;
 
   for (const doc of users.docs) {
     const email = (doc.data().email || '') as string;
     if (isTestAccount(email)) {
       candidates.push({ uid: doc.id, email, projects: 0 });
     } else {
-      keep.push(email || '(no email)');
+      kept++;
     }
   }
 
@@ -59,15 +64,14 @@ async function main() {
   });
   candidates.forEach((c) => { c.projects = byUser.get(c.uid) || 0; });
 
-  const targets = LIMIT > 0 ? candidates.slice(0, LIMIT) : candidates;
+  const targets = LIMIT === null ? candidates : candidates.slice(0, LIMIT);
 
   console.log(`users total          : ${users.size}`);
   console.log(`test accounts        : ${candidates.length}`);
-  console.log(`real accounts (kept) : ${keep.length}`);
+  console.log(`real accounts (kept) : ${kept}`);
   console.log(`their projects       : ${candidates.reduce((n, c) => n + c.projects, 0)}`);
   console.log('');
-  console.log('REAL accounts that will NOT be touched:');
-  keep.sort().forEach((e) => console.log(`  keep  ${e}`));
+  console.log(`${kept} real account(s) will NOT be touched (not listed).`);
   console.log('');
 
   if (!APPLY) {

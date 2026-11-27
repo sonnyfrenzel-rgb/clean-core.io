@@ -151,10 +151,25 @@ export const MFA_REMOVAL_MARKER_TTL_MS = 15 * 60 * 1000;
  */
 export const MFA_REMOVAL_MAX_START_MS = 2 * 60 * 1000;
 
+/**
+ * How long the removal call itself is waited for. A call that has not answered by then is given up as failed, and
+ * its reservation is NOT lifted: the call may still land in Firebase Auth, so own-key saves stay refused until the
+ * reservation runs out. The start window plus this bound stays far below the TTL, so a reservation that has run out
+ * never belongs to a request still waiting on its removal. Should a removal land later all the same, the flag is
+ * still not cleared while an own key is stored (`retireSecondFactor` in lib/mfa-disable.ts).
+ */
+export const MFA_REMOVAL_CALL_TIMEOUT_MS = 60 * 1000;
+
 export const OWN_KEY_SAVE_DURING_MFA_REMOVAL: GateRefusal = {
   status: 409,
   message:
     'The authenticator on this account is being turned off, and an own model key may only be kept with multi-factor authentication. Set the authenticator up again, then store the key.',
+};
+
+export const OWN_KEY_KEEPS_MFA_REQUIREMENT: GateRefusal = {
+  status: 409,
+  message:
+    'An own model key was stored on this account while the authenticator was being turned off, and it may only be kept with multi-factor authentication. Set the authenticator up again under Settings, remove the key, and then turn the authenticator off.',
 };
 
 export const MFA_REMOVAL_ALREADY_RUNNING: GateRefusal = {
