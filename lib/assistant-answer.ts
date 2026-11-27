@@ -116,6 +116,11 @@ export interface CaseEvidence {
   decisions: DecisionLine[];
   /** Why there is no evidence, when there is none — said instead of silence. */
   unreadable: string | null;
+  /**
+   * The project's records as anchored facts — the program decision, the route, the Level A–D of named objects
+   * (`recordFacts` in `lib/assistant-context.ts`). Read for the panel's opening; never written anywhere.
+   */
+  records?: CaseFact[];
 }
 
 export interface AssistantQuestion {
@@ -128,6 +133,11 @@ export interface AssistantQuestion {
   modelOff: boolean;
   /** The demo: no model call on any screen. */
   inDemo: boolean;
+  /**
+   * Where the reader asks from — "Analyze, IT view" (`readerPlaceHint`). Inside a project it goes into the prompt
+   * as a hint for what to put first, said not to be evidence; it is not stored and not part of any answer's facts.
+   */
+  place?: string | null;
 }
 
 export interface AssistantDeps {
@@ -441,13 +451,24 @@ async function answerFromCase(
   }
   if (stale()) return null;
 
-  const decision = answerCase(context.index, { projectId, legacyCode: context.legacyCode }, ask.question, context.decisions);
+  const decision = answerCase(
+    context.index,
+    { projectId, legacyCode: context.legacyCode },
+    ask.question,
+    context.decisions,
+    { records: context.records ?? [], hint: ask.place ?? null },
+  );
 
   if (decision.mode === 'no-evidence') {
     return { text: context.unreadable ?? decision.text, anchors: [], provenance: 'not-determined', noModelCall: true };
   }
   if (decision.mode === 'deterministic') {
-    return { text: decision.text, anchors: [...decision.anchors], provenance: 'reconstructed', noModelCall: true };
+    return {
+      text: decision.text,
+      anchors: [...decision.anchors],
+      provenance: decision.provenance ?? 'reconstructed',
+      noModelCall: true,
+    };
   }
 
   // Grounded: the question needs prose, and prose needs the model.
