@@ -353,8 +353,13 @@ test.describe('the toolbar, rendered', () => {
       await expect(bar.locator('a[data-workspace-tool-next]'), `${view}: a Next tag for an analysis-only reader`).toHaveCount(0);
       await expect(bar.locator('[data-tools-hint]'), `${view}: a hint line under the family's tool row`).toHaveCount(0);
 
-      // The legend says what the marks mean, in text, beside "Tools".
-      const legend = bar.locator('[data-tools-legend="bar"]');
+      // The legend says what the marks mean, in text — on request (3.5.4, Q4): closed until the toggle at the end of
+      // the row is pressed, then the three words.
+      await expect(bar.locator('[data-tools-legend]'), `${view}: the legend stands open unasked`).toHaveCount(0);
+      const legendToggle = bar.locator('[data-info-popover="tools-legend"]');
+      await expect(legendToggle, `${view}: the legend toggle`).toBeVisible();
+      await legendToggle.click();
+      const legend = bar.locator('[data-tools-legend="request"]');
       await expect(legend, `${view}: the legend`).toBeVisible();
       await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.done']);
       await expect(legend).toContainText(WORKSPACE_MESSAGES['tools.legend.started']);
@@ -394,6 +399,8 @@ test.describe('the toolbar, rendered', () => {
     const analyzeElsewhere = page.locator('[data-stage-tools="open"] a[data-workspace-tool="analyze"]');
     await expect(analyzeElsewhere).toHaveAttribute('data-phase-state', 'done', { timeout: 60000 });
     await expect(analyzeElsewhere).not.toHaveAttribute('aria-current', 'page');
+    // The legend is on request (3.5.4, Q4): opened to compare its check with the bar's.
+    await page.locator('[data-stage-tools="open"] [data-info-popover="tools-legend"]').click();
     const [tick, legendTick, success] = await analyzeElsewhere.evaluate((el) => {
       const toRgb = (value: string) => {
         const probe = document.createElement('span');
@@ -405,7 +412,7 @@ test.describe('the toolbar, rendered', () => {
       };
       return [
         getComputedStyle(el.querySelector('[data-workspace-tool-mark="check"]') as Element).color,
-        getComputedStyle(document.querySelector('[data-tools-legend="bar"] svg') as Element).color,
+        getComputedStyle(document.querySelector('[data-tools-legend="request"] svg') as Element).color,
         toRgb(getComputedStyle(document.documentElement).getPropertyValue('--cc-success').trim()),
       ];
     });
@@ -480,10 +487,11 @@ test.describe('the toolbar, rendered', () => {
     });
     expect(half).toBe(information);
     expect(half).not.toBe(success);
-    // The dot is the warning mark, and the legend shows the same one.
+    // The dot is the warning mark, and the legend — opened on request (3.5.4, Q4) — shows the same one.
+    await page.locator('[data-stage-tools="open"] [data-info-popover="tools-legend"]').click();
     const [dot, legendDot] = await analyze.evaluate((el) => [
       getComputedStyle(el.querySelector('[data-workspace-tool-mark="dot"]') as Element).backgroundColor,
-      getComputedStyle(document.querySelector('[data-tools-legend="bar"] span[aria-hidden]') as Element).backgroundColor,
+      getComputedStyle(document.querySelector('[data-tools-legend="request"] span[aria-hidden]') as Element).backgroundColor,
     ]);
     expect(dot).not.toBe('rgba(0, 0, 0, 0)');
     expect(legendDot).toBe(dot);

@@ -130,7 +130,9 @@ test.describe('the page, rendered', () => {
     const answer = page.locator('[data-analysis-answer] [data-answer-card]');
     await expect(answer).toBeVisible({ timeout: 90_000 });
     await expect(answer.locator('[data-answer-question]')).toContainText('How far is this code from clean core?');
-    await expect(answer.locator('[data-family-chip="engine"]').first()).toBeVisible();
+    // "From the engine" once per page, in the head (3.5.4, Q5): the answer card's own engine chip is not drawn.
+    await expect(page.locator('[data-stage-header] [data-stage-page-provenance] [data-family-chip="engine"]')).toBeVisible();
+    await expect(answer.locator('[data-family-chip="engine"]').first()).toBeHidden();
     await expect(answer.locator('[data-analyze-score-value]')).toHaveText(/\d+/);
     await expect(answer.locator('[data-facet]')).toHaveCount(4);
     // The header carries no actions; Add evidence stands in the answer card.

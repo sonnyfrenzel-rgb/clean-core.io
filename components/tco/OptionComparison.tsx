@@ -476,7 +476,9 @@ function EffortChip({
       {state === 'not-entered' ? (
         <FamilyChip kind="not-determined" note="not entered" />
       ) : state === 'proposal' ? (
-        <FamilyChip kind="engine" note="proposal" />
+        // Kept (3.5.4, Q5): a figure the engine proposes stands beside the ones the reader states, and the chip is
+        // what tells the two apart until it is taken over.
+        <FamilyChip kind="engine" note="proposal" keep />
       ) : state === 'from-proposal' ? (
         <FamilyChip kind="yours" note="from the proposal" />
       ) : state === 'typical' ? (
