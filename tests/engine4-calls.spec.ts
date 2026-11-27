@@ -147,3 +147,16 @@ test('a receiver that is a class attribute resolves to its own class\'s attribut
   expect(edgesAt(g, 31)).toEqual(['static METHOD ZCL_X=>RUN']);
   expect(edgesAt(g, 36)).toEqual(['static METHOD ZCL_Y=>RUN']);
 });
+
+test('cyclic inheritance does not hang the call graph', () => {
+  const src = [
+    'CLASS lcl_x DEFINITION INHERITING FROM lcl_y.', '  PUBLIC SECTION.', '    METHODS run.', 'ENDCLASS.',
+    'CLASS lcl_y DEFINITION INHERITING FROM lcl_x.', '  PUBLIC SECTION.', 'ENDCLASS.',
+    'CLASS lcl_main DEFINITION.', '  PUBLIC SECTION.', '    METHODS go.', 'ENDCLASS.',
+    'CLASS lcl_main IMPLEMENTATION.', '  METHOD go.', '    DATA lo TYPE REF TO lcl_y.', '    lo->stop( ).', '    lo->run( ).', '  ENDMETHOD.', 'ENDCLASS.',
+    'CLASS lcl_x IMPLEMENTATION.', '  METHOD run.', '  ENDMETHOD.', 'ENDCLASS.',
+  ].join('\n');
+  const g = graph(src);
+  expect(edgesAt(g, 15)).toHaveLength(1);
+  expect(edgesAt(g, 16).length).toBeGreaterThan(0);
+});

@@ -111,7 +111,10 @@ function lookup(m: Model, cls: string, name: string): string | null {
 
 /** Is method `name` declared FINAL in `cls` or a superclass? */
 function isFinalMethod(m: Model, cls: string, name: string): boolean {
-  for (let c: string | undefined = cls; c; c = m.superOf.get(c)) {
+  // A cyclic INHERITING FROM chain does not compile, but a read source may still state one.
+  const seen = new Set<string>();
+  for (let c: string | undefined = cls; c && !seen.has(c); c = m.superOf.get(c)) {
+    seen.add(c);
     const t = m.classes.get(c);
     const decl = t?.methods.find((x) => x.name === name);
     if (decl) return decl.isFinal;
