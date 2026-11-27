@@ -105,10 +105,36 @@ export function findGlossaryTerm(query: string): GlossaryMatch | null {
  */
 const WHAT_IS = /^\s*what(?:'s|\s+is|\s+are)\s+(?:an?\s+|the\s+)?(.+?)\s*\??\s*$/i;
 
+/** "What does BAdI mean?", "What does CAP stand for?" — the other explicit shape. */
+const WHAT_DOES_MEAN = /^\s*what\s+(?:does|do)\s+(?:an?\s+|the\s+)?(.+?)\s+(?:mean|stand\s+for)\s*\??\s*$/i;
+
 export function parseWhatIsQuestion(text: string): string | null {
-  const match = WHAT_IS.exec(text);
+  const match = WHAT_DOES_MEAN.exec(text) ?? WHAT_IS.exec(text);
   const term = match?.[1]?.trim();
   return term ? term : null;
+}
+
+/**
+ * The entry a name stands for, and only when it stands for one *exactly*:
+ * a `shortName`, a `term` or an alias, case- and spacing-insensitive, with a
+ * closing question mark or full stop and a plural "s" forgiven ("What are
+ * BAdIs?"). Nothing is found because a longer text happens to contain a name —
+ * that loose match is `findGlossaryTerm`'s, for the search dialog.
+ */
+export function findGlossaryTermExact(name: string): GlossaryMatch | null {
+  const q = normalize(name).replace(/[?.!]+$/, '').trim();
+  if (!q) return null;
+  const candidates = q.length > 3 && q.endsWith('s') ? [q, q.slice(0, -1)] : [q];
+  for (const candidate of candidates) {
+    const hit = Object.entries(GLOSSARY_ITEMS).find(
+      ([, item]) =>
+        normalize(item.shortName) === candidate ||
+        normalize(item.term) === candidate ||
+        (item.aliases ?? []).some((a) => normalize(a) === candidate),
+    );
+    if (hit) return { key: hit[0], item: hit[1] };
+  }
+  return null;
 }
 
 /**
@@ -121,13 +147,19 @@ export function glossaryAnswerText(item: GlossaryItem): string {
 }
 
 /**
- * A single entry point for "does this free-text question have a no-model-call
- * answer", used by both the search dialog and the embedded assistant so
- * neither has to duplicate the "What is …?" parsing.
+ * Whether a question asked in the assistant is a glossary question — and its
+ * no-model-call answer when it is.
+ *
+ * Only two shapes are: an explicit "What is …?" / "What does … mean?" whose
+ * subject is exactly a glossary name, or the bare name on its own ("RAP").
+ * Anything else that merely *mentions* a term — "Explain RAP vs CAP", "How does
+ * TCO analysis work?", "Does this program call a released API?" — is not a
+ * request for the definition, and answering it with one replaced the answer
+ * the reader asked for (inside a project: the project's own evidence).
  */
 export function glossaryAnswerFor(question: string): (GlossaryMatch & { answer: string }) | null {
   const named = parseWhatIsQuestion(question);
-  const match = named ? findGlossaryTerm(named) : findGlossaryTerm(question);
+  const match = findGlossaryTermExact(named ?? question);
   if (!match) return null;
   return { ...match, answer: glossaryAnswerText(match.item) };
 }
