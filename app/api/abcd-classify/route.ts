@@ -13,6 +13,7 @@ import {
 import { gradeKey, objectUseFromAccess, type GradedObject, type ObjectUse } from '@/lib/abap/abcd-classification';
 import { profileCoverage, PROFILE_VERSION, type AssessmentProfile } from '@/lib/assessment-profile';
 import { catalogSnapshotKeyFor } from '@/lib/abap/catalog-snapshots';
+import { readBoundedRequestJson } from '@/lib/url-validation';
 
 /**
  * Resolve clean core levels — and, since roadmap "SAP-Katalog im
@@ -75,16 +76,28 @@ export const runtime = 'nodejs';
 /** Bounded so a single call cannot be used to enumerate the whole catalog. */
 const MAX_OBJECTS = 500;
 
+/**
+ * The longest object name looked up. SAP object names are at most 30 characters, a namespace included; a longer
+ * entry is no SAP name and is skipped, as an entry that is not a name is. Skipped rather than refused, so one stray
+ * token in a batch the browser extracted from code does not cost the other grades.
+ */
+const MAX_NAME_LENGTH = 120;
+
+/**
+ * The body bound: room for MAX_OBJECTS entries of `{ name, use }` and MAX_OBJECTS function modules at
+ * MAX_NAME_LENGTH each, with the snapshot and the profile beside them (about 150 KB at most).
+ */
+const CLASSIFY_BODY_LIMITS = { maxBytes: 256 * 1024, timeoutMs: 10_000 };
+
 export async function POST(req: Request) {
   const auth = await verifyRequestAuth(req);
   if (!auth) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
-  }
+  const read = await readBoundedRequestJson(req, CLASSIFY_BODY_LIMITS);
+  if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+  // An empty body, or one that is not JSON, is refused with 400 as before.
+  if (read.body === null) return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  const body: unknown = read.body;
 
   const rawEntries = (body as { objects?: unknown })?.objects;
   const rawModules = (body as { functionModules?: unknown })?.functionModules;
@@ -177,8 +190,9 @@ export async function POST(req: Request) {
     } else {
       continue;
     }
-    name = name.trim().toUpperCase();
-    if (!name) continue;
+    name = name.trim();
+    if (!name || name.length > MAX_NAME_LENGTH) continue;
+    name = name.toUpperCase();
     const key = gradeKey(name, use);
     if (!grades[key]) grades[key] = gradeSapObjectUse(name, use, readKey);
     // Keyed by name alone — hasNoReleasedApiPath does not depend on `use`, so

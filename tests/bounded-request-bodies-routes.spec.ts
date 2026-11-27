@@ -13,6 +13,7 @@ import { POST as ownKeyTestPOST } from '../app/api/secrets/gemini/test/route';
 import { DELETE as readersDELETE } from '../app/api/projects/[projectId]/readers/route';
 import { POST as invitationsPOST } from '../app/api/projects/[projectId]/invitations/route';
 import { POST as modelStagesPOST } from '../app/api/model-stages/route';
+import { POST as abcdClassifyPOST } from '../app/api/abcd-classify/route';
 
 /**
  * The signed-in routes that read their body under a bound answer an oversized one with 413 — a declared length over
@@ -66,6 +67,8 @@ const ROUTES: Array<{ name: string; handler: Handler; url: string; method: strin
   { name: 'POST /api/model-stages', handler: modelStagesPOST as unknown as Handler, url: 'http://localhost/api/model-stages', method: 'POST', maxBytes: SMALL_REQUEST_BODY_LIMITS.maxBytes },
   { name: 'DELETE /api/projects/[id]/readers', handler: readersDELETE as unknown as Handler, url: `http://localhost/api/projects/${PROJECT_ID}/readers`, method: 'DELETE', maxBytes: SMALL_REQUEST_BODY_LIMITS.maxBytes },
   { name: 'POST /api/projects/[id]/invitations', handler: invitationsPOST as unknown as Handler, url: `http://localhost/api/projects/${PROJECT_ID}/invitations`, method: 'POST', maxBytes: SMALL_REQUEST_BODY_LIMITS.maxBytes },
+  // Its own bound: 500 objects and 500 function modules fit (below).
+  { name: 'POST /api/abcd-classify', handler: abcdClassifyPOST as unknown as Handler, url: 'http://localhost/api/abcd-classify', method: 'POST', maxBytes: 256 * 1024 },
 ];
 
 for (const route of ROUTES) {
@@ -101,4 +104,34 @@ test('a body within the bound still reaches the route (the 413 above is the boun
   );
   expect(res.status, await res.clone().text()).toBe(400);
   expect(await res.json()).toEqual({ error: 'Missing uid.' });
+});
+
+test('POST /api/abcd-classify: the largest batch it allows fits its bound, and a name no SAP object can have is skipped', async () => {
+  const classify = (body: unknown) =>
+    abcdClassifyPOST(
+      new NextRequest('http://localhost/api/abcd-classify', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}`, 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      }),
+    );
+  // 500 objects with a use and 500 function modules, every name at the longest length still looked up.
+  const name = (i: number) => `Z${'N'.repeat(115)}${String(i).padStart(4, '0')}`;
+  const full = await classify({
+    objects: Array.from({ length: 500 }, (_, i) => ({ name: name(i), use: 'write' })),
+    functionModules: Array.from({ length: 500 }, (_, i) => name(i)),
+  });
+  expect(full.status, await full.clone().text()).toBe(200);
+
+  const long = 'Z'.repeat(121);
+  const res = await classify({ objects: ['MARA', long, { name: long, use: 'read' }] });
+  expect(res.status, await res.clone().text()).toBe(200);
+  const answer = (await res.json()) as { grades: Record<string, unknown>; noPath: Record<string, unknown> };
+  expect(Object.keys(answer.noPath)).toEqual(['MARA']);
+  expect(Object.keys(answer.grades)).toEqual(['MARA']);
+  // A body that is not JSON is refused as before.
+  const bad = await abcdClassifyPOST(
+    new NextRequest('http://localhost/api/abcd-classify', { method: 'POST', headers: { Authorization: `Bearer ${idToken}` }, body: 'not json' }),
+  );
+  expect(bad.status).toBe(400);
 });

@@ -80,6 +80,30 @@ export async function resendFailureSummary(res: Response): Promise<string> {
   return `status=${res.status} error=${category}`;
 }
 
+/** What a mail that could not even be built answers. */
+export const MAIL_NOT_PREPARED: MailOutcome = {
+  delivered: false,
+  reason: 'not-configured',
+  detail: 'The mail could not be prepared.',
+};
+
+/**
+ * Builds and sends one mail, and answers a failure while building it — a link signed with a secret this deployment
+ * does not have, say — as a mail that did not go out, instead of throwing past the caller's handling of one. A
+ * caller that withdraws what it created when nothing was sent (the two invitation routes) then still withdraws it.
+ * `sendTransactionalMail` itself answers its own failures; what it cannot catch is what is evaluated before it is
+ * called, which is why the whole call sits inside `send`.
+ */
+export async function mailOrNotSent(send: () => Promise<MailOutcome>): Promise<MailOutcome> {
+  try {
+    return await send();
+  } catch (err) {
+    // The error's name only: a message may carry the recipient.
+    console.error(`[Email] A mail could not be prepared: ${err instanceof Error ? err.name : typeof err}`);
+    return MAIL_NOT_PREPARED;
+  }
+}
+
 export async function sendTransactionalMail(msg: OutgoingMail): Promise<MailOutcome> {
   const apiKey = process.env.RESEND_API_KEY;
 

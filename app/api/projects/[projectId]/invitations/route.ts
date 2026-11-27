@@ -14,7 +14,7 @@ import { assertRateLimit } from '@/lib/rate-limit';
 import { escapeHtml } from '@/lib/utils';
 import { APP_BASE_URL } from '@/lib/constants';
 import { wrapEmailDocument } from '@/lib/email-layout';
-import { sendTransactionalMail } from '@/lib/transactional-mail';
+import { mailOrNotSent, sendTransactionalMail } from '@/lib/transactional-mail';
 import {
   buildInvitationEmail,
   buildInviterAddressConfirmationEmail,
@@ -403,7 +403,9 @@ export async function POST(
     }
 
     const link = `${APP_BASE_URL}${invitationLinkPath(gate.projectId, invitation.id)}`;
-    const outcome = await sendTransactionalMail({
+    // Built inside `mailOrNotSent`: a mail that cannot be built is one that was not sent, and the invitation
+    // created above is withdrawn below rather than left waiting.
+    const outcome = await mailOrNotSent(() => sendTransactionalMail({
       to: email,
       subject: INVITATION_EMAIL_SUBJECT,
       label: 'invitation',
@@ -424,7 +426,7 @@ export async function POST(
         }),
         'Clean-Core.io — invitation',
       ),
-    });
+    }));
 
     if (!outcome.delivered) {
       // Property 3: an invitation nobody was told about is a grant with no

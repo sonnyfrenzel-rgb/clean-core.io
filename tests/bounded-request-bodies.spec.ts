@@ -90,6 +90,8 @@ test('the named routes no longer parse a request body without a bound', () => {
     'app/api/survey/vote/route.ts',
     'app/api/secrets/gemini/route.ts',
     'app/api/secrets/gemini/test/route.ts',
+    // And the catalog lookup.
+    'app/api/abcd-classify/route.ts',
   ];
   for (const rel of routes) {
     const src = read(rel).replace(/\r\n/g, '\n');
