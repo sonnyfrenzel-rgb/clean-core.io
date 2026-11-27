@@ -52,6 +52,7 @@ import {
   standardNote,
 } from '@/lib/decide';
 import { redesignModel } from '@/lib/redesign';
+import { modelAbsenceReason } from '@/lib/model-stages';
 import type { Project } from '@/lib/types';
 
 /**
@@ -165,6 +166,8 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
   const edition = project?.s4Deployment === 'private' || project?.s4Deployment === 'public' ? TARGET_EDITION_NAMES[project.s4Deployment] : null;
   const account = typeof window === 'undefined' ? null : (getAuth().currentUser?.email ?? null);
   const confirmedRecord = read?.stored && read.stored.status === 'confirmed' ? read.stored : null;
+  // The account's own switch: a Rebuild's design is written by a model, and a switched-off model says so here.
+  const designOff = availability.enabled('design') ? null : modelAbsenceReason('stage-off', 'design');
 
   const header = (
     <StageHeader
@@ -273,7 +276,7 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
           <ArrowRight size={16} aria-hidden={true} />
         </CcLinkButton>
       );
-      actionNote = 'Design writes it from your answers. Then Transformation builds the code.';
+      actionNote = designOff ?? 'Design writes it from your answers. Then Transformation builds the code.';
     } else if (rebuild && !codeBuilt) {
       // Opening a tool never sends code anywhere (legal review 06.11.2026, 3.0.21, item 1): this link only opens
       // Transformation, whose own button carries the approved text with the provider of the key actually used.
@@ -523,7 +526,7 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
             ? 'Write your reason for this route first.'
             : `Write your reason first${indicated ? `: the analysis indicates ${DECISION_OPTION_LABELS[indicated]}` : ''}.`
           : choice === 'rebuild'
-            ? `${answered && answered.open > 0 ? `${answered.open} open: they stay open in the design. ` : ''}Then the design is written in Design.`
+            ? `${answered && answered.open > 0 ? `${answered.open} open: they stay open in the design. ` : ''}Then the design is written in Design.${designOff ? ` ${designOff}` : ''}`
             : follows
               ? 'It follows the analysis, so no reason is asked.'
               : 'Your reason is kept with the decision.';

@@ -51,15 +51,12 @@ async function openDesign(page: Page, prefix: string, view: 'it' | 'management' 
     await expect(page.locator('svg[data-architecture-canvas]')).toBeVisible({ timeout: 120_000 });
     await expect(page.locator('[data-design-alternative]').first()).toBeVisible({ timeout: 120_000 });
   } else {
-    // Confirm target is the Management view's one action, behind the checklist (ADR-130 (1), G8).
-    await expect(page.locator('[data-design-confirm]')).toBeEnabled({ timeout: 120_000 });
+    // ADR-145: Management shows the decided option; the decision itself is recorded on the Decide page.
+    await expect(page.locator('#design-answer [data-answer]')).toBeVisible({ timeout: 120_000 });
   }
   return seeded;
 }
 
-/** The rich fixture's code is side-by-side by the engine (`tests/design-one-story.spec.ts`). */
-const CAP = 'Side-by-Side Extensibility (CAP / Node.js)';
-const CONFIRMED = 'The target is confirmed.';
 
 const scale = (page: Page) => page.locator('[data-canvas-zoom]').getAttribute('data-canvas-zoom').then(Number);
 const drawnWidth = (page: Page) => page.locator('svg[data-architecture-canvas]').getAttribute('width').then(Number);
@@ -227,30 +224,31 @@ test('zoom changes the scale both ways, fit returns, and full screen opens and c
   }
 });
 
-test('Confirm target asks first: Cancel and Escape write nothing, the box’s Confirm target signs off', async ({ page }) => {
+test('the one confirmation asks first: Cancel and Escape write nothing, its own button records the decision (ADR-145)', async ({ page }) => {
   test.setTimeout(300_000);
   const seeded = await openDesign(page, 'dctl-confirm', 'management');
-  const label = CAP;
-  const answer = page.locator('#design-answer [data-answer]');
-  const opener = page.locator('[data-design-confirm]');
+  // Design no longer confirms a target: the route is recorded with the decision on the Decide page.
+  await expect(page.locator('[data-design-confirm]')).toHaveCount(0);
+  await page.goto(`/project/${seeded.projectId}/redesign`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-decide-state="choosing"]')).toBeVisible({ timeout: 120_000 });
+  await page.locator('[data-decide-option="rebuild"]').click();
+  const opener = page.locator('[data-decide-record]');
   const box = page.locator('[data-cc-message-box]');
-  const ask = page.locator('[data-design-confirm-ask]');
+  await expect(opener).toBeEnabled({ timeout: 120_000 });
 
-  // Small, named, and the full sign-off is not what opens.
+  // Small, named, and it lists what is recorded.
   await opener.click();
   await expect(box).toBeVisible();
-  await expect(box.getByRole('heading', { name: 'Confirm the target?' })).toBeVisible();
-  await expect(ask).toContainText(label);
-  await expect(ask).toContainText('self-declaration by the signed-in account');
-  await expect(page.locator('[data-design-signoff-dialog]')).toHaveCount(0);
+  await expect(box.getByRole('heading', { name: 'Record: Rebuild?' })).toBeVisible();
+  await expect(box).toContainText('A self-declaration by the signed-in account, not an organisational mandate.');
+  await expect(box.locator('[data-decide-dialog-lines]')).toContainText('Rebuild as ');
   expect((await box.boundingBox())!.width).toBeLessThanOrEqual(520);
-  if (SHOTS) await page.screenshot({ path: `${SHOTS}/design-ctl-confirm-1440.png` });
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/decide-confirm-1440.png` });
 
   // Cancel: nothing written, nothing changed.
   await box.getByRole('button', { name: 'Cancel' }).click();
   await expect(box).toHaveCount(0);
   await expect(opener).toBeFocused();
-  await expect(answer).not.toHaveText(CONFIRMED);
   expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect ?? false).toBe(false);
 
   // Escape: the same.
@@ -258,7 +256,6 @@ test('Confirm target asks first: Cancel and Escape write nothing, the box’s Co
   await expect(box).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(box).toHaveCount(0);
-  await expect(answer).not.toHaveText(CONFIRMED);
   expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect ?? false).toBe(false);
 
   // At phone width it is the same small box, inside the screen.
@@ -269,17 +266,17 @@ test('Confirm target asks first: Cancel and Escape write nothing, the box’s Co
   const phone = (await box.boundingBox())!;
   expect(phone.x).toBeGreaterThanOrEqual(0);
   expect(phone.x + phone.width).toBeLessThanOrEqual(390);
-  if (SHOTS) await page.screenshot({ path: `${SHOTS}/design-ctl-confirm-390.png` });
+  if (SHOTS) await page.screenshot({ path: `${SHOTS}/decide-confirm-390.png` });
   await page.keyboard.press('Escape');
   await page.setViewportSize({ width: 1440, height: 900 });
 
-  // Only the box's own button confirms — with the command it always used.
+  // Only the box's own button records, through the one command.
   await opener.click();
-  await box.getByRole('button', { name: 'Confirm target' }).click();
-  await expect(answer).toHaveText(CONFIRMED, { timeout: 60_000 });
+  await box.getByRole('button', { name: 'Record the decision', exact: true }).click();
+  await expect(page.locator('[data-decide-state="decided"][data-decide-option="rebuild"]')).toBeVisible({ timeout: 60_000 });
   await expect(box).toHaveCount(0);
-  await expect(opener).toHaveText(/Change target/);
   const stored = await adminGetDoc('projects', seeded.projectId);
   expect(stored?.approvedByArchitect).toBe(true);
   expect(stored?.architectJustifiedOverride).toBe('');
+  expect((stored?.decision as { status?: string } | undefined)?.status).toBe('confirmed');
 });

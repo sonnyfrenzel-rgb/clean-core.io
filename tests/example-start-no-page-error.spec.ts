@@ -176,8 +176,8 @@ test.describe('screens that load code on demand throw nothing (owner 02.10.2026)
       // Management views (AB-9, AB-10), each drawn by its own page.
       ['the workspace, IT view', '?view=it', '[data-analyze-it]'],
       ['the workspace, management view', '?view=management', '[data-analyze-management="ready"]'],
-      // Re-design, the way on from Analyze (ADR-143).
-      ['Re-design', '/redesign', '[data-stage-title]'],
+      // Decide (was Re-design), the way on from Analyze (ADR-143, ADR-145).
+      ['Decide', '/redesign', '[data-stage-title]'],
       ['Analyze, IT view', '/analyze?view=it', '[data-analysis-answer]'],
       ['Transformation', '/transformation', '[data-stage-title]'],
     ] as const) {

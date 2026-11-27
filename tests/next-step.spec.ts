@@ -295,31 +295,24 @@ test.describe('the "Next step" card, rendered', () => {
     });
   });
 
-  // The "Next step" card stood in the workspace's IT and Management views; the workspace page is gone (AB-11) and
-  // the way on from Analyze is Re-design since ADR-143 (owner request 23.11.2026): one primary action, the next
-  // step, with its reason under it, and every step's state read from the project.
-  const redesign = async (page: Page, id: string) => {
+  // The "Next step" card stood in the workspace's IT and Management views; the workspace page is gone (AB-11). The way
+  // on from Analyze is the Decide page since ADR-145 (was Re-design, ADR-143): it says what is missing and its reason,
+  // and a step the account's own switch blocks says so before anything is recorded.
+  const decide = async (page: Page, id: string) => {
     await page.goto(`/project/${id}/redesign`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-redesign="ready"]', { timeout: 60000 });
   };
 
-  test('an empty project: the card names Analyze and its real reason, not only the title', async ({ page }) => {
+  test('an empty project: the page names Analyze and its real reason, and offers nothing past it', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    await redesign(page, EMPTY_ID);
+    await decide(page, EMPTY_ID);
 
-    const next = page.locator('[data-redesign-next]');
-    await expect(next).toHaveAttribute('data-redesign-next', 'analyze');
-    await expect(next).toHaveText('Run the analysis first');
-    await expect(next).toHaveAttribute('href', `/project/${EMPTY_ID}/analyze`);
-
-    // The reason under the action is more than the title repeated.
-    const reason = ((await page.locator('#redesign-answer [data-answer-next] p').first().textContent()) ?? '').trim();
-    expect(reason.length, 'the reason is more than the title repeated').toBeGreaterThan(10);
-    expect(reason).toBe('Every step of Re-design stands on a signed analysis run.');
-    await expect(page.locator('#redesign-answer')).toContainText('there is none yet');
-    // Nothing past the analysis is offered as the next step.
-    await expect(page.locator('[data-redesign-step-next]')).toHaveCount(0);
+    const state = page.locator('[data-decide-state="no-run"]');
+    await expect(state).toContainText('The decision opens once the program is analyzed and the run is signed.');
+    await expect(state.getByRole('link', { name: 'Open Analyze' })).toHaveAttribute('href', `/project/${EMPTY_ID}/analyze`);
+    // Nothing past the analysis is offered.
+    await expect(page.locator('[data-decide-option], [data-decide-record]')).toHaveCount(0);
   });
 
   test('a phase blocked by the account\'s own switch: the reason names the switch', async ({ page }) => {
@@ -329,35 +322,22 @@ test.describe('the "Next step" card, rendered', () => {
     await page.goto(`/project/${BLOCKED_ID}`, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('[data-analyze-business="ready"]', { timeout: 60000 });
     await expect(page.locator('[data-next-step]')).toHaveCount(0);
-    await redesign(page, BLOCKED_ID);
+    await decide(page, BLOCKED_ID);
 
-    // Design has nothing of its own, and this account switched its model off: the step says so.
-    const design = page.locator('[data-redesign-step="design"]');
-    await expect(design).toHaveAttribute('data-redesign-step-state', 'open');
-    await expect(design.locator('[data-redesign-step-blocked]')).toHaveText(/switched off/);
-    // The step still opens the tool — a navigation cannot fail the way a generation call would.
-    await expect(design.locator('a').first()).toHaveAttribute('href', `/project/${BLOCKED_ID}/design`);
-    // A step the account's switch does not touch says nothing of the kind.
-    await expect(page.locator('[data-redesign-step="tco"] [data-redesign-step-blocked]')).toHaveCount(0);
+    // A Rebuild's design is written by a model this account switched off: the bar says so before anything is recorded.
+    await page.locator('[data-decide-option="rebuild"]').click();
+    await expect(page.locator('[data-decide-bar-summary]')).toContainText(/switched off/);
+    // Another option is not touched by the switch.
+    await page.locator('[data-decide-option="keep"]').click();
+    await expect(page.locator('[data-decide-bar-summary]')).not.toContainText(/switched off/);
   });
 
-  test('a project whose tools are on record: each reads Done, and the one action names what is still open', async ({ page }) => {
+  test('a project whose tools are on record: the decision is still what waits, one primary, nothing pre-selected', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    await redesign(page, DONE_ID);
-
-    // Every tool this fixture finished reads "Done"; what Re-design still asks for is said by name, never by a
-    // second card: the options are priced and decided before the tools (ADR-143).
-    for (const key of ['design', 'transformation', 'documentation', 'testing']) {
-      await expect(page.locator(`[data-redesign-step="${key}"]`), key).toHaveAttribute('data-redesign-step-state', 'done');
-      await expect(page.locator(`[data-redesign-step="${key}"] [data-redesign-step-words]`), key).toHaveText('Done');
-    }
-    await expect(page.locator('[data-redesign-step="analyze"]')).toHaveAttribute('data-redesign-step-state', 'done');
-    // One primary action, the first open step in the one order, and the row it names is marked as the next.
-    const next = page.locator('[data-redesign-next]');
-    await expect(next).toHaveCount(1);
-    const key = await next.getAttribute('data-redesign-next');
-    await expect(page.locator(`[data-redesign-step="${key}"]`)).toHaveAttribute('data-redesign-step-next', '');
-    await expect(page.locator(`[data-redesign-step="${key}"]`)).not.toHaveAttribute('data-redesign-step-state', 'done');
+    await decide(page, DONE_ID);
+    await expect(page.locator('[data-decide-state="choosing"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-decide-option][aria-checked="true"]')).toHaveCount(0);
+    await expect(page.locator('[data-redesign="ready"] [data-cc-button="primary"]')).toHaveCount(1);
   });
 });
