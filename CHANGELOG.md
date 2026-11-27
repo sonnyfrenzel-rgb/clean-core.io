@@ -23,6 +23,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   test system in Settings; no Live Tenant tab, no sidebar.
 - Tests: the assistant's answer path is tested end to end without a server (mocked model, every error, project
   detection on all tool routes and Re-design); a check that could not fail was replaced.
+- Every line anchor in an answer opens its place — the source line in the IT view, the map element in Business — and
+  the decision anchor opens the decision; glossary terms in an answer carry the glossary popover.
+- The reader's tool and view go into the prompt as a hint, never stored; the program decision, the recommended route
+  and the Level A–D of named objects are answered as anchored facts; "What was decided?" is answered from the
+  decision record without a model call.
+- A negation clears a missing place only in its own clause, and an answer for a page the reader has left is dropped
+  even when the reader leaves while the model is answering.
 
 ### Security (audit of v3.5.3)
 
