@@ -278,6 +278,23 @@ export function programNextLink(tile: Pick<ProgramTile, 'analyse' | 'redesign'>)
 
 export type TileFilter = 'all' | 'analysed' | 'redesign' | 'delivered' | 'attention';
 
+/**
+ * What "Re-design a program" in My workspace offers: the account's own programs whose re-design is under way or can
+ * start (an analysis signed), newest change first. One opens directly; several, or none, open a choice that names
+ * them or says to analyse first (owner 27.11.2026: a silent filter looked as if nothing happened).
+ */
+export function redesignCandidates(tiles: readonly ProgramTile[]): ProgramTile[] {
+  return tiles
+    .filter((t) => t.access === 'own' && (t.redesign.kind === 'step' || t.redesign.kind === 'not-started'))
+    .sort((a, b) => b.sortKey.localeCompare(a.sortKey));
+}
+
+/** The press: straight into the one program's Re-design, or the choice. */
+export function redesignPress(tiles: readonly ProgramTile[]): { kind: 'open'; tile: ProgramTile } | { kind: 'choose'; tiles: ProgramTile[] } {
+  const c = redesignCandidates(tiles);
+  return c.length === 1 ? { kind: 'open', tile: c[0] } : { kind: 'choose', tiles: c };
+}
+
 export const TILE_FILTERS: readonly TileFilter[] = ['all', 'analysed', 'redesign', 'delivered', 'attention'];
 
 export function tileMatches(tile: ProgramTile, filter: TileFilter): boolean {

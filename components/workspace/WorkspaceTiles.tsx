@@ -16,6 +16,7 @@ import {
   programNextLabel,
   programNextStep,
   REDESIGN_KEYS,
+  redesignPress,
   tileCounts,
   tileMatches,
   type NextStep,
@@ -651,16 +652,11 @@ export default function WorkspaceTiles({
   // "Re-design a program": the one program a re-design waits on opens directly; with several, or none, a panel opens
   // that names them (or says to analyse first). Filtering the list silently looked like nothing happened (owner
   // 27.11.2026).
-  const redesignCandidates = useMemo(
-    () =>
-      tiles
-        .filter((t) => t.access === 'own' && (t.redesign.kind === 'step' || t.redesign.kind === 'not-started'))
-        .sort((a, b) => b.sortKey.localeCompare(a.sortKey)),
-    [tiles],
-  );
+  const redesignChoice = useMemo(() => redesignPress(tiles), [tiles]);
+  const redesignCandidates = redesignChoice.kind === 'choose' ? redesignChoice.tiles : [redesignChoice.tile];
   const redesignProgram = () => {
-    if (redesignCandidates.length === 1) {
-      router.push(redesignHref(redesignCandidates[0]));
+    if (redesignChoice.kind === 'open') {
+      router.push(redesignHref(redesignChoice.tile));
       return;
     }
     if (redesignOpen) {

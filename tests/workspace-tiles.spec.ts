@@ -7,6 +7,7 @@ import {
   nextStepOf,
   programNextLabel,
   programNextStep,
+  redesignPress,
   tileCounts,
   tileMatches,
   toProgramTile,
@@ -292,5 +293,35 @@ test.describe('the page', () => {
     expect(greens).toBeGreaterThan(0);
     expect(page).toMatch(/tone === 'signed' \? 'text-cc-success'/);
     expect(page).toMatch(/m === 'signed'\s*\?\s*'bg-cc-success'/);
+  });
+});
+
+test.describe('"Re-design a program" (owner 27.11.2026)', () => {
+  test('none analysed: a choice that offers nothing to re-design yet', () => {
+    const press = redesignPress([toProgramTile(project('a')), toProgramTile(project('b'))]);
+    expect(press).toEqual({ kind: 'choose', tiles: [] });
+  });
+
+  test('one analysed: it opens directly', () => {
+    const one = toProgramTile(signed('b'));
+    const press = redesignPress([toProgramTile(project('a')), one]);
+    expect(press).toEqual({ kind: 'open', tile: one });
+  });
+
+  test('several analysed: a choice naming them, newest change first; shared programs are not offered', () => {
+    const older = toProgramTile(signed('c', { updatedAt: '2026-11-02T10:00:00.000Z' }));
+    const newer = toProgramTile(signed('d', { updatedAt: '2026-11-20T10:00:00.000Z' }));
+    const shared = toProgramTile(signed('e'), 'shared');
+    const press = redesignPress([older, shared, newer]);
+    expect(press.kind).toBe('choose');
+    expect(press.kind === 'choose' ? press.tiles.map((t) => t.id) : []).toEqual(['d', 'c']);
+  });
+
+  test('the button runs the press: one opens, otherwise the choice opens', () => {
+    const src = code('components/workspace/WorkspaceTiles.tsx');
+    expect(src).toContain('const redesignChoice = useMemo(() => redesignPress(tiles), [tiles]);');
+    expect(src).toMatch(/if \(redesignChoice\.kind === 'open'\) \{\s*router\.push\(redesignHref\(redesignChoice\.tile\)\);/);
+    expect(src).toContain('{redesignCandidates.length === 0 ? (');
+    expect(src).toContain('data-ws-redesign-none=""');
   });
 });
