@@ -395,6 +395,14 @@ test.describe('outside a project: the same output pipeline', () => {
     expect(presentsAbsentPlace('Open the Live Tenant tab; there is no sidebar.')).toBe(true);
     expect(presentsAbsentPlace('There is no sidebar and no Live Tenant tab.')).toBe(false);
     expect(presentsAbsentPlace('It is not SAP-certified.')).toBe(false);
+    // A negation after the place, as its predicate, says it is absent too.
+    expect(presentsAbsentPlace('The Live Tenant tab is not available.')).toBe(false);
+    expect(presentsAbsentPlace("The sidebar doesn't exist any more.")).toBe(false);
+    expect(presentsAbsentPlace('The Live Tenant tab was removed in 3.5.')).toBe(false);
+    expect(presentsAbsentPlace('A sidebar no longer exists.')).toBe(false);
+    // ... but a predicate that is no negation still points the reader at it.
+    expect(presentsAbsentPlace('The Live Tenant tab is where you connect the system.')).toBe(true);
+    expect(presentsAbsentPlace('Use the Live Tenant tab, not Settings.')).toBe(true);
     const guarded = guardProductAnswer('There is no sidebar, but open the Live Tenant tab under Testing. Settings holds the connection.', kb);
     expect(guarded.dropped).toBe(1);
     expect(guarded.text).not.toContain('Live Tenant');

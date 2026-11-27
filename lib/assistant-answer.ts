@@ -273,6 +273,14 @@ const ABSENT_PLACES: readonly RegExp[] = [
 
 const NEGATION = /\b(?:no|not|never|none|without|isn't|aren't|doesn't|don't|cannot|can't)\b/i;
 
+/**
+ * A negation that follows the place as its predicate, within a couple of words: "the Live Tenant tab is not
+ * available", "a sidebar no longer exists", "the pro plan was removed". An instruction ("open the Live Tenant tab")
+ * has no such predicate and stays flagged.
+ */
+const NEGATED_AFTER =
+  /^(?:\s+[\w-]+){0,2}?\s+(?:(?:is|are|was|were|does|do|has|have)(?:\s+(?:not|no longer)|n't)\b|no longer\b|(?:was|were|has been|have been) (?:removed|retired|dropped)\b|is gone\b)/i;
+
 /** Where one clause ends and the next begins: a negation in one clause says nothing about the next. */
 const CLAUSE_SPLIT = /[;:,]|\s(?:but|and|or|however|while|whereas|yet)\s/i;
 
@@ -285,7 +293,10 @@ export function presentsAbsentPlace(sentence: string): boolean {
   for (const clause of sentence.split(CLAUSE_SPLIT)) {
     for (const place of ABSENT_PLACES) {
       const hit = place.exec(clause);
-      if (hit && !NEGATION.test(clause.slice(0, hit.index))) return true;
+      if (!hit || NEGATION.test(clause.slice(0, hit.index))) continue;
+      // The negation can also follow the place as its predicate: "The Live Tenant tab is not available."
+      if (NEGATED_AFTER.test(clause.slice(hit.index + hit[0].length))) continue;
+      return true;
     }
   }
   return false;
