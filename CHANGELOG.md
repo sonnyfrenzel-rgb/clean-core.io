@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Ask this case (3.5.4, items 1–4 and 8)
+
+- "Ask this case" answers a glossary term only when asked "What is …?" / "What does … mean?" or given the bare
+  term; "Explain RAP vs CAP", "How does TCO analysis work?" and case questions that mention a term are answered
+  from the case.
+- Outside a project the assistant's model answer goes through the same output pipeline as inside one: Markdown
+  cleaned, checked against the product knowledge base (made-up figures, places and offers removed), sensitive text
+  masked, marked AI-generated.
+- Glossary, decision and no-evidence answers need no model and are given with "All automatic AI steps" off;
+  signed-out visitors are asked to sign in; rate limit, timeout, refused own key, unreachable model and a failed
+  evidence read each say what happened.
+- The assistant's knowledge base and suggested questions describe the product as it is in 3.5: Analyze with three
+  views, the seven tools in tool-bar order, the program decision, sharing by invitation, own model key and the SAP
+  test system in Settings; no Live Tenant tab, no sidebar.
+- Tests: the assistant's answer path is tested end to end without a server (mocked model, every error, project
+  detection on all tool routes and Re-design); a check that could not fail was replaced.
+
 ### Security (audit of v3.5.3)
 
 - Five findings of the security audit of v3.5.3 fixed (IDs in `docs/ROADMAP.md` §12), and an account erasure whose
