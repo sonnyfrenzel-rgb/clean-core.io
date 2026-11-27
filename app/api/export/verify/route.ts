@@ -5,6 +5,7 @@ import { getAuditSigningKey, MISSING_SIGNING_KEY_LOG } from '@/lib/audit-signing
 import { getSigningKeypair, verifyEd25519 } from '@/lib/audit-signing-keypair';
 import { parseCanonicalManifest } from '@/lib/audit-pack-canonical';
 import { manifestHmacValid } from '@/lib/pack-signature';
+import { readBoundedRequestJson } from '@/lib/url-validation';
 
 /**
  * POST /api/export/verify
@@ -26,8 +27,11 @@ export async function POST(req: NextRequest) {
     const clientIp = getClientIp(req);
     await assertRateLimit(`export-verify:${clientIp}`, 30, 60_000);
 
-    const body = await req.json().catch(() => ({}));
-    const { canonicalManifest, signature, signatureEd25519 } = body;
+    // Read under a bound before parsing: the manifest itself may be 32 KB, the signatures beside it are short.
+    const read = await readBoundedRequestJson(req, { maxBytes: 64 * 1024, timeoutMs: 10_000 });
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = (read.body ?? {}) as Record<string, unknown>;
+    const { canonicalManifest, signature, signatureEd25519 } = body as { canonicalManifest?: unknown; signature?: unknown; signatureEd25519?: unknown };
 
     if (!canonicalManifest || typeof canonicalManifest !== 'string') {
       return NextResponse.json(

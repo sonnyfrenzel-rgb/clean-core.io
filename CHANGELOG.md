@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security (audit of v3.5.3)
+
+- Five findings of the security audit of v3.5.3 fixed (IDs in `docs/ROADMAP.md` §12), and an account erasure whose
+  sign-in could not be deleted now withdraws that sign-in's administrator rights at once.
+- The model's artefacts on a project are written by the server only: the rules were deployed on 27.11.2026, after
+  v3.5.3 went live.
+
 ## [v3.5.3] — 2026-11-27
 
 The fixes of the external audit of 25 November 2026, every page with a way on (the walk-through of 26 November),

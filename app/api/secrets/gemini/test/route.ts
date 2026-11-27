@@ -26,9 +26,11 @@ import {
   providerUnavailableReason,
   suspendedProvidersOf,
   type ModelKeyProvider,
+  MAX_API_KEY_LENGTH,
 } from '@/lib/model-providers';
 import { testOwnModelKey } from '@/lib/own-key-test';
 import { GEMINI_TEST_REAL_MODEL_HEADER, GEMINI_TEST_STUB_HEADER, geminiTestStubActive } from '@/lib/gemini-test-stub';
+import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 
 /**
  * POST /api/secrets/gemini/test
@@ -73,8 +75,13 @@ export async function POST(req: NextRequest) {
     // not store is not one the server should send to the provider either.
     await assertByokAllowed(decodedToken.uid, decodedToken.admin === true);
 
-    const body = await req.json().catch(() => ({}));
+    const read = await readBoundedRequestJson(req, SMALL_REQUEST_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body ?? {};
     let { apiKey } = (body ?? {}) as { apiKey?: string };
+    if (typeof apiKey === 'string' && apiKey.length > MAX_API_KEY_LENGTH) {
+      return NextResponse.json({ error: 'This does not look like an API key: it is too long.' }, { status: 400 });
+    }
     // 3.0.15: the provider of an entered key; absent means Gemini, as before.
     const requested = (body as { provider?: unknown } | null)?.provider;
     let provider: ModelKeyProvider = 'gemini';

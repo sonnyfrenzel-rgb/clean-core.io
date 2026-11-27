@@ -64,6 +64,11 @@ test('the named routes no longer parse a request body without a bound', () => {
     'app/api/portfolio/selections/[selectionId]/route.ts',
     'app/api/portfolio/selections/[selectionId]/invitations/route.ts',
     'app/api/secrets/gemini/auto-steps/route.ts',
+    // Security audit of v3.5.3: the two public routes and the own-key routes.
+    'app/api/export/verify/route.ts',
+    'app/api/survey/vote/route.ts',
+    'app/api/secrets/gemini/route.ts',
+    'app/api/secrets/gemini/test/route.ts',
   ];
   for (const rel of routes) {
     const src = read(rel).replace(/\r\n/g, '\n');

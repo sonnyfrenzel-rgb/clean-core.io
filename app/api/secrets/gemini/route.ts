@@ -23,6 +23,7 @@ import {
   offeredKeyProviders,
   providerUnavailableReason,
   suspendedProvidersOf,
+  MAX_API_KEY_LENGTH,
 } from '@/lib/model-providers';
 import {
   ADDENDUM_REQUIRED_CODE,
@@ -37,6 +38,7 @@ import { sendAgreementAcceptedMail, sendAgreementEndedMail } from '@/lib/byok-ag
 import { termsVersionInEffectFor } from '@/lib/terms-effective';
 import { OWN_KEY_TEST_FAILED_CODE, OWN_KEY_TEST_FAILED_MESSAGE, testOwnModelKey } from '@/lib/own-key-test';
 import { GEMINI_TEST_REAL_MODEL_HEADER, GEMINI_TEST_STUB_HEADER, geminiTestStubActive } from '@/lib/gemini-test-stub';
+import { readBoundedRequestJson, SMALL_REQUEST_BODY_LIMITS } from '@/lib/url-validation';
 
 /**
  * POST /api/secrets/gemini
@@ -70,11 +72,16 @@ export async function POST(req: NextRequest) {
     // address it could reach us through (3.0.13, owner decision 30.09.2026).
     await assertByokRateLimit('save', decodedToken.uid);
 
-    const body = await req.json().catch(() => ({}));
+    const read = await readBoundedRequestJson(req, SMALL_REQUEST_BODY_LIMITS);
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body ?? {};
     const { apiKey, provider: requestedProvider } = (body ?? {}) as { apiKey?: string; provider?: unknown };
 
     if (!apiKey || typeof apiKey !== 'string' || !apiKey.trim()) {
       return NextResponse.json({ error: 'Missing required field: apiKey.' }, { status: 400 });
+    }
+    if (apiKey.length > MAX_API_KEY_LENGTH) {
+      return NextResponse.json({ error: 'This does not look like an API key: it is too long.' }, { status: 400 });
     }
     // 3.0.15: the provider the key belongs to. Absent means Gemini — the only
     // provider a key could belong to before, and what every older client sends.

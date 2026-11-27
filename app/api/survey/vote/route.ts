@@ -5,6 +5,7 @@ import { logger, errMessage } from '@/lib/logger';
 import { verifySurveyToken } from '@/lib/survey/token';
 import { docId, recordAnswer } from '@/lib/survey/store';
 import { getOption, getQuestion, SURVEY_FREETEXT_MAX } from '@/lib/survey/definition';
+import { readBoundedRequestJson } from '@/lib/url-validation';
 
 /**
  * Records one survey answer, or the free-text comment.
@@ -33,7 +34,9 @@ export async function POST(req: NextRequest) {
   try {
     await assertRateLimit(`survey-vote:${getClientIp(req)}`, 60, 60_000);
 
-    const body = await req.json().catch(() => ({}));
+    const read = await readBoundedRequestJson(req, { maxBytes: 64 * 1024, timeoutMs: 10_000 });
+    if (read.tooLarge) return NextResponse.json({ error: 'The request is too large.', code: 'too-large' }, { status: 413 });
+    const body = read.body ?? {};
     const { token, questionId, optionId, optionIds, comment } = body as {
       token?: string;
       questionId?: string;

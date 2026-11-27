@@ -18,6 +18,9 @@
  */
 
 /** The providers an own key can belong to. */
+/** The longest own model key a route accepts: Gemini and Anthropic keys are about 40 and 110 characters. */
+export const MAX_API_KEY_LENGTH = 512;
+
 export const MODEL_KEY_PROVIDERS = ['gemini', 'anthropic'] as const;
 export type ModelKeyProvider = (typeof MODEL_KEY_PROVIDERS)[number];
 

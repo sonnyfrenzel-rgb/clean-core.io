@@ -94,8 +94,9 @@ import { engineVersionOfProject } from '@/lib/run-engine-version';
  * drew and when, not that the drawing is right. It enters no signed run and no
  * audit pack, and nothing downstream may read it as a statement about the code.
  *
- * Owner only, for reading as for writing: a process model is the project's code
- * in another shape, and an administrator cannot read a project's code either.
+ * Writing is the owner's alone; reading is the owner's and an invited reader's, by membership (as the project's
+ * code is read). A process model is the project's code in another shape, and an administrator cannot read a
+ * project's code either.
  */
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

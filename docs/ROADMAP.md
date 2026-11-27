@@ -1782,6 +1782,15 @@ Scheduling: **critical** immediately as its own patch step before any other work
 | SEC-2026-983 | low | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 | SEC-2026-984 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
 | SEC-2026-985 | info | P3 | comment-hygiene decision (with SEC-2026-895/-896) | scheduled |
+| SEC-2026-1030 | medium | P3 | 3.5.4 · security audit 3.5.3 | scheduled |
+| SEC-2026-1031 | medium | P3 | before the next Firestore migration run | scheduled |
+| SEC-2026-1032 | low | P3 | 3.5.4 · security audit 3.5.3 | scheduled |
+| SEC-2026-1033 | low | P3 | 3.5.4 · security audit 3.5.3 | scheduled |
+| SEC-2026-1034 | low | P3 | 3.5.4 · security audit 3.5.3 | scheduled |
+| SEC-2026-1035 | low | P3 | 3.5.4 · security audit 3.5.3 | scheduled |
+| SEC-2026-1036 | low | P3 | needs Sonny's decision | scheduled |
+| SEC-2026-1037 | info | P3 | 3.5.4 · security audit 3.5.3 | scheduled |
+| SEC-2026-1042 | medium | — | — | accepted risk |
 
 **External audit of v3.5.2 (`e952430`), 25.11.2026** — an outside review, not the security agent, so its
 findings carry `EXT-2511-NNN` IDs and are not in the sealed register; the mapping to the report stays

@@ -21,7 +21,8 @@ permissions:
 jobs:
   health:
     name: Pipeline health (sealed)
-    if: vars.QA_REVIEW_ENABLED != 'false'
+    # main only: a manual run on another ref would run that ref's script with the sealing key in reach.
+    if: vars.QA_REVIEW_ENABLED != 'false' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
