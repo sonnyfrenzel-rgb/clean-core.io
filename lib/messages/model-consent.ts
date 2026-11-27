@@ -36,6 +36,32 @@ export function generateDraftLabel(company: string | null, lang: UiLanguage = UI
   return `Generate draft (sends code to ${company ?? 'the AI provider'})`;
 }
 
+/**
+ * Lawyer's statement 24c (3.5.4): the Decide page's Rebuild confirmation that records the decision and then writes
+ * the design, naming the provider of the key actually used. Before the key is known, the generic provider.
+ */
+export function recordAndWriteDesignLabel(company: string | null, lang: UiLanguage = UI_LANGUAGE): string {
+  if (lang === 'de') return `Festhalten und das Design schreiben (sendet Antworten an ${company ?? 'den KI-Anbieter'})`;
+  return `Record and write the design (sends answers to ${company ?? 'the AI provider'})`;
+}
+
+/**
+ * The hint directly above that button: what the design step sends. Statement 24c proposed "… with your answers and
+ * the findings of the signed run (rules, counts, object names; no line of your code)". The design prompt sends more
+ * than that (`app/(app)/project/[projectId]/design/page.tsx`: the run's model narrative, the rules with their values
+ * and lines, the routine names), so this is the accurate variant, for the lawyer to confirm.
+ */
+export function writeDesignHint(company: string | null, lang: UiLanguage = UI_LANGUAGE): string {
+  const who = company ?? (lang === 'de' ? 'den KI-Anbieter' : 'the AI provider');
+  if (lang === 'de') {
+    return `Danach wird das Design geschrieben: zwei Modellaufrufe an ${who}, mit Ihren Antworten und dem, was die Engine aus Ihrem Code gelesen hat (Regeln mit ihren Werten und Zeilen, Namen von Routinen und SAP-Objekten) sowie der Analyse-Erzählung des Laufs, falls vorhanden, die Code zitieren kann. KI-generiert; zählt nicht gegen Ihre Läufe.`;
+  }
+  return `Then the design is written: two model calls to ${who}, with your answers and what the engine read from your code (rules with their values and lines, routine and SAP object names), and the run's analysis narrative where it has one, which can quote your code. AI-generated; not counted against your runs.`;
+}
+
+/** Statement 24c: what the page says when the design could not be written after the decision was recorded. */
+export const DESIGN_AFTER_DECISION_FAILED = 'Your decision is recorded. The design could not be written; open Design to try again.';
+
 /** The same button when a draft is on record and would be replaced. */
 export function regenerateDraftLabel(company: string | null, lang: UiLanguage = UI_LANGUAGE): string {
   if (lang === 'de') return `Entwurf neu erzeugen (sendet Code an ${company ?? 'den KI-Anbieter'})`;

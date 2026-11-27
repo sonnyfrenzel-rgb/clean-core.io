@@ -363,9 +363,9 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     });
 
     await page.locator('[data-decide-record]').click();
-    await page.locator('[data-cc-message-box]').getByRole('button', { name: 'Record the decision', exact: true }).click();
+    await page.locator('[data-cc-message-box]').getByRole('button', { name: /^(Record only|Record the decision)$/ }).first().click();
     // One confirmation: the decision, its route and its record, by the signed-in account.
-    await expect(page.locator('[data-decide-state="decided"][data-decide-option="rebuild"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('[data-decide-state="decided"][data-decide-result-option="rebuild"]')).toBeVisible({ timeout: 60000 });
     console.log('Decision recorded.');
 
     // --- STAGE 3: TRANSFORMATION ---

@@ -114,7 +114,9 @@ import { useDesignDecision } from '@/hooks/useDesignDecision';
 import { useAroundTheMap } from '@/hooks/useAroundTheMap';
 import { stageViewOf, useLocationSearch } from '@/lib/location-search';
 import { PAGE_ANCHOR_LABELS } from '@/lib/page-anchors';
-import { DECISION_OPTION_MEANINGS } from '@/lib/decision-options';
+import { DECISION_OPTION_MEANINGS, optionOfArchitecture } from '@/lib/decision-options';
+import { takeStartRequest } from '@/lib/start-request';
+import { DESIGN_AFTER_DECISION_FAILED } from '@/lib/messages/model-consent';
 import { standardTouch } from '@/lib/standard-touch';
 import {
   NO_DESIGN_DECISION,
@@ -991,6 +993,21 @@ ${DESIGN_ANSWER_REMINDER}`;
    * first; the box's "Replace" then runs `regenerate` (ADR-083). A reader's
    * click still lands in `regenerate`, whose sentence says why nothing happens.
    */
+  /**
+   * Lawyer's statement 24c: "Record and write the design (sends answers to …)" on the Decide page records the decision
+   * and hands this page an in-memory start (`lib/start-request.ts`). Taken once, only when this page could write the
+   * design itself on a click — the owner, nothing on record, the evidence and the answers read — and never from the
+   * address or storage, so opening Design still calls no model. A failure says that the decision stands.
+   */
+  const [startedFromDecision, setStartedFromDecision] = useState(false);
+  useEffect(() => {
+    if (!project || !isOwner || generating || elsewhereSince !== null || design) return;
+    if (designEvidence.state === 'loading' || businessAnswers.state !== 'ready' || !modelAvailability.known) return;
+    if (!takeStartRequest(projectId as string, 'design')) return;
+    setStartedFromDecision(true);
+    regenerate();
+  });
+
   const askRegenerate = () => {
     if (design && isOwner) setReplaceDesignAsk(true);
     else regenerate();
@@ -1119,7 +1136,7 @@ ${DESIGN_ANSWER_REMINDER}`;
   const designErrorStrip = designError ? (
     <CcMessageStrip
       state="error"
-      headline="Generation failed."
+      headline={startedFromDecision ? DESIGN_AFTER_DECISION_FAILED : 'Generation failed.'}
       announce
       actions={
         // Without a design the empty state below carries "Try again"; one
@@ -1701,7 +1718,7 @@ ${DESIGN_ANSWER_REMINDER}`;
         ),
         actionNote: outside || !isOwner ? null : dcase === 'none' || !decision.confirmed ? 'One page: cost, the four options, your answers, one confirmation.' : null,
         moreActions:
-          recorded && isOwner && !outside && dcase === 'rebuild' ? (
+          recorded && isOwner && !outside && optionOfArchitecture(project?.targetArchitecture) === 'rebuild' ? (
             <DesignConfirmTarget
               label={architectureOptionLabel(recommendation) ?? recommendation}
               onConfirm={() => lockArchitecture(recommendation, '')}

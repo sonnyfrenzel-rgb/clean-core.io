@@ -52,6 +52,13 @@ export interface CcMessageBoxProps {
    * stored work or revoking is not a decision, so it does not wear its button.
    */
   confirmVariant?: 'dark' | 'danger';
+  /**
+   * A second way to confirm, beside the binding one: "Record only" beside "Record and write the design" (lawyer's
+   * statement 24c). Drawn as `secondary` between Cancel and the binding button; absent, nothing changes.
+   */
+  secondary?: { label: string; onClick: () => void };
+  /** Said directly above the buttons, e.g. what a model call sends. */
+  footnote?: React.ReactNode;
 }
 
 export default function CcMessageBox({
@@ -63,6 +70,8 @@ export default function CcMessageBox({
   onCancel,
   cancelLabel,
   confirmVariant = 'dark',
+  secondary,
+  footnote,
 }: CcMessageBoxProps) {
   // Inert page, focus held, Escape, focus returned: `./modal.ts`, shared with
   // `CcDialog`. The box itself takes the first focus, not the confirm button,
@@ -97,10 +106,16 @@ export default function CcMessageBox({
           {title}
         </h3>
         <div className="mt-2 text-[13px] font-medium leading-relaxed text-cc-ink">{children}</div>
-        <div className="mt-4 flex justify-end gap-2">
+        {footnote ? <div data-cc-message-box-footnote="" className="mt-3 text-[12px] font-medium leading-relaxed text-cc-ink-muted">{footnote}</div> : null}
+        <div className="mt-4 flex flex-wrap justify-end gap-2">
           <CcButton variant="ghost" onClick={onCancel}>
             {cancelLabel ?? t('action.cancel')}
           </CcButton>
+          {secondary ? (
+            <CcButton variant="secondary" onClick={secondary.onClick} data-cc-message-box-secondary="">
+              {secondary.label}
+            </CcButton>
+          ) : null}
           <CcButton
             variant={confirmVariant === 'danger' ? 'ghost' : 'dark'}
             tone={confirmVariant === 'danger' ? 'danger' : 'default'}

@@ -20,7 +20,11 @@ import DecideResult from '@/components/redesign/DecideResult';
 import { initialCostAssumptions } from '@/components/tco/OptionComparison';
 import { useProgramDecision } from '@/hooks/useProgramDecision';
 import { useWorkspaceRevision } from '@/hooks/useWorkspaceRevision';
+import { useProcessStates } from '@/hooks/useProcessStates';
+import { useNeedProcessLine } from '@/hooks/useNeedProcessLine';
 import { useFollowHash } from '@/hooks/useFollowHash';
+import { useRouter } from 'next/navigation';
+import { requestStartOnArrival } from '@/lib/start-request';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import WorkspaceRevisionStand from '@/components/workspace/RevisionStand';
 import { getAuth } from '@/lib/firebase';
@@ -37,7 +41,7 @@ import { standardTouch } from '@/lib/standard-touch';
 import { decisionCardView } from '@/lib/decision-card';
 import { ANSWERS_READING, businessAnswersDigest, type BusinessAnswersReading } from '@/lib/design-business-answers';
 import { TARGET_EDITION_NAMES } from '@/lib/sap-naming';
-import { generateDraftLabel, providerCompanyOf } from '@/lib/messages/model-consent';
+import { generateDraftLabel, providerCompanyOf, recordAndWriteDesignLabel, writeDesignHint } from '@/lib/messages/model-consent';
 import {
   ROUTE_WORDS,
   codeOfChoice,
@@ -99,6 +103,10 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
   const program = useProgramDecision(project, projectId, revision);
   const steps = useMemo(() => workflowSteps(project), [project]);
   const availability = useModelAvailability();
+  const router = useRouter();
+  // "Your process" in one line, counted as the map counts it (ADR-087), beside the business questions of a Rebuild.
+  const ruleStates = useProcessStates(projectId, Boolean(project?.activeRunId) && projectId !== '');
+  const processLine = useNeedProcessLine(project, ruleStates.outcome);
 
   const [choice, setChoice] = useState<DecisionOption | null>(null);
   const [route, setRoute] = useState<TargetArchitectureCode | null>(null);
@@ -168,6 +176,8 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
   const confirmedRecord = read?.stored && read.stored.status === 'confirmed' ? read.stored : null;
   // The account's own switch: a Rebuild's design is written by a model, and a switched-off model says so here.
   const designOff = availability.enabled('design') ? null : modelAbsenceReason('stage-off', 'design');
+  // The provider of the key actually used, for every button that sends something (legal review 06.11.2026; 24c).
+  const company = availability.known ? providerCompanyOf(availability.provider) : null;
 
   const header = (
     <StageHeader
@@ -249,7 +259,6 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
     const transformation = steps.find((s) => s.key === 'transformation');
     const designWritten = design?.state === 'done' || design?.state === 'partial';
     const codeBuilt = transformation?.state === 'done' || transformation?.state === 'partial';
-    const company = availability.known ? providerCompanyOf(availability.provider) : null;
     const transformationOn = availability.enabled('transformation');
     const walk = redesignModel(steps, program.state);
     const answer = rebuild
@@ -277,9 +286,25 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
         </CcLinkButton>
       );
       actionNote = designOff ?? 'Design writes it from your answers. Then Transformation builds the code.';
+    } else if (rebuild && !codeBuilt && canDecide && transformationOn) {
+      // Lawyer's statement 24c: the approved label, and its click starts the generation. Transformation runs it in the
+      // browser with its own progress, checks and store; the click hands it the start in memory only
+      // (`lib/start-request.ts`), never through the address or storage, so opening Transformation calls no model.
+      action = (
+        <CcButton
+          variant="primary"
+          onClick={() => {
+            requestStartOnArrival(projectId, 'transformation');
+            router.push(`${base}/transformation`);
+          }}
+          data-decide-next="generate"
+        >
+          <span className="min-w-0 text-left leading-snug whitespace-normal">{generateDraftLabel(company)}</span>
+        </CcButton>
+      );
+      actionNote = 'Starts the generation; Transformation shows its progress.';
     } else if (rebuild && !codeBuilt) {
-      // Opening a tool never sends code anywhere (legal review 06.11.2026, 3.0.21, item 1): this link only opens
-      // Transformation, whose own button carries the approved text with the provider of the key actually used.
+      // The model for Transformation is off, or a reader: the tool opens, nothing is sent.
       action = (
         <CcLinkButton href={`${base}/transformation`} variant="primary" data-decide-next="transformation">
           Open Transformation to generate the code
@@ -325,7 +350,7 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
     ];
     const view = decisionCardView(confirmedRecord);
     return (
-      <StageFrame stage="redesign" data-redesign="ready" data-decide-state="decided" data-decide-option={option}>
+      <StageFrame stage="redesign" data-redesign="ready" data-decide-state="decided" data-decide-result-option={option}>
         {header}
         <DecideResult
           answer={answer}
@@ -373,6 +398,9 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
   const follows = choice && choice !== 'rebuild' && !needsReason && indicatedCard ? followedIndicationReason(choice, indicatedCard.reason) : null;
   const justification = choice === 'rebuild' ? reason.trim() : (follows ?? reason.trim());
   const reasonMissing = needsReason && reason.trim().length === 0;
+  // A Rebuild on the route whose architecture contract carries a blocking limit cannot be confirmed (decision-blocked):
+  // the button says so before a click, instead of a click that is refused.
+  const rebuildBlocked = choice === 'rebuild' && read?.rebuildContract?.blocked === true && read.rebuildContract.route === effectiveRoute;
   const answered = answers.state === 'ready' ? { total: answers.total, open: answers.open } : null;
   const limits = read ? read.draft.conditions.filter((c) => c.source === 'contract-limit').length : null;
   const note = standardNote(touch, choice, indicated);
@@ -389,7 +417,8 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
     setChoice(o);
   };
 
-  const record = async () => {
+  /** `write`: then the design is written (statement 24c), by Design, from an in-memory start this click hands it. */
+  const record = async (write = false) => {
     setAsking(null);
     setRefusal(null);
     if (!read || !choice) return;
@@ -408,6 +437,13 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
       });
       setChoice(null);
       setReason('');
+      if (write) {
+        // The decision is recorded first and holds nothing of the model's answer; Design writes the design now and
+        // says, if it fails, that the decision stands (DESIGN_AFTER_DECISION_FAILED).
+        requestStartOnArrival(projectId, 'design');
+        router.push(`${base}/design?view=business`);
+        return;
+      }
       reloadAll();
     } catch (err: unknown) {
       if (err instanceof CommandAnswerLostError) {
@@ -483,6 +519,14 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
           ) : null}
         </div>
         <div data-decide-questions="">
+          {processLine ? (
+            <p data-decide-need-process="" className="m-0 mb-2 cc-text-cell text-cc-ink-muted">
+              Your process: {processLine}.{' '}
+              <a href={`${base}/analyze#process-map`} className="font-semibold text-cc-ink underline underline-offset-2">
+                Open the map
+              </a>
+            </p>
+          ) : null}
           <p className="m-0 flex flex-wrap items-center gap-2 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">
             Business questions
             {answered && answered.total > 0 ? (
@@ -494,7 +538,11 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
           <div className="mt-2">
             <RuleQuestions project={project} projectId={projectId} onAnswers={setAnswers} />
           </div>
-          <p className="m-0 mt-2 cc-text-meta text-cc-ink-muted">Open questions do not stop anything: they stay open in the design and are said there.</p>
+          {answered && answered.total === 0 ? (
+            <p data-decide-no-questions="" className="m-0 cc-text-cell text-cc-ink">The code asks the business nothing: no rule in it needs an answer before the design.</p>
+          ) : (
+            <p className="m-0 mt-2 cc-text-meta text-cc-ink-muted">Open questions do not stop anything: they stay open in the design and are said there.</p>
+          )}
         </div>
       </div>
     ) : null;
@@ -521,7 +569,9 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
         : 'Only the owner of the project decides. You read it.'
       : reading
         ? 'Reading the decision on record…'
-        : reasonMissing
+        : rebuildBlocked
+          ? `A limit of the architecture contract blocks a Rebuild on this route as it stands, so it cannot be recorded. The limits are in Analyze, IT.${designOff ? ` ${designOff}` : ''}`
+          : reasonMissing
           ? choice === 'rebuild'
             ? 'Write your reason for this route first.'
             : `Write your reason first${indicated ? `: the analysis indicates ${DECISION_OPTION_LABELS[indicated]}` : ''}.`
@@ -530,7 +580,7 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
             : follows
               ? 'It follows the analysis, so no reason is asked.'
               : 'Your reason is kept with the decision.';
-  const recordable = Boolean(choice) && canDecide && !reading && !busy && !reasonMissing && read !== null;
+  const recordable = Boolean(choice) && canDecide && !reading && !busy && !reasonMissing && !rebuildBlocked && read !== null;
   const bar = (
     <DecideBar
       summary={summary}
@@ -546,6 +596,9 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
     />
   );
 
+  // Statement 24c: a Rebuild's confirmation can also write the design, unless the design step's model is off for this
+  // account (the same switch Design's "Generate the design" honours); then only "Record the decision" and no model hint.
+  const writesDesign = choice === 'rebuild' && canDecide && availability.enabled('design');
   const dialogLines = choice
     ? decideDialogLines({
         account,
@@ -596,9 +649,11 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
       <CcMessageBox
         open={asking === 'record' && choice !== null}
         title={choice ? decideDialogTitle(choice) : ''}
-        confirmLabel="Record the decision"
-        onConfirm={() => void record()}
+        confirmLabel={writesDesign ? recordAndWriteDesignLabel(company) : 'Record the decision'}
+        onConfirm={() => void record(writesDesign)}
         onCancel={() => setAsking(null)}
+        secondary={writesDesign ? { label: 'Record only', onClick: () => void record(false) } : undefined}
+        footnote={writesDesign ? <span data-decide-model-hint="">{writeDesignHint(company)}</span> : undefined}
       >
         <p className="m-0">{decideDialogLead(account)}</p>
         <ul data-decide-dialog-lines="" className="m-0 mt-2 list-disc space-y-1 pl-5">

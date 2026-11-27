@@ -89,6 +89,7 @@ import StaleNotice from '@/components/StaleNotice';
 import NotGenerated from '@/components/NotGenerated';
 import { useModelAvailability } from '@/hooks/useModelAvailability';
 import { generateDraftLabel, providerCompanyOf, regenerateDraftLabel } from '@/lib/messages/model-consent';
+import { takeStartRequest } from '@/lib/start-request';
 import { PRODUCT_GEMINI_MODEL } from '@/lib/constants';
 import { BTP } from '@/lib/sap-naming';
 import { enterGenerationPhase, type GenerationPhase, type GenerationPhaseKey } from '@/lib/generation-progress';
@@ -1818,6 +1819,17 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
     if (files.length > 0) setReplaceCodeAsk(true);
     else generateTransformation();
   };
+  /**
+   * Lawyer's statement 24c: "Generate draft (sends code to …)" on the Decide page is this page's own button, clicked
+   * there. Its click hands this page an in-memory start (`lib/start-request.ts`) and opens it; the start is taken once,
+   * only when the button here could start it (`canStart`, nothing generated yet), and runs the same `startGeneration`.
+   * Nothing in the address or in storage carries it: a reload or a direct visit reads no request and sends nothing.
+   */
+  useEffect(() => {
+    if (!canStart || busy || files.length > 0) return;
+    if (!takeStartRequest(projectId as string, 'transformation')) return;
+    startGeneration();
+  });
   /** The tips stand where a generation could start now, or would once the model is on. */
   const showTips = project !== null && isOwner && prerequisites.length === 0 && blockers.length === 0;
 

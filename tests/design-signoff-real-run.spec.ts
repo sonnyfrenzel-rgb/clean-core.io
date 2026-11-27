@@ -83,8 +83,8 @@ test('a Rebuild recorded on the Decide page on a real run: Design shows it decid
   const record = page.locator('[data-decide-record]');
   await expect(record).toBeEnabled({ timeout: 120_000 });
   await record.click();
-  await page.getByRole('dialog').getByRole('button', { name: 'Record the decision', exact: true }).click();
-  await expect(page.locator('[data-decide-state="decided"][data-decide-option="rebuild"]')).toBeVisible({ timeout: 120_000 });
+  await page.getByRole('dialog').getByRole('button', { name: /^(Record only|Record the decision)$/ }).first().click();
+  await expect(page.locator('[data-decide-state="decided"][data-decide-result-option="rebuild"]')).toBeVisible({ timeout: 120_000 });
   const stored = await adminGetDoc('projects', seeded.projectId);
   expect(stored?.approvedByArchitect).toBe(true);
   expect((stored?.decision as { status?: string } | undefined)?.status).toBe('confirmed');
