@@ -29,6 +29,7 @@ import { outdatedReasonsOfAnswer, type DecisionCostBasis, type DecisionCostCheck
 import { stageHref } from '@/lib/workspace-back-href';
 import { workspaceRedirectHref } from '@/lib/workspace-redirect';
 import { cn } from '@/lib/utils';
+import { focusInPageTarget } from '@/lib/in-page-target';
 import InfoPopover from './InfoPopover';
 import type { ObjectStatusValue } from '@/lib/object-status';
 import {
@@ -377,17 +378,9 @@ export default function DecisionCard({
                 }
                 const first = unblock[0];
                 if (!first) return;
-                // A place on this page: assigning the hash the address already carries does nothing, so the button
-                // looked dead. Scroll to it and put the focus on its first choice instead.
-                if (first.path.startsWith('#')) {
-                  const target = document.getElementById(first.path.slice(1));
-                  if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    const choice = target.querySelector<HTMLElement>('[data-option-choose], [data-option-choose-design], button, a[href]');
-                    (choice ?? target).focus({ preventScroll: true });
-                    return;
-                  }
-                }
+                // A place on this page is scrolled to and its first choice focused (lib/in-page-target.ts);
+                // anywhere else is navigated to.
+                if (focusInPageTarget(first.path, document)) return;
                 window.location.assign(unblockHref(first.path));
               }}
               disabled={busy || (!view.confirmable && unblock.length === 0)}

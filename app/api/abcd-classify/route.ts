@@ -77,9 +77,12 @@ export const runtime = 'nodejs';
 const MAX_OBJECTS = 500;
 
 /**
- * The longest object name looked up. SAP object names are at most 30 characters, a namespace included; a longer
- * entry is no SAP name and is skipped, as an entry that is not a name is. Skipped rather than refused, so one stray
- * token in a batch the browser extracted from code does not cost the other grades.
+ * The longest object name looked up, after trimming. An object entry whose name is longer is skipped — left out of
+ * `grades` and `noPath` — as an entry that is not a name is; skipped rather than refused, so one stray token in a
+ * batch the browser extracted from code does not cost the other grades. The bound is a ceiling on the work one entry
+ * can cause, not the SAP length rule: the longest name in the shipped catalog files is 30 characters, and a name of
+ * 31 to 120 characters is still looked up and simply finds nothing. 120 is the length function module names are cut
+ * to below.
  */
 const MAX_NAME_LENGTH = 120;
 
