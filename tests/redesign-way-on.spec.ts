@@ -24,18 +24,18 @@ function rail(states: Partial<Record<PhaseKey, PhaseState>>): RailStep[] {
 const none: RedesignDecision = { stage: 'not-decided', option: null, indicated: 'rebuild' };
 
 test.describe('the Re-design model', () => {
-  test('a signed run with no figures stored reads Not started, and Start with Economics (journey review 26.11.2026)', () => {
+  test('a signed run with no figures stored reads Economics Not started, and the next step is the decision, not Economics (ADR-145 (5))', () => {
     const steps = rail({ analyze: 'done', tco: 'partial' }).map((s) => (s.key === 'tco' ? { ...s, badge: ECONOMICS_NOTHING_STORED } : s));
     const m = redesignModel(steps, none);
     expect(m.steps.find((s) => s.key === 'tco')).toMatchObject({ state: 'open', stateWords: 'Not started' });
-    expect(m.next?.label).toBe('Start with Economics: price the options');
+    expect(m.next).toMatchObject({ key: 'decide', path: `#${REDESIGN_DECIDE_ID}`, label: 'Decide: keep, rebuild, move or retire' });
   });
 
   test('work built ahead of the decision is named in the answer, never Not started above a Done', () => {
     const m = redesignModel(rail({ analyze: 'done', transformation: 'done', documentation: 'done', design: 'partial' }), none);
     expect(m.answer).toMatch(/^Built ahead of the decision: Design, Transformation, Documentation\. /);
     expect(m.answer).not.toContain('Not started');
-    expect(redesignModel(rail({ analyze: 'done' }), none).answer).toMatch(/^Not started\./);
+    expect(redesignModel(rail({ analyze: 'done' }), none).answer).toMatch(/^Not decided yet:/);
   });
 
   test('the six tools in PHASES order with the decision as step 2, between Economics and Design', () => {
@@ -45,11 +45,12 @@ test.describe('the Re-design model', () => {
     expect(m.steps.find((s) => s.key === 'decide')?.path).toBeNull();
   });
 
-  test('the next step: Economics first, then the decision, then Design', () => {
-    expect(redesignModel(rail({ analyze: 'done' }), none).next).toMatchObject({ key: 'tco', path: 'tco', label: 'Start with Economics: price the options' });
-    expect(redesignModel(rail({ analyze: 'done', tco: 'partial' }), none).next?.label).toBe('Continue in Economics: price the options');
+  test('the next step: the decision first, priced or not, then Design; Economics is never the next step (ADR-145 (5))', () => {
+    expect(redesignModel(rail({ analyze: 'done' }), none).next).toMatchObject({ key: 'decide', path: `#${REDESIGN_DECIDE_ID}` });
+    expect(redesignModel(rail({ analyze: 'done', tco: 'partial' }), none).next?.key).toBe('decide');
     const priced = redesignModel(rail({ analyze: 'done', tco: 'done' }), none);
     expect(priced.next).toMatchObject({ key: 'decide', path: `#${REDESIGN_DECIDE_ID}` });
+    expect(priced.next?.note).toBe('One page: cost, the four options, your answers, one confirmation. Not counted against your runs.');
     const decided = redesignModel(rail({ analyze: 'done', tco: 'done' }), { stage: 'confirmed', option: 'rebuild', indicated: 'rebuild' });
     expect(decided.next).toMatchObject({ key: 'design', path: 'design' });
   });
@@ -79,7 +80,7 @@ test.describe('the Re-design model', () => {
       expect(m.next).toMatchObject({ key: 'decide', path: `#${REDESIGN_DECIDE_ID}`, label: 'Open the decision', done: true });
       expect(m.next?.label).not.toMatch(/Design/);
       expect(m.next?.note).toBe(`Done. ${named} builds nothing, so no step is waiting.`);
-      expect(m.answer).toContain(`Decided: ${named}. Nothing is built, so Re-design is done.`);
+      expect(m.answer).toContain(`Decided: ${named}. Nothing is built, so nothing is waiting.`);
     });
   }
 
@@ -98,7 +99,7 @@ test.describe('the Re-design model', () => {
     expect(chosen.next).toMatchObject({ key: 'decide' });
     expect(chosen.next?.done).toBeUndefined();
     expect(chosen.steps.find((s) => s.key === 'design')?.stateWords).toBe('Not needed once Retire is confirmed');
-    expect(chosen.answer).toBe('Retire chosen, not confirmed yet. Nothing is built after it once it is confirmed.');
+    expect(chosen.answer).toBe('Retire chosen earlier, not recorded yet. Record the decision to end it here.');
     const outdated = redesignModel(rail({ analyze: 'done', tco: 'done' }), { stage: 'outdated', option: 'keep', indicated: null });
     expect(outdated.steps.find((s) => s.key === 'decide')?.state).toBe('stale');
     expect(outdated.next).toMatchObject({ key: 'decide' });

@@ -53,11 +53,11 @@ export function journeyNext(
   account?: ModelStageSubject | null,
 ): JourneyNext {
   const model = redesignModel(steps, decision, account);
-  // Once the reader has gone on past Economics (a later tool holds a record, `economicsPassedOver`), the way on does
-  // not send them back to it, nor to a decision that a rebuild can only confirm after Design's sign-off: the next
-  // tool on, as the tool row has always said (owner rule, ADR-128 (5); preservation register RC-design-awaiting-sign-off).
+  // Economics is never the next step (ADR-145 (5)), and once the reader has gone on past it (a later tool holds a
+  // record, `economicsPassedOver`) the way on does not send them back to it. The decision is no longer skipped: since
+  // 3.5.4 it is recorded in one go on the Decide page, route included, with no sign-off in Design before it.
   const passed = economicsPassedOver(steps);
-  const skip = (k: RedesignStep['key'] | 'analyze') => passed && (k === 'tco' || k === 'decide');
+  const skip = (k: RedesignStep['key'] | 'analyze') => passed && k === 'tco';
   let next: RedesignNext | null = model.next ? { ...model.next, path: model.next.path === '#decide' ? 'redesign#decide' : model.next.path } : null;
   if (next && !next.done && skip(next.key)) {
     const on = model.steps.find((s) => !skip(s.key) && s.state !== 'done' && s.state !== 'not-needed') ?? null;

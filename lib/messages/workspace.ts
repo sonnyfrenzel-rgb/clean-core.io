@@ -311,7 +311,7 @@ export const WORKSPACE_PAGE_MESSAGES = {
   'ws.rd.waits': 'Waits for the analysis',
   'ws.rd.afterRun': 'After the new run',
   'ws.rd.notStarted': 'Not started',
-  'ws.rd.startsInDesign': 'Starts with Economics',
+  'ws.rd.startsInDesign': 'Starts with the decision',
   'ws.rd.start': 'Re-design this program',
   'ws.rd.nothingBuilt': 'Nothing is built',
   'ws.rd.openDecision': 'Open the decision',

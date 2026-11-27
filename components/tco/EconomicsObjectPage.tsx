@@ -84,7 +84,7 @@ export interface EconomicsObjectPageProps {
   editable: boolean;
   onPatch: (patch: Partial<CostAssumptions>) => void;
   onPatchOption: (id: string, patch: Partial<CostOption>) => void;
-  /** Where the decision is taken (Re-design, its decision step, ADR-143); `null` hides the link (the demo). */
+  /** Where the decision is taken (the Decide page, ADR-143, ADR-145); `null` hides the link (the demo). */
   managementHref: string | null;
   /** The Design tool, the step after the decision; `null` or absent hides the link (the demo). */
   designHref?: string | null;
@@ -222,7 +222,7 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
   const condition = priced
     ? typicalNow
       ? `A simulation ${allTypical ? 'on typical assumptions' : 'partly on typical assumptions'}, not your own figures. Change any of them in place. Lowest cost is not the decision by itself.`
-      : `A simulation on your figures${anyProposalTaken ? ` and on the effort${fromLines}` : ''}. Lowest cost is not the decision by itself; that is taken in Re-design.`
+      : `A simulation on your figures${anyProposalTaken ? ` and on the effort${fromLines}` : ''}. Lowest cost is not the decision by itself; that is taken in Decide.`
     : ans.state === 'first-visit'
       ? 'Nothing has a default. Use typical assumptions to see the options priced now, or state your own figures.'
       : 'Nothing has a default. Every amount is priced from figures you state, take over or fill with typical assumptions.';
@@ -250,7 +250,7 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
   if (priced) {
     action = props.managementHref ? (
       <CcLinkButton href={props.managementHref} variant="primary" data-economics-decide="">
-        Decide in Re-design
+        Decide
       </CcLinkButton>
     ) : null;
     actionNote = (
@@ -735,8 +735,8 @@ export default function EconomicsObjectPage(props: EconomicsObjectPageProps) {
             <h2 className="m-0 cc-text-h3 text-cc-ink">Where this goes</h2>
             <ol className="m-0 mt-2 list-decimal space-y-1 pl-5 cc-text-cell text-cc-ink">
               <li>
-                <b className="font-semibold">The decision in Re-design</b>: Keep, Rebuild, Move to SAP standard or Retire. It shows these
-                amounts as a simulation and records the assumptions it was priced on, typical ones marked as such.
+                <b className="font-semibold">The decision in Decide</b>: Keep, Rebuild, Move to SAP standard or Retire. It shows these
+                amounts as a simulation and records the revision of the figures it was priced on, typical ones marked as such.
               </li>
               <li>
                 <b className="font-semibold">Next tool: Design</b>, for every option. Design checks its plan against the range priced here
