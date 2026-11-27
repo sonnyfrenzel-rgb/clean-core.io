@@ -192,6 +192,18 @@ test('a removal that outlived its reservation does not start: an expired reserva
   await expect(retireSecondFactor(UID, true, v.deps, { reservedAtMs: r.at ?? 0, now: () => t0 + MFA_REMOVAL_MAX_START_MS })).resolves.toEqual({ ok: true, removedFactor: true });
 });
 
+test('the start check sits after the last await before the removal call', () => {
+  const src = read('lib/mfa-disable.ts');
+  const body = src.slice(src.indexOf('export async function retireSecondFactor'), src.indexOf('From here on a failure'));
+  const auth = body.indexOf('const auth = await deps.adminAuth();');
+  const check = body.indexOf('MFA_REMOVAL_MAX_START_MS) {');
+  const call = body.indexOf('await auth.updateUser(uid,');
+  expect(auth).toBeGreaterThan(-1);
+  expect(check).toBeGreaterThan(auth);
+  expect(call).toBeGreaterThan(check);
+  expect(body.slice(check, call)).not.toContain('await ');
+});
+
 test('the route reserves before it removes and lifts the reservation when the removal fails; the save re-decides in its transaction', () => {
   const route = read('app/api/mfa/disable/route.ts');
   const reserve = route.indexOf('await reserveFactorRemoval(uid,');

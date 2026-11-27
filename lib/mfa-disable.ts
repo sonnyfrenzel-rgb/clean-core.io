@@ -83,13 +83,15 @@ export async function retireSecondFactor(
   fence?: { reservedAtMs: number; now?: () => number },
 ): Promise<MfaRetireOutcome> {
   if (hasFactor) {
-    // A removal that did not start within MFA_REMOVAL_MAX_START_MS of its reservation does not start at all: by the
-    // time the reservation runs out, no request that took it can still remove the factor.
-    if (fence && (fence.now ?? Date.now)() - fence.reservedAtMs > MFA_REMOVAL_MAX_START_MS) {
-      return { ok: false, status: 503, error: FACTOR_REMOVAL_FAILED };
-    }
     try {
       const auth = await deps.adminAuth();
+      // A removal that did not start within MFA_REMOVAL_MAX_START_MS of its reservation does not start at all: by the
+      // time the reservation runs out, no request that took it can still remove the factor. Checked here, after the
+      // last await before the removal call, so nothing awaited lies between the check and the call. What it cannot
+      // bound is the removal call itself taking longer than the TTL less this window.
+      if (fence && (fence.now ?? Date.now)() - fence.reservedAtMs > MFA_REMOVAL_MAX_START_MS) {
+        return { ok: false, status: 503, error: FACTOR_REMOVAL_FAILED };
+      }
       await auth.updateUser(uid, { multiFactor: { enrolledFactors: null } });
     } catch (removeErr) {
       // Nothing has changed: the factor is still there and the flag still requires it.
