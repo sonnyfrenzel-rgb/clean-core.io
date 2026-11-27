@@ -14,6 +14,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The model's artefacts on a project are written by the server only: the rules were deployed on 27.11.2026, after
   v3.5.3 went live.
 
+### Fixed
+
+- Account erasure: when the sign-in of an erased account cannot be deleted, its administrator claim is withdrawn and
+  its tokens are revoked, each on its own, so one failing does not skip the other. The erasure marker is written
+  without an expiry and is given one only once the sign-in is really gone, so an administrator check keeps refusing
+  that account for as long as the sign-in survives (QA reviews of the v3.5.3 release, 27.11.2026).
+
+### Docs
+
+- `docs/ROADMAP.md`: 3.5.4 opens with the rework of "Ask this case" (eight items, owner request 27.11.2026), followed
+  by the quieter tool head (M1, Q4, Q5, Q2) and the QA findings carried from 3.5.3; §12 records the intake of the
+  v3.5.3 security audit (IDs only).
+
 ## [v3.5.3] — 2026-11-27
 
 The fixes of the external audit of 25 November 2026, every page with a way on (the walk-through of 26 November),
