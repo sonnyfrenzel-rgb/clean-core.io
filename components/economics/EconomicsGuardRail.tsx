@@ -22,7 +22,7 @@ export default function EconomicsGuardRail({
   rail: Rail;
   /** The project's Economics tool, e.g. `/project/{id}/tco`. */
   economicsHref: string;
-  /** Where the decision is taken — Re-design's decision step (ADR-143). */
+  /** Where the decision is taken — the Decide page (ADR-143, ADR-145). */
   managementHref?: string;
   /** Design's plan leaves the priced range (`true`), stays inside (`false`), or cannot be compared (`null`). */
   outside?: boolean | null;

@@ -68,7 +68,7 @@ export const CAPABILITIES: Capability[] = [
     benefit:
       'The decision is taken on the evidence of the run, and what it rests on stays visible to whoever reads the project later.',
     effort:
-      "Analyze's Management view gives an indication. The decision itself is the second step of Re-design, after Economics has priced the options, and the signed-in account records it.",
+      "Analyze's Management view gives an indication. The decision itself is taken on the Decide page, in one go: the four options priced as a simulation, the business questions, one confirmation by the signed-in account.",
     limit:
       'Clean-Core.io prepares the decision; it does not take it. A recorded decision is a self-declaration, not a mandate, and it does not know your organisation’s platform strategy, licensing or team skills.',
   },

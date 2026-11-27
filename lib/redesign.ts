@@ -78,7 +78,7 @@ export interface RedesignStep {
 
 export interface RedesignNext {
   key: RedesignStepKey | 'analyze';
-  /** The primary action's words: "Start with Economics: price the options". */
+  /** The primary action's words: "Decide: keep, rebuild, move or retire". */
   label: string;
   /** Route segment under the project, or `#decide` on this page. */
   path: string;
@@ -165,7 +165,8 @@ function decisionWords(d: RedesignDecision): { state: RedesignStepState; words: 
 function actionOf(step: RedesignStep, first: boolean): string {
   switch (step.key) {
     case 'tco':
-      return step.state === 'open' ? 'Start with Economics: price the options' : 'Continue in Economics: price the options';
+      // Never the next step (ADR-145 (5)); kept for a caller that names the step itself.
+      return step.state === 'open' ? 'Open Economics: your own figures' : 'Continue in Economics';
     case 'decide':
       return 'Decide: keep, rebuild, move or retire';
     case 'design':

@@ -100,9 +100,8 @@ export default function DemoAnalyzeManagement({
     {
       id: 'cost',
       label: 'Cost',
-      value: 'Step 1',
-      unit: 'of Re-design',
-      note: 'Economics prices the options with your figures. Analyze computes no amount.',
+      value: 'Not priced',
+      note: 'The Decide page prices the four options as a simulation. Analyze stores no amount.',
       href: `#${MANAGEMENT_PAGE_IDS.options}`,
     },
     {
@@ -145,18 +144,18 @@ export default function DemoAnalyzeManagement({
         }
         action={
           <CcLinkButton href={redesign} variant="primary" data-analyze-management-redesign="">
-            Re-design this program
+            Decide what happens to it
             <ArrowRight size={16} aria-hidden={true} />
           </CcLinkButton>
         }
-        actionNote="Step 1 of 7: price the options. In the demo, nothing is kept."
+        actionNote="One page: cost, the four options, one confirmation. In the demo, nothing is kept."
         after={
           <div data-analyze-indication="" className="mt-2 max-w-[640px] rounded-cc-card border border-cc-ink bg-cc-surface px-4 py-3">
             <p className="m-0 cc-text-label text-cc-ink-muted">Indication from the analysis</p>
             <p className="m-0 mt-1 cc-text-body font-bold text-cc-ink">No option is indicated in a demo.</p>
             <p className="m-0 mt-1 cc-text-cell text-cc-ink">{DEMO_UNSIGNED_NOTICE} The indication rests on a signed run of your own program.</p>
             <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
-              An indication is never a decision. You decide in {REDESIGN_LABEL}, after the options are priced.
+              An indication is never a decision. You decide on the {REDESIGN_LABEL} page.
             </p>
           </div>
         }
@@ -195,7 +194,7 @@ export default function DemoAnalyzeManagement({
               />
             </div>
             <p data-management-not-priced="" className="m-0 mt-3 cc-text-cell text-cc-ink-muted">
-              Not priced yet: all four options are priced together in step 1 of Re-design. Analyze computes no amount.
+              Not priced yet here: the Decide page prices all four options together, as a simulation. Analyze computes no amount.
             </p>
           </Section>
 
@@ -230,11 +229,11 @@ export default function DemoAnalyzeManagement({
             )}
           </Section>
 
-          <Section id={MANAGEMENT_PAGE_IDS.needs} title="What we need from you" lead="One action. Nothing needs a tool before Re-design starts.">
+          <Section id={MANAGEMENT_PAGE_IDS.needs} title="What we need from you" lead="One action. Nothing needs a tool before the decision.">
             <ol data-management-needs="" className="m-0 mt-3 list-none p-0">
               <NumberedItem n={1}>
-                <span className="font-semibold">Start the re-design.</span> The options get priced, then you take the decision: keep, rebuild, move to
-                SAP standard or retire.
+                <span className="font-semibold">Decide what happens to it.</span> Keep, rebuild, move to SAP standard or retire, on one page with the
+                cost and the business questions.
               </NumberedItem>
             </ol>
           </Section>
@@ -248,7 +247,7 @@ export default function DemoAnalyzeManagement({
                 <span className="font-semibold">Analyze</span>: done, what it does and how far it is from clean core.
               </FlowItem>
               <FlowItem>
-                <span className="font-semibold">{REDESIGN_LABEL}</span>: price the options, decide, then build the decided option in six tools.
+                <span className="font-semibold">{REDESIGN_LABEL}</span>: keep, rebuild, move to SAP standard or retire, in one go; then the tools build the decided option.
               </FlowItem>
             </ol>
             <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted">

@@ -1,51 +1,70 @@
-import React from 'react';
+'use client';
+
+import React, { useMemo, useState } from 'react';
 import StageFrame from '@/components/StageFrame';
 import StageHeader from '@/components/StageHeader';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import DemoAbout from '@/components/demo/DemoAbout';
+import FamilyChip from '@/components/family/FamilyChip';
 import { CcTag } from '@/components/cc/Tag';
-import RedesignView from '@/components/redesign/RedesignView';
-import type { FacetProps } from '@/components/family/AnswerCard';
-import { DECISION_OPTION_LABELS, DECISION_OPTION_MEANINGS, optionOfArchitecture, type DecisionOption } from '@/lib/decision-options';
-import { DEMO_ANALYZE_ROUTE, DEMO_ROUTE, DEMO_STRIP_NOTICE, DEMO_TAG, DEMO_UNSIGNED_NOTICE } from '@/lib/demo-marks';
-import { REDESIGN_DECIDE_ID, redesignModel } from '@/lib/redesign';
+import DecideView, { DecideBar } from '@/components/redesign/DecideView';
+import { initialCostAssumptions } from '@/components/tco/OptionComparison';
+import { DECISION_OPTIONS, DECISION_OPTION_LABELS, DECISION_OPTION_MEANINGS, optionOfArchitecture, type DecisionOption } from '@/lib/decision-options';
+import type { OptionCard } from '@/lib/decision-option-signals';
+import { proposeEffort, proposeMaintenanceBaseline } from '@/lib/cost-assumptions';
+import { ROUTE_WORDS, decideCostLine } from '@/lib/decide';
+import { recommendationOfRoute } from '@/lib/project-commands';
+import { DEMO_ROUTE, DEMO_STRIP_NOTICE, DEMO_TAG, DEMO_UNSIGNED_NOTICE } from '@/lib/demo-marks';
 import type { RailStep } from '@/lib/workflow-steps';
 
-const OPTIONS: readonly DecisionOption[] = ['keep', 'rebuild', 'standard', 'retire'];
-
 /**
- * The demo's Re-design (`/demo/redesign`, ADR-143): the same page as a project's, drawn by the same view
- * (`components/redesign/RedesignView.tsx`) from the demo's own rail. The demo has no signed run and no decision record
- * by construction, so the page says so: Analyze reads "Demo run, unsigned", the decision step lists the four options
- * without a way to choose one, and nothing here writes, signs or calls a model.
- *
- * The next step is read as if the reading were signed — the demo's point is to show the way on — while the Analyze row
- * keeps its honest state.
+ * The demo's Decide page (`/demo/redesign`, ADR-143, ADR-145): the same page as a project's, drawn by the same view
+ * (`components/redesign/DecideView.tsx`). The four options can be chosen to see what each needs, and the cost line is
+ * the same simulation on typical assumptions; but the demo has no signed run and no decision record by construction,
+ * so nothing is recorded: the bar says so and offers no button. Nothing here writes, signs or calls a model.
  */
-export default function DemoRedesign({ title, rail, recommendedRoute }: { title: string; rail: RailStep[]; recommendedRoute: string | null }) {
-  const indicated = optionOfArchitecture(recommendedRoute);
-  const decision = { stage: 'not-decided' as const, option: null, indicated };
-  const walk = redesignModel(
-    rail.map((r) => (r.key === 'analyze' ? { ...r, state: 'done' as const, done: true } : r)),
-    decision,
+export default function DemoRedesign({
+  title,
+  rail,
+  recommendedRoute,
+  loc,
+  score,
+}: {
+  title: string;
+  rail: RailStep[];
+  recommendedRoute: string | null;
+  loc: number | null;
+  score: number | null;
+}) {
+  const [choice, setChoice] = useState<DecisionOption | null>(null);
+  const indicated = optionOfArchitecture(recommendedRoute ? recommendationOfRoute({ recommendedRoute }) : null);
+  const route = recommendedRoute ? recommendationOfRoute({ recommendedRoute }) : null;
+  const cost = useMemo(
+    () =>
+      decideCostLine({
+        stored: null,
+        seed: initialCostAssumptions(),
+        proposals: { effort: proposeEffort(loc), baseline: loc === null ? null : proposeMaintenanceBaseline(loc, score) },
+      }),
+    [loc, score],
   );
-  const model = {
-    ...walk,
-    analysed: false,
-    answer:
-      'In the demo nothing is priced or decided. In your own project you price the four options, decide, and the tools after it build the decided one.',
-  };
-  const indicatedLabel = indicated ? DECISION_OPTION_LABELS[indicated] : null;
-
-  const facets: FacetProps[] = [
-    { id: 'decision', label: 'Decision', value: 'Not taken', note: indicatedLabel ? `indicated: ${indicatedLabel}` : 'step 2', href: `#${REDESIGN_DECIDE_ID}` },
-    { id: 'priced', label: 'Options priced', value: 'Not priced yet', note: 'step 1, Economics' },
-    { id: 'questions', label: 'Business rules confirmed', value: 'None', note: 'answered in Design' },
-    { id: 'delivery', label: 'Delivery package', value: 'Not built', note: 'step 7' },
-  ];
+  const cards: OptionCard[] = DECISION_OPTIONS.map((o) => ({
+    option: o,
+    label: DECISION_OPTION_LABELS[o],
+    meaning: DECISION_OPTION_MEANINGS[o],
+    signal: o === indicated ? 'for' : 'not-determined',
+    reason: o === indicated ? 'The engine reading of the demo code points to it.' : 'A demo is never signed, so this is not read from evidence here.',
+    provenance: 'not-determined',
+    place: 'analyze',
+    proposed: o === indicated,
+    chosen: false,
+    effort: { value: null, reason: 'Not priced in the demo.', provenance: 'not-determined', note: null },
+    cost: { value: null, reason: 'Not priced in the demo.', provenance: 'not-determined', note: null },
+    choice: 'direct',
+  }));
 
   return (
-    <StageFrame stage="redesign" className="cc pb-24" data-redesign="ready" data-demo-redesign="">
+    <StageFrame stage="redesign" className="cc pb-24" data-redesign="ready" data-demo-redesign="" data-decide-state="demo">
       <div className="mt-6 mb-4" data-testid="demo-strip">
         <CcMessageStrip state="information" headline={<span data-testid="demo-notice">{DEMO_STRIP_NOTICE}</span>}>
           <span data-testid="demo-unsigned">{DEMO_UNSIGNED_NOTICE}</span>
@@ -54,36 +73,38 @@ export default function DemoRedesign({ title, rail, recommendedRoute }: { title:
       </div>
 
       <StageHeader tools={{ steps: rail, base: DEMO_ROUTE }} projectName={title} place="redesign" eyebrow={<CcTag>{DEMO_TAG}</CcTag>}>
-        Build its clean core successor from the same evidence: priced, decided, designed, built, documented, tested and delivered.
+        Keep, rebuild, move to SAP standard or retire. In your own project the signed-in account records it: a self-declaration, not a mandate.
       </StageHeader>
 
-      <RedesignView
-        base={DEMO_ROUTE}
-        model={model}
-        facets={facets}
-        condition="The demo stands on an unsigned engine reading of fictitious code. In your own project every step stands on a signed analysis run."
-        analyzeWords="Demo run, unsigned"
-        analyzeNote="What it does, how far it is from clean core: the engine's reading, never signed in the demo."
-        indicatedLabel={indicatedLabel}
-        backToAnalyzeHref={`${DEMO_ANALYZE_ROUTE}?view=management`}
-        decide={
-          <div data-redesign-decide="" data-demo-decide="" className="mt-3 flex flex-col gap-3">
-            {indicatedLabel ? (
-              <p className="m-0 cc-text-cell text-cc-ink">
-                The analysis indicates <span className="font-semibold">{indicatedLabel}</span>: an indication, not a decision.
-              </p>
-            ) : null}
-            <ul className="m-0 flex list-none flex-col gap-2 p-0">
-              {OPTIONS.map((o) => (
-                <li key={o} data-demo-decide-option={o} className="cc-text-cell text-cc-ink">
-                  <span className="font-semibold">{DECISION_OPTION_LABELS[o]}</span>: {DECISION_OPTION_MEANINGS[o]}
-                </li>
-              ))}
-            </ul>
-            <p className="m-0 cc-text-cell text-cc-ink-muted">
-              The demo records no decision. In your own project you choose here, recorded by your signed-in account.
+      <DecideView
+        edition={null}
+        editionSigned={false}
+        cost={cost}
+        economicsHref={null}
+        cards={cards}
+        indicated={indicated}
+        choice={choice}
+        onChoose={setChoice}
+        note={null}
+        checkHref={null}
+        runDate={null}
+        rebuild={
+          <div data-demo-decide-rebuild="" className="flex flex-col gap-2 cc-text-cell text-cc-ink">
+            <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">Route</p>
+            <p className="m-0 flex flex-wrap items-center gap-2">
+              <b className="font-bold">{route ? ROUTE_WORDS[route] ?? route : 'Not determined'}</b>
+              <FamilyChip kind="engine" />
             </p>
+            <p className="m-0 text-cc-ink-muted">In your own project the business questions of the code are answered here, before the decision is recorded.</p>
           </div>
+        }
+        reason={null}
+        bar={
+          <DecideBar
+            summary={choice ? `${DECISION_OPTION_LABELS[choice]}${choice === 'rebuild' ? '' : ' · nothing is built'}` : 'Choose one of the four options.'}
+            sub="A demo is never signed, so nothing is recorded here. In your own project one confirmation records the decision."
+            action={null}
+          />
         }
       />
     </StageFrame>

@@ -204,7 +204,9 @@ test.describe('the way on leads through Re-design (ADR-143)', () => {
     const mgmt = code('components/analyze/AnalyzeManagement.tsx');
     expect(mgmt.match(/variant="primary"/g) ?? []).toHaveLength(1);
     expect(mgmt).toContain('An indication, not a decision.');
-    expect(mgmt).toContain('Re-design this program');
+    // Mock-up screen 1 (ADR-145): the one action goes straight to the decision.
+    expect(mgmt).toContain("'Decide what happens to it'");
+    expect(mgmt).not.toContain('Step 1 of 7');
     // No option links into a tool: the options table has no href of a stage.
     expect(mgmt).not.toMatch(/\/(tco|design|transformation|documentation|testing|delivery)[`'"]/);
     expect(mgmt).not.toMatch(/CoachMark|DEC-\d/);
@@ -221,10 +223,11 @@ test.describe('the way on leads through Re-design (ADR-143)', () => {
       expect(tiles, action).toMatch(new RegExp(`<ActionLink href=\\{redesignHref\\(tile(, true)?\\)\\} data-tile-action="${action}"`));
     }
     expect(tiles).toContain('router.push(redesignHref(redesignChoice.tile));');
-    expect(code('components/analyze/RouteCard.tsx')).toContain('Decide in Re-design');
+    expect(code('components/analyze/RouteCard.tsx')).toMatch(/>\s*Decide\s*</);
+    expect(code('components/analyze/RouteCard.tsx')).not.toContain('Re-design');
   });
 
-  test('the tool row of every tool groups the six tools under "Re-design ›"; the Re-design page is its current item', () => {
+  test('the tool row of every tool groups the six tools under "Decide ›" (was Re-design); the Decide page is its current item', () => {
     const bar = code('components/workspace/ToolBar.tsx');
     expect(bar).toContain('data-stage-tools-group="redesign"');
     expect(bar).toContain("aria-current={group.current ? 'page' : undefined}");
@@ -236,14 +239,17 @@ test.describe('the way on leads through Re-design (ADR-143)', () => {
     expect(route).toContain('<RedesignPage');
     const redesign = code('components/redesign/RedesignPage.tsx');
     expect(redesign).toContain('place="redesign"');
-    expect(redesign).toContain('<RedesignView');
-    const view = code('components/redesign/RedesignView.tsx');
-    expect(view).toContain('id={step.key === \'decide\' ? REDESIGN_DECIDE_ID : undefined}');
-    // Read-only apart from the reused decision parts: no write of its own.
+    expect(redesign).toContain('<DecideView');
+    expect(code('lib/redesign.ts')).toContain("export const REDESIGN_LABEL = 'Decide';");
+    const view = code('components/redesign/DecideView.tsx');
+    // Every older address of the decision (`…/redesign#decide`, the redirects of lib/workspace-redirect.ts) lands on it.
+    expect(view).toContain('<section id={REDESIGN_DECIDE_ID}');
+    // The page writes through the commands route only (`decide`, `withdraw-decision`), never Firestore directly.
     for (const src of [redesign, view]) expect(src).not.toMatch(/setDoc|updateDoc|addDoc|fetch\(/);
-    // The demo has its own Re-design page, drawn by the same view, and its onward links lead there.
+    expect(redesign).toContain("command: 'decide'");
+    // The demo has its own Decide page, drawn by the same view, and its onward links lead there.
     expect(code('app/(app)/demo/redesign/page.tsx')).toContain('<DemoRedesign');
-    expect(code('components/demo/DemoRedesign.tsx')).toContain('<RedesignView');
+    expect(code('components/demo/DemoRedesign.tsx')).toContain('<DecideView');
     expect(code('components/demo/DemoAnalyze.tsx')).not.toContain('/demo/workspace?view=management');
     expect(code('components/demo/DemoAnalyze.tsx')).toContain("decideHref={demoRedesignHref('decide')}");
     expect(code('components/demo/DemoAnalyzeBusiness.tsx')).toContain('designHref={demoRedesignHref()}');

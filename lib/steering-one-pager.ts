@@ -581,7 +581,7 @@ export function steeringOnePager(src: SteeringSource): SteeringOnePager {
         owner: 'Decision maker',
         text: proposed
           ? `Choose one of the four options — the evidence points to ${proposed.label}.`
-          : 'Choose one of the four options in Re-design.',
+          : 'Choose one of the four options on the Decide page.',
         link: to.decision,
       });
     }

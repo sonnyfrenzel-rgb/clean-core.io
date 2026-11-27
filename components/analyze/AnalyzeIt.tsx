@@ -291,7 +291,7 @@ export default function AnalyzeIt({
       id: 'route',
       label: 'Recommended route',
       value: shortRoute(route) ?? 'Not determined',
-      note: routeChosenByReader ? 'stored by an earlier build; the rules recommended the other route' : 'fixed rules · decided in Re-design',
+      note: routeChosenByReader ? 'stored by an earlier build; the rules recommended the other route' : 'fixed rules · decided on the Decide page',
       href: `#${ANALYZE_IT_IDS.route}`,
     },
     {

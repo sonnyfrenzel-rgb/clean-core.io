@@ -719,7 +719,7 @@ export function processDocumentationToMarkdown(doc: ProcessDocumentation, opts: 
       out.push(`- \`${event.token}\`${wait} — ${rangeWords(event.anchor)}`);
     }
   }
-  out.push(`- What changes with SAP S/4HANA — the target, the option and the program decision — is decided in Re-design and Design; this file records what the program does today. The open points stand in [Evidence and open decisions](#${A.evidence}).`, '');
+  out.push(`- What changes with SAP S/4HANA — the target, the option and the program decision — is decided on the Decide page and in Design; this file records what the program does today. The open points stand in [Evidence and open decisions](#${A.evidence}).`, '');
 
   /* -------------------------------------------------------- 4. systems and data */
   out.push(...heading(2, A.data, PROCESS_DOCUMENTATION_SECTIONS[4].title));

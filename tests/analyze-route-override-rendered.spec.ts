@@ -151,6 +151,6 @@ test('there is no route switch: the one next action is the decision in Re-design
   await expect(page.locator('body')).not.toContainText('Not the route you want?');
   await expect(page.locator('body')).not.toContainText(/Switch to (ABAP Cloud|SAP BTP)/);
   const next = page.locator('[data-route-next] a');
-  await expect(next).toHaveText(/Decide in Re-design/);
+  await expect(next).toHaveText(/^\s*Decide\s*$/);
   await expect(next).toHaveAttribute('href', `/project/${PROJECT_ID}/redesign#decide`);
 });
