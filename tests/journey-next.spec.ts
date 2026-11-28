@@ -78,4 +78,11 @@ test('once a tool after Economics holds a record, the way on does not send the r
   expect(journeyNext(steps, none, 'design').next?.key).toBe('decide');
   const rebuild: RedesignDecision = { stage: 'confirmed', option: 'rebuild', indicated: null };
   expect(journeyNext(steps, rebuild, 'testing').next).toMatchObject({ key: 'design', path: 'design' });
+  // A route signed in Design before 3.5.4, never confirmed as a record, with code built on it: the next tool, as the
+  // preservation register records (RC-transformation-generated-not-tested), not back to the decision.
+  const chosen: RedesignDecision = { stage: 'chosen', option: 'rebuild', indicated: null };
+  const built = rail({ analyze: 'done', tco: 'partial', design: 'done', transformation: 'done' });
+  expect(journeyNext(built, chosen, 'analyze').next).toMatchObject({ key: 'documentation', path: 'documentation' });
+  // Nothing built past Economics yet: a chosen route is still confirmed on the Decide page.
+  expect(journeyNext(rail({ analyze: 'done' }), chosen, 'analyze').next?.key).toBe('decide');
 });
