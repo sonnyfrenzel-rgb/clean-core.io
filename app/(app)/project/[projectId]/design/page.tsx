@@ -1001,9 +1001,11 @@ ${DESIGN_ANSWER_REMINDER}`;
    */
   const [startedFromDecision, setStartedFromDecision] = useState(false);
   useEffect(() => {
-    if (!project || !isOwner || generating || elsewhereSince !== null || design) return;
-    if (designEvidence.state === 'loading' || businessAnswers.state !== 'ready' || !modelAvailability.known) return;
+    // Taken as soon as the page knows what it holds, whether or not it can write now: a request that cannot start
+    // here ends here, and never starts work on a later visit.
+    if (!project || designEvidence.state === 'loading' || businessAnswers.state !== 'ready' || !modelAvailability.known) return;
     if (!takeStartRequest(projectId as string, 'design')) return;
+    if (!isOwner || generating || elsewhereSince !== null || design) return;
     setStartedFromDecision(true);
     regenerate();
   });

@@ -54,7 +54,7 @@ const facts = (over: Partial<DecisionDraftFacts> = {}): DecisionDraftFacts => ({
   ...over,
 });
 
-const BASIS = decisionBasisOf({ runId: 'run-1', evidenceDigest: DIGEST, draft: deriveDecisionDraft(facts()).draft, stored: null });
+const BASIS = decisionBasisOf({ runId: 'run-1', evidenceDigest: DIGEST, draft: deriveDecisionDraft(facts()).draft, stored: null, costRevision: null });
 
 const body = (over: Record<string, unknown> = {}) => ({
   command: 'decide',
@@ -169,15 +169,18 @@ test.describe('decide, step 2: the derived draft, recorded and confirmed togethe
 
 test.describe('the basis: what the page read, besides the run', () => {
   test('moves with an answer (the need revision), with the record, with the run; not with the clock', () => {
-    const at = (over: Partial<DecisionDraftFacts>, stored: { fingerprint: string; status: string } | null = null) => {
+    const at = (over: Partial<DecisionDraftFacts>, stored: { fingerprint: string; status: string } | null = null, costRevision: string | null = null) => {
       const f = facts(over);
-      return decisionBasisOf({ runId: f.runId, evidenceDigest: f.evidenceDigest, draft: deriveDecisionDraft(f).draft, stored });
+      return decisionBasisOf({ runId: f.runId, evidenceDigest: f.evidenceDigest, draft: deriveDecisionDraft(f).draft, stored, costRevision });
     };
     expect(at({})).toBe(BASIS);
     expect(at({ now: '2026-12-01T00:00:00.000Z' })).toBe(BASIS);
     expect(at({ need: { revision: 4, confirmedDrops: 0, undecided: 0 } })).not.toBe(BASIS);
     expect(at({}, { fingerprint: 'a'.repeat(64), status: 'withdrawn' })).not.toBe(BASIS);
     expect(at({ runId: 'run-2' })).not.toBe(BASIS);
+    // QA review of 374ee7134c8e: figures saved in Economics after the page priced its cost line move the basis too.
+    expect(at({}, null, 'rev-a')).not.toBe(BASIS);
+    expect(at({}, null, 'rev-a')).not.toBe(at({}, null, 'rev-b'));
     expect(BASIS).toMatch(/^[0-9a-f]{64}$/);
   });
 });
@@ -200,6 +203,7 @@ test.describe('the route: owner only, one transaction, every read before the one
     const body = route.slice(decide, route.indexOf('const actor', decide));
     expect(body.match(/deriveProjectDecision\(db, projectId, [^)]*, t\)/g)?.length).toBe(2);
     expect(body).toContain('decisionBasisOf({');
+    expect(body).toContain('costRevision: before.answer.costNow?.revision ?? null');
     expect(body).toContain("code: 'decision-moved'");
     expect(body).toContain('{ ...read, ...signOff.fields }');
     expect(body).not.toMatch(/tx\.(update|set)\(/);

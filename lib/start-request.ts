@@ -7,8 +7,9 @@
  * **Memory only, by design.** The request lives in this module of the running app and nowhere else: not in the
  * address (no query, no hash), not in browser storage, not on the server. It survives the client-side navigation the
  * click makes and nothing more. A reload, a direct visit, a bookmark, another tab or a link shared on reads no request,
- * so opening a tool still calls no model (legal review 06.11.2026, 3.0.21 item 1). It is taken once, for its project
- * and its step only, and it expires after `START_REQUEST_TTL_MS` if the navigation never lands.
+ * so opening a tool still calls no model (legal review 06.11.2026, 3.0.21 item 1). The first tool that opens takes it,
+ * whether or not it is the one meant, and whether or not that tool can start: it starts only for its project and step,
+ * and it expires after `START_REQUEST_TTL_MS` if no tool opens.
  *
  * Pure apart from the one module variable; no React, no window.
  */
@@ -32,7 +33,12 @@ export function takeStartRequest(projectId: string, step: StartStep, now: number
     pending = null;
     return false;
   }
-  if (pending.projectId !== projectId || pending.step !== step) return false;
+  // Another tool or project opened first: the click's navigation did not land where it was meant to, so the request
+  // ends here and can never start work on a later visit.
+  if (pending.projectId !== projectId || pending.step !== step) {
+    pending = null;
+    return false;
+  }
   pending = null;
   return true;
 }

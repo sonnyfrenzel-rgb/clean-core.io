@@ -24,7 +24,8 @@ function watchModelWork(page: Page): string[] {
   const seen: string[] = [];
   page.on('request', (r) => {
     const url = r.url();
-    if (/\/api\/gemini\b|\/api\/transformation\/lease\b/.test(url)) seen.push(`${r.method()} ${url}`);
+    // A GET of the lease route is the plan's read of this hour's generations, not a start.
+    if (/\/api\/gemini\b|\/api\/transformation\/lease\b/.test(url) && r.method() !== 'GET') seen.push(`${r.method()} ${url}`);
   });
   return seen;
 }

@@ -398,6 +398,8 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
   const follows = choice && choice !== 'rebuild' && !needsReason && indicatedCard ? followedIndicationReason(choice, indicatedCard.reason) : null;
   const justification = choice === 'rebuild' ? reason.trim() : (follows ?? reason.trim());
   const reasonMissing = needsReason && reason.trim().length === 0;
+  // A Rebuild is recorded with its business answers: not before they are read (a ready set may hold open ones).
+  const answersPending = choice === 'rebuild' && answers.state !== 'ready';
   // A Rebuild on the route whose architecture contract carries a blocking limit cannot be confirmed (decision-blocked):
   // the button says so before a click, instead of a click that is refused.
   const rebuildBlocked = choice === 'rebuild' && read?.rebuildContract?.blocked === true && read.rebuildContract.route === effectiveRoute;
@@ -433,7 +435,14 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
         justification,
         expectedRunId: read.runId ?? '',
         expectedEvidenceDigest: read.evidenceDigest ?? '',
-        expectedDecisionBasis: decisionBasisOf({ runId: read.runId ?? null, evidenceDigest: read.evidenceDigest ?? null, draft: read.draft, stored: read.stored }),
+        expectedDecisionBasis: decisionBasisOf({
+          runId: read.runId ?? null,
+          evidenceDigest: read.evidenceDigest ?? null,
+          draft: read.draft,
+          stored: read.stored,
+          // The revision the cost line on this page was priced on.
+          costRevision: project?._economics?.revision ?? null,
+        }),
       });
       setChoice(null);
       setReason('');
@@ -569,7 +578,9 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
         : 'Only the owner of the project decides. You read it.'
       : reading
         ? 'Reading the decision on record…'
-        : rebuildBlocked
+        : answersPending
+          ? 'Reading the business questions of the code…'
+          : rebuildBlocked
           ? `A limit of the architecture contract blocks a Rebuild on this route as it stands, so it cannot be recorded. The limits are in Analyze, IT.${designOff ? ` ${designOff}` : ''}`
           : reasonMissing
           ? choice === 'rebuild'
@@ -580,7 +591,7 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
             : follows
               ? 'It follows the analysis, so no reason is asked.'
               : 'Your reason is kept with the decision.';
-  const recordable = Boolean(choice) && canDecide && !reading && !busy && !reasonMissing && !rebuildBlocked && read !== null;
+  const recordable = Boolean(choice) && canDecide && !reading && !busy && !reasonMissing && !rebuildBlocked && !answersPending && read !== null;
   const bar = (
     <DecideBar
       summary={summary}
