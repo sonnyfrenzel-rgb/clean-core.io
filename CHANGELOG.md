@@ -34,6 +34,12 @@ security audit and QA reviews that were scheduled for this release.
 - Design, Management view: shows the decided option; no second confirmation, checklist or second set of options;
   "Change target" stays. Economics is no longer the station before the decision.
 - "SAP standard may fit better" appears on the decision only where the code shows signals for it.
+- A decision recorded while new costs were saved in Economics is refused (409), not signed on the old figures;
+  Rebuild waits until the business questions are read; "Generate draft" on the result starts the generation once
+  Transformation has read its files.
+- Projects signed in Design before 3.5.4 with tools built on them keep their way on to the next tool; the Decide
+  page still lists their decision as open.
+- On a phone the tool row's legend button no longer makes the page scroll sideways.
 
 ### Changed — the head of a tool, quieter (3.5.4)
 
