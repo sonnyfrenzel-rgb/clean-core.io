@@ -1,30 +1,29 @@
 /**
- * Two conveniences of "My workspace" this browser remembers (ADR-123, W9): the
- * lens a returning account reads its tiles through, and whether it sees tiles
- * or the list. Never stored on an account, a project, a run or anywhere a
- * server sees it; views are views only (CLAUDE.md). A browser that refuses
- * storage simply starts from Business and, by its width, the list on a phone or
- * the tiles elsewhere each time (Q12 of the UX review of 22.11.2026).
+ * The one convenience of "My workspace" this browser remembers (ADR-123, W9):
+ * whether a returning account sees its programs as tiles or as the list. Never
+ * stored on an account, a project, a run or anywhere a server sees it. A
+ * browser that refuses storage simply starts, by its width, from the list on a
+ * phone or the tiles elsewhere each time (Q12 of the UX review of 22.11.2026).
  *
- * Both keys are named in the Privacy Policy's list of local-storage keys since
- * version 1.4 (`lib/legal/texts/privacy.en.ts` / `.de.ts`; lawyer, statement
- * 20c E1, with the sentence that the view says nothing about the reader's role,
- * E2). The owner decided on 14.11.2026 to keep both.
- * {@link PRIVACY_PENDING_STORAGE_KEYS} is the register of what that text still
- * has to add — empty since 1.4 — and `tests/workspace-tiles.spec.ts` holds it:
- * a key leaves the register once the published text names it.
+ * `cc.workspace.mode` is named in the Privacy Policy's list of local-storage
+ * keys since version 1.4 (`lib/legal/texts/privacy.en.ts` / `.de.ts`; lawyer,
+ * statement 20c E1). {@link PRIVACY_PENDING_STORAGE_KEYS} is the register of
+ * what that text still has to add — empty since 1.4 — and
+ * `tests/workspace-tiles.spec.ts` holds it: a key leaves the register once the
+ * published text names it.
  *
- * What each key holds — nothing personal, nothing about a project:
- *   - `cc.workspace.lens`: `business`, `it` or `management` — the lens of the tiles.
+ * The lens "Read as Business · IT · Management" (`cc.workspace.lens`) is gone:
+ * owner decision 27.11.2026, one view in My workspace for everyone. Nothing
+ * reads or writes that key any more; a value a browser kept is removed once at a
+ * signed-in visit (`lib/storage-cleanup.ts`, `STORAGE_CLEANUPS`).
+ *
+ * What the key holds — nothing personal, nothing about a project:
  *   - `cc.workspace.mode`: `tiles` or `list` — how the programs are shown.
  */
 import { useSyncExternalStore } from 'react';
-import { isWorkspaceView, type WorkspaceView } from '@/lib/workspace-model';
 
-export type WorkspaceLens = WorkspaceView;
 export type WorkspaceMode = 'tiles' | 'list';
 
-export const WORKSPACE_LENS_KEY = 'cc.workspace.lens';
 export const WORKSPACE_MODE_KEY = 'cc.workspace.mode';
 
 /**
@@ -33,15 +32,6 @@ export const WORKSPACE_MODE_KEY = 'cc.workspace.mode';
  * privacy policy 1.4 names both keys (lawyer, statement 20c).
  */
 export const PRIVACY_PENDING_STORAGE_KEYS: readonly string[] = [];
-
-export function readWorkspaceLens(): WorkspaceLens {
-  try {
-    const v = window.localStorage.getItem(WORKSPACE_LENS_KEY);
-    return isWorkspaceView(v) ? v : 'business';
-  } catch {
-    return 'business';
-  }
-}
 
 /**
  * The width up to which My workspace opens as the list when this browser remembers no choice (UX review 22.11.2026,
@@ -73,27 +63,15 @@ export function readWorkspaceMode(): WorkspaceMode {
 const noSubscription = () => () => {};
 
 /**
- * The stored lens and mode, read where React renders — hydration-safe. A server render, and the hydration of one,
- * read the defaults (`business`, `tiles`); every render after that reads this browser's storage. Reading the storage
+ * The stored mode, read where React renders — hydration-safe. A server render, and the hydration of one, read the
+ * default (`tiles`); every render after that reads this browser's storage. Reading the storage
  * in a `useState` initialiser instead was safe only while no server ever rendered the component: the shell holds an
  * account page until the browser has answered, but the component did not depend on that (14.11.2026, the
- * dev-server hydration warning on the new-account view). The chosen value stays in component state; these hooks
- * give only where it starts.
+ * dev-server hydration warning on the new-account view). The chosen value stays in component state; this hook gives
+ * only where it starts.
  */
-export function useStoredWorkspaceLens(): WorkspaceLens {
-  return useSyncExternalStore(noSubscription, readWorkspaceLens, () => 'business' as const);
-}
-
 export function useStoredWorkspaceMode(): WorkspaceMode {
   return useSyncExternalStore(noSubscription, readWorkspaceMode, () => 'tiles' as const);
-}
-
-export function rememberWorkspaceLens(lens: WorkspaceLens): void {
-  try {
-    window.localStorage.setItem(WORKSPACE_LENS_KEY, lens);
-  } catch {
-    /* not remembered: nothing else depends on it */
-  }
 }
 
 export function rememberWorkspaceMode(mode: WorkspaceMode): void {
