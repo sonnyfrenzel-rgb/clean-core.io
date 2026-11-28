@@ -11,7 +11,7 @@
  */
 export const CONTENT_LAST_MODIFIED: Record<string, string> = {
   '/': '2026-11-27',
-  '/clean-core-explained': '2026-11-25',
+  '/clean-core-explained': '2026-11-27',
   '/first-run': '2026-11-26',
   '/how-to': '2026-11-24',
   '/knowledge': '2026-11-27',
@@ -21,7 +21,7 @@ export const CONTENT_LAST_MODIFIED: Record<string, string> = {
   '/sap-clean-core-object-classification': '2026-10-21',
   '/method/levels': '2026-10-21',
   '/sap-cloudification': '2026-10-21',
-  '/how-it-works': '2026-10-22',
+  '/how-it-works': '2026-11-27',
   '/about': '2026-10-10',
   '/whitepaper': '2026-11-27',
   '/reference-analysis': '2026-10-18',

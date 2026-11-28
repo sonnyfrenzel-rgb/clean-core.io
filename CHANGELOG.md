@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [v3.5.4] — 2026-11-28
+
+The decision in one go, a rebuilt "Ask this case", a quieter head on every tool and one view in My workspace. The
+program decision is taken on one page, Decide, with one confirmation; "Ask this case" answers from the case, says
+honestly what went wrong and links every anchor to its place; the tools say "From the engine" once; My workspace
+drops the lens, and privacy policy 1.6 no longer names its storage entry. With it the findings of the v3.5.3
+security audit and QA reviews that were scheduled for this release.
+
+
 ### Changed — Decide in one go (3.5.4, owner-approved mockup of 25.11.2026, ADR-145)
 
 - The program decision is taken on one page, "Decide": what each choice costs (a simulation on typical assumptions
