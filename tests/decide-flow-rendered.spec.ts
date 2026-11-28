@@ -8,17 +8,20 @@ import { connectAuthToEmulator } from './helpers/emulator-guard';
 import { adminGetDoc, adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm, type SeededProject } from './helpers/seed-project';
 import { decisionBasisOf } from '../lib/decide';
+import { ECONOMICS_START_INPUTS, serializeEconomics } from '../lib/economics-record';
+import { initialCostAssumptions } from '../components/tco/OptionComparison';
 
 /**
  * QA review of 374ee7134c8e, the test gaps of the Decide page (ADR-145), executed against the running app and the
  * emulators on a real signed run:
  *
- *   - the `decide` command itself: a basis that moved between the page's read and the commit is refused with 409 and
- *     writes nothing, a non-owner and a caller without a token are refused (583f223f6061);
+ *   - the `decide` command itself: a basis that moved between the page's read and the commit (figures saved in
+ *     Economics, a withdrawn record) is refused with 409 and writes nothing; a non-owner and a caller without a token
+ *     are refused;
  *   - "Record and write the design (sends answers to …)" really starts the design's model call, once, and only on the
- *     click; a failed call leaves the decision recorded and says so (01d676de09bc);
- *   - Design, Management after a recorded Rebuild without a design offers "Write the design" (8e5be9d33deb);
- *   - "Generate draft (sends code to …)" on the result starts the generation, once, and only on the click (01d676de09bc).
+ *     click; a failed call leaves the decision recorded and says so;
+ *   - Design, Management after a recorded Rebuild without a design offers "Write the design";
+ *   - "Generate draft (sends code to …)" on the result starts the generation, once, and only on the click.
  *
  * The model proxy and the generation lease are intercepted: nothing reaches a provider.
  */
@@ -87,13 +90,35 @@ test('the decide command: a basis that moved since the read is refused whole; no
   const commands = `/api/projects/${seeded.projectId}/commands`;
 
   // The page's read, and the basis it binds.
-  const readRes = await request.get(`/api/projects/${seeded.projectId}/decision`, { headers, timeout: 120_000 });
-  expect(readRes.status()).toBe(200);
-  const read = await readRes.json();
-  const basisAtRead = decisionBasisOf({ runId: read.runId, evidenceDigest: read.evidenceDigest, draft: read.draft, stored: read.stored, costRevision: read.costNow?.revision ?? null });
+  const readNow = async () => {
+    const res = await request.get(`/api/projects/${seeded.projectId}/decision`, { headers, timeout: 120_000 });
+    expect(res.status()).toBe(200);
+    const r = await res.json();
+    return { read: r, basis: decisionBasisOf({ runId: r.runId, evidenceDigest: r.evidenceDigest, draft: r.draft, stored: r.stored, costRevision: r.costNow?.revision ?? null }) };
+  };
+  const { read, basis: firstBasis } = await readNow();
   const body = (targetArchitecture: string, basis: string) => ({
     command: 'decide', targetArchitecture, justification: REASON, expectedRunId: read.runId, expectedEvidenceDigest: read.evidenceDigest, expectedDecisionBasis: basis,
   });
+
+  // Figures saved in Economics after the read: the decision on the old read is refused whole, nothing is signed.
+  const saved = await request.post(`/api/projects/${seeded.projectId}/cost-assumptions`, {
+    headers,
+    data: JSON.parse(serializeEconomics({
+      assumptions: { ...initialCostAssumptions(), currency: 'EUR', devDayRate: 820, testDayRate: 640, horizonYears: 5 },
+      inputs: { ...ECONOMICS_START_INPUTS, oneTimeBudget: 40000 },
+    })),
+  });
+  expect(saved.status(), await saved.text()).toBe(200);
+  const costMoved = await request.post(commands, { headers, data: body('retire', firstBasis), timeout: 120_000 });
+  expect(costMoved.status()).toBe(409);
+  expect((await costMoved.json()).code).toBe('decision-moved');
+  const untouched = await adminGetDoc('projects', seeded.projectId);
+  expect(untouched?.approvedByArchitect ?? false).toBe(false);
+  expect(untouched?.decision ?? null).toBeNull();
+
+  // A fresh read, with the new figures in its basis.
+  const { basis: basisAtRead } = await readNow();
 
   // No token, and a signed-in account that is not the owner: refused, nothing written.
   expect((await request.post(commands, { headers: { 'Content-Type': 'application/json' }, data: body('retire', basisAtRead) })).status()).toBe(401);
@@ -195,6 +220,8 @@ test('Generate draft on the result starts the generation once, on the click, and
   await generate.click();
   await page.waitForURL(/\/transformation$/, { timeout: 120_000 });
   await expect.poll(() => lease.count() + gemini.count(), { timeout: 180_000 }).toBeGreaterThan(0);
-  await page.waitForTimeout(3000);
-  expect(lease.count(), 'one generation lease asked for').toBeLessThanOrEqual(1);
+  // Settled: exactly one lease asked for, and no model call, since a refused lease stops the generation before it.
+  await page.waitForTimeout(5000);
+  expect(lease.count(), 'one generation lease asked for').toBe(1);
+  expect(gemini.count(), 'no model call without a lease').toBe(0);
 });

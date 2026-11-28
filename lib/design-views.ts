@@ -412,5 +412,5 @@ export function designAnchors(view: DesignView, c: DesignCase, n: { open: number
   }
   // ADR-145 (4): the Management view shows the decided option; the checklist and the four options are gone.
   if (c === 'rebuild' || c === 'none') return [a('answer', c === 'none' ? 'Not decided yet' : 'The decided option')];
-  return [a('answer', c === 'retire' ? 'Ready to switch off?' : c === 'keep' ? 'What keeping means' : 'Ready to confirm?')];
+  return [a('answer', c === 'retire' ? 'What switching off means' : c === 'keep' ? 'What keeping means' : 'What moving to standard means')];
 }

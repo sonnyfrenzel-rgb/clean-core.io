@@ -64,7 +64,7 @@ export const CAPABILITIES: Capability[] = [
     stage: 'Re-design',
     title: 'The decision: keep, rebuild, move to SAP standard or retire',
     output:
-      'One question about the program, with the need, the options Economics has priced and the architecture behind the answer, plus whatever still blocks it.',
+      'One question about the program, with the need, the four options priced (on your own Economics figures where they price all four, otherwise as a simulation on typical assumptions) and the architecture behind the answer, plus whatever still blocks it.',
     benefit:
       'The decision is taken on the evidence of the run, and what it rests on stays visible to whoever reads the project later.',
     effort:

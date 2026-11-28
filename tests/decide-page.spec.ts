@@ -18,6 +18,9 @@ import { initialCostAssumptions } from '../components/tco/OptionComparison';
 import { proposeEffort, proposeMaintenanceBaseline } from '../lib/cost-assumptions';
 import { typicalPatch } from '../lib/typical-assumptions';
 import type { StandardTouch } from '../lib/standard-touch';
+import { designAnchors } from '../lib/design-views';
+import { ANALYZE_BUSINESS_MESSAGES } from '../lib/messages/analyze-business';
+import { CAPABILITIES } from '../lib/clean-core-capabilities';
 
 /**
  * ADR-145, steps S3, S5 and S6, server-free: the pure half of the Decide page (`lib/decide.ts`) and the guards on its
@@ -234,4 +237,21 @@ test.describe('the page: no button without effect, nothing pre-selected, no mode
     expect(demo).toMatch(/action=\{null\}/);
     expect(demo).not.toMatch(/runProjectCommand|fetch\(/);
   });
+});
+
+// QA review of 335438bcd04f: the words around Decide promise only what the decision does.
+test('the words around Decide: no second confirmation in Design, questions and a draft only for a rebuild, costs priced or simulated', () => {
+  // Design, Management after a recorded Keep, Retire or Move to standard asks for no confirmation the flow removed.
+  for (const c of ['keep', 'retire', 'standard'] as const) {
+    const label = designAnchors('management', c, { open: 0, objects: 0, steps: 0 })[0].label;
+    expect(label, c).not.toMatch(/^Ready to/);
+  }
+  // Analyze's ending: the business questions and Design's draft belong to a rebuild; the other options build nothing.
+  const happens = ANALYZE_BUSINESS_MESSAGES['abiz.redesignHappens'];
+  expect(happens).toContain('For a rebuild it asks the program’s business questions');
+  expect(happens).toContain('keep, move to standard or retire builds nothing');
+  // The capability summary does not claim Economics priced the options when the page shows a simulation.
+  const decide = CAPABILITIES.find((c) => c.stage === 'Re-design')!;
+  expect(decide.output).not.toContain('the options Economics has priced');
+  expect(decide.output).toContain('otherwise as a simulation on typical assumptions');
 });
