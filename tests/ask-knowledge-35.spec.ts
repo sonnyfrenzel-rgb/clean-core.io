@@ -40,9 +40,10 @@ test('every project opens in Analyze, with the three views in their order', () =
   expect([...at].sort((a, b) => a - b)).toEqual(at);
 });
 
-test('Re-design takes the program decision after Economics, with the four options', () => {
+test('Decide takes the program decision on one page, with the four options', () => {
   expect(KB).toContain('/project/{id}/redesign');
-  expect(KB).toContain('after Economics has priced the options and before Design');
+  expect(KB).toContain('The program decision on one page');
+  expect(KB).not.toContain('after Economics has priced the options');
   for (const label of Object.values(DECISION_OPTION_LABELS)) expect(KB).toContain(label);
 });
 

@@ -40,6 +40,9 @@ security audit and QA reviews that were scheduled for this release.
 - Projects signed in Design before 3.5.4 with tools built on them keep their way on to the next tool; the Decide
   page still lists their decision as open.
 - On a phone the tool row's legend button no longer makes the page scroll sideways.
+- The texts around the decision no longer promise business questions and a design draft for every option, nor
+  costs priced in Economics when the page shows a simulation; Design's Management view no longer asks "Ready to…?"
+  after a decision is recorded; "Ask this case" describes the Decide page as it is.
 
 ### Changed — the head of a tool, quieter (3.5.4)
 
