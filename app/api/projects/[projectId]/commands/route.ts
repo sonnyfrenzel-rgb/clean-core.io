@@ -9,7 +9,15 @@ import {
   QuotaError,
 } from '@/lib/firebase-admin';
 import { assertRateLimit } from '@/lib/rate-limit';
-import { validateProjectCommand, type ProjectCommandState, type RecommendationBasis } from '@/lib/project-commands';
+import {
+  decideRecord,
+  decideSignOff,
+  validateProjectCommand,
+  type ProjectCommandResult,
+  type ProjectCommandState,
+  type RecommendationBasis,
+} from '@/lib/project-commands';
+import { decisionBasisOf } from '@/lib/decide';
 import { recommendationOfProject } from '@/lib/contract-build';
 import { evidenceDigest } from '@/lib/run-evidence-digest';
 import { deriveProjectDecision } from '@/lib/decision-facts';
@@ -274,7 +282,8 @@ export async function POST(
         // read from. Both are named here rather than "any command that sends an
         // expectedRunId": the set of commands that must be bound is a decision
         // of this product, not of whoever writes the request body.
-        const wantsBinding = commandName === 'approve-architecture' || commandName === 'confirm-decision';
+        // ADR-145 adds the third: `decide` signs off and confirms in one go, bound as both are.
+        const wantsBinding = commandName === 'approve-architecture' || commandName === 'confirm-decision' || commandName === 'decide';
         if (wantsBinding && typeof project.activeRunId === 'string' && project.activeRunId.length > 0) {
           const runSnap = await tx.get(ref.collection('runs').doc(project.activeRunId));
           activeRunEvidence = runSnap.exists ? evidenceDigest(runSnap.data()) : null;
@@ -306,7 +315,7 @@ export async function POST(
         // not the client-writable `extensibilityRoute`. `null` when no contract
         // can be derived; the validator then falls back and says so.
         const contractRecommendation =
-          commandName === 'approve-architecture' ? recommendationOfProject(project) : null;
+          commandName === 'approve-architecture' || commandName === 'decide' ? recommendationOfProject(project) : null;
 
         // ADR-081 — the questions the project has now, from the source and the
         // rule answers this transaction reads, so an answer is stored only for
@@ -349,7 +358,45 @@ export async function POST(
           testSubject,
           testingClosure: project.testingClosure,
         };
-        const decision = validateProjectCommand(body, state, { email, now: new Date().toISOString() });
+        /**
+         * ADR-145 — the decision in one go, inside this transaction: the sign-off it stands on (step 1), the basis
+         * the page read against the decision derived from the project as this transaction read it, the derivation
+         * again with the sign-off applied, and its draft recorded and confirmed (step 2). Every read happens before
+         * the one write below; a refusal anywhere writes nothing.
+         */
+        const decideInOneGo = async (
+          t: Transaction,
+          read: Record<string, unknown>,
+          st: ProjectCommandState,
+          who: { email: string; now: string },
+        ): Promise<ProjectCommandResult> => {
+          const signOff = decideSignOff(body, st, who);
+          if (!signOff.ok) return signOff;
+          const before = await deriveProjectDecision(db, projectId, read, who.now, t);
+          if (!before.ok) {
+            return { ok: false, status: 409, code: 'decision-underivable', error: 'No decision can be derived for this project now, so nothing was written.' };
+          }
+          const basisNow = decisionBasisOf({ runId: before.runId, evidenceDigest: before.evidenceDigest, draft: before.answer.draft, stored: before.answer.stored });
+          if ((body as { expectedDecisionBasis?: unknown }).expectedDecisionBasis !== basisNow) {
+            return {
+              ok: false,
+              status: 409,
+              code: 'decision-moved',
+              error: 'The answers or the decision on this project changed since the page was read. Nothing was written. Reload the page and decide on what it shows.',
+            };
+          }
+          const after = await deriveProjectDecision(db, projectId, { ...read, ...signOff.fields }, who.now, t);
+          if (!after.ok) {
+            return { ok: false, status: 409, code: 'decision-underivable', error: 'No decision can be derived for this project now, so nothing was written.' };
+          }
+          return decideRecord(body, { ...st, derivedDecisionFingerprint: after.answer.draft.fingerprint, costBasisNow: after.answer.costNow }, who, signOff, {
+            draft: after.answer.draft,
+            draftFingerprint: after.answer.draft.fingerprint,
+            costBasisNow: after.answer.costNow,
+          });
+        };
+        const actor = { email, now: new Date().toISOString() };
+        const decision = commandName === 'decide' ? await decideInOneGo(tx, project, state, actor) : validateProjectCommand(body, state, actor);
         if (!decision.ok) {
           return {
             status: decision.status,

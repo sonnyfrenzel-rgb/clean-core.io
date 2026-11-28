@@ -359,8 +359,8 @@ export default function CleanCoreExplainedPage() {
         <div className={`${CARD} p-7 sm:p-10`} data-guide-platform="">
           <p className="mb-4 leading-[1.75] text-cc-ink">
             Clean-Core.io works on one ABAP program at a time. Analyze reads the process from the code as BPMN and
-            grades each SAP object Level A–D, or Unknown where SAP’s published data doesn’t answer. Re-design then
-            prices the options on your own figures and records your decision. From there a model drafts the target
+            grades each SAP object Level A–D, or Unknown where SAP’s published data doesn’t answer. The Decide page
+            then prices the options as a simulation and records your decision. From there a model drafts the target
             design, RAP or CAP code, documentation and test scenarios for a person to review, ending in a signed audit
             pack. The whitepaper walks through every step, with what it produces and where it stops.
           </p>

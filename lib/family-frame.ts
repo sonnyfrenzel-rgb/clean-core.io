@@ -28,3 +28,24 @@ export const ONE_PAGE_NOTE = 'One page for all three views';
 export const SHELL_WIDTH_CLASS = 'max-w-screen-2xl';
 export const TOOL_WIDTH_CLASS = 'max-w-screen-2xl';
 export const LIST_WIDTH_CLASS = 'max-w-7xl';
+
+/**
+ * The lead under the title of each tool (release 3.5.4, Q2): one sentence that says what the tool is for, on every
+ * tool and in every state — loading, failed, empty or filled. A page that knows more (the track, the decision) says
+ * its own lead; `StageHeader` falls back to this one where a page names none, so no tool stands without one.
+ */
+export const TOOL_LEADS: Readonly<Record<PhaseKey, string>> = Object.freeze({
+  analyze: 'How far this code is from clean core, why, and where in the code.',
+  tco: 'What keeping, rebuilding, moving to SAP standard or retiring this program would cost.',
+  design: 'Where this code should run after the change, and the design that gets it there.',
+  transformation: 'The successor built from the signed run, and the evidence each part of it rests on.',
+  documentation: 'The process description of this program, read from its code in plain words, and ready for your own standard.',
+  testing: 'Which checks show the successor behaves like the program, and what is not shown yet.',
+  delivery: 'What leaves with the program: the package, its proof, and what is still open before go-live.',
+});
+
+/**
+ * Where the slim head appears (release 3.5.4, M1): once the title has passed half under the shell bar (56 px). Below it
+ * the full head scrolls with the page; above it one line stands under the shell bar.
+ */
+export const SHELL_BAR_PX = 56;

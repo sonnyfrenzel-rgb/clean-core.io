@@ -108,6 +108,18 @@ export function isFamilyChipKind(value: unknown): value is FamilyChipKind {
   return typeof value === 'string' && Object.prototype.hasOwnProperty.call(FAMILY_CHIPS, value);
 }
 
+/**
+ * Whether a chip is drawn on a tool (release 3.5.4, Q5): only where it departs from the normal case. On a tool the
+ * engine is the normal case — the head says "From the engine" once for the page — so an engine chip in a block is
+ * kept only when it departs: `imported` (from your system, not read from the code), or kept on purpose by its caller
+ * (the head's own; a figure the engine proposes beside one the reader states). Every other chip is a departure.
+ * The rule that leaves the rest undrawn is one line of `app/globals.css`, scoped to a page with a tool's frame.
+ */
+export function familyChipKept(chip: { kind: FamilyChipKind; value?: ProvenanceValue; keep?: boolean }): boolean {
+  if (chip.kind !== 'engine') return true;
+  return chip.value === 'imported' || chip.keep === true;
+}
+
 /** Notes the reduction adds where two values share one chip, so the difference is still said. */
 const FROM_VALUE: Readonly<Record<ProvenanceValue, { kind: FamilyChipKind; note?: string } | null>> = Object.freeze({
   proven: { kind: 'signed' },

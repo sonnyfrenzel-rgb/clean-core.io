@@ -58,7 +58,7 @@ export default function DemoEconomics({
         onPatch={patch}
         onPatchOption={patchOption}
         managementHref={null}
-        decisionWords="Decision: not taken in the demo. A project of your own takes it in Re-design."
+        decisionWords="Decision: not taken in the demo. A project of your own takes it in Decide."
         saved={
           <p className="m-0 cc-text-cell text-cc-ink-muted" data-demo-economics-saved="">
             Kept in this browser only, for the demo. Nothing is saved to an account, and nothing is signed.

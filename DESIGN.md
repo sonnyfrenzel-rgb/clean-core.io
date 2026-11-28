@@ -365,17 +365,19 @@ business answers on record do to it (stays · changes · not in the target · op
 name), then the business questions with "Generate the design" under them (the write gate unchanged, ADR-102), then
 what happens next. *IT*: the architecture canvas full width with the evidence of the clicked box beside it, the
 contract, its alternatives and the design document **once** in the drawer under it, the object table (every object,
-its Level and released successor from the catalog), the requirements card. *Management*: "is the design ready to sign
-off?", the checklist before sign-off, *Confirm target* as the one primary action, the four options with the decided
-one. The Canvas | List switch is gone. Keep, Move to SAP standard and Retire show their own content (nothing is built;
+its Level and released successor from the catalog), the requirements card. *Management*: the decided option and what is
+still in the way (ADR-145): no *Confirm target*, no checklist before sign-off and not the four options again, because the
+route is recorded with the decision on the Decide page; *Change target* stays for a route on record. The Canvas | List switch is gone. Keep, Move to SAP standard and Retire show their own content (nothing is built;
 Retire names what the analysis read beside what it could not read). A declared route deviation or an out-of-date
 decision shows "Outside the priced range: re-price it in Economics." in Economics' own guard rail
 (`components/economics/EconomicsGuardRail.tsx`: the decision and the range Economics priced for it); Design shows no
 amount. The design is still written only
 on the owner's click.
 
-On scrolling the header shrinks to title, view switcher and the facet line — in Business the "Project
-status" line; the anchor bar stays in place. **A
+On scrolling the header shrinks to one line (release 3.5.4, M1): once the title has passed under the shell bar, a
+44 px strip stands under it — the way back as a chevron, the tool, the program's name, and on Analyze and Design the
+view it is read in. The full header scrolls with the page, so nothing under it moves; the anchor bar steps down under
+the strip while both stand. **A
 view in the URL is a perspective, not an approval:** a link with `?view=management` opens nothing for which the account
 has no read access. The view never lives in the project, run or audit pack (roadmap 6.1).
 
@@ -488,20 +490,27 @@ Sizes come from §1.2, not from the mock-ups (owner, 22.11.2026).
 | Part | Component | What it is |
 |---|---|---|
 | Head row | `components/StageHeader.tsx` | `‹ My workspace · <program>` — one way back (`familyBackLink` in `lib/workspace-back-href.ts`: My workspace by default and on the project's entry; the workspace's view and layer while the address carries one; the demo workspace on a demo tool; a choice's `?origin=` keeps `ChoiceBackLink`). Right: the view switch on **Analyze and Design** only, on the five others the note *One page for every reader: business, IT and management* (`lib/family-frame.ts`; the view stays in the address). Beside it **Invite to view** for the owner (`components/family/InviteToView.tsx`, the existing invitation dialog). |
-| Tool row | `StageToolBar` (`components/workspace/ToolBar.tsx`, `FamilyToolStrip`) | One row on every tool and width: "Tools", the seven tools in the order of `PHASES` (Analyze → Economics → Design → Transformation → Documentation → Testing → Delivery, ADR-128) with their marks, the legend at the end (steps back below 1280 px). Overflow scrolls sideways with a fade; the current tool filled in ink and scrolled into view. On S "2 of 7" where "Tools" stands; 44 px targets on S and under a coarse pointer. No menu, no hint line. **On Analyze and on Re-design** (ADR-143) the six tools after Analyze stand inside one group, *Re-design ›*, whose label opens `/project/[id]/redesign` (dashed outline; solid ink on the Re-design page, where the label is the current item); the demo keeps the plain row. |
-| Title block | `StageHeader` | Eyebrow: the tool's icon (16 px, muted) and *Tool · Economics* (micro label), chips beside it. `h1`: the program's business name (`lib/family-title.ts`: the source header's title the engine read for the active run, else the project name). Under it the technical name in mono (12 px / 600). Then the lead (14 px / 500). Stage-wide actions right. |
+| Tool row | `StageToolBar` (`components/workspace/ToolBar.tsx`, `FamilyToolStrip`) | One row on every tool and width: "Tools", the seven tools in the order of `PHASES` (Analyze → Economics → Design → Transformation → Documentation → Testing → Delivery, ADR-128) with their marks, and at the end an "i" that opens the legend "done · started · out of date" on request, at every width (release 3.5.4, Q4). Overflow scrolls sideways with a fade; the current tool filled in ink and scrolled into view. On S "2 of 7" where "Tools" stands; 44 px targets on S and under a coarse pointer. No menu, no hint line. **On Analyze and on Re-design** (ADR-143) the six tools after Analyze stand inside one group, *Re-design ›*, whose label opens `/project/[id]/redesign` (dashed outline; solid ink on the Re-design page, where the label is the current item); the demo keeps the plain row. |
+| Title block | `StageHeader` | Eyebrow: the tool's icon (16 px, muted) and *Tool · Economics* (micro label), chips beside it. `h1`: the program's business name (`lib/family-title.ts`: the source header's title the engine read for the active run, else the project name). Under it the technical name in mono (12 px / 600). Then the lead (14 px / 500) — on every tool, the page's own or the tool's from `TOOL_LEADS` in `lib/family-frame.ts` (release 3.5.4, Q2). Beside the eyebrow the page's one *From the engine* chip (Q5). Stage-wide actions right. Scrolled past the title: the slim one-line head (M1). Held by `tests/stage-head-density.spec.ts`. |
 | Answer card | `components/family/AnswerCard.tsx` | The first card on every tool. Props: `question`, `chips`, `answer` (one or two sentences, 15 px / 700), `condition` (13 px / 500), `after`, `action` (the page's one primary), `actionNote`, `moreActions`, `facets` (four `FacetProps`), `children`, `id`. Action column drops under the answer below 900 px. |
 | Facets | `Facet`, `Facets` (same file) | `FacetProps`: `label`, `value` (22 px / 800 tabular), `unit`, `note`, `chip`, `href` (jump) or `onClick` (open), `id`. Four columns under a rule, two below 1100 px. |
 | On this page | `components/PageAnchorBar.tsx` | ADR-126 (3): a 48 px sticky white strip under the shell bar reaching over the frame's gutter, *On this page* (13 px / 600, sentence case), items 15 px / 500 in ink with a 3 px brand bar under the current one, at most six (`PAGE_ANCHOR_MAX`), counts as quiet grey badges (`tone: 'open'` amber for open questions), one optional `action` at the right end, a sideways row with fade on S, focus moves to the section heading, no bar for a single section. |
-| Provenance | `components/family/FamilyChip.tsx`, `lib/family-chips.ts` | Six chips (UX review L2): **Signed** (filled), **From the engine** (outline), **Yours** (filled), **AI-generated** (dashed), **Simulation** (dashed), **Not determined** (outline) — 12 px / 600, a white pill whose border carries the meaning. `<FamilyChip kind="ai" />` or `<FamilyChip value={provenanceValue} />` (`familyChipOf` reduces the nine values of §4; *stale* is no chip — a strip and the tool bar's mark say it). |
+| Provenance | `components/family/FamilyChip.tsx`, `lib/family-chips.ts` | Six chips (UX review L2): **Signed** (filled), **From the engine** (outline), **Yours** (filled), **AI-generated** (dashed), **Simulation** (dashed), **Not determined** (outline) — 12 px / 600, a white pill whose border carries the meaning. `<FamilyChip kind="ai" />` or `<FamilyChip value={provenanceValue} />` (`familyChipOf` reduces the nine values of §4; *stale* is no chip — a strip and the tool bar's mark say it). **Only where something departs from the normal case** (release 3.5.4, Q5): on a tool the engine is the normal case, said once by the head; a block's *From the engine* — and the older *Reconstructed* — is not drawn (`app/globals.css`, scoped to a page with a tool's frame, portals included), unless it departs (`familyChipKept`: *imported*, or `keep` where an engine proposal stands beside the reader's own figure). A "Why?" popover and a process map's legend always draw it. |
 
-**Re-design** (ADR-143): `/project/[id]/redesign` is a page of the family that is not a tool (`StageHeader`
-`place="redesign"`: eyebrow *Re-design*, the way back to Analyze, the note instead of the switch). Its answer card asks
-*Where is the re-design of this program?* with the next step as the one primary action and four facets (decision,
-options priced, business rules confirmed, delivery package); then *The steps of Re-design* in `PHASES` order with the
-decision as step 2 between Economics and Design (the four options and the decision record, reused), every state read
-from the project. Every "go on" link of Analyze leads here, never into a single tool; the business-question link stays
-direct.
+**Decide** (ADR-145, was Re-design, ADR-143; mock-up `decision-flow/index.html`): `/project/[id]/redesign` is a page of
+the family that is not a tool (`StageHeader` `place="redesign"`: eyebrow *Decide*, the way back to Analyze, the tool row's
+group *Decide ›*). The decision in one go, for every reader on one page: the target edition as one line (*Signed* with
+the run); three numbered cards: *What each choice costs* (the four options as a simulation, on the figures stored in
+Economics when they price all four, else on typical assumptions computed and never stored; the chips say which), *Your
+decision* (the four options as one radio group, nothing pre-selected, *Indicated by the analysis* as a tag, the
+sentence *an indication, not a decision*; box B of the fit-to-standard concept above them only when the engine has
+signals), *What it needs from you* (Rebuild: the route with *Another route…* and the business questions, open ones a hint;
+the others: what follows and the reason, required only when it departs from the indication); then one sticky bar with
+the one primary *Record the decision…*, disabled until a click records something, and one dialog that lists account,
+option, route, run, answers, limits and reason. After it the result: *What happens to this program?*, four facets, the
+next action (Rebuild: Design to write the design, then Transformation; the others: *Done*, Design optional), *Withdraw
+the decision…*, and the record's bindings and timeline folded. Every "go on" link of Analyze leads here; Economics is
+never the next step.
 **Transformation in the frame** (ADR-129, `docs/roadmap/transformation-next-mockup.html`): one page for every reader
 (`view="one-page"`). The answer card asks *What became of <program>?* and answers per state (nothing yet, writing,
 written, not ready, demo); facets *Target* (aims at level A, never "is"), *Released target* (a successor or the project
@@ -730,10 +739,11 @@ described in §5.1–§5.2 retired with v3.1.0 (AB-3): the names arrive on the m
 describing the build-up stand as the record of what it was. **Since 3.5.0 Analyze, Management is a page of its own**
 (AB-10, ADR-143, `components/analyze/AnalyzeManagement.tsx`): the answer card *Keep, rebuild or retire: what does this
 program need?* with what the program is for, what needs a decision, the indication worded *an indication, not a
-decision*, and the one primary action *Re-design this program*; four facets (distance to clean core with the Level A–D
-mix, cost from Economics or *Not priced yet*, risk if nothing changes, what we need from you); *On this page* over
+decision*, and the one primary action *Decide what happens to it* (ADR-145); four facets (distance to clean core with the
+Level A–D mix, cost from Economics, else the Decide page's simulation on typical assumptions, risk if nothing changes,
+what we need from you); *On this page* over
 Options · Risk · What we need from you · Still open; the options without a tool link and one *Not priced yet* line for
-all four; no coach mark, no ids as content. The decision is taken on Re-design (§2.12) and shown read-only here. The
+all four; no coach mark, no ids as content. The decision is taken on the Decide page (§2.12) and shown read-only here. The
 workspace keeps IT until AB-9 and its Management view until AB-11; its
 Business view, the "Work from this process" hub and the "Your analysis is ready" line are gone (ADR-090 retired). The
 demo opens the same way (§6.1.2).
@@ -1386,6 +1396,7 @@ Sonny 15.09.2026):
 
 | Version | Date | What |
 |---|---|---|
+| 1.8.20 | 27.11.2026 | Decide in one go (ADR-145, owner decisions 25.11.2026): §2.12 the Decide page (was Re-design) with the cost line, the four options as one choice, route and business questions or reason, one bar and one dialog, and the result that ends; Design's Management view shows the decided option (no *Confirm target*, no checklist, no four options); §5 Analyze, Management's one action *Decide what happens to it* |
 | 1.8.19 | 23.11.2026 | Analyze, IT is one page, code first, in the family frame (AB-9, ADR-140, §5.6); the workspace page dissolves and `/project/<id>` redirects every address to Analyze (AB-11, §2.3); the coach marks retire (§6.2); one line-anchor notation, "line 243" (Q11, §3) |
 | 1.8.18 | 23.11.2026 | Analyze, Management as a page of its own and Re-design as the way on (ADR-143, owner 23.11.2026): §2.12 the *Re-design ›* group in the tool row of Analyze and the Re-design page (`/project/[id]/redesign`) with the decision as step 2; §5 the Management page of Analyze (AB-10), one primary action *Re-design this program*, the decision read-only. |
 | 1.8.17 | 13.11.2026 | Shell bar below 1024 px (§2.1, ADR-115, owner decision 13.11.2026): the path drops the "My workspace" crumb before a project and shows the project and what follows it; Help shows its "?" alone, with its word as accessible name and tooltip. From 1024 px up unchanged. |

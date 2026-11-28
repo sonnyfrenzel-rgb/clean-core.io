@@ -402,7 +402,7 @@ test.describe('the decision warning above the tips (owner 12.10.2026: no rebuild
     const expected = {
       kind: 'standard-fit-open',
       text: 'SAP standard has not been weighed against a rebuild yet — decide Keep, Rebuild, Move to SAP standard or Retire first.',
-      link: { label: 'Decide in Re-design', href: '/project/p1/redesign?view=management&origin=transformation.tips#decide' },
+      link: { label: 'Decide', href: '/project/p1/redesign?view=management&origin=transformation.tips#decide' },
     };
     expect(warn(undefined)).toEqual(expected);
     expect(warn(recorded(null))).toEqual(expected);

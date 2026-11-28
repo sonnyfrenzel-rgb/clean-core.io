@@ -30,7 +30,7 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.warnDecision.standard': 'The decision on record is to move to SAP standard — generating a rebuild goes against it.',
   'transformation.warnDecision.standardFitOpen': 'SAP standard has not been weighed against a rebuild yet — decide Keep, Rebuild, Move to SAP standard or Retire first.',
   'transformation.warnDecision.openDecision': 'Open the decision',
-  'transformation.warnDecision.checkStandardFit': 'Decide in Re-design',
+  'transformation.warnDecision.checkStandardFit': 'Decide',
   'transformation.warnDecision.lead': 'You can still generate — the decision stays yours.',
 
   'transformation.tip.rules.titleLoading': 'Decide the open business rules',
@@ -72,7 +72,7 @@ export const TRANSFORMATION_MESSAGES = {
   'transformation.fix.target': 'Confirm in Design',
   'transformation.fix.requirements': 'Review in Design',
   'transformation.fix.requirementsStart': 'Open the requirements',
-  'transformation.fix.decision': 'Decide in Re-design',
+  'transformation.fix.decision': 'Decide',
   'transformation.insights.noPurpose': 'What the program is for could not be read from the code.',
   'transformation.rules.none': 'The engine read the source and found no business rule in it.',
   'transformation.design.none': 'No solution design on record.',

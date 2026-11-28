@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calculator, CircleHelp, Cog, PenLine, ShieldCheck, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { familyChip, familyChipOf, type FamilyChipKind } from '@/lib/family-chips';
+import { familyChip, familyChipKept, familyChipOf, type FamilyChipKind } from '@/lib/family-chips';
 import type { ProvenanceValue } from '@/lib/provenance';
 import { STATE_CLASSES } from '@/components/cc/state';
 
@@ -12,6 +12,12 @@ import { STATE_CLASSES } from '@/components/cc/state';
  *
  * Takes a `kind`, or a `value` of `lib/provenance.ts` that it reduces to one (`familyChipOf`); never a label. A
  * `stale` value draws nothing — out of date is said by a strip and the tool bar's mark.
+ *
+ * **Only where something departs from the normal case** (release 3.5.4, Q5). On a tool the engine is the normal case:
+ * the head says "From the engine" once for the page (`StageHeader`), and an engine chip in a block is not drawn
+ * (`app/globals.css`, scoped to a page with a tool's frame). It stays in the markup, so the vocabulary and its guards
+ * are unchanged, and a chip that does depart — `imported` (from your system, not the code) or one marked `keep` —
+ * carries `data-chip-keep` and is drawn.
  */
 const ICONS = {
   'shield-check': ShieldCheck,
@@ -23,8 +29,8 @@ const ICONS = {
 } as const;
 
 export type FamilyChipProps =
-  | { kind: FamilyChipKind; value?: never; note?: string; title?: string }
-  | { value: ProvenanceValue; kind?: never; note?: string; title?: string };
+  | { kind: FamilyChipKind; value?: never; note?: string; title?: string; keep?: boolean }
+  | { value: ProvenanceValue; kind?: never; note?: string; title?: string; keep?: boolean };
 
 export default function FamilyChip(props: FamilyChipProps) {
   const reduced = props.kind ? { kind: props.kind } : familyChipOf(props.value as ProvenanceValue);
@@ -37,6 +43,7 @@ export default function FamilyChip(props: FamilyChipProps) {
     <span
       data-family-chip={entry.kind}
       data-cc-form={entry.form}
+      data-chip-keep={familyChipKept({ kind: entry.kind, value: props.value, keep: props.keep }) ? '' : undefined}
       title={props.title ?? entry.meaning}
       className={cn(
         // `flex-wrap` with a note: in a narrow column (a facet beside another on a

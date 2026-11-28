@@ -96,10 +96,10 @@ async function expectFits(page: Page, width: number, height: number, name: strin
 }
 
 /**
- * The Management card's action: Confirm target, or, over a design stored in the older text form with every check done,
- * "Write the design again" in its place (journey review 26.11.2026) — the seeded project's design is that older form.
+ * The Management card's action (ADR-145): the way to the decision while none is recorded, else writing or reading the
+ * design, "Write the design again" over an older text form, or "Change target" for a route on record.
  */
-const CARD_ACTION = '[data-design-confirm], [data-design-rewrite-older]';
+const CARD_ACTION = '[data-design-decide], [data-design-write-link], [data-design-read-it], [data-design-confirm], [data-design-rewrite-older]';
 
 /** The card's action is reached and nothing covers it. */
 async function expectReachable(page: Page, width: number, height: number) {
@@ -163,7 +163,7 @@ test.describe('the Design stage keeps its proportions', () => {
 
     await page.goto('/demo/design?view=management', { waitUntil: 'domcontentloaded' });
     await expect(page.locator('[data-demo-ready="true"]')).toBeAttached({ timeout: 60_000 });
-    await expect(page.locator('[data-design-confirm]')).toBeVisible({ timeout: 60_000 });
+    await expect(page.locator('[data-design-decide]')).toBeVisible({ timeout: 60_000 });
     await expectConfirmFits(page);
   });
 });

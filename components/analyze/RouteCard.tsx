@@ -21,7 +21,7 @@ import { BTP, SIDE_BY_SIDE_LABEL, isSideBySideRoute, routeLabel } from '@/lib/sa
  *   the route and its target · the confidence as a neutral meter · "Driven
  *   off the stack by" with a line anchor per construct · "Holds if" with the
  *   first three assumptions open · one muted line for what the run did not
- *   record · one next action, "Decide in Re-design" (ADR-143).
+ *   record · one next action, "Decide" (ADR-143, ADR-145).
  *
  * Drivers and assumptions are the router's (`routeDrivers`, `assumptions` in
  * `lib/abap/extensibility-router.ts`), recomputed from the signed run's
@@ -276,10 +276,10 @@ export default function RouteCard({
 
       <div className="mt-3" data-route-next="">
         <CcLinkButton href={decideHref} variant="secondary" density="compact">
-          Decide in Re-design
+          Decide
         </CcLinkButton>
         <p className="m-0 mt-1 cc-text-meta font-medium text-cc-ink-muted">
-          Keep, rebuild, move to standard or retire: the program decision is made there, after Economics prices the options.
+          Keep, rebuild, move to standard or retire: the program decision is made there, in one go.
         </p>
       </div>
 

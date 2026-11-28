@@ -4,8 +4,8 @@ import { useParams } from 'next/navigation';
 import RedesignPage from '@/components/redesign/RedesignPage';
 
 /**
- * Re-design — the way on from Analyze into the six tools (ADR-143). Read-only: the steps in the one tool order, each
- * state read from the project, and one primary action, the next step. See `components/redesign/RedesignPage.tsx`.
+ * Decide (ADR-145; was Re-design, ADR-143) — the program decision in one go, on one page for every reader. The route
+ * keeps its segment, so every older link and bookmark still lands here. See `components/redesign/RedesignPage.tsx`.
  */
 export default function RedesignRoute() {
   const { projectId } = useParams();

@@ -9,22 +9,17 @@ import { adminGetDoc, adminMergeDoc, adminSetDoc } from './helpers/admin-seed';
 import { seedStageProject, signInThroughForm } from './helpers/seed-project';
 
 /**
- * A sign-off on a project analysed the way a reader analyses one — a real
- * signed run through `/api/runs/create`, not a seeded run document — shows as
- * confirmed once it lands, and still after a reload.
+ * A decision on a project analysed the way a reader analyses one — a real signed run through `/api/runs/create`, not a
+ * seeded run document. Since ADR-145 the route is recorded with the decision on the Decide page, in one go (`decide`):
+ * Design no longer asks for "Confirm target". It shows the decided option, keeps "Change target" for a route on record,
+ * and the IT view says the target is recorded with the decision — after a reload too. A design written for an earlier
+ * run is still named as older.
  *
- * Since 3.5.0 "Confirm target" is the Management view's one primary action,
- * behind the checklist (ADR-130 (1), G8): the business questions answered and
- * the design current. The IT view shows the state. A design written for an
- * earlier run is no longer signed off over: the checklist names it out of date.
- *
- * `Z_SALES_ORDER_CREATOR` asks the business no question, so a design on
- * record makes the checklist ready; `Z_MM_PO_APPROVAL` asks ten.
+ * `Z_SALES_ORDER_CREATOR` asks the business no question.
  */
 
 const EXAMPLE = 'Z_SALES_ORDER_CREATOR.txt';
 const SOURCE = fs.readFileSync(path.resolve(__dirname, '..', 'public', 'starter-examples', EXAMPLE), 'utf8');
-const CONFIRMED = 'The target is confirmed.';
 
 const DESIGN_JSON = JSON.stringify({
   projectName: 'Sales order creation',
@@ -64,45 +59,43 @@ async function analysedProject(request: import('@playwright/test').APIRequestCon
   return seeded;
 }
 
-async function openManagement(page: import('@playwright/test').Page, projectId: string) {
-  await page.goto(`/project/${projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('[data-design-view="management"] [data-design-checklist]')).toBeVisible({ timeout: 120_000 });
-}
-
-test('an analysis that moved on after the design: Confirm target waits, and the older design document is named as older', async ({ page, request }) => {
+test('an analysis that moved on after the design: Management leads to the decision, and the older design is named as older', async ({ page, request }) => {
   test.setTimeout(480_000);
-  // Analysed, designed, then analysed again under another target: the design
-  // document was written for the earlier run.
+  // Analysed, designed, then analysed again under another target: the design document was written for the earlier run.
   const seeded = await analysedProject(request, ['private', 'public']);
   await signInThroughForm(page, seeded);
-  await openManagement(page, seeded.projectId);
-  const checklist = page.locator('[data-design-checklist]');
-  await expect(checklist.locator('li').filter({ hasText: 'Design written' })).toContainText('Out of date: write it again', { timeout: 120_000 });
-  await expect(page.locator('[data-design-confirm]')).toBeDisabled();
-  await expect(page.locator('#design-confirm-note')).toHaveText('Possible once every check below is done.');
+  await page.goto(`/project/${seeded.projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#design-answer [data-answer]')).toHaveText('Not decided yet. The decision is taken on the Decide page.', { timeout: 120_000 });
+  await expect(page.locator('[data-design-confirm]')).toHaveCount(0);
   expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect ?? false).toBe(false);
   // The design document is still named as written for the earlier run.
   await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
   await expect(page.getByText(/This design was generated for a previous/)).toBeVisible({ timeout: 120_000 });
 });
 
-test('after Confirm target on a real run, the Design page says confirmed — and after a reload', async ({ page, request }) => {
+test('a Rebuild recorded on the Decide page on a real run: Design shows it decided, with "Change target" — and after a reload', async ({ page, request }) => {
   test.setTimeout(420_000);
   const seeded = await analysedProject(request, ['private']);
   await signInThroughForm(page, seeded);
-  await openManagement(page, seeded.projectId);
-  await expect(page.locator('[data-design-confirm]')).toBeEnabled({ timeout: 120_000 });
+  await page.goto(`/project/${seeded.projectId}/redesign`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('[data-decide-state="choosing"]')).toBeVisible({ timeout: 120_000 });
+  await page.locator('[data-decide-option="rebuild"]').click();
+  const record = page.locator('[data-decide-record]');
+  await expect(record).toBeEnabled({ timeout: 120_000 });
+  await record.click();
+  await page.getByRole('dialog').getByRole('button', { name: /^(Record only|Record the decision)$/ }).first().click();
+  await expect(page.locator('[data-decide-state="decided"][data-decide-result-option="rebuild"]')).toBeVisible({ timeout: 120_000 });
+  const stored = await adminGetDoc('projects', seeded.projectId);
+  expect(stored?.approvedByArchitect).toBe(true);
+  expect((stored?.decision as { status?: string } | undefined)?.status).toBe('confirmed');
+  expect(stored?.approvedBy).toBe(seeded.email);
 
-  // "Confirm target" asks first (owner 02.10.2026); its own button confirms.
-  await page.locator('[data-design-confirm]').click();
-  await page.locator('[data-cc-message-box] button:has-text("Confirm target")').click();
-  await expect(page.locator('#design-answer [data-answer]')).toHaveText(CONFIRMED, { timeout: 60_000 });
+  await page.goto(`/project/${seeded.projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
+  await expect(page.locator('#design-answer [data-answer]')).toContainText('Decided: Rebuild as', { timeout: 120_000 });
   await expect(page.locator('[data-design-confirm]')).toHaveText(/Change target/);
-  expect((await adminGetDoc('projects', seeded.projectId))?.approvedByArchitect).toBe(true);
-
   await page.reload({ waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#design-answer [data-answer]')).toHaveText(CONFIRMED, { timeout: 120_000 });
-  // The IT view shows the state (G8).
+  await expect(page.locator('#design-answer [data-answer]')).toContainText('Decided: Rebuild as', { timeout: 120_000 });
+  // The IT view says where the target was recorded.
   await page.goto(`/project/${seeded.projectId}/design?view=it`, { waitUntil: 'domcontentloaded' });
-  await expect(page.locator('#design-answer [data-answer-condition]')).toContainText('The target is confirmed.', { timeout: 120_000 });
+  await expect(page.locator('#design-answer [data-answer-condition]')).toContainText('The target is recorded with the decision.', { timeout: 120_000 });
 });

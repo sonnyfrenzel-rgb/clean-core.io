@@ -164,7 +164,7 @@ test.describe('machine strings — rendered', () => {
       { url: `/project/${acct.projectId}/analyze?view=business`, ready: '[data-analyze-business="ready"] h1' },
       { url: `/project/${acct.projectId}/analyze?view=it`, ready: '[data-analyze-it] [data-answer-card]' },
       { url: `/project/${acct.projectId}/analyze?view=management`, ready: '[data-analyze-management="ready"] [data-answer-card]' },
-      { url: `/project/${acct.projectId}/redesign`, ready: '[data-redesign="ready"] [data-answer-card]' },
+      { url: `/project/${acct.projectId}/redesign`, ready: '[data-redesign="ready"] [data-decide], [data-redesign="ready"] [data-decide-result]' },
       ...STAGES.map((s) => ({ url: `/project/${acct.projectId}/${s}`, ready: '[data-stage-title]' })),
       // The demo opens like a project since v3.1.0 (O10): its Business view is `/demo/analyze`.
       { url: '/demo/analyze', ready: '[data-analyze-business="ready"][data-demo-ready="true"] h1' },

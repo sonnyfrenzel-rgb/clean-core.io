@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import NextStepBar from '@/components/NextStepBar';
 import { useJourneyNext } from '@/hooks/useJourneyNext';
@@ -33,18 +33,23 @@ import StageViewSwitch from '@/components/StageViewSwitch';
 const InviteToView = dynamic(() => import('@/components/family/InviteToView'));
 import { useLocationSearch } from '@/lib/location-search';
 import { familyTitleOf } from '@/lib/family-title';
-import { familyViewMode, ONE_PAGE_NOTE } from '@/lib/family-frame';
+import { familyViewMode, ONE_PAGE_NOTE, SHELL_BAR_PX, TOOL_LEADS } from '@/lib/family-frame';
+import FamilyChip from '@/components/family/FamilyChip';
+import { stageViewOf } from '@/lib/location-search';
+import { VIEW_LABELS } from '@/lib/workspace-model';
 
 /**
  * The header of a tool — the frame every tool of the family shares (mock-ups of 15.11.2026: Economics, Design,
  * Transformation, Documentation, Testing, Delivery, Analyze; ADR-126, ADR-139, ADR-140). There is exactly one.
  *
  *   ‹ My workspace · Emergency purchase approval          One page for every reader · [Invite to view]
- *   TOOLS  [✓ Analyze] [Economics] [Design] [Transformation] …                 ✓ done ◐ started ● out of date
- *   ▢ TOOL · ECONOMICS
+ *   TOOLS  [✓ Analyze] [Economics] [Design] [Transformation] …                                             (i)
+ *   ▢ TOOL · ECONOMICS  [From the engine]
  *   Emergency purchase approval                                                         [stage actions]
  *   Z_MM_PO_APPROVAL
  *   What keeping, rebuilding, moving to SAP standard or retiring this program would cost.
+ *
+ *   scrolled:  ‹  ▢ Economics · Emergency purchase approval                                       IT view
  *
  * 1. **The head row.** On the left the one way back (`familyBackLink`, a chevron, the place and the program); a choice
  *    reached through `?origin=` keeps its own way back (`ChoiceBackLink`). On the right the view: the Business | IT |
@@ -56,6 +61,13 @@ import { familyViewMode, ONE_PAGE_NOTE } from '@/lib/family-frame';
  *    name as the page's `h1` (`lib/family-title.ts`: the source header's title the engine read, else the project's
  *    name), its technical name in mono under it, then the lead. Until the project is read the `h1` is the tool's name.
  *    The `h1` is 22 px / 800, `-0.02em`, `--cc-ink` (`cc-text-title`, `DESIGN.md` §1.2, §2.3).
+ *    **Every tool has its lead** (release 3.5.4, Q2): the page's own, else the tool's from `TOOL_LEADS`.
+ *    **"From the engine" once per page** (release 3.5.4, Q5): beside the eyebrow, for everything on the page that no
+ *    chip of its own says otherwise about; a block shows a chip only where it departs (`FamilyChip`).
+ * 4. **The slim head** (release 3.5.4, M1). Once the title has passed under the shell bar, one line stands under it:
+ *    the way back as a chevron, the tool, the program's name, and on the tools with views the view it is read in.
+ *    The full head scrolls with the page as before, so nothing under it moves; the "On this page" bar steps down
+ *    under the slim line while both stand (`app/globals.css`).
  *
  * **Re-design (ADR-143).** On Analyze the six tools after it stand in one group of the tool row, "Re-design ›", whose
  * label opens the Re-design page (`/project/[id]/redesign`). That page is not a tool: it passes `place="redesign"`,
@@ -68,6 +80,10 @@ import { familyViewMode, ONE_PAGE_NOTE } from '@/lib/family-frame';
  * Guarded by `tests/workflow-style-guard.spec.ts`, which loads every tool and compares the computed style of each
  * `[data-stage-title]` against §2.3, and by `tests/family-frame.spec.ts` (server-free).
  */
+
+/** What the head's one "From the engine" says for the page (release 3.5.4, Q5). */
+const PAGE_PROVENANCE_MEANING =
+  'Unless a block says otherwise, what this page shows was read from the code by the engine, the same on every run. Nobody has confirmed it.';
 
 /** Each tool's mark before "Tool · …" in the eyebrow — neutral, 16 px, in `--cc-ink-muted`. */
 const TOOL_ICONS: Readonly<Record<PhaseKey, LucideIcon>> = {
@@ -194,6 +210,40 @@ export default function StageHeader({
   // a stale analysis keeps Analyze as the step, not the tool past it (preservation RC-delivery-blocked-source-changed).
   const wayKey = journey?.next?.key ?? null;
   const journeyNextKey: PhaseKey | null | undefined = journey === null ? undefined : wayKey && wayKey !== 'decide' ? wayKey : null;
+  // The slim head (M1): shown once the title has passed half under the shell bar. Read on every scroll of the document or
+  // of a scrolling container, once per frame.
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const [slim, setSlim] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      const el = titleRef.current;
+      if (!el) return;
+      // Half of the title under the shell bar: what is left of it no longer reads as the page's name.
+      const r = el.getBoundingClientRect();
+      setSlim((r.top + r.bottom) / 2 < SHELL_BAR_PX);
+    };
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(read);
+    };
+    read();
+    document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      document.removeEventListener('scroll', onScroll, { capture: true });
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+  const viewLabel = mode === 'switch' ? VIEW_LABELS[stageViewOf(search)] : null;
+  // The lead (Q2): the page's own, else the tool's.
+  const lead = children ?? (onRedesign ? null : toolCurrent ? TOOL_LEADS[toolCurrent] : null);
+  // "From the engine" once for the page (Q5): on every tool and on Re-design.
+  const pageProvenance = Boolean(eyebrowTool) || onRedesign;
+  const slimBack = back.kind === 'link' && back.origin ? { href: back.origin.href, label: back.origin.label } : way.kind === 'link' ? { href: way.href, label: way.place } : null;
+
   const group: ToolGroup | null =
     // The same row on every tool (journey review 26.11.2026, Q7): the six tools after Analyze always stand in the group.
     (projectId || demo) && (onRedesign || Boolean(toolCurrent))
@@ -202,6 +252,48 @@ export default function StageHeader({
 
 
   return (
+    <>
+    {/* The slim head (M1): a sticky line of no height of its own, so it takes no room in the page; its bar hangs from
+        it under the shell bar while the title is out of view. Before the header, so it is already stuck when it shows —
+        after it, it would show at its place in the flow, over the lead. Hidden, it is `inert`: not in the tab order,
+        not read. */}
+    <div className="cc-no-print sticky top-14 z-cc-sticky h-0">
+      <div
+        data-stage-head-slim=""
+        data-shown={slim ? 'true' : 'false'}
+        aria-hidden={slim ? undefined : true}
+        inert={!slim}
+        className={`flex h-11 items-center gap-2 rounded-b-cc-card border border-t-0 border-cc-line bg-cc-surface pr-3 pl-1 shadow-[var(--cc-shadow-strip)] transition-opacity duration-150 motion-reduce:transition-none ${slim ? 'visible opacity-100' : 'invisible opacity-0'}`}
+      >
+        {slimBack ? (
+          <Link
+            href={slimBack.href}
+            data-stage-head-slim-back=""
+            aria-label={`Back to ${slimBack.label}`}
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-cc-ink-muted no-underline hover:text-cc-ink"
+          >
+            <ChevronLeft size={16} aria-hidden={true} />
+          </Link>
+        ) : null}
+        {eyebrowTool || onRedesign ? (
+          <span data-stage-head-slim-tool="" className="inline-flex shrink-0 items-center gap-2 cc-text-cell font-semibold text-cc-ink-muted max-sm:hidden">
+            <span aria-hidden="true" className="inline-flex shrink-0 [&>svg]:size-4">
+              {icon ?? (ToolIcon ? <ToolIcon size={16} /> : null)}
+            </span>
+            {onRedesign ? REDESIGN_LABEL : eyebrowTool}
+            <span aria-hidden="true">·</span>
+          </span>
+        ) : null}
+        <span data-stage-head-slim-title="" className="min-w-0 flex-1 truncate text-[15px] leading-5 font-bold text-cc-ink">
+          {heading}
+        </span>
+        {viewLabel ? (
+          <span data-stage-head-slim-view="" className="shrink-0 cc-text-meta whitespace-nowrap text-cc-ink-muted">
+            {viewLabel} view
+          </span>
+        ) : null}
+      </div>
+    </div>
     <header data-stage-header={stage ?? ''} data-family-header="" className={`mt-0 mb-6 ${centred ? 'text-center' : ''}`}>
       {back.kind === 'link' && way.kind === 'link' && (
         <div data-stage-head-row="" className="cc-no-print flex min-h-8 flex-wrap items-center justify-between gap-x-4 gap-y-2">
@@ -218,8 +310,10 @@ export default function StageHeader({
               >
                 <ChevronLeft size={16} aria-hidden="true" className="shrink-0" />
                 <span data-stage-back-lead="">{way.place}</span>
+                {/* On a phone the way back is the place alone, on one line: the program is the title right under it
+                    (release 3.5.4, M1 — the program cut short beside "My workspace" broke the row in two). */}
                 {family?.title ? (
-                  <span data-stage-back-place="" className="inline-flex min-w-0 font-medium">
+                  <span data-stage-back-place="" className="inline-flex min-w-0 font-medium max-sm:hidden">
                     <span aria-hidden="true" className="pr-1">·</span>
                     <span data-stage-back-project="" className="inline-block max-w-[20rem] truncate align-bottom">
                       {family.title}
@@ -281,13 +375,18 @@ export default function StageHeader({
                 </span>
                 <span>{onRedesign ? REDESIGN_LABEL : <>Tool · {eyebrowTool}</>}</span>
               </p>
+              {pageProvenance ? (
+                <span data-stage-page-provenance="" className="inline-flex">
+                  <FamilyChip kind="engine" keep title={PAGE_PROVENANCE_MEANING} />
+                </span>
+              ) : null}
               {eyebrow}
             </div>
           )}
 
           {/* A program name without spaces ("Z_SALES_ORDER_CREATOR" until it has a business name) breaks inside itself
               rather than widening a phone's page. */}
-          <h1 data-stage-title className="m-0 mt-1 cc-text-title text-cc-ink text-balance [overflow-wrap:anywhere]">
+          <h1 data-stage-title className="m-0 mt-1 cc-text-title text-cc-ink text-balance [overflow-wrap:anywhere]" ref={titleRef}>
             {heading}
           </h1>
           {programId ? (
@@ -296,13 +395,16 @@ export default function StageHeader({
             </p>
           ) : null}
 
-          {children && (
-            <p className={`mt-1 cc-text-body text-cc-ink-muted ${centred ? 'max-w-2xl mx-auto' : 'max-w-3xl'}`}>{children}</p>
-          )}
+          {lead ? (
+            <p data-stage-lead="" className={`m-0 mt-1 cc-text-body text-cc-ink-muted ${centred ? 'max-w-2xl mx-auto' : 'max-w-3xl'}`}>
+              {lead}
+            </p>
+          ) : null}
         </div>
 
         {actions && <div className={`flex flex-wrap gap-3 ${centred ? 'justify-center mt-6' : 'shrink-0'}`}>{actions}</div>}
       </div>
     </header>
+    </>
   );
 }

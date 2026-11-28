@@ -689,6 +689,8 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
     // Green is a proof, and nothing here was proved.
     const success = await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--cc-success').trim());
     expect(success, 'the token never reached the browser — the comparison would be vacuous').not.toBe('');
+    // The key is there on request (3.5.4, Q4): open it, so the header is read with everything it can show.
+    await page.locator('[data-stage-header] [data-info-popover="tools-legend"]').click();
     const green = await page.locator('[data-stage-header] *').evaluateAll((els) =>
       els
         .filter((el) => (el as HTMLElement).offsetParent !== null)
@@ -699,7 +701,7 @@ test.describe('the shell, opened by its owner — an ordinary account', () => {
         .map((el) => el.outerHTML.slice(0, 80)),
     );
     expect(green, 'something in the header of an empty project is painted as proven').toEqual([]);
-    // The key itself stands, so the check above is about the project and not about a row without a legend.
+    // The key itself stands open, so the check above is about the project and not about a row without a legend.
     await expect(page.locator('[data-stage-header] [data-tools-legend] [data-tools-legend-entry="done"]')).toBeVisible();
   });
 

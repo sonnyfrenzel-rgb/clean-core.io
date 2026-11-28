@@ -24,18 +24,18 @@ function rail(states: Partial<Record<PhaseKey, PhaseState>>): RailStep[] {
 const none: RedesignDecision = { stage: 'not-decided', option: null, indicated: 'rebuild' };
 
 test.describe('the Re-design model', () => {
-  test('a signed run with no figures stored reads Not started, and Start with Economics (journey review 26.11.2026)', () => {
+  test('a signed run with no figures stored reads Economics Not started, and the next step is the decision, not Economics (ADR-145 (5))', () => {
     const steps = rail({ analyze: 'done', tco: 'partial' }).map((s) => (s.key === 'tco' ? { ...s, badge: ECONOMICS_NOTHING_STORED } : s));
     const m = redesignModel(steps, none);
     expect(m.steps.find((s) => s.key === 'tco')).toMatchObject({ state: 'open', stateWords: 'Not started' });
-    expect(m.next?.label).toBe('Start with Economics: price the options');
+    expect(m.next).toMatchObject({ key: 'decide', path: `#${REDESIGN_DECIDE_ID}`, label: 'Decide: keep, rebuild, move or retire' });
   });
 
   test('work built ahead of the decision is named in the answer, never Not started above a Done', () => {
     const m = redesignModel(rail({ analyze: 'done', transformation: 'done', documentation: 'done', design: 'partial' }), none);
     expect(m.answer).toMatch(/^Built ahead of the decision: Design, Transformation, Documentation\. /);
     expect(m.answer).not.toContain('Not started');
-    expect(redesignModel(rail({ analyze: 'done' }), none).answer).toMatch(/^Not started\./);
+    expect(redesignModel(rail({ analyze: 'done' }), none).answer).toMatch(/^Not decided yet:/);
   });
 
   test('the six tools in PHASES order with the decision as step 2, between Economics and Design', () => {
@@ -45,11 +45,12 @@ test.describe('the Re-design model', () => {
     expect(m.steps.find((s) => s.key === 'decide')?.path).toBeNull();
   });
 
-  test('the next step: Economics first, then the decision, then Design', () => {
-    expect(redesignModel(rail({ analyze: 'done' }), none).next).toMatchObject({ key: 'tco', path: 'tco', label: 'Start with Economics: price the options' });
-    expect(redesignModel(rail({ analyze: 'done', tco: 'partial' }), none).next?.label).toBe('Continue in Economics: price the options');
+  test('the next step: the decision first, priced or not, then Design; Economics is never the next step (ADR-145 (5))', () => {
+    expect(redesignModel(rail({ analyze: 'done' }), none).next).toMatchObject({ key: 'decide', path: `#${REDESIGN_DECIDE_ID}` });
+    expect(redesignModel(rail({ analyze: 'done', tco: 'partial' }), none).next?.key).toBe('decide');
     const priced = redesignModel(rail({ analyze: 'done', tco: 'done' }), none);
     expect(priced.next).toMatchObject({ key: 'decide', path: `#${REDESIGN_DECIDE_ID}` });
+    expect(priced.next?.note).toBe('One page: cost, the four options, your answers, one confirmation. Not counted against your runs.');
     const decided = redesignModel(rail({ analyze: 'done', tco: 'done' }), { stage: 'confirmed', option: 'rebuild', indicated: 'rebuild' });
     expect(decided.next).toMatchObject({ key: 'design', path: 'design' });
   });
@@ -79,7 +80,7 @@ test.describe('the Re-design model', () => {
       expect(m.next).toMatchObject({ key: 'decide', path: `#${REDESIGN_DECIDE_ID}`, label: 'Open the decision', done: true });
       expect(m.next?.label).not.toMatch(/Design/);
       expect(m.next?.note).toBe(`Done. ${named} builds nothing, so no step is waiting.`);
-      expect(m.answer).toContain(`Decided: ${named}. Nothing is built, so Re-design is done.`);
+      expect(m.answer).toContain(`Decided: ${named}. Nothing is built, so nothing is waiting.`);
     });
   }
 
@@ -98,7 +99,7 @@ test.describe('the Re-design model', () => {
     expect(chosen.next).toMatchObject({ key: 'decide' });
     expect(chosen.next?.done).toBeUndefined();
     expect(chosen.steps.find((s) => s.key === 'design')?.stateWords).toBe('Not needed once Retire is confirmed');
-    expect(chosen.answer).toBe('Retire chosen, not confirmed yet. Nothing is built after it once it is confirmed.');
+    expect(chosen.answer).toBe('Retire chosen earlier, not recorded yet. Record the decision to end it here.');
     const outdated = redesignModel(rail({ analyze: 'done', tco: 'done' }), { stage: 'outdated', option: 'keep', indicated: null });
     expect(outdated.steps.find((s) => s.key === 'decide')?.state).toBe('stale');
     expect(outdated.next).toMatchObject({ key: 'decide' });
@@ -203,7 +204,9 @@ test.describe('the way on leads through Re-design (ADR-143)', () => {
     const mgmt = code('components/analyze/AnalyzeManagement.tsx');
     expect(mgmt.match(/variant="primary"/g) ?? []).toHaveLength(1);
     expect(mgmt).toContain('An indication, not a decision.');
-    expect(mgmt).toContain('Re-design this program');
+    // Mock-up screen 1 (ADR-145): the one action goes straight to the decision.
+    expect(mgmt).toContain("'Decide what happens to it'");
+    expect(mgmt).not.toContain('Step 1 of 7');
     // No option links into a tool: the options table has no href of a stage.
     expect(mgmt).not.toMatch(/\/(tco|design|transformation|documentation|testing|delivery)[`'"]/);
     expect(mgmt).not.toMatch(/CoachMark|DEC-\d/);
@@ -220,10 +223,11 @@ test.describe('the way on leads through Re-design (ADR-143)', () => {
       expect(tiles, action).toMatch(new RegExp(`<ActionLink href=\\{redesignHref\\(tile(, true)?\\)\\} data-tile-action="${action}"`));
     }
     expect(tiles).toContain('router.push(redesignHref(redesignChoice.tile));');
-    expect(code('components/analyze/RouteCard.tsx')).toContain('Decide in Re-design');
+    expect(code('components/analyze/RouteCard.tsx')).toMatch(/>\s*Decide\s*</);
+    expect(code('components/analyze/RouteCard.tsx')).not.toContain('Re-design');
   });
 
-  test('the tool row of every tool groups the six tools under "Re-design ›"; the Re-design page is its current item', () => {
+  test('the tool row of every tool groups the six tools under "Decide ›" (was Re-design); the Decide page is its current item', () => {
     const bar = code('components/workspace/ToolBar.tsx');
     expect(bar).toContain('data-stage-tools-group="redesign"');
     expect(bar).toContain("aria-current={group.current ? 'page' : undefined}");
@@ -235,14 +239,17 @@ test.describe('the way on leads through Re-design (ADR-143)', () => {
     expect(route).toContain('<RedesignPage');
     const redesign = code('components/redesign/RedesignPage.tsx');
     expect(redesign).toContain('place="redesign"');
-    expect(redesign).toContain('<RedesignView');
-    const view = code('components/redesign/RedesignView.tsx');
-    expect(view).toContain('id={step.key === \'decide\' ? REDESIGN_DECIDE_ID : undefined}');
-    // Read-only apart from the reused decision parts: no write of its own.
+    expect(redesign).toContain('<DecideView');
+    expect(code('lib/redesign.ts')).toContain("export const REDESIGN_LABEL = 'Decide';");
+    const view = code('components/redesign/DecideView.tsx');
+    // Every older address of the decision (`…/redesign#decide`, the redirects of lib/workspace-redirect.ts) lands on it.
+    expect(view).toContain('<section id={REDESIGN_DECIDE_ID}');
+    // The page writes through the commands route only (`decide`, `withdraw-decision`), never Firestore directly.
     for (const src of [redesign, view]) expect(src).not.toMatch(/setDoc|updateDoc|addDoc|fetch\(/);
-    // The demo has its own Re-design page, drawn by the same view, and its onward links lead there.
+    expect(redesign).toContain("command: 'decide'");
+    // The demo has its own Decide page, drawn by the same view, and its onward links lead there.
     expect(code('app/(app)/demo/redesign/page.tsx')).toContain('<DemoRedesign');
-    expect(code('components/demo/DemoRedesign.tsx')).toContain('<RedesignView');
+    expect(code('components/demo/DemoRedesign.tsx')).toContain('<DecideView');
     expect(code('components/demo/DemoAnalyze.tsx')).not.toContain('/demo/workspace?view=management');
     expect(code('components/demo/DemoAnalyze.tsx')).toContain("decideHref={demoRedesignHref('decide')}");
     expect(code('components/demo/DemoAnalyzeBusiness.tsx')).toContain('designHref={demoRedesignHref()}');

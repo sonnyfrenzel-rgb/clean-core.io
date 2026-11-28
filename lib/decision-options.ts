@@ -33,7 +33,7 @@ export const DECISION_OPTION_LABELS: Readonly<Record<DecisionOption, string>> = 
 /** What the option means for the program, in one sentence a business reader can act on. */
 export const DECISION_OPTION_MEANINGS: Readonly<Record<DecisionOption, string>> = Object.freeze({
   keep: 'The program stays as it is and is maintained. Nothing is built; what blocks the standard stays.',
-  rebuild: 'The program is rebuilt as a clean extension on released interfaces. The route is signed off in Design.',
+  rebuild: 'The program is rebuilt as a clean extension on released interfaces. The route is recorded with the decision.',
   standard: 'SAP standard takes over what the program does. Nothing is built; the program is switched off once the standard runs.',
   retire: 'The program is switched off without a replacement. Nothing is built; whoever still needs it has to say so first.',
 });

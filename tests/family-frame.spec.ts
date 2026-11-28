@@ -8,6 +8,7 @@ import {
   FAMILY_CHIP_KINDS,
   FAMILY_CHIP_MAX,
   FAMILY_CHIPS,
+  familyChipKept,
   familyChipOf,
 } from '../lib/family-chips';
 import { PROVENANCE_VALUES } from '../lib/provenance';
@@ -96,6 +97,26 @@ test.describe('one provenance vocabulary of six chips (L2)', () => {
     // 12 px / 600, a pill (ADR-140 W4).
     expect(ai).toMatch(/class="[^"]*\brounded-full\b[^"]*\btext-\[12px\][^"]*\bfont-semibold\b/);
     expect(read('components/family/FamilyChip.tsx')).not.toMatch(/\blabel\??:\s*string/);
+  });
+
+  test('"From the engine" only where it departs; every other chip always (3.5.4, Q5)', async () => {
+    // The normal case on a tool: an engine chip in a block is not kept — the head says it once for the page.
+    expect(familyChipKept({ kind: 'engine' })).toBe(false);
+    expect(familyChipKept({ kind: 'engine', value: 'reconstructed' })).toBe(false);
+    // Departures: imported from your system, or kept on purpose by its caller (the head's own, a contrast).
+    expect(familyChipKept({ kind: 'engine', value: 'imported' })).toBe(true);
+    expect(familyChipKept({ kind: 'engine', keep: true })).toBe(true);
+    for (const kind of FAMILY_CHIP_KINDS.filter((k) => k !== 'engine')) expect(familyChipKept({ kind }), kind).toBe(true);
+    const { default: FamilyChip } = await load<{ default: (p: Record<string, unknown>) => React.ReactElement | null }>(
+      'components/family/FamilyChip.tsx',
+    );
+    expect(renderToStaticMarkup(React.createElement(FamilyChip, { kind: 'engine' }))).not.toContain('data-chip-keep');
+    expect(renderToStaticMarkup(React.createElement(FamilyChip, { value: 'imported' }))).toContain('data-chip-keep');
+    // The rule that does not draw the rest stands once, in the stylesheet, scoped to the tools.
+    const css = read('app/globals.css');
+    expect(css).toContain(":where(body:has([data-stage-frame])) :is([data-family-chip='engine'], [data-provenance='reconstructed']):not([data-chip-keep])");
+    // The head carries the one it keeps.
+    expect(read('components/StageHeader.tsx')).toMatch(/data-stage-page-provenance[\s\S]{0,200}<FamilyChip kind="engine" keep/);
   });
 });
 

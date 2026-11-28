@@ -333,7 +333,7 @@ export default function TcoCalculatorPage() {
   const analysis = project?.analysis ? readStoredAnalysis<AnalysisData>(project.analysis) : null;
   const routeCode = analysis?.extensibilityRouting?.recommendedRoute || project?.extensibilityRoute || null;
   const decision = programDecisionOf(project);
-  // The decision is step 2 of Re-design (ADR-143); Design comes after it.
+  // Back to the decision itself: the Decide page (ADR-143, ADR-145), not an older address that redirects; Design after it.
   const managementHref = redesignHref(String(projectId), 'decide');
   const designHref = `/project/${encodeURIComponent(String(projectId))}/design`;
   const typicalWords = typicalInWords(assumptions);

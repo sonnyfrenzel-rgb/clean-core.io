@@ -7,10 +7,11 @@ import { signInViaLanding } from './helpers/sign-in';
 import { TERMS_VERSION } from '../lib/constants';
 
 /**
- * 3.5.1 (decision-flow S1), rendered: after a decision that builds nothing the Re-design walk ends. Before, Retire,
- * Keep and Move to SAP standard marked only Transformation to Delivery "Not needed" while Design stayed "Not started",
- * so the page's one primary action read "Open Design" for ever. The step model is covered server-free in
- * `redesign-way-on.spec.ts`; this walks the real page: choose Retire, confirm it, and read what the page says then.
+ * ADR-145 (decide in one go), rendered: the Decide page (`/project/[id]/redesign`, was Re-design). Nothing is
+ * pre-selected and the one button cannot be clicked to no effect; one choice, one reason where it departs from the
+ * indication, one dialog that lists what is recorded, one `decide` command; then the result, which ends for an option
+ * that builds nothing. The step model is covered server-free in `redesign-way-on.spec.ts`, the command in
+ * `decide-command.spec.ts`.
  *
  * Needs the emulators and a server (`npx playwright test` as in CI).
  */
@@ -31,7 +32,9 @@ UPDATE ekpo SET loekz = 'L' WHERE ebeln = '1'.
 CALL FUNCTION 'BAPI_PO_CREATE1'.
 `;
 
-test.describe('S1 rendered: a confirmed Retire ends the Re-design walk', () => {
+test.describe('Decide rendered: one choice, one dialog, and a Retire that ends the walk', () => {
+  // One owner and one project for both tests, in order: the second reads what the first left.
+  test.describe.configure({ mode: 'serial' });
   const OWNER = `${unique('decision-ends')}@cleancore-test.io`;
   const ID = unique('decision-ends');
 
@@ -54,52 +57,74 @@ test.describe('S1 rendered: a confirmed Retire ends the Re-design walk', () => {
     });
   });
 
-  test('choose Retire, confirm it: Design to Delivery read "Not needed", the action opens the decision', async ({ page }) => {
+  test('nothing pre-selected, no button without effect; choose Retire with a reason, one dialog, and the walk ends', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await signInViaLanding(page, OWNER, PASSWORD);
     await page.goto(`/project/${ID}/redesign`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-decision-options]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-decide-state="choosing"]')).toBeVisible({ timeout: 90000 });
 
-    // Choose Retire (the reason is asked because it is not the indicated option).
-    await page.locator('[data-option-choose="retire"]').click();
-    const choose = page.getByRole('dialog');
-    await choose.getByRole('textbox').fill('Nobody has run it since the plant closed; we switch it off.');
-    await choose.getByRole('button', { name: 'Choose this option' }).click();
-    await expect(page.locator('[data-decision-option="retire"][data-option-chosen]')).toBeVisible({ timeout: 60000 });
+    // Nothing is pre-selected, and the one button is disabled until a click would record something.
+    await expect(page.locator('[data-decide-option][aria-checked="true"]')).toHaveCount(0);
+    const record = page.locator('[data-decide-record]');
+    await expect(record).toBeDisabled({ timeout: 60000 });
+    await expect(page.locator('[data-decide-bar-summary]')).toContainText('Choose one of the four options.');
+    // The cost line is a simulation, priced before any figure is entered.
+    await expect(page.locator('[data-decide-cost] [data-family-chip="simulation"]')).toBeVisible();
 
-    // Chosen, not confirmed: the decision is still the step that waits, and the walk has not ended.
-    await expect(page.locator('[data-redesign-step="design"] [data-redesign-step-words]')).toHaveText('Not needed once Retire is confirmed');
-    await expect(page.locator('[data-redesign-done]')).toHaveCount(0);
+    // Retire is not the indication here, so the reason is required before the button records anything.
+    await page.locator('[data-decide-option="retire"]').click();
+    await expect(page.locator('[data-decide-option="retire"]')).toHaveAttribute('aria-checked', 'true');
+    await expect(page.locator('[data-decide-needs="nothing-built"] [data-decide-follows]')).toContainText('Nothing is built.');
+    await expect(record).toBeDisabled();
+    await page.locator('[data-decide-reason] textarea').fill('Nobody has run it since the plant closed; we switch it off.');
+    await expect(record).toBeEnabled({ timeout: 60000 });
 
-    // Confirm it.
-    const confirm = page.locator('[data-decision-confirm]');
-    await expect(confirm).toBeEnabled({ timeout: 60000 });
-    await confirm.click();
+    // One dialog, listing what is recorded; nothing is written until it is confirmed.
+    await record.click();
     const box = page.getByRole('dialog');
-    await box.getByRole('button', { name: 'Confirm decision', exact: true }).click();
-    await expect(page.locator('[data-decision-withdraw]')).toBeVisible({ timeout: 60000 });
+    await expect(box).toContainText('Record: Retire?');
+    await expect(box.locator('[data-decide-dialog-lines]')).toContainText('Retire: nothing is built');
+    await expect(box.locator('[data-decide-dialog-lines]')).toContainText('Bound to the signed run');
+    await expect(box.locator('[data-decide-dialog-lines]')).toContainText('Your reason: “Nobody has run it since the plant closed; we switch it off.”');
+    await expect(box).toContainText('A self-declaration by the signed-in account, not an organisational mandate.');
+    await box.getByRole('button', { name: 'Record the decision', exact: true }).click();
 
-    // The walk ends: nothing after the decision waits, and the one action is never "Open Design".
-    for (const key of ['design', 'transformation', 'documentation', 'testing', 'delivery']) {
-      const row = page.locator(`[data-redesign-step="${key}"]`);
-      await expect(row, key).toHaveAttribute('data-redesign-step-state', 'not-needed', { timeout: 60000 });
-      await expect(row.locator('[data-redesign-step-words]'), key).toHaveText('Not needed: Retire builds nothing');
-    }
-    await expect(page.locator('[data-redesign-step="decide"]')).toHaveAttribute('data-redesign-step-state', 'done');
-    const next = page.locator('[data-redesign-next]');
-    await expect(next).toHaveAttribute('data-redesign-next', 'decide');
-    await expect(next).toHaveAttribute('data-redesign-done', '');
-    await expect(next).toHaveText('Open the decision');
-    await expect(next).toHaveAttribute('href', '#decide');
-    await expect(page.locator('#redesign-answer')).toContainText('Decided: Retire. Nothing is built, so Re-design is done.');
-    await expect(page.locator('#redesign-answer')).toContainText('Done. Retire builds nothing, so no step is waiting.');
-    // The answer card's action is the decision, not Design (an option card may still link to Design as a place).
-    await expect(page.locator('#redesign-answer').getByRole('link', { name: 'Open Design' })).toHaveCount(0);
+    // The result: decided, nothing built, Design optional, nothing waiting.
+    await expect(page.locator('[data-decide-state="decided"][data-decide-result-option="retire"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('#decide-answer')).toContainText('Decided: Retire. Nothing is built.');
+    await expect(page.locator('#decide-answer')).toContainText('Nothing is waiting.');
+    const next = page.locator('[data-decide-next="design-optional"]');
+    await expect(next).toHaveText('Read the switch-off list in Design');
+    await expect(page.locator('#decide-answer').getByRole('link', { name: 'Open Design' })).toHaveCount(0);
 
     // A reload reads the same from the record: nothing here is held in the page.
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-redesign-next]')).toHaveAttribute('data-redesign-done', '', { timeout: 90000 });
-    await expect(page.locator('[data-redesign-step="design"]')).toHaveAttribute('data-redesign-step-state', 'not-needed');
+    await expect(page.locator('[data-decide-state="decided"][data-decide-result-option="retire"]')).toBeVisible({ timeout: 90000 });
+
+    // Withdraw: back to choosing, and the earlier choice is named, never pre-selected.
+    await page.locator('[data-decide-withdraw]').click();
+    await page.getByRole('dialog').getByRole('button', { name: 'Withdraw the decision', exact: true }).click();
+    await expect(page.locator('[data-decide-state="choosing"]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-decide-earlier]')).toContainText('Retire was chosen earlier and never recorded.');
+    await expect(page.locator('[data-decide-option][aria-checked="true"]')).toHaveCount(0);
+  });
+
+  test('Rebuild: the route and the business questions come with the decision; a contract that blocks it is said before a click', async ({ page }) => {
+    test.setTimeout(240 * 1000);
+    await page.setViewportSize({ width: 1440, height: 1000 });
+    await signInViaLanding(page, OWNER, PASSWORD);
+    await page.goto(`/project/${ID}/redesign`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-decide-state="choosing"]')).toBeVisible({ timeout: 90000 });
+    await page.locator('[data-decide-option="rebuild"]').click();
+    await expect(page.locator('[data-decide-needs="rebuild"] [data-decide-route]')).toBeVisible();
+    await expect(page.locator('[data-decide-needs="rebuild"] [data-decide-questions]')).toBeVisible();
+    // This source writes EKPO directly: its architecture contract carries a blocking limit, so a Rebuild on the
+    // contract's route cannot be confirmed. The bar says so and the button stays closed: no click without effect, and
+    // no click the server refuses. (The Rebuild dialog's lines are held server-free in decide-page.spec.ts.)
+    const record = page.locator('[data-decide-record]');
+    await expect(page.locator('[data-decide-bar-summary]')).toContainText('A limit of the architecture contract blocks a Rebuild on this route', { timeout: 60000 });
+    await expect(record).toBeDisabled();
+    await expect(page.locator('[data-decide-state="choosing"]')).toBeVisible();
   });
 });

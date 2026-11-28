@@ -467,8 +467,8 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
     ? link('decision', {
         provenance: 'not-determined', provenanceNote: null, value: null, by: null, at: null,
         missing: decision?.status === 'withdrawn'
-          ? 'The decision was withdrawn. Confirm a new one in Re-design.'
-          : 'No decision is recorded. It is taken in Re-design.',
+          ? 'The decision was withdrawn. Record a new one on the Decide page.'
+          : 'No decision is recorded. It is taken on the Decide page.',
       })
     : !decisionIsCurrent(project, decision)
       ? link('decision', {
@@ -478,7 +478,7 @@ export function buildHandoverChain(project: HandoverProject, phases: RailStep[])
           value: `${decision.decisionId} · revision ${decision.revision} — ${decision.summary}`,
           by: decision.status === 'confirmed' && decision.confirmation ? decision.confirmation.account : null,
           at: decision.status === 'confirmed' && decision.confirmation ? decision.confirmation.at : null,
-          missing: 'Recorded for a previous analysis run. Confirm the decision for the current run in Re-design.',
+          missing: 'Recorded for a previous analysis run. Record the decision for the current run on the Decide page.',
         })
     : (() => {
         const open = decision.conditions.filter((c) => c.status === 'open' || c.status === 'not-determined').length;
@@ -1114,7 +1114,7 @@ export function handoverStillNeeded(
   else if (econ.state === 'stale') add('economics', 'A cost scenario checked against the current score', 'tco');
 
   const decision = by('decision');
-  if (decision.provenance !== 'confirmed') add('decision', 'A confirmed decision — it is taken in Re-design', 'management');
+  if (decision.provenance !== 'confirmed') add('decision', 'A confirmed decision — it is taken on the Decide page', 'management');
 
   if (!state.exportedAt || state.blockers.length > 0) add('audit-pack', 'An audit pack — sealed against the signed run when it is downloaded', 'delivery');
   return out;

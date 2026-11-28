@@ -21,11 +21,12 @@ function rail(states: Partial<Record<PhaseKey, PhaseState>>): RailStep[] {
 const none: RedesignDecision = { stage: 'not-decided', option: null, indicated: null };
 
 test.describe('the one next step', () => {
-  test('from Analyze: Economics; from Economics itself: the decision after it, never Economics again', () => {
+  test('from Analyze and from Economics: the decision, never Economics (ADR-145 (5))', () => {
     const steps = rail({ analyze: 'done' });
-    expect(journeyNext(steps, none, 'analyze').next).toMatchObject({ key: 'tco', path: 'tco' });
+    expect(journeyNext(steps, none, 'analyze').next).toMatchObject({ key: 'decide', path: 'redesign#decide' });
     const onEconomics = journeyNext(steps, none, 'tco');
-    expect(onEconomics.after).toMatchObject({ key: 'decide', path: 'redesign#decide' });
+    expect(onEconomics.next).toMatchObject({ key: 'decide', path: 'redesign#decide' });
+    expect(onEconomics.after).toBeNull();
   });
 
   test('priced, not decided: the decision on the Re-design page — the step the tool row never knew', () => {
@@ -68,9 +69,13 @@ test.describe('the one next step', () => {
   });
 });
 
-test('once a tool after Economics holds a record, the way on does not send the reader back to Economics or the decision', () => {
+test('once a tool after Economics holds a record, the way on does not send the reader back to Economics, but still to the decision (ADR-145)', () => {
+  // Before 3.5.4 a rebuild could be confirmed only after Design's sign-off, so the decision was skipped here. Now it
+  // is recorded in one go on the Decide page, route included: the undecided program's next step is the decision.
   const steps = rail({ analyze: 'done', tco: 'partial', design: 'partial' });
   const way = journeyNext(steps, none, 'testing');
-  expect(way.next).toMatchObject({ key: 'design', path: 'design' });
-  expect(journeyNext(steps, none, 'design').after?.key).not.toBe('decide');
+  expect(way.next).toMatchObject({ key: 'decide', path: 'redesign#decide' });
+  expect(journeyNext(steps, none, 'design').next?.key).toBe('decide');
+  const rebuild: RedesignDecision = { stage: 'confirmed', option: 'rebuild', indicated: null };
+  expect(journeyNext(steps, rebuild, 'testing').next).toMatchObject({ key: 'design', path: 'design' });
 });

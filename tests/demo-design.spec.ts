@@ -25,8 +25,8 @@ import { APP_VERSION } from '../lib/version';
  *      answer for this source — the same engine, the same catalog — and carry
  *      no field of the trust chain;
  *   2. the screen tells one story (card = contract), shows no model-written
- *      document, offers no generation, and words the sign-off as what it is in
- *      a demo: a switch in this browser, which the demo's Delivery stage reads;
+ *      document, offers no generation, and confirms no target (ADR-145: the
+ *      decision, route included, is the Decide page's, which the demo never takes);
  *   3. the demo's wording stays in the demo: a real project's Design page keeps
  *      the self-declaration sentences of the signed-in account.
  */
@@ -52,7 +52,6 @@ const MODEL_SECTIONS = [
   'Non-functional requirements',
 ];
 
-const REAL_NOTE = 'A self-declaration of your account, bound to the run you read.';
 const REAL_DIALOG_LEAD = 'A self-declaration by the signed-in account, bound to the run this page shows';
 
 async function openStage(page: Page, stage: string) {
@@ -136,62 +135,19 @@ test.describe('the demo Design stage on screen', () => {
     // No generation in the demo, and none offered beside the canvas.
     await expect(page.getByRole('button', { name: /^(Generate|Regenerate) design$/ })).toHaveCount(0);
 
-    // The sign-off is the Management view's, and says what it is in the demo, not what it is on a real project.
+    // ADR-145: Management shows the decision it works from, which the demo never takes, and leads to the demo's Decide
+    // page; nothing in the demo's Design confirms a target.
     await openStage(page, 'design?view=management');
-    const note = page.locator('#design-answer [data-answer-next]');
-    await expect(note).toContainText('In the demo, confirming is a switch in this browser');
-    await expect(note).not.toContainText('self-declaration');
+    await expect(page.locator('#design-answer [data-answer-next]')).toContainText('The demo records none.');
+    await expect(page.locator('[data-design-decide]')).toHaveAttribute('href', '/demo/redesign');
+    await expect(page.locator('[data-design-confirm]')).toHaveCount(0);
   });
 
-  test('confirming is a switch in this browser that the Delivery stage reads, and withdrawing resets it', async ({ page }) => {
+  test('nothing in the demo confirms a target: Delivery keeps it pending', async ({ page }) => {
     test.setTimeout(240_000);
-    const data = buildDemoDesign(buildDemoProject());
-    const label = LABEL_OF_ROUTE[data.contract!.route.chosen];
-
-    // ADR-130: "Confirm target" is the Management view's one primary action.
     await openStage(page, 'design?view=management');
     await page.getByTestId('demo-reset').click();
-    await expect(page.locator('[data-design-confirm]')).toHaveText(/Confirm target/);
-
-    // "Confirm target" asks first, as on a real project (owner 02.10.2026),
-    // in the demo's own words; only the box's button confirms.
-    await page.locator('[data-design-confirm]').click();
-    const ask = page.locator('[data-design-confirm-ask]');
-    await expect(ask).toContainText(label);
-    await expect(ask).toContainText('bound to the signed run. In the demo it is a switch in this browser.');
-    await expect(ask).not.toContainText('bound to the run this page shows');
-    // The demo has one target to confirm; there is no other to choose.
-    await expect(page.locator('[data-design-confirm-other]')).toHaveCount(0);
-    await page.locator('[data-cc-message-box] button:has-text("Confirm target")').click();
-    const dialog = page.locator('[data-design-signoff-dialog]');
-
-    // Confirmed: the answer card says so, attributed to nobody.
-    const card = page.locator('#design-answer');
-    await expect(card.locator('[data-answer]')).toHaveText('The target is confirmed, in this browser only.');
-    await expect(card).toContainText('In this browser only: attributed to nobody');
-    await expect(card).not.toContainText('self-declaration');
-    await expect(page.locator('[data-design-confirm]')).toHaveText('Change target');
-    await page.locator('[data-design-confirm]').click();
-    await expect(dialog.getByTestId('demo-confirm-target')).toHaveAttribute('aria-pressed', 'true');
-    await page.keyboard.press('Escape');
-
-    // The shared state: the demo's Delivery stage reads the target as confirmed.
-    await openStage(page, 'delivery');
-    const delivery = page.locator('[data-demo-delivery]');
-    await expect(delivery).toContainText('Confirmed here');
-    await expect(delivery).not.toContainText('Pending sign-off');
-
-    // Withdrawing resets it, there too.
-    await openStage(page, 'design?view=management');
-    await expect(page.locator('[data-design-confirm]')).toHaveText('Change target');
-    await page.locator('[data-design-confirm]').click();
-    const withdraw = page.locator('[data-design-signoff-dialog]').getByTestId('demo-confirm-target');
-    await expect(withdraw).toHaveText('Withdraw the confirmation');
-    await withdraw.click();
-    await expect(withdraw).toHaveAttribute('aria-pressed', 'false');
-    await page.keyboard.press('Escape');
-    await expect(page.locator('[data-design-confirm]')).toHaveText('Confirm target');
-
+    await expect(page.locator('[data-design-confirm], [data-testid="demo-confirm-target"]')).toHaveCount(0);
     await openStage(page, 'delivery');
     await expect(page.locator('[data-demo-delivery]')).toContainText('Pending sign-off');
     await expect(page.locator('[data-demo-delivery]')).not.toContainText('Confirmed here');
@@ -232,30 +188,26 @@ test.describe('the demo wording stays in the demo', () => {
       roadmap: [],
     });
     const seeded = await seedStageProject({ prefix: 'ddwording', acceptTerms: true, rich: true });
-    await adminMergeDoc('projects', seeded.projectId, { solutionDesign: DESIGN_JSON });
+    await adminMergeDoc('projects', seeded.projectId, {
+      solutionDesign: DESIGN_JSON,
+      targetArchitecture: 'rap',
+      approvedByArchitect: true,
+      architectJustifiedOverride: '',
+      architectSignOffAt: new Date().toISOString(),
+      approvedBy: seeded.email,
+    });
 
     await signInThroughForm(page, seeded);
-    // Since 3.5.0 Confirm target is the Management view's action (ADR-130 (1), G8); the note under it says what it is.
+    // Since ADR-145 the route is recorded on the Decide page; "Change target" stays in Design for a route on record,
+    // and its sign-off speaks in the real words.
     await page.goto(`/project/${seeded.projectId}/design?view=management`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-design-confirm]')).toBeEnabled({ timeout: 120_000 });
-
-    const note = page.locator('#design-confirm-note');
-    await expect(note).toContainText(REAL_NOTE);
-    await expect(note).not.toContainText('In the demo');
-
-    // The question first (owner 02.10.2026), in the real wording.
-    await page.locator('[data-design-confirm]').click();
-    const ask = page.locator('[data-design-confirm-ask]');
-    await expect(ask).toContainText(REAL_DIALOG_LEAD);
-    await expect(ask).not.toContainText('In the demo');
-    await page.locator('[data-design-confirm-other]').click();
+    const change = page.locator('[data-design-confirm]');
+    await expect(change).toHaveText(/Change target/, { timeout: 120_000 });
+    await change.click();
     const dialog = page.locator('[data-design-signoff-dialog]');
     await expect(dialog).toContainText(REAL_DIALOG_LEAD);
     await expect(dialog).not.toContainText('In the demo');
-    await dialog.locator('button:has-text("Confirm & Lock Architecture")').click();
-
-    await expect(page.locator('#design-answer [data-answer]')).toHaveText('The target is confirmed.', { timeout: 60_000 });
-    await expect(note).toContainText(REAL_NOTE);
+    await page.keyboard.press('Escape');
     await expect(page.locator('[data-design-view]')).not.toContainText('In the demo');
   });
 });

@@ -1,18 +1,15 @@
 'use client';
 
 import { useMemo } from 'react';
-import { CheckCircle2, Circle } from 'lucide-react';
-import CcButton from '@/components/cc/Button';
 import CcMessageStrip from '@/components/cc/MessageStrip';
 import CcSkeleton from '@/components/cc/Skeleton';
 import DesignCanvasStage, { type DesignDocSection } from '@/components/design/DesignCanvasStage';
-import DesignConfirmTarget from '@/components/design/DesignConfirmTarget';
+import CcLinkButton from '@/components/cc/LinkButton';
+import { demoRedesignHref } from '@/lib/redesign';
 import {
   DesignCard,
-  DesignChecklist,
   DesignDecisionBox,
   DesignObjectTable,
-  DesignOptions,
   DesignSection,
   DesignTargetBoardView,
 } from '@/components/design/DesignViewParts';
@@ -23,7 +20,7 @@ import { useAroundTheMap } from '@/hooks/useAroundTheMap';
 import { stageViewOf, useLocationSearch } from '@/lib/location-search';
 import { PAGE_ANCHOR_LABELS } from '@/lib/page-anchors';
 import { NO_BUSINESS_QUESTIONS } from '@/lib/design-business-answers';
-import { NO_DESIGN_DECISION, designAnchors, designObjects, designSignOffChecklist, designTargetBoard } from '@/lib/design-views';
+import { NO_DESIGN_DECISION, designAnchors, designObjects, designTargetBoard } from '@/lib/design-views';
 import type { Project } from '@/lib/types';
 import RoutingRationale from '@/components/design/RoutingRationale';
 import RequirementsEntryCard from '@/components/requirements/RequirementsEntryCard';
@@ -44,8 +41,8 @@ import type { DemoDesignData } from '@/lib/demo-design';
  * The Design stage of the demo — the same tool as a real project's
  * (`app/(app)/project/[projectId]/design/page.tsx`), in its three views (ADR-130): Business today's process in
  * Analyze's phases (the demo answers no business question, so nothing is marked), IT the canvas drawn by
- * `architectureCanvasModel` with the contract, its alternatives and the object table, Management the checklist
- * before sign-off with *Confirm target*. Fed from the server (`lib/demo-design.ts`) with the
+ * `architectureCanvasModel` with the contract, its alternatives and the object table, Management the decision it
+ * works from, which the demo never takes (ADR-145: no "Confirm target" in Design). Fed from the server (`lib/demo-design.ts`) with the
  * answers a real page reads from its two routes, so the picture, the route and
  * the alternatives tell the one story the contract tells.
  *
@@ -53,8 +50,7 @@ import type { DemoDesignData } from '@/lib/demo-design';
  *
  *   - the design document is a model's work, and a demo makes no model call —
  *     its drawer says where the demo stops instead of showing a document;
- *   - the sign-off is a switch in this browser (`targetConfirmed`, read by the
- *     demo's Delivery stage), attributed to nobody and bound to no run.
+ *   - the decision is never taken in the demo: Management leads to the demo's Decide page, which records nothing.
  */
 
 /** The nine sections a model writes on a real project, named so the reader knows what is missing. */
@@ -83,12 +79,12 @@ export default function DemoDesign({
   demo,
   data,
   confirmed,
-  onConfirm,
 }: {
   demo: DemoProject;
   data: DemoDesignData | null;
   confirmed: boolean;
-  onConfirm: (next: boolean) => void;
+  /** Kept for the caller; since ADR-145 nothing in the demo's Design confirms a target. */
+  onConfirm?: (next: boolean) => void;
 }) {
   // The view is the address's, never stored (ADR-105); the demo has no program decision (ADR-130 (2)).
   const view = stageViewOf(useLocationSearch());
@@ -127,43 +123,10 @@ export default function DemoDesign({
   const label = (code && architectureOptionLabel(code)) ?? code ?? 'the recommended route';
   const edition = TARGET_EDITION_NAMES[demo.deployment === 'private' ? 'private' : 'public'];
   const targetLine = `${edition} assumed · the demo has no run to bind it`;
-  const checklist = designSignOffChecklist({
-    answers: NO_BUSINESS_QUESTIONS,
-    designWritten: false,
-    designStale: false,
-    targetLine,
-    targetBound: false,
-    outside: false,
-    confirmed,
-  });
   const anchors = designAnchors(view, 'none', { open: 0, objects: objects.rows.length, steps: board.steps }).filter(
     (a) => a.key !== 'questions' && a.key !== 'next' && a.key !== 'requirements',
   );
   const decisionBox = <DesignDecisionBox decision={NO_DESIGN_DECISION} economicsHref="/demo/tco" managementHref={null} outside={false} />;
-
-  const signOffPanel = (
-    <div data-testid="demo-signoff" className="flex flex-col gap-4">
-      <p className="m-0 cc-text-body text-cc-ink">
-        On a real project this is where a person puts their name to the target: a self-declaration, not an
-        organisational approval. In the demo it is a switch in this browser. No name is recorded, nothing is stored,
-        and nothing downstream is unlocked by it.
-      </p>
-      <div>
-        {/* Once pressed it steps back to ghost rather than a success colour —
-            green says "proven" (§1.1), and a switch in a browser proves nothing. */}
-        <CcButton
-          variant={confirmed ? 'ghost' : 'primary'}
-          density="cozy"
-          data-testid="demo-confirm-target"
-          aria-pressed={confirmed}
-          onClick={() => onConfirm(!confirmed)}
-          icon={confirmed ? <CheckCircle2 size={16} aria-hidden={true} /> : <Circle size={16} aria-hidden={true} />}
-        >
-          {confirmed ? 'Withdraw the confirmation' : `Confirm ${label}`}
-        </CcButton>
-      </div>
-    </div>
-  );
 
   const documentFallback = (
     <div data-testid="demo-design-document">
@@ -208,14 +171,13 @@ export default function DemoDesign({
             ],
           }
         : {
-            question: 'No decision yet · is the design ready to sign off?',
-            answer: confirmed ? 'The target is confirmed, in this browser only.' : 'Not ready on a real project: the business answers and the written design are missing.',
-            condition: `The demo designs a rebuild: ${label}.`,
+            question: 'No decision yet · what do we build?',
+            answer: 'Not decided in the demo. In your own project the decision is taken on the Decide page, route included.',
+            condition: `The demo designs a rebuild meanwhile: ${label}. ${targetLine}.`,
             facets: [
-              { id: 'decision', label: 'Decision and cost', value: 'Not taken yet', note: 'priced in Economics, decided in Re-design' },
+              { id: 'decision', label: 'Decision and cost', value: 'Not taken yet', note: 'decided on the Decide page' },
               { id: 'target', label: 'Target', value: route, note: targetLine },
               { id: 'fit', label: 'Fit to clean core', value: `${objects.withSuccessor} of ${sapObjects}`, note: 'SAP objects on a released path' },
-              { id: 'confirmed', label: 'Target confirmed', value: confirmed ? 'Here only' : 'No', note: 'a switch in this browser' },
             ],
           };
 
@@ -231,21 +193,15 @@ export default function DemoDesign({
         answer={card.answer}
         condition={card.condition}
         action={
-          view === 'management' && code ? (
-            <DesignConfirmTarget
-              label={label}
-              onConfirm={() => onConfirm(true)}
-              signOffPanel={signOffPanel}
-              locked={confirmed}
-              disabled={false}
-              dialogLead={SIGN_OFF_WORDING.dialogLead}
-              chooseOther={false}
-            />
+          view === 'management' ? (
+            <CcLinkButton href={demoRedesignHref()} variant="primary" data-design-decide="">
+              Decide
+            </CcLinkButton>
           ) : (
             decisionBox
           )
         }
-        actionNote={view === 'management' ? (confirmed ? SIGN_OFF_WORDING.confirmed : SIGN_OFF_WORDING.open) : undefined}
+        actionNote={view === 'management' ? 'One page: cost, the four options, one confirmation. The demo records none.' : undefined}
         facets={card.facets}
       />
 
@@ -312,16 +268,6 @@ export default function DemoDesign({
         </>
       ) : null}
 
-      {view === 'management' ? (
-        <>
-          <DesignSection id="design-checklist" title="Before sign-off" lead="What stands between the decision and the confirmed target.">
-            <DesignChecklist rows={checklist.rows} />
-          </DesignSection>
-          <DesignSection id="design-options" title="The four options" lead="Decided in Re-design. The demo has no decision; Design designs a rebuild meanwhile.">
-            <DesignOptions decided="none" />
-          </DesignSection>
-        </>
-      ) : null}
     </div>
   );
 }

@@ -405,6 +405,7 @@ export const PROJECT_COMMANDS = [
   'record-open-question',
   'close-testing',
   'reopen-testing',
+  'decide',
 ] as const;
 export type ProjectCommandName = (typeof PROJECT_COMMANDS)[number];
 
@@ -451,7 +452,21 @@ export type ProjectCommandBody =
    * what failed — is the server's, never the body's.
    */
   | { command: 'close-testing'; reason: string; note?: string; expectedSubject: string }
-  | { command: 'reopen-testing' };
+  | { command: 'reopen-testing' }
+  /**
+   * ADR-145 — the decision in one go: the option (for a Rebuild its route), the reason, the sign-off, the draft and the
+   * confirmation, in one transaction (`decideSignOff`, then `decideRecord`). Bound like `confirm-decision`: the run and
+   * its evidence, and `expectedDecisionBasis` (`decisionBasisOf`, `lib/decide.ts`) for the need revision and the record
+   * the page read.
+   */
+  | {
+      command: 'decide';
+      targetArchitecture: TargetArchitectureCode;
+      justification?: string;
+      expectedRunId: string;
+      expectedEvidenceDigest: string;
+      expectedDecisionBasis: string;
+    };
 
 /** The part of the project document a command is allowed to look at. */
 export interface ProjectCommandState {
@@ -1077,6 +1092,12 @@ export function validateProjectCommand(
     return { ok: true, action: 'PROJECT_TESTING_REOPENED', fields: { testingClosure: null } };
   }
 
+  // ADR-145: `decide` derives the decision inside the transaction, so it is validated in two steps around that
+  // derivation (`decideSignOff`, `decideRecord`), never here on its own.
+  if (command === 'decide') {
+    return refuse(400, 'decide-needs-derivation', 'A decision in one go is validated with its derivation, by decideSignOff and decideRecord.');
+  }
+
   // The only command left: `withdraw-decision`. An `if` rather than a bare
   // fallthrough — a command added here later must say which one it is rather
   // than silently inheriting whatever sits last in the function.
@@ -1103,6 +1124,90 @@ export function validateProjectCommand(
   }
 
   return refuse(400, 'unknown-command', `command must be one of ${PROJECT_COMMANDS.join(', ')}.`);
+}
+
+/* ------------------------------------------------------------ ADR-145 */
+
+/**
+ * `decide`, step 1 — before the derivation: the shape, the record's state, the binding to the run, and the sign-off the
+ * option stands on. The sign-off is `approve-architecture`'s own, validated by it (the departure check against the
+ * contract's recommendation included), so a decision in one go refuses everything a sign-off refuses.
+ *
+ * The route then compares `expectedDecisionBasis` with the basis of the decision it derives from the project as read
+ * (`decisionBasisOf`), applies these fields to that project, derives again, and hands the draft to `decideRecord`.
+ */
+export function decideSignOff(body: unknown, state: ProjectCommandState, actor: ProjectCommandActor): ProjectCommandResult {
+  if (!isPlainObject(body) || body.command !== 'decide') return refuse(400, 'malformed', 'A decision in one go is a decide command.');
+  if (typeof state.activeRunId !== 'string' || state.activeRunId.length === 0) {
+    return refuse(409, 'no-run', 'The project has no signed analysis run to decide on.');
+  }
+  // A confirmed decision is not decided over: the record keeps who confirmed it and when. Withdraw it first; the next
+  // decision is then a new revision, as `record-decision-draft` has always required.
+  const storedStatus = isPlainObject(state.decision) ? state.decision.status : undefined;
+  if (storedStatus === 'confirmed') {
+    return refuse(
+      409,
+      'decision-confirmed',
+      'This project carries a confirmed decision. Withdraw it before you decide again; the new decision is then a new revision. Nothing was written.',
+    );
+  }
+  // Bound to the run the page was read from, in the decision's words (roadmap 8.8, CR-11).
+  const unbound = refuseUnlessBoundToReadRun(body, state, 'decision');
+  if (unbound) return unbound;
+  const basis = body.expectedDecisionBasis;
+  if (typeof basis !== 'string' || !/^[0-9a-f]{64}$/.test(basis)) {
+    return refuse(400, 'missing-decision-basis', 'A decision names what it was read from. Send expectedDecisionBasis.');
+  }
+  const signOff = validateProjectCommand(
+    {
+      command: 'approve-architecture',
+      targetArchitecture: body.targetArchitecture,
+      justification: body.justification,
+      expectedRunId: body.expectedRunId,
+      expectedEvidenceDigest: body.expectedEvidenceDigest,
+    },
+    state,
+    actor,
+  );
+  if (!signOff.ok) return signOff;
+  return { ...signOff, action: 'PROJECT_DECIDED' };
+}
+
+/**
+ * `decide`, step 2 — after the derivation: the draft the server derived from the project with the sign-off applied is
+ * recorded and confirmed, by the same two validations `record-decision-draft` and `confirm-decision` run, in the same
+ * transaction. `derived.draft` is the server's own derivation, so the confirmation's "is this the decision the server
+ * derives" holds by construction, and is still checked; the run binding, a blocked decision and unread costs refuse as
+ * they always did. Returns the sign-off's fields and the confirmed record together.
+ */
+export function decideRecord(
+  body: unknown,
+  state: ProjectCommandState,
+  actor: ProjectCommandActor,
+  signOff: ProjectCommandWrite,
+  derived: { draft: unknown; draftFingerprint: string | null; costBasisNow: DecisionCostBasis | null },
+): ProjectCommandResult {
+  if (!isPlainObject(body) || body.command !== 'decide') return refuse(400, 'malformed', 'A decision in one go is a decide command.');
+  const drafted = validateProjectCommand({ command: 'record-decision-draft', decision: derived.draft }, state, actor);
+  if (!drafted.ok) return drafted;
+  const confirmed = validateProjectCommand(
+    {
+      command: 'confirm-decision',
+      expectedDecisionFingerprint: derived.draftFingerprint ?? '',
+      expectedRunId: body.expectedRunId,
+      expectedEvidenceDigest: body.expectedEvidenceDigest,
+    },
+    { ...state, decision: drafted.fields.decision, derivedDecisionFingerprint: derived.draftFingerprint, costBasisNow: derived.costBasisNow },
+    actor,
+  );
+  if (!confirmed.ok) return confirmed;
+  return {
+    ok: true,
+    action: 'PROJECT_DECIDED',
+    ...(signOff.recommendationBasis ? { recommendationBasis: signOff.recommendationBasis } : {}),
+    ...(signOff.notice ? { notice: signOff.notice } : {}),
+    fields: { ...signOff.fields, ...confirmed.fields },
+  };
 }
 
 /**

@@ -111,8 +111,6 @@ export const PAGE_ANCHOR_IDS = {
     dependencies: 'design-dependencies',
     notRead: 'design-not-read',
     requirements: 'design-requirements',
-    checklist: 'design-checklist',
-    options: 'design-options',
   },
 } as const;
 

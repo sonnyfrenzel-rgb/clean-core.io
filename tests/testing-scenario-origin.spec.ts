@@ -315,7 +315,9 @@ test.describe('the origin on the Testing stage', () => {
     await expect(first.locator('[data-origin-quote]')).toContainText('IF lv_dev_pct > 5.');
     await expect(first.locator('[data-origin-check="anchored"]')).toContainText('matches BR-009 at L412');
     await expect(first.locator('[data-origin-match="BR-009"]')).toBeVisible();
-    await expect(first.locator('[data-family-chip="engine"]')).toBeVisible();
+    // Anchored to the code, in words; the engine chip is the head's one "From the engine" (3.5.4, Q5), not drawn here.
+    await expect(first.locator('[data-origin-matches]')).toContainText('anchored to the code');
+    await expect(first.locator('[data-family-chip="engine"]')).toBeHidden();
     // The scenario itself stays AI-generated.
     await expect(rows.nth(0).locator('[data-scenario-details] [data-family-chip="ai"]').first()).toBeVisible();
     await first.locator('[data-origin-statement] [data-cc-anchor]').first().click();

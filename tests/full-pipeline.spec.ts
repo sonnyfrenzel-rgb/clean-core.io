@@ -346,29 +346,27 @@ test.describe('Clean-Core.io End-to-End Pipeline & Safe Examples Verification', 
     await expect(page.locator('text=/project-root')).toBeVisible();
     console.log('Stage 2 Complete: Visual architecture catalog verified.');
 
-    // Confirm target architecture sign-off
-    console.log('Confirming target architecture sign-off...');
-    // "Confirm target" asks first, in a small box whose own button confirms
-    // the recommendation (owner 02.10.2026). Since 3.5.0 it is the Management view's one primary action, behind
-    // its checklist (ADR-130 (1), G8).
+    // The decision, route included, in one go on the Decide page (ADR-145): Design's Management view leads there and
+    // no longer confirms a target itself.
+    console.log('Recording the decision on the Decide page...');
     await viewRadio('Management').click();
-    await expect(page.locator('[data-design-view="management"] [data-design-checklist]')).toBeVisible({ timeout: 120_000 });
-    await expect(page.locator('[data-design-confirm]')).toBeEnabled({ timeout: 120_000 });
-    await page.locator('[data-design-confirm]').click();
-    const lockBtn = page.locator('[data-cc-message-box] button:has-text("Confirm target")');
-    await lockBtn.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(1000); // Allow any animations/renders to settle
-    
+    await expect(page.locator('[data-design-decide]')).toBeVisible({ timeout: 120_000 });
+    await expect(page.locator('[data-design-confirm]')).toHaveCount(0);
+    await page.locator('[data-design-decide]').click();
+    await expect(page.locator('[data-decide-state="choosing"]')).toBeVisible({ timeout: 120_000 });
+    await page.locator('[data-decide-option="rebuild"]').click();
+    await expect(page.locator('[data-decide-record]')).toBeEnabled({ timeout: 120_000 });
+
     // Listen for console errors during the click
     page.on('console', msg => {
       if (msg.type() === 'error') console.log(`[BROWSER ERROR] ${msg.text()}`);
     });
-    
-    await lockBtn.click();
-    console.log('Lock button clicked, waiting for confirmation...');
-    // A confirmation closes the box; the answer card says the target is confirmed.
-    await expect(page.locator('#design-answer [data-answer]')).toHaveText('The target is confirmed.', { timeout: 60000 });
-    console.log('Architecture confirmed.');
+
+    await page.locator('[data-decide-record]').click();
+    await page.locator('[data-cc-message-box]').getByRole('button', { name: /^(Record only|Record the decision)$/ }).first().click();
+    // One confirmation: the decision, its route and its record, by the signed-in account.
+    await expect(page.locator('[data-decide-state="decided"][data-decide-result-option="rebuild"]')).toBeVisible({ timeout: 60000 });
+    console.log('Decision recorded.');
 
     // --- STAGE 3: TRANSFORMATION ---
     console.log('Navigating to Stage 3: Transformation...');

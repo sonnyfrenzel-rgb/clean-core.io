@@ -210,8 +210,10 @@ test.describe('a stage as a tool, rendered', () => {
           `${key}:${want.meaning}:${want.kind === 'check' ? 1 : 0}:${want.kind === 'dot' ? 1 : 0}:${want.kind === 'half' ? 1 : 0}`,
         );
       }
-      // The legend stands beside "Tools" on every stage.
-      await expect(bar.locator('[data-tools-legend="bar"]'), `${st}: the legend`).toBeVisible();
+      // The legend is there on request (3.5.4, Q4): a quiet toggle at the end of the row on every stage, the key
+      // itself closed until asked for.
+      await expect(bar.locator('[data-tools-legend]'), `${st}: the legend stands open`).toHaveCount(0);
+      await expect(bar.locator('[data-info-popover="tools-legend"]'), `${st}: the legend toggle`).toBeVisible();
     }
 
     // And a link to another tool goes there, with the way back intact.
@@ -265,7 +267,8 @@ test.describe('a stage as a tool, rendered', () => {
       await expect(page.locator('nav[aria-label="Workflow phases"]'), `demo ${st}: a second navigation`).toHaveCount(0);
       // The same rule on the demo's own rail: a check where it has something on
       // record, a dot where it is out of date, nothing else — and the legend.
-      await expect(bar.locator('[data-tools-legend="bar"]'), `demo ${st}: the legend`).toBeVisible();
+      await expect(bar.locator('[data-tools-legend]'), `demo ${st}: the legend stands open`).toHaveCount(0);
+      await expect(bar.locator('[data-info-popover="tools-legend"]'), `demo ${st}: the legend toggle`).toBeVisible();
       for (const step of DEMO_RAIL) {
         const link = bar.locator(`a[data-workspace-tool="${step.key}"]`);
         const want = toolMark(step);

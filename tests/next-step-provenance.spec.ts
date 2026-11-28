@@ -300,52 +300,37 @@ test.describe('the card, as the reader sees it', () => {
     });
   });
 
-  // The "Next step" card is gone with the workspace page (AB-11); Re-design (ADR-143) is the way on and says the
-  // next step there: one action, the reason under it, and the steps in the one order, each state read from the
-  // project, so the reader sees why that step is next. No model wrote any of it, so no AI-generated chip.
-  const redesign = async (page: Page, id: string) => {
-    await page.goto(`/project/${id}/redesign`, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('[data-redesign="ready"]', { timeout: 60000 });
+  // The "Next step" card is gone with the workspace page (AB-11). Since ADR-145 the decision is the next step of a
+  // signed program, taken on the Decide page; every tool says it in its "Next step" bar, read from the record by the
+  // one rule (`journeyNext`), with the reason under it. No model wrote any of it, so no AI-generated chip.
+  const economics = async (page: Page, id: string) => {
+    await page.goto(`/project/${id}/tco`, { waitUntil: 'domcontentloaded' });
+    await page.waitForSelector('[data-next-step-bar]', { timeout: 60000 });
   };
 
-  test('an open point arrives with its reason and its "why this one", never as a model sentence', async ({ page }) => {
+  test('an open point arrives with its reason, never as a model sentence: the decision, from every tool', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    await redesign(page, OPEN_ID);
+    await economics(page, OPEN_ID);
 
-    // A signed run and nothing after it: Economics, step 1 of Re-design, is next.
-    const next = page.locator('[data-redesign-next]');
-    await expect(next).toHaveAttribute('data-redesign-next', 'tco');
-    await expect(page.locator('#redesign-answer [data-answer-next]')).toContainText('Step 1 of 7.');
-
-    // Why this one: the one step before it, Analyze, is on record, and the row it names is the first not done.
-    await expect(page.locator('[data-redesign-step="analyze"]')).toHaveAttribute('data-redesign-step-state', 'done');
-    const rows = page.locator('[data-redesign-steps] > li');
-    const states = await rows.evaluateAll((els) =>
-      els.map((el) => ({ key: el.getAttribute('data-redesign-step'), state: el.getAttribute('data-redesign-step-state'), next: el.hasAttribute('data-redesign-step-next') })),
-    );
-    const at = states.findIndex((r) => r.next);
-    expect(states[at]?.key).toBe('tco');
-    expect(states.slice(0, at).every((r) => r.state === 'done'), 'a step before the next one is not on record').toBe(true);
-    const text = await page.locator('[data-redesign="ready"]').innerText();
-    expect(text, 'the reader is shown a share instead of a fact').not.toMatch(/\d\s*%/);
-
+    // A signed run and nothing decided: the decision is next, never Economics itself (ADR-145 (5)).
+    const target = page.locator('[data-next-step-bar] [data-next-step-target]');
+    await expect(target).toContainText('Decide: keep, rebuild, move or retire');
+    await expect(target).toHaveAttribute('href', new RegExp(`/project/${OPEN_ID}/redesign#decide$`));
+    const bar = await page.locator('[data-next-step-bar]').innerText();
+    expect(bar, 'the reader is shown a share instead of a fact').not.toMatch(/\d\s*%/);
     // Read from the record, never claimed as a model's sentence.
-    await expect(page.locator('#redesign-answer [data-family-chip="ai"]')).toHaveCount(0);
+    await expect(page.locator('[data-next-step-bar] [data-family-chip="ai"]')).toHaveCount(0);
   });
 
-  test('a project whose tools are on record: nothing is offered as done that is not, and it says where that comes from', async ({ page }) => {
+  test('a project whose tools are on record: the decision is still what waits, with one primary and no model chip', async ({ page }) => {
     test.setTimeout(180 * 1000);
     await signIn(page, ADMIN);
-    await redesign(page, DONE_ID);
-
-    // The tools this fixture finished read "Done", each from the record; the answer names what is still open,
-    // and it is the one action on the card, never a model's suggestion.
-    for (const key of ['design', 'transformation', 'documentation', 'testing']) {
-      await expect(page.locator(`[data-redesign-step="${key}"]`), key).toHaveAttribute('data-redesign-step-state', 'done');
-    }
-    await expect(page.locator('#redesign-answer [data-cc-button="primary"]')).toHaveCount(1);
-    await expect(page.locator('#redesign-answer [data-family-chip="ai"]')).toHaveCount(0);
-    await expect(page.locator('#redesign-steps')).toContainText('Each state is read from the project');
+    await page.goto(`/project/${DONE_ID}/redesign`, { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-decide-state="choosing"]')).toBeVisible({ timeout: 60000 });
+    // One primary on the page: the bar's confirmation, disabled until an option is chosen.
+    await expect(page.locator('[data-redesign="ready"] [data-cc-button="primary"]')).toHaveCount(1);
+    await expect(page.locator('[data-decide-record]')).toBeDisabled();
+    await expect(page.locator('[data-decide] [data-family-chip="ai"]')).toHaveCount(0);
   });
 });

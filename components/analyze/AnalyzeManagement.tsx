@@ -20,7 +20,6 @@ import { useOpenQuestions } from '@/hooks/useOpenQuestions';
 import { useCustomerTexts } from '@/hooks/useCustomerTexts';
 import { loadProjectAndHydrate } from '@/lib/project-loader';
 import { workflowSteps } from '@/lib/workflow-steps';
-import { pricedOptions } from '@/lib/economics-record';
 import { figuresOwnerWords } from '@/lib/typical-assumptions';
 import { scoreBand } from '@/lib/clean-core-score';
 import { programSummaryFactsOf } from '@/lib/program-summary-facts';
@@ -30,6 +29,11 @@ import { anchorLabel } from '@/lib/first-look';
 import { DECISION_OPTION_LABELS } from '@/lib/decision-options';
 import { OPTION_SIGNAL_WORDS } from '@/lib/decision-option-signals';
 import { REDESIGN_LABEL, redesignHref, redesignModel } from '@/lib/redesign';
+import { decideCostLine } from '@/lib/decide';
+import { initialCostAssumptions } from '@/components/tco/OptionComparison';
+import { restoreAssumptions } from '@/lib/economics-record';
+import { proposeEffort, proposeMaintenanceBaseline } from '@/lib/cost-assumptions';
+import { countSourceLines } from '@/lib/source-lines';
 import { openSteeringOnePager } from '@/lib/steering-open';
 import SteeringOnePager from '@/components/workspace/SteeringOnePager';
 import { FlowItem, LevelMix, NumberedItem, Section } from '@/components/analyze/ManagementParts';
@@ -40,20 +44,20 @@ import type { Project } from '@/lib/types';
  * Analyze in the Management view — a page of its own (roadmap 3.5.0 item (2), plan AB-10; owner request 23.11.2026,
  * ADR-143; mock-up `mgmt-view.html`, screen 1; the family frame of ADR-140).
  *
- * The decision is the page's subject and Re-design is its one way on (UX review 22.11.2026, Q7):
+ * The decision is the page's subject and the Decide page its one way on (UX review 22.11.2026, Q7; ADR-145):
  *
  *   - **The answer card**: "Keep, rebuild or retire: what does this program need?", what the program is for in one
  *     sentence (`managementInShort`), what needs a decision, the analysis' *indication* worded "an indication, not a
- *     decision" (plan N1), and **one primary action, "Re-design this program"** → `/project/[id]/redesign`. Four
+ *     decision" (plan N1), and **one primary action, "Decide what happens to it"** → `/project/[id]/redesign`. Four
  *     facets: distance to clean core with the Level A–D mix (UI only, never in the signed pack), cost (Economics'
- *     stored figures read as stored, else "Step 1 of Re-design", with the one "Not priced yet" line under the options; Analyze computes no amount), risk if
+ *     stored figures read as stored, else the Decide page's simulation on typical assumptions, marked so; Analyze stores no amount), risk if
  *     nothing changes, what we need from you.
  *   - **"On this page"**: Options · Risk · What we need from you · Still open.
  *   - **The four options** without a tool link; the cost is said once for all four when nothing is priced.
- *   - **The side column**: the way on (Analyze → Re-design), accountability.
+ *   - **The side column**: the way on (Analyze → Decide), accountability.
  *
- * The decision itself is shown read-only here: it is taken on Re-design, as its step 2, after Economics has priced the
- * options. Nothing is written on this page, and the view is never stored (CLAUDE.md).
+ * The decision itself is shown read-only here: it is taken on the Decide page, in one go (ADR-145). Nothing is written
+ * on this page, and the view is never stored (CLAUDE.md).
  */
 export default function AnalyzeManagement({ projectId, fallback }: { projectId: string; fallback: React.ReactNode }) {
   const [project, setProject] = useState<Project | null>(null);
@@ -146,7 +150,14 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
   const score = typeof project.cleanCoreScore === 'number' ? project.cleanCoreScore : null;
   const band = score !== null ? scoreBand(score) : null;
   const econ = project._economics ?? null;
-  const priced = econ ? pricedOptions(econ) : null;
+  // The Decide page's simulation (ADR-145 (5)): the stored figures when they price all four, else typical assumptions,
+  // computed here and never stored.
+  const loc = legacyCode.trim() ? countSourceLines(legacyCode) : null;
+  const costLine = decideCostLine({
+    stored: econ ? restoreAssumptions(econ.assumptions) : null,
+    seed: initialCostAssumptions(),
+    proposals: { effort: proposeEffort(loc), baseline: loc === null ? null : proposeMaintenanceBaseline(loc, score) },
+  });
   const focus = chosen ?? indicated;
   const focusCost = focus && focus.cost.value ? focus.cost.value : null;
   const anyCost = options.cards.some((c) => c.cost.value !== null);
@@ -158,11 +169,12 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
 
   const redesign = redesignHref(projectId);
   const continueLabel =
-    way.next && way.next.key !== 'tco' && way.next.key !== 'analyze'
-      ? `Continue the re-design: ${way.next.key === 'decide' ? 'decide' : way.steps.find((s) => s.key === way.next?.key)?.label ?? ''}`
-      : 'Re-design this program';
-  const actionNote =
-    way.next && way.next.key === 'tco' ? 'Step 1 of 7: price the options. Not counted against your runs.' : way.next?.note ?? 'Every step of Re-design is on record.';
+    decided && way.next && way.next.key !== 'decide' && way.next.key !== 'analyze'
+      ? `Continue: ${way.steps.find((s) => s.key === way.next?.key)?.label ?? ''}`
+      : decided
+        ? 'Open the decision'
+        : 'Decide what happens to it';
+  const actionNote = decided ? way.next?.note ?? 'Every step is on record.' : 'One page: cost, the four options, your answers, one confirmation. Not counted against your runs.';
 
   const facets: FacetProps[] = [
     {
@@ -182,22 +194,20 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
           note: focusCost,
           href: `#${MANAGEMENT_PAGE_IDS.options}`,
         }
-      : priced
+      : focus && costLine.cost[focus.option]
         ? {
             id: 'cost',
             label: 'Cost',
-            value: `${priced.priced} of ${priced.total}`,
-            unit: 'options priced',
-            note: 'In Economics, step 1 of Re-design.',
+            chip: <FamilyChip kind="simulation" />,
+            value: costLine.cost[focus.option],
+            note: `${DECISION_OPTION_LABELS[focus.option]}, typical assumptions${costLine.period ? `, ${costLine.period}` : ''}`,
             href: `#${MANAGEMENT_PAGE_IDS.options}`,
           }
         : {
             id: 'cost',
             label: 'Cost',
-            // Said once on the page, under the options (UX review Q7): the facet names the step that prices it.
-            value: 'Step 1',
-            unit: 'of Re-design',
-            note: 'Economics prices the options with your figures. Analyze computes no amount.',
+            value: 'Not priced',
+            note: 'The Decide page prices the four options as a simulation. Analyze stores no amount.',
             href: `#${MANAGEMENT_PAGE_IDS.options}`,
           },
     {
@@ -267,7 +277,7 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
             <p data-decision-who={chosen && decided ? '' : undefined} className="m-0 mt-2 cc-text-cell text-cc-ink-muted">
               {chosen && decided
                 ? options.who ?? 'Recorded by the signed-in account: a self-declaration, not a mandate.'
-                : `An indication, not a decision. You decide in ${REDESIGN_LABEL}, after the options are priced.`}
+                : `An indication, not a decision. You decide on the ${REDESIGN_LABEL} page.`}
             </p>
           </div>
         }
@@ -316,7 +326,7 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
             <p data-management-not-priced="" className="m-0 mt-3 cc-text-cell text-cc-ink-muted">
               {anyCost
                 ? `Simulations on ${figuresOwnerWords(econ?.assumptions)} from Economics, not a quote. Analyze computes no amount.`
-                : 'Not priced yet: all four options are priced together in step 1 of Re-design. Analyze computes no amount.'}
+                : 'Not priced yet here: the Decide page prices all four options together, as a simulation. Analyze computes no amount.'}
             </p>
           </Section>
 
@@ -352,7 +362,7 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
             )}
           </Section>
 
-          <Section id={MANAGEMENT_PAGE_IDS.needs} title="What we need from you" lead="Business actions, in order. None of them needs a tool before Re-design starts.">
+          <Section id={MANAGEMENT_PAGE_IDS.needs} title="What we need from you" lead="Business actions, in order. None of them needs a tool before the decision.">
             <ol data-management-needs="" className="m-0 mt-3 list-none p-0">
               {needs.map((g, i) => (
                 <NumberedItem key={g.action} n={i + 1}>
@@ -361,8 +371,8 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
               ))}
               {decided ? null : (
                 <NumberedItem n={needs.length + 1}>
-                  <span className="font-semibold">Start the re-design.</span> The options get priced, then you take the decision: keep, rebuild, move
-                  to SAP standard or retire.
+                  <span className="font-semibold">Decide what happens to it.</span> Keep, rebuild, move to SAP standard or retire, on one page with
+                  the cost and the business questions.
                 </NumberedItem>
               )}
               {decided && needs.length === 0 ? (
@@ -393,7 +403,7 @@ export default function AnalyzeManagement({ projectId, fallback }: { projectId: 
                 <span className="font-semibold">Analyze</span>: done, what it does and how far it is from clean core.
               </FlowItem>
               <FlowItem>
-                <span className="font-semibold">{REDESIGN_LABEL}</span>: price the options, decide, then build the decided option in six tools.
+                <span className="font-semibold">{REDESIGN_LABEL}</span>: keep, rebuild, move to SAP standard or retire, in one go; then the tools build the decided option.
               </FlowItem>
             </ol>
             <p className="m-0 mt-2 cc-text-cell text-cc-ink-muted">

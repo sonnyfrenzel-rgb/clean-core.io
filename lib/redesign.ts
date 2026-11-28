@@ -1,12 +1,13 @@
 /**
- * Re-design — the way on from Analyze (owner request 23.11.2026, ADR-143): "the onward path no longer jumps into the
- * tools but into Re-design and then into the further tools".
+ * The way on from Analyze (owner request 23.11.2026, ADR-143): "the onward path no longer jumps into the tools but into
+ * Re-design and then into the further tools". Since 3.5.4 the page is *Decide* (owner decision 25.11.2026, ADR-145):
+ * the decision in one go, on one page, `/project/[id]/redesign` (`components/redesign/RedesignPage.tsx`).
  *
- * Re-design is one read-only page per project, `/project/[id]/redesign`. It lists the six tools after Analyze in the
- * one tool order (`PHASES`, ADR-128 (5)) with the program decision as a step of its own between Economics and Design,
- * reads every state from what is on record (`workflowSteps()` and the decision record of ADR-092), and offers one
- * primary action: the next step. Nothing here is stored — no "mode", no visit, no view (CLAUDE.md: views are never
- * stored). Pure: no React, no Firestore.
+ * This model is the walk the page and every "next step" read: the six tools after Analyze in the one tool order
+ * (`PHASES`, ADR-128 (5)) with the program decision as a step of its own between Economics and Design, every state
+ * read from what is on record (`workflowSteps()` and the decision record of ADR-092), and the one next step. Economics
+ * is a step, never the next one (ADR-145 (5)). Nothing here is stored — no "mode", no visit, no view (CLAUDE.md: views
+ * are never stored). Pure: no React, no Firestore.
  *
  * Every "go on" link of Analyze leads here (`redesignHref`), and the tool bar of Analyze groups the six tools under
  * "Re-design ›" (`components/workspace/ToolBar.tsx`). The business-question link of Analyze stays a direct link into
@@ -31,8 +32,11 @@ export const REDESIGN_DECIDE_ID = 'decide';
 /** The steps section's id on the Re-design page. */
 export const REDESIGN_STEPS_ID = 'redesign-steps';
 
-/** The name the reader sees in the tool bar, the eyebrow and the links. */
-export const REDESIGN_LABEL = 'Re-design';
+/**
+ * The name the reader sees in the tool bar, the eyebrow and the links: *Decide* since 3.5.4 (owner decision 25.11.2026,
+ * ADR-145), *Re-design* before. The route keeps its segment, `/project/[id]/redesign`, so every link and bookmark holds.
+ */
+export const REDESIGN_LABEL = 'Decide';
 
 /** `/project/{id}/redesign`, or `…#decide` for the decision step. */
 export function redesignHref(projectId: string, hash?: 'decide'): string {
@@ -74,7 +78,7 @@ export interface RedesignStep {
 
 export interface RedesignNext {
   key: RedesignStepKey | 'analyze';
-  /** The primary action's words: "Start with Economics: price the options". */
+  /** The primary action's words: "Decide: keep, rebuild, move or retire". */
   label: string;
   /** Route segment under the project, or `#decide` on this page. */
   path: string;
@@ -101,7 +105,7 @@ export interface RedesignModel {
 export const REDESIGN_PURPOSE: Readonly<Record<RedesignStepKey, string>> = Object.freeze({
   tco: 'The cost of keeping it, the cheapest change that keeps the function, the lowest overall; with your figures or AI proposals.',
   decide: 'Keep, rebuild, move to SAP standard or retire. Recorded by your signed-in account: a self-declaration, not a mandate.',
-  design: 'What the decided option means for this program: the target, the business questions, sign-off.',
+  design: 'What the decided option means for this program: the target and the business questions, written into a design.',
   transformation: 'The new code for the target, every line marked.',
   documentation: 'One document for the program, with the map as its first figure.',
   testing: 'Whether the program is tested, and where it ran.',
@@ -161,7 +165,8 @@ function decisionWords(d: RedesignDecision): { state: RedesignStepState; words: 
 function actionOf(step: RedesignStep, first: boolean): string {
   switch (step.key) {
     case 'tco':
-      return step.state === 'open' ? 'Start with Economics: price the options' : 'Continue in Economics: price the options';
+      // Never the next step (ADR-145 (5)); kept for a caller that names the step itself.
+      return step.state === 'open' ? 'Open Economics: your own figures' : 'Continue in Economics';
     case 'decide':
       return 'Decide: keep, rebuild, move or retire';
     case 'design':
@@ -225,7 +230,7 @@ export function redesignModel(
       key: 'analyze',
       label: analyze?.state === 'stale' ? 'Run the analysis again' : 'Run the analysis first',
       path: 'analyze',
-      note: 'Every step of Re-design stands on a signed analysis run.',
+      note: 'The decision and every tool after it stand on a signed analysis run.',
     };
   } else if (walkEnds) {
     // Nothing is waiting: the decision is the result. The action opens it, as the program's tile does ("Open the
@@ -239,44 +244,40 @@ export function redesignModel(
       done: true,
     };
   } else {
-    const open = out.find((s) => s.state !== 'done' && s.state !== 'not-needed');
+    // Economics is no station the walk waits at (owner decision 25.11.2026, ADR-145 (5)): the Decide page prices the
+    // four options on typical assumptions itself, as a simulation, and own figures stay in Economics. So the next
+    // step is the decision, then the tools after it; Economics stays a step anyone can open.
+    const open = out.find((s) => s.key !== 'tco' && s.state !== 'done' && s.state !== 'not-needed');
     if (open) {
       next = {
         key: open.key,
         label: actionOf(open, open.key === 'design' && out.every((s) => s.key !== 'design' || s.state === 'open')),
         path: open.path ?? `#${REDESIGN_DECIDE_ID}`,
         note:
-          open.key === 'tco'
-            ? 'Step 1 of 7. Not counted against your runs.'
-            : open.key === 'decide'
-              ? 'Step 2 of 7. Recorded by your signed-in account.'
-              : `Step ${open.n} of 7.${open.blocked ? ` ${open.blocked}` : ''}`,
+          open.key === 'decide'
+            ? 'One page: cost, the four options, your answers, one confirmation. Not counted against your runs.'
+            : `Step ${open.n} of 7.${open.blocked ? ` ${open.blocked}` : ''}`,
       };
     }
   }
 
-  const priced = out.find((s) => s.key === 'tco');
   // Tools after the decision already hold work (built ahead of it): the answer names them instead of "Not started"
   // above a list that says Done (journey review 26.11.2026).
   const ahead = out.filter((s) => s.key !== 'tco' && s.key !== 'decide' && (s.state === 'done' || s.state === 'started'));
   const aheadLine = ahead.length ? `Built ahead of the decision: ${ahead.map((s) => s.label).join(', ')}. ` : '';
   const answer = !analysed
-    ? 'Not started. Re-design builds on a signed analysis run, and there is none yet.'
+    ? 'Not started. The decision builds on a signed analysis run, and there is none yet.'
     : decided
       ? buildsNothing
         ? walkEnds
-          ? `Decided: ${DECISION_OPTION_LABELS[decision.option as DecisionOption]}. Nothing is built, so Re-design is done. Design still shows what the decision means for this program, if you want to read it.`
+          ? `Decided: ${DECISION_OPTION_LABELS[decision.option as DecisionOption]}. Nothing is built, so nothing is waiting. Design still shows what the decision means for this program, if you want to read it.`
           : recorded
-            ? `Decided: ${DECISION_OPTION_LABELS[decision.option as DecisionOption]}, out of date: the evidence or the costs changed since it was confirmed. Review it in step 2.`
-            : `${DECISION_OPTION_LABELS[decision.option as DecisionOption]} chosen, not confirmed yet. Nothing is built after it once it is confirmed.`
+            ? `Decided: ${DECISION_OPTION_LABELS[decision.option as DecisionOption]}, out of date: the evidence or the costs changed since it was confirmed. Decide again.`
+            : `${DECISION_OPTION_LABELS[decision.option as DecisionOption]} chosen earlier, not recorded yet. Record the decision to end it here.`
         : next
           ? `Decided: Rebuild. Next: ${next.key === 'decide' ? DECIDE_LABEL : out.find((s) => s.key === next?.key)?.label ?? ''}.`
           : 'Decided: Rebuild. Every step is on record.'
-      : priced && priced.state === 'done'
-        ? `${aheadLine}The options are priced. The decision is next: keep, rebuild, move to SAP standard or retire.`
-        : ahead.length
-          ? `${aheadLine}Not decided yet: the four options are priced with your figures, then you decide.`
-          : 'Not started. First the four options are priced with your figures; then you decide; the decided option is built in the tools after it.';
+      : `${aheadLine}Not decided yet: keep, rebuild, move to SAP standard or retire. The decided option is built in the tools after it.`;
 
   return { steps: out, next, answer, analysed };
 }

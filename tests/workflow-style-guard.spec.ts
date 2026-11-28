@@ -364,8 +364,19 @@ test.describe('the "On this page" bar stands in the same place on every tool', (
       if (last) {
         await page.evaluate((id) => document.getElementById(id)?.scrollIntoView({ block: 'start' }), last);
         await page.waitForTimeout(300);
-        const top = await bars.evaluate((el) => el.getBoundingClientRect().top);
-        if (Math.abs(top - 56) > 2) offSpec.push(`${stage}: scrolled to #${last}, the bar is at y=${top}, not under the shell bar`);
+        // Since 3.5.4 (M1) the slim head stands under the shell bar once the title is out of view, and the bar right
+        // under it: 56 px of shell bar and 44 px of slim head. Both strips are measured, so neither can drift alone.
+        const at = await page.evaluate(() => {
+          const slim = document.querySelector('[data-stage-head-slim]') as HTMLElement | null;
+          const r = slim?.getBoundingClientRect();
+          return {
+            top: (document.querySelector('[data-page-anchors]') as HTMLElement).getBoundingClientRect().top,
+            slim: slim?.getAttribute('data-shown') === 'true' && r ? { top: r.top, bottom: r.bottom } : null,
+          };
+        });
+        if (!at.slim) offSpec.push(`${stage}: scrolled to #${last}, the slim head does not stand`);
+        else if (Math.abs(at.slim.top - 56) > 2) offSpec.push(`${stage}: scrolled to #${last}, the slim head is at y=${at.slim.top}, not under the shell bar`);
+        if (Math.abs(at.top - (at.slim ? at.slim.bottom : 56)) > 2) offSpec.push(`${stage}: scrolled to #${last}, the bar is at y=${at.top}, not under the head`);
       }
     }
     expect(offSpec, 'the "On this page" bar is off its place').toEqual([]);

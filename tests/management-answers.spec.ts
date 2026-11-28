@@ -389,10 +389,11 @@ test.describe('a project with no runs, in the Management view', () => {
     await expect(main).not.toContainText(/portfolio|other projects|average of/i);
 
     // The reason, said where the way on is: nothing is signed, so the analysis comes first.
+    // The Decide page (ADR-145) says it and leads to Analyze; nothing can be chosen without a signed run.
     await page.goto(`/project/${BARE_ID}/redesign`, { waitUntil: 'domcontentloaded' });
-    const answer = page.locator('#redesign-answer');
-    await expect(answer).toContainText('Re-design builds on a signed analysis run, and there is none yet.', { timeout: 90000 });
-    await expect(page.locator('[data-redesign-next]')).toHaveText('Run the analysis first');
-    await expect(page.locator('[data-redesign-step="analyze"] [data-redesign-step-words]')).toHaveText('Not signed yet');
+    const state = page.locator('[data-decide-state="no-run"]');
+    await expect(state).toContainText('The decision opens once the program is analyzed and the run is signed.', { timeout: 90000 });
+    await expect(state.getByRole('link', { name: 'Open Analyze' })).toHaveAttribute('href', `/project/${BARE_ID}/analyze`);
+    await expect(page.locator('[data-decide-option], [data-decide-record]')).toHaveCount(0);
   });
 });

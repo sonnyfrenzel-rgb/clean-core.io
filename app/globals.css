@@ -1456,3 +1456,28 @@ main:has([data-next-step-bar]) {
 html:has([data-next-step-bar]) {
   scroll-padding-bottom: 5rem;
 }
+
+/* -------------------------------------------------------------
+ * The head of a tool, quieter — release 3.5.4 (owner walk-through 26.11.2026)
+ *
+ * M1. While the slim head stands under the shell bar (`[data-stage-head-slim][data-shown="true"]`, 44 px,
+ * `components/StageHeader.tsx`), the "On this page" bar steps down under it instead of sliding beneath it, and the
+ * browser's scroll padding takes both strips out of the area it scrolls a focused element into: 56 + 44 + 48 px.
+ *
+ * Q5. On a tool the engine is the normal case. The head says "From the engine" once for the page; a block's engine
+ * chip — the family's (`data-family-chip="engine"`) or the older vocabulary's *Reconstructed* — is not drawn, unless
+ * it departs (`data-chip-keep`: imported from your system, or kept on purpose by its caller). A chip inside a "Why?"
+ * popover or a process map's legend explains the vocabulary itself and is always drawn. Scoped to a page that holds a
+ * tool's frame, so a drawer or dialog the tool opens through a portal follows the same rule.
+ * ------------------------------------------------------------- */
+html:has([data-stage-head-slim][data-shown='true']) [data-page-anchors] {
+  top: 6.25rem;
+}
+html:has([data-stage-head-slim][data-shown='true']):has([data-page-anchors]) {
+  scroll-padding-top: 9.5rem;
+}
+:where(body:has([data-stage-frame])) :is([data-family-chip='engine'], [data-provenance='reconstructed']):not([data-chip-keep]):not(
+    :where([data-cc-why-popover], [data-process-map-legend]) *
+  ) {
+  display: none;
+}

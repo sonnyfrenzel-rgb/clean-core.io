@@ -294,52 +294,48 @@ test.describe('ADR-079 rendered — choosing an option in Management', () => {
   });
 
   /**
-   * The four options are chosen on Re-design since ADR-143 (owner request 23.11.2026): its step 2, "Decide", reuses
-   * `DecisionOptions` unchanged; Analyze's Management view shows the decision read-only and leads there.
+   * The four options are chosen on the Decide page since ADR-145 (owner decisions 25.11.2026; was step 2 of Re-design,
+   * ADR-143): one radio group, nothing pre-selected, one confirmation. Analyze's Management view shows the decision
+   * read-only and leads there.
    */
   async function open(page: Page) {
     await signInViaLanding(page, OWNER, PASSWORD);
     await page.goto(`/project/${ID}/redesign`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-decision-options]')).toBeVisible({ timeout: 90000 });
+    await expect(page.locator('[data-decide-state="choosing"] [data-decide]')).toBeVisible({ timeout: 90000 });
   }
 
-  test('four cards in order, the question as heading; Keep chosen here names who chose it', async ({ page }) => {
+  test('four options in order under the question; Keep recorded here names who recorded it', async ({ page }) => {
     test.setTimeout(240 * 1000);
     await page.setViewportSize({ width: 1440, height: 1000 });
     await open(page);
-    // The question heads the step the cards stand in: "Decide", with its purpose under it.
-    const step = page.locator(`#decide[data-redesign-step="decide"]`);
-    await expect(step.locator('h3').first()).toHaveText('Decide');
-    await expect(step).toContainText('Keep, rebuild, move to SAP standard or retire.');
-    await expect(step.locator('[data-decision-options]')).toHaveCount(1);
-    const cards = page.locator('[data-decision-option]');
+    // The page asks the question in its lead, and the choice stands in "Your decision".
+    await expect(page.locator('#decide-choice-h')).toHaveText('Your decision');
+    const cards = page.locator('[data-decide-option]');
     await expect(cards).toHaveCount(4);
-    expect(await cards.evaluateAll((els) => els.map((el) => el.getAttribute('data-decision-option')))).toEqual(['keep', 'rebuild', 'standard', 'retire']);
+    expect(await cards.evaluateAll((els) => els.map((el) => el.getAttribute('data-decide-option')))).toEqual(['keep', 'rebuild', 'standard', 'retire']);
     // Never green: no option reading claims proof.
-    await expect(page.locator('[data-decision-options] [data-provenance="proven"]')).toHaveCount(0);
-    // Rebuild goes through Design; the other three are chosen here.
-    await expect(page.locator('[data-decision-option="rebuild"] [data-option-choose-design]')).toHaveAttribute('href', /\/design\?view=management$/);
+    await expect(page.locator('[data-decide] [data-provenance="proven"]')).toHaveCount(0);
+    // Every option is chosen here, Rebuild included: no way into Design to choose it.
+    await expect(page.locator('[data-option-choose-design]')).toHaveCount(0);
 
-    await page.locator('[data-option-choose="keep"]').click();
+    await page.locator('[data-decide-option="keep"]').click();
+    await page.locator('[data-decide-reason] textarea').fill('The program runs fine on Private Edition; we keep it this year.');
+    await page.locator('[data-decide-record]').click();
     const box = page.getByRole('dialog');
     await expect(box).toContainText('self-declaration');
-    await box.getByRole('textbox').fill('The program runs fine on Private Edition; we keep it this year.');
-    await box.getByRole('button', { name: 'Choose this option' }).click();
+    await box.getByRole('button', { name: 'Record the decision', exact: true }).click();
 
-    await expect(page.locator('[data-decision-option="keep"][data-option-chosen]')).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('[data-facet="decision"]')).toContainText('Keep');
-    // Said once (ADR-087): the card under the answer has no headline of its
-    // own; its Option row names the choice as the account's.
-    await expect(page.locator('[data-decision-card] [data-decision-headline]')).toHaveCount(0);
-    await expect(page.locator('[data-decision-card] [data-decision-pillar="option"]')).toContainText('Keep, as chosen by your account.');
-    // One way to the amounts, under the four cards.
-    await expect(page.locator('[data-options-compare-economics]')).toHaveCount(1);
+    await expect(page.locator('[data-decide-state="decided"][data-decide-result-option="keep"]')).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('#decide-answer')).toContainText('Decided: Keep. Nothing is built.');
+    await expect(page.locator('#decide-answer')).toContainText(OWNER);
+    // One way to the amounts: Economics, from the cost line or the strip, never a second set of cards.
+    await expect(page.locator('[data-decide-option]')).toHaveCount(0);
 
-    // Analyze's Management view shows it read-only: the answer names the option, and who chose it.
+    // Analyze's Management view shows it read-only: the answer names the option, and who recorded it.
     await page.goto(`/project/${ID}/analyze?view=management`, { waitUntil: 'domcontentloaded' });
-    await expect(page.locator('[data-analyze-indication] [data-decision-answer]')).toContainText('Keep is chosen', { timeout: 60000 });
+    await expect(page.locator('[data-analyze-indication] [data-decision-answer]')).toContainText('Decided: Keep', { timeout: 60000 });
     await expect(page.locator('[data-analyze-indication] [data-decision-who]')).toContainText(OWNER);
-    await expect(page.locator('[data-decision-option]')).toHaveCount(0);
+    await expect(page.locator('[data-decide-option]')).toHaveCount(0);
   });
 
   test('a level chip in Management explains itself on keyboard focus', async ({ page }) => {
@@ -360,15 +356,15 @@ test.describe('ADR-079 rendered — choosing an option in Management', () => {
     await expect(page.locator(`[data-cc-level-explanation="${level}"]`).first()).toBeVisible();
   });
 
-  test('on a phone the four cards stack and nothing scrolls sideways', async ({ browser }) => {
+  test('on a phone the four options stack and nothing scrolls sideways', async ({ browser }) => {
     test.setTimeout(240 * 1000);
     const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
     const page = await context.newPage();
     await open(page);
-    const xs = await page.locator('[data-decision-option]').evaluateAll((els) =>
+    const xs = await page.locator('[data-decide-option]').evaluateAll((els) =>
       [...new Set(els.map((el) => Math.round(el.getBoundingClientRect().x)))],
     );
-    expect(xs.length, 'the option cards do not stack on a phone').toBe(1);
+    expect(xs.length, 'the options do not stack on a phone').toBe(1);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
     await context.close();

@@ -88,7 +88,8 @@ test('the links that led into the removed table lead to what is there now', () =
   const signals = read('lib/decision-option-signals.ts');
   expect(signals).not.toMatch(/in the Business view\./);
   expect(signals).toMatch(/place: 'standard-check'/);
-  expect(read('components/redesign/RedesignPage.tsx')).toContain("if (place === 'standard-check') return `${base}?view=it#standard`;");
+  // The Decide page's box B prepares the check in the same place (ADR-145).
+  expect(read('components/redesign/RedesignPage.tsx')).toContain('checkHref={`${base}?view=it#standard`}');
   // Transformation's warning: to the Management decision.
   const chain = read('lib/transformation-chain.ts');
   const open = chain.slice(chain.lastIndexOf("kind: 'standard-fit-open'"), chain.lastIndexOf("kind: 'standard-fit-open'") + 400);

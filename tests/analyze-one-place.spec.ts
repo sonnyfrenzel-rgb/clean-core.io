@@ -76,7 +76,7 @@ test.describe('the stage, read', () => {
     // The page writes `extensibilityRoute` only through the run, never from the browser.
     expect(read(PAGE)).not.toMatch(/updateDoc\([^)]*\{\s*extensibilityRoute/);
     const card = read('components/analyze/RouteCard.tsx');
-    expect(card).toContain('Decide in Re-design');
+    expect(card).toMatch(/>\s*Decide\s*</);
     expect(card).not.toMatch(/updateDoc|setDoc|data-route-switch/);
     // The decision is made in Re-design's decision step (ADR-143).
     expect(read(PAGE)).toContain("redesignHref(projectId, 'decide')");
@@ -155,7 +155,7 @@ test.describe('the stage, rendered', () => {
     await why.locator('[data-cc-disclosure-trigger]').first().click();
     await expect(page.locator('[data-route-switch], [data-route-override]')).toHaveCount(0);
     const next = page.locator('[data-route-next] a');
-    await expect(next).toHaveText(/Decide in Re-design/);
+    await expect(next).toHaveText(/^\s*Decide\s*$/);
     await expect(next).toHaveAttribute('href', new RegExp(`/project/${acct.projectId}/redesign#decide$`));
     // The side column (3.5.0, IT view): the route and what is open, each once, and the route only there.
     const side = page.locator('aside[data-analyze-it-side]');
