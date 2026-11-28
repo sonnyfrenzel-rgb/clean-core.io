@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Decide in one go (3.5.4, owner-approved mockup of 25.11.2026, ADR-145)
+
+- The program decision is taken on one page, "Decide": what each choice costs (a simulation on typical assumptions
+  unless Economics holds your own figures), the four options as one choice with nothing pre-selected, the route and
+  the business questions for a Rebuild or a reason for the others (asked only when departing from the indication),
+  one bar and one confirmation that records option, route and decision together. A decision that builds nothing ends
+  there. My workspace and the endings of Analyze keep the name Re-design for the way there.
+- New server command `decide`: sign-off, draft and confirmation in one transaction with the bindings of before (run,
+  evidence, what the page read; 409 on a moved run). A Rebuild that a limit of the architecture contract blocks says
+  so and cannot be recorded. No rules change.
+- In the confirmation of a Rebuild, "Record and write the design (sends answers to {provider})" records the decision
+  and starts the design, with the hint above it naming what goes to the provider; "Record only" records without a
+  model call; with the design step switched off only "Record the decision" is offered. After a Rebuild,
+  "Generate draft (sends code to {provider})" starts the code generation from its click; opening or reloading a
+  tool still starts no model (lawyer's statement 24c).
+- Design, Management view: shows the decided option; no second confirmation, checklist or second set of options;
+  "Change target" stays. Economics is no longer the station before the decision.
+- "SAP standard may fit better" appears on the decision only where the code shows signals for it.
+
+### Changed — the head of a tool, quieter (3.5.4)
+
+- Scrolled past the title, one slim line stands under the shell bar — the way back, the tool, the program and the
+  view — and the "On this page" bar steps down under it. On a phone the way back is "My workspace" on one line.
+- The legend of the tool marks ("done · started · out of date") opens on request from an "i" at the end of the tool
+  row instead of standing in the row.
+- "From the engine" is said once per page, in the head; blocks show a provenance chip only where they depart from
+  it: AI-generated, Yours, Simulation, Not determined, Signed, imported data, the engine's effort proposal.
+- Every tool shows its lead under the title in every state. A density guard fails if the head grows back.
+
+### Changed — My workspace, one view (3.5.4, owner 27.11.2026)
+
+- My workspace shows one view for everyone: the "Read as Business · IT · Management" switch is gone and no fact on a
+  tile is highlighted. Tiles | List stays. The browser no longer keeps `cc.workspace.lens`; a stored value is removed
+  once. Privacy policy 1.6 no longer names that entry.
+
 ### Changed — Ask this case (3.5.4, items 1–4 and 8)
 
 - "Ask this case" answers a glossary term only when asked "What is …?" / "What does … mean?" or given the bare
