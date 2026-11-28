@@ -201,7 +201,7 @@ test.describe('the page: no button without effect, nothing pre-selected, no mode
 
   test('nothing is pre-selected, and the one button records only when a click records something', () => {
     expect(page).toContain('const [choice, setChoice] = useState<DecisionOption | null>(null);');
-    expect(page).toMatch(/const recordable = Boolean\(choice\) && canDecide && !reading && !busy && !reasonMissing && !rebuildBlocked && !answersPending && read !== null;/);
+    expect(page).toMatch(/const recordable = Boolean\(choice\) && canDecide && !reading && !busy && !reasonMissing && !rebuildBlocked && !answersPending && !routeMissing && read !== null;/);
     // QA review of 374ee7134c8e: a Rebuild is recorded only once its business questions are read.
     expect(page).toContain("const answersPending = choice === 'rebuild' && answers.state !== 'ready';");
     // The cost line's own Economics revision travels in the basis.
@@ -254,4 +254,17 @@ test('the words around Decide: no second confirmation in Design, questions and a
   const decide = CAPABILITIES.find((c) => c.stage === 'Re-design')!;
   expect(decide.output).not.toContain('the options Economics has priced');
   expect(decide.output).toContain('otherwise as a simulation on typical assumptions');
+});
+
+test('a Rebuild with no route from the reader or the analysis is not recorded as RAP: the route is asked for first', () => {
+  const page = code('components/redesign/RedesignPage.tsx').replace(/\r\n/g, '\n');
+  // No silent default route.
+  expect(page).not.toMatch(/engineRoute \?\? 'rap'/);
+  expect(page).toContain("choice === 'rebuild' ? (route ?? engineRoute ?? null) : null");
+  // The missing route gates the record button, says why, and opens the route choice.
+  expect(page).toMatch(/const recordable = [^;]*!routeMissing/);
+  expect(page).toContain('Choose the route for the Rebuild: the analysis names none.');
+  expect(page).toContain('(routesOpen || routeMissing) && canDecide');
+  // codeOfChoice refuses a Rebuild without a route, so even a stray call records nothing.
+  expect(codeOfChoice('rebuild', null)).toBeNull();
 });

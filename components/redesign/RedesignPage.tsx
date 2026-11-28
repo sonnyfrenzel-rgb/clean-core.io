@@ -392,7 +392,9 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
   }
 
   /* ------------------------------------------------------- the choosing */
-  const effectiveRoute: TargetArchitectureCode | null = choice === 'rebuild' ? (route ?? engineRoute ?? 'rap') : null;
+  // No route the reader chose and none the analysis names: the Rebuild waits for a choice — never a silent default.
+  const effectiveRoute: TargetArchitectureCode | null = choice === 'rebuild' ? (route ?? engineRoute ?? null) : null;
+  const routeMissing = choice === 'rebuild' && effectiveRoute === null;
   const needsReason = choice ? reasonRequired({ option: choice, route: effectiveRoute, indicated, engineRoute }) : false;
   const indicatedCard = choice ? cards.find((c) => c.option === choice) ?? null : null;
   const follows = choice && choice !== 'rebuild' && !needsReason && indicatedCard ? followedIndicationReason(choice, indicatedCard.reason) : null;
@@ -473,7 +475,7 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
           <p className="m-0 text-[11px] font-semibold tracking-[0.08em] text-cc-ink-muted uppercase">Route</p>
           <div data-decide-route={effectiveRoute ?? ''} className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 cc-text-cell text-cc-ink">
             <b className="font-bold">{effectiveRoute ? ROUTE_WORDS[effectiveRoute] ?? effectiveRoute : 'Not determined'}</b>
-            {effectiveRoute === engineRoute ? <FamilyChip kind="engine" /> : <FamilyChip kind="yours" />}
+            {effectiveRoute === null ? null : effectiveRoute === engineRoute ? <FamilyChip kind="engine" /> : <FamilyChip kind="yours" />}
             <span className="text-cc-ink-muted">
               {contractRoute ? 'architecture contract of the signed run' : 'the route the analysis recorded'}
               {limits !== null && limits > 0 ? ` · ${limits} ${limits === 1 ? 'limit' : 'limits'}, shown with the decision` : ''}
@@ -490,7 +492,7 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
               </button>
             ) : null}
           </div>
-          {routesOpen && canDecide ? (
+          {(routesOpen || routeMissing) && canDecide ? (
             <div className="mt-2">
               <span role="radiogroup" aria-label="Route" className={`${CC_SEGMENTED_GROUP} flex-wrap`}>
                 {rebuildRoutes(engineRoute).map((r) => (
@@ -578,7 +580,9 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
         : 'Only the owner of the project decides. You read it.'
       : reading
         ? 'Reading the decision on record…'
-        : answersPending
+        : routeMissing
+          ? 'Choose the route for the Rebuild: the analysis names none.'
+          : answersPending
           ? 'Reading the business questions of the code…'
           : rebuildBlocked
           ? `A limit of the architecture contract blocks a Rebuild on this route as it stands, so it cannot be recorded. The limits are in Analyze, IT.${designOff ? ` ${designOff}` : ''}`
@@ -591,7 +595,7 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
             : follows
               ? 'It follows the analysis, so no reason is asked.'
               : 'Your reason is kept with the decision.';
-  const recordable = Boolean(choice) && canDecide && !reading && !busy && !reasonMissing && !rebuildBlocked && !answersPending && read !== null;
+  const recordable = Boolean(choice) && canDecide && !reading && !busy && !reasonMissing && !rebuildBlocked && !answersPending && !routeMissing && read !== null;
   const bar = (
     <DecideBar
       summary={summary}

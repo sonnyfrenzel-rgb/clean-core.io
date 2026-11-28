@@ -40,6 +40,8 @@ security audit and QA reviews that were scheduled for this release.
 - Projects signed in Design before 3.5.4 with tools built on them keep their way on to the next tool; the Decide
   page still lists their decision as open.
 - On a phone the tool row's legend button no longer makes the page scroll sideways.
+- A Rebuild for which neither the reader nor the analysis names a route is no longer recorded as RAP by default: the
+  page asks for the route and records only once one is chosen.
 - The texts around the decision no longer promise business questions and a design draft for every option, nor
   costs priced in Economics when the page shows a simulation; Design's Management view no longer asks "Ready to…?"
   after a decision is recorded; "Ask this case" describes the Decide page as it is.
