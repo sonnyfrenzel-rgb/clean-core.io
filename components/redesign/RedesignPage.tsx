@@ -650,6 +650,8 @@ export default function RedesignPage({ projectId }: { projectId: string }) {
         open={asking === 'record' && choice !== null}
         title={choice ? decideDialogTitle(choice) : ''}
         confirmLabel={writesDesign ? recordAndWriteDesignLabel(company) : 'Record the decision'}
+        // The mock-up's green primary, as the bar's "Record the decision…"; "Record only" stays secondary.
+        confirmVariant="primary"
         onConfirm={() => void record(writesDesign)}
         onCancel={() => setAsking(null)}
         secondary={writesDesign ? { label: 'Record only', onClick: () => void record(false) } : undefined}

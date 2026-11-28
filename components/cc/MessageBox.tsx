@@ -51,7 +51,7 @@ export interface CcMessageBoxProps {
    * `danger` is the ghost in error text §1.5 gives destructive acts: replacing
    * stored work or revoking is not a decision, so it does not wear its button.
    */
-  confirmVariant?: 'dark' | 'danger';
+  confirmVariant?: 'dark' | 'danger' | 'primary';
   /**
    * A second way to confirm, beside the binding one: "Record only" beside "Record and write the design" (lawyer's
    * statement 24c). Drawn as `secondary` between Cancel and the binding button; absent, nothing changes.
@@ -117,7 +117,7 @@ export default function CcMessageBox({
             </CcButton>
           ) : null}
           <CcButton
-            variant={confirmVariant === 'danger' ? 'ghost' : 'dark'}
+            variant={confirmVariant === 'danger' ? 'ghost' : confirmVariant === 'primary' ? 'primary' : 'dark'}
             tone={confirmVariant === 'danger' ? 'danger' : 'default'}
             onClick={onConfirm}
           >

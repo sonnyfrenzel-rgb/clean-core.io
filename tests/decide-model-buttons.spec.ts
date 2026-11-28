@@ -85,6 +85,9 @@ test.describe('the start a click hands on lives in memory only', () => {
     expect(decide).toContain("const writesDesign = choice === 'rebuild' && canDecide && availability.enabled('design');");
     expect(decide).toContain("confirmLabel={writesDesign ? recordAndWriteDesignLabel(company) : 'Record the decision'}");
     expect(decide).toContain("secondary={writesDesign ? { label: 'Record only', onClick: () => void record(false) } : undefined}");
+    // The mock-up's green primary in the dialog, as in the bar; "Record only" stays secondary (owner 27.11.2026).
+    expect(decide).toMatch(/confirmLabel=\{writesDesign[^\n]*\n[^\n]*\n\s*confirmVariant="primary"/);
+    expect(code('components/cc/MessageBox.tsx')).toContain("confirmVariant === 'primary' ? 'primary' : 'dark'");
     expect(decide).toContain('footnote={writesDesign ? <span data-decide-model-hint="">{writeDesignHint(company)}</span> : undefined}');
   });
 });
