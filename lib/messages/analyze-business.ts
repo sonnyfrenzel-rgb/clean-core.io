@@ -33,7 +33,7 @@ export const ANALYZE_BUSINESS_MESSAGES = {
   'abiz.endTitle': 'That was the process.',
   'abiz.endLead': 'You can stop here. It stays in your workspace.',
   'abiz.redesignTitle': 'Re-design this program',
-  'abiz.redesignHappens': 'The Decide page prices the options and takes your decision, with the program’s business questions: for each rule you say whether to keep, change or drop it. Then Design drafts a new clean-core version from your answers.',
+  'abiz.redesignHappens': 'The Decide page prices the options and takes your decision. For a rebuild it asks the program’s business questions, for each rule whether to keep, change or drop it, and Design then drafts a new clean-core version from your answers; keep, move to standard or retire builds nothing.',
   'abiz.redesignShort': 'Decide in one go: the options priced, each business rule kept, changed or dropped.',
   'abiz.redesignNothingInSap': 'Nothing changes in SAP. The draft stays in your workspace.',
   'abiz.redesignNothingInSapShort': 'Nothing changes in SAP.',
