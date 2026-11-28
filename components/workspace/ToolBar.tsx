@@ -587,8 +587,10 @@ function FamilyToolStrip({
         {items}
       </div>
       {/* The legend on request (release 3.5.4, Q4): a quiet "i" at the end of the row on every width, the key itself
-          only when asked for. Each mark keeps its words in the link's name for a screen reader. */}
-      <span data-stage-tools-legend-toggle="" className="ml-auto inline-flex shrink-0 items-center">
+          only when asked for. Each mark keeps its words in the link's name for a screen reader. On a phone or a touch
+          screen its 44 px target reaches 10 px past the 24 px "i" on each side; the padding (a whole step) keeps that inside the row,
+          or it is the page that scrolls sideways. */}
+      <span data-stage-tools-legend-toggle="" className="ml-auto inline-flex shrink-0 items-center max-[600px]:pr-3 pointer-coarse:pr-3">
         <InfoPopover subject={wt('tools.legend.subject')} hook="tools-legend" align="right">
           <ToolsLegend place="request" />
         </InfoPopover>

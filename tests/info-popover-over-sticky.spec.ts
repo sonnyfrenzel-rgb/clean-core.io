@@ -41,6 +41,8 @@ for (const stage of ['documentation', 'testing']) {
  */
 const SHELL_BAR = 'header.sticky';
 const ANCHOR_BAR = '[data-page-anchors]';
+/** The slim one-line head under the shell bar while the title is scrolled away (release 3.5.4, M1); the anchor bar steps under it. */
+const SLIM_HEAD = '[data-stage-head-slim][data-shown="true"]';
 
 /** Two frames, so a scroll's re-render (the level panel is placed from its chip) has landed. */
 async function settle(page: Page) {
@@ -99,10 +101,35 @@ async function coveredWhereBarsCross(page: Page, panel: string, bars: string[]) 
   );
 }
 
-async function expectOverBar(page: Page, panel: string, bar: string) {
-  await centreOnBar(page, panel, bar);
+/**
+ * Scrolls until `trigger` stands just below the bottom edge of `bar` while the bar is stuck — where a panel that opens
+ * upward from its trigger has the bar running through it. Placed by the trigger, not by the panel's middle: a sticky bar
+ * that has not stuck yet moves with the page, so a panel above it can never be centred on it by scrolling up.
+ */
+async function triggerBelowBar(page: Page, trigger: string, bar: string) {
+  // The bar first to its stuck place, then the trigger to just below it.
+  await page.evaluate((bar) => window.scrollBy(0, document.querySelector(bar)!.getBoundingClientRect().top), bar);
+  await settle(page);
+  for (let i = 0; i < 10; i++) {
+    const d = await page.evaluate(
+      ({ trigger, bar }) =>
+        Math.round(document.querySelector(trigger)!.getBoundingClientRect().top - (document.querySelector(bar)!.getBoundingClientRect().bottom + 4)),
+      { trigger, bar },
+    );
+    if (Math.abs(d) <= 2) return;
+    const before = await page.evaluate(() => window.scrollY);
+    await page.evaluate((d) => window.scrollBy(0, d), d);
+    await settle(page);
+    if ((await page.evaluate(() => window.scrollY)) === before) return;
+  }
+}
+
+async function expectOverBar(page: Page, panel: string, bar: string, opensUpwardFrom?: string) {
+  if (opensUpwardFrom) await triggerBelowBar(page, opensUpwardFrom, bar);
+  else await centreOnBar(page, panel, bar);
   await expect(page.locator(panel).first()).toBeVisible();
-  const { crossing, covered } = await coveredWhereBarsCross(page, panel, [SHELL_BAR, ANCHOR_BAR]);
+  // Every strip that stands at the top of the page: the shell bar, the slim head under it and the anchor bar.
+  const { crossing, covered } = await coveredWhereBarsCross(page, panel, [SHELL_BAR, SLIM_HEAD, ANCHOR_BAR]);
   // Not vacuous: the bar the panel was moved onto does run through it.
   expect(crossing, `${bar} does not cross the open panel`).toContain(bar);
   expect(covered, 'a sticky bar stands over the open panel').toEqual([]);
@@ -143,7 +170,7 @@ test('analyze: an open glossary term is not covered by the "On this page" bar', 
   await term.click();
   await expect(page.locator('[data-glossary-popover]')).toBeVisible();
   // Opens upward: the term stands just below the bar's bottom edge.
-  await expectOverBar(page, '[data-glossary-popover]', ANCHOR_BAR);
+  await expectOverBar(page, '[data-glossary-popover]', ANCHOR_BAR, 'button[data-glossary-term]');
 });
 
 test('analyze: a pinned level explanation is not covered by the "On this page" bar', async ({ page }) => {

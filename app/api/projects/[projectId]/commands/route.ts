@@ -376,7 +376,13 @@ export async function POST(
           if (!before.ok) {
             return { ok: false, status: 409, code: 'decision-underivable', error: 'No decision can be derived for this project now, so nothing was written.' };
           }
-          const basisNow = decisionBasisOf({ runId: before.runId, evidenceDigest: before.evidenceDigest, draft: before.answer.draft, stored: before.answer.stored });
+          const basisNow = decisionBasisOf({
+            runId: before.runId,
+            evidenceDigest: before.evidenceDigest,
+            draft: before.answer.draft,
+            stored: before.answer.stored,
+            costRevision: before.answer.costNow?.revision ?? null,
+          });
           if ((body as { expectedDecisionBasis?: unknown }).expectedDecisionBasis !== basisNow) {
             return {
               ok: false,

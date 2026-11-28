@@ -55,9 +55,12 @@ export function journeyNext(
   const model = redesignModel(steps, decision, account);
   // Economics is never the next step (ADR-145 (5)), and once the reader has gone on past it (a later tool holds a
   // record, `economicsPassedOver`) the way on does not send them back to it. The decision is no longer skipped: since
-  // 3.5.4 it is recorded in one go on the Decide page, route included, with no sign-off in Design before it.
+  // 3.5.4 it is recorded in one go on the Decide page, route included, with no sign-off in Design before it. One
+  // exception keeps the way on of projects from before 3.5.4 (preservation register): a route signed in Design whose
+  // record was never confirmed (`chosen`), with tools already built on it, goes on to the next tool, not back to a
+  // decision the work has gone past; the Decide page still lists it as open.
   const passed = economicsPassedOver(steps);
-  const skip = (k: RedesignStep['key'] | 'analyze') => passed && k === 'tco';
+  const skip = (k: RedesignStep['key'] | 'analyze') => passed && (k === 'tco' || (k === 'decide' && decision.stage === 'chosen'));
   let next: RedesignNext | null = model.next ? { ...model.next, path: model.next.path === '#decide' ? 'redesign#decide' : model.next.path } : null;
   if (next && !next.done && skip(next.key)) {
     const on = model.steps.find((s) => !skip(s.key) && s.state !== 'done' && s.state !== 'not-needed') ?? null;

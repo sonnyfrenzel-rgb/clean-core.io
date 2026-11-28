@@ -52,6 +52,16 @@ test.describe('the cost line: a simulation, never a stored figure it did not rea
     expect(mine.cost).toEqual(line.cost);
   });
 
+  test('stored figures that do not price all four are not mixed into a line labelled typical (QA review of 374ee7134c8e)', () => {
+    const seed = initialCostAssumptions();
+    const typicalOnly = decideCostLine({ stored: null, seed, proposals: proposals(1200) });
+    // Own shared figures only, no option priced: not all four, so the line is the typical one, untouched by them.
+    const partial = { ...seed, currency: 'USD', devDayRate: 5000, testDayRate: 4000, horizonYears: 2, releaseCadence: { perYear: 6, confirmed: true } };
+    const line = decideCostLine({ stored: partial, seed, proposals: proposals(1200) });
+    expect(line.basis).toBe('typical');
+    expect(line).toEqual(typicalOnly);
+  });
+
   test('no source to size from: nothing is priced, and nothing is invented', () => {
     const line = decideCostLine({ stored: null, seed: initialCostAssumptions(), proposals: proposals(null) });
     expect(line).toMatchObject({ basis: 'none', chips: [], period: null });
@@ -188,7 +198,11 @@ test.describe('the page: no button without effect, nothing pre-selected, no mode
 
   test('nothing is pre-selected, and the one button records only when a click records something', () => {
     expect(page).toContain('const [choice, setChoice] = useState<DecisionOption | null>(null);');
-    expect(page).toMatch(/const recordable = Boolean\(choice\) && canDecide && !reading && !busy && !reasonMissing && !rebuildBlocked && read !== null;/);
+    expect(page).toMatch(/const recordable = Boolean\(choice\) && canDecide && !reading && !busy && !reasonMissing && !rebuildBlocked && !answersPending && read !== null;/);
+    // QA review of 374ee7134c8e: a Rebuild is recorded only once its business questions are read.
+    expect(page).toContain("const answersPending = choice === 'rebuild' && answers.state !== 'ready';");
+    // The cost line's own Economics revision travels in the basis.
+    expect(page).toContain('costRevision: project?._economics?.revision ?? null,');
     expect(page).toMatch(/data-decide-record=""/);
     expect(page).toMatch(/disabled=\{!recordable\}/);
     // The production bug of 3.5.3: a confirm button whose click only set the address it already had.

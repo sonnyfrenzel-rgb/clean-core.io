@@ -35,17 +35,23 @@ export interface DecideBasisSource {
   draft: Pick<ProjectDecision, 'bindings'> | null;
   /** The record on the project, read back (`readStoredDecision`), or `null`. */
   stored: { fingerprint: string; status: string } | null;
+  /**
+   * The Economics revision the page's cost line was priced on (`EconomicsRecord.revision`), or `null` when none is
+   * stored. The server compares the revision it reads in the deciding transaction (`answer.costNow.revision`): figures
+   * saved in another tab after the page was read move the basis, and nothing is recorded on costs nobody was shown.
+   */
+  costRevision: string | null;
 }
 
 /**
  * The digest a `decide` command is bound to besides the run (ADR-145 (2)). Changes when the run, its evidence, the
- * need revision (an answer given or changed) or the stored decision record changes: anything that would make the
- * dialog's lines untrue. Never stored; compared in the deciding transaction only.
+ * need revision (an answer given or changed), the stored decision record or the Economics revision changes: anything
+ * that would make the dialog's lines untrue. Never stored; compared in the deciding transaction only.
  */
 export function decisionBasisOf(src: DecideBasisSource): string {
   const need = src.draft?.bindings.find((b) => b.key === 'need')?.revision ?? null;
   return sha256Hex(
-    JSON.stringify(['decide-basis/1', src.runId ?? null, src.evidenceDigest ?? null, need, src.stored?.fingerprint ?? null, src.stored?.status ?? null]),
+    JSON.stringify(['decide-basis/2', src.runId ?? null, src.evidenceDigest ?? null, need, src.stored?.fingerprint ?? null, src.stored?.status ?? null, src.costRevision ?? null]),
   );
 }
 
@@ -140,8 +146,9 @@ function chipsOf(a: CostAssumptions): DecideCostLine['chips'] {
 /**
  * The cost line of the Decide page. `stored` is the Economics record's assumptions (restored), `seed` the four empty
  * options Economics starts from, `proposals` the size proposals of the source (`proposeEffort`,
- * `proposeMaintenanceBaseline`). Stored figures win where they price all four options; otherwise the stored ones are
- * completed with typical values in memory, as "Use typical assumptions" would, and nothing is written.
+ * `proposeMaintenanceBaseline`). Stored figures win where they price all four options; otherwise the line is priced on
+ * typical assumptions alone, from the empty seed, so a line labelled typical never mixes in a stored figure. Nothing is
+ * written.
  */
 export function decideCostLine(args: { stored: CostAssumptions | null; seed: CostAssumptions; proposals: TypicalProposals }): DecideCostLine {
   const own = args.stored;
@@ -151,7 +158,7 @@ export function decideCostLine(args: { stored: CostAssumptions | null; seed: Cos
       return { basis: 'stored', cost, period: yearsOf(own), chips: chipsOf(own), typical: usesTypical(own) };
     }
   }
-  const start = own ?? args.seed;
+  const start = args.seed;
   const filled: CostAssumptions = { ...start, ...typicalPatch(start, args.proposals) };
   const cost = costsOf(filled);
   if (!DECISION_OPTIONS.some((o) => cost[o] !== null)) {

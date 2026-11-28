@@ -1826,8 +1826,12 @@ ${CODE_DRAFT_BUSINESS_RULES}${originalFacts}
    * Nothing in the address or in storage carries it: a reload or a direct visit reads no request and sends nothing.
    */
   useEffect(() => {
-    if (!canStart || busy || files.length > 0) return;
+    // Taken once the button's own state has settled (the project and its files, the account, the engine's read, the
+    // key, the plan before the click), whether or not it can start: a request that cannot start here ends here and never
+    // starts work on a later visit. Taken earlier, the files still loading would drop it on every click.
+    if (!project || busy || !signedInUid || evidencePending || !modelAvailability.known || planPending) return;
     if (!takeStartRequest(projectId as string, 'transformation')) return;
+    if (!canStart || busy || files.length > 0) return;
     startGeneration();
   });
   /** The tips stand where a generation could start now, or would once the model is on. */

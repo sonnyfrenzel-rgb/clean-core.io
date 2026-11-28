@@ -48,11 +48,17 @@ test.describe('the labels name the provider of the key actually used', () => {
 test.describe('the start a click hands on lives in memory only', () => {
   test('taken once, for its project and step only, and not after it expires', () => {
     requestStartOnArrival('p1', 'design', 1000);
-    expect(takeStartRequest('p2', 'design', 1001)).toBe(false);
-    expect(takeStartRequest('p1', 'transformation', 1001)).toBe(false);
     expect(startRequested('p1', 'design', 1001)).toBe(true);
+    expect(startRequested('p2', 'design', 1001)).toBe(false);
     expect(takeStartRequest('p1', 'design', 1002)).toBe(true);
     expect(takeStartRequest('p1', 'design', 1003)).toBe(false);
+    // QA review of 374ee7134c8e: another tool opening first ends the request; a later visit of the right one gets none.
+    requestStartOnArrival('p1', 'design', 2000);
+    expect(takeStartRequest('p2', 'design', 2001)).toBe(false);
+    expect(takeStartRequest('p1', 'design', 2002)).toBe(false);
+    requestStartOnArrival('p1', 'design', 3000);
+    expect(takeStartRequest('p1', 'transformation', 3001)).toBe(false);
+    expect(takeStartRequest('p1', 'design', 3002)).toBe(false);
     requestStartOnArrival('p1', 'transformation', 0);
     expect(takeStartRequest('p1', 'transformation', START_REQUEST_TTL_MS + 1)).toBe(false);
   });
@@ -74,9 +80,10 @@ test.describe('the start a click hands on lives in memory only', () => {
 
   test('Transformation takes it only where its own button could start, through the same start', () => {
     const src = code('app/(app)/project/[projectId]/transformation/page.tsx');
-    expect(src).toMatch(/if \(!canStart \|\| busy \|\| files\.length > 0\) return;\s*if \(!takeStartRequest\(projectId as string, 'transformation'\)\) return;\s*startGeneration\(\);/);
+    // Taken once the page has settled, then started only where its own button could start.
+    expect(src).toMatch(/if \(!project \|\| busy \|\| !signedInUid \|\| evidencePending \|\| !modelAvailability\.known \|\| planPending\) return;\s*if \(!takeStartRequest\(projectId as string, 'transformation'\)\) return;\s*if \(!canStart \|\| busy \|\| files\.length > 0\) return;\s*startGeneration\(\);/);
     const design = code('app/(app)/project/[projectId]/design/page.tsx');
-    expect(design).toMatch(/if \(!takeStartRequest\(projectId as string, 'design'\)\) return;\s*setStartedFromDecision\(true\);\s*regenerate\(\);/);
+    expect(design).toMatch(/if \(!takeStartRequest\(projectId as string, 'design'\)\) return;\s*if \(!isOwner \|\| generating \|\| elsewhereSince !== null \|\| design\) return;\s*setStartedFromDecision\(true\);\s*regenerate\(\);/);
     expect(design).toContain('headline={startedFromDecision ? DESIGN_AFTER_DECISION_FAILED');
   });
 

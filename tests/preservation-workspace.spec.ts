@@ -558,6 +558,18 @@ test.describe('the reference cases, opened in the workspace', () => {
           // on (journey review 26.11.2026, Q3) — the page itself is the way on.
           await expect(bar.locator('a[data-workspace-tool="analyze"]'), `${rc.id}: Analyze is current`).toHaveAttribute('aria-current', 'page');
           await expect(bar.locator('a[data-workspace-tool-next]'), `${rc.id}: no Next tag on the current tool`).toHaveCount(0);
+        } else if (nextTagShown(tools, rc.workspace.nextStep, false) && rc.seed.project.approvedByArchitect !== true) {
+          // Since 3.5.4 (ADR-145) the decision is recorded in one go on the Decide page, route included, and Design asks
+          // for no sign-off before it: with a design on record and no decision, the way on is the Decide page, which is
+          // not a tool. The row tags none, and on the tool the register named (Analyze has no next-step bar; the page
+          // is its own way on) the bar at the foot names the decision instead.
+          await expect(bar.locator('a[data-workspace-tool-next]'), `${rc.id}: no tool tagged while the decision is next`).toHaveCount(0);
+          await page.goto(`/project/${projectId}/${rc.workspace.nextStep}`, { waitUntil: 'domcontentloaded' });
+          await expect(page.locator('[data-next-step-bar] [data-next-step-target]'), `${rc.id}: the decision is next`).toHaveAttribute(
+            'data-next-step-target',
+            'redesign#decide',
+            { timeout: 60000 },
+          );
         } else if (nextTagShown(tools, rc.workspace.nextStep, false)) {
           await expect(bar.locator('a[data-workspace-tool-next]'), `${rc.id}: the next tool`).toHaveAttribute(
             'data-workspace-tool',
