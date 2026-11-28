@@ -267,6 +267,6 @@ export const STORAGE_CLEANUPS: readonly StorageCleanupEntry[] = Object.freeze([
     area: 'local',
     held: '"business", "it" or "management" — the view the tiles of My workspace were read in',
     why:
-      'My workspace shows one view for everyone since 3.5.4 (owner decision 27.11.2026): the lens and its key are gone; a value a browser kept is removed once at the next signed-in visit (lib/storage-cleanup.ts). Privacy policy 1.5, section 7 still names the key — taking it out needs a new version (owner and lawyer)',
+      'My workspace shows one view for everyone since 3.5.4 (owner decision 27.11.2026): the lens and its key are gone; a value a browser kept is removed once at the next signed-in visit (lib/storage-cleanup.ts). Privacy policy 1.6 no longer names it (owner decision 27.11.2026, on the pattern of statement 22c, 1)',
   },
 ]);

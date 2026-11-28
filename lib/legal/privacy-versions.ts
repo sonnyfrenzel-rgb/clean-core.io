@@ -14,8 +14,9 @@ import type { LegalLang } from './open-values';
  * Which version is in force is the build's: the newest version whose texts say business names start by themselves
  * (`LEGAL_TEXTS_NAMES_AUTOMATIC`, `lib/legal/names-wording.ts`), version 1.1 before — 1.2 was that version from
  * 3.1.0, 1.3 (the usage figures of section 9, lawyer-approved document 21) from 3.2.0, 1.4 (My workspace, statement 20c)
- * from 3.3.0, 1.5 (two storage entries 3.5.0 no longer writes leave section 7, statement 22c, 1) from 3.5.2. Every
- * version comes from
+ * from 3.3.0, 1.5 (two storage entries 3.5.0 no longer writes leave section 7, statement 22c, 1) from 3.5.2, 1.6 (the
+ * storage entry of the view in My workspace leaves section 7, owner decision 27.11.2026) from 3.5.4. Every version
+ * comes from
  * the one source (`privacyDeFor` / `privacyEnFor`, rendered by version id), and `tests/legal-names-wording.spec.ts`
  * holds each archived file to the source as rendered for its version.
  *
@@ -26,7 +27,7 @@ import type { LegalLang } from './open-values';
  * Import-light (the names rule and a type), so the sign-up dialog and the consent record read it.
  */
 
-export type PrivacyVersionId = '1.1' | '1.2' | '1.3' | '1.4' | '1.5';
+export type PrivacyVersionId = '1.1' | '1.2' | '1.3' | '1.4' | '1.5' | '1.6';
 
 /**
  * The day version 1.4 takes effect — 23.11.2026, the release day of 3.3.0 (the version was built on 22.11.2026 with
@@ -44,6 +45,15 @@ export const PRIVACY_14_DATE_ISO = '2026-11-23';
  * below, as for 1.4 (commit 2616c157f). Every date of 1.5 is derived from this one constant.
  */
 export const PRIVACY_15_DATE_ISO = '2026-11-25';
+
+/**
+ * The day version 1.6 takes effect — the release day of 3.5.4 (owner decision 27.11.2026: the lens of My workspace is
+ * removed, and the policy is corrected in the same release). PROVISIONAL: the day the version was built (28.11.2026).
+ * If 3.5.4 goes to main on another day, it becomes that day before the release: change this constant, delete
+ * docs/privacy/1.6.md and 1.6.de.md, run `npx tsx scripts/legal/archive-privacy.ts 1.6` and put the printed digests
+ * below, as for 1.4 and 1.5. Every date of 1.6 is derived from this one constant.
+ */
+export const PRIVACY_16_DATE_ISO = '2026-11-28';
 
 const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
@@ -85,6 +95,13 @@ export interface PrivacyPolicyVersion {
    * version 1.5 (legal review, document 22, question 1; statement 22c, 1: the two deletions, no further sentence).
    */
   retiredEntriesDropped: boolean;
+  /**
+   * Section 7 no longer names the entry of the view in My workspace (`cc.workspace.lens`) nor the sentence on that
+   * view — from version 1.6 (owner decision 27.11.2026: My workspace shows one view for everyone; the interface no
+   * longer keeps the entry and removes a stored one once, `lib/storage-cleanup.ts`). The layout entry
+   * (`cc.workspace.mode`) stays.
+   */
+  lensDropped: boolean;
   /** Repository-relative paths of the immutable archived texts. */
   files: Record<LegalLang, string>;
   /** SHA-256 of each LF-normalised file, lowercase hex. */
@@ -104,6 +121,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     usageFigures: false,
     workspace: false,
     retiredEntriesDropped: false,
+    lensDropped: false,
     files: { en: 'docs/privacy/1.1.md', de: 'docs/privacy/1.1.de.md' },
     // Rendered from the source with the names paused; byte for byte what main published from 9 November 2026
     // (compared against the rendering of the release of 13 November 2026 when this archive was made).
@@ -122,6 +140,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     usageFigures: false,
     workspace: false,
     retiredEntriesDropped: false,
+    lensDropped: false,
     files: { en: 'docs/privacy/1.2.md', de: 'docs/privacy/1.2.de.md' },
     sha256: {
       en: 'e77e23885f626b27cb3423577a2f51737429dfb5f27313bd831cc0394d2f98b7',
@@ -139,6 +158,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     usageFigures: true,
     workspace: false,
     retiredEntriesDropped: false,
+    lensDropped: false,
     files: { en: 'docs/privacy/1.3.md', de: 'docs/privacy/1.3.de.md' },
     sha256: {
       en: '94540d9a86de24f2ad06345eb794afedee155ec7eaa215e46e7453cc4806775f',
@@ -158,6 +178,7 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     usageFigures: true,
     workspace: true,
     retiredEntriesDropped: false,
+    lensDropped: false,
     files: { en: 'docs/privacy/1.4.md', de: 'docs/privacy/1.4.de.md' },
     sha256: {
       en: 'd044c4fd43d076f0ed5f3c25a9bedc890e01ef8dfbe8796e0a771c3bac2ecae6',
@@ -177,10 +198,32 @@ export const PRIVACY_POLICY_VERSIONS: readonly PrivacyPolicyVersion[] = [
     usageFigures: true,
     workspace: true,
     retiredEntriesDropped: true,
+    lensDropped: false,
     files: { en: 'docs/privacy/1.5.md', de: 'docs/privacy/1.5.de.md' },
     sha256: {
       en: '8021afc48111d0c6b78e8c48af462b2eadd0a1ff19a14ca3752e6020dad9ae57',
       de: '617048220aa5901f90af3283548be0fc0e0a8b4ea5e17fd957db446894b6080e',
+    },
+  },
+  {
+    // The version that goes live with 3.5.4 (owner decision 27.11.2026): the lens of My workspace is gone, so section
+    // 7 no longer names its entry (cc.workspace.lens) nor the sentence on the view; the layout entry stays, its clause
+    // rephrased to stand alone. Built on the pattern of 1.5: the deletions and a change note, no sentence on the
+    // clean-up. The interface removes the old local entry once (`lib/storage-cleanup.ts`); the register keeps that as
+    // a clean-up, not as a named entry.
+    id: '1.6',
+    dateIso: PRIVACY_16_DATE_ISO,
+    date: privacyDateOf(PRIVACY_16_DATE_ISO),
+    recordId: '1.6',
+    namesAutomatic: true,
+    usageFigures: true,
+    workspace: true,
+    retiredEntriesDropped: true,
+    lensDropped: true,
+    files: { en: 'docs/privacy/1.6.md', de: 'docs/privacy/1.6.de.md' },
+    sha256: {
+      en: '9b5ffb94114b4e2aaaa6849f4ca9ee647987a81ee7d4deba7d0d2411d84331b0',
+      de: '9036fc31fa87a695e43099ea28d53e04822b6c52b474897e55219639f9b91983',
     },
   },
 ];
@@ -191,9 +234,9 @@ export function privacyVersion(id: PrivacyVersionId): PrivacyPolicyVersion {
   return v;
 }
 
-/** The version a build renders: 1.5 once business names start by themselves, 1.1 before (1.2 to 1.4 stay archived). */
+/** The version a build renders: 1.6 once business names start by themselves, 1.1 before (1.2 to 1.5 stay archived). */
 export function privacyVersionFor(namesAutomatic: boolean): PrivacyPolicyVersion {
-  return privacyVersion(namesAutomatic ? '1.5' : '1.1');
+  return privacyVersion(namesAutomatic ? '1.6' : '1.1');
 }
 
 /** The version in force in this build. */
@@ -243,6 +286,12 @@ const CHANGE_NOTES: Partial<Record<PrivacyVersionId, Record<LegalLang, string>>>
   '1.5': {
     de: 'Abschnitt 7 nennt zwei Einträge nicht mehr, die die Oberfläche seit Release 3.5.0 nicht mehr anlegt: die weggeklickten Hinweise (cc.workspace.coachMarks.dismissed) und die übersprungenen Fragen im Design (cc:design-skip-questions:…).',
     en: 'section 7 no longer names two entries the interface stopped writing with release 3.5.0: the dismissed hints (cc.workspace.coachMarks.dismissed) and the skipped questions in Design (cc:design-skip-questions:…).',
+  },
+  // Owner decision 27.11.2026 (release 3.5.4), on the pattern of 1.5: the entry for the view in My workspace is
+  // removed, because it is no longer kept.
+  '1.6': {
+    de: 'Abschnitt 7 nennt den Eintrag für die Sicht in „My workspace“ (cc.workspace.lens) nicht mehr, weil die Oberfläche ihn seit Release 3.5.4 nicht mehr anlegt.',
+    en: 'section 7 no longer names the entry for the view in My workspace (cc.workspace.lens), which the interface stopped keeping with release 3.5.4.',
   },
 };
 
