@@ -16,7 +16,7 @@ import { START_REQUEST_TTL_MS, requestStartOnArrival, startRequested, takeStartR
  * keep "no model call on opening" true. The rendered half is `decide-no-start-on-open.spec.ts`.
  */
 const ROOT = path.resolve(__dirname, '..');
-const code = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+const code = (rel: string) => fs.readFileSync(path.join(ROOT, rel), 'utf8').replace(/\r\n/g, '\n').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 
 test.describe('the labels name the provider of the key actually used', () => {
   test('Google and Anthropic, and the generic provider before the key is known', () => {
